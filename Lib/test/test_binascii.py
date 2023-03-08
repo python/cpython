@@ -9,9 +9,11 @@ from test.support.hypothesis_helper import hypothesis
 
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
-b2a_functions = ['b2a_base64', 'b2a_hex', 'b2a_qp', 'b2a_uu',
+b2a_functions = ['b2a_ascii85', 'b2a_base64', 'b2a_base85',
+                 'b2a_hex', 'b2a_qp', 'b2a_uu',
                  'hexlify']
-a2b_functions = ['a2b_base64', 'a2b_hex', 'a2b_qp', 'a2b_uu',
+a2b_functions = ['a2b_ascii85', 'a2b_base64', 'a2b_base85',
+                 'a2b_hex', 'a2b_qp', 'a2b_uu',
                  'unhexlify']
 all_functions = a2b_functions + b2a_functions + ['crc32', 'crc_hqx']
 
@@ -206,6 +208,337 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidLength(b'a' * 5)
         assertInvalidLength(b'a' * (4 * 87 + 1))
         assertInvalidLength(b'A\tB\nC ??DE')  # only 5 valid characters
+
+    def test_ascii85_valid(self):
+        # Test Ascii85 with valid data
+        ASCII85_PREFIX = b"<~"
+        ASCII85_SUFFIX = b"~>"
+
+        # Interleave blocks of 4 null bytes and 4 spaces into test data
+        rawdata = bytearray()
+        rawlines, i = [], 0
+        for k in range(1, len(self.rawdata) + 1):
+            b = b"\0\0\0\0" if k & 1 else b"    "
+            b = b + self.rawdata[i:i + k]
+            b = b"    " if k & 1 else b"\0\0\0\0"
+            rawdata += b
+            rawlines.append(b)
+            i += k
+            if i >= len(self.rawdata):
+                break
+
+        # Test core parameter combinations
+        params = (False, False), (False, True), (True, False), (True, True)
+        for fold_spaces, wrap in params:
+            lines = []
+            for rawline in rawlines:
+                b = self.type2test(rawline)
+                a = binascii.b2a_ascii85(b, fold_spaces=fold_spaces, wrap=wrap)
+                lines.append(a)
+            res = bytearray()
+            for line in lines:
+                a = self.type2test(line)
+                b = binascii.a2b_ascii85(a, fold_spaces=fold_spaces, wrap=wrap)
+                res += b
+            self.assertEqual(res, rawdata)
+
+    def test_ascii85_invalid(self):
+        # Test Ascii85 with invalid characters interleaved
+        lines, i = [], 0
+        for k in range(1, len(self.rawdata) + 1):
+            b = self.type2test(self.rawdata[i:i + k])
+            a = binascii.b2a_ascii85(b)
+            lines.append(a)
+            i += k
+            if i >= len(self.rawdata):
+                break
+
+        fillers = bytearray()
+        valid = b"!\"#$%&'()*+,-./0123456789:;<=>?@" \
+                b"ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstu" + b"z"
+        for i in range(256):
+            if i not in valid:
+                fillers.append(i)
+        def addnoise(line):
+            res = bytearray()
+            for i in range(len(line)):
+                res.append(line[i])
+                for j in range(i, len(fillers), len(line)):
+                    res.append(fillers[j])
+            return res
+        res = bytearray()
+        for line in map(addnoise, lines):
+            a = self.type2test(line)
+            b = binascii.a2b_ascii85(a, ignore=fillers)
+            res += b
+        self.assertEqual(res, self.rawdata)
+
+        # Test Ascii85 with only invalid characters
+        fillers = self.type2test(fillers)
+        b = binascii.a2b_ascii85(fillers, ignore=fillers)
+        self.assertEqual(b, b"")
+
+    def test_ascii85_errors(self):
+        def _assertRegexTemplate(assert_regex, data, **kwargs):
+            with self.assertRaisesRegex(binascii.Error, assert_regex):
+                binascii.a2b_ascii85(self.type2test(data), **kwargs)
+
+        def assertMissingDelimiter(data):
+            _assertRegexTemplate(r"(?i)end with '~>'", data, wrap=True)
+
+        def assertOverflow(data):
+            _assertRegexTemplate(r"(?i)85 overflow", data)
+
+        def assertInvalidSpecial(data):
+            _assertRegexTemplate(r"(?i)'[yz]'.+5-tuple", data, fold_spaces=True)
+
+        def assertInvalidChar(data, **kwargs):
+            _assertRegexTemplate(r"(?i)invalid in Ascii85", data, **kwargs)
+
+        def assertInvalidLength(data):
+            _assertRegexTemplate(r"(?i)invalid length", data)
+
+        # Test Ascii85 with missing delimiters
+        assertMissingDelimiter(b"")
+        assertMissingDelimiter(b"a")
+        assertMissingDelimiter(b"<~")
+        assertMissingDelimiter(b"<~!~")
+        assertMissingDelimiter(b"<~abc>")
+        assertMissingDelimiter(b"<~has delimiter but not terminal~>  !")
+
+        # Test Ascii85 with out-of-range encoded value
+        assertOverflow(b"t")
+        assertOverflow(b"s9")
+        assertOverflow(b"s8X")
+        assertOverflow(b"s8W.")
+        assertOverflow(b's8W-"')
+        assertOverflow(b"s8W-!u")
+        assertOverflow(b"s8W-!s8W-!zs8X")
+
+        # Test Ascii85 with misplaced short form groups
+        assertInvalidSpecial(b"ay")
+        assertInvalidSpecial(b"az")
+        assertInvalidSpecial(b"aby")
+        assertInvalidSpecial(b"ayz")
+        assertInvalidSpecial(b"abcz")
+        assertInvalidSpecial(b"abcdy")
+        assertInvalidSpecial(b"y!and!z!then!!y")
+
+        # Test Ascii85 with non-ignored invalid characters
+        assertInvalidChar(b"j\n")
+        assertInvalidChar(b" ", ignore=b"")
+        assertInvalidChar(b" valid\x02until\x03", ignore=b"\x00\x01\x02\x04")
+        assertInvalidChar(b"\tFCb", ignore=b"\n")
+        assertInvalidChar(b"xxxB\nP\thU'D v/F+", ignore=b" \n\tv")
+
+        # Test Ascii85 with invalid length of final group (1 mod 5)
+        assertInvalidLength(b"a")
+        assertInvalidLength(b"b")
+        assertInvalidLength(b"zc")
+        assertInvalidLength(b"zza")
+        assertInvalidLength(b"!!!!!a")
+        assertInvalidLength(b"+<VdL+<VdLZ")
+        assertInvalidLength(b"Z" * (5 * 43 + 21))
+
+    def test_ascii85_width(self):
+        # Test Ascii85 splitting lines by width
+        def assertEncode(a_expected, data, n, wrap=False):
+            b = self.type2test(data)
+            a = binascii.b2a_ascii85(b, wrap=wrap, width=n)
+            self.assertEqual(a, a_expected)
+
+        def assertDecode(data, b_expected, wrap=False):
+            a = self.type2test(data)
+            b = binascii.a2b_ascii85(a, wrap=wrap, ignore=b"\n")
+            self.assertEqual(b, b_expected)
+
+        tests = [
+            (b"", 0, b"", b"<~~>"),
+            (b"", 1, b"", b"<~\n~>"),
+            (b"a", 0, b"@/", b"<~@/~>"),
+            (b"a", 1, b"@\n/", b"<~\n@/\n~>"),
+            (b"a", 2, b"@/", b"<~\n@/\n~>"),
+            (b"a", 3, b"@/", b"<~@\n/~>"),
+            (b"a", 4, b"@/", b"<~@/\n~>"),
+            (b"a", 5, b"@/", b"<~@/\n~>"),
+            (b"a", 6, b"@/", b"<~@/~>"),
+            (b"a", 7, b"@/", b"<~@/~>"),
+            (b"a", 123, b"@/", b"<~@/~>"),
+            (b"this is a test", 7, b"FD,B0+D\nGm>@3BZ\n'F*%",
+                                   b"<~FD,B0\n+DGm>@3\nBZ'F*%\n~>"),
+            (b"a test!!!!!!!    ", 11, b"@3BZ'F*&QK+\nX&!P+WqmM+9",
+                                       b"<~@3BZ'F*&Q\nK+X&!P+WqmM\n+9~>"),
+            (b"\0" * 56, 7, b"zzzzzzz\nzzzzzzz", b"<~zzzzz\nzzzzzzz\nzz~>"),
+        ]
+        for b, n, a, a_wrap in tests:
+            assertEncode(a, b, n)
+            assertEncode(a_wrap, b, n, wrap=True)
+            assertDecode(a, b)
+            assertDecode(a_wrap, b, wrap=True)
+
+    def test_ascii85_pad(self):
+        # Test Ascii85 with encode padding
+        rawdata = b"n1n3tee\n ch@rAcTer$"
+        for i in range(1, len(rawdata) + 1):
+            padding = -i % 4
+            b = rawdata[:i]
+            a_pad = binascii.b2a_ascii85(self.type2test(b), pad=True)
+            b_pad = binascii.a2b_ascii85(self.type2test(a_pad))
+            b_pad_expected = b + b"\0" * padding
+            self.assertEqual(b_pad, b_pad_expected)
+
+        # Test Ascii85 short form groups with encode padding
+        def assertShortPad(data, expected, **kwargs):
+            data = self.type2test(data)
+            res = binascii.b2a_ascii85(data, **kwargs)
+            self.assertEqual(res, expected)
+
+        assertShortPad(b"\0", b"!!", pad=False)
+        assertShortPad(b"\0", b"z", pad=True)
+        assertShortPad(b"\0" * 2, b"z", pad=True)
+        assertShortPad(b"\0" * 3, b"z", pad=True)
+        assertShortPad(b"\0" * 4, b"z", pad=True)
+        assertShortPad(b"\0" * 5, b"zz", pad=True)
+        assertShortPad(b"\0" * 6, b"z!!!")
+        assertShortPad(b" " * 7, b"y+<Vd,", fold_spaces=True, pad=True)
+        assertShortPad(b"\0" * 8, b"<~zz~>",
+                       fold_spaces=True, wrap=True, pad=True)
+        assertShortPad(b"\0\0\0\0abcd    \0\0", b"<~z@:E_Wy\nz~>",
+                       fold_spaces=True, wrap=True, width=9, pad=True)
+
+    def test_ascii85_ignore(self):
+        # Test Ascii85 with ignored characters
+        def assertIgnore(data, expected, ignore=b"", **kwargs):
+            data = self.type2test(data)
+            ignore = self.type2test(ignore)
+            with self.assertRaisesRegex(binascii.Error, r"(?i)invalid in Ascii85"):
+                binascii.a2b_ascii85(data, **kwargs)
+            res = binascii.a2b_ascii85(data, ignore=ignore, **kwargs)
+            self.assertEqual(res, expected)
+
+        assertIgnore(b"\n", b"", ignore=b"\n")
+        assertIgnore(b"<~ ~>", b"", ignore=b" ", wrap=True)
+        assertIgnore(b"z|z", b"\0" * 8, ignore=b"|||")    # repeats don't matter
+        assertIgnore(b"zz!!|", b"\0" * 9, ignore=b"|!z")  # ignore only if invalid
+        assertIgnore(b"<~B P~@~>", b"hi", ignore=b" <~>", wrap=True)
+        assertIgnore(b"zy}", b"\0\0\0\0", ignore=b"zy}")
+        assertIgnore(b"zy}", b"\0\0\0\0    ", ignore=b"zy}", fold_spaces=True)
+
+    def test_base85_valid(self):
+        # Test base85 with valid data
+        lines, i = [], 0
+        for k in range(1, len(self.rawdata) + 1):
+            b = self.type2test(self.rawdata[i:i + k])
+            a = binascii.b2a_base85(b)
+            lines.append(a)
+            i += k
+            if i >= len(self.rawdata):
+                break
+        res = bytes()
+        for line in lines:
+            a = self.type2test(line)
+            b = binascii.a2b_base85(a)
+            res += b
+        self.assertEqual(res, self.rawdata)
+
+    def test_base85_invalid(self):
+        # Test base85 with invalid characters interleaved
+        lines, i = [], 0
+        for k in range(1, len(self.rawdata) + 1):
+            b = self.type2test(self.rawdata[i:i + k])
+            a = binascii.b2a_base85(b)
+            lines.append(a)
+            i += k
+            if i >= len(self.rawdata):
+                break
+
+        fillers = bytearray()
+        valid = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
+                b"abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~"
+        for i in range(256):
+            if i not in valid:
+                fillers.append(i)
+        def addnoise(line):
+            res = bytearray()
+            for i in range(len(line)):
+                res.append(line[i])
+                for j in range(i, len(fillers), len(line)):
+                    res.append(fillers[j])
+            return res
+        res = bytearray()
+        for line in map(addnoise, lines):
+            a = self.type2test(line)
+            b = binascii.a2b_base85(a)
+            res += b
+        self.assertEqual(res, self.rawdata)
+
+    def test_base85_errors(self):
+        def _assertRegexTemplate(assert_regex, data, **kwargs):
+            with self.assertRaisesRegex(binascii.Error, assert_regex):
+                binascii.a2b_base85(self.type2test(data), **kwargs)
+
+        def assertOverflow(data):
+            _assertRegexTemplate(r"(?i)base85 overflow", data)
+
+        def assertInvalidLength(data):
+            _assertRegexTemplate(r"(?i)invalid length", data)
+
+        # Test base85 with out-of-range encoded value
+        assertOverflow(b"}")
+        assertOverflow(b"|O")
+        assertOverflow(b"|Nt")
+        assertOverflow(b"|NsD")
+        assertOverflow(b"|NsC1")
+        assertOverflow(b"|NsC0~")
+        assertOverflow(b"|NsC0|NsC0|NsD0")
+
+        # Test base85 with invalid length of final group (1 mod 5)
+        assertInvalidLength(b"0")
+        assertInvalidLength(b"1")
+        assertInvalidLength(b"^^^^^^")
+        assertInvalidLength(b"|NsC0|NsC0a")
+        assertInvalidLength(b"_" * (5 * 43 + 21))
+
+    def test_base85_pad(self):
+        # Test base85 with encode padding
+        rawdata = b"n1n3Tee\n ch@rAc\te\r$"
+        for i in range(1, len(rawdata) + 1):
+            padding = -i % 4
+            b = rawdata[:i]
+            a_pad = binascii.b2a_base85(self.type2test(b), pad=True)
+            b_pad = binascii.a2b_base85(self.type2test(a_pad))
+            b_pad_expected = b + b"\0" * padding
+            self.assertEqual(b_pad, b_pad_expected)
+
+    def test_base85_strict_mode(self):
+        # Test base85 with strict mode on
+        def assertNonBase85Data(data, expected):
+            data = self.type2test(data)
+            with self.assertRaisesRegex(binascii.Error, r"(?i)invalid in base85"):
+                binascii.a2b_base85(data, strict_mode=True)
+            default_res = binascii.a2b_base85(data)
+            non_strict_res = binascii.a2b_base85(data, strict_mode=False)
+            self.assertEqual(default_res, non_strict_res)
+            self.assertEqual(non_strict_res, expected)
+
+        assertNonBase85Data(b"\xda", b"")
+        assertNonBase85Data(b"00\0\0", b"\0")
+        assertNonBase85Data(b"Z )*", b"ok")
+        assertNonBase85Data(b"bY*jNb0Hyq\n", b"tests!!~")
+
+    def test_base85_newline(self):
+        # Test base85 newline parameter
+        b = self.type2test(b"t3s\t ")
+        self.assertEqual(binascii.b2a_base85(b), b"bTe}aAO\n")
+        self.assertEqual(binascii.b2a_base85(b, newline=True), b"bTe}aAO\n")
+        self.assertEqual(binascii.b2a_base85(b, newline=False), b"bTe}aAO")
+
+    def test_base85_z85(self):
+        # Test base85 z85 parameter
+        b = self.type2test(b"t3s\t ")
+        a = self.type2test(b"BtE$Aao\n")
+        self.assertEqual(binascii.b2a_base85(b, z85=True), b"BtE$Aao\n")
+        self.assertEqual(binascii.a2b_base85(a, z85=True), b"t3s\t ")
 
     def test_uu(self):
         MAX_UU = 45
