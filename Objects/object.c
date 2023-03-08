@@ -180,7 +180,7 @@ _Py_AddRefTotal(Py_ssize_t n)
 }
 
 Py_ssize_t
-_Py_GetRefTotal(void)
+_Py_GetGlobalRefTotal(void)
 {
     return get_global_reftotal();
 }
