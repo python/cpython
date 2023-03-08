@@ -1,1 +1,0 @@
-Fix regression in semantics of normalisation in ``PyErr_SetObject``.
