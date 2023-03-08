@@ -54,31 +54,39 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
 
 
 #ifdef Py_REF_DEBUG
+// XXX Move this to _PyRuntimeState.
 Py_ssize_t _Py_RefTotal;
+#endif
+
+#ifdef Py_REF_DEBUG
+
+#  define REFTOTAL _Py_RefTotal
 
 static inline void
 reftotal_increment(void)
 {
-    _Py_RefTotal++;
+    REFTOTAL++;
 }
 
 static inline void
 reftotal_decrement(void)
 {
-    _Py_RefTotal--;
+    REFTOTAL--;
 }
 
 void
 _Py_AddRefTotal(Py_ssize_t n)
 {
-    _Py_RefTotal += n;
+    REFTOTAL += n;
 }
 
 Py_ssize_t
 _Py_GetRefTotal(void)
 {
-    return _Py_RefTotal;
+    return REFTOTAL;
 }
+
+#undef REFTOTAL
 
 void
 _PyDebug_PrintTotalRefs(void) {
@@ -196,6 +204,9 @@ _Py_DecRef(PyObject *o)
 #endif
     Py_DECREF(o);
 }
+
+
+/**************************************/
 
 PyObject *
 PyObject_Init(PyObject *op, PyTypeObject *tp)
