@@ -282,22 +282,26 @@ an infinity then Decimal('Infinity') is returned.\n\
 
 PyDoc_STRVAR(doc_logical_and,
 "logical_and($self, /, other, context=None)\n--\n\n\
-Return the digit-wise 'and' of the two (logical) operands.\n\
+Return the digit-wise 'and' of the two (logical) operands,\n\
+which both have zero sign and exponent, and digits either 0 or 1.\n\
 \n");
 
 PyDoc_STRVAR(doc_logical_invert,
 "logical_invert($self, /, context=None)\n--\n\n\
-Return the digit-wise inversion of the (logical) operand.\n\
+Return the digit-wise inversion of the (logical) operand,\n\
+which has zero sign and exponent, and digits either 0 or 1.\n\
 \n");
 
 PyDoc_STRVAR(doc_logical_or,
 "logical_or($self, /, other, context=None)\n--\n\n\
-Return the digit-wise 'or' of the two (logical) operands.\n\
+Return the digit-wise 'or' of the two (logical) operands,\n\
+which both have zero sign and exponent, and digits either 0 or 1.\n\
 \n");
 
 PyDoc_STRVAR(doc_logical_xor,
 "logical_xor($self, /, other, context=None)\n--\n\n\
-Return the digit-wise 'exclusive or' of the two (logical) operands.\n\
+Return the digit-wise 'exclusive or' of the two (logical) operands,\n\
+which both have zero sign and exponent, and digits either 0 or 1.\n\
 \n");
 
 PyDoc_STRVAR(doc_max,
@@ -702,22 +706,26 @@ Return the exponent of the magnitude of the operand's MSD.\n\
 
 PyDoc_STRVAR(doc_ctx_logical_and,
 "logical_and($self, x, y, /)\n--\n\n\
-Digit-wise and of x and y.\n\
+Digit-wise and of x and y, which both have zero sign\n\
+and exponent, and digits either 0 or 1.\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_logical_invert,
 "logical_invert($self, x, /)\n--\n\n\
-Invert all digits of x.\n\
+Invert all digits of x, which has zero sign and exponent,\n\
+and digits either 0 or 1.\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_logical_or,
 "logical_or($self, x, y, /)\n--\n\n\
-Digit-wise or of x and y.\n\
+Digit-wise or of x and y, which both have zero sign\n\
+and exponent, and digits either 0 or 1.\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_logical_xor,
 "logical_xor($self, x, y, /)\n--\n\n\
-Digit-wise xor of x and y.\n\
+Digit-wise xor of x and y, which both have zero sign\n\
+and exponent, and digits either 0 or 1.\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_max,
