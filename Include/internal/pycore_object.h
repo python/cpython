@@ -38,6 +38,7 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     _Py_FatalRefcountErrorFunc(__func__, (message))
 
 
+#ifdef Py_REF_DEBUG
 /* The symbol is only exposed in the API for the sake of extensions
    built against the pre-3.12 stable ABI. */
 PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
@@ -45,6 +46,7 @@ PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 extern void _Py_AddRefTotal(Py_ssize_t);
 extern void _Py_IncRefTotal(void);
 extern void _Py_DecRefTotal(void);
+#endif
 
 // Increment reference count by n
 static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
@@ -88,6 +90,7 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
     }
 #endif
 }
+
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
