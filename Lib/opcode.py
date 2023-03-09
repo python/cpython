@@ -34,7 +34,7 @@ hasfree = []
 hasexc = []
 
 
-ENABLE_SPECIALIZATION = True
+ENABLE_SPECIALIZATION = False
 
 def is_pseudo(op):
     return op >= MIN_PSEUDO_OPCODE and op <= MAX_PSEUDO_OPCODE

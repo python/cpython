@@ -50,7 +50,7 @@
             PREDICTED(LOAD_CONST);
             PyObject *value;
             value = GETITEM(consts, oparg);
-            #if 0
+            #if 1
             if (PyLong_CheckExact(value)) {
                 long lval = PyLong_AsLong(value);
                 PyErr_Clear();
@@ -110,7 +110,7 @@
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
-                #if 0
+                #if 1
                 if (PyLong_CheckExact(value)) {
                     long lval = PyLong_AsLong(value);
                     PyErr_Clear();
@@ -168,7 +168,7 @@
             {
                 PyObject *value;
                 value = GETITEM(consts, oparg);
-                #if 0
+                #if 1
                 if (PyLong_CheckExact(value)) {
                     long lval = PyLong_AsLong(value);
                     PyErr_Clear();
