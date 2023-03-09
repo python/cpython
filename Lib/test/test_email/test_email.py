@@ -1567,11 +1567,16 @@ class TestMIMEAudio(unittest.TestCase):
         data_to_subtype = {
             b'FORM    AIFC'    : 'x-aiff',
             b'FORM    AIFF'    : 'x-aiff',
+            b'RIFF    WAVEfmt ': 'x-wav',
             b'.snd'            : 'basic',
-            b'.snd1orem1ps'    : 'basic',  # the chars after '.snd' don't matter.
-            b'RIFF    WAVEfmt ': 'x-wav',  # trailing space is intentional. 
-        }
 
+            # Check that the 4 intermediate chars have no effect
+            b'FORMabcdAIFC'    : 'x-aiff',
+            b'FORMzyxwAIFF'    : 'x-aiff',
+            b'RIFF1234WAVEfmt ': 'x-wav',
+            # Check that anything after the first 4 chars has no effect
+            b'.sndFOOBARZ'     : 'basic',
+        }
         for audiodata, subtype in data_to_subtype.items():
             au = MIMEAudio(audiodata)
             self.assertEqual(au.get_content_subtype(), subtype)
