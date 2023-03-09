@@ -1115,7 +1115,7 @@ _Py_Specialize_LoadGlobal(
     PyObject *globals, PyObject *builtins,
     _Py_CODEUNIT *instr, PyObject *name)
 {
-    assert(ENABLE_SPECIALIZATION);
+    // assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[LOAD_GLOBAL] == INLINE_CACHE_ENTRIES_LOAD_GLOBAL);
     /* Use inline cache */
     _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)(instr + 1);

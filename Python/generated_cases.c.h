@@ -1372,7 +1372,7 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 5, "incorrect cache size");
             PyObject *null = NULL;
             PyObject *v;
-            #if ENABLE_SPECIALIZATION
+            #if 1  /* ENABLE_SPECIALIZATION */
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);

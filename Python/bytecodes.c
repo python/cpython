@@ -1088,7 +1088,7 @@ dummy_func(
         };
 
         inst(LOAD_GLOBAL, (unused/1, unused/1, unused/2, unused/1 -- null if (oparg & 1), v)) {
-            #if ENABLE_SPECIALIZATION
+            #if 1  /* ENABLE_SPECIALIZATION */
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
