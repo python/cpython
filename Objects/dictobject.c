@@ -119,7 +119,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "pycore_dict.h"          // PyDictKeysObject
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "stringlib/eq.h"         // unicode_eq()
 
@@ -304,7 +304,7 @@ static inline void
 dictkeys_incref(PyDictKeysObject *dk)
 {
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
+    _Py_IncRefTotal();
 #endif
     dk->dk_refcnt++;
 }
@@ -314,7 +314,7 @@ dictkeys_decref(PyInterpreterState *interp, PyDictKeysObject *dk)
 {
     assert(dk->dk_refcnt > 0);
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
+    _Py_DecRefTotal();
 #endif
     if (--dk->dk_refcnt == 0) {
         free_keys_object(interp, dk);
@@ -634,7 +634,7 @@ new_keys_object(PyInterpreterState *interp, uint8_t log2_size, bool unicode)
         }
     }
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
+    _Py_IncRefTotal();
 #endif
     dk->dk_refcnt = 1;
     dk->dk_log2_size = log2_size;
@@ -824,7 +824,7 @@ clone_combined_dict_keys(PyDictObject *orig)
        we have it now; calling dictkeys_incref would be an error as
        keys->dk_refcnt is already set to 1 (after memcpy). */
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
+    _Py_IncRefTotal();
 #endif
     return keys;
 }
@@ -1530,7 +1530,7 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
         // We can not use free_keys_object here because key's reference
         // are moved already.
 #ifdef Py_REF_DEBUG
-        _Py_RefTotal--;
+        _Py_DecRefTotal();
 #endif
         if (oldkeys == Py_EMPTY_KEYS) {
             oldkeys->dk_refcnt--;
@@ -2336,7 +2336,14 @@ static void
 dict_dealloc(PyDictObject *mp)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(Py_REFCNT(mp) == 0);
+    Py_SET_REFCNT(mp, 1);
     _PyDict_NotifyEvent(interp, PyDict_EVENT_DEALLOCATED, mp, NULL, NULL);
+    if (Py_REFCNT(mp) > 1) {
+        Py_SET_REFCNT(mp, Py_REFCNT(mp) - 1);
+        return;
+    }
+    Py_SET_REFCNT(mp, 0);
     PyDictValues *values = mp->ma_values;
     PyDictKeysObject *keys = mp->ma_keys;
     Py_ssize_t i, n;
@@ -5704,15 +5711,16 @@ _PyDictKeys_DecRef(PyDictKeysObject *keys)
     dictkeys_decref(interp, keys);
 }
 
-uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictKeysObject *dictkeys)
+uint32_t _PyDictKeys_GetVersionForCurrentState(PyInterpreterState *interp,
+                                               PyDictKeysObject *dictkeys)
 {
     if (dictkeys->dk_version != 0) {
         return dictkeys->dk_version;
     }
-    if (_PyRuntime.dict_state.next_keys_version == 0) {
+    if (interp->dict_state.next_keys_version == 0) {
         return 0;
     }
-    uint32_t v = _PyRuntime.dict_state.next_keys_version++;
+    uint32_t v = interp->dict_state.next_keys_version++;
     dictkeys->dk_version = v;
     return v;
 }
@@ -5788,6 +5796,18 @@ PyDict_ClearWatcher(int watcher_id)
     return 0;
 }
 
+static const char *
+dict_event_name(PyDict_WatchEvent event) {
+    switch (event) {
+        #define CASE(op)                \
+        case PyDict_EVENT_##op:         \
+            return "PyDict_EVENT_" #op;
+        PY_FOREACH_DICT_EVENT(CASE)
+        #undef CASE
+    }
+    Py_UNREACHABLE();
+}
+
 void
 _PyDict_SendEvent(int watcher_bits,
                   PyDict_WatchEvent event,
@@ -5800,9 +5820,18 @@ _PyDict_SendEvent(int watcher_bits,
         if (watcher_bits & 1) {
             PyDict_WatchCallback cb = interp->dict_state.watchers[i];
             if (cb && (cb(event, (PyObject*)mp, key, value) < 0)) {
-                // some dict modification paths (e.g. PyDict_Clear) can't raise, so we
-                // can't propagate exceptions from dict watchers.
-                PyErr_WriteUnraisable((PyObject *)mp);
+                // We don't want to resurrect the dict by potentially having an
+                // unraisablehook keep a reference to it, so we don't pass the
+                // dict as context, just an informative string message.  Dict
+                // repr can call arbitrary code, so we invent a simpler version.
+                PyObject *context = PyUnicode_FromFormat(
+                    "%s watcher callback for <dict at %p>",
+                    dict_event_name(event), mp);
+                if (context == NULL) {
+                    context = Py_NewRef(Py_None);
+                }
+                PyErr_WriteUnraisable(context);
+                Py_DECREF(context);
             }
         }
         watcher_bits >>= 1;

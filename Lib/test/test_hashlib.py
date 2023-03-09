@@ -22,7 +22,6 @@ from test.support.import_helper import import_fresh_module
 from test.support import os_helper
 from test.support import requires_resource
 from test.support import threading_helper
-from test.support import warnings_helper
 from http.client import HTTPException
 
 
