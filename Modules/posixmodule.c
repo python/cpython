@@ -4279,7 +4279,7 @@ os_listdrives_impl(PyObject *module)
     str = PyUnicode_FromWideChar(buffer, buflen - 1);
     nullchar = PyUnicode_FromStringAndSize("\0", 1);
     if (str && nullchar) {
-        r = PyUnicode_Split(str, nullchar, buflen);
+        r = PyUnicode_Split(str, nullchar, -1);
     }
 exit:
     if (buffer && buffer != defaultBuffer) {
@@ -4370,12 +4370,25 @@ os_listmounts_impl(PyObject *module, path_t *volume)
     wchar_t default_buffer[MAX_PATH + 1];
     DWORD buflen = Py_ARRAY_LENGTH(default_buffer);
     LPWSTR buffer = default_buffer;
+    DWORD attributes;
     PyObject *str = NULL;
     PyObject *nullchar = NULL;
     PyObject *result = NULL;
+
+    /* Ensure we have a valid volume path before continuing */
+    Py_BEGIN_ALLOW_THREADS
+    attributes = GetFileAttributesW(volume->wide);
+    Py_END_ALLOW_THREADS
+    if (attributes == INVALID_FILE_ATTRIBUTES &&
+        GetLastError() == ERROR_UNRECOGNIZED_VOLUME)
+    {
+        return PyErr_SetFromWindowsErr(ERROR_UNRECOGNIZED_VOLUME);
+    }
+
     if (PySys_Audit("os.listmounts", "O", volume->object) < 0) {
         return NULL;
     }
+
     while (1) {
         BOOL success;
         Py_BEGIN_ALLOW_THREADS
