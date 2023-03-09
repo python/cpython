@@ -3718,7 +3718,7 @@
                 if (tuple == NULL) {
                     goto error;
                 }
-                _tagged_ptr old_callargs = (_tagged_ptr)callargs;
+                _tagged_ptr old_callargs = (callargs);
                 callargs = untagged(tuple);
                 decref_unless_tagged(old_callargs);
             }
