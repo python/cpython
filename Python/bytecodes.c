@@ -1736,7 +1736,7 @@ dummy_func(
         };
 
         inst(COMPARE_AND_BRANCH, (unused/2, left, right -- )) {
-            #if ENABLE_SPECIALIZATION
+            #if 1
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);

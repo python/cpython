@@ -277,7 +277,7 @@ static int compare_masks[] = {
 void
 _PyCode_Quicken(PyCodeObject *code)
 {
-    #if ENABLE_SPECIALIZATION
+    #if 1
     int opcode = 0;
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     for (int i = 0; i < Py_SIZE(code); i++) {
@@ -299,12 +299,14 @@ _PyCode_Quicken(PyCodeObject *code)
             case LOAD_FAST << 8 | LOAD_FAST:
                 instructions[i - 1].op.code = LOAD_FAST__LOAD_FAST;
                 break;
+            #if 0
             case STORE_FAST << 8 | LOAD_FAST:
                 instructions[i - 1].op.code = STORE_FAST__LOAD_FAST;
                 break;
             case STORE_FAST << 8 | STORE_FAST:
                 instructions[i - 1].op.code = STORE_FAST__STORE_FAST;
                 break;
+            #endif
             case COMPARE_OP << 8 | POP_JUMP_IF_TRUE:
             case COMPARE_OP << 8 | POP_JUMP_IF_FALSE:
             {
@@ -1977,7 +1979,7 @@ void
 _Py_Specialize_CompareAndBranch(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                          int oparg)
 {
-    assert(ENABLE_SPECIALIZATION);
+    // assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[COMPARE_AND_BRANCH] == INLINE_CACHE_ENTRIES_COMPARE_OP);
     _PyCompareOpCache *cache = (_PyCompareOpCache *)(instr + 1);
 #ifndef NDEBUG

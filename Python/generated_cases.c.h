@@ -2202,7 +2202,7 @@
             PREDICTED(COMPARE_AND_BRANCH);
             _tagged_ptr right = stack_pointer[-1];
             _tagged_ptr left = stack_pointer[-2];
-            #if ENABLE_SPECIALIZATION
+            #if 1
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
