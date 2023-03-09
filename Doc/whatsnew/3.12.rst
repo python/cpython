@@ -409,6 +409,10 @@ Deprecated
 * :class:`typing.Hashable` and :class:`typing.Sized` aliases for :class:`collections.abc.Hashable`
   and :class:`collections.abc.Sized`. (:gh:`94309`.)
 
+* :class:`collections.abc.ByteString`, prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
+  For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
+  (Contributed by Shantanu Jain in :gh:`102096`.)
+
 * The :mod:`sqlite3` :ref:`default adapters and converters
   <sqlite3-default-converters>` are now deprecated.
   Instead, use the :ref:`sqlite3-adapter-converter-recipes`
