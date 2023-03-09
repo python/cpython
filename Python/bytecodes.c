@@ -1446,7 +1446,7 @@ dummy_func(
         };
 
         inst(LOAD_ATTR, (unused/9, owner -- res2 if (oparg & 1), res)) {
-            #if ENABLE_SPECIALIZATION
+            #if 1
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -2336,7 +2336,7 @@ dummy_func(
             assert(descr != NULL);
             res2 = Py_NewRef(descr);
             assert(_PyType_HasFeature(Py_TYPE(res2), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            res = self;
+            res = STEAL(self);
             assert(oparg & 1);
         }
 
@@ -2349,7 +2349,7 @@ dummy_func(
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
-            res = self;
+            res = STEAL(self);
             assert(oparg & 1);
         }
 
@@ -2366,7 +2366,7 @@ dummy_func(
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
-            res = self;
+            res = STEAL(self);
             assert(oparg & 1);
         }
 

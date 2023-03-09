@@ -1825,7 +1825,7 @@
             _tagged_ptr owner = stack_pointer[-1];
             PyObject *res2 = NULL;
             PyObject *res;
-            #if ENABLE_SPECIALIZATION
+            #if 1
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
@@ -2968,7 +2968,7 @@
             assert(descr != NULL);
             res2 = Py_NewRef(descr);
             assert(_PyType_HasFeature(Py_TYPE(res2), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            res = detag(self);
+            res = STEAL(self);
             assert(oparg & 1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = untagged(res);
@@ -2991,7 +2991,7 @@
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
-            res = detag(self);
+            res = STEAL(self);
             assert(oparg & 1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = untagged(res);
@@ -3018,7 +3018,7 @@
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             res2 = Py_NewRef(descr);
-            res = detag(self);
+            res = STEAL(self);
             assert(oparg & 1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = untagged(res);
