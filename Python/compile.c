@@ -606,6 +606,14 @@ instr_sequence_to_cfg(instr_sequence *seq, cfg_builder *g) {
         instruction *instr = &seq->s_instrs[i];
         RETURN_IF_ERROR(cfg_builder_addop(g, instr->i_opcode, instr->i_oparg, instr->i_loc));
     }
+    int nblocks = 0;
+    for (basicblock *b = g->g_block_list; b != NULL; b = b->b_list) {
+        nblocks++;
+    }
+    if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
+        PyErr_NoMemory();
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -937,6 +945,7 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
 static bool
 cfg_builder_check(cfg_builder *g)
 {
+    assert(g->g_entryblock->b_iused > 0);
     for (basicblock *block = g->g_block_list; block != NULL; block = block->b_list) {
         assert(!_PyMem_IsPtrFreed(block));
         if (block->b_instr != NULL) {
@@ -8636,6 +8645,40 @@ add_return_at_end(struct compiler *c, int addNone)
     return SUCCESS;
 }
 
+static int
+optimize_code_unit(struct compiler_unit *u, cfg_builder *g, PyObject *consts,
+                   PyObject *const_cache, int code_flags)
+{
+    assert(cfg_builder_check(g));
+    /** Preprocessing **/
+    /* Set firstlineno if it wasn't explicitly set. */
+    if (!u->u_firstlineno) {
+        if (g->g_entryblock->b_instr && g->g_entryblock->b_instr->i_loc.lineno) {
+            u->u_firstlineno = g->g_entryblock->b_instr->i_loc.lineno;
+        }
+        else {
+            u->u_firstlineno = 1;
+        }
+    }
+    /* Map labels to targets and mark exception handlers */
+    RETURN_IF_ERROR(translate_jump_labels_to_targets(g->g_entryblock));
+    RETURN_IF_ERROR(mark_except_handlers(g->g_entryblock));
+    RETURN_IF_ERROR(label_exception_targets(g->g_entryblock));
+
+    /** Optimization **/
+    RETURN_IF_ERROR(optimize_cfg(g, consts, const_cache));
+    RETURN_IF_ERROR(remove_unused_consts(g->g_entryblock, consts));
+    RETURN_IF_ERROR(add_checks_for_loads_of_uninitialized_variables(g->g_entryblock, u));
+
+    /** line numbers */
+    RETURN_IF_ERROR(duplicate_exits_without_lineno(g));
+    propagate_line_numbers(g->g_entryblock);
+    guarantee_lineno_for_exits(g->g_entryblock, u->u_firstlineno);
+
+    RETURN_IF_ERROR(push_cold_blocks_to_end(g, code_flags));
+    return SUCCESS;
+}
+
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -8644,9 +8687,6 @@ assemble(struct compiler *c, int addNone)
     PyObject *filename = c->c_filename;
 
     PyCodeObject *co = NULL;
-    PyObject *consts = NULL;
-    cfg_builder g_;
-    cfg_builder *g = &g_;
     struct assembler a;
     memset(&a, 0, sizeof(struct assembler));
 
@@ -8659,92 +8699,43 @@ assemble(struct compiler *c, int addNone)
         return NULL;
     }
 
-    /** Preprocessing **/
-    if (instr_sequence_to_cfg(INSTR_SEQUENCE(c), g) < 0) {
-        goto error;
-    }
-    assert(cfg_builder_check(g));
-
-    int nblocks = 0;
-    for (basicblock *b = g->g_block_list; b != NULL; b = b->b_list) {
-        nblocks++;
-    }
-    if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
-        PyErr_NoMemory();
-        goto error;
-    }
-
-    /* Set firstlineno if it wasn't explicitly set. */
-    if (!u->u_firstlineno) {
-        if (g->g_entryblock->b_instr && g->g_entryblock->b_instr->i_loc.lineno) {
-            u->u_firstlineno = g->g_entryblock->b_instr->i_loc.lineno;
-        }
-        else {
-            u->u_firstlineno = 1;
-        }
-    }
-
-    /* Map labels to targets and mark exception handlers */
-    if (translate_jump_labels_to_targets(g->g_entryblock) < 0) {
-        goto error;
-    }
-    if (mark_except_handlers(g->g_entryblock) < 0) {
-        goto error;
-    }
-    if (label_exception_targets(g->g_entryblock)) {
-        goto error;
-    }
-
-    /** Optimization **/
-    consts = consts_dict_keys_inorder(u->u_consts);
+    PyObject *consts = consts_dict_keys_inorder(u->u_consts);
     if (consts == NULL) {
         goto error;
     }
-    if (optimize_cfg(g, consts, const_cache)) {
-        goto error;
-    }
-    if (remove_unused_consts(g->g_entryblock, consts) < 0) {
-        goto error;
-    }
-    if (add_checks_for_loads_of_uninitialized_variables(g->g_entryblock, u) < 0) {
-        goto error;
-    }
 
-    /** line numbers (TODO: move this before optimization stage) */
-    if (duplicate_exits_without_lineno(g) < 0) {
+    cfg_builder g;
+    if (instr_sequence_to_cfg(INSTR_SEQUENCE(c), &g) < 0) {
         goto error;
     }
-    propagate_line_numbers(g->g_entryblock);
-    guarantee_lineno_for_exits(g->g_entryblock, u->u_firstlineno);
-
-    if (push_cold_blocks_to_end(g, code_flags) < 0) {
+    if (optimize_code_unit(u, &g, consts, const_cache, code_flags) < 0) {
         goto error;
     }
 
     /** Assembly **/
 
-    int nlocalsplus = prepare_localsplus(u, g, code_flags);
+    int nlocalsplus = prepare_localsplus(u, &g, code_flags);
     if (nlocalsplus < 0) {
         goto error;
     }
 
-    int maxdepth = stackdepth(g->g_entryblock, code_flags);
+    int maxdepth = stackdepth(g.g_entryblock, code_flags);
     if (maxdepth < 0) {
         goto error;
     }
     /* TO DO -- For 3.12, make sure that `maxdepth <= MAX_ALLOWED_STACK_USE` */
 
-    convert_exception_handlers_to_nops(g->g_entryblock);
+    convert_exception_handlers_to_nops(g.g_entryblock);
 
     /* Order of basic blocks must have been determined by now */
-    if (normalize_jumps(g) < 0) {
+    if (normalize_jumps(&g) < 0) {
         goto error;
     }
-    assert(no_redundant_jumps(g));
-    assert(opcode_metadata_is_sane(g));
+    assert(no_redundant_jumps(&g));
+    assert(opcode_metadata_is_sane(&g));
 
     /* Can't modify the bytecode after computing jump offsets. */
-    assemble_jump_offsets(g->g_entryblock);
+    assemble_jump_offsets(g.g_entryblock);
 
     /* Create assembler */
     if (assemble_init(&a, u->u_firstlineno) < 0) {
@@ -8752,7 +8743,7 @@ assemble(struct compiler *c, int addNone)
     }
 
     /* Emit code. */
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g.g_entryblock; b != NULL; b = b->b_next) {
         for (int j = 0; j < b->b_iused; j++) {
             if (assemble_emit(&a, &b->b_instr[j]) < 0) {
                 goto error;
@@ -8764,7 +8755,7 @@ assemble(struct compiler *c, int addNone)
     a.a_lineno = u->u_firstlineno;
     location loc = NO_LOCATION;
     int size = 0;
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g.g_entryblock; b != NULL; b = b->b_next) {
         for (int j = 0; j < b->b_iused; j++) {
             if (!same_location(loc, b->b_instr[j].i_loc)) {
                 if (assemble_emit_location(&a, loc, size)) {
@@ -8780,7 +8771,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    if (assemble_exception_table(&a, g->g_entryblock) < 0) {
+    if (assemble_exception_table(&a, g.g_entryblock) < 0) {
         goto error;
     }
     if (_PyBytes_Resize(&a.a_except_table, a.a_except_table_off) < 0) {
@@ -8807,7 +8798,7 @@ assemble(struct compiler *c, int addNone)
     co = makecode(u, &a, const_cache, consts, maxdepth, nlocalsplus, code_flags, filename);
  error:
     Py_XDECREF(consts);
-    cfg_builder_fini(g);
+    cfg_builder_fini(&g);
     assemble_free(&a);
     return co;
 }
