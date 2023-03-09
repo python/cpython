@@ -1250,7 +1250,7 @@ dummy_func(
         inst(STORE_DEREF, (v --)) {
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
-            PyCell_SET(cell, v);
+            PyCell_SET(cell, STEAL(v));
             Py_XDECREF(oldobj);
         }
 
@@ -2970,29 +2970,29 @@ dummy_func(
                              closure     if (oparg & 0x08),
                              codeobj -- func)) {
 
-            PyFunctionObject *func_obj = (PyFunctionObject *)
-                PyFunction_New(codeobj, GLOBALS());
+            PyFunctionObject *func_obj =
+                (PyFunctionObject *) PyFunction_New(codeobj, GLOBALS());
 
             Py_DECREF(codeobj);
             if (func_obj == NULL) {
-                goto error;
+                goto pop_1_error;
             }
 
             if (oparg & 0x08) {
                 assert(PyTuple_CheckExact(closure));
-                func_obj->func_closure = closure;
+                func_obj->func_closure = STEAL(closure);
             }
             if (oparg & 0x04) {
                 assert(PyTuple_CheckExact(annotations));
-                func_obj->func_annotations = annotations;
+                func_obj->func_annotations = STEAL(annotations);
             }
             if (oparg & 0x02) {
                 assert(PyDict_CheckExact(kwdefaults));
-                func_obj->func_kwdefaults = kwdefaults;
+                func_obj->func_kwdefaults = STEAL(kwdefaults);
             }
             if (oparg & 0x01) {
                 assert(PyTuple_CheckExact(defaults));
-                func_obj->func_defaults = defaults;
+                func_obj->func_defaults = STEAL(defaults);
             }
 
             func_obj->func_version = ((PyCodeObject *)codeobj)->co_version;

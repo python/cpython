@@ -1573,7 +1573,7 @@
             _tagged_ptr v = stack_pointer[-1];
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
-            PyCell_SET(cell, detag(v));
+            PyCell_SET(cell, STEAL(v));
             Py_XDECREF(oldobj);
             STACK_SHRINK(1);
             DISPATCH();
@@ -3746,29 +3746,29 @@
             _tagged_ptr defaults = (oparg & 0x01) ? stack_pointer[-(1 + ((oparg & 0x08) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0) + ((oparg & 0x01) ? 1 : 0))] : untagged(NULL);
             PyObject *func;
 
-            PyFunctionObject *func_obj = (PyFunctionObject *)
-                PyFunction_New(detag(codeobj), GLOBALS());
+            PyFunctionObject *func_obj =
+                (PyFunctionObject *) PyFunction_New(detag(codeobj), GLOBALS());
 
             decref_unless_tagged(codeobj);
             if (func_obj == NULL) {
-                goto error;
+                goto pop_1_error;
             }
 
             if (oparg & 0x08) {
                 assert(PyTuple_CheckExact(detag(closure)));
-                func_obj->func_closure = detag(closure);
+                func_obj->func_closure = STEAL(closure);
             }
             if (oparg & 0x04) {
                 assert(PyTuple_CheckExact(detag(annotations)));
-                func_obj->func_annotations = detag(annotations);
+                func_obj->func_annotations = STEAL(annotations);
             }
             if (oparg & 0x02) {
                 assert(PyDict_CheckExact(detag(kwdefaults)));
-                func_obj->func_kwdefaults = detag(kwdefaults);
+                func_obj->func_kwdefaults = STEAL(kwdefaults);
             }
             if (oparg & 0x01) {
                 assert(PyTuple_CheckExact(detag(defaults)));
-                func_obj->func_defaults = detag(defaults);
+                func_obj->func_defaults = STEAL(defaults);
             }
 
             func_obj->func_version = ((PyCodeObject *)detag(codeobj))->co_version;
