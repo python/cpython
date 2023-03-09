@@ -853,6 +853,13 @@ Custom classes
          A tuple containing the base classes, in the order of
          their occurrence in the base class list.
 
+      :attr:`~class.__base__`
+          ``__base__`` corresponds to the :c:member:`~PyTypeObject.tp_base` in a
+          type object.  At the C level, Python has a single inheritance model
+          that determines the memory layout of instances.  There is a chain
+          involving base classes that contribute to the instance layout.
+          ``__base__`` is the base class that is involved in that chain.
+
       :attr:`__doc__`
          The class's documentation string, or ``None`` if undefined.
 
