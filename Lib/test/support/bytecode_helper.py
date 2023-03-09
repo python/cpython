@@ -103,7 +103,7 @@ class CompilationStepTestCase(unittest.TestCase):
             if isinstance(oparg, self.Label):
                 arg = oparg.value
             else:
-                arg = oparg if opcode in self.HAS_ARG else None
+                arg = oparg if opcode in self.HAS_ARG else 0
             opcode = dis.opname[opcode]
             res.append((opcode, arg, *loc))
         return res

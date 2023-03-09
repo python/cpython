@@ -308,7 +308,7 @@ typedef struct basicblock_ {
        block, not to be confused with b_next, which is next by control flow. */
     struct basicblock_ *b_list;
     /* The label of this block if it is a jump target, -1 otherwise */
-    int b_label;
+    jump_target_label b_label;
     /* Exception stack at start of block, used by assembler to create the exception handling table */
     ExceptStack *b_exceptstack;
     /* pointer to an array of instructions, initially NULL */
@@ -501,7 +501,7 @@ instr_sequence_next_inst(instr_sequence *seq) {
 static jump_target_label
 instr_sequence_new_label(instr_sequence *seq)
 {
-    jump_target_label lbl = {seq->s_next_free_label++};
+    jump_target_label lbl = {++seq->s_next_free_label};
     return lbl;
 }
 
@@ -1095,7 +1095,7 @@ cfg_builder_new_block(cfg_builder *g)
     /* Extend the singly linked list of blocks with new block. */
     b->b_list = g->g_block_list;
     g->g_block_list = b;
-    b->b_label = -1;
+    b->b_label = NO_LABEL;
     return b;
 }
 
@@ -1276,11 +1276,21 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
 static bool
 cfg_builder_current_block_is_terminated(cfg_builder *g)
 {
-    if (IS_LABEL(g->g_current_label)) {
+    struct cfg_instr *last = basicblock_last_instr(g->g_curblock);
+    if (last && IS_TERMINATOR_OPCODE(last->i_opcode)) {
         return true;
     }
-    struct cfg_instr *last = basicblock_last_instr(g->g_curblock);
-    return last && IS_TERMINATOR_OPCODE(last->i_opcode);
+    if (IS_LABEL(g->g_current_label)) {
+        if (last || IS_LABEL(g->g_curblock->b_label)) {
+            return true;
+        }
+        else {
+            /* current block is empty, label it */
+            g->g_curblock->b_label = g->g_current_label;
+            g->g_current_label = NO_LABEL;
+        }
+    }
+    return false;
 }
 
 static int
@@ -1291,7 +1301,7 @@ cfg_builder_maybe_start_new_block(cfg_builder *g)
         if (b == NULL) {
             return ERROR;
         }
-        b->b_label = g->g_current_label.id;
+        b->b_label = g->g_current_label;
         g->g_current_label = NO_LABEL;
         cfg_builder_use_next_block(g, b);
     }
@@ -7380,7 +7390,7 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             if (explicit_jump == NULL) {
                 return ERROR;
             }
-            basicblock_addop(explicit_jump, JUMP, b->b_next->b_label, NO_LOCATION);
+            basicblock_addop(explicit_jump, JUMP, b->b_next->b_label.id, NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             b->b_next = explicit_jump;
@@ -7768,7 +7778,7 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     if (backwards_jump == NULL) {
         return ERROR;
     }
-    basicblock_addop(backwards_jump, JUMP, target->b_label, NO_LOCATION);
+    basicblock_addop(backwards_jump, JUMP, target->b_label.id, NO_LOCATION);
     backwards_jump->b_instr[0].i_target = target;
     last->i_opcode = reversed_opcode;
     last->i_target = b->b_next;
@@ -8297,7 +8307,7 @@ dump_basicblock(const basicblock *b)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
     fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, offset: %d %s\n",
-        b->b_label, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
+        b->b_label.id, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
         b->b_startdepth, b->b_offset, b_return);
     if (b->b_instr) {
         int i;
@@ -9535,8 +9545,8 @@ translate_jump_labels_to_targets(basicblock *entryblock)
 {
     int max_label = -1;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        if (b->b_label > max_label) {
-            max_label = b->b_label;
+        if (b->b_label.id > max_label) {
+            max_label = b->b_label.id;
         }
     }
     size_t mapsize = sizeof(basicblock *) * (max_label + 1);
@@ -9547,8 +9557,8 @@ translate_jump_labels_to_targets(basicblock *entryblock)
     }
     memset(label2block, 0, mapsize);
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        if (b->b_label >= 0) {
-            label2block[b->b_label] = b;
+        if (b->b_label.id >= 0) {
+            label2block[b->b_label.id] = b;
         }
     }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
@@ -9560,7 +9570,7 @@ translate_jump_labels_to_targets(basicblock *entryblock)
                 assert(lbl >= 0 && lbl <= max_label);
                 instr->i_target = label2block[lbl];
                 assert(instr->i_target != NULL);
-                assert(instr->i_target->b_label == lbl);
+                assert(instr->i_target->b_label.id == lbl);
             }
         }
     }
@@ -9857,10 +9867,10 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
         }
         RETURN_IF_ERROR(cfg_builder_addop(g, opcode, oparg, loc));
     }
-    if (translate_jump_labels_to_targets(g->g_entryblock) < 0) {
-        goto error;
+    struct cfg_instr *last = basicblock_last_instr(g->g_curblock);
+    if (last && !IS_TERMINATOR_OPCODE(last->i_opcode)) {
+        RETURN_IF_ERROR(cfg_builder_addop(g, RETURN_VALUE, 0, NO_LOCATION));
     }
-
     PyMem_Free(is_target);
     return SUCCESS;
 error:
@@ -9909,7 +9919,7 @@ cfg_to_instructions(cfg_builder *g)
     }
     int lbl = 0;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        b->b_label = lbl;
+        b->b_label = (jump_target_label){lbl};
         lbl += b->b_iused;
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
@@ -9917,7 +9927,7 @@ cfg_to_instructions(cfg_builder *g)
             struct cfg_instr *instr = &b->b_instr[i];
             location loc = instr->i_loc;
             int arg = HAS_TARGET(instr->i_opcode) ?
-                      instr->i_target->b_label : instr->i_oparg;
+                      instr->i_target->b_label.id : instr->i_oparg;
 
             PyObject *inst_tuple = Py_BuildValue(
                 "(iiiiii)", instr->i_opcode, arg,
@@ -9999,7 +10009,8 @@ _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts)
     if (instructions_to_cfg(instructions, &g) < 0) {
         goto error;
     }
-    if (optimize_cfg(&g, consts, const_cache) < 0) {
+    int code_flags = 0, nlocals = 0, nparams = 0;
+    if (optimize_code_unit(&g, consts, const_cache, code_flags, nlocals, nparams) < 0) {
         goto error;
     }
     res = cfg_to_instructions(&g);
