@@ -286,6 +286,8 @@ Object Protocol
    >>> D.__base__
    <class '__main__.B'>
 
+   Note that behavior of the ``__base__`` attribute is dependent on the CPython implementation.
+
 .. c:function:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
 
    Return ``1`` if *inst* is an instance of the class *cls* or a subclass of

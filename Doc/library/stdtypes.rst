@@ -5453,6 +5453,8 @@ types, where they are relevant.  Some of these are not reported by the
   involving base classes that contribute to the instance layout.
   ``__base__`` is the base class that is involved in that chain.
 
+  .. note::
+    The behavior of the ``__base__`` attribute is dependent on the CPython implementation.
 
 .. attribute:: definition.__name__
 
