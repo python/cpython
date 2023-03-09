@@ -92,7 +92,8 @@ get_global_reftotal(void)
     Py_ssize_t last = _PyRuntime.object_state.last_legacy_reftotal;
     Py_ssize_t legacy = get_legacy_reftotal();
     _PyRuntime.object_state.last_legacy_reftotal = legacy;
-    return REFTOTAL + legacy - last;
+    REFTOTAL += legacy - last;
+    return REFTOTAL;
 }
 
 #undef REFTOTAL
