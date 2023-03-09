@@ -65,12 +65,6 @@ extern PyTypeObject _PyExc_MemoryError;
             .float_format = _py_float_format_unknown, \
             .double_format = _py_float_format_unknown, \
         }, \
-        .dict_state = { \
-            .next_keys_version = 2, \
-        }, \
-        .func_state = { \
-            .next_version = 1, \
-        }, \
         .types = { \
             .next_version_tag = 1, \
         }, \
@@ -116,6 +110,12 @@ extern PyTypeObject _PyExc_MemoryError;
             }, \
         }, \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
+        .dict_state = { \
+            .next_keys_version = 2, \
+        }, \
+        .func_state = { \
+            .next_version = 1, \
+        }, \
         .static_objects = { \
             .singletons = { \
                 ._not_used = 1, \
