@@ -495,8 +495,8 @@ extern Py_ssize_t _Py_RefTotal;
 #    define _Py_INC_REFTOTAL() _Py_RefTotal++
 #    define _Py_DEC_REFTOTAL() _Py_RefTotal--
 #  elif !defined(Py_LIMITED_API) || Py_LIMITED_API+0 > 0x030C0000
-extern void _Py_IncRefTotal_DO_NOT_USE_THIS(void);
-extern void _Py_DecRefTotal_DO_NOT_USE_THIS(void);
+PyAPI_FUNC(void) _Py_IncRefTotal_DO_NOT_USE_THIS(void);
+PyAPI_FUNC(void) _Py_DecRefTotal_DO_NOT_USE_THIS(void);
 #    define _Py_INC_REFTOTAL() _Py_IncRefTotal_DO_NOT_USE_THIS()
 #    define _Py_DEC_REFTOTAL() _Py_DecRefTotal_DO_NOT_USE_THIS()
 #  endif

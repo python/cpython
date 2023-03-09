@@ -158,15 +158,15 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
                            filename, lineno, __func__);
 }
 
-/* This is exposed strictly for use in Py_INCREF(). */
-PyAPI_FUNC(void)
+/* This is used strictly by Py_INCREF(). */
+void
 _Py_IncRefTotal_DO_NOT_USE_THIS(void)
 {
     reftotal_increment();
 }
 
-/* This is exposed strictly for use in Py_DECREF(). */
-PyAPI_FUNC(void)
+/* This is used strictly by Py_DECREF(). */
+void
 _Py_DecRefTotal_DO_NOT_USE_THIS(void)
 {
     reftotal_decrement();
