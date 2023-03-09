@@ -555,6 +555,8 @@ init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *con
         interp->feature_flags |= Py_RTFLAGS_USE_MAIN_OBMALLOC;
     }
     else if (!config->check_multi_interp_extensions) {
+        /* The reason: PyModuleDef.m_base.m_copy leaks objects between
+           interpreters. */
         return _PyStatus_ERR("per-interpreter obmalloc does not support "
                              "single-phase init extension modules");
     }
