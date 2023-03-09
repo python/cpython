@@ -1243,7 +1243,7 @@
             _tagged_ptr owner = stack_pointer[-1];
             _tagged_ptr v = stack_pointer[-2];
             uint16_t counter = read_u16(&next_instr[0].cache);
-            #if ENABLE_SPECIALIZATION
+            #if 1
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 PyObject *name = GETITEM(names, oparg);
@@ -2100,7 +2100,7 @@
             STAT_INC(STORE_ATTR, hit);
             PyDictValues *values = _PyDictOrValues_GetValues(dorv);
             PyObject *old_value = values->values[index];
-            values->values[index] = detag(value);
+            values->values[index] = STEAL(value);
             if (old_value == NULL) {
                 _PyDictValues_AddToInsertionOrder(values, index);
             }
@@ -2138,7 +2138,7 @@
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
                 new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, detag(value));
-                ep->me_value = detag(value);
+                ep->me_value = STEAL(value);
             }
             else {
                 PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
@@ -2146,7 +2146,7 @@
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
                 new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, detag(value));
-                ep->me_value = detag(value);
+                ep->me_value = STEAL(value);
             }
             Py_DECREF(old_value);
             STAT_INC(STORE_ATTR, hit);
@@ -2174,7 +2174,7 @@
             char *addr = (char *)detag(owner) + index;
             STAT_INC(STORE_ATTR, hit);
             PyObject *old_value = *(PyObject **)addr;
-            *(PyObject **)addr = detag(value);
+            *(PyObject **)addr = STEAL(value);
             Py_XDECREF(old_value);
             decref_unless_tagged(owner);
             STACK_SHRINK(2);

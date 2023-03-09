@@ -972,7 +972,7 @@ dummy_func(
         };
 
         inst(STORE_ATTR, (counter/1, unused/3, v, owner --)) {
-            #if ENABLE_SPECIALIZATION
+            #if 1
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 PyObject *name = GETITEM(names, oparg);
@@ -1654,7 +1654,7 @@ dummy_func(
             STAT_INC(STORE_ATTR, hit);
             PyDictValues *values = _PyDictOrValues_GetValues(dorv);
             PyObject *old_value = values->values[index];
-            values->values[index] = value;
+            values->values[index] = STEAL(value);
             if (old_value == NULL) {
                 _PyDictValues_AddToInsertionOrder(values, index);
             }
@@ -1685,7 +1685,7 @@ dummy_func(
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
                 new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
-                ep->me_value = value;
+                ep->me_value = STEAL(value);
             }
             else {
                 PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
@@ -1693,7 +1693,7 @@ dummy_func(
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
                 new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
-                ep->me_value = value;
+                ep->me_value = STEAL(value);
             }
             Py_DECREF(old_value);
             STAT_INC(STORE_ATTR, hit);
@@ -1714,7 +1714,7 @@ dummy_func(
             char *addr = (char *)owner + index;
             STAT_INC(STORE_ATTR, hit);
             PyObject *old_value = *(PyObject **)addr;
-            *(PyObject **)addr = value;
+            *(PyObject **)addr = STEAL(value);
             Py_XDECREF(old_value);
             Py_DECREF(owner);
         }
