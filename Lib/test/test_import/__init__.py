@@ -1403,6 +1403,9 @@ class CircularImportTests(unittest.TestCase):
 class SubinterpImportTests(unittest.TestCase):
 
     RUN_KWARGS = dict(
+        # XXX We get crashes if this is False
+        # (e.g. test.test_import.SubinterpImportTests.test_builtin_compat).
+        use_main_obmalloc=True,
         allow_fork=False,
         allow_exec=False,
         allow_threads=True,
