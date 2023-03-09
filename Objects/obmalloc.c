@@ -732,6 +732,9 @@ static inline OMState *
 get_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+        interp = _PyInterpreterState_Main();
+    }
     return &interp->obmalloc;
 }
 
