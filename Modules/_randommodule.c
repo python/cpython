@@ -77,6 +77,10 @@
 #  include <process.h>            // getpid()
 #endif
 
+#ifdef MS_WINDOWS
+#  include <windows.h>
+#endif
+
 /* Period parameters -- These are all magic.  Don't change. */
 #define N 624
 #define M 397
@@ -259,7 +263,7 @@ random_seed_time_pid(RandomObject *self)
     key[0] = (uint32_t)(now & 0xffffffffU);
     key[1] = (uint32_t)(now >> 32);
 
-#ifdef MS_WINDOWS_NON_DESKTOP
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_DESKTOP) && !defined(MS_WINDOWS_SYSTEM)
     key[2] = (uint32_t)GetCurrentProcessId();
 #elif defined(HAVE_GETPID)
     key[2] = (uint32_t)getpid();

@@ -10,8 +10,8 @@ PyAPI_FUNC(PyObject *) _PyImport_GetModuleId(_Py_Identifier *name);
 PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
 PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
 
-PyAPI_FUNC(void) _PyImport_AcquireLock(void);
-PyAPI_FUNC(int) _PyImport_ReleaseLock(void);
+PyAPI_FUNC(void) _PyImport_AcquireLock(PyInterpreterState *interp);
+PyAPI_FUNC(int) _PyImport_ReleaseLock(PyInterpreterState *interp);
 
 PyAPI_FUNC(int) _PyImport_FixupBuiltin(
     PyObject *mod,
