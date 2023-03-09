@@ -703,7 +703,7 @@ dummy_func(
         };
 
         inst(SEND, (unused/1, receiver, v -- receiver, retval)) {
-            #if ENABLE_SPECIALIZATION
+            #if 1
             _PySendCache *cache = (_PySendCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);

@@ -916,7 +916,7 @@
             _tagged_ptr v = stack_pointer[-1];
             _tagged_ptr receiver = stack_pointer[-2];
             PyObject *retval;
-            #if ENABLE_SPECIALIZATION
+            #if 1
             _PySendCache *cache = (_PySendCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
