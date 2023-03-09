@@ -4230,30 +4230,43 @@ static PyObject *
 os_listdrives_impl(PyObject *module)
 /*[clinic end generated code: output=aaece9dacdf682b5 input=1af9ccc9e583798e]*/
 {
-    DWORD buflen = 64;
     wchar_t defaultBuffer[64];
+    int success = 0;
+    DWORD buflen = Py_ARRAY_LENGTH(defaultBuffer);
     LPWSTR buffer = defaultBuffer;
     if (PySys_Audit("os.listdrives", NULL) < 0) {
         return NULL;
     }
-    Py_BEGIN_ALLOW_THREADS;
-    buflen = GetLogicalDriveStringsW(buflen, buffer);
-    if (buflen >= Py_ARRAY_LENGTH(defaultBuffer)) {
-        Py_BLOCK_THREADS;
-        buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * (buflen + 1));
-        Py_UNBLOCK_THREADS;
-        if (buffer) {
-            buflen = GetLogicalDriveStringsW(buflen, buffer);
+    while (1) {
+        DWORD requiredlen;
+        Py_BEGIN_ALLOW_THREADS;
+        requiredlen = GetLogicalDriveStringsW(buflen, buffer);
+        Py_END_ALLOW_THREADS;
+        if (!requiredlen) {
+            PyErr_SetFromWindowsErr(0);
+            break;
+        } else if (requiredlen >= buflen) {
+            buflen = requiredlen;
+            if (buffer != defaultBuffer) {
+                PyMem_Free((void *)buffer);
+            }
+            buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * (buflen + 1));
+            if (!buffer) {
+                PyErr_NoMemory();
+                break;
+            }
+        } else {
+            success = 1;
+            buflen = requiredlen;
+            break;
         }
     }
-    Py_END_ALLOW_THREADS;
-
 
     PyObject *str = NULL;
     PyObject *nullchar = NULL;
     PyObject *r = NULL;
 
-    if (!buffer) {
+    if (!success || !buffer) {
         goto exit;
     }
 
@@ -4292,7 +4305,7 @@ os_listvolumes_impl(PyObject *module)
 {
     PyObject *result = PyList_New(0);
     HANDLE find = INVALID_HANDLE_VALUE;
-    wchar_t buffer[256];
+    wchar_t buffer[MAX_PATH + 1];
     if (!result) {
         return NULL;
     }
@@ -4303,7 +4316,7 @@ os_listvolumes_impl(PyObject *module)
 
     int err = 0;
     Py_BEGIN_ALLOW_THREADS;
-    find = FindFirstVolumeW(buffer, 256);
+    find = FindFirstVolumeW(buffer, Py_ARRAY_LENGTH(buffer));
     if (find == INVALID_HANDLE_VALUE) {
         err = GetLastError();
     }
@@ -4319,7 +4332,7 @@ os_listvolumes_impl(PyObject *module)
         Py_DECREF(s);
 
         Py_BEGIN_ALLOW_THREADS;
-        if (!FindNextVolumeW(find, buffer, 256)) {
+        if (!FindNextVolumeW(find, buffer, Py_ARRAY_LENGTH(buffer))) {
             err = GetLastError();
         }
         Py_END_ALLOW_THREADS;
@@ -4332,9 +4345,8 @@ os_listvolumes_impl(PyObject *module)
     }
     if (err && err != ERROR_NO_MORE_FILES) {
         PyErr_SetFromWindowsErr(err);
-        if (result) {
-            Py_CLEAR(result);
-        }
+        Py_XDECREF(result);
+        result = NULL;
     }
     return result;
 }
@@ -4355,60 +4367,55 @@ static PyObject *
 os_listmounts_impl(PyObject *module, path_t *volume)
 /*[clinic end generated code: output=06da49679de4512e input=a8a27178e3f67845]*/
 {
-    DWORD buflen = 64;
-    wchar_t defaultBuffer[64];
-    LPWSTR buffer = defaultBuffer;
-    int err = 0;
+    wchar_t default_buffer[MAX_PATH + 1];
+    DWORD buflen = Py_ARRAY_LENGTH(default_buffer);
+    LPWSTR buffer = default_buffer;
+    PyObject *str = NULL;
+    PyObject *nullchar = NULL;
+    PyObject *result = NULL;
     if (PySys_Audit("os.listmounts", "O", volume->object) < 0) {
         return NULL;
     }
-    Py_BEGIN_ALLOW_THREADS;
-    if (!GetVolumePathNamesForVolumeNameW(volume->wide, buffer, buflen, &buflen)) {
-        err = GetLastError();
-        if (err == ERROR_MORE_DATA) {
-            Py_BLOCK_THREADS;
-            buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * buflen);
-            Py_UNBLOCK_THREADS;
-            if (buffer) {
-                if (!GetVolumePathNamesForVolumeNameW(volume->wide, buffer,
-                                                      buflen, &buflen)) {
-                    err = GetLastError();
-                }
-            }
+    while (1) {
+        BOOL success;
+        Py_BEGIN_ALLOW_THREADS
+        success = GetVolumePathNamesForVolumeNameW(volume->wide, buffer,
+                                                   buflen, &buflen);
+        Py_END_ALLOW_THREADS
+        if (success) {
+            break;
+        }
+        if (GetLastError() != ERROR_MORE_DATA) {
+            PyErr_SetFromWindowsErr(0);
+            goto exit;
+        }
+        if (buffer != default_buffer) {
+            PyMem_Free((void *)buffer);
+        }
+        buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * buflen);
+        if (!buffer) {
+            PyErr_NoMemory();
+            goto exit;
         }
     }
-    Py_END_ALLOW_THREADS;
-
-    PyObject *str = NULL;
-    PyObject *nullchar = NULL;
-    PyObject *r = NULL;
-
-    if (err) {
-        PyErr_SetFromWindowsErr(err);
-        goto exit;
-    }
-    if (!buffer) {
-        goto exit;
-    }
     if (buflen < 2) {
-        r = PyList_New(0);
+        result = PyList_New(0);
         goto exit;
     }
-
-    /* buflen includes two null terminators (one for the last string
-       and one for the array of strings */
+    // buflen includes two null terminators, one for the last string
+    // and one for the array of strings.
     str = PyUnicode_FromWideChar(buffer, buflen - 2);
     nullchar = PyUnicode_FromStringAndSize("\0", 1);
     if (str && nullchar) {
-        r = PyUnicode_Split(str, nullchar, buflen);
+        result = PyUnicode_Split(str, nullchar, -1);
     }
 exit:
-    if (buffer && buffer != defaultBuffer) {
-        PyMem_Free((void *)buffer);
+    if (buffer != default_buffer) {
+        PyMem_Free(buffer);
     }
     Py_XDECREF(nullchar);
     Py_XDECREF(str);
-    return r;
+    return result;
 }
 
 
