@@ -267,7 +267,7 @@ Object Protocol
    >>> class D(B, A, C): pass
    ...
    >>> D.__base__
-   <class '__main__.C'>
+   <class 'C'>
    >>>
 
    A built-in type that is not an object or in the absence of the above class.
@@ -275,7 +275,7 @@ Object Protocol
    >>> class D(B, A, int): pass
    ...
    >>> D.__base__
-   <type 'int'>
+   <class 'int'>
 
    The first user defined class that inherits  either an object or
    derives from a class (directly or indirectly) that inherits an
@@ -284,7 +284,7 @@ Object Protocol
    >>> class D(B, A): pass
    ...
    >>> D.__base__
-   <class '__main__.B'>
+   <class 'B'>
 
    Note that behavior of the ``__base__`` attribute is dependent on the CPython implementation.
 
