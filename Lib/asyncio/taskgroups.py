@@ -10,7 +10,30 @@ from . import tasks
 
 
 class TaskGroup:
+    """An asynchronous context manager for managing groups of tasks.
 
+    Example use:
+
+        async with asyncio.TaskGroup() as group:
+            task1 = group.create_task(some_coroutine(...))
+            task2 = group.create_task(other_coroutine(...))
+        
+        print("Both tasks have completed now.")
+
+    All tasks are awaited when the context manager exits.
+
+    Once the context has been exited it's guaranteed that no tasks
+    from the group remain alive. That is, all tasks are guaranteed
+    to have either finished successfully or have been cancelled.
+
+    Any exceptions other than asyncio.CancelledError's raised within
+    tasks cause each of the remaining tasks to be cancelled and the
+    context to be exited.
+
+    Once all tasks have finished, if any tasks have failed with an
+    exception other than asyncio.CancelledError, those exceptions are
+    combined in an ExceptionGroup or BaseExceptionGroup and re-raised.
+    """
     def __init__(self):
         self._entered = False
         self._exiting = False
@@ -135,6 +158,10 @@ class TaskGroup:
                 self._errors = None
 
     def create_task(self, coro, *, name=None, context=None):
+        """Schedule a coroutine and return a task representing it.
+        
+        Raises a RuntimeError if the task cannot be created.
+        """
         if not self._entered:
             raise RuntimeError(f"TaskGroup {self!r} has not been entered")
         if self._exiting and not self._tasks:
