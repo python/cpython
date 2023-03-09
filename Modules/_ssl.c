@@ -2524,7 +2524,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
         if (retval > 0) {
             count += bytes_read;
             if (bytes_read && count < (size_t)len) {
-                sockstate = PySSL_select(sock, 0, 0, 0);
+                sockstate = PySSL_select(sock, 0, 1, 0);
                 /* possibly more data waiting, or a socket error */
                 continue;
             }
