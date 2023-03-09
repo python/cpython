@@ -414,7 +414,7 @@ class Instruction:
     def substitute_tagged_ptr_array(self, texts: list[str], index: int) -> None:
         assert 0 <= index < len(texts)
         prevs, text = texts[max(index - 2, 0) : index], texts[index]
-        if prevs == ["STEAL", "("]:
+        if prevs == ["STEAL", "("] or prevs == ["decref_unless_tagged", "("]:
             return
         nexts = texts[index + 1 : index + 2]
         if nexts:

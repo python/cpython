@@ -1675,7 +1675,7 @@
                 PyObject *item = detag(values[i]);
                 if (err == 0)
                     err = PySet_Add(set, item);
-                Py_DECREF(item);
+                decref_unless_tagged(values[i]);
             }
             if (err != 0) {
                 Py_DECREF(set);
