@@ -3287,9 +3287,6 @@
             shim->localsplus[0] = self;
             Py_INCREF(init);
             _PyInterpreterFrame *init_frame = _PyFrame_PushUnchecked(tstate, init, oparg+1);
-            /* Link frames */
-            init_frame->previous = shim;
-            shim->previous = frame;
             /* Copy self followed by args to __init__ frame */
             init_frame->localsplus[0] = self;
             for (int i = 0; i < oparg; i++) {
@@ -3299,6 +3296,9 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             frame->prev_instr = next_instr - 1;
+            /* Link frames */
+            init_frame->previous = shim;
+            shim->previous = frame;
             frame = cframe.current_frame = init_frame;
             goto start_frame;
         }
