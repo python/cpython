@@ -3887,7 +3887,7 @@
             _tagged_ptr rhs = stack_pointer[-1];
             _tagged_ptr lhs = stack_pointer[-2];
             PyObject *res;
-            #if ENABLE_SPECIALIZATION
+            #if 1
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);

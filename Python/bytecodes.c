@@ -3081,7 +3081,7 @@ dummy_func(
         }
 
         inst(BINARY_OP, (unused/1, lhs, rhs -- res)) {
-            #if ENABLE_SPECIALIZATION
+            #if 1
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
