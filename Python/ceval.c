@@ -773,18 +773,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
 
-    PyObject *names;
-    PyObject *consts;
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
 
 /* Sets the above local variables from the frame */
 #define SET_LOCALS_FROM_FRAME() \
-    { \
-        PyCodeObject *co = frame->f_code; \
-        names = co->co_names; \
-        consts = co->co_consts; \
-    } \
     assert(_PyInterpreterFrame_LASTI(frame) >= -1); \
     /* Jump back to the last instruction executed... */ \
     next_instr = frame->prev_instr + 1; \

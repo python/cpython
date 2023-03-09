@@ -50,7 +50,7 @@
         TARGET(LOAD_CONST) {
             PREDICTED(LOAD_CONST);
             PyObject *value;
-            value = GETITEM(consts, oparg);
+            value = GETITEM(frame->f_code->co_consts, oparg);
             Py_INCREF(value);
             STACK_GROW(1);
             stack_pointer[-1] = value;
@@ -101,7 +101,7 @@
             oparg = (next_instr++)->op.arg;
             {
                 PyObject *value;
-                value = GETITEM(consts, oparg);
+                value = GETITEM(frame->f_code->co_consts, oparg);
                 Py_INCREF(value);
                 _tmp_1 = value;
             }
@@ -150,7 +150,7 @@
             PyObject *_tmp_2;
             {
                 PyObject *value;
-                value = GETITEM(consts, oparg);
+                value = GETITEM(frame->f_code->co_consts, oparg);
                 Py_INCREF(value);
                 _tmp_2 = value;
             }
@@ -753,7 +753,7 @@
         }
 
         TARGET(RETURN_CONST) {
-            PyObject *retval = GETITEM(consts, oparg);
+            PyObject *retval = GETITEM(frame->f_code->co_consts, oparg);
             Py_INCREF(retval);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -1092,7 +1092,7 @@
 
         TARGET(STORE_NAME) {
             PyObject *v = stack_pointer[-1];
-            PyObject *name = GETITEM(names, oparg);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             PyObject *ns = LOCALS();
             int err;
             if (ns == NULL) {
@@ -1112,7 +1112,7 @@
         }
 
         TARGET(DELETE_NAME) {
-            PyObject *name = GETITEM(names, oparg);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             PyObject *ns = LOCALS();
             int err;
             if (ns == NULL) {
@@ -1226,7 +1226,7 @@
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *name = GETITEM(names, oparg);
+                PyObject *name = GETITEM(frame->f_code->co_names, oparg);
                 next_instr--;
                 _Py_Specialize_StoreAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
@@ -1237,7 +1237,7 @@
             #else
             (void)counter;  // Unused.
             #endif  /* ENABLE_SPECIALIZATION */
-            PyObject *name = GETITEM(names, oparg);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             int err = PyObject_SetAttr(owner, name, v);
             Py_DECREF(v);
             Py_DECREF(owner);
@@ -1249,7 +1249,7 @@
 
         TARGET(DELETE_ATTR) {
             PyObject *owner = stack_pointer[-1];
-            PyObject *name = GETITEM(names, oparg);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             int err = PyObject_SetAttr(owner, name, (PyObject *)NULL);
             Py_DECREF(owner);
             if (err) goto pop_1_error;
@@ -1259,7 +1259,7 @@
 
         TARGET(STORE_GLOBAL) {
             PyObject *v = stack_pointer[-1];
-            PyObject *name = GETITEM(names, oparg);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             int err = PyDict_SetItem(GLOBALS(), name, v);
             Py_DECREF(v);
             if (err) goto pop_1_error;
@@ -1268,7 +1268,7 @@
         }
 
         TARGET(DELETE_GLOBAL) {
-            PyObject *name = GETITEM(names, oparg);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             int err;
             err = PyDict_DelItem(GLOBALS(), name);
             // Can't use ERROR_IF here.
@@ -1284,7 +1284,7 @@
 
         TARGET(LOAD_NAME) {
             PyObject *v;
-            PyObject *name = GETITEM(names, oparg);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             PyObject *locals = LOCALS();
             if (locals == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
@@ -1356,7 +1356,7 @@
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *name = GETITEM(names, oparg>>1);
+                PyObject *name = GETITEM(frame->f_code->co_names, oparg>>1);
                 next_instr--;
                 _Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);
                 DISPATCH_SAME_OPARG();
@@ -1364,7 +1364,7 @@
             STAT_INC(LOAD_GLOBAL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            PyObject *name = GETITEM(names, oparg>>1);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg>>1);
             if (PyDict_CheckExact(GLOBALS())
                 && PyDict_CheckExact(BUILTINS()))
             {
@@ -1806,7 +1806,7 @@
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
-                PyObject *name = GETITEM(names, oparg>>1);
+                PyObject *name = GETITEM(frame->f_code->co_names, oparg>>1);
                 next_instr--;
                 _Py_Specialize_LoadAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
@@ -1814,7 +1814,7 @@
             STAT_INC(LOAD_ATTR, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            PyObject *name = GETITEM(names, oparg >> 1);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
                 PyObject* meth = NULL;
@@ -1925,7 +1925,7 @@
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
             DEOPT_IF(dict == NULL, LOAD_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
-            PyObject *name = GETITEM(names, oparg>>1);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg>>1);
             uint16_t hint = index;
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, LOAD_ATTR);
             if (DK_IS_UNICODE(dict->ma_keys)) {
@@ -2049,7 +2049,7 @@
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
 
-            PyObject *name = GETITEM(names, oparg >> 1);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 1);
             Py_INCREF(f);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 2);
             // Manipulate stack directly because we exit with DISPATCH_INLINED().
@@ -2105,7 +2105,7 @@
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
             DEOPT_IF(dict == NULL, STORE_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
-            PyObject *name = GETITEM(names, oparg);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, STORE_ATTR);
             PyObject *old_value;
             uint64_t new_version;
@@ -2358,7 +2358,7 @@
             PyObject *fromlist = stack_pointer[-1];
             PyObject *level = stack_pointer[-2];
             PyObject *res;
-            PyObject *name = GETITEM(names, oparg);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             res = import_name(tstate, frame, name, fromlist, level);
             Py_DECREF(level);
             Py_DECREF(fromlist);
@@ -2371,7 +2371,7 @@
         TARGET(IMPORT_FROM) {
             PyObject *from = stack_pointer[-1];
             PyObject *res;
-            PyObject *name = GETITEM(names, oparg);
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             res = import_from(tstate, from, name);
             if (res == NULL) goto error;
             STACK_GROW(1);
@@ -3006,8 +3006,8 @@
 
         TARGET(KW_NAMES) {
             assert(kwnames == NULL);
-            assert(oparg < PyTuple_GET_SIZE(consts));
-            kwnames = GETITEM(consts, oparg);
+            assert(oparg < PyTuple_GET_SIZE(frame->f_code->co_consts));
+            kwnames = GETITEM(frame->f_code->co_consts, oparg);
             DISPATCH();
         }
 
