@@ -567,18 +567,21 @@ run_at_forkers(PyObject *lst, int reverse)
 void
 PyOS_BeforeFork(void)
 {
-    run_at_forkers(_PyInterpreterState_GET()->before_forkers, 1);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    run_at_forkers(interp->before_forkers, 1);
 
-    _PyImport_AcquireLock();
+    _PyImport_AcquireLock(interp);
 }
 
 void
 PyOS_AfterFork_Parent(void)
 {
-    if (_PyImport_ReleaseLock() <= 0)
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyImport_ReleaseLock(interp) <= 0) {
         Py_FatalError("failed releasing import lock after fork");
+    }
 
-    run_at_forkers(_PyInterpreterState_GET()->after_forkers_parent, 0);
+    run_at_forkers(interp->after_forkers_parent, 0);
 }
 
 void
@@ -604,7 +607,7 @@ PyOS_AfterFork_Child(void)
         goto fatal_error;
     }
 
-    status = _PyImport_ReInitLock();
+    status = _PyImport_ReInitLock(tstate->interp);
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
