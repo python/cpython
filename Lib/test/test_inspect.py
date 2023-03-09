@@ -3286,6 +3286,44 @@ class TestSignatureObject(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'wrapper loop'):
             self.signature(Wrapped)
 
+    def test_signature_on_class_callable_objects(self):
+        class Foo:
+            @classmethod
+            def __call__(cls, a):
+                pass
+
+        self.assertEqual(self.signature(Foo()),
+                         ((('a', ..., ..., "positional_or_keyword"),),
+                          ...))
+
+        class Bar:
+            @classmethod
+            def __call__(cls):
+                pass
+
+        self.assertEqual(self.signature(Bar()),
+                         ((()),
+                          ...))
+
+    def test_signature_on_static_callable_objects(self):
+        class Foo:
+            @staticmethod
+            def __call__(a):
+                pass
+
+        self.assertEqual(self.signature(Foo()),
+                         ((('a', ..., ..., "positional_or_keyword"),),
+                          ...))
+
+        class Bar:
+            @staticmethod
+            def __call__():
+                pass
+
+        self.assertEqual(self.signature(Bar()),
+                         ((()),
+                          ...))
+
     def test_signature_on_lambdas(self):
         self.assertEqual(self.signature((lambda a=10: a)),
                          ((('a', 10, ..., "positional_or_keyword"),),

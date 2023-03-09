@@ -1961,6 +1961,25 @@ def _signature_get_user_defined_method(cls, method_name):
             # callables, this check won't be necessary
             return meth
 
+def _signature_get_user_defined_method_with_descriptor(cls, method_name):
+    """Private helper. Checks if ``cls`` has an attribute
+    named ``method_name`` and returns it with descriptor only if it is a
+    pure python function.
+    """
+    try:
+        meth = getattr(cls, method_name)
+    except AttributeError:
+        return None, None
+
+    if isinstance(meth, _NonUserDefinedCallables):
+        # Once '__signature__' will be added to 'C'-level
+        # callables, this check won't be necessary
+        return None, None
+
+    descriptior = getattr_static(cls, method_name, default=None)
+
+    return meth, descriptior
+
 
 def _signature_get_partial(wrapped_sig, partial, extra_args=()):
     """Private helper to calculate how 'wrapped_sig' signature will
@@ -2604,13 +2623,25 @@ def _signature_from_callable(obj, *,
         # We also check that the 'obj' is not an instance of
         # types.WrapperDescriptorType or types.MethodWrapperType to avoid
         # infinite recursion (and even potential segfault)
-        call = _signature_get_user_defined_method(type(obj), '__call__')
+        call, descriptior = _signature_get_user_defined_method_with_descriptor(type(obj), '__call__')
+
         if call is not None:
+            if descriptior is not None:
+                is_staticmethod = isinstance(descriptior, staticmethod)
+                is_classmethod = isinstance(descriptior, classmethod)
+            else:
+                is_staticmethod = False
+                is_classmethod = False
+
+
             try:
-                sig = _get_signature_of(call)
+                sig = _get_signature_of(call, skip_bound_arg=not is_staticmethod)
             except ValueError as ex:
                 msg = 'no signature found for {!r}'.format(obj)
                 raise ValueError(msg) from ex
+            else:
+                if is_staticmethod or is_classmethod:
+                    return sig
 
     if sig is not None:
         # For classes and objects we skip the first parameter of their
