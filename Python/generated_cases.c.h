@@ -2675,7 +2675,7 @@
             static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
             _tagged_ptr iter = stack_pointer[-1];
             PyObject *next;
-            #if ENABLE_SPECIALIZATION
+            #if 1
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);

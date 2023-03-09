@@ -2099,7 +2099,7 @@ dummy_func(
         };
 
         inst(FOR_ITER, (unused/1, iter -- iter, next)) {
-            #if ENABLE_SPECIALIZATION
+            #if 1
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
