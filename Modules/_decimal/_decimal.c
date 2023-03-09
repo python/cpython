@@ -2160,7 +2160,7 @@ dec_from_long(PyTypeObject *type, PyObject *v,
 
     uint8_t sign = _PyLong_IsNegative(l) ? MPD_NEG :  MPD_POS;
 
-    if (_PyLong_IsSingleDigit(l)) {
+    if (_PyLong_IsCompact(l)) {
         _dec_settriple(dec, sign, l->long_value.ob_digit[0], 0);
         mpd_qfinalize(MPD(dec), ctx, status);
         return dec;

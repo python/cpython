@@ -124,19 +124,19 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
 
 /* Return 1 if the argument is positive single digit int */
 static inline int
-_PyLong_IsNonNegativeSingleDigit(const PyLongObject* op) {
+_PyLong_IsNonNegativeCompact(const PyLongObject* op) {
     assert(PyLong_Check(op));
     return op->long_value.lv_tag <= (1 << NON_SIZE_BITS);
 }
 
 static inline int
-_PyLong_IsSingleDigit(const PyLongObject* op) {
+_PyLong_IsCompact(const PyLongObject* op) {
     assert(PyLong_Check(op));
     return op->long_value.lv_tag < (2 << NON_SIZE_BITS);
 }
 
 static inline int
-_PyLong_BothAreSingleDigit(const PyLongObject* a, const PyLongObject* b) {
+_PyLong_BothAreCompact(const PyLongObject* a, const PyLongObject* b) {
     assert(PyLong_Check(a));
     assert(PyLong_Check(b));
     return (a->long_value.lv_tag | b->long_value.lv_tag) < (2 << NON_SIZE_BITS);
@@ -147,10 +147,10 @@ _PyLong_BothAreSingleDigit(const PyLongObject* a, const PyLongObject* b) {
  * without risk of overflow.
  */
 static inline Py_ssize_t
-_PyLong_SingleDigitValue(const PyLongObject *op)
+_PyLong_CompactValue(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
-    assert(_PyLong_IsSingleDigit(op));
+    assert(_PyLong_IsCompact(op));
     Py_ssize_t sign = 1 - (op->long_value.lv_tag & SIGN_MASK);
     return sign * (Py_ssize_t)op->long_value.ob_digit[0];
 }
