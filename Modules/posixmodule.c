@@ -26,7 +26,9 @@
 
 #ifdef MS_WINDOWS
 #  include <windows.h>
-#  include <pathcch.h>
+#  if !defined(MS_WINDOWS_GAMES) || defined(MS_WINDOWS_DESKTOP)
+#    include <pathcch.h>
+#  endif
 #  include <winioctl.h>
 #  include <lmcons.h>             // UNLEN
 #  include "osdefs.h"             // SEP

@@ -8,7 +8,11 @@
 #ifdef MS_WINDOWS
 #  include <malloc.h>
 #  include <windows.h>
-#  include <pathcch.h>            // PathCchCombineEx
+#  if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
+#    define PATHCCH_ALLOW_LONG_PATHS 0x01
+#  else
+#    include <pathcch.h>            // PathCchCombineEx
+#  endif
 extern int winerror_to_errno(int);
 #endif
 
@@ -2107,123 +2111,71 @@ _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
 #endif
 }
 
-// The Windows Games API family does not provide these functions
-// so provide our own implementations. Remove them in case they get added
-// to the Games API family
-// Note that this implementation does not handle all the same cases as the real
-// function, but we expect games are very unlikely to encounter the more obscure
-// cases.
+// The Windows Games API family implements the PathCch* APIs in the Xbox OS,
+// but does not expose them yet. Load them dynamically until
+// 1) they are officially exposed
+// 2) we stop supporting older versions of the GDK which do not expose them
 #if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
 HRESULT
 PathCchSkipRoot(const wchar_t *path, const wchar_t **rootEnd)
 {
-    if (path[0] == '\\') {
-        /* relative path with root e.g. \Windows */
-        if (path[1] != '\\') {
-            *rootEnd = path + 1;
-            return S_OK;
-        }
+    static int initialized = 0;
+    typedef HRESULT(__stdcall *PPathCchSkipRoot) (PCWSTR pszPath,
+                                                  PCWSTR *ppszRootEnd);
+    static PPathCchSkipRoot _PathCchSkipRoot;
 
-        /* UNC drives e.g. \\server\share or \\?\UNC\server\share */
-        const wchar_t *end = path + 2;
-        if (!wcsnicmp(end, L"?\\UNC\\", 6)) {
-            end += 6;
+    if (initialized == 0) {
+        HMODULE pathapi = LoadLibraryExW(L"api-ms-win-core-path-l1-1-0.dll", NULL,
+                                         LOAD_LIBRARY_SEARCH_SYSTEM32);
+        if (pathapi) {
+            _PathCchSkipRoot = (PPathCchSkipRoot)GetProcAddress(
+                pathapi, "PathCchSkipRoot");
         }
-
-        end = wcschr(end, '\\');
-        if (!end) {
-            *rootEnd = path + wcslen(path);
-            return S_OK;
+        else {
+            _PathCchSkipRoot = NULL;
         }
-        end = wcschr(end + 1, '\\');
-        *rootEnd = (!end) ? path + wcslen(path) : end + 1;
-        return S_OK;
-    }
-    /* absolute / relative path with drive, e.g. C: or C:\ */
-    else if (isalpha(path[0]) && path[1] == ':') {
-        *rootEnd = (path[2] == '\\') ? path + 3 : path + 2;
-        return S_OK;
+        initialized = 1;
     }
 
-    /* relative path */
-    return E_INVALIDARG;
+    if (!_PathCchSkipRoot) {
+        return E_NOINTERFACE;
+    }
+
+    return _PathCchSkipRoot(path, rootEnd);
 }
-
-static HRESULT
-PathCchStripToRoot(wchar_t *path, size_t size)
-{
-    wchar_t *end;
-    if (PathCchSkipRoot(path, &end) == S_OK) {
-        if (*end == '\0') {
-            return S_FALSE;
-        }
-        *end = '\0';
-    }
-
-    return E_INVALIDARG;
-}
-
-static wchar_t*
-PathAddBackslashW(wchar_t *path)
-{
-    size_t len;
-    if (!path) {
-        return NULL;
-    }
-    len = wcslen(path);
-    if (len && path[len - 1] != '\\') {
-        path[len++] = '\\';
-        path[len] = '\0';
-    }
-    return path + len;
-}
-
-#ifndef PATHCCH_ALLOW_LONG_PATHS
-#define PATHCCH_ALLOW_LONG_PATHS 0x01
-#endif
 
 static HRESULT
 PathCchCombineEx(wchar_t *buffer, size_t bufsize, const wchar_t *dirname,
                  const wchar_t *relfile, unsigned long flags)
 {
-    (void)flags;
+    static int initialized = 0;
+    typedef HRESULT(__stdcall *PPathCchCombineEx) (PWSTR pszPathOut,
+                                                   size_t cchPathOut,
+                                                   PCWSTR pszPathIn,
+                                                   PCWSTR pszMore,
+                                                   unsigned long dwFlags);
+    static PPathCchCombineEx _PathCchCombineEx;
 
-    if ((isalpha(relfile[0]) && relfile[1] == ':') ||
-       (relfile[0] == '\\' && relfile[1] == '\\'))
-    {
-        dirname = relfile;
-        relfile = NULL;
+    if (initialized == 0) {
+        HMODULE pathapi = LoadLibraryExW(L"api-ms-win-core-path-l1-1-0.dll", NULL,
+                                         LOAD_LIBRARY_SEARCH_SYSTEM32);
+        if (pathapi) {
+            _PathCchCombineEx = (PPathCchCombineEx)GetProcAddress(
+                pathapi, "PathCchCombineEx");
+        }
+        else {
+            _PathCchCombineEx = NULL;
+        }
+        initialized = 1;
     }
 
-    size_t dir_len = wcslen(dirname);
-    size_t file_len = relfile ? wcslen(relfile) : 0;
-    /* path is at max dirname + filename + backslash + \0 */
-    size_t new_len = dir_len + file_len + 2;
-    if (new_len > bufsize) {
-        return E_INVALIDARG;
+    if (!_PathCchCombineEx) {
+        return E_NOINTERFACE;
     }
 
-    size_t combined_length = dir_len;
-    wcscpy(buffer, dirname);
-    if (!relfile || !relfile[0]) {
-        if(wcsncmp(buffer, L"\\\\?\\", 4)) {
-            buffer += 4;
-        }
-        if (isalpha(buffer[0]) && buffer[1] == ':' && !buffer[2]) {
-            PathAddBackslashW(buffer);
-        }
-    }
-    else {
-        if (relfile[0] == '\\' && relfile[1] != '\\')
-        {
-            PathCchStripToRoot(buffer, combined_length);
-            relfile++;
-        }
-        PathAddBackslashW(buffer);
-        wcscat(buffer, relfile);
-    }
-    return S_OK;
+    return _PathCchCombineEx(buffer, bufsize, dirname, relfile, flags);
 }
+
 #endif /* defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP) */
 
 // The caller must ensure "buffer" is big enough.
