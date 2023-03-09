@@ -3084,11 +3084,13 @@ class DeviceEncodingTests(unittest.TestCase):
 class PidTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'getppid'), "test needs os.getppid")
     def test_getppid(self):
-        p = subprocess.Popen([sys.executable, '-c',
+        p = subprocess.Popen([sys._base_executable, '-c',
                               'import os; print(os.getppid())'],
-                             stdout=subprocess.PIPE)
-        stdout, _ = p.communicate()
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        stdout, error = p.communicate()
         # We are the parent of our subprocess
+        self.assertEqual(error, b'')
         self.assertEqual(int(stdout), os.getpid())
 
     def check_waitpid(self, code, exitcode, callback=None):
