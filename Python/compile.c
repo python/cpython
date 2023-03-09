@@ -9855,6 +9855,38 @@ error:
 }
 
 static PyObject *
+instr_sequence_to_instructions(instr_sequence *seq) {
+    PyObject *instructions = PyList_New(0);
+    if (instructions == NULL) {
+        return NULL;
+    }
+    for (int i = 0; i < seq->s_used; i++) {
+        instruction *instr = &seq->s_instrs[i];
+        location loc = instr->i_loc;
+        int arg = HAS_TARGET(instr->i_opcode) ?
+                  seq->s_labelmap[instr->i_oparg] : instr->i_oparg;
+
+        PyObject *inst_tuple = Py_BuildValue(
+            "(iiiiii)", instr->i_opcode, arg,
+            loc.lineno, loc.end_lineno,
+            loc.col_offset, loc.end_col_offset);
+        if (inst_tuple == NULL) {
+            goto error;
+        }
+
+        int res = PyList_Append(instructions, inst_tuple);
+        Py_DECREF(inst_tuple);
+        if (res != 0) {
+            goto error;
+        }
+    }
+    return instructions;
+error:
+    Py_XDECREF(instructions);
+    return NULL;
+}
+
+static PyObject *
 cfg_to_instructions(cfg_builder *g)
 {
     PyObject *instructions = PyList_New(0);
@@ -9927,19 +9959,10 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         goto finally;
     }
 
-    cfg_builder g;
-    if (instr_sequence_to_cfg(INSTR_SEQUENCE(c), &g) < 0) {
-        goto finally;
-    }
-    if (translate_jump_labels_to_targets(g.g_entryblock) < 0) {
-        goto finally;
-    }
-
-    res = cfg_to_instructions(&g);
+    res = instr_sequence_to_instructions(INSTR_SEQUENCE(c));
 
 finally:
     compiler_exit_scope(c);
-    cfg_builder_fini(&g);
     compiler_free(c);
     _PyArena_Free(arena);
     return res;
