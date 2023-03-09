@@ -808,7 +808,7 @@ resume_frame:
 
 #ifdef LLTRACE
     {
-        if (frame != &entry_frame) {
+        if (frame != &entry_frame && GLOBALS()) {
             int r = PyDict_Contains(GLOBALS(), &_Py_ID(__lltrace__));
             if (r < 0) {
                 goto exit_unwind;

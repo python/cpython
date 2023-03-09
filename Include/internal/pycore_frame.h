@@ -255,7 +255,7 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_l
 /* Pushes a trampoline frame without checking for space.
  * Must be guarded by _PyThreadState_HasStackSpace() */
 static inline _PyInterpreterFrame *
-_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth, int start)
+_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth, int prev_instr)
 {
     CALL_STAT_INC(frames_pushed);
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)tstate->datastack_top;
@@ -265,12 +265,12 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->f_code = (PyCodeObject *)Py_NewRef(code);
 #ifdef Py_DEBUG
     frame->f_builtins = (PyObject*)0xaaaa;
-    frame->f_globals = (PyObject*)0xaaab;
+    frame->f_globals = NULL;
 #endif
     frame->f_locals = NULL;
     frame->stacktop = code->co_nlocalsplus + stackdepth;
     frame->frame_obj = NULL;
-    frame->prev_instr = _PyCode_CODE(code) + start;
+    frame->prev_instr = _PyCode_CODE(code) + prev_instr;
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->yield_offset = 0;
     return frame;

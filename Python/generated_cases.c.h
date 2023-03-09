@@ -3273,7 +3273,6 @@
             if (self == NULL) {
                 goto error;
             }
-            PEEK(oparg+1) = self;
             Py_DECREF(tp);
             CALL_STAT_INC(inlined_py_calls);
             if (_Py_EnterRecursivePy(tstate)) {
@@ -3282,25 +3281,24 @@
             PyInterpreterState *interp = _PyInterpreterState_GET();
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
                 tstate, interp->callable_cache.init_cleanup, 1, 1);
-            assert(_Py_OPCODE(*(_PyCode_CODE(shim->f_code)+ 2)) == EXIT_INIT_CHECK);
+            assert(_PyCode_CODE(shim->f_code)[2].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             Py_INCREF(self);
             shim->localsplus[0] = self;
-            shim->previous = frame;
             Py_INCREF(init);
-            _PyInterpreterFrame *init_frame = _PyFrame_PushUnchecked(tstate, init, code->co_argcount);
+            _PyInterpreterFrame *init_frame = _PyFrame_PushUnchecked(tstate, init, oparg+1);
+            /* Link frames */
+            init_frame->previous = shim;
+            shim->previous = frame;
             /* Copy self followed by args to __init__ frame */
-            for (int i = 0; i <= oparg; i++) {
-                init_frame->localsplus[i] = args[i];
-            }
-            for (int i = oparg+1; i < code->co_nlocalsplus; i++) {
-                init_frame->localsplus[i] = NULL;
+            init_frame->localsplus[0] = self;
+            for (int i = 0; i < oparg; i++) {
+                init_frame->localsplus[i+1] = args[i];
             }
             STACK_SHRINK(oparg+2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
             frame->prev_instr = next_instr - 1;
-            init_frame->previous = shim;
             frame = cframe.current_frame = init_frame;
             goto start_frame;
         }

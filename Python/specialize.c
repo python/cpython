@@ -434,6 +434,7 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_CALL_KWNAMES 27
 #define SPEC_FAIL_CALL_METHOD_WRAPPER 28
 #define SPEC_FAIL_CALL_OPERATOR_WRAPPER 29
+#define SPEC_FAIL_CALL_INIT_NOT_SIMPLE 30
 
 /* COMPARE_OP */
 #define SPEC_FAIL_COMPARE_DIFFERENT_TYPES 12
@@ -1478,6 +1479,9 @@ success:
     cache->counter = adaptive_counter_cooldown();
 }
 
+/* Returns a borrowed reference.
+ * The reference is only valid if guarded by a type version check.
+ */
 static PyFunctionObject *
 get_init_for_simple_managed_python_class(PyTypeObject *tp)
 {
@@ -1499,10 +1503,9 @@ get_init_for_simple_managed_python_class(PyTypeObject *tp)
     }
     int kind = function_kind((PyCodeObject *)PyFunction_GET_CODE(init));
     if (kind != SIMPLE_FUNCTION) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_INIT_NOT_SIMPLE);
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_INIT_NOT_SIMPLE);
         return NULL;
     }
-    Py_CLEAR(((PyHeapTypeObject *)tp)->_spec_cache.init);
     ((PyHeapTypeObject *)tp)->_spec_cache.init = init;
     return (PyFunctionObject *)init;
 }
@@ -1518,6 +1521,21 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
         return -1;
     }
     if (tp->tp_new == PyBaseObject_Type.tp_new) {
+        PyFunctionObject *init = get_init_for_simple_managed_python_class(tp);
+        if (init != NULL) {
+            if (((PyCodeObject *)init->func_code)->co_argcount != nargs+1) {
+                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+                return -1;
+            }
+            if (kwnames) {
+                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_KWNAMES);
+                return -1;
+            }
+            _PyCallCache *cache = (_PyCallCache *)(instr + 1);
+            write_u32(cache->func_version, tp->tp_version_tag);
+            _Py_SET_OPCODE(*instr, CALL_NO_KW_ALLOC_AND_ENTER_INIT);
+            return 0;
+        }
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PYTHON_CLASS);
         return -1;
     }
@@ -1544,23 +1562,6 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
         SPECIALIZATION_FAIL(CALL, tp == &PyUnicode_Type ?
             SPEC_FAIL_CALL_STR : SPEC_FAIL_CALL_CLASS_NO_VECTORCALL);
         return -1;
-    }
-    else {
-        PyFunctionObject *init = get_init_for_simple_managed_python_class(tp);
-        if (init != NULL) {
-            if (((PyCodeObject *)init->func_code)->co_argcount != nargs+1) {
-                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
-                return -1;
-            }
-            if (kwnames) {
-                SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_KWNAMES);
-                return -1;
-            }
-            _PyCallCache *cache = (_PyCallCache *)(instr + 1);
-            write_u32(cache->func_version, tp->tp_version_tag);
-            _Py_SET_OPCODE(*instr, CALL_NO_KW_ALLOC_AND_ENTER_INIT);
-            return 0;
-        }
     }
     SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_CLASS_MUTABLE);
     return -1;
