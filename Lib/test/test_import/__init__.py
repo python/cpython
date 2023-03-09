@@ -87,6 +87,13 @@ def requires_subinterpreters(meth):
                            'subinterpreters required')(meth)
 
 
+def requires_singlephase_init(meth):
+    """Decorator to skip if single-phase init modules are not supported."""
+    meth = cpython_only(meth)
+    return unittest.skipIf(_testsinglephase is None,
+                           'test requires _testsinglephase module')(meth)
+
+
 class ModuleSnapshot(types.SimpleNamespace):
     """A representation of a module for testing.
 
@@ -1720,7 +1727,7 @@ class SubinterpImportTests(unittest.TestCase):
         with self.subTest(f'{module}: strict, shared'):
             self.check_compatible_shared(module, strict=True)
 
-    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    @requires_singlephase_init
     def test_single_init_extension_compat(self):
         module = '_testsinglephase'
         with self.subTest(f'{module}: not strict'):
@@ -1751,7 +1758,7 @@ class SubinterpImportTests(unittest.TestCase):
         with self.subTest(f'{module}: strict, isolated'):
             self.check_compatible_isolated(module, strict=True)
 
-    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    @requires_singlephase_init
     def test_singlephase_check_with_setting_and_override(self):
         module = '_testsinglephase'
 
@@ -1824,6 +1831,7 @@ class TestSinglePhaseSnapshot(ModuleSnapshot):
         return self
 
 
+@requires_singlephase_init
 class SinglephaseInitTests(unittest.TestCase):
 
     NAME = '_testsinglephase'
