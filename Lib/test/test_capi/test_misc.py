@@ -1215,20 +1215,23 @@ class SubinterpreterTest(unittest.TestCase):
         """
         import json
 
+        OBMALLOC = 1<<5
         EXTENSIONS = 1<<8
         THREADS = 1<<10
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
 
-        features = ['fork', 'exec', 'threads', 'daemon_threads', 'extensions']
+        features = ['obmalloc', 'fork', 'exec', 'threads', 'daemon_threads',
+                    'extensions']
         kwlist = [f'allow_{n}' for n in features]
+        kwlist[0] = 'use_main_obmalloc'
         kwlist[-1] = 'check_multi_interp_extensions'
         for config, expected in {
-            (True, True, True, True, True):
-                FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS,
-            (False, False, False, False, False): 0,
-            (False, False, True, False, True): THREADS | EXTENSIONS,
+            (True, True, True, True, True, True):
+                OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS,
+            (False, False, False, False, False, False): 0,
+            (False, False, False, True, False, True): THREADS | EXTENSIONS,
         }.items():
             kwargs = dict(zip(kwlist, config))
             expected = {
@@ -1261,13 +1264,15 @@ class SubinterpreterTest(unittest.TestCase):
         """
         import json
 
+        OBMALLOC = 1<<5
         EXTENSIONS = 1<<8
         THREADS = 1<<10
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
-        BASE_FLAGS = FORK | EXEC | THREADS | DAEMON_THREADS
+        BASE_FLAGS = OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS
         base_kwargs = {
+            'use_main_obmalloc': True,
             'allow_fork': True,
             'allow_exec': True,
             'allow_threads': True,
