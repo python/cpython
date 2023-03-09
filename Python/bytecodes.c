@@ -70,8 +70,6 @@ dummy_func(
     unsigned int oparg,
     _Py_atomic_int * const eval_breaker,
     _PyCFrame cframe,
-    PyObject *names,
-    PyObject *consts,
     _Py_CODEUNIT *next_instr,
     PyObject **stack_pointer,
     PyObject *kwnames,
