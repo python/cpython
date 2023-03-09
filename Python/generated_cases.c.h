@@ -617,7 +617,7 @@
             _tagged_ptr container = stack_pointer[-2];
             _tagged_ptr v = stack_pointer[-3];
             uint16_t counter = read_u16(&next_instr[0].cache);
-            #if ENABLE_SPECIALIZATION
+            #if 1
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 next_instr--;
@@ -657,7 +657,7 @@
             STAT_INC(STORE_SUBSCR, hit);
 
             PyObject *old_value = PyList_GET_ITEM(detag(list), index);
-            PyList_SET_ITEM(detag(list), index, detag(value));
+            PyList_SET_ITEM(detag(list), index, STEAL(value));
             assert(old_value != NULL);
             Py_DECREF(old_value);
             if (!is_tagged(sub)) _Py_DECREF_SPECIALIZED(detag(sub), (destructor)PyObject_Free);

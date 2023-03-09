@@ -453,7 +453,7 @@ dummy_func(
         };
 
         inst(STORE_SUBSCR, (counter/1, v, container, sub -- )) {
-            #if ENABLE_SPECIALIZATION
+            #if 1
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 assert(cframe.use_tracing == 0);
                 next_instr--;
@@ -485,7 +485,7 @@ dummy_func(
             STAT_INC(STORE_SUBSCR, hit);
 
             PyObject *old_value = PyList_GET_ITEM(list, index);
-            PyList_SET_ITEM(list, index, value);
+            PyList_SET_ITEM(list, index, STEAL(value));
             assert(old_value != NULL);
             Py_DECREF(old_value);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);

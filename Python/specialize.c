@@ -1370,7 +1370,7 @@ success:
 void
 _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *instr)
 {
-    assert(ENABLE_SPECIALIZATION);
+    // assert(ENABLE_SPECIALIZATION);
     _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)(instr + 1);
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
