@@ -7971,9 +7971,9 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
 
 static int
 add_checks_for_loads_of_uninitialized_variables(basicblock *entryblock,
-                                                struct compiler_unit *u)
+                                                int nlocals,
+                                                int nparams)
 {
-    int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
     if (nlocals == 0) {
         return SUCCESS;
     }
@@ -7994,7 +7994,6 @@ add_checks_for_loads_of_uninitialized_variables(basicblock *entryblock,
 
     // First origin of being uninitialized:
     // The non-parameter locals in the entry block.
-    int nparams = (int)PyList_GET_SIZE(u->u_ste->ste_varnames);
     uint64_t start_mask = 0;
     for (int i = nparams; i < nlocals; i++) {
         start_mask |= (uint64_t)1 << i;
@@ -8500,8 +8499,6 @@ fix_cell_offsets(struct compiler_unit *u, basicblock *entryblock, int *fixedmap)
     return numdropped;
 }
 
-static void
-propagate_line_numbers(basicblock *entryblock);
 
 #ifndef NDEBUG
 
@@ -8645,12 +8642,11 @@ add_return_at_end(struct compiler *c, int addNone)
     return SUCCESS;
 }
 
+static void propagate_line_numbers(basicblock *entryblock);
+
 static int
-optimize_code_unit(struct compiler_unit *u, cfg_builder *g, PyObject *consts,
-                   PyObject *const_cache, int code_flags)
+resolve_line_numbers(struct compiler_unit *u, cfg_builder *g)
 {
-    assert(cfg_builder_check(g));
-    /** Preprocessing **/
     /* Set firstlineno if it wasn't explicitly set. */
     if (!u->u_firstlineno) {
         if (g->g_entryblock->b_instr && g->g_entryblock->b_instr->i_loc.lineno) {
@@ -8660,6 +8656,18 @@ optimize_code_unit(struct compiler_unit *u, cfg_builder *g, PyObject *consts,
             u->u_firstlineno = 1;
         }
     }
+    RETURN_IF_ERROR(duplicate_exits_without_lineno(g));
+    propagate_line_numbers(g->g_entryblock);
+    guarantee_lineno_for_exits(g->g_entryblock, u->u_firstlineno);
+    return SUCCESS;
+}
+
+static int
+optimize_code_unit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
+                   int code_flags, int nlocals, int nparams)
+{
+    assert(cfg_builder_check(g));
+    /** Preprocessing **/
     /* Map labels to targets and mark exception handlers */
     RETURN_IF_ERROR(translate_jump_labels_to_targets(g->g_entryblock));
     RETURN_IF_ERROR(mark_except_handlers(g->g_entryblock));
@@ -8668,12 +8676,9 @@ optimize_code_unit(struct compiler_unit *u, cfg_builder *g, PyObject *consts,
     /** Optimization **/
     RETURN_IF_ERROR(optimize_cfg(g, consts, const_cache));
     RETURN_IF_ERROR(remove_unused_consts(g->g_entryblock, consts));
-    RETURN_IF_ERROR(add_checks_for_loads_of_uninitialized_variables(g->g_entryblock, u));
-
-    /** line numbers */
-    RETURN_IF_ERROR(duplicate_exits_without_lineno(g));
-    propagate_line_numbers(g->g_entryblock);
-    guarantee_lineno_for_exits(g->g_entryblock, u->u_firstlineno);
+    RETURN_IF_ERROR(
+        add_checks_for_loads_of_uninitialized_variables(
+            g->g_entryblock, nlocals, nparams));
 
     RETURN_IF_ERROR(push_cold_blocks_to_end(g, code_flags));
     return SUCCESS;
@@ -8708,11 +8713,17 @@ assemble(struct compiler *c, int addNone)
     if (instr_sequence_to_cfg(INSTR_SEQUENCE(c), &g) < 0) {
         goto error;
     }
-    if (optimize_code_unit(u, &g, consts, const_cache, code_flags) < 0) {
+    int nparams = (int)PyList_GET_SIZE(u->u_ste->ste_varnames);
+    int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
+    if (optimize_code_unit(&g, consts, const_cache, code_flags, nlocals, nparams) < 0) {
         goto error;
     }
 
     /** Assembly **/
+
+    if (resolve_line_numbers(u, &g) < 0) {
+        goto error;
+    }
 
     int nlocalsplus = prepare_localsplus(u, &g, code_flags);
     if (nlocalsplus < 0) {
@@ -9846,6 +9857,9 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
         }
         RETURN_IF_ERROR(cfg_builder_addop(g, opcode, oparg, loc));
     }
+    if (translate_jump_labels_to_targets(g->g_entryblock) < 0) {
+        goto error;
+    }
 
     PyMem_Free(is_target);
     return SUCCESS;
@@ -9972,7 +9986,11 @@ PyObject *
 _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts)
 {
     PyObject *res = NULL;
-    PyObject *const_cache = NULL;
+    PyObject *const_cache = PyDict_New();
+    if (const_cache == NULL) {
+        return NULL;
+    }
+
     cfg_builder g;
     memset(&g, 0, sizeof(cfg_builder));
     if (cfg_builder_init(&g) < 0) {
@@ -9981,19 +9999,12 @@ _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts)
     if (instructions_to_cfg(instructions, &g) < 0) {
         goto error;
     }
-    const_cache = PyDict_New();
-    if (const_cache == NULL) {
-        goto error;
-    }
-    if (translate_jump_labels_to_targets(g.g_entryblock) < 0) {
-        goto error;
-    }
     if (optimize_cfg(&g, consts, const_cache) < 0) {
         goto error;
     }
     res = cfg_to_instructions(&g);
 error:
-    Py_XDECREF(const_cache);
+    Py_DECREF(const_cache);
     cfg_builder_fini(&g);
     return res;
 }
