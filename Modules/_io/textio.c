@@ -2827,11 +2827,10 @@ finally:
 
 fail:
     if (saved_state) {
-        PyObject *type, *value, *traceback;
-        PyErr_Fetch(&type, &value, &traceback);
+        PyObject *exc = PyErr_GetRaisedException();
         res = PyObject_CallMethodOneArg(
                 self->decoder, &_Py_ID(setstate), saved_state);
-        _PyErr_ChainExceptions(type, value, traceback);
+        _PyErr_ChainExceptions1(exc);
         Py_DECREF(saved_state);
         Py_XDECREF(res);
     }
@@ -3028,24 +3027,28 @@ _io_TextIOWrapper_close_impl(textio *self)
         Py_RETURN_NONE; /* stream already closed */
     }
     else {
-        PyObject *exc = NULL, *val, *tb;
+        PyObject *exc = NULL;
         if (self->finalizing) {
             res = PyObject_CallMethodOneArg(self->buffer, &_Py_ID(_dealloc_warn),
                                             (PyObject *)self);
-            if (res)
+            if (res) {
                 Py_DECREF(res);
-            else
+            }
+            else {
                 PyErr_Clear();
+            }
         }
         res = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(flush));
-        if (res == NULL)
-            PyErr_Fetch(&exc, &val, &tb);
-        else
+        if (res == NULL) {
+            exc = PyErr_GetRaisedException();
+        }
+        else {
             Py_DECREF(res);
+        }
 
         res = PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(close));
         if (exc != NULL) {
-            _PyErr_ChainExceptions(exc, val, tb);
+            _PyErr_ChainExceptions1(exc);
             Py_CLEAR(res);
         }
         return res;

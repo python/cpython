@@ -2261,7 +2261,6 @@ class TestInit(unittest.TestCase):
         class B:
             def __init__(self):
                 self.z = 100
-                pass
 
         # Make sure that declaring this class doesn't raise an error.
         #  The issue is that we can't override __init__ in our class,

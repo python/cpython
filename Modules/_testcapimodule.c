@@ -1611,19 +1611,18 @@ static void
 slot_tp_del(PyObject *self)
 {
     PyObject *del, *res;
-    PyObject *error_type, *error_value, *error_traceback;
 
     /* Temporarily resurrect the object. */
     assert(Py_REFCNT(self) == 0);
     Py_SET_REFCNT(self, 1);
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     PyObject *tp_del = PyUnicode_InternFromString("__tp_del__");
     if (tp_del == NULL) {
         PyErr_WriteUnraisable(NULL);
-        PyErr_Restore(error_type, error_value, error_traceback);
+        PyErr_SetRaisedException(exc);
         return;
     }
     /* Execute __del__ method, if any. */
@@ -1638,7 +1637,7 @@ slot_tp_del(PyObject *self)
     }
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 
     /* Undo the temporary resurrection; can't use DECREF here, it would
      * cause a recursive call.
@@ -1655,15 +1654,10 @@ slot_tp_del(PyObject *self)
      */
     {
         Py_ssize_t refcnt = Py_REFCNT(self);
-        _Py_NewReference(self);
+        _Py_NewReferenceNoTotal(self);
         Py_SET_REFCNT(self, refcnt);
     }
     assert(!PyType_IS_GC(Py_TYPE(self)) || PyObject_GC_IsTracked(self));
-    /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
-       _Py_RefTotal, so we need to undo that. */
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
 }
 
 static PyObject *
@@ -4082,6 +4076,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Exceptions(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Code(m) < 0) {
         return NULL;
     }
 
