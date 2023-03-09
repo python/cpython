@@ -635,6 +635,11 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
+    // This is a temporary fix until we have immortal objects.
+    // (See _PyType_InitCache() in typeobject.c.)
+    extern void _PyType_FixCacheRefcounts(void);
+    _PyType_FixCacheRefcounts();
+
     *tstate_p = tstate;
     return _PyStatus_OK();
 }

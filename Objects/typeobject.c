@@ -309,6 +309,7 @@ type_cache_clear(struct type_cache *cache, PyObject *value)
 void
 _PyType_InitCache(PyInterpreterState *interp)
 {
+    int is_main = _Py_IsMainInterpreter(interp);
     struct type_cache *cache = &interp->types.type_cache;
     for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
         struct type_cache_entry *entry = &cache->hashtable[i];
@@ -317,9 +318,25 @@ _PyType_InitCache(PyInterpreterState *interp)
         entry->version = 0;
         // Set to None so _PyType_Lookup() can use Py_SETREF(),
         // rather than using slower Py_XSETREF().
-        entry->name = Py_NewRef(Py_None);
+        entry->name = Py_None;
+        // Currently, this happens before the GIL has been created,
+        // which is a problem without "immortality" (PEP 683).
+        // Until we have immortal objects, we must avoid an INCREF
+        // in the main interpreter here.  Instead, we fix the refcount
+        // in the main interpreer as soon as the GIL has been created.
+        // (See pycore_create_interpreter() in pylifecycle.c.)
+        if (!is_main) {
+            Py_INCREF(Py_None);
+        }
         entry->value = NULL;
     }
+}
+
+// This is the temporary fix used by pycore_create_interpreter().
+void
+_PyType_FixCacheRefcounts(void)
+{
+    _Py_RefcntAdd(Py_None, (1 << MCACHE_SIZE_EXP));
 }
 
 
