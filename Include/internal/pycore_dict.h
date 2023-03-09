@@ -164,6 +164,7 @@ _PyDict_NotifyEvent(PyDict_WatchEvent event,
                     PyObject *key,
                     PyObject *value)
 {
+    assert(Py_REFCNT((PyObject*)mp) > 0);
     int watcher_bits = mp->ma_version_tag & DICT_VERSION_MASK;
     if (watcher_bits) {
         _PyDict_SendEvent(watcher_bits, event, mp, key, value);
