@@ -51,7 +51,7 @@
             PyObject *value;
             value = GETITEM(consts, oparg);
             #if 1
-            if (PyLong_CheckExact(value)) {
+            if (value != Py_None) {
                 value = tagged(value).obj;
             }
             else {
@@ -111,7 +111,7 @@
                 PyObject *value;
                 value = GETITEM(consts, oparg);
                 #if 1
-                if (PyLong_CheckExact(value)) {
+                if (value != Py_None) {
                     value = tagged(value).obj;
                 }
                 else {
@@ -169,7 +169,7 @@
                 PyObject *value;
                 value = GETITEM(consts, oparg);
                 #if 1
-                if (PyLong_CheckExact(value)) {
+                if (value != Py_None) {
                     value = tagged(value).obj;
                 }
                 else {

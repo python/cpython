@@ -117,7 +117,7 @@ dummy_func(
         inst(LOAD_CONST, (-- value)) {
             value = GETITEM(consts, oparg);
             #if 1
-            if (PyLong_CheckExact(value)) {
+            if (value != Py_None) {
                 value = tagged(value).obj;
             }
             else {
