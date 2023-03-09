@@ -40,16 +40,6 @@ extern PyTypeObject _PyExc_MemoryError;
            in accordance with the specification. */ \
         .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
-        .imports = { \
-            .lock = { \
-                .mutex = NULL, \
-                .thread = PYTHREAD_INVALID_THREAD_ID, \
-                .level = 0, \
-            }, \
-            .find_and_load = { \
-                .header = 1, \
-            }, \
-        }, \
         .ceval = { \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
         }, \
@@ -64,12 +54,6 @@ extern PyTypeObject _PyExc_MemoryError;
         .float_state = { \
             .float_format = _py_float_format_unknown, \
             .double_format = _py_float_format_unknown, \
-        }, \
-        .dict_state = { \
-            .next_keys_version = 2, \
-        }, \
-        .func_state = { \
-            .next_version = 1, \
         }, \
         .types = { \
             .next_version_tag = 1, \
@@ -116,6 +100,12 @@ extern PyTypeObject _PyExc_MemoryError;
             }, \
         }, \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
+        .dict_state = { \
+            .next_keys_version = 2, \
+        }, \
+        .func_state = { \
+            .next_version = 1, \
+        }, \
         .static_objects = { \
             .singletons = { \
                 ._not_used = 1, \

@@ -189,6 +189,8 @@ Other Language Changes
   part of comprehensions (like ``a``) is still disallowed, as per :pep:`572`.
   (Contributed by Nikita Sobolev in :gh:`100581`.)
 
+* :class:`slice` objects are now hashable, allowing them to be used as dict keys and
+  set items. (Contributed by Furkan Onder in :gh:`101264`.)
 
 New Modules
 ===========
