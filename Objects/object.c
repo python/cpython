@@ -220,18 +220,12 @@ Py_DecRef(PyObject *o)
 void
 _Py_IncRef(PyObject *o)
 {
-#ifdef Py_REF_DEBUG
-    reftotal_increment();
-#endif
     Py_INCREF(o);
 }
 
 void
 _Py_DecRef(PyObject *o)
 {
-#ifdef Py_REF_DEBUG
-    reftotal_decrement();
-#endif
     Py_DECREF(o);
 }
 
