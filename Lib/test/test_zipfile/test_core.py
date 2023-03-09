@@ -1616,6 +1616,25 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zf.filelist[0].filename, "foo.txt")
             self.assertEqual(zf.filelist[1].filename, "\xf6.txt")
 
+    def test_read_zipfile_containing_unicode_path_extra_field(self):
+        with zipfile.ZipFile(TESTFN, mode='w') as zf:
+            # create a file with a non-ASCII name
+            filename = '이름.txt'
+            with open(filename, mode='w') as myfile:
+                myfile.write('Hello, world!')
+
+            # create a ZipInfo object with Unicode path extra field
+            zip_info = zipfile.ZipInfo(filename)
+            extra_data = filename.encode('utf-8') + b'\x00'  # path in UTF-8, null-terminated
+            zip_info.extra = b'\x75\x70' + len(extra_data).to_bytes(2, 'little') + extra_data
+
+            # add the file to the ZIP archive
+            with open(filename, mode='r') as myfile:
+                zf.writestr(zip_info, myfile.read())
+
+        with zipfile.ZipFile(TESTFN, "r") as zf:
+            self.assertEqual(zf.filelist[0].filename, "이름.txt")
+
     def test_read_after_write_unicode_filenames(self):
         with zipfile.ZipFile(TESTFN2, 'w') as zipfp:
             zipfp.writestr('приклад', b'sample')
