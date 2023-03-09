@@ -315,7 +315,7 @@ dummy_func(
         };
 
         inst(BINARY_SUBSCR, (unused/4, container, sub -- res)) {
-            #if ENABLE_SPECIALIZATION
+            #if 1
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
