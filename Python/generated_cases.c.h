@@ -52,14 +52,14 @@
             value = GETITEM(consts, oparg);
             #if 1
             if (PyLong_CheckExact(value)) {
-                long lval = PyLong_AsLong(value);
-                PyErr_Clear();
                 value = tagged(value).obj;
-                // fprintf(stderr, "tagged(%p) %ld\n", value, lval);
             }
-            else // Ugly to make diff smaller
-            #endif
+            else {
+                Py_INCREF(value);
+            }
+            #else
             Py_INCREF(value);
+            #endif
             STACK_GROW(1);
             stack_pointer[-1] = untagged(value);
             DISPATCH();
@@ -112,14 +112,14 @@
                 value = GETITEM(consts, oparg);
                 #if 1
                 if (PyLong_CheckExact(value)) {
-                    long lval = PyLong_AsLong(value);
-                    PyErr_Clear();
                     value = tagged(value).obj;
-                    // fprintf(stderr, "tagged(%p) %ld\n", value, lval);
                 }
-                else // Ugly to make diff smaller
-                #endif
+                else {
+                    Py_INCREF(value);
+                }
+                #else
                 Py_INCREF(value);
+                #endif
                 _tmp_1 = value;
             }
             STACK_GROW(2);
@@ -170,14 +170,14 @@
                 value = GETITEM(consts, oparg);
                 #if 1
                 if (PyLong_CheckExact(value)) {
-                    long lval = PyLong_AsLong(value);
-                    PyErr_Clear();
                     value = tagged(value).obj;
-                    // fprintf(stderr, "tagged(%p) %ld\n", value, lval);
                 }
-                else // Ugly to make diff smaller
-                #endif
+                else {
+                    Py_INCREF(value);
+                }
+                #else
                 Py_INCREF(value);
+                #endif
                 _tmp_2 = value;
             }
             oparg = (next_instr++)->op.arg;

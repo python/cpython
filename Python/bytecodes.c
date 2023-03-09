@@ -118,14 +118,14 @@ dummy_func(
             value = GETITEM(consts, oparg);
             #if 1
             if (PyLong_CheckExact(value)) {
-                long lval = PyLong_AsLong(value);
-                PyErr_Clear();
                 value = tagged(value).obj;
-                // fprintf(stderr, "tagged(%p) %ld\n", value, lval);
             }
-            else // Ugly to make diff smaller
-            #endif
+            else {
+                Py_INCREF(value);
+            }
+            #else
             Py_INCREF(value);
+            #endif
         }
 
         inst(STORE_FAST, (value --)) {
