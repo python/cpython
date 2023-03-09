@@ -2495,6 +2495,15 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
                __validate_parameters__=is_duck_function)
 
 
+def _descriptor_get(descriptor, obj):
+    if isclass(descriptor):
+        return descriptor
+    get = getattr(type(descriptor), '__get__', _sentinel)
+    if get is _sentinel:
+        return descriptor
+    return get(descriptor, obj, type(obj))
+
+
 def _signature_from_callable(obj, *,
                              follow_wrapper_chains=True,
                              skip_bound_arg=True,
@@ -2609,28 +2618,27 @@ def _signature_from_callable(obj, *,
 
         # First, let's see if it has an overloaded __call__ defined
         # in its metaclass
-        call = _signature_get_user_defined_method(type(obj), '__call__')
-        if call is not None:
-            sig = _get_signature_of(call)
+        call = getattr_static(type(obj), '__call__', None)
+        if call is not None and not isinstance(call, _NonUserDefinedCallables):
+            call = _descriptor_get(call, obj)
+            return _get_signature_of(call)
         else:
-            factory_method = None
             new = _signature_get_user_defined_method(obj, '__new__')
-            init = _signature_get_user_defined_method(obj, '__init__')
+            init = getattr_static(obj, '__init__', None)
+            if isinstance(init, _NonUserDefinedCallables):
+                init = None
 
             # Go through the MRO and see if any class has user-defined
             # pure Python __new__ or __init__ method
             for base in obj.__mro__:
                 # Now we check if the 'obj' class has an own '__new__' method
                 if new is not None and '__new__' in base.__dict__:
-                    factory_method = new
+                    sig = _get_signature_of(new)
                     break
                 # or an own '__init__' method
                 elif init is not None and '__init__' in base.__dict__:
-                    factory_method = init
-                    break
-
-            if factory_method is not None:
-                sig = _get_signature_of(factory_method)
+                    init = _descriptor_get(init, obj)
+                    return _get_signature_of(init)
 
         if sig is None:
             # At this point we know, that `obj` is a class, with no user-
@@ -2673,13 +2681,10 @@ def _signature_from_callable(obj, *,
         # We also check that the 'obj' is not an instance of
         # types.WrapperDescriptorType or types.MethodWrapperType to avoid
         # infinite recursion (and even potential segfault)
-        call = _signature_get_user_defined_method(type(obj), '__call__')
+        call = getattr_static(type(obj), '__call__', None)
         if call is not None:
-            try:
-                sig = _get_signature_of(call)
-            except ValueError as ex:
-                msg = 'no signature found for {!r}'.format(obj)
-                raise ValueError(msg) from ex
+            call = _descriptor_get(call, obj)
+            return _get_signature_of(call)
 
     if sig is not None:
         # For classes and objects we skip the first parameter of their
