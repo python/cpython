@@ -119,7 +119,7 @@ letter = re.compile(r'[a-zA-Z_]')
 kwds = (
     'AUTO', 'BREAK', 'CASE', 'CHAR', 'CONST',
     'CONTINUE', 'DEFAULT', 'DO', 'DOUBLE', 'ELSE', 'ENUM', 'EXTERN',
-    'FLOAT', 'FOR', 'GOTO', 'IF', 'INLINE', 'INT', 'LONG',
+    'FLOAT', 'FOR', 'GOTO', 'IF', 'INLINE', 'INT', 'LONG', 'OVERRIDE',
     'REGISTER', 'OFFSETOF',
     'RESTRICT', 'RETURN', 'SHORT', 'SIGNED', 'SIZEOF', 'STATIC', 'STRUCT',
     'SWITCH', 'TYPEDEF', 'UNION', 'UNSIGNED', 'VOID',

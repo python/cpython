@@ -1309,7 +1309,6 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
     /* Merge locals into fast locals */
     PyObject *locals;
     PyObject **fast;
-    PyObject *error_type, *error_value, *error_traceback;
     PyCodeObject *co;
     locals = frame->f_locals;
     if (locals == NULL) {
@@ -1318,7 +1317,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
     fast = _PyFrame_GetLocalsArray_ObjectPtr(frame);
     co = frame->f_code;
 
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
 
@@ -1375,7 +1374,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
         }
         Py_XDECREF(value);
     }
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 void

@@ -105,9 +105,14 @@ glob	dirname
 *	./Include
 *	./Include/internal
 
-Modules/_tkinter.c	/usr/include/tcl8.6
-Modules/tkappinit.c	/usr/include/tcl
 Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
+Modules/_hacl/*.c	Modules/_hacl/include
+Modules/_hacl/*.h	Modules/_hacl/include
+Modules/_tkinter.c	/usr/include/tcl8.6
+Modules/md5module.c	Modules/_hacl/include
+Modules/sha1module.c	Modules/_hacl/include
+Modules/sha2module.c	Modules/_hacl/include
+Modules/tkappinit.c	/usr/include/tcl
 Objects/stringlib/*.h	Objects
 
 # @end=tsv@
@@ -173,6 +178,7 @@ Modules/_datetimemodule.c	Py_BUILD_CORE	1
 Modules/_functoolsmodule.c	Py_BUILD_CORE	1
 Modules/_heapqmodule.c	Py_BUILD_CORE	1
 Modules/_io/*.c	Py_BUILD_CORE	1
+Modules/_io/*.h	Py_BUILD_CORE	1
 Modules/_localemodule.c	Py_BUILD_CORE	1
 Modules/_operator.c	Py_BUILD_CORE	1
 Modules/_posixsubprocess.c	Py_BUILD_CORE	1
@@ -296,6 +302,7 @@ MAX_SIZES = {
     # First match wins.
     _abs('Modules/_ctypes/ctypes.h'): (5_000, 500),
     _abs('Modules/_datetimemodule.c'): (20_000, 300),
+    _abs('Modules/_hacl/*.c'): (200_000, 500),
     _abs('Modules/posixmodule.c'): (20_000, 500),
     _abs('Modules/termios.c'): (10_000, 800),
     _abs('Modules/_testcapimodule.c'): (20_000, 400),

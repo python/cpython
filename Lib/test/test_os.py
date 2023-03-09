@@ -2221,6 +2221,26 @@ class TestInvalidFD(unittest.TestCase):
     def test_dup2(self):
         self.check(os.dup2, 20)
 
+    @unittest.skipUnless(hasattr(os, 'dup2'), 'test needs os.dup2()')
+    @unittest.skipIf(
+        support.is_emscripten,
+        "dup2() with negative fds is broken on Emscripten (see gh-102179)"
+    )
+    def test_dup2_negative_fd(self):
+        valid_fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, valid_fd)
+        fds = [
+            valid_fd,
+            -1,
+            -2**31,
+        ]
+        for fd, fd2 in itertools.product(fds, repeat=2):
+            if fd != fd2:
+                with self.subTest(fd=fd, fd2=fd2):
+                    with self.assertRaises(OSError) as ctx:
+                        os.dup2(fd, fd2)
+                    self.assertEqual(ctx.exception.errno, errno.EBADF)
+
     @unittest.skipUnless(hasattr(os, 'fchmod'), 'test needs os.fchmod()')
     def test_fchmod(self):
         self.check(os.fchmod, 0)
@@ -3064,11 +3084,13 @@ class DeviceEncodingTests(unittest.TestCase):
 class PidTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'getppid'), "test needs os.getppid")
     def test_getppid(self):
-        p = subprocess.Popen([sys.executable, '-c',
+        p = subprocess.Popen([sys._base_executable, '-c',
                               'import os; print(os.getppid())'],
-                             stdout=subprocess.PIPE)
-        stdout, _ = p.communicate()
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        stdout, error = p.communicate()
         # We are the parent of our subprocess
+        self.assertEqual(error, b'')
         self.assertEqual(int(stdout), os.getpid())
 
     def check_waitpid(self, code, exitcode, callback=None):

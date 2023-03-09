@@ -34,7 +34,7 @@ class Context(NamedTuple):
     owner: PLexer
 
     def __repr__(self):
-        return f"<{self.begin}-{self.end}>"
+        return f"<{self.owner.filename}: {self.begin}-{self.end}>"
 
 
 @dataclass
@@ -103,6 +103,7 @@ UOp = OpName | CacheEffect
 
 @dataclass
 class InstHeader(Node):
+    override: bool
     register: bool
     kind: Literal["inst", "op", "legacy"]  # Legacy means no (inputs -- outputs)
     name: str
@@ -112,6 +113,7 @@ class InstHeader(Node):
 
 @dataclass
 class InstDef(Node):
+    override: bool
     register: bool
     kind: Literal["inst", "op", "legacy"]
     name: str
@@ -156,17 +158,18 @@ class Parser(PLexer):
         if hdr := self.inst_header():
             if block := self.block():
                 return InstDef(
-                    hdr.register, hdr.kind, hdr.name, hdr.inputs, hdr.outputs, block
+                    hdr.override, hdr.register, hdr.kind, hdr.name, hdr.inputs, hdr.outputs, block
                 )
             raise self.make_syntax_error("Expected block")
         return None
 
     @contextual
     def inst_header(self) -> InstHeader | None:
-        # inst(NAME)
-        #   | [register] inst(NAME, (inputs -- outputs))
-        #   | [register] op(NAME, (inputs -- outputs))
+        # [override] inst(NAME)
+        #   | [override] [register] inst(NAME, (inputs -- outputs))
+        #   | [override] [register] op(NAME, (inputs -- outputs))
         # TODO: Make INST a keyword in the lexer.
+        override = bool(self.expect(lx.OVERRIDE))
         register = bool(self.expect(lx.REGISTER))
         if (tkn := self.expect(lx.IDENTIFIER)) and (kind := tkn.text) in ("inst", "op"):
             if self.expect(lx.LPAREN) and (tkn := self.expect(lx.IDENTIFIER)):
@@ -175,10 +178,10 @@ class Parser(PLexer):
                     inp, outp = self.io_effect()
                     if self.expect(lx.RPAREN):
                         if (tkn := self.peek()) and tkn.kind == lx.LBRACE:
-                            return InstHeader(register, kind, name, inp, outp)
+                            return InstHeader(override, register, kind, name, inp, outp)
                 elif self.expect(lx.RPAREN) and kind == "inst":
                     # No legacy stack effect if kind is "op".
-                    return InstHeader(register, "legacy", name, [], [])
+                    return InstHeader(override, register, "legacy", name, [], [])
         return None
 
     def io_effect(self) -> tuple[list[InputEffect], list[OutputEffect]]:
