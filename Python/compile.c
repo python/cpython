@@ -9844,9 +9844,15 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
         if (PyErr_Occurred()) {
             goto error;
         }
-        int oparg = PyLong_AsLong(PyTuple_GET_ITEM(item, 1));
-        if (PyErr_Occurred()) {
-            goto error;
+        int oparg;
+        if (HAS_ARG(opcode)) {
+            oparg = PyLong_AsLong(PyTuple_GET_ITEM(item, 1));
+            if (PyErr_Occurred()) {
+                goto error;
+            }
+        }
+        else {
+            oparg = 0;
         }
         location loc;
         loc.lineno = PyLong_AsLong(PyTuple_GET_ITEM(item, 2));

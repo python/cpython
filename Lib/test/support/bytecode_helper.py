@@ -103,7 +103,7 @@ class CompilationStepTestCase(unittest.TestCase):
             if isinstance(oparg, self.Label):
                 arg = oparg.value
             else:
-                arg = oparg if opcode in self.HAS_ARG else 0
+                arg = oparg if opcode in self.HAS_ARG else None
             opcode = dis.opname[opcode]
             res.append((opcode, arg, *loc))
         return res
@@ -125,7 +125,7 @@ class CfgOptimizationTestCase(CompilationStepTestCase):
             assert isinstance(item, tuple)
             inst = list(reversed(item))
             opcode = dis.opmap[inst.pop()]
-            oparg = inst.pop() if opcode in self.HAS_ARG_OR_TARGET else 0
+            oparg = inst.pop()
             loc = inst + [-1] * (4 - len(inst))
             res.append((opcode, oparg, *loc))
         return res

@@ -1002,8 +1002,7 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
             ('LOAD_CONST', 1, 13),
             lbl,
-            ('NOP', 0, 14),
-            ('RETURN_CONST', 2, 0),
+            ('RETURN_CONST', 2, 14),
         ]
         self.cfg_optimization_test(insts,
                                    expected_insts,
@@ -1023,10 +1022,9 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
             ('RETURN_VALUE', 14),
         ]
         expected_insts = [
-            ('NOP', None, 11),
-            ('NOP', None, 12),
-            ('NOP', 0, 14),
-            ('RETURN_CONST', 1, 0),
+            ('NOP', 11),
+            ('NOP', 12),
+            ('RETURN_CONST', 1, 14),
         ]
         self.cfg_optimization_test(insts,
                                    expected_insts,
@@ -1061,7 +1059,7 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         expected_insts = [
             lbl := self.Label(),
-            ('NOP', None, 11),
+            ('NOP', 11),
             ('JUMP', lbl, 12),
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
