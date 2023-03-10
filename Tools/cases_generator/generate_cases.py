@@ -387,7 +387,7 @@ class Instruction:
         if prevs:
             if prevs[-1] in (".", "->"):
                 return
-            if prevs == ["STEAL", "("] or prevs == ["is_tagged", "("]:
+            if prevs == ["STEAL", "("] or prevs == ["is_tagged", "("] or prevs == ["incref_if_tagged", "("]:
                 return
             if prevs == ["KEEP", "("]:
                 texts[index - 2] = ""

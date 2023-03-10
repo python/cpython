@@ -997,6 +997,7 @@
                 }
             }
             assert(detag(exc) && PyExceptionInstance_Check(detag(exc)));
+            incref_if_tagged(exc);
             Py_INCREF(detag(exc));
             PyObject *typ = Py_NewRef(PyExceptionInstance_Class(detag(exc)));
             PyObject *tb = PyException_GetTraceback(detag(exc));

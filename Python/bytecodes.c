@@ -790,6 +790,7 @@ dummy_func(
                 }
             }
             assert(exc && PyExceptionInstance_Check(exc));
+            incref_if_tagged(exc);
             Py_INCREF(exc);
             PyObject *typ = Py_NewRef(PyExceptionInstance_Class(exc));
             PyObject *tb = PyException_GetTraceback(exc);
