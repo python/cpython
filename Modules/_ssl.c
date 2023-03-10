@@ -310,6 +310,7 @@ typedef struct {
     SSL *ssl;
     PySSLContext *ctx; /* weakref to SSL context */
     char shutdown_seen_zero;
+    char deferred_empty_reads;
     enum py_ssl_server_or_client socket_type;
     PyObject *owner; /* Python level "owner" passed to servername callback */
     PyObject *server_hostname;
@@ -804,6 +805,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->Socket = NULL;
     self->ctx = (PySSLContext*)Py_NewRef(sslctx);
     self->shutdown_seen_zero = 0;
+    self->deferred_empty_reads = 0;
     self->owner = NULL;
     self->server_hostname = NULL;
     self->err = err;
@@ -2251,7 +2253,7 @@ PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout, int gil_held
     pollfd.fd = s->sock_fd;
     pollfd.events = writing ? POLLOUT : POLLIN;
 
-    /* timeout is in seconds, poll() uses milliseconds */
+    /* timeout is in nanoseconds, poll() uses milliseconds */
     ms = (int)_PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
     assert(ms <= INT_MAX);
 
@@ -2485,10 +2487,15 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
                 goto error;
             }
             if (len == 0) {
-                count = 0;
                 goto done;
             }
         }
+    }
+
+    if (self->deferred_empty_reads) {
+        count = 0;
+        self->deferred_empty_reads -= 1;
+        goto done;
     }
 
     PySSL_BEGIN_ALLOW_THREADS
@@ -2522,10 +2529,12 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
 
         if (retval > 0) {
             count += bytes_read;
-            if (SSL_get_shutdown(self->ssl) == SSL_RECEIVED_SHUTDOWN) {
-                break;
-            }
             if (bytes_read && count < (size_t)len) {
+                if (deadline && _PyDeadline_Get(deadline) <= 0) {
+                    sockstate = SOCKET_HAS_TIMED_OUT;
+                    break;
+                }
+                /* HACK: timeout of 1 to make sure we don't immediately fail */
                 sockstate = PySSL_select(sock, 0, 1, 0);
                 if (sockstate == SOCKET_HAS_TIMED_OUT) {
                     /* nothing else right now, so return what we have */
@@ -2540,24 +2549,30 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
         }
 
         if (err.ssl == SSL_ERROR_ZERO_RETURN && SSL_get_shutdown(self->ssl) == SSL_RECEIVED_SHUTDOWN) {
+            self->deferred_empty_reads += 1;
             retval = 1;
             break;
         }
 
         /* HACK: not sure why it claims SYSCALL error without setting errno? */
         if (err.ssl == SSL_ERROR_SYSCALL && !err.c) {
+            self->deferred_empty_reads += 1;
             retval = 1;
             break;
         }
 
         if (deadline > 0) {
             timeout = _PyDeadline_Get(deadline);
+            if (timeout < 0) {
+                sockstate = SOCKET_HAS_TIMED_OUT;
+                break;
+            }
         }
 
         if (err.ssl == SSL_ERROR_WANT_READ) {
             sockstate = PySSL_select(sock, 0, timeout, 0);
         } else if (err.ssl == SSL_ERROR_WANT_WRITE) {
-            sockstate = PySSL_select(sock, 0, timeout, 0);
+            sockstate = PySSL_select(sock, 1, timeout, 0);
         } else {
             break;
         }
