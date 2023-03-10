@@ -635,6 +635,7 @@ class BasicTest(TestCase):
                 'Precondition in headers is false')
             CONTENT_TOO_LARGE = (413, 'Content Too Large',
                 'Content is too large')
+            REQUEST_ENTITY_TOO_LARGE = CONTENT_TOO_LARGE  # for backward compatibility
             REQUEST_URI_TOO_LONG = (414, 'Request-URI Too Long',
                 'URI is too long')
             UNSUPPORTED_MEDIA_TYPE = (415, 'Unsupported Media Type',
@@ -649,6 +650,7 @@ class BasicTest(TestCase):
             MISDIRECTED_REQUEST = (421, 'Misdirected Request',
                 'Server is not able to produce a response')
             UNPROCESSABLE_CONTENT = 422, 'Unprocessable Content'
+            UNPROCESSABLE_ENTITY = UNPROCESSABLE_CONTENT  # for backward compatibility
             LOCKED = 423, 'Locked'
             FAILED_DEPENDENCY = 424, 'Failed Dependency'
             TOO_EARLY = 425, 'Too Early'
@@ -1689,6 +1691,7 @@ class OfflineTest(TestCase):
             'LENGTH_REQUIRED',
             'PRECONDITION_FAILED',
             'CONTENT_TOO_LARGE',
+            'REQUEST_ENTITY_TOO_LARGE',
             'REQUEST_URI_TOO_LONG',
             'UNSUPPORTED_MEDIA_TYPE',
             'REQUESTED_RANGE_NOT_SATISFIABLE',
@@ -1696,6 +1699,7 @@ class OfflineTest(TestCase):
             'IM_A_TEAPOT',
             'MISDIRECTED_REQUEST',
             'UNPROCESSABLE_CONTENT',
+            'UNPROCESSABLE_ENTITY',
             'LOCKED',
             'FAILED_DEPENDENCY',
             'UPGRADE_REQUIRED',
