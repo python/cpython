@@ -4230,56 +4230,47 @@ class TestBoundArguments(unittest.TestCase):
 
 class TestSignaturePrivateHelpers(unittest.TestCase):
     def _strip_non_python_syntax(self, input,
-        clean_signature, self_parameter, last_positional_only):
+        clean_signature, self_parameter):
         computed_clean_signature, \
-            computed_self_parameter, \
-            computed_last_positional_only = \
+            computed_self_parameter = \
             inspect._signature_strip_non_python_syntax(input)
         self.assertEqual(computed_clean_signature, clean_signature)
         self.assertEqual(computed_self_parameter, self_parameter)
-        self.assertEqual(computed_last_positional_only, last_positional_only)
 
     def test_signature_strip_non_python_syntax(self):
         self._strip_non_python_syntax(
             "($module, /, path, mode, *, dir_fd=None, " +
                 "effective_ids=False,\n       follow_symlinks=True)",
-            "(module, path, mode, *, dir_fd=None, " +
+            "(module, /, path, mode, *, dir_fd=None, " +
                 "effective_ids=False, follow_symlinks=True)",
-            0,
             0)
 
         self._strip_non_python_syntax(
             "($module, word, salt, /)",
-            "(module, word, salt)",
-            0,
-            2)
+            "(module, word, salt, /)",
+            0)
 
         self._strip_non_python_syntax(
             "(x, y=None, z=None, /)",
-            "(x, y=None, z=None)",
-            None,
-            2)
+            "(x, y=None, z=None, /)",
+            None)
 
         self._strip_non_python_syntax(
             "(x, y=None, z=None)",
             "(x, y=None, z=None)",
-            None,
             None)
 
         self._strip_non_python_syntax(
             "(x,\n    y=None,\n      z = None  )",
             "(x, y=None, z=None)",
-            None,
             None)
 
         self._strip_non_python_syntax(
             "",
             "",
-            None,
             None)
 
         self._strip_non_python_syntax(
-            None,
             None,
             None,
             None)

@@ -908,7 +908,6 @@ final_callback(sqlite3_context *context)
     PyObject* function_result;
     PyObject** aggregate_instance;
     int ok;
-    PyObject *exception, *value, *tb;
 
     aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, 0);
     if (aggregate_instance == NULL) {
@@ -923,7 +922,7 @@ final_callback(sqlite3_context *context)
     }
 
     // Keep the exception (if any) of the last call to step, value, or inverse
-    PyErr_Fetch(&exception, &value, &tb);
+    PyObject *exc = PyErr_GetRaisedException();
 
     callback_context *ctx = (callback_context *)sqlite3_user_data(context);
     assert(ctx != NULL);
@@ -938,7 +937,7 @@ final_callback(sqlite3_context *context)
     }
     if (!ok) {
         int attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
-        _PyErr_ChainExceptions(exception, value, tb);
+        _PyErr_ChainExceptions1(exc);
 
         /* Note: contrary to the step, value, and inverse callbacks, SQLite
          * does _not_, as of SQLite 3.38.0, propagate errors to sqlite3_step()
@@ -949,7 +948,7 @@ final_callback(sqlite3_context *context)
                 : "user-defined aggregate's 'finalize' method raised error");
     }
     else {
-        PyErr_Restore(exception, value, tb);
+        PyErr_SetRaisedException(exc);
     }
 
 error:
@@ -2274,15 +2273,14 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
         if (commit) {
             /* Commit failed; try to rollback in order to unlock the database.
              * If rollback also fails, chain the exceptions. */
-            PyObject *exc, *val, *tb;
-            PyErr_Fetch(&exc, &val, &tb);
+            PyObject *exc = PyErr_GetRaisedException();
             result = pysqlite_connection_rollback_impl(self);
             if (result == NULL) {
-                _PyErr_ChainExceptions(exc, val, tb);
+                _PyErr_ChainExceptions1(exc);
             }
             else {
                 Py_DECREF(result);
-                PyErr_Restore(exc, val, tb);
+                PyErr_SetRaisedException(exc);
             }
         }
         return NULL;

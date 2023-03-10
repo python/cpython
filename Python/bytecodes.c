@@ -17,7 +17,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_opcode.h"        // EXTRA_CASES
-#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
@@ -1679,7 +1679,7 @@ dummy_func(
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
-                new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
+                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
             else {
@@ -1687,7 +1687,7 @@ dummy_func(
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
-                new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
+                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
             Py_DECREF(old_value);
@@ -1754,9 +1754,7 @@ dummy_func(
             int offset = next_instr[1].op.arg;
             int err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
-            if (err < 0) {
-                goto error;
-            }
+            ERROR_IF(err < 0, error);
             if (jump_on_true == (err != 0)) {
                 JUMPBY(offset);
             }
@@ -2178,35 +2176,27 @@ dummy_func(
             // Common case: no jump, leave it to the code generator
         }
 
-        // This is slightly different, when the loop isn't terminated we
-        // jump over the immediately following STORE_FAST instruction.
-        inst(FOR_ITER_RANGE, (unused/1, iter -- iter, unused)) {
+        inst(FOR_ITER_RANGE, (unused/1, iter -- iter, next)) {
             assert(cframe.use_tracing == 0);
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
             STAT_INC(FOR_ITER, hit);
-            _Py_CODEUNIT next = next_instr[INLINE_CACHE_ENTRIES_FOR_ITER];
-            assert(_PyOpcode_Deopt[next.op.code] == STORE_FAST);
             if (r->len <= 0) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
                 // Jump over END_FOR instruction.
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
+                DISPATCH();
             }
-            else {
-                long value = r->start;
-                r->start = value + r->step;
-                r->len--;
-                if (_PyLong_AssignValue(&GETLOCAL(next.op.arg), value) < 0) {
-                    goto error;
-                }
-                // The STORE_FAST is already done.
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + 1);
+            long value = r->start;
+            r->start = value + r->step;
+            r->len--;
+            next = PyLong_FromLong(value);
+            if (next == NULL) {
+                goto error;
             }
-            DISPATCH();
         }
 
-        // This is *not* a super-instruction, unique in the family.
         inst(FOR_ITER_GEN, (unused/1, iter -- iter, unused)) {
             assert(cframe.use_tracing == 0);
             PyGenObject *gen = (PyGenObject *)iter;

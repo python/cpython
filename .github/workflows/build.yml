@@ -162,13 +162,11 @@ jobs:
     - uses: actions/checkout@v3
     - name: Install Homebrew dependencies
       run: brew install pkg-config openssl@1.1 xz gdbm tcl-tk
-    - name: Prepare Homebrew environment variables
-      run: |
-        echo "CFLAGS=-I$(brew --prefix gdbm)/include -I$(brew --prefix xz)/include" >> $GITHUB_ENV
-        echo "LDFLAGS=-L$(brew --prefix gdbm)/lib -I$(brew --prefix xz)/lib" >> $GITHUB_ENV
-        echo "PKG_CONFIG_PATH=$(brew --prefix openssl@1.1)/lib/pkgconfig:$(brew --prefix tcl-tk)/lib/pkgconfig" >> $GITHUB_ENV
     - name: Configure CPython
       run: |
+        CFLAGS="-I$(brew --prefix gdbm)/include -I$(brew --prefix xz)/include" \
+        LDFLAGS="-L$(brew --prefix gdbm)/lib -I$(brew --prefix xz)/lib" \
+        PKG_CONFIG_PATH="$(brew --prefix tcl-tk)/lib/pkgconfig" \
         ./configure \
           --with-pydebug \
           --prefix=/opt/python-dev \
