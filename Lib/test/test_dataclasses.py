@@ -2767,6 +2767,19 @@ class TestFrozen(unittest.TestCase):
             c.i = 5
         self.assertEqual(c.i, 10)
 
+    def test_frozen_empty(self):
+        @dataclass(frozen=True)
+        class C:
+            pass
+
+        c = C()
+        with self.assertRaises(FrozenInstanceError):
+            c.i = 5
+        with self.assertRaises(FrozenInstanceError):
+            del c.i
+        with self.assertRaises(AttributeError):
+            del c.i
+
     def test_inherit(self):
         @dataclass(frozen=True)
         class C:
