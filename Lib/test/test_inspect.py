@@ -2343,7 +2343,7 @@ class TestGetAsyncGenState(unittest.TestCase):
 
     def test_suspended(self):
         try:
-            next(self.asyncgen.__anext__())
+            next(anext(self.asyncgen))
         except StopIteration as exc:
             self.assertEqual(self._asyncgenstate(), inspect.AGEN_SUSPENDED)
             self.assertEqual(exc.args, (0,))
@@ -2351,7 +2351,7 @@ class TestGetAsyncGenState(unittest.TestCase):
     def test_closed_after_exhaustion(self):
         while True:
             try:
-                next(self.asyncgen.__anext__())
+                next(anext(self.asyncgen))
             except StopAsyncIteration:
                 self.assertEqual(self._asyncgenstate(), inspect.AGEN_CLOSED)
                 break
@@ -2375,12 +2375,12 @@ class TestGetAsyncGenState(unittest.TestCase):
         self.asyncgen = running_check_asyncgen()
         # Running up to the first yield
         try:
-            next(self.asyncgen.__anext__())
+            next(anext(self.asyncgen))
         except StopIteration:
             pass
         # Running after the first yield
         try:
-            next(self.asyncgen.__anext__())
+            next(anext(self.asyncgen))
         except StopIteration:
             pass
 
@@ -2404,28 +2404,28 @@ class TestGetAsyncGenState(unittest.TestCase):
         self.assertEqual(inspect.getasyncgenlocals(numbers),
                          {'a': None, 'lst': [1, 2, 3]})
         try:
-            next(numbers.__anext__())
+            next(anext(numbers))
         except StopIteration:
             pass
         self.assertEqual(inspect.getasyncgenlocals(numbers),
                          {'a': None, 'lst': [1, 2, 3], 'v': 1,
                           'b': (1, 2, 3)})
         try:
-            next(numbers.__anext__())
+            next(anext(numbers))
         except StopIteration:
             pass
         self.assertEqual(inspect.getasyncgenlocals(numbers),
                          {'a': None, 'lst': [1, 2, 3], 'v': 2,
                           'b': (1, 2, 3)})
         try:
-            next(numbers.__anext__())
+            next(anext(numbers))
         except StopIteration:
             pass
         self.assertEqual(inspect.getasyncgenlocals(numbers),
                          {'a': None, 'lst': [1, 2, 3], 'v': 3,
                           'b': (1, 2, 3), 'c': 12})
         try:
-            next(numbers.__anext__())
+            next(anext(numbers))
         except StopAsyncIteration:
             pass
         self.assertEqual(inspect.getasyncgenlocals(numbers), {})
@@ -2436,12 +2436,12 @@ class TestGetAsyncGenState(unittest.TestCase):
         one = yield_one()
         self.assertEqual(inspect.getasyncgenlocals(one), {})
         try:
-            next(one.__anext__())
+            next(anext(one))
         except StopIteration:
             pass
         self.assertEqual(inspect.getasyncgenlocals(one), {})
         try:
-            next(one.__anext__())
+            next(anext(one))
         except StopAsyncIteration:
             pass
         self.assertEqual(inspect.getasyncgenlocals(one), {})
