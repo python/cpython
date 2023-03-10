@@ -244,7 +244,7 @@ sys_trace_line_func(
                         "Missing frame when calling trace function.");
         return NULL;
     }
-    assert(args[0] == (PyObject *)frame->f_frame->f_code);
+    assert(args[0] == (PyObject *)_PyFrame_GetCode(frame->f_frame));
     if (frame ->f_last_traced_line == line) {
         /* Already traced this line */
         Py_RETURN_NONE;
@@ -279,7 +279,7 @@ sys_trace_jump_func(
     }
     PyCodeObject *code = (PyCodeObject *)args[0];
     assert(PyCode_Check(code));
-    assert(code == frame->f_frame->f_code);
+    assert(code == _PyFrame_GetCode(frame->f_frame));
     /* We can call _Py_Instrumentation_GetLine because we always set
     * line events for tracing */
     int to_line = _Py_Instrumentation_GetLine(code, to);
@@ -309,7 +309,7 @@ sys_trace_exception_handled(
     PyFrameObject *frame = PyEval_GetFrame();
     PyCodeObject *code = (PyCodeObject *)args[0];
     assert(PyCode_Check(code));
-    assert(code == frame->f_frame->f_code);
+    assert(code == _PyFrame_GetCode(frame->f_frame));
     assert(PyLong_Check(args[1]));
     int offset = _PyLong_AsInt(args[1])/sizeof(_Py_CODEUNIT);
     /* We can call _Py_Instrumentation_GetLine because we always set

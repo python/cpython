@@ -128,6 +128,9 @@ lltrace_instruction(_PyInterpreterFrame *frame,
                     PyObject **stack_pointer,
                     _Py_CODEUNIT *next_instr)
 {
+    if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+        return;
+    }
     /* This dump_stack() operation is risky, since the repr() of some
        objects enters the interpreter recursively. It is also slow.
        So you might want to comment it out. */
@@ -136,7 +139,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
     int opcode = next_instr->op.code;
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
-    int offset = (int)(next_instr - _PyCode_CODE(frame->f_code));
+    int offset = (int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame)));
     if (HAS_ARG((int)_PyOpcode_Deopt[opcode])) {
         printf("%d: %s %d\n", offset * 2, opname, oparg);
     }
@@ -677,7 +680,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.f_globals = (PyObject*)0xaaa3;
     entry_frame.f_builtins = (PyObject*)0xaaa4;
 #endif
-    entry_frame.f_code = tstate->interp->interpreter_trampoline;
+    entry_frame.f_executable = Py_None;
     entry_frame.prev_instr =
         _PyCode_CODE(tstate->interp->interpreter_trampoline);
     entry_frame.stacktop = 0;
@@ -701,7 +704,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         }
         /* Because this avoids the RESUME,
          * we need to update instrumentation */
-        _Py_Instrument(frame->f_code, tstate->interp);
+        _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
         monitor_throw(tstate, frame, frame->prev_instr);
         /* TO DO -- Monitor throw entry. */
         goto resume_with_error;
@@ -715,7 +718,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
 /* Sets the above local variables from the frame */
 #define SET_LOCALS_FROM_FRAME() \
-    assert(_PyInterpreterFrame_LASTI(frame) >= -1); \
     /* Jump back to the last instruction executed... */ \
     next_instr = frame->prev_instr + 1; \
     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -784,7 +786,7 @@ handle_eval_breaker:
             opcode = next_instr->op.code;
             _PyErr_Format(tstate, PyExc_SystemError,
                           "%U:%d: unknown opcode %d",
-                          frame->f_code->co_filename,
+                          _PyFrame_GetCode(frame)->co_filename,
                           _PyInterpreterFrame_GetLine(frame),
                           opcode);
             goto error;
@@ -799,7 +801,7 @@ unbound_local_error:
         {
             format_exc_check_arg(tstate, PyExc_UnboundLocalError,
                 UNBOUNDLOCAL_ERROR_MSG,
-                PyTuple_GetItem(frame->f_code->co_localsplusnames, oparg)
+                PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
             );
             goto error;
         }
@@ -839,7 +841,7 @@ exception_unwind:
             /* We can't use frame->f_lasti here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;
-            if (get_exception_handler(frame->f_code, offset, &level, &handler, &lasti) == 0) {
+            if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
                 // No handlers, so exit.
                 assert(_PyErr_Occurred(tstate));
 
@@ -1433,12 +1435,12 @@ clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     assert(frame->owner == FRAME_OWNED_BY_THREAD);
     // Make sure that this is, indeed, the top frame. We can't check this in
     // _PyThreadState_PopFrame, since f_code is already cleared at that point:
-    assert((PyObject **)frame + frame->f_code->co_framesize ==
+    assert((PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize ==
         tstate->datastack_top);
     tstate->c_recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
-    Py_DECREF(frame->f_code);
+    Py_DECREF(frame->f_executable);
     tstate->c_recursion_remaining++;
     _PyThreadState_PopFrame(tstate, frame);
 }
@@ -1923,7 +1925,7 @@ do_monitor_exc(PyThreadState *tstate, _PyInterpreterFrame *frame,
 static inline int
 no_tools_for_event(PyThreadState *tstate, _PyInterpreterFrame *frame, int event)
 {
-    _PyCoMonitoringData *data = frame->f_code->_co_monitoring;
+    _PyCoMonitoringData *data = _PyFrame_GetCode(frame)->_co_monitoring;
     if (data) {
         if (data->active_monitors.tools[event] == 0) {
             return 1;
@@ -2241,7 +2243,7 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
     int result = cf->cf_flags != 0;
 
     if (current_frame != NULL) {
-        const int codeflags = current_frame->f_code->co_flags;
+        const int codeflags = _PyFrame_GetCode(current_frame)->co_flags;
         const int compilerflags = codeflags & PyCF_MASK;
         if (compilerflags) {
             result = 1;
