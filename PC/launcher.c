@@ -770,8 +770,7 @@ run_child(wchar_t * cmdline)
     window, or fetching a message).  As this launcher doesn't do this
     directly, that cursor remains even after the child process does these
     things.  We avoid that by doing a simple post+get message.
-    See http://bugs.python.org/issue17290 and
-    https://bitbucket.org/vinay.sajip/pylauncher/issue/20/busy-cursor-for-a-long-time-when-running
+    See http://bugs.python.org/issue17290
     */
     MSG msg;
 

@@ -56,6 +56,24 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
 #ifdef Py_REF_DEBUG
 Py_ssize_t _Py_RefTotal;
 
+static inline void
+reftotal_increment(void)
+{
+    _Py_RefTotal++;
+}
+
+static inline void
+reftotal_decrement(void)
+{
+    _Py_RefTotal--;
+}
+
+void
+_Py_AddRefTotal(Py_ssize_t n)
+{
+    _Py_RefTotal += n;
+}
+
 Py_ssize_t
 _Py_GetRefTotal(void)
 {
@@ -121,6 +139,32 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
                            filename, lineno, __func__);
 }
 
+/* This is exposed strictly for use in Py_INCREF(). */
+PyAPI_FUNC(void)
+_Py_IncRefTotal_DO_NOT_USE_THIS(void)
+{
+    reftotal_increment();
+}
+
+/* This is exposed strictly for use in Py_DECREF(). */
+PyAPI_FUNC(void)
+_Py_DecRefTotal_DO_NOT_USE_THIS(void)
+{
+    reftotal_decrement();
+}
+
+void
+_Py_IncRefTotal(void)
+{
+    reftotal_increment();
+}
+
+void
+_Py_DecRefTotal(void)
+{
+    reftotal_decrement();
+}
+
 #endif /* Py_REF_DEBUG */
 
 void
@@ -138,12 +182,18 @@ Py_DecRef(PyObject *o)
 void
 _Py_IncRef(PyObject *o)
 {
+#ifdef Py_REF_DEBUG
+    reftotal_increment();
+#endif
     Py_INCREF(o);
 }
 
 void
 _Py_DecRef(PyObject *o)
 {
+#ifdef Py_REF_DEBUG
+    reftotal_decrement();
+#endif
     Py_DECREF(o);
 }
 
@@ -238,17 +288,12 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
      * never happened. */
     Py_ssize_t refcnt = Py_REFCNT(self);
-    _Py_NewReference(self);
+    _Py_NewReferenceNoTotal(self);
     Py_SET_REFCNT(self, refcnt);
 
     _PyObject_ASSERT(self,
                      (!_PyType_IS_GC(Py_TYPE(self))
                       || _PyObject_GC_IS_TRACKED(self)));
-    /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
-       _Py_RefTotal, so we need to undo that. */
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
     return -1;
 }
 
@@ -370,13 +415,12 @@ _PyObject_Dump(PyObject* op)
     fflush(stderr);
 
     PyGILState_STATE gil = PyGILState_Ensure();
-    PyObject *error_type, *error_value, *error_traceback;
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     (void)PyObject_Print(op, stderr, 0);
     fflush(stderr);
 
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
     PyGILState_Release(gil);
 
     fprintf(stderr, "\n");
@@ -860,25 +904,22 @@ set_attribute_error_context(PyObject* v, PyObject* name)
         return 0;
     }
     // Intercept AttributeError exceptions and augment them to offer suggestions later.
-    PyObject *type, *value, *traceback;
-    PyErr_Fetch(&type, &value, &traceback);
-    PyErr_NormalizeException(&type, &value, &traceback);
-    // Check if the normalized exception is indeed an AttributeError
-    if (!PyErr_GivenExceptionMatches(value, PyExc_AttributeError)) {
+    PyObject *exc = PyErr_GetRaisedException();
+    if (!PyErr_GivenExceptionMatches(exc, PyExc_AttributeError)) {
         goto restore;
     }
-    PyAttributeErrorObject* the_exc = (PyAttributeErrorObject*) value;
+    PyAttributeErrorObject* the_exc = (PyAttributeErrorObject*) exc;
     // Check if this exception was already augmented
     if (the_exc->name || the_exc->obj) {
         goto restore;
     }
     // Augment the exception with the name and object
-    if (PyObject_SetAttr(value, &_Py_ID(name), name) ||
-        PyObject_SetAttr(value, &_Py_ID(obj), v)) {
+    if (PyObject_SetAttr(exc, &_Py_ID(name), name) ||
+        PyObject_SetAttr(exc, &_Py_ID(obj), v)) {
         return 1;
     }
 restore:
-    PyErr_Restore(type, value, traceback);
+    PyErr_SetRaisedException(exc);
     return 0;
 }
 
@@ -2014,19 +2055,31 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
 }
 
 
-void
-_Py_NewReference(PyObject *op)
+static inline void
+new_reference(PyObject *op)
 {
     if (_PyRuntime.tracemalloc.config.tracing) {
         _PyTraceMalloc_NewReference(op);
     }
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
     Py_SET_REFCNT(op, 1);
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op, 1);
 #endif
+}
+
+void
+_Py_NewReference(PyObject *op)
+{
+#ifdef Py_REF_DEBUG
+    reftotal_increment();
+#endif
+    new_reference(op);
+}
+
+void
+_Py_NewReferenceNoTotal(PyObject *op)
+{
+    new_reference(op);
 }
 
 
@@ -2190,9 +2243,8 @@ Py_ReprLeave(PyObject *obj)
     PyObject *dict;
     PyObject *list;
     Py_ssize_t i;
-    PyObject *error_type, *error_value, *error_traceback;
 
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     dict = PyThreadState_GetDict();
     if (dict == NULL)
@@ -2213,7 +2265,7 @@ Py_ReprLeave(PyObject *obj)
 
 finally:
     /* ignore exceptions because there is no way to report them. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 /* Trashcan support. */

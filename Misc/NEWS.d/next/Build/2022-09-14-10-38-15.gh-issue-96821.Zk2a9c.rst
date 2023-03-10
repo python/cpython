@@ -1,3 +1,0 @@
-Explicitly mark C extension modules that need defined signed integer overflow,
-and add a configure option :option:`--with-strict-overflow`.
-Patch by Matthias Görgens and Shantanu Jain.

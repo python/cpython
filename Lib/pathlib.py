@@ -314,9 +314,12 @@ class PurePath(object):
 
     @classmethod
     def _format_parsed_parts(cls, drv, root, tail):
-        tail = cls._flavour.sep.join(tail)
+        sep = cls._flavour.sep
+        tail = sep.join(tail)
         if drv or root:
             return f'{drv}{root}{tail}'
+        elif cls._flavour.splitdrive(tail)[0]:
+            return f'.{sep}{tail}'
         else:
             return tail
 
@@ -1188,7 +1191,8 @@ class Path(PurePath):
             homedir = self._flavour.expanduser(self._tail[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
-            return self._from_parts([homedir] + self._tail[1:])
+            drv, root, tail = self._parse_parts((homedir,))
+            return self._from_parsed_parts(drv, root, tail + self._tail[1:])
 
         return self
 

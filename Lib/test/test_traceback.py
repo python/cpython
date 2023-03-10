@@ -6,7 +6,6 @@ import linecache
 import sys
 import types
 import inspect
-import importlib
 import builtins
 import unittest
 import re
