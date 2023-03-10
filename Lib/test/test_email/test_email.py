@@ -1656,8 +1656,9 @@ class TestMIMEImage(unittest.TestCase):
             b'\x76\x2f\x31\x01' : 'exr',
         }
         for content, subtype in content_to_subtype.items():
-            im = MIMEImage(content)
-            self.assertEqual(im.get_content_subtype(), subtype)
+            with self.subTest(content=content, subtype=subtype):
+                im = MIMEImage(content)
+                self.assertEqual(im.get_content_subtype(), subtype)
 
 
 # Test the basic MIMEApplication class
