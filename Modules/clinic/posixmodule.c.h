@@ -10988,7 +10988,7 @@ exit:
 
 #endif /* defined(HAVE_GETRANDOM_SYSCALL) */
 
-#if defined(MS_WINDOWS)
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(os__add_dll_directory__doc__,
 "_add_dll_directory($module, /, path)\n"
@@ -11057,9 +11057,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
 
-#if defined(MS_WINDOWS)
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(os__remove_dll_directory__doc__,
 "_remove_dll_directory($module, /, cookie)\n"
@@ -11120,7 +11120,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
 
 #if (defined(WIFEXITED) || defined(MS_WINDOWS))
 
@@ -11796,4 +11796,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=1b0eb6a76b1a0e28 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9495478e51701b8a input=a9049054013a1b77]*/

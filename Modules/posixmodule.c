@@ -26,11 +26,15 @@
 
 #ifdef MS_WINDOWS
 #  include <windows.h>
-#  include <pathcch.h>
+#  if !defined(MS_WINDOWS_GAMES) || defined(MS_WINDOWS_DESKTOP)
+#    include <pathcch.h>
+#  endif
 #  include <winioctl.h>
 #  include <lmcons.h>             // UNLEN
 #  include "osdefs.h"             // SEP
-#  define HAVE_SYMLINK
+#  if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
+#    define HAVE_SYMLINK
+#  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
 #endif
 
 #include "structmember.h"         // PyMemberDef
@@ -311,7 +315,7 @@ corresponding Unix manual entries for more information on calls.");
 #  include <sys/syscall.h>
 #endif
 
-#if defined(MS_WINDOWS)
+#ifdef HAVE_WINDOWS_CONSOLE_IO
 #  define TERMSIZE_USE_CONIO
 #elif defined(HAVE_SYS_IOCTL_H)
 #  include <sys/ioctl.h>
@@ -321,7 +325,7 @@ corresponding Unix manual entries for more information on calls.");
 #  if defined(TIOCGWINSZ)
 #    define TERMSIZE_USE_IOCTL
 #  endif
-#endif /* MS_WINDOWS */
+#endif /* HAVE_WINDOWS_CONSOLE_IO */
 
 /* Various compilers have only certain posix functions */
 /* XXX Gosh I wish these were all moved into pyconfig.h */
@@ -329,21 +333,25 @@ corresponding Unix manual entries for more information on calls.");
 #  define HAVE_OPENDIR    1
 #  define HAVE_SYSTEM     1
 #  include <process.h>
-#else
-#  ifdef _MSC_VER
-     /* Microsoft compiler */
+#elif defined( _MSC_VER)
+  /* Microsoft compiler */
+#  if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
 #    define HAVE_GETPPID    1
+#  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_APP | MS_WINDOWS_SYSTEM */
+#  if defined(MS_WINDOWS_DESKTOP)
 #    define HAVE_GETLOGIN   1
+#  endif /* MS_WINDOWS_DESKTOP */
+#  if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 #    define HAVE_SPAWNV     1
 #    define HAVE_EXECV      1
 #    define HAVE_WSPAWNV    1
 #    define HAVE_WEXECV     1
-#    define HAVE_PIPE       1
 #    define HAVE_SYSTEM     1
 #    define HAVE_CWAIT      1
-#    define HAVE_FSYNC      1
-#    define fsync _commit
-#  endif  /* _MSC_VER */
+#  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
+#  define HAVE_PIPE       1
+#  define HAVE_FSYNC      1
+#  define fsync _commit
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
 /*[clinic input]
@@ -567,18 +575,21 @@ run_at_forkers(PyObject *lst, int reverse)
 void
 PyOS_BeforeFork(void)
 {
-    run_at_forkers(_PyInterpreterState_GET()->before_forkers, 1);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    run_at_forkers(interp->before_forkers, 1);
 
-    _PyImport_AcquireLock();
+    _PyImport_AcquireLock(interp);
 }
 
 void
 PyOS_AfterFork_Parent(void)
 {
-    if (_PyImport_ReleaseLock() <= 0)
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyImport_ReleaseLock(interp) <= 0) {
         Py_FatalError("failed releasing import lock after fork");
+    }
 
-    run_at_forkers(_PyInterpreterState_GET()->after_forkers_parent, 0);
+    run_at_forkers(interp->after_forkers_parent, 0);
 }
 
 void
@@ -604,7 +615,7 @@ PyOS_AfterFork_Child(void)
         goto fatal_error;
     }
 
-    status = _PyImport_ReInitLock();
+    status = _PyImport_ReInitLock(tstate->interp);
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
@@ -1533,7 +1544,7 @@ convertenviron(void)
 #ifdef MS_WINDOWS
     /* _wenviron must be initialized in this way if the program is started
        through main() instead of wmain(). */
-    _wgetenv(L"");
+    (void)_wgetenv(L"");
     e = _wenviron;
 #elif defined(WITH_NEXT_FRAMEWORK) || (defined(__APPLE__) && defined(Py_ENABLE_SHARED))
     /* environ is not accessible as an extern in a shared object on OSX; use
@@ -1782,6 +1793,10 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
     if (n && (pszFile[n - 1] == L'\\' || pszFile[n - 1] == L'/')) {
         // cannot use PyMem_Malloc here because we do not hold the GIL
         filename = (LPCWSTR)malloc((n + 1) * sizeof(filename[0]));
+        if(!filename) {
+            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+            return FALSE;
+        }
         wcsncpy_s((LPWSTR)filename, n + 1, pszFile, n);
         while (--n > 0 && (filename[n] == L'\\' || filename[n] == L'/')) {
             ((LPWSTR)filename)[n] = L'\0';
@@ -7930,10 +7945,10 @@ static PyObject *
 os_getpid_impl(PyObject *module)
 /*[clinic end generated code: output=9ea6fdac01ed2b3c input=5a9a00f0ab68aa00]*/
 {
-#ifdef MS_WINDOWS_NON_DESKTOP
-    return PyLong_FromUnsignedLong(GetCurrentProcessId());
-#else
+#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     return PyLong_FromPid(getpid());
+#else
+    return PyLong_FromUnsignedLong(GetCurrentProcessId());
 #endif
 }
 #endif /* defined(HAVE_GETPID) */
@@ -8389,6 +8404,7 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
     DWORD err;
     HANDLE handle;
 
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     /* Console processes which share a common console can be sent CTRL+C or
        CTRL+BREAK events, provided they handle said events. */
     if (sig == CTRL_C_EVENT || sig == CTRL_BREAK_EVENT) {
@@ -8396,9 +8412,11 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
             err = GetLastError();
             PyErr_SetFromWindowsErr(err);
         }
-        else
+        else {
             Py_RETURN_NONE;
+        }
     }
+#endif /* HAVE_WINDOWS_CONSOLE_IO */
 
     /* If the signal is outside of what GenerateConsoleCtrlEvent can use,
        attempt to open and terminate the process. */
@@ -13773,7 +13791,9 @@ os_cpu_count_impl(PyObject *module)
 {
     int ncpu = 0;
 #ifdef MS_WINDOWS
+#ifdef MS_WINDOWS_DESKTOP
     ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
+#endif
 #elif defined(__hpux)
     ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
 #elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
@@ -13845,6 +13865,10 @@ os_set_inheritable_impl(PyObject *module, int fd, int inheritable)
 
 
 #ifdef MS_WINDOWS
+#ifndef HANDLE_FLAG_INHERIT
+#define HANDLE_FLAG_INHERIT 0x00000001
+#endif
+
 /*[clinic input]
 os.get_handle_inheritable -> bool
     handle: intptr_t
@@ -15020,7 +15044,8 @@ error:
 }
 #endif   /* HAVE_GETRANDOM_SYSCALL */
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
+
 /* bpo-36085: Helper functions for managing DLL search directories
  * on win32
  */
@@ -15111,7 +15136,7 @@ os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
     Py_RETURN_NONE;
 }
 
-#endif
+#endif /* MS_WINDOWS_APP || MS_WINDOWS_SYSTEM */
 
 
 /* Only check if WIFEXITED is available: expect that it comes
