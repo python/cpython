@@ -51,13 +51,7 @@
             PREDICTED(LOAD_CONST);
             _tagged_ptr value;
             PyObject *v = GETITEM(consts, oparg);
-            if (v != Py_None) {
-                value = tagged(v);
-            }
-            else {
-                Py_INCREF(v);
-                value = untagged(v);
-            }
+            value = tagged(v);
             STACK_GROW(1);
             stack_pointer[-1] = value;
             DISPATCH();
@@ -108,13 +102,7 @@
             {
                 _tagged_ptr value;
                 PyObject *v = GETITEM(consts, oparg);
-                if (v != Py_None) {
-                    value = tagged(v);
-                }
-                else {
-                    Py_INCREF(v);
-                    value = untagged(v);
-                }
+                value = tagged(v);
                 _tmp_1 = value;
             }
             STACK_GROW(2);
@@ -163,13 +151,7 @@
             {
                 _tagged_ptr value;
                 PyObject *v = GETITEM(consts, oparg);
-                if (v != Py_None) {
-                    value = tagged(v);
-                }
-                else {
-                    Py_INCREF(v);
-                    value = untagged(v);
-                }
+                value = tagged(v);
                 _tmp_2 = value;
             }
             oparg = (next_instr++)->op.arg;

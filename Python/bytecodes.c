@@ -116,13 +116,7 @@ dummy_func(
 
         inst(LOAD_CONST, (-- value: _tagged_ptr)) {
             PyObject *v = GETITEM(consts, oparg);
-            if (v != Py_None) {
-                value = tagged(v);
-            }
-            else {
-                Py_INCREF(v);
-                value = untagged(v);
-            }
+            value = tagged(v);
         }
 
         inst(STORE_FAST, (value --)) {
