@@ -127,6 +127,9 @@ lltrace_instruction(_PyInterpreterFrame *frame,
                     PyObject **stack_pointer,
                     _Py_CODEUNIT *next_instr)
 {
+    if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+        return;
+    }
     /* This dump_stack() operation is risky, since the repr() of some
        objects enters the interpreter recursively. It is also slow.
        So you might want to comment it out. */
@@ -135,7 +138,7 @@ lltrace_instruction(_PyInterpreterFrame *frame,
     int opcode = next_instr->op.code;
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
-    int offset = (int)(next_instr - _PyCode_CODE(frame->f_code));
+    int offset = (int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame)));
     if (HAS_ARG((int)_PyOpcode_Deopt[opcode])) {
         printf("%d: %s %d\n", offset * 2, opname, oparg);
     }
@@ -743,7 +746,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.f_globals = (PyObject*)0xaaa3;
     entry_frame.f_builtins = (PyObject*)0xaaa4;
 #endif
-    entry_frame.f_code = tstate->interp->interpreter_trampoline;
+    entry_frame.f_executable = Py_None;
     entry_frame.prev_instr =
         _PyCode_CODE(tstate->interp->interpreter_trampoline);
     entry_frame.stacktop = 0;
@@ -778,7 +781,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
 /* Sets the above local variables from the frame */
 #define SET_LOCALS_FROM_FRAME() \
-    assert(_PyInterpreterFrame_LASTI(frame) >= -1); \
     /* Jump back to the last instruction executed... */ \
     next_instr = frame->prev_instr + 1; \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
@@ -853,7 +855,7 @@ handle_eval_breaker:
     {
         assert(cframe.use_tracing);
         assert(tstate->tracing == 0);
-        if (INSTR_OFFSET() >= frame->f_code->_co_firsttraceable) {
+        if (frame->owner != FRAME_OWNED_BY_CSTACK && INSTR_OFFSET() >= _PyFrame_GetCode(frame)->_co_firsttraceable) {
             int instr_prev = _PyInterpreterFrame_LASTI(frame);
             frame->prev_instr = next_instr;
             NEXTOPARG();
@@ -940,7 +942,7 @@ handle_eval_breaker:
             opcode = next_instr->op.code;
             _PyErr_Format(tstate, PyExc_SystemError,
                           "%U:%d: unknown opcode %d",
-                          frame->f_code->co_filename,
+                          _PyFrame_GetCode(frame)->co_filename,
                           _PyInterpreterFrame_GetLine(frame),
                           opcode);
             goto error;
@@ -955,7 +957,7 @@ unbound_local_error:
         {
             format_exc_check_arg(tstate, PyExc_UnboundLocalError,
                 UNBOUNDLOCAL_ERROR_MSG,
-                PyTuple_GetItem(frame->f_code->co_localsplusnames, oparg)
+                PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
             );
             goto error;
         }
@@ -1000,7 +1002,7 @@ exception_unwind:
             /* We can't use frame->f_lasti here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;
-            if (get_exception_handler(frame->f_code, offset, &level, &handler, &lasti) == 0) {
+            if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
                 // No handlers, so exit.
                 assert(_PyErr_Occurred(tstate));
 
@@ -1593,12 +1595,12 @@ clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     assert(frame->owner == FRAME_OWNED_BY_THREAD);
     // Make sure that this is, indeed, the top frame. We can't check this in
     // _PyThreadState_PopFrame, since f_code is already cleared at that point:
-    assert((PyObject **)frame + frame->f_code->co_framesize ==
+    assert((PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize ==
         tstate->datastack_top);
     tstate->c_recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
-    Py_DECREF(frame->f_code);
+    Py_DECREF(frame->f_executable);
     tstate->c_recursion_remaining++;
     _PyThreadState_PopFrame(tstate, frame);
 }
@@ -2074,7 +2076,7 @@ call_trace_protected(Py_tracefunc func, PyObject *obj,
 static void
 initialize_trace_info(PyTraceInfo *trace_info, _PyInterpreterFrame *frame)
 {
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     if (trace_info->code != code) {
         trace_info->code = code;
         _PyCode_InitAddressRange(code, &trace_info->bounds);
@@ -2113,10 +2115,10 @@ call_trace(Py_tracefunc func, PyObject *obj,
     tstate->tracing_what = what;
     PyThreadState_EnterTracing(tstate);
     assert(_PyInterpreterFrame_LASTI(frame) >= 0);
-    if (_PyCode_InitLineArray(frame->f_code)) {
+    if (_PyCode_InitLineArray(_PyFrame_GetCode(frame))) {
         return -1;
     }
-    f->f_lineno = _PyCode_LineNumberFromArray(frame->f_code, _PyInterpreterFrame_LASTI(frame));
+    f->f_lineno = _PyCode_LineNumberFromArray(_PyFrame_GetCode(frame), _PyInterpreterFrame_LASTI(frame));
     result = func(obj, f, what, arg);
     f->f_lineno = 0;
     PyThreadState_LeaveTracing(tstate);
@@ -2153,17 +2155,17 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
        represents a jump backwards, update the frame's line number and
        then call the trace function if we're tracing source lines.
     */
-    if (_PyCode_InitLineArray(frame->f_code)) {
+    if (_PyCode_InitLineArray(_PyFrame_GetCode(frame))) {
         return -1;
     }
     int lastline;
-    if (instr_prev <= frame->f_code->_co_firsttraceable) {
+    if (instr_prev <= _PyFrame_GetCode(frame)->_co_firsttraceable) {
         lastline = -1;
     }
     else {
-        lastline = _PyCode_LineNumberFromArray(frame->f_code, instr_prev);
+        lastline = _PyCode_LineNumberFromArray(_PyFrame_GetCode(frame), instr_prev);
     }
-    int line = _PyCode_LineNumberFromArray(frame->f_code, _PyInterpreterFrame_LASTI(frame));
+    int line = _PyCode_LineNumberFromArray(_PyFrame_GetCode(frame), _PyInterpreterFrame_LASTI(frame));
     PyFrameObject *f = _PyFrame_GetFrameObject(frame);
     if (f == NULL) {
         return -1;
@@ -2459,7 +2461,7 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
     int result = cf->cf_flags != 0;
 
     if (current_frame != NULL) {
-        const int codeflags = current_frame->f_code->co_flags;
+        const int codeflags = _PyFrame_GetCode(current_frame)->co_flags;
         const int compilerflags = codeflags & PyCF_MASK;
         if (compilerflags) {
             result = 1;
@@ -2984,7 +2986,7 @@ dtrace_function_entry(_PyInterpreterFrame *frame)
     const char *funcname;
     int lineno;
 
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
     lineno = _PyInterpreterFrame_GetLine(frame);
@@ -2999,7 +3001,7 @@ dtrace_function_return(_PyInterpreterFrame *frame)
     const char *funcname;
     int lineno;
 
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
     lineno = _PyInterpreterFrame_GetLine(frame);
@@ -3027,11 +3029,11 @@ maybe_dtrace_line(_PyInterpreterFrame *frame,
         if (_PyInterpreterFrame_LASTI(frame) < instr_prev ||
             (line != lastline && addr == trace_info->bounds.ar_start))
         {
-            co_filename = PyUnicode_AsUTF8(frame->f_code->co_filename);
+            co_filename = PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_filename);
             if (!co_filename) {
                 co_filename = "?";
             }
-            co_name = PyUnicode_AsUTF8(frame->f_code->co_name);
+            co_name = PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_name);
             if (!co_name) {
                 co_name = "?";
             }
