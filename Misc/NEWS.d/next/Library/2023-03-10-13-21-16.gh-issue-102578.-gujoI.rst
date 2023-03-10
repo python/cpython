@@ -1,2 +1,24 @@
 Speed up sanity check for ``__setattr__`` and ``__delattr__`` for frozen
 ``dataclass``\es by using ``set``-based name lookup rather than ``tuple``\s.
+
+The sanity check is always performed, even if the ``dataclass`` is inherited.
+For example:
+
+.. code-block:: python
+
+    @dataclass(frozen=True)
+    class FrozenBase:
+        x: int
+        y: int
+        ... # N_FIELDS
+
+    class Foo(FrozenBase):
+        def __init__(self, x, y, somevalue, someothervalue):
+            super().__init__(x, y)
+            self.somevalue = somevalue            # takes O(N_FIELDS)
+            self.someothervalue = someothervalue  # takes O(N_FIELDS) time again
+
+    foo = Foo(1, 2, 3, 4)
+    foo.extravalue = extravalue  # takes O(N_FIELDS) time again
+
+This change makes the sanity check :math:`O(1)` in the number of fields.
