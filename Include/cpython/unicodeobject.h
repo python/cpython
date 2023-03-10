@@ -97,46 +97,41 @@ typedef struct {
     PyObject_HEAD
     Py_ssize_t length;          /* Number of code points in the string */
     Py_hash_t hash;             /* Hash value; -1 if not set */
-    struct {
-        /* If interned is set, the two references from the
-           dictionary to this object are *not* counted in ob_refcnt. */
-        unsigned int interned:1;
-        /* Character size:
+    /* If interned is set, the two references from the
+        dictionary to this object are *not* counted in ob_refcnt. */
+    uint8_t interned;
+    /* Character size:
 
-           - PyUnicode_1BYTE_KIND (1):
+        - PyUnicode_1BYTE_KIND (1):
 
-             * character type = Py_UCS1 (8 bits, unsigned)
-             * all characters are in the range U+0000-U+00FF (latin1)
-             * if ascii is set, all characters are in the range U+0000-U+007F
-               (ASCII), otherwise at least one character is in the range
-               U+0080-U+00FF
+            * character type = Py_UCS1 (8 bits, unsigned)
+            * all characters are in the range U+0000-U+00FF (latin1)
+            * if ascii is set, all characters are in the range U+0000-U+007F
+            (ASCII), otherwise at least one character is in the range
+            U+0080-U+00FF
 
-           - PyUnicode_2BYTE_KIND (2):
+        - PyUnicode_2BYTE_KIND (2):
 
-             * character type = Py_UCS2 (16 bits, unsigned)
-             * all characters are in the range U+0000-U+FFFF (BMP)
-             * at least one character is in the range U+0100-U+FFFF
+            * character type = Py_UCS2 (16 bits, unsigned)
+            * all characters are in the range U+0000-U+FFFF (BMP)
+            * at least one character is in the range U+0100-U+FFFF
 
-           - PyUnicode_4BYTE_KIND (4):
+        - PyUnicode_4BYTE_KIND (4):
 
-             * character type = Py_UCS4 (32 bits, unsigned)
-             * all characters are in the range U+0000-U+10FFFF
-             * at least one character is in the range U+10000-U+10FFFF
-         */
-        unsigned int kind:3;
-        /* Compact is with respect to the allocation scheme. Compact unicode
-           objects only require one memory block while non-compact objects use
-           one block for the PyUnicodeObject struct and another for its data
-           buffer. */
-        unsigned int compact:1;
-        /* The string only contains characters in the range U+0000-U+007F (ASCII)
-           and the kind is PyUnicode_1BYTE_KIND. If ascii is set and compact is
-           set, use the PyASCIIObject structure. */
-        unsigned int ascii:1;
-        /* Padding to ensure that PyUnicode_DATA() is always aligned to
-           4 bytes (see issue #19537 on m68k). */
-        unsigned int :26;
-    } state;
+            * character type = Py_UCS4 (32 bits, unsigned)
+            * all characters are in the range U+0000-U+10FFFF
+            * at least one character is in the range U+10000-U+10FFFF
+        */
+    uint8_t kind;
+    /* Compact is with respect to the allocation scheme. Compact unicode
+        objects only require one memory block while non-compact objects use
+        one block for the PyUnicodeObject struct and another for its data
+        buffer. */
+    uint8_t compact;
+    /* The string only contains characters in the range U+0000-U+007F (ASCII)
+        and the kind is PyUnicode_1BYTE_KIND. If ascii is set and compact is
+        set, use the PyASCIIObject structure. */
+    uint8_t ascii;
 } PyASCIIObject;
 
 /* Non-ASCII strings allocated through PyUnicode_New use the
@@ -178,15 +173,9 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 
 /* --- Flexible String Representation Helper Macros (PEP 393) -------------- */
 
-/* Values for PyASCIIObject.state: */
-
-/* Interning state. */
-#define SSTATE_NOT_INTERNED 0
-#define SSTATE_INTERNED_MORTAL 1
-
 /* Use only if you know it's a string */
 static inline unsigned int PyUnicode_CHECK_INTERNED(PyObject *op) {
-    return _PyASCIIObject_CAST(op)->state.interned;
+    return _PyASCIIObject_CAST(op)->interned;
 }
 #define PyUnicode_CHECK_INTERNED(op) PyUnicode_CHECK_INTERNED(_PyObject_CAST(op))
 
@@ -200,21 +189,21 @@ static inline unsigned int PyUnicode_IS_READY(PyObject* Py_UNUSED(op)) {
    string may be compact (PyUnicode_IS_COMPACT_ASCII) or not, but must be
    ready. */
 static inline unsigned int PyUnicode_IS_ASCII(PyObject *op) {
-    return _PyASCIIObject_CAST(op)->state.ascii;
+    return _PyASCIIObject_CAST(op)->ascii;
 }
 #define PyUnicode_IS_ASCII(op) PyUnicode_IS_ASCII(_PyObject_CAST(op))
 
 /* Return true if the string is compact or 0 if not.
    No type checks or Ready calls are performed. */
 static inline unsigned int PyUnicode_IS_COMPACT(PyObject *op) {
-    return _PyASCIIObject_CAST(op)->state.compact;
+    return _PyASCIIObject_CAST(op)->compact;
 }
 #define PyUnicode_IS_COMPACT(op) PyUnicode_IS_COMPACT(_PyObject_CAST(op))
 
 /* Return true if the string is a compact ASCII string (use PyASCIIObject
    structure), or 0 if not.  No type checks or Ready calls are performed. */
 static inline int PyUnicode_IS_COMPACT_ASCII(PyObject *op) {
-    return (_PyASCIIObject_CAST(op)->state.ascii && PyUnicode_IS_COMPACT(op));
+    return (_PyASCIIObject_CAST(op)->ascii && PyUnicode_IS_COMPACT(op));
 }
 #define PyUnicode_IS_COMPACT_ASCII(op) PyUnicode_IS_COMPACT_ASCII(_PyObject_CAST(op))
 
@@ -231,7 +220,7 @@ enum PyUnicode_Kind {
 // new compiler warnings on "kind < PyUnicode_KIND(str)" (compare signed and
 // unsigned numbers) where kind type is an int or on
 // "unsigned int kind = PyUnicode_KIND(str)" (cast signed to unsigned).
-#define PyUnicode_KIND(op) _Py_RVALUE(_PyASCIIObject_CAST(op)->state.kind)
+#define PyUnicode_KIND(op) _Py_RVALUE(_PyASCIIObject_CAST(op)->kind)
 
 /* Return a void pointer to the raw unicode buffer. */
 static inline void* _PyUnicode_COMPACT_DATA(PyObject *op) {

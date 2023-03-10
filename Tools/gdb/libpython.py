@@ -1389,16 +1389,15 @@ class PyUnicodeObjectPtr(PyObjectPtr):
     def proxyval(self, visited):
         compact = self.field('_base')
         ascii = compact['_base']
-        state = ascii['state']
-        is_compact_ascii = (int(state['ascii']) and int(state['compact']))
+        is_compact_ascii = (int(compact['ascii']) and int(compact['compact']))
         field_length = int(ascii['length'])
         if is_compact_ascii:
             field_str = ascii.address + 1
-        elif int(state['compact']):
+        elif int(compact['compact']):
             field_str = compact.address + 1
         else:
             field_str = self.field('data')['any']
-        repr_kind = int(state['kind'])
+        repr_kind = int(compact['kind'])
         if repr_kind == 1:
             field_str = field_str.cast(_type_unsigned_char_ptr())
         elif repr_kind == 2:

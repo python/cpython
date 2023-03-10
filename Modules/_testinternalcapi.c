@@ -684,6 +684,21 @@ clear_extension(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+check_compactunicodeobject_data_alignment()
+{
+    size_t data_offset = sizeof(PyCompactUnicodeObject);
+    if (data_offset % 4 != 0) {
+        // This is required so that the data (which immediately follows a
+        // compact unicode offset) is correctly aligned in the largest case (UCS_4)
+        PyErr_Format(PyExc_AssertionError,
+                     "PyCompactUnicodeObject size offset is %i, needs to be multiple of 4 bytes",
+                     data_offset);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -707,6 +722,7 @@ static PyMethodDef module_functions[] = {
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
     {"get_interp_settings", get_interp_settings, METH_VARARGS, NULL},
     {"clear_extension", clear_extension, METH_VARARGS, NULL},
+    {"check_compactunicodeobject_data_alignment", check_compactunicodeobject_data_alignment, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 

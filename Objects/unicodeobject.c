@@ -129,13 +129,16 @@ extern "C" {
 
 #define _PyUnicode_LENGTH(op)                           \
     (_PyASCIIObject_CAST(op)->length)
-#define _PyUnicode_STATE(op)                            \
-    (_PyASCIIObject_CAST(op)->state)
 #define _PyUnicode_HASH(op)                             \
     (_PyASCIIObject_CAST(op)->hash)
+#define _PyUnicode_INTERNED(op)                         \
+    (_PyASCIIObject_CAST(op)->interned)
 #define _PyUnicode_KIND(op)                             \
-    (assert(_PyUnicode_CHECK(op)),                      \
-     _PyASCIIObject_CAST(op)->state.kind)
+    (_PyASCIIObject_CAST(op)->kind)
+#define _PyUnicode_COMPACT(op)                          \
+    (_PyASCIIObject_CAST(op)->compact)
+#define _PyUnicode_ASCII(op)                            \
+    (_PyASCIIObject_CAST(op)->ascii)
 #define _PyUnicode_GET_LENGTH(op)                       \
     (assert(_PyUnicode_CHECK(op)),                      \
      _PyASCIIObject_CAST(op)->length)
@@ -497,21 +500,21 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
     CHECK(PyUnicode_Check(op));
 
     PyASCIIObject *ascii = _PyASCIIObject_CAST(op);
-    int kind = ascii->state.kind;
+    int kind = ascii->kind;
 
-    if (ascii->state.ascii == 1 && ascii->state.compact == 1) {
+    if (ascii->ascii == 1 && ascii->compact == 1) {
         CHECK(kind == PyUnicode_1BYTE_KIND);
     }
     else {
         PyCompactUnicodeObject *compact = _PyCompactUnicodeObject_CAST(op);
         void *data;
 
-        if (ascii->state.compact == 1) {
+        if (ascii->compact == 1) {
             data = compact + 1;
             CHECK(kind == PyUnicode_1BYTE_KIND
                                  || kind == PyUnicode_2BYTE_KIND
                                  || kind == PyUnicode_4BYTE_KIND);
-            CHECK(ascii->state.ascii == 0);
+            CHECK(ascii->ascii == 0);
             CHECK(compact->utf8 != data);
         }
         else {
@@ -521,9 +524,9 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             CHECK(kind == PyUnicode_1BYTE_KIND
                      || kind == PyUnicode_2BYTE_KIND
                      || kind == PyUnicode_4BYTE_KIND);
-            CHECK(ascii->state.compact == 0);
+            CHECK(ascii->compact == 0);
             CHECK(data != NULL);
-            if (ascii->state.ascii) {
+            if (ascii->ascii) {
                 CHECK(compact->utf8 == data);
                 CHECK(compact->utf8_length == ascii->length);
             }
@@ -551,7 +554,7 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
                 maxchar = ch;
         }
         if (kind == PyUnicode_1BYTE_KIND) {
-            if (ascii->state.ascii == 0) {
+            if (ascii->ascii == 0) {
                 CHECK(maxchar >= 128);
                 CHECK(maxchar <= 255);
             }
@@ -1108,9 +1111,9 @@ _PyUnicode_Dump(PyObject *op)
     PyUnicodeObject *unicode = _PyUnicodeObject_CAST(op);
     const void *data;
 
-    if (ascii->state.compact)
+    if (ascii->compact)
     {
-        if (ascii->state.ascii)
+        if (ascii->ascii)
             data = (ascii + 1);
         else
             data = (compact + 1);
@@ -1119,7 +1122,7 @@ _PyUnicode_Dump(PyObject *op)
         data = unicode->data.any;
     printf("%s: len=%zu, ", unicode_kind_name(op), ascii->length);
 
-    if (!ascii->state.ascii) {
+    if (!ascii->ascii) {
         printf("utf8=%p (%zu)", (void *)compact->utf8, compact->utf8_length);
     }
     printf(", data=%p\n", data);
@@ -1195,10 +1198,10 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
         data = unicode + 1;
     _PyUnicode_LENGTH(unicode) = size;
     _PyUnicode_HASH(unicode) = -1;
-    _PyUnicode_STATE(unicode).interned = 0;
-    _PyUnicode_STATE(unicode).kind = kind;
-    _PyUnicode_STATE(unicode).compact = 1;
-    _PyUnicode_STATE(unicode).ascii = is_ascii;
+    _PyUnicode_INTERNED(unicode) = 0;
+    _PyUnicode_KIND(unicode) = kind;
+    _PyUnicode_COMPACT(unicode) = 1;
+    _PyUnicode_ASCII(unicode) = is_ascii;
     if (is_ascii) {
         ((char*)data)[size] = 0;
     }
@@ -14372,10 +14375,10 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
 #else
     _PyUnicode_HASH(self) = _PyUnicode_HASH(unicode);
 #endif
-    _PyUnicode_STATE(self).interned = 0;
-    _PyUnicode_STATE(self).kind = kind;
-    _PyUnicode_STATE(self).compact = 0;
-    _PyUnicode_STATE(self).ascii = _PyUnicode_STATE(unicode).ascii;
+    _PyUnicode_INTERNED(self) = 0;
+    _PyUnicode_KIND(self) = kind;
+    _PyUnicode_COMPACT(self) = 0;
+    _PyUnicode_ASCII(self) = _PyUnicode_ASCII(unicode);
     _PyUnicode_UTF8_LENGTH(self) = 0;
     _PyUnicode_UTF8(self) = NULL;
     _PyUnicode_DATA_ANY(self) = NULL;
@@ -14624,7 +14627,7 @@ PyUnicode_InternInPlace(PyObject **p)
        refcnt. unicode_dealloc() and _PyUnicode_ClearInterned() take care of
        this. */
     Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
-    _PyUnicode_STATE(s).interned = 1;
+    _PyUnicode_INTERNED(s) = 1;
 }
 
 // Function kept for the stable ABI.
@@ -14683,7 +14686,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         total_length += PyUnicode_GET_LENGTH(s);
 #endif
 
-        _PyUnicode_STATE(s).interned = 0;
+        _PyUnicode_INTERNED(s) = 0;
     }
 #ifdef INTERNED_STATS
     fprintf(stderr,

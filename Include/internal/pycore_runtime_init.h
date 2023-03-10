@@ -155,11 +155,9 @@ extern PyTypeObject _PyExc_MemoryError;
         .ob_base = _PyObject_IMMORTAL_INIT(&PyUnicode_Type), \
         .length = sizeof(LITERAL) - 1, \
         .hash = -1, \
-        .state = { \
-            .kind = 1, \
-            .compact = 1, \
-            .ascii = (ASCII), \
-        }, \
+        .kind = 1, \
+        .compact = 1, \
+        .ascii = (ASCII), \
     }
 #define _PyASCIIObject_INIT(LITERAL) \
     { \

@@ -1092,9 +1092,9 @@ _Py_DumpASCII(int fd, PyObject *text)
         return;
 
     size = ascii->length;
-    kind = ascii->state.kind;
-    if (ascii->state.compact) {
-        if (ascii->state.ascii)
+    kind = ascii->kind;
+    if (ascii->compact) {
+        if (ascii->ascii)
             data = ascii + 1;
         else
             data = _PyCompactUnicodeObject_CAST(text) + 1;
@@ -1114,7 +1114,7 @@ _Py_DumpASCII(int fd, PyObject *text)
     }
 
     // Is an ASCII string?
-    if (ascii->state.ascii) {
+    if (ascii->ascii) {
         assert(kind == PyUnicode_1BYTE_KIND);
         char *str = data;
 
@@ -1341,4 +1341,3 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
 
     return NULL;
 }
-

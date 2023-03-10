@@ -1555,5 +1555,11 @@ class Test_Pep523API(unittest.TestCase):
         self.do_test(func2)
 
 
+class Test_UnicodeObjectAlignment(unittest.TestCase):
+
+    def test_unicodeobject_data_alignment(self):
+        _testinternalcapi.check_compactunicodeobject_data_alignment()
+
+
 if __name__ == "__main__":
     unittest.main()

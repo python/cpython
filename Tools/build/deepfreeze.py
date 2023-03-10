@@ -198,10 +198,9 @@ class Printer:
                     self.object_head("PyUnicode_Type")
                     self.write(f".length = {len(s)},")
                     self.write(".hash = -1,")
-                    with self.block(".state =", ","):
-                        self.write(".kind = 1,")
-                        self.write(".compact = 1,")
-                        self.write(".ascii = 1,")
+                    self.write(".kind = 1,")
+                    self.write(".compact = 1,")
+                    self.write(".ascii = 1,")
                 self.write(f"._data = {make_string_literal(s.encode('ascii'))},")
                 return f"& {name}._ascii.ob_base"
             else:
@@ -210,10 +209,9 @@ class Printer:
                         self.object_head("PyUnicode_Type")
                         self.write(f".length = {len(s)},")
                         self.write(".hash = -1,")
-                        with self.block(".state =", ","):
-                            self.write(f".kind = {kind},")
-                            self.write(".compact = 1,")
-                            self.write(".ascii = 0,")
+                        self.write(f".kind = {kind},")
+                        self.write(".compact = 1,")
+                        self.write(".ascii = 0,")
                     utf8 = s.encode('utf-8')
                     self.write(f'.utf8 = {make_string_literal(utf8)},')
                     self.write(f'.utf8_length = {len(utf8)},')
