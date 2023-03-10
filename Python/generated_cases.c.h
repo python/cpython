@@ -3859,7 +3859,7 @@
                itself. */
             if (PyUnicode_CheckExact(detag(value)) && detag(fmt_spec) == NULL) {
                 /* Do nothing, just transfer ownership to result. */
-                result = detag(value);
+                result = STEAL(value);
             } else {
                 /* Actually call format(). */
                 result = PyObject_Format(detag(value), detag(fmt_spec));

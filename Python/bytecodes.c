@@ -3066,7 +3066,7 @@ dummy_func(
                itself. */
             if (PyUnicode_CheckExact(value) && fmt_spec == NULL) {
                 /* Do nothing, just transfer ownership to result. */
-                result = value;
+                result = STEAL(value);
             } else {
                 /* Actually call format(). */
                 result = PyObject_Format(value, fmt_spec);
