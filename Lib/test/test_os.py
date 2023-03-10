@@ -2648,6 +2648,49 @@ class Win32ListdirTests(unittest.TestCase):
                 [os.fsencode(path) for path in self.created_paths])
 
 
+@unittest.skipUnless(os.name == "nt", "NT specific tests")
+class Win32ListdriveTests(unittest.TestCase):
+    """Test listdrive, listmounts and listvolume on Windows."""
+
+    def setUp(self):
+        # Get drives and volumes from fsutil
+        out = subprocess.check_output(
+            ["fsutil.exe", "volume", "list"],
+            cwd=os.path.join(os.getenv("SystemRoot", "\\Windows"), "System32"),
+            encoding="mbcs",
+            errors="ignore",
+        )
+        lines = out.splitlines()
+        self.known_volumes = {l for l in lines if l.startswith('\\\\?\\')}
+        self.known_drives = {l for l in lines if l[1:] == ':\\'}
+        self.known_mounts = {l for l in lines if l[1:3] == ':\\'}
+
+    def test_listdrives(self):
+        drives = os.listdrives()
+        self.assertIsInstance(drives, list)
+        self.assertSetEqual(
+            self.known_drives,
+            self.known_drives & set(drives),
+        )
+
+    def test_listvolumes(self):
+        volumes = os.listvolumes()
+        self.assertIsInstance(volumes, list)
+        self.assertSetEqual(
+            self.known_volumes,
+            self.known_volumes & set(volumes),
+        )
+
+    def test_listmounts(self):
+        for volume in os.listvolumes():
+            mounts = os.listmounts(volume)
+            self.assertIsInstance(mounts, list)
+            self.assertSetEqual(
+                set(mounts),
+                self.known_mounts & set(mounts),
+            )
+
+
 @unittest.skipUnless(hasattr(os, 'readlink'), 'needs os.readlink()')
 class ReadlinkTests(unittest.TestCase):
     filelink = 'readlinktest'
