@@ -1714,6 +1714,13 @@ dummy_func(
             Py_DECREF(owner);
         }
 
+        family(compare_op, INLINE_CACHE_ENTRIES_COMPARE_OP) = {
+            COMPARE_OP,
+            COMPARE_OP_FLOAT,
+            COMPARE_OP_INT,
+            COMPARE_OP_STR,
+        };
+
         inst(COMPARE_OP, (unused/1, left, right -- res)) {
             #if ENABLE_SPECIALIZATION
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;

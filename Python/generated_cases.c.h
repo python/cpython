@@ -2161,6 +2161,7 @@
 
         TARGET(COMPARE_OP) {
             PREDICTED(COMPARE_OP);
+            static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
             PyObject *res;
