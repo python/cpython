@@ -7694,13 +7694,33 @@ assemble_emit_location(struct assembler* a, location loc, int isize)
     return write_location_info_entry(a, loc, isize);
 }
 
-/* assemble_emit()
+static int
+assemble_location_info(struct assembler *a, basicblock *entryblock, int firstlineno)
+{
+    a->a_lineno = firstlineno;
+    location loc = NO_LOCATION;
+    int size = 0;
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int j = 0; j < b->b_iused; j++) {
+            if (!same_location(loc, b->b_instr[j].i_loc)) {
+                RETURN_IF_ERROR(assemble_emit_location(a, loc, size));
+                loc = b->b_instr[j].i_loc;
+                size = 0;
+            }
+            size += instr_size(&b->b_instr[j]);
+        }
+    }
+    RETURN_IF_ERROR(assemble_emit_location(a, loc, size));
+    return SUCCESS;
+}
+
+/* assemble_emit_instr()
    Extend the bytecode with a new instruction.
    Update lnotab if necessary.
 */
 
 static int
-assemble_emit(struct assembler *a, struct cfg_instr *i)
+assemble_emit_instr(struct assembler *a, struct cfg_instr *i)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
     _Py_CODEUNIT *code;
@@ -7715,6 +7735,35 @@ assemble_emit(struct assembler *a, struct cfg_instr *i)
     code = (_Py_CODEUNIT *)PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
     a->a_offset += size;
     write_instr(code, i, size);
+    return SUCCESS;
+}
+
+static int merge_const_one(PyObject *const_cache, PyObject **obj);
+
+static int
+assemble_emit(struct assembler *a, basicblock *entryblock, int first_lineno,
+              PyObject *const_cache)
+{
+    RETURN_IF_ERROR(assemble_init(a, first_lineno));
+
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int j = 0; j < b->b_iused; j++) {
+            RETURN_IF_ERROR(assemble_emit_instr(a, &b->b_instr[j]));
+        }
+    }
+
+    RETURN_IF_ERROR(assemble_location_info(a, entryblock, a->a_lineno));
+
+    RETURN_IF_ERROR(assemble_exception_table(a, entryblock));
+
+    RETURN_IF_ERROR(_PyBytes_Resize(&a->a_except_table, a->a_except_table_off));
+    RETURN_IF_ERROR(merge_const_one(const_cache, &a->a_except_table));
+
+    RETURN_IF_ERROR(_PyBytes_Resize(&a->a_linetable, a->a_location_off));
+    RETURN_IF_ERROR(merge_const_one(const_cache, &a->a_linetable));
+
+    RETURN_IF_ERROR(_PyBytes_Resize(&a->a_bytecode, a->a_offset * sizeof(_Py_CODEUNIT)));
+    RETURN_IF_ERROR(merge_const_one(const_cache, &a->a_bytecode));
     return SUCCESS;
 }
 
@@ -8695,32 +8744,16 @@ optimize_code_unit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
 }
 
 static PyCodeObject *
-assemble(struct compiler *c, int addNone)
+assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
+                   int code_flags, PyObject *filename)
 {
-    struct compiler_unit *u = c->u;
-    PyObject *const_cache = c->c_const_cache;
-    PyObject *filename = c->c_filename;
-
     PyCodeObject *co = NULL;
-    struct assembler a;
-    memset(&a, 0, sizeof(struct assembler));
-
-    int code_flags = compute_code_flags(c);
-    if (code_flags < 0) {
-        return NULL;
-    }
-
-    if (add_return_at_end(c, addNone) < 0) {
-        return NULL;
-    }
-
     PyObject *consts = consts_dict_keys_inorder(u->u_consts);
     if (consts == NULL) {
         goto error;
     }
-
     cfg_builder g;
-    if (instr_sequence_to_cfg(INSTR_SEQUENCE(c), &g) < 0) {
+    if (instr_sequence_to_cfg(&u->u_instr_sequence, &g) < 0) {
         goto error;
     }
     int nparams = (int)PyList_GET_SIZE(u->u_ste->ste_varnames);
@@ -8757,71 +8790,39 @@ assemble(struct compiler *c, int addNone)
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g.g_entryblock);
-
     /* Create assembler */
-    if (assemble_init(&a, u->u_firstlineno) < 0) {
-        goto error;
+    struct assembler a;
+    int res = assemble_emit(&a, g.g_entryblock, u->u_firstlineno, const_cache);
+    if (res == SUCCESS) {
+        co = makecode(u, &a, const_cache, consts, maxdepth, nlocalsplus,
+                      code_flags, filename);
     }
+    assemble_free(&a);
 
-    /* Emit code. */
-    for (basicblock *b = g.g_entryblock; b != NULL; b = b->b_next) {
-        for (int j = 0; j < b->b_iused; j++) {
-            if (assemble_emit(&a, &b->b_instr[j]) < 0) {
-                goto error;
-            }
-        }
-    }
-
-    /* Emit location info */
-    a.a_lineno = u->u_firstlineno;
-    location loc = NO_LOCATION;
-    int size = 0;
-    for (basicblock *b = g.g_entryblock; b != NULL; b = b->b_next) {
-        for (int j = 0; j < b->b_iused; j++) {
-            if (!same_location(loc, b->b_instr[j].i_loc)) {
-                if (assemble_emit_location(&a, loc, size)) {
-                    goto error;
-                }
-                loc = b->b_instr[j].i_loc;
-                size = 0;
-            }
-            size += instr_size(&b->b_instr[j]);
-        }
-    }
-    if (assemble_emit_location(&a, loc, size)) {
-        goto error;
-    }
-
-    if (assemble_exception_table(&a, g.g_entryblock) < 0) {
-        goto error;
-    }
-    if (_PyBytes_Resize(&a.a_except_table, a.a_except_table_off) < 0) {
-        goto error;
-    }
-    if (merge_const_one(const_cache, &a.a_except_table) < 0) {
-        goto error;
-    }
-
-    if (_PyBytes_Resize(&a.a_linetable, a.a_location_off) < 0) {
-        goto error;
-    }
-    if (merge_const_one(const_cache, &a.a_linetable) < 0) {
-        goto error;
-    }
-
-    if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0) {
-        goto error;
-    }
-    if (merge_const_one(const_cache, &a.a_bytecode) < 0) {
-        goto error;
-    }
-
-    co = makecode(u, &a, const_cache, consts, maxdepth, nlocalsplus, code_flags, filename);
  error:
     Py_XDECREF(consts);
     cfg_builder_fini(&g);
-    assemble_free(&a);
     return co;
+
+}
+
+static PyCodeObject *
+assemble(struct compiler *c, int addNone)
+{
+    struct compiler_unit *u = c->u;
+    PyObject *const_cache = c->c_const_cache;
+    PyObject *filename = c->c_filename;
+
+    int code_flags = compute_code_flags(c);
+    if (code_flags < 0) {
+        return NULL;
+    }
+
+    if (add_return_at_end(c, addNone) < 0) {
+        return NULL;
+    }
+
+    return assemble_code_unit(u, const_cache, code_flags, filename);
 }
 
 static PyObject*
