@@ -2553,13 +2553,7 @@ class ProtocolTests(BaseTestCase):
         class E(C): ...
         class F(D): ...
 
-        for klass in C, D, E, F:
-            with self.subTest(klass=klass.__name__):
-                self.assertEqual(klass().attr, 42)
-
-        class G: ...
-
-        self.assertFalse(hasattr(G(), "attr"))
+        class Empty: ...
 
         T = TypeVar('T')
 
@@ -2590,7 +2584,7 @@ class ProtocolTests(BaseTestCase):
                     self.assertIsInstance(klass(), protocol_class)
 
             with self.subTest(protocol_class=protocol_class.__name__):
-                self.assertNotIsInstance(G(), protocol_class)
+                self.assertNotIsInstance(Empty(), protocol_class)
 
         class BadP(Protocol):
             @property
@@ -2607,7 +2601,7 @@ class ProtocolTests(BaseTestCase):
             attr: T
 
         for obj in PG[T], PG[C], PG1[T], PG1[C], BadP, BadP1, BadPG, BadPG1:
-            for klass in C, D, E, F, G:
+            for klass in C, D, E, F, Empty:
                 with self.subTest(klass=klass.__name__, obj=obj):
                     with self.assertRaises(TypeError):
                         isinstance(klass(), obj)
