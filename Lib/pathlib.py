@@ -281,7 +281,7 @@ class PurePath(object):
         if altsep:
             path = path.replace(altsep, sep)
         drv, root, rel = cls._flavour.splitroot(path)
-        if drv and not root and not drv.endswith(sep):
+        if not root and drv.startswith(sep) and not drv.endswith(sep):
             drv_parts = drv.split(sep)
             if len(drv_parts) == 4 and drv_parts[2] not in '?.':
                 # e.g. //server/share
