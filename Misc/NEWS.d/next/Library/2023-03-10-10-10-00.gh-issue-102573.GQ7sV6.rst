@@ -1,0 +1,1 @@
+Use ``set``-based name lookup rather than ``tuple``s for frozen dataclasses
