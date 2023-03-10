@@ -2535,7 +2535,29 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaises(TypeError):
             isinstance(C(), BadPG)
 
-    def test_protocols_isinstance_simple_properties(self):
+    def test_protocols_isinstance_properties_and_descriptors(self):
+        class C:
+            @property
+            def attr(self):
+                return 42
+
+        class CustomDescriptor:
+            def __get__(self, obj, objtype=None):
+                return 42
+
+        class D:
+            attr = CustomDescriptor()
+
+        class E: ...
+
+        # Check that properties set on superclasses
+        # are still found by the isinstance() logic
+        class F(C): ...
+        class G(D): ...
+
+        self.assertEqual(C().attr, 42)
+        self.assertEqual(D().attr, 42)
+
         T = TypeVar('T')
 
         @runtime_checkable
@@ -2555,6 +2577,17 @@ class ProtocolTests(BaseTestCase):
         @runtime_checkable
         class PG1(Protocol[T]):
             attr: T
+
+        for protocol_class in P, P1, PG, PG1:
+            for klass in C, D, F, G:
+                with self.subTest(
+                    klass=klass.__name__,
+                    protocol_class=protocol_class.__name__
+                ):
+                    self.assertIsInstance(klass(), protocol_class)
+
+            with self.subTest(protocol_class=protocol_class.__name__):
+                self.assertNotIsInstance(E(), protocol_class)
 
         class BadP(Protocol):
             @property
@@ -2570,92 +2603,28 @@ class ProtocolTests(BaseTestCase):
         class BadPG1(Protocol[T]):
             attr: T
 
-        class C:
-            @property
-            def attr(self):
-                return 42
+        for obj in PG[T], PG[C], PG1[T], PG1[C], BadP, BadP1, BadPG, BadPG1:
+            for klass in C, D, E, F, G:
+                with self.subTest(klass=klass.__name__, obj=obj):
+                    with self.assertRaises(TypeError):
+                        isinstance(klass(), obj)
 
-        self.assertEqual(C().attr, 42)
-        self.assertIsInstance(C(), P)
-        self.assertIsInstance(C(), P1)
-        self.assertIsInstance(C(), PG)
-        self.assertIsInstance(C(), PG1)
-        with self.assertRaises(TypeError):
-            isinstance(C(), PG[T])
-        with self.assertRaises(TypeError):
-            isinstance(C(), PG[C])
-        with self.assertRaises(TypeError):
-            isinstance(C(), PG1[T])
-        with self.assertRaises(TypeError):
-            isinstance(C(), PG1[C])
-        with self.assertRaises(TypeError):
-            isinstance(C(), BadP)
-        with self.assertRaises(TypeError):
-            isinstance(C(), BadP1)
-        with self.assertRaises(TypeError):
-            isinstance(C(), BadPG)
-        with self.assertRaises(TypeError):
-            isinstance(C(), BadPG1)
-
-    def test_protocols_isinstance_dynamic_properties(self):
-        T = TypeVar('T')
-
+    def test_protocols_isinstance_not_fooled_by_custom_dir(self):
         @runtime_checkable
-        class P(Protocol):
-            @property
-            def attr(self): ...
+        class HasX(Protocol):
+            x: int
 
-        @runtime_checkable
-        class P1(Protocol):
-            attr: int
+        class CustomDirWithX:
+            x = 10
+            def __dir__(self):
+                return []
 
-        @runtime_checkable
-        class PG(Protocol[T]):
-            @property
-            def attr(self): ...
+        class CustomDirWithoutX:
+            def __dir__(self):
+                return ["x"]
 
-        @runtime_checkable
-        class PG1(Protocol[T]):
-            attr: T
-
-        class C:
-            X = True
-            @property
-            def attr(self):
-                if self.X:
-                    return 42
-                raise AttributeError
-
-        inst = C()
-        C.X = False
-
-        with self.assertRaises(AttributeError):
-            C().attr
-        self.assertNotIsInstance(C(), P)
-        self.assertNotIsInstance(C(), P1)
-        self.assertNotIsInstance(C(), PG)
-        self.assertNotIsInstance(C(), PG1)
-
-        with self.assertRaises(AttributeError):
-            inst.attr
-        self.assertNotIsInstance(inst, P)
-        self.assertNotIsInstance(inst, P1)
-        self.assertNotIsInstance(inst, PG)
-        self.assertNotIsInstance(inst, PG1)
-
-        C.X = True
-
-        self.assertEqual(C().attr, 42)
-        self.assertIsInstance(C(), P)
-        self.assertIsInstance(C(), P1)
-        self.assertIsInstance(C(), PG)
-        self.assertIsInstance(C(), PG1)
-
-        self.assertEqual(inst.attr, 42)
-        self.assertIsInstance(inst, P)
-        self.assertIsInstance(inst, P1)
-        self.assertIsInstance(inst, PG)
-        self.assertIsInstance(inst, PG1)
+        self.assertIsInstance(CustomDirWithX(), HasX)
+        self.assertNotIsInstance(CustomDirWithoutX(), HasX)
 
     def test_protocols_isinstance_py36(self):
         class APoint:
