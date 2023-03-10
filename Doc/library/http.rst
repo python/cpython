@@ -80,7 +80,7 @@ Code    Enum Name                           Details
 ``304`` ``NOT_MODIFIED``                    HTTP/1.1 :rfc:`7232`, Section 4.1
 ``305`` ``USE_PROXY``                       HTTP/1.1 :rfc:`7231`, Section 6.4.5
 ``307`` ``TEMPORARY_REDIRECT``              HTTP/1.1 :rfc:`7231`, Section 6.4.7
-``308`` ``PERMANENT_REDIRECT``              Permanent Redirect :rfc:`7238`, Section 3 (Experimental)
+``308`` ``PERMANENT_REDIRECT``              HTTP Semantics :rfc:`9110`, Section 15.4.9
 ``400`` ``BAD_REQUEST``                     HTTP/1.1 :rfc:`7231`, Section 6.5.1
 ``401`` ``UNAUTHORIZED``                    HTTP/1.1 Authentication :rfc:`7235`, Section 3.1
 ``402`` ``PAYMENT_REQUIRED``                HTTP/1.1 :rfc:`7231`, Section 6.5.2
@@ -94,14 +94,14 @@ Code    Enum Name                           Details
 ``410`` ``GONE``                            HTTP/1.1 :rfc:`7231`, Section 6.5.9
 ``411`` ``LENGTH_REQUIRED``                 HTTP/1.1 :rfc:`7231`, Section 6.5.10
 ``412`` ``PRECONDITION_FAILED``             HTTP/1.1 :rfc:`7232`, Section 4.2
-``413`` ``REQUEST_ENTITY_TOO_LARGE``        HTTP/1.1 :rfc:`7231`, Section 6.5.11
+``413`` ``CONTENT_TOO_LARGE``               HTTP Semantics :rfc:`9110`, Section 15.5.14
 ``414`` ``REQUEST_URI_TOO_LONG``            HTTP/1.1 :rfc:`7231`, Section 6.5.12
 ``415`` ``UNSUPPORTED_MEDIA_TYPE``          HTTP/1.1 :rfc:`7231`, Section 6.5.13
 ``416`` ``REQUESTED_RANGE_NOT_SATISFIABLE`` HTTP/1.1 Range Requests :rfc:`7233`, Section 4.4
 ``417`` ``EXPECTATION_FAILED``              HTTP/1.1 :rfc:`7231`, Section 6.5.14
 ``418`` ``IM_A_TEAPOT``                     HTCPCP/1.0 :rfc:`2324`, Section 2.3.2
-``421`` ``MISDIRECTED_REQUEST``             HTTP/2 :rfc:`7540`, Section 9.1.2
-``422`` ``UNPROCESSABLE_ENTITY``            WebDAV :rfc:`4918`, Section 11.2
+``421`` ``MISDIRECTED_REQUEST``             HTTP Semantics :rfc:`9110`, Section 15.5.20
+``422`` ``UNPROCESSABLE_CONTENT``           HTTP Semantics :rfc:`9110`, Section 15.5.21
 ``423`` ``LOCKED``                          WebDAV :rfc:`4918`, Section 11.3
 ``424`` ``FAILED_DEPENDENCY``               WebDAV :rfc:`4918`, Section 11.4
 ``425`` ``TOO_EARLY``                       Using Early Data in HTTP :rfc:`8470`
