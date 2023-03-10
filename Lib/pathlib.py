@@ -314,14 +314,11 @@ class PurePath(object):
 
     @classmethod
     def _format_parsed_parts(cls, drv, root, tail):
-        sep = cls._flavour.sep
-        tail = sep.join(tail)
         if drv or root:
-            return f'{drv}{root}{tail}'
-        elif cls._flavour.splitdrive(tail)[0]:
-            return f'.{sep}{tail}'
-        else:
-            return tail
+            return drv + root + cls._flavour.sep.join(tail)
+        elif tail and cls._flavour.splitdrive(tail[0])[0]:
+            tail = ['.'] + tail
+        return cls._flavour.sep.join(tail)
 
     def __str__(self):
         """Return the string representation of the path, suitable for
