@@ -1976,7 +1976,7 @@ def getasyncgenlocals(agen):
     bound values."""
 
     if not isasyncgen(agen):
-        raise TypeError("{!r} is not a Python async generator".format(agen))
+        raise TypeError(f"{agen!r} is not a Python async generator")
 
     frame = getattr(agen, "ag_frame", None)
     if frame is not None:
