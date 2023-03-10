@@ -294,6 +294,10 @@ os
   method to check if the entry is a junction.
   (Contributed by Charles Machalow in :gh:`99547`.)
 
+* Add :func:`os.listdrives`, :func:`os.listvolumes` and :func:`os.listmounts`
+  functions on Windows for enumerating drives, volumes and mount points.
+  (Contributed by Steve Dower in :gh:`102519`.)
+
 os.path
 -------
 
