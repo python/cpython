@@ -4266,7 +4266,6 @@ os_listdrives_impl(PyObject *module)
         return NULL;
     }
 
-
     /* buflen includes a null terminator, so remove it */
     PyObject *str = PyUnicode_FromWideChar(buffer, buflen - 1);
     if (str) {
