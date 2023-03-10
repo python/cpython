@@ -620,7 +620,8 @@ def _frozen_get_del_attr(cls, fields, globals):
         fields_str = '{' + ','.join(repr(f.name) for f in fields) + '}'
     else:
         # Special case for the zero-length set.
-        fields_str = 'set()'
+        # Use the empty tuple singleton to avoid unnecessary `set` construction
+        fields_str = '()'
     return (_create_fn('__setattr__',
                       ('self', 'name', 'value'),
                       (f'if type(self) is cls or name in {fields_str}:',
