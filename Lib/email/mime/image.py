@@ -34,8 +34,8 @@ class MIMEImage(MIMENonMultipart):
         constructor, which turns them into parameters on the Content-Type
         header.
         """
-        _subtype = _infer_subtype(_imagedata) if _subtype is None else _subtype
-        if _subtype is None:
+        _subtype = _subtype or _infer_subtype(_imagedata)
+        if not _subtype:
             raise TypeError('Could not guess image MIME subtype')
         MIMENonMultipart.__init__(self, 'image', _subtype, policy=policy,
                                   **_params)
@@ -44,7 +44,7 @@ class MIMEImage(MIMENonMultipart):
 
 
 # Originally from the imghdr module.
-def _infer_subtype(h: bytes) -> str:
+def _infer_subtype(h: bytes) -> str | None:
     # JPEG data with JFIF or Exif markers; and raw JPEG
     if h[6:10] in (b'JFIF', b'Exif') or h.startswith(b'\xff\xd8\xff\xdb'):
         return 'jpeg'
