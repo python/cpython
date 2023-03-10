@@ -137,13 +137,13 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(frame->f_code)))
+#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = word.op.code; \
         oparg = word.op.arg; \
     } while (0)
-#define JUMPTO(x)       (next_instr = _PyCode_CODE(frame->f_code) + (x))
+#define JUMPTO(x)       (next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + (x))
 #define JUMPBY(x)       (next_instr += (x))
 
 /* OpCode prediction macros
@@ -196,7 +196,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
 #define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
-#define STACK_SIZE()      (frame->f_code->co_stacksize)
+#define STACK_SIZE()      (_PyFrame_GetCode(frame)->co_stacksize)
 #define EMPTY()           (STACK_LEVEL() == 0)
 #define TOP()             (stack_pointer[-1])
 #define SECOND()          (stack_pointer[-2])
@@ -279,6 +279,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
+#define CONSTS() ((PyCodeObject *)frame->f_executable)->co_consts
+#define NAMES() ((PyCodeObject *)frame->f_executable)->co_names
 
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
