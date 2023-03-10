@@ -664,6 +664,11 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
             if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
                     ERR_GET_REASON(e) == SSL_R_CERTIFICATE_VERIFY_FAILED) {
                 type = state->PySSLCertVerificationErrorObject;
+#ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
+            } else if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
+                    ERR_GET_REASON(e) == SSL_R_UNEXPECTED_EOF_WHILE_READING) {
+                type = state->PySSLEOFErrorObject;
+#endif
             }
             break;
         }
@@ -2537,12 +2542,14 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
                 sockstate = SOCKET_HAS_TIMED_OUT;
                 break;
             }
-            /* HACK: timeout of 1 to make sure we don't immediately fail */
-            sockstate = PySSL_select(sock, 0, 1, 0);
-            if (sockstate == SOCKET_HAS_TIMED_OUT) {
-                /* nothing else right now, so return what we have */
-                sockstate = SOCKET_OPERATION_OK;
-                break;
+            if (!SSL_has_pending(self->ssl)) {
+                /* HACK: timeout of 1 to make sure we don't immediately fail */
+                sockstate = PySSL_select(sock, 0, 1, 0);
+                if (sockstate == SOCKET_HAS_TIMED_OUT) {
+                    /* nothing else right now, so return what we have */
+                    sockstate = SOCKET_OPERATION_OK;
+                    break;
+                }
             }
             /* could be an error or more data */
             continue;
@@ -2554,8 +2561,16 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
             break;
         }
 
-        /* HACK: not sure why it claims SYSCALL error without setting errno? */
+        /* See https://www.openssl.org/docs/man1.1.1/man3/SSL_get_error.html#BUGS
+           for more details about this EOF condition */
+#ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
+        unsigned long e;
+        if (err.ssl == SSL_ERROR_SSL &&
+            ERR_GET_LIB((e = ERR_peek_last_error())) == ERR_LIB_SSL &&
+            ERR_GET_REASON(e) == SSL_R_UNEXPECTED_EOF_WHILE_READING) {
+#else
         if (err.ssl == SSL_ERROR_SYSCALL && !err.c) {
+#endif
             self->deferred_empty_reads += 1;
             retval = 1;
             break;
