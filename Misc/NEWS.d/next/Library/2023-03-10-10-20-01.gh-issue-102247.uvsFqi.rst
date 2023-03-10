@@ -1,2 +1,2 @@
-Update HTTP status codes in httplib package to match rfc9110. Patch by
+Update HTTP status codes in http package to match rfc9110. Patch by
 Yeojin Kim
