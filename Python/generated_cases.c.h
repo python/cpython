@@ -49,20 +49,17 @@
 
         TARGET(LOAD_CONST) {
             PREDICTED(LOAD_CONST);
-            PyObject *value;
-            value = GETITEM(consts, oparg);
-            #if 1
-            if (value != Py_None) {
-                value = tagged(value).obj;
+            _tagged_ptr value;
+            PyObject *v = GETITEM(consts, oparg);
+            if (v != Py_None) {
+                value = tagged(v);
             }
             else {
-                Py_INCREF(value);
+                Py_INCREF(v);
+                value = untagged(v);
             }
-            #else
-            Py_INCREF(value);
-            #endif
             STACK_GROW(1);
-            stack_pointer[-1] = untagged(value);
+            stack_pointer[-1] = value;
             DISPATCH();
         }
 
@@ -74,14 +71,14 @@
         }
 
         TARGET(LOAD_FAST__LOAD_FAST) {
-            PyObject *_tmp_1;
-            PyObject *_tmp_2;
+            _tagged_ptr _tmp_1;
+            _tagged_ptr _tmp_2;
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                _tmp_2 = value;
+                _tmp_2 = untagged(value);
             }
             oparg = (next_instr++)->op.arg;
             {
@@ -89,50 +86,47 @@
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                _tmp_1 = value;
+                _tmp_1 = untagged(value);
             }
             STACK_GROW(2);
-            stack_pointer[-1] = untagged(_tmp_1);
-            stack_pointer[-2] = untagged(_tmp_2);
+            stack_pointer[-1] = _tmp_1;
+            stack_pointer[-2] = _tmp_2;
             DISPATCH();
         }
 
         TARGET(LOAD_FAST__LOAD_CONST) {
-            PyObject *_tmp_1;
-            PyObject *_tmp_2;
+            _tagged_ptr _tmp_1;
+            _tagged_ptr _tmp_2;
             {
                 PyObject *value;
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                _tmp_2 = value;
+                _tmp_2 = untagged(value);
             }
             oparg = (next_instr++)->op.arg;
             {
-                PyObject *value;
-                value = GETITEM(consts, oparg);
-                #if 1
-                if (value != Py_None) {
-                    value = tagged(value).obj;
+                _tagged_ptr value;
+                PyObject *v = GETITEM(consts, oparg);
+                if (v != Py_None) {
+                    value = tagged(v);
                 }
                 else {
-                    Py_INCREF(value);
+                    Py_INCREF(v);
+                    value = untagged(v);
                 }
-                #else
-                Py_INCREF(value);
-                #endif
                 _tmp_1 = value;
             }
             STACK_GROW(2);
-            stack_pointer[-1] = untagged(_tmp_1);
-            stack_pointer[-2] = untagged(_tmp_2);
+            stack_pointer[-1] = _tmp_1;
+            stack_pointer[-2] = _tmp_2;
             DISPATCH();
         }
 
         TARGET(STORE_FAST__LOAD_FAST) {
-            PyObject *_tmp_1 = detag(stack_pointer[-1]);
+            _tagged_ptr _tmp_1 = stack_pointer[-1];
             {
-                _tagged_ptr value = untagged(_tmp_1);
+                _tagged_ptr value = _tmp_1;
                 SETLOCAL(oparg, STEAL(value));
             }
             oparg = (next_instr++)->op.arg;
@@ -141,22 +135,22 @@
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                _tmp_1 = value;
+                _tmp_1 = untagged(value);
             }
-            stack_pointer[-1] = untagged(_tmp_1);
+            stack_pointer[-1] = _tmp_1;
             DISPATCH();
         }
 
         TARGET(STORE_FAST__STORE_FAST) {
-            PyObject *_tmp_1 = detag(stack_pointer[-1]);
-            PyObject *_tmp_2 = detag(stack_pointer[-2]);
+            _tagged_ptr _tmp_1 = stack_pointer[-1];
+            _tagged_ptr _tmp_2 = stack_pointer[-2];
             {
-                _tagged_ptr value = untagged(_tmp_1);
+                _tagged_ptr value = _tmp_1;
                 SETLOCAL(oparg, STEAL(value));
             }
             oparg = (next_instr++)->op.arg;
             {
-                _tagged_ptr value = untagged(_tmp_2);
+                _tagged_ptr value = _tmp_2;
                 SETLOCAL(oparg, STEAL(value));
             }
             STACK_SHRINK(2);
@@ -164,21 +158,18 @@
         }
 
         TARGET(LOAD_CONST__LOAD_FAST) {
-            PyObject *_tmp_1;
-            PyObject *_tmp_2;
+            _tagged_ptr _tmp_1;
+            _tagged_ptr _tmp_2;
             {
-                PyObject *value;
-                value = GETITEM(consts, oparg);
-                #if 1
-                if (value != Py_None) {
-                    value = tagged(value).obj;
+                _tagged_ptr value;
+                PyObject *v = GETITEM(consts, oparg);
+                if (v != Py_None) {
+                    value = tagged(v);
                 }
                 else {
-                    Py_INCREF(value);
+                    Py_INCREF(v);
+                    value = untagged(v);
                 }
-                #else
-                Py_INCREF(value);
-                #endif
                 _tmp_2 = value;
             }
             oparg = (next_instr++)->op.arg;
@@ -187,11 +178,11 @@
                 value = GETLOCAL(oparg);
                 assert(value != NULL);
                 Py_INCREF(value);
-                _tmp_1 = value;
+                _tmp_1 = untagged(value);
             }
             STACK_GROW(2);
-            stack_pointer[-1] = untagged(_tmp_1);
-            stack_pointer[-2] = untagged(_tmp_2);
+            stack_pointer[-1] = _tmp_1;
+            stack_pointer[-2] = _tmp_2;
             DISPATCH();
         }
 

@@ -944,7 +944,7 @@ class Analyzer:
         # Note that 'lowest' may be negative.
         # TODO: Reverse the numbering.
         stack = [
-            StackEffect(f"_tmp_{i+1}", "") for i in reversed(range(highest - lowest))
+            StackEffect(f"_tmp_{i+1}", "_tagged_ptr") for i in reversed(range(highest - lowest))
         ]
         return stack, -lowest
 
@@ -1246,7 +1246,7 @@ class Analyzer:
             for i, var in reversed(list(enumerate(up.stack))):
                 src = None
                 if i < up.initial_sp:
-                    src = StackEffect(f"detag(stack_pointer[-{up.initial_sp - i}])", "")
+                    src = StackEffect(f"stack_pointer[-{up.initial_sp - i}]", "_tagged_ptr")
                 self.out.declare(var, src)
 
             yield
@@ -1255,9 +1255,8 @@ class Analyzer:
             self.out.stack_adjust(up.final_sp - up.initial_sp, [], [])
 
             for i, var in enumerate(reversed(up.stack[: up.final_sp]), 1):
-                dst = StackEffect(f"stack_pointer[-{i}]", "")
-                src = StackEffect(f"untagged({var.name})", "")
-                self.out.assign(dst, src)
+                dst = StackEffect(f"stack_pointer[-{i}]", "_tagged_ptr")
+                self.out.assign(dst, var)
 
             self.out.emit(f"DISPATCH();")
 

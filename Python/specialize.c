@@ -299,14 +299,12 @@ _PyCode_Quicken(PyCodeObject *code)
             case LOAD_FAST << 8 | LOAD_FAST:
                 instructions[i - 1].op.code = LOAD_FAST__LOAD_FAST;
                 break;
-            #if 0
             case STORE_FAST << 8 | LOAD_FAST:
                 instructions[i - 1].op.code = STORE_FAST__LOAD_FAST;
                 break;
             case STORE_FAST << 8 | STORE_FAST:
                 instructions[i - 1].op.code = STORE_FAST__STORE_FAST;
                 break;
-            #endif
             case COMPARE_OP << 8 | POP_JUMP_IF_TRUE:
             case COMPARE_OP << 8 | POP_JUMP_IF_FALSE:
             {
