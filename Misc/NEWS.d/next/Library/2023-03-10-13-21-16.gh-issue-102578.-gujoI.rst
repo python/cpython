@@ -1,0 +1,2 @@
+Speed up sanity check for ``__setattr__`` and ``__delattr__`` for frozen
+``dataclass``\es by using ``set``-based name lookup rather than ``tuple``\s.
