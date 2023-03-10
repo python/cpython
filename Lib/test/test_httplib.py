@@ -525,7 +525,8 @@ class BasicTest(TestCase):
         self.assertTrue({'description', 'name', 'phrase', 'value'} <= set(dir(HTTPStatus(404))))
 
     def test_simple_httpstatus(self):
-        class CheckedHTTPStatus(enum.IntEnum):
+        @enum._simple_enum(enum.IntEnum)
+        class CheckedHTTPStatus:
             """HTTP status codes and reason phrases
 
             Status codes from the following RFCs are all observed:
