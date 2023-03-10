@@ -2446,7 +2446,6 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
     size_t count = 0;
     int retval;
     int sockstate;
-    _PySSLError err;
     PySocketSockObject *sock = GET_SOCKET(self);
     _PyTime_t timeout, deadline = 0;
     unsigned int signalled = 0;
@@ -2509,7 +2508,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
     while (sockstate == SOCKET_OPERATION_OK) {
         size_t bytes_read = 0;
         retval = SSL_read_ex(self->ssl, mem + count, (size_t)len - count, &bytes_read);
-        err = _PySSL_errno(retval == 0, self->ssl, retval);
+        _PySSLError err = _PySSL_errno(retval == 0, self->ssl, retval);
         self->err = err;
 
         if (_PyErr_CheckSignalsTrippedNoGil()) {
@@ -2523,19 +2522,32 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
 
         if (retval > 0) {
             count += bytes_read;
+            if (SSL_get_shutdown(self->ssl) == SSL_RECEIVED_SHUTDOWN) {
+                break;
+            }
             if (bytes_read && count < (size_t)len) {
                 sockstate = PySSL_select(sock, 0, 1, 0);
-                /* possibly more data waiting, or a socket error */
+                if (sockstate == SOCKET_HAS_TIMED_OUT) {
+                    /* nothing else right now, so return what we have */
+                    sockstate = SOCKET_OPERATION_OK;
+                    break;
+                }
+                /* could be an error or more data */
+                printf("going for more data sockstate=%i\n", (int)sockstate);
                 continue;
             }
             /* read complete */
             break;
         }
 
-        if (err.ssl == SSL_ERROR_ZERO_RETURN) {
-            if (SSL_get_shutdown(self->ssl) == SSL_RECEIVED_SHUTDOWN) {
-                retval = 1;
-            }
+        if (err.ssl == SSL_ERROR_ZERO_RETURN && SSL_get_shutdown(self->ssl) == SSL_RECEIVED_SHUTDOWN) {
+            retval = 1;
+            break;
+        }
+
+        /* HACK: not sure why it claims SYSCALL error without setting errno? */
+        if (err.ssl == SSL_ERROR_SYSCALL && !err.c) {
+            retval = 1;
             break;
         }
 
