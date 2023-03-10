@@ -349,7 +349,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
 .. class:: Buffer
 
-   ABC for classes that provide the :meth:`__buffer__` method,
+   ABC for classes that provide the :meth:`~object.__buffer__` method,
    implementing the :ref:`buffer protocol <bufferobjects>`. See :pep:`688`.
 
    .. versionadded:: 3.12

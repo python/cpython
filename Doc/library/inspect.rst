@@ -1583,30 +1583,30 @@ The :mod:`inspect` module provides an :class:`enum.IntFlag`
 .. class:: BufferFlags
 
    This is an :class:`enum.IntFlag` that represents the flags that
-   can be passed to the :meth:`__buffer__` method of objects
+   can be passed to the :meth:`~object.__buffer__` method of objects
    implementing the :ref:`buffer protocol <bufferobjects>`.
 
    The meaning of the flags is explained at :ref:`buffer-request-types`.
 
-   .. attribute:: SIMPLE
-   .. attribute:: WRITABLE
-   .. attribute:: FORMAT
-   .. attribute:: ND
-   .. attribute:: STRIDES
-   .. attribute:: C_CONTIGUOUS
-   .. attribute:: F_CONTIGUOUS
-   .. attribute:: ANY_CONTIGUOUS
-   .. attribute:: INDIRECT
-   .. attribute:: CONTIG
-   .. attribute:: CONTIG_RO
-   .. attribute:: STRIDED
-   .. attribute:: STRIDED_RO
-   .. attribute:: RECORDS
-   .. attribute:: RECORDS_RO
-   .. attribute:: FULL
-   .. attribute:: FULL_RO
-   .. attribute:: READ
-   .. attribute:: WRITE
+   .. attribute:: BufferFlags.SIMPLE
+   .. attribute:: BufferFlags.WRITABLE
+   .. attribute:: BufferFlags.FORMAT
+   .. attribute:: BufferFlags.ND
+   .. attribute:: BufferFlags.STRIDES
+   .. attribute:: BufferFlags.C_CONTIGUOUS
+   .. attribute:: BufferFlags.F_CONTIGUOUS
+   .. attribute:: BufferFlags.ANY_CONTIGUOUS
+   .. attribute:: BufferFlags.INDIRECT
+   .. attribute:: BufferFlags.CONTIG
+   .. attribute:: BufferFlags.CONTIG_RO
+   .. attribute:: BufferFlags.STRIDED
+   .. attribute:: BufferFlags.STRIDED_RO
+   .. attribute:: BufferFlags.RECORDS
+   .. attribute:: BufferFlags.RECORDS_RO
+   .. attribute:: BufferFlags.FULL
+   .. attribute:: BufferFlags.FULL_RO
+   .. attribute:: BufferFlags.READ
+   .. attribute:: BufferFlags.WRITE
 
    .. versionadded:: 3.12
 

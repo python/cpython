@@ -2875,8 +2875,10 @@ implement the protocol in Python.
 
    Called when a buffer is no longer needed. The ``buffer`` argument is a
    :class:`memoryview` object that was previously returned by
-   :meth:`__buffer__`. The method must release any resources associated
+   :meth:`~object.__buffer__`. The method must release any resources associated
    with the buffer. This method should return ``None``.
+   Buffer objects that do not need to perform any cleanup are not required
+   to implement this method.
 
 .. versionadded:: 3.12
 
