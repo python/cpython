@@ -1365,7 +1365,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 }
 
 PyObject *
-PyObject_GenericTryGetAttr(PyObject *obj, PyObject *name)
+_PyObject_GenericTryGetAttr(PyObject *obj, PyObject *name)
 {
     return _PyObject_GenericGetAttrWithDict(obj, name, NULL, 1);
 }

@@ -8249,15 +8249,16 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
          (void *)PyObject_GenericGetAttr))
         /* finding nothing is reasonable when __getattr__ is defined */
-        res = PyObject_GenericTryGetAttr(self, name);
+        res = _PyObject_GenericTryGetAttr(self, name);
     else {
         Py_INCREF(getattribute);
         res = call_attribute(self, getattribute, name);
         Py_DECREF(getattribute);
     }
     if (res == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
             PyErr_Clear();
+        }
         res = call_attribute(self, getattr, name);
     }
     Py_DECREF(getattr);
