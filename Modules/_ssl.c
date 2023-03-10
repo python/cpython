@@ -2533,7 +2533,6 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
                     break;
                 }
                 /* could be an error or more data */
-                printf("going for more data sockstate=%i\n", (int)sockstate);
                 continue;
             }
             /* read complete */
