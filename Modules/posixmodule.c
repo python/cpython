@@ -4245,64 +4245,39 @@ static PyObject *
 os_listdrives_impl(PyObject *module)
 /*[clinic end generated code: output=aaece9dacdf682b5 input=1af9ccc9e583798e]*/
 {
-    wchar_t defaultBuffer[64];
-    int success = 0;
-    DWORD buflen = Py_ARRAY_LENGTH(defaultBuffer);
-    LPWSTR buffer = defaultBuffer;
+    /* Number of possible drives is limited, so 256 should always be enough.
+       On the day when it is not, listmounts() will have to be used. */
+    wchar_t buffer[256];
+    DWORD buflen = Py_ARRAY_LENGTH(buffer);
+    PyObject *result = NULL;
     if (PySys_Audit("os.listdrives", NULL) < 0) {
         return NULL;
     }
-    while (1) {
-        DWORD requiredlen;
-        Py_BEGIN_ALLOW_THREADS;
-        requiredlen = GetLogicalDriveStringsW(buflen, buffer);
-        Py_END_ALLOW_THREADS;
-        if (!requiredlen) {
-            PyErr_SetFromWindowsErr(0);
-            break;
-        } else if (requiredlen >= buflen) {
-            buflen = requiredlen;
-            if (buffer != defaultBuffer) {
-                PyMem_Free((void *)buffer);
-            }
-            buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * (buflen + 1));
-            if (!buffer) {
-                PyErr_NoMemory();
-                break;
-            }
-        } else {
-            success = 1;
-            buflen = requiredlen;
-            break;
-        }
+
+    Py_BEGIN_ALLOW_THREADS;
+    buflen = GetLogicalDriveStringsW(buflen, buffer);
+    Py_END_ALLOW_THREADS;
+
+    if (!buflen) {
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    } else if (buflen >= Py_ARRAY_LENGTH(buffer)) {
+        PyErr_SetFromWindowsErr(ERROR_MORE_DATA);
+        return NULL;
     }
 
-    PyObject *str = NULL;
-    PyObject *nullchar = NULL;
-    PyObject *r = NULL;
-
-    if (!success || !buffer) {
-        goto exit;
-    }
-
-    if (buflen == 0) {
-        r = PyList_New(0);
-        goto exit;
-    }
 
     /* buflen includes a null terminator, so remove it */
-    str = PyUnicode_FromWideChar(buffer, buflen - 1);
-    nullchar = PyUnicode_FromStringAndSize("\0", 1);
-    if (str && nullchar) {
-        r = PyUnicode_Split(str, nullchar, -1);
+    PyObject *str = PyUnicode_FromWideChar(buffer, buflen - 1);
+    if (str) {
+        PyObject *nullchar = PyUnicode_FromStringAndSize("\0", 1);
+        if (nullchar) {
+            result = PyUnicode_Split(str, nullchar, -1);
+            Py_DECREF(nullchar);
+        }
+        Py_DECREF(str);
     }
-exit:
-    if (buffer && buffer != defaultBuffer) {
-        PyMem_Free((void *)buffer);
-    }
-    Py_XDECREF(nullchar);
-    Py_XDECREF(str);
-    return r;
+    return result;
 }
 
 /*[clinic input]
