@@ -634,17 +634,14 @@ def ensure_future(coro_or_future, *, loop=None):
             raise ValueError('The future belongs to a different loop than '
                             'the one specified as the loop argument')
         return coro_or_future
-    should_close = False
+    should_close = True
     if not coroutines.iscoroutine(coro_or_future):
         if inspect.isawaitable(coro_or_future):
             async def _wrap_awaitable(awaitable):
-                @types.coroutine
-                def wrapper():
-                    return (yield from awaitable.__await__())
-                return await wrapper()
+                return await awaitable
 
             coro_or_future = _wrap_awaitable(coro_or_future)
-            should_close = True
+            should_close = False
         else:
             raise TypeError('An asyncio.Future, a coroutine or an awaitable '
                             'is required')
