@@ -2099,7 +2099,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     }
     else {
         // TODO this is a sketchy incref...
-        Py_INCREF(coro_result);
+        // Py_INCREF(coro_result);
         // TODO: check return value, error on NULL
         // (but first let's add a test case that hits this)
         PyObject * res = task_step_handle_result_impl(state, self, coro_result);
@@ -2841,7 +2841,9 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
         Py_RETURN_NONE;
     }
 
-    return task_step_handle_result_impl(state, task, result);
+    PyObject *ret = task_step_handle_result_impl(state, task, result);
+    Py_XDECREF(result);
+    return ret;
 
 fail:
     Py_XDECREF(result);
@@ -2854,6 +2856,8 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
 {
     int res;
     PyObject *o;
+
+    // Py_INCREF(result);
 
     if (result == (PyObject*)task) {
         /* We have a task that wants to await on itself */
@@ -2891,7 +2895,8 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
         Py_DECREF(tmp);
 
         /* task._fut_waiter = result */
-        task->task_fut_waiter = result;  /* no incref is necessary */
+        Py_INCREF(result);
+        task->task_fut_waiter = result;
 
         if (task->task_must_cancel) {
             PyObject *r;
@@ -2984,7 +2989,8 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
         Py_DECREF(tmp);
 
         /* task._fut_waiter = result */
-        task->task_fut_waiter = result;  /* no incref is necessary */
+        Py_INCREF(result);
+        task->task_fut_waiter = result;
 
         if (task->task_must_cancel) {
             PyObject *r;
@@ -3019,21 +3025,21 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
             state, task, PyExc_RuntimeError,
             "yield was used instead of yield from for "
             "generator in task %R with %R", task, result);
-        Py_DECREF(result);
+        // Py_DECREF(result);
         return o;
     }
 
     /* The `result` is none of the above */
     o = task_set_error_soon(
         state, task, PyExc_RuntimeError, "Task got bad yield: %R", result);
-    Py_DECREF(result);
+    // Py_DECREF(result);
     return o;
 
 self_await:
     o = task_set_error_soon(
         state, task, PyExc_RuntimeError,
         "Task cannot await on itself: %R", task);
-    Py_DECREF(result);
+    // Py_DECREF(result);
     return o;
 
 yield_insteadof_yf:
@@ -3042,7 +3048,7 @@ yield_insteadof_yf:
         "yield was used instead of yield from "
         "in task %R with %R",
         task, result);
-    Py_DECREF(result);
+    // Py_DECREF(result);
     return o;
 
 different_loop:
@@ -3050,11 +3056,11 @@ different_loop:
         state, task, PyExc_RuntimeError,
         "Task %R got Future %R attached to a different loop",
         task, result);
-    Py_DECREF(result);
+    // Py_DECREF(result);
     return o;
 
 fail:
-    Py_XDECREF(result);
+    // Py_XDECREF(result);
     return NULL;
 }
 
