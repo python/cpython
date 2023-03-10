@@ -8790,7 +8790,7 @@ assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(g.g_entryblock);
-    /* Create assembler */
+
     struct assembler a;
     int res = assemble_emit(&a, g.g_entryblock, u->u_firstlineno, const_cache);
     if (res == SUCCESS) {
@@ -8803,7 +8803,6 @@ assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     Py_XDECREF(consts);
     cfg_builder_fini(&g);
     return co;
-
 }
 
 static PyCodeObject *
