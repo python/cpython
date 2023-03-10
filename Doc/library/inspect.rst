@@ -1575,6 +1575,41 @@ the following flags:
    for any introspection needs.
 
 
+Buffer flags
+------------
+
+The :mod:`inspect` module provides an :class:`enum.IntFlag`
+
+.. class:: BufferFlags
+
+   This is an :class:`enum.IntFlag` that represents the flags that
+   can be passed to the :meth:`__buffer__` method of objects
+   implementing the :ref:`buffer protocol <bufferobjects>`.
+
+   The meaning of the flags is explained at :ref:`buffer-request-types`.
+
+   .. attribute:: SIMPLE
+   .. attribute:: WRITABLE
+   .. attribute:: FORMAT
+   .. attribute:: ND
+   .. attribute:: STRIDES
+   .. attribute:: C_CONTIGUOUS
+   .. attribute:: F_CONTIGUOUS
+   .. attribute:: ANY_CONTIGUOUS
+   .. attribute:: INDIRECT
+   .. attribute:: CONTIG
+   .. attribute:: CONTIG_RO
+   .. attribute:: STRIDED
+   .. attribute:: STRIDED_RO
+   .. attribute:: RECORDS
+   .. attribute:: RECORDS_RO
+   .. attribute:: FULL
+   .. attribute:: FULL_RO
+   .. attribute:: READ
+   .. attribute:: WRITE
+
+   .. versionadded:: 3.12
+
 .. _inspect-module-cli:
 
 Command Line Interface

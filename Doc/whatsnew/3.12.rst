@@ -138,6 +138,18 @@ New Features
   with contributions from Gregory P. Smith [Google] and Mark Shannon
   in :gh:`96123`.)
 
+PEP 688: Making the buffer protocol accessible in Python
+--------------------------------------------------------
+
+:pep:`688` introduces a way to use the :ref:`buffer protocol <bufferobjects>`
+from Python code. Classes that implement the :meth:`__buffer__` method
+are now usable as buffer types.
+
+The new :class:`collections.abc.Buffer` ABC provides a standard
+way to represent buffer objects, for example in type annotations.
+:class:`memoryview` has a new ``flags`` argument to control the
+:class:`buffer flags <inspect.BufferFlags>` passed to the underlying buffer.
+(Contributed by Jelle Zijlstra in :gh:`102500`.)
 
 Other Language Changes
 ======================

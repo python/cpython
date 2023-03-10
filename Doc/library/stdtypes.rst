@@ -3704,7 +3704,7 @@ Memory Views
 of an object that supports the :ref:`buffer protocol <bufferobjects>` without
 copying.
 
-.. class:: memoryview(object)
+.. class:: memoryview(object, *, flags=BufferFlags.FULL_RO)
 
    Create a :class:`memoryview` that references *object*.  *object* must
    support the buffer protocol.  Built-in objects that support the buffer
@@ -3789,6 +3789,15 @@ copying.
       >>> hash(v[::-2]) == hash(b'abcefg'[::-2])
       True
 
+   The optional ``flags`` can be used to control the :class:`inspect.BufferFlags <buffer flags>`
+   passed to the underlying buffer. For example::
+
+      >>> import inspect
+      >>> v = memoryview(b"x", flags=inspect.BufferFlags.WRITABLE)
+      ...
+      BufferError: Object is not writable.
+      >>> v = memoryview(b"x", flags=inspect.BufferFlags.SIMPLE)
+
    .. versionchanged:: 3.3
       One-dimensional memoryviews can now be sliced.
       One-dimensional memoryviews with formats 'B', 'b' or 'c' are now :term:`hashable`.
@@ -3799,6 +3808,9 @@ copying.
 
    .. versionchanged:: 3.5
       memoryviews can now be indexed with tuple of integers.
+
+   .. versionchanged:: 3.12
+      Added the ``flags`` argument.
 
    :class:`memoryview` has several methods:
 
