@@ -634,11 +634,17 @@ def ensure_future(coro_or_future, *, loop=None):
             raise ValueError('The future belongs to a different loop than '
                             'the one specified as the loop argument')
         return coro_or_future
-    called_wrap_awaitable = False
+    should_close = False
     if not coroutines.iscoroutine(coro_or_future):
         if inspect.isawaitable(coro_or_future):
-            coro_or_future = _wrap_awaitable(coro_or_future)
-            called_wrap_awaitable = True
+            async def _wrap_awaitable():
+                @types.coroutine
+                def wrapper():
+                    return (yield from coro_or_future.__await__())
+                return await wrapper()
+
+            coro_or_future = _wrap_awaitable()
+            should_close = True
         else:
             raise TypeError('An asyncio.Future, a coroutine or an awaitable '
                             'is required')
@@ -648,23 +654,10 @@ def ensure_future(coro_or_future, *, loop=None):
     try:
         return loop.create_task(coro_or_future)
     except RuntimeError:
-        if not called_wrap_awaitable:
+        if should_close:
             coro_or_future.close()
         raise
 
-
-async def _wrap_awaitable(awaitable):
-    """Helper for asyncio.ensure_future().
-
-    Wraps awaitable (an object with __await__) into a coroutine
-    that will later be wrapped in a Task by ensure_future().
-    """
-
-    @types.coroutine
-    def wrapper(awaitable):
-        return (yield from awaitable.__await__())
-
-    return await wrapper(awaitable)
 
 class _GatheringFuture(futures.Future):
     """Helper for gather().
