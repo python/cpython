@@ -716,10 +716,10 @@
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
-                cause = detag(args[1]);
+                cause = STEAL(args[1]);
                 /* fall through */
             case 1:
-                exc = detag(args[0]);
+                exc = STEAL(args[0]);
                 /* fall through */
             case 0:
                 if (do_raise(tstate, exc, cause)) { STACK_SHRINK(oparg); goto exception_unwind; }

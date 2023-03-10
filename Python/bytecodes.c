@@ -523,10 +523,10 @@ dummy_func(
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
-                cause = args[1];
+                cause = STEAL(args[1]);
                 /* fall through */
             case 1:
-                exc = args[0];
+                exc = STEAL(args[0]);
                 /* fall through */
             case 0:
                 ERROR_IF(do_raise(tstate, exc, cause), exception_unwind);
