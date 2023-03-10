@@ -326,6 +326,11 @@ also be used to improve performance.
 
    Enable C-level code profiling with ``gprof`` (disabled by default).
 
+.. cmdoption:: --with-strict-overflow
+
+   Add ``-fstrict-overflow`` to the C compiler flags (by default we add
+   ``-fno-strict-overflow`` instead).
+
 
 .. _debug-build:
 

@@ -49,6 +49,8 @@ import os
 from concurrent.futures import _base
 import queue
 import multiprocessing as mp
+# This import is required to load the multiprocessing.connection submodule
+# so that it can be accessed later as `mp.connection`
 import multiprocessing.connection
 from multiprocessing.queues import Queue
 import threading

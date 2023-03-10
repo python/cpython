@@ -3207,8 +3207,6 @@ SimpleExtendsException(PyExc_Exception, ReferenceError,
 
 #define MEMERRORS_SAVE 16
 
-static PyBaseExceptionObject last_resort_memory_error;
-
 static PyObject *
 get_memory_error(int allow_allocation, PyObject *args, PyObject *kwds)
 {
@@ -3216,7 +3214,9 @@ get_memory_error(int allow_allocation, PyObject *args, PyObject *kwds)
     struct _Py_exc_state *state = get_exc_state();
     if (state->memerrors_freelist == NULL) {
         if (!allow_allocation) {
-            return Py_NewRef(&last_resort_memory_error);
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            return Py_NewRef(
+                &_Py_INTERP_SINGLETON(interp, last_resort_memory_error));
         }
         PyObject *result = BaseException_new((PyTypeObject *)PyExc_MemoryError, args, kwds);
         return result;
@@ -3238,8 +3238,6 @@ get_memory_error(int allow_allocation, PyObject *args, PyObject *kwds)
     _PyObject_GC_TRACK(self);
     return (PyObject *)self;
 }
-
-static PyBaseExceptionObject last_resort_memory_error;
 
 static PyObject *
 MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -3325,7 +3323,7 @@ free_preallocated_memerrors(struct _Py_exc_state *state)
 }
 
 
-static PyTypeObject _PyExc_MemoryError = {
+PyTypeObject _PyExc_MemoryError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "MemoryError",
     sizeof(PyBaseExceptionObject),
@@ -3339,9 +3337,6 @@ static PyTypeObject _PyExc_MemoryError = {
 };
 PyObject *PyExc_MemoryError = (PyObject *) &_PyExc_MemoryError;
 
-static PyBaseExceptionObject last_resort_memory_error = {
-    _PyObject_IMMORTAL_INIT(&_PyExc_MemoryError)
-};
 
 /*
  *    BufferError extends Exception
