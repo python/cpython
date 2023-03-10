@@ -19,6 +19,7 @@ class WavePCM8Test(WaveTest, unittest.TestCase):
     sampwidth = 1
     framerate = 11025
     nframes = 48
+    encoding = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -36,6 +37,7 @@ class WavePCM16Test(WaveTest, unittest.TestCase):
     sampwidth = 2
     framerate = 11025
     nframes = 48
+    encoding = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -57,6 +59,7 @@ class WavePCM24Test(WaveTest, unittest.TestCase):
     sampwidth = 3
     framerate = 11025
     nframes = 48
+    encoding = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -84,6 +87,8 @@ class WavePCM24ExtTest(WaveTest, unittest.TestCase):
     sampwidth = 3
     framerate = 11025
     nframes = 48
+    encoding = wave.WAVE_FORMAT_EXTENSIBLE
+    readonly = True  # Writing EXTENSIBLE wave format is not supported.
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -111,6 +116,7 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
     sampwidth = 4
     framerate = 11025
     nframes = 48
+    encoding = wave.WAVE_FORMAT_PCM
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -131,9 +137,34 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
         frames = wave._byteswap(frames, 4)
 
 
+class WaveIeeeFloatingPointTest(WaveTest, unittest.TestCase):
+    sndfilename = 'pluck-float32.wav'
+    sndfilenframes = 3307
+    nchannels = 2
+    sampwidth = 4
+    framerate = 11025
+    nframes = 48
+    encoding = wave.WAVE_FORMAT_IEEE_FLOAT
+    comptype = 'NONE'
+    compname = 'not compressed'
+    frames = bytes.fromhex("""\
+      60598B3C001423BA 1FB4163F8054FA3B 0E4FC43E80C51D3D 53467EBF4030843D \
+      FC84D0BE304C563D 3053113F40BEFC3C B72F00BFC03E583C E0FEDA3C805142BC \
+      54510FBFE02638BD 569F16BF40FDCABD C060A63EECA421BE 3CE5523E2C3349BE \
+      0C2E10BE14725BBE 5268E7BEDC3B6CBE 985AE03D80497ABE B4B606BEECB67EBE \
+      B0B12E3FC87C6CBE 005519BD4C0F3EBE F8BD1B3EECDF03BE 924E9FBE588D8DBD \
+      D4E150BF501711BD B079A0BD20FBFBBC 5863863D40760CBD 0E3C83BE40E217BD \
+      04FF0B3EF07839BD E29AFB3E80A714BD B91007BFE042D3BC B5AD4D3F80CDA0BB \
+      1AB1C3BEB04E023D D33A063FC0A8973D 8012F9BEE074EC3D 7341223FD415153E \
+      D80409BE04A63A3E 00F27BBFBC25333E 0000803FFC29223E 000080BF38A7143E \
+      3638133F283BEB3D 7C6E253F00CADB3D 686A02BE88FDF53D 920CC7BE28E1FB3D \
+      185B5ABED8A2CE3D 5189463FC8A7A53D E88F8C3DF0FFA13D 1CE6AE3EE0A0B03D \
+      DF90223F184EE43D 376768BF2CD8093E 281612BF60B3EE3D 2F26083F88B4A53D \
+      """)
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        not_exported = {'WAVE_FORMAT_PCM', 'WAVE_FORMAT_EXTENSIBLE', 'KSDATAFORMAT_SUBTYPE_PCM'}
+        not_exported = {'WAVE_FORMAT_PCM', 'WAVE_FORMAT_IEEE_FLOAT', 'WAVE_FORMAT_EXTENSIBLE', 'KSDATAFORMAT_SUBTYPE_PCM'}
         support.check__all__(self, wave, not_exported=not_exported)
 
 

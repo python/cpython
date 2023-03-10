@@ -144,6 +144,8 @@ __all__ = ["Error", "open"]
 warnings._deprecated(__name__, remove=(3, 13))
 
 
+AIFC_ENCODING_LINEAR_PCM = 1
+
 class Error(Exception):
     pass
 
@@ -399,6 +401,9 @@ class Aifc_read:
 
     def getframerate(self):
         return self._framerate
+
+    def getencoding(self):
+        return AIFC_ENCODING_LINEAR_PCM
 
     def getcomptype(self):
         return self._comptype
@@ -674,6 +679,13 @@ class Aifc_write:
 
     def getnframes(self):
         return self._nframeswritten
+
+    def getencoding(self):
+        return AIFC_ENCODING_LINEAR_PCM
+
+    def setencoding(self, encoding):
+        if encoding != AIFC_ENCODING_LINEAR_PCM:
+            raise Error("Unsupported encoding")
 
     def setcomptype(self, comptype, compname):
         if self._nframeswritten:

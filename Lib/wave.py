@@ -15,6 +15,8 @@ This returns an instance of a class with the following public methods:
       getsampwidth()  -- returns sample width in bytes
       getframerate()  -- returns sampling frequency
       getnframes()    -- returns number of audio frames
+      getencoding()   -- returns frame encoding (WAVE_FORMAT_PCM, WAVE_FORMAT_IEEE_FLOAT
+                         or WAVE_FORMAT_EXTENSIBLE)
       getcomptype()   -- returns compression type ('NONE' for linear samples)
       getcompname()   -- returns human-readable version of
                          compression type ('not compressed' linear samples)
@@ -46,6 +48,9 @@ This returns an instance of a class with the following public methods:
       setsampwidth(n) -- set the sample width
       setframerate(n) -- set the frame rate
       setnframes(n)   -- set the number of frames
+      setencoding(encoding)
+                      -- set the frame encoding. Only WAVE_FORMAT_PCM,
+                         WAVE_FORMAT_IEEE_FLOAT are supported.
       setcomptype(type, name)
                       -- set the compression type and the
                          human-readable compression type
@@ -83,6 +88,7 @@ class Error(Exception):
     pass
 
 WAVE_FORMAT_PCM = 0x0001
+WAVE_FORMAT_IEEE_FLOAT = 0x0003
 WAVE_FORMAT_EXTENSIBLE = 0xFFFE
 # Derived from uuid.UUID("00000001-0000-0010-8000-00aa00389b71").bytes_le
 KSDATAFORMAT_SUBTYPE_PCM = b'\x01\x00\x00\x00\x00\x00\x10\x00\x80\x00\x00\xaa\x008\x9bq'
@@ -230,6 +236,10 @@ class Wave_read:
               available through the getsampwidth() method
     _framerate -- the sampling frequency
               available through the getframerate() method
+    _encoding -- frame encoding
+              One of WAVE_FORMAT_PCM, WAVE_FORMAT_IEEE_FLOAT
+              or WAVE_FORMAT_EXTENSIBLE available through
+              getencoding() method
     _comptype -- the AIFF-C compression type ('NONE' if AIFF)
               available through the getcomptype() method
     _compname -- the human-readable AIFF-C compression type
@@ -348,6 +358,9 @@ class Wave_read:
     def getmark(self, id):
         raise Error('no marks')
 
+    def getencoding(self):
+        return self._encoding
+
     def setpos(self, pos):
         if pos < 0 or pos > self._nframes:
             raise Error('position not in range')
@@ -377,16 +390,16 @@ class Wave_read:
 
     def _read_fmt_chunk(self, chunk):
         try:
-            wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
+            self._encoding, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
         except struct.error:
             raise EOFError from None
-        if wFormatTag != WAVE_FORMAT_PCM and wFormatTag != WAVE_FORMAT_EXTENSIBLE:
-            raise Error('unknown format: %r' % (wFormatTag,))
+        if self._encoding not in (WAVE_FORMAT_PCM, WAVE_FORMAT_IEEE_FLOAT, WAVE_FORMAT_EXTENSIBLE):
+            raise Error('unknown format: %r' % (self._encoding,))
         try:
             sampwidth = struct.unpack_from('<H', chunk.read(2))[0]
         except struct.error:
             raise EOFError from None
-        if wFormatTag == WAVE_FORMAT_EXTENSIBLE:
+        if self._encoding == WAVE_FORMAT_EXTENSIBLE:
             try:
                 cbSize, wValidBitsPerSample, dwChannelMask = struct.unpack_from('<HHL', chunk.read(8))
                 # Read the entire UUID from the chunk
@@ -428,6 +441,8 @@ class Wave_write:
               set through the setsampwidth() or setparams() method
     _framerate -- the sampling frequency
               set through the setframerate() or setparams() method
+    _encoding -- frame encoding
+              set through setencoding() method
     _nframes -- the number of audio frames written to the header
               set through the setnframes() or setparams() method
 
@@ -453,6 +468,7 @@ class Wave_write:
         self._file = file
         self._convert = None
         self._nchannels = 0
+        self._encoding = WAVE_FORMAT_PCM
         self._sampwidth = 0
         self._framerate = 0
         self._nframes = 0
@@ -524,6 +540,16 @@ class Wave_write:
             raise Error('unsupported compression type')
         self._comptype = comptype
         self._compname = compname
+
+    def setencoding(self, encoding):
+        if self._datawritten:
+            raise Error('cannot change parameters after starting to write')
+        if encoding not in (WAVE_FORMAT_IEEE_FLOAT, WAVE_FORMAT_PCM):
+            raise Error('unsupported wave format')
+        self._encoding = encoding
+
+    def getencoding(self):
+        return self._encoding
 
     def getcomptype(self):
         return self._comptype
@@ -617,7 +643,7 @@ class Wave_write:
             self._form_length_pos = None
         self._file.write(struct.pack('<L4s4sLHHLLHH4s',
             36 + self._datalength, b'WAVE', b'fmt ', 16,
-            WAVE_FORMAT_PCM, self._nchannels, self._framerate,
+            self._encoding, self._nchannels, self._framerate,
             self._nchannels * self._framerate * self._sampwidth,
             self._nchannels * self._sampwidth,
             self._sampwidth * 8, b'data'))

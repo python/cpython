@@ -2,6 +2,7 @@ import unittest
 from test import audiotests
 import io
 import struct
+import sunau
 import sys
 from test.support import warnings_helper
 
@@ -21,6 +22,7 @@ class SunauPCM8Test(SunauTest, unittest.TestCase):
     sampwidth = 1
     framerate = 11025
     nframes = 48
+    encoding = sunau.AUDIO_FILE_ENCODING_LINEAR_8
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -38,6 +40,7 @@ class SunauPCM16Test(SunauTest, unittest.TestCase):
     sampwidth = 2
     framerate = 11025
     nframes = 48
+    encoding = sunau.AUDIO_FILE_ENCODING_LINEAR_16
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -57,6 +60,7 @@ class SunauPCM24Test(SunauTest, unittest.TestCase):
     sampwidth = 3
     framerate = 11025
     nframes = 48
+    encoding = sunau.AUDIO_FILE_ENCODING_LINEAR_24
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -82,6 +86,7 @@ class SunauPCM32Test(SunauTest, unittest.TestCase):
     sampwidth = 4
     framerate = 11025
     nframes = 48
+    encoding = sunau.AUDIO_FILE_ENCODING_LINEAR_32
     comptype = 'NONE'
     compname = 'not compressed'
     frames = bytes.fromhex("""\
@@ -107,6 +112,7 @@ class SunauULAWTest(SunauTest, unittest.TestCase):
     sampwidth = 2
     framerate = 11025
     nframes = 48
+    encoding = sunau.AUDIO_FILE_ENCODING_MULAW_8
     comptype = 'ULAW'
     compname = 'CCITT G.711 u-law'
     frames = bytes.fromhex("""\
