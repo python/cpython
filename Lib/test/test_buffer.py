@@ -17,6 +17,7 @@ import contextlib
 import unittest
 from test import support
 from test.support import os_helper
+import inspect
 from itertools import permutations, product
 from random import randrange, sample, choice
 import warnings
@@ -4501,6 +4502,40 @@ class TestPythonBufferProtocol(unittest.TestCase):
             self.assertTrue(wr.held)
             self.assertEqual(mv.tobytes(), b"hello")
         self.assertFalse(wr.held)
+
+    def test_buffer_flags(self):
+        class PossiblyMutable:
+            def __init__(self, data, mutable) -> None:
+                self._data = bytearray(data)
+                self._mutable = mutable
+
+            def __buffer__(self, flags):
+                if flags & inspect.BufferFlags.WRITABLE:
+                    if not self._mutable:
+                        raise RuntimeError("not mutable")
+                    return memoryview(self._data)
+                else:
+                    return memoryview(bytes(self._data))
+
+        mutable = PossiblyMutable(b"hello", True)
+        immutable = PossiblyMutable(b"hello", False)
+        with memoryview(mutable, flags=inspect.BufferFlags.WRITABLE) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            mv[0] = ord(b'x')
+            self.assertEqual(mv.tobytes(), b"xello")
+        with memoryview(immutable, flags=inspect.BufferFlags.SIMPLE) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            with self.assertRaises(TypeError):
+                mv[0] = ord(b'x')
+            self.assertEqual(mv.tobytes(), b"hello")
+
+        with self.assertRaises(RuntimeError):
+            memoryview(immutable, flags=inspect.BufferFlags.WRITABLE)
+        with memoryview(immutable) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            with self.assertRaises(TypeError):
+                mv[0] = ord(b'x')
+            self.assertEqual(mv.tobytes(), b"hello")
 
     def test_call_builtins(self):
         ba = bytearray(b"hello")

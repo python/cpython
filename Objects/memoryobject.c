@@ -965,15 +965,17 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char order)
 memoryview.__new__
 
     object: object
+    *
+    flags: int(c_default='PyBUF_FULL_RO') = PyBUF_FULL_RO
 
 Create a new memoryview object which references the given object.
 [clinic start generated code]*/
 
 static PyObject *
-memoryview_impl(PyTypeObject *type, PyObject *object)
-/*[clinic end generated code: output=7de78e184ed66db8 input=f04429eb0bdf8c6e]*/
+memoryview_impl(PyTypeObject *type, PyObject *object, int flags)
+/*[clinic end generated code: output=f1c225d1ad24ec11 input=cab66ab4bb27f268]*/
 {
-    return PyMemoryView_FromObject(object);
+    return PyMemoryView_FromObjectAndFlags(object, flags);
 }
 
 

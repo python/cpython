@@ -9,13 +9,13 @@ preserve
 
 
 PyDoc_STRVAR(memoryview__doc__,
-"memoryview(object)\n"
+"memoryview(object, *, flags=PyBUF_FULL_RO)\n"
 "--\n"
 "\n"
 "Create a new memoryview object which references the given object.");
 
 static PyObject *
-memoryview_impl(PyTypeObject *type, PyObject *object);
+memoryview_impl(PyTypeObject *type, PyObject *object, int flags);
 
 static PyObject *
 memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -23,14 +23,14 @@ memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 2
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(object), },
+        .ob_item = { &_Py_ID(object), &_Py_ID(flags), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -39,24 +39,34 @@ memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"object", NULL};
+    static const char * const _keywords[] = {"object", "flags", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "memoryview",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *object;
+    int flags = PyBUF_FULL_RO;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
     object = fastargs[0];
-    return_value = memoryview_impl(type, object);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    flags = _PyLong_AsInt(fastargs[1]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = memoryview_impl(type, object, flags);
 
 exit:
     return return_value;
@@ -356,4 +366,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a832f2fc44e4794c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9de9bd412f8fea52 input=a9049054013a1b77]*/
