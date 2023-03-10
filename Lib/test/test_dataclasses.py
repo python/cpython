@@ -2911,8 +2911,9 @@ class TestFrozen(unittest.TestCase):
         self.assertEqual(s.y, 10)
         del s.cached
         self.assertFalse(hasattr(s, 'cached'))
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(AttributeError) as cm:
             del s.cached
+        self.assertNotIsInstance(cm.exception, FrozenInstanceError)
 
     def test_non_frozen_normal_derived_from_empty_frozen(self):
         @dataclass(frozen=True)
@@ -2929,8 +2930,9 @@ class TestFrozen(unittest.TestCase):
 
         del s.x
         self.assertFalse(hasattr(s, 'x'))
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(AttributeError) as cm:
             del s.x
+        self.assertNotIsInstance(cm.exception, FrozenInstanceError)
 
     def test_overwriting_frozen(self):
         # frozen uses __setattr__ and __delattr__.
