@@ -84,7 +84,7 @@ void
 _PyDebug_PrintTotalRefs(void) {
     fprintf(stderr,
             "[%zd refs, %zd blocks]\n",
-            _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
+            _Py_GetRefTotal(), _Py_GetGlobalAllocatedBlocks());
 }
 #endif /* Py_REF_DEBUG */
 

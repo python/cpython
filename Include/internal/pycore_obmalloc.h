@@ -678,7 +678,10 @@ void _PyObject_VirtualFree(void *, size_t size);
 
 
 /* This function returns the number of allocated memory blocks, regardless of size */
-PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
+extern Py_ssize_t _Py_GetGlobalAllocatedBlocks(void);
+#define _Py_GetAllocatedBlocks() \
+    _Py_GetGlobalAllocatedBlocks()
+extern Py_ssize_t _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *);
 
 
 #ifdef WITH_PYMALLOC

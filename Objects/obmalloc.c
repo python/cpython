@@ -751,9 +751,9 @@ get_state(void)
 #define raw_allocated_blocks (state->mgmt.raw_allocated_blocks)
 
 Py_ssize_t
-_Py_GetAllocatedBlocks(void)
+_PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *interp)
 {
-    OMState *state = get_state();
+    OMState *state = &interp->obmalloc;
 
     Py_ssize_t n = raw_allocated_blocks;
     /* add up allocated blocks for used pools */
@@ -773,6 +773,38 @@ _Py_GetAllocatedBlocks(void)
         }
     }
     return n;
+}
+
+Py_ssize_t
+_Py_GetGlobalAllocatedBlocks(void)
+{
+    Py_ssize_t total = 0;
+    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(&_PyRuntime);
+    if (finalizing != NULL) {
+        assert(finalizing->interp != NULL);
+        PyInterpreterState *interp = _PyInterpreterState_Main();
+        if (interp == NULL) {
+            /* We are at the very end of runtime finalization. */
+            interp = finalizing->interp;
+        }
+        else {
+            assert(interp != NULL);
+            assert(finalizing->interp == interp);
+            assert(PyInterpreterState_Head() == interp);
+            assert(PyInterpreterState_Next(interp) == NULL);
+        }
+        total += _PyInterpreterState_GetAllocatedBlocks(interp);
+    }
+    else {
+        HEAD_LOCK(&_PyRuntime);
+        PyInterpreterState *interp = PyInterpreterState_Head();
+        assert(interp != NULL);
+        for (; interp != NULL; interp = PyInterpreterState_Next(interp)) {
+            total += _PyInterpreterState_GetAllocatedBlocks(interp);
+        }
+        HEAD_UNLOCK(&_PyRuntime);
+    }
+    return total;
 }
 
 #if WITH_PYMALLOC_RADIX_TREE
@@ -1731,7 +1763,13 @@ _PyObject_Realloc(void *ctx, void *ptr, size_t nbytes)
  * only be used by extensions that are compiled with pymalloc enabled. */
 
 Py_ssize_t
-_Py_GetAllocatedBlocks(void)
+_PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *Py_UNUSED(interp))
+{
+    return 0;
+}
+
+Py_ssize_t
+_Py_GetGlobalAllocatedBlocks(void)
 {
     return 0;
 }
