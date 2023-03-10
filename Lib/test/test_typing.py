@@ -2548,16 +2548,18 @@ class ProtocolTests(BaseTestCase):
         class D:
             attr = CustomDescriptor()
 
-        class E: ...
-
         # Check that properties set on superclasses
         # are still found by the isinstance() logic
-        class F(C): ...
-        class G(D): ...
+        class E(C): ...
+        class F(D): ...
 
-        for klass in C, D, F, G:
+        for klass in C, D, E, F:
             with self.subTest(klass=klass.__name__):
                 self.assertEqual(klass().attr, 42)
+
+        class G: ...
+
+        self.assertFalse(hasattr(G(), "attr"))
 
         T = TypeVar('T')
 
@@ -2580,7 +2582,7 @@ class ProtocolTests(BaseTestCase):
             attr: T
 
         for protocol_class in P, P1, PG, PG1:
-            for klass in C, D, F, G:
+            for klass in C, D, E, F:
                 with self.subTest(
                     klass=klass.__name__,
                     protocol_class=protocol_class.__name__
@@ -2588,7 +2590,7 @@ class ProtocolTests(BaseTestCase):
                     self.assertIsInstance(klass(), protocol_class)
 
             with self.subTest(protocol_class=protocol_class.__name__):
-                self.assertNotIsInstance(E(), protocol_class)
+                self.assertNotIsInstance(G(), protocol_class)
 
         class BadP(Protocol):
             @property
