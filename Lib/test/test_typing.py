@@ -2555,8 +2555,9 @@ class ProtocolTests(BaseTestCase):
         class F(C): ...
         class G(D): ...
 
-        self.assertEqual(C().attr, 42)
-        self.assertEqual(D().attr, 42)
+        for klass in C, D, F, G:
+            with self.subTest(klass=klass.__name__):
+                self.assertEqual(klass().attr, 42)
 
         T = TypeVar('T')
 
