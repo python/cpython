@@ -718,8 +718,15 @@ class Path(PurePath):
     def _make_child_relpath(self, part):
         # This is an optimization used for dir walking.  `part` must be
         # a single part relative to this path.
-        parts = self._parts + [part]
-        return self._from_parsed_parts(self._drv, self._root, parts)
+        drv = self._drv
+        root = self._root
+        parts = self._parts
+        if drv and not root and not parts:
+            sep = self._flavour.sep
+            if drv.startswith(sep) and not drv.endswith(sep):
+                # Incomplete UNC drive like '//foo'.
+                return self._from_parts([self, part])
+        return self._from_parsed_parts(drv, root, parts + [part])
 
     def __enter__(self):
         # In previous versions of pathlib, __exit__() marked this path as
