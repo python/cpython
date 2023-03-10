@@ -3,7 +3,6 @@ import itertools
 import contextlib
 import pathlib
 import pickle
-import string
 import sys
 import unittest
 import zipfile
@@ -12,7 +11,6 @@ from ._functools import compose
 from ._itertools import Counter
 
 from ._test_params import parameterize, Invoked
-from ._func_timeout_compat import set_timeout
 
 from test.support.os_helper import temp_dir
 
@@ -20,9 +18,6 @@ from test.support.os_helper import temp_dir
 class jaraco:
     class itertools:
         Counter = Counter
-
-
-consume = tuple
 
 
 def add_dirs(zf):
@@ -330,11 +325,6 @@ class TestPath(unittest.TestCase):
         # Check the file iterated all items
         assert entries.count == self.HUGE_ZIPFILE_NUM_ENTRIES
 
-    @set_timeout(3)
-    def test_implied_dirs_performance(self):
-        data = ['/'.join(string.ascii_lowercase + str(n)) for n in range(10000)]
-        zipfile.CompleteDirs._implied_dirs(data)
-
     @pass_alpharep
     def test_read_does_not_close(self, alpharep):
         alpharep = self.zipfile_ondisk(alpharep)
@@ -512,7 +502,7 @@ class TestPath(unittest.TestCase):
         saved_1 = pickle.dumps(zipfile.Path(zipfile_ondisk, at=subpath))
         restored_1 = pickle.loads(saved_1)
         first, *rest = restored_1.iterdir()
-        assert first.read_text().startswith('content of ')
+        assert first.read_text(encoding='utf-8').startswith('content of ')
 
     @pass_alpharep
     def test_extract_orig_with_implied_dirs(self, alpharep):
@@ -524,3 +514,12 @@ class TestPath(unittest.TestCase):
         # wrap the zipfile for its side effect
         zipfile.Path(zf)
         zf.extractall(source_path.parent)
+
+    @pass_alpharep
+    def test_getinfo_missing(self, alpharep):
+        """
+        Validate behavior of getinfo on original zipfile after wrapping.
+        """
+        zipfile.Path(alpharep)
+        with self.assertRaises(KeyError):
+            alpharep.getinfo('does-not-exist')

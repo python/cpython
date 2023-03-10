@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "pycore_call.h"
 #include "pycore_code.h"          // CO_FAST_FREE
-#include "pycore_compile.h"       // _Py_Mangle()
+#include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
@@ -3822,11 +3822,11 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
 
     res->ht_qualname = Py_NewRef(ht_name);
     res->ht_name = ht_name;
-    ht_name = NULL;  // Give our reference to to the type
+    ht_name = NULL;  // Give our reference to the type
 
     type->tp_name = _ht_tpname;
     res->_ht_tpname = _ht_tpname;
-    _ht_tpname = NULL;  // Give ownership to to the type
+    _ht_tpname = NULL;  // Give ownership to the type
 
     /* Copy the sizes */
 
@@ -8564,7 +8564,7 @@ an all-zero entry.
            #NAME "($self, /)\n--\n\n" DOC)
 #define IBSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, \
-           #NAME "($self, value, /)\n--\n\nCompute self " DOC " value.")
+           #NAME "($self, value, /)\n--\n\nReturn self" DOC "value.")
 #define BINSLOT(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_l, \
            #NAME "($self, value, /)\n--\n\nReturn self" DOC "value.")
