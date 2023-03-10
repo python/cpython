@@ -435,6 +435,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a5 3519 (Modify SEND instruction)
 #     Python 3.12a5 3520 (Remove PREP_RERAISE_STAR, add CALL_INTRINSIC_2)
 
+#     Python 3.12a7 3522 (Convert COMPARE_AND_BRANCH back to COMPARE_OP)
+
 #     Python 3.13 will start with 3550
 
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -446,7 +448,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3520).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3522).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
