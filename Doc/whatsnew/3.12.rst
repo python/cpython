@@ -372,6 +372,14 @@ sys
   with contributions from Gregory P. Smith [Google] and Mark Shannon
   in :gh:`96123`.)
 
+http
+----
+
+* Updated ``413 REQUEST_ENTITY_TOO_LARGE`` and ``422 UNPROCESSABLE_ENTITY``
+  to ``413 CONTENT_TOO_LARGE`` and ``422 UNPROCESSABLE_CONTENT``.  This is
+  for applying :rfc:`9110`.  Backward compatibility of previous status codes in
+  :mod:`http` module is preserved.  (Contributed by Yeojin Kim in :gh:`102570`.)
+
 
 Optimizations
 =============

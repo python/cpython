@@ -137,6 +137,11 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 .. versionadded:: 3.9
    Added ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` status codes.
 
+.. versionadded:: 3.12
+   Updated ``413 REQUEST_ENTITY_TOO_LARGE`` and ``422 UNPROCESSABLE_ENTITY``
+   to ``413 CONTENT_TOO_LARGE`` and ``422 UNPROCESSABLE_CONTENT``. Backward compatibility
+   of previous status codes in :mod:`http` module is preserved.
+
 HTTP status category
 --------------------
 
