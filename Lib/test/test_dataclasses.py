@@ -2773,8 +2773,10 @@ class TestFrozen(unittest.TestCase):
             pass
 
         c = C()
+        self.assertFalse(hasattr(c, 'i'))
         with self.assertRaises(FrozenInstanceError):
             c.i = 5
+        self.assertFalse(hasattr(c, 'i'))
         with self.assertRaises(FrozenInstanceError):
             del c.i
         with self.assertRaises(AttributeError):
