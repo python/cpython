@@ -2529,23 +2529,23 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
 
         if (retval > 0) {
             count += bytes_read;
-            if (bytes_read && count < (size_t)len) {
-                if (deadline && _PyDeadline_Get(deadline) <= 0) {
-                    sockstate = SOCKET_HAS_TIMED_OUT;
-                    break;
-                }
-                /* HACK: timeout of 1 to make sure we don't immediately fail */
-                sockstate = PySSL_select(sock, 0, 1, 0);
-                if (sockstate == SOCKET_HAS_TIMED_OUT) {
-                    /* nothing else right now, so return what we have */
-                    sockstate = SOCKET_OPERATION_OK;
-                    break;
-                }
-                /* could be an error or more data */
-                continue;
+            if (!bytes_read || count >= (size_t)len) {
+                /* read complete */
+                break;
             }
-            /* read complete */
-            break;
+            if (deadline && _PyDeadline_Get(deadline) <= 0) {
+                sockstate = SOCKET_HAS_TIMED_OUT;
+                break;
+            }
+            /* HACK: timeout of 1 to make sure we don't immediately fail */
+            sockstate = PySSL_select(sock, 0, 1, 0);
+            if (sockstate == SOCKET_HAS_TIMED_OUT) {
+                /* nothing else right now, so return what we have */
+                sockstate = SOCKET_OPERATION_OK;
+                break;
+            }
+            /* could be an error or more data */
+            continue;
         }
 
         if (err.ssl == SSL_ERROR_ZERO_RETURN && SSL_get_shutdown(self->ssl) == SSL_RECEIVED_SHUTDOWN) {
