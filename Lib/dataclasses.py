@@ -1,4 +1,3 @@
-from asyncio import Condition
 import re
 import sys
 import copy
