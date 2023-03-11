@@ -4519,18 +4519,18 @@ class TestPythonBufferProtocol(unittest.TestCase):
 
         mutable = PossiblyMutable(b"hello", True)
         immutable = PossiblyMutable(b"hello", False)
-        with memoryview(mutable, flags=inspect.BufferFlags.WRITABLE) as mv:
+        with memoryview(mutable, _flags=inspect.BufferFlags.WRITABLE) as mv:
             self.assertEqual(mv.tobytes(), b"hello")
             mv[0] = ord(b'x')
             self.assertEqual(mv.tobytes(), b"xello")
-        with memoryview(immutable, flags=inspect.BufferFlags.SIMPLE) as mv:
+        with memoryview(immutable, _flags=inspect.BufferFlags.SIMPLE) as mv:
             self.assertEqual(mv.tobytes(), b"hello")
             with self.assertRaises(TypeError):
                 mv[0] = ord(b'x')
             self.assertEqual(mv.tobytes(), b"hello")
 
         with self.assertRaises(RuntimeError):
-            memoryview(immutable, flags=inspect.BufferFlags.WRITABLE)
+            memoryview(immutable, _flags=inspect.BufferFlags.WRITABLE)
         with memoryview(immutable) as mv:
             self.assertEqual(mv.tobytes(), b"hello")
             with self.assertRaises(TypeError):

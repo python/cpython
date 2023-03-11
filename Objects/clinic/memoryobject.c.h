@@ -9,13 +9,13 @@ preserve
 
 
 PyDoc_STRVAR(memoryview__doc__,
-"memoryview(object, *, flags=PyBUF_FULL_RO)\n"
+"memoryview(object, *, _flags=PyBUF_FULL_RO)\n"
 "--\n"
 "\n"
 "Create a new memoryview object which references the given object.");
 
 static PyObject *
-memoryview_impl(PyTypeObject *type, PyObject *object, int flags);
+memoryview_impl(PyTypeObject *type, PyObject *object, int _flags);
 
 static PyObject *
 memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -30,7 +30,7 @@ memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(object), &_Py_ID(flags), },
+        .ob_item = { &_Py_ID(object), &_Py_ID(_flags), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -39,7 +39,7 @@ memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"object", "flags", NULL};
+    static const char * const _keywords[] = {"object", "_flags", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "memoryview",
@@ -51,7 +51,7 @@ memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *object;
-    int flags = PyBUF_FULL_RO;
+    int _flags = PyBUF_FULL_RO;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
     if (!fastargs) {
@@ -61,12 +61,12 @@ memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    flags = _PyLong_AsInt(fastargs[1]);
-    if (flags == -1 && PyErr_Occurred()) {
+    _flags = _PyLong_AsInt(fastargs[1]);
+    if (_flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = memoryview_impl(type, object, flags);
+    return_value = memoryview_impl(type, object, _flags);
 
 exit:
     return return_value;
@@ -366,4 +366,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9de9bd412f8fea52 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=392fda9a93c25dd2 input=a9049054013a1b77]*/

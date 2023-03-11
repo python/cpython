@@ -966,16 +966,16 @@ memoryview.__new__
 
     object: object
     *
-    flags: int(c_default='PyBUF_FULL_RO') = PyBUF_FULL_RO
+    _flags: int(c_default='PyBUF_FULL_RO') = PyBUF_FULL_RO
 
 Create a new memoryview object which references the given object.
 [clinic start generated code]*/
 
 static PyObject *
-memoryview_impl(PyTypeObject *type, PyObject *object, int flags)
-/*[clinic end generated code: output=f1c225d1ad24ec11 input=cab66ab4bb27f268]*/
+memoryview_impl(PyTypeObject *type, PyObject *object, int _flags)
+/*[clinic end generated code: output=80388b83c45dafac input=2ea9a227b7f350e8]*/
 {
-    return PyMemoryView_FromObjectAndFlags(object, flags);
+    return PyMemoryView_FromObjectAndFlags(object, _flags);
 }
 
 
