@@ -244,6 +244,10 @@ inspect
   a :term:`coroutine` for use with :func:`iscoroutinefunction`.
   (Contributed Carlton Gibson in :gh:`99247`.)
 
+* Add :func:`inspect.getasyncgenstate` and :func:`inspect.getasyncgenlocals`
+  for determining the current state of asynchronous generators.
+  (Contributed by Thomas Krennwallner in :issue:`35759`.)
+
 pathlib
 -------
 
