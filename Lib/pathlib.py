@@ -342,6 +342,7 @@ class PurePath(object):
         try:
             return self._fspath or '.'
         except AttributeError:
+            # The _from_parsed_parts() constructor does not set _fspath.
             self._fspath = str(self)
             return self._fspath
 
@@ -1202,7 +1203,7 @@ class Path(PurePath):
             homedir = self._flavour.expanduser(self._parts[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
-            drv, root, parts = self._parse_parts((homedir,))
+            drv, root, parts = self._parse_path(homedir)
             return self._from_parsed_parts(drv, root, parts + self._parts[1:])
 
         return self
