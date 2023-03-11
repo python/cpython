@@ -186,7 +186,6 @@ Object Protocol
 
    *format_spec* may be ``NULL``. In this case the call is equivalent
    to ``format(obj)``.
-   
    Returns the formatted string on success, ``NULL`` on failure.
 
 .. c:function:: PyObject* PyObject_Repr(PyObject *o)
