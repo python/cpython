@@ -179,6 +179,13 @@ Object Protocol
    If *o1* and *o2* are the same object, :c:func:`PyObject_RichCompareBool`
    will always return ``1`` for :const:`Py_EQ` and ``0`` for :const:`Py_NE`.
 
+.. c:function:: PyObject* PyObject_Format(PyObject *obj, PyObject *format_spec)
+
+   Takes an arbitrary *obj* and returns the result of calling
+   ``obj.__format__(format_spec)``.
+
+   *format_spec* might be ``NULL`` when ``format(obj)`` is used.
+
 .. c:function:: PyObject* PyObject_Repr(PyObject *o)
 
    .. index:: builtin: repr
