@@ -541,7 +541,16 @@ remove_unusable_flags(PyObject *m)
 #define INADDR_NONE (-1)
 #endif
 
+typedef struct {
+} socket_state;
+
+static socket_state global_state;
+
+#define GLOBAL_STATE() (&global_state)
+
+#define clinic_state() GLOBAL_STATE()
 #include "clinic/socketmodule.c.h"
+#undef clinic_state
 
 /* XXX There's a problem here: *static* functions are not supposed to have
    a Py prefix (or use CapitalizedWords).  Later... */
@@ -7323,15 +7332,11 @@ PyDoc_STRVAR(socket_doc,
 See the socket module for documentation.");
 
 static struct PyModuleDef socketmodule = {
-    PyModuleDef_HEAD_INIT,
-    PySocket_MODULE_NAME,
-    socket_doc,
-    -1,
-    socket_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = PySocket_MODULE_NAME,
+    .m_doc = socket_doc,
+    .m_size = sizeof(socket_state),
+    .m_methods = socket_methods,
 };
 
 PyMODINIT_FUNC
