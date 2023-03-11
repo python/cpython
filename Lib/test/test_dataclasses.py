@@ -3606,6 +3606,15 @@ class TestStringAnnotations(unittest.TestCase):
              'return': type(None)})
 
 
+ByMakeDataClass = make_dataclass('ByMakeDataClass', [('x', int)])
+ManualModuleMakeDataClass = make_dataclass('ManualModuleMakeDataClass',
+                                           [('x', int)],
+                                           module='test.test_dataclasses')
+WrongNameMakeDataclass = make_dataclass('Wrong', [('x', int)])
+WrongModuleMakeDataclass = make_dataclass('WrongModuleMakeDataclass',
+                                          [('x', int)],
+                                          module='custom')
+
 class TestMakeDataclass(unittest.TestCase):
     def test_simple(self):
         C = make_dataclass('C',
@@ -3714,6 +3723,36 @@ class TestMakeDataclass(unittest.TestCase):
         self.assertEqual(C.__annotations__, {'x': 'typing.Any',
                                              'y': int,
                                              'z': 'typing.Any'})
+
+    def test_module_attr(self):
+        self.assertEqual(ByMakeDataClass.__module__, __name__)
+        self.assertEqual(ByMakeDataClass(1).__module__, __name__)
+        self.assertEqual(WrongModuleMakeDataclass.__module__, "custom")
+        Nested = make_dataclass('Nested', [])
+        self.assertEqual(Nested.__module__, __name__)
+        self.assertEqual(Nested().__module__, __name__)
+
+    def test_pickle_support(self):
+        for klass in [ByMakeDataClass, ManualModuleMakeDataClass]:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(proto=proto):
+                    self.assertEqual(
+                        pickle.loads(pickle.dumps(klass, proto)),
+                        klass,
+                    )
+                    self.assertEqual(
+                        pickle.loads(pickle.dumps(klass(1), proto)),
+                        klass(1),
+                    )
+
+    def test_cannot_be_pickled(self):
+        for klass in [WrongNameMakeDataclass, WrongModuleMakeDataclass]:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(proto=proto):
+                    with self.assertRaises(pickle.PickleError):
+                        pickle.dumps(klass, proto)
+                    with self.assertRaises(pickle.PickleError):
+                        pickle.dumps(klass(1), proto)
 
     def test_invalid_type_specification(self):
         for bad_field in [(),
