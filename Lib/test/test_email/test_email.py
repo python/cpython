@@ -1591,7 +1591,7 @@ class TestMIMEImage(unittest.TestCase):
             self._make_image(ext)
             subtype = ext if subtype is None else subtype
             self.assertEqual(self._im.get_content_type(), f'image/{subtype}')
-        
+
     def test_guess_minor_type_other_jpeg_pattern(self):
         # We can't have two files of the same name ending in
         # '.jpg', so test the second valid pattern by passing
