@@ -1,3 +1,4 @@
+import asyncio
 import builtins
 import collections
 import datetime
@@ -63,6 +64,10 @@ def revise(filename, *args):
     return (normcase(filename),) + args
 
 git = mod.StupidGit()
+
+
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
 
 
 def signatures_with_lexicographic_keyword_only_parameters():
@@ -2321,7 +2326,7 @@ class TestGetCoroutineState(unittest.TestCase):
                          {'a': None, 'gencoro': gencoro, 'b': 'spam'})
 
 
-class TestGetAsyncGenState(unittest.TestCase):
+class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         async def number_asyncgen():
@@ -2329,11 +2334,8 @@ class TestGetAsyncGenState(unittest.TestCase):
                 yield number
         self.asyncgen = number_asyncgen()
 
-    def tearDown(self):
-        try:
-            self.asyncgen.aclose().send(None)
-        except StopIteration:
-            pass
+    async def asyncTearDown(self):
+        await self.asyncgen.aclose()
 
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)
@@ -2341,32 +2343,25 @@ class TestGetAsyncGenState(unittest.TestCase):
     def test_created(self):
         self.assertEqual(self._asyncgenstate(), inspect.AGEN_CREATED)
 
-    def test_suspended(self):
-        try:
-            next(anext(self.asyncgen))
-        except StopIteration as exc:
-            self.assertEqual(self._asyncgenstate(), inspect.AGEN_SUSPENDED)
-            self.assertEqual(exc.args, (0,))
+    async def test_suspended(self):
+        value = await anext(self.asyncgen)
+        self.assertEqual(self._asyncgenstate(), inspect.AGEN_SUSPENDED)
+        self.assertEqual(value, 0)
 
-    def test_closed_after_exhaustion(self):
-        while True:
-            try:
-                next(anext(self.asyncgen))
-            except StopAsyncIteration:
-                self.assertEqual(self._asyncgenstate(), inspect.AGEN_CLOSED)
-                break
-            except StopIteration as exc:
-                if exc.args is None:
-                    self.assertEqual(self._asyncgenstate(), inspect.AGEN_CLOSED)
-                    break
+    async def test_closed_after_exhaustion(self):
+        countdown = 7
+        with self.assertRaises(StopAsyncIteration):
+            while countdown := countdown - 1:
+                await anext(self.asyncgen)
+        self.assertEqual(countdown, 1)
         self.assertEqual(self._asyncgenstate(), inspect.AGEN_CLOSED)
 
-    def test_closed_after_immediate_exception(self):
+    async def test_closed_after_immediate_exception(self):
         with self.assertRaises(RuntimeError):
-            self.asyncgen.athrow(RuntimeError).send(None)
+            await self.asyncgen.athrow(RuntimeError)
         self.assertEqual(self._asyncgenstate(), inspect.AGEN_CLOSED)
 
-    def test_running(self):
+    async def test_running(self):
         async def running_check_asyncgen():
             for number in range(5):
                 self.assertEqual(self._asyncgenstate(), inspect.AGEN_RUNNING)
@@ -2374,15 +2369,11 @@ class TestGetAsyncGenState(unittest.TestCase):
                 self.assertEqual(self._asyncgenstate(), inspect.AGEN_RUNNING)
         self.asyncgen = running_check_asyncgen()
         # Running up to the first yield
-        try:
-            next(anext(self.asyncgen))
-        except StopIteration:
-            pass
+        await anext(self.asyncgen)
+        self.assertEqual(self._asyncgenstate(), inspect.AGEN_SUSPENDED)
         # Running after the first yield
-        try:
-            next(anext(self.asyncgen))
-        except StopIteration:
-            pass
+        await anext(self.asyncgen)
+        self.assertEqual(self._asyncgenstate(), inspect.AGEN_SUSPENDED)
 
     def test_easy_debugging(self):
         # repr() and str() of a asyncgen state should contain the state name
@@ -2392,7 +2383,7 @@ class TestGetAsyncGenState(unittest.TestCase):
             self.assertIn(name, repr(state))
             self.assertIn(name, str(state))
 
-    def test_getasyncgenlocals(self):
+    async def test_getasyncgenlocals(self):
         async def each(lst, a=None):
             b=(1, 2, 3)
             for v in lst:
@@ -2403,47 +2394,31 @@ class TestGetAsyncGenState(unittest.TestCase):
         numbers = each([1, 2, 3])
         self.assertEqual(inspect.getasyncgenlocals(numbers),
                          {'a': None, 'lst': [1, 2, 3]})
-        try:
-            next(anext(numbers))
-        except StopIteration:
-            pass
+        await anext(numbers)
         self.assertEqual(inspect.getasyncgenlocals(numbers),
                          {'a': None, 'lst': [1, 2, 3], 'v': 1,
                           'b': (1, 2, 3)})
-        try:
-            next(anext(numbers))
-        except StopIteration:
-            pass
+        await anext(numbers)
         self.assertEqual(inspect.getasyncgenlocals(numbers),
                          {'a': None, 'lst': [1, 2, 3], 'v': 2,
                           'b': (1, 2, 3)})
-        try:
-            next(anext(numbers))
-        except StopIteration:
-            pass
+        await anext(numbers)
         self.assertEqual(inspect.getasyncgenlocals(numbers),
                          {'a': None, 'lst': [1, 2, 3], 'v': 3,
                           'b': (1, 2, 3), 'c': 12})
-        try:
-            next(anext(numbers))
-        except StopAsyncIteration:
-            pass
+        with self.assertRaises(StopAsyncIteration):
+            await anext(numbers)
         self.assertEqual(inspect.getasyncgenlocals(numbers), {})
 
-    def test_getasyncgenlocals_empty(self):
+    async def test_getasyncgenlocals_empty(self):
         async def yield_one():
             yield 1
         one = yield_one()
         self.assertEqual(inspect.getasyncgenlocals(one), {})
-        try:
-            next(anext(one))
-        except StopIteration:
-            pass
+        await anext(one)
         self.assertEqual(inspect.getasyncgenlocals(one), {})
-        try:
-            next(anext(one))
-        except StopAsyncIteration:
-            pass
+        with self.assertRaises(StopAsyncIteration):
+            await anext(one)
         self.assertEqual(inspect.getasyncgenlocals(one), {})
 
     def test_getasyncgenlocals_error(self):
