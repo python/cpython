@@ -181,10 +181,13 @@ Object Protocol
 
 .. c:function:: PyObject* PyObject_Format(PyObject *obj, PyObject *format_spec)
 
-   Takes an arbitrary *obj* and returns the result of calling
-   ``obj.__format__(format_spec)``.
+   Format *obj* using *format_spec*. This is equivalent to the Python
+   expression ``format(obj, format_spec)``.
 
-   *format_spec* might be ``NULL`` when ``format(obj)`` is used.
+   *format_spec* may be ``NULL``. In this case the call is equivalent
+   to ``format(obj)``.
+   
+   Returns the formatted string on success, ``NULL`` on failure.
 
 .. c:function:: PyObject* PyObject_Repr(PyObject *o)
 
