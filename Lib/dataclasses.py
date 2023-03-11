@@ -1281,7 +1281,7 @@ def asdict(obj, *, dict_factory=dict):
     If given, 'dict_factory' will be used instead of built-in dict.
     The function applies recursively to field values that are
     dataclass instances. This will also look into built-in containers:
-    tuples, lists, and dicts.
+    tuples, lists, and dicts. Other objects are copied with 'copy.deepcopy()'.
     """
     if not _is_dataclass_instance(obj):
         raise TypeError("asdict() should be called on dataclass instances")
@@ -1353,7 +1353,7 @@ def astuple(obj, *, tuple_factory=tuple):
     If given, 'tuple_factory' will be used instead of built-in tuple.
     The function applies recursively to field values that are
     dataclass instances. This will also look into built-in containers:
-    tuples, lists, and dicts.
+    tuples, lists, and dicts. Other objects are copied with 'copy.deepcopy()'.
     """
 
     if not _is_dataclass_instance(obj):
