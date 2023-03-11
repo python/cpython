@@ -360,10 +360,20 @@ class ExceptionTests(unittest.TestCase):
             self.assertRaises(SystemError, _testcapi.raise_exception,
                               InvalidException, 1)
 
+        def test_capi4():
+            import _testcapi
+            class FlakyException(Exception):
+                def __init__(self):
+                    raise ValueError("Broken __init__")
+
+            fetched_type_name = _testcapi.exc_set_object_fetch(FlakyException, ())
+            self.assertEqual(fetched_type_name, 'FlakyException')
+
         if not sys.platform.startswith('java'):
             test_capi1()
             test_capi2()
             test_capi3()
+            test_capi4()
 
     def test_WindowsError(self):
         try:
