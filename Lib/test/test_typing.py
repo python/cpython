@@ -2583,7 +2583,7 @@ class ProtocolTests(BaseTestCase):
                 ):
                     self.assertIsInstance(klass(), protocol_class)
 
-            with self.subTest(protocol_class=protocol_class.__name__):
+            with self.subTest(klass="Empty", protocol_class=protocol_class.__name__):
                 self.assertNotIsInstance(Empty(), protocol_class)
 
         class BadP(Protocol):
