@@ -145,7 +145,9 @@ The module defines the following items:
 
    .. attribute:: name
 
-      The filename.
+      The path to the gzip file on disk, as a :class:`str` or :class:`bytes`.
+      Equivalent to the output of :func:`os.fspath` on the original input path,
+      with no other normalization, resolution or expansion.
 
    .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added, along with the
