@@ -1591,6 +1591,13 @@ class TestMIMEImage(unittest.TestCase):
             self._make_image(ext)
             subtype = ext if subtype is None else subtype
             self.assertEqual(self._im.get_content_type(), f'image/{subtype}')
+        
+    def test_guess_minor_type_other_jpeg_pattern(self):
+        # We can't have two files of the same name ending in
+        # '.jpg', so test the second valid pattern by passing
+        # the bytes directly.
+        _im = MIMEImage(b'\xff\xd8\xff\xdb')
+        self.assertEqual(_im.get_content_subtype(), 'jpeg')
 
     def test_encoding(self):
         self._make_image('gif')
@@ -1622,43 +1629,6 @@ class TestMIMEImage(unittest.TestCase):
         self.assertIs(self._im.get_param('foobar', missing), missing)
         self.assertIs(self._im.get_param('attachment', missing,
                                          header='foobar'), missing)
-
-    def test_infer_content_subtype(self):
-        content_to_subtype = {
-            b'      JFIF'       : 'jpeg',
-            b'      Exif'       : 'jpeg',
-            b'GIF87a'           : 'gif',
-            b'GIF89a'           : 'gif',
-            b'MM'               : 'tiff',
-            b'II'               : 'tiff',
-            b'P1 '              : 'pbm',
-            b'P4 '              : 'pbm',
-            b'P1\t'             : 'pbm',
-            b'P1\n'             : 'pbm',
-            b'P1\r'             : 'pbm',
-            b'P4\t'             : 'pbm',
-            b'P4\n'             : 'pbm',
-            b'P4\r'             : 'pbm',
-            b'P3 '              : 'ppm',
-            b'P6 '              : 'ppm',
-            b'P3\t'             : 'ppm',
-            b'P3\n'             : 'ppm',
-            b'P3\r'             : 'ppm',
-            b'P6\t'             : 'ppm',
-            b'P6\n'             : 'ppm',
-            b'P6\r'             : 'ppm',
-            b'\211PNG\r\n\032\n': 'png',
-            b'\001\332'         : 'rgb',
-            b'\x59\xA6\x6A\x95' : 'rast',
-            b'#define '         : 'xbm',
-            b'BM'               : 'bmp',
-            b'RIFF    WEBP'     : 'webp',
-            b'\x76\x2f\x31\x01' : 'exr',
-        }
-        for content, subtype in content_to_subtype.items():
-            with self.subTest(content=content, subtype=subtype):
-                im = MIMEImage(content)
-                self.assertEqual(im.get_content_subtype(), subtype)
 
 
 # Test the basic MIMEApplication class
