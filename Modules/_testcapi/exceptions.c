@@ -93,6 +93,35 @@ exc_set_object(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+exc_set_object_fetch(PyObject *self, PyObject *args)
+{
+    PyObject *exc;
+    PyObject *obj;
+    PyObject *type;
+    PyObject *value;
+    PyObject *tb;
+
+    if (!PyArg_ParseTuple(args, "OO:exc_set_object", &exc, &obj)) {
+        return NULL;
+    }
+
+    PyErr_SetObject(exc, obj);
+    PyErr_Fetch(&type, &value, &tb);
+    Py_XDECREF(value);
+    Py_XDECREF(tb);
+    if (!PyType_Check(type)) {
+        Py_XDECREF(type);
+        PyErr_SetString(PyExc_RuntimeError,
+                        "PyErr_Fetch() produced invalid type");
+        return NULL;
+    }
+    PyObject *fetched_type_name = PyUnicode_FromString(
+        ((PyTypeObject *) type)->tp_name);
+    Py_XDECREF(type);
+    return fetched_type_name;
+}
+
+static PyObject *
 raise_exception(PyObject *self, PyObject *args)
 {
     PyObject *exc;
@@ -262,6 +291,7 @@ static PyMethodDef test_methods[] = {
     {"make_exception_with_doc", _PyCFunction_CAST(make_exception_with_doc),
      METH_VARARGS | METH_KEYWORDS},
     {"exc_set_object",          exc_set_object,                  METH_VARARGS},
+    {"exc_set_object_fetch",    exc_set_object_fetch,            METH_VARARGS},
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
     {"set_exc_info",            test_set_exc_info,               METH_VARARGS},

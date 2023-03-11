@@ -169,5 +169,14 @@ class Test_ErrSetAndRestore(unittest.TestCase):
         with self.assertRaises(ZeroDivisionError) as e:
             _testcapi.exc_set_object(Broken, Broken())
 
+    def test_fetch_exception_with_broken_init(self):
+
+        class FlakyException(Exception):
+            def __init__(self):
+                raise ValueError("Broken __init__")
+
+        fetched_type_name = _testcapi.exc_set_object_fetch(FlakyException, ())
+        self.assertEqual(fetched_type_name, 'FlakyException')
+
 if __name__ == "__main__":
     unittest.main()
