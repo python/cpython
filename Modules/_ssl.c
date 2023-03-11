@@ -28,6 +28,10 @@
 /* Include symbols from _socket module */
 #include "socketmodule.h"
 
+#ifdef MS_WINDOWS
+#  include <wincrypt.h>
+#endif
+
 #include "_ssl.h"
 
 /* Redefined below for Windows debug builds after important #includes */

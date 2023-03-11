@@ -390,7 +390,7 @@ _cache_format = {
     "LOAD_GLOBAL": {
         "counter": 1,
         "index": 1,
-        "module_keys_version": 2,
+        "module_keys_version": 1,
         "builtin_keys_version": 1,
     },
     "BINARY_OP": {

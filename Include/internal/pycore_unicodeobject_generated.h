@@ -1310,6 +1310,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(version);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(volume);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(warnings);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(warnoptions);
