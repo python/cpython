@@ -44,8 +44,8 @@ test_PyOS_mystricmp(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef test_methods[] = {
-    {"PyOS_mystrnicmp", test_PyOS_mystrnicmp, METH_NOARGS, NULL},
-    {"PyOS_mystricmp", test_PyOS_mystricmp, METH_NOARGS, NULL},
+    {"test_PyOS_mystrnicmp", test_PyOS_mystrnicmp, METH_NOARGS, NULL},
+    {"test_PyOS_mystricmp", test_PyOS_mystricmp, METH_NOARGS, NULL},
     {NULL},
 };
 
