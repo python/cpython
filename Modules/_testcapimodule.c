@@ -721,42 +721,6 @@ pyobject_bytes_from_null(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-test_pystrcmp(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    assert(PyOS_mystrnicmp("", "", 0) == 0);
-    assert(PyOS_mystrnicmp("", "", 1) == 0);
-
-    assert(PyOS_mystrnicmp("insert", "ins", 3) == 0);
-    assert(PyOS_mystrnicmp("ins", "insert", 3) == 0);
-    assert(PyOS_mystrnicmp("insect", "insert", 3) == 0);
-
-    assert(PyOS_mystrnicmp("insert", "insert", 6) == 0);
-    assert(PyOS_mystrnicmp("Insert", "insert", 6) == 0);
-    assert(PyOS_mystrnicmp("INSERT", "insert", 6) == 0);
-    assert(PyOS_mystrnicmp("insert", "insert", 10) == 0);
-
-    assert(PyOS_mystrnicmp("invert", "insert", 6) == ('v' - 's'));
-    assert(PyOS_mystrnicmp("insert", "invert", 6) == ('s' - 'v'));
-    assert(PyOS_mystrnicmp("insert", "ins\0rt", 6) == 'e');
-
-    // GH-21845
-    assert(PyOS_mystrnicmp("insert\0a", "insert\0b", 8) == 0);
-
-    assert(PyOS_mystricmp("", "") == 0);
-    assert(PyOS_mystricmp("insert", "insert") == 0);
-    assert(PyOS_mystricmp("Insert", "insert") == 0);
-    assert(PyOS_mystricmp("INSERT", "insert") == 0);
-    assert(PyOS_mystricmp("insert", "ins") == 'e');
-    assert(PyOS_mystricmp("ins", "insert") == -'e');
-
-    // GH-21845
-    assert(PyOS_mystricmp("insert", "ins\0rt") == 'e');
-    assert(PyOS_mystricmp("invert", "insert") == ('v' - 's'));
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
 set_errno(PyObject *self, PyObject *args)
 {
     int new_errno;
@@ -3493,7 +3457,6 @@ static PyMethodDef TestMethods[] = {
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
-    {"test_pystrcmp", test_pystrcmp, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
@@ -4121,6 +4084,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Code(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_PyOS(m) < 0) {
         return NULL;
     }
 
