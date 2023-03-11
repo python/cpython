@@ -233,7 +233,7 @@ garbage collection runs.
 Querying Garbage Collector State
 --------------------------------
 
-The C-API provides the following inerface for querying information about
+The C-API provides the following interface for querying information about
 the garbage collector.
 
 .. c:function:: void PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
