@@ -67,7 +67,8 @@ git = mod.StupidGit()
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    if support.has_socket_support:
+        asyncio.set_event_loop_policy(None)
 
 
 def signatures_with_lexicographic_keyword_only_parameters():
@@ -2326,6 +2327,7 @@ class TestGetCoroutineState(unittest.TestCase):
                          {'a': None, 'gencoro': gencoro, 'b': 'spam'})
 
 
+@support.requires_working_socket()
 class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
