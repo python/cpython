@@ -380,6 +380,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_fix_up_module);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_flags);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_flags_);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_get_sourcefile);
