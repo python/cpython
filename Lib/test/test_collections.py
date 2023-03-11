@@ -1956,6 +1956,10 @@ class TestCollectionABCs(ABCTestCase):
         with self.assertWarns(DeprecationWarning):
             class X(ByteString): pass
 
+        with self.assertWarns(DeprecationWarning):
+            # No metaclass conflict
+            class Z(ByteString, Awaitable): pass
+
     def test_MutableSequence(self):
         for sample in [tuple, str, bytes]:
             self.assertNotIsInstance(sample(), MutableSequence)
