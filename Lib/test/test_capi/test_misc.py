@@ -133,6 +133,34 @@ class CAPITest(unittest.TestCase):
         else:
             self.assertTrue(False)
 
+    def test_set_object(self):
+        # new exception as obj is not an exception
+        with self.assertRaises(ValueError) as e:
+            _testcapi.exc_set_object(ValueError, 42)
+        self.assertEqual(e.exception.args, (42,))
+
+        # wraps the exception because unrelated types
+        with self.assertRaises(ValueError) as e:
+            _testcapi.exc_set_object(ValueError, TypeError(1,2,3))
+        wrapped = e.exception.args[0]
+        self.assertIsInstance(wrapped, TypeError)
+        self.assertEqual(wrapped.args, (1, 2, 3))
+
+        # is superclass, so does not wrap
+        with self.assertRaises(PermissionError) as e:
+            _testcapi.exc_set_object(OSError, PermissionError(24))
+        self.assertEqual(e.exception.args, (24,))
+
+        class Meta(type):
+            def __subclasscheck__(cls, sub):
+                1/0
+
+        class Broken(Exception, metaclass=Meta):
+            pass
+
+        with self.assertRaises(ZeroDivisionError) as e:
+            _testcapi.exc_set_object(Broken, Broken())
+
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_seq_bytes_to_charp_array(self):
         # Issue #15732: crash in _PySequence_BytesToCharpArray()
