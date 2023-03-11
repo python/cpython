@@ -2898,7 +2898,7 @@ class TestSpecial(unittest.TestCase):
             pass
         class E(_EnumSuperClass, Enum):
             A=1
-        self.assertEqual(format(E.A), "E.A")
+        self.assertEqual(repr(E.A), "<E.A: 1>")
 
 
 class TestOrder(unittest.TestCase):
