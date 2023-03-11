@@ -1,2 +1,0 @@
-Fix failed :mod:`test_inspect` tests on wasm32-emscripten and wasm32-wasi.
-Patch by Thomas Krennwallner.
