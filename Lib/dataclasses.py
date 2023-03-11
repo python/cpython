@@ -1391,7 +1391,7 @@ def _astuple_inner(obj, tuple_factory):
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                    repr=True, eq=True, order=False, unsafe_hash=False,
                    frozen=False, match_args=True, kw_only=False, slots=False,
-                   weakref_slot=False):
+                   weakref_slot=False, module=None):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -1454,6 +1454,19 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     # We use `types.new_class()` instead of simply `type()` to allow dynamic creation
     # of generic dataclasses.
     cls = types.new_class(cls_name, bases, {}, exec_body_callback)
+
+    # For pickling to work, the __module__ variable needs to be set to the frame
+    # where the dataclass is created.
+    if module is None:
+        try:
+            module = sys._getframemodulename(1) or '__main__'
+        except AttributeError:
+            try:
+                module = sys._getframe(1).f_globals.get('__name__', '__main__')
+            except (AttributeError, ValueError):
+                pass
+    if module is not None:
+        cls.__module__ = module
 
     # Apply the normal decorator.
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
