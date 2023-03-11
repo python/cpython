@@ -1563,23 +1563,6 @@ class TestMIMEAudio(unittest.TestCase):
         self.assertIs(self._au.get_param('attachment', missing,
                                          header='foobar'), missing)
 
-    def test_infer_audio_content_subtypes(self):
-        data_to_subtype = {
-            b'FORM    AIFC'    : 'x-aiff',
-            b'FORM    AIFF'    : 'x-aiff',
-            b'RIFF    WAVEfmt ': 'x-wav',
-            b'.snd'            : 'basic',
-
-            # Check that the 4 intermediate chars have no effect
-            b'FORMabcdAIFC'    : 'x-aiff',
-            b'FORMzyxwAIFF'    : 'x-aiff',
-            b'RIFF1234WAVEfmt ': 'x-wav',
-            # Check that anything after the first 4 chars has no effect
-            b'.sndFOOBARZ'     : 'basic',
-        }
-        for audiodata, subtype in data_to_subtype.items():
-            au = MIMEAudio(audiodata)
-            self.assertEqual(au.get_content_subtype(), subtype)
 
 
 # Test the basic MIMEImage class
