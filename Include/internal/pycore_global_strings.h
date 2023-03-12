@@ -702,6 +702,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(value)
         STRUCT_FOR_ID(values)
         STRUCT_FOR_ID(version)
+        STRUCT_FOR_ID(volume)
         STRUCT_FOR_ID(warnings)
         STRUCT_FOR_ID(warnoptions)
         STRUCT_FOR_ID(wbits)

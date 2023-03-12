@@ -28,7 +28,7 @@ typedef struct {
 typedef struct {
     uint16_t counter;
     uint16_t index;
-    uint16_t module_keys_version[2];
+    uint16_t module_keys_version;
     uint16_t builtin_keys_version;
 } _PyLoadGlobalCache;
 
