@@ -2345,7 +2345,7 @@ Short explanation of selected entries:
 - The first four lines correspond to the arguments of the :func:`Screen.setup <setup>`
   method.
 - Line 5 and 6 correspond to the arguments of the method
-  :meth:`turtle.screensize`.
+  :func:`screensize`.
 - *shape* can be any of the built-in shapes, e.g: arrow, turtle, etc.  For more
   info try ``help(shape)``.
 - If you want to use no fill color (i.e. make the turtle transparent), you have
@@ -2473,20 +2473,20 @@ Have fun!
 Changes since Python 2.6
 ========================
 
-- The methods :meth:`turtle.tracer`, :meth:`turtle.window_width` and
-  :meth:`turtle.window_height` have been eliminated.
+- The methods :func:`tracer`, :func:`window_width` and
+  :func:`window_height` have been eliminated.
   Methods with these names and functionality are now available only
-  as methods of :class:`~turtle.Screen`. The functions derived from these remain
+  as methods of :class:`Screen`. The functions derived from these remain
   available. (In fact already in Python 2.6 these methods were merely
   duplications of the corresponding
-  :class:`~turtle.TurtleScreen`/:class:`~turtle.Screen` methods.)
+  :class:`TurtleScreen`/:class:`Screen` methods.)
 
-- The method :meth:`!Turtle.fill` has been eliminated.
-  The behaviour of :meth:`~turtle.begin_fill` and :meth:`~turtle.end_fill`
+- The method :func:`!Turtle.fill` has been eliminated.
+  The behaviour of :func:`begin_fill` and :func:`end_fill`
   have changed slightly: now every filling process must be completed with an
   ``end_fill()`` call.
 
-- A method :meth:`turtle.filling` has been added. It returns a boolean
+- A method :func:`filling` has been added. It returns a boolean
   value: ``True`` if a filling process is under way, ``False`` otherwise.
   This behaviour corresponds to a ``fill()`` call without arguments in
   Python 2.6.
@@ -2494,23 +2494,23 @@ Changes since Python 2.6
 Changes since Python 3.0
 ========================
 
-- The methods :meth:`turtle.shearfactor`, :meth:`turtle.shapetransform` and
-  :meth:`turtle.get_shapepoly` have been added. Thus the full range of
+- The methods :func:`shearfactor`, :func:`shapetransform` and
+  :func:`get_shapepoly` have been added. Thus the full range of
   regular linear transforms is now available for transforming turtle shapes.
-  :meth:`turtle.tiltangle` has been enhanced in functionality: it now can
-  be used to get or set the tilt angle. :meth:`turtle.settiltangle` has been
+  :func:`tiltangle` has been enhanced in functionality: it now can
+  be used to get or set the tilt angle. :func:`settiltangle` has been
   deprecated.
 
-- The method :meth:`turtle.onkeypress` has been added as a complement to
-  :meth:`turtle.onkey` which in fact binds actions to the key release event.
-  Accordingly the latter has got an alias: :meth:`turtle.onkeyrelease`.
+- The method :func:`onkeypress` has been added as a complement to
+  :func:`onkey` which in fact binds actions to the key release event.
+  Accordingly the latter has got an alias: :func:`onkeyrelease`.
 
-- The method  :meth:`turtle.mainloop` has been added. So when working only
+- The method  :func:`mainloop` has been added. So when working only
   with ``Screen`` and ``Turtle`` objects one must not additionally import
   ``mainloop`` anymore.
 
-- Two input methods have been added: :meth:`turtle.textinput` and
-  :meth:`turtle.numinput`. These pop up input dialogs and return
+- Two input methods have been added: :func:`textinput` and
+  :func:`numinput`. These pop up input dialogs and return
   strings and numbers respectively.
 
 - Two example scripts :file:`tdemo_nim.py` and :file:`tdemo_round_dance.py`
