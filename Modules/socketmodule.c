@@ -558,6 +558,12 @@ typedef struct {
     int accept4_works;
 #endif
 #endif
+
+#ifdef SOCK_CLOEXEC
+    /* socket() and socketpair() fail with EINVAL on Linux kernel older
+     * than 2.6.27 if SOCK_CLOEXEC flag is set in the socket type. */
+    int sock_cloexec_works;
+#endif
 } socket_state;
 
 static socket_state global_state;
@@ -5301,12 +5307,6 @@ sock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 /* Initialize a new socket object. */
 
-#ifdef SOCK_CLOEXEC
-/* socket() and socketpair() fail with EINVAL on Linux kernel older
- * than 2.6.27 if SOCK_CLOEXEC flag is set in the socket type. */
-static int sock_cloexec_works = -1;
-#endif
-
 /*ARGSUSED*/
 
 #ifndef HAVE_SOCKET
@@ -5337,7 +5337,8 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 
 #ifndef MS_WINDOWS
 #ifdef SOCK_CLOEXEC
-    int *atomic_flag_works = &sock_cloexec_works;
+    socket_state *state = GLOBAL_STATE();
+    int *atomic_flag_works = &(state->sock_cloexec_works);
 #else
     int *atomic_flag_works = NULL;
 #endif
@@ -5492,15 +5493,16 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
         /* UNIX */
         Py_BEGIN_ALLOW_THREADS
 #ifdef SOCK_CLOEXEC
-        if (sock_cloexec_works != 0) {
+        socket_state *state = GLOBAL_STATE();
+        if (state->sock_cloexec_works != 0) {
             fd = socket(family, type | SOCK_CLOEXEC, proto);
-            if (sock_cloexec_works == -1) {
+            if (state->sock_cloexec_works == -1) {
                 if (fd >= 0) {
-                    sock_cloexec_works = 1;
+                    state->sock_cloexec_works = 1;
                 }
                 else if (errno == EINVAL) {
                     /* Linux older than 2.6.27 does not support SOCK_CLOEXEC */
-                    sock_cloexec_works = 0;
+                    state->sock_cloexec_works = 0;
                     fd = socket(family, type, proto);
                 }
             }
@@ -6217,7 +6219,8 @@ socket_socketpair(PyObject *self, PyObject *args)
     int family, type = SOCK_STREAM, proto = 0;
     PyObject *res = NULL;
 #ifdef SOCK_CLOEXEC
-    int *atomic_flag_works = &sock_cloexec_works;
+    socket_state *state = GLOBAL_STATE();
+    int *atomic_flag_works = &(state->sock_cloexec_works);
 #else
     int *atomic_flag_works = NULL;
 #endif
@@ -6235,15 +6238,16 @@ socket_socketpair(PyObject *self, PyObject *args)
     /* Create a pair of socket fds */
     Py_BEGIN_ALLOW_THREADS
 #ifdef SOCK_CLOEXEC
-    if (sock_cloexec_works != 0) {
+    socket_state *state = GLOBAL_STATE();
+    if (state->sock_cloexec_works != 0) {
         ret = socketpair(family, type | SOCK_CLOEXEC, proto, sv);
-        if (sock_cloexec_works == -1) {
+        if (state->sock_cloexec_works == -1) {
             if (ret >= 0) {
-                sock_cloexec_works = 1;
+                state->sock_cloexec_works = 1;
             }
             else if (errno == EINVAL) {
                 /* Linux older than 2.6.27 does not support SOCK_CLOEXEC */
-                sock_cloexec_works = 0;
+                state->sock_cloexec_works = 0;
                 ret = socketpair(family, type, proto, sv);
             }
         }
@@ -7344,6 +7348,10 @@ PyInit__socket(void)
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
     state->accept4_works = -1;
 #endif
+#endif
+
+#ifdef SOCK_CLOEXEC
+    state->sock_cloexec_works = -1;
 #endif
 
     // Create exceptions and types, and add them to the module state.
