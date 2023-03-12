@@ -53,9 +53,14 @@ for spec_op, specialized in zip(_empty_slot, _specialized_instructions):
     _all_opname[spec_op] = specialized
     _all_opmap[specialized] = spec_op
 
+_bb_jumps = []
+_uop_hasoparg = []
 _empty_slot = [slot for slot, name in enumerate(_all_opname) if name.startswith("<")]
 for uop_opcode, uop in zip(_empty_slot, _uops):
     _all_opname[uop_opcode] = uop
+    if uop.startswith('BB_BRANCH') or uop.startswith('BB_JUMP'):
+        _bb_jumps.append(uop_opcode)
+        _uop_hasoparg.append(uop_opcode)
 
 deoptmap = {
     specialized: base for base, family in _specializations.items() for specialized in family
@@ -339,7 +344,8 @@ class Instruction(_Instruction):
         return ' '.join(fields).rstrip()
 
 
-def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
+def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False,
+                     tier2=False):
     """Iterator for the opcodes in methods, functions or code
 
     Generates a series of Instruction named tuples giving the details of
@@ -356,7 +362,7 @@ def get_instructions(x, *, first_line=None, show_caches=False, adaptive=False):
         line_offset = first_line - co.co_firstlineno
     else:
         line_offset = 0
-    return _get_instructions_bytes(_get_code_array(co, adaptive),
+    return _get_instructions_bytes(_get_code_array(co, adaptive, tier2),
                                    co._varname_from_oparg,
                                    co.co_names, co.co_consts,
                                    linestarts, line_offset,
@@ -484,6 +490,12 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                     argval, argrepr = _get_name_info(arg, get_name)
             elif deop in hasjabs:
                 argval = arg*2
+                argrepr = "to " + repr(argval)
+            elif deop in _bb_jumps:
+                print("HI")
+                signed_arg = -arg if _is_backward_jump(deop) else arg
+                argval = offset + 2 + signed_arg*2
+                argval += 2 * caches
                 argrepr = "to " + repr(argval)
             elif deop in hasjrel:
                 signed_arg = -arg if _is_backward_jump(deop) else arg
@@ -620,7 +632,7 @@ def _unpack_opargs(code):
         op = code[i]
         deop = _deoptop(op)
         caches = _inline_cache_entries[deop]
-        if deop in hasarg:
+        if deop in hasarg or deop in _uop_hasoparg:
             arg = code[i+1] | extended_arg
             extended_arg = (arg << 8) if deop == EXTENDED_ARG else 0
             # The oparg is stored as a signed integer
@@ -715,7 +727,8 @@ class Bytecode:
 
     Iterating over this yields the bytecode operations as Instruction instances.
     """
-    def __init__(self, x, *, first_line=None, current_offset=None, show_caches=False, adaptive=False):
+    def __init__(self, x, *, first_line=None, current_offset=None, show_caches=False,
+                 adaptive=False, tier2=False):
         self.codeobj = co = _get_code_object(x)
         if first_line is None:
             self.first_line = co.co_firstlineno
@@ -729,10 +742,11 @@ class Bytecode:
         self.exception_entries = _parse_exception_table(co)
         self.show_caches = show_caches
         self.adaptive = adaptive
+        self.tier2 = tier2
 
     def __iter__(self):
         co = self.codeobj
-        return _get_instructions_bytes(_get_code_array(co, self.adaptive),
+        return _get_instructions_bytes(_get_code_array(co, self.adaptive, self.tier2),
                                        co._varname_from_oparg,
                                        co.co_names, co.co_consts,
                                        self._linestarts,
@@ -766,7 +780,7 @@ class Bytecode:
         else:
             offset = -1
         with io.StringIO() as output:
-            _disassemble_bytes(_get_code_array(co, self.adaptive),
+            _disassemble_bytes(_get_code_array(co, self.adaptive, self.tier2),
                                varname_from_oparg=co._varname_from_oparg,
                                names=co.co_names, co_consts=co.co_consts,
                                linestarts=self._linestarts,
