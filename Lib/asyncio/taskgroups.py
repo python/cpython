@@ -158,9 +158,9 @@ class TaskGroup:
                 self._errors = None
 
     def create_task(self, coro, *, name=None, context=None):
-        """Schedule a coroutine and return a task representing it.
+        """Create a new task in this group and return it.
         
-        Raises a RuntimeError if the task cannot be created.
+        Matches the call signature of asyncio.create_task.
         """
         if not self._entered:
             raise RuntimeError(f"TaskGroup {self!r} has not been entered")
