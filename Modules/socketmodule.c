@@ -1064,9 +1064,9 @@ init_sockobject(PySocketSockObject *s,
    in NEWOBJ()). */
 
 static PySocketSockObject *
-new_sockobject(SOCKET_T fd, int family, int type, int proto)
+new_sockobject(socket_state *state, SOCKET_T fd, int family, int type,
+               int proto)
 {
-    socket_state *state = GLOBAL_STATE();
     PyTypeObject *tp = state->sock_type;
     PySocketSockObject *s = (PySocketSockObject *)tp->tp_alloc(tp, 0);
     if (s == NULL) {
@@ -6220,8 +6220,8 @@ socket_socketpair(PyObject *self, PyObject *args)
     SOCKET_T sv[2];
     int family, type = SOCK_STREAM, proto = 0;
     PyObject *res = NULL;
-#ifdef SOCK_CLOEXEC
     socket_state *state = GLOBAL_STATE();
+#ifdef SOCK_CLOEXEC
     int *atomic_flag_works = &(state->sock_cloexec_works);
 #else
     int *atomic_flag_works = NULL;
@@ -6240,7 +6240,6 @@ socket_socketpair(PyObject *self, PyObject *args)
     /* Create a pair of socket fds */
     Py_BEGIN_ALLOW_THREADS
 #ifdef SOCK_CLOEXEC
-    socket_state *state = GLOBAL_STATE();
     if (state->sock_cloexec_works != 0) {
         ret = socketpair(family, type | SOCK_CLOEXEC, proto, sv);
         if (state->sock_cloexec_works == -1) {
@@ -6269,10 +6268,10 @@ socket_socketpair(PyObject *self, PyObject *args)
     if (_Py_set_inheritable(sv[1], 0, atomic_flag_works) < 0)
         goto finally;
 
-    s0 = new_sockobject(sv[0], family, type, proto);
+    s0 = new_sockobject(state, sv[0], family, type, proto);
     if (s0 == NULL)
         goto finally;
-    s1 = new_sockobject(sv[1], family, type, proto);
+    s1 = new_sockobject(state, sv[1], family, type, proto);
     if (s1 == NULL)
         goto finally;
     res = PyTuple_Pack(2, s0, s1);
