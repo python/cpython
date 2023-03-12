@@ -201,6 +201,11 @@ process and user.
    ``'surrogateescape'`` error handler. Use :data:`environb` if you would like
    to use a different encoding.
 
+   On Windows, the keys are converted to uppercase. This also applies when
+   getting, setting, or deleting an item. For example,
+   ``environ['monty'] = 'python'`` maps the key ``'MONTY'`` to the value
+   ``'python'``.
+
    .. note::
 
       Calling :func:`putenv` directly does not change :data:`os.environ`, so it's better
@@ -1091,13 +1096,17 @@ as internal buffering of data.
 
    See also :func:`set_blocking` and :meth:`socket.socket.setblocking`.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
+      On Windows, this function is limited to pipes.
+
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.12
+      Added support for pipes on Windows.
 
 .. function:: isatty(fd, /)
 
@@ -1565,13 +1574,17 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
+      On Windows, this function is limited to pipes.
+
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.12
+      Added support for pipes on Windows.
 
 .. data:: SF_NODISKIO
           SF_MNOWAIT
@@ -2173,6 +2186,69 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+
+.. function:: listdrives()
+
+   Return a list containing the names of drives on a Windows system.
+
+   A drive name typically looks like ``'C:\\'``. Not every drive name
+   will be associated with a volume, and some may be inaccessible for
+   a variety of reasons, including permissions, network connectivity
+   or missing media. This function does not test for access.
+
+   May raise :exc:`OSError` if an error occurs collecting the drive
+   names.
+
+   .. audit-event:: os.listdrives "" os.listdrives
+
+   .. availability:: Windows
+
+   .. versionadded:: 3.12
+
+
+.. function:: listmounts(volume)
+
+   Return a list containing the mount points for a volume on a Windows
+   system.
+
+   *volume* must be represented as a GUID path, like those returned by
+   :func:`os.listvolumes`. Volumes may be mounted in multiple locations
+   or not at all. In the latter case, the list will be empty. Mount
+   points that are not associated with a volume will not be returned by
+   this function.
+
+   The mount points return by this function will be absolute paths, and
+   may be longer than the drive name.
+
+   Raises :exc:`OSError` if the volume is not recognized or if an error
+   occurs collecting the paths.
+
+   .. audit-event:: os.listmounts volume os.listmounts
+
+   .. availability:: Windows
+
+   .. versionadded:: 3.12
+
+
+.. function:: listvolumes()
+
+   Return a list containing the volumes in the system.
+
+   Volumes are typically represented as a GUID path that looks like
+   ``\\?\Volume{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}\``. Files can
+   usually be accessed through a GUID path, permissions allowing.
+   However, users are generally not familiar with them, and so the
+   recommended use of this function is to retrieve mount points
+   using :func:`os.listmounts`.
+
+   May raise :exc:`OSError` if an error occurs collecting the volumes.
+
+   .. audit-event:: os.listvolumes "" os.listvolumes
+
+   .. availability:: Windows
+
+   .. versionadded:: 3.12
 
 
 .. function:: lstat(path, *, dir_fd=None)

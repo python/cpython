@@ -32,6 +32,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_WindowsConsoleIO);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__IOBase_closed);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__abc_tpflags__);
@@ -381,6 +383,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(_handle_fromlist);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_initializing);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_io);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_is_text_encoding);
     PyUnicode_InternInPlace(&string);
@@ -1305,6 +1309,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(values);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(version);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(volume);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(warnings);
     PyUnicode_InternInPlace(&string);

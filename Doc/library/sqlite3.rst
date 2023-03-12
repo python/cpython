@@ -72,7 +72,7 @@ including `cursors`_ and `transactions`_.
 
 First, we need to create a new database and open
 a database connection to allow :mod:`!sqlite3` to work with it.
-Call :func:`sqlite3.connect` to to create a connection to
+Call :func:`sqlite3.connect` to create a connection to
 the database :file:`tutorial.db` in the current working directory,
 implicitly creating it if it does not exist:
 
@@ -1418,15 +1418,22 @@ Cursor objects
 
    .. method:: execute(sql, parameters=(), /)
 
-      Execute SQL statement *sql*.
-      Bind values to the statement using :ref:`placeholders
-      <sqlite3-placeholders>` that map to the :term:`sequence` or :class:`dict`
-      *parameters*.
+      Execute SQL a single SQL statement,
+      optionally binding Python values using
+      :ref:`placeholders <sqlite3-placeholders>`.
 
-      :meth:`execute` will only execute a single SQL statement. If you try to execute
-      more than one statement with it, it will raise a :exc:`ProgrammingError`. Use
-      :meth:`executescript` if you want to execute multiple SQL statements with one
-      call.
+      :param str sql:
+         A single SQL statement.
+
+      :param parameters:
+         Python values to bind to placeholders in *sql*.
+         A :class:`!dict` if named placeholders are used.
+         A :term:`!sequence` if unnamed placeholders are used.
+         See :ref:`sqlite3-placeholders`.
+      :type parameters: :class:`dict` | :term:`sequence`
+
+      :raises ProgrammingError:
+         If *sql* contains more than one SQL statement.
 
       If :attr:`~Connection.autocommit` is
       :data:`LEGACY_TRANSACTION_CONTROL`,
@@ -1435,14 +1442,36 @@ Cursor objects
       and there is no open transaction,
       a transaction is implicitly opened before executing *sql*.
 
+      .. deprecated-removed:: 3.12 3.14
+
+         :exc:`DeprecationWarning` is emitted if
+         :ref:`named placeholders <sqlite3-placeholders>` are used
+         and *parameters* is a sequence instead of a :class:`dict`.
+         Starting with Python 3.14, :exc:`ProgrammingError` will
+         be raised instead.
+
+      Use :meth:`executescript` to execute multiple SQL statements.
 
    .. method:: executemany(sql, parameters, /)
 
-      Execute :ref:`parameterized <sqlite3-placeholders>` SQL statement *sql*
-      against all parameter sequences or mappings found in the sequence
-      *parameters*.  It is also possible to use an
-      :term:`iterator` yielding parameters instead of a sequence.
+      For every item in *parameters*,
+      repeatedly execute the :ref:`parameterized <sqlite3-placeholders>`
+      SQL statement *sql*.
+
       Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
+
+      :param str sql:
+         A single SQL :abbr:`DML (Data Manipulation Language)` statement.
+
+      :param parameters:
+         An :term:`!iterable` of parameters to bind with
+         the placeholders in *sql*.
+         See :ref:`sqlite3-placeholders`.
+      :type parameters: :term:`iterable`
+
+      :raises ProgrammingError:
+         If *sql* contains more than one SQL statement,
+         or is not a DML statment.
 
       Example:
 
@@ -1454,6 +1483,15 @@ Cursor objects
          ]
          # cur is an sqlite3.Cursor object
          cur.executemany("INSERT INTO data VALUES(?)", rows)
+
+      .. deprecated-removed:: 3.12 3.14
+
+         :exc:`DeprecationWarning` is emitted if
+         :ref:`named placeholders <sqlite3-placeholders>` are used
+         and the items in *parameters* are sequences
+         instead of :class:`dict`\s.
+         Starting with Python 3.14, :exc:`ProgrammingError` will
+         be raised instead.
 
    .. method:: executescript(sql_script, /)
 
@@ -1950,7 +1988,7 @@ question marks (qmark style) or named placeholders (named style).
 For the qmark style, *parameters* must be a
 :term:`sequence` whose length must match the number of placeholders,
 or a :exc:`ProgrammingError` is raised.
-For the named style, *parameters* should be
+For the named style, *parameters* must be
 an instance of a :class:`dict` (or a subclass),
 which must contain keys for all named parameters;
 any extra items are ignored.

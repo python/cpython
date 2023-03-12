@@ -77,7 +77,7 @@ another rational number, or from a string.
 
    The :class:`Fraction` class inherits from the abstract base class
    :class:`numbers.Rational`, and implements all of the methods and
-   operations from that class.  :class:`Fraction` instances are hashable,
+   operations from that class.  :class:`Fraction` instances are :term:`hashable`,
    and should be treated as immutable.  In addition,
    :class:`Fraction` has the following properties and methods:
 
@@ -118,7 +118,8 @@ another rational number, or from a string.
    .. method:: as_integer_ratio()
 
       Return a tuple of two integers, whose ratio is equal
-      to the Fraction and with a positive denominator.
+      to the original Fraction.  The ratio is in lowest terms
+      and has a positive denominator.
 
       .. versionadded:: 3.8
 

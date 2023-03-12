@@ -577,6 +577,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(True));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(WarningMessage));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_WindowsConsoleIO));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__IOBase_closed));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__abc_tpflags__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__abs__));
@@ -752,6 +753,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_get_sourcefile));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_handle_fromlist));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_initializing));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_io));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_is_text_encoding));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_length_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_limbo));
@@ -1214,6 +1216,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(value));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(values));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(version));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(volume));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(warnings));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(warnoptions));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(wbits));
