@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "pycore_call.h"
 #include "pycore_code.h"          // CO_FAST_FREE
-#include "pycore_compile.h"       // _Py_Mangle()
+#include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
@@ -3822,11 +3822,11 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
 
     res->ht_qualname = Py_NewRef(ht_name);
     res->ht_name = ht_name;
-    ht_name = NULL;  // Give our reference to to the type
+    ht_name = NULL;  // Give our reference to the type
 
     type->tp_name = _ht_tpname;
     res->_ht_tpname = _ht_tpname;
-    _ht_tpname = NULL;  // Give ownership to to the type
+    _ht_tpname = NULL;  // Give ownership to the type
 
     /* Copy the sizes */
 
@@ -4397,10 +4397,9 @@ static void
 type_dealloc_common(PyTypeObject *type)
 {
     if (type->tp_bases != NULL) {
-        PyObject *tp, *val, *tb;
-        PyErr_Fetch(&tp, &val, &tb);
+        PyObject *exc = PyErr_GetRaisedException();
         remove_all_subclasses(type, type->tp_bases);
-        PyErr_Restore(tp, val, tb);
+        PyErr_SetRaisedException(exc);
     }
 }
 
@@ -8248,14 +8247,17 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
         (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
          (void *)PyObject_GenericGetAttr))
-        res = PyObject_GenericGetAttr(self, name);
+        /* finding nothing is reasonable when __getattr__ is defined */
+        res = _PyObject_GenericTryGetAttr(self, name);
     else {
         Py_INCREF(getattribute);
         res = call_attribute(self, getattribute, name);
         Py_DECREF(getattribute);
     }
-    if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
+    if (res == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+        }
         res = call_attribute(self, getattr, name);
     }
     Py_DECREF(getattr);
@@ -8445,10 +8447,9 @@ slot_tp_finalize(PyObject *self)
 {
     int unbound;
     PyObject *del, *res;
-    PyObject *error_type, *error_value, *error_traceback;
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     /* Execute __del__ method, if any. */
     del = lookup_maybe_method(self, &_Py_ID(__del__), &unbound);
@@ -8462,7 +8463,7 @@ slot_tp_finalize(PyObject *self)
     }
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 static PyObject *
@@ -8564,7 +8565,7 @@ an all-zero entry.
            #NAME "($self, /)\n--\n\n" DOC)
 #define IBSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, WRAPPER, \
-           #NAME "($self, value, /)\n--\n\nCompute self " DOC " value.")
+           #NAME "($self, value, /)\n--\n\nReturn self" DOC "value.")
 #define BINSLOT(NAME, SLOT, FUNCTION, DOC) \
     ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_l, \
            #NAME "($self, value, /)\n--\n\nReturn self" DOC "value.")

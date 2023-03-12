@@ -1002,7 +1002,7 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     } else {
         item = args;
     }
-    _operator_state *state = PyType_GetModuleState(type);
+    _operator_state *state = _PyType_GetModuleState(type);
     /* create itemgetterobject structure */
     ig = PyObject_GC_New(itemgetterobject, (PyTypeObject *) state->itemgetter_type);
     if (ig == NULL) {
@@ -1298,7 +1298,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
 
-    _operator_state *state = PyType_GetModuleState(type);
+    _operator_state *state = _PyType_GetModuleState(type);
     /* create attrgetterobject structure */
     ag = PyObject_GC_New(attrgetterobject, (PyTypeObject *)state->attrgetter_type);
     if (ag == NULL) {
@@ -1578,7 +1578,7 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    _operator_state *state = PyType_GetModuleState(type);
+    _operator_state *state = _PyType_GetModuleState(type);
     /* create methodcallerobject structure */
     mc = PyObject_GC_New(methodcallerobject, (PyTypeObject *)state->methodcaller_type);
     if (mc == NULL) {
