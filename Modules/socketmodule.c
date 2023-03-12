@@ -664,7 +664,7 @@ set_error(void)
 
 #if defined(HAVE_GETHOSTBYNAME_R) || defined (HAVE_GETHOSTBYNAME) || defined (HAVE_GETHOSTBYADDR)
 static PyObject *
-set_herror(int h_error)
+set_herror(socket_state *state, int h_error)
 {
     PyObject *v;
 
@@ -674,7 +674,6 @@ set_herror(int h_error)
     v = Py_BuildValue("(is)", h_error, "host not found");
 #endif
     if (v != NULL) {
-        socket_state *state = GLOBAL_STATE();
         PyErr_SetObject(state->socket_herror, v);
         Py_DECREF(v);
     }
@@ -5728,7 +5727,8 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 
     if (h == NULL) {
         /* Let's get real error message to return */
-        set_herror(h_errno);
+        socket_state *state = GLOBAL_STATE();
+        set_herror(state, h_errno);
         return NULL;
     }
 
