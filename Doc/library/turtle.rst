@@ -72,7 +72,7 @@ The object-oriented interface uses essentially two+two classes:
    on a :class:`TurtleScreen`.  Its constructor needs a Canvas, ScrolledCanvas
    or TurtleScreen as argument, so the RawTurtle objects know where to draw.
 
-   Derived from RawTurtle is the subclass :class:`Turtle` (alias: :class:`~turtle.Pen`),
+   Derived from RawTurtle is the subclass :class:`Turtle` (alias: :class:`Pen`),
    which draws on "the" :class:`Screen` instance which is automatically
    created, if not already present.
 
@@ -2342,7 +2342,7 @@ The built in configuration would correspond to the following ``turtle.cfg``:
 
 Short explanation of selected entries:
 
-- The first four lines correspond to the arguments of the :meth:`turtle.setup`
+- The first four lines correspond to the arguments of the :func:`Screen.setup <setup>`
   method.
 - Line 5 and 6 correspond to the arguments of the method
   :meth:`turtle.screensize`.
@@ -2399,6 +2399,8 @@ The :mod:`turtledemo` package directory contains:
   and use such files.
 
 The demo scripts are:
+
+.. currentmodule:: turtle
 
 .. tabularcolumns:: |l|L|L|
 
@@ -2483,7 +2485,7 @@ Changes since Python 2.6
   duplications of the corresponding
   :class:`~turtle.TurtleScreen`/:class:`~turtle.Screen` methods.)
 
-- The method ``Turtle.fill`` has been eliminated.
+- The method :meth:`!Turtle.fill` has been eliminated.
   The behaviour of :meth:`~turtle.begin_fill` and :meth:`~turtle.end_fill`
   have changed slightly: now every filling process must be completed with an
   ``end_fill()`` call.
