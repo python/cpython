@@ -108,6 +108,7 @@ Local naming conventions:
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
+#include "pycore_moduleobject.h"  // _PyModule_GetState
 #include "structmember.h"         // PyMemberDef
 
 #ifdef _Py_MEMORY_SANITIZER
@@ -569,11 +570,25 @@ typedef struct _socket_state {
 #endif
 } socket_state;
 
-static socket_state global_state;
+static inline socket_state *
+get_module_state(PyObject *mod)
+{
+    void *state = _PyModule_GetState(mod);
+    assert(state != NULL);
+    return (socket_state *)state;
+}
 
-#define GLOBAL_STATE() (&global_state)
+static struct PyModuleDef socketmodule;
 
-#define clinic_state() GLOBAL_STATE()
+static inline socket_state *
+find_module_state_by_def(PyTypeObject *type)
+{
+    PyObject *mod = PyType_GetModuleByDef(type, &socketmodule);
+    assert(mod != NULL);
+    return get_module_state(mod);
+}
+
+#define clinic_state() (find_module_state_by_def(type))
 #include "clinic/socketmodule.c.h"
 #undef clinic_state
 
@@ -5334,7 +5349,7 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 {
 
     SOCKET_T fd = INVALID_SOCKET;
-    socket_state *state = GLOBAL_STATE();
+    socket_state *state = find_module_state_by_def(Py_TYPE(self));
 
 #ifndef MS_WINDOWS
 #ifdef SOCK_CLOEXEC
@@ -5683,7 +5698,7 @@ socket_gethostbyname(PyObject *self, PyObject *args)
     if (PySys_Audit("socket.gethostbyname", "O", args) < 0) {
         goto finally;
     }
-    socket_state *state = GLOBAL_STATE();
+    socket_state *state = get_module_state(self);
     int rc = setipaddr(state, name, (struct sockaddr *)&addrbuf,
                        sizeof(addrbuf), AF_INET);
     if (rc < 0) {
@@ -5878,7 +5893,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     if (PySys_Audit("socket.gethostbyname", "O", args) < 0) {
         goto finally;
     }
-    socket_state *state = GLOBAL_STATE();
+    socket_state *state = get_module_state(self);
     if (setipaddr(state, name, SAS2SA(&addr), sizeof(addr), AF_INET) < 0) {
         goto finally;
     }
@@ -5963,7 +5978,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
         goto finally;
     }
     af = AF_UNSPEC;
-    socket_state *state = GLOBAL_STATE();
+    socket_state *state = get_module_state(self);
     if (setipaddr(state, ip_num, sa, sizeof(addr), af) < 0) {
         goto finally;
     }
@@ -6226,7 +6241,7 @@ socket_socketpair(PyObject *self, PyObject *args)
     SOCKET_T sv[2];
     int family, type = SOCK_STREAM, proto = 0;
     PyObject *res = NULL;
-    socket_state *state = GLOBAL_STATE();
+    socket_state *state = get_module_state(self);
 #ifdef SOCK_CLOEXEC
     int *atomic_flag_works = &(state->sock_cloexec_works);
 #else
@@ -6732,7 +6747,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     Py_END_ALLOW_THREADS
     if (error) {
         res0 = NULL;  // gh-100795
-        socket_state *state = GLOBAL_STATE();
+        socket_state *state = get_module_state(self);
         set_gaierror(state, error);
         goto err;
     }
@@ -6832,7 +6847,7 @@ socket_getnameinfo(PyObject *self, PyObject *args)
     Py_END_ALLOW_THREADS
     if (error) {
         res = NULL;  // gh-100795
-        socket_state *state = GLOBAL_STATE();
+        socket_state *state = get_module_state(self);
         set_gaierror(state, error);
         goto fail;
     }
@@ -6865,7 +6880,7 @@ socket_getnameinfo(PyObject *self, PyObject *args)
     error = getnameinfo(res->ai_addr, (socklen_t) res->ai_addrlen,
                     hbuf, sizeof(hbuf), pbuf, sizeof(pbuf), flags);
     if (error) {
-        socket_state *state = GLOBAL_STATE();
+        socket_state *state = get_module_state(self);
         set_gaierror(state, error);
         goto fail;
     }
@@ -6892,7 +6907,7 @@ Get host and port for a sockaddr.");
 static PyObject *
 socket_getdefaulttimeout(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    socket_state *state = GLOBAL_STATE();
+    socket_state *state = get_module_state(self);
     if (state->defaulttimeout < 0) {
         Py_RETURN_NONE;
     }
@@ -6917,7 +6932,7 @@ socket_setdefaulttimeout(PyObject *self, PyObject *arg)
     if (socket_parse_timeout(&timeout, arg) < 0)
         return NULL;
 
-    socket_state *state = GLOBAL_STATE();
+    socket_state *state = get_module_state(self);
     state->defaulttimeout = timeout;
 
     Py_RETURN_NONE;
@@ -7334,27 +7349,16 @@ PyDoc_STRVAR(socket_doc,
 \n\
 See the socket module for documentation.");
 
-static struct PyModuleDef socketmodule = {
-    .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = PySocket_MODULE_NAME,
-    .m_doc = socket_doc,
-    .m_size = sizeof(socket_state),
-    .m_methods = socket_methods,
-};
-
-PyMODINIT_FUNC
-PyInit__socket(void)
+static int
+socket_exec(PyObject *m)
 {
-    PyObject *m, *has_ipv6;
+    PyObject *has_ipv6;
 
-    if (!os_init())
-        return NULL;
+    if (!os_init()) {
+        return -1;
+    }
 
-    m = PyModule_Create(&socketmodule);
-    if (m == NULL)
-        return NULL;
-
-    socket_state *state = GLOBAL_STATE();
+    socket_state *state = get_module_state(m);
     state->defaulttimeout = _PYTIME_FROMSECONDS(-1);
 
 #if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
@@ -7371,36 +7375,36 @@ PyInit__socket(void)
     state->socket_herror = PyErr_NewException("socket.herror",
                                               PyExc_OSError, NULL);
     if (state->socket_herror == NULL) {
-        return NULL;
+        return -1;
     }
     if (PyModule_AddObjectRef(m, "error", PyExc_OSError) < 0) {
-        return NULL;
+        return -1;
     }
     if (PyModule_AddObjectRef(m, "herror", state->socket_herror) < 0) {
-        return NULL;
+        return -1;
     }
     state->socket_gaierror = PyErr_NewException("socket.gaierror",
                                                 PyExc_OSError, NULL);
     if (state->socket_gaierror == NULL) {
-        return NULL;
+        return -1;
     }
     if (PyModule_AddObjectRef(m, "gaierror", state->socket_gaierror) < 0) {
-        return NULL;
+        return -1;
     }
     if (PyModule_AddObjectRef(m, "timeout", PyExc_TimeoutError) < 0) {
-        return NULL;
+        return -1;
     }
 
     PyObject *sock_type = PyType_FromMetaclass(NULL, m, &sock_spec, NULL);
     if (sock_type == NULL) {
-        return NULL;
+        return -1;
     }
     state->sock_type = (PyTypeObject *)sock_type;
     if (PyModule_AddObjectRef(m, "SocketType", sock_type) < 0) {
-        return NULL;
+        return -1;
     }
     if (PyModule_AddObjectRef(m, "socket", sock_type) < 0) {
-        return NULL;
+        return -1;
     }
 
 #ifdef ENABLE_IPV6
@@ -7413,21 +7417,18 @@ PyInit__socket(void)
     /* Export C API */
     PySocketModule_APIObject *capi = sock_get_api(state);
     if (capi == NULL) {
-        Py_DECREF(m);
-        return NULL;
+        return -1;
     }
     PyObject *capsule = PyCapsule_New(capi,
                                       PySocket_CAPSULE_NAME,
                                       sock_destroy_api);
     if (capsule == NULL) {
         sock_free_api(capi);
-        Py_DECREF(m);
-        return NULL;
+        return -1;
     }
     if (PyModule_AddObject(m, PySocket_CAPI_NAME, capsule) < 0) {
         Py_DECREF(capsule);
-        Py_DECREF(m);
-        return NULL;
+        return -1;
     }
 
     /* Address families (we only support AF_INET and AF_UNIX) */
@@ -8782,7 +8783,7 @@ PyInit__socket(void)
             PyObject *tmp;
             tmp = PyLong_FromUnsignedLong(codes[i]);
             if (tmp == NULL)
-                return NULL;
+                return -1;
             PyModule_AddObject(m, names[i], tmp);
         }
     }
@@ -8805,10 +8806,58 @@ PyInit__socket(void)
 #ifdef MS_WINDOWS
     /* remove some flags on older version Windows during run-time */
     if (remove_unusable_flags(m) < 0) {
-        Py_DECREF(m);
-        return NULL;
+        return -1;
     }
 #endif
 
-    return m;
+    return 0;
+}
+
+static struct PyModuleDef_Slot socket_slots[] = {
+    {Py_mod_exec, socket_exec},
+    {0, NULL},
+};
+
+static int
+socket_traverse(PyObject *mod, visitproc visit, void *arg)
+{
+    socket_state *state = get_module_state(mod);
+    Py_VISIT(state->sock_type);
+    Py_VISIT(state->socket_herror);
+    Py_VISIT(state->socket_gaierror);
+    return 0;
+}
+
+static int
+socket_clear(PyObject *mod)
+{
+    socket_state *state = get_module_state(mod);
+    Py_CLEAR(state->sock_type);
+    Py_CLEAR(state->socket_herror);
+    Py_CLEAR(state->socket_gaierror);
+    return 0;
+}
+
+static void
+socket_free(void *mod)
+{
+    (void)socket_clear((PyObject *)mod);
+}
+
+static struct PyModuleDef socketmodule = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = PySocket_MODULE_NAME,
+    .m_doc = socket_doc,
+    .m_size = sizeof(socket_state),
+    .m_methods = socket_methods,
+    .m_slots = socket_slots,
+    .m_traverse = socket_traverse,
+    .m_clear = socket_clear,
+    .m_free = socket_free,
+};
+
+PyMODINIT_FUNC
+PyInit__socket(void)
+{
+    return PyModuleDef_Init(&socketmodule);
 }
