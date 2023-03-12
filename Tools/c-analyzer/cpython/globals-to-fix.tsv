@@ -386,7 +386,6 @@ Modules/_datetimemodule.c	-	PyDateTime_IsoCalendarDateType	-
 Modules/_datetimemodule.c	-	PyDateTime_TZInfoType	-
 Modules/_datetimemodule.c	-	PyDateTime_TimeType	-
 Modules/_datetimemodule.c	-	PyDateTime_TimeZoneType	-
-Modules/_decimal/_decimal.c	-	PyDecContextManager_Type	-
 Modules/_decimal/_decimal.c	-	PyDecContext_Type	-
 Modules/_decimal/_decimal.c	-	PyDecSignalDictMixin_Type	-
 Modules/_decimal/_decimal.c	-	PyDec_Type	-
