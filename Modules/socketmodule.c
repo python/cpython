@@ -7298,7 +7298,7 @@ sock_destroy_api(PyObject *capsule)
 }
 
 static PySocketModule_APIObject *
-sock_get_api(void)
+sock_get_api(socket_state *state)
 {
     PySocketModule_APIObject *capi = PyMem_Malloc(sizeof(PySocketModule_APIObject));
     if (capi == NULL) {
@@ -7306,7 +7306,6 @@ sock_get_api(void)
         return NULL;
     }
 
-    socket_state *state = GLOBAL_STATE();
     capi->Sock_Type = (PyTypeObject *)Py_NewRef(state->sock_type);
     capi->error = Py_NewRef(PyExc_OSError);
     capi->timeout_error = Py_NewRef(PyExc_TimeoutError);
@@ -7406,7 +7405,7 @@ PyInit__socket(void)
     PyModule_AddObject(m, "has_ipv6", Py_NewRef(has_ipv6));
 
     /* Export C API */
-    PySocketModule_APIObject *capi = sock_get_api();
+    PySocketModule_APIObject *capi = sock_get_api(state);
     if (capi == NULL) {
         Py_DECREF(m);
         return NULL;
