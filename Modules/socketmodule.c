@@ -1095,7 +1095,8 @@ static PyThread_type_lock netdb_lock;
    an error occurred; then an exception is raised. */
 
 static int
-setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
+setipaddr(socket_state *state, const char *name, struct sockaddr *addr_ret,
+          size_t addr_ret_size, int af)
 {
     struct addrinfo hints, *res;
     int error;
@@ -1116,7 +1117,6 @@ setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int
            outcome of the first call. */
         if (error) {
             res = NULL;  // no-op, remind us that it is invalid; gh-100795
-            socket_state *state = GLOBAL_STATE();
             set_gaierror(state, error);
             return -1;
         }
@@ -1228,7 +1228,6 @@ setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int
     Py_END_ALLOW_THREADS
     if (error) {
         res = NULL;  // no-op, remind us that it is invalid; gh-100795
-        socket_state *state = GLOBAL_STATE();
         set_gaierror(state, error);
         return -1;
     }
@@ -1747,6 +1746,7 @@ static int
 getsockaddrarg(PySocketSockObject *s, PyObject *args,
                sock_addr_t *addrbuf, int *len_ret, const char *caller)
 {
+    socket_state *state = GLOBAL_STATE();
     switch (s->sock_family) {
 
 #if defined(AF_UNIX)
@@ -1912,7 +1912,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             return 0;
         }
         struct sockaddr_in* addr = &addrbuf->in;
-        result = setipaddr(host.buf, (struct sockaddr *)addr,
+        result = setipaddr(state, host.buf, (struct sockaddr *)addr,
                            sizeof(*addr),  AF_INET);
         idna_cleanup(&host);
         if (result < 0)
@@ -1957,7 +1957,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             return 0;
         }
         struct sockaddr_in6* addr = &addrbuf->in6;
-        result = setipaddr(host.buf, (struct sockaddr *)addr,
+        result = setipaddr(state, host.buf, (struct sockaddr *)addr,
                            sizeof(*addr), AF_INET6);
         idna_cleanup(&host);
         if (result < 0)
@@ -5683,8 +5683,12 @@ socket_gethostbyname(PyObject *self, PyObject *args)
     if (PySys_Audit("socket.gethostbyname", "O", args) < 0) {
         goto finally;
     }
-    if (setipaddr(name, (struct sockaddr *)&addrbuf,  sizeof(addrbuf), AF_INET) < 0)
+    socket_state *state = GLOBAL_STATE();
+    int rc = setipaddr(state, name, (struct sockaddr *)&addrbuf,
+                       sizeof(addrbuf), AF_INET);
+    if (rc < 0) {
         goto finally;
+    }
     ret = make_ipv4_addr(&addrbuf);
 finally:
     PyMem_Free(name);
@@ -5874,8 +5878,10 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
     if (PySys_Audit("socket.gethostbyname", "O", args) < 0) {
         goto finally;
     }
-    if (setipaddr(name, SAS2SA(&addr), sizeof(addr), AF_INET) < 0)
+    socket_state *state = GLOBAL_STATE();
+    if (setipaddr(state, name, SAS2SA(&addr), sizeof(addr), AF_INET) < 0) {
         goto finally;
+    }
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
@@ -5900,7 +5906,6 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
        addr.ss_family.
        Therefore, we cast the sockaddr_storage into sockaddr to
        access sa_family. */
-    socket_state *state = GLOBAL_STATE();
     sa = SAS2SA(&addr);
     ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr),
                          sa->sa_family);
@@ -5958,8 +5963,10 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
         goto finally;
     }
     af = AF_UNSPEC;
-    if (setipaddr(ip_num, sa, sizeof(addr), af) < 0)
+    socket_state *state = GLOBAL_STATE();
+    if (setipaddr(state, ip_num, sa, sizeof(addr), af) < 0) {
         goto finally;
+    }
     af = sa->sa_family;
     ap = NULL;
     /* al = 0; */
@@ -6000,7 +6007,6 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     h = gethostbyaddr(ap, al, af);
 #endif /* HAVE_GETHOSTBYNAME_R */
     Py_END_ALLOW_THREADS
-    socket_state *state = GLOBAL_STATE();
     ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr), af);
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_release_lock(netdb_lock);
