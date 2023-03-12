@@ -644,6 +644,13 @@ class _EnumTests:
             theother = auto()
         self.assertEqual(repr(MySubEnum.that), "My name is that.")
 
+    def test_multiple_superclasses_repr(self):
+        class _EnumSuperClass(metaclass=EnumMeta):
+            pass
+        class E(_EnumSuperClass, Enum):
+            A = 1
+        self.assertEqual(repr(E.A), "<E.A: 1>")
+
     def test_reversed_iteration_order(self):
         self.assertEqual(
                 list(reversed(self.MainEnum)),
@@ -2892,14 +2899,6 @@ class TestSpecial(unittest.TestCase):
         #
         self.assertEqual(FlagFromChar.a, 158456325028528675187087900672)
         self.assertEqual(FlagFromChar.a|1, 158456325028528675187087900673)
-
-    def test_multiple_superclasses(self):
-        class _EnumSuperClass(metaclass=EnumMeta):
-            pass
-        class E(_EnumSuperClass, Enum):
-            A=1
-        self.assertEqual(repr(E.A), "<E.A: 1>")
-
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
