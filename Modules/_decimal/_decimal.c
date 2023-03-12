@@ -39,6 +39,7 @@
 #include "docstrings.h"
 
 typedef struct {
+    PyTypeObject *PyDecContextManager_Type;
 } decimal_state;
 
 static decimal_state global_state;
@@ -108,7 +109,6 @@ typedef struct {
 static PyTypeObject PyDec_Type;
 static PyTypeObject *PyDecSignalDict_Type;
 static PyTypeObject PyDecContext_Type;
-static PyTypeObject PyDecContextManager_Type;
 #define PyDec_CheckExact(v) Py_IS_TYPE(v, &PyDec_Type)
 #define PyDec_Check(v) PyObject_TypeCheck(v, &PyDec_Type)
 #define PyDecSignalDict_Check(v) Py_IS_TYPE(v, PyDecSignalDict_Type)
@@ -1766,40 +1766,61 @@ ctxmanager_new(PyTypeObject *type UNUSED, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    self = PyObject_New(PyDecContextManagerObject,
-                        &PyDecContextManager_Type);
-    if (self == NULL) {
+    PyObject *local_copy = context_copy(local, NULL);
+    if (local_copy == NULL) {
         return NULL;
     }
-
-    self->local = context_copy(local, NULL);
-    if (self->local == NULL) {
-        self->global = NULL;
-        Py_DECREF(self);
-        return NULL;
-    }
-    self->global = Py_NewRef(global);
 
     int ret = context_setattrs(
-        self->local, prec, rounding,
+        local_copy, prec, rounding,
         Emin, Emax, capitals,
         clamp, flags, traps
     );
-
     if (ret < 0) {
-        Py_DECREF(self);
+        Py_DECREF(local_copy);
         return NULL;
     }
 
+    decimal_state *state = GLOBAL_STATE();
+    self = PyObject_GC_New(PyDecContextManagerObject,
+                           state->PyDecContextManager_Type);
+    if (self == NULL) {
+        Py_DECREF(local_copy);
+        return NULL;
+    }
+
+    self->local = local_copy;
+    self->global = Py_NewRef(global);
+    PyObject_GC_Track(self);
+
     return (PyObject *)self;
+}
+
+static int
+ctxmanager_traverse(PyDecContextManagerObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->local);
+    Py_VISIT(self->global);
+    return 0;
+}
+
+static int
+ctxmanager_clear(PyDecContextManagerObject *self)
+{
+    Py_CLEAR(self->local);
+    Py_CLEAR(self->global);
+    return 0;
 }
 
 static void
 ctxmanager_dealloc(PyDecContextManagerObject *self)
 {
-    Py_XDECREF(self->local);
-    Py_XDECREF(self->global);
-    PyObject_Free(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    (void)ctxmanager_clear(self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -1838,36 +1859,20 @@ static PyMethodDef ctxmanager_methods[] = {
   {NULL, NULL}
 };
 
-static PyTypeObject PyDecContextManager_Type =
-{
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "decimal.ContextManager",               /* tp_name */
-    sizeof(PyDecContextManagerObject),      /* tp_basicsize */
-    0,                                      /* tp_itemsize */
-    (destructor) ctxmanager_dealloc,        /* tp_dealloc */
-    0,                                      /* tp_vectorcall_offset */
-    (getattrfunc) 0,                        /* tp_getattr */
-    (setattrfunc) 0,                        /* tp_setattr */
-    0,                                      /* tp_as_async */
-    (reprfunc) 0,                           /* tp_repr */
-    0,                                      /* tp_as_number */
-    0,                                      /* tp_as_sequence */
-    0,                                      /* tp_as_mapping */
-    0,                                      /* tp_hash */
-    0,                                      /* tp_call */
-    0,                                      /* tp_str */
-    (getattrofunc) PyObject_GenericGetAttr, /* tp_getattro */
-    (setattrofunc) 0,                       /* tp_setattro */
-    (PyBufferProcs *) 0,                    /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                     /* tp_flags */
-    0,                                      /* tp_doc */
-    0,                                      /* tp_traverse */
-    0,                                      /* tp_clear */
-    0,                                      /* tp_richcompare */
-    0,                                      /* tp_weaklistoffset */
-    0,                                      /* tp_iter */
-    0,                                      /* tp_iternext */
-    ctxmanager_methods,                     /* tp_methods */
+static PyType_Slot ctxmanager_slots[] = {
+    {Py_tp_dealloc, ctxmanager_dealloc},
+    {Py_tp_traverse, ctxmanager_traverse},
+    {Py_tp_clear, ctxmanager_clear},
+    {Py_tp_methods, ctxmanager_methods},
+    {0, NULL},
+};
+
+static PyType_Spec ctxmanager_spec = {
+    .name = "decimal.ContextManager",
+    .basicsize = sizeof(PyDecContextManagerObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = ctxmanager_slots,
 };
 
 
@@ -5842,13 +5847,20 @@ PyInit__decimal(void)
     /* Init types */
     PyDec_Type.tp_base = &PyBaseObject_Type;
     PyDecContext_Type.tp_base = &PyBaseObject_Type;
-    PyDecContextManager_Type.tp_base = &PyBaseObject_Type;
     PyDecSignalDictMixin_Type.tp_base = &PyBaseObject_Type;
 
+#define CREATE_TYPE(mod, type, spec)                                        \
+    do {                                                                    \
+        type = (PyTypeObject *)PyType_FromMetaclass(NULL, mod, spec, NULL); \
+        CHECK_PTR(type);                                                    \
+    } while (0)
+
+    decimal_state *state = GLOBAL_STATE();
     CHECK_INT(PyType_Ready(&PyDec_Type));
     CHECK_INT(PyType_Ready(&PyDecContext_Type));
     CHECK_INT(PyType_Ready(&PyDecSignalDictMixin_Type));
-    CHECK_INT(PyType_Ready(&PyDecContextManager_Type));
+    CREATE_TYPE(m, state->PyDecContextManager_Type, &ctxmanager_spec);
+    #undef CREATE_TYPE
 
     ASSIGN_PTR(obj, PyUnicode_FromString("decimal"));
     CHECK_INT(PyDict_SetItemString(PyDec_Type.tp_dict, "__module__", obj));
