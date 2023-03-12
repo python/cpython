@@ -5715,7 +5715,8 @@ sock_decode_hostname(const char *name)
 /* Convenience function common to gethostbyname_ex and gethostbyaddr */
 
 static PyObject *
-gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
+gethost_common(socket_state *state, struct hostent *h, struct sockaddr *addr,
+               size_t alen, int af)
 {
     char **pch;
     PyObject *rtn_tuple = (PyObject *)NULL;
@@ -5726,7 +5727,6 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
 
     if (h == NULL) {
         /* Let's get real error message to return */
-        socket_state *state = GLOBAL_STATE();
         set_herror(state, h_errno);
         return NULL;
     }
@@ -5900,8 +5900,9 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
        addr.ss_family.
        Therefore, we cast the sockaddr_storage into sockaddr to
        access sa_family. */
+    socket_state *state = GLOBAL_STATE();
     sa = SAS2SA(&addr);
-    ret = gethost_common(h, SAS2SA(&addr), sizeof(addr),
+    ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr),
                          sa->sa_family);
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_release_lock(netdb_lock);
@@ -5999,7 +6000,8 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
     h = gethostbyaddr(ap, al, af);
 #endif /* HAVE_GETHOSTBYNAME_R */
     Py_END_ALLOW_THREADS
-    ret = gethost_common(h, SAS2SA(&addr), sizeof(addr), af);
+    socket_state *state = GLOBAL_STATE();
+    ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr), af);
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_release_lock(netdb_lock);
 #endif
