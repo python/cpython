@@ -616,21 +616,19 @@ def _repr_fn(fields, globals):
 def _frozen_get_del_attr(cls, fields, globals):
     locals = {'cls': cls,
               'FrozenInstanceError': FrozenInstanceError}
+    condition = 'type(self) is cls'
     if fields:
-        fields_str = '(' + ','.join(repr(f.name) for f in fields) + ',)'
-    else:
-        # Special case for the zero-length tuple.
-        fields_str = '()'
+        condition += ' or name in {' + ', '.join(repr(f.name) for f in fields) + '}'
     return (_create_fn('__setattr__',
                       ('self', 'name', 'value'),
-                      (f'if type(self) is cls or name in {fields_str}:',
+                      (f'if {condition}:',
                         ' raise FrozenInstanceError(f"cannot assign to field {name!r}")',
                        f'super(cls, self).__setattr__(name, value)'),
                        locals=locals,
                        globals=globals),
             _create_fn('__delattr__',
                       ('self', 'name'),
-                      (f'if type(self) is cls or name in {fields_str}:',
+                      (f'if {condition}:',
                         ' raise FrozenInstanceError(f"cannot delete field {name!r}")',
                        f'super(cls, self).__delattr__(name)'),
                        locals=locals,
@@ -1283,7 +1281,7 @@ def asdict(obj, *, dict_factory=dict):
     If given, 'dict_factory' will be used instead of built-in dict.
     The function applies recursively to field values that are
     dataclass instances. This will also look into built-in containers:
-    tuples, lists, and dicts.
+    tuples, lists, and dicts. Other objects are copied with 'copy.deepcopy()'.
     """
     if not _is_dataclass_instance(obj):
         raise TypeError("asdict() should be called on dataclass instances")
@@ -1355,7 +1353,7 @@ def astuple(obj, *, tuple_factory=tuple):
     If given, 'tuple_factory' will be used instead of built-in tuple.
     The function applies recursively to field values that are
     dataclass instances. This will also look into built-in containers:
-    tuples, lists, and dicts.
+    tuples, lists, and dicts. Other objects are copied with 'copy.deepcopy()'.
     """
 
     if not _is_dataclass_instance(obj):
@@ -1393,7 +1391,7 @@ def _astuple_inner(obj, tuple_factory):
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                    repr=True, eq=True, order=False, unsafe_hash=False,
                    frozen=False, match_args=True, kw_only=False, slots=False,
-                   weakref_slot=False):
+                   weakref_slot=False, module=None):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -1456,6 +1454,19 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     # We use `types.new_class()` instead of simply `type()` to allow dynamic creation
     # of generic dataclasses.
     cls = types.new_class(cls_name, bases, {}, exec_body_callback)
+
+    # For pickling to work, the __module__ variable needs to be set to the frame
+    # where the dataclass is created.
+    if module is None:
+        try:
+            module = sys._getframemodulename(1) or '__main__'
+        except AttributeError:
+            try:
+                module = sys._getframe(1).f_globals.get('__name__', '__main__')
+            except (AttributeError, ValueError):
+                pass
+    if module is not None:
+        cls.__module__ = module
 
     # Apply the normal decorator.
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
