@@ -1998,9 +1998,20 @@ code_getcode(PyCodeObject *code, void *closure)
     return _PyCode_GetCode(code);
 }
 
+static PyObject *
+code_getcodetier2(PyCodeObject *code, void *closure)
+{
+    if (code->_tier2_info == NULL) {
+        return PyBytes_FromStringAndSize("", 0);
+    }
+    return PyBytes_FromStringAndSize(code->_tier2_info->_bb_space->u_code,
+        code->_tier2_info->_bb_space->water_level);
+}
+
 static PyGetSetDef code_getsetlist[] = {
     {"co_lnotab",         (getter)code_getlnotab,       NULL, NULL},
     {"_co_code_adaptive", (getter)code_getcodeadaptive, NULL, NULL},
+    {"_co_code_tier2",    (getter)code_getcodetier2,    NULL, NULL},
     // The following old names are kept for backward compatibility.
     {"co_varnames",       (getter)code_getvarnames,     NULL, NULL},
     {"co_cellvars",       (getter)code_getcellvars,     NULL, NULL},

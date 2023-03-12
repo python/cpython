@@ -821,11 +821,12 @@ _PyTier2_Code_DetectAndEmitBB(PyCodeObject *co, _PyTier2BBSpace *bb_space,
         }
 
     }
+    _PyTier2TypeContext *type_context_copy = NULL;
 end:
     // Create the tier 2 BB
 
     // Make a copy of the type context
-    _PyTier2TypeContext *type_context_copy = _PyTier2TypeContext_Copy(starting_type_context);
+    type_context_copy = _PyTier2TypeContext_Copy(starting_type_context);
     if (type_context_copy == NULL) {
         return NULL;
     }

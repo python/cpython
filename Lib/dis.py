@@ -13,6 +13,7 @@ from opcode import (
     _nb_ops,
     _specializations,
     _specialized_instructions,
+    _uops,
 )
 
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
@@ -52,6 +53,10 @@ for spec_op, specialized in zip(_empty_slot, _specialized_instructions):
     _all_opname[spec_op] = specialized
     _all_opmap[specialized] = spec_op
 
+_empty_slot = [slot for slot, name in enumerate(_all_opname) if name.startswith("<")]
+for uop_opcode, uop in zip(_empty_slot, _uops):
+    _all_opname[uop_opcode] = uop
+
 deoptmap = {
     specialized: base for base, family in _specializations.items() for specialized in family
 }
@@ -69,7 +74,8 @@ def _try_compile(source, name):
         c = compile(source, name, 'exec')
     return c
 
-def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False):
+def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False,
+        tier2=False):
     """Disassemble classes, methods, functions, and other compiled objects.
 
     With no argument, disassemble the last traceback.
@@ -105,7 +111,7 @@ def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False):
                     print("Sorry:", msg, file=file)
                 print(file=file)
     elif hasattr(x, 'co_code'): # Code object
-        _disassemble_recursive(x, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive)
+        _disassemble_recursive(x, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive, tier2=tier2)
     elif isinstance(x, (bytes, bytearray)): # Raw bytecode
         _disassemble_bytes(x, file=file, show_caches=show_caches)
     elif isinstance(x, str):    # Source code
@@ -188,7 +194,9 @@ def _deoptop(op):
     name = _all_opname[op]
     return _all_opmap[deoptmap[name]] if name in deoptmap else op
 
-def _get_code_array(co, adaptive):
+def _get_code_array(co, adaptive, tier2=False):
+    if tier2:
+        return co._co_code_tier2
     return co._co_code_adaptive if adaptive else co.co_code
 
 def code_info(x):
@@ -525,18 +533,18 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                     Positions(*next(co_positions, ()))
                 )
 
-def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False):
+def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False, tier2=False):
     """Disassemble a code object."""
     linestarts = dict(findlinestarts(co))
     exception_entries = _parse_exception_table(co)
-    _disassemble_bytes(_get_code_array(co, adaptive),
+    _disassemble_bytes(_get_code_array(co, adaptive, tier2),
                        lasti, co._varname_from_oparg,
                        co.co_names, co.co_consts, linestarts, file=file,
                        exception_entries=exception_entries,
                        co_positions=co.co_positions(), show_caches=show_caches)
 
-def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adaptive=False):
-    disassemble(co, file=file, show_caches=show_caches, adaptive=adaptive)
+def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adaptive=False, tier2=False):
+    disassemble(co, file=file, show_caches=show_caches, adaptive=adaptive, tier2=tier2)
     if depth is None or depth > 0:
         if depth is not None:
             depth = depth - 1
@@ -545,7 +553,8 @@ def _disassemble_recursive(co, *, file=None, depth=None, show_caches=False, adap
                 print(file=file)
                 print("Disassembly of %r:" % (x,), file=file)
                 _disassemble_recursive(
-                    x, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive
+                    x, file=file, depth=depth, show_caches=show_caches, adaptive=adaptive,
+                    tier2=tier2
                 )
 
 def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,

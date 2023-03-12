@@ -86,8 +86,6 @@ typedef struct _PyTier2BBSpace  {
     _Py_CODEUNIT u_code[1];
 } _PyTier2BBSpace;
 
-#define _PyTier2BBSpace_NBYTES_USED(space) sizeof(_PyTier2BBSpace) + space->max_capacity
-
 // Tier 2 info stored in the code object. Lazily allocated.
 typedef struct _PyTier2Info {
     /* the tier 2 basic block to execute (if any) */
