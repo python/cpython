@@ -136,9 +136,9 @@ from fractions import Fraction
 from decimal import Decimal
 from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
-from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
+from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum, sumprod
 from functools import reduce
-from operator import mul, itemgetter
+from operator import itemgetter
 from collections import Counter, namedtuple, defaultdict
 
 _SQRT2 = sqrt(2.0)
@@ -516,8 +516,9 @@ def fmean(data, weights=None):
     except TypeError:
         weights = list(weights)
         num_weights = len(weights)
-    num = fsum(map(mul, data, weights))
-    if n != num_weights:
+    try:
+        num = sumprod(data, weights)
+    except ValueError:
         raise StatisticsError('data and weights must be the same length')
     den = fsum(weights)
     if not den:
