@@ -1945,7 +1945,8 @@ Notes on using *__slots__*
   program undefined.  In the future, a check may be added to prevent this.
 
 * Nonempty *__slots__* does not work for classes derived from "variable-length"
-  built-in types such as :class:`int`, :class:`bytes` and :class:`tuple`.
+  built-in types such as :class:`int`, :class:`bytes` and :class:`tuple`
+  (see :c:member:`~PyTypeObject.tp_itemsize`).
 
 * Any non-string :term:`iterable` may be assigned to *__slots__*.
 
