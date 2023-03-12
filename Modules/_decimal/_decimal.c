@@ -109,7 +109,6 @@ typedef struct {
 #undef MPD
 #undef CTX
 static PyTypeObject PyDec_Type;
-static PyTypeObject *PyDecSignalDict_Type;
 #define PyDec_CheckExact(v) Py_IS_TYPE(v, &PyDec_Type)
 #define PyDec_Check(v) PyObject_TypeCheck(v, &PyDec_Type)
 #define PyDecSignalDict_Check(v) Py_IS_TYPE(v, PyDecSignalDict_Type)
