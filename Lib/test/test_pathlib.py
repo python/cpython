@@ -1760,9 +1760,11 @@ class _BasePathTest(object):
         _check(p.glob("dir*/file*"), ["dirB/fileB", "dirC/fileC"])
         if not os_helper.can_symlink():
             _check(p.glob("*A"), ['dirA', 'fileA'])
-            _check(p.glob("*B/*"), ['dirB/fileB'])
         else:
             _check(p.glob("*A"), ['dirA', 'fileA', 'linkA'])
+        if not os_helper.can_symlink():
+            _check(p.glob("*B/*"), ['dirB/fileB'])
+        else:
             _check(p.glob("*B/*"), ['dirB/fileB', 'dirB/linkD'])
         _check(p.glob("*/fileB"), ['dirB/fileB'])
         _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE"])
