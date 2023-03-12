@@ -420,8 +420,6 @@ Modules/_cursesmodule.c	-	PyCursesError	-
 Modules/_decimal/_decimal.c	-	DecimalException	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
 Modules/ossaudiodev.c	-	OSSAudioError	-
-Modules/socketmodule.c	-	socket_herror	-
-Modules/socketmodule.c	-	socket_gaierror	-
 Modules/xxlimited_35.c	-	ErrorObject	-
 Modules/xxmodule.c	-	ErrorObject	-
 

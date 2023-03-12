@@ -546,6 +546,11 @@ typedef struct {
        some of which call new_sockobject(), which uses sock_type, so
        there has to be a circular reference. */
     PyTypeObject *sock_type;
+
+    /* Global variable holding the exception type for errors detected
+       by this module (but not argument type or memory errors, etc.). */
+    PyObject *socket_herror;
+    PyObject *socket_gaierror;
 } socket_state;
 
 static socket_state global_state;
@@ -558,11 +563,6 @@ static socket_state global_state;
 
 /* XXX There's a problem here: *static* functions are not supposed to have
    a Py prefix (or use CapitalizedWords).  Later... */
-
-/* Global variable holding the exception type for errors detected
-   by this module (but not argument type or memory errors, etc.). */
-static PyObject *socket_herror;
-static PyObject *socket_gaierror;
 
 #if defined(HAVE_POLL_H)
 #include <poll.h>
@@ -658,7 +658,8 @@ set_herror(int h_error)
     v = Py_BuildValue("(is)", h_error, "host not found");
 #endif
     if (v != NULL) {
-        PyErr_SetObject(socket_herror, v);
+        socket_state *state = GLOBAL_STATE();
+        PyErr_SetObject(state->socket_herror, v);
         Py_DECREF(v);
     }
 
@@ -685,7 +686,8 @@ set_gaierror(int error)
     v = Py_BuildValue("(is)", error, "getaddrinfo failed");
 #endif
     if (v != NULL) {
-        PyErr_SetObject(socket_gaierror, v);
+        socket_state *state = GLOBAL_STATE();
+        PyErr_SetObject(state->socket_gaierror, v);
         Py_DECREF(v);
     }
 
@@ -7332,20 +7334,31 @@ PyInit__socket(void)
     if (m == NULL)
         return NULL;
 
-    PyModule_AddObject(m, "error", Py_NewRef(PyExc_OSError));
-    socket_herror = PyErr_NewException("socket.herror",
-                                       PyExc_OSError, NULL);
-    if (socket_herror == NULL)
-        return NULL;
-    PyModule_AddObject(m, "herror", Py_NewRef(socket_herror));
-    socket_gaierror = PyErr_NewException("socket.gaierror", PyExc_OSError,
-        NULL);
-    if (socket_gaierror == NULL)
-        return NULL;
-    PyModule_AddObject(m, "gaierror", Py_NewRef(socket_gaierror));
-    PyModule_AddObjectRef(m, "timeout", PyExc_TimeoutError);
-
     socket_state *state = GLOBAL_STATE();
+    // Create exceptions and types, and add them to the module state.
+    state->socket_herror = PyErr_NewException("socket.herror",
+                                              PyExc_OSError, NULL);
+    if (state->socket_herror == NULL) {
+        return NULL;
+    }
+    if (PyModule_AddObjectRef(m, "error", PyExc_OSError) < 0) {
+        return NULL;
+    }
+    if (PyModule_AddObjectRef(m, "herror", state->socket_herror) < 0) {
+        return NULL;
+    }
+    state->socket_gaierror = PyErr_NewException("socket.gaierror",
+                                                PyExc_OSError, NULL);
+    if (state->socket_gaierror == NULL) {
+        return NULL;
+    }
+    if (PyModule_AddObjectRef(m, "gaierror", state->socket_gaierror) < 0) {
+        return NULL;
+    }
+    if (PyModule_AddObjectRef(m, "timeout", PyExc_TimeoutError) < 0) {
+        return NULL;
+    }
+
     PyObject *sock_type = PyType_FromMetaclass(NULL, m, &sock_spec, NULL);
     if (sock_type == NULL) {
         return NULL;
