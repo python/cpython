@@ -1784,7 +1784,7 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
         /* Reraise */
         _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
         exc = exc_info->exc_value;
-        if (exc == NULL) {
+        if (Py_IsNone(exc) || exc == NULL) {
             _PyErr_SetString(tstate, PyExc_RuntimeError,
                              "No active exception to reraise");
             return 0;
