@@ -1015,7 +1015,7 @@ sock_call(PySocketSockObject *s,
 /* Initialize a new socket object. */
 
 static int
-init_sockobject(PySocketSockObject *s,
+init_sockobject(socket_state *state, PySocketSockObject *s,
                 SOCKET_T fd, int family, int type, int proto)
 {
     s->sock_fd = fd;
@@ -1045,7 +1045,6 @@ init_sockobject(PySocketSockObject *s,
     else
 #endif
     {
-        socket_state *state = GLOBAL_STATE();
         s->sock_timeout = state->defaulttimeout;
         if (state->defaulttimeout >= 0) {
             if (internal_setblocking(s, 0) == -1) {
@@ -1072,7 +1071,7 @@ new_sockobject(socket_state *state, SOCKET_T fd, int family, int type,
     if (s == NULL) {
         return NULL;
     }
-    if (init_sockobject(s, fd, family, type, proto) == -1) {
+    if (init_sockobject(state, s, fd, family, type, proto) == -1) {
         Py_DECREF(s);
         return NULL;
     }
@@ -5335,10 +5334,10 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 {
 
     SOCKET_T fd = INVALID_SOCKET;
+    socket_state *state = GLOBAL_STATE();
 
 #ifndef MS_WINDOWS
 #ifdef SOCK_CLOEXEC
-    socket_state *state = GLOBAL_STATE();
     int *atomic_flag_works = &(state->sock_cloexec_works);
 #else
     int *atomic_flag_works = NULL;
@@ -5494,7 +5493,6 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
         /* UNIX */
         Py_BEGIN_ALLOW_THREADS
 #ifdef SOCK_CLOEXEC
-        socket_state *state = GLOBAL_STATE();
         if (state->sock_cloexec_works != 0) {
             fd = socket(family, type | SOCK_CLOEXEC, proto);
             if (state->sock_cloexec_works == -1) {
@@ -5526,7 +5524,7 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
         }
 #endif
     }
-    if (init_sockobject(self, fd, family, type, proto) == -1) {
+    if (init_sockobject(state, self, fd, family, type, proto) == -1) {
         SOCKETCLOSE(fd);
         return -1;
     }
