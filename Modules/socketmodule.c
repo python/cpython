@@ -541,7 +541,7 @@ remove_unusable_flags(PyObject *m)
 #define INADDR_NONE (-1)
 #endif
 
-typedef struct {
+typedef struct _socket_state {
     /* The sock_type variable contains pointers to various functions,
        some of which call new_sockobject(), which uses sock_type, so
        there has to be a circular reference. */
@@ -1052,6 +1052,7 @@ init_sockobject(socket_state *state, PySocketSockObject *s,
             }
         }
     }
+    s->state = state;
     return 0;
 }
 
