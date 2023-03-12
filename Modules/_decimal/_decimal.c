@@ -38,6 +38,13 @@
 
 #include "docstrings.h"
 
+typedef struct {
+} decimal_state;
+
+static decimal_state global_state;
+
+#define GLOBAL_STATE() (&global_state)
+
 
 #if !defined(MPD_VERSION_HEX) || MPD_VERSION_HEX < 0x02050000
   #error "libmpdec version >= 2.5.0 required"
