@@ -1,0 +1,2 @@
+Add *follow_symlinks* argument to :meth:`pathlib.Path.glob` and
+:meth:`~pathlib.Path.rglob`, defaulting to false.

@@ -1760,22 +1760,25 @@ class _BasePathTest(object):
         _check(p.glob("dir*/file*"), ["dirB/fileB", "dirC/fileC"])
         if not os_helper.can_symlink():
             _check(p.glob("*A"), ['dirA', 'fileA'])
-        else:
-            _check(p.glob("*A"), ['dirA', 'fileA', 'linkA'])
-        if not os_helper.can_symlink():
             _check(p.glob("*B/*"), ['dirB/fileB'])
         else:
-            _check(p.glob("*B/*"), ['dirB/fileB', 'dirB/linkD',
-                                    'linkB/fileB', 'linkB/linkD'])
-        if not os_helper.can_symlink():
-            _check(p.glob("*/fileB"), ['dirB/fileB'])
-        else:
-            _check(p.glob("*/fileB"), ['dirB/fileB', 'linkB/fileB'])
+            _check(p.glob("*A"), ['dirA', 'fileA', 'linkA'])
+            _check(p.glob("*B/*"), ['dirB/fileB', 'dirB/linkD'])
+        _check(p.glob("*/fileB"), ['dirB/fileB'])
+        _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE"])
 
-        if not os_helper.can_symlink():
-            _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE"])
-        else:
-            _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE", "linkB"])
+    @os_helper.skip_unless_symlink
+    def test_glob_follow_symlinks_common(self):
+        def _check(path, glob, expected):
+            self.assertEqual(set(path.glob(glob, follow_symlinks=True)), { P(BASE, q) for q in expected })
+        P = self.cls
+        p = P(BASE)
+        _check(p, "fileB", [])
+        _check(p, "dir*/file*", ["dirB/fileB", "dirC/fileC"])
+        _check(p, "*A", ['dirA', 'fileA', 'linkA'])
+        _check(p, "*B/*", ['dirB/fileB', 'dirB/linkD', 'linkB/fileB', 'linkB/linkD'])
+        _check(p, "*/fileB", ['dirB/fileB', 'linkB/fileB'])
+        _check(p, "*/", ["dirA", "dirB", "dirC", "dirE", "linkB"])
 
     def test_rglob_common(self):
         def _check(glob, expected):
@@ -1787,22 +1790,10 @@ class _BasePathTest(object):
         _check(it, ["fileA"])
         _check(p.rglob("fileB"), ["dirB/fileB"])
         _check(p.rglob("*/fileA"), [])
-        if not os_helper.can_symlink():
-            _check(p.rglob("*/fileB"), ["dirB/fileB"])
-        else:
-            _check(p.rglob("*/fileB"), ["dirB/fileB", "dirB/linkD/fileB",
-                                        "linkB/fileB", "dirA/linkC/fileB"])
+        _check(p.rglob("*/fileB"), ["dirB/fileB"])
         _check(p.rglob("file*"), ["fileA", "dirB/fileB",
                                   "dirC/fileC", "dirC/dirD/fileD"])
-        if not os_helper.can_symlink():
-            _check(p.rglob("*/"), [
-                "dirA", "dirB", "dirC", "dirC/dirD", "dirE",
-            ])
-        else:
-            _check(p.rglob("*/"), [
-                "dirA", "dirA/linkC", "dirB", "dirB/linkD", "dirC",
-                "dirC/dirD", "dirE", "linkB",
-            ])
+        _check(p.rglob("*/"), ["dirA", "dirB", "dirC", "dirC/dirD", "dirE"])
         _check(p.rglob(""), ["", "dirA", "dirB", "dirC", "dirE", "dirC/dirD"])
 
         p = P(BASE, "dirC")
@@ -1815,6 +1806,33 @@ class _BasePathTest(object):
         # gh-91616, a re module regression
         _check(p.rglob("*.txt"), ["dirC/novel.txt"])
         _check(p.rglob("*.*"), ["dirC/novel.txt"])
+
+    @os_helper.skip_unless_symlink
+    def test_rglob_follow_symlinks_common(self):
+        def _check(path, glob, expected):
+            actual = {path for path in path.rglob(glob, follow_symlinks=True)
+                      if 'linkD' not in path.parts}  # exclude symlink loop.
+            self.assertEqual(actual, { P(BASE, q) for q in expected })
+        P = self.cls
+        p = P(BASE)
+        _check(p, "fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB"])
+        _check(p, "*/fileA", [])
+        _check(p, "*/fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB"])
+        _check(p, "file*", ["fileA", "dirA/linkC/fileB", "dirB/fileB",
+                            "dirC/fileC", "dirC/dirD/fileD", "linkB/fileB"])
+        _check(p, "*/", ["dirA", "dirA/linkC", "dirB", "dirC", "dirC/dirD", "dirE", "linkB"])
+        _check(p, "", ["", "dirA", "dirA/linkC", "dirB", "dirC", "dirE", "dirC/dirD", "linkB"])
+
+        p = P(BASE, "dirC")
+        _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
+                        "dirC/dirD", "dirC/dirD/fileD"])
+        _check(p, "file*", ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "*/*", ["dirC/dirD/fileD"])
+        _check(p, "*/", ["dirC/dirD"])
+        _check(p, "", ["dirC", "dirC/dirD"])
+        # gh-91616, a re module regression
+        _check(p, "*.txt", ["dirC/novel.txt"])
+        _check(p, "*.*", ["dirC/novel.txt"])
 
     @os_helper.skip_unless_symlink
     def test_rglob_symlink_loop(self):
@@ -1856,8 +1874,8 @@ class _BasePathTest(object):
         # ".." is not special in globs.
         P = self.cls
         p = P(BASE)
-        self.assertEqual(set(p.glob("..")), { P(BASE, "..") })
-        self.assertEqual(set(p.glob("dirA/../file*")), { P(BASE, "dirA/../fileA") })
+        self.assertEqual(set(p.glob("..")), set())
+        self.assertEqual(set(p.glob("dirA/../file*")), set())
         self.assertEqual(set(p.glob("../xyzzy")), set())
 
     @os_helper.skip_unless_symlink
@@ -3053,7 +3071,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         self.assertEqual(set(p.glob("FILEa")), { P(BASE, "fileA") })
         self.assertEqual(set(p.glob("*a\\")), { P(BASE, "dirA") })
         self.assertEqual(set(p.glob("F*a")), { P(BASE, "fileA") })
-        self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\FILEa"})
+        self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\fileA"})
         self.assertEqual(set(map(str, p.glob("F*a"))), {f"{p}\\fileA"})
 
     def test_rglob(self):
@@ -3061,7 +3079,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         p = P(BASE, "dirC")
         self.assertEqual(set(p.rglob("FILEd")), { P(BASE, "dirC/dirD/fileD") })
         self.assertEqual(set(p.rglob("*\\")), { P(BASE, "dirC/dirD") })
-        self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\FILEd"})
+        self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\fileD"})
 
     def test_expanduser(self):
         P = self.cls

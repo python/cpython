@@ -852,7 +852,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.glob(pattern)
+.. method:: Path.glob(pattern, *, follow_symlinks=False)
 
    Glob the given relative *pattern* in the directory represented by this path,
    yielding all matching files (of any kind)::
@@ -873,6 +873,9 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
+   By default, :meth:`Path.glob` does not follow symlinks. Set
+   *follow_symlinks* to true to visit symlinks to directories.
+
    .. note::
       Using the "``**``" pattern in large directory trees may consume
       an inordinate amount of time.
@@ -882,6 +885,10 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.11
       Return only directories if *pattern* ends with a pathname components
       separator (:data:`~os.sep` or :data:`~os.altsep`).
+
+   .. versionchanged:: 3.12
+      The *follow_symlinks* parameter was added.  In previous versions,
+      symlinks were followed except when expanding "``**``" wildcards.
 
 .. method:: Path.group()
 
@@ -1268,7 +1275,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.6
       The *strict* argument (pre-3.6 behavior is strict).
 
-.. method:: Path.rglob(pattern)
+.. method:: Path.rglob(pattern, *, follow_symlinks=False)
 
    Glob the given relative *pattern* recursively.  This is like calling
    :func:`Path.glob` with "``**/``" added in front of the *pattern*, where
@@ -1281,11 +1288,18 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
+   By default, :meth:`Path.rglob` does not follow symlinks. Set
+   *follow_symlinks* to true to visit symlinks to directories.
+
    .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
    .. versionchanged:: 3.11
       Return only directories if *pattern* ends with a pathname components
       separator (:data:`~os.sep` or :data:`~os.altsep`).
+
+   .. versionchanged:: 3.12
+      The *follow_symlinks* parameter was added.  In previous versions,
+      symlinks were followed except when expanding "``**``" wildcards.
 
 .. method:: Path.rmdir()
 
