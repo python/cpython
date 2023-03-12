@@ -41,6 +41,7 @@
 typedef struct {
     PyTypeObject *PyDecContextManager_Type;
     PyTypeObject *PyDecContext_Type;
+    PyTypeObject *PyDecSignalDictMixin_Type;
 } decimal_state;
 
 static decimal_state global_state;
@@ -609,6 +610,22 @@ signaldict_setitem(PyObject *self, PyObject *key, PyObject *value)
     return 0;
 }
 
+static int
+signaldict_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+static void
+signaldict_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
 static PyObject *
 signaldict_repr(PyObject *self)
 {
@@ -670,58 +687,35 @@ signaldict_copy(PyObject *self, PyObject *args UNUSED)
 }
 
 
-static PyMappingMethods signaldict_as_mapping = {
-    (lenfunc)signaldict_len,          /* mp_length */
-    (binaryfunc)signaldict_getitem,   /* mp_subscript */
-    (objobjargproc)signaldict_setitem /* mp_ass_subscript */
-};
-
 static PyMethodDef signaldict_methods[] = {
     { "copy", (PyCFunction)signaldict_copy, METH_NOARGS, NULL},
     {NULL, NULL}
 };
 
 
-static PyTypeObject PyDecSignalDictMixin_Type =
-{
-    PyVarObject_HEAD_INIT(0, 0)
-    "decimal.SignalDictMixin",                /* tp_name */
-    sizeof(PyDecSignalDictObject),            /* tp_basicsize */
-    0,                                        /* tp_itemsize */
-    0,                                        /* tp_dealloc */
-    0,                                        /* tp_vectorcall_offset */
-    (getattrfunc) 0,                          /* tp_getattr */
-    (setattrfunc) 0,                          /* tp_setattr */
-    0,                                        /* tp_as_async */
-    (reprfunc) signaldict_repr,               /* tp_repr */
-    0,                                        /* tp_as_number */
-    0,                                        /* tp_as_sequence */
-    &signaldict_as_mapping,                   /* tp_as_mapping */
-    PyObject_HashNotImplemented,              /* tp_hash */
-    0,                                        /* tp_call */
-    (reprfunc) 0,                             /* tp_str */
-    PyObject_GenericGetAttr,                  /* tp_getattro */
-    (setattrofunc) 0,                         /* tp_setattro */
-    (PyBufferProcs *) 0,                      /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    0,                                        /* tp_doc */
-    0,                                        /* tp_traverse */
-    0,                                        /* tp_clear */
-    signaldict_richcompare,                   /* tp_richcompare */
-    0,                                        /* tp_weaklistoffset */
-    (getiterfunc)signaldict_iter,             /* tp_iter */
-    0,                                        /* tp_iternext */
-    signaldict_methods,                       /* tp_methods */
-    0,                                        /* tp_members */
-    0,                                        /* tp_getset */
-    0,                                        /* tp_base */
-    0,                                        /* tp_dict */
-    0,                                        /* tp_descr_get */
-    0,                                        /* tp_descr_set */
-    0,                                        /* tp_dictoffset */
-    (initproc)signaldict_init,                /* tp_init */
-    0,                                        /* tp_alloc */
-    PyType_GenericNew,                        /* tp_new */
+static PyType_Slot signaldict_slots[] = {
+    {Py_tp_dealloc, signaldict_dealloc},
+    {Py_tp_traverse, signaldict_traverse},
+    {Py_tp_repr, signaldict_repr},
+    {Py_tp_hash, PyObject_HashNotImplemented},
+    {Py_tp_richcompare, signaldict_richcompare},
+    {Py_tp_iter, signaldict_iter},
+    {Py_tp_methods, signaldict_methods},
+    {Py_tp_init, signaldict_init},
+
+    // Mapping protocol
+    {Py_mp_length, signaldict_len},
+    {Py_mp_subscript, signaldict_getitem},
+    {Py_mp_ass_subscript, signaldict_setitem},
+    {0, NULL},
+};
+
+static PyType_Spec signaldict_spec = {
+    .name = "decimal.SignalDictMixin",
+    .basicsize = sizeof(PyDecSignalDictObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = signaldict_slots,
 };
 
 
@@ -5870,7 +5864,6 @@ PyInit__decimal(void)
 
     /* Init types */
     PyDec_Type.tp_base = &PyBaseObject_Type;
-    PyDecSignalDictMixin_Type.tp_base = &PyBaseObject_Type;
 
 #define CREATE_TYPE(mod, type, spec)                                        \
     do {                                                                    \
@@ -5881,7 +5874,7 @@ PyInit__decimal(void)
     decimal_state *state = GLOBAL_STATE();
     CHECK_INT(PyType_Ready(&PyDec_Type));
     CREATE_TYPE(m, state->PyDecContext_Type, &context_spec);
-    CHECK_INT(PyType_Ready(&PyDecSignalDictMixin_Type));
+    CREATE_TYPE(m, state->PyDecSignalDictMixin_Type, &signaldict_spec);
     CREATE_TYPE(m, state->PyDecContextManager_Type, &ctxmanager_spec);
     #undef CREATE_TYPE
 
@@ -5923,7 +5916,7 @@ PyInit__decimal(void)
     ASSIGN_PTR(PyDecSignalDict_Type,
                    (PyTypeObject *)PyObject_CallFunction(
                    (PyObject *)&PyType_Type, "s(OO){}",
-                   "SignalDict", &PyDecSignalDictMixin_Type,
+                   "SignalDict", state->PyDecSignalDictMixin_Type,
                    MutableMapping));
 
     /* Done with collections, MutableMapping */
