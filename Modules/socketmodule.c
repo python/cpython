@@ -552,6 +552,9 @@ typedef struct {
     PyObject *socket_herror;
     PyObject *socket_gaierror;
 
+    /* Default timeout for new sockets */
+    _PyTime_t defaulttimeout;
+
 #if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
     /* accept4() is available on Linux 2.6.28+ and glibc 2.10 */
@@ -1013,9 +1016,6 @@ sock_call(PySocketSockObject *s,
 
 /* Initialize a new socket object. */
 
-/* Default timeout for new sockets */
-static _PyTime_t defaulttimeout = _PYTIME_FROMSECONDS(-1);
-
 static int
 init_sockobject(PySocketSockObject *s,
                 SOCKET_T fd, int family, int type, int proto)
@@ -1047,8 +1047,9 @@ init_sockobject(PySocketSockObject *s,
     else
 #endif
     {
-        s->sock_timeout = defaulttimeout;
-        if (defaulttimeout >= 0) {
+        socket_state *state = GLOBAL_STATE();
+        s->sock_timeout = state->defaulttimeout;
+        if (state->defaulttimeout >= 0) {
             if (internal_setblocking(s, 0) == -1) {
                 return -1;
             }
@@ -6882,11 +6883,12 @@ Get host and port for a sockaddr.");
 static PyObject *
 socket_getdefaulttimeout(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    if (defaulttimeout < 0) {
+    socket_state *state = GLOBAL_STATE();
+    if (state->defaulttimeout < 0) {
         Py_RETURN_NONE;
     }
     else {
-        double seconds = _PyTime_AsSecondsDouble(defaulttimeout);
+        double seconds = _PyTime_AsSecondsDouble(state->defaulttimeout);
         return PyFloat_FromDouble(seconds);
     }
 }
@@ -6906,7 +6908,8 @@ socket_setdefaulttimeout(PyObject *self, PyObject *arg)
     if (socket_parse_timeout(&timeout, arg) < 0)
         return NULL;
 
-    defaulttimeout = timeout;
+    socket_state *state = GLOBAL_STATE();
+    state->defaulttimeout = timeout;
 
     Py_RETURN_NONE;
 }
@@ -7344,6 +7347,8 @@ PyInit__socket(void)
         return NULL;
 
     socket_state *state = GLOBAL_STATE();
+    state->defaulttimeout = _PYTIME_FROMSECONDS(-1);
+
 #if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
     state->accept4_works = -1;
