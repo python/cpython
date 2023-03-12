@@ -685,7 +685,7 @@ set_herror(socket_state *state, int h_error)
 
 #ifdef HAVE_GETADDRINFO
 static PyObject *
-set_gaierror(int error)
+set_gaierror(socket_state *state, int error)
 {
     PyObject *v;
 
@@ -701,7 +701,6 @@ set_gaierror(int error)
     v = Py_BuildValue("(is)", error, "getaddrinfo failed");
 #endif
     if (v != NULL) {
-        socket_state *state = GLOBAL_STATE();
         PyErr_SetObject(state->socket_gaierror, v);
         Py_DECREF(v);
     }
@@ -1118,7 +1117,8 @@ setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int
            outcome of the first call. */
         if (error) {
             res = NULL;  // no-op, remind us that it is invalid; gh-100795
-            set_gaierror(error);
+            socket_state *state = GLOBAL_STATE();
+            set_gaierror(state, error);
             return -1;
         }
         switch (res->ai_family) {
@@ -1229,7 +1229,8 @@ setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int
     Py_END_ALLOW_THREADS
     if (error) {
         res = NULL;  // no-op, remind us that it is invalid; gh-100795
-        set_gaierror(error);
+        socket_state *state = GLOBAL_STATE();
+        set_gaierror(state, error);
         return -1;
     }
     if (res->ai_addrlen < addr_ret_size)
@@ -6726,7 +6727,8 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     Py_END_ALLOW_THREADS
     if (error) {
         res0 = NULL;  // gh-100795
-        set_gaierror(error);
+        socket_state *state = GLOBAL_STATE();
+        set_gaierror(state, error);
         goto err;
     }
 
@@ -6825,7 +6827,8 @@ socket_getnameinfo(PyObject *self, PyObject *args)
     Py_END_ALLOW_THREADS
     if (error) {
         res = NULL;  // gh-100795
-        set_gaierror(error);
+        socket_state *state = GLOBAL_STATE();
+        set_gaierror(state, error);
         goto fail;
     }
     if (res->ai_next) {
@@ -6857,7 +6860,8 @@ socket_getnameinfo(PyObject *self, PyObject *args)
     error = getnameinfo(res->ai_addr, (socklen_t) res->ai_addrlen,
                     hbuf, sizeof(hbuf), pbuf, sizeof(pbuf), flags);
     if (error) {
-        set_gaierror(error);
+        socket_state *state = GLOBAL_STATE();
+        set_gaierror(state, error);
         goto fail;
     }
 
