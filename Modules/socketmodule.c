@@ -1747,7 +1747,6 @@ static int
 getsockaddrarg(PySocketSockObject *s, PyObject *args,
                sock_addr_t *addrbuf, int *len_ret, const char *caller)
 {
-    socket_state *state = GLOBAL_STATE();
     switch (s->sock_family) {
 
 #if defined(AF_UNIX)
@@ -1913,7 +1912,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             return 0;
         }
         struct sockaddr_in* addr = &addrbuf->in;
-        result = setipaddr(state, host.buf, (struct sockaddr *)addr,
+        result = setipaddr(s->state, host.buf, (struct sockaddr *)addr,
                            sizeof(*addr),  AF_INET);
         idna_cleanup(&host);
         if (result < 0)
@@ -1958,7 +1957,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             return 0;
         }
         struct sockaddr_in6* addr = &addrbuf->in6;
-        result = setipaddr(state, host.buf, (struct sockaddr *)addr,
+        result = setipaddr(s->state, host.buf, (struct sockaddr *)addr,
                            sizeof(*addr), AF_INET6);
         idna_cleanup(&host);
         if (result < 0)
@@ -2855,7 +2854,7 @@ sock_accept_impl(PySocketSockObject *s, void *data)
 #endif
 
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
-    socket_state *state = GLOBAL_STATE();
+    socket_state *state = s->state;
     if (state->accept4_works != 0) {
         ctx->result = accept4(s->sock_fd, addr, paddrlen,
                               SOCK_CLOEXEC);
@@ -2917,7 +2916,7 @@ sock_accept(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
 #else
 
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
-    socket_state *state = GLOBAL_STATE();
+    socket_state *state = s->state;
     if (!state->accept4_works)
 #endif
     {
