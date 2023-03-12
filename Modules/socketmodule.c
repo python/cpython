@@ -551,6 +551,13 @@ typedef struct {
        by this module (but not argument type or memory errors, etc.). */
     PyObject *socket_herror;
     PyObject *socket_gaierror;
+
+#if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
+#if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
+    /* accept4() is available on Linux 2.6.28+ and glibc 2.10 */
+    int accept4_works;
+#endif
+#endif
 } socket_state;
 
 static socket_state global_state;
@@ -2823,10 +2830,6 @@ struct sock_accept {
 };
 
 #if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
-#if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
-/* accept4() is available on Linux 2.6.28+ and glibc 2.10 */
-static int accept4_works = -1;
-#endif
 
 static int
 sock_accept_impl(PySocketSockObject *s, void *data)
@@ -2845,15 +2848,16 @@ sock_accept_impl(PySocketSockObject *s, void *data)
 #endif
 
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
-    if (accept4_works != 0) {
+    socket_state *state = GLOBAL_STATE();
+    if (state->accept4_works != 0) {
         ctx->result = accept4(s->sock_fd, addr, paddrlen,
                               SOCK_CLOEXEC);
-        if (ctx->result == INVALID_SOCKET && accept4_works == -1) {
+        if (ctx->result == INVALID_SOCKET && state->accept4_works == -1) {
             /* On Linux older than 2.6.28, accept4() fails with ENOSYS */
-            accept4_works = (errno != ENOSYS);
+            state->accept4_works = (errno != ENOSYS);
         }
     }
-    if (accept4_works == 0)
+    if (state->accept4_works == 0)
         ctx->result = accept(s->sock_fd, addr, paddrlen);
 #else
     ctx->result = accept(s->sock_fd, addr, paddrlen);
@@ -2906,7 +2910,8 @@ sock_accept(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
 #else
 
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
-    if (!accept4_works)
+    socket_state *state = GLOBAL_STATE();
+    if (!state->accept4_works)
 #endif
     {
         if (_Py_set_inheritable(newfd, 0, NULL) < 0) {
@@ -7335,6 +7340,12 @@ PyInit__socket(void)
         return NULL;
 
     socket_state *state = GLOBAL_STATE();
+#if defined(HAVE_ACCEPT) || defined(HAVE_ACCEPT4)
+#if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
+    state->accept4_works = -1;
+#endif
+#endif
+
     // Create exceptions and types, and add them to the module state.
     state->socket_herror = PyErr_NewException("socket.herror",
                                               PyExc_OSError, NULL);

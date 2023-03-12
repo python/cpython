@@ -517,7 +517,6 @@ Modules/cjkcodecs/cjkcodecs.h	-	mapping_list	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-
 Modules/readline.c	-	libedit_history_start	-
-Modules/socketmodule.c	-	accept4_works	-
 Modules/socketmodule.c	-	sock_cloexec_works	-
 
 ##-----------------------
