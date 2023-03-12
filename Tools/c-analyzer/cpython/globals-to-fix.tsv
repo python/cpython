@@ -397,7 +397,6 @@ Modules/_pickle.c	-	UnpicklerMemoProxyType	-
 Modules/_pickle.c	-	Unpickler_Type	-
 Modules/ossaudiodev.c	-	OSSAudioType	-
 Modules/ossaudiodev.c	-	OSSMixerType	-
-Modules/socketmodule.c	-	sock_type	-
 Modules/xxmodule.c	-	Null_Type	-
 Modules/xxmodule.c	-	Str_Type	-
 Modules/xxmodule.c	-	Xxo_Type	-
