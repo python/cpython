@@ -92,8 +92,6 @@ class _Selector:
         path_cls = type(parent_path)
         scandir = path_cls._scandir
         normcase = path_cls._flavour.normcase
-        if not follow_symlinks and parent_path.is_symlink():
-            return iter([])
         if not parent_path.is_dir():
             return iter([])
         return self._select_from(parent_path, follow_symlinks, scandir, normcase)
