@@ -2404,72 +2404,68 @@ The demo scripts are:
 
 .. tabularcolumns:: |l|L|L|
 
-+----------------+------------------------------+-------------------------------+
-| Name           | Description                  | Features                      |
-+================+==============================+===============================+
-| bytedesign     | complex classical            | :func:`~turtle.tracer`,       |
-|                | turtle graphics pattern      | :func:`~turtle.delay`         |
-|                |                              | :func:`~turtle.update`        |
-+----------------+------------------------------+-------------------------------+
-| chaos          | graphs Verhulst dynamics,    | world coordinates             |
-|                | shows that computer's        |                               |
-|                | computations can generate    |                               |
-|                | results sometimes against the|                               |
-|                | common sense expectations    |                               |
-+----------------+------------------------------+-------------------------------+
-| clock          | analog clock showing time    | turtles as clock's            |
-|                | of your computer             | hands, :func:`~turtle.ontimer`|
-+----------------+------------------------------+-------------------------------+
-| colormixer     | experiment with r, g, b      | :func:`~turtle.ondrag`        |
-+----------------+------------------------------+-------------------------------+
-| forest         | 3 breadth-first trees        | randomization                 |
-+----------------+------------------------------+-------------------------------+
-| fractalcurves  | Hilbert & Koch curves        | recursion                     |
-+----------------+------------------------------+-------------------------------+
-| lindenmayer    | ethnomathematics             | L-System                      |
-|                | (Indian kolams)              |                               |
-+----------------+------------------------------+-------------------------------+
-| minimal_hanoi  | Towers of Hanoi              | Rectangular turtles           |
-|                |                              | as Hanoi discs (shape,        |
-|                |                              | :func:`~turtle.shapesize`)    |
-+----------------+------------------------------+-------------------------------+
-| nim            | play the classical nim game  | turtles as nimsticks,         |
-|                | with three heaps of sticks   | event driven (mouse,          |
-|                | against the computer.        | keyboard)                     |
-+----------------+------------------------------+-------------------------------+
-| paint          | super minimalistic           | :func:`~turtle.onclick`       |
-|                | drawing program              |                               |
-+----------------+------------------------------+-------------------------------+
-| peace          | elementary                   | turtle: appearance            |
-|                |                              | and animation                 |
-+----------------+------------------------------+-------------------------------+
-| penrose        | aperiodic tiling with        | :func:`~turtle.stamp`         |
-|                | kites and darts              |                               |
-+----------------+------------------------------+-------------------------------+
-| planet_and_moon| simulation of                | compound shapes,              |
-|                | gravitational system         | :class:`~turtle.Vec2D`        |
-+----------------+------------------------------+-------------------------------+
-| rosette        | a pattern from the wikipedia | :func:`~turtle.clone`,        |
-|                | article on turtle graphics   | :func:`~turtle.undo`          |
-+----------------+------------------------------+-------------------------------+
-| round_dance    | dancing turtles rotating     | compound shapes,              |
-|                | pairwise in opposite         | :func:`~turtle.clone`,        |
-|                | direction                    | :func:`~turtle.shapesize`,    |
-|                |                              | :func:`~turtle.tilt`,         |
-|                |                              | :func:`~turtle.get_shapepoly`,|
-|                |                              | :func:`~turtle.update`        |
-+----------------+------------------------------+-------------------------------+
-| sorting_animate| visual demonstration of      | simple alignment,             |
-|                | different sorting methods    | randomization                 |
-+----------------+------------------------------+-------------------------------+
-| tree           | a (graphical) breadth        | :func:`~turtle.clone`         |
-|                | first tree (using generators)|                               |
-+----------------+------------------------------+-------------------------------+
-| two_canvases   | simple design                | turtles on two                |
-|                |                              | canvases                      |
-+----------------+------------------------------+-------------------------------+
-| yinyang        | another elementary example   | :func:`~turtle.circle`        |
-+----------------+------------------------------+-------------------------------+
++----------------+------------------------------+-----------------------+
+| Name           | Description                  | Features              |
++================+==============================+=======================+
+| bytedesign     | complex classical            | :func:`tracer`, delay,|
+|                | turtle graphics pattern      | :func:`update`        |
++----------------+------------------------------+-----------------------+
+| chaos          | graphs Verhulst dynamics,    | world coordinates     |
+|                | shows that computer's        |                       |
+|                | computations can generate    |                       |
+|                | results sometimes against the|                       |
+|                | common sense expectations    |                       |
++----------------+------------------------------+-----------------------+
+| clock          | analog clock showing time    | turtles as clock's    |
+|                | of your computer             | hands, ontimer        |
++----------------+------------------------------+-----------------------+
+| colormixer     | experiment with r, g, b      | :func:`ondrag`        |
++----------------+------------------------------+-----------------------+
+| forest         | 3 breadth-first trees        | randomization         |
++----------------+------------------------------+-----------------------+
+| fractalcurves  | Hilbert & Koch curves        | recursion             |
++----------------+------------------------------+-----------------------+
+| lindenmayer    | ethnomathematics             | L-System              |
+|                | (indian kolams)              |                       |
++----------------+------------------------------+-----------------------+
+| minimal_hanoi  | Towers of Hanoi              | Rectangular Turtles   |
+|                |                              | as Hanoi discs        |
+|                |                              | (shape, shapesize)    |
++----------------+------------------------------+-----------------------+
+| nim            | play the classical nim game  | turtles as nimsticks, |
+|                | with three heaps of sticks   | event driven (mouse,  |
+|                | against the computer.        | keyboard)             |
++----------------+------------------------------+-----------------------+
+| paint          | super minimalistic           | :func:`onclick`       |
+|                | drawing program              |                       |
++----------------+------------------------------+-----------------------+
+| peace          | elementary                   | turtle: appearance    |
+|                |                              | and animation         |
++----------------+------------------------------+-----------------------+
+| penrose        | aperiodic tiling with        | :func:`stamp`         |
+|                | kites and darts              |                       |
++----------------+------------------------------+-----------------------+
+| planet_and_moon| simulation of                | compound shapes,      |
+|                | gravitational system         | :class:`Vec2D`        |
++----------------+------------------------------+-----------------------+
+| rosette        | a pattern from the wikipedia | :func:`clone`,        |
+|                | article on turtle graphics   | :func:`undo`          |
++----------------+------------------------------+-----------------------+
+| round_dance    | dancing turtles rotating     | compound shapes, clone|
+|                | pairwise in opposite         | shapesize, tilt,      |
+|                | direction                    | get_shapepoly, update |
++----------------+------------------------------+-----------------------+
+| sorting_animate| visual demonstration of      | simple alignment,     |
+|                | different sorting methods    | randomization         |
++----------------+------------------------------+-----------------------+
+| tree           | a (graphical) breadth        | :func:`clone`         |
+|                | first tree (using generators)|                       |
++----------------+------------------------------+-----------------------+
+| two_canvases   | simple design                | turtles on two        |
+|                |                              | canvases              |
++----------------+------------------------------+-----------------------+
+| yinyang        | another elementary example   | :func:`circle`        |
++----------------+------------------------------+-----------------------+
 
 Have fun!
 
