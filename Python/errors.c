@@ -135,6 +135,28 @@ _PyErr_GetTopmostException(PyThreadState *tstate)
     return exc_info;
 }
 
+PyObject *
+get_normalization_failure_note(PyThreadState *tstate, PyObject *exception, PyObject *value)
+{
+    PyObject *args = PyObject_Repr(value);
+    if (args == NULL) {
+        _PyErr_Clear(tstate);
+        args = PyUnicode_FromFormat("<unknown>");
+    }
+    PyObject *note;
+    const char *tpname = ((PyTypeObject*)exception)->tp_name;
+    if (args == NULL) {
+        _PyErr_Clear(tstate);
+        note = PyUnicode_FromFormat("Normalization failed: type=%s", tpname);
+    }
+    else {
+        note = PyUnicode_FromFormat("Normalization failed: type=%s args=%S",
+                                    tpname, args);
+        Py_DECREF(args);
+    }
+    return note;
+}
+
 void
 _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
 {
@@ -169,6 +191,16 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
         fixed_value = _PyErr_CreateException(exception, value);
         Py_XDECREF(value);
         if (fixed_value == NULL) {
+            PyObject *exc = _PyErr_GetRaisedException(tstate);
+            assert(PyExceptionInstance_Check(exc));
+
+            PyObject *note = get_normalization_failure_note(tstate, exception, value);
+            if (note != NULL) {
+                PyObject *res = _PyException_AddNote((PyBaseExceptionObject*)exc, note);
+                Py_DECREF(note);
+                Py_XDECREF(res);
+            }
+            _PyErr_SetRaisedException(tstate, exc);
             return;
         }
 

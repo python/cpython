@@ -3749,6 +3749,12 @@ _PyExc_Fini(PyInterpreterState *interp)
     _PyExc_FiniTypes(interp);
 }
 
+PyObject *
+_PyException_AddNote(PyBaseExceptionObject *exc, PyObject *note)
+{
+    return BaseException_add_note((PyObject *)exc, note);
+}
+
 /* Helper to do the equivalent of "raise X from Y" in C, but always using
  * the current exception rather than passing one in.
  *
