@@ -712,6 +712,9 @@ pycore_init_types(PyInterpreterState *interp)
         return _PyStatus_ERR("failed to initialize an exception type");
     }
 
+    // XXX init collections module static types (_PyStaticType_InitBuiltin())
+    // XXX init IO module static types (_PyStaticType_InitBuiltin())
+
     status = _PyExc_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1677,6 +1680,8 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyFloat_FiniType(interp);
     _PyLong_FiniTypes(interp);
     _PyThread_FiniType(interp);
+    // XXX fini collections module static types (_PyStaticType_Dealloc())
+    // XXX fini IO module static types (_PyStaticType_Dealloc())
     _PyErr_FiniTypes(interp);
     _PyTypes_FiniTypes(interp);
 
