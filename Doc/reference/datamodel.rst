@@ -860,7 +860,7 @@ Custom classes
           involving base classes that contribute to the instance layout.
           ``__base__`` is the base class that is involved in that chain.
 
-          .. note::
+          .. impl-detail::
             The behavior of the ``__base__`` attribute is dependent on the :term:`CPython` implementation.
 
       :attr:`__doc__`
