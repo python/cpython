@@ -15,14 +15,14 @@
 #define MODULE_NAME "_xxsubinterpreters"
 
 
-static char *
+static const char *
 _copy_raw_string(PyObject *strobj)
 {
     const char *str = PyUnicode_AsUTF8(strobj);
     if (str == NULL) {
         return NULL;
     }
-    char *copied = PyMem_Malloc(strlen(str)+1);
+    char *copied = PyMem_RawMalloc(strlen(str)+1);
     if (copied == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -128,7 +128,7 @@ clear_module_state(module_state *state)
 /* data-sharing-specific code ***********************************************/
 
 struct _sharednsitem {
-    char *name;
+    const char *name;
     _PyCrossInterpreterData data;
 };
 
@@ -152,7 +152,7 @@ static void
 _sharednsitem_clear(struct _sharednsitem *item)
 {
     if (item->name != NULL) {
-        PyMem_Free(item->name);
+        PyMem_RawFree((void *)item->name);
         item->name = NULL;
     }
     (void)_release_xid_data(&item->data, 1);
@@ -258,96 +258,74 @@ _sharedns_apply(_sharedns *shared, PyObject *ns)
 // of the exception in the calling interpreter.
 
 typedef struct _sharedexception {
-    char *name;
-    char *msg;
+    const char *name;
+    const char *msg;
 } _sharedexception;
 
-static _sharedexception *
-_sharedexception_new(void)
-{
-    _sharedexception *err = PyMem_NEW(_sharedexception, 1);
-    if (err == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    err->name = NULL;
-    err->msg = NULL;
-    return err;
-}
+static const struct _sharedexception no_exception = {
+    .name = NULL,
+    .msg = NULL,
+};
 
 static void
 _sharedexception_clear(_sharedexception *exc)
 {
     if (exc->name != NULL) {
-        PyMem_Free(exc->name);
+        PyMem_RawFree((void *)exc->name);
     }
     if (exc->msg != NULL) {
-        PyMem_Free(exc->msg);
+        PyMem_RawFree((void *)exc->msg);
     }
 }
 
-static void
-_sharedexception_free(_sharedexception *exc)
-{
-    _sharedexception_clear(exc);
-    PyMem_Free(exc);
-}
-
-static _sharedexception *
-_sharedexception_bind(PyObject *exc)
+static const char *
+_sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
 {
     assert(exc != NULL);
-    char *failure = NULL;
+    const char *failure = NULL;
 
-    _sharedexception *err = _sharedexception_new();
-    if (err == NULL) {
-        goto finally;
-    }
-
-    PyObject *name = PyUnicode_FromFormat("%S", Py_TYPE(exc));
-    if (name == NULL) {
+    PyObject *nameobj = PyUnicode_FromFormat("%S", Py_TYPE(exc));
+    if (nameobj == NULL) {
         failure = "unable to format exception type name";
-        goto finally;
+        goto error;
     }
-    err->name = _copy_raw_string(name);
-    Py_DECREF(name);
-    if (err->name == NULL) {
+    sharedexc->name = _copy_raw_string(nameobj);
+    Py_DECREF(nameobj);
+    if (sharedexc->name == NULL) {
         if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
             failure = "out of memory copying exception type name";
         } else {
             failure = "unable to encode and copy exception type name";
         }
-        goto finally;
+        goto error;
     }
 
     if (exc != NULL) {
-        PyObject *msg = PyUnicode_FromFormat("%S", exc);
-        if (msg == NULL) {
+        PyObject *msgobj = PyUnicode_FromFormat("%S", exc);
+        if (msgobj == NULL) {
             failure = "unable to format exception message";
-            goto finally;
+            goto error;
         }
-        err->msg = _copy_raw_string(msg);
-        Py_DECREF(msg);
-        if (err->msg == NULL) {
+        sharedexc->msg = _copy_raw_string(msgobj);
+        Py_DECREF(msgobj);
+        if (sharedexc->msg == NULL) {
             if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
                 failure = "out of memory copying exception message";
             } else {
                 failure = "unable to encode and copy exception message";
             }
-            goto finally;
+            goto error;
         }
     }
 
-finally:
-    if (failure != NULL) {
-        PyErr_Clear();
-        if (err->name != NULL) {
-            PyMem_Free(err->name);
-            err->name = NULL;
-        }
-        err->msg = failure;
-    }
-    return err;
+    return NULL;
+
+error:
+    assert(failure != NULL);
+    PyErr_Clear();
+    _sharedexception_clear(sharedexc);
+    *sharedexc = no_exception;
+    return failure;
 }
 
 static void
@@ -430,7 +408,7 @@ _ensure_not_running(PyInterpreterState *interp)
 
 static int
 _run_script(PyInterpreterState *interp, const char *codestr,
-            _sharedns *shared, _sharedexception **exc)
+            _sharedns *shared, _sharedexception *sharedexc)
 {
     PyObject *excval = NULL;
     PyObject *main_mod = _PyInterpreterState_GetMainModule(interp);
@@ -462,22 +440,20 @@ _run_script(PyInterpreterState *interp, const char *codestr,
         Py_DECREF(result);  // We throw away the result.
     }
 
-    *exc = NULL;
+    *sharedexc = no_exception;
     return 0;
 
 error:
     excval = PyErr_GetRaisedException();
-    _sharedexception *sharedexc = _sharedexception_bind(excval);
-    Py_XDECREF(excval);
-    if (sharedexc == NULL) {
-        fprintf(stderr, "RunFailedError: script raised an uncaught exception");
+    const char *failure = _sharedexception_bind(excval, sharedexc);
+    if (failure != NULL) {
+        fprintf(stderr,
+                "RunFailedError: script raised an uncaught exception (%s)",
+                failure);
         PyErr_Clear();
-        sharedexc = NULL;
     }
-    else {
-        assert(!PyErr_Occurred());
-    }
-    *exc = sharedexc;
+    Py_XDECREF(excval);
+    assert(!PyErr_Occurred());
     return -1;
 }
 
@@ -505,7 +481,7 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
     }
 
     // Run the script.
-    _sharedexception *exc = NULL;
+    _sharedexception exc;
     int result = _run_script(interp, codestr, shared, &exc);
 
     // Switch back.
@@ -514,10 +490,9 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
     }
 
     // Propagate any exception out to the caller.
-    if (exc != NULL) {
+    if (exc.name != NULL) {
         assert(state != NULL);
-        _sharedexception_apply(exc, state->RunFailedError);
-        _sharedexception_free(exc);
+        _sharedexception_apply(&exc, state->RunFailedError);
     }
     else if (result != 0) {
         // We were unable to allocate a shared exception.
