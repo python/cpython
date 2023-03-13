@@ -134,7 +134,7 @@ import sys
 
 from fractions import Fraction
 from decimal import Decimal
-from itertools import count, groupby, repeat
+from itertools import count, groupby, repeat, tee
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum, sumprod
 from functools import reduce
@@ -1076,9 +1076,9 @@ def correlation(x, y, /, *, method='linear'):
         y = _rank(y, start=start)
     xbar = fsum(x) / n
     ybar = fsum(y) / n
-    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    sxx = fsum((d := xi - xbar) * d for xi in x)
-    syy = fsum((d := yi - ybar) * d for yi in y)
+    sxy = sumprod((xi - xbar for xi in x), (yi - ybar for yi in y))
+    sxx = sumprod(*tee(xi - xbar for xi in x))
+    syy = sumprod(*tee(yi - ybar for yi in y))
     try:
         return sxy / sqrt(sxx * syy)
     except ZeroDivisionError:
