@@ -135,9 +135,7 @@ dummy_func(
             res = NULL;
         }
 
-        inst(END_FOR, (second, first --)) {
-            DECREF_INPUTS();
-        }
+        macro(END_FOR) = POP_TOP + POP_TOP;
 
         inst(UNARY_NEGATIVE, (value -- res)) {
             res = PyNumber_Negative(value);

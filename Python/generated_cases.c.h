@@ -184,10 +184,16 @@
         }
 
         TARGET(END_FOR) {
-            PyObject *first = stack_pointer[-1];
-            PyObject *second = stack_pointer[-2];
-            Py_DECREF(second);
-            Py_DECREF(first);
+            PyObject *_tmp_1 = stack_pointer[-1];
+            PyObject *_tmp_2 = stack_pointer[-2];
+            {
+                PyObject *value = _tmp_1;
+                Py_DECREF(value);
+            }
+            {
+                PyObject *value = _tmp_2;
+                Py_DECREF(value);
+            }
             STACK_SHRINK(2);
             DISPATCH();
         }
