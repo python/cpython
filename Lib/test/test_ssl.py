@@ -4068,19 +4068,25 @@ class ThreadedTests(unittest.TestCase):
             self.assertRaises(ValueError, s.write, b'hello')
 
     def test_sendfile(self):
-        TEST_DATA = b"x" * 512
+        TEST_DATA = b"GET / HTTP/1.1\r\n\r\n"
         with open(os_helper.TESTFN, 'wb') as f:
             f.write(TEST_DATA)
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        client_context, server_context, hostname = testing_context()
-        server = ThreadedEchoServer(context=server_context, chatty=False)
-        with server:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
+        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        client_context.options |= ssl.OP_ENABLE_KTLS
+        client_context.check_hostname = False
+        client_context.verify_mode = ssl.CERT_NONE
+        with socket.create_connection(("www.python.org", 443)) as sock:
+            with client_context.wrap_socket(sock) as ssock:
+                if support.verbose:
+                    ktls_used = ssock._sslobj.uses_ktls_for_write()
+                    print(
+                        "kTLS is",
+                        "available" if ktls_used else "unavailable",
+                    )
                 with open(os_helper.TESTFN, 'rb') as file:
-                    s.sendfile(file)
-                    self.assertEqual(s.recv(1024), TEST_DATA)
+                    ssock.sendfile(file)
+                    self.assertEqual(ssock.recv(9), b"HTTP/1.1 ")
 
     def test_session(self):
         client_context, server_context, hostname = testing_context()
