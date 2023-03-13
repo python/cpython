@@ -1706,19 +1706,17 @@ class TestCase(unittest.TestCase):
     def test_helper_asdict_defaultdict(self):
         # Ensure asdict() does not throw exceptions when a
         # defaultdict is a member of a dataclass
-
         @dataclass
         class C:
             mp: DefaultDict[str, List]
-
 
         dd = defaultdict(list)
         dd["x"].append(12)
         c = C(mp=dd)
         d = asdict(c)
 
-        assert d == {"mp": {"x": [12]}}
-        assert d["mp"] is not c.mp  # make sure defaultdict is copied
+        self.assertEqual(d, {"mp": {"x": [12]}})
+        self.assertTrue(d["mp"] is not c.mp)  # make sure defaultdict is copied
 
     def test_helper_astuple(self):
         # Basic tests for astuple(), it should return a new tuple.
@@ -1846,6 +1844,21 @@ class TestCase(unittest.TestCase):
         # Now, using a tuple_factory.  list is convenient here.
         t = astuple(c, tuple_factory=list)
         self.assertEqual(t, ['outer', T(1, ['inner', T(11, 12, 13)], 2)])
+
+    def test_helper_astuple_defaultdict(self):
+        # Ensure astuple() does not throw exceptions when a
+        # defaultdict is a member of a dataclass
+        @dataclass
+        class C:
+            mp: DefaultDict[str, List]
+
+        dd = defaultdict(list)
+        dd["x"].append(12)
+        c = C(mp=dd)
+        t = astuple(c)
+
+        self.assertEqual(t, ({"x": [12]},))
+        self.assertTrue(t[0] is not dd) # make sure defaultdict is copied
 
     def test_dynamic_class_creation(self):
         cls_dict = {'__annotations__': {'x': int, 'y': int},

@@ -1321,15 +1321,14 @@ def _asdict_inner(obj, dict_factory):
         # generator (which is not true for namedtuples, handled
         # above).
         return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
-    elif isinstance(obj, dict) and hasattr(type(obj), 'default_factory'):
-        # obj is a defaultdict, which has a different constructor from
-        # dict as it requires the default_factory as its first arg.
-        # https://bugs.python.org/issue35540
-        result = type(obj)(getattr(obj, 'default_factory'))
-        for k, v in obj.items():
-            result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
-        return result
     elif isinstance(obj, dict):
+        if hasattr(type(obj), 'default_factory'):
+            # obj is a defaultdict, which has a different constructor from
+            # dict as it requires the default_factory as its first arg.
+            result = type(obj)(getattr(obj, 'default_factory'))
+            for k, v in obj.items():
+                result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
+            return result
         return type(obj)((_asdict_inner(k, dict_factory),
                           _asdict_inner(v, dict_factory))
                          for k, v in obj.items())
@@ -1382,7 +1381,15 @@ def _astuple_inner(obj, tuple_factory):
         # above).
         return type(obj)(_astuple_inner(v, tuple_factory) for v in obj)
     elif isinstance(obj, dict):
-        return type(obj)((_astuple_inner(k, tuple_factory), _astuple_inner(v, tuple_factory))
+        obj_type = type(obj)
+        if hasattr(obj_type, 'default_factory'):
+            # obj is a defaultdict, which has a different constructor from
+            # dict as it requires the default_factory as its first arg.
+            result = obj_type(getattr(obj, 'default_factory'))
+            for k, v in obj.items():
+                result[_astuple_inner(k, tuple_factory)] = _astuple_inner(v, tuple_factory)
+            return result
+        return obj_type((_astuple_inner(k, tuple_factory), _astuple_inner(v, tuple_factory))
                           for k, v in obj.items())
     else:
         return copy.deepcopy(obj)
