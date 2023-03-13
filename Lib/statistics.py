@@ -1076,8 +1076,8 @@ def correlation(x, y, /, *, method='linear'):
         y = _rank(y, start=start)
     xbar = fsum(x) / n
     ybar = fsum(y) / n
-    centered_x = [xi - xbar for xi in x]
-    centered_y = [yi - ybar for yi in y]
+    centered_x = [xi - xbar for xi in x] if xbar else x
+    centered_y = [yi - ybar for yi in y] if ybar else y
     sxy = sumprod(centered_x, centered_y)
     sxx = sumprod(centered_x, centered_x)
     syy = sumprod(centered_y, centered_y)
