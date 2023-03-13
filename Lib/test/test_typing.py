@@ -3809,6 +3809,26 @@ class GenericTests(BaseTestCase):
         self.assertEqual(Y.__qualname__,
                          'GenericTests.test_repr_2.<locals>.Y')
 
+    def test_repr_3(self):
+        T = TypeVar('T')
+        P = ParamSpec('P')
+
+        class MyCallable(Generic[P, T]):
+            pass
+
+        self.assertEqual(
+            repr(MyCallable[[], bool]).split('.')[-1],
+            'MyCallable[[], bool]',
+        )
+        self.assertEqual(
+            repr(MyCallable[[int], bool]).split('.')[-1],
+            'MyCallable[[int], bool]',
+        )
+        self.assertEqual(
+            repr(MyCallable[[int, str], bool]).split('.')[-1],
+            "MyCallable[[int, str], bool]",
+        )
+
     def test_eq_1(self):
         self.assertEqual(Generic, Generic)
         self.assertEqual(Generic[T], Generic[T])
