@@ -14611,16 +14611,22 @@ PyUnicode_InternInPlace(PyObject **p)
     PyObject *interned = get_interned_dict();
     assert(interned != NULL);
 
+    // XXX Swap to the main interpreter.
+
     PyObject *t = PyDict_SetDefault(interned, s, s);
     if (t == NULL) {
         PyErr_Clear();
         return;
     }
 
+    // XXX Swap back.
+
     if (t != s) {
         Py_SETREF(*p, Py_NewRef(t));
         return;
     }
+
+    // XXX Immortalize the object.
 
     /* The two references in interned dict (key and value) are not counted by
        refcnt. unicode_dealloc() and _PyUnicode_ClearInterned() take care of
