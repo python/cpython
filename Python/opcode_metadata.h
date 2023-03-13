@@ -61,6 +61,10 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case BINARY_OP_ADD_FLOAT:
             return 2;
+        case BINARY_CHECK_FLOAT:
+            return 2;
+        case BINARY_OP_ADD_FLOAT_REST:
+            return 2;
         case BINARY_OP_ADD_INT:
             return 2;
         case BINARY_CHECK_INT:
@@ -447,6 +451,10 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case BINARY_OP_ADD_FLOAT:
             return 1;
+        case BINARY_CHECK_FLOAT:
+            return 2;
+        case BINARY_OP_ADD_FLOAT_REST:
+            return 1;
         case BINARY_OP_ADD_INT:
             return 1;
         case BINARY_CHECK_INT:
@@ -815,6 +823,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BINARY_OP_ADD_UNICODE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC },
     [BINARY_OP_INPLACE_ADD_UNICODE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [BINARY_OP_ADD_FLOAT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC },
+    [BINARY_CHECK_FLOAT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [BINARY_OP_ADD_FLOAT_REST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [BINARY_OP_ADD_INT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC },
     [BINARY_CHECK_INT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [BINARY_OP_ADD_INT_REST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },

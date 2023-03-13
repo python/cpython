@@ -3,6 +3,14 @@
 //   Python/bytecodes.c
 // Do not edit!
 
+        #define UOP_BINARY_OP_ADD_FLOAT_REST() \
+        do { \
+            STAT_INC(BINARY_OP, hit);\
+            double dsum = ((PyFloatObject *)left)->ob_fval +\
+                ((PyFloatObject *)right)->ob_fval;\
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsum, sum);\
+        } while (0)
+
         #define UOP_BINARY_OP_ADD_INT_REST() \
         do { \
             STAT_INC(BINARY_OP, hit);\
@@ -380,13 +388,31 @@
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            UOP_BINARY_OP_ADD_FLOAT_REST();
+            STACK_SHRINK(1);
+            stack_pointer[-1] = sum;
+            next_instr += 1;
+            DISPATCH();
+        }
+
+        TARGET(BINARY_CHECK_FLOAT) {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            assert(cframe.use_tracing == 0);
+            bb_test = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
+            DISPATCH();
+        }
+
+        TARGET(BINARY_OP_ADD_FLOAT_REST) {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            PyObject *sum;
             STAT_INC(BINARY_OP, hit);
             double dsum = ((PyFloatObject *)left)->ob_fval +
                 ((PyFloatObject *)right)->ob_fval;
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsum, sum);
             STACK_SHRINK(1);
             stack_pointer[-1] = sum;
-            next_instr += 1;
             DISPATCH();
         }
 

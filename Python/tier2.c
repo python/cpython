@@ -450,13 +450,20 @@ write_bb_id(_PyBBBranchCache *cache, int bb_id, bool is_type_guard) {
 #define BB_IS_TYPE_BRANCH(bb_id_raw) (bb_id_raw & 1)
 
 
+// The order/hierarchy to emit type guards
+// NEED TO ADD TO THIS EVERY TIME WE ADD A NEW ONE.
 static int type_guard_ladder[256] = {
+    -1,
     BINARY_CHECK_INT,
+    BINARY_CHECK_FLOAT,
     -1,
 };
 
+// Type guard to index in the ladder.
+// KEEP IN SYNC WITH INDEX IN type_guard_ladder
 static int type_guard_to_index[256] = {
-    [BINARY_CHECK_INT] = 0,
+    [BINARY_CHECK_INT] = 1,
+    [BINARY_CHECK_FLOAT] = 2,
 };
 
 
@@ -733,17 +740,13 @@ infer_BINARY_OP_ADD(
         }
     }
     // Unknown, time to emit the chain of guards.
-    // First, we guesstimate using the current specialised op
     *needs_guard = true;
-    if (raw_op.op.code == BINARY_OP_ADD_INT && prev_type_guard == NULL) {
-        return emit_type_guard(write_curr, BINARY_CHECK_INT, bb_id);
-    }
-    // If there current op isn't specialised, we just do the general ladder.
     if (prev_type_guard == NULL) {
         return emit_type_guard(write_curr, BINARY_CHECK_INT, bb_id);
     }
     else {
-        int next_guard = type_guard_ladder[type_guard_to_index[prev_type_guard->op.code] + 1];
+        int next_guard = type_guard_ladder[
+            type_guard_to_index[prev_type_guard->op.code] + 1];
         if (next_guard != -1) {
             return emit_type_guard(write_curr, next_guard, bb_id);
         }
@@ -775,8 +778,11 @@ _PyTier2_Code_DetectAndEmitBB(
     // do make a copy if needed before calling this function
     _PyTier2TypeContext *starting_type_context)
 {
-    assert(prev_type_guard == NULL ||
-        prev_type_guard->op.code == BINARY_CHECK_INT);
+    assert(
+        prev_type_guard == NULL ||
+        prev_type_guard->op.code == BINARY_CHECK_INT ||
+        prev_type_guard->op.code == BINARY_CHECK_FLOAT
+    );
 #define END() goto end;
 #define JUMPBY(x) i += x + 1;
 #define DISPATCH()        write_i = emit_i(write_i, specop, oparg); \
@@ -827,6 +833,7 @@ _PyTier2_Code_DetectAndEmitBB(
             DISPATCH();
         case COMPARE_AND_BRANCH:
             opcode = COMPARE_OP;
+            specop = COMPARE_OP;
             DISPATCH();
         case END_FOR:
             // Assert that we are the start of a BB
@@ -1177,13 +1184,16 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
     int optimizable = 0;
     for (Py_ssize_t curr = 0; curr < Py_SIZE(co); curr++) {
         _Py_CODEUNIT *curr_instr = _PyCode_CODE(co) + curr;
-        if (IS_FORBIDDEN_OPCODE(_PyOpcode_Deopt[_Py_OPCODE(*curr_instr)])) {
+        int deopt = _PyOpcode_Deopt[_Py_OPCODE(*curr_instr)];
+        if (IS_FORBIDDEN_OPCODE(deopt)) {
 #if BB_DEBUG
             fprintf(stderr, "FORBIDDEN OPCODE %d\n", _Py_OPCODE(*curr_instr));
 #endif
             return NULL;
         }
         optimizable |= IS_OPTIMIZABLE_OPCODE(_Py_OPCODE(*curr_instr), _Py_OPARG(*curr_instr));
+        // Skip the cache entries
+        curr += _PyOpcode_Caches[deopt];
     }
 
     if (!optimizable) {
