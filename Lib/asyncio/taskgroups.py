@@ -17,7 +17,7 @@ class TaskGroup:
         async with asyncio.TaskGroup() as group:
             task1 = group.create_task(some_coroutine(...))
             task2 = group.create_task(other_coroutine(...))
-        
+
         print("Both tasks have completed now.")
 
     All tasks are awaited when the context manager exits.
@@ -27,12 +27,8 @@ class TaskGroup:
     to have either finished successfully or have been cancelled.
 
     Any exceptions other than asyncio.CancelledError's raised within
-    tasks cause each of the remaining tasks to be cancelled and the
-    context to be exited.
-
-    Once all tasks have finished, if any tasks have failed with an
-    exception other than asyncio.CancelledError, those exceptions are
-    combined in an ExceptionGroup or BaseExceptionGroup and re-raised.
+    tasks will cancel all remaining tasks and exit the context. These
+    exceptions will be combined into an ExceptionGroup and re-raised.
     """
     def __init__(self):
         self._entered = False
@@ -159,8 +155,7 @@ class TaskGroup:
 
     def create_task(self, coro, *, name=None, context=None):
         """Create a new task in this group and return it.
-        
-        Matches the call signature of asyncio.create_task.
+        Similar to `asyncio.create_task`.
         """
         if not self._entered:
             raise RuntimeError(f"TaskGroup {self!r} has not been entered")
