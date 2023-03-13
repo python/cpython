@@ -1227,10 +1227,12 @@ class SubinterpreterTest(unittest.TestCase):
         kwlist = [f'allow_{n}' for n in features]
         kwlist[0] = 'use_main_obmalloc'
         kwlist[-1] = 'check_multi_interp_extensions'
+
+        # expected to work
         for config, expected in {
             (True, True, True, True, True, True):
                 OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS,
-            (False, False, False, False, False, False): 0,
+            (True, False, False, False, False, False): OBMALLOC,
             (False, False, False, True, False, True): THREADS | EXTENSIONS,
         }.items():
             kwargs = dict(zip(kwlist, config))
@@ -1252,6 +1254,20 @@ class SubinterpreterTest(unittest.TestCase):
                 settings = json.loads(out)
 
                 self.assertEqual(settings, expected)
+
+        # expected to fail
+        for config in [
+            (False, False, False, False, False, False),
+        ]:
+            kwargs = dict(zip(kwlist, config))
+            with self.subTest(config):
+                script = textwrap.dedent(f'''
+                    import _testinternalcapi
+                    _testinternalcapi.get_interp_settings()
+                    raise NotImplementedError('unreachable')
+                    ''')
+                with self.assertRaises(RuntimeError):
+                    support.run_in_subinterp_with_config(script, **kwargs)
 
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
