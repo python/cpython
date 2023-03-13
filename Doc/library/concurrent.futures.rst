@@ -173,7 +173,7 @@ ThreadPoolExecutor Example
            'http://www.cnn.com/',
            'http://europe.wsj.com/',
            'http://www.bbc.co.uk/',
-           'http://some-made-up-domain.com/']
+           'http://nonexistant-subdomain.python.org/']
 
    # Retrieve a single page and report the URL and contents
    def load_url(url, timeout):
