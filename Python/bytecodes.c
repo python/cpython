@@ -3300,7 +3300,8 @@ dummy_func(
                 _py_set_opcode(next_instr - 1, BB_BRANCH_IF_FLAG_UNSET);
                 // Generate consequent.
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, 0, &tier1_fallback, gen_bb_requires_pop);
+                    frame, cache->bb_id_tagged, next_instr - 1,
+                    0, &tier1_fallback, gen_bb_requires_pop, bb_test);
                 gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
@@ -3311,9 +3312,10 @@ dummy_func(
             else {
                 // Rewrite self
                 _py_set_opcode(next_instr - 1, BB_BRANCH_IF_FLAG_SET);
-                // Generate predicate.
+                // Generate alternative.
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, oparg, &tier1_fallback, gen_bb_requires_pop);
+                    frame, cache->bb_id_tagged, next_instr - 1,
+                    oparg, &tier1_fallback, gen_bb_requires_pop, bb_test);
                 gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
@@ -3336,7 +3338,8 @@ dummy_func(
                 _Py_CODEUNIT *tier1_fallback = NULL;
 
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, oparg, &tier1_fallback, gen_bb_requires_pop);
+                    frame, cache->bb_id_tagged, next_instr - 1,
+                    oparg, &tier1_fallback, gen_bb_requires_pop, bb_test);
                 gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
@@ -3368,7 +3371,8 @@ dummy_func(
                 // @TODO: Rewrite TEST intruction above to a JUMP above..
 
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, oparg, &tier1_fallback, gen_bb_requires_pop);
+                    frame, cache->bb_id_tagged, next_instr - 1,
+                    oparg, &tier1_fallback, gen_bb_requires_pop, bb_test);
                 gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
@@ -3398,7 +3402,7 @@ dummy_func(
             _Py_CODEUNIT *tier1_fallback = NULL;
 
             t2_nextinstr = _PyTier2_LocateJumpBackwardsBB(
-                frame, cache->bb_id, -oparg, &tier1_fallback);
+                frame, cache->bb_id_tagged, -oparg, &tier1_fallback);
             if (t2_nextinstr == NULL) {
                 // Fall back to tier 1.
                 next_instr = tier1_fallback;

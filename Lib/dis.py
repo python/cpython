@@ -59,7 +59,8 @@ _empty_slot = [slot for slot, name in enumerate(_all_opname) if name.startswith(
 for uop_opcode, uop in zip(_empty_slot, _uops):
     _all_opname[uop_opcode] = uop
     if uop.startswith('BB_BRANCH') or uop.startswith('BB_JUMP'):
-        _bb_jumps.append(uop_opcode)
+        if uop.startswith('BB_JUMP'):
+            _bb_jumps.append(uop_opcode)
         _uop_hasoparg.append(uop_opcode)
 
 deoptmap = {
