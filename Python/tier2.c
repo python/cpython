@@ -735,7 +735,7 @@ infer_BINARY_OP_ADD(
     // Unknown, time to emit the chain of guards.
     // First, we guesstimate using the current specialised op
     *needs_guard = true;
-    if (raw_op.op.code == BINARY_OP_ADD_INT) {
+    if (raw_op.op.code == BINARY_OP_ADD_INT && prev_type_guard == NULL) {
         return emit_type_guard(write_curr, BINARY_CHECK_INT, bb_id);
     }
     // If there current op isn't specialised, we just do the general ladder.
@@ -779,7 +779,7 @@ _PyTier2_Code_DetectAndEmitBB(
         prev_type_guard->op.code == BINARY_CHECK_INT);
 #define END() goto end;
 #define JUMPBY(x) i += x + 1;
-#define DISPATCH()        write_i = emit_i(write_i, opcode, oparg); \
+#define DISPATCH()        write_i = emit_i(write_i, specop, oparg); \
                           write_i = copy_cache_entries(write_i, curr+1, caches); \
                           i += caches; \
                           type_propagate(opcode, oparg, starting_type_context, consts); \
@@ -812,7 +812,8 @@ _PyTier2_Code_DetectAndEmitBB(
     for (; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT *curr = _PyCode_CODE(co) + i;
         _Py_CODEUNIT *next_instr = curr + 1;
-        int opcode = _PyOpcode_Deopt[_Py_OPCODE(*curr)];
+        int specop = _Py_OPCODE(*curr);
+        int opcode = _PyOpcode_Deopt[specop];
         int oparg = _Py_OPARG(*curr);
         int caches = _PyOpcode_Caches[opcode];
 
