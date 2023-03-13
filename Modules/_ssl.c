@@ -2312,14 +2312,14 @@ PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout)
 }
 
 /*[clinic input]
-_ssl._SSLSocket.uses_ktls_for_write
+_ssl._SSLSocket.uses_ktls_for_send
 
 Check if the Kernel TLS data-path is used for sending.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl__SSLSocket_uses_ktls_for_write_impl(PySSLSocket *self)
-/*[clinic end generated code: output=a6c2a790ffd0587e input=156f67420e69b2f9]*/
+_ssl__SSLSocket_uses_ktls_for_send_impl(PySSLSocket *self)
+/*[clinic end generated code: output=f9d95fbefceb5068 input=604d98b67c65e8a7]*/
 {
 #ifdef BIO_get_ktls_send
     int uses = BIO_get_ktls_send(SSL_get_wbio(self->ssl));
@@ -3078,7 +3078,7 @@ static PyGetSetDef ssl_getsetlist[] = {
 
 static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_DO_HANDSHAKE_METHODDEF
-    _SSL__SSLSOCKET_USES_KTLS_FOR_WRITE_METHODDEF
+    _SSL__SSLSOCKET_USES_KTLS_FOR_SEND_METHODDEF
     _SSL__SSLSOCKET_USES_KTLS_FOR_READ_METHODDEF
     _SSL__SSLSOCKET_SENDFILE_METHODDEF
     _SSL__SSLSOCKET_WRITE_METHODDEF

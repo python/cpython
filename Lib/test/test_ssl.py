@@ -4079,7 +4079,7 @@ class ThreadedTests(unittest.TestCase):
         with socket.create_connection(("www.python.org", 443)) as sock:
             with client_context.wrap_socket(sock) as ssock:
                 if support.verbose:
-                    ktls_used = ssock._sslobj.uses_ktls_for_write()
+                    ktls_used = ssock._sslobj.uses_ktls_for_send()
                     print(
                         "kTLS is",
                         "available" if ktls_used else "unavailable",

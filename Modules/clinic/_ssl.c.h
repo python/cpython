@@ -213,22 +213,22 @@ _ssl__SSLSocket_compression(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_compression_impl(self);
 }
 
-PyDoc_STRVAR(_ssl__SSLSocket_uses_ktls_for_write__doc__,
-"uses_ktls_for_write($self, /)\n"
+PyDoc_STRVAR(_ssl__SSLSocket_uses_ktls_for_send__doc__,
+"uses_ktls_for_send($self, /)\n"
 "--\n"
 "\n"
 "Check if the Kernel TLS data-path is used for sending.");
 
-#define _SSL__SSLSOCKET_USES_KTLS_FOR_WRITE_METHODDEF    \
-    {"uses_ktls_for_write", (PyCFunction)_ssl__SSLSocket_uses_ktls_for_write, METH_NOARGS, _ssl__SSLSocket_uses_ktls_for_write__doc__},
+#define _SSL__SSLSOCKET_USES_KTLS_FOR_SEND_METHODDEF    \
+    {"uses_ktls_for_send", (PyCFunction)_ssl__SSLSocket_uses_ktls_for_send, METH_NOARGS, _ssl__SSLSocket_uses_ktls_for_send__doc__},
 
 static PyObject *
-_ssl__SSLSocket_uses_ktls_for_write_impl(PySSLSocket *self);
+_ssl__SSLSocket_uses_ktls_for_send_impl(PySSLSocket *self);
 
 static PyObject *
-_ssl__SSLSocket_uses_ktls_for_write(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
+_ssl__SSLSocket_uses_ktls_for_send(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLSocket_uses_ktls_for_write_impl(self);
+    return _ssl__SSLSocket_uses_ktls_for_send_impl(self);
 }
 
 PyDoc_STRVAR(_ssl__SSLSocket_uses_ktls_for_read__doc__,
@@ -1641,4 +1641,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=5ae68c81b5201df3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee707ef11d50ae65 input=a9049054013a1b77]*/

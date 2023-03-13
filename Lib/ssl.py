@@ -1204,7 +1204,7 @@ class SSLSocket(socket):
         """
         if self._sslobj is None:
             return super().sendfile(file, offset, count)
-        if self._sslobj.uses_ktls_for_write():
+        if self._sslobj.uses_ktls_for_send():
             try:
                 return self._sendfile_use_ssl_sendfile(file, offset, count)
             except _GiveupOnSSLSendfile:
