@@ -1695,8 +1695,8 @@
             PyObject **pieces = (stack_pointer - oparg);
             PyObject *str;
             str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
-            for (int i = 0; i < oparg; i++) {
-                Py_DECREF(pieces[i]);
+            for (int _i = oparg; --_i >= 0;) {
+                Py_DECREF(pieces[_i]);
             }
             if (str == NULL) { STACK_SHRINK(oparg); goto error; }
             STACK_SHRINK(oparg);
@@ -1792,9 +1792,8 @@
             if (map == NULL)
                 goto error;
 
-            for (int i = 0; i < oparg; i++) {
-                Py_DECREF(values[i*2]);
-                Py_DECREF(values[i*2+1]);
+            for (int _i = oparg*2; --_i >= 0;) {
+                Py_DECREF(values[_i]);
             }
             if (map == NULL) { STACK_SHRINK(oparg*2); goto error; }
             STACK_SHRINK(oparg*2);
@@ -1859,10 +1858,10 @@
             map = _PyDict_FromItems(
                     &PyTuple_GET_ITEM(keys, 0), 1,
                     values, 1, oparg);
-            Py_DECREF(keys);
-            for (int i = 0; i < oparg; i++) {
-                Py_DECREF(values[i]);
+            for (int _i = oparg; --_i >= 0;) {
+                Py_DECREF(values[_i]);
             }
+            Py_DECREF(keys);
             if (map == NULL) { STACK_SHRINK(oparg); goto pop_1_error; }
             STACK_SHRINK(oparg);
             stack_pointer[-1] = map;
