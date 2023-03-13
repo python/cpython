@@ -4073,7 +4073,7 @@ class ThreadedTests(unittest.TestCase):
             f.write(TEST_DATA)
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        client_context.options |= ssl.OP_ENABLE_KTLS
+        client_context.options |= getattr(ssl, "OP_ENABLE_KTLS", 0)
         client_context.check_hostname = False
         client_context.verify_mode = ssl.CERT_NONE
         with socket.create_connection(("www.python.org", 443)) as sock:
