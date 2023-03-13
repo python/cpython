@@ -1137,8 +1137,8 @@ def linear_regression(x, y, /, *, proportional=False):
     if not proportional:
         xbar = fsum(x) / n
         ybar = fsum(y) / n
-        x = [xi - xbar for xi in x]
-        y = [yi - ybar for yi in y]
+        x = [xi - xbar for xi in x]  # List because used three times below
+        y = (yi - ybar for yi in y)  # Generator because only used once below
     sxy = sumprod(x, y)
     sxx = sumprod(x, x)
     try:
