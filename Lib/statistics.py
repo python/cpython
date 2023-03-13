@@ -1134,16 +1134,13 @@ def linear_regression(x, y, /, *, proportional=False):
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
-    if proportional:
-        sxy = sumprod(x, y)
-        sxx = sumprod(x, x)
-    else:
+    if not proportional:
         xbar = fsum(x) / n
         ybar = fsum(y) / n
-        centered_x = [xi - xbar for xi in x]
-        centered_y = (yi - ybar for yi in y)
-        sxy = sumprod(centered_x, centered_y)
-        sxx = sumprod(centered_x, centered_x)
+        x = [xi - xbar for xi in x]
+        y = [yi - ybar for yi in y]
+    sxy = sumprod(x, y)
+    sxx = sumprod(x, x)
     try:
         slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
