@@ -3429,6 +3429,11 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     }
     interp->sysdict = Py_NewRef(sysdict);
 
+    interp->sysdict_copy = PyDict_Copy(sysdict);
+    if (interp->sysdict_copy == NULL) {
+        goto error;
+    }
+
     if (PyDict_SetItemString(sysdict, "modules", modules) < 0) {
         goto error;
     }

@@ -813,6 +813,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     assert(interp->imports.importlib == NULL);
     assert(interp->imports.import_func == NULL);
 
+    Py_CLEAR(interp->sysdict_copy);
     Py_CLEAR(interp->builtins_copy);
     Py_CLEAR(interp->dict);
 #ifdef HAVE_FORK
