@@ -202,10 +202,7 @@ dummy_func(
             STAT_INC(BINARY_OP, hit);
             double dprod = ((PyFloatObject *)left)->ob_fval *
                 ((PyFloatObject *)right)->ob_fval;
-            prod = PyFloat_FromDouble(dprod);
-            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            ERROR_IF(prod == NULL, error);
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dprod, prod);
         }
 
         inst(BINARY_OP_SUBTRACT_INT, (unused/1, left, right -- sub: PyLong_Type)) {
@@ -225,10 +222,7 @@ dummy_func(
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
-            sub = PyFloat_FromDouble(dsub);
-            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            ERROR_IF(sub == NULL, error);
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsub, sub);
         }
 
         inst(BINARY_OP_ADD_UNICODE, (unused/1, left, right -- res: PyUnicode_Type)) {
@@ -285,10 +279,7 @@ dummy_func(
             STAT_INC(BINARY_OP, hit);
             double dsum = ((PyFloatObject *)left)->ob_fval +
                 ((PyFloatObject *)right)->ob_fval;
-            sum = PyFloat_FromDouble(dsum);
-            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            ERROR_IF(sum == NULL, error);
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsum, sum);
         }
 
         macro_inst(BINARY_OP_ADD_INT, (unused/1, left, right -- sum: PyLong_Type)) {
