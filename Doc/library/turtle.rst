@@ -2345,7 +2345,7 @@ Short explanation of selected entries:
 - The first four lines correspond to the arguments of the :func:`Screen.setup <setup>`
   method.
 - Line 5 and 6 correspond to the arguments of the method
-  :func:`screensize`.
+  :func:`Screen.screensize <screensize>`.
 - *shape* can be any of the built-in shapes, e.g: arrow, turtle, etc.  For more
   info try ``help(shape)``.
 - If you want to use no fill color (i.e. make the turtle transparent), you have
@@ -2473,8 +2473,8 @@ Have fun!
 Changes since Python 2.6
 ========================
 
-- The methods :func:`tracer`, :func:`window_width` and
-  :func:`window_height` have been eliminated.
+- The methods :func:`Turtle.tracer <tracer>`, :func:`Turtle.window_width <window_width>` and
+  :func:`Turtle.window_height <window_height>` have been eliminated.
   Methods with these names and functionality are now available only
   as methods of :class:`Screen`. The functions derived from these remain
   available. (In fact already in Python 2.6 these methods were merely
@@ -2486,7 +2486,7 @@ Changes since Python 2.6
   have changed slightly: now every filling process must be completed with an
   ``end_fill()`` call.
 
-- A method :func:`filling` has been added. It returns a boolean
+- A method :func:`Turtle.filling <filling>` has been added. It returns a boolean
   value: ``True`` if a filling process is under way, ``False`` otherwise.
   This behaviour corresponds to a ``fill()`` call without arguments in
   Python 2.6.
@@ -2494,23 +2494,23 @@ Changes since Python 2.6
 Changes since Python 3.0
 ========================
 
-- The methods :func:`shearfactor`, :func:`shapetransform` and
+- The :class:`Turtle` methods :func:`shearfactor`, :func:`shapetransform` and
   :func:`get_shapepoly` have been added. Thus the full range of
   regular linear transforms is now available for transforming turtle shapes.
   :func:`tiltangle` has been enhanced in functionality: it now can
   be used to get or set the tilt angle. :func:`settiltangle` has been
   deprecated.
 
-- The method :func:`onkeypress` has been added as a complement to
-  :func:`onkey` which in fact binds actions to the key release event.
-  Accordingly the latter has got an alias: :func:`onkeyrelease`.
+- The :class:`Screen` method :func:`onkeypress` has been added as a complement to
+  :func:`onkey`. As the latter binds actions to the key release event,
+  an alias: :func:`onkeyrelease` was also added for it.
 
-- The method  :func:`mainloop` has been added. So when working only
-  with ``Screen`` and ``Turtle`` objects one must not additionally import
-  ``mainloop`` anymore.
+- The method :func:`Screen.mainloop <mainloop>` has been added,
+  so there is no longer a need to use the standalone :func:`mainloop` function
+  when working with :class:`Screen` and :class:`Turtle` objects.
 
-- Two input methods have been added: :func:`textinput` and
-  :func:`numinput`. These pop up input dialogs and return
+- Two input methods have been added: :func:`Screen.textinput <textinput>` and
+  :func:`Screen.numinput <numinput>`. These pop up input dialogs and return
   strings and numbers respectively.
 
 - Two example scripts :file:`tdemo_nim.py` and :file:`tdemo_round_dance.py`
