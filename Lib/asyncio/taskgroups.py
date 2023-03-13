@@ -22,10 +22,6 @@ class TaskGroup:
 
     All tasks are awaited when the context manager exits.
 
-    Once the context has been exited it's guaranteed that no tasks
-    from the group remain alive. That is, all tasks are guaranteed
-    to have either finished successfully or have been cancelled.
-
     Any exceptions other than asyncio.CancelledError's raised within
     tasks will cancel all remaining tasks and exit the context. These
     exceptions will be combined into an ExceptionGroup and re-raised.
