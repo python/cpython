@@ -137,19 +137,29 @@ def _splitext(p, sep, altsep, extsep):
     leading dots.  Returns "(root, ext)"; ext may be empty."""
     # NOTE: This code must work for text and bytes strings.
 
+    if isinstance(p, bytes):
+        sep = sep.encode()
+        altsep = altsep.encode()
+        extsep = extsep.encode()
+
+    # Find the last path separator
     sepIndex = p.rfind(sep)
     if altsep:
         altsepIndex = p.rfind(altsep)
         sepIndex = max(sepIndex, altsepIndex)
 
+    # Find the last extension separator
     dotIndex = p.rfind(extsep)
     if dotIndex > sepIndex:
-        # skip all leading dots
+        # Find the first extension separator
         filenameIndex = sepIndex + 1
         while filenameIndex < dotIndex:
-            if p[filenameIndex:filenameIndex+1] != extsep:
-                return p[:dotIndex], p[dotIndex:]
+            if p[filenameIndex:filenameIndex+1] == extsep:
+                dotIndex = filenameIndex
+                break
             filenameIndex += 1
+
+        return p[:dotIndex], p[dotIndex:]
 
     return p, p[:0]
 
