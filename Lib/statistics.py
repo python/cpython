@@ -1074,13 +1074,14 @@ def correlation(x, y, /, *, method='linear'):
         start = (n - 1) / -2            # Center rankings around zero
         x = _rank(x, start=start)
         y = _rank(y, start=start)
-    xbar = fsum(x) / n
-    ybar = fsum(y) / n
-    centered_x = [xi - xbar for xi in x] if xbar else x
-    centered_y = [yi - ybar for yi in y] if ybar else y
-    sxy = sumprod(centered_x, centered_y)
-    sxx = sumprod(centered_x, centered_x)
-    syy = sumprod(centered_y, centered_y)
+    else:
+        xbar = fsum(x) / n
+        ybar = fsum(y) / n
+        x = [xi - xbar for xi in x]
+        y = [yi - ybar for yi in y]
+    sxy = sumprod(x, y)
+    sxx = sumprod(x, x)
+    syy = sumprod(y, y)
     try:
         return sxy / sqrt(sxx * syy)
     except ZeroDivisionError:
