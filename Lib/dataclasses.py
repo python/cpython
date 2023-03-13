@@ -1391,7 +1391,7 @@ def _astuple_inner(obj, tuple_factory):
             # dict as it requires the default_factory as its first arg.
             result = obj_type(getattr(obj, 'default_factory'))
             for k, v in obj.items():
-                result[_astuple_inner(k, tuple_factory)] = _asdict_inner(v, tuple_factory)
+                result[_astuple_inner(k, tuple_factory)] = _astuple_inner(v, tuple_factory)
             return result
         return obj_type((_astuple_inner(k, tuple_factory), _astuple_inner(v, tuple_factory))
                           for k, v in obj.items())
