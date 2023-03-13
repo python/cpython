@@ -31,7 +31,8 @@
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "opcode.h"
 
-extern void _PyIO_Fini(void);
+extern PyStatus _PyIO_InitTypes(PyInterpreterState *interp);
+extern void _PyIO_FiniTypes(PyInterpreterState *interp);
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
@@ -695,6 +696,11 @@ pycore_init_types(PyInterpreterState *interp)
 
     if (_PyExc_InitTypes(interp) < 0) {
         return _PyStatus_ERR("failed to initialize an exception type");
+    }
+
+    status = _PyIO_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     status = _PyExc_InitGlobalObjects(interp);
@@ -1695,9 +1701,7 @@ finalize_interp_clear(PyThreadState *tstate)
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
 
-    if (is_main_interp) {
-        _PyIO_Fini();
-    }
+    _PyIO_FiniTypes(tstate->interp);
 
     /* Clear all loghooks */
     /* Both _PySys_Audit function and users still need PyObject, such as tuple.
