@@ -1334,7 +1334,9 @@ dispatch:
                     MARK_POP(ctx->lastmark);
                     LASTMARK_RESTORE();
 
-                    /* Restore the global Input Stream pointer */
+                    /* Restore the global Input Stream pointer
+                       since it can change after the jump.
+                       See gh-100061 */
                     state->ptr = ptr;
 
                     /* We have sufficient matches, so exit loop. */

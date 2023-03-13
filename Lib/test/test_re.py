@@ -2303,6 +2303,7 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match("^x{}+$", "xxx"))
         self.assertTrue(re.match("^x{}+$", "x{}"))
 
+        # gh-100061
         self.assertEqual(re.match('((.(?!C))++)', 'ABCD').span(), (0, 1))
 
     def test_fullmatch_possessive_quantifiers(self):
