@@ -559,7 +559,9 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
            propagate; raise a fresh one after swapping in the old thread
            state. */
         _PyErr_SetFromPyStatus(status);
+        PyObject *exc = PyErr_GetRaisedException();
         PyErr_SetString(PyExc_RuntimeError, "interpreter creation failed");
+        _PyErr_ChainExceptions1(exc);
         return NULL;
     }
     assert(tstate != NULL);

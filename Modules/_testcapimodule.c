@@ -1545,7 +1545,9 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
            state. */
         PyThreadState_Swap(mainstate);
         _PyErr_SetFromPyStatus(status);
+        PyObject *exc = PyErr_GetRaisedException();
         PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
+        _PyErr_ChainExceptions1(exc);
         return NULL;
     }
     assert(substate != NULL);
