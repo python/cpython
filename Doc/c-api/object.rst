@@ -286,7 +286,7 @@ Object Protocol
    >>> D.__base__
    <class 'B'>
 
-   Note that behavior of the ``__base__`` attribute is dependent on the CPython implementation.
+   Note that behavior of the ``__base__`` attribute is dependent on the :term:`CPython` implementation.
 
 .. c:function:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
 

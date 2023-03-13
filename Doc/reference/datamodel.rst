@@ -861,7 +861,7 @@ Custom classes
           ``__base__`` is the base class that is involved in that chain.
 
           .. note::
-            The behavior of the ``__base__`` attribute is dependent on the CPython implementation.
+            The behavior of the ``__base__`` attribute is dependent on the :term:`CPython` implementation.
 
       :attr:`__doc__`
          The class's documentation string, or ``None`` if undefined.
