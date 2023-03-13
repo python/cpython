@@ -14533,13 +14533,12 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
         return _PyStatus_OK();
     }
 
-    // Initialize the global interned dict
+    /* Initialize the global interned dict. */
     PyObject *interned = PyDict_New();
     if (interned == NULL) {
         PyErr_Clear();
         return _PyStatus_ERR("failed to create interned dict");
     }
-
     set_interned_dict(interned);
 
     /* Intern statically allocated string identifiers and deepfreeze strings.
