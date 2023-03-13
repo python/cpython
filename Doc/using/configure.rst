@@ -24,6 +24,7 @@ Features required to build CPython:
 
 .. versionchanged:: 3.11
    C11 compiler, IEEE 754 and NaN support are now required.
+   On Windows, Visual Studio 2017 or later is required.
 
 .. versionchanged:: 3.10
    OpenSSL 1.1.1 is now required.
@@ -325,6 +326,11 @@ also be used to improve performance.
 
    Enable C-level code profiling with ``gprof`` (disabled by default).
 
+.. cmdoption:: --with-strict-overflow
+
+   Add ``-fstrict-overflow`` to the C compiler flags (by default we add
+   ``-fno-strict-overflow`` instead).
+
 
 .. _debug-build:
 
@@ -469,11 +475,6 @@ Libraries options
 
    Build the :mod:`pyexpat` module using an installed ``expat`` library
    (default is no).
-
-.. cmdoption:: --with-system-ffi
-
-   Build the :mod:`_ctypes` extension module using an installed ``ffi``
-   library, see the :mod:`ctypes` module (default is system-dependent).
 
 .. cmdoption:: --with-system-libmpdec
 

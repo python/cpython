@@ -52,11 +52,11 @@ are not normal Python classes.  See
 
 .. note:: Nomenclature
 
-   - The class :class:`Color` is an *enumeration* (or *enum*)
-   - The attributes :attr:`Color.RED`, :attr:`Color.GREEN`, etc., are
+   - The class :class:`!Color` is an *enumeration* (or *enum*)
+   - The attributes :attr:`!Color.RED`, :attr:`!Color.GREEN`, etc., are
      *enumeration members* (or *members*) and are functionally constants.
    - The enum members have *names* and *values* (the name of
-     :attr:`Color.RED` is ``RED``, the value of :attr:`Color.BLUE` is
+     :attr:`!Color.RED` is ``RED``, the value of :attr:`!Color.BLUE` is
      ``3``, etc.)
 
 ---------------
@@ -165,8 +165,8 @@ Data Types
    to subclass *EnumType* -- see :ref:`Subclassing EnumType <enumtype-examples>`
    for details.
 
-   *EnumType* is responsible for setting the correct :meth:`__repr__`,
-   :meth:`__str__`, :meth:`__format__`, and :meth:`__reduce__` methods on the
+   *EnumType* is responsible for setting the correct :meth:`!__repr__`,
+   :meth:`!__str__`, :meth:`!__format__`, and :meth:`!__reduce__` methods on the
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
 
@@ -292,6 +292,7 @@ Data Types
          ...     @classmethod
          ...     def today(cls):
          ...         print('today is %s' % cls(date.today().isoweekday()).name)
+         ...
          >>> dir(Weekday.SATURDAY)
          ['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'today', 'value']
 
@@ -309,11 +310,12 @@ Data Types
          >>> class PowersOfThree(Enum):
          ...     @staticmethod
          ...     def _generate_next_value_(name, start, count, last_values):
-         ...         return (count + 1) * 3
+         ...         return 3 ** (count + 1)
          ...     FIRST = auto()
          ...     SECOND = auto()
+         ...
          >>> PowersOfThree.SECOND.value
-         6
+         9
 
    .. method:: Enum.__init_subclass__(cls, **kwds)
 
@@ -336,6 +338,7 @@ Data Types
          ...             if member.value == value:
          ...                 return member
          ...         return None
+         ...
          >>> Build.DEBUG.value
          'debug'
          >>> Build('deBUG')
@@ -353,6 +356,7 @@ Data Types
          ...     def __repr__(self):
          ...         cls_name = self.__class__.__name__
          ...         return f'{cls_name}.{self.name}'
+         ...
          >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
          (OtherStyle.ALTERNATE, 'OtherStyle.ALTERNATE', 'OtherStyle.ALTERNATE')
 
@@ -367,6 +371,7 @@ Data Types
          ...     SOMETHING_ELSE = auto()
          ...     def __str__(self):
          ...         return f'{self.name}'
+         ...
          >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
          (<OtherStyle.ALTERNATE: 1>, 'ALTERNATE', 'ALTERNATE')
 
@@ -381,6 +386,7 @@ Data Types
          ...     SOMETHING_ELSE = auto()
          ...     def __format__(self, spec):
          ...         return f'{self.name}'
+         ...
          >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
          (<OtherStyle.ALTERNATE: 1>, 'OtherStyle.ALTERNATE', 'ALTERNATE')
 
@@ -388,6 +394,8 @@ Data Types
 
       Using :class:`auto` with :class:`Enum` results in integers of increasing value,
       starting with ``1``.
+
+   .. versionchanged:: 3.12 Added :ref:`enum-dataclass-support`
 
 
 .. class:: IntEnum
@@ -401,6 +409,7 @@ Data Types
       ...     ONE = 1
       ...     TWO = 2
       ...     THREE = 3
+      ...
       >>> Numbers.THREE
       <Numbers.THREE: 3>
       >>> Numbers.ONE + Numbers.TWO
@@ -415,9 +424,9 @@ Data Types
       Using :class:`auto` with :class:`IntEnum` results in integers of increasing
       value, starting with ``1``.
 
-   .. versionchanged:: 3.11 :meth:`__str__` is now :func:`int.__str__` to
+   .. versionchanged:: 3.11 :meth:`~object.__str__` is now :meth:`!int.__str__` to
       better support the *replacement of existing constants* use-case.
-      :meth:`__format__` was already :func:`int.__format__` for that same reason.
+      :meth:`~object.__format__` was already :meth:`!int.__format__` for that same reason.
 
 
 .. class:: StrEnum
@@ -461,6 +470,7 @@ Data Types
          ...     RED = auto()
          ...     GREEN = auto()
          ...     BLUE = auto()
+         ...
          >>> purple = Color.RED | Color.BLUE
          >>> white = Color.RED | Color.GREEN | Color.BLUE
          >>> Color.GREEN in purple
@@ -568,6 +578,7 @@ Data Types
       ...     RED = auto()
       ...     GREEN = auto()
       ...     BLUE = auto()
+      ...
       >>> Color.RED & 2
       <Color: 0>
       >>> Color.RED | 2
@@ -606,7 +617,7 @@ Data Types
 
 .. class:: ReprEnum
 
-   :class:`!ReprEum` uses the :meth:`repr() <Enum.__repr__>` of :class:`Enum`,
+   :class:`!ReprEnum` uses the :meth:`repr() <Enum.__repr__>` of :class:`Enum`,
    but the :class:`str() <str>` of the mixed-in data type:
 
       * :meth:`!int.__str__` for :class:`IntEnum` and :class:`IntFlag`
@@ -685,14 +696,14 @@ Data Types
 
    .. attribute:: STRICT
 
-      Out-of-range values cause a :exc:`ValueError` to be raised.  This is the
-      default for :class:`Flag`::
+      Out-of-range values cause a :exc:`ValueError` to be raised::
 
-         >>> from enum import Flag, STRICT
+         >>> from enum import Flag, STRICT, auto
          >>> class StrictFlag(Flag, boundary=STRICT):
          ...     RED = auto()
          ...     GREEN = auto()
          ...     BLUE = auto()
+         ...
          >>> StrictFlag(2**2 + 2**4)
          Traceback (most recent call last):
          ...
@@ -703,13 +714,14 @@ Data Types
    .. attribute:: CONFORM
 
       Out-of-range values have invalid values removed, leaving a valid *Flag*
-      value::
+      value. This is the default for :class:`Flag`::
 
-         >>> from enum import Flag, CONFORM
+         >>> from enum import Flag, CONFORM, auto
          >>> class ConformFlag(Flag, boundary=CONFORM):
          ...     RED = auto()
          ...     GREEN = auto()
          ...     BLUE = auto()
+         ...
          >>> ConformFlag(2**2 + 2**4)
          <ConformFlag.BLUE: 4>
 
@@ -718,24 +730,26 @@ Data Types
       Out-of-range values lose their *Flag* membership and revert to :class:`int`.
       This is the default for :class:`IntFlag`::
 
-         >>> from enum import Flag, EJECT
+         >>> from enum import Flag, EJECT, auto
          >>> class EjectFlag(Flag, boundary=EJECT):
          ...     RED = auto()
          ...     GREEN = auto()
          ...     BLUE = auto()
+         ...
          >>> EjectFlag(2**2 + 2**4)
          20
 
    .. attribute:: KEEP
 
-      Out-of-range values are kept, and the *Flag* membership is kept.  This is
-      used for some stdlib flags:
+      Out-of-range values are kept, and the *Flag* membership is kept. This is
+      used for some stdlib flags::
 
-         >>> from enum import Flag, KEEP
+         >>> from enum import Flag, KEEP, auto
          >>> class KeepFlag(Flag, boundary=KEEP):
          ...     RED = auto()
          ...     GREEN = auto()
          ...     BLUE = auto()
+         ...
          >>> KeepFlag(2**2 + 2**4)
          <KeepFlag.BLUE|16: 20>
 
@@ -746,11 +760,11 @@ Data Types
 Supported ``__dunder__`` names
 """"""""""""""""""""""""""""""
 
-:attr:`__members__` is a read-only ordered mapping of ``member_name``:``member``
+:attr:`~EnumType.__members__` is a read-only ordered mapping of ``member_name``:``member``
 items.  It is only available on the class.
 
-:meth:`__new__`, if specified, must create and return the enum members; it is
-also a very good idea to set the member's :attr:`_value_` appropriately.  Once
+:meth:`~object.__new__`, if specified, must create and return the enum members; it is
+also a very good idea to set the member's :attr:`!_value_` appropriately.  Once
 all the members are created it is no longer used.
 
 
@@ -789,12 +803,12 @@ Utilities and Decorators
 .. class:: auto
 
    *auto* can be used in place of a value.  If used, the *Enum* machinery will
-   call an *Enum*'s :meth:`_generate_next_value_` to get an appropriate value.
+   call an *Enum*'s :meth:`~Enum._generate_next_value_` to get an appropriate value.
    For *Enum* and *IntEnum* that appropriate value will be the last value plus
    one; for *Flag* and *IntFlag* it will be the first power-of-two greater
-   than the last value; for *StrEnum* it will be the lower-cased version of the
-   member's name.  Care must be taken if mixing *auto()* with manually specified
-   values.
+   than the highest value; for *StrEnum* it will be the lower-cased version of
+   the member's name.  Care must be taken if mixing *auto()* with manually
+   specified values.
 
    *auto* instances are only resolved when at the top level of an assignment:
 
@@ -812,7 +826,7 @@ Utilities and Decorators
    ``_generate_next_value_`` can be overridden to customize the values used by
    *auto*.
 
-   .. note:: in 3.13 the default ``"generate_next_value_`` will always return
+   .. note:: in 3.13 the default ``_generate_next_value_`` will always return
              the highest member value incremented by 1, and will fail if any
              member is an incompatible type.
 
@@ -832,7 +846,7 @@ Utilities and Decorators
 .. decorator:: unique
 
    A :keyword:`class` decorator specifically for enumerations.  It searches an
-   enumeration's :attr:`__members__`, gathering any aliases it finds; if any are
+   enumeration's :attr:`~EnumType.__members__`, gathering any aliases it finds; if any are
    found :exc:`ValueError` is raised with the details::
 
       >>> from enum import Enum, unique
@@ -907,6 +921,6 @@ Notes
 
    or you can reassign the appropriate :meth:`str`, etc., in your enum::
 
-       >>> from enum import IntEnum
+       >>> from enum import Enum, IntEnum
        >>> class MyIntEnum(IntEnum):
-       ...     __str__ = IntEnum.__str__
+       ...     __str__ = Enum.__str__

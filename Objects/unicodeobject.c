@@ -233,12 +233,12 @@ static inline PyObject* unicode_new_empty(void)
 */
 static inline PyObject *get_interned_dict(void)
 {
-    return _PyRuntime.global_objects.interned;
+    return _Py_CACHED_OBJECT(interned_strings);
 }
 
 static inline void set_interned_dict(PyObject *dict)
 {
-    _PyRuntime.global_objects.interned = dict;
+    _Py_CACHED_OBJECT(interned_strings) = dict;
 }
 
 #define _Py_RETURN_UNICODE_EMPTY()   \
@@ -947,21 +947,18 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(unicode);
 #endif
 
     new_unicode = (PyObject *)PyObject_Realloc(unicode, new_size);
     if (new_unicode == NULL) {
-        _Py_NewReference(unicode);
+        _Py_NewReferenceNoTotal(unicode);
         PyErr_NoMemory();
         return NULL;
     }
     unicode = new_unicode;
-    _Py_NewReference(unicode);
+    _Py_NewReferenceNoTotal(unicode);
 
     _PyUnicode_LENGTH(unicode) = length;
 #ifdef Py_DEBUG
@@ -5697,8 +5694,6 @@ PyUnicode_AsUTF16String(PyObject *unicode)
 
 /* --- Unicode Escape Codec ----------------------------------------------- */
 
-static _PyUnicode_Name_CAPI *ucnhash_capi = NULL;
-
 PyObject *
 _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
                                Py_ssize_t size,
@@ -5711,6 +5706,8 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
     const char *end;
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
+    _PyUnicode_Name_CAPI *ucnhash_capi;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
 
     // so we can remember if we've seen an invalid escape char or not
     *first_invalid_escape = NULL;
@@ -5858,6 +5855,7 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
 
             /* \N{name} */
         case 'N':
+            ucnhash_capi = interp->unicode.ucnhash_capi;
             if (ucnhash_capi == NULL) {
                 /* load the unicode data module */
                 ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
@@ -5869,6 +5867,7 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
                         );
                     goto onError;
                 }
+                interp->unicode.ucnhash_capi = ucnhash_capi;
             }
 
             message = "malformed \\N character escape";
@@ -14782,14 +14781,21 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
-                             it->it_seq, it->it_index);
+        return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
         PyObject *u = unicode_new_empty();
-        if (u == NULL)
+        if (u == NULL) {
+            Py_XDECREF(iter);
             return NULL;
-        return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), u);
+        }
+        return Py_BuildValue("N(N)", iter, u);
     }
 }
 
@@ -15128,10 +15134,10 @@ _PyUnicode_Fini(PyInterpreterState *interp)
         assert(get_interned_dict() == NULL);
         // bpo-47182: force a unicodedata CAPI capsule re-import on
         // subsequent initialization of main interpreter.
-        ucnhash_capi = NULL;
     }
 
     _PyUnicode_FiniEncodings(&state->fs_codec);
+    interp->unicode.ucnhash_capi = NULL;
 
     unicode_clear_identifiers(state);
 }

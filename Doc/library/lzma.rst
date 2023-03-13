@@ -147,7 +147,7 @@ Compressing and decompressing data in memory
       This format is more limited than ``.xz`` -- it does not support integrity
       checks or multiple filters.
 
-   * :const:`FORMAT_RAW`: A raw data stream, not using sequences format.
+   * :const:`FORMAT_RAW`: A raw data stream, not using any container format.
       This format specifier does not support integrity checks, and requires that
       you always specify a custom filter chain (for both compression and
       decompression). Additionally, data compressed in this manner cannot be

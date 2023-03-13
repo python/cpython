@@ -32,6 +32,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_WindowsConsoleIO);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__IOBase_closed);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(__abc_tpflags__);
@@ -344,6 +346,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_abstract_);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_active);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_annotation);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_anonymous_);
@@ -380,9 +384,13 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_initializing);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_io);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_is_text_encoding);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_length_);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_limbo);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_lock_unlock_module);
     PyUnicode_InternInPlace(&string);
@@ -980,6 +988,8 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(nstype);
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(nt);
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(null);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(number);
@@ -1055,6 +1065,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(pos1);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(pos2);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(posix);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(print_file_and_line);
     PyUnicode_InternInPlace(&string);
@@ -1171,6 +1183,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(size);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(sizehint);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(skip_file_prefixes);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(sleep);
     PyUnicode_InternInPlace(&string);
@@ -1295,6 +1309,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(values);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(version);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(volume);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(warnings);
     PyUnicode_InternInPlace(&string);

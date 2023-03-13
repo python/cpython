@@ -110,6 +110,25 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
     int base,
     int alternate);
 
+/* Return 1 if the argument is positive single digit int */
+static inline int
+_PyLong_IsPositiveSingleDigit(PyObject* sub) {
+    /*  For a positive single digit int, the value of Py_SIZE(sub) is 0 or 1.
+
+        We perform a fast check using a single comparison by casting from int
+        to uint which casts negative numbers to large positive numbers.
+        For details see Section 14.2 "Bounds Checking" in the Agner Fog
+        optimization manual found at:
+        https://www.agner.org/optimize/optimizing_cpp.pdf
+
+        The function is not affected by -fwrapv, -fno-wrapv and -ftrapv
+        compiler options of GCC and clang
+    */
+    assert(PyLong_CheckExact(sub));
+    Py_ssize_t signed_size = Py_SIZE(sub);
+    return ((size_t)signed_size) <= 1;
+}
+
 #ifdef __cplusplus
 }
 #endif

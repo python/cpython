@@ -68,6 +68,24 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual(repr_output, expected_output)
 
+    def test_field_recursive_repr(self):
+        rec_field = field()
+        rec_field.type = rec_field
+        rec_field.name = "id"
+        repr_output = repr(rec_field)
+
+        self.assertIn(",type=...,", repr_output)
+
+    def test_recursive_annotation(self):
+        class C:
+            pass
+
+        @dataclass
+        class D:
+            C: C = field()
+
+        self.assertIn(",type=...,", repr(D.__dataclass_fields__["C"]))
+
     def test_dataclass_params_repr(self):
         # Even though this is testing an internal implementation detail,
         # it's testing a feature we want to make sure is correctly implemented
@@ -2243,7 +2261,6 @@ class TestInit(unittest.TestCase):
         class B:
             def __init__(self):
                 self.z = 100
-                pass
 
         # Make sure that declaring this class doesn't raise an error.
         #  The issue is that we can't override __init__ in our class,
@@ -2750,6 +2767,19 @@ class TestFrozen(unittest.TestCase):
             c.i = 5
         self.assertEqual(c.i, 10)
 
+    def test_frozen_empty(self):
+        @dataclass(frozen=True)
+        class C:
+            pass
+
+        c = C()
+        self.assertFalse(hasattr(c, 'i'))
+        with self.assertRaises(FrozenInstanceError):
+            c.i = 5
+        self.assertFalse(hasattr(c, 'i'))
+        with self.assertRaises(FrozenInstanceError):
+            del c.i
+
     def test_inherit(self):
         @dataclass(frozen=True)
         class C:
@@ -2872,6 +2902,37 @@ class TestFrozen(unittest.TestCase):
         self.assertEqual(s.x, 3)
         self.assertEqual(s.y, 10)
         self.assertEqual(s.cached, True)
+
+        with self.assertRaises(FrozenInstanceError):
+            del s.x
+        self.assertEqual(s.x, 3)
+        with self.assertRaises(FrozenInstanceError):
+            del s.y
+        self.assertEqual(s.y, 10)
+        del s.cached
+        self.assertFalse(hasattr(s, 'cached'))
+        with self.assertRaises(AttributeError) as cm:
+            del s.cached
+        self.assertNotIsInstance(cm.exception, FrozenInstanceError)
+
+    def test_non_frozen_normal_derived_from_empty_frozen(self):
+        @dataclass(frozen=True)
+        class D:
+            pass
+
+        class S(D):
+            pass
+
+        s = S()
+        self.assertFalse(hasattr(s, 'x'))
+        s.x = 5
+        self.assertEqual(s.x, 5)
+
+        del s.x
+        self.assertFalse(hasattr(s, 'x'))
+        with self.assertRaises(AttributeError) as cm:
+            del s.x
+        self.assertNotIsInstance(cm.exception, FrozenInstanceError)
 
     def test_overwriting_frozen(self):
         # frozen uses __setattr__ and __delattr__.
@@ -3545,6 +3606,15 @@ class TestStringAnnotations(unittest.TestCase):
              'return': type(None)})
 
 
+ByMakeDataClass = make_dataclass('ByMakeDataClass', [('x', int)])
+ManualModuleMakeDataClass = make_dataclass('ManualModuleMakeDataClass',
+                                           [('x', int)],
+                                           module='test.test_dataclasses')
+WrongNameMakeDataclass = make_dataclass('Wrong', [('x', int)])
+WrongModuleMakeDataclass = make_dataclass('WrongModuleMakeDataclass',
+                                          [('x', int)],
+                                          module='custom')
+
 class TestMakeDataclass(unittest.TestCase):
     def test_simple(self):
         C = make_dataclass('C',
@@ -3653,6 +3723,36 @@ class TestMakeDataclass(unittest.TestCase):
         self.assertEqual(C.__annotations__, {'x': 'typing.Any',
                                              'y': int,
                                              'z': 'typing.Any'})
+
+    def test_module_attr(self):
+        self.assertEqual(ByMakeDataClass.__module__, __name__)
+        self.assertEqual(ByMakeDataClass(1).__module__, __name__)
+        self.assertEqual(WrongModuleMakeDataclass.__module__, "custom")
+        Nested = make_dataclass('Nested', [])
+        self.assertEqual(Nested.__module__, __name__)
+        self.assertEqual(Nested().__module__, __name__)
+
+    def test_pickle_support(self):
+        for klass in [ByMakeDataClass, ManualModuleMakeDataClass]:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(proto=proto):
+                    self.assertEqual(
+                        pickle.loads(pickle.dumps(klass, proto)),
+                        klass,
+                    )
+                    self.assertEqual(
+                        pickle.loads(pickle.dumps(klass(1), proto)),
+                        klass(1),
+                    )
+
+    def test_cannot_be_pickled(self):
+        for klass in [WrongNameMakeDataclass, WrongModuleMakeDataclass]:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(proto=proto):
+                    with self.assertRaises(pickle.PickleError):
+                        pickle.dumps(klass, proto)
+                    with self.assertRaises(pickle.PickleError):
+                        pickle.dumps(klass(1), proto)
 
     def test_invalid_type_specification(self):
         for bad_field in [(),

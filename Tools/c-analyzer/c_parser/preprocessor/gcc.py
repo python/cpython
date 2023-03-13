@@ -29,7 +29,7 @@ COMPILER_DIRECTIVE_RE = re.compile(r'''
             [^()]*
          )*
      )  # <args>
-    ( [)] [)] )?  # <closed>
+    ( [)] [)] )  # <closed>
 ''', re.VERBOSE)
 
 POST_ARGS = (
@@ -156,6 +156,7 @@ def _iter_top_include_lines(lines, topfile, cwd,
                 if name != 'pragma':
                     raise Exception(line)
             else:
+                line = re.sub(r'__inline__', 'inline', line)
                 if not raw:
                     line, partial = _strip_directives(line, partial=partial)
                 yield _common.SourceLine(
