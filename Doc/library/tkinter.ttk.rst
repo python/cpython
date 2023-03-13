@@ -13,9 +13,7 @@
 --------------
 
 The :mod:`tkinter.ttk` module provides access to the Tk themed widget set,
-introduced in Tk 8.5. If Python has not been compiled against Tk 8.5, this
-module can still be accessed if *Tile* has been installed.  The former
-method using Tk 8.5 provides additional benefits including anti-aliased font
+introduced in Tk 8.5. It provides additional benefits including anti-aliased font
 rendering under X11 and window transparency (requiring a composition
 window manager on X11).
 
@@ -58,7 +56,7 @@ for improved styling effects.
 
 .. seealso::
 
-   `Converting existing applications to use Tile widgets <http://tktable.sourceforge.net/tile/doc/converting.txt>`_
+   `Converting existing applications to use Tile widgets <https://tktable.sourceforge.net/tile/doc/converting.txt>`_
      A monograph (using Tcl terminology) about differences typically
      encountered when moving applications to use the new widgets.
 
@@ -288,7 +286,7 @@ methods :meth:`tkinter.Widget.cget` and :meth:`tkinter.Widget.configure`.
       Modify or inquire widget state. If *statespec* is specified, sets the
       widget state according to it and return a new *statespec* indicating
       which flags were changed. If *statespec* is not specified, returns
-      the currently-enabled state flags.
+      the currently enabled state flags.
 
    *statespec* will usually be a list or a tuple.
 
@@ -467,7 +465,7 @@ Notebook
 
 Ttk Notebook widget manages a collection of windows and displays a single
 one at a time. Each child window is associated with a tab, which the user
-may select to change the currently-displayed window.
+may select to change the currently displayed window.
 
 
 Options
@@ -545,7 +543,7 @@ of the following forms:
 * An integer between zero and the number of tabs
 * The name of a child window
 * A positional specification of the form "@x,y", which identifies the tab
-* The literal string "current", which identifies the currently-selected tab
+* The literal string "current", which identifies the currently selected tab
 * The literal string "end", which returns the number of tabs (only valid for
   :meth:`Notebook.index`)
 
@@ -615,7 +613,7 @@ ttk.Notebook
       Selects the specified *tab_id*.
 
       The associated child window will be displayed, and the
-      previously-selected window (if different) is unmapped. If *tab_id* is
+      previously selected window (if different) is unmapped. If *tab_id* is
       omitted, returns the widget name of the currently selected pane.
 
 
@@ -1274,7 +1272,7 @@ option. If you don't know the class name of a widget, use the method
 
 .. seealso::
 
-   `Tcl'2004 conference presentation <http://tktable.sourceforge.net/tile/tile-tcl2004.pdf>`_
+   `Tcl'2004 conference presentation <https://tktable.sourceforge.net/tile/tile-tcl2004.pdf>`_
       This document explains how the theme engine works
 
 

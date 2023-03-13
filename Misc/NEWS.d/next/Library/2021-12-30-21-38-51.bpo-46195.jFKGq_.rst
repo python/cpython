@@ -1,3 +1,0 @@
-:func:`typing.get_type_hints` no longer adds ``Optional`` to parameters with
-``None`` as a default. This aligns to changes to PEP 484 in
-https://github.com/python/peps/pull/689

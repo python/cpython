@@ -49,7 +49,7 @@ from . import trsock
 from .log import logger
 
 
-__all__ = 'BaseEventLoop',
+__all__ = 'BaseEventLoop','Server',
 
 
 # Minimum number of _scheduled timer handles before cleanup of
@@ -377,7 +377,7 @@ class Server(events.AbstractServer):
             self._serving_forever_fut = None
 
     async def wait_closed(self):
-        if self._sockets is None or self._waiters is None:
+        if self._waiters is None or self._active_count == 0:
             return
         waiter = self._loop.create_future()
         self._waiters.append(waiter)
@@ -426,18 +426,23 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create a Future object attached to the loop."""
         return futures.Future(loop=self)
 
-    def create_task(self, coro, *, name=None):
+    def create_task(self, coro, *, name=None, context=None):
         """Schedule a coroutine object.
 
         Return a task object.
         """
         self._check_closed()
         if self._task_factory is None:
-            task = tasks.Task(coro, loop=self, name=name)
+            task = tasks.Task(coro, loop=self, name=name, context=context)
             if task._source_traceback:
                 del task._source_traceback[-1]
         else:
-            task = self._task_factory(self, coro)
+            if context is None:
+                # Use legacy API if context is not needed
+                task = self._task_factory(self, coro)
+            else:
+                task = self._task_factory(self, coro, context=context)
+
             tasks._set_task_name(task, name)
 
         return task
@@ -556,8 +561,13 @@ class BaseEventLoop(events.AbstractEventLoop):
                     'asyncgen': agen
                 })
 
-    async def shutdown_default_executor(self):
-        """Schedule the shutdown of the default executor."""
+    async def shutdown_default_executor(self, timeout=None):
+        """Schedule the shutdown of the default executor.
+
+        The timeout parameter specifies the amount of time the executor will
+        be given to finish joining. The default value is None, which means
+        that the executor will be given an unlimited amount of time.
+        """
         self._executor_shutdown_called = True
         if self._default_executor is None:
             return
@@ -567,14 +577,22 @@ class BaseEventLoop(events.AbstractEventLoop):
         try:
             await future
         finally:
-            thread.join()
+            thread.join(timeout)
+
+        if thread.is_alive():
+            warnings.warn("The executor did not finishing joining "
+                             f"its threads within {timeout} seconds.",
+                             RuntimeWarning, stacklevel=2)
+            self._default_executor.shutdown(wait=False)
 
     def _do_shutdown(self, future):
         try:
             self._default_executor.shutdown(wait=True)
-            self.call_soon_threadsafe(future.set_result, None)
+            if not self.is_closed():
+                self.call_soon_threadsafe(future.set_result, None)
         except Exception as ex:
-            self.call_soon_threadsafe(future.set_exception, ex)
+            if not self.is_closed():
+                self.call_soon_threadsafe(future.set_exception, ex)
 
     def _check_running(self):
         if self.is_running():
@@ -588,12 +606,13 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._check_closed()
         self._check_running()
         self._set_coroutine_origin_tracking(self._debug)
-        self._thread_id = threading.get_ident()
 
         old_agen_hooks = sys.get_asyncgen_hooks()
-        sys.set_asyncgen_hooks(firstiter=self._asyncgen_firstiter_hook,
-                               finalizer=self._asyncgen_finalizer_hook)
         try:
+            self._thread_id = threading.get_ident()
+            sys.set_asyncgen_hooks(firstiter=self._asyncgen_firstiter_hook,
+                                   finalizer=self._asyncgen_finalizer_hook)
+
             events._set_running_loop(self)
             while True:
                 self._run_once()
@@ -883,7 +902,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         # non-mmap files even if sendfile is supported by OS
         raise exceptions.SendfileNotAvailableError(
             f"syscall sendfile is not available for socket {sock!r} "
-            "and file {file!r} combination")
+            f"and file {file!r} combination")
 
     async def _sock_sendfile_fallback(self, sock, file, offset, count):
         if offset:
@@ -942,7 +961,10 @@ class BaseEventLoop(events.AbstractEventLoop):
             sock = socket.socket(family=family, type=type_, proto=proto)
             sock.setblocking(False)
             if local_addr_infos is not None:
-                for _, _, _, _, laddr in local_addr_infos:
+                for lfamily, _, _, _, laddr in local_addr_infos:
+                    # skip local addresses of different family
+                    if lfamily != family:
+                        continue
                     try:
                         sock.bind(laddr)
                         break
@@ -955,7 +977,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                         exc = OSError(exc.errno, msg)
                         my_exceptions.append(exc)
                 else:  # all bind attempts failed
-                    raise my_exceptions.pop()
+                    if my_exceptions:
+                        raise my_exceptions.pop()
+                    else:
+                        raise OSError(f"no matching local address with {family=} found")
             await self.sock_connect(sock, address)
             return sock
         except OSError as exc:
@@ -967,6 +992,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             if sock is not None:
                 sock.close()
             raise
+        finally:
+            exceptions = my_exceptions = None
 
     async def create_connection(
             self, protocol_factory, host=None, port=None,
@@ -975,7 +1002,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             local_addr=None, server_hostname=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None,
-            happy_eyeballs_delay=None, interleave=None):
+            happy_eyeballs_delay=None, interleave=None,
+            all_errors=False):
         """Connect to a TCP server.
 
         Create a streaming transport connection to a given internet host and
@@ -1064,17 +1092,22 @@ class BaseEventLoop(events.AbstractEventLoop):
 
             if sock is None:
                 exceptions = [exc for sub in exceptions for exc in sub]
-                if len(exceptions) == 1:
-                    raise exceptions[0]
-                else:
-                    # If they all have the same str(), raise one.
-                    model = str(exceptions[0])
-                    if all(str(exc) == model for exc in exceptions):
+                try:
+                    if all_errors:
+                        raise ExceptionGroup("create_connection failed", exceptions)
+                    if len(exceptions) == 1:
                         raise exceptions[0]
-                    # Raise a combined exception so the user can see all
-                    # the various error messages.
-                    raise OSError('Multiple exceptions: {}'.format(
-                        ', '.join(str(exc) for exc in exceptions)))
+                    else:
+                        # If they all have the same str(), raise one.
+                        model = str(exceptions[0])
+                        if all(str(exc) == model for exc in exceptions):
+                            raise exceptions[0]
+                        # Raise a combined exception so the user can see all
+                        # the various error messages.
+                        raise OSError('Multiple exceptions: {}'.format(
+                            ', '.join(str(exc) for exc in exceptions)))
+                finally:
+                    exceptions = None
 
         else:
             if sock is None:
@@ -1786,7 +1819,22 @@ class BaseEventLoop(events.AbstractEventLoop):
                              exc_info=True)
         else:
             try:
-                self._exception_handler(self, context)
+                ctx = None
+                thing = context.get("task")
+                if thing is None:
+                    # Even though Futures don't have a context,
+                    # Task is a subclass of Future,
+                    # and sometimes the 'future' key holds a Task.
+                    thing = context.get("future")
+                if thing is None:
+                    # Handles also have a context.
+                    thing = context.get("handle")
+                if thing is not None and hasattr(thing, "get_context"):
+                    ctx = thing.get_context()
+                if ctx is not None and hasattr(ctx, "run"):
+                    ctx.run(self._exception_handler, self, context)
+                else:
+                    self._exception_handler(self, context)
             except (SystemExit, KeyboardInterrupt):
                 raise
             except BaseException as exc:
@@ -1809,12 +1857,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                                  exc_info=True)
 
     def _add_callback(self, handle):
-        """Add a Handle to _scheduled (TimerHandle) or _ready."""
-        assert isinstance(handle, events.Handle), 'A Handle is required here'
-        if handle._cancelled:
-            return
-        assert not isinstance(handle, events.TimerHandle)
-        self._ready.append(handle)
+        """Add a Handle to _ready."""
+        if not handle._cancelled:
+            self._ready.append(handle)
 
     def _add_callback_signalsafe(self, handle):
         """Like _add_callback() but called from a signal handler."""
@@ -1867,6 +1912,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         event_list = self._selector.select(timeout)
         self._process_events(event_list)
+        # Needed to break cycles when an exception occurs.
+        event_list = None
 
         # Handle 'later' callbacks that are ready.
         end_time = self.time() + self._clock_resolution

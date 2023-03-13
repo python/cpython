@@ -6,6 +6,7 @@ import pathlib
 import random
 import tokenize
 import ast
+from test.support.ast_helper import ASTTestMixin
 
 
 def read_pyfile(filename):
@@ -128,10 +129,7 @@ docstring_prefixes = (
     "async def foo():\n    ",
 )
 
-class ASTTestCase(unittest.TestCase):
-    def assertASTEqual(self, ast1, ast2):
-        self.assertEqual(ast.dump(ast1), ast.dump(ast2))
-
+class ASTTestCase(ASTTestMixin, unittest.TestCase):
     def check_ast_roundtrip(self, code1, **kwargs):
         with self.subTest(code1=code1, ast_parse_kwargs=kwargs):
             ast1 = ast.parse(code1, **kwargs)
@@ -344,7 +342,17 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip("a[i]")
         self.check_ast_roundtrip("a[i,]")
         self.check_ast_roundtrip("a[i, j]")
+        # The AST for these next two both look like `a[(*a,)]`
         self.check_ast_roundtrip("a[(*a,)]")
+        self.check_ast_roundtrip("a[*a]")
+        self.check_ast_roundtrip("a[b, *a]")
+        self.check_ast_roundtrip("a[*a, c]")
+        self.check_ast_roundtrip("a[b, *a, c]")
+        self.check_ast_roundtrip("a[*a, *a]")
+        self.check_ast_roundtrip("a[b, *a, *a]")
+        self.check_ast_roundtrip("a[*a, b, *a]")
+        self.check_ast_roundtrip("a[*a, *a, b]")
+        self.check_ast_roundtrip("a[b, *a, *a, c]")
         self.check_ast_roundtrip("a[(a:=b)]")
         self.check_ast_roundtrip("a[(a:=b,c)]")
         self.check_ast_roundtrip("a[()]")
@@ -375,6 +383,12 @@ class UnparseTestCase(ASTTestCase):
 
     def test_invalid_yield_from(self):
         self.check_invalid(ast.YieldFrom(value=None))
+
+    def test_import_from_level_none(self):
+        tree = ast.ImportFrom(module='mod', names=[ast.alias(name='x')])
+        self.assertEqual(ast.unparse(tree), "from mod import x")
+        tree = ast.ImportFrom(module='mod', names=[ast.alias(name='x')], level=None)
+        self.assertEqual(ast.unparse(tree), "from mod import x")
 
     def test_docstrings(self):
         docstrings = (
@@ -543,9 +557,23 @@ class CosmeticTestCase(ASTTestCase):
             self.check_src_roundtrip(f"{prefix} 1")
 
     def test_slices(self):
+        self.check_src_roundtrip("a[()]")
         self.check_src_roundtrip("a[1]")
         self.check_src_roundtrip("a[1, 2]")
-        self.check_src_roundtrip("a[(1, *a)]")
+        # Note that `a[*a]`, `a[*a,]`, and `a[(*a,)]` all evaluate to the same
+        # thing at runtime and have the same AST, but only `a[*a,]` passes
+        # this test, because that's what `ast.unparse` produces.
+        self.check_src_roundtrip("a[*a,]")
+        self.check_src_roundtrip("a[1, *a]")
+        self.check_src_roundtrip("a[*a, 2]")
+        self.check_src_roundtrip("a[1, *a, 2]")
+        self.check_src_roundtrip("a[*a, *a]")
+        self.check_src_roundtrip("a[1, *a, *a]")
+        self.check_src_roundtrip("a[*a, 1, *a]")
+        self.check_src_roundtrip("a[*a, *a, 1]")
+        self.check_src_roundtrip("a[1, *a, *a, 2]")
+        self.check_src_roundtrip("a[1:2, *a]")
+        self.check_src_roundtrip("a[*a, 1:2]")
 
     def test_lambda_parameters(self):
         self.check_src_roundtrip("lambda: something")
@@ -588,6 +616,9 @@ class CosmeticTestCase(ASTTestCase):
                     self.check_src_roundtrip(source.format(target=target))
 
     def test_star_expr_assign_target_multiple(self):
+        self.check_src_roundtrip("() = []")
+        self.check_src_roundtrip("[] = ()")
+        self.check_src_roundtrip("() = [a] = c, = [d] = e, f = () = g = h")
         self.check_src_roundtrip("a = b = c = d")
         self.check_src_roundtrip("a, b = c, d = e, f = g")
         self.check_src_roundtrip("[a, b] = [c, d] = [e, f] = g")

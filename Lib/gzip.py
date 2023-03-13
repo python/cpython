@@ -21,6 +21,8 @@ _COMPRESS_LEVEL_FAST = 1
 _COMPRESS_LEVEL_TRADEOFF = 6
 _COMPRESS_LEVEL_BEST = 9
 
+READ_BUFFER_SIZE = 128 * 1024
+
 
 def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_BEST,
          encoding=None, errors=None, newline=None):
@@ -211,14 +213,6 @@ class GzipFile(_compression.BaseStream):
 
         if self.mode == WRITE:
             self._write_gzip_header(compresslevel)
-
-    @property
-    def filename(self):
-        import warnings
-        warnings.warn("use the name attribute", DeprecationWarning, 2)
-        if self.mode == WRITE and self.name[-3:] != ".gz":
-            return self.name + ".gz"
-        return self.name
 
     @property
     def mtime(self):
@@ -454,7 +448,7 @@ def _read_gzip_header(fp):
 
 class _GzipReader(_compression.DecompressReader):
     def __init__(self, fp):
-        super().__init__(_PaddedFile(fp), zlib.decompressobj,
+        super().__init__(_PaddedFile(fp), zlib._ZlibDecompressor,
                          wbits=-zlib.MAX_WBITS)
         # Set flag indicating start of a new member
         self._new_member = True
@@ -502,12 +496,13 @@ class _GzipReader(_compression.DecompressReader):
                 self._new_member = False
 
             # Read a chunk of data from the file
-            buf = self._fp.read(io.DEFAULT_BUFFER_SIZE)
+            if self._decompressor.needs_input:
+                buf = self._fp.read(READ_BUFFER_SIZE)
+                uncompress = self._decompressor.decompress(buf, size)
+            else:
+                uncompress = self._decompressor.decompress(b"", size)
 
-            uncompress = self._decompressor.decompress(buf, size)
-            if self._decompressor.unconsumed_tail != b"":
-                self._fp.prepend(self._decompressor.unconsumed_tail)
-            elif self._decompressor.unused_data != b"":
+            if self._decompressor.unused_data != b"":
                 # Prepend the already read bytes to the fileobj so they can
                 # be seen by _read_eof() and _read_gzip_header()
                 self._fp.prepend(self._decompressor.unused_data)
@@ -518,13 +513,10 @@ class _GzipReader(_compression.DecompressReader):
                 raise EOFError("Compressed file ended before the "
                                "end-of-stream marker was reached")
 
-        self._add_read_data( uncompress )
+        self._crc = zlib.crc32(uncompress, self._crc)
+        self._stream_size += len(uncompress)
         self._pos += len(uncompress)
         return uncompress
-
-    def _add_read_data(self, data):
-        self._crc = zlib.crc32(data, self._crc)
-        self._stream_size = self._stream_size + len(data)
 
     def _read_eof(self):
         # We've read to the end of the file
@@ -587,7 +579,8 @@ def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
     header = _create_simple_gzip_header(compresslevel, mtime)
     trailer = struct.pack("<LL", zlib.crc32(data), (len(data) & 0xffffffff))
     # Wbits=-15 creates a raw deflate block.
-    return header + zlib.compress(data, wbits=-15) + trailer
+    return (header + zlib.compress(data, level=compresslevel, wbits=-15) +
+            trailer)
 
 
 def decompress(data):
@@ -654,7 +647,7 @@ def main():
                 f = builtins.open(arg, "rb")
                 g = open(arg + ".gz", "wb")
         while True:
-            chunk = f.read(io.DEFAULT_BUFFER_SIZE)
+            chunk = f.read(READ_BUFFER_SIZE)
             if not chunk:
                 break
             g.write(chunk)

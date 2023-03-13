@@ -2,9 +2,9 @@
 
 import logging
 import socket
-from test import support
 import unittest
 import weakref
+from test import support
 from unittest import mock
 try:
     import ssl

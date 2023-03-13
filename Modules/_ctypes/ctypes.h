@@ -18,7 +18,19 @@
  * This limit is enforced for the `alloca()` call in `_ctypes_callproc`,
  * to avoid allocating a massive buffer on the stack.
  */
-#define CTYPES_MAX_ARGCOUNT 1024
+#ifndef CTYPES_MAX_ARGCOUNT
+  #ifdef __EMSCRIPTEN__
+    #define CTYPES_MAX_ARGCOUNT 1000
+  #else
+    #define CTYPES_MAX_ARGCOUNT 1024
+  #endif
+#endif
+
+#if defined(__has_builtin)
+#if __has_builtin(__builtin_available)
+#define HAVE_BUILTIN_AVAILABLE 1
+#endif
+#endif
 
 typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;

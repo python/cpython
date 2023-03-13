@@ -1,3 +1,0 @@
-Fixed a minor portability issue in the implementation of
-:c:func:`PyLong_FromLong`, and added a fast path for single-digit integers
-to :c:func:`PyLong_FromLongLong`.

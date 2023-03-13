@@ -170,6 +170,62 @@ class GeneratorTest(unittest.TestCase):
             g.send(0)
         self.assertEqual(next(g), 1)
 
+    def test_handle_frame_object_in_creation(self):
+
+        #Attempt to expose partially constructed frames
+        #See https://github.com/python/cpython/issues/94262
+
+        def cb(*args):
+            inspect.stack()
+
+        def gen():
+            yield 1
+
+        thresholds = gc.get_threshold()
+
+        gc.callbacks.append(cb)
+        gc.set_threshold(1, 0, 0)
+        try:
+            gen()
+        finally:
+            gc.set_threshold(*thresholds)
+            gc.callbacks.pop()
+
+        class Sneaky:
+            def __del__(self):
+                inspect.stack()
+
+        sneaky = Sneaky()
+        sneaky._s = Sneaky()
+        sneaky._s._s = sneaky
+
+        gc.set_threshold(1, 0, 0)
+        try:
+            del sneaky
+            gen()
+        finally:
+            gc.set_threshold(*thresholds)
+
+    def test_ag_frame_f_back(self):
+        async def f():
+            yield
+        ag = f()
+        self.assertIsNone(ag.ag_frame.f_back)
+
+    def test_cr_frame_f_back(self):
+        async def f():
+            pass
+        cr = f()
+        self.assertIsNone(cr.cr_frame.f_back)
+        cr.close()  # Suppress RuntimeWarning.
+
+    def test_gi_frame_f_back(self):
+        def f():
+            yield
+        gi = f()
+        self.assertIsNone(gi.gi_frame.f_back)
+
+
 
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
@@ -250,6 +306,26 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(next(g), "done")
         self.assertEqual(sys.exc_info(), (None, None, None))
 
+    def test_nested_gen_except_loop(self):
+        def gen():
+            for i in range(100):
+                self.assertIsInstance(sys.exception(), TypeError)
+                yield "doing"
+
+        def outer():
+            try:
+                raise TypeError
+            except:
+                for x in gen():
+                    yield x
+
+        try:
+            raise ValueError
+        except Exception:
+            for x in outer():
+                self.assertEqual(x, "doing")
+        self.assertEqual(sys.exception(), None)
+
     def test_except_throw_exception_context(self):
         def gen():
             try:
@@ -304,6 +380,15 @@ class ExceptionTest(unittest.TestCase):
         next(gen)
         with self.assertRaises(StopIteration):
             gen.throw(E)
+
+    def test_gen_3_arg_deprecation_warning(self):
+        def g():
+            yield 42
+
+        gen = g()
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(TypeError):
+                gen.throw(TypeError, TypeError(24), None)
 
     def test_stopiteration_error(self):
         # See also PEP 479.
@@ -2076,6 +2161,12 @@ caught ValueError ()
 >>> g.throw(ValueError("xyz"))  # value only
 caught ValueError (xyz)
 
+>>> import warnings
+>>> warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+# Filter DeprecationWarning: regarding the (type, val, tb) signature of throw().
+# Deprecation warnings are re-enabled below.
+
 >>> g.throw(ValueError, ValueError(1))   # value+matching type
 caught ValueError (1)
 
@@ -2143,6 +2234,12 @@ ValueError: 6
 Traceback (most recent call last):
   ...
 ValueError: 7
+
+>>> warnings.filters.pop(0)
+('ignore', None, <class 'DeprecationWarning'>, None, 0)
+
+# Re-enable DeprecationWarning: the (type, val, tb) exception representation is deprecated,
+#                               and may be removed in a future version of Python.
 
 Plain "raise" inside a generator should preserve the traceback (#13188).
 The traceback should have 3 levels:

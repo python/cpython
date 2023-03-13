@@ -6,7 +6,6 @@ import sys
 import traceback
 import types
 import functools
-import warnings
 
 from fnmatch import fnmatch, fnmatchcase
 
@@ -57,9 +56,7 @@ def _make_skipped_test(methodname, exception, suiteClass):
     TestClass = type("ModuleSkipped", (case.TestCase,), attrs)
     return suiteClass((TestClass(methodname),))
 
-def _jython_aware_splitext(path):
-    if path.lower().endswith('$py.class'):
-        return path[:-9]
+def _splitext(path):
     return os.path.splitext(path)[0]
 
 
@@ -93,30 +90,8 @@ class TestLoader(object):
         loaded_suite = self.suiteClass(map(testCaseClass, testCaseNames))
         return loaded_suite
 
-    # XXX After Python 3.5, remove backward compatibility hacks for
-    # use_load_tests deprecation via *args and **kws.  See issue 16662.
-    def loadTestsFromModule(self, module, *args, pattern=None, **kws):
+    def loadTestsFromModule(self, module, *, pattern=None):
         """Return a suite of all test cases contained in the given module"""
-        # This method used to take an undocumented and unofficial
-        # use_load_tests argument.  For backward compatibility, we still
-        # accept the argument (which can also be the first position) but we
-        # ignore it and issue a deprecation warning if it's present.
-        if len(args) > 0 or 'use_load_tests' in kws:
-            warnings.warn('use_load_tests is deprecated and ignored',
-                          DeprecationWarning)
-            kws.pop('use_load_tests', None)
-        if len(args) > 1:
-            # Complain about the number of arguments, but don't forget the
-            # required `module` argument.
-            complaint = len(args) + 1
-            raise TypeError('loadTestsFromModule() takes 1 positional argument but {} were given'.format(complaint))
-        if len(kws) != 0:
-            # Since the keyword arguments are unsorted (see PEP 468), just
-            # pick the alphabetically sorted first argument to complain about,
-            # if multiple were given.  At least the error message will be
-            # predictable.
-            complaint = sorted(kws)[0]
-            raise TypeError("loadTestsFromModule() got an unexpected keyword argument '{}'".format(complaint))
         tests = []
         for name in dir(module):
             obj = getattr(module, name)
@@ -337,7 +312,7 @@ class TestLoader(object):
     def _get_name_from_path(self, path):
         if path == self._top_level_dir:
             return '.'
-        path = _jython_aware_splitext(os.path.normpath(path))
+        path = _splitext(os.path.normpath(path))
 
         _relpath = os.path.relpath(path, self._top_level_dir)
         assert not os.path.isabs(_relpath), "Path must be within the project"
@@ -415,13 +390,13 @@ class TestLoader(object):
             else:
                 mod_file = os.path.abspath(
                     getattr(module, '__file__', full_path))
-                realpath = _jython_aware_splitext(
+                realpath = _splitext(
                     os.path.realpath(mod_file))
-                fullpath_noext = _jython_aware_splitext(
+                fullpath_noext = _splitext(
                     os.path.realpath(full_path))
                 if realpath.lower() != fullpath_noext.lower():
                     module_dir = os.path.dirname(realpath)
-                    mod_name = _jython_aware_splitext(
+                    mod_name = _splitext(
                         os.path.basename(full_path))
                     expected_dir = os.path.dirname(full_path)
                     msg = ("%r module incorrectly imported from %r. Expected "

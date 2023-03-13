@@ -1,3 +1,0 @@
-Fix bug introduced during 3.11alpha where subclasses of ``types.ModuleType``
-with ``__slots__`` were not initialized correctly, resulting in an
-interpreter crash.

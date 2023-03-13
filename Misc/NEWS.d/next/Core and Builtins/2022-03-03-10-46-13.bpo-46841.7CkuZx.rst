@@ -1,2 +1,0 @@
-Add more detailed specialization failure stats for :opcode:`COMPARE_OP`
-followed by :opcode:`EXTENDED_ARG`.
