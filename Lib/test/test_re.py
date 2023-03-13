@@ -2304,7 +2304,7 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match("^x{}+$", "x{}"))
 
         # gh-100061
-        self.assertEqual(re.match('((.(?!C))++)', 'ABCD').span(), (0, 1))
+        self.assertEqual(re.match('((.(?!D))++)', 'ABCDE').span(), (0, 2))
 
     def test_fullmatch_possessive_quantifiers(self):
         self.assertTrue(re.fullmatch(r'a++', 'a'))
