@@ -357,7 +357,7 @@ Data Types
          ...         cls_name = self.__class__.__name__
          ...         return f'{cls_name}.{self.name}'
          ...
-         >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
+         >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f'{OtherStyle.ALTERNATE}'
          (OtherStyle.ALTERNATE, 'OtherStyle.ALTERNATE', 'OtherStyle.ALTERNATE')
 
    .. method:: Enum.__str__(self)
@@ -372,7 +372,7 @@ Data Types
          ...     def __str__(self):
          ...         return f'{self.name}'
          ...
-         >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
+         >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f'{OtherStyle.ALTERNATE}'
          (<OtherStyle.ALTERNATE: 1>, 'ALTERNATE', 'ALTERNATE')
 
    .. method:: Enum.__format__(self)
@@ -387,7 +387,7 @@ Data Types
          ...     def __format__(self, spec):
          ...         return f'{self.name}'
          ...
-         >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
+         >>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f'{OtherStyle.ALTERNATE}'
          (<OtherStyle.ALTERNATE: 1>, 'OtherStyle.ALTERNATE', 'ALTERNATE')
 
    .. note::
