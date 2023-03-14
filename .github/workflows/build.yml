@@ -111,7 +111,7 @@ jobs:
         run: make smelly
       - name: Check limited ABI symbols
         run: make check-limited-abi
-      - name: Check for Unsupported C Global Variables
+      - name: Check for unsupported C global variables
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: python3 Tools/c-analyzer/check-c-globals.py --format summary --traceback
 
