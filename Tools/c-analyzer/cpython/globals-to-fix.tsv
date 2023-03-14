@@ -386,7 +386,6 @@ Modules/_datetimemodule.c	-	PyDateTime_IsoCalendarDateType	-
 Modules/_datetimemodule.c	-	PyDateTime_TZInfoType	-
 Modules/_datetimemodule.c	-	PyDateTime_TimeType	-
 Modules/_datetimemodule.c	-	PyDateTime_TimeZoneType	-
-Modules/_decimal/_decimal.c	-	PyDec_Type	-
 Modules/_pickle.c	-	Pdata_Type	-
 Modules/_pickle.c	-	PicklerMemoProxyType	-
 Modules/_pickle.c	-	Pickler_Type	-
@@ -406,7 +405,6 @@ Modules/xxsubtype.c	-	spamlist_type	-
 
 ## heap types
 Modules/_decimal/_decimal.c	-	DecimalTuple	-
-Modules/_decimal/_decimal.c	-	PyDecSignalDict_Type	-
 Modules/_tkinter.c	-	PyTclObject_Type	-
 Modules/_tkinter.c	-	Tkapp_Type	-
 Modules/_tkinter.c	-	Tktt_Type	-
