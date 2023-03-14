@@ -546,7 +546,7 @@ Clean up refleak on failed module initialisation in :mod:`_zoneinfo`
 .. nonce: qc_KHr
 .. section: Library
 
-Clean up refleaks on failed module initialisation in in :mod:`_pickle`
+Clean up refleaks on failed module initialisation in :mod:`_pickle`
 
 ..
 

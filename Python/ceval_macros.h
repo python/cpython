@@ -350,3 +350,23 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #define KWNAMES_LEN() \
     (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
+
+#define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) \
+do { \
+    if (Py_REFCNT(left) == 1) { \
+        ((PyFloatObject *)left)->ob_fval = (dval); \
+        _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);\
+        result = (left); \
+    } \
+    else if (Py_REFCNT(right) == 1)  {\
+        ((PyFloatObject *)right)->ob_fval = (dval); \
+        _Py_DECREF_NO_DEALLOC(left); \
+        result = (right); \
+    }\
+    else { \
+        result = PyFloat_FromDouble(dval); \
+        if ((result) == NULL) goto error; \
+        _Py_DECREF_NO_DEALLOC(left); \
+        _Py_DECREF_NO_DEALLOC(right); \
+    } \
+} while (0)

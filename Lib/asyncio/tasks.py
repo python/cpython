@@ -630,10 +630,6 @@ def ensure_future(coro_or_future, *, loop=None):
 
     If the argument is a Future, it is returned directly.
     """
-    return _ensure_future(coro_or_future, loop=loop)
-
-
-def _ensure_future(coro_or_future, *, loop=None):
     if futures.isfuture(coro_or_future):
         if loop is not None and loop is not futures._get_loop(coro_or_future):
             raise ValueError('The future belongs to a different loop than '
@@ -798,7 +794,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     outer = None  # bpo-46672
     for arg in coros_or_futures:
         if arg not in arg_to_fut:
-            fut = _ensure_future(arg, loop=loop)
+            fut = ensure_future(arg, loop=loop)
             if loop is None:
                 loop = futures._get_loop(fut)
             if fut is not arg:
@@ -855,7 +851,7 @@ def shield(arg):
     weak references to tasks. A task that isn't referenced elsewhere
     may get garbage collected at any time, even before it's done.
     """
-    inner = _ensure_future(arg)
+    inner = ensure_future(arg)
     if inner.done():
         # Shortcut.
         return inner

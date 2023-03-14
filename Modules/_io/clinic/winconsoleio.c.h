@@ -8,7 +8,7 @@ preserve
 #endif
 
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
 
 PyDoc_STRVAR(_io__WindowsConsoleIO_close__doc__,
 "close($self, /)\n"
@@ -35,9 +35,9 @@ _io__WindowsConsoleIO_close(winconsoleio *self, PyTypeObject *cls, PyObject *con
     return _io__WindowsConsoleIO_close_impl(self, cls);
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
 
 PyDoc_STRVAR(_io__WindowsConsoleIO___init____doc__,
 "_WindowsConsoleIO(file, mode=\'r\', closefd=True, opener=None)\n"
@@ -135,9 +135,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
 
 PyDoc_STRVAR(_io__WindowsConsoleIO_fileno__doc__,
 "fileno($self, /)\n"
@@ -157,9 +157,9 @@ _io__WindowsConsoleIO_fileno(winconsoleio *self, PyObject *Py_UNUSED(ignored))
     return _io__WindowsConsoleIO_fileno_impl(self);
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
 
 PyDoc_STRVAR(_io__WindowsConsoleIO_readable__doc__,
 "readable($self, /)\n"
@@ -179,9 +179,9 @@ _io__WindowsConsoleIO_readable(winconsoleio *self, PyObject *Py_UNUSED(ignored))
     return _io__WindowsConsoleIO_readable_impl(self);
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
 
 PyDoc_STRVAR(_io__WindowsConsoleIO_writable__doc__,
 "writable($self, /)\n"
@@ -201,9 +201,9 @@ _io__WindowsConsoleIO_writable(winconsoleio *self, PyObject *Py_UNUSED(ignored))
     return _io__WindowsConsoleIO_writable_impl(self);
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
 
 PyDoc_STRVAR(_io__WindowsConsoleIO_readinto__doc__,
 "readinto($self, buffer, /)\n"
@@ -243,9 +243,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
 
 PyDoc_STRVAR(_io__WindowsConsoleIO_readall__doc__,
 "readall($self, /)\n"
@@ -267,9 +267,9 @@ _io__WindowsConsoleIO_readall(winconsoleio *self, PyObject *Py_UNUSED(ignored))
     return _io__WindowsConsoleIO_readall_impl(self);
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
 
 PyDoc_STRVAR(_io__WindowsConsoleIO_read__doc__,
 "read($self, size=-1, /)\n"
@@ -325,9 +325,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
 
 PyDoc_STRVAR(_io__WindowsConsoleIO_write__doc__,
 "write($self, b, /)\n"
@@ -387,9 +387,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
 
-#if defined(MS_WINDOWS)
+#if defined(HAVE_WINDOWS_CONSOLE_IO)
 
 PyDoc_STRVAR(_io__WindowsConsoleIO_isatty__doc__,
 "isatty($self, /)\n"
@@ -409,7 +409,7 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
     return _io__WindowsConsoleIO_isatty_impl(self);
 }
 
-#endif /* defined(MS_WINDOWS) */
+#endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
 
 #ifndef _IO__WINDOWSCONSOLEIO_CLOSE_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_CLOSE_METHODDEF
@@ -446,4 +446,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=0bee002cc60d86d0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=79004ec51013c3ab input=a9049054013a1b77]*/
