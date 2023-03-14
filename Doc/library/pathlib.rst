@@ -873,8 +873,8 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
-   By default, :meth:`Path.glob` does not follow symlinks. Set
-   *follow_symlinks* to true to visit symlinks to directories.
+   By default, :meth:`Path.glob` does not follow symlinks when expanding a
+   pattern. Set *follow_symlinks* to true to visit symlinks to directories.
 
    .. note::
       Using the "``**``" pattern in large directory trees may consume
@@ -888,7 +888,8 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.12
       The *follow_symlinks* parameter was added.  In previous versions,
-      symlinks were followed except when expanding "``**``" wildcards.
+      symlinks were followed when expanding patterns, except when expanding
+      "``**``" wildcards.
 
 .. method:: Path.group()
 
@@ -1288,8 +1289,8 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
-   By default, :meth:`Path.rglob` does not follow symlinks. Set
-   *follow_symlinks* to true to visit symlinks to directories.
+   By default, :meth:`Path.rglob` does not follow symlinks when expanding a
+   pattern. Set *follow_symlinks* to true to visit symlinks to directories.
 
    .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
@@ -1299,7 +1300,8 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.12
       The *follow_symlinks* parameter was added.  In previous versions,
-      symlinks were followed except when expanding "``**``" wildcards.
+      symlinks were followed when expanding patterns, except when expanding
+      "``**``" wildcards.
 
 .. method:: Path.rmdir()
 
