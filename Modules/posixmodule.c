@@ -2528,7 +2528,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
                                 val);
     }
 #elif defined(MS_WINDOWS)
-    fill_time(module, v, ST_BIRTHTIME_IDX, -1, ST_BIRTHTIME_NS_IDX,
+    fill_time(module, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
               st->st_birthtime, st->st_birthtime_nsec);
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
