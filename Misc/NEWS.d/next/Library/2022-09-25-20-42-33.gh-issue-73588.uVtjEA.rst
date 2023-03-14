@@ -1,4 +1,0 @@
-Fix generation of the default name of :class:`tkinter.Checkbutton`.
-Previously, checkbuttons in different parent widgets could have the same
-short name and share the same state if arguments "name" and "variable" are
-not specified. Now they are globally unique.

@@ -139,7 +139,8 @@ class DictWriter:
             fieldnames = list(fieldnames)
         self.fieldnames = fieldnames    # list of keys for the dict
         self.restval = restval          # for writing short dicts
-        if extrasaction.lower() not in ("raise", "ignore"):
+        extrasaction = extrasaction.lower()
+        if extrasaction not in ("raise", "ignore"):
             raise ValueError("extrasaction (%s) must be 'raise' or 'ignore'"
                              % extrasaction)
         self.extrasaction = extrasaction
@@ -165,11 +166,6 @@ class DictWriter:
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
-# Guard Sniffer's type checking against builds that exclude complex()
-try:
-    complex
-except NameError:
-    complex = float
 
 class Sniffer:
     '''

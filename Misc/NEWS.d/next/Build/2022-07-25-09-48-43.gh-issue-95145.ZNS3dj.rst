@@ -1,2 +1,0 @@
-wasm32-wasi builds no longer depend on WASIX's pthread stubs. Python now has
-its own stubbed pthread API.

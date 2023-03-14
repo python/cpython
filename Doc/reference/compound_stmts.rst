@@ -192,9 +192,8 @@ those made in the suite of the for-loop::
 
 Names in the target list are not deleted when the loop is finished, but if the
 sequence is empty, they will not have been assigned to at all by the loop.  Hint:
-the built-in function :func:`range` returns an iterator of integers suitable to
-emulate the effect of Pascal's ``for i := a to b do``; e.g., ``list(range(3))``
-returns the list ``[0, 1, 2]``.
+the built-in type :func:`range` represents immutable arithmetic sequences of integers.
+For instance, iterating ``range(3)`` successively yields 0, 1, and then 2.
 
 .. versionchanged:: 3.11
    Starred elements are now allowed in the expression list.
@@ -302,31 +301,28 @@ keeping all locals in that frame alive until the next garbage collection occurs.
    object: traceback
 
 Before an :keyword:`!except` clause's suite is executed,
-details about the exception are
-stored in the :mod:`sys` module and can be accessed via :func:`sys.exc_info`.
-:func:`sys.exc_info` returns a 3-tuple consisting of the exception class, the
-exception instance and a traceback object (see section :ref:`types`) identifying
-the point in the program where the exception occurred.  The details about the
-exception accessed via :func:`sys.exc_info` are restored to their previous values
-when leaving an exception handler::
+the exception is stored in the :mod:`sys` module, where it can be accessed
+from within the body of the :keyword:`!except` clause by calling
+:func:`sys.exception`. When leaving an exception handler, the exception
+stored in the :mod:`sys` module is reset to its previous value::
 
-   >>> print(sys.exc_info())
-   (None, None, None)
+   >>> print(sys.exception())
+   None
    >>> try:
    ...     raise TypeError
    ... except:
-   ...     print(sys.exc_info())
+   ...     print(repr(sys.exception()))
    ...     try:
    ...          raise ValueError
    ...     except:
-   ...         print(sys.exc_info())
-   ...     print(sys.exc_info())
+   ...         print(repr(sys.exception()))
+   ...     print(repr(sys.exception()))
    ...
-   (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
-   (<class 'ValueError'>, ValueError(), <traceback object at 0x10efad040>)
-   (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
-   >>> print(sys.exc_info())
-   (None, None, None)
+   TypeError()
+   ValueError()
+   TypeError()
+   >>> print(sys.exception())
+   None
 
 
 .. index::
@@ -343,7 +339,7 @@ the case of :keyword:`except`, but in the case of exception groups we can have
 partial matches when the type matches some of the exceptions in the group.
 This means that multiple :keyword:`!except*` clauses can execute,
 each handling part of the exception group.
-Each clause executes once and handles an exception group
+Each clause executes at most once and handles an exception group
 of all matching exceptions.  Each exception in the group is handled by at most
 one :keyword:`!except*` clause, the first that matches it. ::
 
@@ -363,18 +359,29 @@ one :keyword:`!except*` clause, the first that matches it. ::
      +-+---------------- 1 ----------------
        | ValueError: 1
        +------------------------------------
-   >>>
 
-   Any remaining exceptions that were not handled by any :keyword:`!except*`
-   clause are re-raised at the end, combined into an exception group along with
-   all exceptions that were raised from within :keyword:`!except*` clauses.
 
-   An :keyword:`!except*` clause must have a matching type,
-   and this type cannot be a subclass of :exc:`BaseExceptionGroup`.
-   It is not possible to mix :keyword:`except` and :keyword:`!except*`
-   in the same :keyword:`try`.
-   :keyword:`break`, :keyword:`continue` and :keyword:`return`
-   cannot appear in an :keyword:`!except*` clause.
+Any remaining exceptions that were not handled by any :keyword:`!except*`
+clause are re-raised at the end, combined into an exception group along with
+all exceptions that were raised from within :keyword:`!except*` clauses.
+
+If the raised exception is not an exception group and its type matches
+one of the :keyword:`!except*` clauses, it is caught and wrapped by an
+exception group with an empty message string. ::
+
+   >>> try:
+   ...     raise BlockingIOError
+   ... except* BlockingIOError as e:
+   ...     print(repr(e))
+   ...
+   ExceptionGroup('', (BlockingIOError()))
+
+An :keyword:`!except*` clause must have a matching type,
+and this type cannot be a subclass of :exc:`BaseExceptionGroup`.
+It is not possible to mix :keyword:`except` and :keyword:`!except*`
+in the same :keyword:`try`.
+:keyword:`break`, :keyword:`continue` and :keyword:`return`
+cannot appear in an :keyword:`!except*` clause.
 
 
 .. index::
@@ -495,7 +502,7 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
       method returns without an error, then :meth:`__exit__` will always be
       called. Thus, if an error occurs during the assignment to the target list,
       it will be treated the same as an error occurring within the suite would
-      be. See step 6 below.
+      be. See step 7 below.
 
 #. The suite is executed.
 
@@ -582,6 +589,7 @@ The :keyword:`!match` statement
    keyword: if
    keyword: as
    pair: match; case
+   single: as; match statement
    single: : (colon); compound statement
 
 .. versionadded:: 3.10
@@ -808,7 +816,7 @@ keyword against a subject.  Syntax:
 
 If the OR pattern fails, the AS pattern fails.  Otherwise, the AS pattern binds
 the subject to the name on the right of the as keyword and succeeds.
-``capture_pattern`` cannot be a a ``_``.
+``capture_pattern`` cannot be a ``_``.
 
 In simple terms ``P as NAME`` will match with ``P``, and on success it will
 set ``NAME = <subject>``.

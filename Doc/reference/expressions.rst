@@ -154,7 +154,7 @@ tuple may or may not yield the same object).
    single: , (comma)
 
 Note that tuples are not formed by the parentheses, but rather by use of the
-comma operator.  The exception is the empty tuple, for which parentheses *are*
+comma.  The exception is the empty tuple, for which parentheses *are*
 required --- allowing unparenthesized "nothing" in expressions would cause
 ambiguities and allow common typos to pass uncaught.
 
@@ -454,7 +454,9 @@ generator.  That generator then controls the execution of the generator
 function.  The execution starts when one of the generator's methods is called.
 At that time, the execution proceeds to the first yield expression, where it is
 suspended again, returning the value of :token:`~python-grammar:expression_list`
-to the generator's caller.  By suspended, we mean that all local state is
+to the generator's caller,
+or ``None`` if :token:`~python-grammar:expression_list` is omitted.
+By suspended, we mean that all local state is
 retained, including the current bindings of local variables, the instruction
 pointer, the internal evaluation stack, and the state of any exception handling.
 When the execution is resumed by calling one of the generator's methods, the

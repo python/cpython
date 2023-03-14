@@ -105,8 +105,9 @@ we also call *flavours*:
       PurePosixPath('setup.py')
 
    Each element of *pathsegments* can be either a string representing a
-   path segment, an object implementing the :class:`os.PathLike` interface
-   which returns a string, or another path object::
+   path segment, or an object implementing the :class:`os.PathLike` interface
+   where the :meth:`~os.PathLike.__fspath__` method returns a string,
+   such as another path object::
 
       >>> PurePath('foo', 'some/path', 'bar')
       PurePosixPath('foo/some/path/bar')
@@ -118,16 +119,16 @@ we also call *flavours*:
       >>> PurePath()
       PurePosixPath('.')
 
-   When several absolute paths are given, the last is taken as an anchor
-   (mimicking :func:`os.path.join`'s behaviour)::
+   If a segment is an absolute path, all previous segments are ignored
+   (like :func:`os.path.join`)::
 
       >>> PurePath('/etc', '/usr', 'lib64')
       PurePosixPath('/usr/lib64')
       >>> PureWindowsPath('c:/Windows', 'd:bar')
       PureWindowsPath('d:bar')
 
-   However, in a Windows path, changing the local root doesn't discard the
-   previous drive setting::
+   On Windows, the drive is not reset when a rooted relative path
+   segment (e.g., ``r'\foo'``) is encountered::
 
       >>> PureWindowsPath('c:/Windows', '/Program Files')
       PureWindowsPath('c:/Program Files')
@@ -186,7 +187,7 @@ these classes, since they don't provide any operation that does system calls.
 General properties
 ^^^^^^^^^^^^^^^^^^
 
-Paths are immutable and hashable.  Paths of a same flavour are comparable
+Paths are immutable and :term:`hashable`.  Paths of a same flavour are comparable
 and orderable.  These properties respect the flavour's case-folding
 semantics::
 
@@ -212,7 +213,10 @@ Paths of a different flavour compare unequal and cannot be ordered::
 Operators
 ^^^^^^^^^
 
-The slash operator helps create child paths, similarly to :func:`os.path.join`::
+The slash operator helps create child paths, like :func:`os.path.join`.
+If the argument is an absolute path, the previous path is ignored.
+On Windows, the drive is not reset when the argument is a rooted
+relative path (e.g., ``r'\foo'``)::
 
    >>> p = PurePath('/etc')
    >>> p
@@ -222,6 +226,10 @@ The slash operator helps create child paths, similarly to :func:`os.path.join`::
    >>> q = PurePath('bin')
    >>> '/usr' / q
    PurePosixPath('/usr/bin')
+   >>> p / '/an_absolute_path'
+   PurePosixPath('/an_absolute_path')
+   >>> PureWindowsPath('c:/Windows', '/Program Files')
+   PureWindowsPath('c:/Program Files')
 
 A path object can be used anywhere an object implementing :class:`os.PathLike`
 is accepted::
@@ -259,7 +267,7 @@ Accessing individual parts
 To access the individual "parts" (components) of a path, use the following
 property:
 
-.. data:: PurePath.parts
+.. attribute:: PurePath.parts
 
    A tuple giving access to the path's various components::
 
@@ -283,7 +291,7 @@ Methods and properties
 
 Pure paths provide the following methods and properties:
 
-.. data:: PurePath.drive
+.. attribute:: PurePath.drive
 
    A string representing the drive letter or name, if any::
 
@@ -299,7 +307,7 @@ Pure paths provide the following methods and properties:
       >>> PureWindowsPath('//host/share/foo.txt').drive
       '\\\\host\\share'
 
-.. data:: PurePath.root
+.. attribute:: PurePath.root
 
    A string representing the (local or global) root, if any::
 
@@ -335,7 +343,7 @@ Pure paths provide the following methods and properties:
       an implementation-defined manner, although more than two leading slashes
       shall be treated as a single slash."*
 
-.. data:: PurePath.anchor
+.. attribute:: PurePath.anchor
 
    The concatenation of the drive and root::
 
@@ -349,7 +357,7 @@ Pure paths provide the following methods and properties:
       '\\\\host\\share\\'
 
 
-.. data:: PurePath.parents
+.. attribute:: PurePath.parents
 
    An immutable sequence providing access to the logical ancestors of
    the path::
@@ -365,7 +373,7 @@ Pure paths provide the following methods and properties:
    .. versionchanged:: 3.10
       The parents sequence now supports :term:`slices <slice>` and negative index values.
 
-.. data:: PurePath.parent
+.. attribute:: PurePath.parent
 
    The logical parent of the path::
 
@@ -391,10 +399,10 @@ Pure paths provide the following methods and properties:
 
       If you want to walk an arbitrary filesystem path upwards, it is
       recommended to first call :meth:`Path.resolve` so as to resolve
-      symlinks and eliminate `".."` components.
+      symlinks and eliminate ``".."`` components.
 
 
-.. data:: PurePath.name
+.. attribute:: PurePath.name
 
    A string representing the final path component, excluding the drive and
    root, if any::
@@ -410,7 +418,7 @@ Pure paths provide the following methods and properties:
       ''
 
 
-.. data:: PurePath.suffix
+.. attribute:: PurePath.suffix
 
    The file extension of the final component, if any::
 
@@ -422,7 +430,7 @@ Pure paths provide the following methods and properties:
       ''
 
 
-.. data:: PurePath.suffixes
+.. attribute:: PurePath.suffixes
 
    A list of the path's file extensions::
 
@@ -434,7 +442,7 @@ Pure paths provide the following methods and properties:
       []
 
 
-.. data:: PurePath.stem
+.. attribute:: PurePath.stem
 
    The final path component, without its suffix::
 
@@ -490,7 +498,7 @@ Pure paths provide the following methods and properties:
       True
 
 
-.. method:: PurePath.is_relative_to(*other)
+.. method:: PurePath.is_relative_to(other)
 
    Return whether or not this path is relative to the *other* path.
 
@@ -502,6 +510,10 @@ Pure paths provide the following methods and properties:
 
    .. versionadded:: 3.9
 
+   .. deprecated-removed:: 3.12 3.14
+
+      Passing additional arguments is deprecated; if supplied, they are joined
+      with *other*.
 
 .. method:: PurePath.is_reserved()
 
@@ -564,10 +576,10 @@ Pure paths provide the following methods and properties:
       True
 
 
-.. method:: PurePath.relative_to(*other)
+.. method:: PurePath.relative_to(other, walk_up=False)
 
    Compute a version of this path relative to the path represented by
-   *other*.  If it's impossible, ValueError is raised::
+   *other*.  If it's impossible, :exc:`ValueError` is raised::
 
       >>> p = PurePosixPath('/etc/passwd')
       >>> p.relative_to('/')
@@ -577,12 +589,38 @@ Pure paths provide the following methods and properties:
       >>> p.relative_to('/usr')
       Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
-        File "pathlib.py", line 694, in relative_to
-          .format(str(self), str(formatted)))
-      ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other absolute.
+        File "pathlib.py", line 941, in relative_to
+          raise ValueError(error_message.format(str(self), str(formatted)))
+      ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other is absolute.
 
-   NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure.
+   When *walk_up* is False (the default), the path must start with *other*.
+   When the argument is True, ``..`` entries may be added to form the
+   relative path. In all other cases, such as the paths referencing
+   different drives, :exc:`ValueError` is raised.::
 
+      >>> p.relative_to('/usr', walk_up=True)
+      PurePosixPath('../etc/passwd')
+      >>> p.relative_to('foo', walk_up=True)
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        File "pathlib.py", line 941, in relative_to
+          raise ValueError(error_message.format(str(self), str(formatted)))
+      ValueError: '/etc/passwd' is not on the same drive as 'foo' OR one path is relative and the other is absolute.
+
+   .. warning::
+      This function is part of :class:`PurePath` and works with strings.
+      It does not check or access the underlying file structure.
+      This can impact the *walk_up* option as it assumes that no symlinks
+      are present in the path; call :meth:`~Path.resolve` first if
+      necessary to resolve symlinks.
+
+   .. versionadded:: 3.12
+      The *walk_up* argument (old behavior is the same as ``walk_up=False``).
+
+   .. deprecated-removed:: 3.12 3.14
+
+      Passing additional positional arguments is deprecated; if supplied,
+      they are joined with *other*.
 
 .. method:: PurePath.with_name(name)
 
@@ -867,6 +905,14 @@ call fails (for example because the path doesn't exist).
 
    ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
+
+
+.. method:: Path.is_junction()
+
+   Return ``True`` if the path points to a junction, and ``False`` for any other
+   type of file. Currently only Windows supports junctions.
+
+   .. versionadded:: 3.12
 
 
 .. method:: Path.is_mount()
@@ -1164,6 +1210,8 @@ call fails (for example because the path doesn't exist).
    relative to the current working directory, *not* the directory of the Path
    object.
 
+   It is implemented in terms of :func:`os.rename` and gives the same guarantees.
+
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.
 
@@ -1223,7 +1271,8 @@ call fails (for example because the path doesn't exist).
 .. method:: Path.rglob(pattern)
 
    Glob the given relative *pattern* recursively.  This is like calling
-   :func:`Path.glob` with "``**/``" added in front of the *pattern*::
+   :func:`Path.glob` with "``**/``" added in front of the *pattern*, where
+   *patterns* are the same as for :mod:`fnmatch`::
 
       >>> sorted(Path().rglob("*.py"))
       [PosixPath('build/lib/pathlib.py'),
@@ -1398,11 +1447,11 @@ Below is a table mapping various :mod:`os` functions to their corresponding
                                        :meth:`Path.group`
 :func:`os.path.isabs`                  :meth:`PurePath.is_absolute`
 :func:`os.path.join`                   :func:`PurePath.joinpath`
-:func:`os.path.basename`               :data:`PurePath.name`
-:func:`os.path.dirname`                :data:`PurePath.parent`
+:func:`os.path.basename`               :attr:`PurePath.name`
+:func:`os.path.dirname`                :attr:`PurePath.parent`
 :func:`os.path.samefile`               :meth:`Path.samefile`
-:func:`os.path.splitext`               :data:`PurePath.stem` and
-                                       :data:`PurePath.suffix`
+:func:`os.path.splitext`               :attr:`PurePath.stem` and
+                                       :attr:`PurePath.suffix`
 ====================================   ==============================
 
 .. rubric:: Footnotes
