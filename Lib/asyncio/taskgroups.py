@@ -22,7 +22,7 @@ class TaskGroup:
 
     All tasks are awaited when the context manager exits.
 
-    Any exceptions other than asyncio.CancelledError's raised within
+    Any exceptions other than asyncio.CancelledErrors raised within
     tasks will cancel all remaining tasks and exit the context. These
     exceptions will be combined into an ExceptionGroup and re-raised.
     """
