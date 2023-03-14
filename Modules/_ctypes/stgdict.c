@@ -421,7 +421,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     int ms_struct = 0;
     #endif
 
-    // figure out how this pyid replacement thing works.
     if (_PyObject_LookupAttr(type, &_Py_ID(_ms_struct_), &tmp) < 0) {
         return -1;
     }
