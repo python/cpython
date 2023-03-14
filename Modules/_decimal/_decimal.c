@@ -44,6 +44,7 @@ typedef struct {
     PyTypeObject *PyDecSignalDictMixin_Type;
     PyTypeObject *PyDec_Type;
     PyTypeObject *PyDecSignalDict_Type;
+    PyTypeObject *DecimalTuple;
 } decimal_state;
 
 static decimal_state global_state;
@@ -3889,7 +3890,6 @@ PyDec_Round(PyObject *dec, PyObject *args)
     }
 }
 
-static PyTypeObject *DecimalTuple = NULL;
 /* Return the DecimalTuple representation of a PyDecObject. */
 static PyObject *
 PyDec_AsTuple(PyObject *dec, PyObject *dummy UNUSED)
@@ -3972,7 +3972,8 @@ PyDec_AsTuple(PyObject *dec, PyObject *dummy UNUSED)
         }
     }
 
-    result = PyObject_CallFunctionObjArgs((PyObject *)DecimalTuple,
+    decimal_state *state = GLOBAL_STATE();
+    result = PyObject_CallFunctionObjArgs((PyObject *)state->DecimalTuple,
                                           sign, coeff, expt, NULL);
 
 out:
@@ -5851,6 +5852,7 @@ PyInit__decimal(void)
     mpd_free = PyMem_Free;
     mpd_setminalloc(_Py_DEC_MINALLOC);
 
+    decimal_state *state = GLOBAL_STATE();
 
     /* Init external C-API functions */
     _py_long_multiply = PyLong_Type.tp_as_number->nb_multiply;
@@ -5869,7 +5871,6 @@ PyInit__decimal(void)
         CHECK_PTR(type);                                                    \
     } while (0)
 
-    decimal_state *state = GLOBAL_STATE();
     CREATE_TYPE(m, state->PyDec_Type, &dec_spec);
     CREATE_TYPE(m, state->PyDecContext_Type, &context_spec);
     CREATE_TYPE(m, state->PyDecSignalDictMixin_Type, &signaldict_spec);
@@ -5898,12 +5899,12 @@ PyInit__decimal(void)
 
     /* DecimalTuple */
     ASSIGN_PTR(collections, PyImport_ImportModule("collections"));
-    ASSIGN_PTR(DecimalTuple, (PyTypeObject *)PyObject_CallMethod(collections,
+    ASSIGN_PTR(state->DecimalTuple, (PyTypeObject *)PyObject_CallMethod(collections,
                                  "namedtuple", "(ss)", "DecimalTuple",
                                  "sign digits exponent"));
 
     ASSIGN_PTR(obj, PyUnicode_FromString("decimal"));
-    CHECK_INT(PyDict_SetItemString(DecimalTuple->tp_dict, "__module__", obj));
+    CHECK_INT(PyDict_SetItemString(state->DecimalTuple->tp_dict, "__module__", obj));
     Py_CLEAR(obj);
 
     /* MutableMapping */
@@ -5929,7 +5930,7 @@ PyInit__decimal(void)
     /* Add types to the module */
     CHECK_INT(PyModule_AddType(m, state->PyDec_Type));
     CHECK_INT(PyModule_AddType(m, state->PyDecContext_Type));
-    CHECK_INT(PyModule_AddObject(m, "DecimalTuple", Py_NewRef(DecimalTuple)));
+    CHECK_INT(PyModule_AddObjectRef(m, "DecimalTuple", state->DecimalTuple));
 
     /* Create top level exception */
     ASSIGN_PTR(DecimalException, PyErr_NewException(
@@ -6074,7 +6075,7 @@ error:
     Py_CLEAR(collections_abc); /* GCOV_NOT_REACHED */
     Py_CLEAR(MutableMapping); /* GCOV_NOT_REACHED */
     Py_CLEAR(SignalTuple); /* GCOV_NOT_REACHED */
-    Py_CLEAR(DecimalTuple); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->DecimalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(default_context_template); /* GCOV_NOT_REACHED */
 #ifndef WITH_DECIMAL_CONTEXTVAR
     Py_CLEAR(tls_context_key); /* GCOV_NOT_REACHED */

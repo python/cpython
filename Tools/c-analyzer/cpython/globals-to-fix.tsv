@@ -404,7 +404,6 @@ Modules/xxsubtype.c	-	spamlist_type	-
 ## non-static types - initialized once
 
 ## heap types
-Modules/_decimal/_decimal.c	-	DecimalTuple	-
 Modules/_tkinter.c	-	PyTclObject_Type	-
 Modules/_tkinter.c	-	Tkapp_Type	-
 Modules/_tkinter.c	-	Tktt_Type	-
