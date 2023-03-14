@@ -783,6 +783,17 @@ class ProcessTestCase(BaseTestCase):
             stdout, stderr = p.communicate()
             self.assertEqual(stdout, b"orange")
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows only issue")
+    def test_win32_duplicate_envs(self):
+        newenv = os.environ.copy()
+        newenv["fruit"] = "lemon"
+        newenv["FRUIT"] = "orange"
+        with subprocess.Popen(["CMD", "/c", "SET", "fruit"],
+                              stdout=subprocess.PIPE,
+                              env=newenv) as p:
+            stdout, stderr = p.communicate()
+            self.assertEqual(stdout, b"fruit=lemon\r\n")
+
     # Windows requires at least the SYSTEMROOT environment variable to start
     # Python
     @unittest.skipIf(sys.platform == 'win32',

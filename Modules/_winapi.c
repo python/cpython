@@ -772,23 +772,88 @@ gethandle(PyObject* obj, const char* name)
     return ret;
 }
 
+static PyObject* sortenvironmentkey(PyObject *module, PyObject *item) {
+    Py_ssize_t n;
+    wchar_t* s = PyUnicode_AsWideCharString(item, &n);
+    if (s == NULL) {
+        return NULL;
+    }
+    return _winapi_LCMapStringEx_impl(NULL, LOCALE_NAME_INVARIANT, LCMAP_UPPERCASE, s);
+}
+
+static PyMethodDef sortenvironmentkey_def = {
+    "sortenvironmentkey",
+    _PyCFunction_CAST(sortenvironmentkey),
+    METH_O,
+    ""
+};
+
+static PyObject *
+normalize_environment(PyObject* environment) {
+    PyObject *result, *keys, *keyfunc, *sort, *args, *kwargs;
+
+    keys = PyMapping_Keys(environment);
+    if (keys == NULL) {
+        return NULL;
+    }
+
+    keyfunc = PyCFunction_New(&sortenvironmentkey_def, NULL);
+    sort = PyObject_GetAttrString(keys, "sort");
+    args = PyTuple_New(0);
+    kwargs = PyDict_New();
+    PyDict_SetItemString(kwargs, "key", keyfunc);
+    if (PyObject_Call(sort, args, kwargs) == NULL) {
+        goto error;
+    }
+
+    result = PyDict_New();
+
+    for (int i = 0; i<PyList_GET_SIZE(keys); i++) {
+        if (i < 1) {
+            continue;
+        }
+        PyObject *key = PyList_GET_ITEM(keys, i);
+        wchar_t *key_string = PyUnicode_AsWideCharString(key, NULL);
+        wchar_t *prev_key_string = PyUnicode_AsWideCharString(PyList_GET_ITEM(keys, i-1), NULL);
+        if (CompareStringOrdinal(prev_key_string, -1, key_string, -1, TRUE) == CSTR_EQUAL) {
+            continue;
+        }
+        PyObject* value = PyDict_GetItem(environment, key);
+        PyDict_SetItem(result, key, value);
+    }
+
+error:
+    Py_DECREF(keys);
+    Py_DECREF(keyfunc);
+    Py_DECREF(sort);
+    Py_DECREF(args);
+    Py_DECREF(kwargs);
+
+    return result;
+}
+
 static wchar_t *
-getenvironment(PyObject* environment)
+getenvironment(PyObject* env)
 {
     Py_ssize_t i, envsize, totalsize;
     wchar_t *buffer = NULL, *p, *end;
-    PyObject *keys, *values;
+    PyObject *environment = NULL, *keys = NULL, *values = NULL;
 
     /* convert environment dictionary to windows environment string */
-    if (! PyMapping_Check(environment)) {
+    if (! PyMapping_Check(env)) {
         PyErr_SetString(
             PyExc_TypeError, "environment must be dictionary or None");
         return NULL;
     }
 
+    environment = normalize_environment(env);
+    if (environment == NULL) {
+        goto error;
+    }
+
     keys = PyMapping_Keys(environment);
     if (!keys) {
-        return NULL;
+        goto error;
     }
     values = PyMapping_Values(environment);
     if (!values) {
@@ -869,7 +934,8 @@ getenvironment(PyObject* environment)
     *p++ = L'\0';
     assert(p == end);
 
- error:
+error:
+    Py_XDECREF(environment);
     Py_XDECREF(keys);
     Py_XDECREF(values);
     return buffer;
