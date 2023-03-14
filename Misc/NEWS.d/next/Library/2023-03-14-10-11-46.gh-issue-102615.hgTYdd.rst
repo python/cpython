@@ -1,0 +1,2 @@
+Fix type variables substitution of :class:`collections.abc.Callable` and
+custom generics with ``ParamSpec``.

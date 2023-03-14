@@ -498,6 +498,17 @@ class _CallableGenericAlias(GenericAlias):
             t_result = new_args[-1]
             t_args = new_args[:-1]
             new_args = (t_args, t_result)
+
+        # This happens in cases like `Callable[P, T][[P, str], bool][int]`,
+        # we need to flatten the result.
+        if len(new_args) > 2:
+            res = []
+            for new_arg in new_args:
+                if isinstance(new_arg, tuple):
+                    res.extend(new_arg)
+                else:
+                    res.append(new_arg)
+            new_args = (res[:-1], res[-1])
         return _CallableGenericAlias(Callable, tuple(new_args))
 
 def _is_param_expr(obj):

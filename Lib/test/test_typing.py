@@ -848,7 +848,6 @@ class GenericAliasSubstitutionTests(BaseTestCase):
                         )
 
 
-
 class UnpackTests(BaseTestCase):
 
     def test_accepts_single_type(self):
@@ -1996,6 +1995,16 @@ class BaseCallableTests:
         self.assertEqual(C2[int, str], Callable[[int, str], int])
         self.assertEqual(repr(C2), f"{fullname}[~P, int]")
         self.assertEqual(repr(C2[int, str]), f"{fullname}[[int, str], int]")
+
+        # gh-102615:
+        C3 = C1[[P, str], bool]
+        self.assertEqual(C3.__parameters__, (P,))
+        self.assertEqual(C3.__args__, (P, str, bool))
+
+        self.assertEqual(C3[int].__args__, (int, str, bool))
+        self.assertEqual(C3[[int, complex]].__args__, (int, complex, str, bool))
+        self.assertEqual(C3[int, complex].__args__, (int, complex, str, bool))
+        self.assertEqual(C3[[]].__args__, (str, bool))
 
     def test_concatenate(self):
         Callable = self.Callable
@@ -7516,16 +7525,18 @@ class ParamSpecTests(BaseTestCase):
     def test_multiple_paramspecs_in_user_generics(self):
         P = ParamSpec("P")
         P2 = ParamSpec("P2")
+        T = TypeVar("T")
 
-        class X(Generic[P, P2]):
+        class X(Generic[P, P2, T]):
             f: Callable[P, int]
             g: Callable[P2, str]
+            t: T
 
-        G1 = X[[int, str], [bytes]]
-        G2 = X[[int], [str, bytes]]
+        G1 = X[[int, str], [bytes], bool]
+        G2 = X[[int], [str, bytes], bool]
         self.assertNotEqual(G1, G2)
-        self.assertEqual(G1.__args__, ((int, str), (bytes,)))
-        self.assertEqual(G2.__args__, ((int,), (str, bytes)))
+        self.assertEqual(G1.__args__, ((int, str), (bytes,), bool))
+        self.assertEqual(G2.__args__, ((int,), (str, bytes), bool))
 
     def test_typevartuple_and_paramspecs_in_user_generics(self):
         Ts = TypeVarTuple("Ts")
@@ -7560,6 +7571,54 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(G4.__args__, ((),))
         with self.assertRaises(TypeError):
             Y[()]
+
+    def test_paramspec_subst(self):
+        # See: https://github.com/python/cpython/issues/102615
+        P = ParamSpec("P")
+        T = TypeVar("T")
+
+        class MyCallable(Generic[P, T]):
+            pass
+
+        G = MyCallable[P, T]
+        self.assertEqual(G.__parameters__, (P, T))
+        self.assertEqual(G.__args__, (P, T))
+
+        C = G[[P, str], bool]
+        self.assertEqual(C.__parameters__, (P,))
+        self.assertEqual(C.__args__, ((P, str), bool))
+
+        self.assertEqual(C[int].__parameters__, ())
+        self.assertEqual(C[int].__args__, ((int, str), bool))
+        self.assertEqual(C[[int, complex]].__args__, ((int, complex, str), bool))
+        self.assertEqual(C[[]].__args__, ((str,), bool))
+
+        Q = G[[int, str], T]
+        self.assertEqual(Q.__parameters__, (T,))
+        self.assertEqual(Q[bool].__parameters__, ())
+        self.assertEqual(Q[bool].__args__, ((int, str), bool))
+
+        # Reversed order:
+        class MyCallable2(Generic[T, P]):
+            pass
+
+        G2 = MyCallable[T, P]
+        self.assertEqual(G2.__parameters__, (T, P))
+        self.assertEqual(G2.__args__, (T, P))
+
+        C2 = G2[bool, [P, str]]
+        self.assertEqual(C2.__parameters__, (P,))
+        self.assertEqual(C2.__args__, (bool, (P, str)))
+
+        self.assertEqual(C2[int].__parameters__, ())
+        self.assertEqual(C2[int].__args__, (bool, (int, str)))
+        self.assertEqual(C2[[int, complex]].__args__, (bool, (int, complex, str)))
+        self.assertEqual(C2[[]].__args__, (bool, (str,)))
+
+        Q2 = G2[T, [int, str]]
+        self.assertEqual(Q2.__parameters__, (T,))
+        self.assertEqual(Q2[bool].__parameters__, ())
+        self.assertEqual(Q2[bool].__args__, (bool, (int, str)))
 
     def test_typevartuple_and_paramspecs_in_generic_aliases(self):
         P = ParamSpec('P')
