@@ -1,0 +1,1 @@
+Update webbrowsers.py to fallback to Microsoft Edge instead of IE
