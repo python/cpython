@@ -532,7 +532,7 @@ statement.
    .. deprecated:: 3.9
       Deprecated in favor of :attr:`~HTTPResponse.headers`.
 
-.. method:: HTTPResponse.getstatus()
+.. method:: HTTPResponse.getcode()
 
    .. deprecated:: 3.9
       Deprecated in favor of :attr:`~HTTPResponse.status`.

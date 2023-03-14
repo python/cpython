@@ -138,6 +138,7 @@ __all__ = [
     'NoReturn',
     'NotRequired',
     'overload',
+    'override',
     'ParamSpecArgs',
     'ParamSpecKwargs',
     'Required',
@@ -371,10 +372,13 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
                 ForwardRef(arg) if isinstance(arg, str) else arg
                 for arg in t.__args__
             )
+            is_unpacked = t.__unpacked__
             if _should_unflatten_callable_args(t, args):
                 t = t.__origin__[(args[:-1], args[-1])]
             else:
                 t = t.__origin__[args]
+            if is_unpacked:
+                t = Unpack[t]
         ev_args = tuple(_eval_type(a, globalns, localns, recursive_guard) for a in t.__args__)
         if ev_args == t.__args__:
             return t
@@ -828,7 +832,7 @@ class ForwardRef(_Final, _root=True):
         # Unfortunately, this isn't a valid expression on its own, so we
         # do the unpacking manually.
         if arg[0] == '*':
-            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0]
+            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
         else:
             arg_to_compile = arg
         try:
@@ -1940,10 +1944,14 @@ def _no_init_or_replace_init(self, *args, **kwargs):
 
 def _caller(depth=1, default='__main__'):
     try:
+        return sys._getframemodulename(depth + 1) or default
+    except AttributeError:  # For platforms without _getframemodulename()
+        pass
+    try:
         return sys._getframe(depth + 1).f_globals.get('__name__', default)
     except (AttributeError, ValueError):  # For platforms without _getframe()
-        return None
-
+        pass
+    return None
 
 def _allow_reckless_class_checks(depth=3):
     """Allow instance and class checks for special stdlib modules.
@@ -2650,6 +2658,7 @@ T_contra = TypeVar('T_contra', contravariant=True)  # Ditto contravariant.
 # Internal type variable used for Type[].
 CT_co = TypeVar('CT_co', covariant=True, bound=type)
 
+
 # A useful type variable with constraints.  This represents string types.
 # (This one *is* for export!)
 AnyStr = TypeVar('AnyStr', bytes, str)
@@ -2741,6 +2750,8 @@ Type.__doc__ = \
     At this point the type checker knows that joe has type BasicUser.
     """
 
+# Internal type variable for callables. Not for export.
+F = TypeVar("F", bound=Callable[..., Any])
 
 @runtime_checkable
 class SupportsInt(Protocol):
@@ -3441,3 +3452,40 @@ def dataclass_transform(
         }
         return cls_or_fn
     return decorator
+
+
+
+def override(method: F, /) -> F:
+    """Indicate that a method is intended to override a method in a base class.
+
+    Usage:
+
+        class Base:
+            def method(self) -> None: ...
+                pass
+
+        class Child(Base):
+            @override
+            def method(self) -> None:
+                super().method()
+
+    When this decorator is applied to a method, the type checker will
+    validate that it overrides a method or attribute with the same name on a
+    base class.  This helps prevent bugs that may occur when a base class is
+    changed without an equivalent change to a child class.
+
+    There is no runtime checking of this property. The decorator sets the
+    ``__override__`` attribute to ``True`` on the decorated object to allow
+    runtime introspection.
+
+    See PEP 698 for details.
+
+    """
+    try:
+        method.__override__ = True
+    except (AttributeError, TypeError):
+        # Skip the attribute silently if it is not writable.
+        # AttributeError happens if the object has __slots__ or a
+        # read-only property, TypeError if it's a builtin class.
+        pass
+    return method

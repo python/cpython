@@ -299,7 +299,7 @@ Number-theoretic and representation functions
 
    Roughly equivalent to::
 
-       sum(itertools.starmap(operator.mul, zip(p, q, strict=true)))
+       sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))
 
    For float and mixed int/float inputs, the intermediate products
    and sums are computed with extended precision.

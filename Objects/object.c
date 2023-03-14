@@ -56,6 +56,24 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
 #ifdef Py_REF_DEBUG
 Py_ssize_t _Py_RefTotal;
 
+static inline void
+reftotal_increment(void)
+{
+    _Py_RefTotal++;
+}
+
+static inline void
+reftotal_decrement(void)
+{
+    _Py_RefTotal--;
+}
+
+void
+_Py_AddRefTotal(Py_ssize_t n)
+{
+    _Py_RefTotal += n;
+}
+
 Py_ssize_t
 _Py_GetRefTotal(void)
 {
@@ -121,6 +139,32 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
                            filename, lineno, __func__);
 }
 
+/* This is exposed strictly for use in Py_INCREF(). */
+PyAPI_FUNC(void)
+_Py_IncRefTotal_DO_NOT_USE_THIS(void)
+{
+    reftotal_increment();
+}
+
+/* This is exposed strictly for use in Py_DECREF(). */
+PyAPI_FUNC(void)
+_Py_DecRefTotal_DO_NOT_USE_THIS(void)
+{
+    reftotal_decrement();
+}
+
+void
+_Py_IncRefTotal(void)
+{
+    reftotal_increment();
+}
+
+void
+_Py_DecRefTotal(void)
+{
+    reftotal_decrement();
+}
+
 #endif /* Py_REF_DEBUG */
 
 void
@@ -138,12 +182,18 @@ Py_DecRef(PyObject *o)
 void
 _Py_IncRef(PyObject *o)
 {
+#ifdef Py_REF_DEBUG
+    reftotal_increment();
+#endif
     Py_INCREF(o);
 }
 
 void
 _Py_DecRef(PyObject *o)
 {
+#ifdef Py_REF_DEBUG
+    reftotal_decrement();
+#endif
     Py_DECREF(o);
 }
 
@@ -238,17 +288,12 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
      * never happened. */
     Py_ssize_t refcnt = Py_REFCNT(self);
-    _Py_NewReference(self);
+    _Py_NewReferenceNoTotal(self);
     Py_SET_REFCNT(self, refcnt);
 
     _PyObject_ASSERT(self,
                      (!_PyType_IS_GC(Py_TYPE(self))
                       || _PyObject_GC_IS_TRACKED(self)));
-    /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
-       _Py_RefTotal, so we need to undo that. */
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
     return -1;
 }
 
@@ -370,13 +415,12 @@ _PyObject_Dump(PyObject* op)
     fflush(stderr);
 
     PyGILState_STATE gil = PyGILState_Ensure();
-    PyObject *error_type, *error_value, *error_traceback;
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     (void)PyObject_Print(op, stderr, 0);
     fflush(stderr);
 
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
     PyGILState_Release(gil);
 
     fprintf(stderr, "\n");
@@ -860,25 +904,22 @@ set_attribute_error_context(PyObject* v, PyObject* name)
         return 0;
     }
     // Intercept AttributeError exceptions and augment them to offer suggestions later.
-    PyObject *type, *value, *traceback;
-    PyErr_Fetch(&type, &value, &traceback);
-    PyErr_NormalizeException(&type, &value, &traceback);
-    // Check if the normalized exception is indeed an AttributeError
-    if (!PyErr_GivenExceptionMatches(value, PyExc_AttributeError)) {
+    PyObject *exc = PyErr_GetRaisedException();
+    if (!PyErr_GivenExceptionMatches(exc, PyExc_AttributeError)) {
         goto restore;
     }
-    PyAttributeErrorObject* the_exc = (PyAttributeErrorObject*) value;
+    PyAttributeErrorObject* the_exc = (PyAttributeErrorObject*) exc;
     // Check if this exception was already augmented
     if (the_exc->name || the_exc->obj) {
         goto restore;
     }
     // Augment the exception with the name and object
-    if (PyObject_SetAttr(value, &_Py_ID(name), name) ||
-        PyObject_SetAttr(value, &_Py_ID(obj), v)) {
+    if (PyObject_SetAttr(exc, &_Py_ID(name), name) ||
+        PyObject_SetAttr(exc, &_Py_ID(obj), v)) {
         return 1;
     }
 restore:
-    PyErr_Restore(type, value, traceback);
+    PyErr_SetRaisedException(exc);
     return 0;
 }
 
@@ -1362,6 +1403,12 @@ PyObject *
 PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 {
     return _PyObject_GenericGetAttrWithDict(obj, name, NULL, 0);
+}
+
+PyObject *
+_PyObject_GenericTryGetAttr(PyObject *obj, PyObject *name)
+{
+    return _PyObject_GenericGetAttrWithDict(obj, name, NULL, 1);
 }
 
 int
@@ -2014,19 +2061,31 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
 }
 
 
-void
-_Py_NewReference(PyObject *op)
+static inline void
+new_reference(PyObject *op)
 {
     if (_PyRuntime.tracemalloc.config.tracing) {
         _PyTraceMalloc_NewReference(op);
     }
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
     Py_SET_REFCNT(op, 1);
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op, 1);
 #endif
+}
+
+void
+_Py_NewReference(PyObject *op)
+{
+#ifdef Py_REF_DEBUG
+    reftotal_increment();
+#endif
+    new_reference(op);
+}
+
+void
+_Py_NewReferenceNoTotal(PyObject *op)
+{
+    new_reference(op);
 }
 
 
@@ -2190,9 +2249,8 @@ Py_ReprLeave(PyObject *obj)
     PyObject *dict;
     PyObject *list;
     Py_ssize_t i;
-    PyObject *error_type, *error_value, *error_traceback;
 
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     dict = PyThreadState_GetDict();
     if (dict == NULL)
@@ -2213,7 +2271,7 @@ Py_ReprLeave(PyObject *obj)
 
 finally:
     /* ignore exceptions because there is no way to report them. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 /* Trashcan support. */
@@ -2225,22 +2283,20 @@ finally:
  * object, with refcount 0.  Py_DECREF must already have been called on it.
  */
 static void
-_PyTrash_thread_deposit_object(PyObject *op)
+_PyTrash_thread_deposit_object(struct _py_trashcan *trash, PyObject *op)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
-    _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)tstate->trash_delete_later);
-    tstate->trash_delete_later = op;
+    _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)trash->delete_later);
+    trash->delete_later = op;
 }
 
 /* Deallocate all the objects in the gcstate->trash_delete_later list.
  * Called when the call-stack unwinds again. */
 static void
-_PyTrash_thread_destroy_chain(void)
+_PyTrash_thread_destroy_chain(struct _py_trashcan *trash)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
     /* We need to increase trash_delete_nesting here, otherwise,
        _PyTrash_thread_destroy_chain will be called recursively
        and then possibly crash.  An example that may crash without
@@ -2252,13 +2308,13 @@ _PyTrash_thread_destroy_chain(void)
                tups = [(tup,) for tup in tups]
            del tups
     */
-    assert(tstate->trash_delete_nesting == 0);
-    ++tstate->trash_delete_nesting;
-    while (tstate->trash_delete_later) {
-        PyObject *op = tstate->trash_delete_later;
+    assert(trash->delete_nesting == 0);
+    ++trash->delete_nesting;
+    while (trash->delete_later) {
+        PyObject *op = trash->delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
-        tstate->trash_delete_later =
+        trash->delete_later =
             (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
 
         /* Call the deallocator directly.  This used to try to
@@ -2269,22 +2325,64 @@ _PyTrash_thread_destroy_chain(void)
          */
         _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
         (*dealloc)(op);
-        assert(tstate->trash_delete_nesting == 1);
+        assert(trash->delete_nesting == 1);
     }
-    --tstate->trash_delete_nesting;
+    --trash->delete_nesting;
+}
+
+
+static struct _py_trashcan *
+_PyTrash_get_state(PyThreadState *tstate)
+{
+    if (tstate != NULL) {
+        return &tstate->trash;
+    }
+    // The current thread must be finalizing.
+    // Fall back to using thread-local state.
+    // XXX Use thread-local variable syntax?
+    assert(PyThread_tss_is_created(&_PyRuntime.trashTSSkey));
+    struct _py_trashcan *trash =
+        (struct _py_trashcan *)PyThread_tss_get(&_PyRuntime.trashTSSkey);
+    if (trash == NULL) {
+        trash = PyMem_RawMalloc(sizeof(struct _py_trashcan));
+        if (trash == NULL) {
+            Py_FatalError("Out of memory");
+        }
+        PyThread_tss_set(&_PyRuntime.trashTSSkey, (void *)trash);
+    }
+    return trash;
+}
+
+static void
+_PyTrash_clear_state(PyThreadState *tstate)
+{
+    if (tstate != NULL) {
+        assert(tstate->trash.delete_later == NULL);
+        return;
+    }
+    if (PyThread_tss_is_created(&_PyRuntime.trashTSSkey)) {
+        struct _py_trashcan *trash =
+            (struct _py_trashcan *)PyThread_tss_get(&_PyRuntime.trashTSSkey);
+        if (trash != NULL) {
+            PyThread_tss_set(&_PyRuntime.trashTSSkey, (void *)NULL);
+            PyMem_RawFree(trash);
+        }
+    }
 }
 
 
 int
 _PyTrash_begin(PyThreadState *tstate, PyObject *op)
 {
-    if (tstate->trash_delete_nesting >= _PyTrash_UNWIND_LEVEL) {
+    // XXX Make sure the GIL is held.
+    struct _py_trashcan *trash = _PyTrash_get_state(tstate);
+    if (trash->delete_nesting >= _PyTrash_UNWIND_LEVEL) {
         /* Store the object (to be deallocated later) and jump past
          * Py_TRASHCAN_END, skipping the body of the deallocator */
-        _PyTrash_thread_deposit_object(op);
+        _PyTrash_thread_deposit_object(trash, op);
         return 1;
     }
-    ++tstate->trash_delete_nesting;
+    ++trash->delete_nesting;
     return 0;
 }
 
@@ -2292,9 +2390,14 @@ _PyTrash_begin(PyThreadState *tstate, PyObject *op)
 void
 _PyTrash_end(PyThreadState *tstate)
 {
-    --tstate->trash_delete_nesting;
-    if (tstate->trash_delete_later && tstate->trash_delete_nesting <= 0) {
-        _PyTrash_thread_destroy_chain();
+    // XXX Make sure the GIL is held.
+    struct _py_trashcan *trash = _PyTrash_get_state(tstate);
+    --trash->delete_nesting;
+    if (trash->delete_nesting <= 0) {
+        if (trash->delete_later != NULL) {
+            _PyTrash_thread_destroy_chain(trash);
+        }
+        _PyTrash_clear_state(tstate);
     }
 }
 
@@ -2342,14 +2445,9 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
         /* Display the traceback where the object has been allocated.
            Do it before dumping repr(obj), since repr() is more likely
            to crash than dumping the traceback. */
-        void *ptr;
         PyTypeObject *type = Py_TYPE(obj);
-        if (_PyType_IS_GC(type)) {
-            ptr = (void *)((char *)obj - sizeof(PyGC_Head));
-        }
-        else {
-            ptr = (void *)obj;
-        }
+        const size_t presize = _PyType_PreHeaderSize(type);
+        void *ptr = (void *)((char *)obj - presize);
         _PyMem_DumpTraceback(fileno(stderr), ptr);
 
         /* This might succeed or fail, but we're about to abort, so at least
@@ -2371,10 +2469,10 @@ _Py_Dealloc(PyObject *op)
     destructor dealloc = type->tp_dealloc;
 #ifdef Py_DEBUG
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *old_exc_type = tstate->curexc_type;
+    PyObject *old_exc = tstate != NULL ? tstate->current_exception : NULL;
     // Keep the old exception type alive to prevent undefined behavior
     // on (tstate->curexc_type != old_exc_type) below
-    Py_XINCREF(old_exc_type);
+    Py_XINCREF(old_exc);
     // Make sure that type->tp_name remains valid
     Py_INCREF(type);
 #endif
@@ -2387,12 +2485,12 @@ _Py_Dealloc(PyObject *op)
 #ifdef Py_DEBUG
     // gh-89373: The tp_dealloc function must leave the current exception
     // unchanged.
-    if (tstate->curexc_type != old_exc_type) {
+    if (tstate != NULL && tstate->current_exception != old_exc) {
         const char *err;
-        if (old_exc_type == NULL) {
+        if (old_exc == NULL) {
             err = "Deallocator of type '%s' raised an exception";
         }
-        else if (tstate->curexc_type == NULL) {
+        else if (tstate->current_exception == NULL) {
             err = "Deallocator of type '%s' cleared the current exception";
         }
         else {
@@ -2403,7 +2501,7 @@ _Py_Dealloc(PyObject *op)
         }
         _Py_FatalErrorFormat(__func__, err, type->tp_name);
     }
-    Py_XDECREF(old_exc_type);
+    Py_XDECREF(old_exc);
     Py_DECREF(type);
 #endif
 }

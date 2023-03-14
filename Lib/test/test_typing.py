@@ -23,6 +23,7 @@ from typing import Generic, ClassVar, Final, final, Protocol
 from typing import assert_type, cast, runtime_checkable
 from typing import get_type_hints
 from typing import get_origin, get_args
+from typing import override
 from typing import is_typeddict
 from typing import reveal_type
 from typing import dataclass_transform
@@ -472,7 +473,6 @@ class TypeVarTests(BaseTestCase):
 
     def test_bad_var_substitution(self):
         T = TypeVar('T')
-        P = ParamSpec("P")
         bad_args = (
             (), (int, str), Union,
             Generic, Generic[T], Protocol, Protocol[T],
@@ -1036,8 +1036,6 @@ class TypeVarTupleTests(BaseTestCase):
 
     def test_repr_is_correct(self):
         Ts = TypeVarTuple('Ts')
-        T = TypeVar('T')
-        T2 = TypeVar('T2')
 
         class G1(Generic[*Ts]): pass
         class G2(Generic[Unpack[Ts]]): pass
@@ -1224,6 +1222,36 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertIs(D[T].__origin__, D)
         self.assertIs(D[Unpack[Ts]].__origin__, D)
 
+    def test_get_type_hints_on_unpack_args(self):
+        Ts = TypeVarTuple('Ts')
+
+        def func1(*args: *Ts): pass
+        self.assertEqual(gth(func1), {'args': Unpack[Ts]})
+
+        def func2(*args: *tuple[int, str]): pass
+        self.assertEqual(gth(func2), {'args': Unpack[tuple[int, str]]})
+
+        class CustomVariadic(Generic[*Ts]): pass
+
+        def func3(*args: *CustomVariadic[int, str]): pass
+        self.assertEqual(gth(func3), {'args': Unpack[CustomVariadic[int, str]]})
+
+    def test_get_type_hints_on_unpack_args_string(self):
+        Ts = TypeVarTuple('Ts')
+
+        def func1(*args: '*Ts'): pass
+        self.assertEqual(gth(func1, localns={'Ts': Ts}),
+                        {'args': Unpack[Ts]})
+
+        def func2(*args: '*tuple[int, str]'): pass
+        self.assertEqual(gth(func2), {'args': Unpack[tuple[int, str]]})
+
+        class CustomVariadic(Generic[*Ts]): pass
+
+        def func3(*args: '*CustomVariadic[int, str]'): pass
+        self.assertEqual(gth(func3, localns={'CustomVariadic': CustomVariadic}),
+                         {'args': Unpack[CustomVariadic[int, str]]})
+
     def test_tuple_args_are_correct(self):
         Ts = TypeVarTuple('Ts')
 
@@ -1276,7 +1304,7 @@ class TypeVarTupleTests(BaseTestCase):
         i = Callable[[None], *Ts]
         j = Callable[[None], Unpack[Ts]]
         self.assertEqual(i.__args__, (type(None), *Ts))
-        self.assertEqual(i.__args__, (type(None), Unpack[Ts]))
+        self.assertEqual(j.__args__, (type(None), Unpack[Ts]))
 
         k = Callable[[None], tuple[int, *Ts]]
         l = Callable[[None], Tuple[int, Unpack[Ts]]]
@@ -1404,8 +1432,6 @@ class TypeVarTupleTests(BaseTestCase):
         self.assertEqual(g.__annotations__, {'args': (*Ts,)[0]})
 
     def test_variadic_args_with_ellipsis_annotations_are_correct(self):
-        Ts = TypeVarTuple('Ts')
-
         def a(*args: *tuple[int, ...]): pass
         self.assertEqual(a.__annotations__,
                          {'args': (*tuple[int, ...],)[0]})
@@ -2504,6 +2530,94 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaises(TypeError):
             isinstance(C(), BadPG)
 
+    def test_protocols_isinstance_properties_and_descriptors(self):
+        class C:
+            @property
+            def attr(self):
+                return 42
+
+        class CustomDescriptor:
+            def __get__(self, obj, objtype=None):
+                return 42
+
+        class D:
+            attr = CustomDescriptor()
+
+        # Check that properties set on superclasses
+        # are still found by the isinstance() logic
+        class E(C): ...
+        class F(D): ...
+
+        class Empty: ...
+
+        T = TypeVar('T')
+
+        @runtime_checkable
+        class P(Protocol):
+            @property
+            def attr(self): ...
+
+        @runtime_checkable
+        class P1(Protocol):
+            attr: int
+
+        @runtime_checkable
+        class PG(Protocol[T]):
+            @property
+            def attr(self): ...
+
+        @runtime_checkable
+        class PG1(Protocol[T]):
+            attr: T
+
+        for protocol_class in P, P1, PG, PG1:
+            for klass in C, D, E, F:
+                with self.subTest(
+                    klass=klass.__name__,
+                    protocol_class=protocol_class.__name__
+                ):
+                    self.assertIsInstance(klass(), protocol_class)
+
+            with self.subTest(klass="Empty", protocol_class=protocol_class.__name__):
+                self.assertNotIsInstance(Empty(), protocol_class)
+
+        class BadP(Protocol):
+            @property
+            def attr(self): ...
+
+        class BadP1(Protocol):
+            attr: int
+
+        class BadPG(Protocol[T]):
+            @property
+            def attr(self): ...
+
+        class BadPG1(Protocol[T]):
+            attr: T
+
+        for obj in PG[T], PG[C], PG1[T], PG1[C], BadP, BadP1, BadPG, BadPG1:
+            for klass in C, D, E, F, Empty:
+                with self.subTest(klass=klass.__name__, obj=obj):
+                    with self.assertRaises(TypeError):
+                        isinstance(klass(), obj)
+
+    def test_protocols_isinstance_not_fooled_by_custom_dir(self):
+        @runtime_checkable
+        class HasX(Protocol):
+            x: int
+
+        class CustomDirWithX:
+            x = 10
+            def __dir__(self):
+                return []
+
+        class CustomDirWithoutX:
+            def __dir__(self):
+                return ["x"]
+
+        self.assertIsInstance(CustomDirWithX(), HasX)
+        self.assertNotIsInstance(CustomDirWithoutX(), HasX)
+
     def test_protocols_isinstance_py36(self):
         class APoint:
             def __init__(self, x, y, label):
@@ -2890,8 +3004,8 @@ class ProtocolTests(BaseTestCase):
             def __init__(self):
                 self.x = None
 
-        self.assertIsInstance(C(), P)
-        self.assertIsInstance(D(), P)
+        self.assertIsInstance(CI(), P)
+        self.assertIsInstance(DI(), P)
 
     def test_protocols_in_unions(self):
         class P(Protocol):
@@ -4136,6 +4250,134 @@ class FinalDecoratorTests(BaseTestCase):
         self.assertIs(True, Methods.cached.__final__)
 
 
+class OverrideDecoratorTests(BaseTestCase):
+    def test_override(self):
+        class Base:
+            def normal_method(self): ...
+            @classmethod
+            def class_method_good_order(cls): ...
+            @classmethod
+            def class_method_bad_order(cls): ...
+            @staticmethod
+            def static_method_good_order(): ...
+            @staticmethod
+            def static_method_bad_order(): ...
+
+        class Derived(Base):
+            @override
+            def normal_method(self):
+                return 42
+
+            @classmethod
+            @override
+            def class_method_good_order(cls):
+                return 42
+            @override
+            @classmethod
+            def class_method_bad_order(cls):
+                return 42
+
+            @staticmethod
+            @override
+            def static_method_good_order():
+                return 42
+            @override
+            @staticmethod
+            def static_method_bad_order():
+                return 42
+
+        self.assertIsSubclass(Derived, Base)
+        instance = Derived()
+        self.assertEqual(instance.normal_method(), 42)
+        self.assertIs(True, Derived.normal_method.__override__)
+        self.assertIs(True, instance.normal_method.__override__)
+
+        self.assertEqual(Derived.class_method_good_order(), 42)
+        self.assertIs(True, Derived.class_method_good_order.__override__)
+        self.assertEqual(Derived.class_method_bad_order(), 42)
+        self.assertIs(False, hasattr(Derived.class_method_bad_order, "__override__"))
+
+        self.assertEqual(Derived.static_method_good_order(), 42)
+        self.assertIs(True, Derived.static_method_good_order.__override__)
+        self.assertEqual(Derived.static_method_bad_order(), 42)
+        self.assertIs(False, hasattr(Derived.static_method_bad_order, "__override__"))
+
+        # Base object is not changed:
+        self.assertIs(False, hasattr(Base.normal_method, "__override__"))
+        self.assertIs(False, hasattr(Base.class_method_good_order, "__override__"))
+        self.assertIs(False, hasattr(Base.class_method_bad_order, "__override__"))
+        self.assertIs(False, hasattr(Base.static_method_good_order, "__override__"))
+        self.assertIs(False, hasattr(Base.static_method_bad_order, "__override__"))
+
+    def test_property(self):
+        class Base:
+            @property
+            def correct(self) -> int:
+                return 1
+            @property
+            def wrong(self) -> int:
+                return 1
+
+        class Child(Base):
+            @property
+            @override
+            def correct(self) -> int:
+                return 2
+            @override
+            @property
+            def wrong(self) -> int:
+                return 2
+
+        instance = Child()
+        self.assertEqual(instance.correct, 2)
+        self.assertTrue(Child.correct.fget.__override__)
+        self.assertEqual(instance.wrong, 2)
+        self.assertFalse(hasattr(Child.wrong, "__override__"))
+        self.assertFalse(hasattr(Child.wrong.fset, "__override__"))
+
+    def test_silent_failure(self):
+        class CustomProp:
+            __slots__ = ('fget',)
+            def __init__(self, fget):
+                self.fget = fget
+            def __get__(self, obj, objtype=None):
+                return self.fget(obj)
+
+        class WithOverride:
+            @override  # must not fail on object with `__slots__`
+            @CustomProp
+            def some(self):
+                return 1
+
+        self.assertEqual(WithOverride.some, 1)
+        self.assertFalse(hasattr(WithOverride.some, "__override__"))
+
+    def test_multiple_decorators(self):
+        import functools
+
+        def with_wraps(f):  # similar to `lru_cache` definition
+            @functools.wraps(f)
+            def wrapper(*args, **kwargs):
+                return f(*args, **kwargs)
+            return wrapper
+
+        class WithOverride:
+            @override
+            @with_wraps
+            def on_top(self, a: int) -> int:
+                return a + 1
+            @with_wraps
+            @override
+            def on_bottom(self, a: int) -> int:
+                return a + 2
+
+        instance = WithOverride()
+        self.assertEqual(instance.on_top(1), 2)
+        self.assertTrue(instance.on_top.__override__)
+        self.assertEqual(instance.on_bottom(1), 3)
+        self.assertTrue(instance.on_bottom.__override__)
+
+
 class CastTests(BaseTestCase):
 
     def test_basics(self):
@@ -4759,7 +5001,6 @@ class OverloadTests(BaseTestCase):
 # Definitions needed for features introduced in Python 3.6
 
 from test import ann_module, ann_module2, ann_module3, ann_module5, ann_module6
-import asyncio
 
 T_a = TypeVar('T_a')
 
@@ -4861,6 +5102,18 @@ class TotalMovie(TypedDict):
 class NontotalMovie(TypedDict, total=False):
     title: Required[str]
     year: int
+
+class ParentNontotalMovie(TypedDict, total=False):
+    title: Required[str]
+
+class ChildTotalMovie(ParentNontotalMovie):
+    year: NotRequired[int]
+
+class ParentDeeplyAnnotatedMovie(TypedDict):
+    title: Annotated[Annotated[Required[str], "foobar"], "another level"]
+
+class ChildDeeplyAnnotatedMovie(ParentDeeplyAnnotatedMovie):
+    year: NotRequired[Annotated[int, 2000]]
 
 class AnnotatedMovie(TypedDict):
     title: Annotated[Required[str], "foobar"]
@@ -5189,6 +5442,17 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(get_type_hints(_typed_dict_helper.VeryAnnotated), {'a': int})
         self.assertEqual(get_type_hints(_typed_dict_helper.VeryAnnotated, include_extras=True), {
             'a': Annotated[Required[int], "a", "b", "c"]
+        })
+
+        self.assertEqual(get_type_hints(ChildTotalMovie), {"title": str, "year": int})
+        self.assertEqual(get_type_hints(ChildTotalMovie, include_extras=True), {
+            "title": Required[str], "year": NotRequired[int]
+        })
+
+        self.assertEqual(get_type_hints(ChildDeeplyAnnotatedMovie), {"title": str, "year": int})
+        self.assertEqual(get_type_hints(ChildDeeplyAnnotatedMovie, include_extras=True), {
+            "title": Annotated[Required[str], "foobar", "another level"],
+            "year": NotRequired[Annotated[int, 2000]]
         })
 
     def test_get_type_hints_collections_abc_callable(self):
@@ -6351,6 +6615,16 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(WeirdlyQuotedMovie.__optional_keys__,
                          frozenset({"year"}))
 
+        self.assertEqual(ChildTotalMovie.__required_keys__,
+                         frozenset({"title"}))
+        self.assertEqual(ChildTotalMovie.__optional_keys__,
+                         frozenset({"year"}))
+
+        self.assertEqual(ChildDeeplyAnnotatedMovie.__required_keys__,
+                         frozenset({"title"}))
+        self.assertEqual(ChildDeeplyAnnotatedMovie.__optional_keys__,
+                         frozenset({"year"}))
+
     def test_multiple_inheritance(self):
         class One(TypedDict):
             one: int
@@ -6885,16 +7159,6 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(get_type_hints(C, globals())['classvar'], ClassVar[int])
         self.assertEqual(get_type_hints(C, globals())['const'], Final[int])
 
-    def test_hash_eq(self):
-        self.assertEqual(len({Annotated[int, 4, 5], Annotated[int, 4, 5]}), 1)
-        self.assertNotEqual(Annotated[int, 4, 5], Annotated[int, 5, 4])
-        self.assertNotEqual(Annotated[int, 4, 5], Annotated[str, 4, 5])
-        self.assertNotEqual(Annotated[int, 4], Annotated[int, 4, 4])
-        self.assertEqual(
-            {Annotated[int, 4, 5], Annotated[int, 4, 5], Annotated[T, 4, 5]},
-            {Annotated[int, 4, 5], Annotated[T, 4, 5]}
-        )
-
     def test_cannot_subclass(self):
         with self.assertRaisesRegex(TypeError, "Cannot subclass .*Annotated"):
             class C(Annotated):
@@ -7323,7 +7587,6 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(B.__args__, ((int, str,), Tuple[bytes, float]))
 
     def test_var_substitution(self):
-        T = TypeVar("T")
         P = ParamSpec("P")
         subst = P.__typing_subst__
         self.assertEqual(subst((int, str)), (int, str))
@@ -7643,7 +7906,7 @@ class SpecialAttrsTests(BaseTestCase):
         self.assertEqual(fr.__module__, 'typing')
         # Forward refs are currently unpicklable.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.assertRaises(TypeError) as exc:
+            with self.assertRaises(TypeError):
                 pickle.dumps(fr, proto)
 
         self.assertEqual(SpecialAttrsTests.TypeName.__name__, 'TypeName')
