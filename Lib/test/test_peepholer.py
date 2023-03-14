@@ -995,15 +995,19 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_CONST', 2, 13),
             lbl,
             ('LOAD_CONST', 3, 14),
+            ('RETURN_VALUE', 14),
         ]
-        expected = [
+        expected_insts = [
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('LOAD_CONST', 2, 13),
+            ('LOAD_CONST', 1, 13),
             lbl,
-            ('LOAD_CONST', 3, 14)
+            ('RETURN_CONST', 2, 14),
         ]
-        self.cfg_optimization_test(insts, expected, consts=list(range(5)))
+        self.cfg_optimization_test(insts,
+                                   expected_insts,
+                                   consts=[0, 1, 2, 3, 4],
+                                   expected_consts=[0, 2, 3])
 
     def test_conditional_jump_forward_const_condition(self):
         # The unreachable branch of the jump is removed, the jump
@@ -1015,26 +1019,32 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_CONST', 2, 13),
             lbl,
             ('LOAD_CONST', 3, 14),
+            ('RETURN_VALUE', 14),
         ]
-        expected = [
-            ('NOP', None, 11),
-            ('NOP', None, 12),
-            ('LOAD_CONST', 3, 14)
+        expected_insts = [
+            ('NOP', 11),
+            ('NOP', 12),
+            ('RETURN_CONST', 1, 14),
         ]
-        self.cfg_optimization_test(insts, expected, consts=list(range(5)))
+        self.cfg_optimization_test(insts,
+                                   expected_insts,
+                                   consts=[0, 1, 2, 3, 4],
+                                   expected_consts=[0, 3])
 
     def test_conditional_jump_backward_non_const_condition(self):
         insts = [
             lbl1 := self.Label(),
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl1, 12),
-            ('LOAD_CONST', 2, 13),
+            ('LOAD_NAME', 2, 13),
+            ('RETURN_VALUE', 13),
         ]
         expected = [
             lbl := self.Label(),
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl, 12),
-            ('LOAD_CONST', 2, 13)
+            ('LOAD_NAME', 2, 13),
+            ('RETURN_VALUE', 13),
         ]
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 
@@ -1042,16 +1052,17 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         # The unreachable branch of the jump is removed
         insts = [
             lbl1 := self.Label(),
-            ('LOAD_CONST', 1, 11),
+            ('LOAD_CONST', 3, 11),
             ('POP_JUMP_IF_TRUE', lbl1, 12),
             ('LOAD_CONST', 2, 13),
+            ('RETURN_VALUE', 13),
         ]
-        expected = [
+        expected_insts = [
             lbl := self.Label(),
-            ('NOP', None, 11),
-            ('JUMP', lbl, 12)
+            ('NOP', 11),
+            ('JUMP', lbl, 12),
         ]
-        self.cfg_optimization_test(insts, expected, consts=list(range(5)))
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
 
 
 if __name__ == "__main__":

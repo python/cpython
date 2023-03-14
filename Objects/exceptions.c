@@ -3781,16 +3781,13 @@ PyObject *
 _PyErr_TrySetFromCause(const char *format, ...)
 {
     PyObject* msg_prefix;
-    PyObject *exc, *val, *tb;
-    PyTypeObject *caught_type;
     PyObject *instance_args;
     Py_ssize_t num_args, caught_type_size, base_exc_size;
-    PyObject *new_exc, *new_val, *new_tb;
     va_list vargs;
     int same_basic_size;
 
-    PyErr_Fetch(&exc, &val, &tb);
-    caught_type = (PyTypeObject *)exc;
+    PyObject *exc = PyErr_GetRaisedException();
+    PyTypeObject *caught_type = Py_TYPE(exc);
     /* Ensure type info indicates no extra state is stored at the C level
      * and that the type can be reinstantiated using PyErr_Format
      */
@@ -3810,31 +3807,30 @@ _PyErr_TrySetFromCause(const char *format, ...)
          * more state than just the exception type. Accordingly, we just
          * leave it alone.
          */
-        PyErr_Restore(exc, val, tb);
+        PyErr_SetRaisedException(exc);
         return NULL;
     }
 
     /* Check the args are empty or contain a single string */
-    PyErr_NormalizeException(&exc, &val, &tb);
-    instance_args = ((PyBaseExceptionObject *)val)->args;
+    instance_args = ((PyBaseExceptionObject *)exc)->args;
     num_args = PyTuple_GET_SIZE(instance_args);
     if (num_args > 1 ||
         (num_args == 1 &&
          !PyUnicode_CheckExact(PyTuple_GET_ITEM(instance_args, 0)))) {
         /* More than 1 arg, or the one arg we do have isn't a string
          */
-        PyErr_Restore(exc, val, tb);
+        PyErr_SetRaisedException(exc);
         return NULL;
     }
 
     /* Ensure the instance dict is also empty */
-    if (!_PyObject_IsInstanceDictEmpty(val)) {
+    if (!_PyObject_IsInstanceDictEmpty(exc)) {
         /* While we could potentially copy a non-empty instance dictionary
          * to the replacement exception, for now we take the more
          * conservative path of leaving exceptions with attributes set
          * alone.
          */
-        PyErr_Restore(exc, val, tb);
+        PyErr_SetRaisedException(exc);
         return NULL;
     }
 
@@ -3847,28 +3843,19 @@ _PyErr_TrySetFromCause(const char *format, ...)
      * types as well, but that's quite a bit trickier due to the extra
      * state potentially stored on OSError instances.
      */
-    /* Ensure the traceback is set correctly on the existing exception */
-    if (tb != NULL) {
-        PyException_SetTraceback(val, tb);
-        Py_DECREF(tb);
-    }
-
     va_start(vargs, format);
     msg_prefix = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
     if (msg_prefix == NULL) {
         Py_DECREF(exc);
-        Py_DECREF(val);
         return NULL;
     }
 
-    PyErr_Format(exc, "%U (%s: %S)",
-                 msg_prefix, Py_TYPE(val)->tp_name, val);
-    Py_DECREF(exc);
+    PyErr_Format((PyObject*)Py_TYPE(exc), "%U (%s: %S)",
+                 msg_prefix, Py_TYPE(exc)->tp_name, exc);
     Py_DECREF(msg_prefix);
-    PyErr_Fetch(&new_exc, &new_val, &new_tb);
-    PyErr_NormalizeException(&new_exc, &new_val, &new_tb);
-    PyException_SetCause(new_val, val);
-    PyErr_Restore(new_exc, new_val, new_tb);
-    return new_val;
+    PyObject *new_exc = PyErr_GetRaisedException();
+    PyException_SetCause(new_exc, exc);
+    PyErr_SetRaisedException(new_exc);
+    return new_exc;
 }
