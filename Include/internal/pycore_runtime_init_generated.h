@@ -729,7 +729,6 @@ extern "C" {
     INIT_ID(_active), \
     INIT_ID(_annotation), \
     INIT_ID(_anonymous_), \
-    INIT_ID(_ms_struct_), \
     INIT_ID(_argtypes_), \
     INIT_ID(_as_parameter_), \
     INIT_ID(_asyncio_future_blocking), \
@@ -752,6 +751,7 @@ extern "C" {
     INIT_ID(_limbo), \
     INIT_ID(_lock_unlock_module), \
     INIT_ID(_loop), \
+    INIT_ID(_ms_struct_), \
     INIT_ID(_needs_com_addref_), \
     INIT_ID(_pack_), \
     INIT_ID(_restype_), \

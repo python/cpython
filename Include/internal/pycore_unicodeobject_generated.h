@@ -352,8 +352,6 @@ _PyUnicode_InitStaticStrings(void) {
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_anonymous_);
     PyUnicode_InternInPlace(&string);
-    string = &_Py_ID(_ms_struct_);
-    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_argtypes_);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_as_parameter_);
@@ -397,6 +395,8 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(_lock_unlock_module);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_loop);
+    PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(_ms_struct_);
     PyUnicode_InternInPlace(&string);
     string = &_Py_ID(_needs_com_addref_);
     PyUnicode_InternInPlace(&string);

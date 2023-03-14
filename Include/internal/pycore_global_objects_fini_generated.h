@@ -737,7 +737,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_active));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_annotation));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_anonymous_));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_ms_struct_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_argtypes_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_as_parameter_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_asyncio_future_blocking));
@@ -760,6 +759,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_limbo));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_lock_unlock_module));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_loop));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_ms_struct_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_needs_com_addref_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_pack_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_restype_));
