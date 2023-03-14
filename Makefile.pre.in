@@ -2560,6 +2560,12 @@ distclean: clobber docclean
 smelly: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/smelly.py
 
+# Check if any unsupported C global variables have been added.
+check-c-globals:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/c-analyzer/check-c-globals.py \
+		--format summary \
+		--traceback
+
 # Find files with funny names
 funny:
 	find $(SUBDIRS) $(SUBDIRSTOO) \
