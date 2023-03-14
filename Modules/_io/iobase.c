@@ -225,6 +225,13 @@ iobase_check_writable(PyObject *self, PyObject *args)
     return _PyIOBase_check_writable(state, self, args);
 }
 
+static PyObject *
+iobase_reduce(PyObject *self, PyObject *args) {
+    PyErr_Format(PyExc_TypeError,
+        "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
+    return NULL;
+}
+
 /* XXX: IOBase thinks it has to maintain its own internal state in
    `__IOBase_closed` and call flush() by itself, but it is redundant with
    whatever behaviour a non-trivial derived class will implement. */
@@ -841,6 +848,9 @@ static PyMethodDef iobase_methods[] = {
     _IO__IOBASE_READLINE_METHODDEF
     _IO__IOBASE_READLINES_METHODDEF
     _IO__IOBASE_WRITELINES_METHODDEF
+
+    {"__reduce__", iobase_reduce, METH_VARARGS},
+    {"__reduce_ex__", iobase_reduce, METH_VARARGS},
 
     {NULL, NULL}
 };
