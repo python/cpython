@@ -5930,7 +5930,7 @@ PyInit__decimal(void)
     /* Add types to the module */
     CHECK_INT(PyModule_AddType(m, state->PyDec_Type));
     CHECK_INT(PyModule_AddType(m, state->PyDecContext_Type));
-    CHECK_INT(PyModule_AddObjectRef(m, "DecimalTuple", state->DecimalTuple));
+    CHECK_INT(PyModule_AddType(m, state->DecimalTuple));
 
     /* Create top level exception */
     ASSIGN_PTR(DecimalException, PyErr_NewException(
