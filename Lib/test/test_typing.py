@@ -3816,18 +3816,15 @@ class GenericTests(BaseTestCase):
         class MyCallable(Generic[P, T]):
             pass
 
-        self.assertEqual(
-            repr(MyCallable[[], bool]).split('.')[-1],
-            'MyCallable[[], bool]',
-        )
-        self.assertEqual(
-            repr(MyCallable[[int], bool]).split('.')[-1],
-            'MyCallable[[int], bool]',
-        )
-        self.assertEqual(
-            repr(MyCallable[[int, str], bool]).split('.')[-1],
-            "MyCallable[[int, str], bool]",
-        )
+        object_to_expected_repr = {
+            MyCallable[[], bool]:         "MyCallable[[], bool]",
+            MyCallable[[int], bool]:      "MyCallable[[int], bool]",
+            MyCallable[[int, str], bool]: "MyCallable[[int, str], bool]"
+        }
+
+        for obj, expected_repr in object_to_expected_repr.items():
+            with self.subTest(obj=obj, expected_repr=expected_repr):
+                self.assertEqual(repr(obj), MyCallable.__module__ + expected_repr)
 
     def test_eq_1(self):
         self.assertEqual(Generic, Generic)
