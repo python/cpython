@@ -654,9 +654,6 @@ Waiting Primitives
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
 
-   .. versionchanged:: 3.10
-      Removed the *loop* parameter.
-
    Example::
 
        for coro in as_completed(aws):
