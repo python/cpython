@@ -182,28 +182,27 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
     Py_XINCREF(value);
     if (!is_subclass) {
         /* We must normalize the value right now */
-        PyObject *fixed_value;
 
         /* Issue #23571: functions must not be called with an
             exception set */
         _PyErr_Clear(tstate);
 
-        fixed_value = _PyErr_CreateException(exception, value);
-        Py_XDECREF(value);
+        PyObject *fixed_value = _PyErr_CreateException(exception, value);
         if (fixed_value == NULL) {
             PyObject *exc = _PyErr_GetRaisedException(tstate);
             assert(PyExceptionInstance_Check(exc));
 
             PyObject *note = get_normalization_failure_note(tstate, exception, value);
+            Py_XDECREF(value);
             if (note != NULL) {
-                PyObject *res = _PyException_AddNote((PyBaseExceptionObject*)exc, note);
+                /* ignore errors in _PyException_AddNote - they will be overwritten below */
+                _PyException_AddNote(exc, note);
                 Py_DECREF(note);
-                Py_XDECREF(res);
             }
             _PyErr_SetRaisedException(tstate, exc);
             return;
         }
-
+        Py_XDECREF(value);
         value = fixed_value;
     }
 

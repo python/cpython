@@ -174,7 +174,7 @@ class Test_ErrSetAndRestore(unittest.TestCase):
             def __init__(self, *arg):
                  raise ValueError("Broken __init__")
 
-        exc = _testcapi.exc_set_object_fetch(Broken, ('abcd'))
+        exc = _testcapi.exc_set_object_fetch(Broken, 'abcd')
         self.assertIsInstance(exc, ValueError)
         self.assertEqual(exc.__notes__[0],
                          "Normalization failed: type=Broken args='abcd'")
@@ -183,7 +183,7 @@ class Test_ErrSetAndRestore(unittest.TestCase):
             def __repr__(self):
                 raise TypeError('Broken arg type')
 
-        exc = _testcapi.exc_set_object_fetch(Broken, (BadArg()))
+        exc = _testcapi.exc_set_object_fetch(Broken, BadArg())
         self.assertIsInstance(exc, ValueError)
         self.assertEqual(exc.__notes__[0],
                          'Normalization failed: type=Broken args=<unknown>')
