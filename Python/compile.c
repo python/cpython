@@ -630,9 +630,9 @@ struct compiler_unit {
     PyObject *u_cellvars;  /* cell variables */
     PyObject *u_freevars;  /* free variables */
 
-    // A set of names that should use fast-locals, even if not in a function */
-    PyObject *u_fastlocals;
-
+    PyObject *u_fasthidden; /* dict; keys are names that are fast-locals only
+                               temporarily within an inlined comprehension. When
+                               value is True, treat as fast-local. */
     PyObject *u_private;        /* for private name mangling */
 
     Py_ssize_t u_argcount;        /* number of arguments for block */
@@ -1000,6 +1000,7 @@ compiler_unit_free(struct compiler_unit *u)
     Py_CLEAR(u->u_varnames);
     Py_CLEAR(u->u_freevars);
     Py_CLEAR(u->u_cellvars);
+    Py_CLEAR(u->u_fasthidden);
     Py_CLEAR(u->u_private);
     PyObject_Free(u);
 }
@@ -1667,6 +1668,12 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
                                PyDict_GET_SIZE(u->u_cellvars));
     if (!u->u_freevars) {
+        compiler_unit_free(u);
+        return ERROR;
+    }
+
+    u->u_fasthidden = PyDict_New();
+    if (!u->u_fasthidden) {
         compiler_unit_free(u);
         return ERROR;
     }
@@ -4118,8 +4125,7 @@ compiler_nameop(struct compiler *c, location loc,
         break;
     case LOCAL:
         if (c->u->u_ste->ste_type == FunctionBlock ||
-                (c->u->u_fastlocals &&
-                 PySet_Contains(c->u->u_fastlocals, mangled)))
+                (PyDict_GetItem(c->u->u_fasthidden, mangled) == Py_True))
             optype = OP_FAST;
         break;
     case GLOBAL_IMPLICIT:
@@ -5298,16 +5304,6 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
     // them from the outer scope as needed
     PyObject *k, *v;
     Py_ssize_t pos = 0;
-    assert(c->u->u_fastlocals == NULL);
-    if (c->u->u_ste->ste_type != FunctionBlock) {
-        // comprehension in non-function scope; for isolation, we'll need to
-        // temporarily override names bound in the comprehension to use fast
-        // locals, even though nothing else in this frame will
-        c->u->u_fastlocals = PySet_New(0);
-        if (c->u->u_fastlocals == NULL) {
-            return ERROR;
-        }
-    }
     while (PyDict_Next(entry->ste_symbols, &pos, &k, &v)) {
         assert(PyLong_Check(v));
         long symbol = PyLong_AS_LONG(v);
@@ -5316,9 +5312,9 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         // assignment expression to a nonlocal in the comprehension, these don't
         // need handling here since they shouldn't be isolated
         if (symbol & DEF_LOCAL && ~symbol & DEF_NONLOCAL) {
-            if (c->u->u_fastlocals) {
+            if (c->u->u_ste->ste_type != FunctionBlock) {
                 // non-function scope: override this name to use fast locals
-                PySet_Add(c->u->u_fastlocals, k);
+                PyDict_SetItem(c->u->u_fasthidden, k, Py_True);
             }
             long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
             PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
@@ -5392,7 +5388,6 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     if (state.temp_symbols) {
-        // restore scope for globals that we temporarily set as locals
         while (PyDict_Next(state.temp_symbols, &pos, &k, &v)) {
             if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v)) {
                 return ERROR;
@@ -5415,8 +5410,15 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
             ADDOP_NAME(c, loc, STORE_FAST_MAYBE_NULL, k, varnames);
         }
     }
-    if (c->u->u_fastlocals) {
-        Py_CLEAR(c->u->u_fastlocals);
+    pos = 0;
+    while (PyDict_Next(c->u->u_fasthidden, &pos, &k, &v)) {
+        if (v == Py_True) {
+            // we set to False instead of clearing, so we can track which names
+            // were temporarily fast-locals and should use CO_FAST_HIDDEN
+            if (PyDict_SetItem(c->u->u_fasthidden, k, Py_False)) {
+                return ERROR;
+            }
+        }
     }
     return SUCCESS;
 }
@@ -8333,6 +8335,9 @@ compute_localsplus_info(struct compiler *c, int nlocalsplus,
         assert(offset < nlocalsplus);
         // For now we do not distinguish arg kinds.
         _PyLocals_Kind kind = CO_FAST_LOCAL;
+        if (PyDict_Contains(c->u->u_fasthidden, k)) {
+            kind |= CO_FAST_HIDDEN;
+        }
         if (PyDict_GetItem(c->u->u_cellvars, k) != NULL) {
             kind |= CO_FAST_CELL;
         }

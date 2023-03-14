@@ -99,19 +99,20 @@ class ListComprehensionTest(unittest.TestCase):
             with self.subTest(scope=scope):
                 if scope == "class":
                     newcode = textwrap.dedent("""
-                        class C:
+                        class _C:
                             {code}
                     """).format(code=textwrap.indent(code, "    "))
                     def get_output(moddict, name):
-                        return getattr(moddict["C"], name)
+                        return getattr(moddict["_C"], name)
                 elif scope == "function":
                     newcode = textwrap.dedent("""
-                        def f():
+                        def _f():
                             {code}
                             return locals()
+                        _out = _f()
                     """).format(code=textwrap.indent(code, "    "))
                     def get_output(moddict, name):
-                        return moddict["f"]()[name]
+                        return moddict["_out"][name]
                 else:
                     newcode = code
                     def get_output(moddict, name):
@@ -143,7 +144,7 @@ class ListComprehensionTest(unittest.TestCase):
             i = 20
             y = [x() for x in items]
         """
-        outputs = {"y": [4, 4, 4, 4, 4]}
+        outputs = {"y": [4, 4, 4, 4, 4], "i": 20}
         self._check_in_scopes(code, outputs)
 
     def test_closure_can_jump_over_comp_scope(self):
@@ -223,6 +224,16 @@ class ListComprehensionTest(unittest.TestCase):
             g()
         """
         outputs = {"x": 1}
+        self._check_in_scopes(code, outputs)
+
+    def test_introspecting_frame_locals(self):
+        code = """
+            import sys
+            [i for i in range(2)]
+            i = 20
+            sys._getframe().f_locals
+        """
+        outputs = {"i": 20}
         self._check_in_scopes(code, outputs)
 
     def test_unbound_local_after_comprehension(self):
