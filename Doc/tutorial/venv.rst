@@ -38,13 +38,13 @@ Creating Virtual Environments
 The module used to create and manage virtual environments is called
 :mod:`venv`.  :mod:`venv` will usually install the most recent version of
 Python that you have available. If you have multiple versions of Python on your
-system, you can select a specific Python version by running ``python3`` or
+system, you can select a specific Python version by running ``python`` or
 whichever version you want.
 
 To create a virtual environment, decide upon a directory where you want to
 place it, and run the :mod:`venv` module as a script with the directory path::
 
-   python3 -m venv tutorial-env
+   python -m venv tutorial-env
 
 This will create the ``tutorial-env`` directory if it doesn't exist,
 and also create directories inside it containing a copy of the Python
