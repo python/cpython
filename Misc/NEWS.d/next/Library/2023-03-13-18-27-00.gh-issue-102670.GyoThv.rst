@@ -1,0 +1,2 @@
+Optimized fmean(), correlation(), covariance(), and linear_regression()
+using the new math.sumprod() function.
