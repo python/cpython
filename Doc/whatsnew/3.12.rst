@@ -984,7 +984,7 @@ Porting to Python 3.12
 
 * The interpreter's error indicator is now always normalized. This means
   that :c:func:`PyErr_SetObject`, :c:func:`PyErr_SetString` and the other
-  functions that set the error indicator now need to normalize the exception
+  functions that set the error indicator now normalize the exception
   before storing it. (Contributed by Mark Shannon in :gh:`101578`.)
 
 Deprecated
