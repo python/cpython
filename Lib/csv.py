@@ -445,6 +445,15 @@ class Sniffer:
         # finally, compare results against first row and "vote"
         # on whether it's a header
         hasHeader = 0
+        #checking if header label is one single word
+        for col in header:
+            if len(re.findall(r"\s", col)) > 0 :
+                hasHeader -= 1 
+                break 
+        if hasHeader == 0 :
+            hasHeader += 1
+    
+              
         for col, colType in columnTypes.items():
             columnTypes[col] = columnTypes[col]//checked
             if similiratyWords[col]/checked < 1:
