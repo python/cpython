@@ -501,7 +501,9 @@ class _CallableGenericAlias(GenericAlias):
 
         # This happens in cases like `Callable[P, T][[P, str], bool][int]`,
         # we need to flatten the result.
-        if len(new_args) > 2:
+        if (len(new_args) > 2
+                and self.__parameters__
+                and _is_param_expr(self.__parameters__[0])):
             res = []
             for new_arg in new_args:
                 if isinstance(new_arg, tuple):
