@@ -1939,8 +1939,8 @@ class _BasePathTest(object):
         # ".." is not special in globs.
         P = self.cls
         p = P(BASE)
-        self.assertEqual(set(p.glob("..")), set())
-        self.assertEqual(set(p.glob("dirA/../file*")), set())
+        self.assertEqual(set(p.glob("..")), { P(BASE, "..") })
+        self.assertEqual(set(p.glob("dirA/../file*")), { P(BASE, "dirA/../fileA") })
         self.assertEqual(set(p.glob("../xyzzy")), set())
 
     @os_helper.skip_unless_symlink

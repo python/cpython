@@ -68,6 +68,8 @@ def _make_selector(pattern_parts, flavour):
         cls = _RecursiveWildcardSelector
     elif '**' in pat:
         raise ValueError("Invalid pattern: '**' can only be an entire path component")
+    elif pat == '..':
+        cls = _ParentSelector
     else:
         cls = _WildcardSelector
     return cls(pat, child_parts, flavour)
@@ -101,6 +103,15 @@ class _TerminatingSelector:
 
     def _select_from(self, parent_path, follow_symlinks, scandir, normcase):
         yield parent_path
+
+
+class _ParentSelector(_Selector):
+    def __init__(self, pat, child_parts, flavour):
+        _Selector.__init__(self, child_parts, flavour)
+
+    def _select_from(self, parent_path, follow_symlinks, scandir, normcase):
+        path = parent_path._make_child_relpath('..')
+        return self.successor._select_from(path, follow_symlinks, scandir, normcase)
 
 
 class _WildcardSelector(_Selector):
