@@ -642,19 +642,10 @@ iomodule_exec(PyObject *m)
 {
     _PyIO_State *state = get_io_state(m);
 
-<<<<<<< HEAD
     /* DEFAULT_BUFFER_SIZE */
     if (PyModule_AddIntMacro(m, DEFAULT_BUFFER_SIZE) < 0) {
         return -1;
     }
-=======
-    // PyRawIOBase_Type(PyIOBase_Type) subclasses
-    &_PyBytesIOBuffer_Type,
-#ifdef HAVE_WINDOWS_CONSOLE_IO
-    &PyWindowsConsoleIO_Type,
-#endif
-};
->>>>>>> 3d872a74c8c16d4a077c2223f678b1f8f7e0e988
 
     /* UnsupportedOperation inherits from ValueError and OSError */
     state->unsupported_operation = PyObject_CallFunction(
