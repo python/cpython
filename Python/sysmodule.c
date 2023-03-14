@@ -3425,11 +3425,19 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         return _PyStatus_ERR("failed to create a module object");
     }
 
+    /* m_copy of Py_None means it is copied some other way. */
+    sysmodule.m_base.m_copy = Py_NewRef(Py_None);
+
     PyObject *sysdict = PyModule_GetDict(sysmod);
     if (sysdict == NULL) {
         goto error;
     }
     interp->sysdict = Py_NewRef(sysdict);
+
+    interp->sysdict_copy = PyDict_Copy(sysdict);
+    if (interp->sysdict_copy == NULL) {
+        goto error;
+    }
 
     if (PyDict_SetItemString(sysdict, "modules", modules) < 0) {
         goto error;
