@@ -128,8 +128,6 @@ extern Py_off_t PyNumber_AsOff_t(PyObject *item, PyObject *err);
 extern PyModuleDef _PyIO_Module;
 
 typedef struct {
-    PyObject *locale_module;
-
     PyObject *unsupported_operation;
 
     /* Types */

@@ -564,7 +564,6 @@ static int
 iomodule_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     _PyIO_State *state = get_io_state(mod);
-    Py_VISIT(state->locale_module);
     Py_VISIT(state->unsupported_operation);
 
     Py_VISIT(state->PyBufferedIOBase_Type);
@@ -592,7 +591,6 @@ static int
 iomodule_clear(PyObject *mod)
 {
     _PyIO_State *state = get_io_state(mod);
-    Py_CLEAR(state->locale_module);
     Py_CLEAR(state->unsupported_operation);
 
     Py_CLEAR(state->PyBufferedIOBase_Type);
