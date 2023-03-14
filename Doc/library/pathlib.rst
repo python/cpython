@@ -873,9 +873,9 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
-   By default, :meth:`Path.glob` follows symlinks except when expanding
-   "``**``" wildcards. Set *follow_symlinks* to true to always follow
-   symlinks, or false to treat all symlinks as files.
+   By default, :meth:`Path.glob` emits a deprecation warning and follows
+   symlinks except when expanding "``**``" wildcards. Set *follow_symlinks*
+   to true to always follow symlinks, or false to treat all symlinks as files.
 
    .. note::
       Using the "``**``" pattern in large directory trees may consume
@@ -889,6 +889,10 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.12
       The *follow_symlinks* parameter was added.
+
+   .. deprecated-removed:: 3.12 3.14
+
+      Setting *follow_symlinks* to ``None`` (e.g. by omitting it) is deprecated.
 
 .. method:: Path.group()
 
@@ -1288,9 +1292,9 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
-   By default, :meth:`Path.rglob` follows symlinks except when expanding
-   "``**``" wildcards. Set *follow_symlinks* to true to always follow
-   symlinks, or false to treat all symlinks as files.
+   By default, :meth:`Path.rglob` emits a deprecation warning and follows
+   symlinks except when expanding "``**``" wildcards. Set *follow_symlinks*
+   to true to always follow symlinks, or false to treat all symlinks as files.
 
    .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
@@ -1300,6 +1304,10 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.12
       The *follow_symlinks* parameter was added.
+
+   .. deprecated-removed:: 3.12 3.14
+
+      Setting *follow_symlinks* to ``None`` (e.g. by omitting it) is deprecated.
 
 .. method:: Path.rmdir()
 
