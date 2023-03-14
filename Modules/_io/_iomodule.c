@@ -317,7 +317,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     _PyIO_State *state = get_io_state(module);
     {
         PyObject *RawIO_class = (PyObject *)state->PyFileIO_Type;
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
         const PyConfig *config = _Py_GetConfig();
         if (!config->legacy_windows_stdio && _PyIO_get_console_type(path_or_fd) != '\0') {
             RawIO_class = (PyObject *)state->PyWindowsConsoleIO_Type;
@@ -642,10 +642,19 @@ iomodule_exec(PyObject *m)
 {
     _PyIO_State *state = get_io_state(m);
 
+<<<<<<< HEAD
     /* DEFAULT_BUFFER_SIZE */
     if (PyModule_AddIntMacro(m, DEFAULT_BUFFER_SIZE) < 0) {
         return -1;
     }
+=======
+    // PyRawIOBase_Type(PyIOBase_Type) subclasses
+    &_PyBytesIOBuffer_Type,
+#ifdef HAVE_WINDOWS_CONSOLE_IO
+    &PyWindowsConsoleIO_Type,
+#endif
+};
+>>>>>>> 3d872a74c8c16d4a077c2223f678b1f8f7e0e988
 
     /* UnsupportedOperation inherits from ValueError and OSError */
     state->unsupported_operation = PyObject_CallFunction(
@@ -704,7 +713,7 @@ do {                                                                     \
     ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, base);
     ADD_TYPE(m, state->PyBytesIOBuffer_Type, &bytesiobuf_spec, NULL);  // XXX: should be subclass of PyRawIOBase_Type?
 
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     ADD_TYPE(m, state->PyWindowsConsoleIO_Type, &winconsoleio_spec, base);
 #endif
 

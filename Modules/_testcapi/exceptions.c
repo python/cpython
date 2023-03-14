@@ -79,6 +79,20 @@ make_exception_with_doc(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
+exc_set_object(PyObject *self, PyObject *args)
+{
+    PyObject *exc;
+    PyObject *obj;
+
+    if (!PyArg_ParseTuple(args, "OO:exc_set_object", &exc, &obj)) {
+        return NULL;
+    }
+
+    PyErr_SetObject(exc, obj);
+    return NULL;
+}
+
+static PyObject *
 raise_exception(PyObject *self, PyObject *args)
 {
     PyObject *exc;
@@ -247,6 +261,7 @@ static PyMethodDef test_methods[] = {
      PyDoc_STR("fatal_error(message, release_gil=False): call Py_FatalError(message)")},
     {"make_exception_with_doc", _PyCFunction_CAST(make_exception_with_doc),
      METH_VARARGS | METH_KEYWORDS},
+    {"exc_set_object",          exc_set_object,                  METH_VARARGS},
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
     {"set_exc_info",            test_set_exc_info,               METH_VARARGS},

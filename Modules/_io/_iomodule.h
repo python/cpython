@@ -22,9 +22,18 @@ extern PyType_Spec rawiobase_spec;
 extern PyType_Spec stringio_spec;
 extern PyType_Spec textiobase_spec;
 extern PyType_Spec textiowrapper_spec;
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
 extern PyType_Spec winconsoleio_spec;
-#endif
+#endif /* HAVE_WINDOWS_CONSOLE_IO */
+
+/* These functions are used as METH_NOARGS methods, are normally called
+ * with args=NULL, and return a new reference.
+ * BUT when args=Py_True is passed, they return a borrowed reference.
+ */
+extern PyObject* _PyIOBase_check_readable(PyObject *self, PyObject *args);
+extern PyObject* _PyIOBase_check_writable(PyObject *self, PyObject *args);
+extern PyObject* _PyIOBase_check_seekable(PyObject *self, PyObject *args);
+extern PyObject* _PyIOBase_check_closed(PyObject *self, PyObject *args);
 
 /* Helper for finalization.
    This function will revive an object ready to be deallocated and try to
@@ -185,6 +194,6 @@ extern PyObject* _PyIOBase_check_writable(_PyIO_State *state, PyObject *self, Py
 extern PyObject* _PyIOBase_check_seekable(_PyIO_State *state, PyObject *self, PyObject *args);
 extern PyObject* _PyIOBase_check_closed(PyObject *self, PyObject *args);
 
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
 extern char _PyIO_get_console_type(PyObject *);
 #endif

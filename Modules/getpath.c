@@ -745,10 +745,12 @@ static int
 library_to_dict(PyObject *dict, const char *key)
 {
 #ifdef MS_WINDOWS
+#ifdef Py_ENABLE_SHARED
     extern HMODULE PyWin_DLLhModule;
     if (PyWin_DLLhModule) {
         return winmodule_to_dict(dict, key, PyWin_DLLhModule);
     }
+#endif
 #elif defined(WITH_NEXT_FRAMEWORK)
     static char modPath[MAXPATHLEN + 1];
     static int modPathInitialized = -1;

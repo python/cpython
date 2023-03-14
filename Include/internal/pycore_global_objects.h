@@ -86,6 +86,7 @@ struct _Py_interp_static_objects {
         // hamt_empty is here instead of global because of its weakreflist.
         _PyGC_Head_UNUSED _hamt_empty_gc_not_used;
         PyHamtObject hamt_empty;
+        PyBaseExceptionObject last_resort_memory_error;
     } singletons;
 };
 
