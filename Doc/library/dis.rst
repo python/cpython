@@ -57,9 +57,9 @@ the following command can be used to display the disassembly of
      2           0 RESUME                   0
    <BLANKLINE>
      3           2 LOAD_GLOBAL              1 (NULL + len)
-                14 LOAD_FAST                0 (alist)
-                16 CALL                     1
-                26 RETURN_VALUE
+                12 LOAD_FAST                0 (alist)
+                14 CALL                     1
+                24 RETURN_VALUE
 
 (The "2" is a line number).
 

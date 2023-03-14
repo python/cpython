@@ -1490,6 +1490,9 @@ static PyStructSequence_Desc windows_version_desc = {
 static PyObject *
 _sys_getwindowsversion_from_kernel32()
 {
+#ifndef MS_WINDOWS_DESKTOP
+    return NULL;
+#else
     HANDLE hKernel32;
     wchar_t kernel32_path[MAX_PATH];
     LPVOID verblock;
@@ -1523,6 +1526,7 @@ _sys_getwindowsversion_from_kernel32()
     realBuild = HIWORD(ffi->dwProductVersionLS);
     PyMem_RawFree(verblock);
     return Py_BuildValue("(kkk)", realMajor, realMinor, realBuild);
+#endif /* !MS_WINDOWS_DESKTOP */
 }
 
 /* Disable deprecation warnings about GetVersionEx as the result is
@@ -3421,11 +3425,19 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         return _PyStatus_ERR("failed to create a module object");
     }
 
+    /* m_copy of Py_None means it is copied some other way. */
+    sysmodule.m_base.m_copy = Py_NewRef(Py_None);
+
     PyObject *sysdict = PyModule_GetDict(sysmod);
     if (sysdict == NULL) {
         goto error;
     }
     interp->sysdict = Py_NewRef(sysdict);
+
+    interp->sysdict_copy = PyDict_Copy(sysdict);
+    if (interp->sysdict_copy == NULL) {
+        goto error;
+    }
 
     if (PyDict_SetItemString(sysdict, "modules", modules) < 0) {
         goto error;

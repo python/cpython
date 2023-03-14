@@ -1474,6 +1474,35 @@ def test_pdb_issue_gh_94215():
     (Pdb) continue
     """
 
+def test_pdb_issue_gh_101673():
+    """See GH-101673
+
+    Make sure ll won't revert local variable assignment
+
+    >>> def test_function():
+    ...    a = 1
+    ...    import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     '!a = 2',
+    ...     'll',
+    ...     'p a',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_101673[0]>(3)test_function()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) !a = 2
+    (Pdb) ll
+      1         def test_function():
+      2            a = 1
+      3  ->        import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) p a
+    2
+    (Pdb) continue
+    """
+
 
 @support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
