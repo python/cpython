@@ -542,11 +542,12 @@ def register_standard_browsers():
         # First try to use the default Windows browser
         register("windows-default", WindowsDefault)
 
-        # Detect some common Windows browsers, fallback to IE
-        iexplore = os.path.join(os.environ.get("PROGRAMFILES", "C:\\Program Files"),
-                                "Internet Explorer\\IEXPLORE.EXE")
-        for browser in ("firefox", "firebird", "seamonkey", "mozilla",
-                        "netscape", "opera", iexplore):
+        # Detect some common Windows browsers, fallback to Edge
+        edge = os.path.join(os.environ.get("PROGRAMFILES(x86)", "C:\\Program Files (x86)"),
+                            "Microsoft\\Edge\\Application\\msedge.exe")
+        edge32 = os.path.join(os.environ.get("PROGRAMFILES", "C:\\Program Files"),
+                             "Microsoft\\Edge\\Application\\msedge.exe")
+        for browser in ("firefox", "firebird", "seamonkey", "mozilla", "opera", edge, edge32):
             if shutil.which(browser):
                 register(browser, None, BackgroundBrowser(browser))
     else:
