@@ -852,7 +852,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.glob(pattern, *, follow_symlinks=False)
+.. method:: Path.glob(pattern, *, follow_symlinks=None)
 
    Glob the given relative *pattern* in the directory represented by this path,
    yielding all matching files (of any kind)::
@@ -873,8 +873,9 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
-   By default, :meth:`Path.glob` does not follow symlinks when expanding a
-   pattern. Set *follow_symlinks* to true to visit symlinks to directories.
+   By default, :meth:`Path.glob` follows symlinks except when expanding
+   "``**``" wildcards. Set *follow_symlinks* to true to always follow
+   symlinks, or false to treat all symlinks as files.
 
    .. note::
       Using the "``**``" pattern in large directory trees may consume
@@ -887,9 +888,7 @@ call fails (for example because the path doesn't exist).
       separator (:data:`~os.sep` or :data:`~os.altsep`).
 
    .. versionchanged:: 3.12
-      The *follow_symlinks* parameter was added.  In previous versions,
-      symlinks were followed when expanding patterns, except when expanding
-      "``**``" wildcards.
+      The *follow_symlinks* parameter was added.
 
 .. method:: Path.group()
 
@@ -1276,7 +1275,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.6
       The *strict* argument (pre-3.6 behavior is strict).
 
-.. method:: Path.rglob(pattern, *, follow_symlinks=False)
+.. method:: Path.rglob(pattern, *, follow_symlinks=None)
 
    Glob the given relative *pattern* recursively.  This is like calling
    :func:`Path.glob` with "``**/``" added in front of the *pattern*, where
@@ -1289,8 +1288,9 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
-   By default, :meth:`Path.rglob` does not follow symlinks when expanding a
-   pattern. Set *follow_symlinks* to true to visit symlinks to directories.
+   By default, :meth:`Path.rglob` follows symlinks except when expanding
+   "``**``" wildcards. Set *follow_symlinks* to true to always follow
+   symlinks, or false to treat all symlinks as files.
 
    .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
@@ -1299,9 +1299,7 @@ call fails (for example because the path doesn't exist).
       separator (:data:`~os.sep` or :data:`~os.altsep`).
 
    .. versionchanged:: 3.12
-      The *follow_symlinks* parameter was added.  In previous versions,
-      symlinks were followed when expanding patterns, except when expanding
-      "``**``" wildcards.
+      The *follow_symlinks* parameter was added.
 
 .. method:: Path.rmdir()
 

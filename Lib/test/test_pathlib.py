@@ -1765,22 +1765,46 @@ class _BasePathTest(object):
         if not os_helper.can_symlink():
             _check(p.glob("*B/*"), ['dirB/fileB'])
         else:
-            _check(p.glob("*B/*"), ['dirB/fileB', 'dirB/linkD'])
-        _check(p.glob("*/fileB"), ['dirB/fileB'])
-        _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE"])
+            _check(p.glob("*B/*"), ['dirB/fileB', 'dirB/linkD',
+                                    'linkB/fileB', 'linkB/linkD'])
+        if not os_helper.can_symlink():
+            _check(p.glob("*/fileB"), ['dirB/fileB'])
+        else:
+            _check(p.glob("*/fileB"), ['dirB/fileB', 'linkB/fileB'])
+
+        if not os_helper.can_symlink():
+            _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE"])
+        else:
+            _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE", "linkB"])
 
     @os_helper.skip_unless_symlink
     def test_glob_follow_symlinks_common(self):
         def _check(path, glob, expected):
-            self.assertEqual(set(path.glob(glob, follow_symlinks=True)), { P(BASE, q) for q in expected })
+            actual = {path for path in path.glob(glob, follow_symlinks=True)
+                      if "linkD" not in path.parent.parts}  # exclude symlink loop.
+            self.assertEqual(actual, { P(BASE, q) for q in expected })
         P = self.cls
         p = P(BASE)
         _check(p, "fileB", [])
         _check(p, "dir*/file*", ["dirB/fileB", "dirC/fileC"])
-        _check(p, "*A", ['dirA', 'fileA', 'linkA'])
-        _check(p, "*B/*", ['dirB/fileB', 'dirB/linkD', 'linkB/fileB', 'linkB/linkD'])
-        _check(p, "*/fileB", ['dirB/fileB', 'linkB/fileB'])
+        _check(p, "*A", ["dirA", "fileA", "linkA"])
+        _check(p, "*B/*", ["dirB/fileB", "dirB/linkD", "linkB/fileB", "linkB/linkD"])
+        _check(p, "*/fileB", ["dirB/fileB", "linkB/fileB"])
         _check(p, "*/", ["dirA", "dirB", "dirC", "dirE", "linkB"])
+
+    @os_helper.skip_unless_symlink
+    def test_glob_no_follow_symlinks_common(self):
+        def _check(path, glob, expected):
+            actual = {path for path in path.glob(glob, follow_symlinks=False)}
+            self.assertEqual(actual, { P(BASE, q) for q in expected })
+        P = self.cls
+        p = P(BASE)
+        _check(p, "fileB", [])
+        _check(p, "dir*/file*", ["dirB/fileB", "dirC/fileC"])
+        _check(p, "*A", ["dirA", "fileA", "linkA"])
+        _check(p, "*B/*", ["dirB/fileB", "dirB/linkD"])
+        _check(p, "*/fileB", ["dirB/fileB"])
+        _check(p, "*/", ["dirA", "dirB", "dirC", "dirE"])
 
     def test_rglob_common(self):
         def _check(glob, expected):
@@ -1792,10 +1816,22 @@ class _BasePathTest(object):
         _check(it, ["fileA"])
         _check(p.rglob("fileB"), ["dirB/fileB"])
         _check(p.rglob("*/fileA"), [])
-        _check(p.rglob("*/fileB"), ["dirB/fileB"])
+        if not os_helper.can_symlink():
+            _check(p.rglob("*/fileB"), ["dirB/fileB"])
+        else:
+            _check(p.rglob("*/fileB"), ["dirB/fileB", "dirB/linkD/fileB",
+                                        "linkB/fileB", "dirA/linkC/fileB"])
         _check(p.rglob("file*"), ["fileA", "dirB/fileB",
                                   "dirC/fileC", "dirC/dirD/fileD"])
-        _check(p.rglob("*/"), ["dirA", "dirB", "dirC", "dirC/dirD", "dirE"])
+        if not os_helper.can_symlink():
+            _check(p.rglob("*/"), [
+                "dirA", "dirB", "dirC", "dirC/dirD", "dirE",
+            ])
+        else:
+            _check(p.rglob("*/"), [
+                "dirA", "dirA/linkC", "dirB", "dirB/linkD", "dirC",
+                "dirC/dirD", "dirE", "linkB",
+            ])
         _check(p.rglob(""), ["", "dirA", "dirB", "dirC", "dirE", "dirC/dirD"])
 
         p = P(BASE, "dirC")
@@ -1813,7 +1849,7 @@ class _BasePathTest(object):
     def test_rglob_follow_symlinks_common(self):
         def _check(path, glob, expected):
             actual = {path for path in path.rglob(glob, follow_symlinks=True)
-                      if 'linkD' not in path.parts}  # exclude symlink loop.
+                      if 'linkD' not in path.parent.parts}  # exclude symlink loop.
             self.assertEqual(actual, { P(BASE, q) for q in expected })
         P = self.cls
         p = P(BASE)
@@ -1822,8 +1858,35 @@ class _BasePathTest(object):
         _check(p, "*/fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB"])
         _check(p, "file*", ["fileA", "dirA/linkC/fileB", "dirB/fileB",
                             "dirC/fileC", "dirC/dirD/fileD", "linkB/fileB"])
-        _check(p, "*/", ["dirA", "dirA/linkC", "dirB", "dirC", "dirC/dirD", "dirE", "linkB"])
-        _check(p, "", ["", "dirA", "dirA/linkC", "dirB", "dirC", "dirE", "dirC/dirD", "linkB"])
+        _check(p, "*/", ["dirA", "dirA/linkC", "dirA/linkC/linkD", "dirB", "dirB/linkD",
+                         "dirC", "dirC/dirD", "dirE", "linkB", "linkB/linkD"])
+        _check(p, "", ["", "dirA", "dirA/linkC", "dirA/linkC/linkD", "dirB", "dirB/linkD",
+                       "dirC", "dirE", "dirC/dirD", "linkB", "linkB/linkD"])
+
+        p = P(BASE, "dirC")
+        _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
+                        "dirC/dirD", "dirC/dirD/fileD"])
+        _check(p, "file*", ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "*/*", ["dirC/dirD/fileD"])
+        _check(p, "*/", ["dirC/dirD"])
+        _check(p, "", ["dirC", "dirC/dirD"])
+        # gh-91616, a re module regression
+        _check(p, "*.txt", ["dirC/novel.txt"])
+        _check(p, "*.*", ["dirC/novel.txt"])
+
+    @os_helper.skip_unless_symlink
+    def test_rglob_no_follow_symlinks_common(self):
+        def _check(path, glob, expected):
+            actual = {path for path in path.rglob(glob, follow_symlinks=False)}
+            self.assertEqual(actual, { P(BASE, q) for q in expected })
+        P = self.cls
+        p = P(BASE)
+        _check(p, "fileB", ["dirB/fileB"])
+        _check(p, "*/fileA", [])
+        _check(p, "*/fileB", ["dirB/fileB"])
+        _check(p, "file*", ["fileA", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD", ])
+        _check(p, "*/", ["dirA", "dirB", "dirC", "dirC/dirD", "dirE"])
+        _check(p, "", ["", "dirA", "dirB", "dirC", "dirE", "dirC/dirD"])
 
         p = P(BASE, "dirC")
         _check(p, "*", ["dirC/fileC", "dirC/novel.txt",

@@ -110,6 +110,7 @@ class _WildcardSelector(_Selector):
         _Selector.__init__(self, child_parts, flavour)
 
     def _select_from(self, parent_path, follow_symlinks, scandir, normcase):
+        follow_dirlinks = True if follow_symlinks is None else follow_symlinks
         try:
             # We must close the scandir() object before proceeding to
             # avoid exhausting file descriptors when globbing deep trees.
@@ -121,7 +122,7 @@ class _WildcardSelector(_Selector):
                         # "entry.is_dir()" can raise PermissionError
                         # in some cases (see bpo-38894), which is not
                         # among the errors ignored by _ignore_error()
-                        if not entry.is_dir(follow_symlinks=follow_symlinks):
+                        if not entry.is_dir(follow_symlinks=follow_dirlinks):
                             continue
                     except OSError as e:
                         if not _ignore_error(e):
@@ -142,6 +143,7 @@ class _RecursiveWildcardSelector(_Selector):
         _Selector.__init__(self, child_parts, flavour)
 
     def _iterate_directories(self, parent_path, follow_symlinks, scandir):
+        follow_dirlinks = False if follow_symlinks is None else follow_symlinks
         yield parent_path
         try:
             # We must close the scandir() object before proceeding to
@@ -151,7 +153,7 @@ class _RecursiveWildcardSelector(_Selector):
             for entry in entries:
                 entry_is_dir = False
                 try:
-                    entry_is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
+                    entry_is_dir = entry.is_dir(follow_symlinks=follow_dirlinks)
                 except OSError as e:
                     if not _ignore_error(e):
                         raise
@@ -737,7 +739,7 @@ class Path(PurePath):
         # includes scandir(), which is used to implement glob().
         return os.scandir(self)
 
-    def glob(self, pattern, *, follow_symlinks=False):
+    def glob(self, pattern, *, follow_symlinks=None):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
@@ -753,7 +755,7 @@ class Path(PurePath):
         for p in selector.select_from(self, follow_symlinks):
             yield p
 
-    def rglob(self, pattern, *, follow_symlinks=False):
+    def rglob(self, pattern, *, follow_symlinks=None):
         """Recursively yield all existing files (of any kind, including
         directories) matching the given relative pattern, anywhere in
         this subtree.
