@@ -135,7 +135,7 @@ _PyErr_GetTopmostException(PyThreadState *tstate)
     return exc_info;
 }
 
-PyObject *
+static PyObject *
 get_normalization_failure_note(PyThreadState *tstate, PyObject *exception, PyObject *value)
 {
     PyObject *args = PyObject_Repr(value);
