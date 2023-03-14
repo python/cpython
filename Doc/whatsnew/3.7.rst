@@ -290,21 +290,21 @@ PEP 539: New C API for Thread-Local Storage
 
 While Python provides a C API for thread-local storage support; the existing
 :ref:`Thread Local Storage (TLS) API <thread-local-storage-api>` has used
-:c:type:`int` to represent TLS keys across all platforms.  This has not
+:c:expr:`int` to represent TLS keys across all platforms.  This has not
 generally been a problem for officially support platforms, but that is neither
 POSIX-compliant, nor portable in any practical sense.
 
 :pep:`539` changes this by providing a new :ref:`Thread Specific Storage (TSS)
 API <thread-specific-storage-api>` to CPython which supersedes use of the
 existing TLS API within the CPython interpreter, while deprecating the existing
-API.  The TSS API uses a new type :c:type:`Py_tss_t` instead of :c:type:`int`
+API.  The TSS API uses a new type :c:type:`Py_tss_t` instead of :c:expr:`int`
 to represent TSS keys--an opaque type the definition of which may depend on
 the underlying TLS implementation.  Therefore, this will allow to build CPython
 on platforms where the native TLS key is defined in a way that cannot be safely
-cast to :c:type:`int`.
+cast to :c:expr:`int`.
 
 Note that on platforms where the native TLS key is defined in a way that cannot
-be safely cast to :c:type:`int`, all functions of the existing TLS API will be
+be safely cast to :c:expr:`int`, all functions of the existing TLS API will be
 no-op and immediately return failure. This indicates clearly that the old API
 is not supported on platforms where it cannot be used reliably, and that no
 effort will be made to add such support.
@@ -1708,12 +1708,12 @@ Contributed by Paul Ganssle in :issue:`10381`.
 
 The type of results of :c:func:`PyThread_start_new_thread` and
 :c:func:`PyThread_get_thread_ident`, and the *id* parameter of
-:c:func:`PyThreadState_SetAsyncExc` changed from :c:type:`long` to
-:c:type:`unsigned long`.
+:c:func:`PyThreadState_SetAsyncExc` changed from :c:expr:`long` to
+:c:expr:`unsigned long`.
 (Contributed by Serhiy Storchaka in :issue:`6532`.)
 
 :c:func:`PyUnicode_AsWideCharString` now raises a :exc:`ValueError` if the
-second argument is ``NULL`` and the :c:type:`wchar_t*` string contains null
+second argument is ``NULL`` and the :c:expr:`wchar_t*` string contains null
 characters.  (Contributed by Serhiy Storchaka in :issue:`30708`.)
 
 Changes to the startup sequence and the management of dynamic memory
@@ -2497,7 +2497,7 @@ number of other issues). Some known details affected:
 
 * :c:func:`PySys_AddWarnOptionUnicode` is not currently usable by embedding
   applications due to the requirement to create a Unicode object prior to
-  calling `Py_Initialize`. Use :c:func:`PySys_AddWarnOption` instead.
+  calling ``Py_Initialize``. Use :c:func:`PySys_AddWarnOption` instead.
 
 * warnings filters added by an embedding application with
   :c:func:`PySys_AddWarnOption` should now more consistently take precedence

@@ -1,1 +1,0 @@
-Add cfg_builder struct and refactor the relevant code so that a cfg can be constructed without an instance of the compiler struct.

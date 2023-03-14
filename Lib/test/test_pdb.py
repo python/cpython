@@ -1474,6 +1474,35 @@ def test_pdb_issue_gh_94215():
     (Pdb) continue
     """
 
+def test_pdb_issue_gh_101673():
+    """See GH-101673
+
+    Make sure ll won't revert local variable assignment
+
+    >>> def test_function():
+    ...    a = 1
+    ...    import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     '!a = 2',
+    ...     'll',
+    ...     'p a',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_101673[0]>(3)test_function()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) !a = 2
+    (Pdb) ll
+      1         def test_function():
+      2            a = 1
+      3  ->        import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) p a
+    2
+    (Pdb) continue
+    """
+
 
 @support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
@@ -2103,6 +2132,52 @@ def bœr():
         """)
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertFalse(stderr)
+
+    def test_gh_93696_frozen_list(self):
+        frozen_src = """
+        def func():
+            x = "Sentinel string for gh-93696"
+            print(x)
+        """
+        host_program = """
+        import os
+        import sys
+
+        def _create_fake_frozen_module():
+            with open('gh93696.py') as f:
+                src = f.read()
+
+            # this function has a co_filename as if it were in a frozen module
+            dummy_mod = compile(src, "<frozen gh93696>", "exec")
+            func_code = dummy_mod.co_consts[0]
+
+            mod = type(sys)("gh93696")
+            mod.func = type(lambda: None)(func_code, mod.__dict__)
+            mod.__file__ = 'gh93696.py'
+
+            return mod
+
+        mod = _create_fake_frozen_module()
+        mod.func()
+        """
+        commands = """
+            break 20
+            continue
+            step
+            list
+            quit
+        """
+        with open('gh93696.py', 'w') as f:
+            f.write(textwrap.dedent(frozen_src))
+
+        with open('gh93696_host.py', 'w') as f:
+            f.write(textwrap.dedent(host_program))
+
+        self.addCleanup(os_helper.unlink, 'gh93696.py')
+        self.addCleanup(os_helper.unlink, 'gh93696_host.py')
+        stdout, stderr = self._run_pdb(["gh93696_host.py"], commands)
+        # verify that pdb found the source of the "frozen" function
+        self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):

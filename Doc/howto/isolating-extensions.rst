@@ -411,7 +411,7 @@ that subclass, which may be defined in different module than yours.
           pass
 
 For a method to get its "defining class", it must use the
-:c:data:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`
+:data:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`
 :c:type:`calling convention <PyMethodDef>`
 and the corresponding :c:type:`PyCMethod` signature::
 
@@ -461,7 +461,7 @@ Module State Access from Slot Methods, Getters and Setters
 
    .. After adding to limited API:
 
-      If you use the `limited API <https://docs.python.org/3/c-api/stable.html>__,
+      If you use the :ref:`limited API <stable>,
       you must update ``Py_LIMITED_API`` to ``0x030b0000``, losing ABI
       compatibility with earlier versions.
 

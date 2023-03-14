@@ -1,2 +1,0 @@
-``run_tests.py`` now handles cross compiling env vars correctly and pass
-``HOSTRUNNER`` to regression tests.

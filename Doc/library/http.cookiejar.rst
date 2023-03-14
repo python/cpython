@@ -61,7 +61,7 @@ The following classes are provided:
    responsible for storing and retrieving cookies from a file or database.
 
 
-.. class:: FileCookieJar(filename, delayload=None, policy=None)
+.. class:: FileCookieJar(filename=None, delayload=None, policy=None)
 
    *policy* is an object implementing the :class:`CookiePolicy` interface.  For the
    other arguments, see the documentation for the corresponding attributes.
@@ -70,6 +70,8 @@ The following classes are provided:
    file on disk.  Cookies are **NOT** loaded from the named file until either the
    :meth:`load` or :meth:`revert` method is called.  Subclasses of this class are
    documented in section :ref:`file-cookie-jar-classes`.
+
+   This should not be initialized directly – use its subclasses below instead.
 
    .. versionchanged:: 3.8
 
@@ -317,11 +319,11 @@ FileCookieJar subclasses and co-operation with web browsers
 The following :class:`CookieJar` subclasses are provided for reading and
 writing.
 
-.. class:: MozillaCookieJar(filename, delayload=None, policy=None)
+.. class:: MozillaCookieJar(filename=None, delayload=None, policy=None)
 
    A :class:`FileCookieJar` that can load from and save cookies to disk in the
-   Mozilla ``cookies.txt`` file format (which is also used by the Lynx and Netscape
-   browsers).
+   Mozilla ``cookies.txt`` file format (which is also used by curl and the Lynx
+   and Netscape browsers).
 
    .. note::
 
@@ -338,7 +340,7 @@ writing.
    Mozilla.
 
 
-.. class:: LWPCookieJar(filename, delayload=None, policy=None)
+.. class:: LWPCookieJar(filename=None, delayload=None, policy=None)
 
    A :class:`FileCookieJar` that can load from and save cookies to disk in format
    compatible with the libwww-perl library's ``Set-Cookie3`` file format.  This is

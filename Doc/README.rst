@@ -93,9 +93,6 @@ Available make targets are:
   plain text documentation for the labels defined in
   ``tools/pyspecific.py`` -- pydoc needs these to show topic and keyword help.
 
-* "suspicious", which checks the parsed markup for text that looks like
-  malformed and thus unconverted reST.
-
 * "check", which checks for frequent markup errors.
 
 * "serve", which serves the build/html directory on port 8000.

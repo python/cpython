@@ -505,6 +505,11 @@ class BaseTest:
         self.checkraises(ValueError, 'hello', 'split', '', 0)
 
     def test_rsplit(self):
+        # without arg
+        self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'rsplit')
+        self.checkequal(['a', 'b', 'c', 'd'], 'a  b  c d', 'rsplit')
+        self.checkequal([], '', 'rsplit')
+
         # by a char
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'rsplit', '|')
         self.checkequal(['a|b|c', 'd'], 'a|b|c|d', 'rsplit', '|', 1)
@@ -558,6 +563,9 @@ class BaseTest:
 
         # with keyword args
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'rsplit', sep='|')
+        self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'rsplit', sep=None)
+        self.checkequal(['a b c', 'd'],
+                        'a b c d', 'rsplit', sep=None, maxsplit=1)
         self.checkequal(['a|b|c', 'd'],
                         'a|b|c|d', 'rsplit', '|', maxsplit=1)
         self.checkequal(['a|b|c', 'd'],

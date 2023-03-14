@@ -49,7 +49,7 @@ typedef struct _symtable_entry {
     PyObject *ste_varnames;  /* list of function parameters */
     PyObject *ste_children;  /* list of child blocks */
     PyObject *ste_directives;/* locations of global and nonlocal statements */
-    _Py_block_ty ste_type;   /* module, class or function */
+    _Py_block_ty ste_type;   /* module, class, function or annotation */
     int ste_nested;      /* true if block is nested */
     unsigned ste_free : 1;        /* true if block has free variables */
     unsigned ste_child_free : 1;  /* true if a child block has free vars,
@@ -90,6 +90,8 @@ PyAPI_FUNC(PySTEntryObject *) PySymtable_Lookup(struct symtable *, void *);
 
 extern void _PySymtable_Free(struct symtable *);
 
+extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
+
 /* Flags for def-use information */
 
 #define DEF_GLOBAL 1           /* global stmt */
@@ -127,6 +129,11 @@ extern struct symtable* _Py_SymtableStringObjectFlags(
     PyObject *filename,
     int start,
     PyCompilerFlags *flags);
+
+int _PyFuture_FromAST(
+    struct _mod * mod,
+    PyObject *filename,
+    PyFutureFeatures* futures);
 
 #ifdef __cplusplus
 }

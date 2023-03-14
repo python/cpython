@@ -1,1 +1,0 @@
-Remove legacy Unicode APIs based on ``Py_UNICODE*``.

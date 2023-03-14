@@ -1,2 +1,0 @@
-:func:`shutil.make_archive` no longer temporarily changes the current
-working directory during creation of standard ``.zip`` or tar archives.

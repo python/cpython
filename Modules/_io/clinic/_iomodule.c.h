@@ -280,8 +280,8 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         }
     }
     if (args[6]) {
-        closefd = _PyLong_AsInt(args[6]);
-        if (closefd == -1 && PyErr_Occurred()) {
+        closefd = PyObject_IsTrue(args[6]);
+        if (closefd < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -407,4 +407,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1f8001287a423470 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f387eba3f4c0254a input=a9049054013a1b77]*/

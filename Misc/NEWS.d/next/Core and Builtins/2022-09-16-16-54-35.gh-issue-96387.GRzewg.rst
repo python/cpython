@@ -1,5 +1,0 @@
-At Python exit, sometimes a thread holding the GIL can wait forever for a
-thread (usually a daemon thread) which requested to drop the GIL, whereas
-the thread already exited. To fix the race condition, the thread which
-requested the GIL drop now resets its request before exiting. Issue
-discovered and analyzed by Mingliang ZHAO. Patch by Victor Stinner.
