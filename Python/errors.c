@@ -202,8 +202,7 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
             _PyErr_SetRaisedException(tstate, exc);
             return;
         }
-        Py_XDECREF(value);
-        value = fixed_value;
+        Py_XSETREF(value, fixed_value);
     }
 
     exc_value = _PyErr_GetTopmostException(tstate)->exc_value;
