@@ -2199,7 +2199,8 @@ _Py_find_basename(const wchar_t *filename)
 wchar_t *
 _Py_normpath(wchar_t *path, Py_ssize_t size)
 {
-    if (path == NULL || !path[0] || size == 0) {
+    assert(path != NULL);
+    if (!path[0] || size == 0) {
         return path;
     }
     wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
