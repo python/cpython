@@ -26,15 +26,6 @@ extern PyType_Spec textiowrapper_spec;
 extern PyType_Spec winconsoleio_spec;
 #endif /* HAVE_WINDOWS_CONSOLE_IO */
 
-/* These functions are used as METH_NOARGS methods, are normally called
- * with args=NULL, and return a new reference.
- * BUT when args=Py_True is passed, they return a borrowed reference.
- */
-extern PyObject* _PyIOBase_check_readable(PyObject *self, PyObject *args);
-extern PyObject* _PyIOBase_check_writable(PyObject *self, PyObject *args);
-extern PyObject* _PyIOBase_check_seekable(PyObject *self, PyObject *args);
-extern PyObject* _PyIOBase_check_closed(PyObject *self, PyObject *args);
-
 /* Helper for finalization.
    This function will revive an object ready to be deallocated and try to
    close() it. It returns 0 if the object can be destroyed, or -1 if it
