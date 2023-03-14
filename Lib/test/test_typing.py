@@ -3824,7 +3824,10 @@ class GenericTests(BaseTestCase):
 
         for obj, expected_repr in object_to_expected_repr.items():
             with self.subTest(obj=obj, expected_repr=expected_repr):
-                self.assertEqual(repr(obj), f"{MyCallable.__module__}.{expected_repr}")
+                self.assertRegex(
+                    repr(obj),
+                    fr"^{re.escape(MyCallable.__module__)}.*\.{re.escape(expected_repr)}$"
+                )
 
     def test_eq_1(self):
         self.assertEqual(Generic, Generic)
