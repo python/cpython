@@ -16,9 +16,8 @@ interpreter.
 
 .. index:: object: traceback
 
-The module uses traceback objects --- this is the object type that is stored in
-the :data:`sys.last_traceback` variable and returned as the third item from
-:func:`sys.exc_info`.
+The module uses traceback objects --- these are objects of type :class:`types.TracebackType`,
+which are assigned to the ``__traceback__`` field of :class:`BaseException` instances.
 
 .. seealso::
 
@@ -81,7 +80,7 @@ The module defines the following functions:
 
 .. function:: print_exc(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(*sys.exc_info(), limit, file,
+   This is a shorthand for ``print_exception(sys.exception(), limit, file,
    chain)``.
 
 
@@ -444,11 +443,11 @@ exception and traceback:
    try:
        lumberjack()
    except IndexError:
-       exc_type, exc_value, exc_traceback = sys.exc_info()
+       exc = sys.exception()
        print("*** print_tb:")
-       traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+       traceback.print_tb(exc.__traceback__, limit=1, file=sys.stdout)
        print("*** print_exception:")
-       traceback.print_exception(exc_value, limit=2, file=sys.stdout)
+       traceback.print_exception(exc, limit=2, file=sys.stdout)
        print("*** print_exc:")
        traceback.print_exc(limit=2, file=sys.stdout)
        print("*** format_exc, first and last line:")
@@ -456,12 +455,12 @@ exception and traceback:
        print(formatted_lines[0])
        print(formatted_lines[-1])
        print("*** format_exception:")
-       print(repr(traceback.format_exception(exc_value)))
+       print(repr(traceback.format_exception(exc)))
        print("*** extract_tb:")
-       print(repr(traceback.extract_tb(exc_traceback)))
+       print(repr(traceback.extract_tb(exc.__traceback__)))
        print("*** format_tb:")
-       print(repr(traceback.format_tb(exc_traceback)))
-       print("*** tb_lineno:", exc_traceback.tb_lineno)
+       print(repr(traceback.format_tb(exc.__traceback__)))
+       print("*** tb_lineno:", exc.__traceback__.tb_lineno)
 
 The output for the example would look similar to this:
 

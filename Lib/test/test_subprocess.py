@@ -717,8 +717,9 @@ class ProcessTestCase(BaseTestCase):
             os.close(test_pipe_r)
             os.close(test_pipe_w)
         pipesize = pipesize_default // 2
-        if pipesize < 512:  # the POSIX minimum
-            raise unittest.SkitTest(
+        pagesize_default = support.get_pagesize()
+        if pipesize < pagesize_default:  # the POSIX minimum
+            raise unittest.SkipTest(
                 'default pipesize too small to perform test.')
         p = subprocess.Popen(
             [sys.executable, "-c",
