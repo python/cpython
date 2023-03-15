@@ -1,0 +1,4 @@
+Implemented an eager task factory in asyncio. When set as a task factory on
+an event loop, it performs eager execution of coroutines and returns a
+completed future instead of scheduling a task to the event loop if the
+coroutine can complete without suspending.
