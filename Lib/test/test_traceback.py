@@ -2987,7 +2987,7 @@ class SuggestionFormattingTestBase:
     def test_getattr_suggestions_do_not_trigger_for_big_dicts(self):
         class A:
             blech = None
-        # A class with a very big __dict__ will not be consider
+        # A class with a very big __dict__ will not be considered
         # for suggestions.
         for index in range(2000):
             setattr(A, f"index_{index}", None)
