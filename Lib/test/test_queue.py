@@ -278,7 +278,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         q.shutdown(immediate=False)
         self.assertNotEqual("shutdown", q.shutdown_state)
 
-    def _shutdown_all_methods(self, immediate):
+    def _shutdown_all_methods_in_one_thread(self, immediate):
         q = self.type2test(2)
         q.put("L")
         q.put_nowait("O")
@@ -312,11 +312,112 @@ class BaseQueueTestMixin(BlockingTestMixin):
             with self.assertRaises(self.queue.ShutDown):
                 q.get(True, 1.0)
 
-    def test_shutdown_all_methods(self):
-        return self._shutdown_all_methods(False)
+    def test_shutdown_all_methods_in_one_thread(self):
+        return self._shutdown_all_methods_in_one_thread(False)
 
-    def test_shutdown_immediate_get(self):
-        return self._shutdown_all_methods(True)
+    def test_shutdown_immediate_all_methods_in_one_thread(self):
+        return self._shutdown_all_methods_in_one_thread(True)
+
+    def _write_msg_thread(self, q, n, results, delay,
+                            i_when_exec_shutdown,
+                            event_start, event_end):
+        event_start.wait()
+        for i in range(1, n+1):
+            try:
+                q.put((i, "YDLO"))
+                results.append(True)
+            except self.queue.ShutDown:
+                results.append(False)
+            # triggers shutdown of queue
+            if i == i_when_exec_shutdown:
+                event_end.set()
+            time.sleep(delay)
+        # end of all puts
+        try:
+            q.join()
+        except self.queue.ShutDown:
+            pass
+
+    def _read_msg_thread(self, q, nb, results, delay, event_start):
+        event_start.wait()
+        block = True
+        while nb:
+            time.sleep(delay)
+            try:
+                # Get at least one message
+                q.get(block)
+                block = False
+                q.task_done()
+                results.append(True)
+                nb -= 1
+            except self.queue.ShutDown:
+                results.append(False)
+                nb -= 1
+            except self.queue.Empty:
+                pass
+        try:
+            q.join()
+        except self.queue.ShutDown:
+            pass
+
+    def _shutdown_thread(self, q, event_end, immediate):
+        event_end.wait()
+        q.shutdown(immediate)
+        try:
+            q.join()
+        except self.queue.ShutDown:
+            pass
+
+    def _join_thread(self, q, delay, event_start):
+        event_start.wait()
+        time.sleep(delay)
+        try:
+            q.join()
+        except self.queue.ShutDown:
+            pass
+
+    def _shutdown_all_methods_in_many_threads(self, immediate):
+        q = self.type2test()
+        ps = []
+        ev_start = threading.Event()
+        ev_exec_shutdown = threading.Event()
+        res_puts = []
+        res_gets = []
+        delay = 1e-4
+        read_process = 4
+        nb_msgs = read_process * 16
+        nb_msgs_r = nb_msgs // read_process
+        when_exec_shutdown = nb_msgs // 2
+        lprocs = (
+            (self._write_msg_thread, 1,  (q, nb_msgs, res_puts, delay,
+                                            when_exec_shutdown,
+                                            ev_start, ev_exec_shutdown)),
+            (self._read_msg_thread, read_process, (q, nb_msgs_r,
+                                                    res_gets, delay*2,
+                                                    ev_start)),
+            (self._join_thread, 2, (q, delay*2, ev_start)),
+            (self._shutdown_thread, 1, (q, ev_exec_shutdown, immediate)),
+            )
+        # start all threds
+        for func, n, args in lprocs:
+            for i in range(n):
+                ps.append(threading.Thread(target=func, args=args))
+                ps[-1].start()
+        # set event in order to run q.shutdown()
+        ev_start.set()
+
+        if not immediate:
+            assert(len(res_gets) == len(res_puts))
+            assert(res_gets.count(True) == res_puts.count(True))
+        else:
+            assert(len(res_gets) <= len(res_puts))
+            assert(res_gets.count(True) <= res_puts.count(True))
+
+    def test_shutdown_all_methods_in_many_threads(self):
+        return self._shutdown_all_methods_in_many_threads(False)
+
+    def test_shutdown_immediate_all_methods_in_many_threads(self):
+        return self._shutdown_all_methods_in_many_threads(True)
 
     def _get(self, q, go, results, shutdown=False):
         go.wait()

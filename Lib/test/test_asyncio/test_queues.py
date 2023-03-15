@@ -654,7 +654,7 @@ class _QueueShutdownTestMixin:
         q.shutdown(immediate=False)
         self.assertNotEqual("shutdown", q._shutdown_state.value)
 
-    async def _shutdown_all_methods(self, immediate):
+    async def _shutdown_all_methods_in_one_task(self, immediate):
         q = asyncio.Queue()
         await q.put("L")
         q.put_nowait("O")
@@ -686,11 +686,11 @@ class _QueueShutdownTestMixin:
             with self.assertRaises(asyncio.QueueShutDown):
                 q.get_nowait()
 
-    async def test_shutdown_all_methods(self):
-        return await self._shutdown_all_methods(False)
+    async def test_shutdown_all_methods_in_one_task(self):
+        return await self._shutdown_all_methods_in_one_task(False)
 
-    async def test_shutdown_immediate_get(self):
-        return await self._shutdown_all_methods(True)
+    async def test_shutdown_immediate_all_methods_in_one_task(self):
+        return await self._shutdown_all_methods_in_one_task(True)
 
     async def _shutdown_putters(self, immediate):
         delay = self.delay
