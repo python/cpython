@@ -229,7 +229,6 @@ class Instruction:
 
     # Parts of the underlying instruction definition
     inst: parser.InstDef
-    register: bool
     kind: typing.Literal["inst", "op", "legacy"]  # Legacy means no (input -- output)
     name: str
     block: parser.Block
@@ -246,17 +245,12 @@ class Instruction:
     unmoved_names: frozenset[str]
     instr_fmt: str
 
-    # Parallel to input_effects; set later
-    input_registers: list[str] = dataclasses.field(repr=False)
-    output_registers: list[str] = dataclasses.field(repr=False)
-
     # Set later
     family: parser.Family | None = None
     predicted: bool = False
 
     def __init__(self, inst: parser.InstDef):
         self.inst = inst
-        self.register = inst.register
         self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
@@ -278,35 +272,16 @@ class Instruction:
             else:
                 break
         self.unmoved_names = frozenset(unmoved_names)
-        if self.register:
-            num_regs = len(self.input_effects) + len(self.output_effects)
-            num_dummies = (num_regs // 2) * 2 + 1 - num_regs
-            fmt = "I" + "B" * num_regs + "X" * num_dummies
+        if variable_used(inst, "oparg"):
+            fmt = "IB"
         else:
-            if variable_used(inst, "oparg"):
-                fmt = "IB"
-            else:
-                fmt = "IX"
+            fmt = "IX"
         cache = "C"
         for ce in self.cache_effects:
             for _ in range(ce.size):
                 fmt += cache
                 cache = "0"
         self.instr_fmt = fmt
-
-    def analyze_registers(self, a: "Analyzer") -> None:
-        regs = iter(("REG(oparg1)", "REG(oparg2)", "REG(oparg3)"))
-        try:
-            self.input_registers = [
-                next(regs) for ieff in self.input_effects if ieff.name != UNUSED
-            ]
-            self.output_registers = [
-                next(regs) for oeff in self.output_effects if oeff.name != UNUSED
-            ]
-        except StopIteration:  # Running out of registers
-            a.error(
-                f"Instruction {self.name} has too many register effects", node=self.inst
-            )
 
     def write(self, out: Formatter) -> None:
         """Write one instruction, sans prologue and epilogue."""
@@ -319,25 +294,19 @@ class Instruction:
                         f'{self.cache_offset}, "incorrect cache size");'
                     )
 
-        if not self.register:
-            # Write input stack effect variable declarations and initializations
-            ieffects = list(reversed(self.input_effects))
-            for i, ieffect in enumerate(ieffects):
-                isize = string_effect_size(
-                    list_effect_size([ieff for ieff in ieffects[: i + 1]])
-                )
-                if ieffect.size:
-                    src = StackEffect(f"(stack_pointer - {maybe_parenthesize(isize)})", "PyObject **")
-                elif ieffect.cond:
-                    src = StackEffect(f"({ieffect.cond}) ? stack_pointer[-{maybe_parenthesize(isize)}] : NULL", "")
-                else:
-                    src = StackEffect(f"stack_pointer[-{maybe_parenthesize(isize)}]", "")
-                out.declare(ieffect, src)
-        else:
-            # Write input register variable declarations and initializations
-            for ieffect, reg in zip(self.input_effects, self.input_registers):
-                src = StackEffect(reg, "")
-                out.declare(ieffect, src)
+        # Write input stack effect variable declarations and initializations
+        ieffects = list(reversed(self.input_effects))
+        for i, ieffect in enumerate(ieffects):
+            isize = string_effect_size(
+                list_effect_size([ieff for ieff in ieffects[: i + 1]])
+            )
+            if ieffect.size:
+                src = StackEffect(f"(stack_pointer - {maybe_parenthesize(isize)})", "PyObject **")
+            elif ieffect.cond:
+                src = StackEffect(f"({ieffect.cond}) ? stack_pointer[-{maybe_parenthesize(isize)}] : NULL", "")
+            else:
+                src = StackEffect(f"stack_pointer[-{maybe_parenthesize(isize)}]", "")
+            out.declare(ieffect, src)
 
         # Write output stack effect variable declarations
         isize = string_effect_size(list_effect_size(self.input_effects))
@@ -367,32 +336,26 @@ class Instruction:
         if self.always_exits:
             return
 
-        if not self.register:
-            # Write net stack growth/shrinkage
-            out.stack_adjust(
-                0,
-                [ieff for ieff in self.input_effects],
-                [oeff for oeff in self.output_effects],
-            )
+        # Write net stack growth/shrinkage
+        out.stack_adjust(
+            0,
+            [ieff for ieff in self.input_effects],
+            [oeff for oeff in self.output_effects],
+        )
 
-            # Write output stack effect assignments
-            oeffects = list(reversed(self.output_effects))
-            for i, oeffect in enumerate(oeffects):
-                if oeffect.name in self.unmoved_names:
-                    continue
-                osize = string_effect_size(
-                    list_effect_size([oeff for oeff in oeffects[: i + 1]])
-                )
-                if oeffect.size:
-                    dst = StackEffect(f"stack_pointer - {maybe_parenthesize(osize)}", "PyObject **")
-                else:
-                    dst = StackEffect(f"stack_pointer[-{maybe_parenthesize(osize)}]", "")
-                out.assign(dst, oeffect)
-        else:
-            # Write output register assignments
-            for oeffect, reg in zip(self.output_effects, self.output_registers):
-                dst = StackEffect(reg, "")
-                out.assign(dst, oeffect)
+        # Write output stack effect assignments
+        oeffects = list(reversed(self.output_effects))
+        for i, oeffect in enumerate(oeffects):
+            if oeffect.name in self.unmoved_names:
+                continue
+            osize = string_effect_size(
+                list_effect_size([oeff for oeff in oeffects[: i + 1]])
+            )
+            if oeffect.size:
+                dst = StackEffect(f"stack_pointer - {maybe_parenthesize(osize)}", "PyObject **")
+            else:
+                dst = StackEffect(f"stack_pointer[-{maybe_parenthesize(osize)}]", "")
+            out.assign(dst, oeffect)
 
         # Write cache effect
         if self.cache_offset:
@@ -438,19 +401,17 @@ class Instruction:
                 # ERROR_IF() must pop the inputs from the stack.
                 # The code block is responsible for DECREF()ing them.
                 # NOTE: If the label doesn't exist, just add it to ceval.c.
-                if not self.register:
-                    # Don't pop common input/output effects at the bottom!
-                    # These aren't DECREF'ed so they can stay.
-                    ieffs = list(self.input_effects)
-                    oeffs = list(self.output_effects)
-                    while ieffs and oeffs and ieffs[0] == oeffs[0]:
-                        ieffs.pop(0)
-                        oeffs.pop(0)
-                    ninputs, symbolic = list_effect_size(ieffs)
-                    if ninputs:
-                        label = f"pop_{ninputs}_{label}"
-                else:
-                    symbolic = ""
+
+                # Don't pop common input/output effects at the bottom!
+                # These aren't DECREF'ed so they can stay.
+                ieffs = list(self.input_effects)
+                oeffs = list(self.output_effects)
+                while ieffs and oeffs and ieffs[0] == oeffs[0]:
+                    ieffs.pop(0)
+                    oeffs.pop(0)
+                ninputs, symbolic = list_effect_size(ieffs)
+                if ninputs:
+                    label = f"pop_{ninputs}_{label}"
                 if symbolic:
                     out.write_raw(
                         f"{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
@@ -458,21 +419,20 @@ class Instruction:
                 else:
                     out.write_raw(f"{space}if ({cond}) goto {label};\n")
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
-                if not self.register:
-                    out.reset_lineno()
-                    space = extra + m.group(1)
-                    for ieff in self.input_effects:
-                        if ieff.name in names_to_skip:
-                            continue
-                        if ieff.size:
-                            out.write_raw(
-                                f"{space}for (int _i = {ieff.size}; --_i >= 0;) {{\n"
-                            )
-                            out.write_raw(f"{space}    Py_DECREF({ieff.name}[_i]);\n")
-                            out.write_raw(f"{space}}}\n")
-                        else:
-                            decref = "XDECREF" if ieff.cond else "DECREF"
-                            out.write_raw(f"{space}Py_{decref}({ieff.name});\n")
+                out.reset_lineno()
+                space = extra + m.group(1)
+                for ieff in self.input_effects:
+                    if ieff.name in names_to_skip:
+                        continue
+                    if ieff.size:
+                        out.write_raw(
+                            f"{space}for (int _i = {ieff.size}; --_i >= 0;) {{\n"
+                        )
+                        out.write_raw(f"{space}    Py_DECREF({ieff.name}[_i]);\n")
+                        out.write_raw(f"{space}}}\n")
+                    else:
+                        decref = "XDECREF" if ieff.cond else "DECREF"
+                        out.write_raw(f"{space}Py_{decref}({ieff.name});\n")
             else:
                 out.write_raw(extra + line)
         out.reset_lineno()
@@ -672,7 +632,6 @@ class Analyzer:
         Raises SystemExit if there is an error.
         """
         self.find_predictions()
-        self.analyze_register_instrs()
         self.analyze_supers_and_macros()
         self.map_families()
         self.check_families()
@@ -782,11 +741,6 @@ class Analyzer:
             assert False, f"Unknown instruction {name!r}"
         return cache, input, output
 
-    def analyze_register_instrs(self) -> None:
-        for instr in self.instrs.values():
-            if instr.register:
-                instr.analyze_registers(self)
-
     def analyze_supers_and_macros(self) -> None:
         """Analyze each super- and macro instruction."""
         self.super_instrs = {}
@@ -816,7 +770,7 @@ class Analyzer:
         stack, initial_sp = self.stack_analysis(components)
         sp = initial_sp
         parts: list[Component | parser.CacheEffect] = []
-        format = "IB"  # Macros don't support register instructions yet
+        format = "IB"
         cache = "C"
         for component in components:
             match component:
@@ -1034,13 +988,9 @@ class Analyzer:
             self.write_stack_effect_functions()
 
             # Write type definitions
-            self.out.emit("enum Direction { DIR_NONE, DIR_READ, DIR_WRITE };")
             self.out.emit(f"enum InstructionFormat {{ {', '.join(format_enums)} }};")
             self.out.emit("struct opcode_metadata {")
             with self.out.indent():
-                self.out.emit("enum Direction dir_op1;")
-                self.out.emit("enum Direction dir_op2;")
-                self.out.emit("enum Direction dir_op3;")
                 self.out.emit("bool valid_entry;")
                 self.out.emit("enum InstructionFormat instr_format;")
             self.out.emit("};")
@@ -1073,32 +1023,20 @@ class Analyzer:
 
     def write_metadata_for_inst(self, instr: Instruction) -> None:
         """Write metadata for a single instruction."""
-        dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
-        if instr.kind == "legacy":
-            assert not instr.register
-        else:
-            if instr.register:
-                directions: list[str] = []
-                directions.extend("DIR_READ" for _ in instr.input_effects)
-                directions.extend("DIR_WRITE" for _ in instr.output_effects)
-                directions.extend("DIR_NONE" for _ in range(3))
-                dir_op1, dir_op2, dir_op3 = directions[:3]
         self.out.emit(
-            f"    [{instr.name}] = {{ {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{instr.instr_fmt} }},"
+            f"    [{instr.name}] = {{ true, {INSTR_FMT_PREFIX}{instr.instr_fmt} }},"
         )
 
     def write_metadata_for_super(self, sup: SuperInstruction) -> None:
         """Write metadata for a super-instruction."""
-        dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
         self.out.emit(
-            f"    [{sup.name}] = {{ {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{sup.instr_fmt} }},"
+            f"    [{sup.name}] = {{ true, {INSTR_FMT_PREFIX}{sup.instr_fmt} }},"
         )
 
     def write_metadata_for_macro(self, mac: MacroInstruction) -> None:
         """Write metadata for a macro-instruction."""
-        dir_op1 = dir_op2 = dir_op3 = "DIR_NONE"
         self.out.emit(
-            f"    [{mac.name}] = {{ {dir_op1}, {dir_op2}, {dir_op3}, true, {INSTR_FMT_PREFIX}{mac.instr_fmt} }},"
+            f"    [{mac.name}] = {{ true, {INSTR_FMT_PREFIX}{mac.instr_fmt} }},"
         )
 
     def write_instructions(self) -> None:
