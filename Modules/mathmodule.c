@@ -105,12 +105,6 @@ Double and triple length extended precision algorithms from:
 typedef struct{ double hi; double lo; } DoubleLength;
 
 static DoubleLength
-d_to_dl(double x)
-{
-    return (DoubleLength) {x, 0.0};
-}
-
-static DoubleLength
 dl_fast_sum(double a, double b)
 {
     /* Algorithm 1.1. Compensated summation of two floating point numbers. */
@@ -187,12 +181,6 @@ dl_fma(double x, double y, DoubleLength total)
     DoubleLength pr = dl_mul(x, y);
     DoubleLength sm = dl_sum(total.hi, pr.hi);
     return DoubleLength {sm.hi, pr.lo + sm.lo + total.lo};
-}
-
-static double
-dl_to_d(DoubleLength total):
-{
-    return total.lo + total.hi;
 }
 
 #endif
@@ -2511,9 +2499,8 @@ References:
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    const double T27 = 134217729.0;     /* ldexp(1.0, 27) + 1.0) */
-    double x, scale, oldcsum, csum = 1.0, frac1 = 0.0, frac2 = 0.0, frac3 = 0.0;
-    double t, hi, lo, h;
+    double x, h, scale, oldcsum, csum = 1.0, frac1 = 0.0, frac2 = 0.0;
+    DoubleLength pr, sm;
     int max_e;
     Py_ssize_t i;
 
@@ -2538,54 +2525,20 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             x *= scale;
             assert(fabs(x) < 1.0);
 
-            t = x * T27;
-            hi = t - (t - x);
-            lo = x - hi;
-            assert(hi + lo == x);
-
-            x = hi * hi;
-            assert(x <= 1.0);
-            assert(fabs(csum) >= fabs(x));
-            oldcsum = csum;
-            csum += x;
-            frac1 += (oldcsum - csum) + x;
-
-            x = 2.0 * hi * lo;
-            assert(fabs(csum) >= fabs(x));
-            oldcsum = csum;
-            csum += x;
-            frac2 += (oldcsum - csum) + x;
-
-            assert(csum + lo * lo == csum);
-            frac3 += lo * lo;
+            pr = dl_mul(x, x);
+            assert(pr.hi <= 1.0);
+            sm = dl_fast_sum(csum, pr.hi);
+            csum = sm.hi;
+            frac1 += pr.lo;
+            frac2 += sm.lo;
         }
-        h = sqrt(csum - 1.0 + (frac1 + frac2 + frac3));
-
-        x = h;
-        t = x * T27;
-        hi = t - (t - x);
-        lo = x - hi;
-        assert (hi + lo == x);
-
-        x = -hi * hi;
-        assert(fabs(csum) >= fabs(x));
-        oldcsum = csum;
-        csum += x;
-        frac1 += (oldcsum - csum) + x;
-
-        x = -2.0 * hi * lo;
-        assert(fabs(csum) >= fabs(x));
-        oldcsum = csum;
-        csum += x;
-        frac2 += (oldcsum - csum) + x;
-
-        x = -lo * lo;
-        assert(fabs(csum) >= fabs(x));
-        oldcsum = csum;
-        csum += x;
-        frac3 += (oldcsum - csum) + x;
-
-        x = csum - 1.0 + (frac1 + frac2 + frac3);
+        h = sqrt(csum - 1.0 + (frac1 + frac2));
+        pr = dl_mul(-h, h);
+        sm = dl_fast_sum(csum, pr.hi);
+        csum = sm.hi;
+        frac1 += pr.lo;
+        frac2 += sm.lo;
+        x = csum - 1.0 + (frac1 + frac2);
         return (h + x / (2.0 * h)) / scale;
     }
     /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
