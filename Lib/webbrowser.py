@@ -545,7 +545,7 @@ def register_standard_browsers():
         # Detect some common Windows browsers, fallback to Microsoft Edge
         # location in 64-bit Windows
         edge64 = os.path.join(os.environ.get("PROGRAMFILES(x86)", "C:\\Program Files (x86)"),
-                            "Microsoft\\Edge\\Application\\msedge.exe")
+                              "Microsoft\\Edge\\Application\\msedge.exe")
         # location in 32-bit Windows
         edge32 = os.path.join(os.environ.get("PROGRAMFILES", "C:\\Program Files"),
                              "Microsoft\\Edge\\Application\\msedge.exe")
