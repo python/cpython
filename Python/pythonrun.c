@@ -703,12 +703,11 @@ _Py_HandleSystemExit(int *exitcode_p)
     int exitcode = 0;
 
     PyObject *exc = PyErr_GetRaisedException();
-    assert(exc != Py_None);
     if (exc == NULL) {
         goto done;
     }
-
     assert(PyExceptionInstance_Check(exc));
+
     /* The error code should be in the `code' attribute. */
     PyObject *code = PyObject_GetAttr(exc, &_Py_ID(code));
     if (code) {
