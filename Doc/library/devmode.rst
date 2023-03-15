@@ -21,7 +21,7 @@ Effects of the Python Development Mode
 Enabling the Python Development Mode is similar to the following command, but
 with additional effects described below::
 
-    PYTHONMALLOC=debug PYTHONASYNCIODEBUG=1 python3 -W default -X faulthandler
+    PYTHONMALLOC=debug PYTHONASYNCIODEBUG=1 python -W default -X faulthandler
 
 Effects of the Python Development Mode:
 
@@ -128,14 +128,14 @@ any warning. Example using README.txt, which has 269 lines:
 
 .. code-block:: shell-session
 
-    $ python3 script.py README.txt
+    $ python script.py README.txt
     269
 
 Enabling the Python Development Mode displays a :exc:`ResourceWarning` warning:
 
 .. code-block:: shell-session
 
-    $ python3 -X dev script.py README.txt
+    $ python -X dev script.py README.txt
     269
     script.py:10: ResourceWarning: unclosed file <_io.TextIOWrapper name='README.rst' mode='r' encoding='UTF-8'>
       main()
@@ -146,7 +146,7 @@ opened:
 
 .. code-block:: shell-session
 
-    $ python3 -X dev -X tracemalloc=5 script.py README.rst
+    $ python -X dev -X tracemalloc=5 script.py README.rst
     269
     script.py:10: ResourceWarning: unclosed file <_io.TextIOWrapper name='README.rst' mode='r' encoding='UTF-8'>
       main()
@@ -190,7 +190,7 @@ By default, Python does not emit any warning:
 
 .. code-block:: shell-session
 
-    $ python3 script.py
+    $ python script.py
     import os
 
 The Python Development Mode shows a :exc:`ResourceWarning` and logs a "Bad file
@@ -198,7 +198,7 @@ descriptor" error when finalizing the file object:
 
 .. code-block:: shell-session
 
-    $ python3 script.py
+    $ python script.py
     import os
     script.py:10: ResourceWarning: unclosed file <_io.TextIOWrapper name='script.py' mode='r' encoding='UTF-8'>
       main()

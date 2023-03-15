@@ -42,6 +42,12 @@ enum {
 #define FLOAT FLOAT_
 #define INT INT_
 #define LONG LONG_
+
+/* This can already be defined on Windows to set the character set
+   the Windows header files treat as default */
+#ifdef UNICODE
+#undef UNICODE
+#endif
 #endif
 
 /* Pickle opcodes. These must be kept updated with pickle.py.

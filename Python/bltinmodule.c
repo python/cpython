@@ -553,9 +553,11 @@ static void
 filter_dealloc(filterobject *lz)
 {
     PyObject_GC_UnTrack(lz);
+    Py_TRASHCAN_BEGIN(lz, filter_dealloc)
     Py_XDECREF(lz->func);
     Py_XDECREF(lz->it);
     Py_TYPE(lz)->tp_free(lz);
+    Py_TRASHCAN_END
 }
 
 static int
@@ -2507,10 +2509,10 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 overflow = 0;
                 /* Single digits are common, fast, and cannot overflow on unpacking. */
                 switch (Py_SIZE(item)) {
-                    case -1: b = -(sdigit) ((PyLongObject*)item)->ob_digit[0]; break;
+                    case -1: b = -(sdigit) ((PyLongObject*)item)->long_value.ob_digit[0]; break;
                     // Note: the continue goes to the top of the "while" loop that iterates over the elements
                     case  0: Py_DECREF(item); continue;
-                    case  1: b = ((PyLongObject*)item)->ob_digit[0]; break;
+                    case  1: b = ((PyLongObject*)item)->long_value.ob_digit[0]; break;
                     default: b = PyLong_AsLongAndOverflow(item, &overflow); break;
                 }
                 if (overflow == 0 &&
@@ -3095,6 +3097,9 @@ _PyBuiltin_Init(PyInterpreterState *interp)
         return NULL;
     }
     Py_DECREF(debug);
+
+    /* m_copy of Py_None means it is copied some other way. */
+    builtinsmodule.m_base.m_copy = Py_NewRef(Py_None);
 
     return mod;
 #undef ADD_TO_ALL

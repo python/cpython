@@ -7,6 +7,9 @@
 # GitHub
 .github/**                    @ezio-melotti
 
+# Build system
+configure*                    @erlend-aasland @corona10
+
 # asyncio
 **/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303
 
@@ -147,6 +150,8 @@ Lib/ast.py                    @isidentical
 **/*tomllib*                  @encukou @hauntsaninja
 
 **/*sysconfig*                @FFY00
+
+**/*cjkcodecs*                @corona10
 
 # macOS
 /Mac/                         @python/macos-team
