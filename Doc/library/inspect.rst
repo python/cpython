@@ -1578,7 +1578,7 @@ the following flags:
 Buffer flags
 ------------
 
-The :mod:`inspect` module provides an :class:`enum.IntFlag`
+The :mod:`inspect` module provides an :class:`enum.IntFlag`.
 
 .. class:: BufferFlags
 
