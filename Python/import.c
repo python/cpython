@@ -994,7 +994,7 @@ get_core_module_dict(PyInterpreterState *interp,
         }
         assert(!PyErr_Occurred());
     }
-    return 0;
+    return NULL;
 }
 
 static inline int
