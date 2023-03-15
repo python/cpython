@@ -3071,6 +3071,7 @@
                 JUMPBY(INLINE_CACHE_ENTRIES_CALL);
                 DISPATCH_INLINED(new_frame);
             }
+
             /* Callable is not a normal Python function */
             if (cframe.use_tracing) {
                 res = trace_call_function(
@@ -3078,10 +3079,10 @@
                     positional_args, kwnames);
             }
             else {
-                res = PyObject_Vectorcall(
+                CALL_WITH_NATIVE_FRAME(callable, res = PyObject_Vectorcall(
                     callable, args,
                     positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                    kwnames);
+                    kwnames));
             }
             kwnames = NULL;
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3267,8 +3268,8 @@
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
             STAT_INC(CALL, hit);
-            res = tp->tp_vectorcall((PyObject *)tp, args,
-                                    total_args - kwnames_len, kwnames);
+            CALL_WITH_NATIVE_FRAME(callable, res = tp->tp_vectorcall((PyObject *)tp, args,
+                                    total_args - kwnames_len, kwnames));
             kwnames = NULL;
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
@@ -3310,7 +3311,7 @@
                 goto error;
             }
             PyObject *arg = args[0];
-            res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
+            CALL_WITH_NATIVE_FRAME(callable, res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg));
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
@@ -3345,10 +3346,10 @@
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             /* res = func(self, args, nargs) */
-            res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
+            CALL_WITH_NATIVE_FRAME(callable, res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable),
                 args,
-                total_args);
+                total_args));
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Free the arguments. */
@@ -3392,12 +3393,12 @@
             _PyCFunctionFastWithKeywords cfunc =
                 (_PyCFunctionFastWithKeywords)(void(*)(void))
                 PyCFunction_GET_FUNCTION(callable);
-            res = cfunc(
+            CALL_WITH_NATIVE_FRAME(callable, res = cfunc(
                 PyCFunction_GET_SELF(callable),
                 args,
                 total_args - KWNAMES_LEN(),
                 kwnames
-            );
+            ));
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             kwnames = NULL;
 
@@ -3435,7 +3436,8 @@
             DEOPT_IF(callable != interp->callable_cache.len, CALL);
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
-            Py_ssize_t len_i = PyObject_Length(arg);
+            Py_ssize_t len_i;
+            CALL_WITH_NATIVE_FRAME(callable, len_i = PyObject_Length(arg));
             if (len_i < 0) {
                 goto error;
             }
@@ -3473,6 +3475,7 @@
             STAT_INC(CALL, hit);
             PyObject *cls = args[1];
             PyObject *inst = args[0];
+
             int retval = PyObject_IsInstance(inst, cls);
             if (retval < 0) {
                 goto error;

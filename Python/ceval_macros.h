@@ -353,3 +353,15 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #define KWNAMES_LEN() \
     (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
+
+
+#define CALL_WITH_NATIVE_FRAME(_callable, _call) \
+    do { \
+        assert(cframe.current_frame == &frame->base); \
+        _PyFrame _bframe; \
+        _bframe.f_executable = _callable; \
+        _bframe.previous = &frame->base; \
+        cframe.current_frame = &_bframe; \
+        (_call); \
+        cframe.current_frame = &frame->base; \
+    } while (0)

@@ -1165,14 +1165,10 @@ done:
    This function is signal safe. */
 
 static void
-dump_frame(int fd, _PyFrame *f)
+dump_pyframe(int fd, _PyInterpreterFrame *frame)
 {
-    if (!PyCode_Check(f->f_executable)) {
-        return;
-    }
-    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)f;
-    PyCodeObject *code =_PyFrame_GetCode(frame);
     PUTS(fd, "  File ");
+    PyCodeObject *code =_PyFrame_GetCode(frame);
     if (code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))
     {
@@ -1201,6 +1197,35 @@ dump_frame(int fd, _PyFrame *f)
         PUTS(fd, "???");
     }
 
+    PUTS(fd, "\n");
+}
+
+static void
+dump_frame(int fd, _PyFrame *f)
+{
+    PyObject * func = f->f_executable;
+    if (PyCode_Check(func)) {
+        dump_pyframe(fd, (_PyInterpreterFrame *)f);
+        return;
+    }
+    if (func == Py_None) {
+        return;
+    }
+    if (PyType_Check(func)) {
+        PUTS(fd, "  Class ");
+        PUTS(fd, ((PyTypeObject *)func)->tp_name);
+    }
+    else if (PyCFunction_Check(func)) {
+        PUTS(fd, "  Builtin function ");
+        PUTS(fd, ((PyCFunctionObject *)func)->m_ml->ml_name);
+    }
+    else if (Py_TYPE(func) == &PyMethodDescr_Type) {
+        PUTS(fd, "  Method descriptor ");
+        PUTS(fd, ((PyMethodDescrObject *)func)->d_method->ml_name);
+    }
+    else {
+        PUTS(fd, " Other");
+    }
     PUTS(fd, "\n");
 }
 

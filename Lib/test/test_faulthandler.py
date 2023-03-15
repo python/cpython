@@ -489,6 +489,13 @@ class FaultHandlerTests(unittest.TestCase):
             '  File "<string>", line 19 in <module>'
         ]
         trace, exitcode = self.get_output(code, filename, fd)
+        if trace != expected:
+            print("Trace")
+            print("-----------------")
+            print(trace)
+            print("Expected")
+            print("-----------------")
+            print(expected)
         self.assertEqual(trace, expected)
         self.assertEqual(exitcode, 0)
 

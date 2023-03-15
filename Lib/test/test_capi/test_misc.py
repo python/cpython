@@ -206,6 +206,7 @@ class CAPITest(unittest.TestCase):
                     r'returned NULL without setting an exception\n'
                 r'\n'
                 r'Current thread.*:\n'
+                    r'  Builtin function return_null_without_error\n'
                 r'  File .*", line 6 in <module>\n')
         else:
             with self.assertRaises(SystemError) as cm:
@@ -240,6 +241,7 @@ class CAPITest(unittest.TestCase):
                         r'returned a result with an exception set\n'
                     r'\n'
                     r'Current thread.*:\n'
+                    r'  Builtin function return_result_with_error\n'
                     r'  File .*, line 6 in <module>\n')
         else:
             with self.assertRaises(SystemError) as cm:
@@ -262,7 +264,6 @@ class CAPITest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         err = decode_stderr(err)
         if 'SystemError: ' not in err:
-            print(err)
             self.assertRegex(err,
                     r'Fatal Python error: _Py_CheckSlotResult: '
                         r'Slot __getitem__ of type dict succeeded '
@@ -271,6 +272,7 @@ class CAPITest(unittest.TestCase):
                     r'ValueError: bug\n'
                     r'\n'
                     r'Current thread .* \(most recent call first\):\n'
+                    r'  Builtin function getitem_with_error\n'
                     r'  File .*, line 6 in <module>\n'
                     r'\n'
                     r'Extension modules: _testcapi \(total: 1\)\n')
