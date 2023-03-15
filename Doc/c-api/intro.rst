@@ -78,19 +78,19 @@ used by extension writers. Structure member names do not have a reserved prefix.
 
 The header files are typically installed with Python.  On Unix, these  are
 located in the directories :file:`{prefix}/include/pythonversion/` and
-:file:`{exec_prefix}/include/pythonversion/`, where :envvar:`prefix` and
-:envvar:`exec_prefix` are defined by the corresponding parameters to Python's
+:file:`{exec_prefix}/include/pythonversion/`, where :option:`prefix <--prefix>` and
+:option:`exec_prefix <--exec-prefix>` are defined by the corresponding parameters to Python's
 :program:`configure` script and *version* is
 ``'%d.%d' % sys.version_info[:2]``.  On Windows, the headers are installed
-in :file:`{prefix}/include`, where :envvar:`prefix` is the installation
+in :file:`{prefix}/include`, where ``prefix`` is the installation
 directory specified to the installer.
 
 To include the headers, place both directories (if different) on your compiler's
 search path for includes.  Do *not* place the parent directories on the search
 path and then use ``#include <pythonX.Y/Python.h>``; this will break on
 multi-platform builds since the platform independent headers under
-:envvar:`prefix` include the platform specific headers from
-:envvar:`exec_prefix`.
+:option:`prefix <--prefix>` include the platform specific headers from
+:option:`exec_prefix <--exec-prefix>`.
 
 C++ users should note that although the API is defined entirely using C, the
 header files properly declare the entry points to be ``extern "C"``. As a result,
