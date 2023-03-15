@@ -172,7 +172,7 @@ class Test_ErrSetAndRestore(unittest.TestCase):
     def test_set_object_and_fetch(self):
         class Broken(Exception):
             def __init__(self, *arg):
-                 raise ValueError("Broken __init__")
+                raise ValueError("Broken __init__")
 
         exc = _testcapi.exc_set_object_fetch(Broken, 'abcd')
         self.assertIsInstance(exc, ValueError)
