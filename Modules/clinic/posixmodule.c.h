@@ -4363,6 +4363,155 @@ exit:
 
 #endif /* defined(HAVE_SCHED_H) && defined(HAVE_SCHED_SETAFFINITY) */
 
+#if defined(HAVE_POSIX_OPENPT)
+
+PyDoc_STRVAR(os_posix_openpt__doc__,
+"posix_openpt($module, oflag, /)\n"
+"--\n"
+"\n"
+"Open and return a file descriptor for a master pseudo-terminal device.\n"
+"\n"
+"Performs a posix_openpt() C function call. The oflag argument is used to\n"
+"set file status flags and file access modes as specified in the manual page\n"
+"of posix_openpt() of your system.");
+
+#define OS_POSIX_OPENPT_METHODDEF    \
+    {"posix_openpt", (PyCFunction)os_posix_openpt, METH_O, os_posix_openpt__doc__},
+
+static int
+os_posix_openpt_impl(PyObject *module, int oflag);
+
+static PyObject *
+os_posix_openpt(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int oflag;
+    int _return_value;
+
+    oflag = _PyLong_AsInt(arg);
+    if (oflag == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    _return_value = os_posix_openpt_impl(module, oflag);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_POSIX_OPENPT) */
+
+#if defined(HAVE_GRANTPT)
+
+PyDoc_STRVAR(os_grantpt__doc__,
+"grantpt($module, fd, /)\n"
+"--\n"
+"\n"
+"Grant access to the slave pseudo-terminal device.\n"
+"\n"
+"  fd\n"
+"    File descriptor of a master pseudo-terminal device.\n"
+"\n"
+"Performs a grantpt() C function call.");
+
+#define OS_GRANTPT_METHODDEF    \
+    {"grantpt", (PyCFunction)os_grantpt, METH_O, os_grantpt__doc__},
+
+static PyObject *
+os_grantpt_impl(PyObject *module, int fd);
+
+static PyObject *
+os_grantpt(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+        goto exit;
+    }
+    return_value = os_grantpt_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_GRANTPT) */
+
+#if defined(HAVE_UNLOCKPT)
+
+PyDoc_STRVAR(os_unlockpt__doc__,
+"unlockpt($module, fd, /)\n"
+"--\n"
+"\n"
+"Unlock a pseudo-terminal master/slave pair.\n"
+"\n"
+"  fd\n"
+"    File descriptor of a master pseudo-terminal device.\n"
+"\n"
+"Performs an unlockpt() C function call.");
+
+#define OS_UNLOCKPT_METHODDEF    \
+    {"unlockpt", (PyCFunction)os_unlockpt, METH_O, os_unlockpt__doc__},
+
+static PyObject *
+os_unlockpt_impl(PyObject *module, int fd);
+
+static PyObject *
+os_unlockpt(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+        goto exit;
+    }
+    return_value = os_unlockpt_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_UNLOCKPT) */
+
+#if defined(HAVE_PTSNAME)
+
+PyDoc_STRVAR(os_ptsname__doc__,
+"ptsname($module, fd, /)\n"
+"--\n"
+"\n"
+"Return the name of the slave pseudo-terminal device.\n"
+"\n"
+"  fd\n"
+"    File descriptor of a master pseudo-terminal device.\n"
+"\n"
+"Performs a ptsname() C function call.");
+
+#define OS_PTSNAME_METHODDEF    \
+    {"ptsname", (PyCFunction)os_ptsname, METH_O, os_ptsname__doc__},
+
+static PyObject *
+os_ptsname_impl(PyObject *module, int fd);
+
+static PyObject *
+os_ptsname(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+        goto exit;
+    }
+    return_value = os_ptsname_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_PTSNAME) */
+
 #if (defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX))
 
 PyDoc_STRVAR(os_openpty__doc__,
@@ -11511,6 +11660,22 @@ exit:
     #define OS_SCHED_GETAFFINITY_METHODDEF
 #endif /* !defined(OS_SCHED_GETAFFINITY_METHODDEF) */
 
+#ifndef OS_POSIX_OPENPT_METHODDEF
+    #define OS_POSIX_OPENPT_METHODDEF
+#endif /* !defined(OS_POSIX_OPENPT_METHODDEF) */
+
+#ifndef OS_GRANTPT_METHODDEF
+    #define OS_GRANTPT_METHODDEF
+#endif /* !defined(OS_GRANTPT_METHODDEF) */
+
+#ifndef OS_UNLOCKPT_METHODDEF
+    #define OS_UNLOCKPT_METHODDEF
+#endif /* !defined(OS_UNLOCKPT_METHODDEF) */
+
+#ifndef OS_PTSNAME_METHODDEF
+    #define OS_PTSNAME_METHODDEF
+#endif /* !defined(OS_PTSNAME_METHODDEF) */
+
 #ifndef OS_OPENPTY_METHODDEF
     #define OS_OPENPTY_METHODDEF
 #endif /* !defined(OS_OPENPTY_METHODDEF) */
@@ -11922,4 +12087,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=47750e0e29c8d707 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3a58e906d8817ae9 input=a9049054013a1b77]*/

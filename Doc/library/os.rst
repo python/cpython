@@ -1108,6 +1108,17 @@ as internal buffering of data.
    .. versionchanged:: 3.12
       Added support for pipes on Windows.
 
+
+.. function:: grantpt(fd, /)
+
+   Grant access to the slave pseudo-terminal device associated with the
+   master pseudo-terminal device to which the file descriptor *fd* refers.
+
+   Calls the C standard library function :c:func:`grantpt`.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
 .. function:: isatty(fd, /)
 
    Return ``True`` if the file descriptor *fd* is open and connected to a
@@ -1375,6 +1386,17 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
+.. function:: posix_openpt(oflag, /)
+
+   Open and return a file descriptor for a master pseudo-terminal device.
+
+   Calls the C standard library function :c:func:`posix_openpt`. The *oflag*
+   argument is used to set file status flags and file access modes as
+   specified in the manual page of :c:func:`posix_openpt` of your system.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
 .. function:: preadv(fd, buffers, offset, flags=0, /)
 
    Read from a file descriptor *fd* at a position of *offset* into mutable
@@ -1430,6 +1452,17 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Linux >= 4.6.
 
    .. versionadded:: 3.7
+
+
+.. function:: ptsname(fd, /)
+
+   Return the name of the slave pseudo-terminal device associated with the
+   master pseudo-terminal device to which the file descriptor *fd* refers.
+
+   Calls the C standard library function :c:func:`ptsname`, which is not
+   guaranteed to be thread-safe.
+
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: pwrite(fd, str, offset, /)
@@ -1681,6 +1714,16 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    exception is raised.
 
    .. availability:: Unix.
+
+
+.. function:: unlockpt(fd, /)
+
+   Unlock the slave pseudo-terminal device associated with the master
+   pseudo-terminal device to which the file descriptor *fd* refers.
+
+   Calls the C standard library function :c:func:`unlockpt`.
+
+   .. availability:: Unix, not Emscripten, not WASI.
 
 
 .. function:: write(fd, str, /)

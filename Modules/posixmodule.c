@@ -7858,6 +7858,116 @@ error:
 #endif /* HAVE_SCHED_H */
 
 
+#ifdef HAVE_POSIX_OPENPT
+/*[clinic input]
+os.posix_openpt -> int
+
+    oflag: int
+    /
+
+Open and return a file descriptor for a master pseudo-terminal device.
+
+Performs a posix_openpt() C function call. The oflag argument is used to
+set file status flags and file access modes as specified in the manual page
+of posix_openpt() of your system.
+[clinic start generated code]*/
+
+static int
+os_posix_openpt_impl(PyObject *module, int oflag)
+/*[clinic end generated code: output=ee0bc2624305fc79 input=0de33d0e29693caa]*/
+{
+    int fd;
+
+    fd = posix_openpt(oflag);
+    if (fd == -1)
+        posix_error();
+
+    return fd;
+}
+#endif /* HAVE_POSIX_OPENPT */
+
+#ifdef HAVE_GRANTPT
+/*[clinic input]
+os.grantpt
+
+    fd: fildes
+        File descriptor of a master pseudo-terminal device.
+    /
+
+Grant access to the slave pseudo-terminal device.
+
+Performs a grantpt() C function call.
+[clinic start generated code]*/
+
+static PyObject *
+os_grantpt_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=dfd580015cf548ab input=0668e3b96760e849]*/
+{
+    int ret;
+    PyOS_sighandler_t sig_saved;
+
+    sig_saved = PyOS_setsig(SIGCHLD, SIG_DFL);
+    ret = grantpt(fd);
+    PyOS_setsig(SIGCHLD, sig_saved);
+
+    if (ret == -1)
+        return posix_error();
+
+    Py_RETURN_NONE;
+}
+#endif /* HAVE_GRANTPT */
+
+#ifdef HAVE_UNLOCKPT
+/*[clinic input]
+os.unlockpt
+
+    fd: fildes
+        File descriptor of a master pseudo-terminal device.
+    /
+
+Unlock a pseudo-terminal master/slave pair.
+
+Performs an unlockpt() C function call.
+[clinic start generated code]*/
+
+static PyObject *
+os_unlockpt_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=e08d354dec12d30c input=de7ab1f59f69a2b4]*/
+{
+    if (unlockpt(fd) == -1)
+        return posix_error();
+
+    Py_RETURN_NONE;
+}
+#endif /* HAVE_UNLOCKPT */
+
+#ifdef HAVE_PTSNAME
+/*[clinic input]
+os.ptsname
+
+    fd: fildes
+        File descriptor of a master pseudo-terminal device.
+    /
+
+Return the name of the slave pseudo-terminal device.
+
+Performs a ptsname() C function call.
+[clinic start generated code]*/
+
+static PyObject *
+os_ptsname_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=ef300fadc5675872 input=a00d870c51570c2a]*/
+{
+    char *name;
+
+    name = ptsname(fd);
+    if (name == NULL)
+        return posix_error();
+
+    return PyUnicode_DecodeFSDefault(name);
+}
+#endif /* HAVE_PTSNAME */
+
 /* AIX uses /dev/ptc but is otherwise the same as /dev/ptmx */
 #if defined(HAVE_DEV_PTC) && !defined(HAVE_DEV_PTMX)
 #  define DEV_PTY_FILE "/dev/ptc"
@@ -15486,6 +15596,10 @@ static PyMethodDef posix_methods[] = {
     OS_SCHED_YIELD_METHODDEF
     OS_SCHED_SETAFFINITY_METHODDEF
     OS_SCHED_GETAFFINITY_METHODDEF
+    OS_POSIX_OPENPT_METHODDEF
+    OS_GRANTPT_METHODDEF
+    OS_UNLOCKPT_METHODDEF
+    OS_PTSNAME_METHODDEF
     OS_OPENPTY_METHODDEF
     OS_LOGIN_TTY_METHODDEF
     OS_FORKPTY_METHODDEF
