@@ -1209,6 +1209,7 @@ extern "C" {
     INIT_ID(value), \
     INIT_ID(values), \
     INIT_ID(version), \
+    INIT_ID(volume), \
     INIT_ID(warnings), \
     INIT_ID(warnoptions), \
     INIT_ID(wbits), \
