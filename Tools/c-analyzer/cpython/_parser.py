@@ -91,10 +91,15 @@ Python/bytecodes.c
 # XXX Fix the parser.
 EXCLUDED += clean_lines('''
 # The tool should be able to parse these...
+
 # The problem with xmlparse.c is that something
 # has gone wrong where # we handle "maybe inline actual"
 # in Tools/c-analyzer/c_parser/parser/_global.py.
 Modules/expat/xmlparse.c
+
+# The parser doesn't like the #line directives
+# that originate from generated_cases.c.h
+Python/ceval.c
 ''')
 
 INCL_DIRS = clean_lines('''
