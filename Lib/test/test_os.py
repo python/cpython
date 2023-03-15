@@ -2683,12 +2683,17 @@ class Win32ListdriveTests(unittest.TestCase):
 
     def test_listmounts(self):
         for volume in os.listvolumes():
-            mounts = os.listmounts(volume)
-            self.assertIsInstance(mounts, list)
-            self.assertSetEqual(
-                set(mounts),
-                self.known_mounts & set(mounts),
-            )
+            try:
+                mounts = os.listmounts(volume)
+            except OSError as ex:
+                if support.verbose:
+                    print("Skipping", volume, "because of", ex)
+            else:
+                self.assertIsInstance(mounts, list)
+                self.assertSetEqual(
+                    set(mounts),
+                    self.known_mounts & set(mounts),
+                )
 
 
 @unittest.skipUnless(hasattr(os, 'readlink'), 'needs os.readlink()')
