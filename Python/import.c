@@ -1024,7 +1024,6 @@ fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
 
     // bpo-44050: Extensions and def->m_base.m_copy can be updated
     // when the extension module doesn't support sub-interpreters.
-    // XXX Why special-case the main interpreter?
     if (def->m_size == -1) {
         if (!is_core_module(tstate->interp, name, filename)) {
             if (def->m_base.m_copy) {
@@ -1044,6 +1043,7 @@ fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
         }
     }
 
+    // XXX Why special-case the main interpreter?
     if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
         if (_extensions_cache_set(filename, name, def) < 0) {
             return -1;
