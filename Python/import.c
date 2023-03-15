@@ -978,11 +978,20 @@ _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
     return 0;
 }
 
-static inline int
-match_mod_name(PyObject *actual, const char *expected)
+static PyObject *
+get_core_module_dict(PyInterpreterState *interp,
+                     PyObject *name, PyObject *filename)
 {
-    if (PyUnicode_CompareWithASCIIString(actual, expected) == 0) {
-        return 1;
+    if (filename != name && filename != NULL) {
+        /* It isn't a builtin module, which means it isn't core. */
+        return 0;
+    }
+    if (PyUnicode_CompareWithASCIIString(name, "sys") == 0) {
+        return interp->sysdict_copy;
+    }
+    assert(!PyErr_Occurred());
+    if (PyUnicode_CompareWithASCIIString(name, "builtins") == 0) {
+        return interp->builtins_copy;
     }
     assert(!PyErr_Occurred());
     return 0;
@@ -1072,13 +1081,8 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
             return NULL;
         }
         else if (m_copy == Py_None) {
-            if (match_mod_name(name, "sys")) {
-                m_copy = tstate->interp->sysdict_copy;
-            }
-            else if (match_mod_name(name, "builtins")) {
-                m_copy = tstate->interp->builtins_copy;
-            }
-            else {
+            m_copy = get_core_module_dict(tstate->interp, name, filename);
+            if (m_copy == NULL) {
                 _PyErr_SetString(tstate, PyExc_ImportError, "missing m_copy");
                 return NULL;
             }
