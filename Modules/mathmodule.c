@@ -2417,6 +2417,7 @@ that are almost always correctly rounded, four techniques are used:
 
 * lossless scaling using a power-of-two scaling factor
 * accurate squaring using Veltkamp-Dekker splitting [1]
+  or an equivalent with an fma() call
 * compensated summation using a variant of the Neumaier algorithm [2]
 * differential correction of the square root [3]
 
@@ -2475,14 +2476,21 @@ algorithm, effectively doubling the number of accurate bits.
 This technique is used in Dekker's SQRT2 algorithm and again in
 Borges' ALGORITHM 4 and 5.
 
-Without proof for all cases, hypot() cannot claim to be always
-correctly rounded.  However for n <= 1000, prior to the final addition
-that rounds the overall result, the internal accuracy of "h" together
-with its correction of "x / (2.0 * h)" is at least 100 bits. [6]
-Also, hypot() was tested against a Decimal implementation with
-prec=300.  After 100 million trials, no incorrectly rounded examples
-were found.  In addition, perfect commutativity (all permutations are
-exactly equal) was verified for 1 billion random inputs with n=5. [7]
+The hypot() function is faithfully rounded (less than 1 ulp error)
+and usually correctly rounded (within 1/2 ulp).  The squaring
+step is exact.  The Neumaier summation computes as if in doubled
+precision (106 bits) and has the advantage that its input squares
+are non-negative so that the condition number of the sum is one.
+The square root with a differential correction is likewise computed
+as if in double precision.
+
+For n <= 1000, prior to the final addition that rounds the overall
+result, the internal accuracy of "h" together with its correction of
+"x / (2.0 * h)" is at least 100 bits. [6] Also, hypot() was tested
+against a Decimal implementation with prec=300.  After 100 million
+trials, no incorrectly rounded examples were found.  In addition,
+perfect commutativity (all permutations are exactly equal) was
+verified for 1 billion random inputs with n=5. [7]
 
 References:
 
