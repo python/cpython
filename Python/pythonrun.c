@@ -1639,35 +1639,29 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 
 }
 
+static void
+flush_io_stream(PyThreadState *tstate, PyObject *name)
+{
+    PyObject *f = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    if (f != NULL) {
+        PyObject *r = _PyObject_CallMethodNoArgs(f, &_Py_ID(flush));
+        if (r) {
+            Py_DECREF(r);
+        }
+        else {
+            PyErr_Clear();
+        }
+    }
+}
 
 static void
 flush_io(void)
 {
-    PyObject *f, *r;
-    PyObject *type, *value, *traceback;
-
-    /* Save the current exception */
-    PyErr_Fetch(&type, &value, &traceback);
-
     PyThreadState *tstate = _PyThreadState_GET();
-    f = _PySys_GetAttr(tstate, &_Py_ID(stderr));
-    if (f != NULL) {
-        r = _PyObject_CallMethodNoArgs(f, &_Py_ID(flush));
-        if (r)
-            Py_DECREF(r);
-        else
-            PyErr_Clear();
-    }
-    f = _PySys_GetAttr(tstate, &_Py_ID(stdout));
-    if (f != NULL) {
-        r = _PyObject_CallMethodNoArgs(f, &_Py_ID(flush));
-        if (r)
-            Py_DECREF(r);
-        else
-            PyErr_Clear();
-    }
-
-    PyErr_Restore(type, value, traceback);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    flush_io_stream(tstate, &_Py_ID(stderr));
+    flush_io_stream(tstate, &_Py_ID(stdout));
+    _PyErr_SetRaisedException(tstate, exc);
 }
 
 static PyObject *
