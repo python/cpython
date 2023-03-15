@@ -75,7 +75,7 @@
         TARGET(LOAD_CONST) {
             PREDICTED(LOAD_CONST);
             PyObject *value;
-            value = GETITEM(frame->f_code->co_consts, oparg);
+            value = GETITEM(consts, oparg);
             Py_INCREF(value);
             STACK_GROW(1);
             stack_pointer[-1] = value;
@@ -149,7 +149,7 @@
             oparg = (next_instr++)->op.arg;
             {
                 PyObject *value;
-                value = GETITEM(frame->f_code->co_consts, oparg);
+                value = GETITEM(consts, oparg);
                 Py_INCREF(value);
                 _tmp_1 = value;
             }
@@ -198,7 +198,7 @@
             PyObject *_tmp_2;
             {
                 PyObject *value;
-                value = GETITEM(frame->f_code->co_consts, oparg);
+                value = GETITEM(consts, oparg);
                 Py_INCREF(value);
                 _tmp_2 = value;
             }

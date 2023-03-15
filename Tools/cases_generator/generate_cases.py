@@ -15,6 +15,7 @@ import typing
 
 from enum import Enum, auto
 
+import lexer as lx
 import parser
 from parser import StackEffect
 from parser import TypeSrcLiteral, TypeSrcConst, TypeSrcLocals, TypeSrcStackInput
@@ -88,6 +89,9 @@ arg_parser.add_argument(
     "-m", "--metadata", type=str, help="Generated metadata", default=DEFAULT_METADATA_OUTPUT
 )
 arg_parser.add_argument(
+    "-l", "--emit-line-directives", help="Emit #line directives", action="store_true"
+)
+arg_parser.add_argument(
     "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
 )
 
@@ -158,20 +162,52 @@ class Formatter:
     stream: typing.TextIO
     prefix: str
     postfix: str
+    emit_line_directives: bool = False
+    lineno: int  # Next line number, 1-based
+    filename: str  # Slightly improved stream.filename
+    nominal_lineno: int
+    nominal_filename: str
 
-    def __init__(self, stream: typing.TextIO, indent: int) -> None:
+    def __init__(
+            self, stream: typing.TextIO, indent: int, emit_line_directives: bool = False
+    ) -> None:
         self.stream = stream
         self.prefix = " " * indent
         self.postfix = ""
+        self.emit_line_directives = emit_line_directives
+        self.lineno = 1
+        # Make filename more user-friendly and less platform-specific
+        filename = self.stream.name.replace("\\", "/")
+        if filename.startswith("./"):
+            filename = filename[2:]
+        if filename.endswith(".new"):
+            filename = filename[:-4]
+        self.filename = filename
+        self.nominal_lineno = 1
+        self.nominal_filename = filename
 
     def write_raw(self, s: str) -> None:
         self.stream.write(s)
+        newlines = s.count("\n")
+        self.lineno += newlines
+        self.nominal_lineno += newlines
 
     def emit(self, arg: str) -> None:
         if arg:
             self.write_raw(f"{self.prefix}{arg}{self.postfix}\n")
         else:
             self.write_raw("\n")
+
+    def set_lineno(self, lineno: int, filename: str) -> None:
+        if self.emit_line_directives:
+            if lineno != self.nominal_lineno or filename != self.nominal_filename:
+                self.emit(f'#line {lineno} "{filename}"')
+                self.nominal_lineno = lineno
+                self.nominal_filename = filename
+
+    def reset_lineno(self) -> None:
+        if self.lineno != self.nominal_lineno or self.filename != self.nominal_filename:
+            self.set_lineno(self.lineno + 1, self.filename)
 
     @contextlib.contextmanager
     def indent(self):
@@ -253,6 +289,7 @@ class Instruction:
     block: parser.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
     predictions: list[str]  # Prediction targets (instruction names)
+    block_line: int  # First line of block in original code
 
     # Computed by constructor
     always_exits: bool
@@ -278,7 +315,7 @@ class Instruction:
         self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
-        self.block_text, self.check_eval_breaker, self.predictions = \
+        self.block_text, self.check_eval_breaker, self.predictions, self.block_line = \
             extract_block_text(self.block)
         self.always_exits = always_exits(self.block_text)
         self.cache_effects = [
@@ -587,7 +624,13 @@ class Instruction:
         assert dedent <= 0
         extra = " " * -dedent
         names_to_skip = self.unmoved_names | frozenset({UNUSED, "null"})
+        offset = 0
+        context = self.block.context
+        assert context != None
+        filename = context.owner.filename
         for line in self.block_text:
+            out.set_lineno(self.block_line + offset, filename)
+            offset += 1
             if m := re.match(r"(\s*)U_INST\((.+)\);\s*$", line):
                 space, label = m.groups()
                 out.emit(f"UOP_{label}();")
@@ -618,6 +661,7 @@ class Instruction:
                     out.write_raw(f"{space}if ({cond}) goto {label};{out.postfix}\n")
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 if not self.register:
+                    out.reset_lineno()
                     space = extra + m.group(1)
                     for ieff in self.input_effects:
                         if ieff.name in names_to_skip:
@@ -633,6 +677,7 @@ class Instruction:
                             out.write_raw(f"{space}Py_{decref}({ieff.name});\n")
             else:
                 out.write_raw(extra + line.rstrip("\n") + out.postfix + "\n")
+        out.reset_lineno()
 
 
 InstructionOrCacheEffect = Instruction | parser.CacheEffect
@@ -707,6 +752,7 @@ class Analyzer:
     output_filename: str
     metadata_filename: str
     errors: int = 0
+    emit_line_directives: bool = False
 
     def __init__(self, input_filenames: list[str], output_filename: str, metadata_filename: str):
         """Read the input file."""
@@ -772,6 +818,10 @@ class Analyzer:
         with open(filename) as file:
             src = file.read()
 
+        # Make filename more user-friendly and less platform-specific
+        filename = filename.replace("\\", "/")
+        if filename.startswith("./"):
+            filename = filename[2:]
         psr = parser.Parser(src, filename=filename)
 
         # Skip until begin marker
@@ -1220,13 +1270,14 @@ class Analyzer:
         format_enums = [INSTR_FMT_PREFIX + format for format in sorted(all_formats)]
 
         with open(self.metadata_filename, "w") as f:
-            # Write provenance header
-            f.write(f"// This file is generated by {THIS}\n")
-            f.write(self.from_source_files())
-            f.write(f"// Do not edit!\n")
-
-            # Create formatter; the rest of the code uses this
+            # Create formatter
             self.out = Formatter(f, 0)
+
+            # Write provenance header
+            self.out.write_raw(f"// This file is generated by {THIS}\n")
+            self.out.write_raw(self.from_source_files())
+            self.out.write_raw(f"// Do not edit!\n")
+
 
             self.write_stack_effect_functions()
 
@@ -1302,13 +1353,13 @@ class Analyzer:
     def write_instructions(self) -> None:
         """Write instructions to output file."""
         with open(self.output_filename, "w") as f:
-            # Write provenance header
-            f.write(f"// This file is generated by {THIS}\n")
-            f.write(self.from_source_files())
-            f.write(f"// Do not edit!\n")
+            # Create formatter
+            self.out = Formatter(f, 8, self.emit_line_directives)
 
-            # Create formatter; the rest of the code uses this
-            self.out = Formatter(f, 8)
+            # Write provenance header
+            self.out.write_raw(f"// This file is generated by {THIS}\n")
+            self.out.write_raw(self.from_source_files())
+            self.out.write_raw(f"// Do not edit!\n")
 
             # Write and count instructions of all kinds
             n_instrs = 0
@@ -1478,13 +1529,16 @@ class Analyzer:
             self.out.emit(f"DISPATCH();")
 
 
-def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str]]:
+def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str], int]:
     # Get lines of text with proper dedent
     blocklines = block.text.splitlines(True)
+    first_token: lx.Token = block.tokens[0]  # IndexError means the context is broken
+    block_line = first_token.begin[0]
 
     # Remove blank lines from both ends
     while blocklines and not blocklines[0].strip():
         blocklines.pop(0)
+        block_line += 1
     while blocklines and not blocklines[-1].strip():
         blocklines.pop()
 
@@ -1493,6 +1547,7 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str]]
     assert blocklines and blocklines[-1].strip() == "}"
     blocklines.pop()
     blocklines.pop(0)
+    block_line += 1
 
     # Remove trailing blank lines
     while blocklines and not blocklines[-1].strip():
@@ -1512,7 +1567,7 @@ def extract_block_text(block: parser.Block) -> tuple[list[str], bool, list[str]]
         predictions.insert(0, m.group(1))
         blocklines.pop()
 
-    return blocklines, check_eval_breaker, predictions
+    return blocklines, check_eval_breaker, predictions, block_line
 
 
 def always_exits(lines: list[str]) -> bool:
@@ -1548,6 +1603,8 @@ def main():
     if len(args.input) == 0:
         args.input.append(DEFAULT_INPUT)
     a = Analyzer(args.input, args.output, args.metadata)  # Raises OSError if input unreadable
+    if args.emit_line_directives:
+        a.emit_line_directives = True
     a.parse()  # Raises SyntaxError on failure
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
