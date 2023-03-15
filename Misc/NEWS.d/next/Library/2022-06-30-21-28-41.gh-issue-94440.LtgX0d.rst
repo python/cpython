@@ -1,3 +1,2 @@
-Fixed ``concurrent.futures.process._ExecutorManagerThread`` to flush canceled
-futures before attempting to shutdown, so that it doesn't hang if all that
-remained in its pending work items are canceled futures.
+Fix a :mod:`concurrent.futures.process` bug where ``ProcessPoolExecutor`` shutdown
+could hang after a future has been quickly submitted and canceled.
