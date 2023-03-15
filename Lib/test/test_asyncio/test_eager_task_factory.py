@@ -17,52 +17,6 @@ def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
 
-class AsyncTaskCounter:
-    def __init__(self, loop, *, task_class, eager):
-        self.loop = loop
-        self.suspense_count = 0
-        self.task_count = 0
-
-        def CountingTask(*args, **kwargs):
-            self.task_count += 1
-            return task_class(*args, **kwargs)
-
-        if eager:
-            factory = asyncio.create_eager_task_factory(CountingTask)
-        else:
-            def factory(loop, coro, **kwargs):
-                return CountingTask(coro, loop=loop, **kwargs)
-        self.loop.set_task_factory(factory)
-
-    def get(self):
-        return self.task_count
-
-
-async def recursive_taskgroups(width, depth):
-    if depth == 0:
-        return 0
-
-    async with asyncio.TaskGroup() as tg:
-        futures = [
-            tg.create_task(recursive_taskgroups(width, depth - 1))
-            for _ in range(width)
-        ]
-    return sum(
-        (1 if isinstance(fut, (asyncio.Task, tasks._CTask, tasks._PyTask)) else 0)
-        + fut.result()
-        for fut in futures
-    )
-
-
-async def recursive_gather(width, depth):
-    if depth == 0:
-        return
-
-    await asyncio.gather(
-        *[recursive_gather(width, depth - 1) for _ in range(width)]
-    )
-
-
 class EagerTaskFactoryLoopTests(test_utils.TestCase):
 
     def setUp(self):
@@ -73,80 +27,6 @@ class EagerTaskFactoryLoopTests(test_utils.TestCase):
 
     def test_eager_task_factory_set(self):
         self.assertIs(self.loop.get_task_factory(), asyncio.eager_task_factory)
-
-    def test_tg_non_eager_execution(self):
-        counter = AsyncTaskCounter(self.loop, task_class=asyncio.Task, eager=False)
-        num_tasks = counter.loop.run_until_complete(recursive_taskgroups(5, 4))
-        self.assertEqual(num_tasks, 780)  # 5 + 5^2 + 5^3 + 5^4
-        self.assertEqual(counter.get(), 781)  # 1 + ^^
-
-    def test_tg_eager_execution(self):
-        counter = AsyncTaskCounter(self.loop, task_class=asyncio.Task, eager=True)
-        num_tasks = counter.loop.run_until_complete(recursive_taskgroups(5, 4))
-        self.assertEqual(num_tasks, 155)  # 5 + 5^2 + 5^3
-        self.assertEqual(counter.get(), 156)  # 1 + ^^
-
-    def test_gather_non_eager_execution(self):
-        counter = AsyncTaskCounter(self.loop, task_class=asyncio.Task, eager=False)
-        counter.loop.run_until_complete(recursive_gather(5, 4))
-        self.assertEqual(counter.get(), 781)  # 1 + 5 + 5^2 + 5^3 + 5^4
-
-    def test_gater_eager_execution(self):
-        counter = AsyncTaskCounter(self.loop, task_class=asyncio.Task, eager=True)
-        counter.loop.run_until_complete(recursive_gather(5, 4))
-        self.assertEqual(counter.get(), 156)  # 1 + 5 + 5^2 + 5^3
-
-    @unittest.skipUnless(hasattr(tasks, '_CTask'),
-                         'requires the C _asyncio module')
-    def test_tg_non_eager_ctask_execution(self):
-        counter = AsyncTaskCounter(self.loop, task_class=tasks._CTask, eager=False)
-        num_tasks = counter.loop.run_until_complete(recursive_taskgroups(5, 4))
-        self.assertEqual(num_tasks, 780)  # 5 + 5^2 + 5^3 + 5^4
-        self.assertEqual(counter.get(), 781)  # 1 + ^^
-
-    def test_tg_non_eager_pytask_execution(self):
-        counter = AsyncTaskCounter(self.loop, task_class=tasks._PyTask, eager=False)
-        num_tasks = counter.loop.run_until_complete(recursive_taskgroups(5, 4))
-        self.assertEqual(num_tasks, 780)  # 5 + 5^2 + 5^3 + 5^4
-        self.assertEqual(counter.get(), 781)  # 1 + ^^
-
-    @unittest.skipUnless(hasattr(tasks, '_CTask'),
-                         'requires the C _asyncio module')
-    def test_tg_eager_ctask_execution(self):
-        counter = AsyncTaskCounter(self.loop, task_class=tasks._CTask, eager=True)
-        num_tasks = counter.loop.run_until_complete(recursive_taskgroups(5, 4))
-        self.assertEqual(num_tasks, 155)  # 5 + 5^2 + 5^3
-        self.assertEqual(counter.get(), 156)  # 1 + ^^
-
-    def test_tg_eager_pytask_execution(self):
-        counter = AsyncTaskCounter(self.loop, task_class=tasks._PyTask, eager=True)
-        num_tasks = counter.loop.run_until_complete(recursive_taskgroups(5, 4))
-        self.assertEqual(num_tasks, 155)  # 5 + 5^2 + 5^3
-        self.assertEqual(counter.get(), 156)  # 1 + ^^
-
-    @unittest.skipUnless(hasattr(tasks, '_CTask'),
-                         'requires the C _asyncio module')
-    def test_gather_non_eager_ctask_execution(self):
-        counter = AsyncTaskCounter(self.loop, task_class=tasks._CTask, eager=False)
-        counter.loop.run_until_complete(recursive_gather(5, 4))
-        self.assertEqual(counter.get(), 781)  # 1 + 5 + 5^2 + 5^3 + 5^4
-
-    def test_gather_non_eager_pytask_execution(self):
-        counter = AsyncTaskCounter(self.loop, task_class=tasks._PyTask, eager=False)
-        counter.loop.run_until_complete(recursive_gather(5, 4))
-        self.assertEqual(counter.get(), 781)  # 1 + 5 + 5^2 + 5^3 + 5^4
-
-    @unittest.skipUnless(hasattr(tasks, '_CTask'),
-                         'requires the C _asyncio module')
-    def test_gater_eager_ctask_execution(self):
-        counter = AsyncTaskCounter(self.loop, task_class=tasks._CTask, eager=True)
-        counter.loop.run_until_complete(recursive_gather(5, 4))
-        self.assertEqual(counter.get(), 156)  # 1 + 5 + 5^2 + 5^3
-
-    def test_gater_eager_pytask_execution(self):
-        counter = AsyncTaskCounter(self.loop, task_class=tasks._PyTask, eager=True)
-        counter.loop.run_until_complete(recursive_gather(5, 4))
-        self.assertEqual(counter.get(), 156)  # 1 + 5 + 5^2 + 5^3
 
     def test_close(self):
         self.assertFalse(self.loop.is_closed())
@@ -498,8 +378,121 @@ class EagerTaskFactoryLoopTests(test_utils.TestCase):
         self.assertEqual(count, 1)
 
 
-# class EagerTaskFactoryLoopTests(BaseEagerTaskFactoryLoopTests, test_utils.TestCase):
-#     pass
+class AsyncTaskCounter:
+    def __init__(self, loop, *, task_class, eager):
+        self.suspense_count = 0
+        self.task_count = 0
+
+        def CountingTask(*args, **kwargs):
+            self.task_count += 1
+            return task_class(*args, **kwargs)
+
+        if eager:
+            factory = asyncio.create_eager_task_factory(CountingTask)
+        else:
+            def factory(loop, coro, **kwargs):
+                return CountingTask(coro, loop=loop, **kwargs)
+        loop.set_task_factory(factory)
+
+    def get(self):
+        return self.task_count
+
+
+async def awaitable_chain(depth):
+    if depth == 0:
+        return 0
+    return 1 + await awaitable_chain(depth - 1)
+
+
+async def recursive_taskgroups(width, depth):
+    if depth == 0:
+        return 0
+
+    async with asyncio.TaskGroup() as tg:
+        futures = [
+            tg.create_task(recursive_taskgroups(width, depth - 1))
+            for _ in range(width)
+        ]
+    return sum(
+        (1 if isinstance(fut, (asyncio.Task, tasks._CTask, tasks._PyTask)) else 0)
+        + fut.result()
+        for fut in futures
+    )
+
+
+async def recursive_gather(width, depth):
+    if depth == 0:
+        return
+
+    await asyncio.gather(
+        *[recursive_gather(width, depth - 1) for _ in range(width)]
+    )
+
+
+class BaseTaskCountingTests:
+
+    Task = None
+    eager = None
+    expected_task_count = None
+
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.new_event_loop()
+        self.counter = AsyncTaskCounter(self.loop, task_class=self.Task, eager=self.eager)
+        self.set_event_loop(self.loop)
+
+    def test_awaitables_chain(self):
+        observed_depth = self.loop.run_until_complete(awaitable_chain(100))
+        self.assertEqual(observed_depth, 100)
+        self.assertEqual(self.counter.get(), 1)
+
+    def test_recursive_taskgroups(self):
+        num_tasks = self.loop.run_until_complete(recursive_taskgroups(5, 4))
+        self.assertEqual(num_tasks, self.expected_task_count - 1)  # 5 + 5^2 + 5^3 + 5^4
+        self.assertEqual(self.counter.get(), self.expected_task_count)  # 1 + ^^
+
+    def test_recursive_gather(self):
+        self.loop.run_until_complete(recursive_gather(5, 4))
+        self.assertEqual(self.counter.get(), self.expected_task_count)  # 1 + 5 + 5^2 + 5^3 + 5^4
+
+
+class BaseNonEagerTaskFactoryTests(BaseTaskCountingTests):
+    eager = False
+    expected_task_count = 781  # 1 + 5 + 5^2 + 5^3 + 5^4
+
+
+class BaseEagerTaskFactoryTests(BaseTaskCountingTests):
+    eager = True
+    expected_task_count = 156  # 1 + 5 + 5^2 + 5^3
+
+
+class NonEagerTests(BaseNonEagerTaskFactoryTests, test_utils.TestCase):
+    Task = asyncio.Task
+
+
+class EagerTests(BaseEagerTaskFactoryTests, test_utils.TestCase):
+    Task = asyncio.Task
+
+
+class NonEagerPyTaskTests(BaseNonEagerTaskFactoryTests, test_utils.TestCase):
+    Task = tasks._PyTask
+
+
+class EagerPyTaskTests(BaseEagerTaskFactoryTests, test_utils.TestCase):
+    Task = tasks._PyTask
+
+
+@unittest.skipUnless(hasattr(tasks, '_CTask'),
+                     'requires the C _asyncio module')
+class NonEagerCTaskTests(BaseNonEagerTaskFactoryTests, test_utils.TestCase):
+    Task = getattr(tasks, '_CTask', None)
+
+
+@unittest.skipUnless(hasattr(tasks, '_CTask'),
+                     'requires the C _asyncio module')
+class EagerCTaskTests(BaseEagerTaskFactoryTests, test_utils.TestCase):
+    Task = getattr(tasks, '_CTask', None)
+
 
 if __name__ == '__main__':
     unittest.main()
