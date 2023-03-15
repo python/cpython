@@ -230,16 +230,17 @@ def _type_repr(obj):
     typically enough to uniquely identify a type.  For everything
     else, we fall back on repr(obj).
     """
-    if isinstance(obj, types.GenericAlias):
-        return repr(obj)
     if isinstance(obj, type):
         if obj.__module__ == 'builtins':
             return obj.__qualname__
         return f'{obj.__module__}.{obj.__qualname__}'
     if obj is ...:
-        return('...')
+        return '...'
     if isinstance(obj, types.FunctionType):
         return obj.__name__
+    if isinstance(obj, tuple):
+        # Special case for `repr` of types with `ParamSpec`:
+        return '[' + ', '.join(_type_repr(t) for t in obj) + ']'
     return repr(obj)
 
 
