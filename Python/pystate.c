@@ -1830,8 +1830,8 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->threads.head; t != NULL; t = t->next) {
-            _PyInterpreterFrame *frame = t->cframe->current_frame;
-            frame = _PyFrame_GetFirstComplete(frame);
+            _PyInterpreterFrame *frame =
+                _PyFrame_GetFirstComplete(t->cframe->current_frame);
             if (frame == NULL) {
                 continue;
             }

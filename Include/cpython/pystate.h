@@ -59,6 +59,8 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_OPCODE 7
 
 
+struct _PyInterpreterFrame;
+
 typedef struct {
     PyCodeObject *code; // The code object for the bounds. May be NULL.
     PyCodeAddressRange bounds; // Only valid if code != NULL.
@@ -79,7 +81,7 @@ typedef struct _PyCFrame {
      */
     uint8_t use_tracing;  // 0 or 255 (or'ed into opcode, hence 8-bit type)
     /* Pointer to the currently executing frame (it can be NULL) */
-    struct _PyInterpreterFrame *current_frame;
+    struct _PyFrame *current_frame;
     struct _PyCFrame *previous;
 } _PyCFrame;
 

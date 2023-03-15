@@ -358,7 +358,7 @@ traceback_get_frames(traceback_t *traceback)
         if (traceback->total_nframe < UINT16_MAX) {
             traceback->total_nframe++;
         }
-        pyframe = _PyFrame_GetFirstComplete(pyframe->previous);
+        pyframe = _PyFrame_GetFirstComplete(pyframe->base.previous);
     }
 }
 

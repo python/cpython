@@ -1165,8 +1165,12 @@ done:
    This function is signal safe. */
 
 static void
-dump_frame(int fd, _PyInterpreterFrame *frame)
+dump_frame(int fd, _PyFrame *f)
 {
+    if (!PyCode_Check(f->f_executable)) {
+        return;
+    }
+    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)f;
     PyCodeObject *code =_PyFrame_GetCode(frame);
     PUTS(fd, "  File ");
     if (code->co_filename != NULL
@@ -1203,7 +1207,7 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
 static void
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
-    _PyInterpreterFrame *frame;
+    _PyFrame *frame;
     unsigned int depth;
 
     if (write_header) {
@@ -1217,26 +1221,14 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
     }
 
     depth = 0;
-    while (1) {
+    while (frame) {
         if (MAX_FRAME_DEPTH <= depth) {
             PUTS(fd, "  ...\n");
             break;
         }
         dump_frame(fd, frame);
         frame = frame->previous;
-        if (frame == NULL) {
-            break;
-        }
-        if (frame->owner == FRAME_OWNED_BY_CSTACK) {
-            /* Trampoline frame */
-            frame = frame->previous;
-        }
-        if (frame == NULL) {
-            break;
-        }
-        /* Can't have more than one shim frame in a row */
-        assert(frame->owner != FRAME_OWNED_BY_CSTACK);
-        depth++;
+        depth ++;
     }
 }
 

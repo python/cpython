@@ -407,8 +407,7 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
-    if (frame == NULL) {
+    if (tstate->cframe->current_frame == NULL) {
         return 0;
     }
     return 1;

@@ -70,7 +70,7 @@ _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
     memcpy(dest, src, size);
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
-    dest->previous = NULL;
+    dest->base.previous = NULL;
 }
 
 
@@ -86,16 +86,16 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     frame = (_PyInterpreterFrame *)f->_f_frame_data;
     f->f_frame = frame;
     frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
-    if (_PyFrame_IsIncomplete(frame)) {
+    if (_PyFrame_IsIncomplete(&frame->base)) {
         // This may be a newly-created generator or coroutine frame. Since it's
         // dead anyways, just pretend that the first RESUME ran:
         PyCodeObject *code = _PyFrame_GetCode(frame);
         frame->prev_instr = _PyCode_CODE(code) + code->_co_firsttraceable;
     }
-    assert(!_PyFrame_IsIncomplete(frame));
+    assert(!_PyFrame_IsIncomplete(&frame->base));
     assert(f->f_back == NULL);
-    _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
-    frame->previous = NULL;
+    _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->base.previous);
+    frame->base.previous = NULL;
     if (prev) {
         assert(prev->owner != FRAME_OWNED_BY_CSTACK);
         /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */
@@ -124,7 +124,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
         _PyFrame_GetGenerator(frame)->gi_frame_state == FRAME_CLEARED);
     // GH-99729: Clearing this frame can expose the stack (via finalizers). It's
     // crucial that this frame has been unlinked, and is no longer visible:
-    assert(_PyThreadState_GET()->cframe->current_frame != frame);
+    assert(_PyThreadState_GET()->cframe->current_frame != &frame->base);
     if (frame->frame_obj) {
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;

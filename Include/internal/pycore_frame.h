@@ -46,9 +46,13 @@ enum _frameowner {
     FRAME_OWNED_BY_CSTACK = 3,
 };
 
-typedef struct _PyInterpreterFrame {
+typedef struct _PyFrame {
     PyObject *f_executable; /* Strong reference */
-    struct _PyInterpreterFrame *previous;
+    struct _PyFrame *previous;
+} _PyFrame;
+
+typedef struct _PyInterpreterFrame {
+    _PyFrame base;
     PyObject *f_funcobj; /* Strong reference. Only valid if not on C stack */
     PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
     PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
@@ -70,8 +74,8 @@ typedef struct _PyInterpreterFrame {
     ((int)((IF)->prev_instr - _PyCode_CODE(_PyFrame_GetCode(IF))))
 
 static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
-    assert(PyCode_Check(f->f_executable));
-    return (PyCodeObject *)f->f_executable;
+    assert(PyCode_Check(f->base.f_executable));
+    return (PyCodeObject *)f->base.f_executable;
 }
 
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
@@ -118,7 +122,7 @@ _PyFrame_Initialize(
     PyObject *locals, PyCodeObject *code, int null_locals_from)
 {
     frame->f_funcobj = (PyObject *)func;
-    frame->f_executable = Py_NewRef(code);
+    frame->base.f_executable = Py_NewRef(code);
     frame->f_builtins = func->func_builtins;
     frame->f_globals = func->func_globals;
     frame->f_locals = locals;
@@ -163,8 +167,12 @@ _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, PyObject **stack_pointer)
  * Frames owned by a generator are always complete.
  */
 static inline bool
-_PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
+_PyFrame_IsIncomplete(_PyFrame *frameptr)
 {
+    if (!PyCode_Check(frameptr->f_executable)) {
+        return true;
+    }
+    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)frameptr;
     if (frame->owner == FRAME_OWNED_BY_CSTACK) {
         return true;
     }
@@ -173,12 +181,12 @@ _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 }
 
 static inline _PyInterpreterFrame *
-_PyFrame_GetFirstComplete(_PyInterpreterFrame *frame)
+_PyFrame_GetFirstComplete(_PyFrame *frame)
 {
-    while (frame && _PyFrame_IsIncomplete(frame)) {
+    while (frame != NULL && _PyFrame_IsIncomplete(frame)) {
         frame = frame->previous;
     }
-    return frame;
+    return (_PyInterpreterFrame *)frame;
 }
 
 static inline _PyInterpreterFrame *
@@ -199,7 +207,7 @@ static inline PyFrameObject *
 _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
 {
 
-    assert(!_PyFrame_IsIncomplete(frame));
+    assert(!_PyFrame_IsIncomplete(&frame->base));
     PyFrameObject *res =  frame->frame_obj;
     if (res != NULL) {
         return res;

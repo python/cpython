@@ -80,6 +80,8 @@ extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 extern _PyPerf_Callbacks _Py_perfmap_callbacks;
 #endif
 
+struct _PyInterpreterFrame;
+
 static inline PyObject*
 _PyEval_EvalFrame(PyThreadState *tstate, struct _PyInterpreterFrame *frame, int throwflag)
 {

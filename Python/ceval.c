@@ -746,16 +746,16 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.f_globals = (PyObject*)0xaaa3;
     entry_frame.f_builtins = (PyObject*)0xaaa4;
 #endif
-    entry_frame.f_executable = Py_None;
+    entry_frame.base.f_executable = Py_None;
     entry_frame.prev_instr =
         _PyCode_CODE(tstate->interp->interpreter_trampoline);
     entry_frame.stacktop = 0;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
     entry_frame.yield_offset = 0;
     /* Push frame */
-    entry_frame.previous = prev_cframe->current_frame;
-    frame->previous = &entry_frame;
-    cframe.current_frame = frame;
+    entry_frame.base.previous = prev_cframe->current_frame;
+    frame->base.previous = &entry_frame.base;
+    cframe.current_frame = &frame->base;
 
     if (_Py_EnterRecursiveCallTstate(tstate, "")) {
         tstate->c_recursion_remaining--;
@@ -984,7 +984,7 @@ error:
 
         /* Log traceback info. */
         assert(frame != &entry_frame);
-        if (!_PyFrame_IsIncomplete(frame)) {
+        if (!_PyFrame_IsIncomplete(&frame->base)) {
             PyFrameObject *f = _PyFrame_GetFrameObject(frame);
             if (f != NULL) {
                 PyTraceBack_Here(f);
@@ -1051,13 +1051,14 @@ exit_unwind:
     assert(frame != &entry_frame);
     // GH-99729: We need to unlink the frame *before* clearing it:
     _PyInterpreterFrame *dying = frame;
-    frame = cframe.current_frame = dying->previous;
+    cframe.current_frame = dying->base.previous;
+    frame = (_PyInterpreterFrame *)cframe.current_frame;
     _PyEvalFrameClearAndPop(tstate, dying);
     if (frame == &entry_frame) {
         /* Restore previous cframe and exit */
         tstate->cframe = cframe.previous;
         tstate->cframe->use_tracing = cframe.use_tracing;
-        assert(tstate->cframe->current_frame == frame->previous);
+        assert(tstate->cframe->current_frame == frame->base.previous);
         _Py_LeaveRecursiveCallTstate(tstate);
         return NULL;
     }
@@ -1600,7 +1601,7 @@ clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     tstate->c_recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
-    Py_DECREF(frame->f_executable);
+    Py_DECREF(frame->base.f_executable);
     tstate->c_recursion_remaining++;
     _PyThreadState_PopFrame(tstate, frame);
 }
@@ -1618,7 +1619,7 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
     tstate->c_recursion_remaining++;
-    frame->previous = NULL;
+    frame->base.previous = NULL;
 }
 
 static void
@@ -2457,11 +2458,11 @@ int
 PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyInterpreterFrame *current_frame = tstate->cframe->current_frame;
+    _PyFrame *current_frame = tstate->cframe->current_frame;
     int result = cf->cf_flags != 0;
 
-    if (current_frame != NULL) {
-        const int codeflags = _PyFrame_GetCode(current_frame)->co_flags;
+    if (current_frame != NULL && PyCode_Check(current_frame->f_executable)) {
+        const int codeflags = ((PyCodeObject *)current_frame->f_executable)->co_flags;
         const int compilerflags = codeflags & PyCF_MASK;
         if (compilerflags) {
             result = 1;
@@ -2501,7 +2502,7 @@ PyEval_GetFuncDesc(PyObject *func)
 #define C_TRACE(x, call) \
 if (use_tracing && tstate->c_profilefunc) { \
     if (call_trace(tstate->c_profilefunc, tstate->c_profileobj, \
-        tstate, tstate->cframe->current_frame, \
+        tstate, (_PyInterpreterFrame *)tstate->cframe->current_frame, \
         PyTrace_C_CALL, func)) { \
         x = NULL; \
     } \
@@ -2511,13 +2512,13 @@ if (use_tracing && tstate->c_profilefunc) { \
             if (x == NULL) { \
                 call_trace_protected(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate, tstate->cframe->current_frame, \
+                    tstate, (_PyInterpreterFrame *)tstate->cframe->current_frame, \
                     PyTrace_C_EXCEPTION, func); \
                 /* XXX should pass (type, value, tb) */ \
             } else { \
                 if (call_trace(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate, tstate->cframe->current_frame, \
+                    tstate, (_PyInterpreterFrame *)tstate->cframe->current_frame, \
                     PyTrace_C_RETURN, func)) { \
                     Py_DECREF(x); \
                     x = NULL; \

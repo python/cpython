@@ -9,7 +9,7 @@
 
         TARGET(RESUME) {
             assert(tstate->cframe == &cframe);
-            assert(frame == cframe.current_frame);
+            assert(&frame->base == cframe.current_frame);
             if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
                 goto handle_eval_breaker;
             }
@@ -723,11 +723,11 @@
         TARGET(INTERPRETER_EXIT) {
             PyObject *retval = stack_pointer[-1];
             assert(frame == &entry_frame);
-            assert(_PyFrame_IsIncomplete(frame));
+            assert(_PyFrame_IsIncomplete(&frame->base));
             /* Restore previous cframe and return. */
             tstate->cframe = cframe.previous;
             tstate->cframe->use_tracing = cframe.use_tracing;
-            assert(tstate->cframe->current_frame == frame->previous);
+            assert(tstate->cframe->current_frame == frame->base.previous);
             assert(!_PyErr_Occurred(tstate));
             _Py_LeaveRecursiveCallTstate(tstate);
             return retval;
@@ -744,7 +744,8 @@
             assert(frame != &entry_frame);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
-            frame = cframe.current_frame = dying->previous;
+            frame = (_PyInterpreterFrame *)dying->base.previous;
+            cframe.current_frame = &frame->base;
             _PyEvalFrameClearAndPop(tstate, dying);
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
@@ -761,7 +762,8 @@
             assert(frame != &entry_frame);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
-            frame = cframe.current_frame = dying->previous;
+            frame = (_PyInterpreterFrame *)dying->base.previous;
+            cframe.current_frame = &frame->base;
             _PyEvalFrameClearAndPop(tstate, dying);
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
@@ -969,8 +971,9 @@
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *gen_frame = frame;
-            frame = cframe.current_frame = frame->previous;
-            gen_frame->previous = NULL;
+            frame = (_PyInterpreterFrame *)frame->base.previous;
+            cframe.current_frame = &frame->base;
+            gen_frame->base.previous = NULL;
             frame->prev_instr -= frame->yield_offset;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
@@ -3766,9 +3769,10 @@
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
             _Py_LeaveRecursiveCallPy(tstate);
             assert(frame != &entry_frame);
-            _PyInterpreterFrame *prev = frame->previous;
+            _PyInterpreterFrame *prev = (_PyInterpreterFrame *)frame->base.previous;
             _PyThreadState_PopFrame(tstate, frame);
-            frame = cframe.current_frame = prev;
+            frame = prev;
+            cframe.current_frame = &prev->base;
             _PyFrame_StackPush(frame, (PyObject *)gen);
             goto resume_frame;
         }

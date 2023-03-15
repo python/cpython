@@ -110,8 +110,9 @@
     do {                                                \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
         frame->prev_instr = next_instr - 1;             \
-        (NEW_FRAME)->previous = frame;                  \
-        frame = cframe.current_frame = (NEW_FRAME);     \
+        (NEW_FRAME)->base.previous = &frame->base;      \
+        frame = (NEW_FRAME);                            \
+        cframe.current_frame = &frame->base;            \
         CALL_STAT_INC(inlined_py_calls);                \
         goto start_frame;                               \
     } while (0)
@@ -282,8 +283,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
-#define CONSTS() ((PyCodeObject *)frame->f_executable)->co_consts
-#define NAMES() ((PyCodeObject *)frame->f_executable)->co_names
+#define CONSTS() ((PyCodeObject *)frame->base.f_executable)->co_consts
+#define NAMES() ((PyCodeObject *)frame->base.f_executable)->co_names
 
 /* Shared opcode macros */
 

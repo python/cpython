@@ -1891,16 +1891,11 @@ sys__getframe_impl(PyObject *module, int depth)
 /*[clinic end generated code: output=d438776c04d59804 input=c1be8a6464b11ee5]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    _PyInterpreterFrame *frame = _PyFrame_GetFirstComplete(tstate->cframe->current_frame);
 
-    if (frame != NULL) {
-        while (depth > 0) {
-            frame = _PyFrame_GetFirstComplete(frame->previous);
-            if (frame == NULL) {
-                break;
-            }
-            --depth;
-        }
+    while (depth > 0 && frame != NULL) {
+        frame = _PyFrame_GetFirstComplete(frame->base.previous);
+        --depth;
     }
     if (frame == NULL) {
         _PyErr_SetString(tstate, PyExc_ValueError,
@@ -2204,14 +2199,14 @@ sys__getframemodulename_impl(PyObject *module, int depth)
     if (PySys_Audit("sys._getframemodulename", "i", depth) < 0) {
         return NULL;
     }
-    _PyInterpreterFrame *f = _PyThreadState_GET()->cframe->current_frame;
+    _PyFrame *f = _PyThreadState_GET()->cframe->current_frame;
     while (f && (_PyFrame_IsIncomplete(f) || depth-- > 0)) {
         f = f->previous;
     }
-    if (f == NULL || f->f_funcobj == NULL) {
+    if (f == NULL || ((_PyInterpreterFrame *)f)->f_funcobj == NULL) {
         Py_RETURN_NONE;
     }
-    PyObject *r = PyFunction_GetModule(f->f_funcobj);
+    PyObject *r = PyFunction_GetModule(((_PyInterpreterFrame *)f)->f_funcobj);
     if (!r) {
         PyErr_Clear();
         r = Py_None;

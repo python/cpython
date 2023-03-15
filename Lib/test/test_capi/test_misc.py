@@ -262,6 +262,7 @@ class CAPITest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         err = decode_stderr(err)
         if 'SystemError: ' not in err:
+            print(err)
             self.assertRegex(err,
                     r'Fatal Python error: _Py_CheckSlotResult: '
                         r'Slot __getitem__ of type dict succeeded '

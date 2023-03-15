@@ -146,7 +146,7 @@ gen_dealloc(PyGenObject *gen)
     if (gen->gi_frame_state < FRAME_CLEARED) {
         _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
         gen->gi_frame_state = FRAME_CLEARED;
-        frame->previous = NULL;
+        frame->base.previous = NULL;
         _PyFrame_ClearExceptCode(frame);
     }
     if (_PyGen_GetCode(gen)->co_flags & CO_COROUTINE) {
@@ -230,7 +230,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     assert(tstate->exc_info == prev_exc_info);
     assert(gen->gi_exc_state.previous_item == NULL);
     assert(gen->gi_frame_state != FRAME_EXECUTING);
-    assert(frame->previous == NULL);
+    assert(frame->base.previous == NULL);
 
     /* If the generator just returned (as opposed to yielding), signal
      * that the generator is exhausted. */
@@ -459,9 +459,9 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                will be reported correctly to the user. */
             /* XXX We should probably be updating the current frame
                somewhere in ceval.c. */
-            _PyInterpreterFrame *prev = tstate->cframe->current_frame;
-            frame->previous = prev;
-            tstate->cframe->current_frame = frame;
+            _PyFrame *prev = tstate->cframe->current_frame;
+            frame->base.previous = prev;
+            tstate->cframe->current_frame = &frame->base;
             /* Close the generator that we are currently iterating with
                'yield from' or awaiting on with 'await'. */
             PyFrameState state = gen->gi_frame_state;
@@ -470,7 +470,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                              typ, val, tb);
             gen->gi_frame_state = state;
             tstate->cframe->current_frame = prev;
-            frame->previous = NULL;
+            frame->base.previous = NULL;
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
             PyObject *meth;
@@ -921,11 +921,11 @@ _Py_MakeCoro(PyFunctionObject *func)
     if (origin_depth == 0) {
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = NULL;
     } else {
-        _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+        _PyFrame *frame = tstate->cframe->current_frame;
         assert(frame);
         assert(_PyFrame_IsIncomplete(frame));
-        frame = _PyFrame_GetFirstComplete(frame->previous);
-        PyObject *cr_origin = compute_cr_origin(origin_depth, frame);
+        _PyInterpreterFrame * pyframe = _PyFrame_GetFirstComplete(frame->previous);
+        PyObject *cr_origin = compute_cr_origin(origin_depth, pyframe);
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = cr_origin;
         if (!cr_origin) {
             Py_DECREF(coro);
@@ -1311,7 +1311,7 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
     /* First count how many frames we have */
     int frame_count = 0;
     for (; frame && frame_count < origin_depth; ++frame_count) {
-        frame = _PyFrame_GetFirstComplete(frame->previous);
+        frame = _PyFrame_GetFirstComplete(frame->base.previous);
     }
 
     /* Now collect them */
@@ -1330,7 +1330,7 @@ compute_cr_origin(int origin_depth, _PyInterpreterFrame *current_frame)
             return NULL;
         }
         PyTuple_SET_ITEM(cr_origin, i, frameinfo);
-        frame = _PyFrame_GetFirstComplete(frame->previous);
+        frame = _PyFrame_GetFirstComplete(frame->base.previous);
     }
 
     return cr_origin;
