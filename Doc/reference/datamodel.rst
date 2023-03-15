@@ -2855,7 +2855,7 @@ Emulating buffer types
 ----------------------
 
 The :ref:`buffer protocol <bufferobjects>` provides a way for Python
-objects to expose efficient access a low-level memory array. This protocol
+objects to expose efficient access to a low-level memory array. This protocol
 is implemented by builtin types such as :class:`bytes` and :class:`memoryview`,
 and third-party libraries may define additional buffer types.
 
@@ -2864,8 +2864,8 @@ implement the protocol in Python.
 
 .. method:: object.__buffer__(self, flags)
 
-   Called when a buffer is requested from ``self`` (for example, by the
-   :class:`memoryview` constructor). The ``flags`` argument is an integer
+   Called when a buffer is requested from *self* (for example, by the
+   :class:`memoryview` constructor). The *flags* argument is an integer
    representing the kind of buffer requested, affecting for example whether
    the returned buffer is read-only or writable. :class:`inspect.BufferFlags`
    provides a convenient way to interpret the flags. The method must return
@@ -2873,7 +2873,7 @@ implement the protocol in Python.
 
 .. method:: object.__release_buffer__(self, buffer)
 
-   Called when a buffer is no longer needed. The ``buffer`` argument is a
+   Called when a buffer is no longer needed. The *buffer* argument is a
    :class:`memoryview` object that was previously returned by
    :meth:`~object.__buffer__`. The method must release any resources associated
    with the buffer. This method should return ``None``.
