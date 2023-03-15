@@ -174,15 +174,6 @@ dl_mul(double x, double y)
     return (DoubleLength) {z, zz};
 }
 
-static DoubleLength
-dl_fma(double x, double y, DoubleLength total)
-{
-    /* Algorithm 5.10 with SumKVert for K=2 */
-    DoubleLength pr = dl_mul(x, y);
-    DoubleLength sm = dl_sum(total.hi, pr.hi);
-    return DoubleLength {sm.hi, pr.lo + sm.lo + total.lo};
-}
-
 #endif
 
 typedef struct { double hi; double lo; double tiny; } TripleLength;
@@ -2535,6 +2526,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 
             pr = dl_mul(x, x);
             assert(pr.hi <= 1.0);
+
             sm = dl_fast_sum(csum, pr.hi);
             csum = sm.hi;
             frac1 += pr.lo;
