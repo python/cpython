@@ -698,30 +698,31 @@ _Py_HandleSystemExit(int *exitcode_p)
         return 0;
     }
 
-    PyObject *exception, *value, *tb;
-    PyErr_Fetch(&exception, &value, &tb);
-
     fflush(stdout);
 
     int exitcode = 0;
-    if (value == NULL || value == Py_None) {
+
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(exc != Py_None);
+    if (exc == NULL) {
         goto done;
     }
 
-    if (PyExceptionInstance_Check(value)) {
-        /* The error code should be in the `code' attribute. */
-        PyObject *code = PyObject_GetAttr(value, &_Py_ID(code));
-        if (code) {
-            Py_SETREF(value, code);
-            if (value == Py_None)
-                goto done;
+    assert(PyExceptionInstance_Check(exc));
+    /* The error code should be in the `code' attribute. */
+    PyObject *code = PyObject_GetAttr(exc, &_Py_ID(code));
+    if (code) {
+        Py_SETREF(exc, code);
+        if (exc == Py_None) {
+            goto done;
         }
-        /* If we failed to dig out the 'code' attribute,
-           just let the else clause below print the error. */
     }
+    /* If we failed to dig out the 'code' attribute,
+     * just let the else clause below print the error.
+     */
 
-    if (PyLong_Check(value)) {
-        exitcode = (int)PyLong_AsLong(value);
+    if (PyLong_Check(exc)) {
+        exitcode = (int)PyLong_AsLong(exc);
     }
     else {
         PyThreadState *tstate = _PyThreadState_GET();
@@ -732,20 +733,17 @@ _Py_HandleSystemExit(int *exitcode_p)
          */
         PyErr_Clear();
         if (sys_stderr != NULL && sys_stderr != Py_None) {
-            PyFile_WriteObject(value, sys_stderr, Py_PRINT_RAW);
+            PyFile_WriteObject(exc, sys_stderr, Py_PRINT_RAW);
         } else {
-            PyObject_Print(value, stderr, Py_PRINT_RAW);
+            PyObject_Print(exc, stderr, Py_PRINT_RAW);
             fflush(stderr);
         }
         PySys_WriteStderr("\n");
         exitcode = 1;
     }
 
- done:
-    /* Cleanup the exception */
-    Py_CLEAR(exception);
-    Py_CLEAR(value);
-    Py_CLEAR(tb);
+done:
+    Py_CLEAR(exc);
     *exitcode_p = exitcode;
     return 1;
 }
