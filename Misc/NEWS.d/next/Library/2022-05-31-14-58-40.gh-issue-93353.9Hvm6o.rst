@@ -1,3 +1,0 @@
-Fix the :func:`importlib.resources.as_file` context manager to remove the
-temporary file if destroyed late during Python finalization: keep a local
-reference to the :func:`os.remove` function. Patch by Victor Stinner.

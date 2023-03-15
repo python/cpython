@@ -27,6 +27,15 @@ The debugger is extensible -- it is actually defined as the class :class:`Pdb`.
 This is currently undocumented but easily understood by reading the source.  The
 extension interface uses the modules :mod:`bdb` and :mod:`cmd`.
 
+.. seealso::
+
+   Module :mod:`faulthandler`
+      Used to dump Python tracebacks explicitly, on a fault, after a timeout,
+      or on a user signal.
+
+   Module :mod:`traceback`
+      Standard interface to extract, format and print stack traces of Python programs.
+
 The debugger's prompt is ``(Pdb)``. Typical usage to run a program under control
 of the debugger is::
 
@@ -49,7 +58,7 @@ of the debugger is::
 :file:`pdb.py` can also be invoked as a script to debug other scripts.  For
 example::
 
-   python3 -m pdb myscript.py
+   python -m pdb myscript.py
 
 When invoked as a script, pdb will automatically enter post-mortem debugging if
 the program being debugged exits abnormally.  After post-mortem debugging (or
@@ -63,7 +72,7 @@ useful than quitting the debugger upon program's exit.
 
 .. versionadded:: 3.7
    :file:`pdb.py` now accepts a ``-m`` option that execute modules similar to the way
-   ``python3 -m`` does. As with a script, the debugger will pause execution just
+   ``python -m`` does. As with a script, the debugger will pause execution just
    before the first line of the module.
 
 

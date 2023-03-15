@@ -51,13 +51,6 @@ static const char copyright[] =
 
 #include <ctype.h>
 
-/* name of this module, minus the leading underscore */
-#if !defined(SRE_MODULE)
-#define SRE_MODULE "sre"
-#endif
-
-#define SRE_PY_MODULE "re"
-
 /* defining this one enables tracing */
 #undef VERBOSE
 
@@ -254,6 +247,8 @@ typedef struct {
     PyTypeObject *Pattern_Type;
     PyTypeObject *Match_Type;
     PyTypeObject *Scanner_Type;
+    PyTypeObject *Template_Type;
+    PyObject *compile_template;  // reference to re._compile_template
 } _sremodulestate;
 
 static _sremodulestate *
@@ -464,8 +459,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     state->start = (void*) ((char*) ptr + start * state->charsize);
     state->end = (void*) ((char*) ptr + end * state->charsize);
 
-    Py_INCREF(string);
-    state->string = string;
+    state->string = Py_NewRef(string);
     state->pos = start;
     state->endpos = end;
 
@@ -504,8 +498,7 @@ getslice(int isbytes, const void *ptr,
     if (isbytes) {
         if (PyBytes_CheckExact(string) &&
             start == 0 && end == PyBytes_GET_SIZE(string)) {
-            Py_INCREF(string);
-            return string;
+            return Py_NewRef(string);
         }
         return PyBytes_FromStringAndSize(
                 (const char *)ptr + start, end - start);
@@ -755,23 +748,6 @@ _sre_SRE_Pattern_search_impl(PatternObject *self, PyTypeObject *cls,
     match = pattern_new_match(module_state, self, &state, status);
     state_fini(&state);
     return match;
-}
-
-static PyObject*
-call(const char* module, const char* function, PyObject* args)
-{
-    PyObject* func;
-    PyObject* result;
-
-    if (!args)
-        return NULL;
-    func = _PyImport_GetModuleAttrString(module, function);
-    if (!func)
-        return NULL;
-    result = PyObject_CallObject(func, args);
-    Py_DECREF(func);
-    Py_DECREF(args);
-    return result;
 }
 
 /*[clinic input]
@@ -1036,6 +1012,57 @@ error:
 
 }
 
+static PyObject *
+compile_template(_sremodulestate *module_state,
+                 PatternObject *pattern, PyObject *template)
+{
+    /* delegate to Python code */
+    PyObject *func = module_state->compile_template;
+    if (func == NULL) {
+        func = _PyImport_GetModuleAttrString("re", "_compile_template");
+        if (func == NULL) {
+            return NULL;
+        }
+        Py_XSETREF(module_state->compile_template, func);
+    }
+
+    PyObject *args[] = {(PyObject *)pattern, template};
+    PyObject *result = PyObject_Vectorcall(func, args, 2, NULL);
+
+    if (result == NULL && PyErr_ExceptionMatches(PyExc_TypeError)) {
+        /* If the replacement string is unhashable (e.g. bytearray),
+         * convert it to the basic type (str or bytes) and repeat. */
+        if (PyUnicode_Check(template) && !PyUnicode_CheckExact(template)) {
+            PyErr_Clear();
+            template = _PyUnicode_Copy(template);
+        }
+        else if (PyObject_CheckBuffer(template) && !PyBytes_CheckExact(template)) {
+            PyErr_Clear();
+            template = PyBytes_FromObject(template);
+        }
+        else {
+            return NULL;
+        }
+        if (template == NULL) {
+            return NULL;
+        }
+        args[1] = template;
+        result = PyObject_Vectorcall(func, args, 2, NULL);
+        Py_DECREF(template);
+    }
+
+    if (result != NULL && Py_TYPE(result) != module_state->Template_Type) {
+        PyErr_Format(PyExc_RuntimeError,
+                    "the result of compiling a replacement string is %.200s",
+                    Py_TYPE(result)->tp_name);
+        Py_DECREF(result);
+        return NULL;
+    }
+    return result;
+}
+
+static PyObject *expand_template(TemplateObject *, MatchObject *); /* Forward */
+
 static PyObject*
 pattern_subx(_sremodulestate* module_state,
              PatternObject* self,
@@ -1055,14 +1082,13 @@ pattern_subx(_sremodulestate* module_state,
     Py_ssize_t n;
     Py_ssize_t i, b, e;
     int isbytes, charsize;
-    int filter_is_callable;
+    enum {LITERAL, TEMPLATE, CALLABLE} filter_type;
     Py_buffer view;
 
     if (PyCallable_Check(ptemplate)) {
         /* sub/subn takes either a function or a template */
-        filter = ptemplate;
-        Py_INCREF(filter);
-        filter_is_callable = 1;
+        filter = Py_NewRef(ptemplate);
+        filter_type = CALLABLE;
     } else {
         /* if not callable, check if it's a literal string */
         int literal;
@@ -1080,18 +1106,23 @@ pattern_subx(_sremodulestate* module_state,
         if (view.buf)
             PyBuffer_Release(&view);
         if (literal) {
-            filter = ptemplate;
-            Py_INCREF(filter);
-            filter_is_callable = 0;
+            filter = Py_NewRef(ptemplate);
+            filter_type = LITERAL;
         } else {
             /* not a literal; hand it over to the template compiler */
-            filter = call(
-                SRE_PY_MODULE, "_subx",
-                PyTuple_Pack(2, self, ptemplate)
-                );
+            filter = compile_template(module_state, self, ptemplate);
             if (!filter)
                 return NULL;
-            filter_is_callable = PyCallable_Check(filter);
+
+            assert(Py_TYPE(filter) == module_state->Template_Type);
+            if (Py_SIZE(filter) == 0) {
+                Py_SETREF(filter,
+                          Py_NewRef(((TemplateObject *)filter)->literal));
+                filter_type = LITERAL;
+            }
+            else {
+                filter_type = TEMPLATE;
+            }
         }
     }
 
@@ -1142,19 +1173,25 @@ pattern_subx(_sremodulestate* module_state,
 
         }
 
-        if (filter_is_callable) {
+        if (filter_type != LITERAL) {
             /* pass match object through filter */
             match = pattern_new_match(module_state, self, &state, 1);
             if (!match)
                 goto error;
-            item = PyObject_CallOneArg(filter, match);
+            if (filter_type == TEMPLATE) {
+                item = expand_template((TemplateObject *)filter,
+                                       (MatchObject *)match);
+            }
+            else {
+                assert(filter_type == CALLABLE);
+                item = PyObject_CallOneArg(filter, match);
+            }
             Py_DECREF(match);
             if (!item)
                 goto error;
         } else {
             /* filter is literal string */
-            item = filter;
-            Py_INCREF(item);
+            item = Py_NewRef(filter);
         }
 
         /* add to list */
@@ -1275,8 +1312,7 @@ static PyObject *
 _sre_SRE_Pattern___copy___impl(PatternObject *self)
 /*[clinic end generated code: output=85dedc2db1bd8694 input=a730a59d863bc9f5]*/
 {
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 /*[clinic input]
@@ -1291,8 +1327,7 @@ static PyObject *
 _sre_SRE_Pattern___deepcopy__(PatternObject *self, PyObject *memo)
 /*[clinic end generated code: output=2ad25679c1f1204a input=a465b1602f997bed]*/
 {
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -1458,19 +1493,16 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
             PyBuffer_Release(&view);
     }
 
-    Py_INCREF(pattern);
-    self->pattern = pattern;
+    self->pattern = Py_NewRef(pattern);
 
     self->flags = flags;
 
     self->groups = groups;
 
     if (PyDict_GET_SIZE(groupindex) > 0) {
-        Py_INCREF(groupindex);
-        self->groupindex = groupindex;
+        self->groupindex = Py_NewRef(groupindex);
         if (PyTuple_GET_SIZE(indexgroup) > 0) {
-            Py_INCREF(indexgroup);
-            self->indexgroup = indexgroup;
+            self->indexgroup = Py_NewRef(indexgroup);
         }
     }
 
@@ -1480,6 +1512,67 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
     }
 
     return (PyObject*) self;
+}
+
+/*[clinic input]
+_sre.template
+
+    pattern: object
+    template: object(subclass_of="&PyList_Type")
+        A list containing interleaved literal strings (str or bytes) and group
+        indices (int), as returned by re._parser.parse_template():
+            [literal1, group1, ..., literalN, groupN]
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+_sre_template_impl(PyObject *module, PyObject *pattern, PyObject *template)
+/*[clinic end generated code: output=d51290e596ebca86 input=af55380b27f02942]*/
+{
+    /* template is a list containing interleaved literal strings (str or bytes)
+     * and group indices (int), as returned by _parser.parse_template:
+     * [literal1, group1, literal2, ..., literalN].
+     */
+    _sremodulestate *module_state = get_sre_module_state(module);
+    TemplateObject *self = NULL;
+    Py_ssize_t n = PyList_GET_SIZE(template);
+    if ((n & 1) == 0 || n < 1) {
+        goto bad_template;
+    }
+    n /= 2;
+    self = PyObject_GC_NewVar(TemplateObject, module_state->Template_Type, n);
+    if (!self)
+        return NULL;
+    self->chunks = 1 + 2*n;
+    self->literal = Py_NewRef(PyList_GET_ITEM(template, 0));
+    for (Py_ssize_t i = 0; i < n; i++) {
+        Py_ssize_t index = PyLong_AsSsize_t(PyList_GET_ITEM(template, 2*i+1));
+        if (index == -1 && PyErr_Occurred()) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        if (index < 0) {
+            goto bad_template;
+        }
+        self->items[i].index = index;
+
+        PyObject *literal = PyList_GET_ITEM(template, 2*i+2);
+        // Skip empty literals.
+        if ((PyUnicode_Check(literal) && !PyUnicode_GET_LENGTH(literal)) ||
+            (PyBytes_Check(literal) && !PyBytes_GET_SIZE(literal)))
+        {
+            literal = NULL;
+            self->chunks--;
+        }
+        self->items[i].literal = Py_XNewRef(literal);
+    }
+    return (PyObject*) self;
+
+bad_template:
+    PyErr_SetString(PyExc_TypeError, "invalid template");
+    Py_XDECREF(self);
+    return NULL;
 }
 
 /* -------------------------------------------------------------------- */
@@ -1518,7 +1611,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
 #endif
 
 /* Report failure */
-#define FAIL do { VTRACE(("FAIL: %d\n", __LINE__)); return 0; } while (0)
+#define FAIL do { VTRACE(("FAIL: %d\n", __LINE__)); return -1; } while (0)
 
 /* Extract opcode, argument, or skip count from code array */
 #define GET_OP                                          \
@@ -1542,7 +1635,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
         skip = *code;                                   \
         VTRACE(("%lu (skip to %p)\n",                   \
                (unsigned long)skip, code+skip));        \
-        if (skip-adj > (uintptr_t)(end - code))      \
+        if (skip-adj > (uintptr_t)(end - code))         \
             FAIL;                                       \
         code++;                                         \
     } while (0)
@@ -1631,9 +1724,10 @@ _validate_charset(SRE_CODE *code, SRE_CODE *end)
         }
     }
 
-    return 1;
+    return 0;
 }
 
+/* Returns 0 on success, -1 on failure, and 1 if the last op is JUMP. */
 static int
 _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
 {
@@ -1711,7 +1805,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
         case SRE_OP_IN_LOC_IGNORE:
             GET_SKIP;
             /* Stop 1 before the end; we check the FAILURE below */
-            if (!_validate_charset(code, code+skip-2))
+            if (_validate_charset(code, code+skip-2))
                 FAIL;
             if (code[skip-2] != SRE_OP_FAILURE)
                 FAIL;
@@ -1765,7 +1859,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 }
                 /* Validate the charset */
                 if (flags & SRE_INFO_CHARSET) {
-                    if (!_validate_charset(code, newcode-1))
+                    if (_validate_charset(code, newcode-1))
                         FAIL;
                     if (newcode[-1] != SRE_OP_FAILURE)
                         FAIL;
@@ -1786,7 +1880,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     if (skip == 0)
                         break;
                     /* Stop 2 before the end; we check the JUMP below */
-                    if (!_validate_inner(code, code+skip-3, groups))
+                    if (_validate_inner(code, code+skip-3, groups))
                         FAIL;
                     code += skip-3;
                     /* Check that it ends with a JUMP, and that each JUMP
@@ -1800,6 +1894,8 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     else if (code+skip-1 != target)
                         FAIL;
                 }
+                if (code != target)
+                    FAIL;
             }
             break;
 
@@ -1815,7 +1911,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     FAIL;
                 if (max > SRE_MAXREPEAT)
                     FAIL;
-                if (!_validate_inner(code, code+skip-4, groups))
+                if (_validate_inner(code, code+skip-4, groups))
                     FAIL;
                 code += skip-4;
                 GET_OP;
@@ -1835,7 +1931,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                     FAIL;
                 if (max > SRE_MAXREPEAT)
                     FAIL;
-                if (!_validate_inner(code, code+skip-3, groups))
+                if (_validate_inner(code, code+skip-3, groups))
                     FAIL;
                 code += skip-3;
                 GET_OP;
@@ -1853,7 +1949,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
         case SRE_OP_ATOMIC_GROUP:
             {
                 GET_SKIP;
-                if (!_validate_inner(code, code+skip-2, groups))
+                if (_validate_inner(code, code+skip-2, groups))
                     FAIL;
                 code += skip-2;
                 GET_OP;
@@ -1905,24 +2001,17 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                to allow arbitrary jumps anywhere in the code; so we just look
                for a JUMP opcode preceding our skip target.
             */
-            if (skip >= 3 && skip-3 < (uintptr_t)(end - code) &&
-                code[skip-3] == SRE_OP_JUMP)
-            {
-                VTRACE(("both then and else parts present\n"));
-                if (!_validate_inner(code+1, code+skip-3, groups))
-                    FAIL;
+            VTRACE(("then part:\n"));
+            int rc = _validate_inner(code+1, code+skip-1, groups);
+            if (rc == 1) {
+                VTRACE(("else part:\n"));
                 code += skip-2; /* Position after JUMP, at <skipno> */
                 GET_SKIP;
-                if (!_validate_inner(code, code+skip-1, groups))
-                    FAIL;
-                code += skip-1;
+                rc = _validate_inner(code, code+skip-1, groups);
             }
-            else {
-                VTRACE(("only a then part present\n"));
-                if (!_validate_inner(code+1, code+skip-1, groups))
-                    FAIL;
-                code += skip-1;
-            }
+            if (rc)
+                FAIL;
+            code += skip-1;
             break;
 
         case SRE_OP_ASSERT:
@@ -1933,13 +2022,19 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
             if (arg & 0x80000000)
                 FAIL; /* Width too large */
             /* Stop 1 before the end; we check the SUCCESS below */
-            if (!_validate_inner(code+1, code+skip-2, groups))
+            if (_validate_inner(code+1, code+skip-2, groups))
                 FAIL;
             code += skip-2;
             GET_OP;
             if (op != SRE_OP_SUCCESS)
                 FAIL;
             break;
+
+        case SRE_OP_JUMP:
+            if (code + 1 != end)
+                FAIL;
+            VTRACE(("JUMP: %d\n", __LINE__));
+            return 1;
 
         default:
             FAIL;
@@ -1948,7 +2043,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
     }
 
     VTRACE(("okay\n"));
-    return 1;
+    return 0;
 }
 
 static int
@@ -1963,7 +2058,7 @@ _validate_outer(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
 static int
 _validate(PatternObject *self)
 {
-    if (!_validate_outer(self->code, self->code+self->codesize, self->groups))
+    if (_validate_outer(self->code, self->code+self->codesize, self->groups))
     {
         PyErr_SetString(PyExc_RuntimeError, "invalid SRE code");
         return 0;
@@ -2021,8 +2116,7 @@ match_getslice_by_index(MatchObject* self, Py_ssize_t index, PyObject* def)
 
     if (self->string == Py_None || self->mark[index] < 0) {
         /* return default value if the string or group is undefined */
-        Py_INCREF(def);
-        return def;
+        return Py_NewRef(def);
     }
 
     ptr = getstring(self->string, &length, &isbytes, &charsize, &view);
@@ -2096,11 +2190,14 @@ static PyObject *
 _sre_SRE_Match_expand_impl(MatchObject *self, PyObject *template)
 /*[clinic end generated code: output=931b58ccc323c3a1 input=4bfdb22c2f8b146a]*/
 {
-    /* delegate to Python code */
-    return call(
-        SRE_PY_MODULE, "_expand",
-        PyTuple_Pack(3, self->pattern, self, template)
-        );
+    _sremodulestate *module_state = get_sre_module_state_by_class(Py_TYPE(self));
+    PyObject *filter = compile_template(module_state, self->pattern, template);
+    if (filter == NULL) {
+        return NULL;
+    }
+    PyObject *result = expand_template((TemplateObject *)filter, self);
+    Py_DECREF(filter);
+    return result;
 }
 
 static PyObject*
@@ -2338,8 +2435,7 @@ match_regs(MatchObject* self)
         PyTuple_SET_ITEM(regs, index, item);
     }
 
-    Py_INCREF(regs);
-    self->regs = regs;
+    self->regs = Py_NewRef(regs);
 
     return regs;
 }
@@ -2353,8 +2449,7 @@ static PyObject *
 _sre_SRE_Match___copy___impl(MatchObject *self)
 /*[clinic end generated code: output=a779c5fc8b5b4eb4 input=3bb4d30b6baddb5b]*/
 {
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 /*[clinic input]
@@ -2369,8 +2464,7 @@ static PyObject *
 _sre_SRE_Match___deepcopy__(MatchObject *self, PyObject *memo)
 /*[clinic end generated code: output=ba7cb46d655e4ee2 input=779d12a31c2c325e]*/
 {
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 PyDoc_STRVAR(match_doc,
@@ -2399,8 +2493,7 @@ match_lastgroup_get(MatchObject *self, void *Py_UNUSED(ignored))
     {
         PyObject *result = PyTuple_GET_ITEM(self->pattern->indexgroup,
                                             self->lastindex);
-        Py_INCREF(result);
-        return result;
+        return Py_NewRef(result);
     }
     Py_RETURN_NONE;
 }
@@ -2409,8 +2502,7 @@ static PyObject *
 match_regs_get(MatchObject *self, void *Py_UNUSED(ignored))
 {
     if (self->regs) {
-        Py_INCREF(self->regs);
-        return self->regs;
+        return Py_NewRef(self->regs);
     } else
         return match_regs(self);
 }
@@ -2454,11 +2546,9 @@ pattern_new_match(_sremodulestate* module_state,
         if (!match)
             return NULL;
 
-        Py_INCREF(pattern);
-        match->pattern = pattern;
+        match->pattern = (PatternObject*)Py_NewRef(pattern);
 
-        Py_INCREF(state->string);
-        match->string = state->string;
+        match->string = Py_NewRef(state->string);
 
         match->regs = NULL;
         match->groups = pattern->groups+1;
@@ -2678,12 +2768,113 @@ pattern_scanner(_sremodulestate *module_state,
         return NULL;
     }
 
-    Py_INCREF(self);
-    scanner->pattern = (PyObject*) self;
+    scanner->pattern = Py_NewRef(self);
 
     PyObject_GC_Track(scanner);
     return (PyObject*) scanner;
 }
+
+/* -------------------------------------------------------------------- */
+/* template methods */
+
+static int
+template_traverse(TemplateObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->literal);
+    for (Py_ssize_t i = 0, n = Py_SIZE(self); i < n; i++) {
+        Py_VISIT(self->items[i].literal);
+    }
+    return 0;
+}
+
+static int
+template_clear(TemplateObject *self)
+{
+    Py_CLEAR(self->literal);
+    for (Py_ssize_t i = 0, n = Py_SIZE(self); i < n; i++) {
+        Py_CLEAR(self->items[i].literal);
+    }
+    return 0;
+}
+
+static void
+template_dealloc(TemplateObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+
+    PyObject_GC_UnTrack(self);
+    (void)template_clear(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyObject *
+expand_template(TemplateObject *self, MatchObject *match)
+{
+    if (Py_SIZE(self) == 0) {
+        return Py_NewRef(self->literal);
+    }
+
+    PyObject *result = NULL;
+    Py_ssize_t count = 0;  // the number of non-empty chunks
+    /* For small number of strings use a buffer allocated on the stack,
+     * otherwise use a list object. */
+    PyObject *buffer[10];
+    PyObject **out = buffer;
+    PyObject *list = NULL;
+    if (self->chunks > (int)Py_ARRAY_LENGTH(buffer) ||
+        !PyUnicode_Check(self->literal))
+    {
+        list = PyList_New(self->chunks);
+        if (!list) {
+            return NULL;
+        }
+        out = &PyList_GET_ITEM(list, 0);
+    }
+
+    out[count++] = Py_NewRef(self->literal);
+    for (Py_ssize_t i = 0; i < Py_SIZE(self); i++) {
+        Py_ssize_t index = self->items[i].index;
+        if (index >= match->groups) {
+            PyErr_SetString(PyExc_IndexError, "no such group");
+            goto cleanup;
+        }
+        PyObject *item = match_getslice_by_index(match, index, Py_None);
+        if (item == NULL) {
+            goto cleanup;
+        }
+        if (item != Py_None) {
+            out[count++] = Py_NewRef(item);
+        }
+        Py_DECREF(item);
+
+        PyObject *literal = self->items[i].literal;
+        if (literal != NULL) {
+            out[count++] = Py_NewRef(literal);
+        }
+    }
+
+    if (PyUnicode_Check(self->literal)) {
+        result = _PyUnicode_JoinArray(&_Py_STR(empty), out, count);
+    }
+    else {
+        Py_SET_SIZE(list, count);
+        result = _PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), list);
+    }
+
+cleanup:
+    if (list) {
+        Py_DECREF(list);
+    }
+    else {
+        for (Py_ssize_t i = 0; i < count; i++) {
+            Py_DECREF(out[i]);
+        }
+    }
+    return result;
+}
+
 
 static Py_hash_t
 pattern_hash(PatternObject *self)
@@ -2907,15 +3098,32 @@ static PyType_Slot scanner_slots[] = {
 };
 
 static PyType_Spec scanner_spec = {
-    .name = "_" SRE_MODULE ".SRE_Scanner",
+    .name = "_sre.SRE_Scanner",
     .basicsize = sizeof(ScannerObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
               Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC),
     .slots = scanner_slots,
 };
 
+static PyType_Slot template_slots[] = {
+    {Py_tp_dealloc, template_dealloc},
+    {Py_tp_traverse, template_traverse},
+    {Py_tp_clear, template_clear},
+    {0, NULL},
+};
+
+static PyType_Spec template_spec = {
+    .name = "_sre.SRE_Template",
+    .basicsize = sizeof(TemplateObject),
+    .itemsize = sizeof(((TemplateObject *)0)->items[0]),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC),
+    .slots = template_slots,
+};
+
 static PyMethodDef _functions[] = {
     _SRE_COMPILE_METHODDEF
+    _SRE_TEMPLATE_METHODDEF
     _SRE_GETCODESIZE_METHODDEF
     _SRE_ASCII_ISCASED_METHODDEF
     _SRE_UNICODE_ISCASED_METHODDEF
@@ -2932,6 +3140,8 @@ sre_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->Pattern_Type);
     Py_VISIT(state->Match_Type);
     Py_VISIT(state->Scanner_Type);
+    Py_VISIT(state->Template_Type);
+    Py_VISIT(state->compile_template);
 
     return 0;
 }
@@ -2944,6 +3154,8 @@ sre_clear(PyObject *module)
     Py_CLEAR(state->Pattern_Type);
     Py_CLEAR(state->Match_Type);
     Py_CLEAR(state->Scanner_Type);
+    Py_CLEAR(state->Template_Type);
+    Py_CLEAR(state->compile_template);
 
     return 0;
 }
@@ -2984,6 +3196,7 @@ sre_exec(PyObject *m)
     CREATE_TYPE(m, state->Pattern_Type, &pattern_spec);
     CREATE_TYPE(m, state->Match_Type, &match_spec);
     CREATE_TYPE(m, state->Scanner_Type, &scanner_spec);
+    CREATE_TYPE(m, state->Template_Type, &template_spec);
 
     if (PyModule_AddIntConstant(m, "MAGIC", SRE_MAGIC) < 0) {
         goto error;
@@ -3013,7 +3226,7 @@ static PyModuleDef_Slot sre_slots[] = {
 
 static struct PyModuleDef sremodule = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_" SRE_MODULE,
+    .m_name = "_sre",
     .m_size = sizeof(_sremodulestate),
     .m_methods = _functions,
     .m_slots = sre_slots,

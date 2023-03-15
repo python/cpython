@@ -44,7 +44,7 @@ whichever version you want.
 To create a virtual environment, decide upon a directory where you want to
 place it, and run the :mod:`venv` module as a script with the directory path::
 
-   python3 -m venv tutorial-env
+   python -m venv tutorial-env
 
 This will create the ``tutorial-env`` directory if it doesn't exist,
 and also create directories inside it containing a copy of the Python
@@ -98,8 +98,8 @@ Managing Packages with pip
 ==========================
 
 You can install, upgrade, and remove packages using a program called
-:program:`pip`.  By default ``pip`` will install packages from the Python
-Package Index, <https://pypi.org>.  You can browse the Python
+:program:`pip`.  By default ``pip`` will install packages from the `Python
+Package Index <https://pypi.org>`_.  You can browse the Python
 Package Index by going to it in your web browser.
 
 ``pip`` has a number of subcommands: "install", "uninstall",

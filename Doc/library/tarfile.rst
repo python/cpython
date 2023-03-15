@@ -279,7 +279,7 @@ be finalized; only the internally used file object will be closed. See the
 .. versionadded:: 3.2
    Added support for the context management protocol.
 
-.. class:: TarFile(name=None, mode='r', fileobj=None, format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False, ignore_zeros=False, encoding=ENCODING, errors='surrogateescape', pax_headers=None, debug=0, errorlevel=0)
+.. class:: TarFile(name=None, mode='r', fileobj=None, format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False, ignore_zeros=False, encoding=ENCODING, errors='surrogateescape', pax_headers=None, debug=0, errorlevel=1)
 
    All following arguments are optional and can be accessed as instance attributes
    as well.
@@ -839,7 +839,7 @@ There are three tar formats that can be created with the :mod:`tarfile` module:
   files and stores pathnames in a portable way. Modern tar implementations,
   including GNU tar, bsdtar/libarchive and star, fully support extended *pax*
   features; some old or unmaintained libraries may not, but should treat
-  *pax* archives as if they were in the universally-supported *ustar* format.
+  *pax* archives as if they were in the universally supported *ustar* format.
   It is the current default format for new archives.
 
   It extends the existing *ustar* format with extra headers for information

@@ -28,10 +28,20 @@ class LoaderTest(unittest.TestCase):
     unknowndll = "xxrandomnamexx"
 
     def test_load(self):
-        if libc_name is None:
-            self.skipTest('could not find libc')
-        CDLL(libc_name)
-        CDLL(os.path.basename(libc_name))
+        if libc_name is not None:
+            test_lib = libc_name
+        else:
+            if os.name == "nt":
+                import _ctypes_test
+                test_lib = _ctypes_test.__file__
+            else:
+                self.skipTest('could not find library to load')
+        CDLL(test_lib)
+        CDLL(os.path.basename(test_lib))
+        class CTypesTestPathLikeCls:
+            def __fspath__(self):
+                return test_lib
+        CDLL(CTypesTestPathLikeCls())
         self.assertRaises(OSError, CDLL, self.unknowndll)
 
     def test_load_version(self):
@@ -93,7 +103,7 @@ class LoaderTest(unittest.TestCase):
         # NOT fit into a 32-bit integer.  FreeLibrary must be able
         # to accept this address.
 
-        # These are tests for https://www.python.org/sf/1703286
+        # These are tests for https://bugs.python.org/issue1703286
         handle = LoadLibrary("advapi32")
         FreeLibrary(handle)
 
@@ -115,6 +125,12 @@ class LoaderTest(unittest.TestCase):
         self.assertTrue(proc)
         # This is the real test: call the function via 'call_function'
         self.assertEqual(0, call_function(proc, (None,)))
+
+    @unittest.skipUnless(os.name == "nt",
+                         'test specific to Windows')
+    def test_load_hasattr(self):
+        # bpo-34816: shouldn't raise OSError
+        self.assertFalse(hasattr(windll, 'test'))
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
