@@ -105,6 +105,22 @@ Double and triple length extended precision algorithms from:
 typedef struct{ double hi; double lo; } DoubleLength;
 
 static DoubleLength
+d_to_dl(double x)
+{
+    return (DoubleLength) {x, 0.0};
+}
+
+static DoubleLength
+dl_fast_sum(double a, double b)
+{
+    /* Algorithm 1.1. Compensated summation of two floating point numbers. */
+    assert(fabs(a) >= fabs(b));
+    double x = a + b;
+    double y = (a - x) + b;
+    return (DoubleLength) {x, y};
+}
+
+static DoubleLength
 dl_sum(double a, double b)
 {
     /* Algorithm 3.1 Error-free transformation of the sum */
@@ -162,6 +178,21 @@ dl_mul(double x, double y)
     double z = p + q;
     double zz = p - z + q + xx.lo * yy.lo;
     return (DoubleLength) {z, zz};
+}
+
+static DoubleLength
+dl_fma(double x, double y, DoubleLength total)
+{
+    /* Algorithm 5.10 with SumKVert for K=2 */
+    DoubleLength pr = dl_mul(x, y);
+    DoubleLength sm = dl_sum(total.hi, pr.hi);
+    return DoubleLength {sm.hi, pr.lo + sm.lo + total.lo};
+}
+
+static double
+dl_to_d(DoubleLength total):
+{
+    return total.lo + total.hi;
 }
 
 #endif
