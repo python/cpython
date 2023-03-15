@@ -1944,8 +1944,10 @@ Notes on using *__slots__*
   descriptor directly from the base class). This renders the meaning of the
   program undefined.  In the future, a check may be added to prevent this.
 
-* Nonempty *__slots__* does not work for classes derived from "variable-length"
-  built-in types such as :class:`int`, :class:`bytes` and :class:`tuple`.
+* :exc:`TypeError` will be raised if nonempty *__slots__* are defined for a
+  class derived from a
+  :c:member:`"variable-length" built-in type <PyTypeObject.tp_itemsize>` such as
+  :class:`int`, :class:`bytes`, and :class:`tuple`.
 
 * Any non-string :term:`iterable` may be assigned to *__slots__*.
 

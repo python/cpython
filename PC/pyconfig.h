@@ -72,9 +72,27 @@ WIN32 is still required for the locale module.
 #define USE_SOCKET
 #endif
 
-#if defined(WINAPI_FAMILY) && (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP)
-#define MS_WINDOWS_NON_DESKTOP
+#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN) || defined(Py_BUILD_CORE_MODULE)
+#include <winapifamily.h>
+
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#define MS_WINDOWS_DESKTOP
 #endif
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
+#define MS_WINDOWS_APP
+#endif
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_SYSTEM)
+#define MS_WINDOWS_SYSTEM
+#endif
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_GAMES)
+#define MS_WINDOWS_GAMES
+#endif
+
+/* Define to 1 if you support windows console io */
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
+#define HAVE_WINDOWS_CONSOLE_IO 1
+#endif
+#endif /* Py_BUILD_CORE || Py_BUILD_CORE_BUILTIN || Py_BUILD_CORE_MODULE */
 
 /* Compiler specific defines */
 
@@ -300,7 +318,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       endif /* Py_BUILD_CORE */
 #endif /* MS_COREDLL */
 
-#if defined(MS_WIN64)
+#ifdef MS_WIN64
 /* maintain "win32" sys.platform for backward compatibility of Python code,
    the Win64 API should be close enough to the Win32 API to make this
    preferable */
