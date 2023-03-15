@@ -1090,7 +1090,6 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
                 return NULL;
             }
         }
-        /* m_copy of Py_None means it is copied some other way. */
         mod = import_add_module(tstate, name);
         if (mod == NULL) {
             return NULL;
