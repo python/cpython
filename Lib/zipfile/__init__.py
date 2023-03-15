@@ -528,14 +528,11 @@ class ZipInfo (object):
                         if up_unicode_name:
                             self.filename = _sanitize_filename(up_unicode_name)
                         else:
-                            import warnings
                             warnings.warn("Empty unicode path extra field (0x7075)", stacklevel=2)
-                except struct.error:
-                    import warnings
-                    warnings.warn("Corrupt unicode path extra field (0x7075)", stacklevel=2)
-                except UnicodeDecodeError:
-                    import warnings
-                    warnings.warn('Corrupt unicode path extra field (0x7075): invalid utf-8 bytes', stacklevel=2)
+                except struct.error as e:
+                    raise BadZipFile("Corrupt unicode path extra field (0x7075)") from e
+                except UnicodeDecodeError as e:
+                    raise BadZipFile('Corrupt unicode path extra field (0x7075): invalid utf-8 bytes') from e
 
             extra = extra[ln+4:]
 
