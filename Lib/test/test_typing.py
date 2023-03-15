@@ -1936,11 +1936,12 @@ class BaseCallableTests:
         ]
         for alias in samples:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                s = pickle.dumps(alias, proto)
-                loaded = pickle.loads(s)
-                self.assertEqual(alias.__origin__, loaded.__origin__)
-                self.assertEqual(alias.__args__, loaded.__args__)
-                self.assertEqual(alias.__parameters__, loaded.__parameters__)
+                with self.subTest(alias=alias, proto=proto):
+                    s = pickle.dumps(alias, proto)
+                    loaded = pickle.loads(s)
+                    self.assertEqual(alias.__origin__, loaded.__origin__)
+                    self.assertEqual(alias.__args__, loaded.__args__)
+                    self.assertEqual(alias.__parameters__, loaded.__parameters__)
 
         del T_pickle, P_pickle, TS_pickle  # cleaning up global state
 
@@ -1973,7 +1974,9 @@ class BaseCallableTests:
         P = ParamSpec('P')
         T = TypeVar('T')
 
-        with self.assertRaises(TypeError):
+        pat = "Expected a list of types, an ellipsis, ParamSpec, or Concatenate."
+
+        with self.assertRaisesRegex(TypeError, pat):
             Callable[P, T][0, int]
 
     def test_type_erasure(self):
