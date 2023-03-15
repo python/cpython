@@ -56,8 +56,9 @@ class Queue(object):
         self._ignore_epipe = False
         self._reset()
         self._shutdown_state = context._default_context.Value(
-            ctypes.c_uint8, _queue_alive, lock=True
-        )
+               ctypes.c_uint8, _queue_alive,
+               lock=True
+               )
 
         if sys.platform != 'win32':
             register_after_fork(self, Queue._after_fork)
@@ -112,17 +113,15 @@ class Queue(object):
             raise ValueError(f"Queue {self!r} is closed")
         if self._shutdown_state.value == _queue_shutdown_immediate:
             raise ShutDown
+        elif self._shutdown_state.value == _queue_shutdown and self.empty():
+            raise ShutDown
         if block and timeout is None:
-            if self._shutdown_state.value == _queue_shutdown and self.empty():
-                raise ShutDown
             with self._rlock:
                 res = self._recv_bytes()
             self._sem.release()
         else:
             if block:
                 deadline = time.monotonic() + timeout
-            if self._shutdown_state.value == _queue_shutdown and self.empty():
-                raise ShutDown
             if not self._rlock.acquire(block, timeout):
                 raise Empty
             try:
@@ -136,8 +135,8 @@ class Queue(object):
                 self._sem.release()
             finally:
                 self._rlock.release()
-            if self._shutdown_state.value == _queue_shutdown_immediate:
-                raise ShutDown
+        if self._shutdown_state.value == _queue_shutdown_immediate:
+            raise ShutDown
         # unserialize the data after having released the lock
         return _ForkingPickler.loads(res)
 
@@ -158,6 +157,8 @@ class Queue(object):
         return self.put(obj, False)
 
     def shutdown(self, immediate=False):
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
         with self._shutdown_state.get_lock():
             if self._shutdown_state.value == _queue_shutdown_immediate:
                 return
@@ -372,10 +373,10 @@ class JoinableQueue(Queue):
                     raise ShutDown
 
     def shutdown(self, immediate=False):
-        initial_shutdown = self._shutdown_state.value
-        super().shutdown(immediate)
-        if initial_shutdown == _queue_alive:
-            with self._cond:
+        with self._cond:
+            initial_shutdown = self._shutdown_state.value
+            super().shutdown(immediate)
+            if initial_shutdown == _queue_alive:
                 self._cond.notify_all() # here to check YD
 
 #
