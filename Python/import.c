@@ -978,6 +978,16 @@ _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
     return 0;
 }
 
+static inline int
+match_mod_name(PyObject *actual, const char *expected)
+{
+    if (PyUnicode_CompareWithASCIIString(actual, expected) == 0) {
+        return 1;
+    }
+    assert(!PyErr_Occurred());
+    return 0;
+}
+
 static int
 fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
 {
@@ -1001,7 +1011,8 @@ fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
     // when the extension module doesn't support sub-interpreters.
     // XXX Why special-case the main interpreter?
     if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
-        if (def->m_size == -1) {
+        /* m_copy of Py_None means it is copied some other way. */
+        if (def->m_size == -1 && def->m_base.m_copy != Py_None) {
             if (def->m_base.m_copy) {
                 /* Somebody already imported the module,
                    likely under a different name.
@@ -1055,18 +1066,34 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
     PyObject *modules = MODULES(tstate->interp);
 
     if (def->m_size == -1) {
+        PyObject *m_copy = def->m_base.m_copy;
         /* Module does not support repeated initialization */
-        if (def->m_base.m_copy == NULL)
+        if (m_copy == NULL) {
             return NULL;
+        }
+        else if (m_copy == Py_None) {
+            if (match_mod_name(name, "sys")) {
+                m_copy = tstate->interp->sysdict_copy;
+            }
+            else if (match_mod_name(name, "builtins")) {
+                m_copy = tstate->interp->builtins_copy;
+            }
+            else {
+                _PyErr_SetString(tstate, PyExc_ImportError, "missing m_copy");
+                return NULL;
+            }
+        }
+        /* m_copy of Py_None means it is copied some other way. */
         mod = import_add_module(tstate, name);
-        if (mod == NULL)
+        if (mod == NULL) {
             return NULL;
+        }
         mdict = PyModule_GetDict(mod);
         if (mdict == NULL) {
             Py_DECREF(mod);
             return NULL;
         }
-        if (PyDict_Update(mdict, def->m_base.m_copy)) {
+        if (PyDict_Update(mdict, m_copy)) {
             Py_DECREF(mod);
             return NULL;
         }

@@ -228,6 +228,7 @@ Modules/_xxinterpchannelsmodule.c	-	_channelid_end_recv	-
 Modules/_xxinterpchannelsmodule.c	-	_channelid_end_send	-
 Modules/_zoneinfo.c	-	DAYS_BEFORE_MONTH	-
 Modules/_zoneinfo.c	-	DAYS_IN_MONTH	-
+Modules/_xxsubinterpretersmodule.c	-	no_exception	-
 Modules/arraymodule.c	-	descriptors	-
 Modules/arraymodule.c	-	emptybuf	-
 Modules/cjkcodecs/_codecs_cn.c	-	_mapping_list	-
