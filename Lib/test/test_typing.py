@@ -3809,6 +3809,51 @@ class GenericTests(BaseTestCase):
         self.assertEqual(Y.__qualname__,
                          'GenericTests.test_repr_2.<locals>.Y')
 
+    def test_repr_3(self):
+        T = TypeVar('T')
+        T1 = TypeVar('T1')
+        P = ParamSpec('P')
+        P2 = ParamSpec('P2')
+        Ts = TypeVarTuple('Ts')
+
+        class MyCallable(Generic[P, T]):
+            pass
+
+        class DoubleSpec(Generic[P, P2, T]):
+            pass
+
+        class TsP(Generic[*Ts, P]):
+            pass
+
+        object_to_expected_repr = {
+            MyCallable[P, T]:                         "MyCallable[~P, ~T]",
+            MyCallable[Concatenate[T1, P], T]:        "MyCallable[typing.Concatenate[~T1, ~P], ~T]",
+            MyCallable[[], bool]:                     "MyCallable[[], bool]",
+            MyCallable[[int], bool]:                  "MyCallable[[int], bool]",
+            MyCallable[[int, str], bool]:             "MyCallable[[int, str], bool]",
+            MyCallable[[int, list[int]], bool]:       "MyCallable[[int, list[int]], bool]",
+            MyCallable[Concatenate[*Ts, P], T]:       "MyCallable[typing.Concatenate[*Ts, ~P], ~T]",
+
+            DoubleSpec[P2, P, T]:                     "DoubleSpec[~P2, ~P, ~T]",
+            DoubleSpec[[int], [str], bool]:           "DoubleSpec[[int], [str], bool]",
+            DoubleSpec[[int, int], [str, str], bool]: "DoubleSpec[[int, int], [str, str], bool]",
+
+            TsP[*Ts, P]:                              "TsP[*Ts, ~P]",
+            TsP[int, str, list[int], []]:             "TsP[int, str, list[int], []]",
+            TsP[int, [str, list[int]]]:               "TsP[int, [str, list[int]]]",
+
+            # These lines are just too long to fit:
+            MyCallable[Concatenate[*Ts, P], int][int, str, [bool, float]]:
+                                                      "MyCallable[[int, str, bool, float], int]",
+        }
+
+        for obj, expected_repr in object_to_expected_repr.items():
+            with self.subTest(obj=obj, expected_repr=expected_repr):
+                self.assertRegex(
+                    repr(obj),
+                    fr"^{re.escape(MyCallable.__module__)}.*\.{re.escape(expected_repr)}$",
+                )
+
     def test_eq_1(self):
         self.assertEqual(Generic, Generic)
         self.assertEqual(Generic[T], Generic[T])
