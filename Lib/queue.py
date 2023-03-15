@@ -1,6 +1,5 @@
 '''A multi-producer, multi-consumer queue.'''
 
-import enum
 import threading
 import types
 from collections import deque
