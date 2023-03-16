@@ -1628,7 +1628,10 @@ class OtherTests(unittest.TestCase):
 
             tag_for_unicode_path = b'\x75\x70'
             version_of_unicode_path = b'\x01'
+
+            import zlib
             filename_crc = struct.pack('<L', zlib.crc32(filename_encoded))
+
             extra_data = version_of_unicode_path + filename_crc + filename_encoded
             tsize = len(extra_data).to_bytes(2, 'little')
 
