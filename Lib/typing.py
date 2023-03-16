@@ -231,7 +231,7 @@ def _type_repr(obj):
     else, we fall back on repr(obj).
     """
     # When changing this function, don't forget about
-    # `_collections_abc._type_repr` function that does the same thing
+    # `_collections_abc._type_repr`, which does the same thing
     # and must be consistent with this one.
     if isinstance(obj, type):
         if obj.__module__ == 'builtins':

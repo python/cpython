@@ -519,7 +519,7 @@ def _type_repr(obj):
     shouldn't depend on that module.
     """
     # When changing this function, don't forget about
-    # `typing._type_repr` function that does the same thing
+    # `typing._type_repr`, which does the same thing
     # and must be consistent with this one.
     if isinstance(obj, type):
         if obj.__module__ == 'builtins':
