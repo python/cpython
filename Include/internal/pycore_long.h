@@ -203,6 +203,14 @@ _PyLong_UnsignedDigitCount(const PyLongObject *op)
 }
 
 static inline int
+_PyLong_CompactSign(const PyLongObject *op)
+{
+    assert(PyLong_Check(op));
+    assert(_PyLong_IsCompact(op));
+    return 1 - (op->long_value.lv_tag & SIGN_MASK);
+}
+
+static inline int
 _PyLong_NonCompactSign(const PyLongObject *op)
 {
     assert(PyLong_Check(op));

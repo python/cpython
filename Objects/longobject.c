@@ -764,6 +764,9 @@ _PyLong_Sign(PyObject *vv)
 
     assert(v != NULL);
     assert(PyLong_Check(v));
+    if (_PyLong_IsCompact(v)) {
+        return _PyLong_CompactSign(v);
+    }
     return _PyLong_NonCompactSign(v);
 }
 
