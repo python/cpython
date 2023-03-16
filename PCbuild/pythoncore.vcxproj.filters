@@ -555,6 +555,9 @@
     <ClInclude Include="..\Include\internal\pycore_fileutils.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_fileutils_windows.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_floatobject.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
