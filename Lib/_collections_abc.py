@@ -481,14 +481,7 @@ class _CallableGenericAlias(GenericAlias):
         # rather than the default types.GenericAlias object.  Most of the
         # code is copied from typing's _GenericAlias and the builtin
         # types.GenericAlias.
-
         if not isinstance(item, tuple):
-            item = (item,)
-        # A special case in PEP 612 where if X = Callable[P, int],
-        # then X[int, str] == X[[int, str]].
-        if (len(self.__parameters__) == 1
-                and _is_param_expr(self.__parameters__[0])
-                and item and not _is_param_expr(item[0])):
             item = (item,)
 
         new_args = super().__getitem__(item).__args__
