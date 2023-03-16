@@ -376,6 +376,7 @@ class ZipInfo (object):
         'external_attr',
         'header_offset',
         'CRC',
+        'orig_filename_crc',
         'compress_size',
         'file_size',
         '_raw_time',
@@ -522,7 +523,7 @@ class ZipInfo (object):
                 # Unicode Path Extra Field
                 try:
                     up_version, up_name_crc = unpack('<BL', data[:5])
-                    if up_version == 1 and up_name_crc == crc32(self.filename):
+                    if up_version == 1 and up_name_crc == self.orig_filename_crc:
                         up_unicode_name = data[5:].decode('utf-8')
                         if up_unicode_name:
                             self.filename = _sanitize_filename(up_unicode_name)
@@ -1433,6 +1434,7 @@ class ZipFile:
             if self.debug > 2:
                 print(centdir)
             filename = fp.read(centdir[_CD_FILENAME_LENGTH])
+            orig_filename_crc = crc32(filename)
             flags = centdir[_CD_FLAG_BITS]
             if flags & _MASK_UTF_FILENAME:
                 # UTF-8 file names extension
@@ -1457,6 +1459,7 @@ class ZipFile:
             x.date_time = ( (d>>9)+1980, (d>>5)&0xF, d&0x1F,
                             t>>11, (t>>5)&0x3F, (t&0x1F) * 2 )
 
+            x.orig_filename_crc = orig_filename_crc
             x._decodeExtra()
             x.header_offset = x.header_offset + concat
             self.filelist.append(x)
