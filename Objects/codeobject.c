@@ -2004,7 +2004,8 @@ code_getcodetier2(PyCodeObject *code, void *closure)
     if (code->_tier2_info == NULL) {
         return PyBytes_FromStringAndSize("", 0);
     }
-    return PyBytes_FromStringAndSize(code->_tier2_info->_bb_space->u_code,
+    return PyBytes_FromStringAndSize(
+        (const char *)code->_tier2_info->_bb_space->u_code,
         code->_tier2_info->_bb_space->water_level);
 }
 

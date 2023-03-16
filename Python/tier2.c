@@ -136,8 +136,9 @@ type_propagate(
 #define STACK_GROW(idx)             STACK_ADJUST((idx))
 #define STACK_SHRINK(idx)           STACK_ADJUST(-(idx))
 
-#ifdef TYPEPROP_DEBUG
-    fprintf(stderr, "  [-] Type stack bef: %llu\n", ((uint64_t)type_stackptr - (uint64_t)type_stack) / sizeof(PyTypeObject *));
+#if TYPEPROP_DEBUG
+    fprintf(stderr, "  [-] Type stack bef: %llu\n",
+        ((uint64_t)type_stackptr - (uint64_t)type_stack) / sizeof(PyTypeObject *));
 #ifdef Py_DEBUG
     fprintf(stderr, "  [-] Type propagating across: %s : %d\n", _PyOpcode_OpName[opcode], oparg);
 #endif
@@ -150,8 +151,9 @@ type_propagate(
         Py_UNREACHABLE();
     }
 
-#ifdef TYPEPROP_DEBUG
-    fprintf(stderr, "  [-] Type stack aft: %llu\n", ((uint64_t)type_stackptr - (uint64_t)type_stack) / sizeof(PyTypeObject *));
+#if TYPEPROP_DEBUG
+    fprintf(stderr, "  [-] Type stack aft: %llu\n",
+        ((uint64_t)type_stackptr - (uint64_t)type_stack) / sizeof(PyTypeObject *));
 #endif
 
     type_context->type_stack_ptr = type_stackptr;
@@ -880,7 +882,7 @@ _PyTier2_Code_DetectAndEmitBB(
                     fprintf(stderr, "Emitted virtual start of basic block\n");
 #endif
                     starts_with_backwards_jump_target = true;
-                    backwards_jump_target_offset = curr - _PyCode_CODE(co);
+                    backwards_jump_target_offset = (int)(curr - _PyCode_CODE(co));
                     virtual_start = false;
                     goto fall_through;
                 }
@@ -970,7 +972,7 @@ end:
     // -1 becaues write_i points to the instruction AFTER the end
     bb_space->water_level += (write_i - t2_start) * sizeof(_Py_CODEUNIT);
 #if BB_DEBUG
-    fprintf(stderr, "Generated BB T2 Start: %p, T1 offset: %d\n", meta->tier2_start,
+    fprintf(stderr, "Generated BB T2 Start: %p, T1 offset: %zu\n", meta->tier2_start,
         meta->tier1_end - _PyCode_CODE(co));
 #endif
     return meta;
@@ -1047,8 +1049,10 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
         PyMem_Free(backward_jump_offsets);
         return 1;
     }
-    if (allocate_jump_offset_2d_array(backwards_jump_count, backward_jump_target_bb_ids)) {
+    if (allocate_jump_offset_2d_array((int)backwards_jump_count,
+        backward_jump_target_bb_ids)) {
         PyMem_Free(backward_jump_offsets);
+        PyMem_Free(backward_jump_target_bb_ids);
         return 1;
     }
 
@@ -1327,7 +1331,7 @@ _PyTier2_GenerateNextBB(
         // one of those conditional pops.
         assert(!gen_bb_requires_pop);
         // Propagate the type guard information.
-#ifdef TYPEPROP_DEBUG
+#if TYPEPROP_DEBUG
         fprintf(stderr,
             "  [-] Previous predicate BB ended with a type guard: %s\n",
             _PyOpcode_OpName[prev_type_guard->op.code]);
