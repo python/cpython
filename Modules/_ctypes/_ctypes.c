@@ -2200,7 +2200,6 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     struct fielddesc *fd;
     PyObject *as_parameter;
     int res;
-    PyObject *exc, *val, *tb;
 
     /* If the value is already an instance of the requested type,
        we can use it as is */
@@ -2234,33 +2233,27 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     parg->obj = fd->setfunc(&parg->value, value, 0);
     if (parg->obj)
         return (PyObject *)parg;
-    PyErr_Fetch(&exc, &val, &tb);
+    PyObject *exc = PyErr_GetRaisedException();
     Py_DECREF(parg);
 
     if (_PyObject_LookupAttr(value, &_Py_ID(_as_parameter_), &as_parameter) < 0) {
         Py_XDECREF(exc);
-        Py_XDECREF(val);
-        Py_XDECREF(tb);
         return NULL;
     }
     if (as_parameter) {
         if (_Py_EnterRecursiveCall("while processing _as_parameter_")) {
             Py_DECREF(as_parameter);
             Py_XDECREF(exc);
-            Py_XDECREF(val);
-            Py_XDECREF(tb);
             return NULL;
         }
         value = PyCSimpleType_from_param(type, as_parameter);
         _Py_LeaveRecursiveCall();
         Py_DECREF(as_parameter);
         Py_XDECREF(exc);
-        Py_XDECREF(val);
-        Py_XDECREF(tb);
         return value;
     }
     if (exc) {
-        PyErr_Restore(exc, val, tb);
+        PyErr_SetRaisedException(exc);
     }
     else {
         PyErr_SetString(PyExc_TypeError, "wrong type");

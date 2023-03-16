@@ -987,6 +987,7 @@ extern "C" {
     INIT_ID(kw2), \
     INIT_ID(lambda), \
     INIT_ID(last), \
+    INIT_ID(last_exc), \
     INIT_ID(last_node), \
     INIT_ID(last_traceback), \
     INIT_ID(last_type), \
@@ -1208,6 +1209,7 @@ extern "C" {
     INIT_ID(value), \
     INIT_ID(values), \
     INIT_ID(version), \
+    INIT_ID(volume), \
     INIT_ID(warnings), \
     INIT_ID(warnoptions), \
     INIT_ID(wbits), \
