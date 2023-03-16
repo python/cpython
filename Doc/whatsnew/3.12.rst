@@ -237,7 +237,7 @@ asyncio
 * Add C implementation of :func:`asyncio.current_task` for 4x-6x speedup.
   (Contributed by Itamar Ostricher and Pranav Thulasiram Bhat in :gh:`100344`.)
 
-* :func:`asyncio.iscoroutine` now returns :const:`False` for generators as
+* :func:`asyncio.iscoroutine` now returns ``False`` for generators as
   :mod:`asyncio` does not supports legacy generator-based coroutines.
   (Contributed by Kumar Aditya in :gh:`102748`.)
 
