@@ -3945,7 +3945,7 @@ fast_mod(PyLongObject *a, PyLongObject *b)
 
     assert(_PyLong_DigitCount(a) == 1);
     assert(_PyLong_DigitCount(b) == 1);
-    sdigit sign = _PyLong_NonCompactSign(b);
+    sdigit sign = _PyLong_CompactSign(b);
     if (_PyLong_SameSign(a, b)) {
         mod = left % right;
     }
