@@ -93,6 +93,26 @@ exc_set_object(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+exc_set_object_fetch(PyObject *self, PyObject *args)
+{
+    PyObject *exc;
+    PyObject *obj;
+    PyObject *type;
+    PyObject *value;
+    PyObject *tb;
+
+    if (!PyArg_ParseTuple(args, "OO:exc_set_object", &exc, &obj)) {
+        return NULL;
+    }
+
+    PyErr_SetObject(exc, obj);
+    PyErr_Fetch(&type, &value, &tb);
+    Py_XDECREF(type);
+    Py_XDECREF(tb);
+    return value;
+}
+
+static PyObject *
 raise_exception(PyObject *self, PyObject *args)
 {
     PyObject *exc;
@@ -262,6 +282,7 @@ static PyMethodDef test_methods[] = {
     {"make_exception_with_doc", _PyCFunction_CAST(make_exception_with_doc),
      METH_VARARGS | METH_KEYWORDS},
     {"exc_set_object",          exc_set_object,                  METH_VARARGS},
+    {"exc_set_object_fetch",    exc_set_object_fetch,            METH_VARARGS},
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
     {"set_exc_info",            test_set_exc_info,               METH_VARARGS},

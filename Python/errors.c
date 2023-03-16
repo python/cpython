@@ -135,6 +135,28 @@ _PyErr_GetTopmostException(PyThreadState *tstate)
     return exc_info;
 }
 
+static PyObject *
+get_normalization_failure_note(PyThreadState *tstate, PyObject *exception, PyObject *value)
+{
+    PyObject *args = PyObject_Repr(value);
+    if (args == NULL) {
+        _PyErr_Clear(tstate);
+        args = PyUnicode_FromFormat("<unknown>");
+    }
+    PyObject *note;
+    const char *tpname = ((PyTypeObject*)exception)->tp_name;
+    if (args == NULL) {
+        _PyErr_Clear(tstate);
+        note = PyUnicode_FromFormat("Normalization failed: type=%s", tpname);
+    }
+    else {
+        note = PyUnicode_FromFormat("Normalization failed: type=%s args=%S",
+                                    tpname, args);
+        Py_DECREF(args);
+    }
+    return note;
+}
+
 void
 _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
 {
@@ -160,19 +182,27 @@ _PyErr_SetObject(PyThreadState *tstate, PyObject *exception, PyObject *value)
     Py_XINCREF(value);
     if (!is_subclass) {
         /* We must normalize the value right now */
-        PyObject *fixed_value;
 
         /* Issue #23571: functions must not be called with an
             exception set */
         _PyErr_Clear(tstate);
 
-        fixed_value = _PyErr_CreateException(exception, value);
-        Py_XDECREF(value);
+        PyObject *fixed_value = _PyErr_CreateException(exception, value);
         if (fixed_value == NULL) {
+            PyObject *exc = _PyErr_GetRaisedException(tstate);
+            assert(PyExceptionInstance_Check(exc));
+
+            PyObject *note = get_normalization_failure_note(tstate, exception, value);
+            Py_XDECREF(value);
+            if (note != NULL) {
+                /* ignore errors in _PyException_AddNote - they will be overwritten below */
+                _PyException_AddNote(exc, note);
+                Py_DECREF(note);
+            }
+            _PyErr_SetRaisedException(tstate, exc);
             return;
         }
-
-        value = fixed_value;
+        Py_XSETREF(value, fixed_value);
     }
 
     exc_value = _PyErr_GetTopmostException(tstate)->exc_value;
