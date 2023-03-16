@@ -1921,14 +1921,29 @@ class BaseCallableTests:
         self.assertEqual(weakref.ref(alias)(), alias)
 
     def test_pickle(self):
+        global T_pickle, P_pickle, TS_pickle  # needed for pickling
         Callable = self.Callable
-        alias = Callable[[int, str], float]
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            s = pickle.dumps(alias, proto)
-            loaded = pickle.loads(s)
-            self.assertEqual(alias.__origin__, loaded.__origin__)
-            self.assertEqual(alias.__args__, loaded.__args__)
-            self.assertEqual(alias.__parameters__, loaded.__parameters__)
+        T_pickle = TypeVar('T_pickle')
+        P_pickle = ParamSpec('P_pickle')
+        TS_pickle = TypeVarTuple('TS_pickle')
+
+        samples = [
+            Callable[[int, str], float],
+            Callable[P_pickle, int],
+            Callable[P_pickle, T_pickle],
+            Callable[Concatenate[int, P_pickle], int],
+            Callable[Concatenate[*TS_pickle, P_pickle], int],
+        ]
+        for alias in samples:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(alias=alias, proto=proto):
+                    s = pickle.dumps(alias, proto)
+                    loaded = pickle.loads(s)
+                    self.assertEqual(alias.__origin__, loaded.__origin__)
+                    self.assertEqual(alias.__args__, loaded.__args__)
+                    self.assertEqual(alias.__parameters__, loaded.__parameters__)
+
+        del T_pickle, P_pickle, TS_pickle  # cleaning up global state
 
     def test_var_substitution(self):
         Callable = self.Callable
@@ -1953,6 +1968,16 @@ class BaseCallableTests:
         C5 = Callable[[typing.List[T], tuple[KT, T], VT], int]
         self.assertEqual(C5[int, str, float],
                          Callable[[typing.List[int], tuple[str, int], float], int])
+
+    def test_type_subst_error(self):
+        Callable = self.Callable
+        P = ParamSpec('P')
+        T = TypeVar('T')
+
+        pat = "Expected a list of types, an ellipsis, ParamSpec, or Concatenate."
+
+        with self.assertRaisesRegex(TypeError, pat):
+            Callable[P, T][0, int]
 
     def test_type_erasure(self):
         Callable = self.Callable
