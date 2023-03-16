@@ -1,6 +1,9 @@
 This directory contains a number of Python programs that are useful
 while building or extending Python.
 
+.build          Automatically generated directory by the build system
+                contain  build artifacts and intermediate files. 
+
 buildbot        Batchfiles for running on Windows buildbot workers.
 
 c-analyzer      CPython's C code makes extensive use of global variables.
