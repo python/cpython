@@ -566,6 +566,7 @@ PySSL_ChainExceptions(PySSLSocket *sslsock) {
         return 0;
 
     _PyErr_ChainExceptions1(sslsock->exc);
+    sslsock->exc = NULL;
     return -1;
 }
 
