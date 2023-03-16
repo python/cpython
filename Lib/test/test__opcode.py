@@ -69,8 +69,7 @@ class OpcodeTests(unittest.TestCase):
 
 class SpecializationStatsTests(unittest.TestCase):
     def test_specialization_stats(self):
-        stat_names = opcode._specialization_stats
-
+        stat_names = ["success", "failure", "hit", "deferred", "miss", "deopt"]
         specialized_opcodes = [
             op.lower()
             for op in opcode._specializations

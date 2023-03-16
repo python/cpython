@@ -375,20 +375,12 @@ _specializations = {
 _specialized_instructions = [
     opcode for family in _specializations.values() for opcode in family
 ]
-_specialization_stats = [
-    "success",
-    "failure",
-    "hit",
-    "deferred",
-    "miss",
-    "deopt",
-]
 
 _cache_format = {
     "LOAD_GLOBAL": {
         "counter": 1,
         "index": 1,
-        "module_keys_version": 2,
+        "module_keys_version": 1,
         "builtin_keys_version": 1,
     },
     "BINARY_OP": {
