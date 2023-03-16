@@ -1616,15 +1616,23 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zf.filelist[0].filename, "foo.txt")
             self.assertEqual(zf.filelist[1].filename, "\xf6.txt")
 
+    @requires_zlib()
     def test_read_zipfile_containing_unicode_path_extra_field(self):
         with zipfile.ZipFile(TESTFN, mode='w') as zf:
             # create a file with a non-ASCII name
             filename = '이름.txt'
+            filename_encoded = filename.encode('utf-8')
 
             # create a ZipInfo object with Unicode path extra field
             zip_info = zipfile.ZipInfo(filename)
-            extra_data = filename.encode('utf-8') + b'\x00'  # path in UTF-8, null-terminated
-            zip_info.extra = b'\x75\x70' + len(extra_data).to_bytes(2, 'little') + extra_data
+
+            tag_for_unicode_path = b'\x75\x70'
+            version_of_unicode_path = b'\x01'
+            filename_crc = struct.pack('<L', zlib.crc32(filename_encoded))
+            extra_data = version_of_unicode_path + filename_crc + filename_encoded
+            tsize = len(extra_data).to_bytes(2, 'little')
+
+            zip_info.extra = tag_for_unicode_path + tsize + extra_data
 
             # add the file to the ZIP archive
             zf.writestr(zip_info, b'Hello World!')
