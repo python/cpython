@@ -866,6 +866,19 @@ which incur interpreter overhead.
            window.append(x)
            yield math.sumprod(kernel, window)
 
+   def polynomial_eval(coefficients, x):
+       """Evaluate a polynomial at a specific value.
+
+       Computes with better numeric stability than Horner's method.
+       """
+       # Evaluate x³ -4x² -17x + 60 at x = 2.5
+       # polynomial_eval([1, -4, -17, 60], x=2.5) --> 8.125
+       n = len(coefficients)
+       if n == 0:
+           return x * 0  # coerce zero to the type of x
+       powers = map(pow, repeat(x), range(n))
+       return math.sumprod(reversed(coefficients), powers)
+
    def polynomial_from_roots(roots):
        """Compute a polynomial's coefficients from its roots.
 
@@ -1244,6 +1257,37 @@ which incur interpreter overhead.
     [20, 20, -16, 8, -12, 8, -12, -16]
     >>> list(convolve(data, [1, -2, 1]))
     [20, 0, -36, 24, -20, 20, -20, -4, 16]
+
+    >>> from fractions import Fraction
+    >>> from decimal import Decimal
+    >>> polynomial_eval([1, -4, -17, 60], x=2)
+    18
+    >>> x = 2; x**3 - 4*x**2 -17*x + 60
+    18
+    >>> polynomial_eval([1, -4, -17, 60], x=2.5)
+    8.125
+    >>> x = 2.5; x**3 - 4*x**2 -17*x + 60
+    8.125
+    >>> polynomial_eval([1, -4, -17, 60], x=Fraction(2, 3))
+    Fraction(1274, 27)
+    >>> x = Fraction(2, 3); x**3 - 4*x**2 -17*x + 60
+    Fraction(1274, 27)
+    >>> polynomial_eval([1, -4, -17, 60], x=Decimal('1.75'))
+    Decimal('23.359375')
+    >>> x = Decimal('1.75'); x**3 - 4*x**2 -17*x + 60
+    Decimal('23.359375')
+    >>> polynomial_eval([], 2)
+    0
+    >>> polynomial_eval([], 2.5)
+    0.0
+    >>> polynomial_eval([], Fraction(2, 3))
+    Fraction(0, 1)
+    >>> polynomial_eval([], Decimal('1.75'))
+    Decimal('0.00')
+    >>> polynomial_eval([11], 7) == 11
+    True
+    >>> polynomial_eval([11, 2], 7) == 11 * 7 + 2
+    True
 
     >>> polynomial_from_roots([5, -4, 3])
     [1, -4, -17, 60]
