@@ -1082,10 +1082,12 @@ PyLong_AsVoidPtr(PyObject *vv)
 #if SIZEOF_VOID_P <= SIZEOF_LONG
     long x;
 
-    if (PyLong_Check(vv) && _PyLong_Sign(vv) < 0)
+    if (PyLong_Check(vv) && _PyLong_IsNegative((PyLongObject *)vv)) {
         x = PyLong_AsLong(vv);
-    else
+    }
+    else {
         x = PyLong_AsUnsignedLong(vv);
+    }
 #else
 
 #if SIZEOF_LONG_LONG < SIZEOF_VOID_P
@@ -1093,10 +1095,12 @@ PyLong_AsVoidPtr(PyObject *vv)
 #endif
     long long x;
 
-    if (PyLong_Check(vv) && _PyLong_Sign(vv) < 0)
+    if (PyLong_Check(vv) && _PyLong_IsNegative((PyLongObject *)vv)) {
         x = PyLong_AsLongLong(vv);
-    else
+    }
+    else {
         x = PyLong_AsUnsignedLongLong(vv);
+    }
 
 #endif /* SIZEOF_VOID_P <= SIZEOF_LONG */
 
@@ -1406,7 +1410,7 @@ _PyLong_UnsignedShort_Converter(PyObject *obj, void *ptr)
 {
     unsigned long uval;
 
-    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
         PyErr_SetString(PyExc_ValueError, "value must be positive");
         return 0;
     }
@@ -1428,7 +1432,7 @@ _PyLong_UnsignedInt_Converter(PyObject *obj, void *ptr)
 {
     unsigned long uval;
 
-    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
         PyErr_SetString(PyExc_ValueError, "value must be positive");
         return 0;
     }
@@ -1450,7 +1454,7 @@ _PyLong_UnsignedLong_Converter(PyObject *obj, void *ptr)
 {
     unsigned long uval;
 
-    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
         PyErr_SetString(PyExc_ValueError, "value must be positive");
         return 0;
     }
@@ -1467,7 +1471,7 @@ _PyLong_UnsignedLongLong_Converter(PyObject *obj, void *ptr)
 {
     unsigned long long uval;
 
-    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
         PyErr_SetString(PyExc_ValueError, "value must be positive");
         return 0;
     }
@@ -1484,7 +1488,7 @@ _PyLong_Size_t_Converter(PyObject *obj, void *ptr)
 {
     size_t uval;
 
-    if (PyLong_Check(obj) && _PyLong_Sign(obj) < 0) {
+    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
         PyErr_SetString(PyExc_ValueError, "value must be positive");
         return 0;
     }

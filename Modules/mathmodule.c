@@ -1726,13 +1726,13 @@ math_isqrt(PyObject *module, PyObject *n)
         return NULL;
     }
 
-    if (_PyLong_Sign(n) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
         PyErr_SetString(
             PyExc_ValueError,
             "isqrt() argument must be nonnegative");
         goto error;
     }
-    if (_PyLong_Sign(n) == 0) {
+    if (_PyLong_IsZero((PyLongObject *)n)) {
         Py_DECREF(n);
         return PyLong_FromLong(0);
     }
