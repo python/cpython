@@ -118,11 +118,13 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
 #define SIGN_NEGATIVE 2
 #define NON_SIZE_BITS 3
 
-/* All "single digit" values are guaranteed to fit into
+/* All *compact" values are guaranteed to fit into
  * a Py_ssize_t with at least one bit to spare.
+ * In other words, for 64 bit machines, compact
+ * will be signed 63 (or fewer) bit values
  */
 
-/* Return 1 if the argument is positive single digit int */
+/* Return 1 if the argument is compact int */
 static inline int
 _PyLong_IsNonNegativeCompact(const PyLongObject* op) {
     assert(PyLong_Check(op));
@@ -142,7 +144,9 @@ _PyLong_BothAreCompact(const PyLongObject* a, const PyLongObject* b) {
     return (a->long_value.lv_tag | b->long_value.lv_tag) < (2 << NON_SIZE_BITS);
 }
 
-/* The value returned by this function will have at least one bit to spare,
+/* Returns a *compact* value, iff `_PyLong_IsCompact` is true for `op`.
+ *
+ * "Compact" values have at least one bit to spare,
  * so that addition and subtraction can be performed on the values
  * without risk of overflow.
  */
@@ -180,7 +184,7 @@ _PyLong_DigitCount(const PyLongObject *op)
     return op->long_value.lv_tag >> NON_SIZE_BITS;
 }
 
-/* Equivalent to _PyLong_DigitCount(op) * _PyLong_NonZeroSign(op) */
+/* Equivalent to _PyLong_DigitCount(op) * _PyLong_NonCompactSign(op) */
 static inline Py_ssize_t
 _PyLong_SignedDigitCount(const PyLongObject *op)
 {
@@ -199,9 +203,10 @@ _PyLong_UnsignedDigitCount(const PyLongObject *op)
 }
 
 static inline int
-_PyLong_NonZeroSign(const PyLongObject *op)
+_PyLong_NonCompactSign(const PyLongObject *op)
 {
     assert(PyLong_Check(op));
+    assert(!_PyLong_IsCompact(op));
     return 1 - (op->long_value.lv_tag & SIGN_MASK);
 }
 
@@ -215,7 +220,7 @@ _PyLong_SameSign(const PyLongObject *a, const PyLongObject *b)
 #define TAG_FROM_SIGN_AND_SIZE(sign, size) ((1 - (sign)) | ((size) << NON_SIZE_BITS))
 
 static inline void
-_PyLong_SetSignAndSize(PyLongObject *op, int sign, Py_ssize_t size)
+_PyLong_SetSignAndDigitCount(PyLongObject *op, int sign, Py_ssize_t size)
 {
     assert(size >= 0);
     assert(-1 <= sign && sign <= 1);
@@ -224,16 +229,18 @@ _PyLong_SetSignAndSize(PyLongObject *op, int sign, Py_ssize_t size)
 }
 
 static inline void
-_PyLong_SetSize(PyLongObject *op, Py_ssize_t size)
+_PyLong_SetDigitCount(PyLongObject *op, Py_ssize_t size)
 {
     assert(size >= 0);
     op->long_value.lv_tag = (((size_t)size) << NON_SIZE_BITS) | (op->long_value.lv_tag & SIGN_MASK);
 }
 
+#define NON_SIZE_MASK ~((1 << NON_SIZE_BITS) - 1)
+
 static inline void
 _PyLong_FlipSign(PyLongObject *op) {
     unsigned int flipped_sign = 2 - (op->long_value.lv_tag & SIGN_MASK);
-    op->long_value.lv_tag &= ~7;
+    op->long_value.lv_tag &= NON_SIZE_MASK;
     op->long_value.lv_tag |= flipped_sign;
 }
 

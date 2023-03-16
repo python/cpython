@@ -840,7 +840,7 @@ r_PyLong(RFILE *p)
     if (ob == NULL)
         return NULL;
 
-    _PyLong_SetSignAndSize(ob, n < 0 ? -1 : 1, size);
+    _PyLong_SetSignAndDigitCount(ob, n < 0 ? -1 : 1, size);
 
     for (i = 0; i < size-1; i++) {
         d = 0;
