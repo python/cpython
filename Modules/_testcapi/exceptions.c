@@ -39,20 +39,13 @@ err_restore(PyObject *self, PyObject *args) {
 static PyObject *
 exception_print(PyObject *self, PyObject *args)
 {
-    PyObject *value;
-    PyObject *tb = NULL;
+    PyObject *exc;
 
-    if (!PyArg_ParseTuple(args, "O:exception_print", &value)) {
+    if (!PyArg_ParseTuple(args, "O:exception_print", &exc)) {
         return NULL;
     }
 
-    if (PyExceptionInstance_Check(value)) {
-        tb = PyException_GetTraceback(value);
-    }
-
-    PyErr_Display((PyObject *) Py_TYPE(value), value, tb);
-    Py_XDECREF(tb);
-
+    PyErr_DisplayException(exc);
     Py_RETURN_NONE;
 }
 
