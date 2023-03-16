@@ -88,6 +88,13 @@ class MetaPathFinder(metaclass=abc.ABCMeta):
     # We don't define find_spec() here since that would break
     # hasattr checks we do to support backward compatibility.
 
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is MetaPathFinder:
+            if any('find_module' in B.__dict__ for B in C.__mro__):
+                return True
+        return NotImplemented
+
     def find_module(self, fullname, path):
         """Return a loader for the module.
 
@@ -124,6 +131,13 @@ class PathEntryFinder(metaclass=abc.ABCMeta):
 
     # We don't define find_spec() here since that would break
     # hasattr checks we do to support backward compatibility.
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is PathEntryFinder:
+            if any('find_module' in B.__dict__ for B in C.__mro__):
+                return True
+        return NotImplemented
 
     def find_loader(self, fullname):
         """Return (loader, namespace portion) for the path entry.
@@ -176,6 +190,14 @@ class ResourceLoader(Loader):
 
     """
 
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is ResourceLoader:
+            if (Loader.__subclasshook__(C) and
+                any('get_data' in B.__dict__ for B in C.__mro__)):
+                return True
+        return NotImplemented
+
     @abc.abstractmethod
     def get_data(self, path):
         """Abstract method which when implemented should return the bytes for
@@ -192,11 +214,24 @@ class InspectLoader(Loader):
 
     """
 
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is InspectLoader:
+            if (Loader.__subclasshook__(C) and
+                any('is_package' in B.__dict__ for B in C.__mro__) and
+                any('get_code' in B.__dict__ for B in C.__mro__) and
+                any('get_source' in B.__dict__ for B in C.__mro__) and
+                any('source_to_code' in B.__dict__ for B in C.__mro__)):
+                return True
+        return NotImplemented
+
     def is_package(self, fullname):
-        """Optional method which when implemented should return whether the
-        module is a package.  The fullname is a str.  Returns a bool.
+        """(abstract) Return whether the module is a package.
+
+        The fullname is a str.
 
         Raises ImportError if the module cannot be found.
+
         """
         raise ImportError
 

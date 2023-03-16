@@ -20,6 +20,14 @@ class Loader(metaclass=abc.ABCMeta):
     # We don't define exec_module() here since that would break
     # hasattr checks we do to support backward compatibility.
 
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is Loader:
+            if (any('exec_module' in B.__dict__ for B in C.__mro__) or
+                any('load_module' in B.__dict__ for B in C.__mro__)):
+                return True
+        return NotImplemented
+
     def load_module(self, fullname):
         """Return the loaded module.
 
