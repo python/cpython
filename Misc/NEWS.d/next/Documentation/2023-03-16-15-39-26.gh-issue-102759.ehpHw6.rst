@@ -1,0 +1,2 @@
+Align function signature for ``functools.reduce`` in Python implementation
+and documentation with the C implementation.
