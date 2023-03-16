@@ -548,7 +548,7 @@ def register_standard_browsers():
                               "Microsoft\\Edge\\Application\\msedge.exe")
         # location in 32-bit Windows
         edge32 = os.path.join(os.environ.get("PROGRAMFILES", "C:\\Program Files"),
-                             "Microsoft\\Edge\\Application\\msedge.exe")
+                              "Microsoft\\Edge\\Application\\msedge.exe")
         for browser in ("firefox", "firebird", "seamonkey", "mozilla",
                         "opera", edge64, edge32):
             if shutil.which(browser):
