@@ -517,9 +517,8 @@ def _type_repr(obj):
 
     Copied from :mod:`typing` since collections.abc
     shouldn't depend on that module.
+    (Keep this roughly in sync with the typing version.)
     """
-    if isinstance(obj, GenericAlias):
-        return repr(obj)
     if isinstance(obj, type):
         if obj.__module__ == 'builtins':
             return obj.__qualname__
