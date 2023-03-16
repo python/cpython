@@ -698,30 +698,30 @@ _Py_HandleSystemExit(int *exitcode_p)
         return 0;
     }
 
-    PyObject *exception, *value, *tb;
-    PyErr_Fetch(&exception, &value, &tb);
-
     fflush(stdout);
 
     int exitcode = 0;
-    if (value == NULL || value == Py_None) {
+
+    PyObject *exc = PyErr_GetRaisedException();
+    if (exc == NULL) {
         goto done;
     }
+    assert(PyExceptionInstance_Check(exc));
 
-    if (PyExceptionInstance_Check(value)) {
-        /* The error code should be in the `code' attribute. */
-        PyObject *code = PyObject_GetAttr(value, &_Py_ID(code));
-        if (code) {
-            Py_SETREF(value, code);
-            if (value == Py_None)
-                goto done;
+    /* The error code should be in the `code' attribute. */
+    PyObject *code = PyObject_GetAttr(exc, &_Py_ID(code));
+    if (code) {
+        Py_SETREF(exc, code);
+        if (exc == Py_None) {
+            goto done;
         }
-        /* If we failed to dig out the 'code' attribute,
-           just let the else clause below print the error. */
     }
+    /* If we failed to dig out the 'code' attribute,
+     * just let the else clause below print the error.
+     */
 
-    if (PyLong_Check(value)) {
-        exitcode = (int)PyLong_AsLong(value);
+    if (PyLong_Check(exc)) {
+        exitcode = (int)PyLong_AsLong(exc);
     }
     else {
         PyThreadState *tstate = _PyThreadState_GET();
@@ -732,20 +732,17 @@ _Py_HandleSystemExit(int *exitcode_p)
          */
         PyErr_Clear();
         if (sys_stderr != NULL && sys_stderr != Py_None) {
-            PyFile_WriteObject(value, sys_stderr, Py_PRINT_RAW);
+            PyFile_WriteObject(exc, sys_stderr, Py_PRINT_RAW);
         } else {
-            PyObject_Print(value, stderr, Py_PRINT_RAW);
+            PyObject_Print(exc, stderr, Py_PRINT_RAW);
             fflush(stderr);
         }
         PySys_WriteStderr("\n");
         exitcode = 1;
     }
 
- done:
-    /* Cleanup the exception */
-    Py_CLEAR(exception);
-    Py_CLEAR(value);
-    Py_CLEAR(tb);
+done:
+    Py_CLEAR(exc);
     *exitcode_p = exitcode;
     return 1;
 }
@@ -1636,35 +1633,29 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 
 }
 
+static void
+flush_io_stream(PyThreadState *tstate, PyObject *name)
+{
+    PyObject *f = _PySys_GetAttr(tstate, name);
+    if (f != NULL) {
+        PyObject *r = _PyObject_CallMethodNoArgs(f, &_Py_ID(flush));
+        if (r) {
+            Py_DECREF(r);
+        }
+        else {
+            PyErr_Clear();
+        }
+    }
+}
 
 static void
 flush_io(void)
 {
-    PyObject *f, *r;
-    PyObject *type, *value, *traceback;
-
-    /* Save the current exception */
-    PyErr_Fetch(&type, &value, &traceback);
-
     PyThreadState *tstate = _PyThreadState_GET();
-    f = _PySys_GetAttr(tstate, &_Py_ID(stderr));
-    if (f != NULL) {
-        r = _PyObject_CallMethodNoArgs(f, &_Py_ID(flush));
-        if (r)
-            Py_DECREF(r);
-        else
-            PyErr_Clear();
-    }
-    f = _PySys_GetAttr(tstate, &_Py_ID(stdout));
-    if (f != NULL) {
-        r = _PyObject_CallMethodNoArgs(f, &_Py_ID(flush));
-        if (r)
-            Py_DECREF(r);
-        else
-            PyErr_Clear();
-    }
-
-    PyErr_Restore(type, value, traceback);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    flush_io_stream(tstate, &_Py_ID(stderr));
+    flush_io_stream(tstate, &_Py_ID(stdout));
+    _PyErr_SetRaisedException(tstate, exc);
 }
 
 static PyObject *
