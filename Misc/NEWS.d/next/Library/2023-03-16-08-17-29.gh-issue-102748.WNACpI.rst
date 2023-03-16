@@ -1,1 +1,3 @@
-:func:`asyncio.iscoroutine` now returns :const:`False` for generators as :mod:`asyncio` does not supports legacy generator based coroutines. Patch by Kumar Aditya.
+:func:`asyncio.iscoroutine` now returns :const:`False` for generators as
+:mod:`asyncio` does not supports legacy generator-based coroutines.
+Patch by Kumar Aditya.
