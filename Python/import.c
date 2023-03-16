@@ -1000,7 +1000,7 @@ get_core_module_dict(PyInterpreterState *interp,
 static inline int
 is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *filename)
 {
-    return get_core_module_dict(interp, name, filename) == NULL;
+    return get_core_module_dict(interp, name, filename) != NULL;
 }
 
 static int
