@@ -111,6 +111,7 @@ struct _is {
 
     PyObject *dict;  /* Stores per-interpreter state */
 
+    PyObject *sysdict_copy;
     PyObject *builtins_copy;
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
@@ -141,6 +142,7 @@ struct _is {
     struct _Py_float_state float_state;
     struct _Py_long_state long_state;
     struct _dtoa_state dtoa;
+    struct _py_func_state func_state;
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
     PySliceObject *slice_cache;
