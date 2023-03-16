@@ -242,7 +242,7 @@ asyncio
   (Contributed by Kumar Aditya in :gh:`102748`.)
 
 * :func:`asyncio.wait` now accepts generators yielding tasks.
-  (Contributed by Kumar Aditya in :gh:`78530`)
+  (Contributed by Kumar Aditya in :gh:`78530`.)
 
 inspect
 -------
