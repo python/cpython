@@ -3098,9 +3098,6 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     }
     Py_DECREF(debug);
 
-    /* m_copy of Py_None means it is copied some other way. */
-    builtinsmodule.m_base.m_copy = Py_NewRef(Py_None);
-
     return mod;
 #undef ADD_TO_ALL
 #undef SETBUILTIN

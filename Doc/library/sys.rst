@@ -1323,7 +1323,7 @@ always available.
 
    A string giving the site-specific directory prefix where the platform
    independent Python files are installed; on Unix, the default is
-   ``'/usr/local'``.  This can be set at build time with the ``--prefix``
+   :file:`/usr/local`. This can be set at build time with the :option:`--prefix`
    argument to the :program:`configure` script.  See
    :ref:`installation_paths` for derived paths.
 
