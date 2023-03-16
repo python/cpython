@@ -14,6 +14,7 @@ import logging
 from logging.handlers import QueueHandler
 import os
 import queue
+import signal
 import sys
 import threading
 import time
@@ -396,6 +397,33 @@ class ExecutorShutdownTest:
                        context=getattr(self, 'ctx', None)))
         self.assertFalse(err)
         self.assertEqual(out.strip(), b"apple")
+
+    def test_hang_gh94440(self):
+        """shutdown(wait=True) doesn't hang when a future was submitted and
+        quickly canceled right before shutdown.
+
+        See https://github.com/python/cpython/issues/94440.
+        """
+        if not hasattr(signal, 'alarm'):
+            raise unittest.SkipTest(
+                "Tested platform does not support the alarm signal")
+
+        def timeout(_signum, _frame):
+            raise RuntimeError("timed out waiting for shutdown")
+
+        kwargs = {}
+        if getattr(self, 'ctx', None):
+            kwargs['mp_context'] = self.get_context()
+        executor = self.executor_type(max_workers=1, **kwargs)
+        executor.submit(int).result()
+        old_handler = signal.signal(signal.SIGALRM, timeout)
+        try:
+            signal.alarm(5)
+            executor.submit(int).cancel()
+            executor.shutdown(wait=True)
+        finally:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_handler)
 
 
 class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase):
