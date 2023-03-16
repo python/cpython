@@ -25,7 +25,6 @@ from . import events
 from . import exceptions
 from . import futures
 from . import timeouts
-from .coroutines import _is_coroutine
 
 # Helper to generate new task names
 # This uses itertools.count() instead of a "+= 1" operation because the latter
@@ -635,11 +634,14 @@ def ensure_future(coro_or_future, *, loop=None):
             raise ValueError('The future belongs to a different loop than '
                             'the one specified as the loop argument')
         return coro_or_future
-    called_wrap_awaitable = False
+    should_close = True
     if not coroutines.iscoroutine(coro_or_future):
         if inspect.isawaitable(coro_or_future):
+            async def _wrap_awaitable(awaitable):
+                return await awaitable
+
             coro_or_future = _wrap_awaitable(coro_or_future)
-            called_wrap_awaitable = True
+            should_close = False
         else:
             raise TypeError('An asyncio.Future, a coroutine or an awaitable '
                             'is required')
@@ -649,21 +651,9 @@ def ensure_future(coro_or_future, *, loop=None):
     try:
         return loop.create_task(coro_or_future)
     except RuntimeError:
-        if not called_wrap_awaitable:
+        if should_close:
             coro_or_future.close()
         raise
-
-
-@types.coroutine
-def _wrap_awaitable(awaitable):
-    """Helper for asyncio.ensure_future().
-
-    Wraps awaitable (an object with __await__) into a coroutine
-    that will later be wrapped in a Task by ensure_future().
-    """
-    return (yield from awaitable.__await__())
-
-_wrap_awaitable._is_coroutine = _is_coroutine
 
 
 class _GatheringFuture(futures.Future):
