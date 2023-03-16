@@ -1641,7 +1641,7 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 static void
 flush_io_stream(PyThreadState *tstate, PyObject *name)
 {
-    PyObject *f = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *f = _PySys_GetAttr(tstate, name);
     if (f != NULL) {
         PyObject *r = _PyObject_CallMethodNoArgs(f, &_Py_ID(flush));
         if (r) {
