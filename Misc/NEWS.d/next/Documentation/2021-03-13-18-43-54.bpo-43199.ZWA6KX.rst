@@ -1,1 +1,0 @@
-Answer "Why is there no goto?" in the Design and History FAQ.

@@ -18,8 +18,10 @@
 #define PyCF_IGNORE_COOKIE 0x0800
 #define PyCF_TYPE_COMMENTS 0x1000
 #define PyCF_ALLOW_TOP_LEVEL_AWAIT 0x2000
+#define PyCF_ALLOW_INCOMPLETE_INPUT 0x4000
 #define PyCF_COMPILE_MASK (PyCF_ONLY_AST | PyCF_ALLOW_TOP_LEVEL_AWAIT | \
-                           PyCF_TYPE_COMMENTS | PyCF_DONT_IMPLY_DEDENT)
+                           PyCF_TYPE_COMMENTS | PyCF_DONT_IMPLY_DEDENT | \
+                           PyCF_ALLOW_INCOMPLETE_INPUT)
 
 typedef struct {
     int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
@@ -29,11 +31,26 @@ typedef struct {
 #define _PyCompilerFlags_INIT \
     (PyCompilerFlags){.cf_flags = 0, .cf_feature_version = PY_MINOR_VERSION}
 
+/* source location information */
+typedef struct {
+    int lineno;
+    int end_lineno;
+    int col_offset;
+    int end_col_offset;
+} _PyCompilerSrcLocation;
+
+#define SRC_LOCATION_FROM_AST(n) \
+    (_PyCompilerSrcLocation){ \
+               .lineno = (n)->lineno, \
+               .end_lineno = (n)->end_lineno, \
+               .col_offset = (n)->col_offset, \
+               .end_col_offset = (n)->end_col_offset }
+
 /* Future feature support */
 
 typedef struct {
-    int ff_features;      /* flags set by future statements */
-    int ff_lineno;        /* line number of last future statement */
+    int ff_features;                    /* flags set by future statements */
+    _PyCompilerSrcLocation ff_location; /* location of last future statement */
 } PyFutureFeatures;
 
 #define FUTURE_NESTED_SCOPES "nested_scopes"
@@ -47,39 +64,6 @@ typedef struct {
 #define FUTURE_GENERATOR_STOP "generator_stop"
 #define FUTURE_ANNOTATIONS "annotations"
 
-struct _mod; /* Declare the existence of this type */
-#define PyAST_Compile(mod, s, f, ar) PyAST_CompileEx(mod, s, f, -1, ar)
-PyAPI_FUNC(PyCodeObject *) PyAST_CompileEx(
-    struct _mod *mod,
-    const char *filename,       /* decoded from the filesystem encoding */
-    PyCompilerFlags *flags,
-    int optimize,
-    PyArena *arena);
-PyAPI_FUNC(PyCodeObject *) PyAST_CompileObject(
-    struct _mod *mod,
-    PyObject *filename,
-    PyCompilerFlags *flags,
-    int optimize,
-    PyArena *arena);
-PyAPI_FUNC(PyFutureFeatures *) PyFuture_FromAST(
-    struct _mod * mod,
-    const char *filename        /* decoded from the filesystem encoding */
-    );
-PyAPI_FUNC(PyFutureFeatures *) PyFuture_FromASTObject(
-    struct _mod * mod,
-    PyObject *filename
-    );
-
-/* _Py_Mangle is defined in compile.c */
-PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
-
 #define PY_INVALID_STACK_EFFECT INT_MAX
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int opcode, int oparg);
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump);
-
-typedef struct {
-    int optimize;
-    int ff_features;
-} _PyASTOptimizeState;
-
-PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, _PyASTOptimizeState *state);

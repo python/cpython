@@ -311,6 +311,10 @@ class RobotHandler(BaseHTTPRequestHandler):
         pass
 
 
+@unittest.skipUnless(
+    support.has_socket_support,
+    "Socket server requires working socket."
+)
 class PasswordProtectedSiteTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -345,6 +349,7 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
         self.assertFalse(parser.can_fetch("*", robots_url))
 
 
+@support.requires_working_socket()
 class NetworkTestCase(unittest.TestCase):
 
     base_url = 'http://www.pythontest.net/'

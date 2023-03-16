@@ -1,1 +1,0 @@
-Emit SyntaxWarnings for assertions with tuple constants, this is a regression introduced in python3.7

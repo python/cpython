@@ -161,11 +161,11 @@ class saved_test_environment:
         warnings.filters[:] = saved_filters[2]
 
     def get_asyncore_socket_map(self):
-        asyncore = sys.modules.get('asyncore')
+        asyncore = sys.modules.get('test.support.asyncore')
         # XXX Making a copy keeps objects alive until __exit__ gets called.
         return asyncore and asyncore.socket_map.copy() or {}
     def restore_asyncore_socket_map(self, saved_map):
-        asyncore = sys.modules.get('asyncore')
+        asyncore = sys.modules.get('test.support.asyncore')
         if asyncore is not None:
             asyncore.close_all(ignore_all=True)
             asyncore.socket_map.update(saved_map)
@@ -320,7 +320,8 @@ class saved_test_environment:
                 support.environment_altered = True
                 restore(original)
                 if not self.quiet and not self.pgo:
-                    print_warning(f"{name} was modified by {self.testname}")
-                    print(f"  Before: {original}\n  After:  {current} ",
-                          file=sys.stderr, flush=True)
+                    print_warning(
+                        f"{name} was modified by {self.testname}\n"
+                        f"  Before: {original}\n"
+                        f"  After:  {current} ")
         return False

@@ -5,7 +5,10 @@ from textwrap import dedent
 import unittest
 import time
 
-import _xxsubinterpreters as _interpreters
+from test import support
+from test.support import import_helper
+_interpreters = import_helper.import_module('_xxsubinterpreters')
+_channels = import_helper.import_module('_xxinterpchannels')
 from test.support import interpreters
 
 
@@ -14,11 +17,11 @@ def _captured_script(script):
     indented = script.replace('\n', '\n                ')
     wrapped = dedent(f"""
         import contextlib
-        with open({w}, 'w') as spipe:
+        with open({w}, 'w', encoding='utf-8') as spipe:
             with contextlib.redirect_stdout(spipe):
                 {indented}
         """)
-    return wrapped, open(r)
+    return wrapped, open(r, encoding='utf-8')
 
 
 def clean_up_interpreters():
@@ -407,11 +410,11 @@ class TestInterpreterRun(TestBase):
 
         self.assertEqual(out, 'it worked!')
 
-    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @support.requires_fork()
     def test_fork(self):
         interp = interpreters.create()
         import tempfile
-        with tempfile.NamedTemporaryFile('w+') as file:
+        with tempfile.NamedTemporaryFile('w+', encoding='utf-8') as file:
             file.write('')
             file.flush()
 
@@ -421,7 +424,7 @@ class TestInterpreterRun(TestBase):
                 try:
                     os.fork()
                 except RuntimeError:
-                    with open('{file.name}', 'w') as out:
+                    with open('{file.name}', 'w', encoding='utf-8') as out:
                         out.write('{expected}')
                 """)
             interp.run(script)
@@ -531,7 +534,7 @@ class TestRecvChannelAttrs(TestBase):
 
     def test_id_type(self):
         rch, _ = interpreters.create_channel()
-        self.assertIsInstance(rch.id, _interpreters.ChannelID)
+        self.assertIsInstance(rch.id, _channels.ChannelID)
 
     def test_custom_id(self):
         rch = interpreters.RecvChannel(1)
@@ -556,7 +559,7 @@ class TestSendChannelAttrs(TestBase):
 
     def test_id_type(self):
         _, sch = interpreters.create_channel()
-        self.assertIsInstance(sch.id, _interpreters.ChannelID)
+        self.assertIsInstance(sch.id, _channels.ChannelID)
 
     def test_custom_id(self):
         sch = interpreters.SendChannel(1)
