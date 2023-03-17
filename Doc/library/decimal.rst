@@ -411,7 +411,7 @@ Decimal objects
    :class:`int`).
 
    .. versionchanged:: 3.12
-      A :class:`Decimal` instance may be coerced to an integer (i.e. by
+      A :class:`Decimal` instance may be interpreted as an integer (i.e. by
       :func:`~operator.index`) if it has no fractional part; otherwise, a
       :exc:`TypeError` is raised.
 
