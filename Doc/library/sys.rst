@@ -1118,7 +1118,7 @@ always available.
           last_value
           last_traceback
 
-   These three variables are deprecated, use ``sys.last_exc`` instead.
+   These three variables are deprecated; use :data:`sys.last_exc` instead.
    They hold the legacy representation of ``sys.last_exc``, as returned
    from :func:`exc_info` above.
 
