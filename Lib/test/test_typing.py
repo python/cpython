@@ -603,7 +603,7 @@ class BaseCallableTests:
         self.assertEqual(C5[int, str, float],
                          Callable[[typing.List[int], tuple[str, int], float], int])
 
-   def test_type_subst_error(self):
+    def test_type_subst_error(self):
         Callable = self.Callable
         P = ParamSpec('P')
         T = TypeVar('T')
