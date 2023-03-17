@@ -93,6 +93,113 @@ get_math_module_state(PyObject *module)
 }
 
 /*
+Double and triple length extended precision algorithms from:
+
+  Accurate Sum and Dot Product
+  by Takeshi Ogita, Siegfried M. Rump, and Shin’Ichi Oishi
+  https://doi.org/10.1137/030601818
+  https://www.tuhh.de/ti3/paper/rump/OgRuOi05.pdf
+
+*/
+
+typedef struct{ double hi; double lo; } DoubleLength;
+
+static DoubleLength
+dl_fast_sum(double a, double b)
+{
+    /* Algorithm 1.1. Compensated summation of two floating point numbers. */
+    assert(fabs(a) >= fabs(b));
+    double x = a + b;
+    double y = (a - x) + b;
+    return (DoubleLength) {x, y};
+}
+
+static DoubleLength
+dl_sum(double a, double b)
+{
+    /* Algorithm 3.1 Error-free transformation of the sum */
+    double x = a + b;
+    double z = x - a;
+    double y = (a - (x - z)) + (b - z);
+    return (DoubleLength) {x, y};
+}
+
+#ifndef UNRELIABLE_FMA
+
+static DoubleLength
+dl_mul(double x, double y)
+{
+    /* Algorithm 3.5. Error-free transformation of a product */
+    double z = x * y;
+    double zz = fma(x, y, -z);
+    return (DoubleLength) {z, zz};
+}
+
+#else
+
+/*
+   The default implementation of dl_mul() depends on the C math library
+   having an accurate fma() function as required by § 7.12.13.1 of the
+   C99 standard.
+
+   The UNRELIABLE_FMA option is provided as a slower but accurate
+   alternative for builds where the fma() function is found wanting.
+   The speed penalty may be modest (17% slower on an Apple M1 Max),
+   so don't hesitate to enable this build option.
+
+   The algorithms are from the T. J. Dekker paper:
+   A Floating-Point Technique for Extending the Available Precision
+   https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
+*/
+
+static DoubleLength
+dl_split(double x) {
+    // Dekker (5.5) and (5.6).
+    double t = x * 134217729.0;  // Veltkamp constant = 2.0 ** 27 + 1
+    double hi = t - (t - x);
+    double lo = x - hi;
+    return (DoubleLength) {hi, lo};
+}
+
+static DoubleLength
+dl_mul(double x, double y)
+{
+    // Dekker (5.12) and mul12()
+    DoubleLength xx = dl_split(x);
+    DoubleLength yy = dl_split(y);
+    double p = xx.hi * yy.hi;
+    double q = xx.hi * yy.lo + xx.lo * yy.hi;
+    double z = p + q;
+    double zz = p - z + q + xx.lo * yy.lo;
+    return (DoubleLength) {z, zz};
+}
+
+#endif
+
+typedef struct { double hi; double lo; double tiny; } TripleLength;
+
+static const TripleLength tl_zero = {0.0, 0.0, 0.0};
+
+static TripleLength
+tl_fma(double x, double y, TripleLength total)
+{
+    /* Algorithm 5.10 with SumKVert for K=3 */
+    DoubleLength pr = dl_mul(x, y);
+    DoubleLength sm = dl_sum(total.hi, pr.hi);
+    DoubleLength r1 = dl_sum(total.lo, pr.lo);
+    DoubleLength r2 = dl_sum(r1.hi, sm.lo);
+    return (TripleLength) {sm.hi, r2.hi, total.tiny + r1.lo + r2.lo};
+}
+
+static double
+tl_to_d(TripleLength total)
+{
+    DoubleLength last = dl_sum(total.lo, total.hi);
+    return total.tiny + last.lo + last.hi;
+}
+
+
+/*
    sin(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  This is here for use in the
    reflection formula for the gamma function.  It conforms to IEEE
@@ -2301,6 +2408,7 @@ that are almost always correctly rounded, four techniques are used:
 
 * lossless scaling using a power-of-two scaling factor
 * accurate squaring using Veltkamp-Dekker splitting [1]
+  or an equivalent with an fma() call
 * compensated summation using a variant of the Neumaier algorithm [2]
 * differential correction of the square root [3]
 
@@ -2359,14 +2467,21 @@ algorithm, effectively doubling the number of accurate bits.
 This technique is used in Dekker's SQRT2 algorithm and again in
 Borges' ALGORITHM 4 and 5.
 
-Without proof for all cases, hypot() cannot claim to be always
-correctly rounded.  However for n <= 1000, prior to the final addition
-that rounds the overall result, the internal accuracy of "h" together
-with its correction of "x / (2.0 * h)" is at least 100 bits. [6]
-Also, hypot() was tested against a Decimal implementation with
-prec=300.  After 100 million trials, no incorrectly rounded examples
-were found.  In addition, perfect commutativity (all permutations are
-exactly equal) was verified for 1 billion random inputs with n=5. [7]
+The hypot() function is faithfully rounded (less than 1 ulp error)
+and usually correctly rounded (within 1/2 ulp).  The squaring
+step is exact.  The Neumaier summation computes as if in doubled
+precision (106 bits) and has the advantage that its input squares
+are non-negative so that the condition number of the sum is one.
+The square root with a differential correction is likewise computed
+as if in double precision.
+
+For n <= 1000, prior to the final addition that rounds the overall
+result, the internal accuracy of "h" together with its correction of
+"x / (2.0 * h)" is at least 100 bits. [6] Also, hypot() was tested
+against a Decimal implementation with prec=300.  After 100 million
+trials, no incorrectly rounded examples were found.  In addition,
+perfect commutativity (all permutations are exactly equal) was
+verified for 1 billion random inputs with n=5. [7]
 
 References:
 
@@ -2383,9 +2498,8 @@ References:
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    const double T27 = 134217729.0;     /* ldexp(1.0, 27) + 1.0) */
-    double x, scale, oldcsum, csum = 1.0, frac1 = 0.0, frac2 = 0.0, frac3 = 0.0;
-    double t, hi, lo, h;
+    double x, h, scale, oldcsum, csum = 1.0, frac1 = 0.0, frac2 = 0.0;
+    DoubleLength pr, sm;
     int max_e;
     Py_ssize_t i;
 
@@ -2410,54 +2524,21 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             x *= scale;
             assert(fabs(x) < 1.0);
 
-            t = x * T27;
-            hi = t - (t - x);
-            lo = x - hi;
-            assert(hi + lo == x);
+            pr = dl_mul(x, x);
+            assert(pr.hi <= 1.0);
 
-            x = hi * hi;
-            assert(x <= 1.0);
-            assert(fabs(csum) >= fabs(x));
-            oldcsum = csum;
-            csum += x;
-            frac1 += (oldcsum - csum) + x;
-
-            x = 2.0 * hi * lo;
-            assert(fabs(csum) >= fabs(x));
-            oldcsum = csum;
-            csum += x;
-            frac2 += (oldcsum - csum) + x;
-
-            assert(csum + lo * lo == csum);
-            frac3 += lo * lo;
+            sm = dl_fast_sum(csum, pr.hi);
+            csum = sm.hi;
+            frac1 += pr.lo;
+            frac2 += sm.lo;
         }
-        h = sqrt(csum - 1.0 + (frac1 + frac2 + frac3));
-
-        x = h;
-        t = x * T27;
-        hi = t - (t - x);
-        lo = x - hi;
-        assert (hi + lo == x);
-
-        x = -hi * hi;
-        assert(fabs(csum) >= fabs(x));
-        oldcsum = csum;
-        csum += x;
-        frac1 += (oldcsum - csum) + x;
-
-        x = -2.0 * hi * lo;
-        assert(fabs(csum) >= fabs(x));
-        oldcsum = csum;
-        csum += x;
-        frac2 += (oldcsum - csum) + x;
-
-        x = -lo * lo;
-        assert(fabs(csum) >= fabs(x));
-        oldcsum = csum;
-        csum += x;
-        frac3 += (oldcsum - csum) + x;
-
-        x = csum - 1.0 + (frac1 + frac2 + frac3);
+        h = sqrt(csum - 1.0 + (frac1 + frac2));
+        pr = dl_mul(-h, h);
+        sm = dl_fast_sum(csum, pr.hi);
+        csum = sm.hi;
+        frac1 += pr.lo;
+        frac2 += sm.lo;
+        x = csum - 1.0 + (frac1 + frac2);
         return (h + x / (2.0 * h)) / scale;
     }
     /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
@@ -2644,102 +2725,6 @@ static inline bool
 long_add_would_overflow(long a, long b)
 {
     return (a > 0) ? (b > LONG_MAX - a) : (b < LONG_MIN - a);
-}
-
-/*
-Double and triple length extended precision algorithms from:
-
-  Accurate Sum and Dot Product
-  by Takeshi Ogita, Siegfried M. Rump, and Shin’Ichi Oishi
-  https://doi.org/10.1137/030601818
-  https://www.tuhh.de/ti3/paper/rump/OgRuOi05.pdf
-
-*/
-
-typedef struct{ double hi; double lo; } DoubleLength;
-
-static DoubleLength
-dl_sum(double a, double b)
-{
-    /* Algorithm 3.1 Error-free transformation of the sum */
-    double x = a + b;
-    double z = x - a;
-    double y = (a - (x - z)) + (b - z);
-    return (DoubleLength) {x, y};
-}
-
-#ifndef UNRELIABLE_FMA
-
-static DoubleLength
-dl_mul(double x, double y)
-{
-    /* Algorithm 3.5. Error-free transformation of a product */
-    double z = x * y;
-    double zz = fma(x, y, -z);
-    return (DoubleLength) {z, zz};
-}
-
-#else
-
-/*
-   The default implementation of dl_mul() depends on the C math library
-   having an accurate fma() function as required by § 7.12.13.1 of the
-   C99 standard.
-
-   The UNRELIABLE_FMA option is provided as a slower but accurate
-   alternative for builds where the fma() function is found wanting.
-   The speed penalty may be modest (17% slower on an Apple M1 Max),
-   so don't hesitate to enable this build option.
-
-   The algorithms are from the T. J. Dekker paper:
-   A Floating-Point Technique for Extending the Available Precision
-   https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
-*/
-
-static DoubleLength
-dl_split(double x) {
-    // Dekker (5.5) and (5.6).
-    double t = x * 134217729.0;  // Veltkamp constant = 2.0 ** 27 + 1
-    double hi = t - (t - x);
-    double lo = x - hi;
-    return (DoubleLength) {hi, lo};
-}
-
-static DoubleLength
-dl_mul(double x, double y)
-{
-    // Dekker (5.12) and mul12()
-    DoubleLength xx = dl_split(x);
-    DoubleLength yy = dl_split(y);
-    double p = xx.hi * yy.hi;
-    double q = xx.hi * yy.lo + xx.lo * yy.hi;
-    double z = p + q;
-    double zz = p - z + q + xx.lo * yy.lo;
-    return (DoubleLength) {z, zz};
-}
-
-#endif
-
-typedef struct { double hi; double lo; double tiny; } TripleLength;
-
-static const TripleLength tl_zero = {0.0, 0.0, 0.0};
-
-static TripleLength
-tl_fma(double x, double y, TripleLength total)
-{
-    /* Algorithm 5.10 with SumKVert for K=3 */
-    DoubleLength pr = dl_mul(x, y);
-    DoubleLength sm = dl_sum(total.hi, pr.hi);
-    DoubleLength r1 = dl_sum(total.lo, pr.lo);
-    DoubleLength r2 = dl_sum(r1.hi, sm.lo);
-    return (TripleLength) {sm.hi, r2.hi, total.tiny + r1.lo + r2.lo};
-}
-
-static double
-tl_to_d(TripleLength total)
-{
-    DoubleLength last = dl_sum(total.lo, total.hi);
-    return total.tiny + last.lo + last.hi;
 }
 
 /*[clinic input]

@@ -12,6 +12,7 @@ PyAPI_FUNC(PyObject *) Py_CompileString(const char *, const char *, int);
 PyAPI_FUNC(void) PyErr_Print(void);
 PyAPI_FUNC(void) PyErr_PrintEx(int);
 PyAPI_FUNC(void) PyErr_Display(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(void) PyErr_DisplayException(PyObject *);
 
 
 /* Stuff with no proper home (yet) */

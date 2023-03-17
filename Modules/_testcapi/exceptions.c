@@ -39,20 +39,13 @@ err_restore(PyObject *self, PyObject *args) {
 static PyObject *
 exception_print(PyObject *self, PyObject *args)
 {
-    PyObject *value;
-    PyObject *tb = NULL;
+    PyObject *exc;
 
-    if (!PyArg_ParseTuple(args, "O:exception_print", &value)) {
+    if (!PyArg_ParseTuple(args, "O:exception_print", &exc)) {
         return NULL;
     }
 
-    if (PyExceptionInstance_Check(value)) {
-        tb = PyException_GetTraceback(value);
-    }
-
-    PyErr_Display((PyObject *) Py_TYPE(value), value, tb);
-    Py_XDECREF(tb);
-
+    PyErr_DisplayException(exc);
     Py_RETURN_NONE;
 }
 
@@ -90,6 +83,26 @@ exc_set_object(PyObject *self, PyObject *args)
 
     PyErr_SetObject(exc, obj);
     return NULL;
+}
+
+static PyObject *
+exc_set_object_fetch(PyObject *self, PyObject *args)
+{
+    PyObject *exc;
+    PyObject *obj;
+    PyObject *type;
+    PyObject *value;
+    PyObject *tb;
+
+    if (!PyArg_ParseTuple(args, "OO:exc_set_object", &exc, &obj)) {
+        return NULL;
+    }
+
+    PyErr_SetObject(exc, obj);
+    PyErr_Fetch(&type, &value, &tb);
+    Py_XDECREF(type);
+    Py_XDECREF(tb);
+    return value;
 }
 
 static PyObject *
@@ -262,6 +275,7 @@ static PyMethodDef test_methods[] = {
     {"make_exception_with_doc", _PyCFunction_CAST(make_exception_with_doc),
      METH_VARARGS | METH_KEYWORDS},
     {"exc_set_object",          exc_set_object,                  METH_VARARGS},
+    {"exc_set_object_fetch",    exc_set_object_fetch,            METH_VARARGS},
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
     {"set_exc_info",            test_set_exc_info,               METH_VARARGS},

@@ -742,7 +742,7 @@ sys_excepthook_impl(PyObject *module, PyObject *exctype, PyObject *value,
                     PyObject *traceback)
 /*[clinic end generated code: output=18d99fdda21b6b5e input=ecf606fa826f19d9]*/
 {
-    PyErr_Display(exctype, value, traceback);
+    PyErr_Display(NULL, value, traceback);
     Py_RETURN_NONE;
 }
 
@@ -3424,9 +3424,6 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     if (sysmod == NULL) {
         return _PyStatus_ERR("failed to create a module object");
     }
-
-    /* m_copy of Py_None means it is copied some other way. */
-    sysmodule.m_base.m_copy = Py_NewRef(Py_None);
 
     PyObject *sysdict = PyModule_GetDict(sysmod);
     if (sysdict == NULL) {

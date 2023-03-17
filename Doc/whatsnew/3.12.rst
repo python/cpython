@@ -237,6 +237,13 @@ asyncio
 * Add C implementation of :func:`asyncio.current_task` for 4x-6x speedup.
   (Contributed by Itamar Ostricher and Pranav Thulasiram Bhat in :gh:`100344`.)
 
+* :func:`asyncio.iscoroutine` now returns ``False`` for generators as
+  :mod:`asyncio` does not support legacy generator-based coroutines.
+  (Contributed by Kumar Aditya in :gh:`102748`.)
+
+* :func:`asyncio.wait` now accepts generators yielding tasks.
+  (Contributed by Kumar Aditya in :gh:`78530`.)
+
 inspect
 -------
 
@@ -301,6 +308,16 @@ os
 * Add :func:`os.listdrives`, :func:`os.listvolumes` and :func:`os.listmounts`
   functions on Windows for enumerating drives, volumes and mount points.
   (Contributed by Steve Dower in :gh:`102519`.)
+
+* :func:`os.stat` and :func:`os.lstat` are now more accurate on Windows.
+  The ``st_birthtime`` field will now be filled with the creation time
+  of the file, and ``st_ctime`` is deprecated but still contains the
+  creation time (but in the future will return the last metadata change,
+  for consistency with other platforms). ``st_dev`` may be up to 64 bits
+  and ``st_ino`` up to 128 bits depending on your file system, and
+  ``st_rdev`` is always set to zero rather than incorrect values.
+  Both functions may be significantly faster on newer releases of
+  Windows. (Contributed by Steve Dower in :gh:`99726`.)
 
 os.path
 -------
@@ -464,6 +481,12 @@ Deprecated
   is deprecated for extension modules. Accessing this field will generate a compiler
   warning at compile time. This field will be removed in Python 3.14.
   (Contributed by Ramvikrams and Kumar Aditya in :gh:`101193`. PEP by Ken Jin.)
+
+* The ``st_ctime`` fields return by :func:`os.stat` and :func:`os.lstat` on
+  Windows are deprecated. In a future release, they will contain the last
+  metadata change time, consistent with other platforms. For now, they still
+  contain the creation time, which is also available in the new ``st_birthtime``
+  field. (Contributed by Steve Dower in :gh:`99726`.)
 
 Pending Removal in Python 3.13
 ------------------------------
@@ -924,6 +947,10 @@ New Features
   the :attr:`~BaseException.args` passed to the exception's constructor.
   (Contributed by Mark Shannon in :gh:`101578`.)
 
+* Add :c:func:`PyErr_DisplayException`, which takes an exception instance,
+  to replace the legacy-api :c:func:`PyErr_Display`. (Contributed by
+  Irit Katriel in :gh:`102755`).
+
 Porting to Python 3.12
 ----------------------
 
@@ -1056,6 +1083,9 @@ Deprecated
   Use :c:func:`PyErr_GetRaisedException` and
   :c:func:`PyErr_SetRaisedException` instead.
   (Contributed by Mark Shannon in :gh:`101578`.)
+
+* :c:func:`PyErr_Display` is deprecated. Use :c:func:`PyErr_DisplayException`
+  instead. (Contributed by Irit Katriel in :gh:`102755`).
 
 
 Removed
