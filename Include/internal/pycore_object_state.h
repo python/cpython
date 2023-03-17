@@ -8,6 +8,14 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+struct _py_object_runtime_state {
+#ifdef Py_REF_DEBUG
+    Py_ssize_t interpreter_leaks;
+#else
+    int _not_used;
+#endif
+};
+
 struct _py_object_state {
 #ifdef Py_REF_DEBUG
     Py_ssize_t reftotal;

@@ -99,6 +99,14 @@ void
 _Py_FinalizeRefTotal(_PyRuntimeState *runtime)
 {
     last_final_reftotal = get_global_reftotal(runtime);
+    runtime->object_state.interpreter_leaks = 0;
+}
+
+void
+_PyInterpreterState_FinalizeRefTotal(PyInterpreterState *interp)
+{
+    interp->runtime->object_state.interpreter_leaks += REFTOTAL(interp);
+    REFTOTAL(interp) = 0;
 }
 
 static inline Py_ssize_t
@@ -125,6 +133,7 @@ get_global_reftotal(_PyRuntimeState *runtime)
     /* Add in the updated value from the legacy _Py_RefTotal. */
     total += get_legacy_reftotal();
     total += last_final_reftotal;
+    total += runtime->object_state.interpreter_leaks;
 
     return total;
 }

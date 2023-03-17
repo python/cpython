@@ -482,6 +482,11 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
+#ifdef Py_REF_DEBUG
+    /* The count is cleared by _Py_FinalizeRefTotal(). */
+    assert(runtime->object_state.interpreter_leaks == 0);
+#endif
+
     if (gilstate_tss_initialized(runtime)) {
         gilstate_tss_fini(runtime);
     }
@@ -856,6 +861,8 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.
+
+    _PyInterpreterState_FinalizeRefTotal(interp);
 }
 
 
