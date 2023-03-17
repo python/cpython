@@ -66,43 +66,56 @@ get_legacy_reftotal(void)
 
 #ifdef Py_REF_DEBUG
 
-#  define REFTOTAL (_PyRuntime.object_state.reftotal)
+#  define REFTOTAL ((runtime)->object_state.reftotal)
 
 static inline void
-reftotal_increment(void)
+reftotal_increment(_PyRuntimeState *runtime)
 {
     REFTOTAL++;
 }
 
 static inline void
-reftotal_decrement(void)
+reftotal_decrement(_PyRuntimeState *runtime)
 {
     REFTOTAL--;
 }
 
 static inline void
-reftotal_add(Py_ssize_t n)
+reftotal_add(_PyRuntimeState *runtime, Py_ssize_t n)
 {
     REFTOTAL += n;
 }
 
+/* We preserve the number of refs leaked during runtime finalization,
+   so they can be reported if the runtime is initialized again. */
+// XXX We don't lose any information by dropping this,
+// so we should consider doing so.
+static Py_ssize_t last_final_reftotal = 0;
+
+void
+_Py_SetFinalRefTotal(_PyRuntimeState *runtime)
+{
+    last_final_reftotal += REFTOTAL;
+}
+
 static inline Py_ssize_t
-get_global_reftotal(void)
+get_global_reftotal(_PyRuntimeState *runtime)
 {
     Py_ssize_t last = _PyRuntime.object_state.last_legacy_reftotal;
     Py_ssize_t legacy = get_legacy_reftotal();
     _PyRuntime.object_state.last_legacy_reftotal = legacy;
     REFTOTAL += legacy - last;
-    return REFTOTAL;
+    return REFTOTAL + last_final_reftotal;
 }
 
 #undef REFTOTAL
 
 void
 _PyDebug_PrintTotalRefs(void) {
+    _PyRuntimeState *runtime = &_PyRuntime;
     fprintf(stderr,
             "[%zd refs, %zd blocks]\n",
-            get_global_reftotal(), _Py_GetAllocatedBlocks());
+            get_global_reftotal(runtime), _Py_GetAllocatedBlocks());
     /* It may be helpful to also print the "legacy" reftotal separately. */
 }
 #endif /* Py_REF_DEBUG */
@@ -162,39 +175,40 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
 void
 _Py_IncRefTotal_DO_NOT_USE_THIS(void)
 {
-    reftotal_increment();
+    reftotal_increment(&_PyRuntime);
 }
 
 /* This is used strictly by Py_DECREF(). */
 void
 _Py_DecRefTotal_DO_NOT_USE_THIS(void)
 {
-    reftotal_decrement();
+    reftotal_decrement(&_PyRuntime);
 }
 
 void
 _Py_IncRefTotal(void)
 {
-    reftotal_increment();
+    reftotal_increment(&_PyRuntime);
 }
 
 void
 _Py_DecRefTotal(void)
 {
-    reftotal_decrement();
+    reftotal_decrement(&_PyRuntime);
 }
 
 void
 _Py_AddRefTotal(Py_ssize_t n)
 {
-    reftotal_add(n);
+    reftotal_add(&_PyRuntime, n);
 }
 
-/* This includes the legacy total. */
+/* This includes the legacy total
+   and any carried over from the last runtime init/fini cycle. */
 Py_ssize_t
 _Py_GetGlobalRefTotal(void)
 {
-    return get_global_reftotal();
+    return get_global_reftotal(&_PyRuntime);
 }
 
 Py_ssize_t
@@ -2106,7 +2120,7 @@ void
 _Py_NewReference(PyObject *op)
 {
 #ifdef Py_REF_DEBUG
-    reftotal_increment();
+    reftotal_increment(&_PyRuntime);
 #endif
     new_reference(op);
 }
