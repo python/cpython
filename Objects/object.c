@@ -26,9 +26,6 @@
 extern "C" {
 #endif
 
-#define OBJSTATE(runtime) \
-    (runtime)->object_state
-
 /* Defined in tracemalloc.c */
 extern void _PyMem_DumpTraceback(int fd, const void *ptr);
 
@@ -69,24 +66,25 @@ get_legacy_reftotal(void)
 
 #ifdef Py_REF_DEBUG
 
-#  define REFTOTAL (OBJSTATE(runtime).reftotal)
+#  define REFTOTAL(runtime) \
+    (runtime)->object_state.reftotal
 
 static inline void
 reftotal_increment(_PyRuntimeState *runtime)
 {
-    REFTOTAL++;
+    REFTOTAL(runtime)++;
 }
 
 static inline void
 reftotal_decrement(_PyRuntimeState *runtime)
 {
-    REFTOTAL--;
+    REFTOTAL(runtime)--;
 }
 
 static inline void
 reftotal_add(_PyRuntimeState *runtime, Py_ssize_t n)
 {
-    REFTOTAL += n;
+    REFTOTAL(runtime) += n;
 }
 
 static inline Py_ssize_t get_global_reftotal(_PyRuntimeState *);
@@ -101,7 +99,7 @@ void
 _Py_ClearRefTotal(_PyRuntimeState *runtime)
 {
     last_final_reftotal += get_global_reftotal(runtime);
-    REFTOTAL = 0;
+    REFTOTAL(runtime) = 0;
 }
 
 static inline Py_ssize_t
@@ -109,7 +107,7 @@ get_global_reftotal(_PyRuntimeState *runtime)
 {
     /* For an update from _Py_RefTotal first. */
     Py_ssize_t legacy = get_legacy_reftotal();
-    return REFTOTAL + legacy + last_final_reftotal;
+    return REFTOTAL(runtime) + legacy + last_final_reftotal;
 }
 
 #undef REFTOTAL
