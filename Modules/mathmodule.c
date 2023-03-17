@@ -2530,16 +2530,16 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         x = vec[i];
         assert(Py_IS_FINITE(x) && fabs(x) <= max);
 
-        x *= scale;
+        x *= scale;                     // lossless scaling
         assert(fabs(x) < 1.0);
 
-        pr = dl_mul(x, x);
+        pr = dl_mul(x, x);              // lossless squaring
         assert(pr.hi <= 1.0);
 
-        sm = dl_fast_sum(csum, pr.hi);
+        sm = dl_fast_sum(csum, pr.hi);  // lossless addition
         csum = sm.hi;
-        frac1 += pr.lo;
-        frac2 += sm.lo;
+        frac1 += pr.lo;                 // lossy addition
+        frac2 += sm.lo;                 // lossy addition
     }
     h = sqrt(csum - 1.0 + (frac1 + frac2));
     pr = dl_mul(-h, h);
@@ -2548,7 +2548,8 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     frac1 += pr.lo;
     frac2 += sm.lo;
     x = csum - 1.0 + (frac1 + frac2);
-    return (h + x / (2.0 * h)) / scale;
+    h +=  x / (2.0 * h);                 // diffential correction
+    return h / scale;
 }
 
 #define NUM_STACK_ELEMS 16
