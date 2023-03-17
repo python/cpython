@@ -91,6 +91,7 @@ Python/bytecodes.c
 # XXX Fix the parser.
 EXCLUDED += clean_lines('''
 # The tool should be able to parse these...
+
 # The problem with xmlparse.c is that something
 # has gone wrong where # we handle "maybe inline actual"
 # in Tools/c-analyzer/c_parser/parser/_global.py.
