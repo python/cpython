@@ -495,7 +495,7 @@ Deprecated
   field. (Contributed by Steve Dower in :gh:`99726`.)
 
 * The :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`
-  fields. Use :data:`sys.last_exc` instead.
+  fields are deprecated. Use :data:`sys.last_exc` instead.
   (Contributed by Irit Katriel in :gh:`102778`.)
 
 Pending Removal in Python 3.13
