@@ -96,7 +96,7 @@ static inline Py_ssize_t get_global_reftotal(_PyRuntimeState *);
 static Py_ssize_t last_final_reftotal = 0;
 
 void
-_Py_ClearRefTotal(_PyRuntimeState *runtime)
+_Py_FinalizeRefTotal(_PyRuntimeState *runtime)
 {
     last_final_reftotal += get_global_reftotal(runtime);
     REFTOTAL(runtime) = 0;
