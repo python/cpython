@@ -585,7 +585,22 @@ class PurePath(object):
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self._from_parts((self,) + args)
+        drv1, root1, parts1 = self._drv, self._root, self._parts
+        drv2, root2, parts2 = self._parse_parts(args)
+        if root2:
+            if not drv2 and drv1:
+                return self._from_parsed_parts(drv1, root2, [drv1 + root2] + parts2[1:])
+            else:
+                return self._from_parsed_parts(drv2, root2, parts2)
+        elif drv2:
+            if drv2 == drv1 or self._flavour.normcase(drv2) == self._flavour.normcase(drv1):
+                # Same drive => second path is relative to the first.
+                return self._from_parsed_parts(drv1, root1, parts1 + parts2[1:])
+            else:
+                return self._from_parsed_parts(drv2, root2, parts2)
+        else:
+            # Second path is non-anchored (common case).
+            return self._from_parsed_parts(drv1, root1, parts1 + parts2)
 
     def __truediv__(self, key):
         try:
