@@ -1373,6 +1373,22 @@ class BaseTaskTests:
         self.assertEqual(res, 42)
         self.assertAlmostEqual(0.15, loop.time())
 
+
+    def test_wait_generator(self):
+        async def func(a):
+            return a
+
+        loop = self.new_test_loop()
+
+        async def main():
+            tasks = (self.new_task(loop, func(i)) for i in range(10))
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
+            self.assertEqual(len(done), 10)
+            self.assertEqual(len(pending), 0)
+
+        loop.run_until_complete(main())
+
+
     def test_as_completed(self):
 
         def gen():
