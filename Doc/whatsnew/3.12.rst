@@ -397,10 +397,10 @@ sys
   with contributions from Gregory P. Smith [Google] and Mark Shannon
   in :gh:`96123`.)
 
-* Add ``sys.last_exc`` which holds the last unhandled exception that
+* Add :data:`sys.last_exc` which holds the last unhandled exception that
   was raised (for post-mortem debugging use cases). Deprecate the
   three fields that have the same information in its legacy form:
-  ``sys.last_type``, ``sys.last_value`` and ``sys.last_traceback``.
+  :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`.
   (Contributed by Irit Katriel in :gh:`102778`.)
 
 
@@ -494,8 +494,9 @@ Deprecated
   contain the creation time, which is also available in the new ``st_birthtime``
   field. (Contributed by Steve Dower in :gh:`99726`.)
 
-* The ``sys.last_type``, ``sys.last_value`` and ``sys.last_traceback`` fields.
-  Use ``sys.last_exc`` instead. (Contributed by Irit Katriel in :gh:`102778`.)
+* The :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`
+  fields. Use :data:`sys.last_exc` instead.
+  (Contributed by Irit Katriel in :gh:`102778`.)
 
 Pending Removal in Python 3.13
 ------------------------------
