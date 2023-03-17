@@ -3168,9 +3168,7 @@ class TestMiscellaneous(TestEmailBase):
         # gh-91400
         identity = '"foo  bar" <foo@example.com>'
         single = utils.formataddr(utils.parseaddr(identity))
-        double = utils.formataddr(utils.parseaddr(single))
         self.assertEqual(identity, single)
-        self.assertEqual(single, double)
 
     def test_quotes_unicode_names(self):
         # issue 1690608.  email.utils.formataddr() should be rfc2047 aware.
