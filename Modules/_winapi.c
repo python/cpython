@@ -808,18 +808,46 @@ normalize_environment(PyObject* environment) {
 
     result = PyDict_New();
 
-    for (int i = 0; i<PyList_GET_SIZE(keys); i++) {
-        if (i < 1) {
+    for (int i=0; i<PyList_GET_SIZE(keys); i++) {
+        PyObject *key = PyList_GET_ITEM(keys, i);
+        PyObject* value = PyObject_GetItem(environment, key);
+
+        if (! PyUnicode_Check(key) || ! PyUnicode_Check(value)) {
+            PyErr_SetString(PyExc_TypeError,
+                "environment can only contain strings");
+            Py_DECREF(result);
+            result = NULL;
+            goto error;
+        }
+        if (PyUnicode_FindChar(key, '\0', 0, PyUnicode_GET_LENGTH(key), 1) != -1 ||
+            PyUnicode_FindChar(value, '\0', 0, PyUnicode_GET_LENGTH(value), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            Py_DECREF(result);
+            result = NULL;
+            goto error;
+        }
+        /* Search from index 1 because on Windows starting '=' is allowed for
+           defining hidden environment variables. */
+        if (PyUnicode_GET_LENGTH(key) == 0 ||
+            PyUnicode_FindChar(key, '=', 1, PyUnicode_GET_LENGTH(key), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+            Py_DECREF(result);
+            result = NULL;
+            goto error;
+        }
+
+        if (i == 0) {
             continue;
         }
-        PyObject *key = PyList_GET_ITEM(keys, i);
+
         wchar_t *key_string = PyUnicode_AsWideCharString(key, NULL);
         wchar_t *prev_key_string = PyUnicode_AsWideCharString(PyList_GET_ITEM(keys, i-1), NULL);
         if (CompareStringOrdinal(prev_key_string, -1, key_string, -1, TRUE) == CSTR_EQUAL) {
             continue;
         }
-        PyObject* value = PyDict_GetItem(environment, key);
-        PyDict_SetItem(result, key, value);
+        PyObject_SetItem(result, key, value);
     }
 
 error:
@@ -848,7 +876,7 @@ getenvironment(PyObject* env)
 
     environment = normalize_environment(env);
     if (environment == NULL) {
-        goto error;
+        return NULL;
     }
 
     keys = PyMapping_Keys(environment);
@@ -872,26 +900,6 @@ getenvironment(PyObject* env)
         PyObject* key = PyList_GET_ITEM(keys, i);
         PyObject* value = PyList_GET_ITEM(values, i);
         Py_ssize_t size;
-
-        if (! PyUnicode_Check(key) || ! PyUnicode_Check(value)) {
-            PyErr_SetString(PyExc_TypeError,
-                "environment can only contain strings");
-            goto error;
-        }
-        if (PyUnicode_FindChar(key, '\0', 0, PyUnicode_GET_LENGTH(key), 1) != -1 ||
-            PyUnicode_FindChar(value, '\0', 0, PyUnicode_GET_LENGTH(value), 1) != -1)
-        {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
-            goto error;
-        }
-        /* Search from index 1 because on Windows starting '=' is allowed for
-           defining hidden environment variables. */
-        if (PyUnicode_GET_LENGTH(key) == 0 ||
-            PyUnicode_FindChar(key, '=', 1, PyUnicode_GET_LENGTH(key), 1) != -1)
-        {
-            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
-            goto error;
-        }
 
         size = PyUnicode_AsWideChar(key, NULL, 0);
         assert(size > 1);

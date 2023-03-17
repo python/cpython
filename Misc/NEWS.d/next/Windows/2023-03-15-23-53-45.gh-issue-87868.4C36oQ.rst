@@ -1,2 +1,2 @@
-Correctly sort and remove duplicates environment variables in
+Correctly sort and remove duplicate environment variables in
 ``_winapi.CreateProcess``.

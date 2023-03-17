@@ -788,6 +788,7 @@ class ProcessTestCase(BaseTestCase):
         newenv = os.environ.copy()
         newenv["fruit"] = "lemon"
         newenv["FRUIT"] = "orange"
+        newenv["frUit"] = "banana"
         with subprocess.Popen(["CMD", "/c", "SET", "fruit"],
                               stdout=subprocess.PIPE,
                               env=newenv) as p:
