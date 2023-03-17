@@ -77,13 +77,16 @@ class TypeSrcLiteral(Node):
 class TypeSrcConst(Node):
     index: str
 
+
 @dataclass
 class TypeSrcLocals(Node):
     index: str
 
+
 @dataclass
 class TypeSrcStackInput(Node):
     name: str
+
 
 TypeSrc: TypeAlias = (
     TypeSrcLiteral 
@@ -92,10 +95,12 @@ TypeSrc: TypeAlias = (
     | TypeSrcStackInput
 )
 
+
 @dataclass
 class TypeAnnotation(Node):
     op: Literal["TYPE_SET", "TYPE_OVERWRITE"]
     src: TypeSrc
+
 
 @dataclass
 class StackEffect(Node):
