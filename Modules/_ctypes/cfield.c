@@ -68,7 +68,7 @@ GCC mode places fields one after another, bit by bit.  But when a field would
 straddle an alignment boundary for its type, we insert a few bits of padding to
 avoid that.
 
-MSVC mode works similar expect for bitfield packing.  Adjacent bit-fields are
+MSVC mode works similar except for bitfield packing.  Adjacent bit-fields are
 packed into the same 1-, 2-, or 4-byte allocation unit if the integral types
 are the same size and if the next bit-field fits into the current allocation
 unit without crossing the boundary imposed by the common alignment requirements
