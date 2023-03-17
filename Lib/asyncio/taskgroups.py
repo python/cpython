@@ -23,6 +23,8 @@ class TaskGroup:
 
     Any exceptions other than `asyncio.CancelledError` raised within
     a task will cancel all remaining tasks and wait for them to exit.
+    You can prevent this behavior by passing `defer_errors=True` to
+    the constructor.
     The exceptions are then combined and raised as an `ExceptionGroup`.
     """
     def __init__(self, defer_errors=False):
