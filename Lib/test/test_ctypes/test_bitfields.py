@@ -68,7 +68,12 @@ class C_Test(unittest.TestCase):
     def test_shorts(self):
         b = BITS()
         name = "M"
+        # See Modules/_ctypes/_ctypes_test.c for where the magic 999 comes from.
         if func(byref(b), name.encode('ascii')) == 999:
+            # unpack_bitfields and unpack_bitfields_msvc in
+            # Modules/_ctypes/_ctypes_test.c return 999 to indicate
+            # an invalid name. 'M' is only valid, if signed short bitfields
+            # are supported by the C compiler.
             self.skipTest("Compiler does not support signed short bitfields")
         for i in range(256):
             for name in "MNOPQRS":
