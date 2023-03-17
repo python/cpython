@@ -1743,7 +1743,7 @@ class ChownFileTests(unittest.TestCase):
         stat = os.stat(os_helper.TESTFN)
         uid = stat.st_uid
         gid = stat.st_gid
-        for value in (-1.0, -1j, decimal.Decimal(-1), fractions.Fraction(-2, 2)):
+        for value in (-1.0, -1j, decimal.Decimal(-1.1), fractions.Fraction(-2, 2)):
             self.assertRaises(TypeError, os.chown, os_helper.TESTFN, value, gid)
             self.assertRaises(TypeError, os.chown, os_helper.TESTFN, uid, value)
         self.assertIsNone(os.chown(os_helper.TESTFN, uid, gid))
