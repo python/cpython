@@ -1,7 +1,7 @@
 This directory contains a number of Python programs that are useful
 while building or extending Python.
 
-.build          Automatically generated directory by the build system
+build           Automatically generated directory by the build system
                 contain  build artifacts and intermediate files.
 
 buildbot        Batchfiles for running on Windows buildbot workers.
@@ -12,7 +12,7 @@ cases_generator A Python tool for providing test cases for Python's parser modul
 
 ccbench         A Python threads-based concurrency benchmark. (*)
 
-clinic          Tool for generating C code that interfaces with Python's 
+clinic          Tool for generating C code that interfaces with Python's
                 C API.
 
 freeze          Create a stand-alone executable from a Python program.
