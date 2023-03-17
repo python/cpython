@@ -134,6 +134,8 @@ class Queue(mixins._LoopBoundMixin):
 
         Put an item into the queue. If the queue is full, wait until a free
         slot is available before adding item.
+
+        Raise a QueueShutDown if _shutdown_state is not set to `ALIVE`.
         """
         if self._shutdown_state is not _QueueState.ALIVE:
             raise QueueShutDown
@@ -164,6 +166,9 @@ class Queue(mixins._LoopBoundMixin):
         """Put an item into the queue without blocking.
 
         If no free slot is immediately available, raise QueueFull.
+
+        Raise a QueueShutDown if _shutdown_state is not set to
+        `ALIVE`.
         """
         if self._shutdown_state is not _QueueState.ALIVE:
             raise QueueShutDown
@@ -178,11 +183,17 @@ class Queue(mixins._LoopBoundMixin):
         """Remove and return an item from the queue.
 
         If queue is empty, wait until an item is available.
+
+        Raise a QueueShutDown if _shutdown_state is set to
+        `SHUTDOWN_IMMEDIATE`.
+
+        Raise a QueueShutDown if _shutdown_state is set to
+        `SHUTDOWN` and queue is empty.
         """
         if self._shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE:
             raise QueueShutDown
         while self.empty():
-            if self._shutdown_state is not _QueueState.ALIVE:
+            if self._shutdown_state is _QueueState.SHUTDOWN:
                 raise QueueShutDown
             getter = self._get_loop().create_future()
             self._getters.append(getter)
@@ -210,13 +221,19 @@ class Queue(mixins._LoopBoundMixin):
         """Remove and return an item from the queue.
 
         Return an item if one is immediately available, else raise QueueEmpty.
+
+        Raise a QueueShutDown if _shutdown_state is set to
+        `SHUTDOWN_IMMEDIATE`.
+
+        Raise a QueueShutDown if _shutdown_state is set to
+        `SHUTDOWN` and queue is empty.
         """
+        if self._shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE:
+            raise QueueShutDown
         if self.empty():
-            if self._shutdown_state is not _QueueState.ALIVE:
+            if self._shutdown_state is _QueueState.SHUTDOWN:
                 raise QueueShutDown
             raise QueueEmpty
-        elif self._shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE:
-            raise QueueShutDown
         item = self._get()
         self._wakeup_next(self._putters)
         return item
@@ -234,6 +251,9 @@ class Queue(mixins._LoopBoundMixin):
 
         Raises ValueError if called more times than there were items placed in
         the queue.
+
+        Raise a QueueShutDown if _shutdown_state is set to
+        `SHUTDOWN_IMMEDIATE`.
         """
         if self._shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE:
             raise QueueShutDown
@@ -250,6 +270,9 @@ class Queue(mixins._LoopBoundMixin):
         queue. The count goes down whenever a consumer calls task_done() to
         indicate that the item was retrieved and all work on it is complete.
         When the count of unfinished tasks drops to zero, join() unblocks.
+
+        Raise a QueueShutDown if _shutdown_state is set to
+        `SHUTDOWN_IMMEDIATE`.
         """
         if self._shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE:
             raise QueueShutDown

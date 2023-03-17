@@ -62,7 +62,7 @@ class Queue:
         self.all_tasks_done = threading.Condition(self.mutex)
         self.unfinished_tasks = 0
 
-        # Queue shut-down state
+        # Queue shutdown state
         self.shutdown_state = _queue_alive
 
     def task_done(self):
@@ -78,9 +78,10 @@ class Queue:
 
         Raises a ValueError if called more times than there were items
         placed in the queue.
+        Raises a ShutDown if shutdown_state attribute is set to
+        `_queue_shutdown_immediate`.
         '''
         with self.all_tasks_done:
-            # here `self.all_task_done` uses `self.mutex`
             if self.shutdown_state == _queue_shutdown_immediate:
                 raise ShutDown
             unfinished = self.unfinished_tasks - 1
@@ -98,9 +99,11 @@ class Queue:
         to indicate the item was retrieved and all work on it is complete.
 
         When the count of unfinished tasks drops to zero, join() unblocks.
+
+        Raises a ShutDown if shutdown_state attribute is set to
+        `_queue_shutdown_immediate`.
         '''
         with self.all_tasks_done:
-            # here `self.all_task_done` uses `self.mutex`
             if self.shutdown_state == _queue_shutdown_immediate:
                 raise ShutDown
             while self.unfinished_tasks:
@@ -148,9 +151,11 @@ class Queue:
         Otherwise ('block' is false), put an item on the queue if a free slot
         is immediately available, else raise the Full exception ('timeout'
         is ignored in that case).
+
+        Raises a ShutDown if shutdown_state attribute is not set to
+        `_queue_alive`.
         '''
         with self.not_full:
-            # here `self.not_full` uses `self.mutex``
             if self.shutdown_state != _queue_alive:
                 raise ShutDown
             if self.maxsize > 0:
@@ -187,9 +192,13 @@ class Queue:
         Otherwise ('block' is false), return an item if one is immediately
         available, else raise the Empty exception ('timeout' is ignored
         in that case).
+
+        Raises a ShutDown if shutdown_state attribute is set to
+        `_queue_shutdown` and queue is empty.
+        Raises a ShutDown if shutdown_state attribute is set to
+        `_queue_shutdown_immediate`
         '''
         with self.not_empty:
-            # here `self.not_empty` uses `self.mutex`
             if self.shutdown_state == _queue_shutdown_immediate:
                 raise ShutDown
             elif self.shutdown_state == _queue_shutdown and not self._qsize():
