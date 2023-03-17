@@ -60,18 +60,9 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
 /* We keep the legacy symbol around for backward compatibility. */
 Py_ssize_t _Py_RefTotal;
 
-static inline void
-sync_legacy_reftotal(_PyRuntimeState *runtime)
-{
-    Py_ssize_t last = OBJSTATE(runtime).last_legacy_reftotal;
-    OBJSTATE(runtime).last_legacy_reftotal = _Py_RefTotal;
-    OBJSTATE(runtime).reftotal += _Py_RefTotal - last;
-}
-
 static inline Py_ssize_t
-get_legacy_reftotal(_PyRuntimeState *runtime)
+get_legacy_reftotal(void)
 {
-    sync_legacy_reftotal(runtime);
     return _Py_RefTotal;
 }
 #endif
@@ -111,15 +102,14 @@ _Py_ClearRefTotal(_PyRuntimeState *runtime)
 {
     last_final_reftotal += get_global_reftotal(runtime);
     REFTOTAL = 0;
-    _Py_RefTotal = 0;
 }
 
 static inline Py_ssize_t
 get_global_reftotal(_PyRuntimeState *runtime)
 {
     /* For an update from _Py_RefTotal first. */
-    sync_legacy_reftotal(runtime);
-    return REFTOTAL + last_final_reftotal;
+    Py_ssize_t legacy = get_legacy_reftotal();
+    return REFTOTAL + legacy + last_final_reftotal;
 }
 
 #undef REFTOTAL
@@ -228,7 +218,7 @@ _Py_GetGlobalRefTotal(void)
 Py_ssize_t
 _Py_GetLegacyRefTotal(void)
 {
-    return get_legacy_reftotal(&_PyRuntime);
+    return get_legacy_reftotal();
 }
 
 #endif /* Py_REF_DEBUG */
