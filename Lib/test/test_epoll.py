@@ -191,6 +191,14 @@ class TestEPoll(unittest.TestCase):
         then = time.monotonic()
         self.assertFalse(then - now > 0.01)
 
+        # we might receive events one at a time
+        if len(events) < 2:
+            now = time.monotonic()
+            events += ep.poll(1.0, 4)
+            then = time.monotonic()
+            self.assertFalse(then - now > 0.01)
+
+
         expected = [(client.fileno(), select.EPOLLIN | select.EPOLLOUT),
                     (server.fileno(), select.EPOLLIN | select.EPOLLOUT)]
         self.assertEqual(sorted(events), sorted(expected))
