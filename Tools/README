@@ -2,7 +2,7 @@ This directory contains a number of Python programs that are useful
 while building or extending Python.
 
 .build          Automatically generated directory by the build system
-                contain  build artifacts and intermediate files. 
+                contain  build artifacts and intermediate files.
 
 buildbot        Batchfiles for running on Windows buildbot workers.
 
@@ -13,7 +13,7 @@ cases_generator A Python tool for providing test cases for Python's parser modul
 ccbench         A Python threads-based concurrency benchmark. (*)
 
 clinic          Tool for generating C code that interfaces with Python's 
-                C API. 
+                C API.
 
 freeze          Create a stand-alone executable from a Python program.
 
@@ -34,7 +34,7 @@ msi             Support for packaging Python as an MSI package on Windows.
 nuget           A package manager for Microsoft . NET applications.
 
 patchcheck      Tools for checking and applying patches to the Python source code
-                and verifying the integrity of patch files. 
+                and verifying the integrity of patch files.
 
 peg_generator   PEG-based parser generator (pegen) used for new parser.
 
@@ -43,17 +43,14 @@ scripts         A number of useful single-file programs, e.g. tabnanny.py
                 tabs and spaces, and 2to3, which converts Python 2 code
                 to Python 3 code.
 
-ssl             Tools permit for working with with SSL/TLS encryption in Python,
-                generating SSL/TLS certificates and keys and testing SSL/TLS 
-                connections and protocols. 
+ssl             Scripts to generate ssl_data.h from OpenSSL sources, and run
+                tests against multiple installations of OpenSSL and LibreSSL.
                 
 
 stringbench     A suite of micro-benchmarks for various operations on
                 strings (both 8-bit and unicode). (*)
 
-tz              A Python tools offers timezone implementations, generating
-                timezone information files,converting between different 
-                tz formats, and managing timezone data.
+tz              A script to dump timezone from /usr/share/zoneinfo.
 
 
 unicode         Tools for generating unicodedata and codecs from unicode.org
@@ -63,8 +60,8 @@ unicode         Tools for generating unicodedata and codecs from unicode.org
 unittestgui     A Tkinter based GUI test runner for unittest, with test
                 discovery.
 
-wasm            A Configuration and helpers to facilitate cross compilation 
-                of CPython to WebAssembly (WASM)
+wasm            Config and helpers to facilitate cross compilation of CPython
+                to WebAssembly (WASM).
 
 (*) A generic benchmark suite is maintained separately at https://github.com/python/performance
 
