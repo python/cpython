@@ -45,6 +45,8 @@ UEMPTYSTRING = ''
 CRLF = '\r\n'
 TICK = "'"
 
+# These are used by formataddr() to understand what characters require a name
+# field to be quoted and what characters within that must be \escaped.
 specialsre = re.compile(r'[][\\()<>@,:;". ]')
 escapesre = re.compile(r'[\\"]')
 
