@@ -313,7 +313,7 @@ class PurePath(object):
     def _from_parsed_parts(cls, drv, root, parts):
         path = cls._format_parsed_parts(drv, root, parts)
         self = cls(path)
-        self._str = path
+        self._str = path or '.'
         self._drv = drv
         self._root = root
         self._parts_cached = parts
