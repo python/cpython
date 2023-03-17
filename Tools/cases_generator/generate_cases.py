@@ -176,8 +176,9 @@ class Formatter:
         self.postfix = ""
         self.emit_line_directives = emit_line_directives
         self.lineno = 1
+        filename = os.path.relpath(self.stream.name, ROOT)
         # Make filename more user-friendly and less platform-specific
-        filename = self.stream.name.replace("\\", "/")
+        filename = filename.replace("\\", "/")
         if filename.startswith("./"):
             filename = filename[2:]
         if filename.endswith(".new"):
@@ -778,6 +779,7 @@ class Analyzer:
         with open(filename) as file:
             src = file.read()
 
+        filename = os.path.relpath(filename, ROOT)
         # Make filename more user-friendly and less platform-specific
         filename = filename.replace("\\", "/")
         if filename.startswith("./"):
