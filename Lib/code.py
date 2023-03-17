@@ -120,7 +120,7 @@ class InteractiveInterpreter:
             else:
                 # Stuff in the right filename
                 value = SyntaxError(msg, (filename, lineno, offset, line))
-                sys.last_value = value
+                sys.last_exc = sys.last_value = value
         if sys.excepthook is sys.__excepthook__:
             lines = traceback.format_exception_only(type, value)
             self.write(''.join(lines))
