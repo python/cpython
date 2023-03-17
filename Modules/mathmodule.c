@@ -2542,14 +2542,13 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         return (h + x / (2.0 * h)) / scale;
     }
     /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
-       So instead of multiplying by a scale, we just divide by *max*.
-       This converts a subnormal to normal, giving extra bits of
-       precision and making it possible to recurse back to vector_norm().
+       So we first perform lossless scaling from subnormals back to normals,
+       then recurse back to vector_norm(), and then finally undo the scaling.
     */
     for (i=0 ; i < n ; i++) {
-        vec[i] /= max;
+        vec[i] /= DBL_MIN;
     }
-    return max * vector_norm(n, vec, 1.0, found_nan);
+    return DBL_MIN * vector_norm(n, vec, max / DBL_MIN, found_nan);
 }
 
 #define NUM_STACK_ELEMS 16
