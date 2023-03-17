@@ -600,7 +600,7 @@ new_keys_object(uint8_t log2_size, bool unicode)
 
     assert(log2_size >= PyDict_LOG_MINSIZE);
 
-    usable = USABLE_FRACTION(1<<log2_size);
+    usable = USABLE_FRACTION((size_t)1<<log2_size);
     if (log2_size < 8) {
         log2_bytes = log2_size;
     }
