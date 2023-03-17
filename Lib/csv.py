@@ -390,9 +390,8 @@ class Sniffer:
         # column is of a single type (say, integers), *except* for the first
         # row, then the first row is presumed to be labels. If the type
         # can't be determined, it is assumed to be a string in which case
-        # the length of the string is the determining factor: if all of the
-        # rows except for the first are the same length, it's a header.
-        # Finally, a 'vote' is taken at the end for each column, adding or
+        # the length of the string is the determining factor.
+        # A 'vote' is taken at the end for each column, adding or
         # subtracting from the likelihood of the first row being a header.
 
         rdr = reader(StringIO(sample), self.sniff(sample))
@@ -401,7 +400,11 @@ class Sniffer:
 
         columns = len(header)
         columnTypes = {}
-        for i in range(columns): columnTypes[i] = None
+        similiratyWords = {}
+        compareWords = []
+        for i in range(columns): 
+            columnTypes[i] = None
+            similiratyWords[i] = 0
 
         checked = 0
         for row in rdr:
@@ -414,7 +417,7 @@ class Sniffer:
                 continue # skip rows that have irregular number of columns
 
             for col in list(columnTypes.keys()):
-                thisType = complex
+                thisType = complex  #class complex
                 try:
                     thisType(row[col])
                 except (ValueError, OverflowError):
@@ -424,15 +427,30 @@ class Sniffer:
                 if thisType != columnTypes[col]:
                     if columnTypes[col] is None: # add new column type
                         columnTypes[col] = thisType
+                        compareWords.append(re.findall(r"\w+[^\s]", row[col]))   #create a list of every words
                     else:
-                        # type is inconsistent, remove column from
-                        # consideration
-                        del columnTypes[col]
+                        if isinstance(row[col], int)==False:  #it's not an integer
+                            columnTypes[col] += thisType
+                            compareWords.append(re.findall(r"\w+[^\s]", row[col]))
+                            for words in compareWords[0]:   #match words
+                                if words in compareWords[1]:    #if a word has been repeated
+                                    similiratyWords[col] += 1
+                            del compareWords[0]
+                        else:
+                            # type is inconsistent, remove column from
+                            # consideration
+                            del columnTypes[col]
 
         # finally, compare results against first row and "vote"
         # on whether it's a header
-        hasHeader = 0
+        hasHeader = 0    
+              
         for col, colType in columnTypes.items():
+            columnTypes[col] = columnTypes[col]//checked
+            if similiratyWords[col]/checked < 1:
+                hasHeader -= 1
+            else:
+                hasHeader += 1 
             if isinstance(colType, int): # it's a length
                 if len(header[col]) != colType:
                     hasHeader += 1
