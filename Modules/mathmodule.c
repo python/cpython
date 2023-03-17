@@ -2498,7 +2498,7 @@ References:
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    double x, h, scale, oldcsum, csum = 1.0, frac1 = 0.0, frac2 = 0.0;
+    double x, h, scale, csum = 1.0, frac1 = 0.0, frac2 = 0.0;
     DoubleLength pr, sm;
     int max_e;
     Py_ssize_t i;
@@ -2543,19 +2543,13 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     }
     /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
        So instead of multiplying by a scale, we just divide by *max*.
+       This converts a subnormal to normal, giving extra bits of
+       precision and making it possible to recurse back to vector_norm().
     */
     for (i=0 ; i < n ; i++) {
-        x = vec[i];
-        assert(Py_IS_FINITE(x) && fabs(x) <= max);
-        x /= max;
-        x = x*x;
-        assert(x <= 1.0);
-        assert(fabs(csum) >= fabs(x));
-        oldcsum = csum;
-        csum += x;
-        frac1 += (oldcsum - csum) + x;
+        vec[i] /= max;
     }
-    return max * sqrt(csum - 1.0 + frac1);
+    return max * vector_norm(n, vec, 1.0, found_nan);
 }
 
 #define NUM_STACK_ELEMS 16
