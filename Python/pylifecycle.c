@@ -1304,7 +1304,7 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
 {
     // List of names to clear in sys
     static const char * const sys_deletes[] = {
-        "path", "argv", "ps1", "ps2",
+        "path", "argv", "ps1", "ps2", "last_exc",
         "last_type", "last_value", "last_traceback",
         "__interactivehook__",
         // path_hooks and path_importer_cache are cleared

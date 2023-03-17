@@ -481,6 +481,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(kw2)
         STRUCT_FOR_ID(lambda)
         STRUCT_FOR_ID(last)
+        STRUCT_FOR_ID(last_exc)
         STRUCT_FOR_ID(last_node)
         STRUCT_FOR_ID(last_traceback)
         STRUCT_FOR_ID(last_type)
