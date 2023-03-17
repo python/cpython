@@ -26,6 +26,9 @@
 extern "C" {
 #endif
 
+#define OBJSTATE(runtime) \
+    (runtime)->object_state
+
 /* Defined in tracemalloc.c */
 extern void _PyMem_DumpTraceback(int fd, const void *ptr);
 
@@ -57,16 +60,25 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
 /* We keep the legacy symbol around for backward compatibility. */
 Py_ssize_t _Py_RefTotal;
 
-static inline Py_ssize_t
-get_legacy_reftotal(void)
+static inline void
+sync_legacy_reftotal(_PyRuntimeState *runtime)
 {
+    Py_ssize_t last = OBJSTATE(runtime).last_legacy_reftotal;
+    OBJSTATE(runtime).last_legacy_reftotal = _Py_RefTotal;
+    OBJSTATE(runtime).reftotal += _Py_RefTotal - last;
+}
+
+static inline Py_ssize_t
+get_legacy_reftotal(_PyRuntimeState *runtime)
+{
+    sync_legacy_reftotal(runtime);
     return _Py_RefTotal;
 }
 #endif
 
 #ifdef Py_REF_DEBUG
 
-#  define REFTOTAL ((runtime)->object_state.reftotal)
+#  define REFTOTAL (OBJSTATE(runtime).reftotal)
 
 static inline void
 reftotal_increment(_PyRuntimeState *runtime)
@@ -86,6 +98,8 @@ reftotal_add(_PyRuntimeState *runtime, Py_ssize_t n)
     REFTOTAL += n;
 }
 
+static inline Py_ssize_t get_global_reftotal(_PyRuntimeState *);
+
 /* We preserve the number of refs leaked during runtime finalization,
    so they can be reported if the runtime is initialized again. */
 // XXX We don't lose any information by dropping this,
@@ -95,17 +109,16 @@ static Py_ssize_t last_final_reftotal = 0;
 void
 _Py_ClearRefTotal(_PyRuntimeState *runtime)
 {
-    last_final_reftotal += REFTOTAL;
+    last_final_reftotal += get_global_reftotal(runtime);
     REFTOTAL = 0;
+    _Py_RefTotal = 0;
 }
 
 static inline Py_ssize_t
 get_global_reftotal(_PyRuntimeState *runtime)
 {
-    Py_ssize_t last = _PyRuntime.object_state.last_legacy_reftotal;
-    Py_ssize_t legacy = get_legacy_reftotal();
-    _PyRuntime.object_state.last_legacy_reftotal = legacy;
-    REFTOTAL += legacy - last;
+    /* For an update from _Py_RefTotal first. */
+    sync_legacy_reftotal(runtime);
     return REFTOTAL + last_final_reftotal;
 }
 
@@ -215,7 +228,7 @@ _Py_GetGlobalRefTotal(void)
 Py_ssize_t
 _Py_GetLegacyRefTotal(void)
 {
-    return get_legacy_reftotal();
+    return get_legacy_reftotal(&_PyRuntime);
 }
 
 #endif /* Py_REF_DEBUG */
