@@ -17,7 +17,6 @@ import time
 import types
 import weakref
 import errno
-import ctypes
 
 from queue import Empty, Full, ShutDown
 
@@ -56,7 +55,7 @@ class Queue(object):
         self._ignore_epipe = False
         self._reset()
         self._shutdown_state = context._default_context.Value(
-               ctypes.c_uint8, _queue_alive,
+               'i', _queue_alive,
                lock=True
                )
 
