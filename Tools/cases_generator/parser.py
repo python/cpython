@@ -69,30 +69,33 @@ class Block(Node):
 
 
 @dataclass
-class TypeLiteralAnnotation(Node):
+class TypeSrcLiteral(Node):
     literal: str
 
 
 @dataclass
-class TypeIndexAnnotation(Node):
-    array: Literal["locals", "consts"]
+class TypeSrcConst(Node):
     index: str
 
 @dataclass
-class TypeInputAnnotation(Node):
-    name: str
+class TypeSrcLocals(Node):
+    index: str
 
 @dataclass
-class TypeDerefAnnotation(Node):
-    typeval: TypeLiteralAnnotation # Support more types as needed
+class TypeSrcStackInput(Node):
+    name: str
 
-
-TypeAnnotation: TypeAlias = (
-    TypeLiteralAnnotation 
-    | TypeIndexAnnotation 
-    | TypeInputAnnotation 
-    | TypeDerefAnnotation
+TypeSrc: TypeAlias = (
+    TypeSrcLiteral 
+    | TypeSrcConst 
+    | TypeSrcLocals 
+    | TypeSrcStackInput
 )
+
+@dataclass
+class TypeAnnotation(Node):
+    op: Literal["TYPE_SET", "TYPE_OVERWRITE"]
+    src: TypeSrc
 
 @dataclass
 class StackEffect(Node):
@@ -356,28 +359,31 @@ class Parser(PLexer):
             return StackEffect(tkn.text, _type, type_annotation, cond_text, size_text)
 
     @contextual
-    def stackvar_type(self) -> TypeAnnotation | None: 
+    def stackvar_typesrc(self) -> TypeSrc | None:
         if id := self.expect(lx.IDENTIFIER):
             idstr = id.text.strip()
             if not self.expect(lx.LBRACKET):
-                return TypeLiteralAnnotation(idstr)
+                return TypeSrcLiteral(idstr)
             if idstr not in ["locals", "consts"]: return
             if id := self.expect(lx.IDENTIFIER):
                 index = id.text.strip()
                 self.require(lx.RBRACKET)
-                return TypeIndexAnnotation(
-                    "locals" if idstr == "locals" else "consts", 
-                    index)
+                if idstr == "locals":
+                    return TypeSrcLocals(index)
+                return TypeSrcConst(index)
         elif self.expect(lx.TIMES):
             id = self.require(lx.IDENTIFIER)
-            return TypeInputAnnotation(id.text.strip())
-        elif self.expect(lx.LSHIFTEQUAL):
-            typeval = self.stackvar_type()
-            # TODO: Support other type annotations as needed
-            assert isinstance(typeval, TypeLiteralAnnotation), \
-                "TypeDerefAnnotation only supports Type Literals"
-            return TypeDerefAnnotation(typeval)
+            return TypeSrcStackInput(id.text.strip())
 
+    @contextual
+    def stackvar_type(self) -> TypeAnnotation | None: 
+        if self.expect(lx.LSHIFTEQUAL):
+            src = self.stackvar_typesrc()
+            if src is None: return None
+            return TypeAnnotation("TYPE_SET", src)
+        src = self.stackvar_typesrc()
+        if src is None: return None
+        return TypeAnnotation("TYPE_OVERWRITE", src)
 
     @contextual
     def local_effect(self) -> LocalEffect | None:

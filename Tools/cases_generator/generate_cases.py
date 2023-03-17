@@ -17,7 +17,7 @@ from enum import Enum, auto
 
 import parser
 from parser import StackEffect
-from parser import TypeLiteralAnnotation, TypeIndexAnnotation, TypeInputAnnotation, TypeDerefAnnotation
+from parser import TypeAnnotation, TypeSrcLiteral, TypeSrcConst, TypeSrcLocals, TypeSrcStackInput
 from parser import LocalEffect, LocalEffectVarLiteral, LocalEffectVarStack
 
 HERE = os.path.dirname(__file__)
@@ -343,13 +343,13 @@ class Instruction:
         # Stack input is used in output effect
         for oeffect in self.output_effects:
             if not (typ := oeffect.type_annotation): continue
-            if not isinstance(typ, TypeInputAnnotation): continue
-            if oeffect.name in self.unmoved_names and oeffect.name == typ.name: 
+            if not isinstance(src := typ.src, TypeSrcStackInput): continue
+            if oeffect.name in self.unmoved_names and oeffect.name == src.name: 
                 print(
                     f"Warn: {self.name} type annotation for {oeffect.name} will be ignored "
                     "as it is unmoved")
                 continue
-            need_to_declare.append(typ.name)
+            need_to_declare.append(src.name)
 
         # Write input stack effect variable declarations and initializations
         ieffects = list(reversed(self.input_effects))
@@ -404,28 +404,29 @@ class Instruction:
 
             # Check if it's even used
             if oeffect.name == UNUSED: continue
-
+            
             # Check if there's type info
             if typ := oeffect.type_annotation:
-                match typ:
-                    case TypeLiteralAnnotation(literal=val): 
+
+                if typ.op == "TYPE_SET":
+                    # TODO
+                    continue
+                
+                # typ.op == "TYPE_OVERWRITE"
+                match typ.src:
+                    case TypeSrcLiteral(literal=val): 
                         if val != "NULL": val = f"&{val}"
-                    case TypeIndexAnnotation(array=arr, index=idx):
-                        val = f"{'TYPELOCALS_GET' if arr == 'locals' else 'TYPECONST_GET'}({idx})"
-                    case TypeInputAnnotation(name=val):
+                    case TypeSrcLocals(index=idx):
+                        val = f"TYPELOCALS_GET({idx})"
+                    case TypeSrcConst(index=idx):
+                        val = f"TYPECONST_GET({idx})"
+                    case TypeSrcStackInput(name=val):
                         # We determined above that we don't need to write this stack effect
                         if val not in need_to_declare:
                             continue
                         # Unmoved var, don't need to write
                         if oeffect.name in self.unmoved_names:
                             continue
-                    case TypeDerefAnnotation(typeval=typeval):
-                        match typeval:
-                            case TypeLiteralAnnotation(literal=val):
-                                # TODO
-                                continue
-                            case _:
-                                typing.assert_never(typeval)
                     case _:
                         typing.assert_never(typ)
                 if oeffect.cond:
