@@ -1,0 +1,2 @@
+Add ``sys.last_exc`` and deprecate ``sys.last_type``, ``sys.last_value`` and
+``sys.last_traceback``, which have the same info in its legacy form.
