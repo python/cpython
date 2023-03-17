@@ -978,6 +978,31 @@ _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
     return 0;
 }
 
+static PyObject *
+get_core_module_dict(PyInterpreterState *interp,
+                     PyObject *name, PyObject *filename)
+{
+    /* Only builtin modules are core. */
+    if (filename == name) {
+        assert(!PyErr_Occurred());
+        if (PyUnicode_CompareWithASCIIString(name, "sys") == 0) {
+            return interp->sysdict_copy;
+        }
+        assert(!PyErr_Occurred());
+        if (PyUnicode_CompareWithASCIIString(name, "builtins") == 0) {
+            return interp->builtins_copy;
+        }
+        assert(!PyErr_Occurred());
+    }
+    return NULL;
+}
+
+static inline int
+is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *filename)
+{
+    return get_core_module_dict(interp, name, filename) != NULL;
+}
+
 static int
 fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
 {
@@ -999,9 +1024,8 @@ fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
 
     // bpo-44050: Extensions and def->m_base.m_copy can be updated
     // when the extension module doesn't support sub-interpreters.
-    // XXX Why special-case the main interpreter?
-    if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
-        if (def->m_size == -1) {
+    if (def->m_size == -1) {
+        if (!is_core_module(tstate->interp, name, filename)) {
             if (def->m_base.m_copy) {
                 /* Somebody already imported the module,
                    likely under a different name.
@@ -1017,7 +1041,10 @@ fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
                 return -1;
             }
         }
+    }
 
+    // XXX Why special-case the main interpreter?
+    if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
         if (_extensions_cache_set(filename, name, def) < 0) {
             return -1;
         }
@@ -1055,18 +1082,24 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
     PyObject *modules = MODULES(tstate->interp);
 
     if (def->m_size == -1) {
+        PyObject *m_copy = def->m_base.m_copy;
         /* Module does not support repeated initialization */
-        if (def->m_base.m_copy == NULL)
-            return NULL;
+        if (m_copy == NULL) {
+            m_copy = get_core_module_dict(tstate->interp, name, filename);
+            if (m_copy == NULL) {
+                return NULL;
+            }
+        }
         mod = import_add_module(tstate, name);
-        if (mod == NULL)
+        if (mod == NULL) {
             return NULL;
+        }
         mdict = PyModule_GetDict(mod);
         if (mdict == NULL) {
             Py_DECREF(mod);
             return NULL;
         }
-        if (PyDict_Update(mdict, def->m_base.m_copy)) {
+        if (PyDict_Update(mdict, m_copy)) {
             Py_DECREF(mod);
             return NULL;
         }

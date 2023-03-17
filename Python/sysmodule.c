@@ -742,7 +742,7 @@ sys_excepthook_impl(PyObject *module, PyObject *exctype, PyObject *value,
                     PyObject *traceback)
 /*[clinic end generated code: output=18d99fdda21b6b5e input=ecf606fa826f19d9]*/
 {
-    PyErr_Display(exctype, value, traceback);
+    PyErr_Display(NULL, value, traceback);
     Py_RETURN_NONE;
 }
 
@@ -3430,6 +3430,11 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         goto error;
     }
     interp->sysdict = Py_NewRef(sysdict);
+
+    interp->sysdict_copy = PyDict_Copy(sysdict);
+    if (interp->sysdict_copy == NULL) {
+        goto error;
+    }
 
     if (PyDict_SetItemString(sysdict, "modules", modules) < 0) {
         goto error;
