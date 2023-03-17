@@ -1,2 +1,0 @@
-Fix the ``defs`` and ``kwdefs`` arguments to :c:func:`PyEval_EvalCodeEx`
-and a reference leak in that function.
