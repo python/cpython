@@ -1,0 +1,1 @@
+Fixing bug csv.Sniffer().has_header() which was returning False whereas there was clearly a header by improving the heuristic.
