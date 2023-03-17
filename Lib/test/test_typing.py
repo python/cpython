@@ -1681,6 +1681,16 @@ class BaseCallableTests:
         self.assertEqual(C5[int, str, float],
                          Callable[[typing.List[int], tuple[str, int], float], int])
 
+    def test_type_subst_error(self):
+        Callable = self.Callable
+        P = ParamSpec('P')
+        T = TypeVar('T')
+
+        pat = "Expected a list of types, an ellipsis, ParamSpec, or Concatenate."
+
+        with self.assertRaisesRegex(TypeError, pat):
+            Callable[P, T][0, int]
+
     def test_type_erasure(self):
         Callable = self.Callable
         class C1(Callable):
