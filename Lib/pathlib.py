@@ -310,7 +310,9 @@ class PurePath(object):
 
     @classmethod
     def _from_parsed_parts(cls, drv, root, parts):
-        self = object.__new__(cls)
+        path = cls._format_parsed_parts(drv, root, parts)
+        self = cls(path)
+        self._str = path
         self._drv = drv
         self._root = root
         self._parts = parts
