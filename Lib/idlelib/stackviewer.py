@@ -41,14 +41,14 @@ class StackTreeItem(TreeItem):
 
     def get_exception(self):
         if hasattr(sys, 'last_exc'):
-            type = type(sys.last_exc)
+            typ = type(sys.last_exc)
             value = sys.last_exc
         else:
-            type = sys.last_type
+            typ = sys.last_type
             value = sys.last_value
-        if hasattr(type, "__name__"):
-            type = type.__name__
-        s = str(type)
+        if hasattr(typ, "__name__"):
+            typ = typ.__name__
+        s = str(typ)
         if value is not None:
             s = s + ": " + str(value)
         return s
