@@ -93,9 +93,10 @@ reftotal_add(_PyRuntimeState *runtime, Py_ssize_t n)
 static Py_ssize_t last_final_reftotal = 0;
 
 void
-_Py_SetFinalRefTotal(_PyRuntimeState *runtime)
+_Py_ClearRefTotal(_PyRuntimeState *runtime)
 {
     last_final_reftotal += REFTOTAL;
+    REFTOTAL = 0;
 }
 
 static inline Py_ssize_t

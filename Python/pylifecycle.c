@@ -1930,7 +1930,7 @@ Py_FinalizeEx(void)
     if (show_ref_count) {
         _PyDebug_PrintTotalRefs();
     }
-    _Py_SetFinalRefTotal(runtime);
+    _Py_ClearRefTotal(runtime);
 #endif
 
 #ifdef Py_TRACE_REFS

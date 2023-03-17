@@ -506,6 +506,9 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 
 #undef FREE_LOCK
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    /* The reftotal is cleared by _Py_ClearRefTotal(). */
+    assert(runtime->object_state.reftotal == 0);
 }
 
 #ifdef HAVE_FORK
