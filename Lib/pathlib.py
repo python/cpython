@@ -339,12 +339,7 @@ class PurePath(object):
             return self._str
 
     def __fspath__(self):
-        try:
-            return self._fspath or '.'
-        except AttributeError:
-            # The _from_parsed_parts() constructor does not set _fspath.
-            self._fspath = str(self)
-            return self._fspath
+        return str(self)
 
     def as_posix(self):
         """Return the string representation of the path with forward (/)
@@ -355,7 +350,7 @@ class PurePath(object):
     def __bytes__(self):
         """Return the bytes representation of the path.  This is only
         recommended to use under Unix."""
-        return os.fsencode(str(self))
+        return os.fsencode(self)
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
