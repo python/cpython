@@ -2537,41 +2537,28 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
 static int
 _Py_FatalError_PrintExc(PyThreadState *tstate)
 {
-    PyObject *ferr, *res;
-    PyObject *exception, *v, *tb;
-    int has_tb;
-
-    _PyErr_Fetch(tstate, &exception, &v, &tb);
-    if (exception == NULL) {
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    if (exc == NULL) {
         /* No current exception */
         return 0;
     }
 
-    ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
     if (ferr == NULL || ferr == Py_None) {
         /* sys.stderr is not set yet or set to None,
            no need to try to display the exception */
         return 0;
     }
 
-    _PyErr_NormalizeException(tstate, &exception, &v, &tb);
-    if (tb == NULL) {
-        tb = Py_NewRef(Py_None);
-    }
-    PyException_SetTraceback(v, tb);
-    if (exception == NULL) {
-        /* PyErr_NormalizeException() failed */
-        return 0;
-    }
+    PyErr_DisplayException(exc);
 
-    has_tb = (tb != Py_None);
-    PyErr_Display(exception, v, tb);
-    Py_XDECREF(exception);
-    Py_XDECREF(v);
+    PyObject *tb = PyException_GetTraceback(exc);
+    int has_tb = (tb != NULL) && (tb != Py_None);
     Py_XDECREF(tb);
+    Py_XDECREF(exc);
 
     /* sys.stderr may be buffered: call sys.stderr.flush() */
-    res = PyObject_CallMethodNoArgs(ferr, &_Py_ID(flush));
+    PyObject *res = PyObject_CallMethodNoArgs(ferr, &_Py_ID(flush));
     if (res == NULL) {
         _PyErr_Clear(tstate);
     }
