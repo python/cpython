@@ -3774,6 +3774,33 @@ PyDec_AsFloat(PyObject *dec)
 }
 
 static PyObject *
+PyDec_AsInt(PyObject *dec)
+{
+    PyObject *context;
+
+    if (mpd_isspecial(MPD(dec))) {
+        if (mpd_isnan(MPD(dec))) {
+            PyErr_SetString(PyExc_ValueError,
+                "NaN cannot be interpreted as an integer");
+        }
+        else {
+            PyErr_SetString(PyExc_OverflowError,
+                "Infinity cannot be interpreted as an integer");
+        }
+        return NULL;
+    }
+
+    if (!mpd_isinteger(MPD(dec))) {
+        PyErr_SetString(PyExc_TypeError,
+            "Decimal with fractional part cannot be interpreted as an integer");
+        return NULL;
+    }
+
+    CURRENT_CONTEXT(context);
+    return dec_as_long(dec, context, MPD_ROUND_TRUNC);
+}
+
+static PyObject *
 PyDec_Round(PyObject *dec, PyObject *args)
 {
     PyObject *result;
@@ -4877,6 +4904,7 @@ static PyNumberMethods dec_number_methods =
     (binaryfunc) nm_mpd_qdiv,     /* binaryfunc nb_true_divide; */
     0,               /* binaryfunc nb_inplace_floor_divide; */
     0,               /* binaryfunc nb_inplace_true_divide; */
+    (unaryfunc) PyDec_AsInt,  /* unaryfunc nb_index; */
 };
 
 static PyMethodDef dec_methods [] =

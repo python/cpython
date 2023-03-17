@@ -1640,6 +1640,21 @@ class Decimal(object):
         else:
             return s*int(self._int[:self._exp] or '0')
 
+    def __index__(self):
+        """
+        Converts self to an int, if it is possible to do so with no loss of
+        precision.
+        """
+        if self._is_special:
+            if self._isnan():
+                raise ValueError("Cannot convert NaN to integer")
+            elif self._isinfinity():
+                raise OverflowError("Cannot convert infinity to integer")
+        elif self._exp != 0:
+            raise TypeError("Cannot convert Decimal with fractional part "
+                            "to integer")
+        return (-1)**self._sign*int(self._int)
+
     __trunc__ = __int__
 
     @property

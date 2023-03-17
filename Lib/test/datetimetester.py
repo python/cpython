@@ -5431,7 +5431,7 @@ class Oddballs(unittest.TestCase):
             pass
 
         for xx in [10.0, Float(10.9),
-                   decimal.Decimal(10), decimal.Decimal('10.9'),
+                   decimal.Decimal('10.9'),
                    Number(10), Number(10.9),
                    '10']:
             self.assertRaises(TypeError, datetime, xx, 10, 10, 10, 10, 10, 10)

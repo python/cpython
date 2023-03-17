@@ -534,7 +534,6 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.factorial, 5.2)
         self.assertRaises(TypeError, math.factorial, -1.0)
         self.assertRaises(TypeError, math.factorial, -1e100)
-        self.assertRaises(TypeError, math.factorial, decimal.Decimal('5'))
         self.assertRaises(TypeError, math.factorial, decimal.Decimal('5.2'))
         self.assertRaises(TypeError, math.factorial, "5")
 
@@ -2173,10 +2172,10 @@ class MathTests(unittest.TestCase):
         # Raises TypeError if any argument is non-integer or argument count is
         # not 1 or 2
         self.assertRaises(TypeError, perm, 10, 1.0)
-        self.assertRaises(TypeError, perm, 10, decimal.Decimal(1.0))
+        self.assertRaises(TypeError, perm, 10, decimal.Decimal(1.1))
         self.assertRaises(TypeError, perm, 10, "1")
         self.assertRaises(TypeError, perm, 10.0, 1)
-        self.assertRaises(TypeError, perm, decimal.Decimal(10.0), 1)
+        self.assertRaises(TypeError, perm, decimal.Decimal(10.1), 1)
         self.assertRaises(TypeError, perm, "10", 1)
 
         self.assertRaises(TypeError, perm)
@@ -2240,10 +2239,10 @@ class MathTests(unittest.TestCase):
         # Raises TypeError if any argument is non-integer or argument count is
         # not 2
         self.assertRaises(TypeError, comb, 10, 1.0)
-        self.assertRaises(TypeError, comb, 10, decimal.Decimal(1.0))
+        self.assertRaises(TypeError, comb, 10, decimal.Decimal(1.1))
         self.assertRaises(TypeError, comb, 10, "1")
         self.assertRaises(TypeError, comb, 10.0, 1)
-        self.assertRaises(TypeError, comb, decimal.Decimal(10.0), 1)
+        self.assertRaises(TypeError, comb, decimal.Decimal(10.1), 1)
         self.assertRaises(TypeError, comb, "10", 1)
 
         self.assertRaises(TypeError, comb, 10)

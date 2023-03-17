@@ -2613,6 +2613,27 @@ class PythonAPItests(unittest.TestCase):
         self.assertRaises(OverflowError, int, Decimal('inf'))
         self.assertRaises(OverflowError, int, Decimal('-inf'))
 
+    def test_index(self):
+        Decimal = self.decimal.Decimal
+
+        for x in range(-250, 250):
+            self.assertEqual(operator.index(Decimal(x)), x)
+
+        self.assertRaises(TypeError, operator.index, Decimal('2.5'))
+
+        HAVE_CONFIG_64 = (C.MAX_PREC > 425000000)
+
+        # Corner cases
+        int_max = 2**63-1 if HAVE_CONFIG_64 else 2**31-1
+
+        self.assertEqual(operator.index(Decimal(int_max-1)), int_max-1)
+        self.assertEqual(operator.index(Decimal(-int_max)), -int_max)
+
+        self.assertRaises(ValueError, operator.index, Decimal('-nan'))
+        self.assertRaises(ValueError, operator.index, Decimal('snan'))
+        self.assertRaises(OverflowError, operator.index, Decimal('inf'))
+        self.assertRaises(OverflowError, operator.index, Decimal('-inf'))
+
     @cpython_only
     def test_small_ints(self):
         Decimal = self.decimal.Decimal

@@ -23,6 +23,7 @@ import warnings
 import sys, array, io, os
 from decimal import Decimal
 from fractions import Fraction
+import re
 
 try:
     from _testbuffer import *
@@ -2532,8 +2533,9 @@ class TestBufferProtocol(unittest.TestCase):
 
         def f(): return 7
 
+        fd = Decimal("-21.1")
         values = [INT(9), IDX(9),
-                  2.2+3j, Decimal("-21.1"), 12.2, Fraction(5, 2),
+                  2.2+3j, Decimal("2"), fd, 12.2, Fraction(5, 2),
                   [1,2,3], {4,5,6}, {7:8}, (), (9,),
                   True, False, None, Ellipsis,
                   b'a', b'abc', bytearray(b'a'), bytearray(b'abc'),
@@ -2559,6 +2561,10 @@ class TestBufferProtocol(unittest.TestCase):
                     struct.pack_into(fmt, nd, itemsize, v)
                 except struct.error:
                     struct_err = struct.error
+                except TypeError as e:
+                    # This can't be represented as an integer:
+                    if v == fd and re.search('[bBhHiIlLqQnN]', fmt):
+                        struct_err = e
 
                 mv_err = None
                 try:

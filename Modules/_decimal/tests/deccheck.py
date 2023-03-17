@@ -63,8 +63,8 @@ Functions = {
     # Plain unary:
     'unary': (
         '__abs__', '__bool__', '__ceil__', '__complex__', '__copy__',
-        '__floor__', '__float__', '__hash__', '__int__', '__neg__',
-        '__pos__', '__reduce__', '__repr__', '__str__', '__trunc__',
+        '__floor__', '__float__', '__hash__', '__index__', '__int__',
+        '__neg__', '__pos__', '__reduce__', '__repr__', '__str__', '__trunc__',
         'adjusted', 'as_integer_ratio', 'as_tuple', 'canonical', 'conjugate',
         'copy_abs', 'copy_negate', 'is_canonical', 'is_finite', 'is_infinite',
         'is_nan', 'is_qnan', 'is_signed', 'is_snan', 'is_zero', 'radix'

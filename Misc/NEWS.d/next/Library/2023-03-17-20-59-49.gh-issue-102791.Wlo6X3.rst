@@ -1,0 +1,3 @@
+:func:`decimal.Decimal` instances may now be interpreted as integers (i.e.
+by :func:`~operator.index`) if they have no fractional part. Patch by Chris
+Novakovic.

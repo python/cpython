@@ -410,6 +410,11 @@ Decimal objects
    compared, sorted, and coerced to another type (such as :class:`float` or
    :class:`int`).
 
+   .. versionchanged:: 3.12
+      A :class:`Decimal` instance may be coerced to an integer (i.e. by
+      :func:`~operator.index`) if it has no fractional part; otherwise, a
+      :exc:`TypeError` is raised.
+
    There are some small differences between arithmetic on Decimal objects and
    arithmetic on integers and floats.  When the remainder operator ``%`` is
    applied to Decimal objects, the sign of the result is the sign of the
