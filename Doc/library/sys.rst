@@ -177,7 +177,7 @@ always available.
 
    Tracing is suspended while calling a tracing function set by
    :func:`settrace` or :func:`setprofile` to avoid infinite recursion.
-   :func:`call_tracing` enables explicit recursion of tracing function.
+   :func:`!call_tracing` enables explicit recursion of the tracing function.
 
 
 .. data:: copyright
