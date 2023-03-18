@@ -374,6 +374,10 @@ class TestNtpath(NtpathTestCase):
         self.assertPathEqual(ntpath.realpath(os.fsencode(ABSTFN + "1")),
                          os.fsencode(ABSTFN))
 
+        # gh-88013: call ntpath.realpath with binary drive name may raise a
+        # TypeError. The drive should not exist to reproduce the bug.
+        self.assertEqual(ntpath.realpath(b"n:/"), b"n:\\")
+
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_strict(self):

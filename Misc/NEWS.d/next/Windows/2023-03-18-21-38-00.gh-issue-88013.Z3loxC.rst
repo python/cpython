@@ -1,0 +1,2 @@
+Fixed a bug which will cause ``TypeError`` when calling
+``ntpath.realpath()`` with bytes parameter in some cases.
