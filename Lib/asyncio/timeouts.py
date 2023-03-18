@@ -25,7 +25,7 @@ class _State(enum.Enum):
 
 @final
 class Timeout:
-    """Asynchronous context manager which limits the time spent inside of it."""
+    """Asynchronous context manager which limits the time spent inside it."""
 
     def __init__(self, when: Optional[float]) -> None:
         self._state = _State.CREATED
@@ -44,8 +44,7 @@ class Timeout:
     def reschedule(self, when: Optional[float]) -> None:
         """Change the time at which the timeout will trigger.
 
-        - If `when` is `None`, any current deadline will be removed,
-            and the context manager will wait indefinitely.
+        - If `when` is `None`, any current deadline will be removed.
         - If `when` is a float, it is set as the new deadline.
         - if `when` is in the past, the timeout will trigger on the
             next iteration of the event loop.
