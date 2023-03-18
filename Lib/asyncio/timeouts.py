@@ -25,9 +25,23 @@ class _State(enum.Enum):
 
 @final
 class Timeout:
-    """Asynchronous context manager which limits the time spent inside it."""
+    """Asynchronous context manager which limits the time spent inside it.
+
+    Example use:
+
+        loop = asyncio.asyncio.get_running_loop()
+        async with asyncio.Timeout(loop.time() + 1):  # Run for up to a second
+            await asyncio.sleep(2)                    # `TimeoutError` occurs.
+
+    """
 
     def __init__(self, when: Optional[float]) -> None:
+        """Initialize a timeout that will trigger at a given loop time.
+
+        - If `when is None`, the timeout will never trigger.
+        - If `when < loop.time()`, the timeout will trigger on the next
+        iteration of the event loop.
+        """
         self._state = _State.CREATED
 
         self._timeout_handler: Optional[events.TimerHandle] = None
@@ -35,20 +49,12 @@ class Timeout:
         self._when = when
 
     def when(self) -> Optional[float]:
-        """Return the current deadline, or `None` if the current deadline is not set.
-
-        The deadline is a float, consistent with the time returned by `loop.time()`.
-        """
+        """Return the current deadline."""
         return self._when
 
     def reschedule(self, when: Optional[float]) -> None:
-        """Change the time at which the timeout will trigger.
+        """Change the time at which the timeout will trigger."""
 
-        - If `when` is `None`, any current deadline will be removed.
-        - If `when` is a float, it is set as the new deadline.
-        - if `when` is in the past, the timeout will trigger on the
-            next iteration of the event loop.
-        """
         assert self._state is not _State.CREATED
         if self._state is not _State.ENTERED:
             raise RuntimeError(
