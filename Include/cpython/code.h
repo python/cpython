@@ -56,14 +56,35 @@ typedef struct {
     PyObject *_co_freevars;
 } _PyCoCached;
 
+// TYPENODE is a tagged pointer that uses the last 2 LSB as the tag
+#define _Py_TYPENODE_t uintptr_t
+
+// TYPENODE Tags
+typedef enum _Py_TypeNodeTags {
+    // Node is unused
+    TYPE_NULL = 0,
+    // TYPE_ROOT can point to a PyTypeObject or be a NULL
+    TYPE_ROOT = 1,
+    // TYPE_REF points to a TYPE_ROOT or a TYPE_REF
+    TYPE_REF  = 2
+} _Py_TypeNodeTags;
+
+#define _Py_TYPENODE_NULL 0
+#define _Py_TYPENODE_GET_TAG(typenode) ((typenode) & (0b11))
+#define _Py_TYPENODE_CLEAR_TAG(typenode) ((typenode) & (~(uintptr_t)(0b11)))
+
+#define _Py_TYPENODE_MAKE_NULL() _Py_TYPENODE_NULL
+#define _Py_TYPENODE_MAKE_ROOT(ptr) (_Py_TYPENODE_CLEAR_TAG(ptr) | TYPE_ROOT)
+#define _Py_TYPENODE_MAKE_REF(ptr) (_Py_TYPENODE_CLEAR_TAG(ptr) | TYPE_REF)
+
 // Tier 2 types meta interpreter
 typedef struct _PyTier2TypeContext {
     // points into type_stack, points to one element after the stack
-    PyTypeObject** type_stack_ptr;
+    _Py_TYPENODE_t *type_stack_ptr;
     int type_locals_len;
     int type_stack_len;
-    PyTypeObject** type_stack;
-    PyTypeObject** type_locals;
+    _Py_TYPENODE_t *type_stack;
+    _Py_TYPENODE_t *type_locals;
 } _PyTier2TypeContext;
 
 // Tier 2 interpreter information

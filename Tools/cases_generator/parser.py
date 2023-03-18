@@ -127,22 +127,9 @@ class CacheEffect(Node):
 
 
 @dataclass
-class LocalEffectVarLiteral(Node):
-    name: str
-
-
-@dataclass
-class LocalEffectVarStack(Node):
-    name: str
-
-
-LocalEffectVar: TypeAlias = LocalEffectVarLiteral | LocalEffectVarStack
-
-
-@dataclass
 class LocalEffect(Node):
     index: str
-    value: LocalEffectVar
+    value: TypeSrc
 
 
 @dataclass
@@ -404,12 +391,12 @@ class Parser(PLexer):
                     value = self.require(lx.IDENTIFIER).text.strip()
                     return LocalEffect(
                         index, 
-                        LocalEffectVarStack(value)
+                        TypeSrcStackInput(value)
                     )
                 value = self.require(lx.IDENTIFIER).text.strip()
                 return LocalEffect(
                     index,
-                    LocalEffectVarLiteral(value)
+                    TypeSrcLiteral(value)
                 )
 
     @contextual
