@@ -68,7 +68,6 @@ exec_tests = [
     "class C(object): pass",
     # Return
     "def f():return 1",
-    # Return without argument
     "def f():return",
     # Delete
     "del v",
