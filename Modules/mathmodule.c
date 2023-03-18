@@ -2447,9 +2447,8 @@ Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
 To minimize loss of information during the accumulation of fractional
 values, each term has a separate accumulator.  This also breaks up
 sequential dependencies in the inner loop so the CPU can maximize
-floating point throughput. [4]  On a 2.6 GHz Haswell, adding one
-dimension has an incremental cost of only 5ns -- for example when
-moving from hypot(x,y) to hypot(x,y,z).
+floating point throughput. [4]  On an Apple M1 Max, hypot(*vec)
+takes only 3.33 µsec when len(vec) == 1000.
 
 The square root differential correction is needed because a
 correctly rounded square root of a correctly rounded sum of
@@ -2473,7 +2472,7 @@ step is exact.  The Neumaier summation computes as if in doubled
 precision (106 bits) and has the advantage that its input squares
 are non-negative so that the condition number of the sum is one.
 The square root with a differential correction is likewise computed
-as if in double precision.
+as if in doubled precision.
 
 For n <= 1000, prior to the final addition that rounds the overall
 result, the internal accuracy of "h" together with its correction of
