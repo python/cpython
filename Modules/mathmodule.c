@@ -2542,7 +2542,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     frac1 += pr.lo;
     frac2 += sm.lo;
     x = csum - 1.0 + (frac1 + frac2);
-    h +=  x / (2.0 * h);                 // diffential correction
+    h +=  x / (2.0 * h);                 // differential correction
     return h / scale;
 }
 
