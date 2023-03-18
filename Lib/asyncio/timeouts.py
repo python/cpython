@@ -25,6 +25,7 @@ class _State(enum.Enum):
 
 @final
 class Timeout:
+    """Asynchronous context manager which limits the time spent inside of it."""
 
     def __init__(self, when: Optional[float]) -> None:
         self._state = _State.CREATED
@@ -34,9 +35,21 @@ class Timeout:
         self._when = when
 
     def when(self) -> Optional[float]:
+        """Return the current deadline, or None if the current deadline is not set.
+
+        The deadline is a float, consistent with the time returned by loop.time().
+        """
         return self._when
 
     def reschedule(self, when: Optional[float]) -> None:
+        """Change the time at which the timeout will trigger.
+
+        - If `when` is `None`, any current deadline will be removed,
+            and the context manager will wait indefinitely.
+        - If `when` is a float, it is set as the new deadline.
+        - if `when` is in the past, the timeout will trigger on the
+            next iteration of the event loop.
+        """
         assert self._state is not _State.CREATED
         if self._state is not _State.ENTERED:
             raise RuntimeError(
