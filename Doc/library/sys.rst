@@ -1418,7 +1418,7 @@ always available.
 
    ``'c_exception'``
       A C function has raised an exception.  *arg* is the C function object.
-   
+
    .. note::
       The same tracing mechanism is used for :func:`setprofile` than :func:`settrace`.
       To trace calls with :func:`setprofile` inside a tracing function (e.g. in a
@@ -1483,7 +1483,7 @@ always available.
 
    If there is any error occurred in the trace function, it will be unset, just
    like ``settrace(None)`` is called.
-   
+
    .. note::
       Tracing is disabled while calling the trace function (e.g. a function set by
       :func:`settrace` or :func:`setprofile`). For recursive tracing see :func:`call_tracing`.
