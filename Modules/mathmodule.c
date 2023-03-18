@@ -2514,12 +2514,9 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     }
     frexp(max, &max_e);
     if (max_e < -1023) {
-        /* When max_e < -1023, ldexp(1.0, -max_e) would overflow.
-           So we first perform lossless scaling from subnormals back to normals,
-           then recurse back to vector_norm(), and then finally undo the scaling.
-        */
+        /* When max_e < -1023, ldexp(1.0, -max_e) would overflow. */
         for (i=0 ; i < n ; i++) {
-            vec[i] /= DBL_MIN;
+            vec[i] /= DBL_MIN;          // convert subnormals to normals
         }
         return DBL_MIN * vector_norm(n, vec, max / DBL_MIN, found_nan);
     }
@@ -2529,13 +2526,10 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     for (i=0 ; i < n ; i++) {
         x = vec[i];
         assert(Py_IS_FINITE(x) && fabs(x) <= max);
-
         x *= scale;                     // lossless scaling
         assert(fabs(x) < 1.0);
-
         pr = dl_mul(x, x);              // lossless squaring
         assert(pr.hi <= 1.0);
-
         sm = dl_fast_sum(csum, pr.hi);  // lossless addition
         csum = sm.hi;
         frac1 += pr.lo;                 // lossy addition
