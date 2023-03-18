@@ -179,9 +179,8 @@ exec_tests = [
     # PEP 448: Additional Unpacking Generalizations
     "{**{1:2}, 2:3}",
     "{*{1, 2}, 3}",
-    # Function with yield
+    # Function with yield (from)
     "def f(): yield 1",
-    # Function with yield from
     "def f(): yield from []",
     # Asynchronous comprehensions
     "async def f():\n [i async for b in c]",
