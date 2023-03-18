@@ -776,6 +776,10 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
     }
 
     if (set_sys_last_vars) {
+        if (_PySys_SetAttr(&_Py_ID(last_exc), exc) < 0) {
+            _PyErr_Clear(tstate);
+        }
+        /* Legacy version: */
         if (_PySys_SetAttr(&_Py_ID(last_type), typ) < 0) {
             _PyErr_Clear(tstate);
         }
