@@ -2835,21 +2835,30 @@ class BoundArguments:
         Dict of keyword arguments values.
     """
 
-    __slots__ = ('arguments', '_signature', '__weakref__')
+    __slots__ = ('arguments', '_signature', '_kwarg_names', '__weakref__')
 
-    def __init__(self, signature, arguments):
+    def __init__(self, signature, arguments, kwarg_names={}):
         self.arguments = arguments
         self._signature = signature
+        self._kwarg_names = kwarg_names
 
     @property
     def signature(self):
         return self._signature
 
     @property
+    def kwarg_names(self):
+        return self.kwarg_names
+
+    @property
     def args(self):
         args = []
         for param_name, param in self._signature.parameters.items():
             if param.kind in (_VAR_KEYWORD, _KEYWORD_ONLY):
+                break
+
+            if (param.kind == _POSITIONAL_OR_KEYWORD and \
+                param_name in self._kwarg_names):
                 break
 
             try:
@@ -2875,6 +2884,9 @@ class BoundArguments:
         for param_name, param in self._signature.parameters.items():
             if not kwargs_started:
                 if param.kind in (_VAR_KEYWORD, _KEYWORD_ONLY):
+                    kwargs_started = True
+                elif (param.kind == _POSITIONAL_OR_KEYWORD and
+                      param_name in self._kwarg_names):
                     kwargs_started = True
                 else:
                     if param_name not in self.arguments:
@@ -2932,7 +2944,8 @@ class BoundArguments:
         if not isinstance(other, BoundArguments):
             return NotImplemented
         return (self.signature == other.signature and
-                self.arguments == other.arguments)
+                self.arguments == other.arguments and
+                self.kwarg_names == other.kwarg_names)
 
     def __setstate__(self, state):
         self._signature = state['_signature']
@@ -3088,6 +3101,7 @@ class Signature:
         """Private method. Don't use directly."""
 
         arguments = {}
+        kwarg_names = set(kwargs.keys())
 
         parameters = iter(self.parameters.values())
         parameters_ex = ()
@@ -3217,7 +3231,7 @@ class Signature:
                     'got an unexpected keyword argument {arg!r}'.format(
                         arg=next(iter(kwargs))))
 
-        return self._bound_arguments_cls(self, arguments)
+        return self._bound_arguments_cls(self, arguments, kwarg_names)
 
     def bind(self, /, *args, **kwargs):
         """Get a BoundArguments object, that maps the passed `args`

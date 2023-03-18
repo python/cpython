@@ -4084,7 +4084,7 @@ class TestSignatureBind(unittest.TestCase):
         ba = sig.bind(1, 2, 3)
         self.assertEqual(ba.args, (1, 2, 3))
         ba = sig.bind(1, self=2, b=3)
-        self.assertEqual(ba.args, (1, 2, 3))
+        self.assertEqual(ba.args, (1,))
 
     def test_signature_bind_vararg_name(self):
         def test(a, *args):
