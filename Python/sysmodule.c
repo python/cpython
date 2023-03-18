@@ -2670,11 +2670,13 @@ stderr -- standard error object; used for error messages\n\
   By assigning other file objects (or objects that behave like files)\n\
   to these, it is possible to redirect all of the interpreter's I/O.\n\
 \n\
+last_exc - the last uncaught exception\n\
+  Only available in an interactive session after a\n\
+  traceback has been printed.\n\
 last_type -- type of last uncaught exception\n\
 last_value -- value of last uncaught exception\n\
 last_traceback -- traceback of last uncaught exception\n\
-  These three are only available in an interactive session after a\n\
-  traceback has been printed.\n\
+  These three are the (deprecated) legacy representation of last_exc.\n\
 "
 )
 /* concatenating string here */
