@@ -99,13 +99,10 @@ exec_tests = [
     "for v in v:pass",
     # While
     "while v:pass",
-    # If
-    "if v:pass",
-    # If-Elif
-    "if a:\n  pass\nelif b:\n  pass",
-    # If-Else
-    "if a:\n  pass\nelse:\n  pass",
     # If-Elif-Else
+    "if v:pass",
+    "if a:\n  pass\nelif b:\n  pass",
+    "if a:\n  pass\nelse:\n  pass",
     "if a:\n  pass\nelif b:\n  pass\nelse:\n  pass",
     # With
     "with x: pass",
