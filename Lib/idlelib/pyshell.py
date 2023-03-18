@@ -1367,11 +1367,14 @@ class PyShell(OutputWindow):
         if self.interp.rpcclt:
             return self.interp.remote_stack_viewer()
         try:
-            sys.last_traceback
+            if hasattr(sys, 'last_exc'):
+                sys.last_exc.__traceback__
+            else:
+                sys.last_traceback
         except:
             messagebox.showerror("No stack trace",
                 "There is no stack trace yet.\n"
-                "(sys.last_traceback is not defined)",
+                "(sys.last_exc and sys.last_traceback are not defined)",
                 parent=self.text)
             return
         from idlelib.stackviewer import StackBrowser
