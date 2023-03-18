@@ -1,0 +1,1 @@
+Fixed inspect.signature.bind behavior on keyword arguments
