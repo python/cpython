@@ -2324,6 +2324,7 @@ remove_importlib_frames(PyThreadState *tstate)
     int always_trim = 0;
     int in_importlib = 0;
     PyObject **prev_link, **outer_link = NULL;
+    PyObject *base_tb = NULL;
 
     /* Synopsis: if it's an ImportError, we trim all importlib chunks
        from the traceback. We always trim chunks
@@ -2339,7 +2340,7 @@ remove_importlib_frames(PyThreadState *tstate)
     }
 
     assert(PyExceptionInstance_Check(exc));
-    PyObject *base_tb = PyException_GetTraceback(exc);
+    base_tb = PyException_GetTraceback(exc);
     prev_link = &base_tb;
     PyObject *tb = base_tb;
     while (tb != NULL) {
@@ -2376,6 +2377,7 @@ remove_importlib_frames(PyThreadState *tstate)
     }
     PyException_SetTraceback(exc, base_tb);
 done:
+    Py_XDECREF(base_tb);
     _PyErr_SetRaisedException(tstate, exc);
 }
 
