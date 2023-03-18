@@ -1536,6 +1536,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
         _PyFrame_SetStackPointer(frame, stack_pointer); \
         int err = trace_function_entry(tstate, frame); \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
+        frame->stacktop = -1; \
         if (err) { \
             goto error; \
         } \
