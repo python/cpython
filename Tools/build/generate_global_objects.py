@@ -360,6 +360,7 @@ def generate_static_strings_initializer(identifiers, strings):
                 # This use of _Py_ID() is ignored by iter_global_strings()
                 # since iter_files() ignores .h files.
                 printer.write(f'string = &_Py_ID({i});')
+                printer.write(f'assert(_PyUnicode_CheckConsistency(string, 1));')
                 printer.write(f'PyUnicode_InternInPlace(&string);')
             # XXX What about "strings"?
         printer.write(END)

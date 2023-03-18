@@ -3060,21 +3060,20 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         Py_DECREF(v);
         return 0;
     }
-    /* XXX UNREF/NEWREF interface should be more symmetrical */
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(v);
 #endif
     *pv = (PyObject *)
         PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
     if (*pv == NULL) {
+#ifdef Py_REF_DEBUG
+        _Py_DecRefTotal();
+#endif
         PyObject_Free(v);
         PyErr_NoMemory();
         return -1;
     }
-    _Py_NewReference(*pv);
+    _Py_NewReferenceNoTotal(*pv);
     sv = (PyBytesObject *) *pv;
     Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
