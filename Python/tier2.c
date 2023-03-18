@@ -44,10 +44,10 @@ initialize_type_context(const PyCodeObject *co)
 
     // Initialize to unknown type.
     for (int i = 0; i < nlocals; i++) {
-        type_locals[i] = _Py_TYPENODE_NULL;
+        type_locals[i] = _Py_TYPENODE_NULLROOT;
     }
     for (int i = 0; i < nstack; i++) {
-        type_stack[i] = _Py_TYPENODE_NULL;
+        type_stack[i] = _Py_TYPENODE_NULLROOT;
     }
 
     _PyTier2TypeContext *type_context = PyMem_Malloc(sizeof(_PyTier2TypeContext));
@@ -125,16 +125,36 @@ __type_stack_shrink(_Py_TYPENODE_t **type_stackptr, int idx)
 }
 
 static _Py_TYPENODE_t*
-__type_typenode_get_rootptr(_Py_TYPENODE_t ref)
+__typenode_get_rootptr(_Py_TYPENODE_t ref)
 {
     uintptr_t tag;
     _Py_TYPENODE_t *ref_ptr;
     do {
-        ref_ptr = (_Py_TYPENODE_t *)(ref);
+        ref_ptr = (_Py_TYPENODE_t *)(_Py_TYPENODE_CLEAR_TAG(ref));
         ref = *ref_ptr;
         tag = _Py_TYPENODE_GET_TAG(ref);
     } while (tag != TYPE_ROOT);
     return ref_ptr;
+}
+
+static PyTypeObject*
+_typenode_get_type(_Py_TYPENODE_t node)
+{
+    uintptr_t tag = _Py_TYPENODE_GET_TAG(node);
+    switch (tag) {
+    case TYPE_NULL: return NULL;
+    case TYPE_ROOT: {
+        PyTypeObject *ret = (PyTypeObject *)_Py_TYPENODE_CLEAR_TAG(node);
+        return ret;
+    }
+    case TYPE_REF: {
+        _Py_TYPENODE_t *root_ref = __typenode_get_rootptr(node);
+        PyTypeObject *ret = (PyTypeObject *)_Py_TYPENODE_CLEAR_TAG(*root_ref);
+        return ret;
+    }
+    default:
+        Py_UNREACHABLE();
+    }
 }
 
 static void
@@ -167,7 +187,7 @@ __type_propagate_TYPE_SET(
         break;
     }
     case TYPE_REF: {
-        _Py_TYPENODE_t *rootref = __type_typenode_get_rootptr(*dst);
+        _Py_TYPENODE_t *rootref = __typenode_get_rootptr(*dst);
         if (!src_is_new) {
             // Traverse up to the root of dst, make root a reference to src
             *rootref = _Py_TYPENODE_MAKE_REF(
@@ -178,6 +198,8 @@ __type_propagate_TYPE_SET(
         *rootref = (_Py_TYPENODE_t)src;
         break;
     }
+    default:
+        Py_UNREACHABLE();
     }
 }
 
@@ -306,8 +328,33 @@ __type_propagate_TYPE_OVERWRITE(
         }
         break;
     }
+    default:
+        Py_UNREACHABLE();
     }
 }
+
+#if TYPEPROP_DEBUG
+static void print_typestack(const _PyTier2TypeContext *type_context)
+{
+    _Py_TYPENODE_t *type_stack = type_context->type_stack;
+    _Py_TYPENODE_t *type_locals = type_context->type_locals;
+    _Py_TYPENODE_t *type_stackptr = type_context->type_stack_ptr;
+
+    int nstack = (int)(type_stackptr - type_stack);
+    fprintf(stderr, "      Stack: [");
+    for (int i = 0; i < nstack; i++) {
+        PyTypeObject *type = _typenode_get_type(type_stack[i]);
+        fprintf(stderr, "%s, ", type == NULL ? "?" : type->tp_name);
+    }
+    fprintf(stderr, "]\n");
+    fprintf(stderr, "      Locals: [");
+    for (int i = 0; i < type_context->type_locals_len; i++) {
+        PyTypeObject *type = _typenode_get_type(type_locals[i]);
+        fprintf(stderr, "%s, ", type == NULL ? "?" : type->tp_name);
+    }
+    fprintf(stderr, "]\n");
+}
+#endif
 
 // Type propagates across a single function. 
 static void
@@ -337,7 +384,7 @@ type_propagate(
 // Stack shrinking has to NULL the nodes
 #define STACK_SHRINK(idx)           __type_stack_shrink(&type_stackptr, (idx))
 
-#ifdef TYPEPROP_DEBUG
+#if TYPEPROP_DEBUG
     fprintf(stderr, "  [-] Type stack bef: %llu\n", (uint64_t)(type_stackptr - type_stack));
 #ifdef Py_DEBUG
     fprintf(stderr, "  [-] Type propagating across: %s : %d\n", _PyOpcode_OpName[opcode], oparg);
@@ -350,12 +397,12 @@ type_propagate(
         fprintf(stderr, "Unsupported opcode in type propagator: %d\n", opcode);
         Py_UNREACHABLE();
     }
-
-#ifdef TYPEPROP_DEBUG
-    fprintf(stderr, "  [-] Type stack aft: %llu\n", (uint64_t)(type_stackptr - type_stack));
-#endif
-
     type_context->type_stack_ptr = type_stackptr;
+
+#if TYPEPROP_DEBUG
+    fprintf(stderr, "  [-] Type stack aft: %llu\n", (uint64_t)(type_stackptr - type_stack));
+    print_typestack(type_context);
+#endif
 
 #undef TARGET
 #undef TYPESTACK_PEEK

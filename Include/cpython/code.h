@@ -69,13 +69,15 @@ typedef enum _Py_TypeNodeTags {
     TYPE_REF  = 2
 } _Py_TypeNodeTags;
 
-#define _Py_TYPENODE_NULL 0
 #define _Py_TYPENODE_GET_TAG(typenode) ((typenode) & (0b11))
 #define _Py_TYPENODE_CLEAR_TAG(typenode) ((typenode) & (~(uintptr_t)(0b11)))
 
 #define _Py_TYPENODE_MAKE_NULL() _Py_TYPENODE_NULL
 #define _Py_TYPENODE_MAKE_ROOT(ptr) (_Py_TYPENODE_CLEAR_TAG(ptr) | TYPE_ROOT)
 #define _Py_TYPENODE_MAKE_REF(ptr) (_Py_TYPENODE_CLEAR_TAG(ptr) | TYPE_REF)
+
+#define _Py_TYPENODE_NULL 0
+#define _Py_TYPENODE_NULLROOT _Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL)
 
 // Tier 2 types meta interpreter
 typedef struct _PyTier2TypeContext {
