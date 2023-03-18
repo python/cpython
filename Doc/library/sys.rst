@@ -174,10 +174,10 @@ always available.
    Call ``func(*args)``, while tracing is enabled.  The tracing state is saved,
    and restored afterwards.  This is intended to be called from a debugger from
    a checkpoint, to recursively debug or profile some other code.
-   
+
    Tracing is suspended while calling a tracing function set by
-   :func:`settrace` or :func:`setprofile` to avoid infinite recursion. 
-   :func:`call_tracing` enables explicit recursion of tracing function. 
+   :func:`settrace` or :func:`setprofile` to avoid infinite recursion.
+   :func:`call_tracing` enables explicit recursion of tracing function.
 
 
 .. data:: copyright
