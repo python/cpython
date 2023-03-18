@@ -7679,6 +7679,71 @@ class ParamSpecTests(BaseTestCase):
                 with self.assertRaises(TypeError):
                     collections.abc.Callable[P, T][arg, str]
 
+    def test_type_var_subst_for_other_type_vars(self):
+        T = TypeVar('T')
+        T2 = TypeVar('T2')
+        P = ParamSpec('P')
+        P2 = ParamSpec('P2')
+        Ts = TypeVarTuple('Ts')
+
+        class Base(Generic[P]):
+            pass
+
+        A1 = Base[T]
+        self.assertEqual(A1.__parameters__, (T,))
+        self.assertEqual(A1.__args__, ((T,),))
+        self.assertEqual(A1[int], Base[int])
+
+        A2 = Base[[T]]
+        self.assertEqual(A2.__parameters__, (T,))
+        self.assertEqual(A2.__args__, ((T,),))
+        self.assertEqual(A2[int], Base[int])
+
+        A3 = Base[[int, T]]
+        self.assertEqual(A3.__parameters__, (T,))
+        self.assertEqual(A3.__args__, ((int, T),))
+        self.assertEqual(A3[str], Base[[int, str]])
+
+        A4 = Base[[T, int, T2]]
+        self.assertEqual(A4.__parameters__, (T, T2))
+        self.assertEqual(A4.__args__, ((T, int, T2),))
+        self.assertEqual(A4[str, bool], Base[[str, int, bool]])
+
+        A5 = Base[[*Ts, int]]
+        self.assertEqual(A5.__parameters__, (Ts,))
+        self.assertEqual(A5.__args__, ((*Ts, int),))
+        self.assertEqual(A5[str, bool], Base[[str, bool, int]])
+
+        A5_2 = Base[[int, *Ts]]
+        self.assertEqual(A5_2.__parameters__, (Ts,))
+        self.assertEqual(A5_2.__args__, ((int, *Ts),))
+        self.assertEqual(A5_2[str, bool], Base[[int, str, bool]])
+
+        A6 = Base[[T, *Ts]]
+        self.assertEqual(A6.__parameters__, (T, Ts))
+        self.assertEqual(A6.__args__, ((T, *Ts),))
+        self.assertEqual(A6[int, str, bool], Base[[int, str, bool]])
+
+        A7 = Base[[T, T]]
+        self.assertEqual(A7.__parameters__, (T,))
+        self.assertEqual(A7.__args__, ((T, T),))
+        self.assertEqual(A7[int], Base[[int, int]])
+
+        A8 = Base[[T, list[T]]]
+        self.assertEqual(A8.__parameters__, (T,))
+        self.assertEqual(A8.__args__, ((T, list[T]),))
+        self.assertEqual(A8[int], Base[[int, list[int]]])
+
+        A9 = Base[[Tuple[*Ts], *Ts]]
+        self.assertEqual(A9.__parameters__, (Ts,))
+        self.assertEqual(A9.__args__, ((Tuple[*Ts], *Ts),))
+        self.assertEqual(A9[int, str], Base[Tuple[int, str], int, str])
+
+        A10 = Base[P2]
+        self.assertEqual(A10.__parameters__, (P2,))
+        self.assertEqual(A10.__args__, (P2,))
+        self.assertEqual(A10[[int, str]], Base[[int, str]])
+
     def test_paramspec_in_nested_generics(self):
         # Although ParamSpec should not be found in __parameters__ of most
         # generics, they probably should be found when nested in

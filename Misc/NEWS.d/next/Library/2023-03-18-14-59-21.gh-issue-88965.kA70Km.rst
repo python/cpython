@@ -1,0 +1,2 @@
+Fix type substitution after ParamSpec substitution of the user generic with
+a list with a TypeVar.
