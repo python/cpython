@@ -1,0 +1,4 @@
+:meth:`~unittest.TestResult.addError`,
+:meth:`~unittest.TestResult.addFailure` and
+:meth:`~unittest.TestResult.addSubTest` now accept either an exception
+instance or a ``(typ, val, tb)`` tuple.

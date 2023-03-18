@@ -179,9 +179,10 @@ class TestSuite(BaseTestSuite):
                 if failed and doClassCleanups is not None:
                     doClassCleanups()
                     for exc_info in currentClass.tearDown_exceptions:
+                        exc = exc_info[1] if isinstance(exc_info, tuple) else exc_info
                         self._createClassOrModuleLevelException(
                                 result, exc_info[1], 'setUpClass', className,
-                                info=exc_info)
+                                err=exc)
             finally:
                 _call_if_exists(result, '_restoreStdout')
 
@@ -231,21 +232,22 @@ class TestSuite(BaseTestSuite):
                 _call_if_exists(result, '_restoreStdout')
 
     def _createClassOrModuleLevelException(self, result, exc, method_name,
-                                           parent, info=None):
+                                           parent, err=None):
         errorName = f'{method_name} ({parent})'
-        self._addClassOrModuleLevelException(result, exc, errorName, info)
+        self._addClassOrModuleLevelException(result, exc, errorName, err)
 
     def _addClassOrModuleLevelException(self, result, exception, errorName,
-                                        info=None):
+                                        err=None):
         error = _ErrorHolder(errorName)
         addSkip = getattr(result, 'addSkip', None)
         if addSkip is not None and isinstance(exception, case.SkipTest):
             addSkip(error, str(exception))
         else:
-            if not info:
-                result.addError(error, sys.exc_info())
+            if not err:
+                result.addError(error, sys.exc_info()[1])
             else:
-                result.addError(error, info)
+                assert not isinstance(err, tuple)
+                result.addError(error, err)
 
     def _handleModuleTearDown(self, result):
         previousModule = self._get_previous_module(result)
@@ -314,13 +316,14 @@ class TestSuite(BaseTestSuite):
             if doClassCleanups is not None:
                 doClassCleanups()
                 for exc_info in previousClass.tearDown_exceptions:
+                    exc = exc_info[1] if isinstance(exc_info, tuple) else exc_info
                     if isinstance(result, _DebugResult):
-                        raise exc_info[1]
+                        raise exc
                     className = util.strclass(previousClass)
                     self._createClassOrModuleLevelException(result, exc_info[1],
                                                             'tearDownClass',
                                                             className,
-                                                            info=exc_info)
+                                                            err=exc)
         finally:
             _call_if_exists(result, '_restoreStdout')
 

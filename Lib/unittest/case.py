@@ -62,16 +62,15 @@ class _Outcome(object):
             _addSkip(self.result, test_case, str(e))
         except _ShouldStop:
             pass
-        except:
-            exc_info = sys.exc_info()
+        except BaseException as e:
             if self.expecting_failure:
-                self.expectedFailure = exc_info
+                self.expectedFailure = sys.exc_info()
             else:
                 self.success = False
                 if subTest:
-                    self.result.addSubTest(test_case.test_case, test_case, exc_info)
+                    self.result.addSubTest(test_case.test_case, test_case, e)
                 else:
-                    _addError(self.result, test_case, exc_info)
+                    _addError(self.result, test_case, e)
             # explicitly break a reference cycle:
             # exc_info -> frame -> exc_info
             exc_info = None
@@ -91,12 +90,13 @@ def _addSkip(result, test_case, reason):
                       RuntimeWarning, 2)
         result.addSuccess(test_case)
 
-def _addError(result, test, exc_info):
-    if result is not None and exc_info is not None:
-        if issubclass(exc_info[0], test.failureException):
-            result.addFailure(test, exc_info)
+def _addError(result, test, exc):
+    assert not isinstance(exc, tuple)
+    if result is not None and exc is not None:
+        if isinstance(exc, test.failureException):
+            result.addFailure(test, exc)
         else:
-            result.addError(test, exc_info)
+            result.addError(test, exc)
 
 def _id(obj):
     return obj
@@ -567,8 +567,8 @@ class TestCase(object):
             # otherwise the legacy result can choke.
             try:
                 raise _UnexpectedSuccess from None
-            except _UnexpectedSuccess:
-                result.addFailure(self, sys.exc_info())
+            except _UnexpectedSuccess as e:
+                result.addFailure(self, e)
         else:
             addUnexpectedSuccess(self)
 

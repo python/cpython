@@ -146,14 +146,13 @@ class Test_TestResult(unittest.TestCase):
     # ...
     # "errors - A list containing 2-tuples of TestCase instances and
     # formatted tracebacks. Each tuple represents a test which raised an
-    # unexpected exception. Contains formatted
-    # tracebacks instead of sys.exc_info() results."
+    # unexpected exception. Contains formatted tracebacks rather than
+    # exception objects.
     # ...
     # "failures - A list containing 2-tuples of TestCase instances and
     # formatted tracebacks. Each tuple represents a test where a failure was
     # explicitly signalled using the TestCase.fail*() or TestCase.assert*()
-    # methods. Contains formatted tracebacks instead
-    # of sys.exc_info() results."
+    # methods. Contains formatted tracebacks rather than exception objects.
     def test_addSuccess(self):
         class Foo(unittest.TestCase):
             def test_1(self):
@@ -175,8 +174,8 @@ class Test_TestResult(unittest.TestCase):
 
     # "addFailure(test, err)"
     # ...
-    # "Called when the test case test signals a failure. err is a tuple of
-    # the form returned by sys.exc_info(): (type, value, traceback)"
+    # "Called when the test case test signals a failure. err is an exception
+    #  instance or a (typ, exc, tb) tuple.
     # ...
     # "wasSuccessful() - Returns True if all tests run so far have passed,
     # otherwise returns False"
@@ -185,14 +184,13 @@ class Test_TestResult(unittest.TestCase):
     # ...
     # "errors - A list containing 2-tuples of TestCase instances and
     # formatted tracebacks. Each tuple represents a test which raised an
-    # unexpected exception. Contains formatted
-    # tracebacks instead of sys.exc_info() results."
+    # unexpected exception. Contains formatted tracebacks rather than
+    # exception objects.
     # ...
     # "failures - A list containing 2-tuples of TestCase instances and
     # formatted tracebacks. Each tuple represents a test where a failure was
     # explicitly signalled using the TestCase.fail*() or TestCase.assert*()
-    # methods. Contains formatted tracebacks instead
-    # of sys.exc_info() results."
+    # methods. Contains formatted tracebacks rather than exception objects.
     def test_addFailure(self):
         class Foo(unittest.TestCase):
             def test_1(self):
@@ -204,21 +202,22 @@ class Test_TestResult(unittest.TestCase):
         except:
             exc_info_tuple = sys.exc_info()
 
-        result = unittest.TestResult()
+        for exc in [exc_info_tuple, exc_info_tuple[1]]:
+            result = unittest.TestResult()
 
-        result.startTest(test)
-        result.addFailure(test, exc_info_tuple)
-        result.stopTest(test)
+            result.startTest(test)
+            result.addFailure(test, exc)
+            result.stopTest(test)
 
-        self.assertFalse(result.wasSuccessful())
-        self.assertEqual(len(result.errors), 0)
-        self.assertEqual(len(result.failures), 1)
-        self.assertEqual(result.testsRun, 1)
-        self.assertEqual(result.shouldStop, False)
+            self.assertFalse(result.wasSuccessful())
+            self.assertEqual(len(result.errors), 0)
+            self.assertEqual(len(result.failures), 1)
+            self.assertEqual(result.testsRun, 1)
+            self.assertEqual(result.shouldStop, False)
 
-        test_case, formatted_exc = result.failures[0]
-        self.assertIs(test_case, test)
-        self.assertIsInstance(formatted_exc, str)
+            test_case, formatted_exc = result.failures[0]
+            self.assertIs(test_case, test)
+            self.assertIsInstance(formatted_exc, str)
 
     def test_addFailure_filter_traceback_frames(self):
         class Foo(unittest.TestCase):
@@ -232,19 +231,23 @@ class Test_TestResult(unittest.TestCase):
             except:
                 return sys.exc_info()
 
-        exc_info_tuple = get_exc_info()
+        for use_tuple in [True, False]:
+            exc_info_tuple = get_exc_info()
+            exc = exc_info_tuple if use_tuple else exc_info_tuple[1]
+            if isinstance(exc, tuple):
+                full_exc = traceback.format_exception(*exc)
+            else:
+                full_exc = traceback.format_exception(exc)
 
-        full_exc = traceback.format_exception(*exc_info_tuple)
+            result = unittest.TestResult()
+            result.startTest(test)
+            result.addFailure(test, exc)
+            result.stopTest(test)
 
-        result = unittest.TestResult()
-        result.startTest(test)
-        result.addFailure(test, exc_info_tuple)
-        result.stopTest(test)
-
-        formatted_exc = result.failures[0][1]
-        dropped = [l for l in full_exc if l not in formatted_exc]
-        self.assertEqual(len(dropped), 1)
-        self.assertIn("raise self.failureException(msg)", dropped[0])
+            formatted_exc = result.failures[0][1]
+            dropped = [l for l in full_exc if l not in formatted_exc]
+            self.assertEqual(len(dropped), 1)
+            self.assertIn("raise self.failureException(msg)", dropped[0])
 
     def test_addFailure_filter_traceback_frames_context(self):
         class Foo(unittest.TestCase):
@@ -261,19 +264,23 @@ class Test_TestResult(unittest.TestCase):
             except:
                 return sys.exc_info()
 
-        exc_info_tuple = get_exc_info()
+        for use_tuple in [True, False]:
+            exc_info_tuple = get_exc_info()
+            exc = exc_info_tuple if use_tuple else exc_info_tuple[1]
+            if isinstance(exc, tuple):
+                full_exc = traceback.format_exception(*exc)
+            else:
+                full_exc = traceback.format_exception(exc)
 
-        full_exc = traceback.format_exception(*exc_info_tuple)
+            result = unittest.TestResult()
+            result.startTest(test)
+            result.addFailure(test, exc)
+            result.stopTest(test)
 
-        result = unittest.TestResult()
-        result.startTest(test)
-        result.addFailure(test, exc_info_tuple)
-        result.stopTest(test)
-
-        formatted_exc = result.failures[0][1]
-        dropped = [l for l in full_exc if l not in formatted_exc]
-        self.assertEqual(len(dropped), 1)
-        self.assertIn("raise self.failureException(msg)", dropped[0])
+            formatted_exc = result.failures[0][1]
+            dropped = [l for l in full_exc if l not in formatted_exc]
+            self.assertEqual(len(dropped), 1)
+            self.assertIn("raise self.failureException(msg)", dropped[0])
 
     def test_addFailure_filter_traceback_frames_chained_exception_self_loop(self):
         class Foo(unittest.TestCase):
@@ -289,16 +296,17 @@ class Test_TestResult(unittest.TestCase):
             except:
                 return sys.exc_info()
 
-        exc_info_tuple = get_exc_info()
+        for use_tuple in [True, False]:
+            exc_info_tuple = get_exc_info()
+            exc = exc_info_tuple if use_tuple else exc_info_tuple[1]
+            test = Foo('test_1')
+            result = unittest.TestResult()
+            result.startTest(test)
+            result.addFailure(test, exc)
+            result.stopTest(test)
 
-        test = Foo('test_1')
-        result = unittest.TestResult()
-        result.startTest(test)
-        result.addFailure(test, exc_info_tuple)
-        result.stopTest(test)
-
-        formatted_exc = result.failures[0][1]
-        self.assertEqual(formatted_exc.count("Exception: Loop\n"), 1)
+            formatted_exc = result.failures[0][1]
+            self.assertEqual(formatted_exc.count("Exception: Loop\n"), 1)
 
     def test_addFailure_filter_traceback_frames_chained_exception_cycle(self):
         class Foo(unittest.TestCase):
@@ -318,24 +326,24 @@ class Test_TestResult(unittest.TestCase):
             except:
                 return sys.exc_info()
 
-        exc_info_tuple = get_exc_info()
+        for use_tuple in [True, False]:
+            exc_info_tuple = get_exc_info()
+            exc = exc_info_tuple if use_tuple else exc_info_tuple[1]
+            test = Foo('test_1')
+            result = unittest.TestResult()
+            result.startTest(test)
+            result.addFailure(test, exc)
+            result.stopTest(test)
 
-        test = Foo('test_1')
-        result = unittest.TestResult()
-        result.startTest(test)
-        result.addFailure(test, exc_info_tuple)
-        result.stopTest(test)
-
-        formatted_exc = result.failures[0][1]
-        self.assertEqual(formatted_exc.count("Exception: A\n"), 1)
-        self.assertEqual(formatted_exc.count("Exception: B\n"), 1)
-        self.assertEqual(formatted_exc.count("Exception: C\n"), 1)
+            formatted_exc = result.failures[0][1]
+            self.assertEqual(formatted_exc.count("Exception: A\n"), 1)
+            self.assertEqual(formatted_exc.count("Exception: B\n"), 1)
+            self.assertEqual(formatted_exc.count("Exception: C\n"), 1)
 
     # "addError(test, err)"
     # ...
-    # "Called when the test case test raises an unexpected exception err
-    # is a tuple of the form returned by sys.exc_info():
-    # (type, value, traceback)"
+    # "Called when the test case test raises an unexpected exception. err
+    # is an exception instance or a (typ, exc, tb) tuple.
     # ...
     # "wasSuccessful() - Returns True if all tests run so far have passed,
     # otherwise returns False"
@@ -344,14 +352,13 @@ class Test_TestResult(unittest.TestCase):
     # ...
     # "errors - A list containing 2-tuples of TestCase instances and
     # formatted tracebacks. Each tuple represents a test which raised an
-    # unexpected exception. Contains formatted
-    # tracebacks instead of sys.exc_info() results."
+    # unexpected exception. Contains formatted tracebacks rather than
+    # exception objects.
     # ...
     # "failures - A list containing 2-tuples of TestCase instances and
     # formatted tracebacks. Each tuple represents a test where a failure was
     # explicitly signalled using the TestCase.fail*() or TestCase.assert*()
-    # methods. Contains formatted tracebacks instead
-    # of sys.exc_info() results."
+    # methods. Contains formatted tracebacks rather than exception objects.
     def test_addError(self):
         class Foo(unittest.TestCase):
             def test_1(self):
@@ -363,21 +370,22 @@ class Test_TestResult(unittest.TestCase):
         except:
             exc_info_tuple = sys.exc_info()
 
-        result = unittest.TestResult()
+        for exc in [exc_info_tuple, exc_info_tuple[1]]:
+            result = unittest.TestResult()
 
-        result.startTest(test)
-        result.addError(test, exc_info_tuple)
-        result.stopTest(test)
+            result.startTest(test)
+            result.addError(test, exc)
+            result.stopTest(test)
 
-        self.assertFalse(result.wasSuccessful())
-        self.assertEqual(len(result.errors), 1)
-        self.assertEqual(len(result.failures), 0)
-        self.assertEqual(result.testsRun, 1)
-        self.assertEqual(result.shouldStop, False)
+            self.assertFalse(result.wasSuccessful())
+            self.assertEqual(len(result.errors), 1)
+            self.assertEqual(len(result.failures), 0)
+            self.assertEqual(result.testsRun, 1)
+            self.assertEqual(result.shouldStop, False)
 
-        test_case, formatted_exc = result.errors[0]
-        self.assertIs(test_case, test)
-        self.assertIsInstance(formatted_exc, str)
+            test_case, formatted_exc = result.errors[0]
+            self.assertIs(test_case, test)
+            self.assertIsInstance(formatted_exc, str)
 
     def test_addError_locals(self):
         class Foo(unittest.TestCase):

@@ -109,30 +109,32 @@ class TestResult(object):
 
     @failfast
     def addError(self, test, err):
-        """Called when an error has occurred. 'err' is a tuple of values as
-        returned by sys.exc_info().
+        """Called when an error has occurred. 'err' is an exception
+        instance or a (typ, exc, tb) tuple.
         """
         self.errors.append((test, self._exc_info_to_string(err, test)))
         self._mirrorOutput = True
 
     @failfast
     def addFailure(self, test, err):
-        """Called when an error has occurred. 'err' is a tuple of values as
-        returned by sys.exc_info()."""
+        """Called when an error has occurred. 'err' is and exception
+        instnace or a (typ, exc, tb) tuple.
+        """
         self.failures.append((test, self._exc_info_to_string(err, test)))
         self._mirrorOutput = True
 
     def addSubTest(self, test, subtest, err):
         """Called at the end of a subtest.
-        'err' is None if the subtest ended successfully, otherwise it's a
-        tuple of values as returned by sys.exc_info().
+        'err' is None if the subtest ended successfully, otherwise it's an
+        exception instance or a (typ, exc, tb) tuple.
         """
         # By default, we don't do anything with successful subtests, but
         # more sophisticated test results might want to record them.
         if err is not None:
             if getattr(self, 'failfast', False):
                 self.stop()
-            if issubclass(err[0], test.failureException):
+            errtype = err[0] if isinstance(err, tuple) else type(err)
+            if issubclass(errtype, test.failureException):
                 errors = self.failures
             else:
                 errors = self.errors
@@ -171,7 +173,13 @@ class TestResult(object):
         self.shouldStop = True
 
     def _exc_info_to_string(self, err, test):
-        """Converts a sys.exc_info()-style tuple of values into a string."""
+        """Converts an exception instance or a (typ, exc, tb) tuple
+        into a string.
+        """
+        if isinstance(err, BaseException):
+            err = type(err), err, err.__traceback__
+        elif err is None:
+            err = None, None, None
         exctype, value, tb = err
         tb = self._clean_tracebacks(exctype, value, tb, test)
         tb_e = traceback.TracebackException(

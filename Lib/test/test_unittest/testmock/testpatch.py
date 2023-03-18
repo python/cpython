@@ -1051,9 +1051,10 @@ class PatchTest(unittest.TestCase):
         except:
             err = sys.exc_info()
 
-        result = unittest.TextTestResult(None, None, 0)
-        traceback = result._exc_info_to_string(err, self)
-        self.assertIn('raise AssertionError', traceback)
+        for err_ in [err, err[1]]:
+            result = unittest.TextTestResult(None, None, 0)
+            traceback = result._exc_info_to_string(err_, self)
+            self.assertIn('raise AssertionError', traceback)
 
 
     def test_new_callable_patch(self):

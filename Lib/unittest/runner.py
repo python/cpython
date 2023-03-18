@@ -73,13 +73,14 @@ class TextTestResult(result.TestResult):
 
     def addSubTest(self, test, subtest, err):
         if err is not None:
+            err = err[1] if isinstance(err, tuple) else err
             if self.showAll:
-                if issubclass(err[0], subtest.failureException):
+                if isinstance(err, subtest.failureException):
                     self._write_status(subtest, "FAIL")
                 else:
                     self._write_status(subtest, "ERROR")
             elif self.dots:
-                if issubclass(err[0], subtest.failureException):
+                if isinstance(err, subtest.failureException):
                     self.stream.write('F')
                 else:
                     self.stream.write('E')

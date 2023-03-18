@@ -385,6 +385,15 @@ typing
   same name on a base class, as per :pep:`698`. (Contributed by Steven Troxler in
   :gh:`101564`.)
 
+unittest
+--------
+
+:meth:`~unittest.TestResult.addError`,
+:meth:`~unittest.TestResult.addFailure` and
+:meth:`~unittest.TestResult.addSubTest` now accept either an exception
+instance or a ``(typ, val, tb)`` tuple. (Contributed by Irit Katriel in
+:gh:`102812`.)
+
 sys
 ---
 

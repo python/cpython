@@ -2091,24 +2091,29 @@ Loading and running tests
 
    .. method:: addError(test, err)
 
-      Called when the test case *test* raises an unexpected exception. *err* is a
-      tuple of the form returned by :func:`sys.exc_info`: ``(type, value,
-      traceback)``.
+      Called when the test case *test* raises an unexpected exception. *err* is
+      an exception instance or a tuple of the form returned by
+      :func:`sys.exc_info`: ``(type, value, traceback)``.
 
       The default implementation appends a tuple ``(test, formatted_err)`` to
       the instance's :attr:`errors` attribute, where *formatted_err* is a
       formatted traceback derived from *err*.
 
+      .. versionchanged:: 3.12
+         ``err`` can be an exception instance.
 
    .. method:: addFailure(test, err)
 
-      Called when the test case *test* signals a failure. *err* is a tuple of
-      the form returned by :func:`sys.exc_info`: ``(type, value, traceback)``.
+      Called when the test case *test* signals a failure. *err* is an exception
+      instance or a tuple of the form returned by :func:`sys.exc_info`:
+      ``(type, value, traceback)``.
 
       The default implementation appends a tuple ``(test, formatted_err)`` to
       the instance's :attr:`failures` attribute, where *formatted_err* is a
       formatted traceback derived from *err*.
 
+      .. versionchanged:: 3.12
+         ``err`` can be an exception instance.
 
    .. method:: addSuccess(test)
 
@@ -2152,14 +2157,17 @@ Loading and running tests
       :class:`TestCase` instance describing the subtest.
 
       If *outcome* is :const:`None`, the subtest succeeded.  Otherwise,
-      it failed with an exception where *outcome* is a tuple of the form
-      returned by :func:`sys.exc_info`: ``(type, value, traceback)``.
+      it failed with an exception where *outcome* is an exception instance
+      or a tuple of the form returned by :func:`sys.exc_info`:
+      ``(type, value, traceback)``.
 
       The default implementation does nothing when the outcome is a
       success, and records subtest failures as normal failures.
 
       .. versionadded:: 3.4
 
+      .. versionchanged:: 3.12
+         ``outcome`` can be an exception instance.
 
 .. class:: TextTestResult(stream, descriptions, verbosity)
 

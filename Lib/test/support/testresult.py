@@ -80,7 +80,13 @@ class RegressionTestResult(unittest.TextTestResult):
                 e2.text = str(v)
 
     @classmethod
-    def __makeErrorDict(cls, err_type, err_value, err_tb):
+    def __makeErrorDict(cls, err):
+        if not isinstance(err, tuple):
+            if err is not None:
+                err = type(err), err, err.__traceback__
+            else:
+                err =  None, None, None
+        err_type, err_value, err_tb = err
         if isinstance(err_type, type):
             if err_type.__module__ == 'builtins':
                 typename = err_type.__name__
@@ -99,15 +105,15 @@ class RegressionTestResult(unittest.TextTestResult):
         }
 
     def addError(self, test, err):
-        self._add_result(test, True, error=self.__makeErrorDict(*err))
+        self._add_result(test, True, error=self.__makeErrorDict(err))
         super().addError(test, err)
 
     def addExpectedFailure(self, test, err):
-        self._add_result(test, True, output=self.__makeErrorDict(*err))
+        self._add_result(test, True, output=self.__makeErrorDict(err))
         super().addExpectedFailure(test, err)
 
     def addFailure(self, test, err):
-        self._add_result(test, True, failure=self.__makeErrorDict(*err))
+        self._add_result(test, True, failure=self.__makeErrorDict(err))
         super().addFailure(test, err)
 
     def addSkip(self, test, reason):
