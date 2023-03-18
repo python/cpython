@@ -35,9 +35,9 @@ class Timeout:
         self._when = when
 
     def when(self) -> Optional[float]:
-        """Return the current deadline, or None if the current deadline is not set.
+        """Return the current deadline, or `None` if the current deadline is not set.
 
-        The deadline is a float, consistent with the time returned by loop.time().
+        The deadline is a float, consistent with the time returned by `loop.time()`.
         """
         return self._when
 
