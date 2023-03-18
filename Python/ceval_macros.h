@@ -314,6 +314,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         _PyFrame_SetStackPointer(frame, stack_pointer); \
         int err = trace_function_entry(tstate, frame); \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
+        frame->stacktop = -1; \
         if (err) { \
             goto error; \
         } \
