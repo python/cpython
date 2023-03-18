@@ -112,6 +112,10 @@ PyAPI_FUNC(PyObject *) _PyErr_FormatFromCause(
 
 /* In exceptions.c */
 
+PyAPI_FUNC(int) _PyException_AddNote(
+     PyObject *exc,
+     PyObject *note);
+
 /* Helper that attempts to replace the current exception with one of the
  * same type but with a prefix added to the exception text. The resulting
  * exception description looks like:

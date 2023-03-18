@@ -1921,14 +1921,29 @@ class BaseCallableTests:
         self.assertEqual(weakref.ref(alias)(), alias)
 
     def test_pickle(self):
+        global T_pickle, P_pickle, TS_pickle  # needed for pickling
         Callable = self.Callable
-        alias = Callable[[int, str], float]
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            s = pickle.dumps(alias, proto)
-            loaded = pickle.loads(s)
-            self.assertEqual(alias.__origin__, loaded.__origin__)
-            self.assertEqual(alias.__args__, loaded.__args__)
-            self.assertEqual(alias.__parameters__, loaded.__parameters__)
+        T_pickle = TypeVar('T_pickle')
+        P_pickle = ParamSpec('P_pickle')
+        TS_pickle = TypeVarTuple('TS_pickle')
+
+        samples = [
+            Callable[[int, str], float],
+            Callable[P_pickle, int],
+            Callable[P_pickle, T_pickle],
+            Callable[Concatenate[int, P_pickle], int],
+            Callable[Concatenate[*TS_pickle, P_pickle], int],
+        ]
+        for alias in samples:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(alias=alias, proto=proto):
+                    s = pickle.dumps(alias, proto)
+                    loaded = pickle.loads(s)
+                    self.assertEqual(alias.__origin__, loaded.__origin__)
+                    self.assertEqual(alias.__args__, loaded.__args__)
+                    self.assertEqual(alias.__parameters__, loaded.__parameters__)
+
+        del T_pickle, P_pickle, TS_pickle  # cleaning up global state
 
     def test_var_substitution(self):
         Callable = self.Callable
@@ -1953,6 +1968,16 @@ class BaseCallableTests:
         C5 = Callable[[typing.List[T], tuple[KT, T], VT], int]
         self.assertEqual(C5[int, str, float],
                          Callable[[typing.List[int], tuple[str, int], float], int])
+
+    def test_type_subst_error(self):
+        Callable = self.Callable
+        P = ParamSpec('P')
+        T = TypeVar('T')
+
+        pat = "Expected a list of types, an ellipsis, ParamSpec, or Concatenate."
+
+        with self.assertRaisesRegex(TypeError, pat):
+            Callable[P, T][0, int]
 
     def test_type_erasure(self):
         Callable = self.Callable
@@ -3808,6 +3833,51 @@ class GenericTests(BaseTestCase):
         self.assertEqual(Y.__module__, __name__)
         self.assertEqual(Y.__qualname__,
                          'GenericTests.test_repr_2.<locals>.Y')
+
+    def test_repr_3(self):
+        T = TypeVar('T')
+        T1 = TypeVar('T1')
+        P = ParamSpec('P')
+        P2 = ParamSpec('P2')
+        Ts = TypeVarTuple('Ts')
+
+        class MyCallable(Generic[P, T]):
+            pass
+
+        class DoubleSpec(Generic[P, P2, T]):
+            pass
+
+        class TsP(Generic[*Ts, P]):
+            pass
+
+        object_to_expected_repr = {
+            MyCallable[P, T]:                         "MyCallable[~P, ~T]",
+            MyCallable[Concatenate[T1, P], T]:        "MyCallable[typing.Concatenate[~T1, ~P], ~T]",
+            MyCallable[[], bool]:                     "MyCallable[[], bool]",
+            MyCallable[[int], bool]:                  "MyCallable[[int], bool]",
+            MyCallable[[int, str], bool]:             "MyCallable[[int, str], bool]",
+            MyCallable[[int, list[int]], bool]:       "MyCallable[[int, list[int]], bool]",
+            MyCallable[Concatenate[*Ts, P], T]:       "MyCallable[typing.Concatenate[*Ts, ~P], ~T]",
+
+            DoubleSpec[P2, P, T]:                     "DoubleSpec[~P2, ~P, ~T]",
+            DoubleSpec[[int], [str], bool]:           "DoubleSpec[[int], [str], bool]",
+            DoubleSpec[[int, int], [str, str], bool]: "DoubleSpec[[int, int], [str, str], bool]",
+
+            TsP[*Ts, P]:                              "TsP[*Ts, ~P]",
+            TsP[int, str, list[int], []]:             "TsP[int, str, list[int], []]",
+            TsP[int, [str, list[int]]]:               "TsP[int, [str, list[int]]]",
+
+            # These lines are just too long to fit:
+            MyCallable[Concatenate[*Ts, P], int][int, str, [bool, float]]:
+                                                      "MyCallable[[int, str, bool, float], int]",
+        }
+
+        for obj, expected_repr in object_to_expected_repr.items():
+            with self.subTest(obj=obj, expected_repr=expected_repr):
+                self.assertRegex(
+                    repr(obj),
+                    fr"^{re.escape(MyCallable.__module__)}.*\.{re.escape(expected_repr)}$",
+                )
 
     def test_eq_1(self):
         self.assertEqual(Generic, Generic)
