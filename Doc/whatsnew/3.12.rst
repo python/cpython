@@ -526,7 +526,7 @@ Pending Removal in Python 3.14
 * Accessing ``co_lnotab`` was deprecated in :pep:`626` since 3.10
   and was planned to be removed in 3.12
   but it only got a proper :exc:`DeprecationWarning` in 3.12.
-  Remove it in 3.14.
+  May be removed in 3.14.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
 
 Pending Removal in Future Versions
