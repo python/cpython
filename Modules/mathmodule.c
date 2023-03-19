@@ -2447,9 +2447,8 @@ Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
 To minimize loss of information during the accumulation of fractional
 values, each term has a separate accumulator.  This also breaks up
 sequential dependencies in the inner loop so the CPU can maximize
-floating point throughput. [4]  On a 2.6 GHz Haswell, adding one
-dimension has an incremental cost of only 5ns -- for example when
-moving from hypot(x,y) to hypot(x,y,z).
+floating point throughput. [4]  On an Apple M1 Max, hypot(*vec)
+takes only 3.33 µsec when len(vec) == 1000.
 
 The square root differential correction is needed because a
 correctly rounded square root of a correctly rounded sum of
@@ -2473,7 +2472,7 @@ step is exact.  The Neumaier summation computes as if in doubled
 precision (106 bits) and has the advantage that its input squares
 are non-negative so that the condition number of the sum is one.
 The square root with a differential correction is likewise computed
-as if in double precision.
+as if in doubled precision.
 
 For n <= 1000, prior to the final addition that rounds the overall
 result, the internal accuracy of "h" together with its correction of
@@ -2498,7 +2497,7 @@ References:
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    double x, h, scale, oldcsum, csum = 1.0, frac1 = 0.0, frac2 = 0.0;
+    double x, h, scale, csum = 1.0, frac1 = 0.0, frac2 = 0.0;
     DoubleLength pr, sm;
     int max_e;
     Py_ssize_t i;
@@ -2513,49 +2512,37 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         return max;
     }
     frexp(max, &max_e);
-    if (max_e >= -1023) {
-        scale = ldexp(1.0, -max_e);
-        assert(max * scale >= 0.5);
-        assert(max * scale < 1.0);
+    if (max_e < -1023) {
+        /* When max_e < -1023, ldexp(1.0, -max_e) would overflow. */
         for (i=0 ; i < n ; i++) {
-            x = vec[i];
-            assert(Py_IS_FINITE(x) && fabs(x) <= max);
-
-            x *= scale;
-            assert(fabs(x) < 1.0);
-
-            pr = dl_mul(x, x);
-            assert(pr.hi <= 1.0);
-
-            sm = dl_fast_sum(csum, pr.hi);
-            csum = sm.hi;
-            frac1 += pr.lo;
-            frac2 += sm.lo;
+            vec[i] /= DBL_MIN;          // convert subnormals to normals
         }
-        h = sqrt(csum - 1.0 + (frac1 + frac2));
-        pr = dl_mul(-h, h);
-        sm = dl_fast_sum(csum, pr.hi);
-        csum = sm.hi;
-        frac1 += pr.lo;
-        frac2 += sm.lo;
-        x = csum - 1.0 + (frac1 + frac2);
-        return (h + x / (2.0 * h)) / scale;
+        return DBL_MIN * vector_norm(n, vec, max / DBL_MIN, found_nan);
     }
-    /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
-       So instead of multiplying by a scale, we just divide by *max*.
-    */
+    scale = ldexp(1.0, -max_e);
+    assert(max * scale >= 0.5);
+    assert(max * scale < 1.0);
     for (i=0 ; i < n ; i++) {
         x = vec[i];
         assert(Py_IS_FINITE(x) && fabs(x) <= max);
-        x /= max;
-        x = x*x;
-        assert(x <= 1.0);
-        assert(fabs(csum) >= fabs(x));
-        oldcsum = csum;
-        csum += x;
-        frac1 += (oldcsum - csum) + x;
+        x *= scale;                     // lossless scaling
+        assert(fabs(x) < 1.0);
+        pr = dl_mul(x, x);              // lossless squaring
+        assert(pr.hi <= 1.0);
+        sm = dl_fast_sum(csum, pr.hi);  // lossless addition
+        csum = sm.hi;
+        frac1 += pr.lo;                 // lossy addition
+        frac2 += sm.lo;                 // lossy addition
     }
-    return max * sqrt(csum - 1.0 + frac1);
+    h = sqrt(csum - 1.0 + (frac1 + frac2));
+    pr = dl_mul(-h, h);
+    sm = dl_fast_sum(csum, pr.hi);
+    csum = sm.hi;
+    frac1 += pr.lo;
+    frac2 += sm.lo;
+    x = csum - 1.0 + (frac1 + frac2);
+    h +=  x / (2.0 * h);                 // differential correction
+    return h / scale;
 }
 
 #define NUM_STACK_ELEMS 16

@@ -1027,6 +1027,10 @@ class DisTests(DisTestBase):
 
     def test_dis_none(self):
         try:
+            del sys.last_exc
+        except AttributeError:
+            pass
+        try:
             del sys.last_traceback
         except AttributeError:
             pass
@@ -1043,7 +1047,7 @@ class DisTests(DisTestBase):
             1/0
         except Exception as e:
             tb = e.__traceback__
-            sys.last_traceback = tb
+            sys.last_exc = e
 
         tb_dis = self.get_disassemble_as_string(tb.tb_frame.f_code, tb.tb_lasti)
         self.do_disassembly_test(None, tb_dis, True)
@@ -1900,6 +1904,10 @@ class TestFinderMethods(unittest.TestCase):
 
 class TestDisTraceback(DisTestBase):
     def setUp(self) -> None:
+        try:  # We need to clean up existing tracebacks
+            del sys.last_exc
+        except AttributeError:
+            pass
         try:  # We need to clean up existing tracebacks
             del sys.last_traceback
         except AttributeError:

@@ -1889,8 +1889,8 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
                 os.write(w, b'LOOP:' + str(id(loop)).encode())
             except RuntimeError:
                 os.write(w, b'NO LOOP')
-            except:
-                os.write(w, b'ERROR:' + ascii(sys.exc_info()).encode())
+            except BaseException as e:
+                os.write(w, b'ERROR:' + ascii(e).encode())
             finally:
                 os._exit(0)
         else:

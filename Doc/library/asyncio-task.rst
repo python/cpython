@@ -804,6 +804,10 @@ Waiting Primitives
    .. versionchanged:: 3.11
       Passing coroutine objects to ``wait()`` directly is forbidden.
 
+   .. versionchanged:: 3.12
+      Added support for generators yielding tasks.
+
+
 .. function:: as_completed(aws, *, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
