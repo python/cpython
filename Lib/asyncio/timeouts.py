@@ -27,12 +27,8 @@ class _State(enum.Enum):
 class Timeout:
     """Asynchronous context manager for cancelling overdue coroutines.
 
-    Example use:
-
-        loop = asyncio.asyncio.get_running_loop()
-        async with asyncio.Timeout(loop.time() + 1):  # Run for up to a second
-            await asyncio.sleep(2)                    # `TimeoutError` occurs.
-
+    Note: this class is not intended to be directly used, please use
+    the `timeout` and `timeout_at` functions below instead.
     """
 
     def __init__(self, when: Optional[float]) -> None:
