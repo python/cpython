@@ -325,7 +325,7 @@ Directory and files operations
    will not be caught.
 
    The deprecated *onerror* is similar to *onexc*, except that the third
-   paramter it receives is the tuple returned from :func:`sys.exc_info`.
+   parameter it receives is the tuple returned from :func:`sys.exc_info`.
 
    .. audit-event:: shutil.rmtree path,dir_fd shutil.rmtree
 
