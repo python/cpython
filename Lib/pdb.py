@@ -1739,7 +1739,11 @@ def post_mortem(t=None):
 
 def pm():
     """Enter post-mortem debugging of the traceback found in sys.last_traceback."""
-    post_mortem(sys.last_traceback)
+    if hasattr(sys, 'last_exc'):
+        tb = sys.last_exc.__traceback__
+    else:
+        tb = sys.last_traceback
+    post_mortem(tb)
 
 
 # Main program for testing

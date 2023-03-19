@@ -19,6 +19,7 @@ class StackBrowserTest(unittest.TestCase):
         except NameError:
             svs.last_type, svs.last_value, svs.last_traceback = (
                 sys.exc_info())
+            svs.last_exc = svs.last_value
 
         requires('gui')
         cls.root = Tk()
@@ -27,7 +28,7 @@ class StackBrowserTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         svs = stackviewer.sys
-        del svs.last_traceback, svs.last_type, svs.last_value
+        del svs.last_exc, svs.last_traceback, svs.last_type, svs.last_value
 
         cls.root.update_idletasks()
 ##        for id in cls.root.tk.call('after', 'info'):
