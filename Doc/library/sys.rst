@@ -1396,7 +1396,12 @@ always available.
    ``'return'``, ``'c_call'``, ``'c_return'``, or ``'c_exception'``. *arg* depends
    on the event type.
 
-   .. audit-event:: sys.setprofile "" sys.setprofile
+.. note::
+   The same tracing mechanism is used for :func:`!setprofile` as :func:`settrace`.
+   To trace calls with :func:`!setprofile` inside a tracing function (e.g. in a
+   debugger breakpoint) see :func:`call_tracing`.
+
+.. audit-event:: sys.setprofile "" sys.setprofile
 
    The events have the following meaning:
 
@@ -1418,11 +1423,6 @@ always available.
 
    ``'c_exception'``
       A C function has raised an exception.  *arg* is the C function object.
-
-   .. note::
-      The same tracing mechanism is used for :func:`!setprofile` as :func:`settrace`.
-      To trace calls with :func:`!setprofile` inside a tracing function (e.g. in a
-      debugger breakpoint) see :func:`call_tracing`.
 
 .. function:: setrecursionlimit(limit)
 
