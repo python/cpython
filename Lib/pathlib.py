@@ -1216,10 +1216,10 @@ class Path(PurePath):
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
         sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
-        stack = [self]
+        paths = [self]
 
-        while stack:
-            path = stack.pop()
+        while paths:
+            path = paths.pop()
             if isinstance(path, tuple):
                 yield path
                 continue
@@ -1254,9 +1254,9 @@ class Path(PurePath):
             if top_down:
                 yield path, dirnames, filenames
             else:
-                stack.append((path, dirnames, filenames))
+                paths.append((path, dirnames, filenames))
 
-            stack += [path._make_child_relpath(d) for d in reversed(dirnames)]
+            paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
 
 
 class PosixPath(Path, PurePosixPath):
