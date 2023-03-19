@@ -266,7 +266,7 @@ deepcopy_tuple(PyObject* module, PyObject* x, PyObject* memo, PyObject* id_x,
  * Using the private _PyNone_Type and _PyNotImplemented_Type avoids
  * special-casing those in do_deepcopy.
  */
-static PyTypeObject* const atomic_type[] = {
+static const PyTypeObject* const atomic_type[] = {
     &_PyNone_Type,    /* type(None) */
     &PyUnicode_Type,  /* str */
     &PyBytes_Type,    /* bytes */
