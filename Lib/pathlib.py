@@ -268,7 +268,7 @@ class PurePath(object):
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
         # when pickling related paths.
-        return (self.__class__, self.parts)
+        return (self.__class__, (self._raw_path,))
 
     def __init__(self, *args):
         if not args:
