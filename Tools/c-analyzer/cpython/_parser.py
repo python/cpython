@@ -91,6 +91,7 @@ Python/bytecodes.c
 # XXX Fix the parser.
 EXCLUDED += clean_lines('''
 # The tool should be able to parse these...
+
 # The problem with xmlparse.c is that something
 # has gone wrong where # we handle "maybe inline actual"
 # in Tools/c-analyzer/c_parser/parser/_global.py.
@@ -106,14 +107,19 @@ glob	dirname
 *	./Include/internal
 
 Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
+Modules/_elementtree.c	Modules/expat
 Modules/_hacl/*.c	Modules/_hacl/include
 Modules/_hacl/*.h	Modules/_hacl/include
-Modules/_tkinter.c	/usr/include/tcl8.6
 Modules/md5module.c	Modules/_hacl/include
 Modules/sha1module.c	Modules/_hacl/include
 Modules/sha2module.c	Modules/_hacl/include
-Modules/tkappinit.c	/usr/include/tcl
 Objects/stringlib/*.h	Objects
+
+# possible system-installed headers, just in case
+Modules/_tkinter.c	/usr/include/tcl8.6
+Modules/_uuidmodule.c	/usr/include/uuid
+Modules/nismodule.c	/usr/include/tirpc
+Modules/tkappinit.c	/usr/include/tcl
 
 # @end=tsv@
 ''')[1:]
