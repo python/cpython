@@ -629,10 +629,7 @@ class Event:
 
         """
         with self._cond:
-            signaled = self._flag
-            if not signaled:
-                signaled = self._cond.wait(timeout)
-            return signaled
+            return self._flag or self._cond.wait(timeout)
 
 
 # A barrier class.  Inspired in part by the pthread_barrier_* api and
