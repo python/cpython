@@ -684,7 +684,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     onerror is set, it is called to handle the error with arguments (func,
     path, exc_info) where func is platform and implementation dependent;
     path is the argument to that function that caused it to fail; and
-    the value of exc_info described the exception. For onexc it is the
+    the value of exc_info describes the exception. For onexc it is the
     exception instance, and for onerror it is a tuple as returned by
     sys.exc_info().  If ignore_errors is false and both onexc and
     onerror are None, the exception is reraised.
