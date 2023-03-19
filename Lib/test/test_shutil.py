@@ -496,6 +496,10 @@ class TestRmTree(BaseTest, unittest.TestCase):
             self.assertTrue(isinstance(exc, OSError))
             self.errorState = 3
 
+    @unittest.skipIf(sys.platform[:6] == 'cygwin',
+                     "This test can't be run on Cygwin (issue #1071513).")
+    @os_helper.skip_if_dac_override
+    @os_helper.skip_unless_working_chmod
     def test_both_onerror_and_onexc(self):
         onerror_called = False
         onexc_called = False
