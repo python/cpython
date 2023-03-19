@@ -337,6 +337,11 @@ shutil
   of the process to *root_dir* to perform archiving.
   (Contributed by Serhiy Storchaka in :gh:`74696`.)
 
+* :func:`shutil.rmtree` now accepts a new argument *onexc* which is an
+  error handler like *onerror* but which expects an exception instance
+  rather than a *(typ, val, tb)* triplet. *onerror* is deprecated.
+  (Contributed by Irit Katriel in :gh:`102828`.)
+
 
 sqlite3
 -------
@@ -497,6 +502,10 @@ Deprecated
 * The :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`
   fields are deprecated. Use :data:`sys.last_exc` instead.
   (Contributed by Irit Katriel in :gh:`102778`.)
+
+* The *onerror* argument of :func:`shutil.rmtree` is deprecated. Use *onexc*
+  instead. (Contributed by Irit Katriel in :gh:`102828`.)
+
 
 Pending Removal in Python 3.13
 ------------------------------
