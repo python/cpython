@@ -389,6 +389,9 @@ def synopsis(filename, cache={}):
 class ErrorDuringImport(Exception):
     """Errors that occurred while trying to import something to document it."""
     def __init__(self, filename, exc_info):
+        if not isinstance(exc_info, tuple):
+            assert isinstance(exc_info, BaseException)
+            exc_info = type(exc_info), exc_info, exc_info.__traceback__
         self.filename = filename
         self.exc, self.value, self.tb = exc_info
 
@@ -411,8 +414,8 @@ def importfile(path):
     spec = importlib.util.spec_from_file_location(name, path, loader=loader)
     try:
         return importlib._bootstrap._load(spec)
-    except:
-        raise ErrorDuringImport(path, sys.exc_info())
+    except BaseException as e:
+        raise ErrorDuringImport(path, e)
 
 def safeimport(path, forceload=0, cache={}):
     """Import a module; handle errors; return None if the module isn't found.
@@ -440,21 +443,20 @@ def safeimport(path, forceload=0, cache={}):
                     cache[key] = sys.modules[key]
                     del sys.modules[key]
         module = __import__(path)
-    except:
+    except BaseException as e:
         # Did the error occur before or after the module was found?
-        (exc, value, tb) = info = sys.exc_info()
         if path in sys.modules:
             # An error occurred while executing the imported module.
-            raise ErrorDuringImport(sys.modules[path].__file__, info)
-        elif exc is SyntaxError:
+            raise ErrorDuringImport(sys.modules[path].__file__, e)
+        elif type(e) is SyntaxError:
             # A SyntaxError occurred before we could execute the module.
-            raise ErrorDuringImport(value.filename, info)
-        elif issubclass(exc, ImportError) and value.name == path:
+            raise ErrorDuringImport(e.filename, e)
+        elif isinstance(e, ImportError) and e.name == path:
             # No such module in the path.
             return None
         else:
             # Some other error occurred during the importing process.
-            raise ErrorDuringImport(path, sys.exc_info())
+            raise ErrorDuringImport(path, e)
     for part in path.split('.')[1:]:
         try: module = getattr(module, part)
         except AttributeError: return None
