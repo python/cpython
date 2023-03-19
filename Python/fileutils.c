@@ -8,6 +8,8 @@
 #ifdef MS_WINDOWS
 #  include <malloc.h>
 #  include <windows.h>
+#  include <winioctl.h>             // FILE_DEVICE_* constants
+#  include "pycore_fileutils_windows.h" // FILE_STAT_BASIC_INFORMATION
 #  if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
 #    define PATHCCH_ALLOW_LONG_PATHS 0x01
 #  else
@@ -1056,6 +1058,13 @@ FILE_TIME_to_time_t_nsec(FILETIME *in_ptr, time_t *time_out, int* nsec_out)
     *time_out = Py_SAFE_DOWNCAST((in / 10000000) - secs_between_epochs, __int64, time_t);
 }
 
+static void
+LARGE_INTEGER_to_time_t_nsec(LARGE_INTEGER *in_ptr, time_t *time_out, int* nsec_out)
+{
+    *nsec_out = (int)(in_ptr->QuadPart % 10000000) * 100; /* FILETIME is in units of 100 nsec. */
+    *time_out = Py_SAFE_DOWNCAST((in_ptr->QuadPart / 10000000) - secs_between_epochs, __int64, time_t);
+}
+
 void
 _Py_time_t_to_FILE_TIME(time_t time_in, int nsec_in, FILETIME *out_ptr)
 {
@@ -1085,33 +1094,126 @@ attributes_to_mode(DWORD attr)
     return m;
 }
 
+
+typedef union {
+    FILE_ID_128 id;
+    struct {
+        uint64_t st_ino;
+        uint64_t st_ino_high;
+    };
+} id_128_to_ino;
+
+
 void
 _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
+                           FILE_BASIC_INFO *basic_info, FILE_ID_INFO *id_info,
                            struct _Py_stat_struct *result)
 {
     memset(result, 0, sizeof(*result));
     result->st_mode = attributes_to_mode(info->dwFileAttributes);
     result->st_size = (((__int64)info->nFileSizeHigh)<<32) + info->nFileSizeLow;
-    result->st_dev = info->dwVolumeSerialNumber;
-    result->st_rdev = result->st_dev;
-    FILE_TIME_to_time_t_nsec(&info->ftCreationTime, &result->st_ctime, &result->st_ctime_nsec);
-    FILE_TIME_to_time_t_nsec(&info->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
-    FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
+    result->st_dev = id_info ? id_info->VolumeSerialNumber : info->dwVolumeSerialNumber;
+    result->st_rdev = 0;
+    /* st_ctime is deprecated, but we preserve the legacy value in our caller, not here */
+    if (basic_info) {
+        LARGE_INTEGER_to_time_t_nsec(&basic_info->CreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
+        LARGE_INTEGER_to_time_t_nsec(&basic_info->ChangeTime, &result->st_ctime, &result->st_ctime_nsec);
+        LARGE_INTEGER_to_time_t_nsec(&basic_info->LastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+        LARGE_INTEGER_to_time_t_nsec(&basic_info->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
+    } else {
+        FILE_TIME_to_time_t_nsec(&info->ftCreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
+        FILE_TIME_to_time_t_nsec(&info->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+        FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
+    }
     result->st_nlink = info->nNumberOfLinks;
-    result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
+
+    if (id_info) {
+        id_128_to_ino file_id;
+        file_id.id = id_info->FileId;
+        result->st_ino = file_id.st_ino;
+        result->st_ino_high = file_id.st_ino_high;
+    } else {
+        /* should only occur for DirEntry_from_find_data, in which case the
+           index is likely to be zero anyway. */
+        result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
+    }
+
     /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
        open other name surrogate reparse points without traversing them. To
        detect/handle these, check st_file_attributes and st_reparse_tag. */
     result->st_reparse_tag = reparse_tag;
     if (info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
         reparse_tag == IO_REPARSE_TAG_SYMLINK) {
-        /* first clear the S_IFMT bits */
-        result->st_mode ^= (result->st_mode & S_IFMT);
-        /* now set the bits that make this a symlink */
-        result->st_mode |= S_IFLNK;
+        /* set the bits that make this a symlink */
+        result->st_mode = (result->st_mode & ~S_IFMT) | S_IFLNK;
     }
     result->st_file_attributes = info->dwFileAttributes;
 }
+
+void
+_Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *info,
+                            struct _Py_stat_struct *result)
+{
+    memset(result, 0, sizeof(*result));
+    result->st_mode = attributes_to_mode(info->FileAttributes);
+    result->st_size = info->EndOfFile.QuadPart;
+    LARGE_INTEGER_to_time_t_nsec(&info->CreationTime, &result->st_birthtime, &result->st_birthtime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&info->ChangeTime, &result->st_ctime, &result->st_ctime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&info->LastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+    LARGE_INTEGER_to_time_t_nsec(&info->LastAccessTime, &result->st_atime, &result->st_atime_nsec);
+    result->st_nlink = info->NumberOfLinks;
+    result->st_dev = info->VolumeSerialNumber.QuadPart;
+    /* File systems with less than 128-bits zero pad into this field */
+    id_128_to_ino file_id;
+    file_id.id = info->FileId128;
+    result->st_ino = file_id.st_ino;
+    result->st_ino_high = file_id.st_ino_high;
+    /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
+       open other name surrogate reparse points without traversing them. To
+       detect/handle these, check st_file_attributes and st_reparse_tag. */
+    result->st_reparse_tag = info->ReparseTag;
+    if (info->FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+        info->ReparseTag == IO_REPARSE_TAG_SYMLINK) {
+        /* set the bits that make this a symlink */
+        result->st_mode = (result->st_mode & ~S_IFMT) | S_IFLNK;
+    }
+    result->st_file_attributes = info->FileAttributes;
+    switch (info->DeviceType) {
+    case FILE_DEVICE_DISK:
+    case FILE_DEVICE_VIRTUAL_DISK:
+    case FILE_DEVICE_DFS:
+    case FILE_DEVICE_CD_ROM:
+    case FILE_DEVICE_CONTROLLER:
+    case FILE_DEVICE_DATALINK:
+        break;
+    case FILE_DEVICE_DISK_FILE_SYSTEM:
+    case FILE_DEVICE_CD_ROM_FILE_SYSTEM:
+    case FILE_DEVICE_NETWORK_FILE_SYSTEM:
+        result->st_mode = (result->st_mode & ~S_IFMT) | 0x6000; /* _S_IFBLK */
+        break;
+    case FILE_DEVICE_CONSOLE:
+    case FILE_DEVICE_NULL:
+    case FILE_DEVICE_KEYBOARD:
+    case FILE_DEVICE_MODEM:
+    case FILE_DEVICE_MOUSE:
+    case FILE_DEVICE_PARALLEL_PORT:
+    case FILE_DEVICE_PRINTER:
+    case FILE_DEVICE_SCREEN:
+    case FILE_DEVICE_SERIAL_PORT:
+    case FILE_DEVICE_SOUND:
+        result->st_mode = (result->st_mode & ~S_IFMT) | _S_IFCHR;
+        break;
+    case FILE_DEVICE_NAMED_PIPE:
+        result->st_mode = (result->st_mode & ~S_IFMT) | _S_IFIFO;
+        break;
+    default:
+        if (info->FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            result->st_mode = (result->st_mode & ~S_IFMT) | _S_IFDIR;
+        }
+        break;
+    }
+}
+
 #endif
 
 /* Return information about a file.
@@ -1131,6 +1233,8 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
 {
 #ifdef MS_WINDOWS
     BY_HANDLE_FILE_INFORMATION info;
+    FILE_BASIC_INFO basicInfo;
+    FILE_ID_INFO idInfo;
     HANDLE h;
     int type;
 
@@ -1162,14 +1266,16 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
         return 0;
     }
 
-    if (!GetFileInformationByHandle(h, &info)) {
+    if (!GetFileInformationByHandle(h, &info) ||
+        !GetFileInformationByHandleEx(h, FileBasicInfo, &basicInfo, sizeof(basicInfo)) ||
+        !GetFileInformationByHandleEx(h, FileIdInfo, &idInfo, sizeof(idInfo))) {
         /* The Win32 error is already set, but we also set errno for
            callers who expect it */
         errno = winerror_to_errno(GetLastError());
         return -1;
     }
 
-    _Py_attribute_data_to_stat(&info, 0, status);
+    _Py_attribute_data_to_stat(&info, 0, &basicInfo, &idInfo, status);
     return 0;
 #else
     return fstat(fd, status);
