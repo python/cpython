@@ -376,7 +376,9 @@ class TestNtpath(NtpathTestCase):
 
         # gh-88013: call ntpath.realpath with binary drive name may raise a
         # TypeError. The drive should not exist to reproduce the bug.
-        self.assertEqual(ntpath.realpath(b"n:/"), b"n:\\")
+        drives = {f"{chr(x)}:\\" for x in range(65, 91)} - set(os.listdrives())
+        d = drives.pop().encode()
+        self.assertEqual(ntpath.realpath(d), d)
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
