@@ -360,20 +360,20 @@ __type_propagate_TYPE_OVERWRITE(
 static void
 __type_stack_shrink(_PyTier2TypeContext *type_context, _Py_TYPENODE_t **type_stackptr, int idx)
 {
-    while (idx--) {
-        // TODO:
-        //   If we don't touch the stack elements
-        //   when shrinking, we need to check for references
-        //   on these elements.
-        //   Otherwise, if we NULL these elements, we need to refactor
-        //   the type propagator to perform shrinking last.
-        // 
-        // __type_propagate_TYPE_OVERWRITE(
-        //     type_context,
-        //     (_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, *type_stackptr,
-        //     true);
-        *type_stackptr -= 1;
-    }
+    // TODO:
+    //   If we don't touch the stack elements
+    //   when shrinking, we need to check for references
+    //   on these elements.
+    //   Otherwise, if we NULL these elements, we need to refactor
+    //   the type propagator to perform shrinking last.
+    //while (idx--) {
+    //    __type_propagate_TYPE_OVERWRITE(
+    //        type_context,
+    //        (_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, *type_stackptr,
+    //        true);
+    //    *type_stackptr -= 1;
+    //}
+    *type_stackptr -= idx;
 }
 
 #if TYPEPROP_DEBUG
