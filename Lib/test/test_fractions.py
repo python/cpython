@@ -1220,6 +1220,29 @@ class FractionTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     format(fraction, spec)
 
+    def test_traceback_in_mod_and_floordiv_with_complex_objects(self):
+        # See issue-102840 for more details.
+
+        a = F(1, 2)
+        b = 1j
+        mod = lambda x, y: x % y
+        floordiv = lambda x, y: x // y
+        message = "unsupported operand type(s) for %s: %s and %s"
+        # test forward
+        self.assertRaisesMessage(TypeError,
+                                 message % ("%", "'Fraction'", "'complex'"),
+                                 mod, a, b)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("//", "'Fraction'", "'complex'"),
+                                 floordiv, a, b)
+        # test reverse
+        self.assertRaisesMessage(TypeError,
+                                 message % ("%", "'complex'", "'Fraction'"),
+                                 mod, b, a)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("//", "'complex'", "'Fraction'"),
+                                 floordiv, b, a)
+
 
 if __name__ == '__main__':
     unittest.main()
