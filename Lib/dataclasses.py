@@ -222,6 +222,8 @@ _POST_INIT_NAME = '__post_init__'
 # https://bugs.python.org/issue33453 for details.
 _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
+# Types for which deepcopy(obj) returns obj unmodified
+# Used to skip deepcopy in asdict and astuple
 _ATOMIC_TYPES = {
     types.NoneType,
     types.EllipsisType,
