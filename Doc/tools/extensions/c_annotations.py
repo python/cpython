@@ -24,6 +24,7 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from docutils.parsers.rst import Directive
 from docutils.statemachine import StringList
+from sphinx.locale import _ as sphinx_gettext
 import csv
 
 from sphinx import addnodes
@@ -168,11 +169,11 @@ class Annotations:
             elif not entry.result_type.endswith("Object*"):
                 continue
             if entry.result_refs is None:
-                rc = 'Return value: Always NULL.'
+                rc = sphinx_gettext('Return value: Always NULL.')
             elif entry.result_refs:
-                rc = 'Return value: New reference.'
+                rc = sphinx_gettext('Return value: New reference.')
             else:
-                rc = 'Return value: Borrowed reference.'
+                rc = sphinx_gettext('Return value: Borrowed reference.')
             node.insert(0, nodes.emphasis(rc, rc, classes=['refcount']))
 
 

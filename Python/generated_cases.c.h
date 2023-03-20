@@ -3,6 +3,14 @@
 //   Python/bytecodes.c
 // Do not edit!
 
+        #define UOP_BINARY_OP_ADD_FLOAT_REST() \
+        do { \
+            STAT_INC(BINARY_OP, hit);\
+            double dsum = ((PyFloatObject *)left)->ob_fval +\
+                ((PyFloatObject *)right)->ob_fval;\
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsum, sum);\
+        } while (0)
+
         #define UOP_BINARY_OP_ADD_INT_REST() \
         do { \
             STAT_INC(BINARY_OP, hit);\
@@ -280,10 +288,7 @@
             STAT_INC(BINARY_OP, hit);
             double dprod = ((PyFloatObject *)left)->ob_fval *
                 ((PyFloatObject *)right)->ob_fval;
-            prod = PyFloat_FromDouble(dprod);
-            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            if (prod == NULL) goto pop_2_error;
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dprod, prod);
             STACK_SHRINK(1);
             stack_pointer[-1] = prod;
             next_instr += 1;
@@ -317,10 +322,7 @@
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
-            sub = PyFloat_FromDouble(dsub);
-            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            if (sub == NULL) goto pop_2_error;
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsub, sub);
             STACK_SHRINK(1);
             stack_pointer[-1] = sub;
             next_instr += 1;
@@ -386,16 +388,31 @@
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
-            STAT_INC(BINARY_OP, hit);
-            double dsum = ((PyFloatObject *)left)->ob_fval +
-                ((PyFloatObject *)right)->ob_fval;
-            sum = PyFloat_FromDouble(dsum);
-            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            if (sum == NULL) goto pop_2_error;
+            UOP_BINARY_OP_ADD_FLOAT_REST();
             STACK_SHRINK(1);
             stack_pointer[-1] = sum;
             next_instr += 1;
+            DISPATCH();
+        }
+
+        TARGET(BINARY_CHECK_FLOAT) {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            assert(cframe.use_tracing == 0);
+            bb_test = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
+            DISPATCH();
+        }
+
+        TARGET(BINARY_OP_ADD_FLOAT_REST) {
+            PyObject *right = stack_pointer[-1];
+            PyObject *left = stack_pointer[-2];
+            PyObject *sum;
+            STAT_INC(BINARY_OP, hit);
+            double dsum = ((PyFloatObject *)left)->ob_fval +
+                ((PyFloatObject *)right)->ob_fval;
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsum, sum);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = sum;
             DISPATCH();
         }
 
@@ -1384,7 +1401,7 @@
 
         TARGET(LOAD_GLOBAL) {
             PREDICTED(LOAD_GLOBAL);
-            static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 5, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
             PyObject *null = NULL;
             PyObject *v;
             #if ENABLE_SPECIALIZATION
@@ -1443,7 +1460,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = v;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = null; }
-            next_instr += 5;
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -1451,7 +1468,7 @@
             PyObject *null = NULL;
             PyObject *res;
             uint16_t index = read_u16(&next_instr[1].cache);
-            uint32_t version = read_u32(&next_instr[2].cache);
+            uint16_t version = read_u16(&next_instr[2].cache);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
@@ -1467,7 +1484,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = null; }
-            next_instr += 5;
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -1475,8 +1492,8 @@
             PyObject *null = NULL;
             PyObject *res;
             uint16_t index = read_u16(&next_instr[1].cache);
-            uint32_t mod_version = read_u32(&next_instr[2].cache);
-            uint16_t bltn_version = read_u16(&next_instr[4].cache);
+            uint16_t mod_version = read_u16(&next_instr[2].cache);
+            uint16_t bltn_version = read_u16(&next_instr[3].cache);
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
@@ -1495,7 +1512,7 @@
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1] = res;
             if (oparg & 1) { stack_pointer[-(1 + ((oparg & 1) ? 1 : 0))] = null; }
-            next_instr += 5;
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -2149,7 +2166,7 @@
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
-                new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
+                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
             else {
@@ -2157,7 +2174,7 @@
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
-                new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
+                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
             Py_DECREF(old_value);
@@ -4131,7 +4148,8 @@
                 _py_set_opcode(next_instr - 1, BB_BRANCH_IF_FLAG_UNSET);
                 // Generate consequent.
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, 0, &tier1_fallback, gen_bb_requires_pop);
+                    frame, cache->bb_id_tagged, next_instr - 1,
+                    0, &tier1_fallback, gen_bb_requires_pop, bb_test);
                 gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
@@ -4142,9 +4160,10 @@
             else {
                 // Rewrite self
                 _py_set_opcode(next_instr - 1, BB_BRANCH_IF_FLAG_SET);
-                // Generate predicate.
+                // Generate alternative.
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, oparg, &tier1_fallback, gen_bb_requires_pop);
+                    frame, cache->bb_id_tagged, next_instr - 1,
+                    oparg, &tier1_fallback, gen_bb_requires_pop, bb_test);
                 gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
@@ -4167,7 +4186,8 @@
                 _Py_CODEUNIT *tier1_fallback = NULL;
 
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, oparg, &tier1_fallback, gen_bb_requires_pop);
+                    frame, cache->bb_id_tagged, next_instr - 1,
+                    oparg, &tier1_fallback, gen_bb_requires_pop, bb_test);
                 gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
@@ -4203,7 +4223,8 @@
                 // @TODO: Rewrite TEST intruction above to a JUMP above..
 
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, oparg, &tier1_fallback, gen_bb_requires_pop);
+                    frame, cache->bb_id_tagged, next_instr - 1,
+                    oparg, &tier1_fallback, gen_bb_requires_pop, bb_test);
                 gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
@@ -4236,7 +4257,7 @@
             _Py_CODEUNIT *tier1_fallback = NULL;
 
             t2_nextinstr = _PyTier2_LocateJumpBackwardsBB(
-                frame, cache->bb_id, -oparg, &tier1_fallback);
+                frame, cache->bb_id_tagged, -oparg, &tier1_fallback);
             if (t2_nextinstr == NULL) {
                 // Fall back to tier 1.
                 next_instr = tier1_fallback;

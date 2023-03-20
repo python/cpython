@@ -123,6 +123,18 @@
             break;
         }
 
+        TARGET(BINARY_CHECK_FLOAT) {
+            TYPESTACK_POKE(1, &PyFloat_Type);
+            TYPESTACK_POKE(2, &PyFloat_Type);
+            break;
+        }
+
+        TARGET(BINARY_OP_ADD_FLOAT_REST) {
+            STACK_SHRINK(1);
+            TYPESTACK_POKE(1, &PyFloat_Type);
+            break;
+        }
+
         TARGET(BINARY_OP_ADD_INT) {
             STACK_SHRINK(1);
             TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&PyLong_Type), TYPESTACK_PEEK(1), true);

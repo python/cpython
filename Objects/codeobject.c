@@ -11,9 +11,24 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
 
+static PyObject* code_repr(PyCodeObject *co);
+
+static const char *
+code_event_name(PyCodeEvent event) {
+    switch (event) {
+        #define CASE(op)                \
+        case PY_CODE_EVENT_##op:         \
+            return "PY_CODE_EVENT_" #op;
+        PY_FOREACH_CODE_EVENT(CASE)
+        #undef CASE
+    }
+    Py_UNREACHABLE();
+}
+
 static void
 notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
 {
+    assert(Py_REFCNT(co) > 0);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp->_initialized);
     uint8_t bits = interp->active_code_watchers;
@@ -25,7 +40,21 @@ notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, co) < 0) {
-                PyErr_WriteUnraisable((PyObject *) co);
+                // Don't risk resurrecting the object if an unraisablehook keeps
+                // a reference; pass a string as context.
+                PyObject *context = NULL;
+                PyObject *repr = code_repr(co);
+                if (repr) {
+                    context = PyUnicode_FromFormat(
+                        "%s watcher callback for %U",
+                        code_event_name(event), repr);
+                    Py_DECREF(repr);
+                }
+                if (context == NULL) {
+                    context = Py_NewRef(Py_None);
+                }
+                PyErr_WriteUnraisable(context);
+                Py_DECREF(context);
             }
         }
         i++;
@@ -1708,7 +1737,14 @@ code_tier2_fini(PyCodeObject *co)
 static void
 code_dealloc(PyCodeObject *co)
 {
+    assert(Py_REFCNT(co) == 0);
+    Py_SET_REFCNT(co, 1);
     notify_code_watchers(PY_CODE_EVENT_DESTROY, co);
+    if (Py_REFCNT(co) > 1) {
+        Py_SET_REFCNT(co, Py_REFCNT(co) - 1);
+        return;
+    }
+    Py_SET_REFCNT(co, 0);
 
     if (co->co_extra != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -1962,9 +1998,21 @@ code_getcode(PyCodeObject *code, void *closure)
     return _PyCode_GetCode(code);
 }
 
+static PyObject *
+code_getcodetier2(PyCodeObject *code, void *closure)
+{
+    if (code->_tier2_info == NULL) {
+        return PyBytes_FromStringAndSize("", 0);
+    }
+    return PyBytes_FromStringAndSize(
+        (const char *)code->_tier2_info->_bb_space->u_code,
+        code->_tier2_info->_bb_space->water_level);
+}
+
 static PyGetSetDef code_getsetlist[] = {
     {"co_lnotab",         (getter)code_getlnotab,       NULL, NULL},
     {"_co_code_adaptive", (getter)code_getcodeadaptive, NULL, NULL},
+    {"_co_code_tier2",    (getter)code_getcodetier2,    NULL, NULL},
     // The following old names are kept for backward compatibility.
     {"co_varnames",       (getter)code_getvarnames,     NULL, NULL},
     {"co_cellvars",       (getter)code_getcellvars,     NULL, NULL},

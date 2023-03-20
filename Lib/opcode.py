@@ -402,7 +402,7 @@ _cache_format = {
     "LOAD_GLOBAL": {
         "counter": 1,
         "index": 1,
-        "module_keys_version": 2,
+        "module_keys_version": 1,
         "builtin_keys_version": 1,
     },
     "BINARY_OP": {
@@ -458,6 +458,7 @@ _inline_cache_entries = [
 
 _macro_ops = [
     'BINARY_OP_ADD_INT',
+    'BINARY_OP_ADD_FLOAT',
 ]
 _uops = [
     # Tier 2 BB opcodes
@@ -502,8 +503,8 @@ _uops = [
     # The benefit is that they save some dispatch overhead versus the
     # single operand forms.
     'BINARY_CHECK_INT',
-    # 'BINARY_CHECK_FLOAT',
+    'BINARY_CHECK_FLOAT',
     # 'BINARY_CHECK_STR',
-    # BINARY_OP_ADD_INT,
     'BINARY_OP_ADD_INT_REST',
+    'BINARY_OP_ADD_FLOAT_REST',
 ]

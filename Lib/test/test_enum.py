@@ -20,7 +20,6 @@ from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from test.support import ALWAYS_EQ
 from test.support import threading_helper
-from textwrap import dedent
 from datetime import timedelta
 
 python_version = sys.version_info[:2]
@@ -1187,7 +1186,6 @@ class TestSpecial(unittest.TestCase):
         #
         class SillyInt(HexInt):
             __qualname__ = 'SillyInt'
-            pass
         class MyOtherEnum(SillyInt, enum.Enum):
             __qualname__ = 'MyOtherEnum'
             D = 4

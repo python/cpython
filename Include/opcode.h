@@ -279,7 +279,9 @@ extern "C" {
 #define BB_TEST_POP_IF_NONE                    187
 #define BB_JUMP_BACKWARD_LAZY                  188
 #define BINARY_CHECK_INT                       189
-#define BINARY_OP_ADD_INT_REST                 190
+#define BINARY_CHECK_FLOAT                     190
+#define BINARY_OP_ADD_INT_REST                 191
+#define BINARY_OP_ADD_FLOAT_REST               192
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \

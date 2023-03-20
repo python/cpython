@@ -202,10 +202,7 @@ dummy_func(
             STAT_INC(BINARY_OP, hit);
             double dprod = ((PyFloatObject *)left)->ob_fval *
                 ((PyFloatObject *)right)->ob_fval;
-            prod = PyFloat_FromDouble(dprod);
-            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            ERROR_IF(prod == NULL, error);
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dprod, prod);
         }
 
         inst(BINARY_OP_SUBTRACT_INT, (unused/1, left, right -- sub: PyLong_Type)) {
@@ -225,10 +222,7 @@ dummy_func(
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
             STAT_INC(BINARY_OP, hit);
             double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
-            sub = PyFloat_FromDouble(dsub);
-            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            ERROR_IF(sub == NULL, error);
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsub, sub);
         }
 
         inst(BINARY_OP_ADD_UNICODE, (unused/1, left, right -- res: PyUnicode_Type)) {
@@ -282,13 +276,19 @@ dummy_func(
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
+            U_INST(BINARY_OP_ADD_FLOAT_REST);
+        }
+
+        inst(BINARY_CHECK_FLOAT, (left, right -- left : PyFloat_Type, right : PyFloat_Type)) {
+            assert(cframe.use_tracing == 0);
+            bb_test = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
+        }
+
+        u_inst(BINARY_OP_ADD_FLOAT_REST, (left, right -- sum : PyFloat_Type)) {
             STAT_INC(BINARY_OP, hit);
             double dsum = ((PyFloatObject *)left)->ob_fval +
                 ((PyFloatObject *)right)->ob_fval;
-            sum = PyFloat_FromDouble(dsum);
-            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            ERROR_IF(sum == NULL, error);
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsum, sum);
         }
 
         macro_inst(BINARY_OP_ADD_INT, (unused/1, left, right -- sum: PyLong_Type)) {
@@ -1094,7 +1094,7 @@ dummy_func(
             LOAD_GLOBAL_BUILTIN,
         };
 
-        inst(LOAD_GLOBAL, (unused/1, unused/1, unused/2, unused/1 -- null if (oparg & 1), v)) {
+        inst(LOAD_GLOBAL, (unused/1, unused/1, unused/1, unused/1 -- null if (oparg & 1), v)) {
             #if ENABLE_SPECIALIZATION
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -1149,7 +1149,7 @@ dummy_func(
             null = NULL;
         }
 
-        inst(LOAD_GLOBAL_MODULE, (unused/1, index/1, version/2, unused/1 -- null if (oparg & 1), res)) {
+        inst(LOAD_GLOBAL_MODULE, (unused/1, index/1, version/1, unused/1 -- null if (oparg & 1), res)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             PyDictObject *dict = (PyDictObject *)GLOBALS();
@@ -1163,7 +1163,7 @@ dummy_func(
             null = NULL;
         }
 
-        inst(LOAD_GLOBAL_BUILTIN, (unused/1, index/1, mod_version/2, bltn_version/1 -- null if (oparg & 1), res)) {
+        inst(LOAD_GLOBAL_BUILTIN, (unused/1, index/1, mod_version/1, bltn_version/1 -- null if (oparg & 1), res)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
             DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
@@ -1695,7 +1695,7 @@ dummy_func(
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
-                new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
+                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
             else {
@@ -1703,7 +1703,7 @@ dummy_func(
                 DEOPT_IF(ep->me_key != name, STORE_ATTR);
                 old_value = ep->me_value;
                 DEOPT_IF(old_value == NULL, STORE_ATTR);
-                new_version = _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, value);
+                new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
             Py_DECREF(old_value);
@@ -3300,7 +3300,8 @@ dummy_func(
                 _py_set_opcode(next_instr - 1, BB_BRANCH_IF_FLAG_UNSET);
                 // Generate consequent.
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, 0, &tier1_fallback, gen_bb_requires_pop);
+                    frame, cache->bb_id_tagged, next_instr - 1,
+                    0, &tier1_fallback, gen_bb_requires_pop, bb_test);
                 gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
@@ -3311,9 +3312,10 @@ dummy_func(
             else {
                 // Rewrite self
                 _py_set_opcode(next_instr - 1, BB_BRANCH_IF_FLAG_SET);
-                // Generate predicate.
+                // Generate alternative.
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, oparg, &tier1_fallback, gen_bb_requires_pop);
+                    frame, cache->bb_id_tagged, next_instr - 1,
+                    oparg, &tier1_fallback, gen_bb_requires_pop, bb_test);
                 gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
@@ -3336,7 +3338,8 @@ dummy_func(
                 _Py_CODEUNIT *tier1_fallback = NULL;
 
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, oparg, &tier1_fallback, gen_bb_requires_pop);
+                    frame, cache->bb_id_tagged, next_instr - 1,
+                    oparg, &tier1_fallback, gen_bb_requires_pop, bb_test);
                 gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
@@ -3368,7 +3371,8 @@ dummy_func(
                 // @TODO: Rewrite TEST intruction above to a JUMP above..
 
                 t2_nextinstr = _PyTier2_GenerateNextBB(
-                    frame, cache->bb_id, oparg, &tier1_fallback, gen_bb_requires_pop);
+                    frame, cache->bb_id_tagged, next_instr - 1,
+                    oparg, &tier1_fallback, gen_bb_requires_pop, bb_test);
                 gen_bb_requires_pop = false;
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
@@ -3398,7 +3402,7 @@ dummy_func(
             _Py_CODEUNIT *tier1_fallback = NULL;
 
             t2_nextinstr = _PyTier2_LocateJumpBackwardsBB(
-                frame, cache->bb_id, -oparg, &tier1_fallback);
+                frame, cache->bb_id_tagged, -oparg, &tier1_fallback);
             if (t2_nextinstr == NULL) {
                 // Fall back to tier 1.
                 next_instr = tier1_fallback;

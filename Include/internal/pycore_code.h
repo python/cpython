@@ -9,7 +9,9 @@ extern "C" {
 typedef struct {
     // Unique ID (for this code object) for this basic block. This indexes into
     // the PyTier2Info bb_data field.
-    uint16_t bb_id;
+    // The LSB indicates whether the bb branch is a type guard or not.
+    // To get the actual BB ID, do a right bit shift by one.
+    uint16_t bb_id_tagged;
 } _PyBBBranchCache;
 
 #define INLINE_CACHE_ENTRIES_BB_BRANCH CACHE_ENTRIES(_PyBBBranchCache)
@@ -28,7 +30,7 @@ typedef struct {
 typedef struct {
     uint16_t counter;
     uint16_t index;
-    uint16_t module_keys_version[2];
+    uint16_t module_keys_version;
     uint16_t builtin_keys_version;
 } _PyLoadGlobalCache;
 
@@ -258,8 +260,13 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 extern _Py_CODEUNIT *_PyCode_Tier2Warmup(struct _PyInterpreterFrame *,
     _Py_CODEUNIT *);
 extern _Py_CODEUNIT *_PyTier2_GenerateNextBB(
-    struct _PyInterpreterFrame *frame, uint16_t bb_id, int jumpby,
-    _Py_CODEUNIT **tier1_fallback, char gen_bb_requires_pop);
+    struct _PyInterpreterFrame *frame,
+    uint16_t bb_id_tagged,
+    _Py_CODEUNIT *curr_executing_instr,
+    int jumpby,
+    _Py_CODEUNIT **tier1_fallback,
+    char gen_bb_requires_pop,
+    char gen_bb_is_successor);
 extern _Py_CODEUNIT *_PyTier2_LocateJumpBackwardsBB(
     struct _PyInterpreterFrame *frame, uint16_t bb_id, int jumpby,
     _Py_CODEUNIT **tier1_fallback);

@@ -8,7 +8,11 @@
 #ifdef MS_WINDOWS
 #  include <malloc.h>
 #  include <windows.h>
-#  include <pathcch.h>            // PathCchCombineEx
+#  if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
+#    define PATHCCH_ALLOW_LONG_PATHS 0x01
+#  else
+#    include <pathcch.h>            // PathCchCombineEx
+#  endif
 extern int winerror_to_errno(int);
 #endif
 
@@ -77,7 +81,8 @@ _Py_device_encoding(int fd)
     if (!valid)
         Py_RETURN_NONE;
 
-#if defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     UINT cp;
     if (fd == 0)
         cp = GetConsoleCP();
@@ -92,6 +97,9 @@ _Py_device_encoding(int fd)
     }
 
     return PyUnicode_FromFormat("cp%u", (unsigned int)cp);
+#else
+    Py_RETURN_NONE;
+#endif /* HAVE_WINDOWS_CONSOLE_IO */
 #else
     if (_PyRuntime.preconfig.utf8_mode) {
         _Py_DECLARE_STR(utf_8, "utf-8");
@@ -1270,6 +1278,13 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 #endif
 }
 
+#ifdef MS_WINDOWS
+// For some Windows API partitions, SetHandleInformation() is declared
+// but none of the handle flags are defined.
+#ifndef HANDLE_FLAG_INHERIT
+#define HANDLE_FLAG_INHERIT 0x00000001
+#endif
+#endif
 
 /* This function MUST be kept async-signal-safe on POSIX when raise=0. */
 static int
@@ -2096,6 +2111,72 @@ _Py_abspath(const wchar_t *path, wchar_t **abspath_p)
 #endif
 }
 
+// The Windows Games API family implements the PathCch* APIs in the Xbox OS,
+// but does not expose them yet. Load them dynamically until
+// 1) they are officially exposed
+// 2) we stop supporting older versions of the GDK which do not expose them
+#if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
+HRESULT
+PathCchSkipRoot(const wchar_t *path, const wchar_t **rootEnd)
+{
+    static int initialized = 0;
+    typedef HRESULT(__stdcall *PPathCchSkipRoot) (PCWSTR pszPath,
+                                                  PCWSTR *ppszRootEnd);
+    static PPathCchSkipRoot _PathCchSkipRoot;
+
+    if (initialized == 0) {
+        HMODULE pathapi = LoadLibraryExW(L"api-ms-win-core-path-l1-1-0.dll", NULL,
+                                         LOAD_LIBRARY_SEARCH_SYSTEM32);
+        if (pathapi) {
+            _PathCchSkipRoot = (PPathCchSkipRoot)GetProcAddress(
+                pathapi, "PathCchSkipRoot");
+        }
+        else {
+            _PathCchSkipRoot = NULL;
+        }
+        initialized = 1;
+    }
+
+    if (!_PathCchSkipRoot) {
+        return E_NOINTERFACE;
+    }
+
+    return _PathCchSkipRoot(path, rootEnd);
+}
+
+static HRESULT
+PathCchCombineEx(wchar_t *buffer, size_t bufsize, const wchar_t *dirname,
+                 const wchar_t *relfile, unsigned long flags)
+{
+    static int initialized = 0;
+    typedef HRESULT(__stdcall *PPathCchCombineEx) (PWSTR pszPathOut,
+                                                   size_t cchPathOut,
+                                                   PCWSTR pszPathIn,
+                                                   PCWSTR pszMore,
+                                                   unsigned long dwFlags);
+    static PPathCchCombineEx _PathCchCombineEx;
+
+    if (initialized == 0) {
+        HMODULE pathapi = LoadLibraryExW(L"api-ms-win-core-path-l1-1-0.dll", NULL,
+                                         LOAD_LIBRARY_SEARCH_SYSTEM32);
+        if (pathapi) {
+            _PathCchCombineEx = (PPathCchCombineEx)GetProcAddress(
+                pathapi, "PathCchCombineEx");
+        }
+        else {
+            _PathCchCombineEx = NULL;
+        }
+        initialized = 1;
+    }
+
+    if (!_PathCchCombineEx) {
+        return E_NOINTERFACE;
+    }
+
+    return _PathCchCombineEx(buffer, bufsize, dirname, relfile, flags);
+}
+
+#endif /* defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP) */
 
 // The caller must ensure "buffer" is big enough.
 static int
@@ -2491,12 +2572,12 @@ _Py_get_blocking(int fd)
     success = GetNamedPipeHandleStateW(handle, &mode,
                                        NULL, NULL, NULL, NULL, 0);
     Py_END_ALLOW_THREADS
-    
+
     if (!success) {
         PyErr_SetFromWindowsErr(0);
         return -1;
     }
-    
+
     return !(mode & PIPE_NOWAIT);
 }
 
