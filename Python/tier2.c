@@ -181,7 +181,7 @@ __typenode_get_rootptr(_Py_TYPENODE_t ref)
 }
 
 static PyTypeObject*
-_typenode_get_type(_Py_TYPENODE_t node)
+typenode_get_type(_Py_TYPENODE_t node)
 {
     uintptr_t tag = _Py_TYPENODE_GET_TAG(node);
     switch (tag) {
@@ -389,7 +389,7 @@ print_typestack(const _PyTier2TypeContext *type_context)
     int nstack = type_context->type_stack_len;
     fprintf(stderr, "      Stack: %p: [", type_stack);
     for (int i = 0; i < nstack; i++) {
-        PyTypeObject *type = _typenode_get_type(type_stack[i]);
+        PyTypeObject *type = typenode_get_type(type_stack[i]);
         _Py_TYPENODE_t tag = _Py_TYPENODE_GET_TAG(type_stack[i]);
         fprintf(stderr, "%s%s%s",
             i == nstack_use ? "." : " ",
@@ -399,7 +399,7 @@ print_typestack(const _PyTier2TypeContext *type_context)
     fprintf(stderr, "]\n");
     fprintf(stderr, "      Locals %p: [", type_locals);
     for (int i = 0; i < type_context->type_locals_len; i++) {
-        PyTypeObject *type = _typenode_get_type(type_locals[i]);
+        PyTypeObject *type = typenode_get_type(type_locals[i]);
         _Py_TYPENODE_t tag = _Py_TYPENODE_GET_TAG(type_locals[i]);
         fprintf(stderr, "%s%s ",
             type == NULL ? "?" : type->tp_name,
@@ -1029,8 +1029,8 @@ infer_BINARY_OP_ADD(
     int bb_id)
 {
     *needs_guard = false;
-    PyTypeObject *right = _typenode_get_type(type_context->type_stack_ptr[-1]);
-    PyTypeObject *left = _typenode_get_type(type_context->type_stack_ptr[-2]);
+    PyTypeObject *right = typenode_get_type(type_context->type_stack_ptr[-1]);
+    PyTypeObject *left = typenode_get_type(type_context->type_stack_ptr[-2]);
     if (left == &PyLong_Type) {
         if (right == &PyLong_Type) {
             write_curr->op.code = BINARY_OP_ADD_INT_REST;
