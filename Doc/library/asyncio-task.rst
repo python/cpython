@@ -527,6 +527,30 @@ Running Tasks Concurrently
       and there is no running event loop.
 
 
+Eager Task Factory
+==================
+
+.. function:: eager_task_factory(loop, coro, *, name=None, context=None)
+
+    A task factory for eager task execution.
+
+    When using this factory (via ``loop.set_task_factory(asyncio.eager_task_factory)``),
+    coroutines that are able to complete synchronously (without suspending)
+    are returned immediately as a completed :class:`Future`.
+
+    A regular :class:`Task` is returned otherwise, at the first suspension of *coro*.
+
+    .. versionadded:: 3.12
+
+.. function:: create_eager_task_factory(custom_task_constructor)
+
+    Create an eager task factory, similar to :func:`eager_task_factory`,
+    using the provided *custom_task_constructor* when creating a new task instead
+    of the default :class:`Task`.
+
+    .. versionadded:: 3.12
+
+
 Shielding From Cancellation
 ===========================
 
