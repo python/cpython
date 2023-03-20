@@ -69,28 +69,46 @@ class Block(Node):
 
 
 @dataclass
-class StackVarTypeLiteral(Node):
+class TypeSrcLiteral(Node):
     literal: str
 
 
 @dataclass
-class StackVarTypeIndex(Node):
-    array: Literal["locals", "consts"]
+class TypeSrcConst(Node):
     index: str
 
+
 @dataclass
-class StackVarInputVar(Node):
+class TypeSrcLocals(Node):
+    index: str
+
+
+@dataclass
+class TypeSrcStackInput(Node):
     name: str
 
 
-StackVarType: TypeAlias = StackVarTypeLiteral | StackVarTypeIndex | StackVarInputVar
+TypeSrc: TypeAlias = (
+    TypeSrcLiteral 
+    | TypeSrcConst 
+    | TypeSrcLocals 
+    | TypeSrcStackInput
+)
 
+@dataclass
+class TypeOperation(Node):
+    op: Literal["TYPE_SET", "TYPE_OVERWRITE"]
+    src: TypeSrc
+
+@dataclass
+class TypeAnnotation(Node):
+    ops: tuple[TypeOperation]
 
 @dataclass
 class StackEffect(Node):
     name: str
     type: str = ""  # Optional `:type`
-    type_annotation: StackVarType | None = None # Default is None
+    type_annotation: TypeAnnotation | None = None # Default is None
     cond: str = ""  # Optional `if (cond)`
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
@@ -111,22 +129,9 @@ class CacheEffect(Node):
 
 
 @dataclass
-class LocalEffectVarLiteral(Node):
-    name: str
-
-
-@dataclass
-class LocalEffectVarStack(Node):
-    name: str
-
-
-LocalEffectVar: TypeAlias = LocalEffectVarLiteral | LocalEffectVarStack
-
-
-@dataclass
 class LocalEffect(Node):
     index: str
-    value: LocalEffectVar
+    value: TypeSrc
 
 
 @dataclass
@@ -328,7 +333,7 @@ class Parser(PLexer):
             type_annotation = None
             if self.expect(lx.COLON):
                 has_type_annotation = True
-                type_annotation = self.stackvar_type()
+                type_annotation = self.stackvar_typeannotation()
             cond_text = ""
             if self.expect(lx.IF):
                 self.require(lx.LPAREN)
@@ -348,22 +353,48 @@ class Parser(PLexer):
             return StackEffect(tkn.text, _type, type_annotation, cond_text, size_text)
 
     @contextual
-    def stackvar_type(self) -> StackVarType | None: 
+    def stackvar_typesrc(self) -> TypeSrc | None:
         if id := self.expect(lx.IDENTIFIER):
             idstr = id.text.strip()
             if not self.expect(lx.LBRACKET):
-                return StackVarTypeLiteral(idstr)
+                return TypeSrcLiteral(idstr)
             if idstr not in ["locals", "consts"]: return
             if id := self.expect(lx.IDENTIFIER):
                 index = id.text.strip()
                 self.require(lx.RBRACKET)
-                return StackVarTypeIndex(
-                    "locals" if idstr == "locals" else "consts", 
-                    index)
+                if idstr == "locals":
+                    return TypeSrcLocals(index)
+                return TypeSrcConst(index)
         elif self.expect(lx.TIMES):
             id = self.require(lx.IDENTIFIER)
-            return StackVarInputVar(id.text.strip())
+            return TypeSrcStackInput(id.text.strip())
 
+    @contextual
+    def stackvar_typeoperation(self) -> TypeOperation | None: 
+        if self.expect(lx.LSHIFTEQUAL):
+            src = self.stackvar_typesrc()
+            if src is None: return None
+            return TypeOperation("TYPE_SET", src)
+        src = self.stackvar_typesrc()
+        if src is None: return None
+        return TypeOperation("TYPE_OVERWRITE", src)
+
+    @contextual
+    def stackvar_typeannotation(self) -> TypeAnnotation | None:
+        ops = []
+        if self.expect(lx.LBRACE):
+            while True:
+                typ = self.stackvar_typeoperation()
+                ops.append(typ)
+                if typ is None: return None
+                if self.expect(lx.RBRACE):
+                    break
+                self.require(lx.COMMA)
+        else:
+            typ = self.stackvar_typeoperation()
+            if typ is None: return None
+            ops.append(typ)
+        return TypeAnnotation(tuple(ops))
 
     @contextual
     def local_effect(self) -> LocalEffect | None:
@@ -379,12 +410,12 @@ class Parser(PLexer):
                     value = self.require(lx.IDENTIFIER).text.strip()
                     return LocalEffect(
                         index, 
-                        LocalEffectVarStack(value)
+                        TypeSrcStackInput(value)
                     )
                 value = self.require(lx.IDENTIFIER).text.strip()
                 return LocalEffect(
                     index,
-                    LocalEffectVarLiteral(value)
+                    TypeSrcLiteral(value)
                 )
 
     @contextual

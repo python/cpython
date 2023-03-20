@@ -39,11 +39,11 @@ initialize_type_context(const PyCodeObject *co)
     int nlocals = co->co_nlocals;
     int nstack = co->co_stacksize;
 
-    PyTypeObject **type_locals = PyMem_Malloc(nlocals * sizeof(PyTypeObject *));
+    _Py_TYPENODE_t *type_locals = PyMem_Malloc(nlocals * sizeof(_Py_TYPENODE_t));
     if (type_locals == NULL) {
         return NULL;
     }
-    PyTypeObject **type_stack = PyMem_Malloc(nstack * sizeof(PyTypeObject *));
+    _Py_TYPENODE_t *type_stack = PyMem_Malloc(nstack * sizeof(_Py_TYPENODE_t));
     if (type_stack == NULL) {
         PyMem_Free(type_locals);
         return NULL;
@@ -51,10 +51,10 @@ initialize_type_context(const PyCodeObject *co)
 
     // Initialize to unknown type.
     for (int i = 0; i < nlocals; i++) {
-        type_locals[i] = NULL;
+        type_locals[i] = _Py_TYPENODE_NULLROOT;
     }
     for (int i = 0; i < nstack; i++) {
-        type_stack[i] = NULL;
+        type_stack[i] = _Py_TYPENODE_NULLROOT;
     }
 
     _PyTier2TypeContext *type_context = PyMem_Malloc(sizeof(_PyTier2TypeContext));
@@ -79,21 +79,20 @@ _PyTier2TypeContext_Copy(const _PyTier2TypeContext *type_context)
     fprintf(stderr, "  [*] Copying type context\n");
 #endif
 
+    _Py_TYPENODE_t *orig_type_locals = type_context->type_locals;
+    _Py_TYPENODE_t *orig_type_stack = type_context->type_stack;
     int nlocals = type_context->type_locals_len;
     int nstack = type_context->type_stack_len;
 
-    PyTypeObject **type_locals = PyMem_Malloc(nlocals * sizeof(PyTypeObject *));
+    _Py_TYPENODE_t *type_locals = PyMem_Malloc(nlocals * sizeof(_Py_TYPENODE_t));
     if (type_locals == NULL) {
         return NULL;
     }
-    PyTypeObject **type_stack = PyMem_Malloc(nstack * sizeof(PyTypeObject *));
+    _Py_TYPENODE_t *type_stack = PyMem_Malloc(nstack * sizeof(_Py_TYPENODE_t));
     if (type_stack == NULL) {
         PyMem_Free(type_locals);
         return NULL;
     }
-
-    memcpy(type_locals, type_context->type_locals, nlocals * sizeof(PyTypeObject *));
-    memcpy(type_stack, type_context->type_stack, nstack * sizeof(PyTypeObject *));
 
     _PyTier2TypeContext *new_type_context = PyMem_Malloc(sizeof(_PyTier2TypeContext));
     if (new_type_context == NULL) {
@@ -101,6 +100,59 @@ _PyTier2TypeContext_Copy(const _PyTier2TypeContext *type_context)
         PyMem_Free(type_stack);
         return NULL;
     }
+
+    for (int i = 0; i < nlocals; i++) {
+        _Py_TYPENODE_t node = type_context->type_locals[i];
+        switch _Py_TYPENODE_GET_TAG(node)
+        {
+        case TYPE_ROOT:
+            type_locals[i] = node;
+            break;
+        case TYPE_REF: {
+            // Check if part of locals
+            _Py_TYPENODE_t *parent = (_Py_TYPENODE_t *)_Py_TYPENODE_CLEAR_TAG(node);
+
+            // Check if part of locals
+            if (parent - type_context->type_locals < nlocals) {
+                type_locals[i] = node - (uintptr_t)orig_type_locals + (uintptr_t)type_locals;
+            }
+            // Is part of stack
+            else {
+                type_locals[i] = node - (uintptr_t)orig_type_stack + (uintptr_t)type_stack;
+            }
+            break;
+        }
+        default:
+            Py_UNREACHABLE();
+        }
+    }
+
+    for (int i = 0; i < nstack; i++) {
+        _Py_TYPENODE_t node = type_context->type_stack[i];
+        switch _Py_TYPENODE_GET_TAG(node)
+        {
+        case TYPE_ROOT:
+            type_stack[i] = node;
+            break;
+        case TYPE_REF: {
+            // Check if part of locals
+            _Py_TYPENODE_t *parent = (_Py_TYPENODE_t *)_Py_TYPENODE_CLEAR_TAG(node);
+
+            // Check if part of locals
+            if (parent - type_context->type_locals < nlocals) {
+                type_stack[i] = node - (uintptr_t)orig_type_locals + (uintptr_t)type_locals;
+            }
+            // Is part of stack
+            else {
+                type_stack[i] = node - (uintptr_t)orig_type_stack + (uintptr_t)type_stack;
+            }
+            break;
+        }
+        default:
+            Py_UNREACHABLE();
+        }
+    }
+
     new_type_context->type_locals_len = nlocals;
     new_type_context->type_stack_len = nstack;
     new_type_context->type_locals = type_locals;
@@ -122,6 +174,248 @@ _PyTier2TypeContext_Free(_PyTier2TypeContext *type_context)
     PyMem_Free(type_context);
 }
 
+static _Py_TYPENODE_t*
+__typenode_get_rootptr(_Py_TYPENODE_t ref)
+{
+    uintptr_t tag;
+    _Py_TYPENODE_t *ref_ptr;
+    do {
+        ref_ptr = (_Py_TYPENODE_t *)(_Py_TYPENODE_CLEAR_TAG(ref));
+        ref = *ref_ptr;
+        tag = _Py_TYPENODE_GET_TAG(ref);
+    } while (tag != TYPE_ROOT);
+    return ref_ptr;
+}
+
+static PyTypeObject*
+typenode_get_type(_Py_TYPENODE_t node)
+{
+    uintptr_t tag = _Py_TYPENODE_GET_TAG(node);
+    switch (tag) {
+    case TYPE_ROOT: {
+        PyTypeObject *ret = (PyTypeObject *)_Py_TYPENODE_CLEAR_TAG(node);
+        return ret;
+    }
+    case TYPE_REF: {
+        _Py_TYPENODE_t *root_ref = __typenode_get_rootptr(node);
+        PyTypeObject *ret = (PyTypeObject *)_Py_TYPENODE_CLEAR_TAG(*root_ref);
+        return ret;
+    }
+    default:
+        Py_UNREACHABLE();
+    }
+}
+
+static void
+__type_propagate_TYPE_SET(
+    _Py_TYPENODE_t *src, _Py_TYPENODE_t *dst, bool src_is_new)
+{
+
+#ifdef Py_DEBUG
+    // If `src_is_new` is set:
+    //   - `src` doesn't belong inside the type context yet.
+    //   - `src` has to be a TYPE_ROOT
+    //   - `src` is to be interpreted as a _Py_TYPENODE_t
+    if (src_is_new) {
+        assert(_Py_TYPENODE_GET_TAG((_Py_TYPENODE_t)src) == TYPE_ROOT);
+    }
+#endif
+
+    uintptr_t tag = _Py_TYPENODE_GET_TAG(*dst);
+    switch (tag) {
+    case TYPE_ROOT: {
+        if (!src_is_new) {
+            // Make dst a reference to src
+            *dst = _Py_TYPENODE_MAKE_REF((_Py_TYPENODE_t)src);
+            break;
+        }
+        // Make dst the src
+        *dst = (_Py_TYPENODE_t)src;
+        break;
+    }
+    case TYPE_REF: {
+        _Py_TYPENODE_t *rootref = __typenode_get_rootptr(*dst);
+        if (!src_is_new) {
+            // Traverse up to the root of dst, make root a reference to src
+            *rootref = _Py_TYPENODE_MAKE_REF((_Py_TYPENODE_t)src);
+            break;
+        }
+        // Make root of dst the src
+        *rootref = (_Py_TYPENODE_t)src;
+        break;
+    }
+    default:
+        Py_UNREACHABLE();
+    }
+}
+
+static void
+__type_propagate_TYPE_OVERWRITE(
+    _PyTier2TypeContext *type_context,
+    _Py_TYPENODE_t* src, _Py_TYPENODE_t* dst, bool src_is_new)
+{
+
+#ifdef Py_DEBUG
+    // See: __type_propagate_TYPE_SET
+    if (src_is_new) {
+        assert(_Py_TYPENODE_GET_TAG((_Py_TYPENODE_t)src) == TYPE_ROOT);
+    }
+#endif
+
+    uintptr_t tag = _Py_TYPENODE_GET_TAG(*dst);
+    switch (tag) {
+    case TYPE_ROOT: {
+        
+        _Py_TYPENODE_t old_dst = *dst;
+        if (!src_is_new) {
+            // Make dst a reference to src
+            *dst = _Py_TYPENODE_MAKE_REF((_Py_TYPENODE_t)src);
+        }
+        else {
+            // Make dst the src
+            *dst = (_Py_TYPENODE_t)src;
+        }
+
+        /* Pick one child of dst andmake that the new root of the dst tree */
+
+        // Children of dst will have this form
+        _Py_TYPENODE_t child_test = _Py_TYPENODE_MAKE_REF(
+            _Py_TYPENODE_CLEAR_TAG((_Py_TYPENODE_t)dst));
+        // Will be initialised to the first child we find (ptr to the new root)
+        _Py_TYPENODE_t *new_root_ptr = NULL;
+
+        // Search locals for children
+        int nlocals = type_context->type_locals_len;
+        for (int i = 0; i < nlocals; i++) {
+            _Py_TYPENODE_t *node_ptr = &(type_context->type_locals[i]);
+            if (*node_ptr == child_test) {
+                if (new_root_ptr == NULL) {
+                    // First child encountered! initialise root
+                    new_root_ptr = node_ptr;
+                    *node_ptr = old_dst;
+                }
+                else {
+                    // Not the first child encounted, point it to the new root
+                    *node_ptr = _Py_TYPENODE_MAKE_REF((_Py_TYPENODE_t)new_root_ptr);
+                }
+            }
+        }
+
+        // Search stack for children
+        int nstack = type_context->type_stack_len;
+        for (int i = 0; i < nstack; i++) {
+            _Py_TYPENODE_t *node_ptr = &(type_context->type_stack[i]);
+            if (*node_ptr == child_test) {
+                if (new_root_ptr == NULL) {
+                    // First child encountered! initialise root
+                    new_root_ptr = node_ptr;
+                    *node_ptr = old_dst;
+                }
+                else {
+                    // Not the first child encounted, point it to the new root
+                    *node_ptr = _Py_TYPENODE_MAKE_REF((_Py_TYPENODE_t)new_root_ptr);
+                }
+            }
+        }
+        break;
+    }
+    case TYPE_REF: {
+
+        // Make dst a reference to src
+        _Py_TYPENODE_t old_dst = *dst;
+        if (!src_is_new) {
+            // Make dst a reference to src
+            *dst = _Py_TYPENODE_MAKE_REF((_Py_TYPENODE_t)src);
+        }
+        else {
+            // Make dst the src
+            *dst = (_Py_TYPENODE_t)src;
+        }
+
+        /* Make all child of src be a reference to the parent of dst */
+
+        // Children of dst will have this form
+        _Py_TYPENODE_t child_test = _Py_TYPENODE_MAKE_REF(
+            _Py_TYPENODE_CLEAR_TAG((_Py_TYPENODE_t)dst));
+
+        // Search locals for children
+        int nlocals = type_context->type_locals_len;
+        for (int i = 0; i < nlocals; i++) {
+            _Py_TYPENODE_t *node_ptr = &(type_context->type_locals[i]);
+            if (*node_ptr == child_test) {
+                // Is a child of dst. Point it to the parent of dst
+                *node_ptr = old_dst;
+            }
+        }
+
+        // Search stack for children
+        int nstack = type_context->type_stack_len;
+        for (int i = 0; i < nstack; i++) {
+            _Py_TYPENODE_t *node_ptr = &(type_context->type_stack[i]);
+            if (*node_ptr == child_test) {
+                // Is a child of dst. Point it to the parent of dst
+                *node_ptr = old_dst;
+            }
+        }
+        break;
+    }
+    default:
+        Py_UNREACHABLE();
+    }
+}
+
+static void
+__type_stack_shrink(_PyTier2TypeContext *type_context, _Py_TYPENODE_t **type_stackptr, int idx)
+{
+    // TODO:
+    //   If we don't touch the stack elements
+    //   when shrinking, we need to check for references
+    //   on these elements.
+    //   Otherwise, if we NULL these elements, we need to refactor
+    //   the type propagator to perform shrinking last.
+    //while (idx--) {
+    //    __type_propagate_TYPE_OVERWRITE(
+    //        type_context,
+    //        (_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, *type_stackptr,
+    //        true);
+    //    *type_stackptr -= 1;
+    //}
+    *type_stackptr -= idx;
+}
+
+#if TYPEPROP_DEBUG
+
+static void
+print_typestack(const _PyTier2TypeContext *type_context)
+{
+    _Py_TYPENODE_t *type_stack = type_context->type_stack;
+    _Py_TYPENODE_t *type_locals = type_context->type_locals;
+    _Py_TYPENODE_t *type_stackptr = type_context->type_stack_ptr;
+
+    int nstack_use = (int)(type_stackptr - type_stack);
+    int nstack = type_context->type_stack_len;
+    fprintf(stderr, "      Stack: %p: [", type_stack);
+    for (int i = 0; i < nstack; i++) {
+        PyTypeObject *type = typenode_get_type(type_stack[i]);
+        _Py_TYPENODE_t tag = _Py_TYPENODE_GET_TAG(type_stack[i]);
+        fprintf(stderr, "%s%s%s",
+            i == nstack_use ? "." : " ",
+            type == NULL ? "?" : type->tp_name,
+            tag == TYPE_REF ? "*" : "");
+    }
+    fprintf(stderr, "]\n");
+    fprintf(stderr, "      Locals %p: [", type_locals);
+    for (int i = 0; i < type_context->type_locals_len; i++) {
+        PyTypeObject *type = typenode_get_type(type_locals[i]);
+        _Py_TYPENODE_t tag = _Py_TYPENODE_GET_TAG(type_locals[i]);
+        fprintf(stderr, "%s%s ",
+            type == NULL ? "?" : type->tp_name,
+            tag == TYPE_REF ? "*" : "");
+    }
+    fprintf(stderr, "]\n");
+}
+#endif
+
 // Type propagates across a single function. 
 static void
 type_propagate(
@@ -129,23 +423,29 @@ type_propagate(
     _PyTier2TypeContext *type_context,
     const PyObject *consts)
 {
-    PyTypeObject **type_stack = type_context->type_stack;
-    PyTypeObject **type_locals = type_context->type_locals;
-    PyTypeObject **type_stackptr = type_context->type_stack_ptr;
+    _Py_TYPENODE_t *type_stack = type_context->type_stack;
+    _Py_TYPENODE_t *type_locals = type_context->type_locals;
+    _Py_TYPENODE_t **type_stackptr = &type_context->type_stack_ptr;
 
-#define TARGET(op) case op: 
-#define TYPESTACK_PEEK(idx)         (type_stackptr[-(idx)])
-#define TYPESTACK_POKE(idx, v)      type_stackptr[-(idx)] = (v)
-#define TYPELOCALS_SET(idx, v)      type_locals[idx] = v;
-#define TYPELOCALS_GET(idx)         (type_locals[idx])
-#define TYPECONST_GET(idx)          Py_TYPE(_PyTuple_CAST(consts)->ob_item[(idx)])
-#define STACK_ADJUST(idx)           type_stackptr += (idx)
-#define STACK_GROW(idx)             STACK_ADJUST((idx))
-#define STACK_SHRINK(idx)           STACK_ADJUST(-(idx))
+#define TARGET(op) case op:
+#define TYPESTACK_PEEK(idx)         (&((*type_stackptr)[-(idx)]))
+#define TYPELOCALS_GET(idx)         (&(type_locals[idx]))
+
+// Get the type of the const and make into a TYPENODE ROOT
+#define TYPECONST_GET(idx)          _Py_TYPENODE_MAKE_ROOT( \
+                                        (_Py_TYPENODE_t)Py_TYPE( \
+                                            _PyTuple_CAST(consts)->ob_item[(idx)]))
+
+#define TYPE_SET(src, dst, flag)        __type_propagate_TYPE_SET((src), (dst), (flag))
+#define TYPE_OVERWRITE(src, dst, flag)  __type_propagate_TYPE_OVERWRITE(type_context, (src), (dst), (flag))
+
+#define STACK_GROW(idx)             *type_stackptr += (idx)
+
+// Stack shrinking has to NULL the nodes
+#define STACK_SHRINK(idx)           __type_stack_shrink(type_context, type_stackptr, (idx))
 
 #if TYPEPROP_DEBUG
-    fprintf(stderr, "  [-] Type stack bef: %llu\n",
-        ((uint64_t)type_stackptr - (uint64_t)type_stack) / sizeof(PyTypeObject *));
+    fprintf(stderr, "  [-] Type stack bef: %llu\n", (uint64_t)(*type_stackptr - type_stack));
 #ifdef Py_DEBUG
     fprintf(stderr, "  [-] Type propagating across: %s : %d\n", _PyOpcode_OpName[opcode], oparg);
 #endif
@@ -159,11 +459,9 @@ type_propagate(
     }
 
 #if TYPEPROP_DEBUG
-    fprintf(stderr, "  [-] Type stack aft: %llu\n",
-        ((uint64_t)type_stackptr - (uint64_t)type_stack) / sizeof(PyTypeObject *));
+    fprintf(stderr, "  [-] Type stack aft: %llu\n", (uint64_t)(*type_stackptr - type_stack));
+    print_typestack(type_context);
 #endif
-
-    type_context->type_stack_ptr = type_stackptr;
 
 #undef TARGET
 #undef STACK_ADJUST
@@ -775,8 +1073,8 @@ infer_BINARY_OP_ADD(
     int bb_id)
 {
     *needs_guard = false;
-    PyTypeObject *right = type_context->type_stack_ptr[-1];
-    PyTypeObject *left = type_context->type_stack_ptr[-2];
+    PyTypeObject *right = typenode_get_type(type_context->type_stack_ptr[-1]);
+    PyTypeObject *left = typenode_get_type(type_context->type_stack_ptr[-2]);
     if (left == &PyLong_Type) {
         if (right == &PyLong_Type) {
             write_curr->op.code = BINARY_OP_ADD_INT_REST;
@@ -1661,3 +1959,5 @@ _PyTier2_RewriteBackwardJump(_Py_CODEUNIT *jump_backward_lazy, _Py_CODEUNIT *tar
 #undef TYPELOCALS_SET
 #undef TYPELOCALS_GET
 #undef TYPECONST_GET
+#undef TYPE_SET
+#undef TYPE_OVERWRITE

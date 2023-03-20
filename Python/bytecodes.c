@@ -300,7 +300,11 @@ dummy_func(
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsum, sum);
         }
 
-        inst(BINARY_CHECK_FLOAT, (left, right -- left_unboxed : PyRawFloat_Type, right_unboxed : PyRawFloat_Type)) {
+        inst(BINARY_CHECK_FLOAT, (
+                left, right 
+                -- left_unboxed : {<<= PyFloat_Type, PyRawFloat_Type}, 
+                   right_unboxed: {<<= PyFloat_Type, PyRawFloat_Type})
+            ) {
             assert(cframe.use_tracing == 0);
             bb_test = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
             left_unboxed = (bb_test
@@ -338,7 +342,7 @@ dummy_func(
             U_INST(BINARY_OP_ADD_INT_REST);
         }
 
-        inst(BINARY_CHECK_INT, (left, right -- left : PyLong_Type, right : PyLong_Type)) {
+        inst(BINARY_CHECK_INT, (left, right -- left : <<= PyLong_Type, right : <<= PyLong_Type)) {
             assert(cframe.use_tracing == 0);
             bb_test = PyLong_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
         }
