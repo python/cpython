@@ -14673,7 +14673,8 @@ PyUnicode_InternInPlace(PyObject **p)
     }
 
     /* Immortalize the object. */
-    _Py_SetImmortal(s);
+    // XXX Uncomment this once the PEP 683 implementation has landed.
+    //_Py_SetImmortal(s);
 
     /* The two references in interned dict (key and value) are not counted by
        refcnt. unicode_dealloc() and _PyUnicode_ClearInterned() take care of
