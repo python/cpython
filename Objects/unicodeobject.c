@@ -14584,6 +14584,33 @@ error:
 }
 
 
+static PyThreadState *
+get_interned_tstate(void)
+{
+    PyThreadState *tstate = _PyRuntime.unicode_state.interned.tstate;
+    if (tstate == NULL) {
+        PyInterpreterState *main_interp = _PyInterpreterState_Main();
+        /* We do not "bind" the thread state here. */
+        tstate = _PyThreadState_New(main_interp);
+        if (tstate == NULL) {
+            PyErr_Clear();
+            return NULL;
+        }
+    }
+    return tstate;
+}
+
+static void
+clear_interned_tstate(void)
+{
+    PyThreadState *tstate = _PyRuntime.unicode_state.interned.tstate;
+    if (tstate != NULL) {
+        _PyRuntime.unicode_state.interned.tstate = NULL;
+        PyThreadState_Clear(tstate);
+        PyThreadState_Delete(tstate);
+    }
+}
+
 static inline PyObject *
 store_interned(PyObject *obj)
 {
@@ -14709,6 +14736,8 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     PyDict_Clear(interned);
     Py_DECREF(interned);
     set_interned_dict(NULL);
+
+    clear_interned_tstate();
 }
 
 
