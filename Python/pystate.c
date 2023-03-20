@@ -861,8 +861,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.
-
-    _PyInterpreterState_FinalizeRefTotal(interp);
 }
 
 
@@ -905,6 +903,10 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     zapthreads(interp);
 
     _PyEval_FiniState(&interp->ceval);
+
+    // XXX This call should be done at the end of clear_interpreter(),
+    // but currently some objects get decref'ed after that.
+    _PyInterpreterState_FinalizeRefTotal(interp);
 
     HEAD_LOCK(runtime);
     PyInterpreterState **p;
