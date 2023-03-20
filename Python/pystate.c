@@ -904,9 +904,11 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 
     _PyEval_FiniState(&interp->ceval);
 
+#ifdef Py_REF_DEBUG
     // XXX This call should be done at the end of clear_interpreter(),
     // but currently some objects get decref'ed after that.
     _PyInterpreterState_FinalizeRefTotal(interp);
+#endif
 
     HEAD_LOCK(runtime);
     PyInterpreterState **p;
