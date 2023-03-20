@@ -14617,14 +14617,26 @@ store_interned(PyObject *obj)
     PyObject *interned = get_interned_dict();
     assert(interned != NULL);
 
-    // XXX Swap to the main interpreter.
+    /* Swap to the main interpreter, if necessary. */
+    PyThreadState *oldts = NULL;
+    if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
+        PyThreadState *main_tstate = get_interned_tstate();
+        if (main_tstate == NULL) {
+            return NULL;
+        }
+        oldts = PyThreadState_Swap(main_tstate);
+        assert(oldts != NULL);
+    }
 
     PyObject *t = PyDict_SetDefault(interned, obj, obj);
     if (t == NULL) {
         PyErr_Clear();
     }
 
-    // XXX Swap back.
+    /* Swap back. */
+    if (oldts != NULL) {
+        PyThreadState_Swap(oldts);
+    }
 
     return t;
 }
