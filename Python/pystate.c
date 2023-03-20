@@ -677,7 +677,14 @@ _Py_AddToGlobalDict(PyObject *dict, PyObject *key, PyObject *value)
 
     release_global_objects_lock(runtime);
 
-    // XXX Immortalize the key and value.
+    /* Immortalize the key and value. */
+    if (actual == value) {
+        /* It was added. */
+        _Py_SetImmortal(key);
+        if (value != key) {
+            _Py_SetImmortal(value);
+        }
+    }
 
     return actual;
 }
