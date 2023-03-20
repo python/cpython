@@ -136,7 +136,11 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
         Py_DECREF(f);
     }
     assert(frame->stacktop >= 0);
+    char *unboxed_bitmask = _PyFrame_GetUnboxedBitMask(frame);
     for (int i = 0; i < frame->stacktop; i++) {
+        if (unboxed_bitmask[i]) {
+            continue;
+        }
         Py_XDECREF(frame->localsplus[i]);
     }
     Py_XDECREF(frame->frame_obj);

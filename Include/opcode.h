@@ -280,8 +280,15 @@ extern "C" {
 #define BB_JUMP_BACKWARD_LAZY                  188
 #define BINARY_CHECK_INT                       189
 #define BINARY_CHECK_FLOAT                     190
-#define BINARY_OP_ADD_INT_REST                 191
-#define BINARY_OP_ADD_FLOAT_REST               192
+#define UNARY_CHECK_FLOAT                      191
+#define BINARY_OP_ADD_INT_REST                 192
+#define BINARY_OP_ADD_FLOAT_UNBOXED            193
+#define UNBOX_FLOAT                            194
+#define BOX_FLOAT                              195
+#define LOAD_FAST_NO_INCREF                    196
+#define STORE_FAST_BOXED_UNBOXED               197
+#define STORE_FAST_UNBOXED_BOXED               198
+#define STORE_FAST_UNBOXED_UNBOXED             199
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \

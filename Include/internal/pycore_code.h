@@ -529,10 +529,6 @@ extern uint32_t _Py_next_func_version;
 
 #define COMPARISON_NOT_EQUALS (COMPARISON_UNORDERED | COMPARISON_LESS_THAN | COMPARISON_GREATER_THAN)
 
-
-#define BB_SUC 1
-#define BB_ALT 0
-
 #ifdef __cplusplus
 }
 #endif

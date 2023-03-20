@@ -504,7 +504,20 @@ _uops = [
     # single operand forms.
     'BINARY_CHECK_INT',
     'BINARY_CHECK_FLOAT',
+    'UNARY_CHECK_FLOAT',
     # 'BINARY_CHECK_STR',
     'BINARY_OP_ADD_INT_REST',
-    'BINARY_OP_ADD_FLOAT_REST',
+    'BINARY_OP_ADD_FLOAT_UNBOXED',
+
+    # Boxing / unboxing ops
+    'UNBOX_FLOAT',
+    'BOX_FLOAT',
+    'LOAD_FAST_NO_INCREF',
+    # Storing a boxed value, overwriting an unboxed local.
+    'STORE_FAST_BOXED_UNBOXED',
+    # Storing an unboxed value, overwriting a boxed local.
+    'STORE_FAST_UNBOXED_BOXED',
+    # Storing an unboxed value, overwriting an unboxed local.
+    'STORE_FAST_UNBOXED_UNBOXED',
+    # The traditional STORE_FAST is storing a boxed value, overwriting a boxed local.
 ]

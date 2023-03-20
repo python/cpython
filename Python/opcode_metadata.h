@@ -21,9 +21,17 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case LOAD_FAST:
             return 0;
+        case LOAD_FAST_NO_INCREF:
+            return 0;
         case LOAD_CONST:
             return 0;
         case STORE_FAST:
+            return 1;
+        case STORE_FAST_BOXED_UNBOXED:
+            return 1;
+        case STORE_FAST_UNBOXED_BOXED:
+            return 1;
+        case STORE_FAST_UNBOXED_UNBOXED:
             return 1;
         case LOAD_FAST__LOAD_FAST:
             return 0+0;
@@ -63,8 +71,14 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case BINARY_CHECK_FLOAT:
             return 2;
-        case BINARY_OP_ADD_FLOAT_REST:
+        case UNARY_CHECK_FLOAT:
+            return oparg + 1;
+        case BINARY_OP_ADD_FLOAT_UNBOXED:
             return 2;
+        case UNBOX_FLOAT:
+            return oparg + 1;
+        case BOX_FLOAT:
+            return oparg + 1;
         case BINARY_OP_ADD_INT:
             return 2;
         case BINARY_CHECK_INT:
@@ -411,9 +425,17 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case LOAD_FAST:
             return 1;
+        case LOAD_FAST_NO_INCREF:
+            return 1;
         case LOAD_CONST:
             return 1;
         case STORE_FAST:
+            return 0;
+        case STORE_FAST_BOXED_UNBOXED:
+            return 0;
+        case STORE_FAST_UNBOXED_BOXED:
+            return 0;
+        case STORE_FAST_UNBOXED_UNBOXED:
             return 0;
         case LOAD_FAST__LOAD_FAST:
             return 1+1;
@@ -453,8 +475,14 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case BINARY_CHECK_FLOAT:
             return 2;
-        case BINARY_OP_ADD_FLOAT_REST:
+        case UNARY_CHECK_FLOAT:
+            return oparg + 1;
+        case BINARY_OP_ADD_FLOAT_UNBOXED:
             return 1;
+        case UNBOX_FLOAT:
+            return oparg + 1;
+        case BOX_FLOAT:
+            return oparg + 1;
         case BINARY_OP_ADD_INT:
             return 1;
         case BINARY_CHECK_INT:
@@ -803,8 +831,12 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [LOAD_CLOSURE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_FAST_CHECK] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [LOAD_FAST_NO_INCREF] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_CONST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [STORE_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [STORE_FAST_BOXED_UNBOXED] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [STORE_FAST_UNBOXED_BOXED] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [STORE_FAST_UNBOXED_UNBOXED] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [LOAD_FAST__LOAD_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBIB },
     [LOAD_FAST__LOAD_CONST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBIB },
     [STORE_FAST__LOAD_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBIB },
@@ -824,7 +856,10 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BINARY_OP_INPLACE_ADD_UNICODE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [BINARY_OP_ADD_FLOAT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC },
     [BINARY_CHECK_FLOAT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
-    [BINARY_OP_ADD_FLOAT_REST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [UNARY_CHECK_FLOAT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BINARY_OP_ADD_FLOAT_UNBOXED] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [UNBOX_FLOAT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
+    [BOX_FLOAT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [BINARY_OP_ADD_INT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IXC },
     [BINARY_CHECK_INT] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [BINARY_OP_ADD_INT_REST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },

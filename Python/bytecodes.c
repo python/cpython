@@ -121,6 +121,10 @@ dummy_func(
             Py_INCREF(value);
         }
 
+        inst(LOAD_FAST_NO_INCREF, (-- value : locals[oparg])) {
+            value = GETLOCAL(oparg);
+        }
+
         inst(LOAD_CONST, (-- value : consts[oparg])) {
             value = GETITEM(consts, oparg);
             Py_INCREF(value);
@@ -128,6 +132,20 @@ dummy_func(
 
         inst(STORE_FAST, (value --), locals[oparg] = *value) {
             SETLOCAL(oparg, value);
+        }
+
+        inst(STORE_FAST_BOXED_UNBOXED, (value --), locals[oparg] = *value) {
+            SETLOCAL_NO_DECREF(oparg, value);
+            _PyFrame_GetUnboxedBitMask(frame)[oparg] = false;
+        }
+
+        inst(STORE_FAST_UNBOXED_BOXED, (value--), locals[oparg] = *value) {
+            SETLOCAL(oparg, value);
+            _PyFrame_GetUnboxedBitMask(frame)[oparg] = true;
+        }
+
+        inst(STORE_FAST_UNBOXED_UNBOXED, (value--), locals[oparg] = *value) {
+            SETLOCAL_NO_DECREF(oparg, value);
         }
 
         super(LOAD_FAST__LOAD_FAST) = LOAD_FAST + LOAD_FAST;
@@ -276,23 +294,45 @@ dummy_func(
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
-            U_INST(BINARY_OP_ADD_FLOAT_REST);
-        }
-
-        inst(BINARY_CHECK_FLOAT, (
-                left, right 
-                -- left : {<<= PyFloat_Type, PyRawFloat_Type}, 
-                   right: {<<= PyFloat_Type, PyRawFloat_Type})
-            ) {
-            assert(cframe.use_tracing == 0);
-            bb_test = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
-        }
-
-        u_inst(BINARY_OP_ADD_FLOAT_REST, (left, right -- sum : PyFloat_Type)) {
             STAT_INC(BINARY_OP, hit);
             double dsum = ((PyFloatObject *)left)->ob_fval +
                 ((PyFloatObject *)right)->ob_fval;
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsum, sum);
+        }
+
+        inst(BINARY_CHECK_FLOAT, (
+                left, right 
+                -- left_unboxed : {<<= PyFloat_Type, PyRawFloat_Type}, 
+                   right_unboxed: {<<= PyFloat_Type, PyRawFloat_Type})
+            ) {
+            assert(cframe.use_tracing == 0);
+            bb_test = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
+            left_unboxed = (bb_test
+                ? *((PyObject **)(&(((PyFloatObject *)left)->ob_fval)))
+                : left);
+            right_unboxed = (bb_test
+                ? *((PyObject **)(&(((PyFloatObject *)right)->ob_fval)))
+                : right);
+        }
+
+        inst(UNARY_CHECK_FLOAT, (arg, unused[oparg] -- arg : PyFloat_Type, unused[oparg])) {
+            assert(cframe.use_tracing == 0);
+            bb_test = PyFloat_CheckExact(arg);
+        }
+
+        inst(BINARY_OP_ADD_FLOAT_UNBOXED, (left, right -- sum : PyRawFloat_Type)) {
+            STAT_INC(BINARY_OP, hit);
+            double temp = *(double *)(&(left)) + *(double *)(&(right));
+            sum = *(PyObject **)(&temp);
+        }
+
+        inst(UNBOX_FLOAT, (boxed_float, unused[oparg] -- unboxed_float : PyRawFloat_Type, unused[oparg])) {
+            double temp = ((PyFloatObject *)boxed_float)->ob_fval;
+            unboxed_float = (*(PyObject **)(&temp));
+        }
+
+        inst(BOX_FLOAT, (raw_float, unused[oparg] -- boxed_float : PyFloat_Type, unused[oparg])) {
+            boxed_float = PyFloat_FromDouble(*(double *)(&(raw_float)));
         }
 
         macro_inst(BINARY_OP_ADD_INT, (unused/1, left, right -- sum: PyLong_Type)) {

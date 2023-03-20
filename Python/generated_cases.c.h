@@ -3,14 +3,6 @@
 //   Python/bytecodes.c
 // Do not edit!
 
-        #define UOP_BINARY_OP_ADD_FLOAT_REST() \
-        do { \
-            STAT_INC(BINARY_OP, hit);\
-            double dsum = ((PyFloatObject *)left)->ob_fval +\
-                ((PyFloatObject *)right)->ob_fval;\
-            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsum, sum);\
-        } while (0)
-
         #define UOP_BINARY_OP_ADD_INT_REST() \
         do { \
             STAT_INC(BINARY_OP, hit);\
@@ -72,6 +64,14 @@
             DISPATCH();
         }
 
+        TARGET(LOAD_FAST_NO_INCREF) {
+            PyObject *value;
+            value = GETLOCAL(oparg);
+            STACK_GROW(1);
+            stack_pointer[-1] = value;
+            DISPATCH();
+        }
+
         TARGET(LOAD_CONST) {
             PREDICTED(LOAD_CONST);
             PyObject *value;
@@ -85,6 +85,29 @@
         TARGET(STORE_FAST) {
             PyObject *value = stack_pointer[-1];
             SETLOCAL(oparg, value);
+            STACK_SHRINK(1);
+            DISPATCH();
+        }
+
+        TARGET(STORE_FAST_BOXED_UNBOXED) {
+            PyObject *value = stack_pointer[-1];
+            SETLOCAL_NO_DECREF(oparg, value);
+            _PyFrame_GetUnboxedBitMask(frame)[oparg] = false;
+            STACK_SHRINK(1);
+            DISPATCH();
+        }
+
+        TARGET(STORE_FAST_UNBOXED_BOXED) {
+            PyObject *value = stack_pointer[-1];
+            SETLOCAL(oparg, value);
+            _PyFrame_GetUnboxedBitMask(frame)[oparg] = true;
+            STACK_SHRINK(1);
+            DISPATCH();
+        }
+
+        TARGET(STORE_FAST_UNBOXED_UNBOXED) {
+            PyObject *value = stack_pointer[-1];
+            SETLOCAL_NO_DECREF(oparg, value);
             STACK_SHRINK(1);
             DISPATCH();
         }
@@ -388,7 +411,10 @@
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
-            UOP_BINARY_OP_ADD_FLOAT_REST();
+            STAT_INC(BINARY_OP, hit);
+            double dsum = ((PyFloatObject *)left)->ob_fval +
+                ((PyFloatObject *)right)->ob_fval;
+            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsum, sum);
             STACK_SHRINK(1);
             stack_pointer[-1] = sum;
             next_instr += 1;
@@ -398,21 +424,54 @@
         TARGET(BINARY_CHECK_FLOAT) {
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
+            PyObject *left_unboxed;
+            PyObject *right_unboxed;
             assert(cframe.use_tracing == 0);
             bb_test = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
+            left_unboxed = (bb_test
+                ? *((PyObject **)(&(((PyFloatObject *)left)->ob_fval)))
+                : left);
+            right_unboxed = (bb_test
+                ? *((PyObject **)(&(((PyFloatObject *)right)->ob_fval)))
+                : right);
+            stack_pointer[-1] = right_unboxed;
+            stack_pointer[-2] = left_unboxed;
             DISPATCH();
         }
 
-        TARGET(BINARY_OP_ADD_FLOAT_REST) {
+        TARGET(UNARY_CHECK_FLOAT) {
+            PyObject *arg = stack_pointer[-(1 + oparg)];
+            assert(cframe.use_tracing == 0);
+            bb_test = PyFloat_CheckExact(arg);
+            DISPATCH();
+        }
+
+        TARGET(BINARY_OP_ADD_FLOAT_UNBOXED) {
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
             PyObject *sum;
             STAT_INC(BINARY_OP, hit);
-            double dsum = ((PyFloatObject *)left)->ob_fval +
-                ((PyFloatObject *)right)->ob_fval;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsum, sum);
+            double temp = *(double *)(&(left)) + *(double *)(&(right));
+            sum = *(PyObject **)(&temp);
             STACK_SHRINK(1);
             stack_pointer[-1] = sum;
+            DISPATCH();
+        }
+
+        TARGET(UNBOX_FLOAT) {
+            PyObject *boxed_float = stack_pointer[-(1 + oparg)];
+            PyObject *unboxed_float;
+            double temp = ((PyFloatObject *)boxed_float)->ob_fval;
+            unboxed_float = (*(PyObject **)(&temp));
+            stack_pointer[-(1 + oparg)] = unboxed_float;
+            DISPATCH();
+        }
+
+        TARGET(BOX_FLOAT) {
+            PyObject *raw_float = stack_pointer[-(1 + oparg)];
+            PyObject *boxed_float;
+            boxed_float = PyFloat_FromDouble(*(double *)(&(raw_float)));
+            stack_pointer[-(1 + oparg)] = boxed_float;
             DISPATCH();
         }
 
