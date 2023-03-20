@@ -2762,7 +2762,7 @@ check_compare(struct compiler *c, expr_ty e)
     return SUCCESS;
 }
 
-static int compare_masks[] = {
+static const int compare_masks[] = {
     [Py_LT] = COMPARISON_LESS_THAN,
     [Py_LE] = COMPARISON_LESS_THAN | COMPARISON_EQUALS,
     [Py_EQ] = COMPARISON_EQUALS,
