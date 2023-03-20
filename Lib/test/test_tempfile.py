@@ -12,6 +12,7 @@ import stat
 import types
 import weakref
 import gc
+import shutil
 from unittest import mock
 
 import unittest
