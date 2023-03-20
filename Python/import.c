@@ -389,8 +389,7 @@ PyImport_AddModule(const char *name)
 static void
 remove_module(PyThreadState *tstate, PyObject *name)
 {
-    PyObject *type, *value, *traceback;
-    _PyErr_Fetch(tstate, &type, &value, &traceback);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
 
     PyObject *modules = MODULES(tstate->interp);
     if (PyDict_CheckExact(modules)) {
@@ -403,7 +402,7 @@ remove_module(PyThreadState *tstate, PyObject *name)
         }
     }
 
-    _PyErr_ChainExceptions(type, value, traceback);
+    _PyErr_ChainExceptions1(exc);
 }
 
 
@@ -978,6 +977,31 @@ _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
     return 0;
 }
 
+static PyObject *
+get_core_module_dict(PyInterpreterState *interp,
+                     PyObject *name, PyObject *filename)
+{
+    /* Only builtin modules are core. */
+    if (filename == name) {
+        assert(!PyErr_Occurred());
+        if (PyUnicode_CompareWithASCIIString(name, "sys") == 0) {
+            return interp->sysdict_copy;
+        }
+        assert(!PyErr_Occurred());
+        if (PyUnicode_CompareWithASCIIString(name, "builtins") == 0) {
+            return interp->builtins_copy;
+        }
+        assert(!PyErr_Occurred());
+    }
+    return NULL;
+}
+
+static inline int
+is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *filename)
+{
+    return get_core_module_dict(interp, name, filename) != NULL;
+}
+
 static int
 fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
 {
@@ -999,9 +1023,8 @@ fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
 
     // bpo-44050: Extensions and def->m_base.m_copy can be updated
     // when the extension module doesn't support sub-interpreters.
-    // XXX Why special-case the main interpreter?
-    if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
-        if (def->m_size == -1) {
+    if (def->m_size == -1) {
+        if (!is_core_module(tstate->interp, name, filename)) {
             if (def->m_base.m_copy) {
                 /* Somebody already imported the module,
                    likely under a different name.
@@ -1017,7 +1040,10 @@ fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
                 return -1;
             }
         }
+    }
 
+    // XXX Why special-case the main interpreter?
+    if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
         if (_extensions_cache_set(filename, name, def) < 0) {
             return -1;
         }
@@ -1055,18 +1081,24 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
     PyObject *modules = MODULES(tstate->interp);
 
     if (def->m_size == -1) {
+        PyObject *m_copy = def->m_base.m_copy;
         /* Module does not support repeated initialization */
-        if (def->m_base.m_copy == NULL)
-            return NULL;
+        if (m_copy == NULL) {
+            m_copy = get_core_module_dict(tstate->interp, name, filename);
+            if (m_copy == NULL) {
+                return NULL;
+            }
+        }
         mod = import_add_module(tstate, name);
-        if (mod == NULL)
+        if (mod == NULL) {
             return NULL;
+        }
         mdict = PyModule_GetDict(mod);
         if (mdict == NULL) {
             Py_DECREF(mod);
             return NULL;
         }
-        if (PyDict_Update(mdict, def->m_base.m_copy)) {
+        if (PyDict_Update(mdict, m_copy)) {
             Py_DECREF(mod);
             return NULL;
         }
@@ -2291,32 +2323,34 @@ remove_importlib_frames(PyThreadState *tstate)
     const char *remove_frames = "_call_with_frames_removed";
     int always_trim = 0;
     int in_importlib = 0;
-    PyObject *exception, *value, *base_tb, *tb;
     PyObject **prev_link, **outer_link = NULL;
+    PyObject *base_tb = NULL;
 
     /* Synopsis: if it's an ImportError, we trim all importlib chunks
        from the traceback. We always trim chunks
        which end with a call to "_call_with_frames_removed". */
 
-    _PyErr_Fetch(tstate, &exception, &value, &base_tb);
-    if (!exception || _PyInterpreterState_GetConfig(tstate->interp)->verbose) {
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    if (exc == NULL || _PyInterpreterState_GetConfig(tstate->interp)->verbose) {
         goto done;
     }
 
-    if (PyType_IsSubtype((PyTypeObject *) exception,
-                         (PyTypeObject *) PyExc_ImportError))
+    if (PyType_IsSubtype(Py_TYPE(exc), (PyTypeObject *) PyExc_ImportError)) {
         always_trim = 1;
+    }
 
+    assert(PyExceptionInstance_Check(exc));
+    base_tb = PyException_GetTraceback(exc);
     prev_link = &base_tb;
-    tb = base_tb;
+    PyObject *tb = base_tb;
     while (tb != NULL) {
+        assert(PyTraceBack_Check(tb));
         PyTracebackObject *traceback = (PyTracebackObject *)tb;
         PyObject *next = (PyObject *) traceback->tb_next;
         PyFrameObject *frame = traceback->tb_frame;
         PyCodeObject *code = PyFrame_GetCode(frame);
         int now_in_importlib;
 
-        assert(PyTraceBack_Check(tb));
         now_in_importlib = _PyUnicode_EqualToASCIIString(code->co_filename, importlib_filename) ||
                            _PyUnicode_EqualToASCIIString(code->co_filename, external_filename);
         if (now_in_importlib && !in_importlib) {
@@ -2337,15 +2371,14 @@ remove_importlib_frames(PyThreadState *tstate)
         Py_DECREF(code);
         tb = next;
     }
-    assert(PyExceptionInstance_Check(value));
-    assert((PyObject *)Py_TYPE(value) == exception);
     if (base_tb == NULL) {
         base_tb = Py_None;
         Py_INCREF(Py_None);
     }
-    PyException_SetTraceback(value, base_tb);
+    PyException_SetTraceback(exc, base_tb);
 done:
-    _PyErr_Restore(tstate, exception, value, base_tb);
+    Py_XDECREF(base_tb);
+    _PyErr_SetRaisedException(tstate, exc);
 }
 
 

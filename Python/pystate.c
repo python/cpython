@@ -482,6 +482,11 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
+#ifdef Py_REF_DEBUG
+    /* The reftotal is cleared by _Py_FinalizeRefTotal(). */
+    assert(runtime->object_state.reftotal == 0);
+#endif
+
     if (gilstate_tss_initialized(runtime)) {
         gilstate_tss_fini(runtime);
     }
@@ -805,6 +810,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     assert(interp->imports.importlib == NULL);
     assert(interp->imports.import_func == NULL);
 
+    Py_CLEAR(interp->sysdict_copy);
     Py_CLEAR(interp->builtins_copy);
     Py_CLEAR(interp->dict);
 #ifdef HAVE_FORK
