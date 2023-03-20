@@ -307,7 +307,7 @@ The asyncio components that enable structured concurrency, like
 are implemented using cancellation internally and might misbehave if
 a coroutine swallows :exc:`asyncio.CancelledError`. Similarly, user code
 should not generally call :meth:`uncancel <asyncio.Task.uncancel>`.
-However, in such cases when supprssing :exc:`asynci.CancelledError` is
+However, in cases when suppressing :exc:`asyncio.CancelledError` is
 truly desired, it is necessary to also call :meth:`uncancel` to completely
 remove the cancellation state.
 
