@@ -222,6 +222,25 @@ _POST_INIT_NAME = '__post_init__'
 # https://bugs.python.org/issue33453 for details.
 _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
+_ATOMIC_TYPES = {
+    types.NoneType,
+    types.EllipsisType,
+    types.NotImplementedType,
+    int,
+    float,
+    bool,
+    complex,
+    bytes,
+    str,
+    types.CodeType,
+    type,
+    range,
+    types.BuiltinFunctionType,
+    types.FunctionType,
+    # weakref.ref,  # weakref is not currently imported by dataclasses directly
+    property,
+}
+
 # This function's logic is copied from "recursive_repr" function in
 # reprlib module to avoid dependency.
 def _recursive_repr(user_function):
@@ -1295,7 +1314,9 @@ def _asdict_inner(obj, dict_factory):
     if _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):
-            value = _asdict_inner(getattr(obj, f.name), dict_factory)
+            value = getattr(obj, f.name)
+            if type(value) not in _ATOMIC_TYPES:
+                value = _asdict_inner(value, dict_factory)
             result.append((f.name, value))
         return dict_factory(result)
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
@@ -1318,23 +1339,33 @@ def _asdict_inner(obj, dict_factory):
         #   namedtuples, we could no longer call asdict() on a data
         #   structure where a namedtuple was used as a dict key.
 
-        return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
+        return type(obj)(*[
+            v if type(v) in _ATOMIC_TYPES else _asdict_inner(v, dict_factory)
+            for v in obj
+        ])
     elif isinstance(obj, (list, tuple)):
         # Assume we can create an object of this type by passing in a
         # generator (which is not true for namedtuples, handled
         # above).
-        return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
+        return type(obj)(
+            v if type(v) in _ATOMIC_TYPES else _asdict_inner(v, dict_factory)
+            for v in obj
+        )
     elif isinstance(obj, dict):
         if hasattr(type(obj), 'default_factory'):
             # obj is a defaultdict, which has a different constructor from
             # dict as it requires the default_factory as its first arg.
             result = type(obj)(getattr(obj, 'default_factory'))
             for k, v in obj.items():
-                result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
+                k = k if type(k) in _ATOMIC_TYPES else _asdict_inner(k, dict_factory)
+                v = v if type(v) in _ATOMIC_TYPES else _asdict_inner(v, dict_factory)
+                result[k] = v
             return result
-        return type(obj)((_asdict_inner(k, dict_factory),
-                          _asdict_inner(v, dict_factory))
-                         for k, v in obj.items())
+
+        return type(obj)(
+            (k if type(k) in _ATOMIC_TYPES else _asdict_inner(k, dict_factory),
+             v if type(v) in _ATOMIC_TYPES else _asdict_inner(v, dict_factory))
+             for k, v in obj.items())
     else:
         return copy.deepcopy(obj)
 
@@ -1367,7 +1398,9 @@ def _astuple_inner(obj, tuple_factory):
     if _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):
-            value = _astuple_inner(getattr(obj, f.name), tuple_factory)
+            value = getattr(obj, f.name)
+            if type(value) not in _ATOMIC_TYPES:
+                value = _astuple_inner(value, tuple_factory)
             result.append(value)
         return tuple_factory(result)
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
@@ -1377,12 +1410,18 @@ def _astuple_inner(obj, tuple_factory):
         # treated (see below), but we just need to create them
         # differently because a namedtuple's __init__ needs to be
         # called differently (see bpo-34363).
-        return type(obj)(*[_astuple_inner(v, tuple_factory) for v in obj])
+        return type(obj)(*[
+            v if type(v) in _ATOMIC_TYPES else _astuple_inner(v, tuple_factory)
+            for v in obj
+        ])
     elif isinstance(obj, (list, tuple)):
         # Assume we can create an object of this type by passing in a
         # generator (which is not true for namedtuples, handled
         # above).
-        return type(obj)(_astuple_inner(v, tuple_factory) for v in obj)
+        return type(obj)(
+            v if type(v) in _ATOMIC_TYPES else _astuple_inner(v, tuple_factory)
+            for v in obj
+        )
     elif isinstance(obj, dict):
         obj_type = type(obj)
         if hasattr(obj_type, 'default_factory'):
@@ -1390,10 +1429,14 @@ def _astuple_inner(obj, tuple_factory):
             # dict as it requires the default_factory as its first arg.
             result = obj_type(getattr(obj, 'default_factory'))
             for k, v in obj.items():
-                result[_astuple_inner(k, tuple_factory)] = _astuple_inner(v, tuple_factory)
+                k = k if type(k) in _ATOMIC_TYPES else _astuple_inner(k, tuple_factory)
+                v = v if type(v) in _ATOMIC_TYPES else _astuple_inner(v, tuple_factory)
+                result[k] = v
             return result
-        return obj_type((_astuple_inner(k, tuple_factory), _astuple_inner(v, tuple_factory))
-                          for k, v in obj.items())
+        return obj_type(
+            (k if type(k) in _ATOMIC_TYPES else _astuple_inner(k, tuple_factory),
+             v if type(v) in _ATOMIC_TYPES else _astuple_inner(v, tuple_factory))
+            for k, v in obj.items())
     else:
         return copy.deepcopy(obj)
 
