@@ -1,0 +1,12 @@
+#
+# This is a file listing entities to be ignored by sanitizers.
+# https://clang.llvm.org/docs/SanitizerSpecialCaseList.html
+#
+
+[memory]
+# medium_value called by maybe_small_long accesses an uninitialized
+# integer in the case of PyLong of size 0, but the integer is then
+# multiplied by zero immediately, so the lack of initialisation has no
+# adverse effect.
+# https://github.com/python/cpython/issues/102509
+fun:maybe_small_long

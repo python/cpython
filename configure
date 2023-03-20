@@ -11174,8 +11174,8 @@ fi
 $as_echo "$ax_cv_check_cflags___fsanitize_memory" >&6; }
 if test "x$ax_cv_check_cflags___fsanitize_memory" = xyes; then :
 
-BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer -fsanitize-ignorelist=Misc/sanitize-ignorelist.txt $BASECFLAGS"
+LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fsanitize-ignorelist=Misc/sanitize-ignorelist.txt $LDFLAGS"
 
 else
   as_fn_error $? "The selected compiler doesn't support memory sanitizer" "$LINENO" 5

@@ -3081,8 +3081,8 @@ AC_ARG_WITH(memory_sanitizer,
 [
 AC_MSG_RESULT($withval)
 AX_CHECK_COMPILE_FLAG([-fsanitize=memory],[
-BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer -fsanitize-ignorelist=Misc/sanitize-ignorelist.txt $BASECFLAGS"
+LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fsanitize-ignorelist=Misc/sanitize-ignorelist.txt $LDFLAGS"
 ],[AC_MSG_ERROR([The selected compiler doesn't support memory sanitizer])])
 # MSan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
