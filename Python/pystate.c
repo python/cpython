@@ -482,6 +482,9 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
+    /* The reftotal is cleared by _Py_FinalizeRefTotal(). */
+    assert(runtime->object_state.reftotal == 0);
+
     if (gilstate_tss_initialized(runtime)) {
         gilstate_tss_fini(runtime);
     }

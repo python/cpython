@@ -46,7 +46,8 @@ PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 extern void _Py_AddRefTotal(Py_ssize_t);
 extern void _Py_IncRefTotal(void);
 extern void _Py_DecRefTotal(void);
-#  define _Py_DEC_REFTOTAL() _Py_RefTotal--
+
+#  define _Py_DEC_REFTOTAL() _PyRuntime.object_state.reftotal--
 #endif
 
 // Increment reference count by n
@@ -225,6 +226,7 @@ static inline void _PyObject_GC_UNTRACK(
 #endif
 
 #ifdef Py_REF_DEBUG
+extern void _Py_FinalizeRefTotal(_PyRuntimeState *);
 extern void _PyDebug_PrintTotalRefs(void);
 #endif
 
