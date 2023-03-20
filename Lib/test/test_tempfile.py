@@ -1837,6 +1837,11 @@ class TestTemporaryDirectory(BaseTestCase):
             d.cleanup()
         self.assertFalse(os.path.exists(d.name))
 
+    def test_delete_false(self):
+        with tempfile.TemporaryDirectory(delete=False) as working_dir:
+            pass
+        self.assertTrue(os.path.exists(working_dir))
+        shutil.rmtree(working_dir)
 
 if __name__ == "__main__":
     unittest.main()

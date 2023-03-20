@@ -851,6 +851,9 @@ class TemporaryDirectory:
 
     Upon exiting the context, the directory and everything contained
     in it are removed.
+
+    Arguments:
+    'delete' -- whether the directory is automatically deleted (default True).
     """
 
     def __init__(self, suffix=None, prefix=None, dir=None,
