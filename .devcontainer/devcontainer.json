@@ -5,6 +5,19 @@
     "updateContentCommand": {
         // Using a shell for `nproc` usage.
         "python": "./configure --config-cache --with-pydebug && make -s -j `nproc`",
-        "docs": ["make", "--directory", "Doc", "venv", "html"]
+        "docs": [
+            "make",
+            "--directory",
+            "Doc",
+            "venv",
+            "html"
+        ]
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "brettcannon.zephyr-asdl"
+            ]
+        }
     }
 }
