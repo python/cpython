@@ -123,10 +123,6 @@ class PlatformTest(unittest.TestCase):
         for input, output in (
             ('2.4.3 (#1, Jun 21 2006, 13:54:21) \n[GCC 3.3.4 (pre 3.3.5 20040809)]',
              ('CPython', '2.4.3', '', '', '1', 'Jun 21 2006 13:54:21', 'GCC 3.3.4 (pre 3.3.5 20040809)')),
-            ('IronPython 1.0.60816 on .NET 2.0.50727.42',
-             ('IronPython', '1.0.60816', '', '', '', '', '.NET 2.0.50727.42')),
-            ('IronPython 1.0 (1.0.61005.1977) on .NET 2.0.50727.42',
-             ('IronPython', '1.0.0', '', '', '', '', '.NET 2.0.50727.42')),
             ('2.4.3 (truncation, date, t) \n[GCC]',
              ('CPython', '2.4.3', '', '', 'truncation', 'date t', 'GCC')),
             ('2.4.3 (truncation, date, ) \n[GCC]',
@@ -161,20 +157,11 @@ class PlatformTest(unittest.TestCase):
                  ('r261:67515', 'Dec  6 2008 15:26:00'),
                  'GCC 4.0.1 (Apple Computer, Inc. build 5370)'),
 
-            ("IronPython 2.0 (2.0.0.0) on .NET 2.0.50727.3053", None, "cli")
+            ("3.10.8 (tags/v3.10.8:aaaf517424, Feb 14 2023, 16:28:12) [GCC 9.4.0]",
+             None, "linux")
             :
-                ("IronPython", "2.0.0", "", "", ("", ""),
-                 ".NET 2.0.50727.3053"),
-
-            ("2.6.1 (IronPython 2.6.1 (2.6.10920.0) on .NET 2.0.50727.1433)", None, "cli")
-            :
-                ("IronPython", "2.6.1", "", "", ("", ""),
-                 ".NET 2.0.50727.1433"),
-
-            ("2.7.4 (IronPython 2.7.4 (2.7.0.40) on Mono 4.0.30319.1 (32-bit))", None, "cli")
-            :
-                ("IronPython", "2.7.4", "", "", ("", ""),
-                 "Mono 4.0.30319.1 (32-bit)"),
+                ('CPython', '3.10.8', '', '',
+                ('tags/v3.10.8:aaaf517424', 'Feb 14 2023 16:28:12'), 'GCC 9.4.0'),
 
             ("2.5 (trunk:6107, Mar 26 2009, 13:02:18) \n[Java HotSpot(TM) Client VM (\"Apple Computer, Inc.\")]",
             ('Jython', 'trunk', '6107'), "java1.5.0_16")
@@ -204,6 +191,9 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(platform.python_revision(), info[3])
             self.assertEqual(platform.python_build(), info[4])
             self.assertEqual(platform.python_compiler(), info[5])
+
+        with self.assertRaises(ValueError):
+            platform._sys_version('2. 4.3 (truncation) \n[GCC]')
 
     def test_system_alias(self):
         res = platform.system_alias(

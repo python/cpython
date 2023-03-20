@@ -778,9 +778,7 @@ dummy_func(
             }
             assert(exc && PyExceptionInstance_Check(exc));
             Py_INCREF(exc);
-            PyObject *typ = Py_NewRef(PyExceptionInstance_Class(exc));
-            PyObject *tb = PyException_GetTraceback(exc);
-            _PyErr_Restore(tstate, typ, exc, tb);
+            _PyErr_SetRaisedException(tstate, exc);
             goto exception_unwind;
         }
 
@@ -791,9 +789,7 @@ dummy_func(
             }
             else {
                 Py_INCREF(exc);
-                PyObject *typ = Py_NewRef(PyExceptionInstance_Class(exc));
-                PyObject *tb = PyException_GetTraceback(exc);
-                _PyErr_Restore(tstate, typ, exc, tb);
+                _PyErr_SetRaisedException(tstate, exc);
                 goto exception_unwind;
             }
         }

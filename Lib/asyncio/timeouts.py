@@ -25,8 +25,18 @@ class _State(enum.Enum):
 
 @final
 class Timeout:
+    """Asynchronous context manager for cancelling overdue coroutines.
+
+    Use `timeout()` or `timeout_at()` rather than instantiating this class directly.
+    """
 
     def __init__(self, when: Optional[float]) -> None:
+        """Schedule a timeout that will trigger at a given loop time.
+
+        - If `when` is `None`, the timeout will never trigger.
+        - If `when < loop.time()`, the timeout will trigger on the next
+          iteration of the event loop.
+        """
         self._state = _State.CREATED
 
         self._timeout_handler: Optional[events.TimerHandle] = None
@@ -34,9 +44,11 @@ class Timeout:
         self._when = when
 
     def when(self) -> Optional[float]:
+        """Return the current deadline."""
         return self._when
 
     def reschedule(self, when: Optional[float]) -> None:
+        """Reschedule the timeout."""
         assert self._state is not _State.CREATED
         if self._state is not _State.ENTERED:
             raise RuntimeError(
