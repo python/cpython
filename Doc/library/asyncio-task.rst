@@ -300,7 +300,8 @@ in the task at the next opportunity.
 It is recommended that coroutines use ``try/finally`` blocks to robustly
 perform clean-up logic. In case :exc:`asyncio.CancelledError`
 is explicitly caught, it should generally be propagated when
-clean-up is complete. Most code can safely ignore :exc:`asyncio.CancelledError`.
+clean-up is complete. :exc:`asyncio.CancelledError` is a subclass of
+:exc:`BaseException` so most code will not need to be aware of it.
 
 The asyncio components that enable structured concurrency, like
 :class:`asyncio.TaskGroup` and :func:`asyncio.timeout`,
