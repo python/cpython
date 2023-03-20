@@ -529,8 +529,8 @@ file then shutil will silently fallback on using less efficient
 
 .. versionchanged:: 3.8
 
-.. versionchanged:: 3.11
-    Solaris now uses :func:`os.sendfile` rather than no fast-copy operation.
+.. versionchanged:: 3.12.1
+    Solaris now uses :func:`os.sendfile`.
 
 .. _shutil-copytree-example:
 
