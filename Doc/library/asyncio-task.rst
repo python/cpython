@@ -300,7 +300,7 @@ in the task at the next opportunity.
 It is recommended that coroutines use ``try/finally`` blocks to robustly
 perform clean-up logic. In case :exc:`asyncio.CancelledError`
 is explicitly caught, it should generally be propagated when
-clean-up is complete. :exc:`asyncio.CancelledError` is a subclass of
+clean-up is complete. :exc:`asyncio.CancelledError` directly subclasses
 :exc:`BaseException` so most code will not need to be aware of it.
 
 The asyncio components that enable structured concurrency, like
@@ -309,7 +309,7 @@ are implemented using cancellation internally and might misbehave if
 a coroutine swallows :exc:`asyncio.CancelledError`. Similarly, user code
 should not generally call :meth:`uncancel <asyncio.Task.uncancel>`.
 However, in cases when suppressing :exc:`asyncio.CancelledError` is
-truly desired, it is necessary to also call :meth:`uncancel` to completely
+truly desired, it is necessary to also call ``uncancel()`` to completely
 remove the cancellation state.
 
 .. _taskgroups:
