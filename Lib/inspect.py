@@ -2837,10 +2837,13 @@ class BoundArguments:
 
     __slots__ = ('arguments', '_signature', '_kwarg_names', '__weakref__')
 
-    def __init__(self, signature, arguments, kwarg_names={}):
+    def __init__(self, signature, arguments, kwarg_names=None):
         self.arguments = arguments
         self._signature = signature
-        self._kwarg_names = kwarg_names
+        if kwarg_names is None:
+            self._kwarg_names = {}
+        else:
+            self._kwarg_names = kwarg_names
 
     @property
     def signature(self):
