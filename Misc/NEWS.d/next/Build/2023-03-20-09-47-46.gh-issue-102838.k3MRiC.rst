@@ -1,0 +1,2 @@
+Ignore acceptable access of an uninitialized value to fix building
+``--with-memory-sanitizer``. Patch by Illia Volochii.
