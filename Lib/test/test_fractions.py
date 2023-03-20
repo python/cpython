@@ -1221,7 +1221,7 @@ class FractionTest(unittest.TestCase):
                     format(fraction, spec)
 
     def test_traceback_in_mod_and_floordiv_with_complex_objects(self):
-        # See issue-102840 for more details.
+        # See issue gh-102840 for more details.
 
         a = F(1, 2)
         b = 1j
