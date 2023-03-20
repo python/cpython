@@ -1312,13 +1312,22 @@ def asdict(obj, *, dict_factory=dict):
 
 def _asdict_inner(obj, dict_factory):
     if _is_dataclass_instance(obj):
-        result = []
-        for f in fields(obj):
-            value = getattr(obj, f.name)
-            if type(value) not in _ATOMIC_TYPES:
-                value = _asdict_inner(value, dict_factory)
-            result.append((f.name, value))
-        return dict_factory(result)
+        if dict_factory is dict:
+            result = {}
+            for f in fields(obj):
+                value = getattr(obj, f.name)
+                if type(value) not in _ATOMIC_TYPES:
+                    value = _asdict_inner(value, dict_factory)
+                result[f.name] = value
+            return result
+        else:
+            result = []
+            for f in fields(obj):
+                value = getattr(obj, f.name)
+                if type(value) not in _ATOMIC_TYPES:
+                    value = _asdict_inner(value, dict_factory)
+                result.append((f.name, value))
+            return dict_factory(result)
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
         # obj is a namedtuple.  Recurse into it, but the returned
         # object is another namedtuple of the same type.  This is
@@ -1365,7 +1374,7 @@ def _asdict_inner(obj, dict_factory):
         return type(obj)(
             (k if type(k) in _ATOMIC_TYPES else _asdict_inner(k, dict_factory),
              v if type(v) in _ATOMIC_TYPES else _asdict_inner(v, dict_factory))
-             for k, v in obj.items())
+            for k, v in obj.items())
     else:
         return copy.deepcopy(obj)
 
