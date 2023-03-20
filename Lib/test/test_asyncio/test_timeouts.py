@@ -270,6 +270,13 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                     asyncio.current_task().cancel()
                     await asyncio.sleep(2)  # some cleanup
 
+    async def test_timeout_exception_cause (self):
+        with self.assertRaises(asyncio.TimeoutError) as exc:
+            async with asyncio.timeout(0):
+                await asyncio.sleep(1)
+        cause = exc.exception.__cause__
+        assert isinstance(cause, asyncio.CancelledError)
+
 
 if __name__ == '__main__':
     unittest.main()
