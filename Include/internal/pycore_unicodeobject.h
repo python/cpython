@@ -33,6 +33,11 @@ struct _Py_unicode_runtime_ids {
 };
 
 struct _Py_unicode_runtime_state {
+    struct {
+        PyThreadState *tstate;
+        /* The actual interned dict is at
+           _PyRuntime.cached_objects.interned_strings. */
+    } interned;
     struct _Py_unicode_runtime_ids ids;
 };
 
