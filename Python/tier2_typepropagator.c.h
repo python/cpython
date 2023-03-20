@@ -124,8 +124,8 @@
         }
 
         TARGET(BINARY_CHECK_FLOAT) {
-            TYPESTACK_POKE(1, &PyFloat_Type);
-            TYPESTACK_POKE(2, &PyFloat_Type);
+            TYPESTACK_POKE(1, &PyRawFloat_Type);
+            TYPESTACK_POKE(2, &PyRawFloat_Type);
             break;
         }
 

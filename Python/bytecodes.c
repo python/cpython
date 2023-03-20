@@ -279,9 +279,15 @@ dummy_func(
             U_INST(BINARY_OP_ADD_FLOAT_REST);
         }
 
-        inst(BINARY_CHECK_FLOAT, (left, right -- left : PyFloat_Type, right : PyFloat_Type)) {
+        inst(BINARY_CHECK_FLOAT, (left, right -- left_unboxed : PyRawFloat_Type, left_unboxed : PyRawFloat_Type)) {
             assert(cframe.use_tracing == 0);
             bb_test = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
+            left_unboxed = (bb_test
+                ? *((PyObject **)(&(((PyFloatObject *)left)->ob_fval)))
+                : left);
+            right_unboxed = (bb_test
+                ? *((PyObject **)(&(((PyFloatObject *)right)->ob_fval)))
+                : right);
         }
 
         u_inst(BINARY_OP_ADD_FLOAT_REST, (left, right -- sum : PyFloat_Type)) {

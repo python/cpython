@@ -398,8 +398,18 @@
         TARGET(BINARY_CHECK_FLOAT) {
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
+            PyObject *left_unboxed;
+            PyObject *left_unboxed;
             assert(cframe.use_tracing == 0);
             bb_test = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
+            left_unboxed = (bb_test
+                ? *((PyObject **)(&(((PyFloatObject *)left)->ob_fval)))
+                : left);
+            right_unboxed = (bb_test
+                ? *((PyObject **)(&(((PyFloatObject *)right)->ob_fval)))
+                : right);
+            stack_pointer[-1] = left_unboxed;
+            stack_pointer[-2] = left_unboxed;
             DISPATCH();
         }
 
