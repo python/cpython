@@ -355,6 +355,11 @@ eval_tests = [
   "[5][1:1:1]",
   # IfExp
   "foo() if x else bar()",
+  # JoinedStr and FormattedValue
+  "f'{a}'",
+  "f'{a:.2f}'",
+  "f'{a!r}'",
+  "f'foo({a})'",
 ]
 
 
@@ -2879,5 +2884,9 @@ eval_results = [
 ('Expression', ('Subscript', (1, 0, 1, 8), ('List', (1, 0, 1, 3), [('Constant', (1, 1, 1, 2), 5, None)], ('Load',)), ('Slice', (1, 4, 1, 7), None, None, ('Constant', (1, 6, 1, 7), 1, None)), ('Load',))),
 ('Expression', ('Subscript', (1, 0, 1, 10), ('List', (1, 0, 1, 3), [('Constant', (1, 1, 1, 2), 5, None)], ('Load',)), ('Slice', (1, 4, 1, 9), ('Constant', (1, 4, 1, 5), 1, None), ('Constant', (1, 6, 1, 7), 1, None), ('Constant', (1, 8, 1, 9), 1, None)), ('Load',))),
 ('Expression', ('IfExp', (1, 0, 1, 21), ('Name', (1, 9, 1, 10), 'x', ('Load',)), ('Call', (1, 0, 1, 5), ('Name', (1, 0, 1, 3), 'foo', ('Load',)), [], []), ('Call', (1, 16, 1, 21), ('Name', (1, 16, 1, 19), 'bar', ('Load',)), [], []))),
+('Expression', ('JoinedStr', (1, 0, 1, 6), [('FormattedValue', (1, 0, 1, 6), ('Name', (1, 3, 1, 4), 'a', ('Load',)), -1, None)])),
+('Expression', ('JoinedStr', (1, 0, 1, 10), [('FormattedValue', (1, 0, 1, 10), ('Name', (1, 3, 1, 4), 'a', ('Load',)), -1, ('JoinedStr', (1, 0, 1, 10), [('Constant', (1, 0, 1, 10), '.2f', None)]))])),
+('Expression', ('JoinedStr', (1, 0, 1, 8), [('FormattedValue', (1, 0, 1, 8), ('Name', (1, 3, 1, 4), 'a', ('Load',)), 114, None)])),
+('Expression', ('JoinedStr', (1, 0, 1, 11), [('Constant', (1, 0, 1, 11), 'foo(', None), ('FormattedValue', (1, 0, 1, 11), ('Name', (1, 7, 1, 8), 'a', ('Load',)), -1, None), ('Constant', (1, 0, 1, 11), ')', None)])),
 ]
 main()
