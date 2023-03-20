@@ -95,12 +95,14 @@ TypeSrc: TypeAlias = (
     | TypeSrcStackInput
 )
 
-
 @dataclass
-class TypeAnnotation(Node):
+class TypeOperation(Node):
     op: Literal["TYPE_SET", "TYPE_OVERWRITE"]
     src: TypeSrc
 
+@dataclass
+class TypeAnnotation(Node):
+    ops: tuple[TypeOperation]
 
 @dataclass
 class StackEffect(Node):
@@ -331,7 +333,7 @@ class Parser(PLexer):
             type_annotation = None
             if self.expect(lx.COLON):
                 has_type_annotation = True
-                type_annotation = self.stackvar_type()
+                type_annotation = self.stackvar_typeannotation()
             cond_text = ""
             if self.expect(lx.IF):
                 self.require(lx.LPAREN)
@@ -368,14 +370,31 @@ class Parser(PLexer):
             return TypeSrcStackInput(id.text.strip())
 
     @contextual
-    def stackvar_type(self) -> TypeAnnotation | None: 
+    def stackvar_typeoperation(self) -> TypeOperation | None: 
         if self.expect(lx.LSHIFTEQUAL):
             src = self.stackvar_typesrc()
             if src is None: return None
-            return TypeAnnotation("TYPE_SET", src)
+            return TypeOperation("TYPE_SET", src)
         src = self.stackvar_typesrc()
         if src is None: return None
-        return TypeAnnotation("TYPE_OVERWRITE", src)
+        return TypeOperation("TYPE_OVERWRITE", src)
+
+    @contextual
+    def stackvar_typeannotation(self) -> TypeAnnotation | None:
+        ops = []
+        if self.expect(lx.LBRACE):
+            while True:
+                typ = self.stackvar_typeoperation()
+                ops.append(typ)
+                if typ is None: return None
+                if self.expect(lx.RBRACE):
+                    break
+                self.require(lx.COMMA)
+        else:
+            typ = self.stackvar_typeoperation()
+            if typ is None: return None
+            ops.append(typ)
+        return TypeAnnotation(tuple(ops))
 
     @contextual
     def local_effect(self) -> LocalEffect | None:

@@ -279,7 +279,11 @@ dummy_func(
             U_INST(BINARY_OP_ADD_FLOAT_REST);
         }
 
-        inst(BINARY_CHECK_FLOAT, (left, right -- left : <<= PyFloat_Type, right : <<= PyFloat_Type)) {
+        inst(BINARY_CHECK_FLOAT, (
+                left, right 
+                -- left : {<<= PyFloat_Type, PyRawFloat_Type}, 
+                   right: {<<= PyFloat_Type, PyRawFloat_Type})
+            ) {
             assert(cframe.use_tracing == 0);
             bb_test = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
         }

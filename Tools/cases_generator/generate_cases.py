@@ -343,13 +343,15 @@ class Instruction:
         # Stack input is used in output effect
         for oeffect in self.output_effects:
             if not (typ := oeffect.type_annotation): continue
-            if not isinstance(src := typ.src, TypeSrcStackInput): continue
-            if oeffect.name in self.unmoved_names and oeffect.name == src.name: 
-                print(
-                    f"Warn: {self.name} type annotation for {oeffect.name} will be ignored "
-                    "as it is unmoved")
-                continue
-            need_to_declare.append(src.name)
+            ops = typ.ops
+            for op in ops:
+                if not isinstance(src := op.src, TypeSrcStackInput): continue
+                if oeffect.name in self.unmoved_names and oeffect.name == src.name: 
+                    print(
+                        f"Warn: {self.name} type annotation for {oeffect.name} will be ignored "
+                        "as it is unmoved")
+                    continue
+                need_to_declare.append(src.name)
 
         # Write input stack effect variable declarations and initializations
         ieffects = list(reversed(self.input_effects))
@@ -424,33 +426,34 @@ class Instruction:
             
             # Check if there's type info
             if typ := oeffect.type_annotation:
-                match typ.src:
-                    case TypeSrcLiteral(literal=valstr):
-                        if valstr == "NULL":
-                            src = "(_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT"
+                for op in typ.ops:
+                    match op.src:
+                        case TypeSrcLiteral(literal=valstr):
+                            if valstr == "NULL":
+                                src = "(_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT"
+                                flag = "true"
+                            else:
+                                src = f"(_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&{valstr})"
+                                flag = "true"
+                        case TypeSrcStackInput(name=valstr):
+                            assert valstr in need_to_declare
+                            assert oeffect.name not in self.unmoved_names
+                            src = valstr
+                            flag = "false"
+                        case TypeSrcConst(index=idx):
+                            src = f"(_Py_TYPENODE_t *)TYPECONST_GET({idx})"
                             flag = "true"
-                        else:
-                            src = f"(_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&{valstr})"
-                            flag = "true"
-                    case TypeSrcStackInput(name=valstr):
-                        assert valstr in need_to_declare
-                        assert oeffect.name not in self.unmoved_names
-                        src = valstr
-                        flag = "false"
-                    case TypeSrcConst(index=idx):
-                        src = f"(_Py_TYPENODE_t *)TYPECONST_GET({idx})"
-                        flag = "true"
-                    case TypeSrcLocals(index=idx):
-                        src = f"TYPELOCALS_GET({idx})"
-                        flag = "false"
-                    case _:
-                        typing.assert_never(typ.src)
-                
-                opstr = f"{typ.op}({src}, {dst}, {flag})"
-                if oeffect.cond:
-                    out.emit(f"if ({oeffect.cond}) {{ {opstr}; }}")
-                else:
-                    out.emit(f"{opstr};")
+                        case TypeSrcLocals(index=idx):
+                            src = f"TYPELOCALS_GET({idx})"
+                            flag = "false"
+                        case _:
+                            typing.assert_never(op.src)
+                    
+                    opstr = f"{op.op}({src}, {dst}, {flag})"
+                    if oeffect.cond:
+                        out.emit(f"if ({oeffect.cond}) {{ {opstr}; }}")
+                    else:
+                        out.emit(f"{opstr};")
                 continue
 
             # Don't touch unmoved stack vars
