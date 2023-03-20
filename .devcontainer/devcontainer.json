@@ -17,7 +17,24 @@
         "vscode": {
             "extensions": [
                 "brettcannon.zephyr-asdl"
-            ]
+            ],
+            "settings": {
+                "editor.insertSpaces": true,
+                "editor.rulers": [
+                    80
+                ],
+                "editor.trimAutoWhitespace": true,
+                "files.encoding": "utf8",
+                "files.eol": "\n",
+                "files.insertFinalNewline": true,
+                "files.trimTrailingWhitespace": true,
+                "[python]": {
+                    "editor.tabSize": 4
+                },
+                "[restructuredtext]": {
+                    "editor.tabSize": 3
+                }
+            }
         }
     }
 }
