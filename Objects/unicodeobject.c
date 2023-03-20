@@ -14664,7 +14664,9 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
+    PyThread_acquire_lock(_PyRuntime.unicode_state.interned.lock, WAIT_LOCK);
     PyObject *t = store_interned(s);
+    PyThread_release_lock(_PyRuntime.unicode_state.interned.lock);
     if (t != s) {
         if (t != NULL) {
             Py_SETREF(*p, Py_NewRef(t));
