@@ -635,11 +635,6 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    // This is a temporary fix until we have immortal objects.
-    // (See _PyType_InitCache() in typeobject.c.)
-    extern void _PyType_FixCacheRefcounts(void);
-    _PyType_FixCacheRefcounts();
-
     *tstate_p = tstate;
     return _PyStatus_OK();
 }
@@ -806,6 +801,11 @@ pycore_interp_init(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     PyStatus status;
     PyObject *sysmod = NULL;
+
+    // This is a temporary fix until we have immortal objects.
+    // (See _PyType_InitCache() in typeobject.c.)
+    extern void _PyType_FixCacheRefcounts(void);
+    _PyType_FixCacheRefcounts();
 
     // Create singletons before the first PyType_Ready() call, since
     // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)
