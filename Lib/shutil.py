@@ -695,7 +695,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     """
 
     if onerror is not None:
-        warnings.warn("onerror is deprecated, use onexc instead",
+        warnings.warn("onerror argument is deprecated, use onexc instead",
                       DeprecationWarning)
 
     sys.audit("shutil.rmtree", path, dir_fd)
