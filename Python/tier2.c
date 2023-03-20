@@ -529,6 +529,7 @@ _PyTier2_BBSpaceCheckAndReallocIfNeeded(PyCodeObject *co, Py_ssize_t space_reque
 #if BB_DEBUG
         fprintf(stderr, "Allocating new BB of size %lld\n", new_size);
 #endif
+        // @TODO We can't Realloc, we actually need to do the linked list method.
         _PyTier2BBSpace *new_space = PyMem_Realloc(curr, new_size);
         if (new_space == NULL) {
             return NULL;
@@ -809,7 +810,7 @@ static int type_guard_to_index[256] = {
 static inline _Py_CODEUNIT *
 emit_type_guard(_Py_CODEUNIT *write_curr, int guard_opcode, int bb_id)
 {
-#if BB_DEBUG
+#if BB_DEBUG && defined(Py_DEBUG)
     fprintf(stderr, "emitted type guard %p %s\n", write_curr,
         _PyOpcode_OpName[guard_opcode]);
 #endif
@@ -1200,7 +1201,10 @@ _PyTier2_Code_DetectAndEmitBB(
             // So we tell the BB to skip over it.
             t2_start++;
             DISPATCH();
-        case LOAD_CONST:
+        case LOAD_CONST: {
+            _Py_TYPENODE_t *type_stack = starting_type_context->type_stack;
+            _Py_TYPENODE_t *type_locals = starting_type_context->type_locals;
+            _Py_TYPENODE_t **type_stackptr = &starting_type_context->type_stack_ptr;
             if (TYPECONST_GET(oparg) == &PyFloat_Type) {
                 write_i->op.code = LOAD_CONST;
                 write_i->op.arg = oparg;
@@ -1213,6 +1217,7 @@ _PyTier2_Code_DetectAndEmitBB(
                 continue;
             }
             DISPATCH();
+        }
         case LOAD_FAST: {
             // Read-only, only for us to inspect the types. DO NOT MODIFY HERE.
             // ONLY THE TYPES PROPAGATOR SHOULD MODIFY THEIR INTERNAL VALUES.
@@ -1224,6 +1229,17 @@ _PyTier2_Code_DetectAndEmitBB(
                 opcode = specop = LOAD_FAST_NO_INCREF;
             }
             else {
+                if (TYPELOCALS_GET(oparg) == &PyFloat_Type) {
+                    write_i->op.code = LOAD_FAST;
+                    write_i->op.arg = oparg;
+                    write_i++;
+                    type_propagate(LOAD_FAST, oparg, starting_type_context, consts);
+                    write_i->op.code = UNBOX_FLOAT;
+                    write_i->op.arg = 0;
+                    write_i++;
+                    type_propagate(UNBOX_FLOAT, oparg, starting_type_context, consts);
+                    continue;
+                }
                 opcode = specop = LOAD_FAST;
             }
             DISPATCH();
@@ -1773,7 +1789,7 @@ _PyTier2_GenerateNextBB(
         // one of those conditional pops.
         assert(!gen_bb_requires_pop);
         // Propagate the type guard information.
-#if TYPEPROP_DEBUG
+#if TYPEPROP_DEBUG && defined(Py_DEBUG)
         fprintf(stderr,
             "  [-] Previous predicate BB ended with a type guard: %s\n",
             _PyOpcode_OpName[prev_type_guard->op.code]);
