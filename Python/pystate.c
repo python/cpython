@@ -356,7 +356,8 @@ _Py_COMP_DIAG_POP
 
 static int
 alloc_for_runtime(PyThread_type_lock *plock1, PyThread_type_lock *plock2,
-                  PyThread_type_lock *plock3, PyThread_type_lock *plock4)
+                  PyThread_type_lock *plock3, PyThread_type_lock *plock4,
+                  PyThread_type_lock *plock5)
 {
     /* Force default allocator, since _PyRuntimeState_Fini() must
        use the same allocator than this function. */
@@ -389,12 +390,22 @@ alloc_for_runtime(PyThread_type_lock *plock1, PyThread_type_lock *plock2,
         return -1;
     }
 
+    PyThread_type_lock lock5 = PyThread_allocate_lock();
+    if (lock4 == NULL) {
+        PyThread_free_lock(lock1);
+        PyThread_free_lock(lock2);
+        PyThread_free_lock(lock3);
+        PyThread_free_lock(lock4);
+        return -1;
+    }
+
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     *plock1 = lock1;
     *plock2 = lock2;
     *plock3 = lock3;
     *plock4 = lock4;
+    *plock5 = lock5;
     return 0;
 }
 
@@ -404,6 +415,7 @@ init_runtime(_PyRuntimeState *runtime,
              _Py_AuditHookEntry *audit_hook_head,
              Py_ssize_t unicode_next_index,
              PyThread_type_lock unicode_ids_mutex,
+             PyThread_type_lock interned_mutex,
              PyThread_type_lock interpreters_mutex,
              PyThread_type_lock xidregistry_mutex,
              PyThread_type_lock getargs_mutex)
@@ -435,6 +447,7 @@ init_runtime(_PyRuntimeState *runtime,
 
     runtime->unicode_state.ids.next_index = unicode_next_index;
     runtime->unicode_state.ids.lock = unicode_ids_mutex;
+    runtime->unicode_state.interned.lock = interned_mutex;
 
     runtime->_initialized = 1;
 }
@@ -452,8 +465,8 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     // is called multiple times.
     Py_ssize_t unicode_next_index = runtime->unicode_state.ids.next_index;
 
-    PyThread_type_lock lock1, lock2, lock3, lock4;
-    if (alloc_for_runtime(&lock1, &lock2, &lock3, &lock4) != 0) {
+    PyThread_type_lock lock1, lock2, lock3, lock4, lock5;
+    if (alloc_for_runtime(&lock1, &lock2, &lock3, &lock4, &lock5) != 0) {
         return _PyStatus_NO_MEMORY();
     }
 
@@ -474,7 +487,7 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     }
 
     init_runtime(runtime, open_code_hook, open_code_userdata, audit_hook_head,
-                 unicode_next_index, lock1, lock2, lock3, lock4);
+                 unicode_next_index, lock1, lock2, lock3, lock4, lock5);
 
     return _PyStatus_OK();
 }
@@ -530,6 +543,7 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     int reinit_interp = _PyThread_at_fork_reinit(&runtime->interpreters.mutex);
     int reinit_xidregistry = _PyThread_at_fork_reinit(&runtime->xidregistry.mutex);
     int reinit_unicode_ids = _PyThread_at_fork_reinit(&runtime->unicode_state.ids.lock);
+    int reinit_interned = _PyThread_at_fork_reinit(&runtime->unicode_state.interned.lock);
     int reinit_getargs = _PyThread_at_fork_reinit(&runtime->getargs.mutex);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
@@ -542,6 +556,7 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
         || reinit_main_id < 0
         || reinit_xidregistry < 0
         || reinit_unicode_ids < 0
+        || reinit_interned < 0
         || reinit_getargs < 0)
     {
         return _PyStatus_ERR("Failed to reinitialize runtime locks");
