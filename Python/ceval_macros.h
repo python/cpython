@@ -251,6 +251,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define SETLOCAL(i, value)      do { PyObject *tmp = GETLOCAL(i); \
                                      GETLOCAL(i) = value; \
                                      Py_XDECREF(tmp); } while (0)
+#define SETLOCAL_NO_DECREF(i, value) do { PyObject *tmp = GETLOCAL(i); \
+                                     GETLOCAL(i) = value;} while (0)
 
 #define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 

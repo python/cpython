@@ -16,6 +16,13 @@
 #define BB_EPILOG 0
 
 
+/* Dummy types used by the types propagator */
+PyTypeObject PyRawFloat_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "rawfloat",
+    sizeof(PyFloatObject),
+};
+
 static inline int IS_SCOPE_EXIT_OPCODE(int opcode);
 
 
@@ -159,11 +166,6 @@ type_propagate(
     type_context->type_stack_ptr = type_stackptr;
 
 #undef TARGET
-#undef TYPESTACK_PEEK
-#undef TYPESTACK_POKE
-#undef TYPELOCALS_SET
-#undef TYPELOCALS_GET
-#undef TYPECONST_GET
 #undef STACK_ADJUST
 #undef STACK_GROW
 #undef STACK_SHRINK
@@ -400,9 +402,23 @@ static inline int
 IS_FORBIDDEN_OPCODE(int opcode)
 {
     switch (opcode) {
+        // Modifying containers
+    case LIST_EXTEND:
+    case SET_UPDATE:
+    case DICT_UPDATE:
+        // f-strings
+    case FORMAT_VALUE:
+        // Type hinting
+    case SETUP_ANNOTATIONS:
+        // Context manager
+    case BEFORE_WITH:
         // Generators and coroutines
     case SEND:
     case YIELD_VALUE:
+    case GET_AITER:
+    case GET_ANEXT:
+    case BEFORE_ASYNC_WITH:
+    case END_ASYNC_FOR:
         // Raise keyword
     case RAISE_VARARGS:
         // Exceptions, we could support these theoretically.
@@ -410,8 +426,11 @@ IS_FORBIDDEN_OPCODE(int opcode)
     case PUSH_EXC_INFO:
     case RERAISE:
     case POP_EXCEPT:
+    case CHECK_EXC_MATCH:
+    case CLEANUP_THROW:
         // Closures
     case LOAD_DEREF:
+    case LOAD_CLASSDEREF:
     case MAKE_CELL:
         // DELETE_FAST
     case DELETE_FAST:
@@ -427,6 +446,24 @@ IS_FORBIDDEN_OPCODE(int opcode)
     default:
         return 0;
     }
+}
+
+// Decides what values we need to rebox.
+// num_elements is how many stack entries and thus how far from the TOS we want to rebox.
+static inline _Py_CODEUNIT *
+rebox_stack(_Py_CODEUNIT *write_curr,
+    _PyTier2TypeContext *type_context, int num_elements)
+{
+    for (int i = 0; i < num_elements; i++) {
+        PyTypeObject **curr = type_context->type_stack_ptr - 1 - i;
+        if (*curr == &PyRawFloat_Type) {
+            write_curr->op.code = BOX_FLOAT;
+            write_curr->op.arg = i;
+            write_curr++;
+            type_propagate(BOX_FLOAT, i, type_context, NULL);
+        }
+    }
+    return write_curr;
 }
 
 static inline _Py_CODEUNIT *
@@ -617,10 +654,15 @@ emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr,
 }
 
 static inline _Py_CODEUNIT *
-emit_scope_exit(_Py_CODEUNIT *write_curr, _Py_CODEUNIT exit)
+emit_scope_exit(_Py_CODEUNIT *write_curr, _Py_CODEUNIT exit,
+    _PyTier2TypeContext *type_context)
 {
     switch (_Py_OPCODE(exit)) {
     case RETURN_VALUE:
+        write_curr = rebox_stack(write_curr, type_context, 1);
+        *write_curr = exit;
+        write_curr++;
+        return write_curr;
     case RETURN_CONST:
     case INTERPRETER_EXIT:
 #if BB_DEBUG
@@ -743,7 +785,16 @@ infer_BINARY_OP_ADD(
             return write_curr;
         }
     }
+    if (left == &PyRawFloat_Type) {
+        if (right == &PyRawFloat_Type) {
+            write_curr->op.code = BINARY_OP_ADD_FLOAT_UNBOXED;
+            write_curr++;
+            type_propagate(BINARY_OP_ADD_FLOAT_UNBOXED, 0, type_context, NULL);
+            return write_curr;
+        }
+    }
     // Unknown, time to emit the chain of guards.
+    write_curr = rebox_stack(write_curr, type_context, 2);
     *needs_guard = true;
     if (prev_type_guard == NULL) {
         return emit_type_guard(write_curr, BINARY_CHECK_INT, bb_id);
@@ -759,6 +810,12 @@ infer_BINARY_OP_ADD(
     // Unknown, just emit the same opcode, don't bother emitting guard.
     // Fall through and let the code generator handle.
     return NULL;
+}
+
+static inline bool
+is_unboxed_type(PyTypeObject *t)
+{
+    return t == &PyRawFloat_Type;
 }
 
 // Detects a BB from the current instruction start to the end of the first basic block it sees.
@@ -836,8 +893,7 @@ _PyTier2_Code_DetectAndEmitBB(
             opcode = RESUME_QUICK;
             DISPATCH();
         case COMPARE_AND_BRANCH:
-            opcode = COMPARE_OP;
-            specop = COMPARE_OP;
+            opcode = specop = COMPARE_OP;
             DISPATCH();
         case END_FOR:
             // Assert that we are the start of a BB
@@ -845,6 +901,73 @@ _PyTier2_Code_DetectAndEmitBB(
             // Though we want to emit this, we don't want to start execution from END_FOR.
             // So we tell the BB to skip over it.
             t2_start++;
+            DISPATCH();
+        case LOAD_CONST:
+            if (TYPECONST_GET(oparg) == &PyFloat_Type) {
+                write_i->op.code = LOAD_CONST;
+                write_i->op.arg = oparg;
+                write_i++;
+                type_propagate(LOAD_CONST, oparg, starting_type_context, consts);
+                write_i->op.code = UNBOX_FLOAT;
+                write_i->op.arg = 0;
+                write_i++;
+                type_propagate(UNBOX_FLOAT, 0, starting_type_context, consts);
+                continue;
+            }
+            DISPATCH();
+        case LOAD_FAST: {
+            // Read-only, only for us to inspect the types. DO NOT MODIFY HERE.
+            // ONLY THE TYPES PROPAGATOR SHOULD MODIFY THEIR INTERNAL VALUES.
+            PyTypeObject **type_stack = starting_type_context->type_stack;
+            PyTypeObject **type_locals = starting_type_context->type_locals;
+            PyTypeObject **type_stackptr = starting_type_context->type_stack_ptr;
+            // Writing unboxed val to a boxed val. 
+            if (is_unboxed_type(TYPELOCALS_GET(oparg))) {
+                opcode = specop = LOAD_FAST_NO_INCREF;
+            }
+            else {
+                opcode = specop = LOAD_FAST;
+            }
+            DISPATCH();
+        }
+        case STORE_FAST: {
+            // Read-only, only for us to inspect the types. DO NOT MODIFY HERE.
+            // ONLY THE TYPES PROPAGATOR SHOULD MODIFY THEIR INTERNAL VALUES.
+            PyTypeObject **type_stack = starting_type_context->type_stack;
+            PyTypeObject **type_locals = starting_type_context->type_locals;
+            PyTypeObject **type_stackptr = starting_type_context->type_stack_ptr;
+            // Writing unboxed val to a boxed val. 
+            if (is_unboxed_type(TYPESTACK_PEEK(1))) {
+                if (!is_unboxed_type(TYPELOCALS_GET(oparg))) {
+                    opcode = specop = STORE_FAST_UNBOXED_BOXED;
+                }
+                else {
+                    opcode = specop = STORE_FAST_UNBOXED_UNBOXED;
+                }
+            }
+            else {
+                if (is_unboxed_type(TYPELOCALS_GET(oparg))) {
+                    opcode = specop = STORE_FAST_BOXED_UNBOXED;
+                }
+                else {
+                    opcode = specop = STORE_FAST;
+                }
+            }
+            DISPATCH();
+        }
+        // Need to handle reboxing at these boundaries.
+        case CALL:
+            write_i = rebox_stack(write_i, starting_type_context,
+                oparg + 2);
+            DISPATCH();
+        case BUILD_MAP:
+            write_i = rebox_stack(write_i, starting_type_context,
+                oparg * 2);
+            DISPATCH();
+        case BUILD_STRING:
+        case BUILD_LIST:
+            write_i = rebox_stack(write_i, starting_type_context,
+                oparg);
             DISPATCH();
         case BINARY_OP:
             if (oparg == NB_ADD) {
@@ -868,7 +991,24 @@ _PyTier2_Code_DetectAndEmitBB(
                 i += caches;
                 continue;
             }
+            write_i = rebox_stack(write_i, starting_type_context, 2);
             DISPATCH()
+        case LOAD_ATTR:
+        case CALL_INTRINSIC_1:
+        case UNARY_NEGATIVE:
+        case UNARY_NOT:
+        case UNARY_INVERT:
+        case GET_LEN:
+            write_i = rebox_stack(write_i, starting_type_context, 1);
+            DISPATCH();
+        case CALL_INTRINSIC_2:
+        case BINARY_SUBSCR:
+        case BINARY_SLICE:
+            write_i = rebox_stack(write_i, starting_type_context, 2);
+            DISPATCH();
+        case STORE_SLICE:
+            write_i = rebox_stack(write_i, starting_type_context, 4);
+            DISPATCH();
         default:
 #if BB_DEBUG || TYPEPROP_DEBUG
             fprintf(stderr, "offset: %Id\n", curr - _PyCode_CODE(co));
@@ -903,10 +1043,12 @@ _PyTier2_Code_DetectAndEmitBB(
                     return NULL;
                 }
                 bb_space->water_level += (write_i - t2_start) * sizeof(_Py_CODEUNIT);
-                // Reset the start
+                // Reset all our values
                 t2_start = write_i;
                 i++;
                 virtual_start = true;
+                starting_type_context = type_context_copy;
+
                 // Don't change opcode or oparg, let us handle it again.
                 DISPATCH_GOTO();
             }
@@ -914,7 +1056,7 @@ _PyTier2_Code_DetectAndEmitBB(
             // These are definitely the end of a basic block.
             if (IS_SCOPE_EXIT_OPCODE(opcode)) {
                 // Emit the scope exit instruction.
-                write_i = emit_scope_exit(write_i, *curr);
+                write_i = emit_scope_exit(write_i, *curr, starting_type_context);
                 END();
             }
 
@@ -1513,3 +1655,9 @@ _PyTier2_RewriteBackwardJump(_Py_CODEUNIT *jump_backward_lazy, _Py_CODEUNIT *tar
     _py_set_opcode(write_curr, END_FOR);
     write_curr++;
 }
+
+#undef TYPESTACK_PEEK
+#undef TYPESTACK_POKE
+#undef TYPELOCALS_SET
+#undef TYPELOCALS_GET
+#undef TYPECONST_GET

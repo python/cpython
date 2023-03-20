@@ -33,6 +33,12 @@
             break;
         }
 
+        TARGET(LOAD_FAST_NO_INCREF) {
+            STACK_GROW(1);
+            TYPESTACK_POKE(1, TYPELOCALS_GET(oparg));
+            break;
+        }
+
         TARGET(LOAD_CONST) {
             STACK_GROW(1);
             TYPESTACK_POKE(1, TYPECONST_GET(oparg));
@@ -40,6 +46,27 @@
         }
 
         TARGET(STORE_FAST) {
+            PyTypeObject *value = TYPESTACK_PEEK(1);
+            TYPELOCALS_SET(oparg, value)
+            STACK_SHRINK(1);
+            break;
+        }
+
+        TARGET(STORE_FAST_BOXED_UNBOXED) {
+            PyTypeObject *value = TYPESTACK_PEEK(1);
+            TYPELOCALS_SET(oparg, value)
+            STACK_SHRINK(1);
+            break;
+        }
+
+        TARGET(STORE_FAST_UNBOXED_BOXED) {
+            PyTypeObject *value = TYPESTACK_PEEK(1);
+            TYPELOCALS_SET(oparg, value)
+            STACK_SHRINK(1);
+            break;
+        }
+
+        TARGET(STORE_FAST_UNBOXED_UNBOXED) {
             PyTypeObject *value = TYPESTACK_PEEK(1);
             TYPELOCALS_SET(oparg, value)
             STACK_SHRINK(1);
@@ -129,9 +156,24 @@
             break;
         }
 
-        TARGET(BINARY_OP_ADD_FLOAT_REST) {
+        TARGET(UNARY_CHECK_FLOAT) {
+            TYPESTACK_POKE(1 + oparg, &PyFloat_Type);
+            break;
+        }
+
+        TARGET(BINARY_OP_ADD_FLOAT_UNBOXED) {
             STACK_SHRINK(1);
-            TYPESTACK_POKE(1, &PyFloat_Type);
+            TYPESTACK_POKE(1, &PyRawFloat_Type);
+            break;
+        }
+
+        TARGET(UNBOX_FLOAT) {
+            TYPESTACK_POKE(1 + oparg, &PyRawFloat_Type);
+            break;
+        }
+
+        TARGET(BOX_FLOAT) {
+            TYPESTACK_POKE(1 + oparg, &PyFloat_Type);
             break;
         }
 

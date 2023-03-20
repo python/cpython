@@ -428,15 +428,15 @@ static const char *const _PyOpcode_OpName[263] = {
     [BB_JUMP_BACKWARD_LAZY] = "BB_JUMP_BACKWARD_LAZY",
     [BINARY_CHECK_INT] = "BINARY_CHECK_INT",
     [BINARY_CHECK_FLOAT] = "BINARY_CHECK_FLOAT",
+    [UNARY_CHECK_FLOAT] = "UNARY_CHECK_FLOAT",
     [BINARY_OP_ADD_INT_REST] = "BINARY_OP_ADD_INT_REST",
-    [BINARY_OP_ADD_FLOAT_REST] = "BINARY_OP_ADD_FLOAT_REST",
-    [193] = "<193>",
-    [194] = "<194>",
-    [195] = "<195>",
-    [196] = "<196>",
-    [197] = "<197>",
-    [198] = "<198>",
-    [199] = "<199>",
+    [BINARY_OP_ADD_FLOAT_UNBOXED] = "BINARY_OP_ADD_FLOAT_UNBOXED",
+    [UNBOX_FLOAT] = "UNBOX_FLOAT",
+    [BOX_FLOAT] = "BOX_FLOAT",
+    [LOAD_FAST_NO_INCREF] = "LOAD_FAST_NO_INCREF",
+    [STORE_FAST_BOXED_UNBOXED] = "STORE_FAST_BOXED_UNBOXED",
+    [STORE_FAST_UNBOXED_BOXED] = "STORE_FAST_UNBOXED_BOXED",
+    [STORE_FAST_UNBOXED_UNBOXED] = "STORE_FAST_UNBOXED_UNBOXED",
     [200] = "<200>",
     [201] = "<201>",
     [202] = "<202>",
@@ -505,13 +505,6 @@ static const char *const _PyOpcode_OpName[263] = {
 
 
 #define EXTRA_CASES \
-    case 193: \
-    case 194: \
-    case 195: \
-    case 196: \
-    case 197: \
-    case 198: \
-    case 199: \
     case 200: \
     case 201: \
     case 202: \

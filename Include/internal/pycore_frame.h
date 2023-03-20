@@ -62,7 +62,7 @@ typedef struct _PyInterpreterFrame {
     int stacktop;  /* Offset of TOS from localsplus  */
     uint16_t yield_offset;
     char owner;
-    /* Locals and stack */
+    /* Locals and stack and unboxed bit mask */
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
 
@@ -105,7 +105,10 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
     /* This function needs to remain in sync with the calculation of
      * co_framesize in Tools/build/deepfreeze.py */
     assert(code->co_framesize >= FRAME_SPECIALS_SIZE);
-    return code->co_framesize - FRAME_SPECIALS_SIZE;
+    int res = code->co_framesize - FRAME_SPECIALS_SIZE -
+        (code->co_nlocalsplus * sizeof(char) / sizeof(PyObject *) + 1);
+    assert(res > 0);
+    return res;
 }
 
 void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest);
@@ -126,7 +129,6 @@ _PyFrame_Initialize(
     frame->f_locals = locals;
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
-    // @TODO CHANGE ME
     if (code->_tier2_info != NULL) {
         frame->prev_instr = code->_tier2_info->_entry_bb->tier2_start - 1;
     }
@@ -139,6 +141,15 @@ _PyFrame_Initialize(
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
     }
+}
+
+// The unboxed bitmask. true indicates an unboxed value. false indicates a normal PyObject.
+static inline char*
+_PyFrame_GetUnboxedBitMask(_PyInterpreterFrame *frame)
+{
+    PyCodeObject *co = frame->f_code;
+    return (char *)(frame + co->co_framesize -
+        (co->co_nlocalsplus * sizeof(char) / sizeof(PyObject *) + 1));
 }
 
 /* Gets the pointer to the locals array
