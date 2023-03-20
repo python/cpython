@@ -14584,6 +14584,24 @@ error:
 }
 
 
+static inline PyObject *
+store_interned(PyObject *obj)
+{
+    PyObject *interned = get_interned_dict();
+    assert(interned != NULL);
+
+    // XXX Swap to the main interpreter.
+
+    PyObject *t = PyDict_SetDefault(interned, obj, obj);
+    if (t == NULL) {
+        PyErr_Clear();
+    }
+
+    // XXX Swap back.
+
+    return t;
+}
+
 void
 PyUnicode_InternInPlace(PyObject **p)
 {
@@ -14607,21 +14625,11 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
-    PyObject *interned = get_interned_dict();
-    assert(interned != NULL);
-
-    // XXX Swap to the main interpreter.
-
-    PyObject *t = PyDict_SetDefault(interned, s, s);
-    if (t == NULL) {
-        PyErr_Clear();
-        return;
-    }
-
-    // XXX Swap back.
-
+    PyObject *t = store_interned(s);
     if (t != s) {
-        Py_SETREF(*p, Py_NewRef(t));
+        if (t != NULL) {
+            Py_SETREF(*p, Py_NewRef(t));
+        }
         return;
     }
 
