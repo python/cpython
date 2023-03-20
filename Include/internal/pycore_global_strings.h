@@ -339,6 +339,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(copy)
         STRUCT_FOR_ID(copyreg)
         STRUCT_FOR_ID(coro)
+        STRUCT_FOR_ID(coro_result)
         STRUCT_FOR_ID(count)
         STRUCT_FOR_ID(cwd)
         STRUCT_FOR_ID(d)

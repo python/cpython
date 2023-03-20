@@ -156,6 +156,9 @@ class _asyncio.Future "FutureObj *" "&Future_Type"
 /* Get FutureIter from Future */
 static PyObject * future_new_iter(PyObject *);
 
+static PyObject *
+task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *result);
+
 
 static int
 _is_coroutine(asyncio_state *state, PyObject *coro)
@@ -2025,15 +2028,16 @@ _asyncio.Task.__init__
     loop: object = None
     name: object = None
     context: object = None
+    coro_result: object = NULL
 
 A coroutine wrapped in a Future.
 [clinic start generated code]*/
 
 static int
 _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
-                            PyObject *name, PyObject *context)
-/*[clinic end generated code: output=49ac96fe33d0e5c7 input=924522490c8ce825]*/
-
+                            PyObject *name, PyObject *context,
+                            PyObject *coro_result)
+/*[clinic end generated code: output=e241855787412a77 input=3fcd7fb1c00d3f87]*/
 {
     if (future_init((FutureObj*)self, loop)) {
         return -1;
@@ -2081,8 +2085,16 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         return -1;
     }
 
-    if (task_call_step_soon(state, self, NULL)) {
-        return -1;
+    if (coro_result == NULL) {
+        if (task_call_step_soon(state, self, NULL)) {
+            return -1;
+        }
+    }
+    else {
+        PyObject * res = task_step_handle_result_impl(state, self, coro_result);
+        if (res == NULL) {
+            return -1;
+        }
     }
     return register_task(state, (PyObject*)self);
 }
@@ -2822,6 +2834,22 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
         Py_RETURN_NONE;
     }
 
+    PyObject *ret = task_step_handle_result_impl(state, task, result);
+    Py_XDECREF(result);
+    return ret;
+
+fail:
+    Py_XDECREF(result);
+    return NULL;
+}
+
+
+static PyObject *
+task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *result)
+{
+    int res;
+    PyObject *o;
+
     if (result == (PyObject*)task) {
         /* We have a task that wants to await on itself */
         goto self_await;
@@ -2858,7 +2886,8 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
         Py_DECREF(tmp);
 
         /* task._fut_waiter = result */
-        task->task_fut_waiter = result;  /* no incref is necessary */
+        Py_INCREF(result);
+        task->task_fut_waiter = result;
 
         if (task->task_must_cancel) {
             PyObject *r;
@@ -2951,7 +2980,8 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
         Py_DECREF(tmp);
 
         /* task._fut_waiter = result */
-        task->task_fut_waiter = result;  /* no incref is necessary */
+        Py_INCREF(result);
+        task->task_fut_waiter = result;
 
         if (task->task_must_cancel) {
             PyObject *r;
@@ -2986,21 +3016,18 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
             state, task, PyExc_RuntimeError,
             "yield was used instead of yield from for "
             "generator in task %R with %R", task, result);
-        Py_DECREF(result);
         return o;
     }
 
     /* The `result` is none of the above */
     o = task_set_error_soon(
         state, task, PyExc_RuntimeError, "Task got bad yield: %R", result);
-    Py_DECREF(result);
     return o;
 
 self_await:
     o = task_set_error_soon(
         state, task, PyExc_RuntimeError,
         "Task cannot await on itself: %R", task);
-    Py_DECREF(result);
     return o;
 
 yield_insteadof_yf:
@@ -3009,7 +3036,6 @@ yield_insteadof_yf:
         "yield was used instead of yield from "
         "in task %R with %R",
         task, result);
-    Py_DECREF(result);
     return o;
 
 different_loop:
@@ -3017,11 +3043,9 @@ different_loop:
         state, task, PyExc_RuntimeError,
         "Task %R got Future %R attached to a different loop",
         task, result);
-    Py_DECREF(result);
     return o;
 
 fail:
-    Py_XDECREF(result);
     return NULL;
 }
 

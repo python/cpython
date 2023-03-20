@@ -163,7 +163,8 @@ class TaskGroup:
             task = self._loop.create_task(coro)
         else:
             task = self._loop.create_task(coro, context=context)
-        tasks._set_task_name(task, name)
+        if name is not None and not task.done():  # If it's done already, it's a future
+            tasks._set_task_name(task, name)
         task.add_done_callback(self._on_task_done)
         self._tasks.add(task)
         return task

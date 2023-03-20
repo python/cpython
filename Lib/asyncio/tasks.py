@@ -6,6 +6,7 @@ __all__ = (
     'wait', 'wait_for', 'as_completed', 'sleep',
     'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
     'current_task', 'all_tasks',
+    'create_eager_task_factory', 'eager_task_factory',
     '_register_task', '_unregister_task', '_enter_task', '_leave_task',
 )
 
@@ -75,6 +76,8 @@ def _set_task_name(task, name):
             set_name(name)
 
 
+_NOT_SET = object()
+
 class Task(futures._PyFuture):  # Inherit Python Task implementation
                                 # from a Python Future implementation.
 
@@ -93,7 +96,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     # status is still pending
     _log_destroy_pending = True
 
-    def __init__(self, coro, *, loop=None, name=None, context=None):
+    def __init__(self, coro, *, loop=None, name=None, context=None,
+                                coro_result=_NOT_SET):
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -117,7 +121,10 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         else:
             self._context = context
 
-        self._loop.call_soon(self.__step, context=self._context)
+        if coro_result is _NOT_SET:
+            self._loop.call_soon(self.__step, context=self._context)
+        else:
+            self.__step_handle_result(coro_result)
         _register_task(self)
 
     def __del__(self):
@@ -287,55 +294,58 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         except BaseException as exc:
             super().set_exception(exc)
         else:
-            blocking = getattr(result, '_asyncio_future_blocking', None)
-            if blocking is not None:
-                # Yielded Future must come from Future.__iter__().
-                if futures._get_loop(result) is not self._loop:
-                    new_exc = RuntimeError(
-                        f'Task {self!r} got Future '
-                        f'{result!r} attached to a different loop')
-                    self._loop.call_soon(
-                        self.__step, new_exc, context=self._context)
-                elif blocking:
-                    if result is self:
-                        new_exc = RuntimeError(
-                            f'Task cannot await on itself: {self!r}')
-                        self._loop.call_soon(
-                            self.__step, new_exc, context=self._context)
-                    else:
-                        result._asyncio_future_blocking = False
-                        result.add_done_callback(
-                            self.__wakeup, context=self._context)
-                        self._fut_waiter = result
-                        if self._must_cancel:
-                            if self._fut_waiter.cancel(
-                                    msg=self._cancel_message):
-                                self._must_cancel = False
-                else:
-                    new_exc = RuntimeError(
-                        f'yield was used instead of yield from '
-                        f'in task {self!r} with {result!r}')
-                    self._loop.call_soon(
-                        self.__step, new_exc, context=self._context)
-
-            elif result is None:
-                # Bare yield relinquishes control for one event loop iteration.
-                self._loop.call_soon(self.__step, context=self._context)
-            elif inspect.isgenerator(result):
-                # Yielding a generator is just wrong.
-                new_exc = RuntimeError(
-                    f'yield was used instead of yield from for '
-                    f'generator in task {self!r} with {result!r}')
-                self._loop.call_soon(
-                    self.__step, new_exc, context=self._context)
-            else:
-                # Yielding something else is an error.
-                new_exc = RuntimeError(f'Task got bad yield: {result!r}')
-                self._loop.call_soon(
-                    self.__step, new_exc, context=self._context)
+            self.__step_handle_result(result)
         finally:
             _leave_task(self._loop, self)
             self = None  # Needed to break cycles when an exception occurs.
+
+    def __step_handle_result(self, result):
+        blocking = getattr(result, '_asyncio_future_blocking', None)
+        if blocking is not None:
+                # Yielded Future must come from Future.__iter__().
+            if futures._get_loop(result) is not self._loop:
+                new_exc = RuntimeError(
+                    f'Task {self!r} got Future '
+                    f'{result!r} attached to a different loop')
+                self._loop.call_soon(
+                    self.__step, new_exc, context=self._context)
+            elif blocking:
+                if result is self:
+                    new_exc = RuntimeError(
+                        f'Task cannot await on itself: {self!r}')
+                    self._loop.call_soon(
+                        self.__step, new_exc, context=self._context)
+                else:
+                    result._asyncio_future_blocking = False
+                    result.add_done_callback(
+                        self.__wakeup, context=self._context)
+                    self._fut_waiter = result
+                    if self._must_cancel:
+                        if self._fut_waiter.cancel(
+                                msg=self._cancel_message):
+                            self._must_cancel = False
+            else:
+                new_exc = RuntimeError(
+                    f'yield was used instead of yield from '
+                    f'in task {self!r} with {result!r}')
+                self._loop.call_soon(
+                    self.__step, new_exc, context=self._context)
+
+        elif result is None:
+            # Bare yield relinquishes control for one event loop iteration.
+            self._loop.call_soon(self.__step, context=self._context)
+        elif inspect.isgenerator(result):
+            # Yielding a generator is just wrong.
+            new_exc = RuntimeError(
+                f'yield was used instead of yield from for '
+                f'generator in task {self!r} with {result!r}')
+            self._loop.call_soon(
+                self.__step, new_exc, context=self._context)
+        else:
+            # Yielding something else is an error.
+            new_exc = RuntimeError(f'Task got bad yield: {result!r}')
+            self._loop.call_soon(
+                self.__step, new_exc, context=self._context)
 
     def __wakeup(self, future):
         try:
@@ -895,6 +905,35 @@ def run_coroutine_threadsafe(coro, loop):
 
     loop.call_soon_threadsafe(callback)
     return future
+
+
+def create_eager_task_factory(custom_task_constructor):
+
+    def factory(loop, coro, *, name=None, context=None):
+        loop._check_closed()
+        if not loop.is_running():
+            return custom_task_constructor(coro, loop=loop, name=name, context=context)
+
+        try:
+            result = coro.send(None)
+        except StopIteration as si:
+            fut = loop.create_future()
+            fut.set_result(si.value)
+            return fut
+        except Exception as ex:
+            fut = loop.create_future()
+            fut.set_exception(ex)
+            return fut
+        else:
+            task = custom_task_constructor(
+                coro, loop=loop, name=name, context=context, coro_result=result)
+            if task._source_traceback:
+                del task._source_traceback[-1]
+            return task
+
+    return factory
+
+eager_task_factory = create_eager_task_factory(Task)
 
 
 # WeakSet containing all alive tasks.

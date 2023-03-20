@@ -845,6 +845,7 @@ extern "C" {
     INIT_ID(copy), \
     INIT_ID(copyreg), \
     INIT_ID(coro), \
+    INIT_ID(coro_result), \
     INIT_ID(count), \
     INIT_ID(cwd), \
     INIT_ID(d), \

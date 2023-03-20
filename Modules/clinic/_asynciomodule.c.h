@@ -482,14 +482,16 @@ _asyncio_Future__make_cancelled_error(FutureObj *self, PyObject *Py_UNUSED(ignor
 }
 
 PyDoc_STRVAR(_asyncio_Task___init____doc__,
-"Task(coro, *, loop=None, name=None, context=None)\n"
+"Task(coro, *, loop=None, name=None, context=None,\n"
+"     coro_result=<unrepresentable>)\n"
 "--\n"
 "\n"
 "A coroutine wrapped in a Future.");
 
 static int
 _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
-                            PyObject *name, PyObject *context);
+                            PyObject *name, PyObject *context,
+                            PyObject *coro_result);
 
 static int
 _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -497,14 +499,14 @@ _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 5
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(coro), &_Py_ID(loop), &_Py_ID(name), &_Py_ID(context), },
+        .ob_item = { &_Py_ID(coro), &_Py_ID(loop), &_Py_ID(name), &_Py_ID(context), &_Py_ID(coro_result), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -513,14 +515,14 @@ _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"coro", "loop", "name", "context", NULL};
+    static const char * const _keywords[] = {"coro", "loop", "name", "context", "coro_result", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "Task",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
@@ -528,6 +530,7 @@ _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *loop = Py_None;
     PyObject *name = Py_None;
     PyObject *context = Py_None;
+    PyObject *coro_result = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
     if (!fastargs) {
@@ -549,9 +552,15 @@ _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_kwonly;
         }
     }
-    context = fastargs[3];
+    if (fastargs[3]) {
+        context = fastargs[3];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    coro_result = fastargs[4];
 skip_optional_kwonly:
-    return_value = _asyncio_Task___init___impl((TaskObj *)self, coro, loop, name, context);
+    return_value = _asyncio_Task___init___impl((TaskObj *)self, coro, loop, name, context, coro_result);
 
 exit:
     return return_value;
@@ -1302,4 +1311,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=00f494214f2fd008 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d7cd98454c53b85a input=a9049054013a1b77]*/
