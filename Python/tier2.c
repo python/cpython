@@ -434,7 +434,7 @@ type_propagate(
 // Get the type of the const and make into a TYPENODE ROOT
 #define TYPECONST_GET(idx)          _Py_TYPENODE_MAKE_ROOT( \
                                         (_Py_TYPENODE_t)Py_TYPE( \
-                                            _PyTuple_CAST(consts)->ob_item[(idx)]))
+                                            PyTuple_GET_ITEM(consts, idx)))
 
 #define TYPE_SET(src, dst, flag)        __type_propagate_TYPE_SET((src), (dst), (flag))
 #define TYPE_OVERWRITE(src, dst, flag)  __type_propagate_TYPE_OVERWRITE(type_context, (src), (dst), (flag))
@@ -467,6 +467,7 @@ type_propagate(
 #undef STACK_ADJUST
 #undef STACK_GROW
 #undef STACK_SHRINK
+#undef TYPECONST_GET
 }
 
 ////////// Utility functions
@@ -754,8 +755,8 @@ rebox_stack(_Py_CODEUNIT *write_curr,
     _PyTier2TypeContext *type_context, int num_elements)
 {
     for (int i = 0; i < num_elements; i++) {
-        PyTypeObject **curr = type_context->type_stack_ptr - 1 - i;
-        if (*curr == &PyRawFloat_Type) {
+        _Py_TYPENODE_t *curr = type_context->type_stack_ptr - 1 - i;
+        if (typenode_get_type(*curr) == &PyRawFloat_Type) {
             write_curr->op.code = BOX_FLOAT;
             write_curr->op.arg = i;
             write_curr++;
@@ -1151,7 +1152,7 @@ _PyTier2_Code_DetectAndEmitBB(
                           type_propagate(opcode, oparg, starting_type_context, consts); \
                           continue;
 #define DISPATCH_GOTO() goto dispatch_opcode;
-
+#define TYPECONST_GET_RAWTYPE(idx) Py_TYPE(PyTuple_GET_ITEM(consts, idx))
 
     assert(co->_tier2_info != NULL);
     // There are only two cases that a BB ends.
@@ -1202,10 +1203,7 @@ _PyTier2_Code_DetectAndEmitBB(
             t2_start++;
             DISPATCH();
         case LOAD_CONST: {
-            _Py_TYPENODE_t *type_stack = starting_type_context->type_stack;
-            _Py_TYPENODE_t *type_locals = starting_type_context->type_locals;
-            _Py_TYPENODE_t **type_stackptr = &starting_type_context->type_stack_ptr;
-            if (TYPECONST_GET(oparg) == &PyFloat_Type) {
+            if (TYPECONST_GET_RAWTYPE(oparg) == &PyFloat_Type) {
                 write_i->op.code = LOAD_CONST;
                 write_i->op.arg = oparg;
                 write_i++;
@@ -1221,15 +1219,14 @@ _PyTier2_Code_DetectAndEmitBB(
         case LOAD_FAST: {
             // Read-only, only for us to inspect the types. DO NOT MODIFY HERE.
             // ONLY THE TYPES PROPAGATOR SHOULD MODIFY THEIR INTERNAL VALUES.
-            PyTypeObject **type_stack = starting_type_context->type_stack;
-            PyTypeObject **type_locals = starting_type_context->type_locals;
-            PyTypeObject **type_stackptr = starting_type_context->type_stack_ptr;
-            // Writing unboxed val to a boxed val. 
-            if (is_unboxed_type(TYPELOCALS_GET(oparg))) {
+            _Py_TYPENODE_t *type_locals = starting_type_context->type_locals;
+            // Writing unboxed val to a boxed val.
+            PyTypeObject *local = typenode_get_type(*TYPELOCALS_GET(oparg));
+            if (is_unboxed_type(local)) {
                 opcode = specop = LOAD_FAST_NO_INCREF;
             }
             else {
-                if (TYPELOCALS_GET(oparg) == &PyFloat_Type) {
+                if (local == &PyFloat_Type) {
                     write_i->op.code = LOAD_FAST;
                     write_i->op.arg = oparg;
                     write_i++;
@@ -1247,12 +1244,13 @@ _PyTier2_Code_DetectAndEmitBB(
         case STORE_FAST: {
             // Read-only, only for us to inspect the types. DO NOT MODIFY HERE.
             // ONLY THE TYPES PROPAGATOR SHOULD MODIFY THEIR INTERNAL VALUES.
-            PyTypeObject **type_stack = starting_type_context->type_stack;
-            PyTypeObject **type_locals = starting_type_context->type_locals;
-            PyTypeObject **type_stackptr = starting_type_context->type_stack_ptr;
+            _Py_TYPENODE_t *type_locals = starting_type_context->type_locals;
+            _Py_TYPENODE_t **type_stackptr = &starting_type_context->type_stack_ptr;
+            PyTypeObject *local = typenode_get_type(*TYPESTACK_PEEK(1));
+            PyTypeObject *store = typenode_get_type(*TYPELOCALS_GET(oparg));
             // Writing unboxed val to a boxed val. 
-            if (is_unboxed_type(TYPESTACK_PEEK(1))) {
-                if (!is_unboxed_type(TYPELOCALS_GET(oparg))) {
+            if (is_unboxed_type(local)) {
+                if (!is_unboxed_type(store)) {
                     opcode = specop = STORE_FAST_UNBOXED_BOXED;
                 }
                 else {
@@ -1260,7 +1258,7 @@ _PyTier2_Code_DetectAndEmitBB(
                 }
             }
             else {
-                if (is_unboxed_type(TYPELOCALS_GET(oparg))) {
+                if (is_unboxed_type(store)) {
                     opcode = specop = STORE_FAST_BOXED_UNBOXED;
                 }
                 else {
@@ -1974,6 +1972,5 @@ _PyTier2_RewriteBackwardJump(_Py_CODEUNIT *jump_backward_lazy, _Py_CODEUNIT *tar
 #undef TYPESTACK_POKE
 #undef TYPELOCALS_SET
 #undef TYPELOCALS_GET
-#undef TYPECONST_GET
 #undef TYPE_SET
 #undef TYPE_OVERWRITE
