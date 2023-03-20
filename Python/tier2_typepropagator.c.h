@@ -53,7 +53,7 @@
 
         TARGET(PUSH_NULL) {
             STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -68,17 +68,17 @@
         }
 
         TARGET(UNARY_NEGATIVE) {
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(UNARY_NOT) {
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(UNARY_INVERT) {
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -124,14 +124,14 @@
         }
 
         TARGET(BINARY_CHECK_FLOAT) {
-            TYPESTACK_POKE(1, &PyFloat_Type);
-            TYPESTACK_POKE(2, &PyFloat_Type);
+            TYPE_SET((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&PyFloat_Type), TYPESTACK_PEEK(1), true);
+            TYPE_SET((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&PyFloat_Type), TYPESTACK_PEEK(2), true);
             break;
         }
 
         TARGET(BINARY_OP_ADD_FLOAT_REST) {
             STACK_SHRINK(1);
-            TYPESTACK_POKE(1, &PyFloat_Type);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&PyFloat_Type), TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -155,13 +155,13 @@
 
         TARGET(BINARY_SUBSCR) {
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(BINARY_SLICE) {
             STACK_SHRINK(2);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -172,19 +172,19 @@
 
         TARGET(BINARY_SUBSCR_LIST_INT) {
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(BINARY_SUBSCR_TUPLE_INT) {
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(BINARY_SUBSCR_DICT) {
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -224,13 +224,13 @@
         }
 
         TARGET(CALL_INTRINSIC_1) {
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(CALL_INTRINSIC_2) {
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -255,18 +255,18 @@
         }
 
         TARGET(GET_AITER) {
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(GET_ANEXT) {
             STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(GET_AWAITABLE) {
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -307,20 +307,20 @@
 
         TARGET(CLEANUP_THROW) {
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(2), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(2), true);
             break;
         }
 
         TARGET(LOAD_ASSERTION_ERROR) {
             STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(LOAD_BUILD_CLASS) {
             STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -342,21 +342,21 @@
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
             STACK_SHRINK(1);
             STACK_GROW(oparg);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(oparg), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(oparg), true);
             break;
         }
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
             STACK_SHRINK(1);
             STACK_GROW(oparg);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(oparg), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(oparg), true);
             break;
         }
 
         TARGET(UNPACK_SEQUENCE_LIST) {
             STACK_SHRINK(1);
             STACK_GROW(oparg);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(oparg), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(oparg), true);
             break;
         }
 
@@ -386,31 +386,31 @@
 
         TARGET(LOAD_NAME) {
             STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(LOAD_GLOBAL) {
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
             break;
         }
 
         TARGET(LOAD_GLOBAL_MODULE) {
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
             break;
         }
 
         TARGET(LOAD_GLOBAL_BUILTIN) {
             STACK_GROW(1);
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
             break;
         }
 
@@ -432,7 +432,7 @@
 
         TARGET(LOAD_CLASSDEREF) {
             STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -523,43 +523,43 @@
 
         TARGET(LOAD_ATTR) {
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
             break;
         }
 
         TARGET(LOAD_ATTR_INSTANCE_VALUE) {
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
             break;
         }
 
         TARGET(LOAD_ATTR_MODULE) {
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
             break;
         }
 
         TARGET(LOAD_ATTR_WITH_HINT) {
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
             break;
         }
 
         TARGET(LOAD_ATTR_SLOT) {
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
             break;
         }
 
         TARGET(LOAD_ATTR_CLASS) {
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
             break;
         }
 
@@ -590,7 +590,7 @@
 
         TARGET(COMPARE_OP) {
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -627,8 +627,8 @@
         }
 
         TARGET(CHECK_EG_MATCH) {
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(2), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(2), true);
             break;
         }
 
@@ -639,13 +639,13 @@
 
         TARGET(IMPORT_NAME) {
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(IMPORT_FROM) {
             STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -737,7 +737,7 @@
 
         TARGET(MATCH_CLASS) {
             STACK_SHRINK(2);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -760,42 +760,42 @@
         }
 
         TARGET(GET_ITER) {
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(GET_YIELD_FROM_ITER) {
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(FOR_ITER) {
             STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(BB_TEST_ITER) {
             STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(FOR_ITER_LIST) {
             STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(FOR_ITER_TUPLE) {
             STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(FOR_ITER_RANGE) {
             STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -806,15 +806,15 @@
 
         TARGET(BEFORE_ASYNC_WITH) {
             STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(2), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(2), true);
             break;
         }
 
         TARGET(BEFORE_WITH) {
             STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(2), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(2), true);
             break;
         }
 
@@ -832,22 +832,22 @@
 
         TARGET(LOAD_ATTR_METHOD_WITH_VALUES) {
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
             break;
         }
 
         TARGET(LOAD_ATTR_METHOD_NO_DICT) {
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
             break;
         }
 
         TARGET(LOAD_ATTR_METHOD_LAZY_DICT) {
             STACK_GROW(((oparg & 1) ? 1 : 0));
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
-            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            if (oparg & 1) { TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1 + ((oparg & 1) ? 1 : 0)), true); }
             break;
         }
 
@@ -858,7 +858,7 @@
         TARGET(CALL) {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -883,63 +883,63 @@
         TARGET(CALL_NO_KW_TYPE_1) {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(CALL_NO_KW_STR_1) {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(CALL_NO_KW_TUPLE_1) {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(CALL_BUILTIN_CLASS) {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(CALL_NO_KW_BUILTIN_O) {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(CALL_NO_KW_BUILTIN_FAST) {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(CALL_BUILTIN_FAST_WITH_KEYWORDS) {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(CALL_NO_KW_LEN) {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(CALL_NO_KW_ISINSTANCE) {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -952,41 +952,41 @@
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS) {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_FAST) {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(CALL_FUNCTION_EX) {
             STACK_SHRINK(((oparg & 1) ? 1 : 0));
             STACK_SHRINK(2);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(MAKE_FUNCTION) {
             STACK_SHRINK(((oparg & 0x01) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x08) ? 1 : 0));
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -997,13 +997,13 @@
         TARGET(BUILD_SLICE) {
             STACK_SHRINK(((oparg == 3) ? 1 : 0));
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
         TARGET(FORMAT_VALUE) {
             STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0));
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -1016,7 +1016,7 @@
 
         TARGET(BINARY_OP) {
             STACK_SHRINK(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL), TYPESTACK_PEEK(1), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 

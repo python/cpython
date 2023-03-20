@@ -385,7 +385,7 @@ class Instruction:
             match val:
                 case TypeSrcLiteral(name=valstr): 
                     if valstr == "NULL":
-                        src = "(_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL)"
+                        src = "(_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT"
                         flag = "true"
                     else:
                         src = f"(_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&{valstr})"
@@ -427,7 +427,7 @@ class Instruction:
                 match typ.src:
                     case TypeSrcLiteral(literal=valstr):
                         if valstr == "NULL":
-                            src = "(_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL)"
+                            src = "(_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT"
                             flag = "true"
                         else:
                             src = f"(_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&{valstr})"
@@ -459,7 +459,7 @@ class Instruction:
             
             # Just output null
             typ_op = "TYPE_OVERWRITE"
-            src = "(_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT(_Py_TYPENODE_NULL)"
+            src = "(_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT"
             flag = "true"
             opstr = f"{typ_op}({src}, {dst}, {flag})"
             if oeffect.cond:
