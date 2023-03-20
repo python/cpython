@@ -204,12 +204,12 @@ _PyCode_GetLogicalEnd(PyCodeObject *co)
 static _PyTier2BBSpace *
 _PyTier2_CreateBBSpace(Py_ssize_t space_to_alloc)
 {
-    _PyTier2BBSpace *bb_space = PyMem_Malloc(space_to_alloc);
+    _PyTier2BBSpace *bb_space = PyMem_Malloc(space_to_alloc + sizeof(_PyTier2BBSpace));
     if (bb_space == NULL) {
         return NULL;
     }
     bb_space->water_level = 0;
-    bb_space->max_capacity = (space_to_alloc - sizeof(_PyTier2BBSpace));
+    bb_space->max_capacity = space_to_alloc;
     return bb_space;
 }
 
@@ -226,13 +226,15 @@ _PyTier2_BBSpaceCheckAndReallocIfNeeded(PyCodeObject *co, Py_ssize_t space_reque
     if (curr->water_level + space_requested > curr->max_capacity) {
         // Note: overallocate
         Py_ssize_t new_size = sizeof(_PyTier2BBSpace) + (curr->water_level + space_requested) * 2;
+#if BB_DEBUG
+        fprintf(stderr, "Allocating new BB of size %lld\n", new_size);
+#endif
         _PyTier2BBSpace *new_space = PyMem_Realloc(curr, new_size);
         if (new_space == NULL) {
             return NULL;
         }
         co->_tier2_info->_bb_space = new_space;
         new_space->max_capacity = new_size;
-        PyMem_Free(curr);
         return new_space;
     }
     // We have enouogh space. Don't do anything, j
