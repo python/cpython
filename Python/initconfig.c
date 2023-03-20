@@ -5,7 +5,7 @@
 #include "pycore_interp.h"        // _PyInterpreterState.runtime
 #include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_pathconfig.h"    // _Py_path_config
-#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -129,7 +129,14 @@ The following implementation-specific options are available:\n\
 \n\
 -X int_max_str_digits=number: limit the size of int<->str conversions.\n\
     This helps avoid denial of service attacks when parsing untrusted data.\n\
-    The default is sys.int_info.default_max_str_digits.  0 disables.";
+    The default is sys.int_info.default_max_str_digits.  0 disables."
+
+#ifdef Py_STATS
+"\n\
+\n\
+-X pystats: Enable pystats collection at startup."
+#endif
+;
 
 /* Envvars that don't have equivalent command-line options are listed first */
 static const char usage_envvars[] =
@@ -173,6 +180,8 @@ static const char usage_envvars[] =
 "PYTHONDEBUG             : enable parser debug mode (-d)\n"
 "PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n"
 "PYTHONINSPECT           : inspect interactively after running script (-i)\n"
+"PYTHONINTMAXSTRDIGITS   : limit max digit characters in an int value\n"
+"                          (-X int_max_str_digits=number)\n"
 "PYTHONNOUSERSITE        : disable user site directory (-s)\n"
 "PYTHONOPTIMIZE          : enable level 1 optimizations (-O)\n"
 "PYTHONUNBUFFERED        : disable stdout/stderr buffering (-u)\n"
@@ -2186,6 +2195,12 @@ config_read(PyConfig *config, int compute_path_config)
         config->show_ref_count = 1;
     }
 
+#ifdef Py_STATS
+    if (config_get_xoption(config, L"pystats")) {
+        _py_stats = &_py_stats_struct;
+    }
+#endif
+
     status = config_read_complex_options(config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -3128,8 +3143,7 @@ init_dump_ascii_wstr(const wchar_t *str)
 void
 _Py_DumpPathConfig(PyThreadState *tstate)
 {
-    PyObject *exc_type, *exc_value, *exc_tb;
-    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
 
     PySys_WriteStderr("Python path configuration:\n");
 
@@ -3187,5 +3201,5 @@ _Py_DumpPathConfig(PyThreadState *tstate)
         PySys_WriteStderr("  ]\n");
     }
 
-    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
+    _PyErr_SetRaisedException(tstate, exc);
 }

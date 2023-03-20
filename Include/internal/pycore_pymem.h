@@ -90,28 +90,6 @@ PyAPI_FUNC(int) _PyMem_GetAllocatorName(
    PYMEM_ALLOCATOR_NOT_SET does nothing. */
 PyAPI_FUNC(int) _PyMem_SetupAllocators(PyMemAllocatorName allocator);
 
-struct _PyTraceMalloc_Config {
-    /* Module initialized?
-       Variable protected by the GIL */
-    enum {
-        TRACEMALLOC_NOT_INITIALIZED,
-        TRACEMALLOC_INITIALIZED,
-        TRACEMALLOC_FINALIZED
-    } initialized;
-
-    /* Is tracemalloc tracing memory allocations?
-       Variable protected by the GIL */
-    int tracing;
-
-    /* limit of the number of frames in a traceback, 1 by default.
-       Variable protected by the GIL. */
-    int max_nframe;
-};
-
-#define _PyTraceMalloc_Config_INIT \
-    {.initialized = TRACEMALLOC_NOT_INITIALIZED, \
-     .tracing = 0, \
-     .max_nframe = 1}
 
 #ifdef __cplusplus
 }

@@ -206,6 +206,7 @@
     <ClCompile Include="..\Python\import.c" />
     <ClCompile Include="..\Python\importdl.c" />
     <ClCompile Include="..\Python\initconfig.c" />
+    <ClCompile Include="..\Python\intrinsics.c" />
     <ClCompile Include="..\Python\marshal.c" />
     <ClCompile Include="..\Python\modsupport.c" />
     <ClCompile Include="..\Python\mysnprintf.c" />

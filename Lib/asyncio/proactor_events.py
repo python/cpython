@@ -288,7 +288,8 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                         # we got end-of-file so no need to reschedule a new read
                         return
 
-                    data = self._data[:length]
+                    # It's a new slice so make it immutable so protocols upstream don't have problems
+                    data = bytes(memoryview(self._data)[:length])
                 else:
                     # the future will be replaced by next proactor.recv call
                     fut.cancel()

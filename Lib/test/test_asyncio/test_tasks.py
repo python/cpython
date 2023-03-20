@@ -8,6 +8,7 @@ import random
 import re
 import sys
 import traceback
+import types
 import unittest
 from unittest import mock
 from types import GenericAlias
@@ -273,6 +274,20 @@ class BaseTaskTests:
         fut = asyncio.ensure_future(Aw(coro()), loop=loop)
         loop.run_until_complete(fut)
         self.assertEqual(fut.result(), 'ok')
+
+    def test_ensure_future_task_awaitable(self):
+        class Aw:
+            def __await__(self):
+                return asyncio.sleep(0, result='ok').__await__()
+
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+        task = asyncio.ensure_future(Aw(), loop=loop)
+        loop.run_until_complete(task)
+        self.assertTrue(task.done())
+        self.assertEqual(task.result(), 'ok')
+        self.assertIsInstance(task.get_coro(), types.CoroutineType)
+        loop.close()
 
     def test_ensure_future_neither(self):
         with self.assertRaises(TypeError):
@@ -1357,6 +1372,22 @@ class BaseTaskTests:
         res = loop.run_until_complete(self.new_task(loop, foo()))
         self.assertEqual(res, 42)
         self.assertAlmostEqual(0.15, loop.time())
+
+
+    def test_wait_generator(self):
+        async def func(a):
+            return a
+
+        loop = self.new_test_loop()
+
+        async def main():
+            tasks = (self.new_task(loop, func(i)) for i in range(10))
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
+            self.assertEqual(len(done), 10)
+            self.assertEqual(len(pending), 0)
+
+        loop.run_until_complete(main())
+
 
     def test_as_completed(self):
 
@@ -2804,6 +2835,7 @@ class CIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
 
 
 class BaseCurrentLoopTests:
+    current_task = None
 
     def setUp(self):
         super().setUp()
@@ -2814,33 +2846,39 @@ class BaseCurrentLoopTests:
         raise NotImplementedError
 
     def test_current_task_no_running_loop(self):
-        self.assertIsNone(asyncio.current_task(loop=self.loop))
+        self.assertIsNone(self.current_task(loop=self.loop))
 
     def test_current_task_no_running_loop_implicit(self):
         with self.assertRaisesRegex(RuntimeError, 'no running event loop'):
-            asyncio.current_task()
+            self.current_task()
 
     def test_current_task_with_implicit_loop(self):
         async def coro():
-            self.assertIs(asyncio.current_task(loop=self.loop), task)
+            self.assertIs(self.current_task(loop=self.loop), task)
 
-            self.assertIs(asyncio.current_task(None), task)
-            self.assertIs(asyncio.current_task(), task)
+            self.assertIs(self.current_task(None), task)
+            self.assertIs(self.current_task(), task)
 
         task = self.new_task(coro())
         self.loop.run_until_complete(task)
-        self.assertIsNone(asyncio.current_task(loop=self.loop))
+        self.assertIsNone(self.current_task(loop=self.loop))
 
 
 class PyCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
+    current_task = staticmethod(tasks._py_current_task)
 
     def new_task(self, coro):
         return tasks._PyTask(coro, loop=self.loop)
 
 
-@unittest.skipUnless(hasattr(tasks, '_CTask'),
+@unittest.skipUnless(hasattr(tasks, '_CTask') and
+                     hasattr(tasks, '_c_current_task'),
                      'requires the C _asyncio module')
 class CCurrentLoopTests(BaseCurrentLoopTests, test_utils.TestCase):
+    if hasattr(tasks, '_c_current_task'):
+        current_task = staticmethod(tasks._c_current_task)
+    else:
+        current_task = None
 
     def new_task(self, coro):
         return getattr(tasks, '_CTask')(coro, loop=self.loop)

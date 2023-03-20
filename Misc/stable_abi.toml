@@ -609,6 +609,8 @@
     added = '3.2'
 [function.PyErr_Display]
     added = '3.2'
+[function.PyErr_DisplayException]
+    added = '3.12'
 [function.PyErr_ExceptionMatches]
     added = '3.2'
 [function.PyErr_Fetch]
@@ -2333,6 +2335,15 @@
     added = '3.12'
 [function.PyVectorcall_Call]
     added = '3.12'
+[function.PyErr_GetRaisedException]
+    added = '3.12'
+[function.PyErr_SetRaisedException]
+    added = '3.12'
+[function.PyException_GetArgs]
+    added = '3.12'
+[function.PyException_SetArgs]
+    added = '3.12'
+
 [typedef.vectorcallfunc]
     added = '3.12'
 [function.PyObject_Vectorcall]

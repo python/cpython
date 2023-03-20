@@ -839,7 +839,7 @@ PyConfig
       will produce an error.
 
       Configured by the :option:`-X int_max_str_digits <-X>` command line
-      flag or the :envvar:`PYTHONINTMAXSTRDIGITS` environment varable.
+      flag or the :envvar:`PYTHONINTMAXSTRDIGITS` environment variable.
 
       Default: ``-1`` in Python mode.  4300
       (:data:`sys.int_info.default_max_str_digits`) in isolated mode.
@@ -1582,7 +1582,7 @@ applied during the "Main" phase. It may allow to customize Python in Python to
 override or tune the :ref:`Path Configuration <init-path-config>`, maybe
 install a custom :data:`sys.meta_path` importer or an import hook, etc.
 
-It may become possible to calculatin the :ref:`Path Configuration
+It may become possible to calculate the :ref:`Path Configuration
 <init-path-config>` in Python, after the Core phase and before the Main phase,
 which is one of the :pep:`432` motivation.
 

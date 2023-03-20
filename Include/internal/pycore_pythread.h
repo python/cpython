@@ -33,7 +33,7 @@ extern "C" {
 # endif /* _POSIX_THREADS */
 #endif /* _POSIX_THREADS */
 
-#if defined(_POSIX_THREADS) && !defined(HAVE_PTHREAD_STUBS)
+#if defined(_POSIX_THREADS) || defined(HAVE_PTHREAD_STUBS)
 # define _USE_PTHREADS
 #endif
 

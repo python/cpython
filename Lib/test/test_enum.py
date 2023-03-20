@@ -20,7 +20,6 @@ from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from test.support import ALWAYS_EQ
 from test.support import threading_helper
-from textwrap import dedent
 from datetime import timedelta
 
 python_version = sys.version_info[:2]
@@ -1187,7 +1186,6 @@ class TestSpecial(unittest.TestCase):
         #
         class SillyInt(HexInt):
             __qualname__ = 'SillyInt'
-            pass
         class MyOtherEnum(SillyInt, enum.Enum):
             __qualname__ = 'MyOtherEnum'
             D = 4
@@ -2855,6 +2853,46 @@ class TestSpecial(unittest.TestCase):
                 [TTuple(id=0, a=0, blist=[]), TTuple(id=1, a=2, blist=[4]), TTuple(id=2, a=4, blist=[0, 1, 2])],
                 )
 
+    def test_flag_with_custom_new(self):
+        class FlagFromChar(IntFlag):
+            def __new__(cls, c):
+                value = 1 << c
+                self = int.__new__(cls, value)
+                self._value_ = value
+                return self
+            #
+            a = ord('a')
+        #
+        self.assertEqual(FlagFromChar.a, 158456325028528675187087900672)
+        self.assertEqual(FlagFromChar.a|1, 158456325028528675187087900673)
+        #
+        #
+        class FlagFromChar(Flag):
+            def __new__(cls, c):
+                value = 1 << c
+                self = object.__new__(cls)
+                self._value_ = value
+                return self
+            #
+            a = ord('a')
+            z = 1
+        #
+        self.assertEqual(FlagFromChar.a.value, 158456325028528675187087900672)
+        self.assertEqual((FlagFromChar.a|FlagFromChar.z).value, 158456325028528675187087900674)
+        #
+        #
+        class FlagFromChar(int, Flag, boundary=KEEP):
+            def __new__(cls, c):
+                value = 1 << c
+                self = int.__new__(cls, value)
+                self._value_ = value
+                return self
+            #
+            a = ord('a')
+        #
+        self.assertEqual(FlagFromChar.a, 158456325028528675187087900672)
+        self.assertEqual(FlagFromChar.a|1, 158456325028528675187087900673)
+
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
 
@@ -4259,7 +4297,7 @@ expected_help_output_with_docs = """\
 Help on class Color in module %s:
 
 class Color(enum.Enum)
- |  Color(value, names=None, *values, module=None, qualname=None, type=None, start=1, boundary=None)
+ |  Color(*values)
  |
  |  Method resolution order:
  |      Color
@@ -4315,7 +4353,7 @@ expected_help_output_without_docs = """\
 Help on class Color in module %s:
 
 class Color(enum.Enum)
- |  Color(value, names=None, *values, module=None, qualname=None, type=None, start=1)
+ |  Color(*values)
  |
  |  Method resolution order:
  |      Color
@@ -4462,6 +4500,27 @@ class TestStdLib(unittest.TestCase):
         if failed:
             self.fail("result does not equal expected, see print above")
 
+    def test_inspect_signatures(self):
+        from inspect import signature, Signature, Parameter
+        self.assertEqual(
+                signature(Enum),
+                Signature([
+                    Parameter('new_class_name', Parameter.POSITIONAL_ONLY),
+                    Parameter('names', Parameter.POSITIONAL_OR_KEYWORD),
+                    Parameter('module', Parameter.KEYWORD_ONLY, default=None),
+                    Parameter('qualname', Parameter.KEYWORD_ONLY, default=None),
+                    Parameter('type', Parameter.KEYWORD_ONLY, default=None),
+                    Parameter('start', Parameter.KEYWORD_ONLY, default=1),
+                    Parameter('boundary', Parameter.KEYWORD_ONLY, default=None),
+                    ]),
+                )
+        self.assertEqual(
+                signature(enum.FlagBoundary),
+                Signature([
+                    Parameter('values', Parameter.VAR_POSITIONAL),
+                    ]),
+                )
+
     def test_test_simple_enum(self):
         @_simple_enum(Enum)
         class SimpleColor:
@@ -4520,15 +4579,14 @@ class MiscTestCase(unittest.TestCase):
             TWO = 2
         self.assertEqual(Double.__doc__, None)
 
-
-    def test_doc_1(self):
+    def test_doc_3(self):
         class Triple(Enum):
             ONE = 1
             TWO = 2
             THREE = 3
         self.assertEqual(Triple.__doc__, None)
 
-    def test_doc_1(self):
+    def test_doc_4(self):
         class Quadruple(Enum):
             ONE = 1
             TWO = 2
