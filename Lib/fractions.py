@@ -611,29 +611,33 @@ class Fraction(numbers.Rational):
 
         """
         def forward(a, b):
-            if isinstance(b, Fraction):
-                return monomorphic_operator(a, b)
-            elif isinstance(b, int):
-                return monomorphic_operator(a, Fraction(b))
-            elif isinstance(b, float):
-                return fallback_operator(float(a), b)
-            elif isinstance(b, complex):
-                return fallback_operator(complex(a), b)
-            else:
-                return NotImplemented
+            try:
+                if isinstance(b, Fraction):
+                    return monomorphic_operator(a, b)
+                elif isinstance(b, int):
+                    return monomorphic_operator(a, Fraction(b))
+                elif isinstance(b, float):
+                    return fallback_operator(float(a), b)
+                elif isinstance(b, complex):
+                    return fallback_operator(complex(a), b)
+            except TypeError:
+                pass
+            return NotImplemented
         forward.__name__ = '__' + fallback_operator.__name__ + '__'
         forward.__doc__ = monomorphic_operator.__doc__
 
         def reverse(b, a):
-            if isinstance(a, numbers.Rational):
-                # Includes ints.
-                return monomorphic_operator(Fraction(a), b)
-            elif isinstance(a, numbers.Real):
-                return fallback_operator(float(a), float(b))
-            elif isinstance(a, numbers.Complex):
-                return fallback_operator(complex(a), complex(b))
-            else:
-                return NotImplemented
+            try:
+                if isinstance(a, numbers.Rational):
+                    # Includes ints.
+                    return monomorphic_operator(Fraction(a), b)
+                elif isinstance(a, numbers.Real):
+                    return fallback_operator(float(a), float(b))
+                elif isinstance(a, numbers.Complex):
+                    return fallback_operator(complex(a), complex(b))
+            except TypeError:
+                pass
+            return NotImplemented
         reverse.__name__ = '__r' + fallback_operator.__name__ + '__'
         reverse.__doc__ = monomorphic_operator.__doc__
 
