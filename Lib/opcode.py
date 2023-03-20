@@ -510,6 +510,7 @@ _uops = [
     'BINARY_OP_ADD_FLOAT_UNBOXED',
 
     # Boxing / unboxing ops
+    'POP_TOP_NO_DECREF',
     'UNBOX_FLOAT',
     'BOX_FLOAT',
     'LOAD_FAST_NO_INCREF',

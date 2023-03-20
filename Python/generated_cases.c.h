@@ -223,6 +223,12 @@
             DISPATCH();
         }
 
+        TARGET(POP_TOP_NO_DECREF) {
+            PyObject *value = stack_pointer[-1];
+            STACK_SHRINK(1);
+            DISPATCH();
+        }
+
         TARGET(PUSH_NULL) {
             PyObject *res;
             res = NULL;

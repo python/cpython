@@ -283,12 +283,13 @@ extern "C" {
 #define UNARY_CHECK_FLOAT                      191
 #define BINARY_OP_ADD_INT_REST                 192
 #define BINARY_OP_ADD_FLOAT_UNBOXED            193
-#define UNBOX_FLOAT                            194
-#define BOX_FLOAT                              195
-#define LOAD_FAST_NO_INCREF                    196
-#define STORE_FAST_BOXED_UNBOXED               197
-#define STORE_FAST_UNBOXED_BOXED               198
-#define STORE_FAST_UNBOXED_UNBOXED             199
+#define POP_TOP_NO_DECREF                      194
+#define UNBOX_FLOAT                            195
+#define BOX_FLOAT                              196
+#define LOAD_FAST_NO_INCREF                    197
+#define STORE_FAST_BOXED_UNBOXED               198
+#define STORE_FAST_UNBOXED_BOXED               199
+#define STORE_FAST_UNBOXED_UNBOXED             200
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \

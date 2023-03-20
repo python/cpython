@@ -78,6 +78,11 @@
             break;
         }
 
+        TARGET(POP_TOP_NO_DECREF) {
+            STACK_SHRINK(1);
+            break;
+        }
+
         TARGET(PUSH_NULL) {
             STACK_GROW(1);
             TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);

@@ -1202,6 +1202,17 @@ _PyTier2_Code_DetectAndEmitBB(
             // So we tell the BB to skip over it.
             t2_start++;
             DISPATCH();
+        case POP_TOP: {
+            // Read-only, only for us to inspect the types. DO NOT MODIFY HERE.
+            // ONLY THE TYPES PROPAGATOR SHOULD MODIFY THEIR INTERNAL VALUES.
+            _Py_TYPENODE_t **type_stackptr = &starting_type_context->type_stack_ptr;
+            PyTypeObject *pop = typenode_get_type(*TYPESTACK_PEEK(1));
+            // Writing unboxed val to a boxed val. 
+            if (is_unboxed_type(pop)) {
+                opcode = specop = POP_TOP_NO_DECREF;
+            }
+            DISPATCH();
+        }
         case LOAD_CONST: {
             if (TYPECONST_GET_RAWTYPE(oparg) == &PyFloat_Type) {
                 write_i->op.code = LOAD_CONST;
@@ -1230,11 +1241,22 @@ _PyTier2_Code_DetectAndEmitBB(
                     write_i->op.code = LOAD_FAST;
                     write_i->op.arg = oparg;
                     write_i++;
-                    type_propagate(LOAD_FAST, oparg, starting_type_context, consts);
+                    type_propagate(LOAD_FAST,
+                        oparg, starting_type_context, consts);
                     write_i->op.code = UNBOX_FLOAT;
                     write_i->op.arg = 0;
                     write_i++;
-                    type_propagate(UNBOX_FLOAT, oparg, starting_type_context, consts);
+                    type_propagate(UNBOX_FLOAT, 0, starting_type_context, consts);
+                    write_i->op.code = STORE_FAST_UNBOXED_BOXED;
+                    write_i->op.arg = oparg;
+                    write_i++;
+                    type_propagate(STORE_FAST_UNBOXED_BOXED,
+                        oparg, starting_type_context, consts);
+                    write_i->op.code = LOAD_FAST_NO_INCREF;
+                    write_i->op.arg = oparg;
+                    write_i++;
+                    type_propagate(LOAD_FAST_NO_INCREF,
+                        oparg, starting_type_context, consts);
                     continue;
                 }
                 opcode = specop = LOAD_FAST;

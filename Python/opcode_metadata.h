@@ -45,6 +45,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0+0;
         case POP_TOP:
             return 1;
+        case POP_TOP_NO_DECREF:
+            return 1;
         case PUSH_NULL:
             return 0;
         case END_FOR:
@@ -449,6 +451,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1+1;
         case POP_TOP:
             return 0;
+        case POP_TOP_NO_DECREF:
+            return 0;
         case PUSH_NULL:
             return 1;
         case END_FOR:
@@ -843,6 +847,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [STORE_FAST__STORE_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBIB },
     [LOAD_CONST__LOAD_FAST] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IBIB },
     [POP_TOP] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
+    [POP_TOP_NO_DECREF] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [PUSH_NULL] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },
     [END_FOR] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IB },
     [UNARY_NEGATIVE] = { DIR_NONE, DIR_NONE, DIR_NONE, true, INSTR_FMT_IX },

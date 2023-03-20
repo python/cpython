@@ -158,6 +158,9 @@ dummy_func(
             DECREF_INPUTS();
         }
 
+        inst(POP_TOP_NO_DECREF, (value--)) {
+        }
+
         inst(PUSH_NULL, (-- res: NULL)) {
             res = NULL;
         }
