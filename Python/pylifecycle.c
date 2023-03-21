@@ -1962,10 +1962,10 @@ error:
 
     /* Oops, it didn't work.  Undo it all. */
     PyErr_PrintEx(0);
+    PyThreadState_Swap(save_tstate);
     PyThreadState_Clear(tstate);
     PyThreadState_Delete(tstate);
     PyInterpreterState_Delete(interp);
-    PyThreadState_Swap(save_tstate);
 
     return status;
 }
