@@ -126,7 +126,9 @@ PyAPI_FUNC(void) _PyThreadState_Bind(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyThreadState_Init(
     PyThreadState *tstate);
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
+
 extern void _PyThreadState_InitDetached(PyThreadState *, PyInterpreterState *);
+extern void _PyThreadState_ClearDetached(PyThreadState *);
 
 
 static inline void

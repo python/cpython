@@ -1371,6 +1371,19 @@ _PyThreadState_InitDetached(PyThreadState *tstate, PyInterpreterState *interp)
     // We do not call add_threadstate().
 }
 
+
+static void
+clear_datastack(PyThreadState *tstate)
+{
+    _PyStackChunk *chunk = tstate->datastack_chunk;
+    tstate->datastack_chunk = NULL;
+    while (chunk != NULL) {
+        _PyStackChunk *prev = chunk->previous;
+        _PyObject_VirtualFree(chunk, chunk->size);
+        chunk = prev;
+    }
+}
+
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
@@ -1445,7 +1458,6 @@ PyThreadState_Clear(PyThreadState *tstate)
     // XXX Do it as early in the function as possible.
 }
 
-
 /* Common code for PyThreadState_Delete() and PyThreadState_DeleteCurrent() */
 static void
 tstate_delete_common(PyThreadState *tstate)
@@ -1478,17 +1490,25 @@ tstate_delete_common(PyThreadState *tstate)
     unbind_tstate(tstate);
 
     // XXX Move to PyThreadState_Clear()?
-    _PyStackChunk *chunk = tstate->datastack_chunk;
-    tstate->datastack_chunk = NULL;
-    while (chunk != NULL) {
-        _PyStackChunk *prev = chunk->previous;
-        _PyObject_VirtualFree(chunk, chunk->size);
-        chunk = prev;
-    }
+    clear_datastack(tstate);
 
     tstate->_status.finalized = 1;
 }
 
+void
+_PyThreadState_ClearDetached(PyThreadState *tstate)
+{
+    assert(!tstate->_status.bound);
+    assert(!tstate->_status.bound_gilstate);
+    assert(tstate->datastack_chunk == NULL);
+    assert(tstate->thread_id == 0);
+    assert(tstate->native_thread_id == 0);
+    assert(tstate->next == NULL);
+    assert(tstate->prev == NULL);
+
+    PyThreadState_Clear(tstate);
+    clear_datastack(tstate);
+}
 
 static void
 zapthreads(PyInterpreterState *interp)
