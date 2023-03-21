@@ -2373,7 +2373,7 @@ _posix_free(void *module)
    _posix_clear((PyObject *)module);
 }
 
-static void
+static int
 fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index, time_t sec, unsigned long nsec)
 {
     PyObject *s = _PyLong_FromTime_t(sec);
@@ -2381,17 +2381,21 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
     PyObject *s_in_ns = NULL;
     PyObject *ns_total = NULL;
     PyObject *float_s = NULL;
+    int result = 0;
 
-    if (!(s && ns_fractional))
+    if (!(s && ns_fractional)) {
         goto exit;
+    }
 
     s_in_ns = PyNumber_Multiply(s, get_posix_state(module)->billion);
-    if (!s_in_ns)
+    if (!s_in_ns) {
         goto exit;
+    }
 
     ns_total = PyNumber_Add(s_in_ns, ns_fractional);
-    if (!ns_total)
+    if (!ns_total) {
         goto exit;
+    }
 
     float_s = PyFloat_FromDouble(sec + 1e-9*nsec);
     if (!float_s) {
@@ -2410,12 +2414,15 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
         PyStructSequence_SET_ITEM(v, ns_index, ns_total);
         ns_total = NULL;
     }
+
+    result = 1;
 exit:
     Py_XDECREF(s);
     Py_XDECREF(ns_fractional);
     Py_XDECREF(s_in_ns);
     Py_XDECREF(ns_total);
     Py_XDECREF(float_s);
+    return result;
 }
 
 #ifdef MS_WINDOWS
@@ -2446,7 +2453,7 @@ _pystat_l128_from_l64_l64(uint64_t low, uint64_t high)
 #endif
 
 /* pack a system stat C structure into the Python stat tuple
-   (used by posix_stat() and posix_fstat()) */
+   (used by posix_stat()) */
 static PyObject*
 _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 {
@@ -2458,7 +2465,12 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 
     PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
 #ifdef MS_WINDOWS
-    PyStructSequence_SET_ITEM(v, 1, _pystat_l128_from_l64_l64(st->st_ino, st->st_ino_high));
+    PyObject *l = _pystat_l128_from_l64_l64(st->st_ino, st->st_ino_high);
+    if (l == NULL) {
+        Py_DECREF(v);
+        return NULL;
+    }
+    PyStructSequence_SET_ITEM(v, 1, l);
     PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLongLong(st->st_dev));
 #else
     static_assert(sizeof(unsigned long long) >= sizeof(st->st_ino),
@@ -2493,9 +2505,12 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #else
     ansec = mnsec = cnsec = 0;
 #endif
-    fill_time(module, v, 7, 10, 13, st->st_atime, ansec);
-    fill_time(module, v, 8, 11, 14, st->st_mtime, mnsec);
-    fill_time(module, v, 9, 12, 15, st->st_ctime, cnsec);
+    if (!(fill_time(module, v, 7, 10, 13, st->st_atime, ansec) &&
+          fill_time(module, v, 8, 11, 14, st->st_mtime, mnsec) &&
+          fill_time(module, v, 9, 12, 15, st->st_ctime, cnsec))) {
+        Py_DECREF(v);
+        return NULL;
+    }
 
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,

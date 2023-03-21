@@ -647,6 +647,33 @@ class PosixTester(unittest.TestCase):
                 'should be string, bytes, os.PathLike or integer, not',
                 posix.stat, list(os.fsencode(os_helper.TESTFN)))
 
+        # see gh-102890
+        code = f"""if 1:
+        import posix
+        import random
+        import threading
+        import _thread
+        import time
+
+        def crasher_thread():
+            time.sleep(0.000001 * random.randint(1, 30))
+            _thread.interrupt_main()
+
+        def try_crash():
+            try:
+                ct = threading.Thread(target=crasher_thread)
+                ct.start()
+                posix.stat("%s")
+                ct.join()
+            except KeyboardInterrupt:
+                pass
+
+        for i in range(1000):
+            try_crash()
+        """ % os_helper.TESTFN
+
+        assert_python_ok('-c', code)
+
     @unittest.skipUnless(hasattr(posix, 'mkfifo'), "don't have mkfifo()")
     def test_mkfifo(self):
         if sys.platform == "vxworks":
