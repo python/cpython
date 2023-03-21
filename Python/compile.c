@@ -9092,20 +9092,29 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
     struct cfg_instr nop;
     INSTR_SET_OP0(&nop, NOP);
     struct cfg_instr *target;
+    int opcode = 0;
+    int oparg = 0;
+    int nextop = 0;
     for (int i = 0; i < bb->b_iused; i++) {
         struct cfg_instr *inst = &bb->b_instr[i];
-        int oparg = inst->i_oparg;
-        int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
-        if (HAS_TARGET(inst->i_opcode)) {
-            assert(inst->i_target->b_iused > 0);
-            target = &inst->i_target->b_instr[0];
-            assert(!IS_ASSEMBLER_OPCODE(target->i_opcode));
+        bool is_copy_of_load_const = (opcode == LOAD_CONST &&
+                                      inst->i_opcode == COPY &&
+                                      inst->i_oparg == 1);
+        if (! is_copy_of_load_const) {
+            opcode = inst->i_opcode;
+            oparg = inst->i_oparg;
+            nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
+            if (HAS_TARGET(opcode)) {
+                assert(inst->i_target->b_iused > 0);
+                target = &inst->i_target->b_instr[0];
+                assert(!IS_ASSEMBLER_OPCODE(target->i_opcode));
+            }
+            else {
+                target = &nop;
+            }
         }
-        else {
-            target = &nop;
-        }
-        assert(!IS_ASSEMBLER_OPCODE(inst->i_opcode));
-        switch (inst->i_opcode) {
+        assert(!IS_ASSEMBLER_OPCODE(opcode));
+        switch (opcode) {
             /* Remove LOAD_CONST const; conditional jump */
             case LOAD_CONST:
             {
@@ -9115,7 +9124,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 switch(nextop) {
                     case POP_JUMP_IF_FALSE:
                     case POP_JUMP_IF_TRUE:
-                        cnt = get_const_value(inst->i_opcode, oparg, consts);
+                        cnt = get_const_value(opcode, oparg, consts);
                         if (cnt == NULL) {
                             goto error;
                         }
@@ -9134,7 +9143,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         }
                         break;
                     case IS_OP:
-                        cnt = get_const_value(inst->i_opcode, oparg, consts);
+                        cnt = get_const_value(opcode, oparg, consts);
                         if (cnt == NULL) {
                             goto error;
                         }
