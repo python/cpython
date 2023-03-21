@@ -1217,8 +1217,7 @@ free_threadstate(PyThreadState *tstate)
 
 static void
 init_threadstate(PyThreadState *tstate,
-                 PyInterpreterState *interp, uint64_t id,
-                 PyThreadState *next)
+                 PyInterpreterState *interp, uint64_t id)
 {
     if (tstate->_status.initialized) {
         Py_FatalError("thread state already initialized");
@@ -1227,17 +1226,12 @@ init_threadstate(PyThreadState *tstate,
     assert(interp != NULL);
     tstate->interp = interp;
 
+    // next/prev are set in add_threadstate().
+    assert(tstate->next == NULL);
+    assert(tstate->prev == NULL);
+
     assert(id > 0);
     tstate->id = id;
-
-    assert(interp->threads.head == tstate);
-    assert((next != NULL && id != 1) || (next == NULL && id == 1));
-    if (next != NULL) {
-        assert(next->prev == NULL || next->prev == tstate);
-        next->prev = tstate;
-    }
-    tstate->next = next;
-    assert(tstate->prev == NULL);
 
     // thread_id and native_thread_id are set in bind_tstate().
 
@@ -1257,6 +1251,22 @@ init_threadstate(PyThreadState *tstate,
     tstate->datastack_limit = NULL;
 
     tstate->_status.initialized = 1;
+}
+
+static void
+add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
+                PyThreadState *next)
+{
+    assert(interp->threads.head != tstate);
+    assert((next != NULL && tstate->id != 1) ||
+           (next == NULL && tstate->id == 1));
+    if (next != NULL) {
+        assert(next->prev == NULL || next->prev == tstate);
+        next->prev = tstate;
+    }
+    tstate->next = next;
+    assert(tstate->prev == NULL);
+    interp->threads.head = tstate;
 }
 
 static PyThreadState *
@@ -1298,9 +1308,9 @@ new_threadstate(PyInterpreterState *interp)
                &initial._main_interpreter._initial_thread,
                sizeof(*tstate));
     }
-    interp->threads.head = tstate;
 
-    init_threadstate(tstate, interp, id, old_head);
+    init_threadstate(tstate, interp, id);
+    add_threadstate(interp, tstate, old_head);
 
     HEAD_UNLOCK(runtime);
     if (!used_newtstate) {
