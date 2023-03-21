@@ -80,9 +80,9 @@ class Nested(object):
                 if mgr.__exit__(*ex):
                     ex = (None, None, None)
             except BaseException as e:
-                ex = e
+                ex = (type(e), e, e.__traceback__)
         self.entered = None
-        if ex is not exc_info[1]:
+        if ex is not exc_info:
             raise ex
 
 
