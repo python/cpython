@@ -3749,16 +3749,18 @@ _PyExc_Fini(PyInterpreterState *interp)
     _PyExc_FiniTypes(interp);
 }
 
-
-PyObject*
+int
 _PyException_AddNote(PyObject *exc, PyObject *note)
 {
     if (!PyExceptionInstance_Check(exc)) {
         PyErr_Format(PyExc_TypeError,
                      "exc must be an exception, not '%s'",
                      Py_TYPE(exc)->tp_name);
-        return NULL;
+        return -1;
     }
-    return BaseException_add_note(exc, note);
+    PyObject *r = BaseException_add_note(exc, note);
+    int res = r == NULL ? -1 : 0;
+    Py_XDECREF(r);
+    return res;
 }
 

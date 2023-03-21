@@ -112,9 +112,9 @@ PyAPI_FUNC(PyObject *) _PyErr_FormatFromCause(
 
 /* In exceptions.c */
 
-PyAPI_FUNC(PyObject*) _PyException_AddNote(
-    PyObject *exc,
-    PyObject *note);
+PyAPI_FUNC(int) _PyException_AddNote(
+     PyObject *exc,
+     PyObject *note);
 
 /* In signalmodule.c */
 

@@ -393,14 +393,12 @@ add_note_to_codec_error(const char *operation,
         _PyErr_ChainExceptions1(exc);
         return;
     }
-    PyObject *res = _PyException_AddNote(exc, note);
+    int res = _PyException_AddNote(exc, note);
     Py_DECREF(note);
-
-    if (res == NULL) {
+    if (res < 0) {
         _PyErr_ChainExceptions1(exc);
         return;
     }
-    Py_DECREF(res);
     PyErr_SetRaisedException(exc);
 }
 

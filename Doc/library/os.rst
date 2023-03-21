@@ -2858,6 +2858,12 @@ features:
       Added support for the :class:`~os.PathLike` interface.  Added support
       for :class:`bytes` paths on Windows.
 
+   .. versionchanged:: 3.12
+      The ``st_ctime`` attribute of a stat result is deprecated on Windows.
+      The file creation time is properly available as ``st_birthtime``, and
+      in the future ``st_ctime`` may be changed to return zero or the
+      metadata change time, if available.
+
 
 .. function:: stat(path, *, dir_fd=None, follow_symlinks=True)
 
@@ -2973,10 +2979,12 @@ features:
 
    .. attribute:: st_ctime
 
-      Platform dependent:
+      Time of most recent metadata change expressed in seconds.
 
-      * the time of most recent metadata change on Unix,
-      * the time of creation on Windows, expressed in seconds.
+      .. versionchanged:: 3.12
+         ``st_ctime`` is deprecated on Windows. Use ``st_birthtime`` for
+         the file creation time. In the future, ``st_ctime`` will contain
+         the time of the most recent metadata change, as for other platforms.
 
    .. attribute:: st_atime_ns
 
@@ -2989,29 +2997,48 @@ features:
 
    .. attribute:: st_ctime_ns
 
-      Platform dependent:
+      Time of most recent metadata change expressed in nanoseconds as an
+      integer.
 
-      * the time of most recent metadata change on Unix,
-      * the time of creation on Windows, expressed in nanoseconds as an
-        integer.
+      .. versionchanged:: 3.12
+         ``st_ctime_ns`` is deprecated on Windows. Use ``st_birthtime_ns``
+         for the file creation time. In the future, ``st_ctime`` will contain
+         the time of the most recent metadata change, as for other platforms.
+
+   .. attribute:: st_birthtime
+
+      Time of file creation expressed in seconds. This attribute is not
+      always available, and may raise :exc:`AttributeError`.
+
+      .. versionchanged:: 3.12
+         ``st_birthtime`` is now available on Windows.
+
+   .. attribute:: st_birthtime_ns
+
+      Time of file creation expressed in nanoseconds as an integer.
+      This attribute is not always available, and may raise
+      :exc:`AttributeError`.
+
+      .. versionadded:: 3.12
 
    .. note::
 
       The exact meaning and resolution of the :attr:`st_atime`,
-      :attr:`st_mtime`, and :attr:`st_ctime` attributes depend on the operating
-      system and the file system. For example, on Windows systems using the FAT
-      or FAT32 file systems, :attr:`st_mtime` has 2-second resolution, and
-      :attr:`st_atime` has only 1-day resolution.  See your operating system
-      documentation for details.
+      :attr:`st_mtime`, :attr:`st_ctime` and :attr:`st_birthtime` attributes
+      depend on the operating system and the file system. For example, on
+      Windows systems using the FAT32 file systems, :attr:`st_mtime` has
+      2-second resolution, and :attr:`st_atime` has only 1-day resolution.
+      See your operating system documentation for details.
 
       Similarly, although :attr:`st_atime_ns`, :attr:`st_mtime_ns`,
-      and :attr:`st_ctime_ns` are always expressed in nanoseconds, many
-      systems do not provide nanosecond precision.  On systems that do
-      provide nanosecond precision, the floating-point object used to
-      store :attr:`st_atime`, :attr:`st_mtime`, and :attr:`st_ctime`
-      cannot preserve all of it, and as such will be slightly inexact.
-      If you need the exact timestamps you should always use
-      :attr:`st_atime_ns`, :attr:`st_mtime_ns`, and :attr:`st_ctime_ns`.
+      :attr:`st_ctime_ns` and :attr:`st_birthtime_ns` are always expressed in
+      nanoseconds, many systems do not provide nanosecond precision.  On
+      systems that do provide nanosecond precision, the floating-point object
+      used to store :attr:`st_atime`, :attr:`st_mtime`, :attr:`st_ctime` and
+      :attr:`st_birthtime` cannot preserve all of it, and as such will be
+      slightly inexact. If you need the exact timestamps you should always use
+      :attr:`st_atime_ns`, :attr:`st_mtime_ns`, :attr:`st_ctime_ns` and
+      :attr:`st_birthtime_ns`.
 
    On some Unix systems (such as Linux), the following attributes may also be
    available:
@@ -3040,10 +3067,6 @@ features:
    .. attribute:: st_gen
 
       File generation number.
-
-   .. attribute:: st_birthtime
-
-      Time of file creation.
 
    On Solaris and derivatives, the following attributes may also be
    available:
@@ -3116,6 +3139,25 @@ features:
       On Windows, the :attr:`st_mode` member now identifies special
       files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
       as appropriate.
+
+   .. versionchanged:: 3.12
+      On Windows, :attr:`st_ctime` is deprecated. Eventually, it will
+      contain the last metadata change time, for consistency with other
+      platforms, but for now still contains creation time.
+      Use :attr:`st_birthtime` for the creation time.
+
+   .. versionchanged:: 3.12
+      On Windows, :attr:`st_ino` may now be up to 128 bits, depending
+      on the file system. Previously it would not be above 64 bits, and
+      larger file identifiers would be arbitrarily packed.
+
+   .. versionchanged:: 3.12
+      On Windows, :attr:`st_rdev` no longer returns a value. Previously
+      it would contain the same as :attr:`st_dev`, which was incorrect.
+
+   .. versionadded:: 3.12
+      Added the :attr:`st_birthtime` member on Windows.
+
 
 .. function:: statvfs(path)
 

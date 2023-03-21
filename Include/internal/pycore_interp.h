@@ -111,6 +111,7 @@ struct _is {
 
     PyObject *dict;  /* Stores per-interpreter state */
 
+    PyObject *sysdict_copy;
     PyObject *builtins_copy;
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
