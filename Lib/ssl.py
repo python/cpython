@@ -837,6 +837,15 @@ class SSLObject:
         return self._sslobj.session_reused
 
     @property
+    def eager_recv(self):
+        """If data is read from the socket eagerly, ignoring possible TLS EOF packets."""
+        return self._sslobj.eager_recv
+
+    @eager_recv.setter
+    def eager_recv(self, eager_recv):
+        self._sslobj.eager_recv = eager_recv
+
+    @property
     def server_side(self):
         """Whether this is a server-side socket."""
         return self._sslobj.server_side
@@ -1043,6 +1052,17 @@ class SSLSocket(socket):
     def session_reused(self):
         if self._sslobj is not None:
             return self._sslobj.session_reused
+
+    @property
+    @_sslcopydoc
+    def eager_recv(self):
+        if self._sslobj is not None:
+            return self._sslobj.eager_recv
+
+    @eager_recv.setter
+    def eager_recv(self, eager_recv):
+        if self._sslobj is not None:
+            self._sslobj.eager_recv = eager_recv
 
     def dup(self):
         raise NotImplementedError("Can't dup() %s instances" %

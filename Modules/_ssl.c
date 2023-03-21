@@ -309,6 +309,7 @@ typedef struct {
     PyObject *Socket; /* weakref to socket on which we're layered */
     SSL *ssl;
     PySSLContext *ctx; /* weakref to SSL context */
+    int eager_recv;
     char shutdown_seen_zero;
     enum py_ssl_server_or_client socket_type;
     PyObject *owner; /* Python level "owner" passed to servername callback */
@@ -799,6 +800,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->ssl = NULL;
     self->Socket = NULL;
     self->ctx = (PySSLContext*)Py_NewRef(sslctx);
+    self->eager_recv = 0;
     self->shutdown_seen_zero = 0;
     self->owner = NULL;
     self->server_hostname = NULL;
@@ -2116,6 +2118,22 @@ static int PySSL_set_context(PySSLSocket *self, PyObject *value,
     return 0;
 }
 
+static PyObject *
+PySSL_get_eager_recv(PySSLSocket *self, void *c)
+{
+    return PyBool_FromLong(self->eager_recv);
+}
+
+static int
+PySSL_set_eager_recv(PySSLSocket *self, PyObject *arg, void *c)
+{
+    int eager_recv;
+    if (!PyArg_Parse(arg, "p", &eager_recv))
+        return -1;
+    self->eager_recv = eager_recv;
+    return 0;
+}
+
 PyDoc_STRVAR(PySSL_set_context_doc,
 "_setter_context(ctx)\n\
 \
@@ -2424,10 +2442,11 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
     PyObject *dest = NULL;
     char *mem;
     size_t count = 0;
+    size_t readbytes = 0;
     int retval;
     int sockstate;
     _PySSLError err;
-    int nonblocking;
+    int nonblocking = 0;
     PySocketSockObject *sock = GET_SOCKET(self);
     _PyTime_t timeout, deadline = 0;
     int has_timeout;
@@ -2487,10 +2506,21 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
 
     do {
         PySSL_BEGIN_ALLOW_THREADS
-        retval = SSL_read_ex(self->ssl, mem, (size_t)len, &count);
+        do {
+            retval = SSL_read_ex(self->ssl, mem + count, len, &readbytes);
+            if (retval <= 0) {
+                break;
+            }
+            count += readbytes;
+            len -= readbytes;
+        } while (nonblocking && self->eager_recv && len > 0);
         err = _PySSL_errno(retval == 0, self->ssl, retval);
         PySSL_END_ALLOW_THREADS
         self->err = err;
+
+        if (count > 0) {
+            break;
+        }
 
         if (PyErr_CheckSignals())
             goto error;
@@ -2522,7 +2552,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
     } while (err.ssl == SSL_ERROR_WANT_READ ||
              err.ssl == SSL_ERROR_WANT_WRITE);
 
-    if (retval == 0) {
+    if (count == 0) {
         PySSL_SetError(self, retval, __FILE__, __LINE__);
         goto error;
     }
@@ -2871,6 +2901,8 @@ PyDoc_STRVAR(PySSL_get_session_reused_doc,
 static PyGetSetDef ssl_getsetlist[] = {
     {"context", (getter) PySSL_get_context,
                 (setter) PySSL_set_context, PySSL_set_context_doc},
+    {"eager_recv", (getter) PySSL_get_eager_recv,
+                    (setter) PySSL_set_eager_recv, NULL},
     {"server_side", (getter) PySSL_get_server_side, NULL,
                     PySSL_get_server_side_doc},
     {"server_hostname", (getter) PySSL_get_server_hostname, NULL,
