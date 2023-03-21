@@ -14601,8 +14601,15 @@ store_interned(PyObject *obj)
     PyThreadState *oldts = NULL;
     if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
         PyThreadState *main_tstate = get_interned_tstate();
+        int bound = _PyThreadState_IsBound(main_tstate);
+        if (!bound) {
+            _PyThreadState_Bind(main_tstate);
+        }
         oldts = PyThreadState_Swap(main_tstate);
         assert(oldts != NULL);
+        if (!bound) {
+            _PyThreadState_Unbind(main_tstate);
+        }
     }
 
     PyObject *t = PyDict_SetDefault(interned, obj, obj);
