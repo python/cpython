@@ -2383,24 +2383,20 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
     PyObject *float_s = NULL;
     int result = 0;
 
-    if (!(s && ns_fractional)) {
+    if (!(s && ns_fractional))
         goto exit;
-    }
 
     s_in_ns = PyNumber_Multiply(s, get_posix_state(module)->billion);
-    if (!s_in_ns) {
+    if (!s_in_ns)
         goto exit;
-    }
 
     ns_total = PyNumber_Add(s_in_ns, ns_fractional);
-    if (!ns_total) {
+    if (!ns_total)
         goto exit;
-    }
 
     float_s = PyFloat_FromDouble(sec + 1e-9*nsec);
-    if (!float_s) {
+    if (!float_s)
         goto exit;
-    }
 
     if (s_index >= 0) {
         PyStructSequence_SET_ITEM(v, s_index, s);
