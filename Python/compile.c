@@ -9103,7 +9103,6 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
         if (! is_copy_of_load_const) {
             opcode = inst->i_opcode;
             oparg = inst->i_oparg;
-            nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
             if (HAS_TARGET(opcode)) {
                 assert(inst->i_target->b_iused > 0);
                 target = &inst->i_target->b_instr[0];
@@ -9113,6 +9112,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 target = &nop;
             }
         }
+        nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
         assert(!IS_ASSEMBLER_OPCODE(opcode));
         switch (opcode) {
             /* Remove LOAD_CONST const; conditional jump */
@@ -9275,6 +9275,48 @@ inline_small_exit_blocks(basicblock *bb) {
     }
     return 0;
 }
+
+
+static int
+remove_redundant_nops_and_pairs(basicblock *entryblock)
+{
+    bool done = false;
+
+    while (! done) {
+        done = true;
+        struct cfg_instr *prev_instr = NULL;
+        struct cfg_instr *instr = NULL;
+        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+            remove_redundant_nops(b);
+            for (int i = 0; i < b->b_iused; i++) {
+                prev_instr = instr;
+                instr = &b->b_instr[i];
+                int prev_opcode = prev_instr ? prev_instr->i_opcode : 0;
+                int prev_oparg = prev_instr ? prev_instr->i_oparg : 0;
+                int opcode = instr->i_opcode;
+                bool is_redundant_pair = false;
+                if (opcode == POP_TOP) {
+                   if (prev_opcode == LOAD_CONST) {
+                       is_redundant_pair = true;
+                   }
+                   else if (prev_opcode == COPY && prev_oparg == 1) {
+                       is_redundant_pair = true;
+                   }
+                }
+                if (is_redundant_pair) {
+                    INSTR_SET_OP0(prev_instr, NOP);
+                    INSTR_SET_OP0(instr, NOP);
+                    done = false;
+                }
+            }
+            if (! BB_HAS_FALLTHROUGH(b)) {
+                instr = NULL;
+            }
+        }
+    }
+    return SUCCESS;
+}
+
 
 static int
 remove_redundant_nops(basicblock *bb) {
@@ -9514,9 +9556,9 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
     assert(no_empty_basic_blocks(g));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         RETURN_IF_ERROR(optimize_basic_block(const_cache, b, consts));
-        remove_redundant_nops(b);
         assert(b->b_predecessors == 0);
     }
+    RETURN_IF_ERROR(remove_redundant_nops_and_pairs(g->g_entryblock));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         RETURN_IF_ERROR(inline_small_exit_blocks(b));
     }
