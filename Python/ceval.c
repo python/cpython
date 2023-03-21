@@ -85,13 +85,6 @@
     } while (0)
 #endif
 
-// GH-89279: Similar to above, force inlining by using a macro.
-#if defined(_MSC_VER) && SIZEOF_INT == 4
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
-#else
-#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
-#endif
-
 /* Forward declarations */
 static PyObject *trace_call_function(
     PyThreadState *tstate, PyObject *callable, PyObject **stack,
