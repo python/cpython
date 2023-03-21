@@ -876,7 +876,7 @@ which incur interpreter overhead.
        n = len(coefficients)
        if n == 0:
            return x * 0  # coerce zero to the type of x
-       powers = accumulate(repeat(x, n - 1), operator.mul, initial=1)
+       powers = map(pow, repeat(x), range(n))
        return math.sumprod(reversed(coefficients), powers)
 
    def polynomial_from_roots(roots):
