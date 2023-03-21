@@ -195,7 +195,7 @@ loops that truncate the stream.
           if n < 1:
               raise ValueError('n must be at least one')
           it = iter(iterable)
-          while (batch := tuple(islice(it, n))):
+          while batch := tuple(islice(it, n)):
               yield batch
 
    .. versionadded:: 3.12
