@@ -553,6 +553,9 @@ def register_standard_browsers():
                         "opera", edge64, edge32):
             if shutil.which(browser):
                 register(browser, None, BackgroundBrowser(browser))
+    elif "com.termux" in sys.executable and hasattr(sys, "getandroidapilevel"):
+        # Termux
+        register("termux-open-url", None, GenericBrowser("termux-open-url"))
     else:
         # Prefer X browsers if present
         if os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
