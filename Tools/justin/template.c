@@ -24,7 +24,9 @@
             /* This is only a single return on release builds! */ \
             UPDATE_MISS_STATS((INSTNAME));                        \
             assert(_PyOpcode_Deopt[opcode] == (INSTNAME));        \
-            return _JUSTIN_RETURN_DEOPT;                          \
+            _res = _JUSTIN_RETURN_DEOPT;                          \
+            next_instr = frame->prev_instr;                       \
+            goto _bail;                                           \
         }                                                         \
     } while (0)
 
@@ -39,7 +41,8 @@ extern int _justin_oparg;
 #define DISPATCH()                                 \
     do {                                           \
         if (_check && next_instr != _next_trace) { \
-            return _JUSTIN_RETURN_OK;              \
+            _res = _JUSTIN_RETURN_OK;              \
+            goto _bail;                            \
         }                                          \
         goto _JUSTIN_CONTINUE;                     \
     } while (0)
@@ -55,11 +58,12 @@ extern int _justin_oparg;
         opcode = _JUSTIN_OPCODE_##N;                \
     } while (0)
 #undef PREDICTED
-#define PREDICTED(OP) 
-    
+#define PREDICTED(OP)
+
 int
 _justin_target(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
+    int _res;
     // Locals that the instruction implementations expect to exist:
     _Py_atomic_int *const eval_breaker = &tstate->interp->ceval.eval_breaker;
     _Py_CODEUNIT *next_instr = &_justin_next_instr;
@@ -68,15 +72,22 @@ _justin_target(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **sta
     // Labels that the instruction implementations expect to exist:
     if (false) {
     error:
-        return _JUSTIN_RETURN_GOTO_ERROR;
+        _res = _JUSTIN_RETURN_GOTO_ERROR;
+        goto _bail;
     handle_eval_breaker:
-        return _JUSTIN_RETURN_GOTO_HANDLE_EVAL_BREAKER;
+        _res = _JUSTIN_RETURN_GOTO_HANDLE_EVAL_BREAKER;
+        goto _bail;
     }
     // Stuff to make Justin work:
     _Py_CODEUNIT *_next_trace;
     int _check;
+    // Now, the actual instruction definition:
 %s
     // Finally, the continuation:
     __attribute__((musttail))
     return _justin_continue(tstate, frame, stack_pointer);
+_bail:
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    frame->prev_instr = next_instr;
+    return _res;
 }

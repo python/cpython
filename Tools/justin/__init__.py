@@ -1,8 +1,10 @@
 """The Justin(time) template JIT for CPython 3.12, based on copy-and-patch."""
 
+import collections
 import ctypes
 import dataclasses
 import dis
+import functools
 import itertools
 import mmap
 import pathlib
@@ -128,11 +130,6 @@ class Stencil:
     def __len__(self) -> int:
         return len(self.body)
 
-class Trace:
-    def __init__(self, func: typing.Callable[[], int], code: types.CodeType) -> None:
-        self.run_here = func
-        self._ref = code
-
 class Engine:
     _CC_FLAGS = [
         "-DNDEBUG",
@@ -167,14 +164,19 @@ class Engine:
         "STORE_FAST__STORE_FAST",
     ]
 
-    def __init__(self) -> None:
+    def __init__(self, *, verbose: bool = False) -> None:
         self._stencils_built = {}
         self._stencils_loaded = {}
         self._trampoline_built = None
         self._trampoline_loaded = None
+        self._verbose = verbose
+
+    def _stderr(self, *args, **kwargs) -> None:
+        if self._verbose:
+            print(*args, **kwargs, file=sys.stderr)
 
     def _compile(self, opnames, path) -> Stencil:
-        print(f"Building: {' -> '.join(opnames)}")
+        self._stderr(f"Building stencil for {' + '.join(opnames)}.")
         defines = []
         for i, opname in enumerate(opnames):
             branches = str("BRANCH" in opname or "JUMP_IF" in opname).lower()
@@ -216,20 +218,56 @@ class Engine:
 
     def load(self) -> None:
         for opnames, stencil in self._stencils_built.items():
-            print(f"Loading: {' -> '.join(opnames)}")
+            self._stderr(f"Loading stencil for {' + '.join(opnames)}.")
             self._stencils_loaded[opnames] = stencil.load()
         self._trampoline_loaded = self._trampoline_built.load()
 
-    def compile_trace(
-        self, code: types.CodeType, trace: typing.Sequence[int], stacklevel: int = 0
-    ) -> Trace:
+    def trace(self, f):
+        recorded = collections.deque(maxlen=20)
+        compiled = {}
+        def tracer(frame: types.FrameType, event: str, arg: object):
+            assert frame.f_code is f.__code__
+            if event == "opcode":
+                i = frame.f_lasti
+                if i in recorded:
+                    ix = recorded.index(i)
+                    traced = list(recorded)[ix:]
+                    wrapper = self._compile_trace(frame.f_code, traced)
+                    recorded.clear()
+                    compiled[i] = wrapper
+                if i in compiled:
+                    self._stderr(f"Entering trace for {frame.f_code.co_qualname}.")
+                    status = compiled[i]()
+                    self._stderr(f"Exiting trace for {frame.f_code.co_qualname} with status {status}.")
+                else:
+                    recorded.append(i)
+            elif event == "call":
+                frame.f_trace_opcodes = True
+                recorded.clear()
+            return tracer
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                sys.settrace(tracer)
+                return f(*args, **kwargs)
+            finally:
+                sys.settrace(None)
+        return wrapper
+
+    def _compile_trace(self, code: types.CodeType, trace: typing.Sequence[int]):
         start = time.time()
         pre = []
+        skip = 0
         for x in range(len(trace)):
+            if skip:
+                skip -= 1
+                continue
             i = trace[x]
-            j = trace[(x + 1) % len(trace)]
             opcode, oparg = code._co_code_adaptive[i : i + 2]
             opname = dis._all_opname[opcode]
+            if "__" in opname: # XXX
+                skip = 1
+            j = trace[(x + skip + 1) % len(trace)]
             pre.append((i, j, opname, oparg))
         bundles = []
         x = 0
@@ -252,7 +290,6 @@ class Engine:
         lengths = [
             len(self._trampoline_loaded),  *(len(stencil) for stencil, _, _, _ in bundles)
         ]
-        print(f"Size: {size:,} bytes")
         flags = mmap.MAP_ANONYMOUS | mmap.MAP_PRIVATE
         prot = mmap.PROT_EXEC | mmap.PROT_WRITE
         memory = mmap.mmap(-1, size, flags=flags, prot=prot)
@@ -265,7 +302,6 @@ class Engine:
                 _cstring=memory.tell(),
                 _justin_continue=continuations[0],
                 _justin_next_instr = first_instr + trace[0],
-                _justin_stacklevel = stacklevel,
             )
         )
         for (stencil, i, js, opargs), continuation in zip(
@@ -286,5 +322,5 @@ class Engine:
             )
         assert memory.tell() == len(memory) == size
         wrapper = ctypes.cast(buffer, WRAPPER_TYPE)
-        print(f"Time: {(time.time() - start) * 1_000:0.3} ms")
-        return Trace(wrapper, code)
+        self._stderr(f"Compiled {size:,} bytes in {(time.time() - start) * 1_000:0.3} ms")
+        return wrapper
