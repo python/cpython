@@ -2065,22 +2065,23 @@ error:
     return status;
 }
 
-PyThreadState *
-_Py_NewInterpreterFromConfig(const _PyInterpreterConfig *config)
+PyStatus
+_Py_NewInterpreterFromConfig(PyThreadState **tstate_p,
+                             const _PyInterpreterConfig *config)
 {
-    PyThreadState *tstate = NULL;
-    PyStatus status = new_interpreter(&tstate, config);
-    if (_PyStatus_EXCEPTION(status)) {
-        Py_ExitStatusException(status);
-    }
-    return tstate;
+    return new_interpreter(tstate_p, config);
 }
 
 PyThreadState *
 Py_NewInterpreter(void)
 {
+    PyThreadState *tstate = NULL;
     const _PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
-    return _Py_NewInterpreterFromConfig(&config);
+    PyStatus status = _Py_NewInterpreterFromConfig(&tstate, &config);
+    if (_PyStatus_EXCEPTION(status)) {
+        Py_ExitStatusException(status);
+    }
+    return tstate;
 }
 
 /* Delete an interpreter and its last thread.  This requires that the
