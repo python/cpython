@@ -620,8 +620,6 @@ instr_sequence_to_cfg(instr_sequence *seq, cfg_builder *g) {
         int lbl = offset2lbl[i];
         if (lbl >= 0) {
             assert (lbl < seq->s_labelmap_size);
-            int offset = seq->s_labelmap[lbl];
-            assert(offset >= 0 && offset < seq->s_used);
             jump_target_label lbl_ = {lbl};
             if (cfg_builder_use_label(g, lbl_) < 0) {
                 goto error;
