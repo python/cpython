@@ -14588,29 +14588,7 @@ error:
 static PyThreadState *
 get_interned_tstate(void)
 {
-    PyThreadState *tstate = _PyRuntime.unicode_state.interned.tstate;
-    if (tstate == NULL) {
-        PyInterpreterState *main_interp = _PyInterpreterState_Main();
-        /* We do not "bind" the thread state here. */
-        tstate = _PyThreadState_New(main_interp);
-        if (tstate == NULL) {
-            PyErr_Clear();
-            return NULL;
-        }
-        _PyRuntime.unicode_state.interned.tstate = tstate;
-    }
-    return tstate;
-}
-
-static void
-clear_interned_tstate(void)
-{
-    PyThreadState *tstate = _PyRuntime.unicode_state.interned.tstate;
-    if (tstate != NULL) {
-        _PyRuntime.unicode_state.interned.tstate = NULL;
-        PyThreadState_Clear(tstate);
-        PyThreadState_Delete(tstate);
-    }
+    return &_PyRuntime.cached_objects.main_tstate;
 }
 
 static inline PyObject *
@@ -14623,9 +14601,6 @@ store_interned(PyObject *obj)
     PyThreadState *oldts = NULL;
     if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
         PyThreadState *main_tstate = get_interned_tstate();
-        if (main_tstate == NULL) {
-            return NULL;
-        }
         oldts = PyThreadState_Swap(main_tstate);
         assert(oldts != NULL);
     }
@@ -14750,8 +14725,6 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     PyDict_Clear(interned);
     Py_DECREF(interned);
     set_interned_dict(NULL);
-
-    clear_interned_tstate();
 }
 
 

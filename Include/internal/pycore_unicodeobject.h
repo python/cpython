@@ -33,12 +33,8 @@ struct _Py_unicode_runtime_ids {
 };
 
 struct _Py_unicode_runtime_state {
-    struct {
-        PyThreadState *tstate;
-        /* The actual interned dict is at
-           _PyRuntime.cached_objects.interned_strings. */
-    } interned;
     struct _Py_unicode_runtime_ids ids;
+    /* The interned dict is at _PyRuntime.cached_objects.interned_strings. */
 };
 
 /* fs_codec.encoding is initialized to NULL.
