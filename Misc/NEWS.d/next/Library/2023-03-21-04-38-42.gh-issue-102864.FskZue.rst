@@ -1,0 +1,1 @@
+Fixed the bug where switching frames would revert local variable changes
