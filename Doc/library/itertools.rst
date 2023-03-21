@@ -867,13 +867,17 @@ which incur interpreter overhead.
            yield math.sumprod(kernel, window)
 
    def polynomial_eval(coefficients, x):
-       "Evaluate a polynomial at a specific value."
-       # polynomial_eval([1, -4, -17, 60], x=2.5) --> 8.125  x³ -4x² -17x + 60
+       """Evaluate a polynomial at a specific value.
+
+       Computes with better numeric stability than Horner's method.
+       """
+       # Evaluate x³ -4x² -17x + 60 at x = 2.5
+       # polynomial_eval([1, -4, -17, 60], x=2.5) --> 8.125
        n = len(coefficients)
        if n == 0:
            return x * 0  # coerce zero to the type of x
-       powers = list(accumulate(repeat(x, n - 1), operator.mul, initial=1))
-       return math.sumprod(coefficients, reversed(powers))
+       powers = accumulate(repeat(x, n - 1), operator.mul, initial=1)
+       return math.sumprod(reversed(coefficients), powers)
 
    def polynomial_from_roots(roots):
        """Compute a polynomial's coefficients from its roots.
