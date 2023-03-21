@@ -2284,6 +2284,8 @@ loghelper(PyObject* arg, double (*func)(double))
 }
 
 
+/* AC: cannot convert yet, see gh-102839 and gh-89381, waiting
+   for support of multiple signatures */
 static PyObject *
 math_log(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
