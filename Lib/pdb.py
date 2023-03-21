@@ -1562,6 +1562,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         or '<lambda>', the input arguments, the return value, and the
         line of code (if it exists).
 
+        This function is overwritten because accessing frame.f_locals will
+        refresh the dictionary. We need to provide cached f_locals to avoid
+        reverting local variable changes to it
         """
         import linecache, reprlib
         filename = self.canonic(frame.f_code.co_filename)

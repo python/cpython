@@ -1475,9 +1475,9 @@ def test_pdb_issue_gh_94215():
     """
 
 def test_pdb_issue_gh_101673():
-    """See GH-101673
+    """See GH-101673 and GH-102864
 
-    Make sure ll won't revert local variable assignment
+    Make sure ll and switching frames won't revert local variable assignment
 
     >>> def test_function():
     ...    a = 1
