@@ -3026,7 +3026,6 @@ dummy_func(
                 value = result;
             }
 
-            /* Actually call format(). */
             result = PyObject_Format(value, fmt_spec);
             Py_DECREF(value);
             Py_XDECREF(fmt_spec);
