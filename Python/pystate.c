@@ -1923,6 +1923,12 @@ PyThreadState_Swap(PyThreadState *newts)
 }
 
 
+int
+_PyThreadState_IsBound(PyThreadState *tstate)
+{
+    return tstate_is_bound(tstate);
+}
+
 void
 _PyThreadState_Bind(PyThreadState *tstate)
 {
@@ -1932,6 +1938,14 @@ _PyThreadState_Bind(PyThreadState *tstate)
     if (gilstate_tss_get(tstate->interp->runtime) == NULL) {
         bind_gilstate_tstate(tstate);
     }
+}
+
+void
+_PyThreadState_Unbind(PyThreadState *tstate)
+{
+    /* For now, we do not allow the initial tstate to be unbound. */
+    assert(gilstate_tss_get(tstate->interp->runtime) != tstate);
+    unbind_tstate(tstate);
 }
 
 
