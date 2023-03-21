@@ -9091,7 +9091,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
     assert(PyList_CheckExact(consts));
     struct cfg_instr nop;
     INSTR_SET_OP0(&nop, NOP);
-    struct cfg_instr *target;
+    struct cfg_instr *target = &nop;
     int opcode = 0;
     int oparg = 0;
     int nextop = 0;
