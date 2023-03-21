@@ -674,6 +674,11 @@ _PyIO_InitTypes(PyInterpreterState *interp)
         return _PyStatus_OK();
     }
 
+    // Set type base classes
+#ifdef MS_WINDOWS
+    PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
+#endif
+
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
         if (_PyStaticType_InitBuiltin(type) < 0) {
@@ -740,11 +745,6 @@ PyInit__io(void)
                               (PyObject *) PyExc_BlockingIOError) < 0) {
         goto fail;
     }
-
-    // Set type base classes
-#ifdef MS_WINDOWS
-    PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
-#endif
 
     // Add types
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
