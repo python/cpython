@@ -4190,24 +4190,11 @@
                 value = result;
             }
 
-            /* If value is a unicode object, and there's no fmt_spec,
-               then we know the result of format(value) is value
-               itself. In that case, skip calling format(). I plan to
-               move this optimization in to PyObject_Format()
-               itself. */
-            if (PyUnicode_CheckExact(value) && fmt_spec == NULL) {
-                /* Do nothing, just transfer ownership to result. */
-                result = value;
-            } else {
-                /* Actually call format(). */
-                result = PyObject_Format(value, fmt_spec);
-            #line 4205 "Python/generated_cases.c.h"
-                Py_DECREF(value);
-                Py_XDECREF(fmt_spec);
-            #line 2991 "Python/bytecodes.c"
-                if (result == NULL) { STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0)); goto pop_1_error; }
-            }
-            #line 4211 "Python/generated_cases.c.h"
+            result = PyObject_Format(value, fmt_spec);
+            Py_DECREF(value);
+            Py_XDECREF(fmt_spec);
+            if (result == NULL) { STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0)); goto pop_1_error; }
+            #line 4198 "Python/generated_cases.c.h"
             STACK_SHRINK((((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0));
             stack_pointer[-1] = result;
             DISPATCH();
@@ -4216,10 +4203,10 @@
         TARGET(COPY) {
             PyObject *bottom = stack_pointer[-(1 + (oparg-1))];
             PyObject *top;
-            #line 2996 "Python/bytecodes.c"
+            #line 2986 "Python/bytecodes.c"
             assert(oparg > 0);
             top = Py_NewRef(bottom);
-            #line 4223 "Python/generated_cases.c.h"
+            #line 4210 "Python/generated_cases.c.h"
             STACK_GROW(1);
             stack_pointer[-1] = top;
             DISPATCH();
@@ -4231,7 +4218,7 @@
             PyObject *rhs = stack_pointer[-1];
             PyObject *lhs = stack_pointer[-2];
             PyObject *res;
-            #line 3001 "Python/bytecodes.c"
+            #line 2991 "Python/bytecodes.c"
             #if ENABLE_SPECIALIZATION
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -4247,12 +4234,12 @@
             assert((unsigned)oparg < Py_ARRAY_LENGTH(binary_ops));
             assert(binary_ops[oparg]);
             res = binary_ops[oparg](lhs, rhs);
-            #line 4251 "Python/generated_cases.c.h"
+            #line 4238 "Python/generated_cases.c.h"
             Py_DECREF(lhs);
             Py_DECREF(rhs);
-            #line 3017 "Python/bytecodes.c"
+            #line 3007 "Python/bytecodes.c"
             if (res == NULL) goto pop_2_error;
-            #line 4256 "Python/generated_cases.c.h"
+            #line 4243 "Python/generated_cases.c.h"
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             next_instr += 1;
@@ -4262,27 +4249,27 @@
         TARGET(SWAP) {
             PyObject *top = stack_pointer[-1];
             PyObject *bottom = stack_pointer[-(2 + (oparg-2))];
-            #line 3022 "Python/bytecodes.c"
+            #line 3012 "Python/bytecodes.c"
             assert(oparg >= 2);
-            #line 4268 "Python/generated_cases.c.h"
+            #line 4255 "Python/generated_cases.c.h"
             stack_pointer[-1] = bottom;
             stack_pointer[-(2 + (oparg-2))] = top;
             DISPATCH();
         }
 
         TARGET(EXTENDED_ARG) {
-            #line 3026 "Python/bytecodes.c"
+            #line 3016 "Python/bytecodes.c"
             assert(oparg);
             assert(cframe.use_tracing == 0);
             opcode = next_instr->op.code;
             oparg = oparg << 8 | next_instr->op.arg;
             PRE_DISPATCH_GOTO();
             DISPATCH_GOTO();
-            #line 4282 "Python/generated_cases.c.h"
+            #line 4269 "Python/generated_cases.c.h"
         }
 
         TARGET(CACHE) {
-            #line 3035 "Python/bytecodes.c"
+            #line 3025 "Python/bytecodes.c"
             Py_UNREACHABLE();
-            #line 4288 "Python/generated_cases.c.h"
+            #line 4275 "Python/generated_cases.c.h"
         }
