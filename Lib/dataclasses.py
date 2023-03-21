@@ -4,7 +4,6 @@ import copy
 import types
 import inspect
 import keyword
-import builtins
 import functools
 import itertools
 import abc
@@ -617,21 +616,19 @@ def _repr_fn(fields, globals):
 def _frozen_get_del_attr(cls, fields, globals):
     locals = {'cls': cls,
               'FrozenInstanceError': FrozenInstanceError}
+    condition = 'type(self) is cls'
     if fields:
-        fields_str = '(' + ','.join(repr(f.name) for f in fields) + ',)'
-    else:
-        # Special case for the zero-length tuple.
-        fields_str = '()'
+        condition += ' or name in {' + ', '.join(repr(f.name) for f in fields) + '}'
     return (_create_fn('__setattr__',
                       ('self', 'name', 'value'),
-                      (f'if type(self) is cls or name in {fields_str}:',
+                      (f'if {condition}:',
                         ' raise FrozenInstanceError(f"cannot assign to field {name!r}")',
                        f'super(cls, self).__setattr__(name, value)'),
                        locals=locals,
                        globals=globals),
             _create_fn('__delattr__',
                       ('self', 'name'),
-                      (f'if type(self) is cls or name in {fields_str}:',
+                      (f'if {condition}:',
                         ' raise FrozenInstanceError(f"cannot delete field {name!r}")',
                        f'super(cls, self).__delattr__(name)'),
                        locals=locals,
@@ -1192,6 +1189,9 @@ def _add_slots(cls, is_frozen, weakref_slot):
     # Remove __dict__ itself.
     cls_dict.pop('__dict__', None)
 
+    # Clear existing `__weakref__` descriptor, it belongs to a previous type:
+    cls_dict.pop('__weakref__', None)  # gh-102069
+
     # And finally create the class.
     qualname = getattr(cls, '__qualname__', None)
     cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
@@ -1284,7 +1284,7 @@ def asdict(obj, *, dict_factory=dict):
     If given, 'dict_factory' will be used instead of built-in dict.
     The function applies recursively to field values that are
     dataclass instances. This will also look into built-in containers:
-    tuples, lists, and dicts.
+    tuples, lists, and dicts. Other objects are copied with 'copy.deepcopy()'.
     """
     if not _is_dataclass_instance(obj):
         raise TypeError("asdict() should be called on dataclass instances")
@@ -1324,15 +1324,14 @@ def _asdict_inner(obj, dict_factory):
         # generator (which is not true for namedtuples, handled
         # above).
         return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
-    elif isinstance(obj, dict) and hasattr(type(obj), 'default_factory'):
-        # obj is a defaultdict, which has a different constructor from
-        # dict as it requires the default_factory as its first arg.
-        # https://bugs.python.org/issue35540
-        result = type(obj)(getattr(obj, 'default_factory'))
-        for k, v in obj.items():
-            result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
-        return result
     elif isinstance(obj, dict):
+        if hasattr(type(obj), 'default_factory'):
+            # obj is a defaultdict, which has a different constructor from
+            # dict as it requires the default_factory as its first arg.
+            result = type(obj)(getattr(obj, 'default_factory'))
+            for k, v in obj.items():
+                result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
+            return result
         return type(obj)((_asdict_inner(k, dict_factory),
                           _asdict_inner(v, dict_factory))
                          for k, v in obj.items())
@@ -1356,7 +1355,7 @@ def astuple(obj, *, tuple_factory=tuple):
     If given, 'tuple_factory' will be used instead of built-in tuple.
     The function applies recursively to field values that are
     dataclass instances. This will also look into built-in containers:
-    tuples, lists, and dicts.
+    tuples, lists, and dicts. Other objects are copied with 'copy.deepcopy()'.
     """
 
     if not _is_dataclass_instance(obj):
@@ -1385,7 +1384,15 @@ def _astuple_inner(obj, tuple_factory):
         # above).
         return type(obj)(_astuple_inner(v, tuple_factory) for v in obj)
     elif isinstance(obj, dict):
-        return type(obj)((_astuple_inner(k, tuple_factory), _astuple_inner(v, tuple_factory))
+        obj_type = type(obj)
+        if hasattr(obj_type, 'default_factory'):
+            # obj is a defaultdict, which has a different constructor from
+            # dict as it requires the default_factory as its first arg.
+            result = obj_type(getattr(obj, 'default_factory'))
+            for k, v in obj.items():
+                result[_astuple_inner(k, tuple_factory)] = _astuple_inner(v, tuple_factory)
+            return result
+        return obj_type((_astuple_inner(k, tuple_factory), _astuple_inner(v, tuple_factory))
                           for k, v in obj.items())
     else:
         return copy.deepcopy(obj)
@@ -1394,7 +1401,7 @@ def _astuple_inner(obj, tuple_factory):
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                    repr=True, eq=True, order=False, unsafe_hash=False,
                    frozen=False, match_args=True, kw_only=False, slots=False,
-                   weakref_slot=False):
+                   weakref_slot=False, module=None):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -1457,6 +1464,19 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     # We use `types.new_class()` instead of simply `type()` to allow dynamic creation
     # of generic dataclasses.
     cls = types.new_class(cls_name, bases, {}, exec_body_callback)
+
+    # For pickling to work, the __module__ variable needs to be set to the frame
+    # where the dataclass is created.
+    if module is None:
+        try:
+            module = sys._getframemodulename(1) or '__main__'
+        except AttributeError:
+            try:
+                module = sys._getframe(1).f_globals.get('__name__', '__main__')
+            except (AttributeError, ValueError):
+                pass
+    if module is not None:
+        cls.__module__ = module
 
     # Apply the normal decorator.
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,

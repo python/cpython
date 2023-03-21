@@ -74,7 +74,7 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
         buf, len
     );
     if (res == NULL) {
-        PyErr_Fetch(&ssl_obj->exc_type, &ssl_obj->exc_value, &ssl_obj->exc_tb);
+        ssl_obj->exc = PyErr_GetRaisedException();
     } else {
         Py_DECREF(res);
     }
@@ -138,8 +138,7 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
         lock = PyThread_allocate_lock();
         if (lock == NULL) {
             PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-            PyErr_Fetch(&ssl_obj->exc_type, &ssl_obj->exc_value,
-                        &ssl_obj->exc_tb);
+            ssl_obj->exc = PyErr_GetRaisedException();
             return;
         }
     }
@@ -156,7 +155,7 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
         errno = e;
         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError,
                                              ssl_obj->ctx->keylog_filename);
-        PyErr_Fetch(&ssl_obj->exc_type, &ssl_obj->exc_value, &ssl_obj->exc_tb);
+        ssl_obj->exc = PyErr_GetRaisedException();
     }
     PyGILState_Release(threadstate);
 }

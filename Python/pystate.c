@@ -3,7 +3,8 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"
-#include "pycore_code.h"           // stats
+#include "pycore_code.h"          // stats
+#include "pycore_dtoa.h"          // _dtoa_state_INIT()
 #include "pycore_frame.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"        // _PyType_InitCache()
@@ -481,6 +482,11 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
+#ifdef Py_REF_DEBUG
+    /* The reftotal is cleared by _Py_FinalizeRefTotal(). */
+    assert(runtime->object_state.reftotal == 0);
+#endif
+
     if (gilstate_tss_initialized(runtime)) {
         gilstate_tss_fini(runtime);
     }
@@ -618,6 +624,18 @@ free_interpreter(PyInterpreterState *interp)
    e.g. by PyMem_RawCalloc() or memset(), or otherwise pre-initialized.
    The runtime state is not manipulated.  Instead it is assumed that
    the interpreter is getting added to the runtime.
+
+   Note that the main interpreter was statically initialized as part
+   of the runtime and most state is already set properly.  That leaves
+   a small number of fields to initialize dynamically, as well as some
+   that are initialized lazily.
+
+   For subinterpreters we memcpy() the main interpreter in
+   PyInterpreterState_New(), leaving it in the same mostly-initialized
+   state.  The only difference is that the interpreter has some
+   self-referential state that is statically initializexd to the
+   main interpreter.  We fix those fields here, in addition
+   to the other dynamically initialized fields.
   */
 
 static void
@@ -644,6 +662,11 @@ init_interpreter(PyInterpreterState *interp,
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
+
+    if (interp != &runtime->_main_interpreter) {
+        /* Fix the self-referential, statically initialized fields. */
+        interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
+    }
 
     interp->_initialized = 1;
 }
@@ -754,12 +777,19 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         _PyErr_Clear(tstate);
     }
 
+    // Clear the current/main thread state last.
     HEAD_LOCK(runtime);
-    // XXX Clear the current/main thread state last.
-    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
-        PyThreadState_Clear(p);
-    }
+    PyThreadState *p = interp->threads.head;
     HEAD_UNLOCK(runtime);
+    while (p != NULL) {
+        // See https://github.com/python/cpython/issues/102126
+        // Must be called without HEAD_LOCK held as it can deadlock
+        // if any finalizer tries to acquire that lock.
+        PyThreadState_Clear(p);
+        HEAD_LOCK(runtime);
+        p = p->next;
+        HEAD_UNLOCK(runtime);
+    }
 
     /* It is possible that any of the objects below have a finalizer
        that runs Python code or otherwise relies on a thread state
@@ -780,6 +810,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     assert(interp->imports.importlib == NULL);
     assert(interp->imports.import_func == NULL);
 
+    Py_CLEAR(interp->sysdict_copy);
     Py_CLEAR(interp->builtins_copy);
     Py_CLEAR(interp->dict);
 #ifdef HAVE_FORK

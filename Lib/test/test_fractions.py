@@ -488,6 +488,7 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(F(5, 6), F(2, 3) * F(5, 4))
         self.assertEqual(F(1, 4), F(1, 10) / F(2, 5))
         self.assertEqual(F(-15, 8), F(3, 4) / F(-2, 5))
+        self.assertRaises(ZeroDivisionError, operator.truediv, F(1), F(0))
         self.assertTypedEquals(2, F(9, 10) // F(2, 5))
         self.assertTypedEquals(10**23, F(10**23, 1) // F(1))
         self.assertEqual(F(5, 6), F(7, 3) % F(3, 2))
