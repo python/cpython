@@ -1487,6 +1487,9 @@ def test_pdb_issue_gh_101673():
     ...     '!a = 2',
     ...     'll',
     ...     'p a',
+    ...     'u',
+    ...     'd',
+    ...     'p a',
     ...     'continue'
     ... ]):
     ...     test_function()
@@ -1498,6 +1501,14 @@ def test_pdb_issue_gh_101673():
       1         def test_function():
       2            a = 1
       3  ->        import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) p a
+    2
+    (Pdb) u
+    > <doctest test.test_pdb.test_pdb_issue_gh_101673[1]>(10)<module>()
+    -> test_function()
+    (Pdb) d
+    > <doctest test.test_pdb.test_pdb_issue_gh_101673[0]>(3)test_function()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) p a
     2
     (Pdb) continue

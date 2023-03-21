@@ -286,8 +286,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.curframe = self.stack[self.curindex][0]
         # The f_locals dictionary is updated from the actual frame
         # locals whenever the .f_locals accessor is called, so we
-        # cache it here to ensure that modifications are not overwritten.
-        self.curframe_locals = self.curframe.f_locals
+        # need to cache it for all frames and never access it again
+        # during debugging
+        self.frame_locals = [pair[0].f_locals for pair in self.stack]
+        self.curframe_locals = self.frame_locals[self.curindex]
         return self.execRcLines()
 
     # Can be executed earlier than 'setup' if desired
@@ -347,7 +349,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.onecmd(line)
             self.lastcmd = lastcmd_back
             if not self.commands_silent[currentbp]:
-                self.print_stack_entry(self.stack[self.curindex])
+                self.print_stack_entry(self.curindex)
             if self.commands_doprompt[currentbp]:
                 self._cmdloop()
             self.forget()
@@ -422,7 +424,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             # a command like "continue")
             self.forget()
             return
-        self.print_stack_entry(self.stack[self.curindex])
+        self.print_stack_entry(self.curindex)
         self._cmdloop()
         self.forget()
 
@@ -1004,8 +1006,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         assert 0 <= number < len(self.stack)
         self.curindex = number
         self.curframe = self.stack[self.curindex][0]
-        self.curframe_locals = self.curframe.f_locals
-        self.print_stack_entry(self.stack[self.curindex])
+        self.curframe_locals = self.frame_locals[self.curindex]
+        self.print_stack_entry(self.curindex)
         self.lineno = None
 
     def do_up(self, arg):
@@ -1162,7 +1164,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 # new position
                 self.curframe.f_lineno = arg
                 self.stack[self.curindex] = self.stack[self.curindex][0], arg
-                self.print_stack_entry(self.stack[self.curindex])
+                self.print_stack_entry(self.curindex)
             except ValueError as e:
                 self.error('Jump failed: %s' % e)
     do_j = do_jump
@@ -1536,19 +1538,47 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def print_stack_trace(self):
         try:
-            for frame_lineno in self.stack:
-                self.print_stack_entry(frame_lineno)
+            for frame_idx in range(len(self.stack)):
+                self.print_stack_entry(frame_idx)
         except KeyboardInterrupt:
             pass
 
-    def print_stack_entry(self, frame_lineno, prompt_prefix=line_prefix):
-        frame, lineno = frame_lineno
+    def print_stack_entry(self, frame_idx, prompt_prefix=line_prefix):
+        frame, lineno = self.stack[frame_idx]
         if frame is self.curframe:
             prefix = '> '
         else:
             prefix = '  '
         self.message(prefix +
-                     self.format_stack_entry(frame_lineno, prompt_prefix))
+                     self.format_stack_entry(frame,
+                                             lineno,
+                                             self.frame_locals[frame_idx],
+                                             prompt_prefix))
+
+    def format_stack_entry(self, frame, lineno, f_locals, lprefix=': '):
+        """Return a string with information about a stack entry.
+
+        The return string contains the canonical filename, the function name
+        or '<lambda>', the input arguments, the return value, and the
+        line of code (if it exists).
+
+        """
+        import linecache, reprlib
+        filename = self.canonic(frame.f_code.co_filename)
+        s = '%s(%r)' % (filename, lineno)
+        if frame.f_code.co_name:
+            s += frame.f_code.co_name
+        else:
+            s += "<lambda>"
+        s += '()'
+        if '__return__' in f_locals:
+            rv = f_locals['__return__']
+            s += '->'
+            s += reprlib.repr(rv)
+        line = linecache.getline(filename, lineno, frame.f_globals)
+        if line:
+            s += lprefix + line.strip()
+        return s
 
     # Provide help
 
