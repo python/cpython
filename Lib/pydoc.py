@@ -389,8 +389,17 @@ def synopsis(filename, cache={}):
 class ErrorDuringImport(Exception):
     """Errors that occurred while trying to import something to document it."""
     def __init__(self, filename, exc_info):
+        if not isinstance(exc_info, tuple):
+            assert isinstance(exc_info, BaseException)
+            self.exc = type(exc_info)
+            self.value = exc_info
+            self.tb = exc_info.__traceback__
+        else:
+            warnings.warn("A tuple value for exc_info is deprecated, use an exception instance",
+                          DeprecationWarning)
+
+            self.exc, self.value, self.tb = exc_info
         self.filename = filename
-        self.exc, self.value, self.tb = exc_info
 
     def __str__(self):
         exc = self.exc.__name__
@@ -411,8 +420,8 @@ def importfile(path):
     spec = importlib.util.spec_from_file_location(name, path, loader=loader)
     try:
         return importlib._bootstrap._load(spec)
-    except:
-        raise ErrorDuringImport(path, sys.exc_info())
+    except BaseException as err:
+        raise ErrorDuringImport(path, err)
 
 def safeimport(path, forceload=0, cache={}):
     """Import a module; handle errors; return None if the module isn't found.
@@ -440,21 +449,20 @@ def safeimport(path, forceload=0, cache={}):
                     cache[key] = sys.modules[key]
                     del sys.modules[key]
         module = __import__(path)
-    except:
+    except BaseException as err:
         # Did the error occur before or after the module was found?
-        (exc, value, tb) = info = sys.exc_info()
         if path in sys.modules:
             # An error occurred while executing the imported module.
-            raise ErrorDuringImport(sys.modules[path].__file__, info)
-        elif exc is SyntaxError:
+            raise ErrorDuringImport(sys.modules[path].__file__, err)
+        elif type(err) is SyntaxError:
             # A SyntaxError occurred before we could execute the module.
-            raise ErrorDuringImport(value.filename, info)
-        elif issubclass(exc, ImportError) and value.name == path:
+            raise ErrorDuringImport(err.filename, err)
+        elif isinstance(err, ImportError) and err.name == path:
             # No such module in the path.
             return None
         else:
             # Some other error occurred during the importing process.
-            raise ErrorDuringImport(path, sys.exc_info())
+            raise ErrorDuringImport(path, err)
     for part in path.split('.')[1:]:
         try: module = getattr(module, part)
         except AttributeError: return None
@@ -1997,8 +2005,8 @@ class Helper:
         if request is not self._GoInteractive:
             try:
                 self.help(request)
-            except ImportError as e:
-                self.output.write(f'{e}\n')
+            except ImportError as err:
+                self.output.write(f'{err}\n')
         else:
             self.intro()
             self.interact()
@@ -2405,8 +2413,8 @@ def _start_server(urlhandler, hostname, port):
                 docsvr = DocServer(self.host, self.port, self.ready)
                 self.docserver = docsvr
                 docsvr.serve_until_quit()
-            except Exception as e:
-                self.error = e
+            except Exception as err:
+                self.error = err
 
         def ready(self, server):
             self.serving = True

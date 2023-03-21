@@ -864,8 +864,8 @@ class TemporaryDirectory:
 
     @classmethod
     def _rmtree(cls, name, ignore_errors=False):
-        def onerror(func, path, exc_info):
-            if issubclass(exc_info[0], PermissionError):
+        def onexc(func, path, exc):
+            if isinstance(exc, PermissionError):
                 def resetperms(path):
                     try:
                         _os.chflags(path, 0)
@@ -885,13 +885,13 @@ class TemporaryDirectory:
                         cls._rmtree(path, ignore_errors=ignore_errors)
                 except FileNotFoundError:
                     pass
-            elif issubclass(exc_info[0], FileNotFoundError):
+            elif isinstance(exc, FileNotFoundError):
                 pass
             else:
                 if not ignore_errors:
                     raise
 
-        _shutil.rmtree(name, onerror=onerror)
+        _shutil.rmtree(name, onexc=onexc)
 
     @classmethod
     def _cleanup(cls, name, warn_message, ignore_errors=False):
