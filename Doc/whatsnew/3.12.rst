@@ -339,7 +339,8 @@ shutil
 
 * :func:`shutil.rmtree` now accepts a new argument *onexc* which is an
   error handler like *onerror* but which expects an exception instance
-  rather than a *(typ, val, tb)* triplet. *onerror* is deprecated.
+  rather than a *(typ, val, tb)* triplet. *onerror* is deprecated and
+  will be removed in Python 3.14.
   (Contributed by Irit Katriel in :gh:`102828`.)
 
 
@@ -503,8 +504,8 @@ Deprecated
   fields are deprecated. Use :data:`sys.last_exc` instead.
   (Contributed by Irit Katriel in :gh:`102778`.)
 
-* The *onerror* argument of :func:`shutil.rmtree` is deprecated. Use *onexc*
-  instead. (Contributed by Irit Katriel in :gh:`102828`.)
+* The *onerror* argument of :func:`shutil.rmtree` is deprecated as will be removed
+  in Python 3.14. Use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
 
 
 Pending Removal in Python 3.13
@@ -585,6 +586,9 @@ Pending Removal in Python 3.14
 * :mod:`pty` has two undocumented ``master_open()`` and ``slave_open()``
   functions that have been deprecated since Python 2 but only gained a
   proper :exc:`DeprecationWarning` in 3.12. Remove them in 3.14.
+
+* The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
+  and will be removed in 3.14.
 
 Pending Removal in Future Versions
 ----------------------------------
