@@ -1,0 +1,2 @@
+Added warning for skipped files in :func:`shutil.unpack_archive` using *zip*
+format.

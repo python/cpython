@@ -10,6 +10,7 @@ import stat
 import fnmatch
 import collections
 import errno
+import logging
 
 try:
     import zlib
@@ -1215,12 +1216,14 @@ def _unpack_zipfile(filename, extract_dir):
         raise ReadError("%s is not a zip file" % filename)
 
     zip = zipfile.ZipFile(filename)
+    skipped = 0
     try:
         for info in zip.infolist():
             name = info.filename
 
             # don't extract absolute paths or ones with .. in them
             if name.startswith('/') or '..' in name:
+                skipped += 1
                 continue
 
             targetpath = os.path.join(extract_dir, *name.split('/'))
@@ -1234,6 +1237,11 @@ def _unpack_zipfile(filename, extract_dir):
                         open(targetpath, 'wb') as target:
                     copyfileobj(source, target)
     finally:
+        if skipped:
+            import logging
+            logging.getLogger(__file__)
+            logging.warning(f'unpack {filename}: {skipped} file(s) skipped'
+                          ' (due to absolute path or `..` path component)')
         zip.close()
 
 def _unpack_tarfile(filename, extract_dir):

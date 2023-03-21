@@ -1861,6 +1861,14 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.assertRaises(shutil.ReadError, unpack_archive, converter(TESTFN))
         self.assertRaises(ValueError, unpack_archive, converter(TESTFN), format='xxx')
 
+    def test_unpack_archive_zip_warn_skipped(self):
+        tmpdir2 = self.mkdtemp()
+        with self.assertLogs(level='WARNING') as cm:
+            fn = support.findfile("testzip.zip")
+            unpack_archive(pathlib.Path(fn), pathlib.Path(tmpdir2))
+        self.assertIn('1 file(s) skipped', cm.output[0])
+        self.assertEqual(rlistdir(tmpdir2), ['test'])
+
     def test_unpack_archive_tar(self):
         self.check_unpack_archive('tar')
 
