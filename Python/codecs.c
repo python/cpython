@@ -387,6 +387,9 @@ add_note_to_codec_error(const char *operation,
                         const char *encoding)
 {
     PyObject *exc = PyErr_GetRaisedException();
+    if (exc == NULL) {
+        return;
+    }
     PyObject *note = PyUnicode_FromFormat("%s with '%s' codec failed",
                                           operation, encoding);
     if (note == NULL) {
