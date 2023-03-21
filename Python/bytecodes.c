@@ -205,7 +205,7 @@ dummy_func(
         };
 
 
-        inst(BINARY_OP_MULTIPLY_INT, (unused/1, left, right -- prod: PyLong_Type)) {
+        inst(BINARY_OP_MULTIPLY_INT, (unused/1, left, right -- prod)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
@@ -216,7 +216,7 @@ dummy_func(
             ERROR_IF(prod == NULL, error);
         }
 
-        inst(BINARY_OP_MULTIPLY_FLOAT, (unused/1, left, right -- prod: PyFloat_Type)) {
+        inst(BINARY_OP_MULTIPLY_FLOAT, (unused/1, left, right -- prod)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
@@ -226,7 +226,7 @@ dummy_func(
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dprod, prod);
         }
 
-        inst(BINARY_OP_SUBTRACT_INT, (unused/1, left, right -- sub: PyLong_Type)) {
+        inst(BINARY_OP_SUBTRACT_INT, (unused/1, left, right -- sub)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
@@ -237,7 +237,7 @@ dummy_func(
             ERROR_IF(sub == NULL, error);
         }
 
-        inst(BINARY_OP_SUBTRACT_FLOAT, (unused/1, left, right -- sub: PyFloat_Type)) {
+        inst(BINARY_OP_SUBTRACT_FLOAT, (unused/1, left, right -- sub)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyFloat_CheckExact(right), BINARY_OP);
@@ -246,7 +246,7 @@ dummy_func(
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dsub, sub);
         }
 
-        inst(BINARY_OP_ADD_UNICODE, (unused/1, left, right -- res: PyUnicode_Type)) {
+        inst(BINARY_OP_ADD_UNICODE, (unused/1, left, right -- res)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyUnicode_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -293,7 +293,7 @@ dummy_func(
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_OP + 1);
         }
 
-        inst(BINARY_OP_ADD_FLOAT, (unused/1, left, right -- sum: PyFloat_Type)) {
+        inst(BINARY_OP_ADD_FLOAT, (unused/1, left, right -- sum)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyFloat_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -338,7 +338,7 @@ dummy_func(
             boxed_float = PyFloat_FromDouble(*(double *)(&(raw_float)));
         }
 
-        macro_inst(BINARY_OP_ADD_INT, (unused/1, left, right -- sum: PyLong_Type)) {
+        macro_inst(BINARY_OP_ADD_INT, (unused/1, left, right -- sum)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(Py_TYPE(right) != Py_TYPE(left), BINARY_OP);
@@ -487,7 +487,7 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(LIST_APPEND, (list, unused[oparg-1], v -- list, unused[oparg-1])) {
+        inst(LIST_APPEND, (list, unused[oparg-1], v -- list : PyList_Type, unused[oparg-1])) {
             ERROR_IF(_PyList_AppendTakeRef((PyListObject *)list, v) < 0, error);
             PREDICT(JUMP_BACKWARD);
         }
@@ -1357,7 +1357,7 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(SET_UPDATE, (set, unused[oparg-1], iterable -- set, unused[oparg-1])) {
+        inst(SET_UPDATE, (set, unused[oparg-1], iterable -- set: PySet_Type, unused[oparg-1])) {
             int err = _PySet_Update(set, iterable);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
