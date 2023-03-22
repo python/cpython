@@ -435,6 +435,9 @@ CPython bytecode changes
   :opcode:`LOAD_METHOD` instruction if the low bit of its oparg is set.
   (Contributed by Ken Jin in :gh:`93429`.)
 
+* Removed the :opcode:`JUMP_IF_FALSE_OR_POP` and :opcode:`JUMP_IF_TRUE_OR_POP`
+  instructions. (Contributed by Irit Katriel in :gh:`102859`.)
+
 
 Demos and Tools
 ===============

@@ -1152,30 +1152,6 @@ iterations of the loop.
    .. versionchanged:: 3.12
       This is no longer a pseudo-instruction.
 
-
-.. opcode:: JUMP_IF_TRUE_OR_POP (delta)
-
-   If ``STACK[-1]`` is true, increments the bytecode counter by *delta* and leaves
-   ``STACK[-1]`` on the stack.  Otherwise (``STACK[-1]`` is false), ``STACK[-1]``
-   is popped.
-
-   .. versionadded:: 3.1
-
-   .. versionchanged:: 3.11
-      The oparg is now a relative delta rather than an absolute target.
-
-.. opcode:: JUMP_IF_FALSE_OR_POP (delta)
-
-   If ``STACK[-1]`` is false, increments the bytecode counter by *delta* and leaves
-   ``STACK[-1]`` on the stack. Otherwise (``STACK[-1]`` is true), ``STACK[-1]`` is
-   popped.
-
-   .. versionadded:: 3.1
-
-   .. versionchanged:: 3.11
-      The oparg is now a relative delta rather than an absolute target.
-
-
 .. opcode:: FOR_ITER (delta)
 
    ``STACK[-1]`` is an :term:`iterator`.  Call its :meth:`~iterator.__next__` method.
