@@ -233,7 +233,8 @@ def parse_headers(fp, _class=HTTPMessage):
     """
     headers = _read_headers(fp)
     hstring = b''.join(headers).decode('iso-8859-1')
-    return email.parser.Parser(_class=_class).parsestr(hstring)
+    return email.parser.Parser(_class=_class).parsestr(
+        hstring, headersonly=True, strictheaders=False)
 
 
 class HTTPResponse(io.BufferedIOBase):
