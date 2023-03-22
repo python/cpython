@@ -45,7 +45,7 @@ class ObjectParser:
         self._path = path
 
     def _dump(self, *args) -> typing.Iterator[str]:
-        args = ["llvm-objdump-14", *args, self._path]
+        args = ["objdump", *args, self._path]
         process = subprocess.run(args, check=True, capture_output=True)
         lines = filter(None, process.stdout.decode().splitlines())
         line = next(lines, None)
@@ -58,7 +58,9 @@ class ObjectParser:
         line = next(lines, None)
         assert line == "Sections:"
         line = next(lines, None)
-        assert line == "Idx Name            Size     VMA              Type"
+        pattern = r"Idx\s+Name\s+Size\s+VMA\s+Type"
+        match = re.fullmatch(pattern, line)
+        assert match is not None
         pattern = r"\s+(\d+)\s+([\w\.\-]+)?\s+([0-9a-f]{8})\s+([0-9a-f]{16})\s+(TEXT|DATA)?"
         for i, line in enumerate(lines):
             match = re.fullmatch(pattern, line)
@@ -148,7 +150,7 @@ class ObjectParser:
                 # TODO: fix offset too? Or just assert that relocs are only in main section?
                 hole = Hole(hole.symbol, hole.kind, hole.offset, hole.addend + offsets[hole.symbol])
             fixed.append(hole)
-        return Stencil(body, fixed, 0)
+        return Stencil(body, fixed)
 
 class ObjectParserELF64X8664(ObjectParser):
     _file_format = "elf64-x86-64"
@@ -198,7 +200,6 @@ class Hole:
 class Stencil:
     body: bytes
     holes: tuple[Hole, ...]
-    rodata: int
 
     def load(self) -> typing.Self:
         # XXX: Load the addend too.
@@ -212,7 +213,7 @@ class Stencil:
                 # if not hole.symbol.startswith("_justin") and hole.symbol != "_cstring":
                 #     print(hole.symbol)
                 new_holes.append(hole)
-        return self.__class__(bytes(new_body), tuple(new_holes), self.rodata)
+        return self.__class__(bytes(new_body), tuple(new_holes))
     
     def copy_and_patch(self, **symbols: int) -> bytes:
         body = bytearray(self.body)
@@ -287,7 +288,7 @@ class Engine:
             defines.append(f"-D_JUSTIN_OPCODE_{i}={opname}")
         with tempfile.NamedTemporaryFile(suffix=".o") as o:
             subprocess.run(
-                ["clang-14", *self._CC_FLAGS, *defines, path, "-o",  o.name],
+                ["clang", *self._CC_FLAGS, *defines, path, "-o",  o.name],
                 check=True,
             )
             return _get_object_parser(o.name).parse()
@@ -422,7 +423,7 @@ class Engine:
             for x, (j, oparg) in enumerate(zip(js, opargs, strict=True)):
                 patches[f"_justin_next_trace_{x}"] = first_instr + j
                 patches[f"_justin_oparg_{x}"] = oparg
-            patches[".rodata.str1.1"] = base + memory.tell() + stencil.rodata
+            patches[".rodata.str1.1"] = base + memory.tell()
             memory.write(
                 stencil.copy_and_patch(
                     _cstring=base + memory.tell(),
