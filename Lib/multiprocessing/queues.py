@@ -37,7 +37,7 @@ _queue_shutdown_immediate = 2
 #
 
 class Queue(object):
-    _VALUE=True
+
     def __init__(self, maxsize=0, *, ctx):
         if maxsize <= 0:
             # Can raise ImportError (see issues #3770 and #23400)
