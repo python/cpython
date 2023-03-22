@@ -1485,6 +1485,7 @@ regen-cases:
 	PYTHONPATH=$(srcdir)/Tools/cases_generator \
 	$(PYTHON_FOR_REGEN) \
 	    $(srcdir)/Tools/cases_generator/generate_cases.py \
+		--emit-line-directives \
 		-o $(srcdir)/Python/generated_cases.c.h.new \
 		-m $(srcdir)/Python/opcode_metadata.h.new \
 		$(srcdir)/Python/bytecodes.c
@@ -1698,6 +1699,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_moduleobject.h \
 		$(srcdir)/Include/internal/pycore_namespace.h \
 		$(srcdir)/Include/internal/pycore_object.h \
+		$(srcdir)/Include/internal/pycore_object_state.h \
 		$(srcdir)/Include/internal/pycore_obmalloc.h \
 		$(srcdir)/Include/internal/pycore_obmalloc_init.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
@@ -2559,6 +2561,12 @@ distclean: clobber docclean
 # Check that all symbols exported by libpython start with "Py" or "_Py"
 smelly: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/smelly.py
+
+# Check if any unsupported C global variables have been added.
+check-c-globals:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/c-analyzer/check-c-globals.py \
+		--format summary \
+		--traceback
 
 # Find files with funny names
 funny:
