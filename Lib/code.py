@@ -5,6 +5,7 @@
 # Inspired by similar code by Jeff Epler and Fredrik Lundh.
 
 
+import builtins
 import sys
 import traceback
 from codeop import CommandCompiler, compile_command
@@ -219,27 +220,59 @@ class InteractiveConsole(InteractiveInterpreter):
         elif banner:
             self.write("%s\n" % str(banner))
         more = 0
-        while 1:
-            try:
-                if more:
-                    prompt = sys.ps2
-                else:
-                    prompt = sys.ps1
+
+        # When the user uses exit() or quit() in their interactive shell
+        # they probably just want to exit the created shell, not the whole
+        # process. exit and quit in builtins closes sys.stdin which makes
+        # it super difficult to restore
+        #
+        # We overwrite the builtins so exit() and quit() only raises
+        # SystemExit and we can catch that to only exit the interactive
+        # shell
+
+        _exit = None
+        if hasattr(builtins, "exit"):
+            _exit = builtins.exit
+            builtins.exit = Quitter("exit")
+
+        _quit = None
+        if hasattr(builtins, "quit"):
+            _quit = builtins.quit
+            builtins.quit = Quitter("quit")
+
+        try:
+            while True:
                 try:
-                    line = self.raw_input(prompt)
-                except EOFError:
+                    if more:
+                        prompt = sys.ps2
+                    else:
+                        prompt = sys.ps1
+                    try:
+                        line = self.raw_input(prompt)
+                    except EOFError:
+                        self.write("\n")
+                        break
+                    else:
+                        more = self.push(line)
+                except KeyboardInterrupt:
+                    self.write("\nKeyboardInterrupt\n")
+                    self.resetbuffer()
+                    more = 0
+                except SystemExit:
                     self.write("\n")
                     break
-                else:
-                    more = self.push(line)
-            except KeyboardInterrupt:
-                self.write("\nKeyboardInterrupt\n")
-                self.resetbuffer()
-                more = 0
-        if exitmsg is None:
-            self.write('now exiting %s...\n' % self.__class__.__name__)
-        elif exitmsg != '':
-            self.write('%s\n' % exitmsg)
+        finally:
+            # restore exit and quit in builtins
+            if _exit is not None:
+                builtins.exit = _exit
+
+            if _quit is not None:
+                builtins.quit = _quit
+
+            if exitmsg is None:
+                self.write('now exiting %s...\n' % self.__class__.__name__)
+            elif exitmsg != '':
+                self.write('%s\n' % exitmsg)
 
     def push(self, line):
         """Push a line to the interpreter.
@@ -275,6 +308,18 @@ class InteractiveConsole(InteractiveInterpreter):
         """
         return input(prompt)
 
+
+class Quitter:
+    def __init__(self, name):
+        self.name = name
+        self.eof = 'Ctrl-Z plus Return' if sys.platform == "win32" else \
+                   'Ctrl-D (i.e. EOF)'
+
+    def __repr__(self):
+        return f'Use {self.name} or {self.eof} to exit'
+
+    def __call__(self, code=None):
+        raise SystemExit(code)
 
 
 def interact(banner=None, readfunc=None, local=None, exitmsg=None):
