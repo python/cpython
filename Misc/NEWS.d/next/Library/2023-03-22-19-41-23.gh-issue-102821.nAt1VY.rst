@@ -1,0 +1,1 @@
+Simplify redundant logic of :meth:`threading.Event.wait`.
