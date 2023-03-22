@@ -12,7 +12,9 @@
  */
 
 #ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
 #  include <windows.h>
 #  include <winsock2.h>
 #  include <process.h>               /* getpid() */
@@ -21,20 +23,14 @@
 #  endif
 #  define SEM_HANDLE HANDLE
 #  define SEM_VALUE_MAX LONG_MAX
+#  define HAVE_MP_SEMAPHORE
 #else
 #  include <fcntl.h>                 /* O_CREAT and O_EXCL */
 #  if defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED)
+#    define HAVE_MP_SEMAPHORE
 #    include <semaphore.h>
      typedef sem_t *SEM_HANDLE;
 #  endif
-#  define HANDLE int
-#  define SOCKET int
-#  define BOOL int
-#  define UINT32 uint32_t
-#  define INT32 int32_t
-#  define TRUE 1
-#  define FALSE 0
-#  define INVALID_HANDLE_VALUE (-1)
 #endif
 
 /*
@@ -72,8 +68,6 @@
 #  define T_HANDLE T_POINTER
 #  define F_SEM_HANDLE F_HANDLE
 #  define T_SEM_HANDLE T_HANDLE
-#  define F_DWORD "k"
-#  define T_DWORD T_ULONG
 #else
 #  define F_HANDLE "i"
 #  define T_HANDLE T_INT
@@ -97,7 +91,7 @@ PyObject *_PyMp_SetError(PyObject *Type, int num);
  * Externs - not all will really exist on all platforms
  */
 
-extern PyTypeObject _PyMp_SemLockType;
-extern PyObject *_PyMp_sem_unlink(PyObject *ignore, PyObject *args);
+extern PyType_Spec _PyMp_SemLockType_spec;
+extern PyObject *_PyMp_sem_unlink(const char *name);
 
 #endif /* MULTIPROCESSING_H */

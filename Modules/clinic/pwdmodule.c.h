@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(pwd_getpwuid__doc__,
 "getpwuid($module, uidobj, /)\n"
 "--\n"
@@ -34,7 +40,7 @@ pwd_getpwnam(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("getpwnam", 0, "str", arg);
+        _PyArg_BadArgument("getpwnam", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -74,4 +80,4 @@ pwd_getpwall(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef PWD_GETPWALL_METHODDEF
     #define PWD_GETPWALL_METHODDEF
 #endif /* !defined(PWD_GETPWALL_METHODDEF) */
-/*[clinic end generated code: output=f9412bdedc69706c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a95bc08653cda56b input=a9049054013a1b77]*/
