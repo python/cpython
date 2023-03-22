@@ -565,6 +565,81 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 #endif
 
 
+//---------------
+// global objects
+//---------------
+
+static PyThreadState *
+bind_global_objects_state(_PyRuntimeState *runtime)
+{
+    PyThreadState *main_tstate = &runtime->cached_objects.main_tstate;
+
+    bind_tstate(main_tstate);
+    /* Unlike _PyThreadState_Bind(), we do not modify gilstate TSS. */
+
+    return main_tstate;
+}
+
+static void
+unbind_global_objects_state(_PyRuntimeState *runtime)
+{
+    PyThreadState *main_tstate = &runtime->cached_objects.main_tstate;
+    assert(tstate_is_alive(main_tstate));
+    assert(!main_tstate->_status.active);
+    assert(gilstate_tss_get(runtime) != main_tstate);
+
+    unbind_tstate(main_tstate);
+
+    /* This thread state may be bound/unbound repeatedly,
+       so we must erase evidence that it was ever bound (or unbound). */
+    main_tstate->_status.bound = 0;
+    main_tstate->_status.unbound = 0;
+
+    /* We must fully unlink the thread state from any OS thread,
+       to allow it to be bound more than once. */
+    main_tstate->thread_id = 0;
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+    main_tstate->native_thread_id = 0;
+#endif
+}
+
+PyThreadState *
+_Py_AcquireGlobalObjectsState(PyInterpreterState *interp)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+    assert(interp != NULL);
+    assert(interp->runtime == runtime);
+
+    PyThreadState *oldts = NULL;
+    /* All global objects are owned by the main interpreter. */
+    if (!_Py_IsMainInterpreter(interp)) {
+        PyThreadState *main_tstate = bind_global_objects_state(runtime);
+
+        oldts = _PyThreadState_Swap(runtime, main_tstate);
+        assert(oldts != NULL);
+
+        unbind_global_objects_state(runtime);
+    }
+
+    return oldts;
+}
+
+void
+_Py_ReleaseGlobalObjectsState(PyThreadState *oldts)
+{
+    if (oldts != NULL) {
+        /* The thread state was swapped in _Py_AcquireGlobalObjectsState(),
+           because the main interpreter wasn't running in the OS thread.. */
+        _PyRuntimeState *runtime = &_PyRuntime;
+        assert(oldts->interp->runtime == runtime);
+        assert(!_Py_IsMainInterpreter(oldts->interp));
+
+        // The returned tstate should be _PyRuntime.cached_objects.main_tstate.
+        _PyThreadState_Swap(runtime, oldts);
+    }
+}
+
+
 /*************************************/
 /* the per-interpreter runtime state */
 /*************************************/
