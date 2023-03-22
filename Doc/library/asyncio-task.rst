@@ -627,7 +627,7 @@ Timeouts
     .. class:: Timeout(when)
 
        An :ref:`asynchronous context manager <async-context-managers>`
-       context manager for cancelling overdue coroutines.
+       for cancelling overdue coroutines.
 
        .. note::
 
