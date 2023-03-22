@@ -394,6 +394,8 @@ class PurePythonExceptionFormattingMixin:
 
 
 class CAPIExceptionFormattingMixin:
+    LEGACY = 0
+
     def get_exception(self, callable, slice_start=0, slice_end=-1):
         from _testcapi import exception_print
         try:
@@ -401,11 +403,13 @@ class CAPIExceptionFormattingMixin:
             self.fail("No exception thrown.")
         except Exception as e:
             with captured_output("stderr") as tbstderr:
-                exception_print(e)
+                exception_print(e, self.LEGACY)
             return tbstderr.getvalue().splitlines()[slice_start:slice_end]
 
     callable_line = get_exception.__code__.co_firstlineno + 3
 
+class CAPIExceptionFormattingLegacyMixin(CAPIExceptionFormattingMixin):
+    LEGACY = 1
 
 @requires_debug_ranges()
 class TracebackErrorLocationCaretTestBase:
@@ -912,6 +916,16 @@ class CPythonTracebackErrorCaretTests(
     Same set of tests as above but with Python's internal traceback printing.
     """
 
+@cpython_only
+@requires_debug_ranges()
+class CPythonTracebackErrorCaretTests(
+    CAPIExceptionFormattingLegacyMixin,
+    TracebackErrorLocationCaretTestBase,
+    unittest.TestCase,
+):
+    """
+    Same set of tests as above but with Python's legacy internal traceback printing.
+    """
 
 class TracebackFormatTests(unittest.TestCase):
 
