@@ -23,13 +23,6 @@ PYTHON_GENERATED_CASES_C_H = TOOLS_JUSTIN.parent.parent / "Python" / "generated_
 
 WRAPPER_TYPE = ctypes.PYFUNCTYPE(ctypes.c_int)
 
-SUPPORTED_RELOCATIONS = {
-    "X86_64_RELOC_UNSIGNED",  # Mach-O (Intel)
-    # "ARM64_RELOC_UNSIGNED",  # Mach-O (ARM)
-    "R_X86_64_64",  # ELF
-    # "IMAGE_REL_AMD64_ADDR64",  # COFF
-}
-
 # XXX: Do --reloc, then --headers, then --full-contents (per-section)
 # Maybe need --syms to check that justin_entry is indeed first/only?
 class ObjectParser:
@@ -61,7 +54,7 @@ class ObjectParser:
         pattern = r"Idx\s+Name\s+Size\s+VMA\s+Type"
         match = re.fullmatch(pattern, line)
         assert match is not None
-        pattern = r"\s+(\d+)\s+([\w\.\-]+)?\s+([0-9a-f]{8})\s+([0-9a-f]{16})\s+(TEXT|DATA)?"
+        pattern = r"\s+(\d+)\s+([\w\.\-]+)?\s+([0-9a-f]{8})\s+([0-9a-f]{16})\s+(BSS|DATA|TEXT)?"
         for i, line in enumerate(lines):
             match = re.fullmatch(pattern, line)
             assert match is not None, line
@@ -121,7 +114,9 @@ class ObjectParser:
     def _parse_full_contents(self, section) -> bytes:
         lines = self._dump("--full-contents", "--section", section)
         line = next(lines, None)
-        assert line == f"Contents of section {self._section_prefix}{section}:"
+        if line is None:
+            return b""
+        assert line == f"Contents of section {self._section_prefix}{section}:", line
         body = bytearray()
         pattern = r" ([\s0-9a-f]{4}) ([\s0-9a-f]{8}) ([\s0-9a-f]{8}) ([\s0-9a-f]{8}) ([\s0-9a-f]{8}) .*"
         for line in lines:
@@ -151,6 +146,13 @@ class ObjectParser:
                 hole = Hole(hole.symbol, hole.kind, hole.offset, hole.addend + offsets[hole.symbol])
             fixed.append(hole)
         return Stencil(body, fixed)
+    
+class ObjectParserCOFFX8664(ObjectParser):
+    _file_format = "coff-x86-64"
+    _type = "IMAGE_REL_AMD64_ADDR64"
+    _section_prefix = ""
+    _fix_up_holes = True
+    _symbol_prefix = ""
 
 class ObjectParserELF64X8664(ObjectParser):
     _file_format = "elf64-x86-64"
@@ -158,6 +160,13 @@ class ObjectParserELF64X8664(ObjectParser):
     _section_prefix = ""
     _fix_up_holes = True
     _symbol_prefix = ""
+
+class ObjectParserMachO64BitARM64(ObjectParser):
+    _file_format = "mach-o 64-bit arm64"
+    _type = "ARM64_RELOC_UNSIGNED"
+    _section_prefix = "__TEXT,"
+    _fix_up_holes = False
+    _symbol_prefix = "_"
 
 class ObjectParserMachO64BitX8664(ObjectParser):
     _file_format = "mach-o 64-bit x86-64"
@@ -167,12 +176,17 @@ class ObjectParserMachO64BitX8664(ObjectParser):
     _symbol_prefix = "_"
 
 def _get_object_parser(path: str) -> ObjectParser:
-    for parser in [ObjectParserELF64X8664, ObjectParserMachO64BitX8664]:
+    for parser in [
+        ObjectParserCOFFX8664,
+        ObjectParserELF64X8664,
+        ObjectParserMachO64BitARM64,
+        ObjectParserMachO64BitX8664
+    ]:
         p = parser(path)
         try:
             p._dump("--syms")
         except NotImplementedError:
-            continue
+            pass
         else:
             return p
     raise NotImplementedError(sys.platform)
@@ -231,6 +245,29 @@ class Stencil:
 
     def __len__(self) -> int:
         return len(self.body)
+    
+def mmap_posix(size):
+    flags = mmap.MAP_ANONYMOUS | mmap.MAP_PRIVATE
+    prot = mmap.PROT_EXEC | mmap.PROT_WRITE
+    memory = mmap.mmap(-1, size, flags=flags, prot=prot)
+    return (ctypes.c_char * size).from_buffer(memory)
+    
+def mmap_windows(size):
+    kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+    MEM_COMMIT = 0x00001000
+    MEM_RESERVE = 0x00002000
+    PAGE_EXECUTE_READWRITE = 0x40
+    VirtualAlloc = kernel32.VirtualAlloc
+    VirtualAlloc.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_size_t,
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+    ]
+    VirtualAlloc.restype = ctypes.c_void_p
+    memory = VirtualAlloc(None, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE)
+    return ctypes.cast(ctypes.c_char_p(memory), ctypes.POINTER(ctypes.c_char * size))[0]
+
 
 class Engine:
     _CC_FLAGS = [
@@ -238,6 +275,7 @@ class Engine:
         "-I.",
         "-IInclude",
         "-IInclude/internal",
+        "-IPC",
         "-O3",
         "-Wall",
         "-Werror",
@@ -401,17 +439,18 @@ class Engine:
         lengths = [
             len(self._trampoline_loaded),  *(len(stencil) for stencil, _, _, _ in bundles)
         ]
-        flags = mmap.MAP_ANONYMOUS | mmap.MAP_PRIVATE
-        prot = mmap.PROT_EXEC | mmap.PROT_WRITE
-        memory = mmap.mmap(-1, size, flags=flags, prot=prot)
-        buffer = (ctypes.c_char * size).from_buffer(memory)
         first_instr = id(code) + self._OFFSETOF_CO_CODE_ADAPTIVE
-        base = ctypes.addressof(buffer)
+        if sys.platform == "win32":
+            memory = mmap_windows(size)
+        else:
+            memory = mmap_posix(size)
+        base = ctypes.addressof(memory)
         continuations = list(itertools.accumulate(lengths, initial=base))[1:]
         continuations[-1] = continuations[0]
-        memory.write(
+        buffer = bytearray()
+        buffer += (
             self._trampoline_loaded.copy_and_patch(
-                _cstring=base + memory.tell(),
+                _cstring=base + len(buffer),
                 _justin_continue=continuations[0],
                 _justin_next_instr = first_instr + trace[0],
             )
@@ -423,17 +462,18 @@ class Engine:
             for x, (j, oparg) in enumerate(zip(js, opargs, strict=True)):
                 patches[f"_justin_next_trace_{x}"] = first_instr + j
                 patches[f"_justin_oparg_{x}"] = oparg
-            patches[".rodata.str1.1"] = base + memory.tell()
-            memory.write(
+            patches[".rodata.str1.1"] = base + len(buffer)
+            buffer += (
                 stencil.copy_and_patch(
-                    _cstring=base + memory.tell(),
+                    _cstring=base + len(buffer),
                     _justin_continue=continuation,
                     _justin_next_instr=first_instr + i,
-                    _justin_target=memory.tell(),
+                    _justin_target=len(buffer),
                     **patches,
                 )
             )
-        assert memory.tell() == len(memory) == size
-        wrapper = ctypes.cast(buffer, WRAPPER_TYPE)
+        assert len(buffer) == size
+        memory[:] = buffer
+        wrapper = ctypes.cast(memory, WRAPPER_TYPE)
         self._stderr(f"Compiled {size:,} bytes in {(time.time() - start) * 1_000:0.3} ms")
         return wrapper
