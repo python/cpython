@@ -1,1 +1,1 @@
-Fixed bugs in :func:`posix.stat` implementation that led to to crash on error or interrupt
+Fixed bugs in :func:`posix.stat` implementation that led to crash on error or interrupt
