@@ -13,15 +13,6 @@
             "html"
         ]
     },
-    "forwardPorts": [3000, 3001],
-    "portsAttributes": {
-        "3000": {
-            "label": "Live Preview extension"
-        },
-        "3001": {
-            "label": "Live Preview extension"
-        }
-    },
     "customizations": {
         "vscode": {
             "extensions": [
