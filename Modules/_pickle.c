@@ -196,9 +196,10 @@ typedef struct {
        2 and 3 */
     PyObject *partial;
 
-    /* needed for multi-state initialization*/
+    /* Types */
     PyTypeObject *pickler_type;
     PyTypeObject *unpickler_type;
+    PyTypeObject *Pdata_type;
 } PickleState;
 
 /* Forward declaration of the _pickle module definition. */
@@ -209,6 +210,14 @@ static PickleState *
 _Pickle_GetState(PyObject *module)
 {
     return (PickleState *)_PyModule_GetState(module);
+}
+
+static PickleState *
+_Pickle_FindStateByType(PyTypeObject *tp)
+{
+    PyObject *module = PyType_GetModuleByDef(tp, &_picklemodule);
+    assert(module != NULL);
+    return _Pickle_GetState(module);
 }
 
 /* Clear the given pickle module state. */
@@ -231,6 +240,7 @@ _Pickle_ClearState(PickleState *st)
     Py_CLEAR(st->partial);
     Py_CLEAR(st->pickler_type);
     Py_CLEAR(st->unpickler_type);
+    Py_CLEAR(st->Pdata_type);
 }
 
 /* Initialize the given pickle module state. */
@@ -440,41 +450,61 @@ typedef struct {
     Py_ssize_t allocated;  /* number of slots in data allocated */
 } Pdata;
 
+static int
+Pdata_traverse(Pdata *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static void
 Pdata_dealloc(Pdata *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
     Py_ssize_t i = Py_SIZE(self);
     while (--i >= 0) {
         Py_DECREF(self->data[i]);
     }
     PyMem_Free(self->data);
-    PyObject_Free(self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
-static PyTypeObject Pdata_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_pickle.Pdata",              /*tp_name*/
-    sizeof(Pdata),                /*tp_basicsize*/
-    sizeof(PyObject *),           /*tp_itemsize*/
-    (destructor)Pdata_dealloc,    /*tp_dealloc*/
+static PyType_Slot pdata_slots[] = {
+    {Py_tp_dealloc, Pdata_dealloc},
+    {Py_tp_traverse, Pdata_traverse},
+    {0, NULL},
+};
+
+static PyType_Spec pdata_spec = {
+    .name = "_pickle.Pdata",
+    .basicsize = sizeof(Pdata),
+    .itemsize = sizeof(PyObject *),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = pdata_slots,
 };
 
 static PyObject *
-Pdata_New(void)
+Pdata_New(PickleState *state)
 {
     Pdata *self;
 
-    if (!(self = PyObject_New(Pdata, &Pdata_Type)))
+    if (!(self = PyObject_GC_New(Pdata, state->Pdata_type))) {
         return NULL;
+    }
     Py_SET_SIZE(self, 0);
     self->mark_set = 0;
     self->fence = 0;
     self->allocated = 8;
     self->data = PyMem_Malloc(self->allocated * sizeof(PyObject *));
-    if (self->data)
-        return (PyObject *)self;
-    Py_DECREF(self);
-    return PyErr_NoMemory();
+    if (self->data == NULL) {
+        Py_DECREF(self);
+        return PyErr_NoMemory();
+    }
+    PyObject_GC_Track(self);
+    return (PyObject *)self;
 }
 
 
@@ -1614,7 +1644,7 @@ _Unpickler_New(PyObject *module)
     self->memo_size = 32;
     self->memo_len = 0;
     self->memo = _Unpickler_NewMemo(self->memo_size);
-    self->stack = (Pdata *)Pdata_New();
+    self->stack = (Pdata *)Pdata_New(st);
 
     if (self->memo == NULL || self->stack == NULL) {
         Py_DECREF(self);
@@ -7198,7 +7228,9 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
         return -1;
     }
 
-    self->stack = (Pdata *)Pdata_New();
+    PyTypeObject *tp = Py_TYPE(self);
+    PickleState *state = _Pickle_FindStateByType(tp);
+    self->stack = (Pdata *)Pdata_New(state);
     if (self->stack == NULL)
         return -1;
 
@@ -7842,22 +7874,24 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->partial);
     Py_VISIT(st->pickler_type);
     Py_VISIT(st->unpickler_type);
+    Py_VISIT(st->Pdata_type);
     return 0;
 }
 
 static int
 _pickle_exec(PyObject *m)
 {
-    PickleState *st;
+    PickleState *st = _Pickle_GetState(m);
 
-    if (PyType_Ready(&Pdata_Type) < 0)
+    st->Pdata_type = (PyTypeObject *)PyType_FromMetaclass(NULL, m, &pdata_spec,
+                                                          NULL);
+    if (st->Pdata_type == NULL) {
         return -1;
+    }
     if (PyType_Ready(&PicklerMemoProxyType) < 0)
         return -1;
     if (PyType_Ready(&UnpicklerMemoProxyType) < 0)
         return -1;
-
-    st = _Pickle_GetState(m);
 
     /* Add types */
     if (PyModule_AddType(m, &PyPickleBuffer_Type) < 0) {
