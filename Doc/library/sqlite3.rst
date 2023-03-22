@@ -272,7 +272,7 @@ Module functions
 
    :param float timeout:
        How many seconds the connection should wait before raising
-       :exc:`OperationalError`, when a table is locked.
+       an :exc:`OperationalError` when a table is locked.
        If another connection opens a transaction to modify a table,
        that table will be locked until the transaction is committed.
        Default five seconds.
