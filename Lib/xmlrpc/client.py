@@ -50,6 +50,7 @@
 # 2003-10-31 mvl Add multicall support
 # 2004-08-20 mvl Bump minimum supported Python version to 2.1
 # 2014-12-02 ch/doko  Add workaround for gzip bomb vulnerability
+# 2023-03-24 ms  Added support for i8 and BigInteger
 #
 # Copyright (c) 1999-2002 by Secret Labs AB.
 # Copyright (c) 1999-2002 by Fredrik Lundh.
@@ -157,6 +158,8 @@ __version__ = '%d.%d' % sys.version_info[:2]
 # xmlrpc integer limits
 MAXINT =  2**31-1
 MININT = -2**31
+MAXINT64 = 2**63-1
+MININT64 = -2**63
 
 # --------------------------------------------------------------------
 # Error constants (from Dan Libby's specification at
@@ -548,11 +551,18 @@ class Marshaller:
     dispatch[bool] = dump_bool
 
     def dump_long(self, value, write):
-        if value > MAXINT or value < MININT:
-            raise OverflowError("int exceeds XML-RPC limits")
-        write("<value><int>")
-        write(str(int(value)))
-        write("</int></value>\n")
+        if MININT <= value <= MAXINT:
+            write("<value><int>")
+            write(str(int(value)))
+            write("</int></value>\n")
+        elif MININT64 <= value <= MAXINT64:
+            write("<value><i8>")
+            write(str(int(value)))
+            write("</i8></value>")
+        else:
+            write("<value><biginteger>")
+            write(str(int(value)))
+            write("</biginterger></value>\n")
     dispatch[int] = dump_long
 
     # backward compatible

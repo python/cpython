@@ -124,7 +124,11 @@ class XMLRPCTestCase(unittest.TestCase):
         self.assertEqual(t2, t.__dict__)
 
     def test_dump_big_long(self):
-        self.assertRaises(OverflowError, xmlrpclib.dumps, (2**99,))
+        strg = xmlrpclib.dumps((2**99,-2**99 ))
+        assert("<int>" not in strg)
+        assert("<i8>" not in strg)
+        assert("<biginteger>" in strg)
+
 
     def test_dump_bad_dict(self):
         self.assertRaises(TypeError, xmlrpclib.dumps, ({(1,2,3): 1},))
@@ -142,26 +146,28 @@ class XMLRPCTestCase(unittest.TestCase):
         self.assertRaises(TypeError, xmlrpclib.dumps, (d,))
 
     def test_dump_big_int(self):
-        if sys.maxsize > 2**31-1:
-            self.assertRaises(OverflowError, xmlrpclib.dumps,
-                              (int(2**34),))
 
-        xmlrpclib.dumps((xmlrpclib.MAXINT, xmlrpclib.MININT))
-        self.assertRaises(OverflowError, xmlrpclib.dumps,
-                          (xmlrpclib.MAXINT+1,))
-        self.assertRaises(OverflowError, xmlrpclib.dumps,
-                          (xmlrpclib.MININT-1,))
+        strg = xmlrpclib.dumps((xmlrpclib.MAXINT, xmlrpclib.MININT))
+        assert("<int>" in strg)
+        assert("<i8>" not in strg)
+        assert("<biginteger>" not in strg)
 
         def dummy_write(s):
             pass
 
         m = xmlrpclib.Marshaller()
+
         m.dump_int(xmlrpclib.MAXINT, dummy_write)
         m.dump_int(xmlrpclib.MININT, dummy_write)
-        self.assertRaises(OverflowError, m.dump_int,
-                          xmlrpclib.MAXINT+1, dummy_write)
-        self.assertRaises(OverflowError, m.dump_int,
-                          xmlrpclib.MININT-1, dummy_write)
+
+        if sys.maxsize > 2**31-1:
+            strg = xmlrpclib.dumps((xmlrpclib.MAXINT+1, xmlrpclib.MININT-1))
+            assert("<int>" not in strg)
+            assert("<i8>" in strg)
+            assert("<biginteger>" not in strg)
+            m.dump_int(xmlrpclib.MAXINT+1, dummy_write)
+            m.dump_int(xmlrpclib.MININT-1, dummy_write)
+
 
     def test_dump_double(self):
         xmlrpclib.dumps((float(2 ** 34),))
