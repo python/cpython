@@ -272,9 +272,9 @@ Module functions
 
    :param float timeout:
        How many seconds the connection should wait before raising
-       an exception, if the database is locked by another connection.
-       If another connection opens a transaction to modify the database,
-       it will be locked until that transaction is committed.
+       :exc:`OperationalError`, when a table is locked.
+       If another connection opens a transaction to modify a table,
+       that table will be locked until the transaction is committed.
        Default five seconds.
 
    :param int detect_types:
