@@ -1,0 +1,1 @@
+Fixed a problem with buffered tell() that caused the internally maintained file position to get out of sync with the kernel when writing to a file using write append mode. Patch by Jeffrey Kintscher.

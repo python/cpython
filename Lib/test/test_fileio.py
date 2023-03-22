@@ -569,6 +569,70 @@ class OtherFileTests:
         self.assertRaises(MyException, MyFileIO, fd)
         os.close(fd)  # should not raise OSError(EBADF)
 
+    def test_buffered_seek_and_tell_with_appended_writes(self):
+        # issue #36411
+        #
+        # Confirm that when a file
+        # is appended to using buffered I/O,
+        # tell() and seek() behave properly.
+
+        #
+        # test binary file I/O
+        #
+        with open(TESTFN, 'wb') as f:
+            self.assertEqual(f.write(b'abc'), 3)
+            self.assertEqual(f.tell(), 3)
+            f.close()
+
+        with open(TESTFN, 'a+b') as f:
+            self.assertEqual(f.tell(), 3)
+            self.assertEqual(f.write(b'def'), 3)
+            self.assertEqual(f.tell(), 6)
+            self.assertIsNotNone(f.seek(0))
+            self.assertEqual(f.tell(), 0)
+            self.assertEqual(f.write(b'ghi'), 3)
+            self.assertEqual(f.tell(), 9)
+            self.assertEqual(f.write(b'jkl'), 3)
+            self.assertEqual(f.tell(), 12)
+            self.assertIsNotNone(f.seek(0, io.SEEK_CUR))
+            self.assertEqual(f.tell(), 12)
+            self.assertIsNotNone(f.seek(0))
+            self.assertEqual(f.read(), b'abcdefghijkl')
+            f.close()
+
+        try:
+            os.unlink(TESTFN)
+        finally:
+            pass
+
+        #
+        # test text file I/O
+        #
+        with open(TESTFN, 'wt', encoding="utf-8") as f:
+            self.assertEqual(f.write('一二三'), 3)
+            self.assertEqual(f.tell(), 9)
+            f.close()
+
+        with open(TESTFN, 'a+t', encoding="utf-8") as f:
+            self.assertEqual(f.tell(), 9)
+            self.assertEqual(f.write('四五六'), 3)
+            self.assertEqual(f.tell(), 18)
+            self.assertIsNotNone(f.seek(0))
+            self.assertEqual(f.tell(), 0)
+            self.assertEqual(f.write('七八九'), 3)
+            self.assertEqual(f.tell(), 27)
+            self.assertEqual(f.write('十百千'), 3)
+            self.assertEqual(f.tell(), 36)
+            self.assertIsNotNone(f.seek(0, io.SEEK_CUR))
+            self.assertEqual(f.tell(), 36)
+            self.assertIsNotNone(f.seek(0))
+            self.assertEqual(f.read(), '一二三四五六七八九十百千')
+            f.close()
+
+        try:
+            os.unlink(TESTFN)
+        finally:
+            pass
 
 class COtherFileTests(OtherFileTests, unittest.TestCase):
     FileIO = _io.FileIO
