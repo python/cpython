@@ -623,6 +623,23 @@ release_global_objects_lock(_PyRuntimeState *runtime)
 }
 
 PyObject *
+_Py_GetFromGlobalDict(PyObject *dict, PyObject *key)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+
+    /* Due to interpreter isolation we must hold a global lock,
+       starting at this point and ending before we return.
+       Note that the operations in this function are very fucused
+       and we should not expect any reentrancy. */
+    acquire_global_objects_lock(runtime);
+    /* We don't worry about the global objects state
+       since there are no memory operations. */
+    PyObject *value = PyDict_GetItemWithError(dict, key);
+    release_global_objects_lock(runtime);
+    return value;
+}
+
+PyObject *
 _Py_AddToGlobalDict(PyObject *dict, PyObject *key, PyObject *value)
 {
     assert(dict != NULL);
