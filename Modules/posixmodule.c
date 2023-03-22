@@ -2489,7 +2489,6 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
     if (PyErr_Occurred()) {
         goto error;
     }
-
 #if defined(HAVE_STAT_TV_NSEC)
     ansec = st->st_atim.tv_nsec;
     mnsec = st->st_mtim.tv_nsec;
@@ -2545,7 +2544,6 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
     if (PyErr_Occurred()) {
         goto error;
     }
-
     if (!fill_time(module, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
               st->st_birthtime, st->st_birthtime_nsec)) {
         goto error;
@@ -2571,9 +2569,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
     if (PyErr_Occurred()) {
         goto error;
     }
-
     return v;
-
 error:
     Py_DECREF(v);
     return NULL;
