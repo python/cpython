@@ -117,7 +117,7 @@ class TestTranforms(BytecodeTestCase):
             return None
 
         self.assertNotInBytecode(f, 'LOAD_GLOBAL')
-        self.assertInBytecode(f, 'LOAD_CONST', None)
+        self.assertInBytecode(f, 'RETURN_CONST', None)
         self.check_lnotab(f)
 
     def test_while_one(self):
@@ -134,7 +134,7 @@ class TestTranforms(BytecodeTestCase):
 
     def test_pack_unpack(self):
         for line, elem in (
-            ('a, = a,', 'LOAD_CONST',),
+            ('a, = a,', 'RETURN_CONST',),
             ('a, b = a, b', 'SWAP',),
             ('a, b, c = a, b, c', 'SWAP',),
             ):
@@ -165,7 +165,7 @@ class TestTranforms(BytecodeTestCase):
         # One LOAD_CONST for the tuple, one for the None return value
         load_consts = [instr for instr in dis.get_instructions(code)
                               if instr.opname == 'LOAD_CONST']
-        self.assertEqual(len(load_consts), 2)
+        self.assertEqual(len(load_consts), 1)
         self.check_lnotab(code)
 
         # Bug 1053819:  Tuple of constants misidentified when presented with:
@@ -984,6 +984,7 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         if expected_consts is None:
             expected_consts = consts
         opt_insts, opt_consts = self.get_optimized(insts, consts)
+        expected_insts = self.normalize_insts(expected_insts)
         self.assertInstructionsMatch(opt_insts, expected_insts)
         self.assertEqual(opt_consts, expected_consts)
 
@@ -994,15 +995,19 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_CONST', 2, 13),
             lbl,
             ('LOAD_CONST', 3, 14),
+            ('RETURN_VALUE', 14),
         ]
-        expected = [
-            ('LOAD_NAME', '1', 11),
+        expected_insts = [
+            ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('LOAD_CONST', '2', 13),
+            ('LOAD_CONST', 1, 13),
             lbl,
-            ('LOAD_CONST', '3', 14)
+            ('RETURN_CONST', 2, 14),
         ]
-        self.cfg_optimization_test(insts, expected, consts=list(range(5)))
+        self.cfg_optimization_test(insts,
+                                   expected_insts,
+                                   consts=[0, 1, 2, 3, 4],
+                                   expected_consts=[0, 2, 3])
 
     def test_conditional_jump_forward_const_condition(self):
         # The unreachable branch of the jump is removed, the jump
@@ -1014,26 +1019,32 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_CONST', 2, 13),
             lbl,
             ('LOAD_CONST', 3, 14),
+            ('RETURN_VALUE', 14),
         ]
-        expected = [
-            ('NOP', None, 11),
-            ('NOP', None, 12),
-            ('LOAD_CONST', '3', 14)
+        expected_insts = [
+            ('NOP', 11),
+            ('NOP', 12),
+            ('RETURN_CONST', 1, 14),
         ]
-        self.cfg_optimization_test(insts, expected, consts=list(range(5)))
+        self.cfg_optimization_test(insts,
+                                   expected_insts,
+                                   consts=[0, 1, 2, 3, 4],
+                                   expected_consts=[0, 3])
 
     def test_conditional_jump_backward_non_const_condition(self):
         insts = [
             lbl1 := self.Label(),
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl1, 12),
-            ('LOAD_CONST', 2, 13),
+            ('LOAD_NAME', 2, 13),
+            ('RETURN_VALUE', 13),
         ]
         expected = [
             lbl := self.Label(),
-            ('LOAD_NAME', '1', 11),
+            ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl, 12),
-            ('LOAD_CONST', '2', 13)
+            ('LOAD_NAME', 2, 13),
+            ('RETURN_VALUE', 13),
         ]
         self.cfg_optimization_test(insts, expected, consts=list(range(5)))
 
@@ -1041,16 +1052,17 @@ class DirectiCfgOptimizerTests(CfgOptimizationTestCase):
         # The unreachable branch of the jump is removed
         insts = [
             lbl1 := self.Label(),
-            ('LOAD_CONST', 1, 11),
+            ('LOAD_CONST', 3, 11),
             ('POP_JUMP_IF_TRUE', lbl1, 12),
             ('LOAD_CONST', 2, 13),
+            ('RETURN_VALUE', 13),
         ]
-        expected = [
+        expected_insts = [
             lbl := self.Label(),
-            ('NOP', None, 11),
-            ('JUMP', lbl, 12)
+            ('NOP', 11),
+            ('JUMP', lbl, 12),
         ]
-        self.cfg_optimization_test(insts, expected, consts=list(range(5)))
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
 
 
 if __name__ == "__main__":

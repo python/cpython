@@ -121,7 +121,7 @@ To actually run a coroutine, asyncio provides the following mechanisms:
 
               print(f"started at {time.strftime('%X')}")
 
-          # The wait is implicit when the context manager exits.
+          # The await is implicit when the context manager exits.
 
           print(f"finished at {time.strftime('%X')}")
 
@@ -666,7 +666,7 @@ Timeouts
             except TimeoutError:
                 pass
 
-            if cm.expired:
+            if cm.expired():
                 print("Looks like we haven't finished on time.")
 
     Timeout context managers can be safely nested.
@@ -804,6 +804,10 @@ Waiting Primitives
    .. versionchanged:: 3.11
       Passing coroutine objects to ``wait()`` directly is forbidden.
 
+   .. versionchanged:: 3.12
+      Added support for generators yielding tasks.
+
+
 .. function:: as_completed(aws, *, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
@@ -813,9 +817,6 @@ Waiting Primitives
 
    Raises :exc:`TimeoutError` if the timeout occurs before
    all Futures are done.
-
-   .. versionchanged:: 3.10
-      Removed the *loop* parameter.
 
    Example::
 
@@ -1097,7 +1098,7 @@ Task Object
       The *limit* argument is passed to :meth:`get_stack` directly.
 
       The *file* argument is an I/O stream to which the output
-      is written; by default output is written to :data:`sys.stderr`.
+      is written; by default output is written to :data:`sys.stdout`.
 
    .. method:: get_coro()
 

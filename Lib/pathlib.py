@@ -272,58 +272,37 @@ class PurePath(object):
         return (self.__class__, tuple(self._parts))
 
     @classmethod
-    def _split_root(cls, part):
-        sep = cls._flavour.sep
-        rel = cls._flavour.splitdrive(part)[1].lstrip(sep)
-        anchor = part.removesuffix(rel)
-        if anchor:
-            anchor = cls._flavour.normpath(anchor)
-        drv, root = cls._flavour.splitdrive(anchor)
-        if drv.startswith(sep):
-            # UNC paths always have a root.
-            root = sep
-        return drv, root, rel
-
-    @classmethod
     def _parse_parts(cls, parts):
         if not parts:
             return '', '', []
+        elif len(parts) == 1:
+            path = os.fspath(parts[0])
+        else:
+            path = cls._flavour.join(*parts)
         sep = cls._flavour.sep
         altsep = cls._flavour.altsep
-        path = cls._flavour.join(*parts)
+        if isinstance(path, str):
+            # Force-cast str subclasses to str (issue #21127)
+            path = str(path)
+        else:
+            raise TypeError(
+                "argument should be a str or an os.PathLike "
+                "object where __fspath__ returns a str, "
+                f"not {type(path).__name__!r}")
         if altsep:
             path = path.replace(altsep, sep)
-        drv, root, rel = cls._split_root(path)
+        drv, root, rel = cls._flavour.splitroot(path)
+        if drv.startswith(sep):
+            # pathlib assumes that UNC paths always have a root.
+            root = sep
         unfiltered_parsed = [drv + root] + rel.split(sep)
         parsed = [sys.intern(x) for x in unfiltered_parsed if x and x != '.']
         return drv, root, parsed
 
     @classmethod
-    def _parse_args(cls, args):
-        # This is useful when you don't want to create an instance, just
-        # canonicalize some constructor arguments.
-        parts = []
-        for a in args:
-            if isinstance(a, PurePath):
-                parts += a._parts
-            else:
-                a = os.fspath(a)
-                if isinstance(a, str):
-                    # Force-cast str subclasses to str (issue #21127)
-                    parts.append(str(a))
-                else:
-                    raise TypeError(
-                        "argument should be a str object or an os.PathLike "
-                        "object returning str, not %r"
-                        % type(a))
-        return cls._parse_parts(parts)
-
-    @classmethod
     def _from_parts(cls, args):
-        # We need to call _parse_args on the instance, so as to get the
-        # right flavour.
         self = object.__new__(cls)
-        drv, root, parts = self._parse_args(args)
+        drv, root, parts = self._parse_parts(args)
         self._drv = drv
         self._root = root
         self._parts = parts
@@ -341,8 +320,9 @@ class PurePath(object):
     def _format_parsed_parts(cls, drv, root, parts):
         if drv or root:
             return drv + root + cls._flavour.sep.join(parts[1:])
-        else:
-            return cls._flavour.sep.join(parts)
+        elif parts and cls._flavour.splitdrive(parts[0])[0]:
+            parts = ['.'] + parts
+        return cls._flavour.sep.join(parts)
 
     def __str__(self):
         """Return the string representation of the path, suitable for
@@ -493,9 +473,9 @@ class PurePath(object):
         """Return a new path with the file name changed."""
         if not self.name:
             raise ValueError("%r has an empty name" % (self,))
-        drv, root, parts = self._parse_parts((name,))
-        if (not name or name[-1] in [self._flavour.sep, self._flavour.altsep]
-            or drv or root or len(parts) != 1):
+        f = self._flavour
+        drv, root, tail = f.splitroot(name)
+        if drv or root or not tail or f.sep in tail or (f.altsep and f.altsep in tail):
             raise ValueError("Invalid name %r" % (name))
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
@@ -582,7 +562,7 @@ class PurePath(object):
         anchored).
         """
         drv1, root1, parts1 = self._drv, self._root, self._parts
-        drv2, root2, parts2 = self._parse_args(args)
+        drv2, root2, parts2 = self._parse_parts(args)
         if root2:
             if not drv2 and drv1:
                 return self._from_parsed_parts(drv1, root2, [drv1 + root2] + parts2[1:])
@@ -657,15 +637,10 @@ class PurePath(object):
         drv, root, pat_parts = self._parse_parts((path_pattern,))
         if not pat_parts:
             raise ValueError("empty pattern")
-        elif drv and drv != self._flavour.normcase(self._drv):
-            return False
-        elif root and root != self._root:
-            return False
         parts = self._parts_normcase
         if drv or root:
             if len(pat_parts) != len(parts):
                 return False
-            pat_parts = pat_parts[1:]
         elif len(pat_parts) > len(parts):
             return False
         for part, pat in zip(reversed(parts), reversed(pat_parts)):
@@ -674,7 +649,7 @@ class PurePath(object):
         return True
 
 # Can't subclass os.PathLike from PurePath and keep the constructor
-# optimizations in PurePath._parse_args().
+# optimizations in PurePath.__slots__.
 os.PathLike.register(PurePath)
 
 
@@ -719,11 +694,7 @@ class Path(PurePath):
             warnings._deprecated("pathlib.PurePath(**kwargs)", msg, remove=(3, 14))
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
-        self = cls._from_parts(args)
-        if self._flavour is not os.path:
-            raise NotImplementedError("cannot instantiate %r on your system"
-                                      % (cls.__name__,))
-        return self
+        return cls._from_parts(args)
 
     def _make_child_relpath(self, part):
         # This is an optimization used for dir walking.  `part` must be
@@ -831,7 +802,12 @@ class Path(PurePath):
         """
         if self.is_absolute():
             return self
-        return self._from_parts([os.getcwd()] + self._parts)
+        elif self._drv:
+            # There is a CWD on each drive-letter drive.
+            cwd = self._flavour.abspath(self._drv)
+        else:
+            cwd = os.getcwd()
+        return self._from_parts([cwd] + self._parts)
 
     def resolve(self, strict=False):
         """
@@ -1213,7 +1189,8 @@ class Path(PurePath):
             homedir = self._flavour.expanduser(self._parts[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
-            return self._from_parts([homedir] + self._parts[1:])
+            drv, root, parts = self._parse_parts((homedir,))
+            return self._from_parsed_parts(drv, root, parts + self._parts[1:])
 
         return self
 
@@ -1268,9 +1245,19 @@ class PosixPath(Path, PurePosixPath):
     """
     __slots__ = ()
 
+    if os.name == 'nt':
+        def __new__(cls, *args, **kwargs):
+            raise NotImplementedError(
+                f"cannot instantiate {cls.__name__!r} on your system")
+
 class WindowsPath(Path, PureWindowsPath):
     """Path subclass for Windows systems.
 
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
+
+    if os.name != 'nt':
+        def __new__(cls, *args, **kwargs):
+            raise NotImplementedError(
+                f"cannot instantiate {cls.__name__!r} on your system")

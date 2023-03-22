@@ -307,7 +307,7 @@ Suppose you configure logging with the following JSON:
                 "class": "logging.StreamHandler",
                 "level": "INFO",
                 "formatter": "simple",
-                "stream": "ext://sys.stdout",
+                "stream": "ext://sys.stdout"
             },
             "stderr": {
                 "class": "logging.StreamHandler",
@@ -2538,7 +2538,7 @@ should be logged, or the ``extra`` keyword parameter to indicate additional
 contextual information to be added to the log). So you cannot directly make
 logging calls using :meth:`str.format` or :class:`string.Template` syntax,
 because internally the logging package uses %-formatting to merge the format
-string and the variable arguments. There would no changing this while preserving
+string and the variable arguments. There would be no changing this while preserving
 backward compatibility, since all logging calls which are out there in existing
 code will be using %-format strings.
 
@@ -3628,7 +3628,7 @@ refer to the comments in the code snippet for more detailed information.
 Logging to syslog with RFC5424 support
 --------------------------------------
 
-Although :rfc:`5424` dates from 2009, most syslog servers are configured by detault to
+Although :rfc:`5424` dates from 2009, most syslog servers are configured by default to
 use the older :rfc:`3164`, which hails from 2001. When ``logging`` was added to Python
 in 2003, it supported the earlier (and only existing) protocol at the time. Since
 RFC5424 came out, as there has not been widespread deployment of it in syslog
@@ -3819,7 +3819,7 @@ then running the script results in
     WARNING:demo:division by zero
 
 As you can see, this output isn't ideal. That's because the underlying code
-which writes to ``sys.stderr`` makes mutiple writes, each of which results in a
+which writes to ``sys.stderr`` makes multiple writes, each of which results in a
 separate logged line (for example, the last three lines above). To get around
 this problem, you need to buffer things and only output log lines when newlines
 are seen. Let's use a slghtly better implementation of ``LoggerWriter``:
