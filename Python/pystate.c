@@ -569,6 +569,9 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 // global objects
 //---------------
 
+/* The global objects thread state is meant to be used in a very limited
+   way and should not be used to actually run any Python code. */
+
 static PyThreadState *
 bind_global_objects_state(_PyRuntimeState *runtime)
 {
@@ -603,53 +606,42 @@ unbind_global_objects_state(_PyRuntimeState *runtime)
 #endif
 }
 
-PyThreadState *
-_Py_AcquireGlobalObjectsState(PyInterpreterState *interp)
+PyObject *
+_Py_AddToGlobalDict(PyObject *dict, PyObject *key, PyObject *value)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    assert(interp != NULL);
-    assert(interp->runtime == runtime);
+    assert(dict != NULL);
+    assert(PyDict_CheckExact(dict));
 
+    /* All global objects are stored in _PyRuntime
+       and owned by the main interpreter. */
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *curts = current_fast_get(runtime);
+    PyInterpreterState *interp = curts->interp;
+    assert(interp != NULL);  // The GIL must be held.
+
+    /* Due to interpreter isolation we must hold a global lock,
+       starting at this point and ending before we return.
+       Note that the operations in this function are very fucused
+       and we should not expect any reentrancy. */
+    // For now we rely on the GIL.
+
+    /* Swap to the main interpreter, if necessary. */
     PyThreadState *oldts = NULL;
-    /* All global objects are owned by the main interpreter. */
     if (!_Py_IsMainInterpreter(interp)) {
         PyThreadState *main_tstate = bind_global_objects_state(runtime);
 
         oldts = _PyThreadState_Swap(runtime, main_tstate);
         assert(oldts != NULL);
-
-        unbind_global_objects_state(runtime);
-    }
-
-    return oldts;
-}
-
-void
-_Py_ReleaseGlobalObjectsState(PyThreadState *oldts)
-{
-    if (oldts != NULL) {
-        /* The thread state was swapped in _Py_AcquireGlobalObjectsState(),
-           because the main interpreter wasn't running in the OS thread.. */
-        _PyRuntimeState *runtime = &_PyRuntime;
-        assert(oldts->interp->runtime == runtime);
         assert(!_Py_IsMainInterpreter(oldts->interp));
 
-        // The returned tstate should be _PyRuntime.cached_objects.main_tstate.
-        _PyThreadState_Swap(runtime, oldts);
+        /* The limitations of the global objects thread state apply
+           from this point to the point we swap back to oldts. */
     }
-}
-
-PyObject *
-_Py_AddToGlobalDict(PyObject *dict, PyObject *key, PyObject *value)
-{
-    assert(dict != NULL);
-
-    /* Swap to the main interpreter, if necessary. */
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyThreadState *oldts = _Py_AcquireGlobalObjectsState(interp);
 
     /* This might trigger a resize, which is why we must "acquire"
-       the global object state. */
+       the global object state.  Also note that PyDict_SetDefault()
+       must be compatible with our reentrancy and global objects state
+       constraints. */
     PyObject *actual = PyDict_SetDefault(dict, key, value);
     if (actual == NULL) {
         /* Raising an exception from one interpreter in another
@@ -661,8 +653,14 @@ _Py_AddToGlobalDict(PyObject *dict, PyObject *key, PyObject *value)
 
     /* Swap back, it it wasn't in the main interpreter already. */
     if (oldts != NULL) {
-        _Py_ReleaseGlobalObjectsState(oldts);
+        // The returned tstate should be _PyRuntime.cached_objects.main_tstate.
+        _PyThreadState_Swap(runtime, oldts);
+
+        unbind_global_objects_state(runtime);
     }
+
+    // This is where we would release the global lock,
+    // if we weren't relying on the GIL.
 
     // XXX Immortalize the key and value.
 
