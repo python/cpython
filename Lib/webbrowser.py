@@ -445,10 +445,6 @@ def register_X_browsers():
     if shutil.which("epiphany"):
         register(browser, None, Epiphany("epiphany"))
 
-    # Skipstone, another Gtk/Mozilla based browser
-    if shutil.which("skipstone"):
-        register("skipstone", None, BackgroundBrowser("skipstone"))
-
     # Google Chrome/Chromium browsers
     for browser in ("google-chrome", "chrome", "chromium", "chromium-browser"):
         if shutil.which(browser):
