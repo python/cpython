@@ -3690,7 +3690,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
     /* Split a & b into hi & lo pieces. */
     shift = bsize >> 1;
     if (kmul_split(a, shift, &ah, &al) < 0) goto fail;
-    assert(_PyLong_DigitCount(ah) > 0);            /* the split isn't degenerate */
+    assert(_PyLong_IsPositive(ah));        /* the split isn't degenerate */
 
     if (a == b) {
         bh = (PyLongObject*)Py_NewRef(ah);
@@ -3724,7 +3724,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
 
     /* 2. t1 <- ah*bh, and copy into high digits of result. */
     if ((t1 = k_mul(ah, bh)) == NULL) goto fail;
-    assert(_PyLong_DigitCount(t1) >= 0);
+    assert(!_PyLong_IsNegative(t1));
     assert(2*shift + _PyLong_DigitCount(t1) <= _PyLong_DigitCount(ret));
     memcpy(ret->long_value.ob_digit + 2*shift, t1->long_value.ob_digit,
            _PyLong_DigitCount(t1) * sizeof(digit));
@@ -3740,7 +3740,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
         Py_DECREF(t1);
         goto fail;
     }
-    assert(_PyLong_DigitCount(t2) >= 0);
+    assert(!_PyLong_IsNegative(t2));
     assert(_PyLong_DigitCount(t2) <= 2*shift); /* no overlap with high digits */
     memcpy(ret->long_value.ob_digit, t2->long_value.ob_digit, _PyLong_DigitCount(t2) * sizeof(digit));
 
@@ -3780,7 +3780,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
     _Py_DECREF_INT(t1);
     _Py_DECREF_INT(t2);
     if (t3 == NULL) goto fail;
-    assert(_PyLong_DigitCount(t3) >= 0);
+    assert(!_PyLong_IsNegative(t3));
 
     /* Add t3.  It's not obvious why we can't run out of room here.
      * See the (*) comment after this function.
