@@ -778,9 +778,7 @@ dummy_func(
             }
             assert(exc && PyExceptionInstance_Check(exc));
             Py_INCREF(exc);
-            PyObject *typ = Py_NewRef(PyExceptionInstance_Class(exc));
-            PyObject *tb = PyException_GetTraceback(exc);
-            _PyErr_Restore(tstate, typ, exc, tb);
+            _PyErr_SetRaisedException(tstate, exc);
             goto exception_unwind;
         }
 
@@ -791,9 +789,7 @@ dummy_func(
             }
             else {
                 Py_INCREF(exc);
-                PyObject *typ = Py_NewRef(PyExceptionInstance_Class(exc));
-                PyObject *tb = PyException_GetTraceback(exc);
-                _PyErr_Restore(tstate, typ, exc, tb);
+                _PyErr_SetRaisedException(tstate, exc);
                 goto exception_unwind;
             }
         }
@@ -3030,20 +3026,10 @@ dummy_func(
                 value = result;
             }
 
-            /* If value is a unicode object, and there's no fmt_spec,
-               then we know the result of format(value) is value
-               itself. In that case, skip calling format(). I plan to
-               move this optimization in to PyObject_Format()
-               itself. */
-            if (PyUnicode_CheckExact(value) && fmt_spec == NULL) {
-                /* Do nothing, just transfer ownership to result. */
-                result = value;
-            } else {
-                /* Actually call format(). */
-                result = PyObject_Format(value, fmt_spec);
-                DECREF_INPUTS();
-                ERROR_IF(result == NULL, error);
-            }
+            result = PyObject_Format(value, fmt_spec);
+            Py_DECREF(value);
+            Py_XDECREF(fmt_spec);
+            ERROR_IF(result == NULL, error);
         }
 
         inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {

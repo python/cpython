@@ -1040,20 +1040,6 @@ _sys_version_parser = re.compile(
     r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
     r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
 
-_ironpython_sys_version_parser = re.compile(
-    r'IronPython\s*'
-    r'([\d\.]+)'
-    r'(?: \(([\d\.]+)\))?'
-    r' on (.NET [\d\.]+)', re.ASCII)
-
-# IronPython covering 2.6 and 2.7
-_ironpython26_sys_version_parser = re.compile(
-    r'([\d.]+)\s*'
-    r'\(IronPython\s*'
-    r'[\d.]+\s*'
-    r'\(([\d.]+)\) on ([\w.]+ [\d.]+(?: \(\d+-bit\))?)\)'
-)
-
 _pypy_sys_version_parser = re.compile(
     r'([\w.+]+)\s*'
     r'\(#?([^,]+),\s*([\w ]+),\s*([\w :]+)\)\s*'
@@ -1090,25 +1076,7 @@ def _sys_version(sys_version=None):
     if result is not None:
         return result
 
-    # Parse it
-    if 'IronPython' in sys_version:
-        # IronPython
-        name = 'IronPython'
-        if sys_version.startswith('IronPython'):
-            match = _ironpython_sys_version_parser.match(sys_version)
-        else:
-            match = _ironpython26_sys_version_parser.match(sys_version)
-
-        if match is None:
-            raise ValueError(
-                'failed to parse IronPython sys.version: %s' %
-                repr(sys_version))
-
-        version, alt_version, compiler = match.groups()
-        buildno = ''
-        builddate = ''
-
-    elif sys.platform.startswith('java'):
+    if sys.platform.startswith('java'):
         # Jython
         name = 'Jython'
         match = _sys_version_parser.match(sys_version)
@@ -1171,7 +1139,6 @@ def python_implementation():
 
         Currently, the following implementations are identified:
           'CPython' (C implementation of Python),
-          'IronPython' (.NET implementation of Python),
           'Jython' (Java implementation of Python),
           'PyPy' (Python implementation of Python).
 

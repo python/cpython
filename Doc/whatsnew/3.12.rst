@@ -337,6 +337,12 @@ shutil
   of the process to *root_dir* to perform archiving.
   (Contributed by Serhiy Storchaka in :gh:`74696`.)
 
+* :func:`shutil.rmtree` now accepts a new argument *onexc* which is an
+  error handler like *onerror* but which expects an exception instance
+  rather than a *(typ, val, tb)* triplet. *onerror* is deprecated and
+  will be removed in Python 3.14.
+  (Contributed by Irit Katriel in :gh:`102828`.)
+
 
 sqlite3
 -------
@@ -498,6 +504,10 @@ Deprecated
   fields are deprecated. Use :data:`sys.last_exc` instead.
   (Contributed by Irit Katriel in :gh:`102778`.)
 
+* The *onerror* argument of :func:`shutil.rmtree` is deprecated as will be removed
+  in Python 3.14. Use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
+
+
 Pending Removal in Python 3.13
 ------------------------------
 
@@ -556,6 +566,9 @@ Pending Removal in Python 3.14
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases using the C API.
 
+* Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
+  (Contributed by Alan Williams in :gh:`72346`.)
+
 * ``__package__`` and ``__cached__`` will cease to be set or taken
   into consideration by the import system (:gh:`97879`).
 
@@ -573,6 +586,9 @@ Pending Removal in Python 3.14
 * :mod:`pty` has two undocumented ``master_open()`` and ``slave_open()``
   functions that have been deprecated since Python 2 but only gained a
   proper :exc:`DeprecationWarning` in 3.12. Remove them in 3.14.
+
+* The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
+  and will be removed in 3.14.
 
 Pending Removal in Future Versions
 ----------------------------------
@@ -1023,6 +1039,11 @@ Porting to Python 3.12
   that :c:func:`PyErr_SetObject`, :c:func:`PyErr_SetString` and the other
   functions that set the error indicator now normalize the exception
   before storing it. (Contributed by Mark Shannon in :gh:`101578`.)
+
+* ``_Py_RefTotal`` is no longer authoritative and only kept around
+  for ABI compabitility.  Note that it is an internal global and only
+  available on debug builds.  If you happen to be using it then you'll
+  need to start using ``_Py_GetGlobalRefTotal()``.
 
 Deprecated
 ----------
