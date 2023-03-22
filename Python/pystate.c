@@ -606,6 +606,22 @@ unbind_global_objects_state(_PyRuntimeState *runtime)
 #endif
 }
 
+static inline void
+acquire_global_objects_lock(_PyRuntimeState *runtime)
+{
+    /* For now we can rely on the GIL, so we don't actually
+       acquire a global lock here. */
+    assert(current_fast_get(runtime) != NULL);
+}
+
+static inline void
+release_global_objects_lock(_PyRuntimeState *runtime)
+{
+    /* For now we can rely on the GIL, so we don't actually
+       release a global lock here. */
+    assert(current_fast_get(runtime) != NULL);
+}
+
 PyObject *
 _Py_AddToGlobalDict(PyObject *dict, PyObject *key, PyObject *value)
 {
@@ -623,7 +639,7 @@ _Py_AddToGlobalDict(PyObject *dict, PyObject *key, PyObject *value)
        starting at this point and ending before we return.
        Note that the operations in this function are very fucused
        and we should not expect any reentrancy. */
-    // For now we rely on the GIL.
+    acquire_global_objects_lock(runtime);
 
     /* Swap to the main interpreter, if necessary. */
     PyThreadState *oldts = NULL;
@@ -659,8 +675,7 @@ _Py_AddToGlobalDict(PyObject *dict, PyObject *key, PyObject *value)
         unbind_global_objects_state(runtime);
     }
 
-    // This is where we would release the global lock,
-    // if we weren't relying on the GIL.
+    release_global_objects_lock(runtime);
 
     // XXX Immortalize the key and value.
 
