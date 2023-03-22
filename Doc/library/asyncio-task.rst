@@ -624,10 +624,24 @@ Timeouts
     The context manager produced by :func:`asyncio.timeout` can be
     rescheduled to a different deadline and inspected.
 
-    .. class:: Timeout()
+    .. class:: Timeout(when)
 
        An :ref:`asynchronous context manager <async-context-managers>`
-       that limits time spent inside of it.
+       context manager for cancelling overdue coroutines.
+
+       .. note::
+
+            Please use :meth:`timeout()` or :meth:`timeout_at()`
+            rather than instantiating this class directly.
+
+       The ``when`` parameter specifies at what time the context should
+       time out. It's value should be either a float relative to the
+       current :meth:`loop.time` or ``None``, if the context should never
+       expire.
+
+       If ``when`` is ``None``, the timeout will never trigger.
+       If ``when < loop.time()``, the timeout will trigger on the next
+       iteration of the event loop.
 
         .. versionadded:: 3.11
 
@@ -636,20 +650,9 @@ Timeouts
            Return the current deadline, or ``None`` if the current
            deadline is not set.
 
-           The deadline is a float, consistent with the time returned by
-           :meth:`loop.time`.
-
         .. method:: reschedule(when: float | None)
 
             Change the time the timeout will trigger.
-
-            If *when* is ``None``, any current deadline will be removed, and the
-            context manager will wait indefinitely.
-
-            If *when* is a float, it is set as the new deadline.
-
-            if *when* is in the past, the timeout will trigger on the next
-            iteration of the event loop.
 
         .. method:: expired() -> bool
 
