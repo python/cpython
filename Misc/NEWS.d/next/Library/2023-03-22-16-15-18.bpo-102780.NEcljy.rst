@@ -1,0 +1,3 @@
+The `asyncio.timeout()` now works reliably even when performing cleanup due
+to task cancellation.  Previously the context manager could raise a
+`asyncio.CancelledError` instead of an `asyncio.TimeoutError` in such cases.
