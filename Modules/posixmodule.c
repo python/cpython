@@ -2569,6 +2569,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
     if (PyErr_Occurred()) {
         goto error;
     }
+
     return v;
 error:
     Py_DECREF(v);
