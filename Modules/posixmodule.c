@@ -2536,8 +2536,11 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
       bnsec = 0;
 #endif
       val = PyFloat_FromDouble(bsec + 1e-9*bnsec);
-      PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
-                                val);
+      if (val == NULL) {
+        Py_DECREF(v);
+        return NULL;
+      }
+      PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX, val);
     }
 #elif defined(MS_WINDOWS)
     fill_time(module, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
