@@ -45,7 +45,7 @@ class ObjectParser:
         self._path = path
 
     def _dump(self, *args) -> typing.Iterator[str]:
-        args = ["objdump", *args, self._path]
+        args = ["llvm-objdump", *args, self._path]
         process = subprocess.run(args, check=True, capture_output=True)
         lines = filter(None, process.stdout.decode().splitlines())
         line = next(lines, None)
