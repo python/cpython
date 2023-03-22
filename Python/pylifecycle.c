@@ -695,11 +695,6 @@ pycore_init_types(PyInterpreterState *interp)
         return _PyStatus_ERR("failed to initialize an exception type");
     }
 
-    status = _PyIO_InitTypes(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     status = _PyExc_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
