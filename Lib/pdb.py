@@ -1549,39 +1549,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             prefix = '> '
         else:
             prefix = '  '
+        fp = _FrameProxy(frame, self.frame_locals[frame_idx])
         self.message(prefix +
-                     self.format_stack_entry(frame,
-                                             lineno,
-                                             self.frame_locals[frame_idx],
-                                             prompt_prefix))
-
-    def format_stack_entry(self, frame, lineno, f_locals, lprefix=': '):
-        """Return a string with information about a stack entry.
-
-        The return string contains the canonical filename, the function name
-        or '<lambda>', the input arguments, the return value, and the
-        line of code (if it exists).
-
-        This function is overwritten because accessing frame.f_locals will
-        refresh the dictionary. We need to provide cached f_locals to avoid
-        reverting local variable changes to it
-        """
-        import linecache, reprlib
-        filename = self.canonic(frame.f_code.co_filename)
-        s = '%s(%r)' % (filename, lineno)
-        if frame.f_code.co_name:
-            s += frame.f_code.co_name
-        else:
-            s += "<lambda>"
-        s += '()'
-        if '__return__' in f_locals:
-            rv = f_locals['__return__']
-            s += '->'
-            s += reprlib.repr(rv)
-        line = linecache.getline(filename, lineno, frame.f_globals)
-        if line:
-            s += lprefix + line.strip()
-        return s
+                     self.format_stack_entry((fp, lineno), prompt_prefix))
 
     # Provide help
 
@@ -1860,6 +1830,19 @@ def main():
             pdb.interaction(None, t)
             print("Post mortem debugger finished. The " + target +
                   " will be restarted")
+
+
+class _FrameProxy:
+    def __init__(self, frame, f_locals):
+        self.__frame = frame
+        self.__f_locals = f_locals
+
+    def __getattr__(self, name):
+        if name[:1] == "_":
+            raise AttributeError(name)
+        if name == "f_locals":
+            return self.__f_locals
+        return getattr(self.__frame, name)
 
 
 # When invoked as main program, invoke the debugger on a script
