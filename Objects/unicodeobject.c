@@ -239,6 +239,7 @@ static inline PyObject *get_interned_dict(void)
 static inline void set_interned_dict(PyObject *dict)
 {
     _Py_CACHED_OBJECT(interned_strings) = dict;
+    _Py_SetImmortal(dict);
 }
 
 #define _Py_RETURN_UNICODE_EMPTY()   \
