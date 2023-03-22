@@ -281,16 +281,6 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case POP_JUMP_IF_NONE:
             return 1;
-        case BB_TEST_POP_IF_NONE:
-            return 1;
-        case JUMP_IF_FALSE_OR_POP:
-            return 1;
-        case BB_TEST_IF_FALSE_OR_POP:
-            return 1;
-        case JUMP_IF_TRUE_OR_POP:
-            return 1;
-        case BB_TEST_IF_TRUE_OR_POP:
-            return 1;
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
         case GET_LEN:
@@ -687,16 +677,6 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case POP_JUMP_IF_NONE:
             return 0;
-        case BB_TEST_POP_IF_NONE:
-            return 0;
-        case JUMP_IF_FALSE_OR_POP:
-            return (jump ? 1 : 0);
-        case BB_TEST_IF_FALSE_OR_POP:
-            return (jump ? 1 : 0);
-        case JUMP_IF_TRUE_OR_POP:
-            return (jump ? 1 : 0);
-        case BB_TEST_IF_TRUE_OR_POP:
-            return (jump ? 1 : 0);
         case JUMP_BACKWARD_NO_INTERRUPT:
             return 0;
         case GET_LEN:
@@ -961,11 +941,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB },
     [BB_TEST_POP_IF_NOT_NONE] = { true, INSTR_FMT_IX },
     [POP_JUMP_IF_NONE] = { true, INSTR_FMT_IB },
-    [BB_TEST_POP_IF_NONE] = { true, INSTR_FMT_IX },
-    [JUMP_IF_FALSE_OR_POP] = { true, INSTR_FMT_IB },
-    [BB_TEST_IF_FALSE_OR_POP] = { true, INSTR_FMT_IX },
-    [JUMP_IF_TRUE_OR_POP] = { true, INSTR_FMT_IB },
-    [BB_TEST_IF_TRUE_OR_POP] = { true, INSTR_FMT_IX },
     [JUMP_BACKWARD_NO_INTERRUPT] = { true, INSTR_FMT_IB },
     [GET_LEN] = { true, INSTR_FMT_IX },
     [MATCH_CLASS] = { true, INSTR_FMT_IB },
