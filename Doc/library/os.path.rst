@@ -308,11 +308,11 @@ the :mod:`glob` module.)
 
    Join one or more path segments intelligently.  The return value is the
    concatenation of *path* and all members of *\*paths*, with exactly one
-   directory separator following each non-empty part except the last. That is,
-   if the last part is empty, the result will end in a separator. If
-   a segment is an absolute path (which on Windows requires both a drive and a
-   root), then all previous segments are ignored and joining continues from the
-   absolute path segment.
+   directory separator following each non-empty part, except the last. That is,
+   the result will only end in a separator if the last part is either empty or
+   ends in a separator. If a segment is an absolute path (which on Windows
+   requires both a drive and a root), then all previous segments are ignored and
+   joining continues from the absolute path segment.
 
    On Windows, the drive is not reset when a rooted path segment (e.g.,
    ``r'\foo'``) is encountered. If a segment is on a different drive or is an
@@ -486,6 +486,39 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+
+.. function:: splitroot(path)
+
+   Split the pathname *path* into a 3-item tuple ``(drive, root, tail)`` where
+   *drive* is a device name or mount point, *root* is a string of separators
+   after the drive, and *tail* is everything after the root. Any of these
+   items may be the empty string. In all cases, ``drive + root + tail`` will
+   be the same as *path*.
+
+   On POSIX systems, *drive* is always empty. The *root* may be empty (if *path* is
+   relative), a single forward slash (if *path* is absolute), or two forward slashes
+   (implementation-defined per `IEEE Std 1003.1-2017; 4.13 Pathname Resolution
+   <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_.)
+   For example::
+
+      >>> splitroot('/home/sam')
+      ('', '/', 'home/sam')
+      >>> splitroot('//home/sam')
+      ('', '//', 'home/sam')
+      >>> splitroot('///home/sam')
+      ('', '/', '//home/sam')
+
+   On Windows, *drive* may be empty, a drive-letter name, a UNC share, or a device
+   name. The *root* may be empty, a forward slash, or a backward slash. For
+   example::
+
+      >>> splitroot('C:/Users/Sam')
+      ('C:', '/', 'Users/Sam')
+      >>> splitroot('//Server/Share/Users/Sam')
+      ('//Server/Share', '/', 'Users/Sam')
+
+   .. versionadded:: 3.12
 
 
 .. function:: splitext(path)

@@ -10,7 +10,7 @@ extern "C" {
 
 #define FUNC_MAX_WATCHERS 8
 
-struct _py_func_runtime_state {
+struct _py_func_state {
     uint32_t next_version;
 };
 

@@ -111,6 +111,14 @@ underlying :class:`Popen` interface can be used directly.
       Added the *text* parameter, as a more understandable alias of *universal_newlines*.
       Added the *capture_output* parameter.
 
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
+
 .. class:: CompletedProcess
 
    The return value from :func:`run`, representing a process that has finished.
@@ -270,15 +278,14 @@ default values. The arguments that are most commonly needed are:
 
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
-   are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing file object with a valid file descriptor, and ``None``.
-   :data:`PIPE` indicates that a new pipe to the child should be created.
-   :data:`DEVNULL` indicates that the special file :data:`os.devnull` will
-   be used.  With the default settings of ``None``, no redirection will occur;
-   the child's file handles will be inherited from the parent.
-   Additionally, *stderr* can be :data:`STDOUT`, which indicates that the
-   stderr data from the child process should be captured into the same file
-   handle as for *stdout*.
+   are ``None``, :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a
+   positive integer), and an existing :term:`file object` with a valid file
+   descriptor.  With the default settings of ``None``, no redirection will
+   occur.  :data:`PIPE` indicates that a new pipe to the child should be
+   created.  :data:`DEVNULL` indicates that the special file :data:`os.devnull`
+   will be used.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
+   that the stderr data from the child process should be captured into the same
+   file handle as for *stdout*.
 
    .. index::
       single: universal newlines; subprocess module
@@ -458,7 +465,7 @@ functions.
    - :const:`0` means unbuffered (read and write are one
      system call and can return short)
    - :const:`1` means line buffered
-     (only usable if ``universal_newlines=True`` i.e., in a text mode)
+     (only usable if ``text=True`` or ``universal_newlines=True``)
    - any other positive value means use a buffer of approximately that
      size
    - negative bufsize (the default) means the system default of
@@ -488,17 +495,24 @@ functions.
       *executable* parameter accepts a bytes and :term:`path-like object`
       on Windows.
 
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
+
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
-   are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing :term:`file object` with a valid file descriptor,
-   and ``None``.  :data:`PIPE` indicates that a new pipe to the child should
-   be created.  :data:`DEVNULL` indicates that the special file
-   :data:`os.devnull` will be used. With the default settings of ``None``,
-   no redirection will occur; the child's file handles will be inherited from
-   the parent.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
+   are ``None``, :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a
+   positive integer), and an existing :term:`file object` with a valid file
+   descriptor.  With the default settings of ``None``, no redirection will
+   occur.  :data:`PIPE` indicates that a new pipe to the child should be
+   created.  :data:`DEVNULL` indicates that the special file :data:`os.devnull`
+   will be used.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
    that the stderr data from the applications should be captured into the same
-   file handle as for stdout.
+   file handle as for *stdout*.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed.
@@ -849,7 +863,8 @@ Instances of the :class:`Popen` class have the following methods:
    On Windows :meth:`kill` is an alias for :meth:`terminate`.
 
 
-The following attributes are also available:
+The following attributes are also set by the class for you to access.
+Reassigning them to new values is unsupported:
 
 .. attribute:: Popen.args
 
@@ -862,9 +877,9 @@ The following attributes are also available:
 
    If the *stdin* argument was :data:`PIPE`, this attribute is a writeable
    stream object as returned by :func:`open`. If the *encoding* or *errors*
-   arguments were specified or the *universal_newlines* argument was ``True``,
-   the stream is a text stream, otherwise it is a byte stream. If the *stdin*
-   argument was not :data:`PIPE`, this attribute is ``None``.
+   arguments were specified or the *text* or *universal_newlines* argument
+   was ``True``, the stream is a text stream, otherwise it is a byte stream.
+   If the *stdin* argument was not :data:`PIPE`, this attribute is ``None``.
 
 
 .. attribute:: Popen.stdout
@@ -872,9 +887,9 @@ The following attributes are also available:
    If the *stdout* argument was :data:`PIPE`, this attribute is a readable
    stream object as returned by :func:`open`. Reading from the stream provides
    output from the child process. If the *encoding* or *errors* arguments were
-   specified or the *universal_newlines* argument was ``True``, the stream is a
-   text stream, otherwise it is a byte stream. If the *stdout* argument was not
-   :data:`PIPE`, this attribute is ``None``.
+   specified or the *text* or *universal_newlines* argument was ``True``, the
+   stream is a text stream, otherwise it is a byte stream. If the *stdout*
+   argument was not :data:`PIPE`, this attribute is ``None``.
 
 
 .. attribute:: Popen.stderr
@@ -882,9 +897,9 @@ The following attributes are also available:
    If the *stderr* argument was :data:`PIPE`, this attribute is a readable
    stream object as returned by :func:`open`. Reading from the stream provides
    error output from the child process. If the *encoding* or *errors* arguments
-   were specified or the *universal_newlines* argument was ``True``, the stream
-   is a text stream, otherwise it is a byte stream. If the *stderr* argument was
-   not :data:`PIPE`, this attribute is ``None``.
+   were specified or the *text* or *universal_newlines* argument was ``True``, the
+   stream is a text stream, otherwise it is a byte stream. If the *stderr* argument
+   was not :data:`PIPE`, this attribute is ``None``.
 
 .. warning::
 
@@ -1159,6 +1174,14 @@ calls these functions.
    .. versionchanged:: 3.3
       *timeout* was added.
 
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
+
 .. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, \
                          shell=False, cwd=None, timeout=None, \
                          **other_popen_kwargs)
@@ -1190,6 +1213,14 @@ calls these functions.
 
    .. versionchanged:: 3.3
       *timeout* was added.
+
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
 
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
@@ -1245,6 +1276,14 @@ calls these functions.
 
    .. versionadded:: 3.7
       *text* was added as a more readable alias for *universal_newlines*.
+
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
 
 
 .. _subprocess-replacements:
@@ -1583,7 +1622,7 @@ that.
 It is safe to set these to false on any Python version. They will have no
 effect on older versions when unsupported. Do not assume the attributes are
 available to read. Despite their names, a true value does not indicate that the
-corresponding function will be used, only that that it may be.
+corresponding function will be used, only that it may be.
 
 Please file issues any time you have to use these private knobs with a way to
 reproduce the issue you were seeing. Link to that issue from a comment in your

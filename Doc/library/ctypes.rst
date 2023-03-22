@@ -466,6 +466,14 @@ integer, string, bytes, a :mod:`ctypes` instance, or an object with an
 Return types
 ^^^^^^^^^^^^
 
+.. testsetup::
+
+   from ctypes import CDLL, c_char, c_char_p
+   from ctypes.util import find_library
+   libc = CDLL(find_library('c'))
+   strchr = libc.strchr
+
+
 By default functions are assumed to return the C :c:expr:`int` type.  Other
 return types can be specified by setting the :attr:`restype` attribute of the
 function object.
@@ -502,18 +510,19 @@ If you want to avoid the ``ord("x")`` calls above, you can set the
 :attr:`argtypes` attribute, and the second argument will be converted from a
 single character Python bytes object into a C char::
 
+.. doctest::
+
    >>> strchr.restype = c_char_p
    >>> strchr.argtypes = [c_char_p, c_char]
    >>> strchr(b"abcdef", b"d")
-   'def'
+   b'def'
    >>> strchr(b"abcdef", b"def")
    Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   ArgumentError: argument 2: TypeError: one character string expected
+   ctypes.ArgumentError: argument 2: TypeError: one character bytes, bytearray or integer expected
    >>> print(strchr(b"abcdef", b"x"))
    None
    >>> strchr(b"abcdef", b"d")
-   'def'
+   b'def'
    >>>
 
 You can also use a callable Python object (a function or a class for example) as
@@ -1371,6 +1380,10 @@ way is to instantiate one of the following classes:
    DLLs and determine which one is not found using Windows debugging and
    tracing tools.
 
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
+
 .. seealso::
 
     `Microsoft DUMPBIN tool <https://docs.microsoft.com/cpp/build/reference/dependents>`_
@@ -1389,12 +1402,20 @@ way is to instantiate one of the following classes:
    .. versionchanged:: 3.3
       :exc:`WindowsError` used to be raised.
 
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
+
 
 .. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
    assumed to return :c:expr:`int` by default.
+
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
 
 The Python :term:`global interpreter lock` is released before calling any
 function exported by these libraries, and reacquired afterwards.
@@ -1408,6 +1429,10 @@ function exported by these libraries, and reacquired afterwards.
    exception is raised.
 
    Thus, this is only useful to call Python C api functions directly.
+
+   .. versionchanged:: 3.12
+
+      The *name* parameter can now be a :term:`path-like object`.
 
 All these classes can be instantiated by calling them with at least one
 argument, the pathname of the shared library.  If you have an existing handle to
@@ -1656,12 +1681,12 @@ They are instances of a private class:
    passed arguments.
 
 
-.. audit-event:: ctypes.seh_exception code foreign-functions
+.. audit-event:: ctypes.set_exception code foreign-functions
 
    On Windows, when a foreign function call raises a system exception (for
    example, due to an access violation), it will be captured and replaced with
    a suitable Python exception. Further, an auditing event
-   ``ctypes.seh_exception`` with argument ``code`` will be raised, allowing an
+   ``ctypes.set_exception`` with argument ``code`` will be raised, allowing an
    audit hook to replace the exception with its own.
 
 .. audit-event:: ctypes.call_function func_pointer,arguments foreign-functions
@@ -2501,6 +2526,7 @@ fields, or any other data types containing pointer type fields.
       An optional small integer that allows overriding the alignment of
       structure fields in the instance.  :attr:`_pack_` must already be defined
       when :attr:`_fields_` is assigned, otherwise it will have no effect.
+      Setting this attribute to 0 is the same as not setting it at all.
 
 
    .. attribute:: _anonymous_
