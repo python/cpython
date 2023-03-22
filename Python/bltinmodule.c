@@ -5,6 +5,7 @@
 #include "pycore_ast.h"           // _PyAST_Validate()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_compile.h"       // _PyAST_Compile()
+#include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_object.h"        // _Py_AddToAllObjects()
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -2491,7 +2492,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
     */
     if (PyLong_CheckExact(result)) {
         int overflow;
-        long i_result = PyLong_AsLongAndOverflow(result, &overflow);
+        Py_ssize_t i_result = PyLong_AsLongAndOverflow(result, &overflow);
         /* If this already overflowed, don't even enter the loop. */
         if (overflow == 0) {
             Py_SETREF(result, NULL);
@@ -2505,15 +2506,14 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 return PyLong_FromLong(i_result);
             }
             if (PyLong_CheckExact(item) || PyBool_Check(item)) {
-                long b;
+                Py_ssize_t b;
                 overflow = 0;
                 /* Single digits are common, fast, and cannot overflow on unpacking. */
-                switch (Py_SIZE(item)) {
-                    case -1: b = -(sdigit) ((PyLongObject*)item)->long_value.ob_digit[0]; break;
-                    // Note: the continue goes to the top of the "while" loop that iterates over the elements
-                    case  0: Py_DECREF(item); continue;
-                    case  1: b = ((PyLongObject*)item)->long_value.ob_digit[0]; break;
-                    default: b = PyLong_AsLongAndOverflow(item, &overflow); break;
+                if (_PyLong_IsCompact((PyLongObject *)item)) {
+                    b = _PyLong_CompactValue((PyLongObject *)item);
+                }
+                else {
+                    b = PyLong_AsLongAndOverflow(item, &overflow);
                 }
                 if (overflow == 0 &&
                     (i_result >= 0 ? (b <= LONG_MAX - i_result)
