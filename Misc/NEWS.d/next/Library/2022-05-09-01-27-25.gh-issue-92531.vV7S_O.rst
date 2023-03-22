@@ -1,3 +1,0 @@
-The statistics.median_grouped() function now always return a float.
-Formerly, it did not convert the input type when for sequences of length
-one.

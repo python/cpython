@@ -508,7 +508,7 @@ class PositionTest(unittest.TestCase):
 
 class sf1296433Test(unittest.TestCase):
     def test_parse_only_xml_data(self):
-        # http://python.org/sf/1296433
+        # https://bugs.python.org/issue1296433
         #
         xml = "<?xml version='1.0' encoding='iso8859'?><s>%s</s>" % ('a' * 1025)
         # this one doesn't crash

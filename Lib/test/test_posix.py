@@ -634,7 +634,7 @@ class PosixTester(unittest.TestCase):
         self.assertTrue(posix.stat(os_helper.TESTFN))
         self.assertTrue(posix.stat(os.fsencode(os_helper.TESTFN)))
 
-        self.assertWarnsRegex(DeprecationWarning,
+        self.assertRaisesRegex(TypeError,
                 'should be string, bytes, os.PathLike or integer, not',
                 posix.stat, bytearray(os.fsencode(os_helper.TESTFN)))
         self.assertRaisesRegex(TypeError,
@@ -787,6 +787,7 @@ class PosixTester(unittest.TestCase):
             check_stat(uid, gid)
 
     @os_helper.skip_unless_working_chmod
+    @unittest.skipIf(support.is_emscripten, "getgid() is a stub")
     def test_chown(self):
         # raise an OSError if the file does not exist
         os.unlink(os_helper.TESTFN)
@@ -798,6 +799,7 @@ class PosixTester(unittest.TestCase):
 
     @os_helper.skip_unless_working_chmod
     @unittest.skipUnless(hasattr(posix, 'fchown'), "test needs os.fchown()")
+    @unittest.skipIf(support.is_emscripten, "getgid() is a stub")
     def test_fchown(self):
         os.unlink(os_helper.TESTFN)
 
@@ -839,11 +841,8 @@ class PosixTester(unittest.TestCase):
 
     def test_listdir_bytes_like(self):
         for cls in bytearray, memoryview:
-            with self.assertWarns(DeprecationWarning):
-                names = posix.listdir(cls(b'.'))
-            self.assertIn(os.fsencode(os_helper.TESTFN), names)
-            for name in names:
-                self.assertIs(type(name), bytes)
+            with self.assertRaises(TypeError):
+                posix.listdir(cls(b'.'))
 
     @unittest.skipUnless(posix.listdir in os.supports_fd,
                          "test needs fd support for posix.listdir()")
@@ -1356,6 +1355,7 @@ class TestPosixDirFd(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'chown') and (os.chown in os.supports_dir_fd),
                          "test needs dir_fd support in os.chown()")
+    @unittest.skipIf(support.is_emscripten, "getgid() is a stub")
     def test_chown_dir_fd(self):
         with self.prepare_file() as (dir_fd, name, fullname):
             posix.chown(name, os.getuid(), os.getgid(), dir_fd=dir_fd)
@@ -1645,12 +1645,6 @@ class _PosixSpawnMixin:
             resetids=True
         )
         support.wait_process(pid, exitcode=0)
-
-    def test_resetids_wrong_type(self):
-        with self.assertRaises(TypeError):
-            self.spawn_func(sys.executable,
-                            [sys.executable, "-c", "pass"],
-                            os.environ, resetids=None)
 
     def test_setpgroup(self):
         pid = self.spawn_func(
@@ -2087,6 +2081,28 @@ class TestPosixWeaklinking(unittest.TestCase):
             with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
                 os.mkdir("dir", dir_fd=0)
 
+    def test_mkfifo(self):
+        self._verify_available("HAVE_MKFIFOAT")
+        if self.mac_ver >= (13, 0):
+            self.assertIn("HAVE_MKFIFOAT", posix._have_functions)
+
+        else:
+            self.assertNotIn("HAVE_MKFIFOAT", posix._have_functions)
+
+            with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
+                os.mkfifo("path", dir_fd=0)
+
+    def test_mknod(self):
+        self._verify_available("HAVE_MKNODAT")
+        if self.mac_ver >= (13, 0):
+            self.assertIn("HAVE_MKNODAT", posix._have_functions)
+
+        else:
+            self.assertNotIn("HAVE_MKNODAT", posix._have_functions)
+
+            with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
+                os.mknod("path", dir_fd=0)
+
     def test_rename_replace(self):
         self._verify_available("HAVE_RENAMEAT")
         if self.mac_ver >= (10, 10):
@@ -2167,6 +2183,53 @@ class TestPosixWeaklinking(unittest.TestCase):
 
             with self.assertRaisesRegex(NotImplementedError, "dir_fd unavailable"):
                 os.utime("path", dir_fd=0)
+
+
+class NamespacesTests(unittest.TestCase):
+    """Tests for os.unshare() and os.setns()."""
+
+    @unittest.skipUnless(hasattr(os, 'unshare'), 'needs os.unshare()')
+    @unittest.skipUnless(hasattr(os, 'setns'), 'needs os.setns()')
+    @unittest.skipUnless(os.path.exists('/proc/self/ns/uts'), 'need /proc/self/ns/uts')
+    @support.requires_linux_version(3, 0, 0)
+    def test_unshare_setns(self):
+        code = """if 1:
+            import errno
+            import os
+            import sys
+            fd = os.open('/proc/self/ns/uts', os.O_RDONLY)
+            try:
+                original = os.readlink('/proc/self/ns/uts')
+                try:
+                    os.unshare(os.CLONE_NEWUTS)
+                except OSError as e:
+                    if e.errno == errno.ENOSPC:
+                        # skip test if limit is exceeded
+                        sys.exit()
+                    raise
+                new = os.readlink('/proc/self/ns/uts')
+                if original == new:
+                    raise Exception('os.unshare failed')
+                os.setns(fd, os.CLONE_NEWUTS)
+                restored = os.readlink('/proc/self/ns/uts')
+                if original != restored:
+                    raise Exception('os.setns failed')
+            except PermissionError:
+                # The calling process did not have the required privileges
+                # for this operation
+                pass
+            except OSError as e:
+                # Skip the test on these errors:
+                # - ENOSYS: syscall not available
+                # - EINVAL: kernel was not configured with the CONFIG_UTS_NS option
+                # - ENOMEM: not enough memory
+                if e.errno not in (errno.ENOSYS, errno.EINVAL, errno.ENOMEM):
+                    raise
+            finally:
+                os.close(fd)
+            """
+
+        assert_python_ok("-c", code)
 
 
 def tearDownModule():

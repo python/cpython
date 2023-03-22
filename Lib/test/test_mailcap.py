@@ -3,7 +3,6 @@ import os
 import sys
 import test.support
 import unittest
-import warnings
 from test.support import os_helper
 from test.support import warnings_helper
 

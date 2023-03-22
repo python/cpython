@@ -11,6 +11,7 @@
 #include "Python.h"
 #include "_iomodule.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -59,7 +60,7 @@ PyDoc_STRVAR(module_doc,
 "   I/O classes. open() uses the file's blksize (as obtained by os.stat) if\n"
 "   possible.\n"
     );
-
+
 
 /*
  * The main open() function
@@ -74,7 +75,7 @@ _io.open
     encoding: str(accept={str, NoneType}) = None
     errors: str(accept={str, NoneType}) = None
     newline: str(accept={str, NoneType}) = None
-    closefd: bool(accept={int}) = True
+    closefd: bool = True
     opener: object = None
 
 Open file and return a stream.  Raise OSError upon failure.
@@ -196,7 +197,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=5bb37f174cb2fb11]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=cd034e7cdfbf4e78]*/
 {
     unsigned i;
 
@@ -204,16 +205,14 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     int text = 0, binary = 0;
 
     char rawmode[6], *m;
-    int line_buffering, is_number;
-    long isatty = 0;
+    int line_buffering, is_number, isatty = 0;
 
     PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL, *path_or_fd = NULL;
 
     is_number = PyNumber_Check(file);
 
     if (is_number) {
-        path_or_fd = file;
-        Py_INCREF(path_or_fd);
+        path_or_fd = Py_NewRef(file);
     } else {
         path_or_fd = PyOS_FSPath(file);
         if (path_or_fd == NULL) {
@@ -316,9 +315,10 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     }
 
     /* Create the Raw file stream */
+    _PyIO_State *state = get_io_state(module);
     {
-        PyObject *RawIO_class = (PyObject *)&PyFileIO_Type;
-#ifdef MS_WINDOWS
+        PyObject *RawIO_class = (PyObject *)state->PyFileIO_Type;
+#ifdef HAVE_WINDOWS_CONSOLE_IO
         const PyConfig *config = _Py_GetConfig();
         if (!config->legacy_windows_stdio && _PyIO_get_console_type(path_or_fd) != '\0') {
             RawIO_class = (PyObject *)&PyWindowsConsoleIO_Type;
@@ -335,8 +335,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         goto error;
     result = raw;
 
-    Py_DECREF(path_or_fd);
-    path_or_fd = NULL;
+    Py_SETREF(path_or_fd, NULL);
 
     modeobj = PyUnicode_FromString(mode);
     if (modeobj == NULL)
@@ -347,9 +346,9 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         PyObject *res = PyObject_CallMethodNoArgs(raw, &_Py_ID(isatty));
         if (res == NULL)
             goto error;
-        isatty = PyLong_AsLong(res);
+        isatty = PyObject_IsTrue(res);
         Py_DECREF(res);
-        if (isatty == -1 && PyErr_Occurred())
+        if (isatty < 0)
             goto error;
     }
 
@@ -392,12 +391,15 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     {
         PyObject *Buffered_class;
 
-        if (updating)
-            Buffered_class = (PyObject *)&PyBufferedRandom_Type;
-        else if (creating || writing || appending)
-            Buffered_class = (PyObject *)&PyBufferedWriter_Type;
-        else if (reading)
-            Buffered_class = (PyObject *)&PyBufferedReader_Type;
+        if (updating) {
+            Buffered_class = (PyObject *)state->PyBufferedRandom_Type;
+        }
+        else if (creating || writing || appending) {
+            Buffered_class = (PyObject *)state->PyBufferedWriter_Type;
+        }
+        else if (reading) {
+            Buffered_class = (PyObject *)state->PyBufferedReader_Type;
+        }
         else {
             PyErr_Format(PyExc_ValueError,
                          "unknown mode: '%s'", mode);
@@ -419,7 +421,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     }
 
     /* wraps into a TextIOWrapper */
-    wrapper = PyObject_CallFunction((PyObject *)&PyTextIOWrapper_Type,
+    wrapper = PyObject_CallFunction((PyObject *)state->PyTextIOWrapper_Type,
                                     "OsssO",
                                     buffer,
                                     encoding, errors, newline,
@@ -436,10 +438,9 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
   error:
     if (result != NULL) {
-        PyObject *exc, *val, *tb, *close_result;
-        PyErr_Fetch(&exc, &val, &tb);
-        close_result = PyObject_CallMethodNoArgs(result, &_Py_ID(close));
-        _PyErr_ChainExceptions(exc, val, tb);
+        PyObject *exc = PyErr_GetRaisedException();
+        PyObject *close_result = PyObject_CallMethodNoArgs(result, &_Py_ID(close));
+        _PyErr_ChainExceptions1(exc);
         Py_XDECREF(close_result);
         Py_DECREF(result);
     }
@@ -489,8 +490,7 @@ _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
             encoding = &_Py_ID(locale);
         }
     }
-    Py_INCREF(encoding);
-    return encoding;
+    return Py_NewRef(encoding);
 }
 
 
@@ -512,7 +512,7 @@ _io_open_code_impl(PyObject *module, PyObject *path)
 {
     return PyFile_OpenCodeObject(path);
 }
-
+
 /*
  * Private helpers for the io module.
  */
@@ -561,14 +561,6 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
     return result;
 }
 
-static inline _PyIO_State*
-get_io_state(PyObject *module)
-{
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (_PyIO_State *)state;
-}
-
 _PyIO_State *
 _PyIO_get_module_state(void)
 {
@@ -590,6 +582,15 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
         return 0;
     Py_VISIT(state->locale_module);
     Py_VISIT(state->unsupported_operation);
+
+    Py_VISIT(state->PyBufferedRWPair_Type);
+    Py_VISIT(state->PyBufferedRandom_Type);
+    Py_VISIT(state->PyBufferedReader_Type);
+    Py_VISIT(state->PyBufferedWriter_Type);
+    Py_VISIT(state->PyBytesIO_Type);
+    Py_VISIT(state->PyFileIO_Type);
+    Py_VISIT(state->PyStringIO_Type);
+    Py_VISIT(state->PyTextIOWrapper_Type);
     return 0;
 }
 
@@ -602,6 +603,15 @@ iomodule_clear(PyObject *mod) {
     if (state->locale_module != NULL)
         Py_CLEAR(state->locale_module);
     Py_CLEAR(state->unsupported_operation);
+
+    Py_CLEAR(state->PyBufferedRWPair_Type);
+    Py_CLEAR(state->PyBufferedRandom_Type);
+    Py_CLEAR(state->PyBufferedReader_Type);
+    Py_CLEAR(state->PyBufferedWriter_Type);
+    Py_CLEAR(state->PyBytesIO_Type);
+    Py_CLEAR(state->PyFileIO_Type);
+    Py_CLEAR(state->PyStringIO_Type);
+    Py_CLEAR(state->PyTextIOWrapper_Type);
     return 0;
 }
 
@@ -615,7 +625,9 @@ iomodule_free(PyObject *mod) {
  * Module definition
  */
 
+#define clinic_state() (get_io_state(module))
 #include "clinic/_iomodule.c.h"
+#undef clinic_state
 
 static PyMethodDef module_methods[] = {
     _IO_OPEN_METHODDEF
@@ -647,35 +659,62 @@ static PyTypeObject* static_types[] = {
     &PyRawIOBase_Type,
     &PyTextIOBase_Type,
 
-    // PyBufferedIOBase_Type(PyIOBase_Type) subclasses
-    &PyBytesIO_Type,
-    &PyBufferedReader_Type,
-    &PyBufferedWriter_Type,
-    &PyBufferedRWPair_Type,
-    &PyBufferedRandom_Type,
-
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
-    &PyFileIO_Type,
     &_PyBytesIOBuffer_Type,
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     &PyWindowsConsoleIO_Type,
 #endif
-
-    // PyTextIOBase_Type(PyIOBase_Type) subclasses
-    &PyStringIO_Type,
-    &PyTextIOWrapper_Type,
 };
 
 
-void
-_PyIO_Fini(void)
+PyStatus
+_PyIO_InitTypes(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
+    // Set type base classes
+#ifdef HAVE_WINDOWS_CONSOLE_IO
+    PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
+#endif
+
+    for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
+        PyTypeObject *type = static_types[i];
+        if (_PyStaticType_InitBuiltin(type) < 0) {
+            return _PyStatus_ERR("Can't initialize builtin type");
+        }
+    }
+
+    return _PyStatus_OK();
+}
+
+void
+_PyIO_FiniTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    // Deallocate types in the reverse order to deallocate subclasses before
+    // their base classes.
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types) - 1; i >= 0; i--) {
-        PyTypeObject *exc = static_types[i];
-        _PyStaticType_Dealloc(exc);
+        PyTypeObject *type = static_types[i];
+        _PyStaticType_Dealloc(type);
     }
 }
 
+#define ADD_TYPE(module, type, spec, base)                               \
+do {                                                                     \
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec,        \
+                                                    (PyObject *)base);   \
+    if (type == NULL) {                                                  \
+        goto fail;                                                       \
+    }                                                                    \
+    if (PyModule_AddType(module, type) < 0) {                            \
+        goto fail;                                                       \
+    }                                                                    \
+} while (0)
 
 PyMODINIT_FUNC
 PyInit__io(void)
@@ -697,45 +736,42 @@ PyInit__io(void)
         "UnsupportedOperation", PyExc_OSError, PyExc_ValueError);
     if (state->unsupported_operation == NULL)
         goto fail;
-    Py_INCREF(state->unsupported_operation);
     if (PyModule_AddObject(m, "UnsupportedOperation",
-                           state->unsupported_operation) < 0)
+                           Py_NewRef(state->unsupported_operation)) < 0)
         goto fail;
 
     /* BlockingIOError, for compatibility */
-    Py_INCREF(PyExc_BlockingIOError);
-    if (PyModule_AddObject(m, "BlockingIOError",
-                           (PyObject *) PyExc_BlockingIOError) < 0)
+    if (PyModule_AddObjectRef(m, "BlockingIOError",
+                              (PyObject *) PyExc_BlockingIOError) < 0) {
         goto fail;
-
-    // Set type base classes
-    PyFileIO_Type.tp_base = &PyRawIOBase_Type;
-    PyBytesIO_Type.tp_base = &PyBufferedIOBase_Type;
-    PyStringIO_Type.tp_base = &PyTextIOBase_Type;
-#ifdef MS_WINDOWS
-    PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
-#endif
-    PyBufferedReader_Type.tp_base = &PyBufferedIOBase_Type;
-    PyBufferedWriter_Type.tp_base = &PyBufferedIOBase_Type;
-    PyBufferedRWPair_Type.tp_base = &PyBufferedIOBase_Type;
-    PyBufferedRandom_Type.tp_base = &PyBufferedIOBase_Type;
-    PyTextIOWrapper_Type.tp_base = &PyTextIOBase_Type;
+    }
 
     // Add types
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
-        // Private type not exposed in the _io module
-        if (type == &_PyBytesIOBuffer_Type) {
-            if (PyType_Ready(type) < 0) {
-                goto fail;
-            }
-        }
-        else {
-            if (PyModule_AddType(m, type) < 0) {
-                goto fail;
-            }
+        if (PyModule_AddType(m, type) < 0) {
+            goto fail;
         }
     }
+
+    // PyBufferedIOBase_Type(PyIOBase_Type) subclasses
+    ADD_TYPE(m, state->PyBytesIO_Type, &bytesio_spec, &PyBufferedIOBase_Type);
+    ADD_TYPE(m, state->PyBufferedWriter_Type, &bufferedwriter_spec,
+             &PyBufferedIOBase_Type);
+    ADD_TYPE(m, state->PyBufferedReader_Type, &bufferedreader_spec,
+             &PyBufferedIOBase_Type);
+    ADD_TYPE(m, state->PyBufferedRWPair_Type, &bufferedrwpair_spec,
+             &PyBufferedIOBase_Type);
+    ADD_TYPE(m, state->PyBufferedRandom_Type, &bufferedrandom_spec,
+             &PyBufferedIOBase_Type);
+
+    // PyRawIOBase_Type(PyIOBase_Type) subclasses
+    ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, &PyRawIOBase_Type);
+
+    // PyTextIOBase_Type(PyIOBase_Type) subclasses
+    ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, &PyTextIOBase_Type);
+    ADD_TYPE(m, state->PyTextIOWrapper_Type, &textiowrapper_spec,
+             &PyTextIOBase_Type);
 
     state->initialized = 1;
 

@@ -415,5 +415,39 @@ def show_events(callable):
     pprint.pprint(capture_events(callable))
 
 
+class TestEdgeCases(unittest.TestCase):
+
+    def setUp(self):
+        self.addCleanup(sys.setprofile, sys.getprofile())
+        sys.setprofile(None)
+
+    def test_reentrancy(self):
+        def foo(*args):
+            ...
+
+        def bar(*args):
+            ...
+
+        class A:
+            def __call__(self, *args):
+                pass
+
+            def __del__(self):
+                sys.setprofile(bar)
+
+        sys.setprofile(A())
+        sys.setprofile(foo)
+        self.assertEqual(sys.getprofile(), bar)
+
+
+    def test_same_object(self):
+        def foo(*args):
+            ...
+
+        sys.setprofile(foo)
+        del foo
+        sys.setprofile(sys.getprofile())
+
+
 if __name__ == "__main__":
     unittest.main()

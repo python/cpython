@@ -235,8 +235,7 @@ PyObject *args_tuple(PyObject *object,
     args = PyTuple_New(1 + (errors != NULL));
     if (args == NULL)
         return NULL;
-    Py_INCREF(object);
-    PyTuple_SET_ITEM(args,0,object);
+    PyTuple_SET_ITEM(args, 0, Py_NewRef(object));
     if (errors) {
         PyObject *v;
 
@@ -263,8 +262,7 @@ PyObject *codec_getitem(const char *encoding, int index)
         return NULL;
     v = PyTuple_GET_ITEM(codecs, index);
     Py_DECREF(codecs);
-    Py_INCREF(v);
-    return v;
+    return Py_NewRef(v);
 }
 
 /* Helper functions to create an incremental codec. */
@@ -384,20 +382,27 @@ PyObject *PyCodec_StreamWriter(const char *encoding,
     return codec_getstreamcodec(encoding, stream, errors, 3);
 }
 
-/* Helper that tries to ensure the reported exception chain indicates the
- * codec that was invoked to trigger the failure without changing the type
- * of the exception raised.
- */
 static void
-wrap_codec_error(const char *operation,
-                 const char *encoding)
+add_note_to_codec_error(const char *operation,
+                        const char *encoding)
 {
-    /* TrySetFromCause will replace the active exception with a suitably
-     * updated clone if it can, otherwise it will leave the original
-     * exception alone.
-     */
-    _PyErr_TrySetFromCause("%s with '%s' codec failed",
-                           operation, encoding);
+    PyObject *exc = PyErr_GetRaisedException();
+    if (exc == NULL) {
+        return;
+    }
+    PyObject *note = PyUnicode_FromFormat("%s with '%s' codec failed",
+                                          operation, encoding);
+    if (note == NULL) {
+        _PyErr_ChainExceptions1(exc);
+        return;
+    }
+    int res = _PyException_AddNote(exc, note);
+    Py_DECREF(note);
+    if (res < 0) {
+        _PyErr_ChainExceptions1(exc);
+        return;
+    }
+    PyErr_SetRaisedException(exc);
 }
 
 /* Encode an object (e.g. a Unicode object) using the given encoding
@@ -420,7 +425,7 @@ _PyCodec_EncodeInternal(PyObject *object,
 
     result = PyObject_Call(encoder, args, NULL);
     if (result == NULL) {
-        wrap_codec_error("encoding", encoding);
+        add_note_to_codec_error("encoding", encoding);
         goto onError;
     }
 
@@ -430,8 +435,7 @@ _PyCodec_EncodeInternal(PyObject *object,
                         "encoder must return a tuple (object, integer)");
         goto onError;
     }
-    v = PyTuple_GET_ITEM(result,0);
-    Py_INCREF(v);
+    v = Py_NewRef(PyTuple_GET_ITEM(result,0));
     /* We don't check or use the second (integer) entry. */
 
     Py_DECREF(args);
@@ -466,7 +470,7 @@ _PyCodec_DecodeInternal(PyObject *object,
 
     result = PyObject_Call(decoder, args, NULL);
     if (result == NULL) {
-        wrap_codec_error("decoding", encoding);
+        add_note_to_codec_error("decoding", encoding);
         goto onError;
     }
     if (!PyTuple_Check(result) ||
@@ -475,8 +479,7 @@ _PyCodec_DecodeInternal(PyObject *object,
                         "decoder must return a tuple (object,integer)");
         goto onError;
     }
-    v = PyTuple_GET_ITEM(result,0);
-    Py_INCREF(v);
+    v = Py_NewRef(PyTuple_GET_ITEM(result,0));
     /* We don't check or use the second (integer) entry. */
 
     Py_DECREF(args);
@@ -571,8 +574,7 @@ PyObject *codec_getitem_checked(const char *encoding,
     if (codec == NULL)
         return NULL;
 
-    v = PyTuple_GET_ITEM(codec, index);
-    Py_INCREF(v);
+    v = Py_NewRef(PyTuple_GET_ITEM(codec, index));
     Py_DECREF(codec);
     return v;
 }
