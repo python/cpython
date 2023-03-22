@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_long.h"
 #include "pycore_object.h"
 #include "pycore_parser.h"
 #include "pycore_pymem_init.h"
@@ -129,15 +130,6 @@ extern PyTypeObject _PyExc_MemoryError;
 
 
 // global objects
-
-#define _PyLong_DIGIT_INIT(val) \
-    { \
-        .ob_base = _PyObject_IMMORTAL_INIT(&PyLong_Type), \
-        .long_value  = { \
-            ((val) == 0 ? 0 : ((val) > 0 ? 1 : -1)), \
-            { ((val) >= 0 ? (val) : -(val)) }, \
-        } \
-    }
 
 #define _PyBytes_SIMPLE_INIT(CH, LEN) \
     { \
