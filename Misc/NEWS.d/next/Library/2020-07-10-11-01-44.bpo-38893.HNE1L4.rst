@@ -1,0 +1,5 @@
+:func:`shutil.copystat` now ignores :const:`errno.ENOSYS` and
+:const:`errno.EACCES` when copying extended file attributes.
+:func:`os.listxattr` can fail with ENOSYS on some file systems (e.g. NFS).
+An LSM may block :func:`os.setxattr` for security attributes like
+``security.selinux``.
