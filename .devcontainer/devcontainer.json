@@ -16,7 +16,8 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "brettcannon.zephyr-asdl"
+                "brettcannon.zephyr-asdl",
+                "ms-vscode.live-server"
             ],
             "settings": {
                 "editor.insertSpaces": true,
