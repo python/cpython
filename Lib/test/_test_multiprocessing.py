@@ -2772,6 +2772,18 @@ class _TestPool(BaseTestCase):
             pool = None
             support.gc_collect()
 
+class TestPoolMaxWorkers(unittest.TestCase):
+    @unittest.skipUnless(sys.platform=='win32', 'Windows-only process limit')
+    def test_max_workers_too_large(self):
+        with self.assertRaisesRegex(ValueError, "max_workers must be <= 61"):
+            multiprocessing.pool.Pool(62)
+
+        # ThreadPool have no limit.
+        p = multiprocessing.pool.ThreadPool(62)
+        p.close()
+        p.join()
+
+
 def raising():
     raise KeyError("key")
 

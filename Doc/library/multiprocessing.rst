@@ -2209,6 +2209,10 @@ with the :class:`Pool` class.
 
    *processes* is the number of worker processes to use.  If *processes* is
    ``None`` then the number returned by :func:`os.cpu_count` is used.
+   On Windows, *processes* must be equal or lower than ``61``. If it is not
+   then :exc:`ValueError` will be raised. If *processes* is ``None``, then
+   the default chosen will be at most ``61``, even if more processors are
+   available.
 
    If *initializer* is not ``None`` then each worker process will call
    ``initializer(*initargs)`` when it starts.

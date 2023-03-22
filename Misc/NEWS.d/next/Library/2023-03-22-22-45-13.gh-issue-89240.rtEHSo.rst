@@ -1,0 +1,2 @@
+Limit ``processes`` in :class:`multiprocessing.Pool` to 61 to work around a
+WaitForMultipleObjects limitation.

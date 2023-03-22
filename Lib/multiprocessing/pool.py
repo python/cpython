@@ -17,6 +17,7 @@ import collections
 import itertools
 import os
 import queue
+import sys
 import threading
 import time
 import traceback
@@ -175,6 +176,10 @@ class Pool(object):
     Class which supports an async version of applying functions to arguments.
     '''
     _wrap_exception = True
+    # On Windows, WaitForMultipleObjects is used to wait for processes to
+    # finish. It can wait on, at most, 64 objects. There is an overhead of three
+    # objects.
+    _MAX_WINDOWS_WORKERS = 64 - 3
 
     @staticmethod
     def Process(ctx, *args, **kwds):
@@ -201,8 +206,12 @@ class Pool(object):
 
         if processes is None:
             processes = os.cpu_count() or 1
+            if sys.platform == 'win32':
+                processes = min(processes, self._MAX_WINDOWS_WORKERS)
         if processes < 1:
             raise ValueError("Number of processes must be at least 1")
+        if sys.platform == 'win32' and processes > self._MAX_WINDOWS_WORKERS:
+            raise ValueError(f"max_workers must be <= {self._MAX_WINDOWS_WORKERS}")
         if maxtasksperchild is not None:
             if not isinstance(maxtasksperchild, int) or maxtasksperchild <= 0:
                 raise ValueError("maxtasksperchild must be a positive int or None")
@@ -920,6 +929,7 @@ class IMapUnorderedIterator(IMapIterator):
 
 class ThreadPool(Pool):
     _wrap_exception = False
+    _MAX_WINDOWS_WORKERS = float("inf")
 
     @staticmethod
     def Process(ctx, *args, **kwds):
