@@ -2395,8 +2395,9 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
         goto exit;
 
     float_s = PyFloat_FromDouble(sec + 1e-9*nsec);
-    if (!float_s)
+    if (!float_s) {
         goto exit;
+    }
 
     if (s_index >= 0) {
         PyStructSequence_SET_ITEM(v, s_index, s);
@@ -2449,7 +2450,7 @@ _pystat_l128_from_l64_l64(uint64_t low, uint64_t high)
 #endif
 
 /* pack a system stat C structure into the Python stat tuple
-   (used by posix_stat()) */
+   (used by posix_do_stat()) */
 static PyObject*
 _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 {

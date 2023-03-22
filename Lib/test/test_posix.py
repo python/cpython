@@ -647,6 +647,7 @@ class PosixTester(unittest.TestCase):
                 'should be string, bytes, os.PathLike or integer, not',
                 posix.stat, list(os.fsencode(os_helper.TESTFN)))
 
+    def test_stat_error_handling(self):
         # see gh-102890
         code = f"""if 1:
         import posix
