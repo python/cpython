@@ -2969,6 +2969,57 @@ class NumericOwnerTest(unittest.TestCase):
                               tarfl.extract, filename_1, TEMPDIR, False, True)
 
 
+class BufferWriteTest(TarTest, unittest.TestCase):
+    prefix = 'w:'
+
+    def test_buffer_write(self):
+        with tarfile.open(tmpname, self.mode) as tar:
+            r, w = os.pipe()
+            r, w = open(r, 'rb'), open(w, 'wb')
+            w.write(b'foobar')
+            w.close()
+            tarinfo = tar.gettarinfo(name='foo', fileobj=r)
+            tar.addbuffer(tarinfo, r)
+            r.close()
+
+        tar = tarfile.open(tmpname)
+        try:
+            tarinfo = tar.getmember('foo')
+            self.assertEqual(tarinfo.size, 6)
+            self.assertTrue(tarinfo.isfile())
+            fd = tar.extractfile(tarinfo)
+            self.assertEqual(fd.read(), b'foobar')
+        finally:
+            tar.close()
+
+    def test_pax_header(self):
+        with tarfile.open(tmpname, self.mode, format=tarfile.PAX_FORMAT) as tar:
+            buf = io.BytesIO(b'foobar')
+            tarinfo = tar.gettarinfo(name='foo', fileobj=buf)
+            with self.assertRaises(ValueError):
+                tar.addbuffer(tarinfo, buf)
+
+
+class UnseekableBufferWriteTest:
+    prefix = 'w:'
+
+    def test_unseekable_buffer_write(self):
+        with tarfile.open(tmpname, self.mode) as tar:
+            buf = io.BytesIO(b'foobar')
+            tarinfo = tar.gettarinfo(name='foo', fileobj=buf)
+            with self.assertRaises(ValueError):
+                tar.addbuffer(tarinfo, buf)
+
+
+class GzipUnseekableBufferWriteTest(GzipTest, UnseekableBufferWriteTest):
+    pass
+
+class Bz2UnseekableBufferWriteTest(Bz2Test, UnseekableBufferWriteTest):
+    pass
+
+class LzmaUnseekableBufferWriteTest(LzmaTest, UnseekableBufferWriteTest):
+    pass
+
 def setUpModule():
     os_helper.unlink(TEMPDIR)
     os.makedirs(TEMPDIR)
