@@ -265,10 +265,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
             if reporthook:
                 reporthook(blocknum, bs, size)
 
-            while True:
-                block = fp.read(bs)
-                if not block:
-                    break
+            while block := fp.read(bs):
                 read += len(block)
                 tfp.write(block)
                 blocknum += 1
@@ -1582,7 +1579,7 @@ class FTPHandler(BaseHandler):
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
         except ftplib.all_errors as exp:
-            raise URLError(f'ftp error: {exp}') from exp
+            raise URLError(exp) from exp
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         return ftpwrapper(user, passwd, host, port, dirs, timeout,
@@ -1847,10 +1844,7 @@ class URLopener:
                     size = int(headers["Content-Length"])
                 if reporthook:
                     reporthook(blocknum, bs, size)
-                while 1:
-                    block = fp.read(bs)
-                    if not block:
-                        break
+                while block := fp.read(bs):
                     read += len(block)
                     tfp.write(block)
                     blocknum += 1
@@ -2508,28 +2502,34 @@ def getproxies_environment():
     this seems to be the standard convention.  If you need a
     different way, you can pass a proxies dictionary to the
     [Fancy]URLopener constructor.
-
     """
-    proxies = {}
     # in order to prefer lowercase variables, process environment in
     # two passes: first matches any, second pass matches lowercase only
-    for name, value in os.environ.items():
-        name = name.lower()
-        if value and name[-6:] == '_proxy':
-            proxies[name[:-6]] = value
+
+    # select only environment variables which end in (after making lowercase) _proxy
+    proxies = {}
+    environment = []
+    for name in os.environ.keys():
+        # fast screen underscore position before more expensive case-folding
+        if len(name) > 5 and name[-6] == "_" and name[-5:].lower() == "proxy":
+            value = os.environ[name]
+            proxy_name = name[:-6].lower()
+            environment.append((name, value, proxy_name))
+            if value:
+                proxies[proxy_name] = value
     # CVE-2016-1000110 - If we are running as CGI script, forget HTTP_PROXY
     # (non-all-lowercase) as it may be set from the web server by a "Proxy:"
     # header from the client
     # If "proxy" is lowercase, it will still be used thanks to the next block
     if 'REQUEST_METHOD' in os.environ:
         proxies.pop('http', None)
-    for name, value in os.environ.items():
+    for name, value, proxy_name in environment:
+        # not case-folded, checking here for lower-case env vars only
         if name[-6:] == '_proxy':
-            name = name.lower()
             if value:
-                proxies[name[:-6]] = value
+                proxies[proxy_name] = value
             else:
-                proxies.pop(name[:-6], None)
+                proxies.pop(proxy_name, None)
     return proxies
 
 def proxy_bypass_environment(host, proxies=None):

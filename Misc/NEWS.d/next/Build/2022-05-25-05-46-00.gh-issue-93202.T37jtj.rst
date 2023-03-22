@@ -1,4 +1,0 @@
-Python now always use the ``%zu`` and ``%zd`` printf formats to format a
-``size_t`` or ``Py_ssize_t`` number. Building Python 3.12 requires a C11
-compiler, so these printf formats are now always supported. Patch by Victor
-Stinner.

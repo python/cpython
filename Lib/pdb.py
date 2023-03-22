@@ -107,15 +107,6 @@ def find_function(funcname, filename):
                 return funcname, filename, lineno
     return None
 
-def getsourcelines(obj):
-    lines, lineno = inspect.findsource(obj)
-    if inspect.isframe(obj) and obj.f_globals is obj.f_locals:
-        # must be a module frame: do not try to cut a block out of it
-        return lines, 1
-    elif inspect.ismodule(obj):
-        return lines, 1
-    return inspect.getblock(lines[lineno:]), lineno+1
-
 def lasti2lineno(code, lasti):
     linestarts = list(dis.findlinestarts(code))
     linestarts.reverse()
@@ -1332,6 +1323,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if last is None:
             last = first + 10
         filename = self.curframe.f_code.co_filename
+        # gh-93696: stdlib frozen modules provide a useful __file__
+        # this workaround can be removed with the closure of gh-89815
+        if filename.startswith("<frozen"):
+            tmp = self.curframe.f_globals.get("__file__")
+            if isinstance(tmp, str):
+                filename = tmp
         breaklist = self.get_file_breaks(filename)
         try:
             lines = linecache.getlines(filename, self.curframe.f_globals)
@@ -1351,7 +1348,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
         try:
-            lines, lineno = getsourcelines(self.curframe)
+            lines, lineno = inspect.getsourcelines(self.curframe)
         except OSError as err:
             self.error(err)
             return
@@ -1367,7 +1364,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except:
             return
         try:
-            lines, lineno = getsourcelines(obj)
+            lines, lineno = inspect.getsourcelines(obj)
         except (OSError, TypeError) as err:
             self.error(err)
             return
@@ -1742,7 +1739,11 @@ def post_mortem(t=None):
 
 def pm():
     """Enter post-mortem debugging of the traceback found in sys.last_traceback."""
-    post_mortem(sys.last_traceback)
+    if hasattr(sys, 'last_exc'):
+        tb = sys.last_exc.__traceback__
+    else:
+        tb = sys.last_traceback
+    post_mortem(tb)
 
 
 # Main program for testing

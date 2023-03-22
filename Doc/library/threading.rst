@@ -272,7 +272,7 @@ The instance's values will be different for separate threads.
    A class that represents thread-local data.
 
    For more details and extensive examples, see the documentation string of the
-   :mod:`_threading_local` module.
+   :mod:`_threading_local` module: :source:`Lib/_threading_local.py`.
 
 
 .. _thread-objects:

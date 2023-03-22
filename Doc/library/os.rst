@@ -159,6 +159,11 @@ can be read from :data:`sys.flags.utf8_mode <sys.flags>`.
 See also the :ref:`UTF-8 mode on Windows <win-utf8-mode>`
 and the :term:`filesystem encoding and error handler`.
 
+.. seealso::
+
+   :pep:`686`
+      Python 3.15 will make :ref:`utf8-mode` default.
+
 
 .. _os-procinfo:
 
@@ -195,6 +200,11 @@ process and user.
    On Unix, keys and values use :func:`sys.getfilesystemencoding` and
    ``'surrogateescape'`` error handler. Use :data:`environb` if you would like
    to use a different encoding.
+
+   On Windows, the keys are converted to uppercase. This also applies when
+   getting, setting, or deleting an item. For example,
+   ``environ['monty'] = 'python'`` maps the key ``'MONTY'`` to the value
+   ``'python'``.
 
    .. note::
 
@@ -299,8 +309,8 @@ process and user.
 
 .. function:: getenv(key, default=None)
 
-   Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are str. Note that
+   Return the value of the environment variable *key* as a string if it exists, or
+   *default* if it doesn't. *key* is a string. Note that
    since :func:`getenv` uses :data:`os.environ`, the mapping of :func:`getenv` is
    similarly also captured on import, and the function may not reflect
    future environment changes.
@@ -314,8 +324,8 @@ process and user.
 
 .. function:: getenvb(key, default=None)
 
-   Return the value of the environment variable *key* if it exists, or
-   *default* if it doesn't. *key*, *default* and the result are bytes. Note that
+   Return the value of the environment variable *key* as bytes if it exists, or
+   *default* if it doesn't. *key* must be bytes. Note that
    since :func:`getenvb` uses :data:`os.environb`, the mapping of :func:`getenvb` is
    similarly also captured on import, and the function may not reflect
    future environment changes.
@@ -369,7 +379,7 @@ process and user.
       :ref:`wasm-availability` for more information.
 
 
-.. function:: getgrouplist(user, group)
+.. function:: getgrouplist(user, group, /)
 
    Return list of group ids that *user* belongs to. If *group* is not in the
    list, it is included; typically, *group* is specified as the group ID
@@ -515,7 +525,7 @@ process and user.
       :ref:`wasm-availability` for more information.
 
 
-.. function:: initgroups(username, gid)
+.. function:: initgroups(username, gid, /)
 
    Call the system initgroups() to initialize the group access list with all of
    the groups of which the specified username is a member, plus the specified
@@ -526,7 +536,7 @@ process and user.
    .. versionadded:: 3.2
 
 
-.. function:: putenv(key, value)
+.. function:: putenv(key, value, /)
 
    .. index:: single: environment variables; setting
 
@@ -551,28 +561,28 @@ process and user.
       The function is now always available.
 
 
-.. function:: setegid(egid)
+.. function:: setegid(egid, /)
 
    Set the current process's effective group id.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: seteuid(euid)
+.. function:: seteuid(euid, /)
 
    Set the current process's effective user id.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setgid(gid)
+.. function:: setgid(gid, /)
 
    Set the current process' group id.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setgroups(groups)
+.. function:: setgroups(groups, /)
 
    Set the list of supplemental group ids associated with the current process to
    *groups*. *groups* must be a sequence, and each element must be an integer
@@ -585,6 +595,44 @@ process and user.
       See the documentation for :func:`getgroups` for cases where it may not
       return the same group list set by calling setgroups().
 
+.. function:: setns(fd, nstype=0)
+
+   Reassociate the current thread with a Linux namespace.
+   See the :manpage:`setns(2)` and :manpage:`namespaces(7)` man pages for more
+   details.
+
+   If *fd* refers to a :file:`/proc/{pid}/ns/` link, ``setns()`` reassociates the
+   calling thread with the namespace associated with that link,
+   and *nstype* may be set to one of the
+   :ref:`CLONE_NEW* constants <os-unshare-clone-flags>`
+   to impose constraints on the operation
+   (``0`` means no constraints).
+
+   Since Linux 5.8, *fd* may refer to a PID file descriptor obtained from
+   :func:`~os.pidfd_open`. In this case, ``setns()`` reassociates the calling thread
+   into one or more of the same namespaces as the thread referred to by *fd*.
+   This is subject to any constraints imposed by *nstype*,
+   which is a bit mask combining one or more of the
+   :ref:`CLONE_NEW* constants <os-unshare-clone-flags>`,
+   e.g. ``setns(fd, os.CLONE_NEWUTS | os.CLONE_NEWPID)``.
+   The caller's memberships in unspecified namespaces are left unchanged.
+
+   *fd* can be any object with a :meth:`~io.IOBase.fileno` method, or a raw file descriptor.
+
+   This example reassociates the thread with the ``init`` process's network namespace::
+
+      fd = os.open("/proc/1/ns/net", os.O_RDONLY)
+      os.setns(fd, os.CLONE_NEWNET)
+      os.close(fd)
+
+   .. availability:: Linux >= 3.0 with glibc >= 2.14.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+      The :func:`~os.unshare` function.
+
 .. function:: setpgrp()
 
    Call the system call :c:func:`setpgrp` or ``setpgrp(0, 0)`` depending on
@@ -593,7 +641,7 @@ process and user.
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setpgid(pid, pgrp)
+.. function:: setpgid(pid, pgrp, /)
 
    Call the system call :c:func:`setpgid` to set the process group id of the
    process with id *pid* to the process group with id *pgrp*.  See the Unix manual
@@ -621,14 +669,14 @@ process and user.
    .. versionadded:: 3.3
 
 
-.. function:: setregid(rgid, egid)
+.. function:: setregid(rgid, egid, /)
 
    Set the current process's real and effective group ids.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setresgid(rgid, egid, sgid)
+.. function:: setresgid(rgid, egid, sgid, /)
 
    Set the current process's real, effective, and saved group ids.
 
@@ -637,7 +685,7 @@ process and user.
    .. versionadded:: 3.2
 
 
-.. function:: setresuid(ruid, euid, suid)
+.. function:: setresuid(ruid, euid, suid, /)
 
    Set the current process's real, effective, and saved user ids.
 
@@ -646,14 +694,14 @@ process and user.
    .. versionadded:: 3.2
 
 
-.. function:: setreuid(ruid, euid)
+.. function:: setreuid(ruid, euid, /)
 
    Set the current process's real and effective user ids.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: getsid(pid)
+.. function:: getsid(pid, /)
 
    Call the system call :c:func:`getsid`.  See the Unix manual for the semantics.
 
@@ -667,7 +715,7 @@ process and user.
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: setuid(uid)
+.. function:: setuid(uid, /)
 
    .. index:: single: user; id, setting
 
@@ -677,7 +725,7 @@ process and user.
 
 
 .. placed in this section since it relates to errno.... a little weak
-.. function:: strerror(code)
+.. function:: strerror(code, /)
 
    Return the error message corresponding to the error code in *code*.
    On platforms where :c:func:`strerror` returns ``NULL`` when given an unknown
@@ -692,7 +740,7 @@ process and user.
    .. versionadded:: 3.2
 
 
-.. function:: umask(mask)
+.. function:: umask(mask, /)
 
    Set the current numeric umask and return the previous umask.
 
@@ -732,7 +780,7 @@ process and user.
       with named attributes.
 
 
-.. function:: unsetenv(key)
+.. function:: unsetenv(key, /)
 
    .. index:: single: environment variables; deleting
 
@@ -749,6 +797,49 @@ process and user.
 
    .. versionchanged:: 3.9
       The function is now always available and is also available on Windows.
+
+
+.. function:: unshare(flags)
+
+   Disassociate parts of the process execution context, and move them into a
+   newly created namespace.
+   See the :manpage:`unshare(2)`
+   man page for more details.
+   The *flags* argument is a bit mask, combining zero or more of the
+   :ref:`CLONE_* constants <os-unshare-clone-flags>`,
+   that specifies which parts of the execution context should be
+   unshared from their existing associations and moved to a new namespace.
+   If the *flags* argument is ``0``, no changes are made to the calling process's
+   execution context.
+
+   .. availability:: Linux >= 2.6.16.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+      The :func:`~os.setns` function.
+
+.. _os-unshare-clone-flags:
+
+Flags to the :func:`unshare` function, if the implementation supports them.
+See :manpage:`unshare(2)` in the Linux manual
+for their exact effect and availability.
+
+.. data:: CLONE_FILES
+          CLONE_FS
+          CLONE_NEWCGROUP
+          CLONE_NEWIPC
+          CLONE_NEWNET
+          CLONE_NEWNS
+          CLONE_NEWPID
+          CLONE_NEWTIME
+          CLONE_NEWUSER
+          CLONE_NEWUTS
+          CLONE_SIGHAND
+          CLONE_SYSVSEM
+          CLONE_THREAD
+          CLONE_VM
 
 
 .. _os-newstreams:
@@ -800,7 +891,7 @@ as internal buffering of data.
       :func:`fdopen`, use its :meth:`~io.IOBase.close` method.
 
 
-.. function:: closerange(fd_low, fd_high)
+.. function:: closerange(fd_low, fd_high, /)
 
    Close all file descriptors from *fd_low* (inclusive) to *fd_high* (exclusive),
    ignoring errors. Equivalent to (but much faster than)::
@@ -860,7 +951,7 @@ as internal buffering of data.
       On Unix, the function now implements the Python UTF-8 Mode.
 
 
-.. function:: dup(fd)
+.. function:: dup(fd, /)
 
    Return a duplicate of file descriptor *fd*. The new file descriptor is
    :ref:`non-inheritable <fd_inheritance>`.
@@ -931,7 +1022,7 @@ as internal buffering of data.
       This function is not available on MacOS.
 
 
-.. function:: fpathconf(fd, name)
+.. function:: fpathconf(fd, name, /)
 
    Return system configuration information relevant to an open file. *name*
    specifies the configuration value to retrieve; it may be a string which is the
@@ -963,7 +1054,7 @@ as internal buffering of data.
       The :func:`.stat` function.
 
 
-.. function:: fstatvfs(fd)
+.. function:: fstatvfs(fd, /)
 
    Return information about the filesystem containing the file associated with
    file descriptor *fd*, like :func:`statvfs`.  As of Python 3.3, this is
@@ -984,7 +1075,7 @@ as internal buffering of data.
    .. availability:: Unix, Windows.
 
 
-.. function:: ftruncate(fd, length)
+.. function:: ftruncate(fd, length, /)
 
    Truncate the file corresponding to file descriptor *fd*, so that it is at
    most *length* bytes in size.  As of Python 3.3, this is equivalent to
@@ -998,28 +1089,32 @@ as internal buffering of data.
       Added support for Windows
 
 
-.. function:: get_blocking(fd)
+.. function:: get_blocking(fd, /)
 
    Get the blocking mode of the file descriptor: ``False`` if the
    :data:`O_NONBLOCK` flag is set, ``True`` if the flag is cleared.
 
    See also :func:`set_blocking` and :meth:`socket.socket.setblocking`.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
+      On Windows, this function is limited to pipes.
+
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.12
+      Added support for pipes on Windows.
 
-.. function:: isatty(fd)
+.. function:: isatty(fd, /)
 
    Return ``True`` if the file descriptor *fd* is open and connected to a
    tty(-like) device, else ``False``.
 
 
-.. function:: lockf(fd, cmd, len)
+.. function:: lockf(fd, cmd, len, /)
 
    Apply, test or remove a POSIX lock on an open file descriptor.
    *fd* is an open file descriptor.
@@ -1046,7 +1141,7 @@ as internal buffering of data.
    .. versionadded:: 3.3
 
 
-.. function:: login_tty(fd)
+.. function:: login_tty(fd, /)
 
    Prepare the tty of which fd is a file descriptor for a new login session.
    Make the calling process a session leader; make the tty the controlling tty,
@@ -1057,7 +1152,7 @@ as internal buffering of data.
    .. versionadded:: 3.11
 
 
-.. function:: lseek(fd, pos, how)
+.. function:: lseek(fd, pos, how, /)
 
    Set the current position of file descriptor *fd* to position *pos*, modified
    by *how*: :const:`SEEK_SET` or ``0`` to set the position relative to the
@@ -1214,7 +1309,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       The new file descriptors are now non-inheritable.
 
 
-.. function:: pipe2(flags)
+.. function:: pipe2(flags, /)
 
    Create a pipe with *flags* set atomically.
    *flags* can be constructed by ORing together one or more of these values:
@@ -1227,7 +1322,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: posix_fallocate(fd, offset, len)
+.. function:: posix_fallocate(fd, offset, len, /)
 
    Ensures that enough disk space is allocated for the file specified by *fd*
    starting from *offset* and continuing for *len* bytes.
@@ -1237,7 +1332,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: posix_fadvise(fd, offset, len, advice)
+.. function:: posix_fadvise(fd, offset, len, advice, /)
 
    Announces an intention to access data in a specific pattern thus allowing
    the kernel to make optimizations.
@@ -1267,7 +1362,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: pread(fd, n, offset)
+.. function:: pread(fd, n, offset, /)
 
    Read at most *n* bytes from file descriptor *fd* at a position of *offset*,
    leaving the file offset unchanged.
@@ -1280,7 +1375,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: preadv(fd, buffers, offset, flags=0)
+.. function:: preadv(fd, buffers, offset, flags=0, /)
 
    Read from a file descriptor *fd* at a position of *offset* into mutable
    :term:`bytes-like objects <bytes-like object>` *buffers*, leaving the file
@@ -1337,7 +1432,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.7
 
 
-.. function:: pwrite(fd, str, offset)
+.. function:: pwrite(fd, str, offset, /)
 
    Write the bytestring in *str* to file descriptor *fd* at position of
    *offset*, leaving the file offset unchanged.
@@ -1349,7 +1444,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: pwritev(fd, buffers, offset, flags=0)
+.. function:: pwritev(fd, buffers, offset, flags=0, /)
 
    Write the *buffers* contents to file descriptor *fd* at a offset *offset*,
    leaving the file offset unchanged.  *buffers* must be a sequence of
@@ -1412,7 +1507,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.10
 
 
-.. function:: read(fd, n)
+.. function:: read(fd, n, /)
 
    Read at most *n* bytes from file descriptor *fd*.
 
@@ -1472,20 +1567,24 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       Parameters *out* and *in* was renamed to *out_fd* and *in_fd*.
 
 
-.. function:: set_blocking(fd, blocking)
+.. function:: set_blocking(fd, blocking, /)
 
    Set the blocking mode of the specified file descriptor. Set the
    :data:`O_NONBLOCK` flag if blocking is ``False``, clear the flag otherwise.
 
    See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
+      On Windows, this function is limited to pipes.
+
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.12
+      Added support for pipes on Windows.
 
 .. data:: SF_NODISKIO
           SF_MNOWAIT
@@ -1541,7 +1640,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. versionadded:: 3.10
 
-.. function:: readv(fd, buffers)
+.. function:: readv(fd, buffers, /)
 
    Read from a file descriptor *fd* into a number of mutable :term:`bytes-like
    objects <bytes-like object>` *buffers*. Transfer data into each buffer until
@@ -1559,7 +1658,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: tcgetpgrp(fd)
+.. function:: tcgetpgrp(fd, /)
 
    Return the process group associated with the terminal given by *fd* (an open
    file descriptor as returned by :func:`os.open`).
@@ -1567,7 +1666,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Unix, not WASI.
 
 
-.. function:: tcsetpgrp(fd, pg)
+.. function:: tcsetpgrp(fd, pg, /)
 
    Set the process group associated with the terminal given by *fd* (an open file
    descriptor as returned by :func:`os.open`) to *pg*.
@@ -1575,7 +1674,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Unix, not WASI.
 
 
-.. function:: ttyname(fd)
+.. function:: ttyname(fd, /)
 
    Return a string which specifies the terminal device associated with
    file descriptor *fd*.  If *fd* is not associated with a terminal device, an
@@ -1584,7 +1683,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Unix.
 
 
-.. function:: write(fd, str)
+.. function:: write(fd, str, /)
 
    Write the bytestring in *str* to file descriptor *fd*.
 
@@ -1604,7 +1703,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
 
-.. function:: writev(fd, buffers)
+.. function:: writev(fd, buffers, /)
 
    Write the contents of *buffers* to file descriptor *fd*. *buffers* must be
    a sequence of :term:`bytes-like objects <bytes-like object>`. Buffers are
@@ -1628,7 +1727,7 @@ Querying the size of a terminal
 
 .. versionadded:: 3.3
 
-.. function:: get_terminal_size(fd=STDOUT_FILENO)
+.. function:: get_terminal_size(fd=STDOUT_FILENO, /)
 
    Return the size of the terminal window as ``(columns, lines)``,
    tuple of type :class:`terminal_size`.
@@ -1683,21 +1782,21 @@ streams are closed, and inheritable handles are only inherited if the
 On WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi``, the file
 descriptor cannot be modified.
 
-.. function:: get_inheritable(fd)
+.. function:: get_inheritable(fd, /)
 
    Get the "inheritable" flag of the specified file descriptor (a boolean).
 
-.. function:: set_inheritable(fd, inheritable)
+.. function:: set_inheritable(fd, inheritable, /)
 
    Set the "inheritable" flag of the specified file descriptor.
 
-.. function:: get_handle_inheritable(handle)
+.. function:: get_handle_inheritable(handle, /)
 
    Get the "inheritable" flag of the specified handle (a boolean).
 
    .. availability:: Windows.
 
-.. function:: set_handle_inheritable(handle, inheritable)
+.. function:: set_handle_inheritable(handle, inheritable, /)
 
    Set the "inheritable" flag of the specified handle.
 
@@ -2089,6 +2188,69 @@ features:
       Accepts a :term:`path-like object`.
 
 
+.. function:: listdrives()
+
+   Return a list containing the names of drives on a Windows system.
+
+   A drive name typically looks like ``'C:\\'``. Not every drive name
+   will be associated with a volume, and some may be inaccessible for
+   a variety of reasons, including permissions, network connectivity
+   or missing media. This function does not test for access.
+
+   May raise :exc:`OSError` if an error occurs collecting the drive
+   names.
+
+   .. audit-event:: os.listdrives "" os.listdrives
+
+   .. availability:: Windows
+
+   .. versionadded:: 3.12
+
+
+.. function:: listmounts(volume)
+
+   Return a list containing the mount points for a volume on a Windows
+   system.
+
+   *volume* must be represented as a GUID path, like those returned by
+   :func:`os.listvolumes`. Volumes may be mounted in multiple locations
+   or not at all. In the latter case, the list will be empty. Mount
+   points that are not associated with a volume will not be returned by
+   this function.
+
+   The mount points return by this function will be absolute paths, and
+   may be longer than the drive name.
+
+   Raises :exc:`OSError` if the volume is not recognized or if an error
+   occurs collecting the paths.
+
+   .. audit-event:: os.listmounts volume os.listmounts
+
+   .. availability:: Windows
+
+   .. versionadded:: 3.12
+
+
+.. function:: listvolumes()
+
+   Return a list containing the volumes in the system.
+
+   Volumes are typically represented as a GUID path that looks like
+   ``\\?\Volume{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}\``. Files can
+   usually be accessed through a GUID path, permissions allowing.
+   However, users are generally not familiar with them, and so the
+   recommended use of this function is to retrieve mount points
+   using :func:`os.listmounts`.
+
+   May raise :exc:`OSError` if an error occurs collecting the volumes.
+
+   .. audit-event:: os.listvolumes "" os.listvolumes
+
+   .. availability:: Windows
+
+   .. versionadded:: 3.12
+
+
 .. function:: lstat(path, *, dir_fd=None)
 
    Perform the equivalent of an :c:func:`lstat` system call on the given path.
@@ -2244,19 +2406,19 @@ features:
       Accepts a :term:`path-like object`.
 
 
-.. function:: major(device)
+.. function:: major(device, /)
 
    Extract the device major number from a raw device number (usually the
    :attr:`st_dev` or :attr:`st_rdev` field from :c:type:`stat`).
 
 
-.. function:: minor(device)
+.. function:: minor(device, /)
 
    Extract the device minor number from a raw device number (usually the
    :attr:`st_dev` or :attr:`st_rdev` field from :c:type:`stat`).
 
 
-.. function:: makedev(major, minor)
+.. function:: makedev(major, minor, /)
 
    Compose a raw device number from the major and minor device numbers.
 
@@ -2335,7 +2497,7 @@ features:
 .. function:: remove(path, *, dir_fd=None)
 
    Remove (delete) the file *path*.  If *path* is a directory, an
-   :exc:`IsADirectoryError` is raised.  Use :func:`rmdir` to remove directories.
+   :exc:`OSError` is raised.  Use :func:`rmdir` to remove directories.
    If the file does not exist, a :exc:`FileNotFoundError` is raised.
 
    This function can support :ref:`paths relative to directory descriptors
@@ -2381,6 +2543,8 @@ features:
    will fail with an :exc:`OSError` subclass in a number of cases:
 
    On Windows, if *dst* exists a :exc:`FileExistsError` is always raised.
+   The operation may fail if *src* and *dst* are on different filesystems. Use
+   :func:`shutil.move` to support moves to a different filesystem.
 
    On Unix, if *src* is a file and *dst* is a directory or vice-versa, an
    :exc:`IsADirectoryError` or a :exc:`NotADirectoryError` will be raised
@@ -2652,6 +2816,17 @@ features:
       This method can raise :exc:`OSError`, such as :exc:`PermissionError`,
       but :exc:`FileNotFoundError` is caught and not raised.
 
+   .. method:: is_junction()
+
+      Return ``True`` if this entry is a junction (even if broken);
+      return ``False`` if the entry points to a regular directory, any kind
+      of file, a symlink, or if it doesn't exist anymore.
+
+      The result is cached on the ``os.DirEntry`` object. Call
+      :func:`os.path.isjunction` to fetch up-to-date information.
+
+      .. versionadded:: 3.12
+
    .. method:: stat(*, follow_symlinks=True)
 
       Return a :class:`stat_result` object for this entry. This method
@@ -2674,14 +2849,20 @@ features:
    Note that there is a nice correspondence between several attributes
    and methods of ``os.DirEntry`` and of :class:`pathlib.Path`.  In
    particular, the ``name`` attribute has the same
-   meaning, as do the ``is_dir()``, ``is_file()``, ``is_symlink()``
-   and ``stat()`` methods.
+   meaning, as do the ``is_dir()``, ``is_file()``, ``is_symlink()``,
+   ``is_junction()``, and ``stat()`` methods.
 
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.6
       Added support for the :class:`~os.PathLike` interface.  Added support
       for :class:`bytes` paths on Windows.
+
+   .. versionchanged:: 3.12
+      The ``st_ctime`` attribute of a stat result is deprecated on Windows.
+      The file creation time is properly available as ``st_birthtime``, and
+      in the future ``st_ctime`` may be changed to return zero or the
+      metadata change time, if available.
 
 
 .. function:: stat(path, *, dir_fd=None, follow_symlinks=True)
@@ -2798,10 +2979,12 @@ features:
 
    .. attribute:: st_ctime
 
-      Platform dependent:
+      Time of most recent metadata change expressed in seconds.
 
-      * the time of most recent metadata change on Unix,
-      * the time of creation on Windows, expressed in seconds.
+      .. versionchanged:: 3.12
+         ``st_ctime`` is deprecated on Windows. Use ``st_birthtime`` for
+         the file creation time. In the future, ``st_ctime`` will contain
+         the time of the most recent metadata change, as for other platforms.
 
    .. attribute:: st_atime_ns
 
@@ -2814,29 +2997,48 @@ features:
 
    .. attribute:: st_ctime_ns
 
-      Platform dependent:
+      Time of most recent metadata change expressed in nanoseconds as an
+      integer.
 
-      * the time of most recent metadata change on Unix,
-      * the time of creation on Windows, expressed in nanoseconds as an
-        integer.
+      .. versionchanged:: 3.12
+         ``st_ctime_ns`` is deprecated on Windows. Use ``st_birthtime_ns``
+         for the file creation time. In the future, ``st_ctime`` will contain
+         the time of the most recent metadata change, as for other platforms.
+
+   .. attribute:: st_birthtime
+
+      Time of file creation expressed in seconds. This attribute is not
+      always available, and may raise :exc:`AttributeError`.
+
+      .. versionchanged:: 3.12
+         ``st_birthtime`` is now available on Windows.
+
+   .. attribute:: st_birthtime_ns
+
+      Time of file creation expressed in nanoseconds as an integer.
+      This attribute is not always available, and may raise
+      :exc:`AttributeError`.
+
+      .. versionadded:: 3.12
 
    .. note::
 
       The exact meaning and resolution of the :attr:`st_atime`,
-      :attr:`st_mtime`, and :attr:`st_ctime` attributes depend on the operating
-      system and the file system. For example, on Windows systems using the FAT
-      or FAT32 file systems, :attr:`st_mtime` has 2-second resolution, and
-      :attr:`st_atime` has only 1-day resolution.  See your operating system
-      documentation for details.
+      :attr:`st_mtime`, :attr:`st_ctime` and :attr:`st_birthtime` attributes
+      depend on the operating system and the file system. For example, on
+      Windows systems using the FAT32 file systems, :attr:`st_mtime` has
+      2-second resolution, and :attr:`st_atime` has only 1-day resolution.
+      See your operating system documentation for details.
 
       Similarly, although :attr:`st_atime_ns`, :attr:`st_mtime_ns`,
-      and :attr:`st_ctime_ns` are always expressed in nanoseconds, many
-      systems do not provide nanosecond precision.  On systems that do
-      provide nanosecond precision, the floating-point object used to
-      store :attr:`st_atime`, :attr:`st_mtime`, and :attr:`st_ctime`
-      cannot preserve all of it, and as such will be slightly inexact.
-      If you need the exact timestamps you should always use
-      :attr:`st_atime_ns`, :attr:`st_mtime_ns`, and :attr:`st_ctime_ns`.
+      :attr:`st_ctime_ns` and :attr:`st_birthtime_ns` are always expressed in
+      nanoseconds, many systems do not provide nanosecond precision.  On
+      systems that do provide nanosecond precision, the floating-point object
+      used to store :attr:`st_atime`, :attr:`st_mtime`, :attr:`st_ctime` and
+      :attr:`st_birthtime` cannot preserve all of it, and as such will be
+      slightly inexact. If you need the exact timestamps you should always use
+      :attr:`st_atime_ns`, :attr:`st_mtime_ns`, :attr:`st_ctime_ns` and
+      :attr:`st_birthtime_ns`.
 
    On some Unix systems (such as Linux), the following attributes may also be
    available:
@@ -2865,10 +3067,6 @@ features:
    .. attribute:: st_gen
 
       File generation number.
-
-   .. attribute:: st_birthtime
-
-      Time of file creation.
 
    On Solaris and derivatives, the following attributes may also be
    available:
@@ -2941,6 +3139,25 @@ features:
       On Windows, the :attr:`st_mode` member now identifies special
       files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
       as appropriate.
+
+   .. versionchanged:: 3.12
+      On Windows, :attr:`st_ctime` is deprecated. Eventually, it will
+      contain the last metadata change time, for consistency with other
+      platforms, but for now still contains creation time.
+      Use :attr:`st_birthtime` for the creation time.
+
+   .. versionchanged:: 3.12
+      On Windows, :attr:`st_ino` may now be up to 128 bits, depending
+      on the file system. Previously it would not be above 64 bits, and
+      larger file identifiers would be arbitrarily packed.
+
+   .. versionchanged:: 3.12
+      On Windows, :attr:`st_rdev` no longer returns a value. Previously
+      it would contain the same as :attr:`st_dev`, which was incorrect.
+
+   .. versionadded:: 3.12
+      Added the :attr:`st_birthtime` member on Windows.
+
 
 .. function:: statvfs(path)
 
@@ -3189,7 +3406,7 @@ features:
    system records access and modification times; see :func:`~os.stat`. The best
    way to preserve exact times is to use the *st_atime_ns* and *st_mtime_ns*
    fields from the :func:`os.stat` result object with the *ns* parameter to
-   `utime`.
+   :func:`utime`.
 
    This function can support :ref:`specifying a file descriptor <path_fd>`,
    :ref:`paths relative to directory descriptors <dir_fd>` and :ref:`not
@@ -3217,7 +3434,8 @@ features:
    filenames)``.
 
    *dirpath* is a string, the path to the directory.  *dirnames* is a list of the
-   names of the subdirectories in *dirpath* (excluding ``'.'`` and ``'..'``).
+   names of the subdirectories in *dirpath* (including symlinks to directories,
+   and excluding ``'.'`` and ``'..'``).
    *filenames* is a list of the names of the non-directory files in *dirpath*.
    Note that the names in the lists contain no path components.  To get a full path
    (which begins with *top*) to a file or directory in *dirpath*, do
@@ -3733,7 +3951,7 @@ to be ignored.
 
    .. note::
 
-      The standard way to exit is ``sys.exit(n)``.  :func:`_exit` should
+      The standard way to exit is :func:`sys.exit(n) <sys.exit>`.  :func:`!_exit` should
       normally only be used in the child process after a :func:`fork`.
 
 The following exit codes are defined and can be used with :func:`_exit`,
@@ -3912,7 +4130,7 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: kill(pid, sig)
+.. function:: kill(pid, sig, /)
 
    .. index::
       single: process; killing
@@ -3939,7 +4157,7 @@ written in Python, such as a mail server's external command delivery program.
       Windows support.
 
 
-.. function:: killpg(pgid, sig)
+.. function:: killpg(pgid, sig, /)
 
    .. index::
       single: process; killing
@@ -3952,7 +4170,7 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix, not Emscripten, not WASI.
 
 
-.. function:: nice(increment)
+.. function:: nice(increment, /)
 
    Add *increment* to the process's "niceness".  Return the new niceness.
 
@@ -3981,7 +4199,7 @@ written in Python, such as a mail server's external command delivery program.
    .. versionadded:: 3.12
 
 
-.. function:: plock(op)
+.. function:: plock(op, /)
 
    Lock program segments into memory.  The value of *op* (defined in
    ``<sys/lock.h>``) determines which segments are locked.
@@ -4089,7 +4307,7 @@ written in Python, such as a mail server's external command delivery program.
    library :c:data:`POSIX_SPAWN_RESETIDS` flag.
 
    If the *setsid* argument is ``True``, it will create a new session ID
-   for `posix_spawn`. *setsid* requires :c:data:`POSIX_SPAWN_SETSID`
+   for ``posix_spawn``. *setsid* requires :c:data:`POSIX_SPAWN_SETSID`
    or :c:data:`POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
    is raised.
 
@@ -4393,6 +4611,9 @@ written in Python, such as a mail server's external command delivery program.
    number is zero); the high bit of the low byte is set if a core file was
    produced.
 
+   If there are no children that could be waited for, :exc:`ChildProcessError`
+   is raised.
+
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
@@ -4400,78 +4621,42 @@ written in Python, such as a mail server's external command delivery program.
 
    .. seealso::
 
-      :func:`waitpid` can be used to wait for the completion of a specific
-      child process and has more options.
+      The other :func:`!wait*` functions documented below can be used to wait for the
+      completion of a specific child process and have more options.
+      :func:`waitpid` is the only one also available on Windows.
 
-.. function:: waitid(idtype, id, options)
 
-   Wait for the completion of one or more child processes.
-   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or
-   :data:`P_PIDFD` on Linux.
-   *id* specifies the pid to wait on.
-   *options* is constructed from the ORing of one or more of :data:`WEXITED`,
-   :data:`WSTOPPED` or :data:`WCONTINUED` and additionally may be ORed with
-   :data:`WNOHANG` or :data:`WNOWAIT`. The return value is an object
-   representing the data contained in the :c:type:`siginfo_t` structure, namely:
-   :attr:`si_pid`, :attr:`si_uid`, :attr:`si_signo`, :attr:`si_status`,
-   :attr:`si_code` or ``None`` if :data:`WNOHANG` is specified and there are no
-   children in a waitable state.
+.. function:: waitid(idtype, id, options, /)
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   Wait for the completion of a child process.
 
-   .. versionadded:: 3.3
+   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or (on Linux) :data:`P_PIDFD`.
+   The interpretation of *id* depends on it; see their individual descriptions.
 
-.. data:: P_PID
-          P_PGID
-          P_ALL
+   *options* is an OR combination of flags.  At least one of :data:`WEXITED`,
+   :data:`WSTOPPED` or :data:`WCONTINUED` is required;
+   :data:`WNOHANG` and :data:`WNOWAIT` are additional optional flags.
 
-   These are the possible values for *idtype* in :func:`waitid`. They affect
-   how *id* is interpreted.
+   The return value is an object representing the data contained in the
+   :c:type:`!siginfo_t` structure with the following attributes:
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   * :attr:`!si_pid` (process ID)
+   * :attr:`!si_uid` (real user ID of the child)
+   * :attr:`!si_signo` (always :data:`~signal.SIGCHLD`)
+   * :attr:`!si_status` (the exit status or signal number, depending on :attr:`!si_code`)
+   * :attr:`!si_code` (see :data:`CLD_EXITED` for possible values)
 
-   .. versionadded:: 3.3
-
-.. data:: P_PIDFD
-
-   This is a Linux-specific *idtype* that indicates that *id* is a file
-   descriptor that refers to a process.
-
-   .. availability:: Linux >= 5.4
-
-   .. versionadded:: 3.9
-
-.. data:: WEXITED
-          WSTOPPED
-          WNOWAIT
-
-   Flags that can be used in *options* in :func:`waitid` that specify what
-   child signal to wait for.
+   If :data:`WNOHANG` is specified and there are no matching children in the
+   requested state, ``None`` is returned.
+   Otherwise, if there are no matching children
+   that could be waited for, :exc:`ChildProcessError` is raised.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
 
 
-.. data:: CLD_EXITED
-          CLD_KILLED
-          CLD_DUMPED
-          CLD_TRAPPED
-          CLD_STOPPED
-          CLD_CONTINUED
-
-   These are the possible values for :attr:`si_code` in the result returned by
-   :func:`waitid`.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-   .. versionadded:: 3.3
-
-   .. versionchanged:: 3.9
-      Added :data:`CLD_KILLED` and :data:`CLD_STOPPED` values.
-
-
-.. function:: waitpid(pid, options)
+.. function:: waitpid(pid, options, /)
 
    The details of this function differ on Unix and Windows.
 
@@ -4487,8 +4672,11 @@ written in Python, such as a mail server's external command delivery program.
    ``-1``, status is requested for any process in the process group ``-pid`` (the
    absolute value of *pid*).
 
-   An :exc:`OSError` is raised with the value of errno when the syscall
-   returns -1.
+   *options* is an OR combination of flags.  If it contains :data:`WNOHANG` and
+   there are no matching children in the requested state, ``(0, 0)`` is
+   returned.  Otherwise, if there are no matching children that could be waited
+   for, :exc:`ChildProcessError` is raised.  Other options that can be used are
+   :data:`WUNTRACED` and :data:`WCONTINUED`.
 
    On Windows: Wait for completion of a process given by process handle *pid*, and
    return a tuple containing *pid*, and its exit status shifted left by 8 bits
@@ -4501,7 +4689,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not Emscripten, not WASI.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -4514,9 +4702,9 @@ written in Python, such as a mail server's external command delivery program.
    Similar to :func:`waitpid`, except no process id argument is given and a
    3-element tuple containing the child's process id, exit status indication,
    and resource usage information is returned.  Refer to
-   :mod:`resource`.\ :func:`~resource.getrusage` for details on resource usage
-   information.  The option argument is the same as that provided to
-   :func:`waitpid` and :func:`wait4`.
+   :func:`resource.getrusage` for details on resource usage information.  The
+   *options* argument is the same as that provided to :func:`waitpid` and
+   :func:`wait4`.
 
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exitcode.
@@ -4527,15 +4715,120 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: wait4(pid, options)
 
    Similar to :func:`waitpid`, except a 3-element tuple, containing the child's
-   process id, exit status indication, and resource usage information is returned.
-   Refer to :mod:`resource`.\ :func:`~resource.getrusage` for details on
-   resource usage information.  The arguments to :func:`wait4` are the same
-   as those provided to :func:`waitpid`.
+   process id, exit status indication, and resource usage information is
+   returned.  Refer to :func:`resource.getrusage` for details on resource usage
+   information.  The arguments to :func:`wait4` are the same as those provided
+   to :func:`waitpid`.
 
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exitcode.
 
    .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: P_PID
+          P_PGID
+          P_ALL
+          P_PIDFD
+
+   These are the possible values for *idtype* in :func:`waitid`. They affect
+   how *id* is interpreted:
+
+   * :data:`!P_PID` - wait for the child whose PID is *id*.
+   * :data:`!P_PGID` - wait for any child whose progress group ID is *id*.
+   * :data:`!P_ALL` - wait for any child; *id* is ignored.
+   * :data:`!P_PIDFD` - wait for the child identified by the file descriptor
+     *id* (a process file descriptor created with :func:`pidfd_open`).
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. note:: :data:`!P_PIDFD` is only available on Linux >= 5.4.
+
+   .. versionadded:: 3.3
+   .. versionadded:: 3.9
+      The :data:`!P_PIDFD` constant.
+
+
+.. data:: WCONTINUED
+
+   This *options* flag for :func:`waitpid`, :func:`wait3`, :func:`wait4`, and
+   :func:`waitid` causes child processes to be reported if they have been
+   continued from a job control stop since they were last reported.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: WEXITED
+
+   This *options* flag for :func:`waitid` causes child processes that have terminated to
+   be reported.
+
+   The other ``wait*`` functions always report children that have terminated,
+   so this option is not available for them.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.3
+
+
+.. data:: WSTOPPED
+
+   This *options* flag for :func:`waitid` causes child processes that have been stopped
+   by the delivery of a signal to be reported.
+
+   This option is not available for the other ``wait*`` functions.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.3
+
+
+.. data:: WUNTRACED
+
+   This *options* flag for :func:`waitpid`, :func:`wait3`, and :func:`wait4` causes
+   child processes to also be reported if they have been stopped but their
+   current state has not been reported since they were stopped.
+
+   This option is not available for :func:`waitid`.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: WNOHANG
+
+   This *options* flag causes :func:`waitpid`, :func:`wait3`, :func:`wait4`, and
+   :func:`waitid` to return right away if no child process status is available
+   immediately.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: WNOWAIT
+
+   This *options* flag causes :func:`waitid` to leave the child in a waitable state, so that
+   a later :func:`!wait*` call can be used to retrieve the child status information again.
+
+   This option is not available for the other ``wait*`` functions.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+
+.. data:: CLD_EXITED
+          CLD_KILLED
+          CLD_DUMPED
+          CLD_TRAPPED
+          CLD_STOPPED
+          CLD_CONTINUED
+
+   These are the possible values for :attr:`!si_code` in the result returned by
+   :func:`waitid`.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.3
+
+   .. versionchanged:: 3.9
+      Added :data:`CLD_KILLED` and :data:`CLD_STOPPED` values.
 
 
 .. function:: waitstatus_to_exitcode(status)
@@ -4570,37 +4863,11 @@ written in Python, such as a mail server's external command delivery program.
    .. versionadded:: 3.9
 
 
-.. data:: WNOHANG
-
-   The option for :func:`waitpid` to return immediately if no child process status
-   is available immediately. The function returns ``(0, 0)`` in this case.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-
-.. data:: WCONTINUED
-
-   This option causes child processes to be reported if they have been continued
-   from a job control stop since their status was last reported.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-      Some Unix systems.
-
-
-.. data:: WUNTRACED
-
-   This option causes child processes to be reported if they have been stopped but
-   their current state has not been reported since they were stopped.
-
-   .. availability:: Unix, not Emscripten, not WASI.
-
-
 The following functions take a process status code as returned by
 :func:`system`, :func:`wait`, or :func:`waitpid` as a parameter.  They may be
 used to determine the disposition of a process.
 
-.. function:: WCOREDUMP(status)
+.. function:: WCOREDUMP(status, /)
 
    Return ``True`` if a core dump was generated for the process, otherwise
    return ``False``.
@@ -4745,33 +5012,33 @@ operating system.
    scheduling policy constants above.
 
 
-.. function:: sched_setscheduler(pid, policy, param)
+.. function:: sched_setscheduler(pid, policy, param, /)
 
    Set the scheduling policy for the process with PID *pid*. A *pid* of 0 means
    the calling process. *policy* is one of the scheduling policy constants
    above. *param* is a :class:`sched_param` instance.
 
 
-.. function:: sched_getscheduler(pid)
+.. function:: sched_getscheduler(pid, /)
 
    Return the scheduling policy for the process with PID *pid*. A *pid* of 0
    means the calling process. The result is one of the scheduling policy
    constants above.
 
 
-.. function:: sched_setparam(pid, param)
+.. function:: sched_setparam(pid, param, /)
 
    Set the scheduling parameters for the process with PID *pid*. A *pid* of 0 means
    the calling process. *param* is a :class:`sched_param` instance.
 
 
-.. function:: sched_getparam(pid)
+.. function:: sched_getparam(pid, /)
 
    Return the scheduling parameters as a :class:`sched_param` instance for the
    process with PID *pid*. A *pid* of 0 means the calling process.
 
 
-.. function:: sched_rr_get_interval(pid)
+.. function:: sched_rr_get_interval(pid, /)
 
    Return the round-robin quantum in seconds for the process with PID *pid*. A
    *pid* of 0 means the calling process.
@@ -4782,14 +5049,14 @@ operating system.
    Voluntarily relinquish the CPU.
 
 
-.. function:: sched_setaffinity(pid, mask)
+.. function:: sched_setaffinity(pid, mask, /)
 
    Restrict the process with PID *pid* (or the current process if zero) to a
    set of CPUs.  *mask* is an iterable of integers representing the set of
    CPUs to which the process should be restricted.
 
 
-.. function:: sched_getaffinity(pid)
+.. function:: sched_getaffinity(pid, /)
 
    Return the set of CPUs the process with PID *pid* (or the current process
    if zero) is restricted to.
@@ -4801,7 +5068,7 @@ Miscellaneous System Information
 --------------------------------
 
 
-.. function:: confstr(name)
+.. function:: confstr(name, /)
 
    Return string-valued system configuration values. *name* specifies the
    configuration value to retrieve; it may be a string which is the name of a
@@ -4852,7 +5119,7 @@ Miscellaneous System Information
    .. availability:: Unix.
 
 
-.. function:: sysconf(name)
+.. function:: sysconf(name, /)
 
    Return integer-valued system configuration values. If the configuration value
    specified by *name* isn't defined, ``-1`` is returned.  The comments regarding
@@ -4995,7 +5262,7 @@ Random numbers
 
    .. versionadded:: 3.6
 
-.. function:: urandom(size)
+.. function:: urandom(size, /)
 
    Return a bytestring of *size* random bytes suitable for cryptographic use.
 

@@ -257,6 +257,16 @@ class RunTests(BaseTest):
         with self.assertRaises(asyncio.CancelledError):
             asyncio.run(main())
 
+    def test_asyncio_run_loop_factory(self):
+        factory = mock.Mock()
+        loop = factory.return_value = self.new_loop()
+
+        async def main():
+            self.assertEqual(asyncio.get_running_loop(), loop)
+
+        asyncio.run(main(), loop_factory=factory)
+        factory.assert_called_once_with()
+
 
 class RunnerTests(BaseTest):
 

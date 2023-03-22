@@ -133,7 +133,7 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        not_exported = {'WAVE_FORMAT_PCM', 'WAVE_FORMAT_EXTENSIBLE'}
+        not_exported = {'WAVE_FORMAT_PCM', 'WAVE_FORMAT_EXTENSIBLE', 'KSDATAFORMAT_SUBTYPE_PCM'}
         support.check__all__(self, wave, not_exported=not_exported)
 
 

@@ -157,7 +157,7 @@ functions.
 
 - Threading is disabled by default. The ``configure`` option
   ``--enable-wasm-pthreads`` adds compiler flag ``-pthread`` and
-  linker flags ``-sUSE_PTHREADS -sPROXY_TO_PTHREAD``. 
+  linker flags ``-sUSE_PTHREADS -sPROXY_TO_PTHREAD``.
 - pthread support requires WASM threads and SharedArrayBuffer (bulk memory).
   The Node.JS runtime keeps a pool of web workers around. Each web worker
   uses several file descriptors (eventfd, epoll, pipe).
@@ -168,7 +168,7 @@ functions.
 
 - Most user, group, and permission related function and modules are not
   supported or don't work as expected, e.g.``pwd`` module, ``grp`` module,
-  ``os.setgroups``, ``os.chown``, and so on. ``lchown`` and `lchmod`` are
+  ``os.setgroups``, ``os.chown``, and so on. ``lchown`` and ``lchmod`` are
   not available.
 - ``umask`` is a no-op.
 - hard links (``os.link``) are not supported.
@@ -192,7 +192,7 @@ functions.
   supports. It's currently known to crash in combination with threading.
 - glibc extensions for date and time formatting are not available.
 - ``locales`` module is affected by musl libc issues,
-  [bpo-46390](https://bugs.python.org/issue46390).
+  [gh-90548](https://github.com/python/cpython/issues/90548).
 - Python's object allocator ``obmalloc`` is disabled by default.
 - ``ensurepip`` is not available.
 - Some ``ctypes`` features like ``c_longlong`` and ``c_longdouble`` may need
@@ -203,7 +203,7 @@ functions.
 - The interactive shell does not handle copy 'n paste and unicode support
   well.
 - The bundled stdlib is limited. Network-related modules,
-  distutils, multiprocessing, dbm, tests and similar modules
+  multiprocessing, dbm, tests and similar modules
   are not shipped. All other modules are bundled as pre-compiled
   ``pyc`` files.
 - In-memory file system (MEMFS) is not persistent and limited.
@@ -283,7 +283,7 @@ popd
 
 ## WASI limitations and issues (WASI SDK 15.0)
 
-A lot of Emscripten limitations also apply to WASI. Noticable restrictions
+A lot of Emscripten limitations also apply to WASI. Noticeable restrictions
 are:
 
 - Call stack size is limited. Default recursion limit and parser stack size

@@ -160,6 +160,18 @@ class MiscSourceEncodingTest(unittest.TestCase):
         finally:
             os.unlink(TESTFN)
 
+    def test_tokenizer_fstring_warning_in_first_line(self):
+        source = "0b1and 2"
+        with open(TESTFN, "w") as fd:
+            fd.write("{}".format(source))
+        try:
+            retcode, stdout, stderr = script_helper.assert_python_ok(TESTFN)
+            self.assertIn(b"SyntaxWarning: invalid binary litera", stderr)
+            self.assertEqual(stderr.count(source.encode()), 1)
+        finally:
+            os.unlink(TESTFN)
+
+
 class AbstractSourceEncodingTest:
 
     def test_default_coding(self):
