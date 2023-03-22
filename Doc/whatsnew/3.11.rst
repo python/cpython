@@ -676,10 +676,10 @@ enum
 * Changed :meth:`Enum.__format__() <enum.Enum.__format__>`
   (the default for :func:`format`, :meth:`str.format` and :term:`f-string`\s)
   of enums with mixed-in types (e.g. :class:`int`, :class:`str`)
-  to include the class name and member key in the output, not the member's value.
+  to show the class name and member name in the output, instead of the member's value.
   This matches the existing behavior of :meth:`enum.Enum.__str__`,
-  returning e.g. ``'AnEnum.MEMBER'`` for an enum ``AnEnum(str, Enum)``
-  instead of the member's value. Those wishing to keep the old formatting behavior
+  returning e.g. ``'AnEnum.MEMBER'`` for an enum ``AnEnum(str, Enum)``.
+  Those wishing to keep the old formatting behavior
   may wish to modify their enums with mixed-in types to inherit from the appropriate
   :class:`StrEnum` or :class:`IntEnum` class.
 
