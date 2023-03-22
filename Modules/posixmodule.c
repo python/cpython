@@ -2485,7 +2485,12 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #endif
     static_assert(sizeof(long long) >= sizeof(st->st_size),
                   "stat.st_size is larger than long long");
-    PyStructSequence_SET_ITEM(v, 6, PyLong_FromLongLong(st->st_size));
+    PyObject *size = PyLong_FromLongLong(st->st_size);
+    if (size == NULL) {
+        Py_DECREF(v);
+        return NULL;
+    }
+    PyStructSequence_SET_ITEM(v, 6, size);
 
 #if defined(HAVE_STAT_TV_NSEC)
     ansec = st->st_atim.tv_nsec;
