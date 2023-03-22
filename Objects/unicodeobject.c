@@ -1534,7 +1534,8 @@ unicode_dealloc(PyObject *unicode)
            PyDict_DelItem(). */
         assert(Py_REFCNT(unicode) == 0);
         Py_SET_REFCNT(unicode, 3);
-        if (PyDict_DelItem(interned, unicode) != 0) {
+        if (_Py_PopFromGlobalDict(interned, unicode) == NULL
+                && PyErr_Occurred()) {
             _PyErr_WriteUnraisableMsg("deletion of interned string failed",
                                       NULL);
         }
