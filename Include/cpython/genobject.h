@@ -13,8 +13,6 @@ extern "C" {
    and coroutine objects. */
 #define _PyGenObject_HEAD(prefix)                                           \
     PyObject_HEAD                                                           \
-    /* The code object backing the generator */                             \
-    PyCodeObject *prefix##_code;                                            \
     /* List of weak reference. */                                           \
     PyObject *prefix##_weakreflist;                                         \
     /* Name of the generator. */                                            \
@@ -28,7 +26,7 @@ extern "C" {
     char prefix##_running_async;                                            \
     /* The frame */                                                         \
     int8_t prefix##_frame_state;                                            \
-    PyObject *prefix##_iframe[1];
+    PyObject *prefix##_iframe[1];                                           \
 
 typedef struct {
     /* The gi_ prefix is intended to remind of generator-iterator. */
@@ -46,6 +44,7 @@ PyAPI_FUNC(PyObject *) PyGen_NewWithQualName(PyFrameObject *,
 PyAPI_FUNC(int) _PyGen_SetStopIterationValue(PyObject *);
 PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
 PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
+PyAPI_FUNC(PyCodeObject *) PyGen_GetCode(PyGenObject *gen);
 
 
 /* --- PyCoroObject ------------------------------------------------------- */

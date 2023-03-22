@@ -85,7 +85,7 @@ class ModulesFilesTests(SiteDir, unittest.TestCase):
         _path.build(spec, self.site_dir)
         import mod
 
-        actual = resources.files(mod).joinpath('res.txt').read_text()
+        actual = resources.files(mod).joinpath('res.txt').read_text(encoding='utf-8')
         assert actual == spec['res.txt']
 
 
@@ -99,7 +99,7 @@ class ImplicitContextFilesTests(SiteDir, unittest.TestCase):
                 '__init__.py': textwrap.dedent(
                     """
                     import importlib.resources as res
-                    val = res.files().joinpath('res.txt').read_text()
+                    val = res.files().joinpath('res.txt').read_text(encoding='utf-8')
                     """
                 ),
                 'res.txt': 'resources are the best',
