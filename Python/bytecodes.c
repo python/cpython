@@ -331,6 +331,7 @@ dummy_func(
 
         inst(UNBOX_FLOAT, (boxed_float, unused[oparg] -- unboxed_float : PyRawFloat_Type, unused[oparg])) {
             double temp = ((PyFloatObject *)boxed_float)->ob_fval;
+            Py_DECREF(boxed_float);
             unboxed_float = (*(PyObject **)(&temp));
         }
 

@@ -468,6 +468,7 @@
             PyObject *boxed_float = stack_pointer[-(1 + oparg)];
             PyObject *unboxed_float;
             double temp = ((PyFloatObject *)boxed_float)->ob_fval;
+            Py_DECREF(boxed_float);
             unboxed_float = (*(PyObject **)(&temp));
             stack_pointer[-(1 + oparg)] = unboxed_float;
             DISPATCH();
