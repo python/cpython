@@ -629,11 +629,6 @@ Timeouts
        An :ref:`asynchronous context manager <async-context-managers>`
        for cancelling overdue coroutines.
 
-       .. note::
-
-            Please use :meth:`timeout()` or :meth:`timeout_at()`
-            rather than instantiating this class directly.
-
        The ``when`` parameter specifies at what time the context should
        time out. It's value should be either a float relative to the
        current :meth:`loop.time` or ``None``.
@@ -642,7 +637,7 @@ Timeouts
        If ``when < loop.time()``, the timeout will trigger on the next
        iteration of the event loop.
 
-        .. versionadded:: 3.11
+       .. versionadded:: 3.11
 
         .. method:: when() -> float | None
 
@@ -651,7 +646,7 @@ Timeouts
 
         .. method:: reschedule(when: float | None)
 
-            Change the time the timeout will trigger.
+            Reschedule the timeout.
 
         .. method:: expired() -> bool
 
