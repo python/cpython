@@ -468,6 +468,30 @@ Module contents
      def is_dataclass_instance(obj):
          return is_dataclass(obj) and not isinstance(obj, type)
 
+.. class:: DataclassLike
+
+   An abstract base class for all dataclasses. Mainly useful for type-checking.
+
+   All classes created using the :func:`@dataclass <dataclass>` decorator are
+   considered subclasses of this class; all dataclass instances are considered
+   instances of this class:
+
+      >>> from dataclasses import dataclass, DataclassLike
+      >>> @dataclass
+      ... class Foo:
+      ...     x: int
+      ...
+      >>> issubclass(Foo, DataclassLike)
+      True
+      >>> isinstance(Foo(42), DataclassLike)
+      True
+
+   ``DataclassLike`` is an abstract class that cannot be instantiated. It is
+   also a "final" class that cannot be subclassed: use the
+   :func:`@dataclass <dataclass>` decorator to create new dataclasses.
+
+   .. versionadded:: 3.12
+
 .. data:: MISSING
 
    A sentinel value signifying a missing default or default_factory.

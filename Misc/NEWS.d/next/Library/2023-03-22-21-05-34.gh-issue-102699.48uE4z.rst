@@ -1,0 +1,2 @@
+Add :class:`dataclasses.DataclassLike`, an abstract base class for all
+dataclasses. Patch by Alex Waygood.

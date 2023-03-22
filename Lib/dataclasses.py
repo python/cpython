@@ -26,6 +26,7 @@ __all__ = ['dataclass',
            'make_dataclass',
            'replace',
            'is_dataclass',
+           'DataclassLike',
            ]
 
 # Conditions for adding methods.  The boxes indicate what action the
@@ -1265,6 +1266,32 @@ def is_dataclass(obj):
     dataclass."""
     cls = obj if isinstance(obj, type) else type(obj)
     return hasattr(cls, _FIELDS)
+
+
+class DataclassLike(metaclass=abc.ABCMeta):
+    """Abstract base class for all dataclass types.
+
+    Mainly useful for type-checking.
+    """
+    # __dataclass_fields__ here is really an "abstract class variable",
+    # but there's no good way of expressing that at runtime,
+    # so just make it a regular class variable with a dummy value
+    __dataclass_fields__ = {}
+
+    def __init_subclass__(cls):
+        raise TypeError(
+            "Use the @dataclass decorator to create dataclasses, "
+            "rather than subclassing dataclasses.DataclassLike"
+        )
+
+    def __new__(cls):
+        raise TypeError(
+            "dataclasses.DataclassLike is an abstract class that cannot be instantiated"
+        )
+
+    @classmethod
+    def __subclasshook__(cls, other):
+        return hasattr(other, _FIELDS)
 
 
 def asdict(obj, *, dict_factory=dict):
