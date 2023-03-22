@@ -889,7 +889,7 @@ _extensions_cache_get(PyObject *filename, PyObject *name)
     if (key == NULL) {
         return NULL;
     }
-    PyModuleDef *def = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
+    PyModuleDef *def = (PyModuleDef *)_Py_GetFromGlobalDict(extensions, key);
     Py_DECREF(key);
     return def;
 }
@@ -909,9 +909,15 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
     if (key == NULL) {
         return -1;
     }
-    int res = PyDict_SetItem(extensions, key, (PyObject *)def);
+    PyObject *existing = _Py_AddToGlobalDict(extensions, key, (PyObject *)def);
     Py_DECREF(key);
-    if (res < 0) {
+    if (existing == NULL) {
+        return -1;
+    }
+    if (existing != (PyObject *)def) {
+        assert(!PyErr_Occurred());
+        PyErr_Format(PyExc_ImportError,
+                     "could not add moduledef for %s to the cache", name);
         return -1;
     }
     return 0;
@@ -928,14 +934,11 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
     if (key == NULL) {
         return -1;
     }
-    if (PyDict_DelItem(extensions, key) < 0) {
-        if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
-            Py_DECREF(key);
-            return -1;
-        }
-        PyErr_Clear();
-    }
+    PyObject *value = _Py_PopFromGlobalDict(extensions, key);
     Py_DECREF(key);
+    if (value == NULL && PyErr_Occurred()) {
+        return -1;
+    }
     return 0;
 }
 
