@@ -21,9 +21,6 @@
 #define DEOPT_IF(COND, INSTNAME)                                  \
     do {                                                          \
         if ((COND)) {                                             \
-            /* This is only a single return on release builds! */ \
-            UPDATE_MISS_STATS((INSTNAME));                        \
-            assert(_PyOpcode_Deopt[opcode] == (INSTNAME));        \
             _res = _JUSTIN_RETURN_DEOPT;                          \
             next_instr = frame->prev_instr;                       \
             goto _bail;                                           \
@@ -31,7 +28,8 @@
     } while (0)
 
 // Stuff that will be patched at "JIT time":
-extern int _justin_continue(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer);
+extern int _justin_continue(PyThreadState *tstate, _PyInterpreterFrame *frame,
+                            PyObject **stack_pointer);
 extern _Py_CODEUNIT _justin_next_instr;
 extern int _justin_oparg;
 
@@ -61,7 +59,8 @@ extern int _justin_oparg;
 #define PREDICTED(OP)
 
 int
-_justin_target(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer)
+_justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
+              PyObject **stack_pointer)
 {
     int _res;
     // Locals that the instruction implementations expect to exist:

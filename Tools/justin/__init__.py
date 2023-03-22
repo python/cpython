@@ -13,7 +13,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import timeit
 import types
 import typing
 
@@ -27,80 +26,182 @@ WRAPPER_TYPE = ctypes.PYFUNCTYPE(ctypes.c_int)
 SUPPORTED_RELOCATIONS = {
     "X86_64_RELOC_UNSIGNED",  # Mach-O (Intel)
     # "ARM64_RELOC_UNSIGNED",  # Mach-O (ARM)
-    # "R_X86_64_64",  # ELF
+    "R_X86_64_64",  # ELF
     # "IMAGE_REL_AMD64_ADDR64",  # COFF
 }
 
-def _parse_mach_o_check_entry_is_0(path: str) -> None:
-    process = subprocess.run(
-        ["objdump", "--syms", path], check=True, capture_output=True
-    )
-    header, table, *lines = filter(None, process.stdout.decode().splitlines())
-    assert re.fullmatch(fr"{path}:\s+file format mach-o 64-bit x86-64", header), header
-    assert re.fullmatch(r"SYMBOL TABLE:", table), table
-    pattern = r"0000000000000000\s+g\s+F\s+__TEXT,__text\s+__justin_(?:target|trampoline)"
-    assert any(re.fullmatch(pattern, line) for line in lines), lines
+# XXX: Do --reloc, then --headers, then --full-contents (per-section)
+# Maybe need --syms to check that justin_entry is indeed first/only?
+class ObjectParser:
 
-def _parse_mach_o_holes(path: str) -> tuple["Hole", ...]:
-    process = subprocess.run(
-        ["objdump", "--reloc", path], check=True, capture_output=True
-    )
-    header, *lines = filter(None, process.stdout.decode().splitlines())
-    assert re.fullmatch(fr"{path}:\s+file format mach-o 64-bit x86-64", header), header
-    holes = []
-    if lines:
-        section, table, *lines = lines
-        assert re.fullmatch(r"RELOCATION RECORDS FOR \[__text\]:", section), section
-        assert re.fullmatch(r"OFFSET\s+TYPE\s+VALUE", table), table
-        for line in lines:
-            pattern = r"([0-9a-f]{16}) (X86_64_RELOC_UNSIGNED)    _(\w+)"
+    _file_format: typing.ClassVar[str]
+    _type: typing.ClassVar[str]
+    _section_prefix: typing.ClassVar[str]
+    _fix_up_holes: typing.ClassVar[bool]
+    _symbol_prefix: typing.ClassVar[str]
+    
+    def __init__(self, path: str) -> None:
+        self._sections = []
+        self._path = path
+
+    def _dump(self, *args) -> typing.Iterator[str]:
+        args = ["llvm-objdump-14", *args, self._path]
+        process = subprocess.run(args, check=True, capture_output=True)
+        lines = filter(None, process.stdout.decode().splitlines())
+        line = next(lines, None)
+        if line != f"{self._path}:\tfile format {self._file_format}":
+            raise NotImplementedError(line)
+        return lines
+
+    def _parse_headers(self) -> typing.Generator[tuple[str, int, str], None, None]:
+        lines = self._dump("--headers")
+        line = next(lines, None)
+        assert line == "Sections:"
+        line = next(lines, None)
+        assert line == "Idx Name            Size     VMA              Type"
+        pattern = r"\s+(\d+)\s+([\w\.\-]+)?\s+([0-9a-f]{8})\s+([0-9a-f]{16})\s+(TEXT|DATA)?"
+        for i, line in enumerate(lines):
             match = re.fullmatch(pattern, line)
-            offset, kind, value = match.groups()
-            holes.append(Hole(value, kind, int(offset, 16)))
-    return tuple(holes)
+            assert match is not None, line
+            idx, name, size, vma, type = match.groups()
+            assert int(idx) == i
+            assert int(vma, 16) == 0
+            if type is not None:
+                yield (name, int(size, 16), type)
 
-def _parse_mach_o_body(path: str) -> bytes:
-    process = subprocess.run(
-        ["objdump", "--full-contents", path], check=True, capture_output=True
-    )
-    header, *lines = filter(None, process.stdout.decode().splitlines())
-    assert re.fullmatch(fr"{path}:\s+file format mach-o 64-bit x86-64", header), header
-    body = bytearray()
-    for line in lines:
-        line, _, _ = line.partition("  ")
-        if re.fullmatch(r"Contents of section __TEXT,__(?:text|cstring):", line):
+    # def _parse_syms(self) -> None:
+    #     lines = self._dump("--syms", "--section", ".text")
+    #     assert next(lines) == "SYMBOL TABLE:"
+    #     pattern = r"([0-9a-f]+)\s+([\sa-zA-Z]*)\s+(\*ABS\*|\*UND\*|[\w\.]+)\s+([0-9a-f]+)\s+([\w\.]+)"
+    #     for line in lines:
+    #         match = re.fullmatch(pattern, line)
+    #         assert match is not None, line
+    #         value, flags, section, size, name = match.groups()
+    #         assert int(value, 16) == 0
+    #         if section == "*ABS*":
+    #             assert flags == "l    df"
+    #             assert int(size, 16) == 0
+    #         elif section == "*UND*":
+    #             assert flags == ""
+    #             assert int(size, 16) == 0
+    #         else:
+    #             print(name, int(size, 16))
+
+    def _parse_reloc(self) -> None:
+        lines = self._dump("--reloc")
+        relocs = collections.defaultdict(list)
+        line = next(lines, None)
+        while line is not None:
+            pattern = r"RELOCATION RECORDS FOR \[([\w+\.]+)\]:"
+            match = re.fullmatch(pattern, line)
+            assert match is not None
+            [section] = match.groups()
+            assert section not in relocs
+            line = next(lines, None)
+            pattern = r"OFFSET\s+TYPE\s+VALUE"
+            match = re.fullmatch(pattern, line)
+            assert match is not None
+            for line in lines:
+                pattern = r"([0-9a-f]{16})\s+(\w+)\s+([\w\.]+)(?:\+0x([0-9a-f]+))?"
+                match = re.fullmatch(pattern, line)
+                if match is None:
+                    break
+                offset, type, value, addend = match.groups()
+                assert type == self._type
+                addend = int(addend, 16) if addend else 0
+                assert value.startswith(self._symbol_prefix)
+                value = value.removeprefix(self._symbol_prefix)
+                relocs[section].append(Hole(value, type, int(offset, 16), addend))
+            else:
+                break
+        return relocs
+
+    def _parse_full_contents(self, section) -> bytes:
+        lines = self._dump("--full-contents", "--section", section)
+        line = next(lines, None)
+        assert line == f"Contents of section {self._section_prefix}{section}:"
+        body = bytearray()
+        pattern = r" ([\s0-9a-f]{4}) ([\s0-9a-f]{8}) ([\s0-9a-f]{8}) ([\s0-9a-f]{8}) ([\s0-9a-f]{8}) .*"
+        for line in lines:
+            match = re.fullmatch(pattern, line)
+            assert match is not None, line
+            i, *chunks = match.groups()
+            assert int(i, 16) == len(body), (i, len(body))
+            data = "".join(chunks).rstrip()
+            body.extend(int(data, 16).to_bytes(len(data) // 2, "big"))
+        return bytes(body)
+
+    def parse(self):
+        relocs = self._parse_reloc()
+        body = b""
+        holes = []
+        offsets = {}
+        for name, size, type in self._parse_headers():
+            holes += relocs[name]
+            size_before = len(body)
+            offsets[name] = size_before
+            body += self._parse_full_contents(name)
+            assert len(body) - size_before == size
+        fixed = []
+        for hole in holes:
+            if self._fix_up_holes and hole.symbol in offsets:
+                # TODO: fix offset too? Or just assert that relocs are only in main section?
+                hole = Hole(hole.symbol, hole.kind, hole.offset, hole.addend + offsets[hole.symbol])
+            fixed.append(hole)
+        return Stencil(body, fixed, 0)
+
+class ObjectParserELF64X8664(ObjectParser):
+    _file_format = "elf64-x86-64"
+    _type = "R_X86_64_64"
+    _section_prefix = ""
+    _fix_up_holes = True
+    _symbol_prefix = ""
+
+class ObjectParserMachO64BitX8664(ObjectParser):
+    _file_format = "mach-o 64-bit x86-64"
+    _type = "X86_64_RELOC_UNSIGNED"
+    _section_prefix = "__TEXT,"
+    _fix_up_holes = False
+    _symbol_prefix = "_"
+
+def _get_object_parser(path: str) -> ObjectParser:
+    for parser in [ObjectParserELF64X8664, ObjectParserMachO64BitX8664]:
+        p = parser(path)
+        try:
+            p._dump("--syms")
+        except NotImplementedError:
             continue
-        i, *rest = line.split()
-        assert int(i, 16) == len(body), (i, len(body))
-        for word in rest:
-            body.extend(int(word, 16).to_bytes(len(word) // 2, "big"))
-    return bytes(body)
+        else:
+            return p
+    raise NotImplementedError(sys.platform)
 
-def parse_mach_o(path: str):
-    _parse_mach_o_check_entry_is_0(path)
-    holes = _parse_mach_o_holes(path)
-    body = _parse_mach_o_body(path)
-    return Stencil(body, holes)
+
+
+def read_uint64(body: bytes, offset: int) -> int:
+    return int.from_bytes(body[offset : offset + 8], sys.byteorder, signed=False)
+
+def write_uint64(body: bytearray, offset: int, value: int) -> None:
+    value &= (1 << 64) - 1
+    body[offset : offset + 8] = value.to_bytes(8, sys.byteorder, signed=False)
 
 @dataclasses.dataclass(frozen=True)
 class Hole:
     symbol: str
     kind: str
     offset: int
+    addend: int
 
     def patch(self, body: bytearray, value: int) -> None:
-        assert self.kind == "X86_64_RELOC_UNSIGNED", self.kind
-        size = 8
-        hole = slice(self.offset, self.offset + size)
-        value += int.from_bytes(body[hole], sys.byteorder, signed=False)
-        body[hole] = value.to_bytes(size, sys.byteorder, signed=False)
+        write_uint64(body, self.offset, value + self.addend)
 
 @dataclasses.dataclass(frozen=True)
 class Stencil:
     body: bytes
     holes: tuple[Hole, ...]
+    rodata: int
 
     def load(self) -> typing.Self:
+        # XXX: Load the addend too.
         new_body = bytearray(self.body)
         new_holes = []
         for hole in self.holes:
@@ -108,10 +209,10 @@ class Stencil:
             if value is not None:
                 hole.patch(new_body, value)
             else:
-                if not hole.symbol.startswith("_justin") and hole.symbol != "_cstring":
-                    print(hole.symbol)
+                # if not hole.symbol.startswith("_justin") and hole.symbol != "_cstring":
+                #     print(hole.symbol)
                 new_holes.append(hole)
-        return self.__class__(bytes(new_body), tuple(new_holes))
+        return self.__class__(bytes(new_body), tuple(new_holes), self.rodata)
     
     def copy_and_patch(self, **symbols: int) -> bytes:
         body = bytearray(self.body)
@@ -148,6 +249,8 @@ class Engine:
         "-fno-asynchronous-unwind-tables",
         # Need this to leave room for patching our 64-bit pointers:
         "-mcmodel=large",
+        # Don't want relocations to use the global offset table:
+        "-fno-pic"
     ]
     _OFFSETOF_CO_CODE_ADAPTIVE = 192
     _WINDOW = 2
@@ -184,10 +287,10 @@ class Engine:
             defines.append(f"-D_JUSTIN_OPCODE_{i}={opname}")
         with tempfile.NamedTemporaryFile(suffix=".o") as o:
             subprocess.run(
-                ["clang", *self._CC_FLAGS, *defines, path, "-o",  o.name],
+                ["clang-14", *self._CC_FLAGS, *defines, path, "-o",  o.name],
                 check=True,
             )
-            return parse_mach_o(o.name)
+            return _get_object_parser(o.name).parse()
 
     def build(self) -> None:
         generated_cases = PYTHON_GENERATED_CASES_C_H.read_text()
@@ -222,10 +325,11 @@ class Engine:
             self._stencils_loaded[opnames] = stencil.load()
         self._trampoline_loaded = self._trampoline_built.load()
 
-    def trace(self, f):
+    def trace(self, f, *, warmup: int = 1):
         recorded = collections.deque(maxlen=20)
         compiled = {}
         def tracer(frame: types.FrameType, event: str, arg: object):
+            # This needs to be *fast*.
             assert frame.f_code is f.__code__
             if event == "opcode":
                 i = frame.f_lasti
@@ -233,8 +337,8 @@ class Engine:
                     ix = recorded.index(i)
                     traced = list(recorded)[ix:]
                     wrapper = self._compile_trace(frame.f_code, traced)
-                    recorded.clear()
                     compiled[i] = wrapper
+                    recorded.clear()
                 if i in compiled:
                     self._stderr(f"Entering trace for {frame.f_code.co_qualname}.")
                     status = compiled[i]()
@@ -247,6 +351,11 @@ class Engine:
             return tracer
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
+            # This needs to be *fast*.
+            nonlocal warmup
+            if 0 < warmup:
+                warmup -= 1
+                return f(*args, **kwargs)
             try:
                 sys.settrace(tracer)
                 return f(*args, **kwargs)
@@ -255,6 +364,7 @@ class Engine:
         return wrapper
 
     def _compile_trace(self, code: types.CodeType, trace: typing.Sequence[int]):
+        # This needs to be *fast*.
         start = time.time()
         pre = []
         skip = 0
@@ -295,11 +405,12 @@ class Engine:
         memory = mmap.mmap(-1, size, flags=flags, prot=prot)
         buffer = (ctypes.c_char * size).from_buffer(memory)
         first_instr = id(code) + self._OFFSETOF_CO_CODE_ADAPTIVE
-        continuations = list(itertools.accumulate(lengths, initial=ctypes.addressof(buffer)))[1:]
+        base = ctypes.addressof(buffer)
+        continuations = list(itertools.accumulate(lengths, initial=base))[1:]
         continuations[-1] = continuations[0]
         memory.write(
             self._trampoline_loaded.copy_and_patch(
-                _cstring=memory.tell(),
+                _cstring=base + memory.tell(),
                 _justin_continue=continuations[0],
                 _justin_next_instr = first_instr + trace[0],
             )
@@ -311,9 +422,10 @@ class Engine:
             for x, (j, oparg) in enumerate(zip(js, opargs, strict=True)):
                 patches[f"_justin_next_trace_{x}"] = first_instr + j
                 patches[f"_justin_oparg_{x}"] = oparg
+            patches[".rodata.str1.1"] = base + memory.tell() + stencil.rodata
             memory.write(
                 stencil.copy_and_patch(
-                    _cstring=memory.tell(),
+                    _cstring=base + memory.tell(),
                     _justin_continue=continuation,
                     _justin_next_instr=first_instr + i,
                     _justin_target=memory.tell(),

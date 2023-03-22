@@ -11,8 +11,6 @@ def fib(n: float) -> float:
         n -= 1.0
     return a
 
-fib(100.0)  # Specialize all instructions (can't do this while tracing).
-
 # First, create our JIT engine:
 engine = Engine(verbose=True)
 # This performs all of the steps that normally happen at build time:
@@ -22,9 +20,9 @@ engine.load()
 
 fib_jit = engine.trace(fib)
 
-size = 100_000_000.0
-fib_jit_time = timeit.timeit(f"fib_jit({size:_})", globals=globals(), number=1)
-fib_time = timeit.timeit(f"fib({size:_})", globals=globals(), number=1)
+size = 10_000_000.0
+fib_jit_time = timeit.timeit(f"fib_jit({size:_})", globals=globals(), number=10)
+fib_time = timeit.timeit(f"fib({size:_})", globals=globals(), number=10)
 
 print(f"fib_jit is {fib_time / fib_jit_time - 1:.0%} faster than fib!")
 
