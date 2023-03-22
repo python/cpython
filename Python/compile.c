@@ -9326,6 +9326,10 @@ remove_redundant_nops_and_pairs(basicblock *entryblock)
         struct cfg_instr *instr = NULL;
         for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
             remove_redundant_nops(b);
+            if (IS_LABEL(b->b_label)) {
+                /* this block is a jump target, forget instr */
+                instr = NULL;
+            }
             for (int i = 0; i < b->b_iused; i++) {
                 prev_instr = instr;
                 instr = &b->b_instr[i];
@@ -9347,7 +9351,7 @@ remove_redundant_nops_and_pairs(basicblock *entryblock)
                     done = false;
                 }
             }
-            if (! BB_HAS_FALLTHROUGH(b)) {
+            if ((instr && is_jump(instr)) || !BB_HAS_FALLTHROUGH(b)) {
                 instr = NULL;
             }
         }
