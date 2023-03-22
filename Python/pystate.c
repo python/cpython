@@ -639,6 +639,36 @@ _Py_ReleaseGlobalObjectsState(PyThreadState *oldts)
     }
 }
 
+PyObject *
+_Py_AddToGlobalDict(PyObject *dict, PyObject *key, PyObject *value)
+{
+    assert(dict != NULL);
+
+    /* Swap to the main interpreter, if necessary. */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyThreadState *oldts = _Py_AcquireGlobalObjectsState(interp);
+
+    /* This might trigger a resize, which is why we must "acquire"
+       the global object state. */
+    PyObject *actual = PyDict_SetDefault(dict, key, value);
+    if (actual == NULL) {
+        /* Raising an exception from one interpreter in another
+           is problematic, so we clear it and let the caller deal
+           with the returned NULL. */
+        assert(PyErr_ExceptionMatches(PyExc_MemoryError));
+        PyErr_Clear();
+    }
+
+    /* Swap back, it it wasn't in the main interpreter already. */
+    if (oldts != NULL) {
+        _Py_ReleaseGlobalObjectsState(oldts);
+    }
+
+    // XXX Immortalize the key and value.
+
+    return actual;
+}
+
 
 /*************************************/
 /* the per-interpreter runtime state */

@@ -133,6 +133,8 @@ extern void _PyThreadState_ClearDetached(PyThreadState *);
 extern PyThreadState * _Py_AcquireGlobalObjectsState(PyInterpreterState *);
 extern void _Py_ReleaseGlobalObjectsState(PyThreadState *);
 
+extern PyObject * _Py_AddToGlobalDict(PyObject *, PyObject *, PyObject *);
+
 
 static inline void
 _PyThreadState_UpdateTracingState(PyThreadState *tstate)
