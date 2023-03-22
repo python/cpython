@@ -911,7 +911,7 @@ Connection objects
 
       Call this method from a different thread to abort any queries that might
       be executing on the connection.
-      Aborted queries will raise an exception.
+      Aborted queries will raise :exc:`OperationalError`.
 
 
    .. method:: set_authorizer(authorizer_callback)
