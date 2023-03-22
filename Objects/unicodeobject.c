@@ -14585,31 +14585,6 @@ error:
 }
 
 
-static inline PyObject *
-store_interned(PyObject *obj)
-{
-    PyObject *interned = get_interned_dict();
-    assert(interned != NULL);
-
-    /* Swap to the main interpreter, if necessary. */
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyThreadState *oldts = _Py_AcquireGlobalObjectsState(interp);
-
-    /* This might trigger a resize, which is why we must "acquire"
-       the global object state. */
-    PyObject *t = PyDict_SetDefault(interned, obj, obj);
-    if (t == NULL) {
-        PyErr_Clear();
-    }
-
-    /* Swap back. */
-    if (oldts != NULL) {
-        _Py_ReleaseGlobalObjectsState(oldts);
-    }
-
-    return t;
-}
-
 void
 PyUnicode_InternInPlace(PyObject **p)
 {
@@ -14633,15 +14608,14 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
-    PyObject *t = store_interned(s);
+    PyObject *interned = get_interned_dict();
+    PyObject *t = _Py_AddToGlobalDict(interned, s, s);
     if (t != s) {
         if (t != NULL) {
             Py_SETREF(*p, Py_NewRef(t));
         }
         return;
     }
-
-    // XXX Immortalize the object.
 
     /* The two references in interned dict (key and value) are not counted by
        refcnt. unicode_dealloc() and _PyUnicode_ClearInterned() take care of
