@@ -193,15 +193,6 @@ _PyLong_SignedDigitCount(const PyLongObject *op)
     return sign * (Py_ssize_t)(op->long_value.lv_tag >> NON_SIZE_BITS);
 }
 
-/* Like _PyLong_DigitCount but asserts that op is non-negative */
-static inline Py_ssize_t
-_PyLong_UnsignedDigitCount(const PyLongObject *op)
-{
-    assert(PyLong_Check(op));
-    assert(!_PyLong_IsNegative(op));
-    return op->long_value.lv_tag >> NON_SIZE_BITS;
-}
-
 static inline int
 _PyLong_CompactSign(const PyLongObject *op)
 {

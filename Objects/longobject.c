@@ -507,8 +507,8 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
             }
         }
         /* Haven't lost any bits, but casting to long requires extra
-            * care (see comment above).
-            */
+        * care (see comment above).
+        */
         if (x <= (unsigned long)LONG_MAX) {
             res = (long)x * sign;
         }
@@ -3507,7 +3507,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
     if (z == NULL)
         return NULL;
 
-    memset(z->long_value.ob_digit, 0, _PyLong_UnsignedDigitCount(z) * sizeof(digit));
+    memset(z->long_value.ob_digit, 0, _PyLong_DigitCount(z) * sizeof(digit));
     if (a == b) {
         /* Efficient squaring per HAC, Algorithm 14.16:
          * http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf
@@ -3690,7 +3690,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
     /* Split a & b into hi & lo pieces. */
     shift = bsize >> 1;
     if (kmul_split(a, shift, &ah, &al) < 0) goto fail;
-    assert(_PyLong_UnsignedDigitCount(ah) > 0);            /* the split isn't degenerate */
+    assert(_PyLong_DigitCount(ah) > 0);            /* the split isn't degenerate */
 
     if (a == b) {
         bh = (PyLongObject*)Py_NewRef(ah);
@@ -3719,20 +3719,20 @@ k_mul(PyLongObject *a, PyLongObject *b)
     if (ret == NULL) goto fail;
 #ifdef Py_DEBUG
     /* Fill with trash, to catch reference to uninitialized digits. */
-    memset(ret->long_value.ob_digit, 0xDF, _PyLong_UnsignedDigitCount(ret) * sizeof(digit));
+    memset(ret->long_value.ob_digit, 0xDF, _PyLong_DigitCount(ret) * sizeof(digit));
 #endif
 
     /* 2. t1 <- ah*bh, and copy into high digits of result. */
     if ((t1 = k_mul(ah, bh)) == NULL) goto fail;
-    assert(_PyLong_UnsignedDigitCount(t1) >= 0);
-    assert(2*shift + _PyLong_UnsignedDigitCount(t1) <= _PyLong_UnsignedDigitCount(ret));
+    assert(_PyLong_DigitCount(t1) >= 0);
+    assert(2*shift + _PyLong_DigitCount(t1) <= _PyLong_DigitCount(ret));
     memcpy(ret->long_value.ob_digit + 2*shift, t1->long_value.ob_digit,
-           _PyLong_UnsignedDigitCount(t1) * sizeof(digit));
+           _PyLong_DigitCount(t1) * sizeof(digit));
 
     /* Zero-out the digits higher than the ah*bh copy. */
-    i = _PyLong_UnsignedDigitCount(ret) - 2*shift - _PyLong_UnsignedDigitCount(t1);
+    i = _PyLong_DigitCount(ret) - 2*shift - _PyLong_DigitCount(t1);
     if (i)
-        memset(ret->long_value.ob_digit + 2*shift + _PyLong_UnsignedDigitCount(t1), 0,
+        memset(ret->long_value.ob_digit + 2*shift + _PyLong_DigitCount(t1), 0,
                i * sizeof(digit));
 
     /* 3. t2 <- al*bl, and copy into the low digits. */
@@ -3740,23 +3740,23 @@ k_mul(PyLongObject *a, PyLongObject *b)
         Py_DECREF(t1);
         goto fail;
     }
-    assert(_PyLong_UnsignedDigitCount(t2) >= 0);
-    assert(_PyLong_UnsignedDigitCount(t2) <= 2*shift); /* no overlap with high digits */
-    memcpy(ret->long_value.ob_digit, t2->long_value.ob_digit, _PyLong_UnsignedDigitCount(t2) * sizeof(digit));
+    assert(_PyLong_DigitCount(t2) >= 0);
+    assert(_PyLong_DigitCount(t2) <= 2*shift); /* no overlap with high digits */
+    memcpy(ret->long_value.ob_digit, t2->long_value.ob_digit, _PyLong_DigitCount(t2) * sizeof(digit));
 
     /* Zero out remaining digits. */
-    i = 2*shift - _PyLong_UnsignedDigitCount(t2);          /* number of uninitialized digits */
+    i = 2*shift - _PyLong_DigitCount(t2);          /* number of uninitialized digits */
     if (i)
-        memset(ret->long_value.ob_digit + _PyLong_UnsignedDigitCount(t2), 0, i * sizeof(digit));
+        memset(ret->long_value.ob_digit + _PyLong_DigitCount(t2), 0, i * sizeof(digit));
 
     /* 4 & 5. Subtract ah*bh (t1) and al*bl (t2).  We do al*bl first
      * because it's fresher in cache.
      */
-    i = _PyLong_UnsignedDigitCount(ret) - shift;  /* # digits after shift */
-    (void)v_isub(ret->long_value.ob_digit + shift, i, t2->long_value.ob_digit, _PyLong_UnsignedDigitCount(t2));
+    i = _PyLong_DigitCount(ret) - shift;  /* # digits after shift */
+    (void)v_isub(ret->long_value.ob_digit + shift, i, t2->long_value.ob_digit, _PyLong_DigitCount(t2));
     _Py_DECREF_INT(t2);
 
-    (void)v_isub(ret->long_value.ob_digit + shift, i, t1->long_value.ob_digit, _PyLong_UnsignedDigitCount(t1));
+    (void)v_isub(ret->long_value.ob_digit + shift, i, t1->long_value.ob_digit, _PyLong_DigitCount(t1));
     _Py_DECREF_INT(t1);
 
     /* 6. t3 <- (ah+al)(bh+bl), and add into result. */
@@ -3780,12 +3780,12 @@ k_mul(PyLongObject *a, PyLongObject *b)
     _Py_DECREF_INT(t1);
     _Py_DECREF_INT(t2);
     if (t3 == NULL) goto fail;
-    assert(_PyLong_UnsignedDigitCount(t3) >= 0);
+    assert(_PyLong_DigitCount(t3) >= 0);
 
     /* Add t3.  It's not obvious why we can't run out of room here.
      * See the (*) comment after this function.
      */
-    (void)v_iadd(ret->long_value.ob_digit + shift, i, t3->long_value.ob_digit, _PyLong_UnsignedDigitCount(t3));
+    (void)v_iadd(ret->long_value.ob_digit + shift, i, t3->long_value.ob_digit, _PyLong_DigitCount(t3));
     _Py_DECREF_INT(t3);
 
     return long_normalize(ret);
@@ -3868,7 +3868,7 @@ k_lopsided_mul(PyLongObject *a, PyLongObject *b)
     ret = _PyLong_New(asize + bsize);
     if (ret == NULL)
         return NULL;
-    memset(ret->long_value.ob_digit, 0, _PyLong_UnsignedDigitCount(ret) * sizeof(digit));
+    memset(ret->long_value.ob_digit, 0, _PyLong_DigitCount(ret) * sizeof(digit));
 
     /* Successive slices of b are copied into bslice. */
     bslice = _PyLong_New(asize);
@@ -3890,8 +3890,8 @@ k_lopsided_mul(PyLongObject *a, PyLongObject *b)
             goto fail;
 
         /* Add into result. */
-        (void)v_iadd(ret->long_value.ob_digit + nbdone, _PyLong_UnsignedDigitCount(ret) - nbdone,
-                     product->long_value.ob_digit, _PyLong_UnsignedDigitCount(product));
+        (void)v_iadd(ret->long_value.ob_digit + nbdone, _PyLong_DigitCount(ret) - nbdone,
+                     product->long_value.ob_digit, _PyLong_DigitCount(product));
         _Py_DECREF_INT(product);
 
         bsize -= nbtouse;
@@ -4654,7 +4654,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
               base % modulus instead.
            We could _always_ do this reduction, but l_mod() isn't cheap,
            so we only do it when it buys something. */
-        if (_PyLong_IsNegative(a) || _PyLong_UnsignedDigitCount(a) > _PyLong_UnsignedDigitCount(c)) {
+        if (_PyLong_IsNegative(a) || _PyLong_DigitCount(a) > _PyLong_DigitCount(c)) {
             if (l_mod(a, c, &temp) < 0)
                 goto Error;
             Py_SETREF(a, temp);
@@ -5329,14 +5329,14 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
     /* We now own references to a and b */
 
     Py_ssize_t size_a, size_b, alloc_a, alloc_b;
-    alloc_a = _PyLong_UnsignedDigitCount(a);
-    alloc_b = _PyLong_UnsignedDigitCount(b);
+    alloc_a = _PyLong_DigitCount(a);
+    alloc_b = _PyLong_DigitCount(b);
     /* reduce until a fits into 2 digits */
-    while ((size_a = _PyLong_UnsignedDigitCount(a)) > 2) {
+    while ((size_a = _PyLong_DigitCount(a)) > 2) {
         nbits = bit_length_digit(a->long_value.ob_digit[size_a-1]);
         /* extract top 2*PyLong_SHIFT bits of a into x, along with
            corresponding bits of b into y */
-        size_b = _PyLong_UnsignedDigitCount(b);
+        size_b = _PyLong_DigitCount(b);
         assert(size_b <= size_a);
         if (size_b == 0) {
             if (size_a < alloc_a) {
@@ -5380,7 +5380,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             Py_SETREF(a, b);
             b = r;
             alloc_a = alloc_b;
-            alloc_b = _PyLong_UnsignedDigitCount(b);
+            alloc_b = _PyLong_DigitCount(b);
             continue;
         }
 

@@ -887,6 +887,7 @@ asBignumObj(PyObject *value)
     PyObject *hexstr;
     const char *hexchars;
     mp_int bigValue;
+
     assert(PyLong_Check(value));
     neg = _PyLong_IsNegative((PyLongObject *)value);
     hexstr = _PyLong_Format(value, 16);
