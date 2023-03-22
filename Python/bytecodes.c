@@ -3325,36 +3325,6 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(INSTRUMENTED_JUMP_IF_TRUE_OR_POP, ( -- )) {
-            PyObject *cond = TOP();
-            int err = PyObject_IsTrue(cond);
-            ERROR_IF(err < 0, error);
-            _Py_CODEUNIT *here = next_instr-1;
-            assert(err == 0 || err == 1);
-            _Py_CODEUNIT *target = next_instr + err*oparg;
-            int shrink = 1 - err;
-            INSTRUMENTED_JUMP(here, target, PY_MONITORING_EVENT_BRANCH);
-            if (shrink) {
-                STACK_SHRINK(1);
-                Py_DECREF(cond);
-            }
-        }
-
-        inst(INSTRUMENTED_JUMP_IF_FALSE_OR_POP, ( -- )) {
-            PyObject *cond = TOP();
-            int err = PyObject_IsTrue(cond);
-            ERROR_IF(err < 0, error);
-            _Py_CODEUNIT *here = next_instr-1;
-            assert(err == 0 || err == 1);
-            _Py_CODEUNIT *target = next_instr + (1-err)*oparg;
-            int shrink = err;
-            INSTRUMENTED_JUMP(here, target, PY_MONITORING_EVENT_BRANCH);
-            if (shrink) {
-                STACK_SHRINK(1);
-                Py_DECREF(cond);
-            }
-        }
-
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, ( -- )) {
             PyObject *cond = POP();
             int err = PyObject_IsTrue(cond);
