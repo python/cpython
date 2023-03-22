@@ -132,6 +132,7 @@ extern void _PyThreadState_ClearDetached(PyThreadState *);
 
 extern PyObject * _Py_GetFromGlobalDict(PyObject *, PyObject *);
 extern PyObject * _Py_AddToGlobalDict(PyObject *, PyObject *, PyObject *);
+extern PyObject * _Py_PopFromGlobalDict(PyObject *, PyObject *);
 
 
 static inline void

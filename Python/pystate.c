@@ -625,6 +625,9 @@ release_global_objects_lock(_PyRuntimeState *runtime)
 PyObject *
 _Py_GetFromGlobalDict(PyObject *dict, PyObject *key)
 {
+    assert(dict != NULL);
+    assert(PyDict_CheckExact(dict));
+
     _PyRuntimeState *runtime = &_PyRuntime;
 
     /* Due to interpreter isolation we must hold a global lock,
@@ -697,6 +700,66 @@ _Py_AddToGlobalDict(PyObject *dict, PyObject *key, PyObject *value)
     // XXX Immortalize the key and value.
 
     return actual;
+}
+
+PyObject *
+_Py_PopFromGlobalDict(PyObject *dict, PyObject *key)
+{
+    assert(dict != NULL);
+    assert(PyDict_CheckExact(dict));
+
+    /* All global objects are stored in _PyRuntime
+       and owned by the main interpreter. */
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *curts = current_fast_get(runtime);
+    PyInterpreterState *interp = curts->interp;
+    assert(interp != NULL);  // The GIL must be held.
+
+    /* Due to interpreter isolation we must hold a global lock,
+       starting at this point and ending before we return.
+       Note that the operations in this function are very fucused
+       and we should not expect any reentrancy. */
+    acquire_global_objects_lock(runtime);
+
+    /* We only swap interpreters if necessary. */
+    PyObject *value = PyDict_GetItemWithError(dict, key);
+    if (value != NULL) {
+        /* Swap to the main interpreter, if necessary. */
+        PyThreadState *oldts = NULL;
+        if (!_Py_IsMainInterpreter(interp)) {
+            PyThreadState *main_tstate = bind_global_objects_state(runtime);
+
+            oldts = _PyThreadState_Swap(runtime, main_tstate);
+            assert(oldts != NULL);
+            assert(!_Py_IsMainInterpreter(oldts->interp));
+
+            /* The limitations of the global objects thread state apply
+               from this point to the point we swap back to oldts. */
+        }
+
+        /* This might trigger a resize, which is why we must "acquire"
+           the global object state.  Also note that PyDict_DelItem()
+           must be compatible with our reentrancy and global objects state
+           constraints. */
+        int res = PyDict_DelItem(dict, key);
+        assert(res == 0);
+        if (res < 0) {
+            /* This really shouldn't happen. */
+            PyErr_Clear();
+        }
+
+        /* Swap back, it it wasn't in the main interpreter already. */
+        if (oldts != NULL) {
+            // The returned tstate should be _PyRuntime.cached_objects.main_tstate.
+            _PyThreadState_Swap(runtime, oldts);
+
+            unbind_global_objects_state(runtime);
+        }
+    }
+
+    release_global_objects_lock(runtime);
+
+    return value;
 }
 
 
