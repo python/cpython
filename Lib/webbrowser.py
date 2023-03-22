@@ -425,7 +425,7 @@ def register_X_browsers():
     if "KDE_FULL_SESSION" in os.environ and shutil.which("kfmclient"):
         register("kfmclient", Konqueror, Konqueror("kfmclient"))
 
-    # Common symbolic link for the default text-based browser
+    # Common symbolic link for the default X11 browser
     if shutil.which("x-www-browser"):
         register("x-www-browser", None, BackgroundBrowser("x-www-browser"))
 
