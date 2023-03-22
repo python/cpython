@@ -16,9 +16,10 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "brettcannon.zephyr-asdl",
-                "ms-vscode.live-server"
-            ],
+				"brettcannon.zephyr-asdl",
+				"ms-vscode.live-server",
+				"maelvalais.autoconf"
+			],
             "settings": {
                 "editor.insertSpaces": true,
                 "editor.rulers": [
