@@ -483,8 +483,8 @@ void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
 #ifdef Py_REF_DEBUG
-    /* The reftotal is cleared by _Py_FinalizeRefTotal(). */
-    assert(runtime->object_state.reftotal == 0);
+    /* The count is cleared by _Py_FinalizeRefTotal(). */
+    assert(runtime->object_state.interpreter_leaks == 0);
 #endif
 
     if (gilstate_tss_initialized(runtime)) {
@@ -903,6 +903,12 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     zapthreads(interp);
 
     _PyEval_FiniState(&interp->ceval);
+
+#ifdef Py_REF_DEBUG
+    // XXX This call should be done at the end of clear_interpreter(),
+    // but currently some objects get decref'ed after that.
+    _PyInterpreterState_FinalizeRefTotal(interp);
+#endif
 
     HEAD_LOCK(runtime);
     PyInterpreterState **p;

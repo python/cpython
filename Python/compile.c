@@ -595,17 +595,52 @@ static int
 instr_sequence_to_cfg(instr_sequence *seq, cfg_builder *g) {
     memset(g, 0, sizeof(cfg_builder));
     RETURN_IF_ERROR(cfg_builder_init(g));
-    /* Note: there can be more than one label for the same offset */
+
+    /* There can be more than one label for the same offset. The
+     * offset2lbl maping selects one of them which we use consistently.
+     */
+
+    int *offset2lbl = PyMem_Malloc(seq->s_used * sizeof(int));
+    if (offset2lbl == NULL) {
+        PyErr_NoMemory();
+        return ERROR;
+    }
     for (int i = 0; i < seq->s_used; i++) {
-        for (int j=0; j < seq->s_labelmap_size; j++) {
-            if (seq->s_labelmap[j] == i) {
-                jump_target_label lbl = {j};
-                RETURN_IF_ERROR(cfg_builder_use_label(g, lbl));
+        offset2lbl[i] = -1;
+    }
+    for (int lbl=0; lbl < seq->s_labelmap_size; lbl++) {
+        int offset = seq->s_labelmap[lbl];
+        if (offset >= 0) {
+            assert(offset < seq->s_used);
+            offset2lbl[offset] = lbl;
+        }
+    }
+
+    for (int i = 0; i < seq->s_used; i++) {
+        int lbl = offset2lbl[i];
+        if (lbl >= 0) {
+            assert (lbl < seq->s_labelmap_size);
+            jump_target_label lbl_ = {lbl};
+            if (cfg_builder_use_label(g, lbl_) < 0) {
+                goto error;
             }
         }
         instruction *instr = &seq->s_instrs[i];
-        RETURN_IF_ERROR(cfg_builder_addop(g, instr->i_opcode, instr->i_oparg, instr->i_loc));
+        int opcode = instr->i_opcode;
+        int oparg = instr->i_oparg;
+        if (HAS_TARGET(opcode)) {
+            int offset = seq->s_labelmap[oparg];
+            assert(offset >= 0 && offset < seq->s_used);
+            int lbl = offset2lbl[offset];
+            assert(lbl >= 0 && lbl < seq->s_labelmap_size);
+            oparg = lbl;
+        }
+        if (cfg_builder_addop(g, opcode, oparg, instr->i_loc) < 0) {
+            goto error;
+        }
     }
+    PyMem_Free(offset2lbl);
+
     int nblocks = 0;
     for (basicblock *b = g->g_block_list; b != NULL; b = b->b_list) {
         nblocks++;
@@ -615,6 +650,9 @@ instr_sequence_to_cfg(instr_sequence *seq, cfg_builder *g) {
         return ERROR;
     }
     return SUCCESS;
+error:
+    PyMem_Free(offset2lbl);
+    return ERROR;
 }
 
 
