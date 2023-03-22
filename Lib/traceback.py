@@ -179,7 +179,7 @@ def _safe_string(value, what, func=str):
 # --
 
 def print_exc(limit=None, file=None, chain=True):
-    """Shorthand for 'print_exception(*sys.exc_info(), limit, file)'."""
+    """Shorthand for 'print_exception(*sys.exc_info(), limit, file, chain)'."""
     print_exception(*sys.exc_info(), limit=limit, file=file, chain=chain)
 
 def format_exc(limit=None, chain=True):
@@ -187,12 +187,16 @@ def format_exc(limit=None, chain=True):
     return "".join(format_exception(*sys.exc_info(), limit=limit, chain=chain))
 
 def print_last(limit=None, file=None, chain=True):
-    """This is a shorthand for 'print_exception(sys.last_type,
-    sys.last_value, sys.last_traceback, limit, file)'."""
-    if not hasattr(sys, "last_type"):
+    """This is a shorthand for 'print_exception(sys.last_exc, limit, file, chain)'."""
+    if not hasattr(sys, "last_exc") and not hasattr(sys, "last_type"):
         raise ValueError("no last exception")
-    print_exception(sys.last_type, sys.last_value, sys.last_traceback,
-                    limit, file, chain)
+
+    if hasattr(sys, "last_exc"):
+        print_exception(sys.last_exc, limit, file, chain)
+    else:
+        print_exception(sys.last_type, sys.last_value, sys.last_traceback,
+                        limit, file, chain)
+
 
 #
 # Printing and Extracting Stacks.

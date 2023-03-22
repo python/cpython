@@ -127,6 +127,11 @@ PyAPI_FUNC(void) _PyThreadState_Init(
     PyThreadState *tstate);
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
 
+extern void _PyThreadState_InitDetached(PyThreadState *, PyInterpreterState *);
+extern void _PyThreadState_ClearDetached(PyThreadState *);
+
+extern PyObject * _Py_AddToGlobalDict(PyObject *, PyObject *, PyObject *);
+
 
 static inline void
 _PyThreadState_UpdateTracingState(PyThreadState *tstate)
