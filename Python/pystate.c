@@ -661,38 +661,44 @@ _Py_AddToGlobalDict(PyObject *dict, PyObject *key, PyObject *value)
        and we should not expect any reentrancy. */
     acquire_global_objects_lock(runtime);
 
-    /* Swap to the main interpreter, if necessary. */
-    PyThreadState *oldts = NULL;
-    if (!_Py_IsMainInterpreter(interp)) {
-        PyThreadState *main_tstate = bind_global_objects_state(runtime);
+    /* We only swap interpreters if necessary. */
+    PyObject *actual = PyDict_GetItemWithError(dict, key);
+    if (actual == NULL && !PyErr_Occurred()) {
+        /* Swap to the main interpreter, if necessary. */
+        PyThreadState *oldts = NULL;
+        if (!_Py_IsMainInterpreter(interp)) {
+            PyThreadState *main_tstate = bind_global_objects_state(runtime);
 
-        oldts = _PyThreadState_Swap(runtime, main_tstate);
-        assert(oldts != NULL);
-        assert(!_Py_IsMainInterpreter(oldts->interp));
+            oldts = _PyThreadState_Swap(runtime, main_tstate);
+            assert(oldts != NULL);
+            assert(!_Py_IsMainInterpreter(oldts->interp));
 
-        /* The limitations of the global objects thread state apply
-           from this point to the point we swap back to oldts. */
-    }
+            /* The limitations of the global objects thread state apply
+               from this point to the point we swap back to oldts. */
+        }
 
-    /* This might trigger a resize, which is why we must "acquire"
-       the global object state.  Also note that PyDict_SetDefault()
-       must be compatible with our reentrancy and global objects state
-       constraints. */
-    PyObject *actual = PyDict_SetDefault(dict, key, value);
-    if (actual == NULL) {
-        /* Raising an exception from one interpreter in another
-           is problematic, so we clear it and let the caller deal
-           with the returned NULL. */
-        assert(PyErr_ExceptionMatches(PyExc_MemoryError));
-        PyErr_Clear();
-    }
+        /* This might trigger a resize, which is why we must "acquire"
+           the global object state.  Also note that PyDict_SetItem()
+           must be compatible with our reentrancy and global objects state
+           constraints. */
+        if (PyDict_SetItem(dict, key, value) < 0) {
+            /* Raising an exception from one interpreter in another
+               is problematic, so we clear it and let the caller deal
+               with the returned NULL. */
+            assert(PyErr_ExceptionMatches(PyExc_MemoryError));
+            PyErr_Clear();
+        }
+        else {
+            actual = value;
+        }
 
-    /* Swap back, it it wasn't in the main interpreter already. */
-    if (oldts != NULL) {
-        // The returned tstate should be _PyRuntime.cached_objects.main_tstate.
-        _PyThreadState_Swap(runtime, oldts);
+        /* Swap back, it it wasn't in the main interpreter already. */
+        if (oldts != NULL) {
+            // The returned tstate should be _PyRuntime.cached_objects.main_tstate.
+            _PyThreadState_Swap(runtime, oldts);
 
-        unbind_global_objects_state(runtime);
+            unbind_global_objects_state(runtime);
+        }
     }
 
     release_global_objects_lock(runtime);
