@@ -660,6 +660,16 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
                     ERR_GET_REASON(e) == SSL_R_CERTIFICATE_VERIFY_FAILED) {
                 type = state->PySSLCertVerificationErrorObject;
             }
+#if defined(SSL_R_UNEXPECTED_EOF_WHILE_READING)
+            /* OpenSSL 3.0 changed transport EOF from SSL_ERROR_SYSCALL with
+             * zero return value to SSL_ERROR_SSL with a special error code. */
+            if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
+                    ERR_GET_REASON(e) == SSL_R_UNEXPECTED_EOF_WHILE_READING) {
+                p = PY_SSL_ERROR_EOF;
+                type = state->PySSLEOFErrorObject;
+                errstr = "EOF occurred in violation of protocol";
+            }
+#endif
             break;
         }
         default:
@@ -1988,24 +1998,44 @@ static PyObject *
 _ssl__SSLSocket_shared_ciphers_impl(PySSLSocket *self)
 /*[clinic end generated code: output=3d174ead2e42c4fd input=0bfe149da8fe6306]*/
 {
-    STACK_OF(SSL_CIPHER) *ciphers;
-    int i;
+    STACK_OF(SSL_CIPHER) *server_ciphers;
+    STACK_OF(SSL_CIPHER) *client_ciphers;
+    int i, len;
     PyObject *res;
+    const SSL_CIPHER* cipher;
 
-    ciphers = SSL_get_ciphers(self->ssl);
-    if (!ciphers)
+    /* Rather than use SSL_get_shared_ciphers, we use an equivalent algorithm because:
+
+       1) It returns a colon seperated list of strings, in an undefined
+          order, that we would have to post process back into tuples.
+       2) It will return a truncated string with no indication that it has
+          done so, if the buffer is too small.
+     */
+
+    server_ciphers = SSL_get_ciphers(self->ssl);
+    if (!server_ciphers)
         Py_RETURN_NONE;
-    res = PyList_New(sk_SSL_CIPHER_num(ciphers));
+    client_ciphers = SSL_get_client_ciphers(self->ssl);
+    if (!client_ciphers)
+        Py_RETURN_NONE;
+
+    res = PyList_New(sk_SSL_CIPHER_num(server_ciphers));
     if (!res)
         return NULL;
-    for (i = 0; i < sk_SSL_CIPHER_num(ciphers); i++) {
-        PyObject *tup = cipher_to_tuple(sk_SSL_CIPHER_value(ciphers, i));
+    len = 0;
+    for (i = 0; i < sk_SSL_CIPHER_num(server_ciphers); i++) {
+        cipher = sk_SSL_CIPHER_value(server_ciphers, i);
+        if (sk_SSL_CIPHER_find(client_ciphers, cipher) < 0)
+            continue;
+
+        PyObject *tup = cipher_to_tuple(cipher);
         if (!tup) {
             Py_DECREF(res);
             return NULL;
         }
-        PyList_SET_ITEM(res, i, tup);
+        PyList_SET_ITEM(res, len++, tup);
     }
+    Py_SET_SIZE(res, len);
     return res;
 }
 
@@ -3092,10 +3122,6 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 #endif
 #ifdef SSL_OP_SINGLE_ECDH_USE
     options |= SSL_OP_SINGLE_ECDH_USE;
-#endif
-#ifdef SSL_OP_IGNORE_UNEXPECTED_EOF
-    /* Make OpenSSL 3.0.0 behave like 1.1.1 */
-    options |= SSL_OP_IGNORE_UNEXPECTED_EOF;
 #endif
     SSL_CTX_set_options(self->ctx, options);
 
