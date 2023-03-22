@@ -916,7 +916,9 @@ deque_rotate(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(rotate_doc,
-"Rotate the deque n steps to the right (default n=1).  If n is negative, rotates left.");
+"rotate(n)\n\n"
+"Rotate the deque *n* steps to the right (default ``n=1``). "
+"If *n* is negative, rotates left.");
 
 static PyObject *
 deque_reverse(dequeobject *deque, PyObject *unused)
@@ -957,7 +959,8 @@ deque_reverse(dequeobject *deque, PyObject *unused)
 }
 
 PyDoc_STRVAR(reverse_doc,
-"D.reverse() -- reverse *IN PLACE*");
+"reverse()\n\n"
+"Reverse the elements of the deque *IN PLACE*.");
 
 static PyObject *
 deque_count(dequeobject *deque, PyObject *v)
@@ -997,7 +1000,8 @@ deque_count(dequeobject *deque, PyObject *v)
 }
 
 PyDoc_STRVAR(count_doc,
-"D.count(value) -> integer -- return number of occurrences of value");
+"count(x) -> int\n\n"
+"Count the number of deque elements equal to *x*.");
 
 static int
 deque_contains(dequeobject *deque, PyObject *v)
@@ -1106,8 +1110,10 @@ deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(index_doc,
-"D.index(value, [start, [stop]]) -> integer -- return first index of value.\n"
-"Raises ValueError if the value is not present.");
+"index(x, [start, [stop]]) -> int\n\n"
+"Return the position of *x* in the deque "
+"(at or after index *start* and before index *stop*). "
+"Returns the first match or raises a ValueError if not found.");
 
 /* insert(), remove(), and delitem() are implemented in terms of
    rotate() for simplicity and reasonable performance near the end
@@ -1152,10 +1158,13 @@ deque_insert(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(insert_doc,
-"D.insert(index, object) -- insert object before index");
+"insert(i, x)\n\n"
+"Insert *x* into the deque at position *i*.");
 
 PyDoc_STRVAR(remove_doc,
-"D.remove(value) -- remove first occurrence of value.");
+"remove(x)\n\n"
+"Remove the first occurrence of *x*."
+"If not found, raises a ValueError.");
 
 static int
 valid_index(Py_ssize_t i, Py_ssize_t limit)
@@ -1534,7 +1543,8 @@ deque_sizeof(dequeobject *deque, void *unused)
 }
 
 PyDoc_STRVAR(sizeof_doc,
-"D.__sizeof__() -- size of D in memory, in bytes");
+"__sizeof__() -> int\n\n"
+"Size of the deque in memory, in bytes.");
 
 static PyObject *
 deque_get_maxlen(dequeobject *deque, void *Py_UNUSED(ignored))
@@ -1569,7 +1579,8 @@ static PySequenceMethods deque_as_sequence = {
 static PyObject *deque_iter(dequeobject *deque);
 static PyObject *deque_reviter(dequeobject *deque, PyObject *Py_UNUSED(ignored));
 PyDoc_STRVAR(reversed_doc,
-    "D.__reversed__() -- return a reverse iterator over the deque");
+"__reversed__()\n\n"
+"Return a reverse iterator over the deque.");
 
 static PyMethodDef deque_methods[] = {
     {"append",                  (PyCFunction)deque_append,
@@ -1614,9 +1625,8 @@ static PyMethodDef deque_methods[] = {
 };
 
 PyDoc_STRVAR(deque_doc,
-"deque([iterable[, maxlen]]) --> deque object\n\
-\n\
-A list-like sequence optimized for data accesses near its endpoints.");
+"deque([iterable[, maxlen]]) -> collections.deque\n\n"
+"A list-like sequence optimized for data accesses near its endpoints.");
 
 static PyTypeObject deque_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -1999,7 +2009,8 @@ new_defdict(defdictobject *dd, PyObject *arg)
         dd->default_factory ? dd->default_factory : Py_None, arg, NULL);
 }
 
-PyDoc_STRVAR(defdict_copy_doc, "D.copy() -> a shallow copy of D.");
+PyDoc_STRVAR(defdict_copy_doc, "copy() -> collections.deque\n\n"
+"A shallow copy of the deque.");
 
 static PyObject *
 defdict_copy(defdictobject *dd, PyObject *Py_UNUSED(ignored))
