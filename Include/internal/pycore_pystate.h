@@ -121,9 +121,7 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 // PyThreadState functions
 
 PyAPI_FUNC(PyThreadState *) _PyThreadState_New(PyInterpreterState *interp);
-PyAPI_FUNC(int) _PyThreadState_IsBound(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyThreadState_Bind(PyThreadState *tstate);
-PyAPI_FUNC(void) _PyThreadState_Unbind(PyThreadState *tstate);
 // We keep this around exclusively for stable ABI compatibility.
 PyAPI_FUNC(void) _PyThreadState_Init(
     PyThreadState *tstate);

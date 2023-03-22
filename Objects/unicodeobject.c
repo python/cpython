@@ -14585,12 +14585,6 @@ error:
 }
 
 
-static PyThreadState *
-get_interned_tstate(void)
-{
-    return &_PyRuntime.cached_objects.main_tstate;
-}
-
 static inline PyObject *
 store_interned(PyObject *obj)
 {
@@ -14598,20 +14592,11 @@ store_interned(PyObject *obj)
     assert(interned != NULL);
 
     /* Swap to the main interpreter, if necessary. */
-    PyThreadState *oldts = NULL;
-    if (!_Py_IsMainInterpreter(_PyInterpreterState_GET())) {
-        PyThreadState *main_tstate = get_interned_tstate();
-        int bound = _PyThreadState_IsBound(main_tstate);
-        if (!bound) {
-            _PyThreadState_Bind(main_tstate);
-        }
-        oldts = PyThreadState_Swap(main_tstate);
-        assert(oldts != NULL);
-        if (!bound) {
-            _PyThreadState_Unbind(main_tstate);
-        }
-    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyThreadState *oldts = _Py_AcquireGlobalObjectsState(interp);
 
+    /* This might trigger a resize, which is why we must "acquire"
+       the global object state. */
     PyObject *t = PyDict_SetDefault(interned, obj, obj);
     if (t == NULL) {
         PyErr_Clear();
@@ -14619,7 +14604,7 @@ store_interned(PyObject *obj)
 
     /* Swap back. */
     if (oldts != NULL) {
-        PyThreadState_Swap(oldts);
+        _Py_ReleaseGlobalObjectsState(oldts);
     }
 
     return t;
