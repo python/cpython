@@ -509,7 +509,7 @@ by the local file.
    :file:`.pdbrc` file)::
 
       # Print instance variables (usage "pi classInst")
-      alias pi for k in %1.__dict__.keys(): print("%1.",k,"=",%1.__dict__[k])
+      alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
       # Print instance variables in self
       alias ps pi self
 
