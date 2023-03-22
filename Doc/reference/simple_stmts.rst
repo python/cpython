@@ -330,7 +330,7 @@ statement, of a variable or attribute annotation and an optional assignment stat
    annotated_assignment_stmt: `augtarget` ":" `expression`
                             : ["=" (`starred_expression` | `yield_expression`)]
 
-The difference from normal :ref:`assignment` is that only single target is allowed.
+The difference from normal :ref:`assignment` is that only a single target is allowed.
 
 For simple names as assignment targets, if in class or module scope,
 the annotations are evaluated and stored in a special class or module
@@ -365,8 +365,8 @@ target, then the interpreter evaluates the target except for the last
       IDEs.
 
 .. versionchanged:: 3.8
-   Now annotated assignments allow same expressions in the right hand side as
-   the regular assignments. Previously, some expressions (like un-parenthesized
+   Now annotated assignments allow the same expressions in the right hand side as
+   regular assignments. Previously, some expressions (like un-parenthesized
    tuple expressions) caused a syntax error.
 
 
@@ -756,7 +756,7 @@ commas) the two steps are carried out separately for each clause, just
 as though the clauses had been separated out into individual import
 statements.
 
-The details of the first step, finding and loading modules are described in
+The details of the first step, finding and loading modules, are described in
 greater detail in the section on the :ref:`import system <importsystem>`,
 which also describes the various types of packages and modules that can
 be imported, as well as all the hooks that can be used to customize

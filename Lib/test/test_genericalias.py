@@ -2,6 +2,7 @@
 
 import unittest
 import pickle
+from array import array
 import copy
 from collections import (
     defaultdict, deque, OrderedDict, Counter, UserDict, UserList
@@ -30,11 +31,15 @@ try:
     from multiprocessing.managers import ValueProxy
     from multiprocessing.pool import ApplyResult
     from multiprocessing.queues import SimpleQueue as MPSimpleQueue
+    from multiprocessing.queues import Queue as MPQueue
+    from multiprocessing.queues import JoinableQueue as MPJoinableQueue
 except ImportError:
     # _multiprocessing module is optional
     ValueProxy = None
     ApplyResult = None
     MPSimpleQueue = None
+    MPQueue = None
+    MPJoinableQueue = None
 try:
     from multiprocessing.shared_memory import ShareableList
 except ImportError:
@@ -124,11 +129,13 @@ class BaseTest(unittest.TestCase):
                      ShareableList,
                      Future, _WorkItem,
                      Morsel,
-                     DictReader, DictWriter]
+                     DictReader, DictWriter,
+                     array]
     if ctypes is not None:
         generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
     if ValueProxy is not None:
-        generic_types.extend((ValueProxy, ApplyResult, MPSimpleQueue))
+        generic_types.extend((ValueProxy, ApplyResult,
+                              MPSimpleQueue, MPQueue, MPJoinableQueue))
 
     def test_subscriptable(self):
         for t in self.generic_types:

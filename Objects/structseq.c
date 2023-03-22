@@ -200,8 +200,7 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
     }
     for (i = 0; i < len; ++i) {
         PyObject *v = PySequence_Fast_GET_ITEM(arg, i);
-        Py_INCREF(v);
-        res->ob_item[i] = v;
+        res->ob_item[i] = Py_NewRef(v);
     }
     Py_DECREF(arg);
     for (; i < max_len; ++i) {
@@ -219,8 +218,7 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
                 ob = Py_None;
             }
         }
-        Py_INCREF(ob);
-        res->ob_item[i] = ob;
+        res->ob_item[i] = Py_NewRef(ob);
     }
 
     _PyObject_GC_TRACK(res);
@@ -594,7 +592,7 @@ _PyStructSequence_FiniType(PyTypeObject *type)
     // Don't use Py_DECREF(): static type must not be deallocated
     Py_SET_REFCNT(type, 0);
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
+    _Py_DecRefTotal(_PyInterpreterState_GET());
 #endif
 
     // Make sure that _PyStructSequence_InitType() will initialize

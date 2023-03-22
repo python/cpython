@@ -4,6 +4,8 @@
 .. module:: signal
    :synopsis: Set handlers for asynchronous events.
 
+**Source code:** :source:`Lib/signal.py`
+
 --------------
 
 This module provides mechanisms to use signal handlers in Python.
@@ -362,9 +364,9 @@ The :mod:`signal` module defines the following functions:
 
 .. function:: strsignal(signalnum)
 
-   Return the system description of the signal *signalnum*, such as
-   "Interrupt", "Segmentation fault", etc. Returns :const:`None` if the signal
-   is not recognized.
+   Returns the description of signal *signalnum*, such as "Interrupt"
+   for :const:`SIGINT`. Returns :const:`None` if *signalnum* has no
+   description. Raises :exc:`ValueError` if *signalnum* is invalid.
 
    .. versionadded:: 3.8
 

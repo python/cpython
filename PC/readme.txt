@@ -60,11 +60,6 @@ python_nt.rc   Resource compiler input for python15.dll.
 dl_nt.c
                Additional sources used for 32-bit Windows features.
 
-getpathp.c     Default sys.path calculations (for all PC platforms).
-
-dllbase_nt.txt A (manually maintained) list of base addresses for
-               various DLLs, to avoid run-time relocation.
-
 
 Note for Windows 3.x and DOS users
 ==================================

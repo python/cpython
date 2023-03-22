@@ -69,12 +69,12 @@ class OpcodeTests(unittest.TestCase):
 
 class SpecializationStatsTests(unittest.TestCase):
     def test_specialization_stats(self):
-        stat_names = opcode._specialization_stats
-
+        stat_names = ["success", "failure", "hit", "deferred", "miss", "deopt"]
         specialized_opcodes = [
-            op[:-len("_ADAPTIVE")].lower() for
-            op in opcode._specialized_instructions
-            if op.endswith("_ADAPTIVE")]
+            op.lower()
+            for op in opcode._specializations
+            if opcode._inline_cache_entries[opcode.opmap[op]]
+        ]
         self.assertIn('load_attr', specialized_opcodes)
         self.assertIn('binary_subscr', specialized_opcodes)
 
