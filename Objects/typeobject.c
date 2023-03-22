@@ -8,6 +8,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"        // _PyType_HasFeature()
+#include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_typeobject.h"    // struct type_cache
@@ -7865,7 +7866,7 @@ slot_sq_length(PyObject *self)
         return -1;
 
     assert(PyLong_Check(res));
-    if (Py_SIZE(res) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)res)) {
         Py_DECREF(res);
         PyErr_SetString(PyExc_ValueError,
                         "__len__() should return >= 0");
