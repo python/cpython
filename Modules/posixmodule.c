@@ -2462,12 +2462,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 
     PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
 #ifdef MS_WINDOWS
-    PyObject *l = _pystat_l128_from_l64_l64(st->st_ino, st->st_ino_high);
-    if (l == NULL) {
-        Py_DECREF(v);
-        return NULL;
-    }
-    PyStructSequence_SET_ITEM(v, 1, l);
+    PyStructSequence_SET_ITEM(v, 1, _pystat_l128_from_l64_l64(st->st_ino, st->st_ino_high));
     PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLongLong(st->st_dev));
 #else
     static_assert(sizeof(unsigned long long) >= sizeof(st->st_ino),
