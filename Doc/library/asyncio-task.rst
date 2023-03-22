@@ -636,8 +636,7 @@ Timeouts
 
        The ``when`` parameter specifies at what time the context should
        time out. It's value should be either a float relative to the
-       current :meth:`loop.time` or ``None``, if the context should never
-       expire.
+       current :meth:`loop.time` or ``None``.
 
        If ``when`` is ``None``, the timeout will never trigger.
        If ``when < loop.time()``, the timeout will trigger on the next
