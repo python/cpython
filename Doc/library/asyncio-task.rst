@@ -538,7 +538,7 @@ Eager Task Factory
     coroutines that are able to complete synchronously (without blocking)
     are returned immediately as a completed :class:`Future`.
 
-    This task factory tries to execute the coroutine `coro` immediately
+    This task factory tries to execute the coroutine ``coro`` immediately
     (before creating and scheduling a task to the event loop), until it either
     blocks, returns, or raises.
     If the coroutine returns or raises, a :class:`Future` is returned, and no
