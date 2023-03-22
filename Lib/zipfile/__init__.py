@@ -207,6 +207,8 @@ def _strip_extra(extra, xids):
         i = j
     if not modified:
         return extra
+    if start != len(extra):
+        buffer.append(extra[start:])
     return b''.join(buffer)
 
 def _check_zipfile(fp):

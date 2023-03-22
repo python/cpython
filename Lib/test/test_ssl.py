@@ -151,7 +151,6 @@ OP_SINGLE_DH_USE = getattr(ssl, "OP_SINGLE_DH_USE", 0)
 OP_SINGLE_ECDH_USE = getattr(ssl, "OP_SINGLE_ECDH_USE", 0)
 OP_CIPHER_SERVER_PREFERENCE = getattr(ssl, "OP_CIPHER_SERVER_PREFERENCE", 0)
 OP_ENABLE_MIDDLEBOX_COMPAT = getattr(ssl, "OP_ENABLE_MIDDLEBOX_COMPAT", 0)
-OP_IGNORE_UNEXPECTED_EOF = getattr(ssl, "OP_IGNORE_UNEXPECTED_EOF", 0)
 
 # Ubuntu has patched OpenSSL and changed behavior of security level 2
 # see https://bugs.python.org/issue41561#msg389003
@@ -958,8 +957,7 @@ class ContextTests(unittest.TestCase):
         # SSLContext also enables these by default
         default |= (OP_NO_COMPRESSION | OP_CIPHER_SERVER_PREFERENCE |
                     OP_SINGLE_DH_USE | OP_SINGLE_ECDH_USE |
-                    OP_ENABLE_MIDDLEBOX_COMPAT |
-                    OP_IGNORE_UNEXPECTED_EOF)
+                    OP_ENABLE_MIDDLEBOX_COMPAT)
         self.assertEqual(default, ctx.options)
         with warnings_helper.check_warnings():
             ctx.options |= ssl.OP_NO_TLSv1
@@ -2084,13 +2082,13 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.assertIs(sslobj._sslobj.owner, sslobj)
         self.assertIsNone(sslobj.cipher())
         self.assertIsNone(sslobj.version())
-        self.assertIsNotNone(sslobj.shared_ciphers())
+        self.assertIsNone(sslobj.shared_ciphers())
         self.assertRaises(ValueError, sslobj.getpeercert)
         if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES:
             self.assertIsNone(sslobj.get_channel_binding('tls-unique'))
         self.ssl_io_loop(sock, incoming, outgoing, sslobj.do_handshake)
         self.assertTrue(sslobj.cipher())
-        self.assertIsNotNone(sslobj.shared_ciphers())
+        self.assertIsNone(sslobj.shared_ciphers())
         self.assertIsNotNone(sslobj.version())
         self.assertTrue(sslobj.getpeercert())
         if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES:
@@ -2119,6 +2117,20 @@ class SimpleBackgroundTests(unittest.TestCase):
         buf = self.ssl_io_loop(sock, incoming, outgoing, sslobj.read, 1024)
         self.assertEqual(buf, b'foo\n')
         self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
+
+    def test_transport_eof(self):
+        client_context, server_context, hostname = testing_context()
+        with socket.socket(socket.AF_INET) as sock:
+            sock.connect(self.server_addr)
+            incoming = ssl.MemoryBIO()
+            outgoing = ssl.MemoryBIO()
+            sslobj = client_context.wrap_bio(incoming, outgoing,
+                                             server_hostname=hostname)
+            self.ssl_io_loop(sock, incoming, outgoing, sslobj.do_handshake)
+
+            # Simulate EOF from the transport.
+            incoming.write_eof()
+            self.assertRaises(ssl.SSLEOFError, sslobj.read)
 
 
 @support.requires_resource('network')
@@ -4039,7 +4051,7 @@ class ThreadedTests(unittest.TestCase):
     def test_shared_ciphers(self):
         client_context, server_context, hostname = testing_context()
         client_context.set_ciphers("AES128:AES256")
-        server_context.set_ciphers("AES256")
+        server_context.set_ciphers("AES256:eNULL")
         expected_algs = [
             "AES256", "AES-256",
             # TLS 1.3 ciphers are always enabled
