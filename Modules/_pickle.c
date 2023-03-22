@@ -200,6 +200,7 @@ typedef struct {
     PyTypeObject *pickler_type;
     PyTypeObject *unpickler_type;
     PyTypeObject *Pdata_type;
+    PyTypeObject *PicklerMemoProxyType;
 } PickleState;
 
 /* Forward declaration of the _pickle module definition. */
@@ -210,6 +211,14 @@ static PickleState *
 _Pickle_GetState(PyObject *module)
 {
     return (PickleState *)_PyModule_GetState(module);
+}
+
+static inline PickleState *
+_Pickle_GetStateByClass(PyTypeObject *cls)
+{
+    void *state = _PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (PickleState *)state;
 }
 
 static PickleState *
@@ -241,6 +250,7 @@ _Pickle_ClearState(PickleState *st)
     Py_CLEAR(st->pickler_type);
     Py_CLEAR(st->unpickler_type);
     Py_CLEAR(st->Pdata_type);
+    Py_CLEAR(st->PicklerMemoProxyType);
 }
 
 /* Initialize the given pickle module state. */
@@ -4889,15 +4899,18 @@ static PyMethodDef picklerproxy_methods[] = {
 static void
 PicklerMemoProxy_dealloc(PicklerMemoProxyObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    Py_XDECREF(self->pickler);
+    Py_CLEAR(self->pickler);
     PyObject_GC_Del((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static int
 PicklerMemoProxy_traverse(PicklerMemoProxyObject *self,
                           visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->pickler);
     return 0;
 }
@@ -4909,43 +4922,28 @@ PicklerMemoProxy_clear(PicklerMemoProxyObject *self)
     return 0;
 }
 
-static PyTypeObject PicklerMemoProxyType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_pickle.PicklerMemoProxy",                 /*tp_name*/
-    sizeof(PicklerMemoProxyObject),             /*tp_basicsize*/
-    0,
-    (destructor)PicklerMemoProxy_dealloc,       /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    PyObject_HashNotImplemented,                /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    PyObject_GenericSetAttr,                    /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    0,                                          /* tp_doc */
-    (traverseproc)PicklerMemoProxy_traverse,    /* tp_traverse */
-    (inquiry)PicklerMemoProxy_clear,            /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    picklerproxy_methods,                       /* tp_methods */
+static PyType_Slot memoproxy_slots[] = {
+    {Py_tp_dealloc, PicklerMemoProxy_dealloc},
+    {Py_tp_traverse, PicklerMemoProxy_traverse},
+    {Py_tp_clear, PicklerMemoProxy_clear},
+    {Py_tp_methods, picklerproxy_methods},
+    {0, NULL},
+};
+
+static PyType_Spec memoproxy_spec = {
+    .name = "_pickle.PicklerMemoProxy",
+    .basicsize = sizeof(PicklerMemoProxyObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = memoproxy_slots,
 };
 
 static PyObject *
 PicklerMemoProxy_New(PicklerObject *pickler)
 {
     PicklerMemoProxyObject *self;
-
-    self = PyObject_GC_New(PicklerMemoProxyObject, &PicklerMemoProxyType);
+    PickleState *st = _Pickle_GetStateByClass(Py_TYPE(pickler));
+    self = PyObject_GC_New(PicklerMemoProxyObject, st->PicklerMemoProxyType);
     if (self == NULL)
         return NULL;
     self->pickler = (PicklerObject*)Py_NewRef(pickler);
@@ -4972,7 +4970,8 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    if (Py_IS_TYPE(obj, &PicklerMemoProxyType)) {
+    PickleState *st = _Pickle_GetStateByClass(Py_TYPE(self));
+    if (Py_IS_TYPE(obj, st->PicklerMemoProxyType)) {
         PicklerObject *pickler =
             ((PicklerMemoProxyObject *)obj)->pickler;
 
@@ -7888,8 +7887,13 @@ _pickle_exec(PyObject *m)
     if (st->Pdata_type == NULL) {
         return -1;
     }
-    if (PyType_Ready(&PicklerMemoProxyType) < 0)
+
+    st->PicklerMemoProxyType = (PyTypeObject *)PyType_FromMetaclass(
+            NULL, m, &memoproxy_spec, NULL);
+    if (st->PicklerMemoProxyType == NULL) {
         return -1;
+    }
+
     if (PyType_Ready(&UnpicklerMemoProxyType) < 0)
         return -1;
 
