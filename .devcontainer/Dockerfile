@@ -9,7 +9,7 @@ ENV WASMTIME_HOME=/opt/wasmtime
 ENV WASMTIME_VERSION=7.0.0
 ENV WASMTIME_CPU_ARCH=x86_64
 
-RUN dnf -y install clang xz dnf-plugins-core && \
+RUN dnf -y install git clang xz dnf-plugins-core && \
     dnf -y builddep python3
 
 RUN mkdir ${WASI_SDK_PATH} && \
