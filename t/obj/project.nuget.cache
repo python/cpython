@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "dgSpecHash": "+zX6nLhQPGdy/XDGBLbbWjuByQJOKBH7BKSoowKXtphzL7T+70FMq4mpy7FJoIoa70Qx3DXmdZ0jKqtSYWIK0A==",
+  "success": false,
+  "projectFilePath": "c:\\Users\\aspire\\OneDrive\\Documents\\GitHub\\cpython\\t\\twitter.fsproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\aspire\\.nuget\\packages\\fsharp.core\\7.0.200\\fsharp.core.7.0.200.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1101",
+      "level": "Error",
+      "message": "Unable to find package Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation. No packages exist with this id in source(s): C:\\Program Files\\dotnet\\sdk\\7.0.201\\FSharp\\library-packs",
+      "libraryId": "Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation",
+      "targetGraphs": [
+        "net7.0"
+      ]
+    }
+  ]
+}
