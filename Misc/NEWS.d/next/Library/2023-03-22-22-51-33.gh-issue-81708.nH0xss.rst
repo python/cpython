@@ -1,0 +1,2 @@
+:meth:`datetime.datetime.timestamp` with dates near The Unix Epoch no longer
+raises ``OSError: [Errno 22] Invalid argument`` on Windows.
