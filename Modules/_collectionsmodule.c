@@ -1154,7 +1154,7 @@ PyDoc_STRVAR(insert_doc,
 
 PyDoc_STRVAR(remove_doc,
 "remove(x)\n"
-"Remove the first occurrence of *x*."
+"Remove the first occurrence of *x*. "
 "If not found, raises a ValueError.");
 
 static int
