@@ -910,7 +910,7 @@ deque_rotate(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(rotate_doc,
-"rotate(n)\n\n"
+"rotate(n)\n"
 "Rotate the deque *n* steps to the right (default ``n=1``). "
 "If *n* is negative, rotates left.");
 
@@ -953,7 +953,7 @@ deque_reverse(dequeobject *deque, PyObject *unused)
 }
 
 PyDoc_STRVAR(reverse_doc,
-"reverse()\n\n"
+"reverse()\n"
 "Reverse the elements of the deque *IN PLACE*.");
 
 static PyObject *
@@ -993,7 +993,7 @@ deque_count(dequeobject *deque, PyObject *v)
 }
 
 PyDoc_STRVAR(count_doc,
-"count(x) -> int\n\n"
+"count(x) -> int\n"
 "Count the number of deque elements equal to *x*.");
 
 static int
@@ -1102,10 +1102,9 @@ deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(index_doc,
-"index(x, [start, [stop]]) -> int\n\n"
-"Return the position of *x* in the deque "
-"(at or after index *start* and before index *stop*). "
-"Returns the first match or raises a ValueError if not found.");
+"index(x, [start, [stop]]) -> int\n"
+"Return first index of *x*. "
+"Raises ValueError if *x* is not present.");
 
 /* insert(), remove(), and delitem() are implemented in terms of
    rotate() for simplicity and reasonable performance near the end
@@ -1150,11 +1149,11 @@ deque_insert(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(insert_doc,
-"insert(i, x)\n\n"
+"insert(i, x)\n"
 "Insert *x* into the deque at position *i*.");
 
 PyDoc_STRVAR(remove_doc,
-"remove(x)\n\n"
+"remove(x)\n"
 "Remove the first occurrence of *x*."
 "If not found, raises a ValueError.");
 
@@ -1527,7 +1526,7 @@ deque_sizeof(dequeobject *deque, void *unused)
 }
 
 PyDoc_STRVAR(sizeof_doc,
-"__sizeof__() -> int\n\n"
+"__sizeof__() -> int\n"
 "Size of the deque in memory, in bytes.");
 
 static PyObject *
@@ -1563,7 +1562,7 @@ static PySequenceMethods deque_as_sequence = {
 static PyObject *deque_iter(dequeobject *deque);
 static PyObject *deque_reviter(dequeobject *deque, PyObject *Py_UNUSED(ignored));
 PyDoc_STRVAR(reversed_doc,
-"__reversed__()\n\n"
+"__reversed__()\n"
 "Return a reverse iterator over the deque.");
 
 static PyMethodDef deque_methods[] = {
@@ -1609,7 +1608,7 @@ static PyMethodDef deque_methods[] = {
 };
 
 PyDoc_STRVAR(deque_doc,
-"deque([iterable[, maxlen]]) -> collections.deque\n\n"
+"deque([iterable[, maxlen]]) -> collections.deque\n"
 "A list-like sequence optimized for data accesses near its endpoints.");
 
 static PyTypeObject deque_type = {
@@ -1989,7 +1988,7 @@ new_defdict(defdictobject *dd, PyObject *arg)
         dd->default_factory ? dd->default_factory : Py_None, arg, NULL);
 }
 
-PyDoc_STRVAR(defdict_copy_doc, "copy() -> collections.deque\n\n"
+PyDoc_STRVAR(defdict_copy_doc, "copy() -> collections.deque\n"
 "A shallow copy of the deque.");
 
 static PyObject *
