@@ -1475,9 +1475,9 @@ def test_pdb_issue_gh_94215():
     """
 
 def test_pdb_issue_gh_101673():
-    """See GH-101673
+    """See GH-101673 and GH-102864
 
-    Make sure ll won't revert local variable assignment
+    Make sure ll and switching frames won't revert local variable assignment
 
     >>> def test_function():
     ...    a = 1
@@ -1486,6 +1486,9 @@ def test_pdb_issue_gh_101673():
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     '!a = 2',
     ...     'll',
+    ...     'p a',
+    ...     'u',
+    ...     'd',
     ...     'p a',
     ...     'continue'
     ... ]):
@@ -1498,6 +1501,14 @@ def test_pdb_issue_gh_101673():
       1         def test_function():
       2            a = 1
       3  ->        import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) p a
+    2
+    (Pdb) u
+    > <doctest test.test_pdb.test_pdb_issue_gh_101673[1]>(10)<module>()
+    -> test_function()
+    (Pdb) d
+    > <doctest test.test_pdb.test_pdb_issue_gh_101673[0]>(3)test_function()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) p a
     2
     (Pdb) continue
