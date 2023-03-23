@@ -977,7 +977,7 @@ New Features
   (Contributed by Mark Shannon in :gh:`101578`.)
 
 * Add :c:func:`PyErr_DisplayException`, which takes an exception instance,
-  to replace the legacy-api :c:func:`PyErr_Display`. (Contributed by
+  to replace the legacy-api :c:func:`!PyErr_Display`. (Contributed by
   Irit Katriel in :gh:`102755`).
 
 Porting to Python 3.12
@@ -1118,7 +1118,7 @@ Deprecated
   :c:func:`PyErr_SetRaisedException` instead.
   (Contributed by Mark Shannon in :gh:`101578`.)
 
-* :c:func:`PyErr_Display` is deprecated. Use :c:func:`PyErr_DisplayException`
+* :c:func:`!PyErr_Display` is deprecated. Use :c:func:`PyErr_DisplayException`
   instead. (Contributed by Irit Katriel in :gh:`102755`).
 
 
