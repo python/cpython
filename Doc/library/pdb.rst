@@ -547,7 +547,7 @@ can be overridden by the local file.
 .. pdbcommand:: debug code
 
    Enter a recursive debugger that steps through *code*
-    (which is an arbitrary expression or statement to be
+   (which is an arbitrary expression or statement to be
    executed in the current environment).
 
 .. pdbcommand:: retval
