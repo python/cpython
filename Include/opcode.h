@@ -115,10 +115,8 @@ extern "C" {
 #define KW_NAMES                               172
 #define CALL_INTRINSIC_1                       173
 #define CALL_INTRINSIC_2                       174
-#define INSTRUMENTED_POP_JUMP_IF_NONE          235
-#define INSTRUMENTED_POP_JUMP_IF_NOT_NONE      236
-#define INSTRUMENTED_RETURN_CONST              237
-#define INSTRUMENTED_FOR_ITER                  238
+#define INSTRUMENTED_POP_JUMP_IF_NONE          238
+#define INSTRUMENTED_POP_JUMP_IF_NOT_NONE      239
 #define INSTRUMENTED_RESUME                    240
 #define INSTRUMENTED_CALL                      241
 #define INSTRUMENTED_RETURN_VALUE              242
@@ -126,6 +124,8 @@ extern "C" {
 #define INSTRUMENTED_CALL_FUNCTION_EX          244
 #define INSTRUMENTED_JUMP_FORWARD              245
 #define INSTRUMENTED_JUMP_BACKWARD             246
+#define INSTRUMENTED_RETURN_CONST              247
+#define INSTRUMENTED_FOR_ITER                  248
 #define INSTRUMENTED_POP_JUMP_IF_FALSE         249
 #define INSTRUMENTED_POP_JUMP_IF_TRUE          250
 #define INSTRUMENTED_END_FOR                   251
