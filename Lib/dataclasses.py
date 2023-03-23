@@ -1285,7 +1285,7 @@ class DataclassLike(metaclass=abc.ABCMeta):
             "dataclasses.DataclassLike is an abstract class that cannot be instantiated"
         )
 
-    __subclasshook__ = staticmethod(is_dataclass)
+    __subclasshook__ = is_dataclass
 
 
 def asdict(obj, *, dict_factory=dict):
