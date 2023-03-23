@@ -1,6 +1,7 @@
 import inspect
 import ntpath
 import os
+import string
 import sys
 import unittest
 import warnings
@@ -376,7 +377,7 @@ class TestNtpath(NtpathTestCase):
 
         # gh-88013: call ntpath.realpath with binary drive name may raise a
         # TypeError. The drive should not exist to reproduce the bug.
-        drives = {f"{chr(x)}:\\" for x in range(65, 91)} - set(os.listdrives())
+        drives = {f"{c}:\\" for c in string.ascii_uppercase} - set(os.listdrives())
         d = drives.pop().encode()
         self.assertEqual(ntpath.realpath(d), d)
 
