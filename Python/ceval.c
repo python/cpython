@@ -13,7 +13,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_opcode.h"        // EXTRA_CASES
-#include "pycore_pyerrors.h"      // _PyErr_Fetch(), _PyErr_GetRaisedException()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
@@ -773,18 +773,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
 
-    PyObject *names;
-    PyObject *consts;
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
 
 /* Sets the above local variables from the frame */
 #define SET_LOCALS_FROM_FRAME() \
-    { \
-        PyCodeObject *co = frame->f_code; \
-        names = co->co_names; \
-        consts = co->co_consts; \
-    } \
     assert(_PyInterpreterFrame_LASTI(frame) >= -1); \
     /* Jump back to the last instruction executed... */ \
     next_instr = frame->prev_instr + 1; \
@@ -1783,18 +1776,15 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
     if (exc == NULL) {
         /* Reraise */
         _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
-        value = exc_info->exc_value;
-        if (Py_IsNone(value) || value == NULL) {
+        exc = exc_info->exc_value;
+        if (Py_IsNone(exc) || exc == NULL) {
             _PyErr_SetString(tstate, PyExc_RuntimeError,
                              "No active exception to reraise");
             return 0;
         }
-        assert(PyExceptionInstance_Check(value));
-        type = PyExceptionInstance_Class(value);
-        Py_XINCREF(type);
-        Py_XINCREF(value);
-        PyObject *tb = PyException_GetTraceback(value); /* new ref */
-        _PyErr_Restore(tstate, type, value, tb);
+        Py_INCREF(exc);
+        assert(PyExceptionInstance_Check(exc));
+        _PyErr_SetRaisedException(tstate, exc);
         return 1;
     }
 
@@ -2035,28 +2025,27 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
                PyThreadState *tstate,
                _PyInterpreterFrame *f)
 {
-    PyObject *type, *value, *traceback, *orig_traceback, *arg;
-    int err;
-    _PyErr_Fetch(tstate, &type, &value, &orig_traceback);
-    if (value == NULL) {
-        value = Py_NewRef(Py_None);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    assert(exc && PyExceptionInstance_Check(exc));
+    PyObject *type = PyExceptionInstance_Class(exc);
+    PyObject *traceback = PyException_GetTraceback(exc);
+    if (traceback == NULL) {
+        traceback = Py_NewRef(Py_None);
     }
-    _PyErr_NormalizeException(tstate, &type, &value, &orig_traceback);
-    traceback = (orig_traceback != NULL) ? orig_traceback : Py_None;
-    arg = PyTuple_Pack(3, type, value, traceback);
+    PyObject *arg = PyTuple_Pack(3, type, exc, traceback);
+    Py_XDECREF(traceback);
+
     if (arg == NULL) {
-        _PyErr_Restore(tstate, type, value, orig_traceback);
+        _PyErr_SetRaisedException(tstate, exc);
         return;
     }
-    err = call_trace(func, self, tstate, f, PyTrace_EXCEPTION, arg);
+    int err = call_trace(func, self, tstate, f, PyTrace_EXCEPTION, arg);
     Py_DECREF(arg);
     if (err == 0) {
-        _PyErr_Restore(tstate, type, value, orig_traceback);
+        _PyErr_SetRaisedException(tstate, exc);
     }
     else {
-        Py_XDECREF(type);
-        Py_XDECREF(value);
-        Py_XDECREF(orig_traceback);
+        Py_XDECREF(exc);
     }
 }
 

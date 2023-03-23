@@ -512,7 +512,8 @@ specialize_module_load_attr(
                             SPEC_FAIL_OUT_OF_RANGE);
         return -1;
     }
-    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict->ma_keys);
+    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(
+            _PyInterpreterState_GET(), dict->ma_keys);
     if (keys_version == 0) {
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
@@ -1063,7 +1064,8 @@ PyObject *descr, DescriptorClassification kind)
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_SHADOWED);
             return 0;
         }
-        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(keys);
+        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(
+                _PyInterpreterState_GET(), keys);
         if (keys_version == 0) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
             return 0;
@@ -1134,18 +1136,24 @@ _Py_Specialize_LoadGlobal(
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_EXPECTED_ERROR);
         goto fail;
     }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (index != DKIX_EMPTY) {
         if (index != (uint16_t)index) {
             SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
             goto fail;
         }
-        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(globals_keys);
+        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(
+                interp, globals_keys);
         if (keys_version == 0) {
             SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
+        if (keys_version != (uint16_t)keys_version) {
+            SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
+            goto fail;
+        }
         cache->index = (uint16_t)index;
-        write_u32(cache->module_keys_version, keys_version);
+        cache->module_keys_version = (uint16_t)keys_version;
         instr->op.code = LOAD_GLOBAL_MODULE;
         goto success;
     }
@@ -1167,12 +1175,18 @@ _Py_Specialize_LoadGlobal(
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
         goto fail;
     }
-    uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState(globals_keys);
+    uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState(
+            interp, globals_keys);
     if (globals_version == 0) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
     }
-    uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState(builtin_keys);
+    if (globals_version != (uint16_t)globals_version) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
+        goto fail;
+    }
+    uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState(
+            interp, builtin_keys);
     if (builtins_version == 0) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_VERSIONS);
         goto fail;
@@ -1182,7 +1196,7 @@ _Py_Specialize_LoadGlobal(
         goto fail;
     }
     cache->index = (uint16_t)index;
-    write_u32(cache->module_keys_version, globals_version);
+    cache->module_keys_version = (uint16_t)globals_version;
     cache->builtin_keys_version = (uint16_t)builtins_version;
     instr->op.code = LOAD_GLOBAL_BUILTIN;
     goto success;
@@ -1294,7 +1308,7 @@ _Py_Specialize_BinarySubscr(
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
-            if (Py_SIZE(sub) == 0 || Py_SIZE(sub) == 1) {
+            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
                 instr->op.code = BINARY_SUBSCR_LIST_INT;
                 goto success;
             }
@@ -1307,7 +1321,7 @@ _Py_Specialize_BinarySubscr(
     }
     if (container_type == &PyTuple_Type) {
         if (PyLong_CheckExact(sub)) {
-            if (Py_SIZE(sub) == 0 || Py_SIZE(sub) == 1) {
+            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
                 instr->op.code = BINARY_SUBSCR_TUPLE_INT;
                 goto success;
             }
@@ -1375,7 +1389,7 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
-            if ((Py_SIZE(sub) == 0 || Py_SIZE(sub) == 1)
+            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)
                 && ((PyLongObject *)sub)->long_value.ob_digit[0] < (size_t)PyList_GET_SIZE(container))
             {
                 instr->op.code = STORE_SUBSCR_LIST_INT;
@@ -1993,7 +2007,7 @@ _Py_Specialize_CompareAndBranch(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *inst
         goto success;
     }
     if (PyLong_CheckExact(lhs)) {
-        if (Py_ABS(Py_SIZE(lhs)) <= 1 && Py_ABS(Py_SIZE(rhs)) <= 1) {
+        if (_PyLong_IsCompact((PyLongObject *)lhs) && _PyLong_IsCompact((PyLongObject *)rhs)) {
             instr->op.code = COMPARE_AND_BRANCH_INT;
             goto success;
         }

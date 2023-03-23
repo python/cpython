@@ -947,21 +947,18 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(unicode);
 #endif
 
     new_unicode = (PyObject *)PyObject_Realloc(unicode, new_size);
     if (new_unicode == NULL) {
-        _Py_NewReference(unicode);
+        _Py_NewReferenceNoTotal(unicode);
         PyErr_NoMemory();
         return NULL;
     }
     unicode = new_unicode;
-    _Py_NewReference(unicode);
+    _Py_NewReferenceNoTotal(unicode);
 
     _PyUnicode_LENGTH(unicode) = length;
 #ifdef Py_DEBUG
@@ -14536,6 +14533,15 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
         return _PyStatus_OK();
     }
 
+    // Initialize the global interned dict
+    PyObject *interned = PyDict_New();
+    if (interned == NULL) {
+        PyErr_Clear();
+        return _PyStatus_ERR("failed to create interned dict");
+    }
+
+    set_interned_dict(interned);
+
     /* Intern statically allocated string identifiers and deepfreeze strings.
      * This must be done before any module initialization so that statically
      * allocated string identifiers are used instead of heap allocated strings.
@@ -14603,23 +14609,11 @@ PyUnicode_InternInPlace(PyObject **p)
     }
 
     PyObject *interned = get_interned_dict();
-    if (interned == NULL) {
-        interned = PyDict_New();
-        if (interned == NULL) {
-            PyErr_Clear(); /* Don't leave an exception */
-            return;
-        }
-        set_interned_dict(interned);
-    }
-
-    PyObject *t = PyDict_SetDefault(interned, s, s);
-    if (t == NULL) {
-        PyErr_Clear();
-        return;
-    }
-
+    PyObject *t = _Py_AddToGlobalDict(interned, s, s);
     if (t != s) {
-        Py_SETREF(*p, Py_NewRef(t));
+        if (t != NULL) {
+            Py_SETREF(*p, Py_NewRef(t));
+        }
         return;
     }
 

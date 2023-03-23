@@ -5492,10 +5492,10 @@ class TCPTimeoutTest(SocketTCPTest):
                 self.fail("caught timeout instead of Alarm")
             except Alarm:
                 pass
-            except:
+            except BaseException as e:
                 self.fail("caught other exception instead of Alarm:"
                           " %s(%s):\n%s" %
-                          (sys.exc_info()[:2] + (traceback.format_exc(),)))
+                          (type(e), e, traceback.format_exc()))
             else:
                 self.fail("nothing caught")
             finally:
