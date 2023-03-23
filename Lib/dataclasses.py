@@ -1268,16 +1268,12 @@ def is_dataclass(obj):
     return hasattr(cls, _FIELDS)
 
 
+@dataclass(init=False, repr=False, eq=False, match_args=False)
 class DataclassLike(metaclass=abc.ABCMeta):
     """Abstract base class for all dataclass types.
 
     Mainly useful for type-checking.
     """
-    # __dataclass_fields__ here is really an "abstract class variable",
-    # but there's no good way of expressing that at runtime,
-    # so just make it a regular class variable with a dummy value
-    __dataclass_fields__ = {}
-
     def __init_subclass__(cls):
         raise TypeError(
             "Use the @dataclass decorator to create dataclasses, "
