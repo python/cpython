@@ -966,6 +966,13 @@ Introspection
    .. versionadded:: 3.7
 
 
+.. function:: iscoroutine(obj)
+
+   Return ``True`` if *obj* is a coroutine object.
+
+   .. versionadded:: 3.4
+
+
 Task Object
 ===========
 
