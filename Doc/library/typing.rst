@@ -1585,10 +1585,11 @@ These are not used in annotations. They are building blocks for creating generic
       assert isinstance(open('/some/file'), Closable)
 
       @runtime_checkable
-      class HasErrNo(Protocol):
-          errno: int
+      class Named(Protocol):
+          name: str
 
-      assert isinstance(OSError(42, 'foo'), HasErrNo)
+      import threading
+      assert isinstance(threading.Thread(name='Bob'), Named)
 
    .. note::
 
