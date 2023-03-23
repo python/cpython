@@ -7923,7 +7923,7 @@ _pickle_exec(PyObject *m)
 
 static PyModuleDef_Slot pickle_slots[] = {
     {Py_mod_exec, _pickle_exec},
-    {0, NULL}
+    {0, NULL},
 };
 
 static struct PyModuleDef _picklemodule = {
@@ -7935,7 +7935,7 @@ static struct PyModuleDef _picklemodule = {
     .m_slots = pickle_slots,
     .m_traverse = pickle_traverse,
     .m_clear = pickle_clear,
-    .m_free = (freefunc)pickle_free
+    .m_free = (freefunc)pickle_free,
 };
 
 PyMODINIT_FUNC
