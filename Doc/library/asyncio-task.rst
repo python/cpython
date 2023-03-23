@@ -629,8 +629,8 @@ Timeouts
        An :ref:`asynchronous context manager <async-context-managers>`
        for cancelling overdue coroutines.
 
-       ``when`` should be either a float relative to the current
-       :meth:`loop.time` or ``None``:
+       ``when`` should be an absolute time at which the context should time out,
+       as measured by the event loop's clock.
 
        - If ``when`` is ``None``, the timeout will never trigger.
        - If ``when < loop.time()``, the timeout will trigger on the next
