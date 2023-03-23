@@ -194,8 +194,8 @@ typedef struct {
     PyObject *partial;
 
     /* Types */
-    PyTypeObject *pickler_type;
-    PyTypeObject *unpickler_type;
+    PyTypeObject *Pickler_Type;
+    PyTypeObject *Unpickler_Type;
     PyTypeObject *Pdata_type;
     PyTypeObject *PicklerMemoProxyType;
     PyTypeObject *UnpicklerMemoProxyType;
@@ -247,8 +247,8 @@ _Pickle_ClearState(PickleState *st)
     Py_CLEAR(st->codecs_encode);
     Py_CLEAR(st->getattr);
     Py_CLEAR(st->partial);
-    Py_CLEAR(st->pickler_type);
-    Py_CLEAR(st->unpickler_type);
+    Py_CLEAR(st->Pickler_Type);
+    Py_CLEAR(st->Unpickler_Type);
     Py_CLEAR(st->Pdata_type);
     Py_CLEAR(st->PicklerMemoProxyType);
     Py_CLEAR(st->UnpicklerMemoProxyType);
@@ -1147,7 +1147,7 @@ _Pickler_New(PickleState *st)
 {
     PicklerObject *self;
 
-    self = PyObject_GC_New(PicklerObject, st->pickler_type);
+    self = PyObject_GC_New(PicklerObject, st->Pickler_Type);
     if (self == NULL)
         return NULL;
 
@@ -1628,7 +1628,7 @@ _Unpickler_New(PyObject *module)
     UnpicklerObject *self;
     PickleState *st = _Pickle_GetState(module);
 
-    self = PyObject_GC_New(UnpicklerObject, st->unpickler_type);
+    self = PyObject_GC_New(UnpicklerObject, st->Unpickler_Type);
     if (self == NULL)
         return NULL;
 
@@ -7838,8 +7838,8 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->codecs_encode);
     Py_VISIT(st->getattr);
     Py_VISIT(st->partial);
-    Py_VISIT(st->pickler_type);
-    Py_VISIT(st->unpickler_type);
+    Py_VISIT(st->Pickler_Type);
+    Py_VISIT(st->Unpickler_Type);
     Py_VISIT(st->Pdata_type);
     Py_VISIT(st->PicklerMemoProxyType);
     Py_VISIT(st->UnpicklerMemoProxyType);
@@ -7874,21 +7874,21 @@ _pickle_exec(PyObject *m)
         return -1;
     }
 
-    st->pickler_type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &pickler_type_spec, NULL);
-    if (st->pickler_type == NULL) {
+    st->Pickler_Type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &pickler_type_spec, NULL);
+    if (st->Pickler_Type == NULL) {
         return -1;
     }
 
-    if (PyModule_AddType(m, st->pickler_type) < 0) {
+    if (PyModule_AddType(m, st->Pickler_Type) < 0) {
         return -1;
     }
 
-    st->unpickler_type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &unpickler_type_spec, NULL);
-    if (st->unpickler_type == NULL) {
+    st->Unpickler_Type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &unpickler_type_spec, NULL);
+    if (st->Unpickler_Type == NULL) {
         return -1;
     }
 
-    if (PyModule_AddType(m, st->unpickler_type) < 0) {
+    if (PyModule_AddType(m, st->Unpickler_Type) < 0) {
         return -1;
     }
 
