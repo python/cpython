@@ -526,15 +526,20 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         ? (_PyInterpreterConfig)_PyInterpreterConfig_INIT
         : (_PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
     // XXX Possible GILState issues?
-    PyThreadState *tstate = _Py_NewInterpreterFromConfig(&config);
+    PyThreadState *tstate = NULL;
+    PyStatus status = _Py_NewInterpreterFromConfig(&tstate, &config);
     PyThreadState_Swap(save_tstate);
-    if (tstate == NULL) {
+    if (PyStatus_Exception(status)) {
         /* Since no new thread state was created, there is no exception to
            propagate; raise a fresh one after swapping in the old thread
            state. */
+        _PyErr_SetFromPyStatus(status);
+        PyObject *exc = PyErr_GetRaisedException();
         PyErr_SetString(PyExc_RuntimeError, "interpreter creation failed");
+        _PyErr_ChainExceptions1(exc);
         return NULL;
     }
+    assert(tstate != NULL);
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
     PyObject *idobj = _PyInterpreterState_GetIDObject(interp);
     if (idobj == NULL) {

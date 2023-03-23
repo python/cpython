@@ -239,7 +239,6 @@ def print_exception():
     efile = sys.stderr
     typ, val, tb = excinfo = sys.exc_info()
     sys.last_type, sys.last_value, sys.last_traceback = excinfo
-    sys.last_exc = val
     seen = set()
 
     def print_exc(typ, exc, tb):
@@ -630,7 +629,6 @@ class Executive:
             flist = self.rpchandler.get_remote_proxy(flist_oid)
         while tb and tb.tb_frame.f_globals["__name__"] in ["rpc", "run"]:
             tb = tb.tb_next
-        sys.last_exc = val
         sys.last_type = typ
         sys.last_value = val
         item = stackviewer.StackTreeItem(flist, tb)
