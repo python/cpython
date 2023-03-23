@@ -300,13 +300,17 @@ in the task at the next opportunity.
 It is recommended that coroutines use ``try/finally`` blocks to robustly
 perform clean-up logic. In case :exc:`asyncio.CancelledError`
 is explicitly caught, it should generally be propagated when
-clean-up is complete. Most code can safely ignore :exc:`asyncio.CancelledError`.
+clean-up is complete. :exc:`asyncio.CancelledError` directly subclasses
+:exc:`BaseException` so most code will not need to be aware of it.
 
 The asyncio components that enable structured concurrency, like
 :class:`asyncio.TaskGroup` and :func:`asyncio.timeout`,
 are implemented using cancellation internally and might misbehave if
 a coroutine swallows :exc:`asyncio.CancelledError`. Similarly, user code
-should not call :meth:`uncancel <asyncio.Task.uncancel>`.
+should not generally call :meth:`uncancel <asyncio.Task.uncancel>`.
+However, in cases when suppressing :exc:`asyncio.CancelledError` is
+truly desired, it is necessary to also call ``uncancel()`` to completely
+remove the cancellation state.
 
 .. _taskgroups:
 
@@ -804,6 +808,10 @@ Waiting Primitives
    .. versionchanged:: 3.11
       Passing coroutine objects to ``wait()`` directly is forbidden.
 
+   .. versionchanged:: 3.12
+      Added support for generators yielding tasks.
+
+
 .. function:: as_completed(aws, *, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
@@ -813,9 +821,6 @@ Waiting Primitives
 
    Raises :exc:`TimeoutError` if the timeout occurs before
    all Futures are done.
-
-   .. versionchanged:: 3.10
-      Removed the *loop* parameter.
 
    Example::
 
@@ -1147,7 +1152,9 @@ Task Object
       Therefore, unlike :meth:`Future.cancel`, :meth:`Task.cancel` does
       not guarantee that the Task will be cancelled, although
       suppressing cancellation completely is not common and is actively
-      discouraged.
+      discouraged.  Should the coroutine nevertheless decide to suppress
+      the cancellation, it needs to call :meth:`Task.uncancel` in addition
+      to catching the exception.
 
       .. versionchanged:: 3.9
          Added the *msg* parameter.
@@ -1236,6 +1243,10 @@ Task Object
       continue running even in case of the timeout.  This is implemented
       with :meth:`uncancel`.  :class:`TaskGroup` context managers use
       :func:`uncancel` in a similar fashion.
+
+      If end-user code is, for some reason, suppresing cancellation by
+      catching :exc:`CancelledError`, it needs to call this method to remove
+      the cancellation state.
 
    .. method:: cancelling()
 
