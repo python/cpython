@@ -13,7 +13,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_signal.h"
+#include "pycore_signal.h"        // Py_NSIG
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
@@ -27,8 +27,6 @@
 #    include <process.h>
 #  endif
 #endif
-
-#include "pycore_signal.h"        // Py_NSIG
 
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>
@@ -148,6 +146,10 @@ get_signal_state(PyObject *module)
 static inline int
 compare_handler(PyObject *func, PyObject *dfl_ign_handler)
 {
+    // See https://github.com/python/cpython/pull/102399
+    if (func == NULL || dfl_ign_handler == NULL) {
+        return 0;
+    }
     assert(PyLong_CheckExact(dfl_ign_handler));
     if (!PyLong_CheckExact(func)) {
         return 0;
@@ -234,14 +236,13 @@ signal_default_int_handler_impl(PyObject *module, int signalnum,
 static int
 report_wakeup_write_error(void *data)
 {
-    PyObject *exc, *val, *tb;
     int save_errno = errno;
     errno = (int) (intptr_t) data;
-    PyErr_Fetch(&exc, &val, &tb);
+    PyObject *exc = PyErr_GetRaisedException();
     PyErr_SetFromErrno(PyExc_OSError);
     _PyErr_WriteUnraisableMsg("when trying to write to the signal wakeup fd",
                               NULL);
-    PyErr_Restore(exc, val, tb);
+    PyErr_SetRaisedException(exc);
     errno = save_errno;
     return 0;
 }
@@ -252,14 +253,13 @@ report_wakeup_send_error(void* data)
 {
     int send_errno = (int) (intptr_t) data;
 
-    PyObject *exc, *val, *tb;
-    PyErr_Fetch(&exc, &val, &tb);
+    PyObject *exc = PyErr_GetRaisedException();
     /* PyErr_SetExcFromWindowsErr() invokes FormatMessage() which
        recognizes the error codes used by both GetLastError() and
        WSAGetLastError */
     PyErr_SetExcFromWindowsErr(PyExc_OSError, send_errno);
     _PyErr_WriteUnraisableMsg("when trying to send to the signal wakeup fd", NULL);
-    PyErr_Restore(exc, val, tb);
+    PyErr_SetRaisedException(exc);
     return 0;
 }
 #endif   /* MS_WINDOWS */
@@ -1803,10 +1803,7 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
      */
     _Py_atomic_store(&is_tripped, 0);
 
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
-    while (frame && _PyFrame_IsIncomplete(frame)) {
-        frame = frame->previous;
-    }
+    _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
     signal_state_t *state = &signal_global_state;
     for (int i = 1; i < Py_NSIG; i++) {
         if (!_Py_atomic_load_relaxed(&Handlers[i].tripped)) {

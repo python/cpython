@@ -5,7 +5,7 @@
 #include "pycore_interp.h"        // _PyInterpreterState.runtime
 #include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_pathconfig.h"    // _Py_path_config
-#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -180,6 +180,8 @@ static const char usage_envvars[] =
 "PYTHONDEBUG             : enable parser debug mode (-d)\n"
 "PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n"
 "PYTHONINSPECT           : inspect interactively after running script (-i)\n"
+"PYTHONINTMAXSTRDIGITS   : limit max digit characters in an int value\n"
+"                          (-X int_max_str_digits=number)\n"
 "PYTHONNOUSERSITE        : disable user site directory (-s)\n"
 "PYTHONOPTIMIZE          : enable level 1 optimizations (-O)\n"
 "PYTHONUNBUFFERED        : disable stdout/stderr buffering (-u)\n"
@@ -3141,8 +3143,7 @@ init_dump_ascii_wstr(const wchar_t *str)
 void
 _Py_DumpPathConfig(PyThreadState *tstate)
 {
-    PyObject *exc_type, *exc_value, *exc_tb;
-    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
 
     PySys_WriteStderr("Python path configuration:\n");
 
@@ -3200,5 +3201,5 @@ _Py_DumpPathConfig(PyThreadState *tstate)
         PySys_WriteStderr("  ]\n");
     }
 
-    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
+    _PyErr_SetRaisedException(tstate, exc);
 }

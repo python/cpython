@@ -1275,6 +1275,75 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_is_stack_trampoline_active_impl(module);
 }
 
+PyDoc_STRVAR(sys__getframemodulename__doc__,
+"_getframemodulename($module, /, depth=0)\n"
+"--\n"
+"\n"
+"Return the name of the module for a calling frame.\n"
+"\n"
+"The default depth returns the module containing the call to this API.\n"
+"A more typical use in a library will pass a depth of 1 to get the user\'s\n"
+"module rather than the library module.\n"
+"\n"
+"If no frame, module, or name can be found, returns None.");
+
+#define SYS__GETFRAMEMODULENAME_METHODDEF    \
+    {"_getframemodulename", _PyCFunction_CAST(sys__getframemodulename), METH_FASTCALL|METH_KEYWORDS, sys__getframemodulename__doc__},
+
+static PyObject *
+sys__getframemodulename_impl(PyObject *module, int depth);
+
+static PyObject *
+sys__getframemodulename(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(depth), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"depth", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_getframemodulename",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int depth = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    depth = _PyLong_AsInt(args[0]);
+    if (depth == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = sys__getframemodulename_impl(module, depth);
+
+exit:
+    return return_value;
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1318,4 +1387,4 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=b32b444538dfd354 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c761f14326ced54 input=a9049054013a1b77]*/

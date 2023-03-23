@@ -1,0 +1,1 @@
+Fix pathlib.Path.walk RecursionError on deep directory trees by rewriting it using iteration instead of recursion.

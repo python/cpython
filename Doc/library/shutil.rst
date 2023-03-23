@@ -292,15 +292,15 @@ Directory and files operations
    .. versionadded:: 3.8
       The *dirs_exist_ok* parameter.
 
-.. function:: rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None)
+.. function:: rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None)
 
    .. index:: single: directory; deleting
 
    Delete an entire directory tree; *path* must point to a directory (but not a
    symbolic link to a directory).  If *ignore_errors* is true, errors resulting
    from failed removals will be ignored; if false or omitted, such errors are
-   handled by calling a handler specified by *onerror* or, if that is omitted,
-   they raise an exception.
+   handled by calling a handler specified by *onexc* or *onerror* or, if both
+   are omitted, exceptions are propagated to the caller.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
@@ -315,14 +315,17 @@ Directory and files operations
       otherwise.  Applications can use the :data:`rmtree.avoids_symlink_attacks`
       function attribute to determine which case applies.
 
-   If *onerror* is provided, it must be a callable that accepts three
-   parameters: *function*, *path*, and *excinfo*.
+   If *onexc* is provided, it must be a callable that accepts three parameters:
+   *function*, *path*, and *excinfo*.
 
    The first parameter, *function*, is the function which raised the exception;
    it depends on the platform and implementation.  The second parameter,
    *path*, will be the path name passed to *function*.  The third parameter,
-   *excinfo*, will be the exception information returned by
-   :func:`sys.exc_info`.  Exceptions raised by *onerror* will not be caught.
+   *excinfo*, is the exception that was raised. Exceptions raised by *onexc*
+   will not be caught.
+
+   The deprecated *onerror* is similar to *onexc*, except that the third
+   parameter it receives is the tuple returned from :func:`sys.exc_info`.
 
    .. audit-event:: shutil.rmtree path,dir_fd shutil.rmtree
 
@@ -336,6 +339,9 @@ Directory and files operations
 
    .. versionchanged:: 3.11
       The *dir_fd* parameter.
+
+   .. versionchanged:: 3.12
+      Added the *onexc* parameter, deprecated *onerror*.
 
    .. attribute:: rmtree.avoids_symlink_attacks
 
@@ -509,7 +515,7 @@ rmtree example
 ~~~~~~~~~~~~~~
 
 This example shows how to remove a directory tree on Windows where some
-of the files have their read-only bit set. It uses the onerror callback
+of the files have their read-only bit set. It uses the onexc callback
 to clear the readonly bit and reattempt the remove. Any subsequent failure
 will propagate. ::
 
@@ -521,7 +527,7 @@ will propagate. ::
         os.chmod(path, stat.S_IWRITE)
         func(path)
 
-    shutil.rmtree(directory, onerror=remove_readonly)
+    shutil.rmtree(directory, onexc=remove_readonly)
 
 .. _archiving-operations:
 
