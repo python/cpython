@@ -20,6 +20,8 @@
 				"maelvalais.autoconf",
                 "ms-vscode.cpptools",
 				"ms-vscode.live-server"
+                // https://github.com/microsoft/vscode-python/issues/18073
+                // "ms-python.python"
 			],
             "settings": {
                 "C_Cpp.default.cStandard": "c11",
@@ -41,6 +43,16 @@
                 "files.eol": "\n",
                 "files.insertFinalNewline": true,
                 "files.trimTrailingWhitespace": true,
+                "python.analysis.diagnosticSeverityOverrides": {
+                    // Complains about shadowing the stdlib w/ the stdlib.
+                    "reportShadowedImports": "none",
+                    // Dodesn't like _frozen_importlib.
+                    "reportMissingImports": "none"
+                },
+                "python.analysis.extraPaths": [
+                    "Lib"
+                ],
+                "python.defaultInterpreterPath": "./python",
                 "[restructuredtext]": {
                     "editor.tabSize": 3
                 }
