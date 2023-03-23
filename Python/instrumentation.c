@@ -1135,8 +1135,7 @@ _Py_call_instrumentation_exc_vector(
 {
     assert(_PyErr_Occurred(tstate));
     assert(args[0] == NULL);
-    PyObject *type, *value, *traceback;
-    _PyErr_Fetch(tstate, &type, &value, &traceback);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
     PyCodeObject *code = frame->f_code;
     assert(args[1] == NULL);
     args[1] = (PyObject *)code;
@@ -1155,12 +1154,10 @@ _Py_call_instrumentation_exc_vector(
         Py_DECREF(offset_obj);
     }
     if (err) {
-        Py_XDECREF(type);
-        Py_XDECREF(value);
-        Py_XDECREF(traceback);
+        Py_XDECREF(exc);
     }
     else {
-        _PyErr_Restore(tstate, type, value, traceback);
+        _PyErr_SetRaisedException(tstate, exc);
     }
     assert(_PyErr_Occurred(tstate));
 }
