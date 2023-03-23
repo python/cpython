@@ -2562,7 +2562,7 @@ class BasicHyperVTest(unittest.TestCase):
         socket.HV_GUID_LOOPBACK
 
     def testCreateHyperVSocketWithUnknownProtoFailure(self):
-        expected = "[WinError 10041]"
+        expected = r"\[WinError 10041\]"
         with self.assertRaisesRegex(OSError, expected):
             socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM)
 
