@@ -3,7 +3,7 @@
         "dockerfile": "Dockerfile"
     },
     "updateContentCommand": {
-        // Using a shell for `nproc` usage.
+        // Using the shell for `nproc` usage.
         "python": "./configure --config-cache --with-pydebug && make -s -j `nproc`",
         "docs": [
             "make",
