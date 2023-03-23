@@ -20,17 +20,14 @@
 PyDoc_STRVAR(pickle_module_doc,
 "Optimized C implementation for the Python pickle module.");
 
-//TODO should we remove Pickler_Type from the clinic input here?
-//similar entry was not removed in pull 20960 for _bz2
-
 /*[clinic input]
 module _pickle
-class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
-class _pickle.PicklerMemoProxy "PicklerMemoProxyObject *" "&PicklerMemoProxyType"
-class _pickle.Unpickler "UnpicklerObject *" "&Unpickler_Type"
-class _pickle.UnpicklerMemoProxy "UnpicklerMemoProxyObject *" "&UnpicklerMemoProxyType"
+class _pickle.Pickler "PicklerObject *" ""
+class _pickle.PicklerMemoProxy "PicklerMemoProxyObject *" ""
+class _pickle.Unpickler "UnpicklerObject *" ""
+class _pickle.UnpicklerMemoProxy "UnpicklerMemoProxyObject *" ""
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4b3e113468a58e6c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b6d7191ab6466cda]*/
 
 /* Bump HIGHEST_PROTOCOL when new opcodes are added to the pickle protocol.
    Bump DEFAULT_PROTOCOL only when the oldest still supported version of Python
