@@ -1819,28 +1819,6 @@ dummy_func(
             }
         }
 
-        inst(INSTRUMENTED_COMPARE_AND_BRANCH, ( -- )) {
-            assert((oparg >> 4) <= Py_GE);
-            PyObject *right = POP();
-            PyObject *left = POP();
-            PyObject *cond = PyObject_RichCompare(left, right, oparg>>4);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            ERROR_IF(cond == NULL, error);
-            assert(_Py_OPCODE(next_instr[1]) == POP_JUMP_IF_FALSE ||
-                   _Py_OPCODE(next_instr[1]) == POP_JUMP_IF_TRUE);
-            bool jump_on_true = _Py_OPCODE(next_instr[1]) == POP_JUMP_IF_TRUE;
-            int offset = 0;
-            int err = PyObject_IsTrue(cond);
-            _Py_CODEUNIT *here = next_instr-1;
-            Py_DECREF(cond);
-            ERROR_IF(err < 0, error);
-            if (jump_on_true == (err != 0)) {
-                offset = _Py_OPARG(next_instr[1]);
-            }
-            INSTRUMENTED_JUMP(here, next_instr + 2 + offset, PY_MONITORING_EVENT_BRANCH);
-        }
-
         inst(COMPARE_AND_BRANCH_FLOAT, (unused/2, left, right -- )) {
             DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_AND_BRANCH);
             DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_AND_BRANCH);

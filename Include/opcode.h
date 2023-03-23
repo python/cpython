@@ -120,7 +120,6 @@ extern "C" {
 #define INSTRUMENTED_POP_JUMP_IF_NOT_NONE      236
 #define INSTRUMENTED_RETURN_CONST              237
 #define INSTRUMENTED_FOR_ITER                  238
-#define INSTRUMENTED_COMPARE_AND_BRANCH        239
 #define INSTRUMENTED_RESUME                    240
 #define INSTRUMENTED_CALL                      241
 #define INSTRUMENTED_RETURN_VALUE              242

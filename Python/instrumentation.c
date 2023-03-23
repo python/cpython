@@ -42,14 +42,12 @@ static const int8_t EVENT_FOR_OPCODE[256] = {
     [POP_JUMP_IF_TRUE] = PY_MONITORING_EVENT_BRANCH,
     [POP_JUMP_IF_NONE] = PY_MONITORING_EVENT_BRANCH,
     [POP_JUMP_IF_NOT_NONE] = PY_MONITORING_EVENT_BRANCH,
-    [COMPARE_AND_BRANCH] = PY_MONITORING_EVENT_BRANCH,
     [INSTRUMENTED_JUMP_FORWARD] = PY_MONITORING_EVENT_JUMP,
     [INSTRUMENTED_JUMP_BACKWARD] = PY_MONITORING_EVENT_JUMP,
     [INSTRUMENTED_POP_JUMP_IF_FALSE] = PY_MONITORING_EVENT_BRANCH,
     [INSTRUMENTED_POP_JUMP_IF_TRUE] = PY_MONITORING_EVENT_BRANCH,
     [INSTRUMENTED_POP_JUMP_IF_NONE] = PY_MONITORING_EVENT_BRANCH,
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = PY_MONITORING_EVENT_BRANCH,
-    [INSTRUMENTED_COMPARE_AND_BRANCH] = PY_MONITORING_EVENT_BRANCH,
     [FOR_ITER] = PY_MONITORING_EVENT_BRANCH,
     [INSTRUMENTED_FOR_ITER] = PY_MONITORING_EVENT_BRANCH,
     [END_FOR] = PY_MONITORING_EVENT_STOP_ITERATION,
@@ -77,14 +75,12 @@ static const bool OPCODE_HAS_EVENT[256] = {
     [POP_JUMP_IF_TRUE] = true,
     [POP_JUMP_IF_NONE] = true,
     [POP_JUMP_IF_NOT_NONE] = true,
-    [COMPARE_AND_BRANCH] = true,
     [INSTRUMENTED_JUMP_FORWARD] = true,
     [INSTRUMENTED_JUMP_BACKWARD] = true,
     [INSTRUMENTED_POP_JUMP_IF_FALSE] = true,
     [INSTRUMENTED_POP_JUMP_IF_TRUE] = true,
     [INSTRUMENTED_POP_JUMP_IF_NONE] = true,
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = true,
-    [INSTRUMENTED_COMPARE_AND_BRANCH] = true,
     [INSTRUMENTED_FOR_ITER] = true,
     [END_FOR] = true,
     [INSTRUMENTED_END_FOR] = true,
@@ -105,7 +101,6 @@ static const uint8_t DE_INSTRUMENT[256] = {
     [INSTRUMENTED_POP_JUMP_IF_TRUE] = POP_JUMP_IF_TRUE,
     [INSTRUMENTED_POP_JUMP_IF_NONE] = POP_JUMP_IF_NONE,
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = POP_JUMP_IF_NOT_NONE,
-    [INSTRUMENTED_COMPARE_AND_BRANCH] = COMPARE_AND_BRANCH,
     [INSTRUMENTED_FOR_ITER] = FOR_ITER,
     [INSTRUMENTED_END_FOR] = END_FOR,
     [INSTRUMENTED_END_SEND] = END_SEND,
@@ -136,8 +131,6 @@ static const uint8_t INSTRUMENTED_OPCODES[256] = {
     [INSTRUMENTED_POP_JUMP_IF_NONE] = INSTRUMENTED_POP_JUMP_IF_NONE,
     [POP_JUMP_IF_NOT_NONE] = INSTRUMENTED_POP_JUMP_IF_NOT_NONE,
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = INSTRUMENTED_POP_JUMP_IF_NOT_NONE,
-    [COMPARE_AND_BRANCH] = INSTRUMENTED_COMPARE_AND_BRANCH,
-    [INSTRUMENTED_COMPARE_AND_BRANCH] = INSTRUMENTED_COMPARE_AND_BRANCH,
     [END_FOR] = INSTRUMENTED_END_FOR,
     [INSTRUMENTED_END_FOR] = INSTRUMENTED_END_FOR,
     [END_SEND] = INSTRUMENTED_END_SEND,
@@ -357,10 +350,6 @@ Instruction read_instruction(PyCodeObject *code, int offset)
     int base = _PyOpcode_Deopt[result.deinstrumented_opcode];
     /* TO DO -- Use instruction length, not cache count table */
     result.length += _PyOpcode_Caches[base];
-    if (base == COMPARE_AND_BRANCH) {
-        /* Skip over following POP_JUMP_IF */
-        result.length += 1;
-    }
     return result;
 }
 
@@ -1637,13 +1626,6 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         while (base_opcode == EXTENDED_ARG) {
             i++;
             base_opcode = _Py_GetBaseOpcode(code, i);
-        }
-        /* TO DO -- Use instruction length, not cache count */
-        if (base_opcode == COMPARE_AND_BRANCH) {
-            /* Skip over following POP_JUMP_IF */
-            CHECK(instr[2].op.code == POP_JUMP_IF_FALSE ||
-                   instr[2].op.code == POP_JUMP_IF_TRUE);
-            i++;
         }
         i += _PyOpcode_Caches[base_opcode];
 

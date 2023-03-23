@@ -231,8 +231,6 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case COMPARE_AND_BRANCH:
             return 2;
-        case INSTRUMENTED_COMPARE_AND_BRANCH:
-            return 0;
         case COMPARE_AND_BRANCH_FLOAT:
             return 2;
         case COMPARE_AND_BRANCH_INT:
@@ -617,8 +615,6 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case COMPARE_AND_BRANCH:
             return 0;
-        case INSTRUMENTED_COMPARE_AND_BRANCH:
-            return 0;
         case COMPARE_AND_BRANCH_FLOAT:
             return 0;
         case COMPARE_AND_BRANCH_INT:
@@ -896,7 +892,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [STORE_ATTR_SLOT] = { true, INSTR_FMT_IXC000 },
     [COMPARE_OP] = { true, INSTR_FMT_IBC },
     [COMPARE_AND_BRANCH] = { true, INSTR_FMT_IBC0 },
-    [INSTRUMENTED_COMPARE_AND_BRANCH] = { true, INSTR_FMT_IB },
     [COMPARE_AND_BRANCH_FLOAT] = { true, INSTR_FMT_IBC0 },
     [COMPARE_AND_BRANCH_INT] = { true, INSTR_FMT_IBC0 },
     [COMPARE_AND_BRANCH_STR] = { true, INSTR_FMT_IBC0 },
