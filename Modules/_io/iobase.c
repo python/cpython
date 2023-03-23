@@ -130,8 +130,7 @@ iobase_is_closed(PyObject *self)
 {
     PyObject *res;
     int ret;
-    /* This gets the derived attribute, which is *not* __IOBase_closed
-       in most cases! */
+    /* This gets the IOBase internal attribute. */
     ret = _PyObject_LookupAttr(self, &_Py_ID(__IOBase_closed), &res);
     Py_XDECREF(res);
     return ret;
