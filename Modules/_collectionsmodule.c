@@ -910,7 +910,7 @@ deque_rotate(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(rotate_doc,
-"Rotate the deque n steps to the right (default n=1).  If n is negative, rotates left.");
+"Rotate the deque n steps to the right (default n=1). If n is negative, rotates left.");
 
 static PyObject *
 deque_reverse(dequeobject *deque, PyObject *unused)
