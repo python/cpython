@@ -7851,43 +7851,29 @@ _pickle_exec(PyObject *m)
 {
     PickleState *st = _Pickle_GetState(m);
 
-    st->Pdata_Type = (PyTypeObject *)PyType_FromMetaclass(NULL, m, &pdata_spec,
-                                                          NULL);
-    if (st->Pdata_Type == NULL) {
-        return -1;
-    }
+#define CREATE_TYPE(mod, type, spec)                                        \
+    do {                                                                    \
+        type = (PyTypeObject *)PyType_FromMetaclass(NULL, mod, spec, NULL); \
+        if (type == NULL) {                                                 \
+            return -1;                                                      \
+        }                                                                   \
+    } while (0)
 
-    st->PicklerMemoProxyType = (PyTypeObject *)PyType_FromMetaclass(
-            NULL, m, &memoproxy_spec, NULL);
-    if (st->PicklerMemoProxyType == NULL) {
-        return -1;
-    }
+    CREATE_TYPE(m, st->Pdata_Type, &pdata_spec);
+    CREATE_TYPE(m, st->PicklerMemoProxyType, &memoproxy_spec);
+    CREATE_TYPE(m, st->UnpicklerMemoProxyType, &unpickler_memoproxy_spec);
+    CREATE_TYPE(m, st->Pickler_Type, &pickler_type_spec);
+    CREATE_TYPE(m, st->Unpickler_Type, &unpickler_type_spec);
 
-    st->UnpicklerMemoProxyType = (PyTypeObject *)PyType_FromMetaclass(
-            NULL, m, &unpickler_memoproxy_spec, NULL);
-    if (st->UnpicklerMemoProxyType == NULL) {
-        return -1;
-    }
+#undef CREATE_TYPE
 
     /* Add types */
     if (PyModule_AddType(m, &PyPickleBuffer_Type) < 0) {
         return -1;
     }
-
-    st->Pickler_Type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &pickler_type_spec, NULL);
-    if (st->Pickler_Type == NULL) {
-        return -1;
-    }
-
     if (PyModule_AddType(m, st->Pickler_Type) < 0) {
         return -1;
     }
-
-    st->Unpickler_Type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &unpickler_type_spec, NULL);
-    if (st->Unpickler_Type == NULL) {
-        return -1;
-    }
-
     if (PyModule_AddType(m, st->Unpickler_Type) < 0) {
         return -1;
     }
