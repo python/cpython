@@ -4895,7 +4895,7 @@ PicklerMemoProxy_dealloc(PicklerMemoProxyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_CLEAR(self->pickler);
-    PyObject_GC_Del((PyObject *)self);
+    tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
 }
 
@@ -7094,45 +7094,6 @@ static struct PyMethodDef Unpickler_methods[] = {
     {NULL, NULL}                /* sentinel */
 };
 
-static void
-Unpickler_dealloc(UnpicklerObject *self)
-{
-    PyObject_GC_UnTrack((PyObject *)self);
-    Py_XDECREF(self->readline);
-    Py_XDECREF(self->readinto);
-    Py_XDECREF(self->read);
-    Py_XDECREF(self->peek);
-    Py_XDECREF(self->stack);
-    Py_XDECREF(self->pers_func);
-    Py_XDECREF(self->buffers);
-    if (self->buffer.buf != NULL) {
-        PyBuffer_Release(&self->buffer);
-        self->buffer.buf = NULL;
-    }
-
-    _Unpickler_MemoCleanup(self);
-    PyMem_Free(self->marks);
-    PyMem_Free(self->input_line);
-    PyMem_Free(self->encoding);
-    PyMem_Free(self->errors);
-
-    Py_TYPE(self)->tp_free((PyObject *)self);
-}
-
-static int
-Unpickler_traverse(UnpicklerObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->readline);
-    Py_VISIT(self->readinto);
-    Py_VISIT(self->read);
-    Py_VISIT(self->peek);
-    Py_VISIT(self->stack);
-    Py_VISIT(self->pers_func);
-    Py_VISIT(self->buffers);
-    return 0;
-}
-
 static int
 Unpickler_clear(UnpicklerObject *self)
 {
@@ -7158,6 +7119,30 @@ Unpickler_clear(UnpicklerObject *self)
     PyMem_Free(self->errors);
     self->errors = NULL;
 
+    return 0;
+}
+
+static void
+Unpickler_dealloc(UnpicklerObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack((PyObject *)self);
+    (void)Unpickler_clear(self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
+}
+
+static int
+Unpickler_traverse(UnpicklerObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->readline);
+    Py_VISIT(self->readinto);
+    Py_VISIT(self->read);
+    Py_VISIT(self->peek);
+    Py_VISIT(self->stack);
+    Py_VISIT(self->pers_func);
+    Py_VISIT(self->buffers);
     return 0;
 }
 
@@ -7352,7 +7337,7 @@ UnpicklerMemoProxy_dealloc(UnpicklerMemoProxyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_CLEAR(self->unpickler);
-    PyObject_GC_Del((PyObject *)self);
+    tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
 }
 
@@ -7856,7 +7841,6 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->partial);
     Py_VISIT(st->pickler_type);
     Py_VISIT(st->unpickler_type);
-    Py_VISIT(st->Pdata_type);
     Py_VISIT(st->Pdata_type);
     Py_VISIT(st->PicklerMemoProxyType);
     Py_VISIT(st->UnpicklerMemoProxyType);
