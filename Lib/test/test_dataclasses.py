@@ -5,10 +5,12 @@
 from dataclasses import *
 
 import abc
+import io
 import pickle
 import inspect
 import builtins
 import types
+import traceback
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol
@@ -1413,6 +1415,16 @@ class TestCase(unittest.TestCase):
             fields(C)
         with self.assertRaisesRegex(TypeError, 'dataclass type or instance'):
             fields(C())
+
+    def test_clean_traceback_from_fields_exception(self):
+        stdout = io.StringIO()
+        try:
+            fields(object)
+        except TypeError as exc:
+            traceback.print_exception(exc, file=stdout)
+        printed_traceback = stdout.getvalue()
+        self.assertNotIn("AttributeError", printed_traceback)
+        self.assertNotIn("__dataclass_fields__", printed_traceback)
 
     def test_helper_asdict(self):
         # Basic tests for asdict(), it should return a new dictionary.
