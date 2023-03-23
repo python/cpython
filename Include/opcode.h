@@ -203,7 +203,6 @@ extern "C" {
 #define UNPACK_SEQUENCE_TUPLE                  154
 #define UNPACK_SEQUENCE_TWO_TUPLE              158
 #define SEND_GEN                               159
-#define DO_TRACING                             255
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \

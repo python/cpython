@@ -254,5 +254,5 @@ static void *opcode_targets[256] = {
     &&TARGET_INSTRUMENTED_END_SEND,
     &&TARGET_INSTRUMENTED_INSTRUCTION,
     &&TARGET_INSTRUMENTED_LINE,
-    &&TARGET_DO_TRACING
+    &&_unknown_opcode
 };

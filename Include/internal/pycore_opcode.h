@@ -500,7 +500,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [INSTRUMENTED_END_SEND] = "INSTRUMENTED_END_SEND",
     [INSTRUMENTED_INSTRUCTION] = "INSTRUMENTED_INSTRUCTION",
     [INSTRUMENTED_LINE] = "INSTRUMENTED_LINE",
-    [DO_TRACING] = "DO_TRACING",
+    [255] = "<255>",
     [SETUP_FINALLY] = "SETUP_FINALLY",
     [SETUP_CLEANUP] = "SETUP_CLEANUP",
     [SETUP_WITH] = "SETUP_WITH",
@@ -582,6 +582,7 @@ static const char *const _PyOpcode_OpName[263] = {
     case 235: \
     case 236: \
     case 237: \
+    case 255: \
         ;
 
 #ifdef __cplusplus

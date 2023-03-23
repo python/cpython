@@ -803,39 +803,6 @@ handle_eval_breaker:
 #include "generated_cases.c.h"
 
 #if USE_COMPUTED_GOTOS
-        TARGET_DO_TRACING:
-#else
-        case DO_TRACING:
-#endif
-    {
-        assert(0);
-        NEXTOPARG();
-        PRE_DISPATCH_GOTO();
-        // No _PyOpcode_Deopt here, since EXTENDED_ARG has no optimized forms:
-        while (opcode == EXTENDED_ARG) {
-            // CPython hasn't ever traced the instruction after an EXTENDED_ARG.
-            // Inline the EXTENDED_ARG here, so we can avoid branching there:
-            INSTRUCTION_START(EXTENDED_ARG);
-            opcode = next_instr->op.code;
-            oparg = oparg << 8 | next_instr->op.arg;
-            // Make sure the next instruction isn't a RESUME, since that needs
-            // to trace properly (and shouldn't have an EXTENDED_ARG, anyways):
-            assert(opcode != RESUME);
-            PRE_DISPATCH_GOTO();
-        }
-        opcode = _PyOpcode_Deopt[opcode];
-        if (_PyOpcode_Caches[opcode]) {
-            uint16_t *counter = &next_instr[1].cache;
-            // The instruction is going to decrement the counter, so we need to
-            // increment it here to make sure it doesn't try to specialize:
-            if (!ADAPTIVE_COUNTER_IS_MAX(*counter)) {
-                INCREMENT_ADAPTIVE_COUNTER(*counter);
-            }
-        }
-        DISPATCH_GOTO();
-    }
-
-#if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
         EXTRA_CASES  // From opcode.h, a 'case' for each unused opcode

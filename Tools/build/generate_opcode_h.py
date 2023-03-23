@@ -105,9 +105,6 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
         specialized_opmap[name] = next_op
         opname_including_specialized[next_op] = name
         used[next_op] = True
-    specialized_opmap['DO_TRACING'] = 255
-    opname_including_specialized[255] = 'DO_TRACING'
-    used[255] = True
 
     with open(outfile, 'w') as fobj, open(internaloutfile, 'w') as iobj:
         fobj.write(header)
