@@ -482,6 +482,27 @@ static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
 static uint32_t function_get_version(PyObject *o, int opcode);
 
 static int
+insert_into_cache(PyTypeObject *type, PyObject *descr)
+{
+    for (unsigned int i = 0; i < type->_tp_cache_used; i++) {
+        if (type->_tp_cache[i] == descr) {
+            return i;
+        }
+    }
+    if (type->_tp_cache_used == type->_tp_cache_size) {
+        type->_tp_cache_size = Py_MAX(type->_tp_cache_size << 1, (1 << 2));
+        PyMem_Resize(type->_tp_cache, PyObject *, type->_tp_cache_size);
+        if (type->_tp_cache == NULL) {
+            type->_tp_cache_size = 0;
+            type->_tp_cache_used = 0;
+            return -1;
+        }
+    }
+    type->_tp_cache[type->_tp_cache_used] = descr;
+    return type->_tp_cache_used++;
+}
+
+static int
 specialize_module_load_attr(
     PyObject *owner, _Py_CODEUNIT *instr, PyObject *name
 ) {
@@ -775,7 +796,13 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             assert(type->tp_version_tag != 0);
             write_u32(lm_cache->type_version, type->tp_version_tag);
             /* borrowed */
-            write_obj(lm_cache->descr, fget);
+            int index = insert_into_cache(type, fget);
+            if (index < 0) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
+                goto fail;
+            }
+            assert(index <= UINT16_MAX);
+            lm_cache->index = index;
             instr->op.code = LOAD_ATTR_PROPERTY;
             goto success;
         }
@@ -835,7 +862,13 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
             }
             write_u32(lm_cache->keys_version, version);
             /* borrowed */
-            write_obj(lm_cache->descr, descr);
+            int index = insert_into_cache(type, descr);
+            if (index < 0) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
+                goto fail;
+            }
+            assert(index <= UINT16_MAX);
+            lm_cache->index = index;
             write_u32(lm_cache->type_version, type->tp_version_tag);
             instr->op.code = LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN;
             goto success;
@@ -1027,7 +1060,13 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
         case METHOD:
         case NON_DESCRIPTOR:
             write_u32(cache->type_version, ((PyTypeObject *)owner)->tp_version_tag);
-            write_obj(cache->descr, descr);
+            int index = insert_into_cache((PyTypeObject *)owner, descr);
+            if (index < 0) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
+                return -1;
+            }
+            assert(index <= UINT16_MAX);
+            cache->index = index;
             instr->op.code = LOAD_ATTR_CLASS;
             return 0;
 #ifdef Py_STATS
@@ -1108,7 +1147,13 @@ PyObject *descr, DescriptorClassification kind)
     *  working since Python 2.6 and it's battle-tested.
     */
     write_u32(cache->type_version, owner_cls->tp_version_tag);
-    write_obj(cache->descr, descr);
+    int index = insert_into_cache(owner_cls, descr);
+    if (index < 0) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
+        return 0;
+    }
+    assert(index <= UINT16_MAX);
+    cache->index = index;
     return 1;
 }
 

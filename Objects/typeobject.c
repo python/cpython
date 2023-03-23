@@ -510,6 +510,7 @@ PyType_Modified(PyTypeObject *type)
 
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
+    type->_tp_cache_used = 0;
 }
 
 static void
@@ -563,6 +564,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
  clear:
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
+    type->_tp_cache_used = 0;
 }
 
 static int
@@ -586,6 +588,7 @@ assign_version_tag(PyTypeObject *type)
     }
     type->tp_version_tag = next_version_tag++;
     assert (type->tp_version_tag != 0);
+    assert(type->_tp_cache_used == 0);
 
     PyObject *bases = type->tp_bases;
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
@@ -4493,6 +4496,10 @@ _PyStaticType_Dealloc(PyTypeObject *type)
         static_builtin_state_clear(type);
         /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
     }
+    type->_tp_cache_size = 0;
+    type->_tp_cache_used = 0;
+    PyMem_Free(type->_tp_cache);
+    type->_tp_cache = NULL;
 }
 
 
@@ -4516,6 +4523,7 @@ type_dealloc(PyTypeObject *type)
     Py_XDECREF(type->tp_mro);
     Py_XDECREF(type->tp_cache);
     clear_subclasses(type);
+    PyMem_Free(type->_tp_cache);
 
     /* A type's tp_doc is heap allocated, unlike the tp_doc slots
      * of most other objects.  It's okay to cast it to char *.

@@ -81,6 +81,10 @@ typedef struct _typeobject {
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
 
+    unsigned int _tp_cache_size;
+    unsigned int _tp_cache_used;
+    PyObject **_tp_cache;
+
     /* bitset of which type-watchers care about this type */
     char tp_watched;
 } PyTypeObject;

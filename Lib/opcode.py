@@ -407,7 +407,7 @@ _cache_format = {
         "counter": 1,
         "version": 2,
         "keys_version": 2,
-        "descr": 4,
+        "index": 1,
     },
     "STORE_ATTR": {
         "counter": 1,

@@ -436,6 +436,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a6 3520 (Remove PREP_RERAISE_STAR, add CALL_INTRINSIC_2)
 #     Python 3.12a7 3521 (Shrink the LOAD_GLOBAL caches)
 #     Python 3.12a7 3522 (Removed JUMP_IF_FALSE_OR_POP/JUMP_IF_TRUE_OR_POP)
+#     Python 3.12a7 3523 (Shrink the LOAD_ATTR caches))
 
 #     Python 3.13 will start with 3550
 
@@ -452,7 +453,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3522).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3523).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 

@@ -699,7 +699,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC0, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC0, INSTR_FMT_IBC000, INSTR_FMT_IBC00000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
 struct opcode_metadata {
     bool valid_entry;
     enum InstructionFormat instr_format;
@@ -800,14 +800,14 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [DICT_UPDATE] = { true, INSTR_FMT_IB },
     [DICT_MERGE] = { true, INSTR_FMT_IB },
     [MAP_ADD] = { true, INSTR_FMT_IB },
-    [LOAD_ATTR] = { true, INSTR_FMT_IBC00000000 },
-    [LOAD_ATTR_INSTANCE_VALUE] = { true, INSTR_FMT_IBC00000000 },
-    [LOAD_ATTR_MODULE] = { true, INSTR_FMT_IBC00000000 },
-    [LOAD_ATTR_WITH_HINT] = { true, INSTR_FMT_IBC00000000 },
-    [LOAD_ATTR_SLOT] = { true, INSTR_FMT_IBC00000000 },
-    [LOAD_ATTR_CLASS] = { true, INSTR_FMT_IBC00000000 },
-    [LOAD_ATTR_PROPERTY] = { true, INSTR_FMT_IBC00000000 },
-    [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = { true, INSTR_FMT_IBC00000000 },
+    [LOAD_ATTR] = { true, INSTR_FMT_IBC00000 },
+    [LOAD_ATTR_INSTANCE_VALUE] = { true, INSTR_FMT_IBC00000 },
+    [LOAD_ATTR_MODULE] = { true, INSTR_FMT_IBC00000 },
+    [LOAD_ATTR_WITH_HINT] = { true, INSTR_FMT_IBC00000 },
+    [LOAD_ATTR_SLOT] = { true, INSTR_FMT_IBC00000 },
+    [LOAD_ATTR_CLASS] = { true, INSTR_FMT_IBC00000 },
+    [LOAD_ATTR_PROPERTY] = { true, INSTR_FMT_IBC00000 },
+    [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = { true, INSTR_FMT_IBC00000 },
     [STORE_ATTR_INSTANCE_VALUE] = { true, INSTR_FMT_IXC000 },
     [STORE_ATTR_WITH_HINT] = { true, INSTR_FMT_IBC000 },
     [STORE_ATTR_SLOT] = { true, INSTR_FMT_IXC000 },
@@ -845,9 +845,9 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BEFORE_WITH] = { true, INSTR_FMT_IX },
     [WITH_EXCEPT_START] = { true, INSTR_FMT_IX },
     [PUSH_EXC_INFO] = { true, INSTR_FMT_IX },
-    [LOAD_ATTR_METHOD_WITH_VALUES] = { true, INSTR_FMT_IBC00000000 },
-    [LOAD_ATTR_METHOD_NO_DICT] = { true, INSTR_FMT_IBC00000000 },
-    [LOAD_ATTR_METHOD_LAZY_DICT] = { true, INSTR_FMT_IBC00000000 },
+    [LOAD_ATTR_METHOD_WITH_VALUES] = { true, INSTR_FMT_IBC00000 },
+    [LOAD_ATTR_METHOD_NO_DICT] = { true, INSTR_FMT_IBC00000 },
+    [LOAD_ATTR_METHOD_LAZY_DICT] = { true, INSTR_FMT_IBC00000 },
     [KW_NAMES] = { true, INSTR_FMT_IB },
     [CALL] = { true, INSTR_FMT_IBC000 },
     [CALL_BOUND_METHOD_EXACT_ARGS] = { true, INSTR_FMT_IBC000 },
