@@ -196,7 +196,7 @@ typedef struct {
     /* Types */
     PyTypeObject *Pickler_Type;
     PyTypeObject *Unpickler_Type;
-    PyTypeObject *Pdata_type;
+    PyTypeObject *Pdata_Type;
     PyTypeObject *PicklerMemoProxyType;
     PyTypeObject *UnpicklerMemoProxyType;
 } PickleState;
@@ -249,7 +249,7 @@ _Pickle_ClearState(PickleState *st)
     Py_CLEAR(st->partial);
     Py_CLEAR(st->Pickler_Type);
     Py_CLEAR(st->Unpickler_Type);
-    Py_CLEAR(st->Pdata_type);
+    Py_CLEAR(st->Pdata_Type);
     Py_CLEAR(st->PicklerMemoProxyType);
     Py_CLEAR(st->UnpicklerMemoProxyType);
 }
@@ -502,7 +502,7 @@ Pdata_New(PickleState *state)
 {
     Pdata *self;
 
-    if (!(self = PyObject_GC_New(Pdata, state->Pdata_type)))
+    if (!(self = PyObject_GC_New(Pdata, state->Pdata_Type)))
         return NULL;
     Py_SET_SIZE(self, 0);
     self->mark_set = 0;
@@ -7840,7 +7840,7 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->partial);
     Py_VISIT(st->Pickler_Type);
     Py_VISIT(st->Unpickler_Type);
-    Py_VISIT(st->Pdata_type);
+    Py_VISIT(st->Pdata_Type);
     Py_VISIT(st->PicklerMemoProxyType);
     Py_VISIT(st->UnpicklerMemoProxyType);
     return 0;
@@ -7851,9 +7851,9 @@ _pickle_exec(PyObject *m)
 {
     PickleState *st = _Pickle_GetState(m);
 
-    st->Pdata_type = (PyTypeObject *)PyType_FromMetaclass(NULL, m, &pdata_spec,
+    st->Pdata_Type = (PyTypeObject *)PyType_FromMetaclass(NULL, m, &pdata_spec,
                                                           NULL);
-    if (st->Pdata_type == NULL) {
+    if (st->Pdata_Type == NULL) {
         return -1;
     }
 
