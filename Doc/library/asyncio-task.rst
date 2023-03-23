@@ -636,8 +636,6 @@ Timeouts
        - If ``when < loop.time()``, the timeout will trigger on the next
          iteration of the event loop.
 
-       .. versionadded:: 3.11
-
         .. method:: when() -> float | None
 
            Return the current deadline, or ``None`` if the current
