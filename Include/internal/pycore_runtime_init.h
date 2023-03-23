@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_long.h"
 #include "pycore_object.h"
 #include "pycore_parser.h"
 #include "pycore_pymem_init.h"
@@ -40,16 +41,6 @@ extern PyTypeObject _PyExc_MemoryError;
            in accordance with the specification. */ \
         .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
-        .imports = { \
-            .lock = { \
-                .mutex = NULL, \
-                .thread = PYTHREAD_INVALID_THREAD_ID, \
-                .level = 0, \
-            }, \
-            .find_and_load = { \
-                .header = 1, \
-            }, \
-        }, \
         .ceval = { \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
         }, \
@@ -67,6 +58,9 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .types = { \
             .next_version_tag = 1, \
+        }, \
+        .cached_objects = { \
+            .main_tstate = _PyThreadState_INIT, \
         }, \
         .static_objects = { \
             .singletons = { \
@@ -139,15 +133,6 @@ extern PyTypeObject _PyExc_MemoryError;
 
 
 // global objects
-
-#define _PyLong_DIGIT_INIT(val) \
-    { \
-        .ob_base = _PyObject_IMMORTAL_INIT(&PyLong_Type), \
-        .long_value  = { \
-            ((val) == 0 ? 0 : ((val) > 0 ? 1 : -1)), \
-            { ((val) >= 0 ? (val) : -(val)) }, \
-        } \
-    }
 
 #define _PyBytes_SIMPLE_INIT(CH, LEN) \
     { \

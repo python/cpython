@@ -306,8 +306,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
             }
             opcode = code[i].op.code;
             switch (opcode) {
-                case JUMP_IF_FALSE_OR_POP:
-                case JUMP_IF_TRUE_OR_POP:
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
                 {
@@ -318,16 +316,8 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     if (stacks[j] == UNINITIALIZED && j < i) {
                         todo = 1;
                     }
-                    if (opcode == JUMP_IF_FALSE_OR_POP ||
-                        opcode == JUMP_IF_TRUE_OR_POP)
-                    {
-                        target_stack = next_stack;
-                        next_stack = pop_value(next_stack);
-                    }
-                    else {
-                        next_stack = pop_value(next_stack);
-                        target_stack = next_stack;
-                    }
+                    next_stack = pop_value(next_stack);
+                    target_stack = next_stack;
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
                     stacks[j] = target_stack;
                     stacks[i+1] = next_stack;
@@ -354,14 +344,6 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     if (stacks[j] == UNINITIALIZED && j < i) {
                         todo = 1;
                     }
-                    assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
-                    stacks[j] = next_stack;
-                    break;
-                case COMPARE_AND_BRANCH:
-                    next_stack = pop_value(pop_value(next_stack));
-                    i++;
-                    j = get_arg(code, i) + i + 1;
-                    assert(j < len);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
                     stacks[j] = next_stack;
                     break;
