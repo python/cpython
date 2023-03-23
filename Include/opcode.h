@@ -66,8 +66,6 @@ extern "C" {
 #define IMPORT_NAME                            108
 #define IMPORT_FROM                            109
 #define JUMP_FORWARD                           110
-#define JUMP_IF_FALSE_OR_POP                   111
-#define JUMP_IF_TRUE_OR_POP                    112
 #define POP_JUMP_IF_FALSE                      114
 #define POP_JUMP_IF_TRUE                       115
 #define LOAD_GLOBAL                            116
@@ -180,14 +178,14 @@ extern "C" {
 #define STORE_ATTR_INSTANCE_VALUE               86
 #define STORE_ATTR_SLOT                         87
 #define STORE_ATTR_WITH_HINT                    88
-#define STORE_FAST__LOAD_FAST                  113
-#define STORE_FAST__STORE_FAST                 143
-#define STORE_SUBSCR_DICT                      153
-#define STORE_SUBSCR_LIST_INT                  154
-#define UNPACK_SEQUENCE_LIST                   158
-#define UNPACK_SEQUENCE_TUPLE                  159
-#define UNPACK_SEQUENCE_TWO_TUPLE              160
-#define SEND_GEN                               161
+#define STORE_FAST__LOAD_FAST                  111
+#define STORE_FAST__STORE_FAST                 112
+#define STORE_SUBSCR_DICT                      113
+#define STORE_SUBSCR_LIST_INT                  143
+#define UNPACK_SEQUENCE_LIST                   153
+#define UNPACK_SEQUENCE_TUPLE                  154
+#define UNPACK_SEQUENCE_TWO_TUPLE              158
+#define SEND_GEN                               159
 #define DO_TRACING                             255
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\

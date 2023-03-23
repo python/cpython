@@ -353,7 +353,7 @@ remove_unusable_flags(PyObject *m)
     }
 #ifndef MS_WINDOWS_DESKTOP
     info.dwOSVersionInfoSize = sizeof(info);
-    if (!GetVersionExW((OSVERSIONINFOW*) &info)) {
+    if (!GetVersionEx((OSVERSIONINFO*) &info)) {
         PyErr_SetFromWindowsErr(0);
         return -1;
     }

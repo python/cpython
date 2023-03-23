@@ -713,11 +713,12 @@ if sys.platform == 'darwin':
 
 def main():
     import getopt
-    usage = """Usage: %s [-n | -t] url
+    usage = """Usage: %s [-n | -t | -h] url
     -n: open new window
-    -t: open new tab""" % sys.argv[0]
+    -t: open new tab
+    -h, --help: show help""" % sys.argv[0]
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'ntd')
+        opts, args = getopt.getopt(sys.argv[1:], 'ntdh',['help'])
     except getopt.error as msg:
         print(msg, file=sys.stderr)
         print(usage, file=sys.stderr)
@@ -726,6 +727,9 @@ def main():
     for o, a in opts:
         if o == '-n': new_win = 1
         elif o == '-t': new_win = 2
+        elif o == '-h' or o == '--help': 
+            print(usage, file=sys.stderr)
+            sys.exit()
     if len(args) != 1:
         print(usage, file=sys.stderr)
         sys.exit(1)

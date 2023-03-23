@@ -54,37 +54,100 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
 
 
 #ifdef Py_REF_DEBUG
+/* We keep the legacy symbol around for backward compatibility. */
 Py_ssize_t _Py_RefTotal;
 
-static inline void
-reftotal_increment(void)
-{
-    _Py_RefTotal++;
-}
-
-static inline void
-reftotal_decrement(void)
-{
-    _Py_RefTotal--;
-}
-
-void
-_Py_AddRefTotal(Py_ssize_t n)
-{
-    _Py_RefTotal += n;
-}
-
-Py_ssize_t
-_Py_GetRefTotal(void)
+static inline Py_ssize_t
+get_legacy_reftotal(void)
 {
     return _Py_RefTotal;
 }
+#endif
+
+#ifdef Py_REF_DEBUG
+
+#  define REFTOTAL(interp) \
+    interp->object_state.reftotal
+
+static inline void
+reftotal_increment(PyInterpreterState *interp)
+{
+    REFTOTAL(interp)++;
+}
+
+static inline void
+reftotal_decrement(PyInterpreterState *interp)
+{
+    REFTOTAL(interp)--;
+}
+
+static inline void
+reftotal_add(PyInterpreterState *interp, Py_ssize_t n)
+{
+    REFTOTAL(interp) += n;
+}
+
+static inline Py_ssize_t get_global_reftotal(_PyRuntimeState *);
+
+/* We preserve the number of refs leaked during runtime finalization,
+   so they can be reported if the runtime is initialized again. */
+// XXX We don't lose any information by dropping this,
+// so we should consider doing so.
+static Py_ssize_t last_final_reftotal = 0;
+
+void
+_Py_FinalizeRefTotal(_PyRuntimeState *runtime)
+{
+    last_final_reftotal = get_global_reftotal(runtime);
+    runtime->object_state.interpreter_leaks = 0;
+}
+
+void
+_PyInterpreterState_FinalizeRefTotal(PyInterpreterState *interp)
+{
+    interp->runtime->object_state.interpreter_leaks += REFTOTAL(interp);
+    REFTOTAL(interp) = 0;
+}
+
+static inline Py_ssize_t
+get_reftotal(PyInterpreterState *interp)
+{
+    /* For a single interpreter, we ignore the legacy _Py_RefTotal,
+       since we can't determine which interpreter updated it. */
+    return REFTOTAL(interp);
+}
+
+static inline Py_ssize_t
+get_global_reftotal(_PyRuntimeState *runtime)
+{
+    Py_ssize_t total = 0;
+
+    /* Add up the total from each interpreter. */
+    HEAD_LOCK(&_PyRuntime);
+    PyInterpreterState *interp = PyInterpreterState_Head();
+    for (; interp != NULL; interp = PyInterpreterState_Next(interp)) {
+        total += REFTOTAL(interp);
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+
+    /* Add in the updated value from the legacy _Py_RefTotal. */
+    total += get_legacy_reftotal();
+    total += last_final_reftotal;
+    total += runtime->object_state.interpreter_leaks;
+
+    return total;
+}
+
+#undef REFTOTAL
 
 void
 _PyDebug_PrintTotalRefs(void) {
+    _PyRuntimeState *runtime = &_PyRuntime;
     fprintf(stderr,
             "[%zd refs, %zd blocks]\n",
-            _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
+            get_global_reftotal(runtime), _Py_GetAllocatedBlocks());
+    /* It may be helpful to also print the "legacy" reftotal separately.
+       Likewise for the total for each interpreter. */
 }
 #endif /* Py_REF_DEBUG */
 
@@ -139,30 +202,56 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
                            filename, lineno, __func__);
 }
 
-/* This is exposed strictly for use in Py_INCREF(). */
-PyAPI_FUNC(void)
+/* This is used strictly by Py_INCREF(). */
+void
 _Py_IncRefTotal_DO_NOT_USE_THIS(void)
 {
-    reftotal_increment();
+    reftotal_increment(_PyInterpreterState_GET());
 }
 
-/* This is exposed strictly for use in Py_DECREF(). */
-PyAPI_FUNC(void)
+/* This is used strictly by Py_DECREF(). */
+void
 _Py_DecRefTotal_DO_NOT_USE_THIS(void)
 {
-    reftotal_decrement();
+    reftotal_decrement(_PyInterpreterState_GET());
 }
 
 void
-_Py_IncRefTotal(void)
+_Py_IncRefTotal(PyInterpreterState *interp)
 {
-    reftotal_increment();
+    reftotal_increment(interp);
 }
 
 void
-_Py_DecRefTotal(void)
+_Py_DecRefTotal(PyInterpreterState *interp)
 {
-    reftotal_decrement();
+    reftotal_decrement(interp);
+}
+
+void
+_Py_AddRefTotal(PyInterpreterState *interp, Py_ssize_t n)
+{
+    reftotal_add(interp, n);
+}
+
+/* This includes the legacy total
+   and any carried over from the last runtime init/fini cycle. */
+Py_ssize_t
+_Py_GetGlobalRefTotal(void)
+{
+    return get_global_reftotal(&_PyRuntime);
+}
+
+Py_ssize_t
+_Py_GetLegacyRefTotal(void)
+{
+    return get_legacy_reftotal();
+}
+
+Py_ssize_t
+_PyInterpreterState_GetRefTotal(PyInterpreterState *interp)
+{
+    return get_reftotal(interp);
 }
 
 #endif /* Py_REF_DEBUG */
@@ -182,20 +271,17 @@ Py_DecRef(PyObject *o)
 void
 _Py_IncRef(PyObject *o)
 {
-#ifdef Py_REF_DEBUG
-    reftotal_increment();
-#endif
     Py_INCREF(o);
 }
 
 void
 _Py_DecRef(PyObject *o)
 {
-#ifdef Py_REF_DEBUG
-    reftotal_decrement();
-#endif
     Py_DECREF(o);
 }
+
+
+/**************************************/
 
 PyObject *
 PyObject_Init(PyObject *op, PyTypeObject *tp)
@@ -2077,7 +2163,7 @@ void
 _Py_NewReference(PyObject *op)
 {
 #ifdef Py_REF_DEBUG
-    reftotal_increment();
+    reftotal_increment(_PyInterpreterState_GET());
 #endif
     new_reference(op);
 }
