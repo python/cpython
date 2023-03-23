@@ -1,0 +1,3 @@
+The :class:`asyncio.Timeout` context manager now works reliably even when performing cleanup due
+to task cancellation.  Previously it could raise a
+:exc:`~asyncio.CancelledError` instead of an :exc:`~asyncio.TimeoutError` in such cases.

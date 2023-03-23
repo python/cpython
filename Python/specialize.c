@@ -1284,7 +1284,7 @@ _Py_Specialize_BinarySubscr(
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
-            if (Py_SIZE(sub) == 0 || Py_SIZE(sub) == 1) {
+            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
                 instr->op.code = BINARY_SUBSCR_LIST_INT;
                 goto success;
             }
@@ -1297,7 +1297,7 @@ _Py_Specialize_BinarySubscr(
     }
     if (container_type == &PyTuple_Type) {
         if (PyLong_CheckExact(sub)) {
-            if (Py_SIZE(sub) == 0 || Py_SIZE(sub) == 1) {
+            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
                 instr->op.code = BINARY_SUBSCR_TUPLE_INT;
                 goto success;
             }
@@ -1365,7 +1365,7 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
     PyTypeObject *container_type = Py_TYPE(container);
     if (container_type == &PyList_Type) {
         if (PyLong_CheckExact(sub)) {
-            if ((Py_SIZE(sub) == 0 || Py_SIZE(sub) == 1)
+            if (_PyLong_IsNonNegativeCompact((PyLongObject *)sub)
                 && ((PyLongObject *)sub)->long_value.ob_digit[0] < (size_t)PyList_GET_SIZE(container))
             {
                 instr->op.code = STORE_SUBSCR_LIST_INT;
@@ -1979,7 +1979,7 @@ _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         goto success;
     }
     if (PyLong_CheckExact(lhs)) {
-        if (Py_ABS(Py_SIZE(lhs)) <= 1 && Py_ABS(Py_SIZE(rhs)) <= 1) {
+        if (_PyLong_IsCompact((PyLongObject *)lhs) && _PyLong_IsCompact((PyLongObject *)rhs)) {
             instr->op.code = COMPARE_OP_INT;
             goto success;
         }

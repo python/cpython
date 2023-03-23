@@ -11,6 +11,7 @@
 #include "Python.h"
 #include "_iomodule.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -666,12 +667,40 @@ static PyTypeObject* static_types[] = {
 };
 
 
-void
-_PyIO_Fini(void)
+PyStatus
+_PyIO_InitTypes(PyInterpreterState *interp)
 {
+    if (!_Py_IsMainInterpreter(interp)) {
+        return _PyStatus_OK();
+    }
+
+    // Set type base classes
+#ifdef HAVE_WINDOWS_CONSOLE_IO
+    PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
+#endif
+
+    for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
+        PyTypeObject *type = static_types[i];
+        if (_PyStaticType_InitBuiltin(type) < 0) {
+            return _PyStatus_ERR("Can't initialize builtin type");
+        }
+    }
+
+    return _PyStatus_OK();
+}
+
+void
+_PyIO_FiniTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    // Deallocate types in the reverse order to deallocate subclasses before
+    // their base classes.
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types) - 1; i >= 0; i--) {
-        PyTypeObject *exc = static_types[i];
-        _PyStaticType_Dealloc(exc);
+        PyTypeObject *type = static_types[i];
+        _PyStaticType_Dealloc(type);
     }
 }
 
@@ -716,11 +745,6 @@ PyInit__io(void)
                               (PyObject *) PyExc_BlockingIOError) < 0) {
         goto fail;
     }
-
-    // Set type base classes
-#ifdef HAVE_WINDOWS_CONSOLE_IO
-    PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
-#endif
 
     // Add types
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
