@@ -205,6 +205,18 @@ class FrameAttrsTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del f.f_lineno
 
+    def test_weakref_support(self):
+        wkd = weakref.WeakKeyDictionary()
+        def _test():
+            f, outer, inner = self.make_frames()
+            for frame in (f, outer, inner):
+                wkd[frame] = True
+            for frame in (f, outer, inner):
+                self.assertEqual(wkd[frame], True)
+        _test()
+        gc.collect()
+        self.assertEqual(len(wkd), 0)
+
 
 class ReprTest(unittest.TestCase):
     """
