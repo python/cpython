@@ -118,7 +118,9 @@ class FaultHandlerTests(unittest.TestCase):
         # Enable MULTILINE flag
         regex = f'(?m){regex}'
         output, exitcode = self.get_output(code, filename=filename, fd=fd)
-        output = '\n'.join(output)
+        output = '\n'.join([line for line in output if
+                            "Builtin function" not in line and
+                            "Method descriptor" not in line])
         self.assertRegex(output, regex)
         self.assertNotEqual(exitcode, 0)
 
@@ -484,6 +486,7 @@ class FaultHandlerTests(unittest.TestCase):
             lineno = 14
         expected = [
             'Stack (most recent call first):',
+            '  Builtin function dump_traceback',
             '  File "<string>", line %s in funcB' % lineno,
             '  File "<string>", line 17 in funcA',
             '  File "<string>", line 19 in <module>'
@@ -529,6 +532,7 @@ class FaultHandlerTests(unittest.TestCase):
         )
         expected = [
             'Stack (most recent call first):',
+            '  Builtin function dump_traceback',
             '  File "<string>", line 4 in %s' % truncated,
             '  File "<string>", line 6 in <module>'
         ]
@@ -575,7 +579,9 @@ class FaultHandlerTests(unittest.TestCase):
             """
         code = code.format(filename=repr(filename))
         output, exitcode = self.get_output(code, filename)
-        output = '\n'.join(output)
+        output = '\n'.join([line for line in output if
+                            "Builtin function" not in line and
+                            "Method descriptor" not in line])
         if filename:
             lineno = 8
         else:
@@ -651,8 +657,9 @@ class FaultHandlerTests(unittest.TestCase):
             fd=fd,
         )
         trace, exitcode = self.get_output(code, filename)
-        trace = '\n'.join(trace)
-
+        trace = '\n'.join([line for line in trace if
+                            "Builtin function" not in line and
+                            "Method descriptor" not in line])
         if not cancel:
             count = loops
             if repeat:
@@ -754,7 +761,7 @@ class FaultHandlerTests(unittest.TestCase):
             fd=fd,
         )
         trace, exitcode = self.get_output(code, filename)
-        trace = '\n'.join(trace)
+        trace = '\n'.join([line for line in trace if "Builtin function" not in line ])
         if not unregister:
             if all_threads:
                 regex = r'Current thread 0x[0-9a-f]+ \(most recent call first\):\n'
