@@ -1,0 +1,2 @@
+Improve traceback when :func:`dataclasses.fields` is called on a
+non-dataclass. Patch by Alex Waygood
