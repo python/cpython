@@ -494,16 +494,27 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         try:
             while stack:
                 action, value = stack.pop()
-                if action is _WalkAction.YIELD:
-                    yield value
-                    continue
-                elif action is _WalkAction.CLOSE:
-                    close(value)
-                    continue
-                elif action is _WalkAction.WALK:
-                    topfd, toppath = value
-                else:
-                    raise AssertionError(f"invalid walk action: {action!r}")
+                try:
+                    if action is _WalkAction.YIELD:
+                        yield value
+                        continue
+                    elif action is _WalkAction.CLOSE:
+                        close(value)
+                        continue
+                    elif action is _WalkAction.WALK:
+                        topfd, toppath = value
+                    else:
+                        raise AssertionError(f"invalid walk action: {action!r}")
+                except:
+                    # make sure fd is closed when an exception occurs right
+                    # after its popped from the stack
+                    if action is _WalkAction.CLOSE:
+                        try:
+                            close(value)
+                        except OSError:
+                            pass
+                    raise
+
                 scandir_it = scandir(topfd)
                 dirs = []
                 nondirs = []
@@ -562,7 +573,10 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         except:
             for action, value in reversed(stack):
                 if action is _WalkAction.CLOSE:
-                    close(value)
+                    try:
+                        close(value)
+                    except OSError:
+                        pass
             raise
 
     __all__.append("fwalk")
