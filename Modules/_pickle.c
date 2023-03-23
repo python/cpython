@@ -205,10 +205,12 @@ typedef struct {
 static struct PyModuleDef _picklemodule;
 
 /* Given a module object, get its per-module state. */
-static PickleState *
+static inline PickleState *
 _Pickle_GetState(PyObject *module)
 {
-    return (PickleState *)_PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (PickleState *)state;
 }
 
 static inline PickleState *
@@ -219,7 +221,7 @@ _Pickle_GetStateByClass(PyTypeObject *cls)
     return (PickleState *)state;
 }
 
-static PickleState *
+static inline PickleState *
 _Pickle_FindStateByType(PyTypeObject *tp)
 {
     PyObject *module = PyType_GetModuleByDef(tp, &_picklemodule);
