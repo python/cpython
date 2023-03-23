@@ -16,9 +16,13 @@
     "customizations": {
         "vscode": {
             "extensions": [
+                // Highlighting for Parser/Python.asdl.
 				"brettcannon.zephyr-asdl",
+                // Highlighting for configure.ac.
 				"maelvalais.autoconf",
+                // C auto-complete.
                 "ms-vscode.cpptools",
+                // To view built docs.
 				"ms-vscode.live-server"
                 // https://github.com/microsoft/vscode-python/issues/18073
                 // "ms-python.python"
