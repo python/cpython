@@ -1391,17 +1391,15 @@ always available.
    its return value is not used, so it can simply return ``None``.  Error in the profile
    function will cause itself unset.
 
+   .. note::
+      The same tracing mechanism is used for :func:`!setprofile` as :func:`settrace`.
+      To trace calls with :func:`!setprofile` inside a tracing function
+      (e.g. in a debugger breakpoint), see :func:`call_tracing`.
+
    Profile functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
    ``'return'``, ``'c_call'``, ``'c_return'``, or ``'c_exception'``. *arg* depends
    on the event type.
-
-.. note::
-   The same tracing mechanism is used for :func:`!setprofile` as :func:`settrace`.
-   To trace calls with :func:`!setprofile` inside a tracing function (e.g. in a
-   debugger breakpoint) see :func:`call_tracing`.
-
-.. audit-event:: sys.setprofile "" sys.setprofile
 
    The events have the following meaning:
 
@@ -1423,6 +1421,9 @@ always available.
 
    ``'c_exception'``
       A C function has raised an exception.  *arg* is the C function object.
+
+   .. audit-event:: sys.setprofile "" sys.setprofile
+
 
 .. function:: setrecursionlimit(limit)
 
