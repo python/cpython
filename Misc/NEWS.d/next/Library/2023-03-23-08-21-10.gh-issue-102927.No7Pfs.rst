@@ -1,0 +1,1 @@
+xmlrpc now supports 64bit integers and will wrap them in <i8> tag instead of throwing OverflowError
