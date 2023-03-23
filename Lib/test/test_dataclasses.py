@@ -1504,6 +1504,11 @@ class TestCase(unittest.TestCase):
         self.assertTrue(is_dataclass(a))
 
     def test_DataclassLike(self):
+        # As an abstract base class for all dataclasses,
+        # it makes sense for DataclassLike to also be considered a dataclass
+        self.assertTrue(is_dataclass(DataclassLike))
+        self.assertTrue(issubclass(DataclassLike, DataclassLike))
+
         with self.assertRaises(TypeError):
             DataclassLike()
 
