@@ -289,26 +289,6 @@ int _Py_GetBaseOpcode(PyCodeObject *code, int offset)
     return _PyOpcode_Deopt[opcode];
 }
 
-uint8_t deinstrument(PyCodeObject *code, int offset)
-{
-    int opcode = _Py_OPCODE(_PyCode_CODE(code)[offset]);
-    if (!is_instrumented(opcode)) {
-        assert(_PyOpcode_Deopt[opcode] != 0);
-        return _PyOpcode_Deopt[opcode];
-    }
-    if (opcode == INSTRUMENTED_INSTRUCTION) {
-        opcode = code->_co_monitoring->per_instruction_opcodes[offset];
-    }
-    if (opcode == INSTRUMENTED_LINE) {
-        opcode = code->_co_monitoring->lines[offset].original_opcode;
-    }
-    int deinstrumented = DE_INSTRUMENT[opcode];
-    if (deinstrumented) {
-        return deinstrumented;
-    }
-    return opcode;
-}
-
 typedef struct _Instruction {
     uint8_t extended_args;
     uint8_t deinstrumented_opcode;
