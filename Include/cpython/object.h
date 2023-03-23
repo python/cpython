@@ -141,7 +141,7 @@ typedef struct {
  * backwards-compatibility */
 typedef Py_ssize_t printfunc;
 
-#define _TP_CACHE_SIZE (1 << 3)
+#define _TP_CACHE_SIZE (1 << 4)
 
 // If this structure is modified, Doc/includes/typestruct.h should be updated
 // as well.
