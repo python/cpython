@@ -17,16 +17,26 @@
         "vscode": {
             "extensions": [
 				"brettcannon.zephyr-asdl",
-				"ms-vscode.live-server",
-				"maelvalais.autoconf"
+				"maelvalais.autoconf",
+                "ms-vscode.cpptools",
+				"ms-vscode.live-server"
 			],
             "settings": {
+                "C_Cpp.default.cStandard": "c11",
+                "C_Cpp.default.defines": [
+                    "Py_BUILD_CORE"
+                ],
+                // https://github.com/microsoft/vscode-cpptools/issues/10732
+                "C_Cpp.errorSquiggles": "enabled",
                 "editor.insertSpaces": true,
                 "editor.rulers": [
                     80
                 ],
                 "editor.tabSize": 4,
                 "editor.trimAutoWhitespace": true,
+                "files.associations": {
+                    "*.h": "c"
+                },
                 "files.encoding": "utf8",
                 "files.eol": "\n",
                 "files.insertFinalNewline": true,
