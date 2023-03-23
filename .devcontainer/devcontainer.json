@@ -29,7 +29,7 @@
                     "Py_BUILD_CORE"
                 ],
                 // https://github.com/microsoft/vscode-cpptools/issues/10732
-                "C_Cpp.errorSquiggles": "enabled",
+                "C_Cpp.errorSquiggles": "disabled",
                 "editor.insertSpaces": true,
                 "editor.rulers": [
                     80
