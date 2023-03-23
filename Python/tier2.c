@@ -113,12 +113,17 @@ _PyTier2TypeContext_Copy(const _PyTier2TypeContext *type_context)
             _Py_TYPENODE_t *parent = (_Py_TYPENODE_t *)_Py_TYPENODE_CLEAR_TAG(node);
 
             // Check if part of locals
-            if (parent - type_context->type_locals < nlocals) {
-                type_locals[i] = node - (uintptr_t)orig_type_locals + (uintptr_t)type_locals;
+            int offset_locals = (int)(parent - type_context->type_locals);
+            if (0 <= offset_locals && offset_locals < nlocals) {
+                type_locals[i] = _Py_TYPENODE_MAKE_REF((_Py_TYPENODE_t)(&type_locals[offset_locals]));
             }
             // Is part of stack
             else {
-                type_locals[i] = node - (uintptr_t)orig_type_stack + (uintptr_t)type_stack;
+#if TYPEPROP_DEBUG
+                int offset_stack = (int)(parent - type_context->type_stack);
+                assert(0 <= offset_stack && offset_stack < nstack);
+#endif
+                type_locals[i] = _Py_TYPENODE_MAKE_REF((_Py_TYPENODE_t)(&type_stack[offset_stack]));
             }
             break;
         }
@@ -139,12 +144,17 @@ _PyTier2TypeContext_Copy(const _PyTier2TypeContext *type_context)
             _Py_TYPENODE_t *parent = (_Py_TYPENODE_t *)_Py_TYPENODE_CLEAR_TAG(node);
 
             // Check if part of locals
-            if (parent - type_context->type_locals < nlocals) {
-                type_stack[i] = node - (uintptr_t)orig_type_locals + (uintptr_t)type_locals;
+            int plocals = (int)(parent - type_context->type_locals);
+            if (0 <= plocals && plocals < nlocals) {
+                type_stack[i] = _Py_TYPENODE_MAKE_REF((_Py_TYPENODE_t)(&type_locals[plocals]));
             }
             // Is part of stack
             else {
-                type_stack[i] = node - (uintptr_t)orig_type_stack + (uintptr_t)type_stack;
+#if TYPEPROP_DEBUG
+                int offset_stack = (int)(parent - type_context->type_stack);
+                assert(0 <= offset_stack && offset_stack < nstack);
+#endif
+                type_stack[i] = _Py_TYPENODE_MAKE_REF((_Py_TYPENODE_t)(&type_stack[offset_stack]));
             }
             break;
         }
@@ -394,23 +404,62 @@ print_typestack(const _PyTier2TypeContext *type_context)
 
     int nstack_use = (int)(type_stackptr - type_stack);
     int nstack = type_context->type_stack_len;
+    int nlocals = type_context->type_locals_len;
+
+    int plocals = 0;
+    int pstack = 0;
+    bool is_local = false;
+
     fprintf(stderr, "      Stack: %p: [", type_stack);
     for (int i = 0; i < nstack; i++) {
-        PyTypeObject *type = typenode_get_type(type_stack[i]);
-        _Py_TYPENODE_t tag = _Py_TYPENODE_GET_TAG(type_stack[i]);
-        fprintf(stderr, "%s%s%s",
+        _Py_TYPENODE_t node = type_stack[i];
+        PyTypeObject *type = typenode_get_type(node);
+        _Py_TYPENODE_t tag = _Py_TYPENODE_GET_TAG(node);
+
+        if (tag == TYPE_REF) {
+            _Py_TYPENODE_t *parent = (_Py_TYPENODE_t *)(_Py_TYPENODE_CLEAR_TAG(node));
+            plocals = (int)(parent - type_context->type_locals);
+            pstack = (int)(parent - type_context->type_stack);
+            is_local = (0 <= plocals) && (plocals < nlocals);
+            if (!is_local) {
+                assert((0 <= pstack) && (pstack < nstack));
+            }
+        }
+
+        fprintf(stderr, "%s%s",
             i == nstack_use ? "." : " ",
-            type == NULL ? "?" : type->tp_name,
-            tag == TYPE_REF ? "*" : "");
+            type == NULL ? "?" : type->tp_name);
+        if (tag == TYPE_REF) {
+            fprintf(stderr, "%s%d]",
+                is_local ? "->locals[" : "->stack[",
+                is_local ? plocals : pstack);
+        }
     }
     fprintf(stderr, "]\n");
+
     fprintf(stderr, "      Locals %p: [", type_locals);
-    for (int i = 0; i < type_context->type_locals_len; i++) {
-        PyTypeObject *type = typenode_get_type(type_locals[i]);
-        _Py_TYPENODE_t tag = _Py_TYPENODE_GET_TAG(type_locals[i]);
-        fprintf(stderr, "%s%s ",
-            type == NULL ? "?" : type->tp_name,
-            tag == TYPE_REF ? "*" : "");
+    for (int i = 0; i < nlocals; i++) {
+        _Py_TYPENODE_t node = type_locals[i];
+        PyTypeObject *type = typenode_get_type(node);
+        _Py_TYPENODE_t tag = _Py_TYPENODE_GET_TAG(node);
+
+        if (tag == TYPE_REF) {
+            _Py_TYPENODE_t *parent = (_Py_TYPENODE_t *)(_Py_TYPENODE_CLEAR_TAG(node));
+            plocals = (int)(parent - type_context->type_locals);
+            pstack = (int)(parent - type_context->type_stack);
+            is_local = (0 <= plocals) && (plocals < nlocals);
+            if (!is_local) {
+                assert((0 <= pstack) && (pstack < nstack));
+            }
+        }
+
+        fprintf(stderr, " %s",
+            type == NULL ? "?" : type->tp_name);
+        if (tag == TYPE_REF) {
+            fprintf(stderr, "%s%d]",
+                is_local ? "->locals[" : "->stack[",
+                is_local ? plocals : pstack);
+        }
     }
     fprintf(stderr, "]\n");
 }
@@ -1669,7 +1718,11 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
         int deopt = _PyOpcode_Deopt[_Py_OPCODE(*curr_instr)];
         if (IS_FORBIDDEN_OPCODE(deopt)) {
 #if BB_DEBUG
+#ifdef Py_DEBUG
+            fprintf(stderr, "FORBIDDEN OPCODE %s\n", _PyOpcode_OpName[_Py_OPCODE(*curr_instr)]);
+#else
             fprintf(stderr, "FORBIDDEN OPCODE %d\n", _Py_OPCODE(*curr_instr));
+#endif
 #endif
             return NULL;
         }
