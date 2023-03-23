@@ -2,6 +2,15 @@
     "build": {
         "dockerfile": "Dockerfile"
     },
+    "onCreateCommand": [
+        // Install common tooling.
+        "dnf",
+        "install",
+        "-y",
+        "which",
+        "zsh",
+        "fish"
+    ],
     "updateContentCommand": {
         // Using the shell for `nproc` usage.
         "python": "./configure --config-cache --with-pydebug && make -s -j `nproc`",
@@ -17,16 +26,16 @@
         "vscode": {
             "extensions": [
                 // Highlighting for Parser/Python.asdl.
-				"brettcannon.zephyr-asdl",
+                "brettcannon.zephyr-asdl",
                 // Highlighting for configure.ac.
-				"maelvalais.autoconf",
+                "maelvalais.autoconf",
                 // C auto-complete.
                 "ms-vscode.cpptools",
                 // To view built docs.
-				"ms-vscode.live-server"
+                "ms-vscode.live-server"
                 // https://github.com/microsoft/vscode-python/issues/18073
                 // "ms-python.python"
-			],
+            ],
             "settings": {
                 "C_Cpp.default.cStandard": "c11",
                 "C_Cpp.default.defines": [
