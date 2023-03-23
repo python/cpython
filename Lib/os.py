@@ -491,29 +491,23 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         # necessary, it can be adapted to only require O(1) FDs, see issue
         # bpo-13734 (gh-57943).
         stack = [(_WalkAction.WALK, (topfd, toppath))]
+        fd_stack = []
         try:
             while stack:
                 action, value = stack.pop()
-                try:
-                    if action is _WalkAction.YIELD:
-                        yield value
-                        continue
-                    elif action is _WalkAction.CLOSE:
-                        close(value)
-                        continue
-                    elif action is _WalkAction.WALK:
-                        topfd, toppath = value
-                    else:
-                        raise AssertionError(f"invalid walk action: {action!r}")
-                except:
-                    # make sure fd is closed when an exception occurs right
-                    # after its popped from the stack
-                    if action is _WalkAction.CLOSE:
-                        try:
-                            close(value)
-                        except OSError:
-                            pass
-                    raise
+                if action is _WalkAction.YIELD:
+                    yield value
+                    continue
+                elif action is _WalkAction.CLOSE:
+                    # Don't remove any fd from fd_stack until after it
+                    # is closed
+                    close(fd_stack[-1])
+                    fd_stack.pop()
+                    continue
+                elif action is _WalkAction.WALK:
+                    topfd, toppath = value
+                else:
+                    raise AssertionError(f"invalid walk action: {action!r}")
 
                 scandir_it = scandir(topfd)
                 dirs = []
@@ -565,18 +559,18 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                     # Close dirfd right after all subdirs have been traversed.
                     # Note that we use a stack, so actions appended first are
                     # executed last.
-                    stack.append((_WalkAction.CLOSE, dirfd))
+                    fd_stack.append(dirfd)
+                    stack.append((_WalkAction.CLOSE, None))
                     # Walk all subdirs
                     if follow_symlinks or path.samestat(orig_st, stat(dirfd)):
                         dirpath = path.join(toppath, name)
                         stack.append((_WalkAction.WALK, (dirfd, dirpath)))
         except:
-            for action, value in reversed(stack):
-                if action is _WalkAction.CLOSE:
-                    try:
-                        close(value)
-                    except OSError:
-                        pass
+            for fd in reversed(fd_stack):
+                try:
+                    close(fd)
+                except OSError:
+                    pass
             raise
 
     __all__.append("fwalk")
