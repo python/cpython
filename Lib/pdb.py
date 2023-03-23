@@ -276,9 +276,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def setup(self, f, tb):
         self.forget()
         self.stack, self.curindex = self.get_stack(f, tb)
-        # proxy all the frames because we only want to read f_locals once
-        self.stack = [(_FrameProxy(frame), lineno) for frame, lineno in self.stack]
-
         while tb:
             # when setting up post-mortem debugging with a traceback, save all
             # the original line numbers to be displayed along the current line
@@ -287,6 +284,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.tb_lineno[tb.tb_frame] = lineno
             tb = tb.tb_next
         self.curframe = self.stack[self.curindex][0]
+        # The f_locals dictionary is updated from the actual frame
+        # locals whenever the .f_locals accessor is called, so we
+        # cache it here to ensure that modifications are not overwritten.
+        self.curframe_locals = self.curframe.f_locals
         return self.execRcLines()
 
     # Can be executed earlier than 'setup' if desired
@@ -367,6 +368,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if self._wait_for_mainpyfile:
             return
         exc_type, exc_value, exc_traceback = exc_info
+        exc_traceback = bdb.TracebackProxy(exc_traceback)
         frame.f_locals['__exception__'] = exc_type, exc_value
 
         # An 'Internal StopIteration' exception is an exception debug event
@@ -435,7 +437,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def default(self, line):
         if line[:1] == '!': line = line[1:]
-        locals = self.curframe.f_locals
+        locals = self.curframe_locals
         globals = self.curframe.f_globals
         try:
             code = compile(line + '\n', '<stdin>', 'single')
@@ -563,7 +565,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Collect globals and locals.  It is usually not really sensible to also
         # complete builtins, and they clutter the namespace quite heavily, so we
         # leave them out.
-        ns = {**self.curframe.f_globals, **self.curframe.f_locals}
+        ns = {**self.curframe.f_globals, **self.curframe_locals}
         if '.' in text:
             # Walk an attribute chain up to the last part, similar to what
             # rlcompleter does.  This will bail if any of the parts are not
@@ -727,7 +729,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 try:
                     func = eval(arg,
                                 self.curframe.f_globals,
-                                self.curframe.f_locals)
+                                self.curframe_locals)
                 except:
                     func = arg
                 try:
@@ -1003,6 +1005,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         assert 0 <= number < len(self.stack)
         self.curindex = number
         self.curframe = self.stack[self.curindex][0]
+        self.curframe_locals = self.curframe.f_locals
         self.print_stack_entry(self.stack[self.curindex])
         self.lineno = None
 
@@ -1066,7 +1069,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return
         else:
             lineno = None
-        self.set_until(self.curframe.frame, lineno)
+        self.set_until(self.curframe, lineno)
         return 1
     do_unt = do_until
 
@@ -1085,7 +1088,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Continue execution until the next line in the current function
         is reached or it returns.
         """
-        self.set_next(self.curframe.frame)
+        self.set_next(self.curframe)
         return 1
     do_n = do_next
 
@@ -1114,7 +1117,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """r(eturn)
         Continue execution until the current function returns.
         """
-        self.set_return(self.curframe.frame)
+        self.set_return(self.curframe)
         return 1
     do_r = do_return
 
@@ -1173,7 +1176,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         sys.settrace(None)
         globals = self.curframe.f_globals
-        locals = self.curframe.f_locals
+        locals = self.curframe_locals
         p = Pdb(self.completekey, self.stdin, self.stdout)
         p.prompt = "(%s) " % self.prompt.strip()
         self.message("ENTERING RECURSIVE DEBUGGER")
@@ -1212,7 +1215,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Print the argument list of the current function.
         """
         co = self.curframe.f_code
-        dict = self.curframe.f_locals
+        dict = self.curframe_locals
         n = co.co_argcount + co.co_kwonlyargcount
         if co.co_flags & inspect.CO_VARARGS: n = n+1
         if co.co_flags & inspect.CO_VARKEYWORDS: n = n+1
@@ -1228,15 +1231,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """retval
         Print the return value for the last return of a function.
         """
-        if '__return__' in self.curframe.f_locals:
-            self.message(repr(self.curframe.f_locals['__return__']))
+        if '__return__' in self.curframe_locals:
+            self.message(repr(self.curframe_locals['__return__']))
         else:
             self.error('Not yet returned!')
     do_rv = do_retval
 
     def _getval(self, arg):
         try:
-            return eval(arg, self.curframe.f_globals, self.curframe.f_locals)
+            return eval(arg, self.curframe.f_globals, self.curframe_locals)
         except:
             self._error_exc()
             raise
@@ -1244,7 +1247,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def _getval_except(self, arg, frame=None):
         try:
             if frame is None:
-                return eval(arg, self.curframe.f_globals, self.curframe.f_locals)
+                return eval(arg, self.curframe.f_globals, self.curframe_locals)
             else:
                 return eval(arg, frame.f_globals, frame.f_locals)
         except:
@@ -1374,7 +1377,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """Print a range of lines."""
         if frame:
             current_lineno = frame.f_lineno
-            exc_lineno = self.tb_lineno.get(frame.frame, -1)
+            exc_lineno = self.tb_lineno.get(frame, -1)
         else:
             current_lineno = exc_lineno = -1
         for lineno, line in enumerate(lines, start):
@@ -1470,7 +1473,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Start an interactive interpreter whose global namespace
         contains all the (global and local) names found in the current scope.
         """
-        ns = {**self.curframe.f_globals, **self.curframe.f_locals}
+        ns = {**self.curframe.f_globals, **self.curframe_locals}
         code.interact("*interactive*", local=ns)
 
     def do_alias(self, arg):
@@ -1741,7 +1744,7 @@ def pm():
         tb = sys.last_exc.__traceback__
     else:
         tb = sys.last_traceback
-    post_mortem(tb)
+    post_mortem(bdb.TracebackProxy(tb))
 
 
 # Main program for testing
@@ -1825,32 +1828,6 @@ def main():
             pdb.interaction(None, t)
             print("Post mortem debugger finished. The " + target +
                   " will be restarted")
-
-
-class _FrameProxy:
-    """
-    Every time we read f_locals from the FrameObject, it will be refreshed
-    by the current FAST variables. To avoid missing our changes to the
-    local variables, we use proxy to only read f_locals once
-    """
-    def __init__(self, frame):
-        self.__frame = frame
-        self.__f_locals = frame.f_locals
-
-    def __getattr__(self, name):
-        if name.startswith("_"):
-            raise AttributeError(name)
-        if name == "f_locals":
-            return self.__f_locals
-        if name == "frame":
-            return self.__frame
-        return getattr(self.__frame, name)
-
-    def __setattr__(self, name, value):
-        if name.startswith("_"):
-            super().__setattr__(name, value)
-        else:
-            setattr(self.__frame, name, value)
 
 
 # When invoked as main program, invoke the debugger on a script
