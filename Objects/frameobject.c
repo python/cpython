@@ -1371,6 +1371,15 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     }
 }
 
+int
+_PyFrame_IsEntryFrame(PyFrameObject *frame)
+{
+    assert(frame != NULL);
+    _PyInterpreterFrame *f = frame->f_frame;
+    assert(!_PyFrame_IsIncomplete(&f->base));
+    return f->base.previous && f->base.previous->f_executable == Py_None;
+}
+
 PyCodeObject *
 PyFrame_GetCode(PyFrameObject *frame)
 {
