@@ -2800,6 +2800,15 @@ check_compare(struct compiler *c, expr_ty e)
     return SUCCESS;
 }
 
+static const int compare_masks[] = {
+    [Py_LT] = COMPARISON_LESS_THAN,
+    [Py_LE] = COMPARISON_LESS_THAN | COMPARISON_EQUALS,
+    [Py_EQ] = COMPARISON_EQUALS,
+    [Py_NE] = COMPARISON_NOT_EQUALS,
+    [Py_GT] = COMPARISON_GREATER_THAN,
+    [Py_GE] = COMPARISON_GREATER_THAN | COMPARISON_EQUALS,
+};
+
 static int compiler_addcompare(struct compiler *c, location loc,
                                cmpop_ty op)
 {
@@ -2840,7 +2849,7 @@ static int compiler_addcompare(struct compiler *c, location loc,
     }
     /* cmp goes in top bits of the oparg, while the low bits are used by quickened
      * versions of this opcode to store the comparison mask. */
-    ADDOP_I(c, loc, COMPARE_OP, cmp << 4);
+    ADDOP_I(c, loc, COMPARE_OP, (cmp << 4) | compare_masks[cmp]);
     return SUCCESS;
 }
 

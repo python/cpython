@@ -645,23 +645,21 @@
             break;
         }
 
-        TARGET(COMPARE_AND_BRANCH) {
-            STACK_SHRINK(2);
+        TARGET(COMPARE_OP_FLOAT) {
+            STACK_SHRINK(1);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
-        TARGET(COMPARE_AND_BRANCH_FLOAT) {
-            STACK_SHRINK(2);
+        TARGET(COMPARE_OP_INT) {
+            STACK_SHRINK(1);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
-        TARGET(COMPARE_AND_BRANCH_INT) {
-            STACK_SHRINK(2);
-            break;
-        }
-
-        TARGET(COMPARE_AND_BRANCH_STR) {
-            STACK_SHRINK(2);
+        TARGET(COMPARE_OP_STR) {
+            STACK_SHRINK(1);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
