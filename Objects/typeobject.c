@@ -4496,10 +4496,7 @@ _PyStaticType_Dealloc(PyTypeObject *type)
         static_builtin_state_clear(type);
         /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
     }
-    type->_tp_cache_size = 0;
     type->_tp_cache_used = 0;
-    PyMem_Free(type->_tp_cache);
-    type->_tp_cache = NULL;
 }
 
 
@@ -4523,7 +4520,6 @@ type_dealloc(PyTypeObject *type)
     Py_XDECREF(type->tp_mro);
     Py_XDECREF(type->tp_cache);
     clear_subclasses(type);
-    PyMem_Free(type->_tp_cache);
 
     /* A type's tp_doc is heap allocated, unlike the tp_doc slots
      * of most other objects.  It's okay to cast it to char *.

@@ -489,17 +489,11 @@ insert_into_cache(PyTypeObject *type, PyObject *descr)
             return i;
         }
     }
-    if (type->_tp_cache_used == type->_tp_cache_size) {
-        type->_tp_cache_size = Py_MAX(type->_tp_cache_size << 1, 8);
-        PyMem_Resize(type->_tp_cache, PyObject *, type->_tp_cache_size);
-        if (type->_tp_cache == NULL) {
-            type->_tp_cache_size = 0;
-            type->_tp_cache_used = 0;
-            return -1;
-        }
+    if (type->_tp_cache_used < _TP_CACHE_SIZE) {
+        type->_tp_cache[type->_tp_cache_used] = descr;
+        return type->_tp_cache_used++;
     }
-    type->_tp_cache[type->_tp_cache_used] = descr;
-    return type->_tp_cache_used++;
+    return -1;
 }
 
 static int
