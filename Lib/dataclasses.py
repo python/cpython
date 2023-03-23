@@ -1287,7 +1287,7 @@ class DataclassLike(metaclass=abc.ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, other):
-        return hasattr(other, _FIELDS)
+        return is_dataclass(other)
 
 
 def asdict(obj, *, dict_factory=dict):
