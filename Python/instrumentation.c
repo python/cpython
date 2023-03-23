@@ -602,7 +602,7 @@ de_instrument(PyCodeObject *code, int offset, int event)
             if (opcode != INSTRUMENTED_LINE) {
                 int deinstrumented = DE_INSTRUMENT[opcode];
                 if (deinstrumented) {
-                    code->_co_monitoring->per_instruction_opcodes[offset] = deinstrumented;
+                    code->_co_monitoring->per_instruction_opcodes[offset] = opcode = deinstrumented;
                 }
                 break;
             }
@@ -613,7 +613,7 @@ de_instrument(PyCodeObject *code, int offset, int event)
             int orignal_opcode = lines->original_opcode;
             int deinstrumented = DE_INSTRUMENT[orignal_opcode];
             if (deinstrumented) {
-                lines->original_opcode = deinstrumented;
+                lines->original_opcode = opcode = deinstrumented;
             }
             break;
         }
@@ -621,12 +621,12 @@ de_instrument(PyCodeObject *code, int offset, int event)
         {
             int deinstrumented = DE_INSTRUMENT[opcode];
             assert(deinstrumented);
-            instr->op.code = deinstrumented;
+            instr->op.code = opcode = deinstrumented;
         }
     }
-    int base_opcode = _Py_GetBaseOpcode(code, offset);
+    assert(!is_instrumented(opcode));
+    int base_opcode = _PyOpcode_Deopt[opcode];
     assert(base_opcode != 0);
-    assert(_PyOpcode_Deopt[base_opcode] == base_opcode);
     if (_PyOpcode_Caches[base_opcode]) {
         instr[1].cache = adaptive_counter_warmup();
     }
