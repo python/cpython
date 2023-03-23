@@ -490,7 +490,7 @@ insert_into_cache(PyTypeObject *type, PyObject *descr)
         }
     }
     if (type->_tp_cache_used == type->_tp_cache_size) {
-        type->_tp_cache_size = Py_MAX(type->_tp_cache_size << 1, (1 << 2));
+        type->_tp_cache_size = Py_MAX(type->_tp_cache_size << 1, 8);
         PyMem_Resize(type->_tp_cache, PyObject *, type->_tp_cache_size);
         if (type->_tp_cache == NULL) {
             type->_tp_cache_size = 0;
