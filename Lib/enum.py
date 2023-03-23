@@ -1186,6 +1186,8 @@ class Enum(metaclass=EnumType):
         return None
 
     def __repr__(self):
+        if not isinstance(self, Enum):
+            return repr(self)
         v_repr = self.__class__._value_repr_ or repr
         return "<%s.%s: %s>" % (self.__class__.__name__, self._name_, v_repr(self._value_))
 
