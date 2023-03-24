@@ -341,7 +341,6 @@ Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
 ##-----------------------
 ## static types
 
-Modules/_ctypes/_ctypes.c	-	DictRemover_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCArrayType_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCArray_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCData_Type	-

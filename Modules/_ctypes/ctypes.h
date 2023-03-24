@@ -33,6 +33,7 @@
 #endif
 
 typedef struct {
+    PyTypeObject *DictRemover_Type;
 } ctypes_state;
 
 extern ctypes_state global_state;

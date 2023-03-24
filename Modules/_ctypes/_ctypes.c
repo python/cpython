@@ -152,13 +152,32 @@ typedef struct {
     PyObject *dict;
 } DictRemoverObject;
 
+static int
+_DictRemover_traverse(DictRemoverObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->key);
+    Py_VISIT(self->dict);
+    return 0;
+}
+
+static int
+_DictRemover_clear(DictRemoverObject *self)
+{
+    Py_CLEAR(self->key);
+    Py_CLEAR(self->dict);
+    return 0;
+}
+
 static void
 _DictRemover_dealloc(PyObject *myself)
 {
+    PyTypeObject *tp = Py_TYPE(myself);
     DictRemoverObject *self = (DictRemoverObject *)myself;
-    Py_XDECREF(self->key);
-    Py_XDECREF(self->dict);
-    Py_TYPE(self)->tp_free(myself);
+    PyObject_GC_UnTrack(myself);
+    (void)_DictRemover_clear(self);
+    tp->tp_free(myself);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -175,47 +194,23 @@ _DictRemover_call(PyObject *myself, PyObject *args, PyObject *kw)
     Py_RETURN_NONE;
 }
 
-static PyTypeObject DictRemover_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.DictRemover",                      /* tp_name */
-    sizeof(DictRemoverObject),                  /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    _DictRemover_dealloc,                       /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    _DictRemover_call,                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-/* XXX should participate in GC? */
-    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
-    PyDoc_STR("deletes a key from a dictionary"), /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
+PyDoc_STRVAR(dictremover_doc, "deletes a key from a dictionary");
+
+static PyType_Slot dictremover_slots[] = {
+    {Py_tp_dealloc, _DictRemover_dealloc},
+    {Py_tp_traverse, _DictRemover_traverse},
+    {Py_tp_clear, _DictRemover_clear},
+    {Py_tp_call, _DictRemover_call},
+    {Py_tp_doc, (void *)dictremover_doc},
+    {0, NULL},
+};
+
+static PyType_Spec dictremover_spec = {
+    .name = "_ctypes.DictRemover",
+    .basicsize = sizeof(DictRemoverObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = dictremover_slots,
 };
 
 int
@@ -226,7 +221,8 @@ PyDict_SetItemProxy(PyObject *dict, PyObject *key, PyObject *item)
     PyObject *proxy;
     int result;
 
-    obj = _PyObject_CallNoArgs((PyObject *)&DictRemover_Type);
+    ctypes_state *st = GLOBAL_STATE();
+    obj = _PyObject_CallNoArgs((PyObject *)st->DictRemover_Type);
     if (obj == NULL)
         return -1;
 
@@ -5637,6 +5633,15 @@ _ctypes_add_types(PyObject *mod)
         } \
     } while (0)
 
+#define CREATE_TYPE(MOD, TP, SPEC) \
+    do { \
+        PyObject *type = PyType_FromMetaclass(NULL, MOD, SPEC, NULL); \
+        if (type == NULL) { \
+            return -1; \
+        } \
+        TP = (PyTypeObject *)type; \
+    } while (0)
+
     /* Note:
        ob_type is the metatype (the 'type'), defaults to PyType_Type,
        tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
@@ -5683,8 +5688,8 @@ _ctypes_add_types(PyObject *mod)
      * Other stuff
      */
 
-    DictRemover_Type.tp_new = PyType_GenericNew;
-    TYPE_READY(&DictRemover_Type);
+    ctypes_state *st = GLOBAL_STATE();
+    CREATE_TYPE(mod, st->DictRemover_Type, &dictremover_spec);
     TYPE_READY(&StructParam_Type);
 
 #ifdef MS_WIN32
@@ -5694,6 +5699,7 @@ _ctypes_add_types(PyObject *mod)
 #undef TYPE_READY
 #undef TYPE_READY_BASE
 #undef MOD_ADD_TYPE
+#undef CREATE_TYPE
     return 0;
 }
 
