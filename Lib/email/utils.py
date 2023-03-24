@@ -122,6 +122,7 @@ def _post_parse_validation(parsedvalues):
     for v in parsedvalues:
         if '[' in v[1]:
             parsedvalues.remove(v)
+            parsedvalues.append(('', ''))
 
     return parsedvalues
 
