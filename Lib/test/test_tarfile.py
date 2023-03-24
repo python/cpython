@@ -225,13 +225,19 @@ class UstarReadTest(ReadTest, unittest.TestCase):
         self.add_dir_and_getmember('bar')
         self.add_dir_and_getmember('a'*101)
 
+    @unittest.skipUnless(hasattr(os, "getuid") and hasattr(os, "getgid"),
+                         "Missing getuid or getgid implementation")
     def add_dir_and_getmember(self, name):
+        def filter(tarinfo):
+            tarinfo.uid = tarinfo.gid = 100
+            return tarinfo
+
         with os_helper.temp_cwd():
             with tarfile.open(tmpname, 'w') as tar:
                 tar.format = tarfile.USTAR_FORMAT
                 try:
                     os.mkdir(name)
-                    tar.add(name)
+                    tar.add(name, filter=filter)
                 finally:
                     os.rmdir(name)
             with tarfile.open(tmpname) as tar:
@@ -734,6 +740,18 @@ class MiscReadTestBase(CommonReadTest):
             with self.assertRaises(tarfile.ReadError):
                 tarfile.open(self.tarname)
 
+    def test_next_on_empty_tarfile(self):
+        fd = io.BytesIO()
+        tf = tarfile.open(fileobj=fd, mode="w")
+        tf.close()
+
+        fd.seek(0)
+        with tarfile.open(fileobj=fd, mode="r|") as tf:
+            self.assertEqual(tf.next(), None)
+
+        fd.seek(0)
+        with tarfile.open(fileobj=fd, mode="r") as tf:
+            self.assertEqual(tf.next(), None)
 
 class MiscReadTest(MiscReadTestBase, unittest.TestCase):
     test_fail_comp = None

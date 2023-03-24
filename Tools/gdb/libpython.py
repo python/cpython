@@ -82,6 +82,8 @@ Py_TPFLAGS_DICT_SUBCLASS     = (1 << 29)
 Py_TPFLAGS_BASE_EXC_SUBCLASS = (1 << 30)
 Py_TPFLAGS_TYPE_SUBCLASS     = (1 << 31)
 
+#From pycore_frame.h
+FRAME_OWNED_BY_CSTACK = 3
 
 MAX_OUTPUT_LEN=1024
 
@@ -880,10 +882,16 @@ class PyLongObjectPtr(PyObjectPtr):
     def proxyval(self, visited):
         '''
         Python's Include/longobjrep.h has this declaration:
-           struct _longobject {
-               PyObject_VAR_HEAD
-               digit ob_digit[1];
-           };
+
+            typedef struct _PyLongValue {
+                uintptr_t lv_tag; /* Number of digits, sign and flags */
+                digit ob_digit[1];
+            } _PyLongValue;
+
+            struct _longobject {
+                PyObject_HEAD
+               _PyLongValue long_value;
+            };
 
         with this description:
             The absolute value of a number is equal to
@@ -895,11 +903,13 @@ class PyLongObjectPtr(PyObjectPtr):
             #define PyLong_SHIFT        30
             #define PyLong_SHIFT        15
         '''
-        ob_size = int(self.field('ob_size'))
-        if ob_size == 0:
+        long_value = self.field('long_value')
+        lv_tag = int(long_value['lv_tag'])
+        size = lv_tag >> 3
+        if size == 0:
             return 0
 
-        ob_digit = self.field('ob_digit')
+        ob_digit = long_value['ob_digit']
 
         if gdb.lookup_type('digit').sizeof == 2:
             SHIFT = 15
@@ -907,9 +917,9 @@ class PyLongObjectPtr(PyObjectPtr):
             SHIFT = 30
 
         digits = [int(ob_digit[i]) * 2**(SHIFT*i)
-                  for i in safe_range(abs(ob_size))]
+                  for i in safe_range(size)]
         result = sum(digits)
-        if ob_size < 0:
+        if (lv_tag & 3) == 2:
             result = -result
         return result
 
@@ -1077,8 +1087,8 @@ class PyFramePtr:
         first_instr = self._f_code().field("co_code_adaptive").cast(codeunit_p)
         return int(prev_instr - first_instr)
 
-    def is_entry(self):
-        return self._f_special("is_entry", bool)
+    def is_shim(self):
+        return self._f_special("owner", int) == FRAME_OWNED_BY_CSTACK
 
     def previous(self):
         return self._f_special("previous", PyFramePtr)
@@ -1821,14 +1831,14 @@ class Frame(object):
             interp_frame = self.get_pyop()
             while True:
                 if interp_frame:
+                    if interp_frame.is_shim():
+                        break
                     line = interp_frame.get_truncated_repr(MAX_OUTPUT_LEN)
                     sys.stdout.write('#%i %s\n' % (self.get_index(), line))
                     if not interp_frame.is_optimized_out():
                         line = interp_frame.current_line()
                         if line is not None:
                             sys.stdout.write('    %s\n' % line.strip())
-                    if interp_frame.is_entry():
-                        break
                 else:
                     sys.stdout.write('#%i (unable to read python frame information)\n' % self.get_index())
                     break
@@ -1845,13 +1855,13 @@ class Frame(object):
             interp_frame = self.get_pyop()
             while True:
                 if interp_frame:
+                    if interp_frame.is_shim():
+                        break
                     interp_frame.print_traceback()
                     if not interp_frame.is_optimized_out():
                         line = interp_frame.current_line()
                         if line is not None:
                             sys.stdout.write('    %s\n' % line.strip())
-                    if interp_frame.is_entry():
-                        break
                 else:
                     sys.stdout.write('  (unable to read python frame information)\n')
                     break
@@ -2106,6 +2116,9 @@ class PyLocals(gdb.Command):
         while True:
             if not pyop_frame:
                 print(UNABLE_READ_INFO_PYTHON_FRAME)
+                break
+            if pyop_frame.is_shim():
+                break
 
             sys.stdout.write('Locals for %s\n' % (pyop_frame.co_name.proxyval(set())))
 
@@ -2114,8 +2127,6 @@ class PyLocals(gdb.Command):
                     % (pyop_name.proxyval(set()),
                         pyop_value.get_truncated_repr(MAX_OUTPUT_LEN)))
 
-            if pyop_frame.is_entry():
-                break
 
             pyop_frame = pyop_frame.previous()
 

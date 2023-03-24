@@ -96,8 +96,7 @@ synchronous servers of four types::
 
 Note that :class:`UnixDatagramServer` derives from :class:`UDPServer`, not from
 :class:`UnixStreamServer` --- the only difference between an IP and a Unix
-stream server is the address family, which is simply repeated in both Unix
-server classes.
+server is the address family.
 
 
 .. class:: ForkingMixIn
@@ -431,11 +430,8 @@ Request Handler Objects
    The :attr:`self.rfile` and :attr:`self.wfile` attributes can be
    read or written, respectively, to get the request data or return data
    to the client.
-
-   The :attr:`rfile` attributes of both classes support the
-   :class:`io.BufferedIOBase` readable interface, and
-   :attr:`DatagramRequestHandler.wfile` supports the
-   :class:`io.BufferedIOBase` writable interface.
+   The :attr:`!rfile` attributes support the :class:`io.BufferedIOBase` readable interface,
+   and :attr:`!wfile` attributes support the :class:`!io.BufferedIOBase` writable interface.
 
    .. versionchanged:: 3.6
       :attr:`StreamRequestHandler.wfile` also supports the

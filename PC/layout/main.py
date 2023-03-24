@@ -35,7 +35,7 @@ TEST_DIRS_ONLY = FileNameSet("test", "tests")
 
 IDLE_DIRS_ONLY = FileNameSet("idlelib")
 
-TCLTK_PYDS_ONLY = FileStemSet("tcl*", "tk*", "_tkinter")
+TCLTK_PYDS_ONLY = FileStemSet("tcl*", "tk*", "_tkinter", "zlib1")
 TCLTK_DIRS_ONLY = FileNameSet("tkinter", "turtledemo")
 TCLTK_FILES_ONLY = FileNameSet("turtle.py")
 
