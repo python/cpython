@@ -1479,7 +1479,7 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
     return 0;
 }
 
-static bool super_instructions[256] = {
+static const bool super_instructions[256] = {
     [LOAD_FAST__LOAD_FAST] = true,
     [LOAD_FAST__LOAD_CONST] = true,
     [STORE_FAST__LOAD_FAST] = true,
@@ -1972,7 +1972,7 @@ add_power2_constant(PyObject *obj, const char *name, int i)
     return err;
 }
 
-const char *event_names[] = {
+const char *const event_names [] = {
     [PY_MONITORING_EVENT_PY_START] = "PY_START",
     [PY_MONITORING_EVENT_PY_RESUME] = "PY_RESUME",
     [PY_MONITORING_EVENT_PY_RETURN] = "PY_RETURN",
