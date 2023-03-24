@@ -301,7 +301,8 @@ typedef struct _Instruction {
     bool is_specialized_instrumented;
 } Instruction;
 
-Instruction read_instruction(PyCodeObject *code, int offset)
+static Instruction
+read_instruction(PyCodeObject *code, int offset)
 {
     Instruction result = (Instruction){0};
     int opcode = result.actual_opcode = _PyCode_CODE(code)[offset].op.code;
@@ -812,7 +813,8 @@ remove_tools(PyCodeObject * code, int offset, int event, int tools)
 }
 
 #ifndef NDEBUG
-bool tools_is_subset_for_event(PyCodeObject * code, int event, int tools)
+static bool
+tools_is_subset_for_event(PyCodeObject * code, int event, int tools)
 {
     int global_tools = PyInterpreterState_Get()->monitors.tools[event];
     int local_tools = code->_co_monitoring->local_monitors.tools[event];
