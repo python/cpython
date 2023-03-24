@@ -1,0 +1,1 @@
+Apply :pep:`687` to :mod:`datetime`. Patch by Erlend Aasland.
