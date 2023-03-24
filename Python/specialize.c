@@ -1336,13 +1336,8 @@ _Py_Specialize_BinarySubscr(
             goto fail;
         }
         PyHeapTypeObject *ht = (PyHeapTypeObject *)container_type;
-        if (ht->_spec_cache.getitem == NULL) {
-            ht->_spec_cache.getitem = descriptor;
-            ht->_spec_cache.getitem_version = version;
-        }
-        assert(ht->_spec_cache.getitem == descriptor && 
-               ht->_spec_cache.getitem_version == version);
         ht->_spec_cache.getitem = descriptor;
+        ht->_spec_cache.getitem_version = version;
         instr->op.code = BINARY_SUBSCR_GETITEM;
         goto success;
     }
