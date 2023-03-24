@@ -3183,6 +3183,7 @@ dummy_func(
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, ( -- )) {
             PyObject *cond = POP();
             int err = PyObject_IsTrue(cond);
+            Py_DECREF(cond);
             ERROR_IF(err < 0, error);
             _Py_CODEUNIT *here = next_instr-1;
             assert(err == 0 || err == 1);
@@ -3193,6 +3194,7 @@ dummy_func(
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, ( -- )) {
             PyObject *cond = POP();
             int err = PyObject_IsTrue(cond);
+            Py_DECREF(cond);
             ERROR_IF(err < 0, error);
             _Py_CODEUNIT *here = next_instr-1;
             assert(err == 0 || err == 1);
