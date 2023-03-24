@@ -25,6 +25,11 @@ class Full(Exception):
     pass
 
 
+class Cancelled(Exception):
+    'Exception raised by Queue.get(block=True) when cancelled'
+    pass
+
+
 class Queue:
     '''Create a queue object with a given maximum size.
 
@@ -53,6 +58,9 @@ class Queue:
         # drops to zero; thread waiting to join() is notified to resume
         self.all_tasks_done = threading.Condition(self.mutex)
         self.unfinished_tasks = 0
+
+        # Support cancelling queues blocking on get
+        self.cancelling = threading.Semaphore()
 
     def task_done(self):
         '''Indicate that a formerly enqueued task is complete.
@@ -119,6 +127,26 @@ class Queue:
         with self.mutex:
             return 0 < self.maxsize <= self._qsize()
 
+    def cancel_all(self):
+        '''Cancel all get(block=True) calls
+
+        This method cancels alls of the get(block=True) calls waiting for an
+        item
+        '''
+        with self.not_empty:  # access to private len - lock is held: ok
+            self.cancelling.release(n=len(self.not_empty._waiters))
+            self.not_empty.notify_all()
+
+    def cancel(self, n=1):
+        '''Cancel one or more get(block=True) calls
+
+        This method cancels at most n of the get(block=True) calls waiting for
+        an item
+        '''
+        with self.not_empty:
+            self.cancelling.release(n=n)
+            self.not_empty.notify(n=n)
+
     def put(self, item, block=True, timeout=None):
         '''Put an item into the queue.
 
@@ -166,18 +194,15 @@ class Queue:
             if not block:
                 if not self._qsize():
                     raise Empty
-            elif timeout is None:
-                while not self._qsize():
-                    self.not_empty.wait()
-            elif timeout < 0:
+            elif timeout is not None and timeout < 0:
                 raise ValueError("'timeout' must be a non-negative number")
-            else:
-                endtime = time() + timeout
-                while not self._qsize():
-                    remaining = endtime - time()
-                    if remaining <= 0.0:
-                        raise Empty
-                    self.not_empty.wait(remaining)
+
+            else:  # timeout is either None or >= 0
+                if not self.not_empty.wait_for(self._qsize, timeout=timeout):
+                    raise Empty
+                if self.cancelling.acquire(blocking=False):  # cancel?
+                    raise Cancelled  # if decrement sem counter: cancelled
+
             item = self._get()
             self.not_full.notify()
             return item
