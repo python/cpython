@@ -207,7 +207,7 @@ The module defines the following user-callable items:
 
    .. versionchanged:: 3.10
       Added *ignore_cleanup_errors* parameter.
-   
+
    .. versionchanged:: 3.12
       Added the *delete* parameter.
 
