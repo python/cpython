@@ -850,17 +850,26 @@ class TemporaryDirectory:
             ...
 
     Upon exiting the context, the directory and everything contained
-    in it are removed.
+    in it are removed (unless delete=False is passed or an exception
+    is raised during cleanup and ignore_cleanup_errors is not True).
+
+    Optional Arguments:
+        suffix - A str suffix for the directory name.  (see mkdtemp)
+        prefix - A str prefix for the directory name.  (see mkdtemp)
+        dir - A directory to create this temp dir in.  (see mkdtemp)
+        ignore_cleanup_errors - False; ignore exceptions during cleanup?
+        delete - True; whether the directory is automatically deleted.
     """
 
     def __init__(self, suffix=None, prefix=None, dir=None,
-                 ignore_cleanup_errors=False):
+                 ignore_cleanup_errors=False, *, delete=True):
         self.name = mkdtemp(suffix, prefix, dir)
         self._ignore_cleanup_errors = ignore_cleanup_errors
+        self._delete = delete
         self._finalizer = _weakref.finalize(
             self, self._cleanup, self.name,
             warn_message="Implicitly cleaning up {!r}".format(self),
-            ignore_errors=self._ignore_cleanup_errors)
+            ignore_errors=self._ignore_cleanup_errors, delete=self._delete)
 
     @classmethod
     def _rmtree(cls, name, ignore_errors=False):
@@ -894,9 +903,10 @@ class TemporaryDirectory:
         _shutil.rmtree(name, onexc=onexc)
 
     @classmethod
-    def _cleanup(cls, name, warn_message, ignore_errors=False):
-        cls._rmtree(name, ignore_errors=ignore_errors)
-        _warnings.warn(warn_message, ResourceWarning)
+    def _cleanup(cls, name, warn_message, ignore_errors=False, delete=True):
+        if delete:
+            cls._rmtree(name, ignore_errors=ignore_errors)
+            _warnings.warn(warn_message, ResourceWarning)
 
     def __repr__(self):
         return "<{} {!r}>".format(self.__class__.__name__, self.name)
@@ -905,7 +915,8 @@ class TemporaryDirectory:
         return self.name
 
     def __exit__(self, exc, value, tb):
-        self.cleanup()
+        if self._delete:
+            self.cleanup()
 
     def cleanup(self):
         if self._finalizer.detach() or _os.path.exists(self.name):
