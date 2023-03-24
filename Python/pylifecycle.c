@@ -31,7 +31,8 @@
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "opcode.h"
 
-extern void _PyIO_Fini(void);
+extern PyStatus _PyIO_InitTypes(PyInterpreterState *interp);
+extern void _PyIO_FiniTypes(PyInterpreterState *interp);
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
@@ -635,6 +636,8 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
+    _PyThreadState_InitDetached(&runtime->cached_objects.main_tstate, interp);
+
     *tstate_p = tstate;
     return _PyStatus_OK();
 }
@@ -695,6 +698,11 @@ pycore_init_types(PyInterpreterState *interp)
 
     if (_PyExc_InitTypes(interp) < 0) {
         return _PyStatus_ERR("failed to initialize an exception type");
+    }
+
+    status = _PyIO_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     status = _PyExc_InitGlobalObjects(interp);
@@ -801,6 +809,11 @@ pycore_interp_init(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     PyStatus status;
     PyObject *sysmod = NULL;
+
+    // This is a temporary fix until we have immortal objects.
+    // (See _PyType_InitCache() in typeobject.c.)
+    extern void _PyType_FixCacheRefcounts(void);
+    _PyType_FixCacheRefcounts();
 
     // Create singletons before the first PyType_Ready() call, since
     // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)
@@ -1695,9 +1708,7 @@ finalize_interp_clear(PyThreadState *tstate)
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
 
-    if (is_main_interp) {
-        _PyIO_Fini();
-    }
+    _PyIO_FiniTypes(tstate->interp);
 
     /* Clear all loghooks */
     /* Both _PySys_Audit function and users still need PyObject, such as tuple.
@@ -1923,6 +1934,8 @@ Py_FinalizeEx(void)
     // XXX Do this sooner during finalization.
     // XXX Ensure finalizer errors are handled properly.
 
+    _PyThreadState_ClearDetached(&runtime->cached_objects.main_tstate);
+
     finalize_interp_clear(tstate);
     finalize_interp_delete(tstate->interp);
 
@@ -1930,6 +1943,7 @@ Py_FinalizeEx(void)
     if (show_ref_count) {
         _PyDebug_PrintTotalRefs();
     }
+    _Py_FinalizeRefTotal(runtime);
 #endif
 
 #ifdef Py_TRACE_REFS
@@ -2056,30 +2070,31 @@ error:
 
     /* Oops, it didn't work.  Undo it all. */
     PyErr_PrintEx(0);
+    PyThreadState_Swap(save_tstate);
     PyThreadState_Clear(tstate);
     PyThreadState_Delete(tstate);
     PyInterpreterState_Delete(interp);
-    PyThreadState_Swap(save_tstate);
 
     return status;
 }
 
-PyThreadState *
-_Py_NewInterpreterFromConfig(const _PyInterpreterConfig *config)
+PyStatus
+_Py_NewInterpreterFromConfig(PyThreadState **tstate_p,
+                             const _PyInterpreterConfig *config)
 {
-    PyThreadState *tstate = NULL;
-    PyStatus status = new_interpreter(&tstate, config);
-    if (_PyStatus_EXCEPTION(status)) {
-        Py_ExitStatusException(status);
-    }
-    return tstate;
+    return new_interpreter(tstate_p, config);
 }
 
 PyThreadState *
 Py_NewInterpreter(void)
 {
+    PyThreadState *tstate = NULL;
     const _PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
-    return _Py_NewInterpreterFromConfig(&config);
+    PyStatus status = _Py_NewInterpreterFromConfig(&tstate, &config);
+    if (_PyStatus_EXCEPTION(status)) {
+        Py_ExitStatusException(status);
+    }
+    return tstate;
 }
 
 /* Delete an interpreter and its last thread.  This requires that the

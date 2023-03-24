@@ -2562,8 +2562,7 @@ class BasicHyperVTest(unittest.TestCase):
         socket.HV_GUID_LOOPBACK
 
     def testCreateHyperVSocketWithUnknownProtoFailure(self):
-        expected = "A protocol was specified in the socket function call " \
-            "that does not support the semantics of the socket type requested"
+        expected = r"\[WinError 10041\]"
         with self.assertRaisesRegex(OSError, expected):
             socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM)
 
