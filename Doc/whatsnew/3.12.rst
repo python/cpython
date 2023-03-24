@@ -248,7 +248,7 @@ inspect
 -------
 
 * Add :func:`inspect.markcoroutinefunction` to mark sync functions that return
-  a :term:`coroutine` for use with :func:`iscoroutinefunction`.
+  a :term:`coroutine` for use with :func:`inspect.iscoroutinefunction`.
   (Contributed Carlton Gibson in :gh:`99247`.)
 
 * Add :func:`inspect.getasyncgenstate` and :func:`inspect.getasyncgenlocals`
@@ -277,7 +277,7 @@ dis
 * Pseudo instruction opcodes (which are used by the compiler but
   do not appear in executable bytecode) are now exposed in the
   :mod:`dis` module.
-  :data:`~dis.HAVE_ARGUMENT` is still relevant to real opcodes,
+  :opcode:`HAVE_ARGUMENT` is still relevant to real opcodes,
   but it is not useful for pseudo instructions. Use the new
   :data:`~dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
@@ -422,7 +422,7 @@ Optimizations
   (Contributed by Kevin Modzelewski in :gh:`90536`.)
 
 * Speed up the regular expression substitution (functions :func:`re.sub` and
-  :func:`re.subn` and corresponding :class:`re.Pattern` methods) for
+  :func:`re.subn` and corresponding :class:`!re.Pattern` methods) for
   replacement strings containing group references by 2--3 times.
   (Contributed by Serhiy Storchaka in :gh:`91524`.)
 
@@ -435,7 +435,7 @@ CPython bytecode changes
   :opcode:`LOAD_METHOD` instruction if the low bit of its oparg is set.
   (Contributed by Ken Jin in :gh:`93429`.)
 
-* Removed the :opcode:`JUMP_IF_FALSE_OR_POP` and :opcode:`JUMP_IF_TRUE_OR_POP`
+* Removed the :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
   instructions. (Contributed by Irit Katriel in :gh:`102859`.)
 
 
@@ -482,7 +482,7 @@ Deprecated
   :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
-* The :meth:`~asyncio.DefaultEventLoopPolicy.get_event_loop` method of the
+* The :meth:`~asyncio.get_event_loop` method of the
   default event loop policy now emits a :exc:`DeprecationWarning` if there
   is no current event loop set and it decides to create one.
   (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
@@ -541,13 +541,13 @@ Modules (see :pep:`594`):
 
 APIs:
 
-* :class:`configparser.LegacyInterpolation` (:gh:`90765`)
+* :class:`!configparser.LegacyInterpolation` (:gh:`90765`)
 * :func:`locale.getdefaultlocale` (:gh:`90817`)
-* :meth:`turtle.RawTurtle.settiltangle` (:gh:`50096`)
-* :func:`unittest.findTestCases` (:gh:`50096`)
-* :func:`unittest.makeSuite` (:gh:`50096`)
-* :func:`unittest.getTestCaseNames` (:gh:`50096`)
-* :class:`webbrowser.MacOSX` (:gh:`86421`)
+* :meth:`!turtle.RawTurtle.settiltangle` (:gh:`50096`)
+* :func:`!unittest.findTestCases` (:gh:`50096`)
+* :func:`!unittest.makeSuite` (:gh:`50096`)
+* :func:`!unittest.getTestCaseNames` (:gh:`50096`)
+* :class:`!webbrowser.MacOSX` (:gh:`86421`)
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -555,9 +555,9 @@ Pending Removal in Python 3.14
 * Deprecated the following :mod:`importlib.abc` classes, scheduled for removal in
   Python 3.14:
 
-  * :class:`importlib.abc.ResourceReader`
-  * :class:`importlib.abc.Traversable`
-  * :class:`importlib.abc.TraversableResources`
+  * :class:`!importlib.abc.ResourceReader`
+  * :class:`!importlib.abc.Traversable`
+  * :class:`!importlib.abc.TraversableResources`
 
   Use :mod:`importlib.resources.abc` classes instead:
 
@@ -566,7 +566,7 @@ Pending Removal in Python 3.14
 
   (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
 
-* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+* Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases using the C API.
 
 * Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
@@ -701,11 +701,11 @@ Removed
 
 * Remove ``io.OpenWrapper`` and ``_pyio.OpenWrapper``, deprecated in Python
   3.10: just use :func:`open` instead. The :func:`open` (:func:`io.open`)
-  function is a built-in function. Since Python 3.10, :func:`_pyio.open` is
+  function is a built-in function. Since Python 3.10, :func:`!_pyio.open` is
   also a static method.
   (Contributed by Victor Stinner in :gh:`94169`.)
 
-* Remove the :func:`ssl.RAND_pseudo_bytes` function, deprecated in Python 3.6:
+* Remove the :func:`!ssl.RAND_pseudo_bytes` function, deprecated in Python 3.6:
   use :func:`os.urandom` or :func:`ssl.RAND_bytes` instead.
   (Contributed by Victor Stinner in :gh:`94199`.)
 
@@ -715,13 +715,13 @@ Removed
   extension if it was not present.
   (Contributed by Victor Stinner in :gh:`94196`.)
 
-* Remove the :func:`ssl.match_hostname` function. The
-  :func:`ssl.match_hostname` was deprecated in Python 3.7. OpenSSL performs
+* Remove the :func:`!ssl.match_hostname` function.
+  It was deprecated in Python 3.7. OpenSSL performs
   hostname matching since Python 3.7, Python no longer uses the
-  :func:`ssl.match_hostname` function.
+  :func:`!ssl.match_hostname` function.
   (Contributed by Victor Stinner in :gh:`94199`.)
 
-* Remove the :func:`locale.format` function, deprecated in Python 3.7:
+* Remove the :func:`!locale.format` function, deprecated in Python 3.7:
   use :func:`locale.format_string` instead.
   (Contributed by Victor Stinner in :gh:`94226`.)
 
@@ -731,9 +731,9 @@ Removed
   a C implementation of :func:`~hashlib.pbkdf2_hmac()` which is faster.
   (Contributed by Victor Stinner in :gh:`94199`.)
 
-* :mod:`xml.etree`: Remove the ``ElementTree.Element.copy()`` method of the
+* :mod:`xml.etree.ElementTree`: Remove the ``ElementTree.Element.copy()`` method of the
   pure Python implementation, deprecated in Python 3.10, use the
-  :func:`copy.copy` function instead.  The C implementation of :mod:`xml.etree`
+  :func:`copy.copy` function instead.  The C implementation of :mod:`xml.etree.ElementTree`
   has no ``copy()`` method, only a ``__copy__()`` method.
   (Contributed by Victor Stinner in :gh:`94383`.)
 
@@ -742,10 +742,10 @@ Removed
   :pep:`451` for the rationale.
   (Contributed by Victor Stinner in :gh:`94379`.)
 
-* Remove the :func:`ssl.wrap_socket` function, deprecated in Python 3.7:
+* Remove the :func:`!ssl.wrap_socket` function, deprecated in Python 3.7:
   instead, create a :class:`ssl.SSLContext` object and call its
   :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
-  :func:`ssl.wrap_socket` is broken and insecure. The function neither sends a
+  :func:`!ssl.wrap_socket` is broken and insecure. The function neither sends a
   SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
   <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
   Validation.
@@ -912,7 +912,7 @@ New Features
   The :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is now removed from a class
   when the class's :py:meth:`~object.__call__` method is reassigned.
   This makes vectorcall safe to use with mutable types (i.e. heap types
-  without the :const:`immutable <Py_TPFLAGS_IMMUTABLETYPE>` flag).
+  without the immutable flag, :const:`Py_TPFLAGS_IMMUTABLETYPE`).
   Mutable types that do not override :c:member:`~PyTypeObject.tp_call` now
   inherit the ``Py_TPFLAGS_HAVE_VECTORCALL`` flag.
   (Contributed by Petr Viktorin in :gh:`93274`.)
@@ -945,7 +945,7 @@ New Features
   (Contributed by Andrew Frost in :gh:`92257`.)
 
 * The C API now permits registering callbacks via :c:func:`PyDict_AddWatcher`,
-  :c:func:`PyDict_AddWatch` and related APIs to be called whenever a dictionary
+  :c:func:`PyDict_Watch` and related APIs to be called whenever a dictionary
   is modified. This is intended for use by optimizing interpreters, JIT
   compilers, or debuggers.
   (Contributed by Carl Meyer in :gh:`91052`.)
@@ -977,7 +977,7 @@ New Features
   (Contributed by Mark Shannon in :gh:`101578`.)
 
 * Add :c:func:`PyErr_DisplayException`, which takes an exception instance,
-  to replace the legacy-api :c:func:`PyErr_Display`. (Contributed by
+  to replace the legacy-api :c:func:`!PyErr_Display`. (Contributed by
   Irit Katriel in :gh:`102755`).
 
 Porting to Python 3.12
@@ -1024,7 +1024,7 @@ Porting to Python 3.12
   supported, but does not fully support multiple inheritance
   (:gh:`95589`), and performance may be worse.
   Classes declaring :const:`Py_TPFLAGS_MANAGED_DICT` should call
-  :c:func:`_PyObject_VisitManagedDict` and :c:func:`_PyObject_ClearManagedDict`
+  :c:func:`!_PyObject_VisitManagedDict` and :c:func:`!_PyObject_ClearManagedDict`
   to traverse and clear their instance's dictionaries.
   To clear weakrefs, call :c:func:`PyObject_ClearWeakRefs`, as before.
 
@@ -1069,17 +1069,17 @@ Deprecated
   * :c:var:`Py_HashRandomizationFlag`: use :c:member:`PyConfig.use_hash_seed`
     and :c:member:`PyConfig.hash_seed`
   * :c:var:`Py_IsolatedFlag`: use :c:member:`PyConfig.isolated`
-  * :c:var:`Py_LegacyWindowsFSEncodingFlag`: use :c:member:`PyConfig.legacy_windows_fs_encoding`
+  * :c:var:`Py_LegacyWindowsFSEncodingFlag`: use :c:member:`PyPreConfig.legacy_windows_fs_encoding`
   * :c:var:`Py_LegacyWindowsStdioFlag`: use :c:member:`PyConfig.legacy_windows_stdio`
-  * :c:var:`Py_FileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
-  * :c:var:`Py_FileSystemDefaultEncodeErrors`: use :c:member:`PyConfig.filesystem_errors`
-  * :c:var:`Py_UTF8Mode`: use :c:member:`PyPreConfig.utf8_mode` (see :c:func:`Py_PreInitialize`)
+  * :c:var:`!Py_FileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
+  * :c:var:`!Py_FileSystemDefaultEncodeErrors`: use :c:member:`PyConfig.filesystem_errors`
+  * :c:var:`!Py_UTF8Mode`: use :c:member:`PyPreConfig.utf8_mode` (see :c:func:`Py_PreInitialize`)
 
   The :c:func:`Py_InitializeFromConfig` API should be used with
   :c:type:`PyConfig` instead.
   (Contributed by Victor Stinner in :gh:`77782`.)
 
-* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+* Creating immutable types (:const:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases is deprecated and will be disabled in Python 3.14.
 
 * The ``structmember.h`` header is deprecated, though it continues to be
@@ -1118,7 +1118,7 @@ Deprecated
   :c:func:`PyErr_SetRaisedException` instead.
   (Contributed by Mark Shannon in :gh:`101578`.)
 
-* :c:func:`PyErr_Display` is deprecated. Use :c:func:`PyErr_DisplayException`
+* :c:func:`!PyErr_Display` is deprecated. Use :c:func:`PyErr_DisplayException`
   instead. (Contributed by Irit Katriel in :gh:`102755`).
 
 
@@ -1132,15 +1132,15 @@ Removed
 
 * Legacy Unicode APIs have been removed. See :pep:`623` for detail.
 
-   * :c:macro:`PyUnicode_WCHAR_KIND`
-   * :c:func:`PyUnicode_AS_UNICODE`
-   * :c:func:`PyUnicode_AsUnicode`
-   * :c:func:`PyUnicode_AsUnicodeAndSize`
-   * :c:func:`PyUnicode_AS_DATA`
-   * :c:func:`PyUnicode_FromUnicode`
-   * :c:func:`PyUnicode_GET_SIZE`
-   * :c:func:`PyUnicode_GetSize`
-   * :c:func:`PyUnicode_GET_DATA_SIZE`
+   * :c:macro:`!PyUnicode_WCHAR_KIND`
+   * :c:func:`!PyUnicode_AS_UNICODE`
+   * :c:func:`!PyUnicode_AsUnicode`
+   * :c:func:`!PyUnicode_AsUnicodeAndSize`
+   * :c:func:`!PyUnicode_AS_DATA`
+   * :c:func:`!PyUnicode_FromUnicode`
+   * :c:func:`!PyUnicode_GET_SIZE`
+   * :c:func:`!PyUnicode_GetSize`
+   * :c:func:`!PyUnicode_GET_DATA_SIZE`
 
 * Remove the ``PyUnicode_InternImmortal()`` function and the
   ``SSTATE_INTERNED_IMMORTAL`` macro.
