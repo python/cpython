@@ -1316,22 +1316,13 @@ def asdict(obj, *, dict_factory=dict):
 
 def _asdict_inner(obj, dict_factory):
     if _is_dataclass_instance(obj):
-        if dict_factory is dict:
-            result = {}
-            for f in fields(obj):
-                value = getattr(obj, f.name)
-                if type(value) not in _ATOMIC_TYPES:
-                    value = _asdict_inner(value, dict_factory)
-                result[f.name] = value
-            return result
-        else:
-            result = []
-            for f in fields(obj):
-                value = getattr(obj, f.name)
-                if type(value) not in _ATOMIC_TYPES:
-                    value = _asdict_inner(value, dict_factory)
-                result.append((f.name, value))
-            return dict_factory(result)
+        result = []
+        for f in fields(obj):
+            value = getattr(obj, f.name)
+            if type(value) not in _ATOMIC_TYPES:
+                value = _asdict_inner(value, dict_factory)
+            result.append((f.name, value))
+        return dict_factory(result)
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
         # obj is a namedtuple.  Recurse into it, but the returned
         # object is another namedtuple of the same type.  This is
