@@ -1315,12 +1315,12 @@ def asdict(obj, *, dict_factory=dict):
 
 
 def _asdict_inner(obj, dict_factory):
-    if _is_dataclass_instance(obj):
+    if type(obj) in _ATOMIC_TYPES:
+        return obj
+    elif _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):
-            value = getattr(obj, f.name)
-            if type(value) not in _ATOMIC_TYPES:
-                value = _asdict_inner(value, dict_factory)
+            value = _asdict_inner(getattr(obj, f.name), dict_factory)
             result.append((f.name, value))
         return dict_factory(result)
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
@@ -1343,33 +1343,23 @@ def _asdict_inner(obj, dict_factory):
         #   namedtuples, we could no longer call asdict() on a data
         #   structure where a namedtuple was used as a dict key.
 
-        return type(obj)(*[
-            v if type(v) in _ATOMIC_TYPES else _asdict_inner(v, dict_factory)
-            for v in obj
-        ])
+        return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
     elif isinstance(obj, (list, tuple)):
         # Assume we can create an object of this type by passing in a
         # generator (which is not true for namedtuples, handled
         # above).
-        return type(obj)(
-            v if type(v) in _ATOMIC_TYPES else _asdict_inner(v, dict_factory)
-            for v in obj
-        )
+        return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
     elif isinstance(obj, dict):
         if hasattr(type(obj), 'default_factory'):
             # obj is a defaultdict, which has a different constructor from
             # dict as it requires the default_factory as its first arg.
             result = type(obj)(getattr(obj, 'default_factory'))
             for k, v in obj.items():
-                k = k if type(k) in _ATOMIC_TYPES else _asdict_inner(k, dict_factory)
-                v = v if type(v) in _ATOMIC_TYPES else _asdict_inner(v, dict_factory)
-                result[k] = v
+                result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
             return result
-
-        return type(obj)(
-            (k if type(k) in _ATOMIC_TYPES else _asdict_inner(k, dict_factory),
-             v if type(v) in _ATOMIC_TYPES else _asdict_inner(v, dict_factory))
-            for k, v in obj.items())
+        return type(obj)((_asdict_inner(k, dict_factory),
+                          _asdict_inner(v, dict_factory))
+                         for k, v in obj.items())
     else:
         return copy.deepcopy(obj)
 
