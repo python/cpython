@@ -4,13 +4,8 @@
 
 #include <stddef.h>
 #include "Python.h"
-#include "opcode.h"
 #include "pycore_ceval.h"
-#include "pycore_instruments.h"
 #include "pycore_object.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"
 
 typedef struct _PyLegacyEventHandler {
@@ -40,7 +35,6 @@ call_profile_func(_PyLegacyEventHandler *self, PyObject *arg)
         Py_RETURN_NONE;
     }
     PyFrameObject* frame = PyEval_GetFrame();
-    assert(frame);
     if (frame == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Missing frame when calling profile function.");

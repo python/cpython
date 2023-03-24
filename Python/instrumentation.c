@@ -612,8 +612,8 @@ de_instrument(PyCodeObject *code, int offset, int event)
         case INSTRUMENTED_LINE:
         {
             _PyCoLineInstrumentationData *lines = &code->_co_monitoring->lines[offset];
-            int orignal_opcode = lines->original_opcode;
-            int deinstrumented = DE_INSTRUMENT[orignal_opcode];
+            int original_opcode = lines->original_opcode;
+            int deinstrumented = DE_INSTRUMENT[original_opcode];
             if (deinstrumented) {
                 lines->original_opcode = opcode = deinstrumented;
             }
@@ -694,7 +694,7 @@ de_instrument_per_instruction(PyCodeObject *code, int offset)
         }
     }
     assert(instr->op.code != INSTRUMENTED_INSTRUCTION);
-    /* Keep things clean for snaity check */
+    /* Keep things clean for sanity check */
     code->_co_monitoring->per_instruction_opcodes[offset] = 0;
 }
 
