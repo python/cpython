@@ -8,7 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "Include/Python.h"
 #include "pycore_opcode_utils.h"
 
 static _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
