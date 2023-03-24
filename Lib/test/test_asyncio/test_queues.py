@@ -630,13 +630,15 @@ class _QueueShutdownTestMixin:
             await q.get()
 
     async def test_shutdown_repr(self):
-        q = self.q_class()
+        q = self.q_class(4)
+        # when alive, not in repr
         self.assertNotIn("alive", repr(q))
 
-        q.shutdown()
+        q = self.q_class(6)
+        q.shutdown(immediate=False)
         self.assertIn("shutdown", repr(q))
 
-        q = self.q_class()
+        q = self.q_class(8)
         q.shutdown(immediate=True)
         self.assertIn("shutdown-immediate", repr(q))
 
