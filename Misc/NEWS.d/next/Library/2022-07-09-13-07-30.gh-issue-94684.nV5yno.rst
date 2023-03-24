@@ -1,0 +1,1 @@
+Now :func:`uuid.uuid3` and :func:`uuid.uuid5` functions support :class:`bytes` objects as their *name* argument.
