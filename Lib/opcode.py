@@ -92,6 +92,8 @@ def_op('UNARY_NOT', 12)
 
 def_op('UNARY_INVERT', 15)
 
+def_op('RESERVED', 17)
+
 def_op('BINARY_SUBSCR', 25)
 def_op('BINARY_SLICE', 26)
 def_op('STORE_SLICE', 27)

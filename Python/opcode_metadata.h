@@ -379,6 +379,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case CACHE:
             return 0;
+        case RESERVED:
+            return 0;
         default:
             return -1;
     }
@@ -761,6 +763,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case CACHE:
             return 0;
+        case RESERVED:
+            return 0;
         default:
             return -1;
     }
@@ -962,5 +966,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB },
     [EXTENDED_ARG] = { true, INSTR_FMT_IB },
     [CACHE] = { true, INSTR_FMT_IX },
+    [RESERVED] = { true, INSTR_FMT_IX },
 };
 #endif

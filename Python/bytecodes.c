@@ -1234,6 +1234,7 @@ dummy_func(
             DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
             PyDictObject *mdict = (PyDictObject *)GLOBALS();
             PyDictObject *bdict = (PyDictObject *)BUILTINS();
+            assert(opcode == LOAD_GLOBAL_BUILTIN);
             DEOPT_IF(mdict->ma_keys->dk_version != mod_version, LOAD_GLOBAL);
             DEOPT_IF(bdict->ma_keys->dk_version != bltn_version, LOAD_GLOBAL);
             assert(DK_IS_UNICODE(bdict->ma_keys));
@@ -3242,6 +3243,10 @@ dummy_func(
 
         inst(CACHE, (--)) {
             Py_UNREACHABLE();
+        }
+
+        inst(RESERVED, (--)) {
+            assert(0 && "Executing RESERVED instruction.");
         }
 
 

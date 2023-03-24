@@ -1487,9 +1487,12 @@ deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
         int opcode = _Py_GetBaseOpcode(code, i);
         int caches = _PyOpcode_Caches[opcode];
         instructions[i].op.code = opcode;
-        while (caches--) {
-            instructions[++i].op.code = CACHE;
-            instructions[i].op.arg = 0;
+        if (caches) {
+            instructions[i+1].cache = adaptive_counter_warmup();
+            for (int j = 2; j <= caches; j++) {
+                instructions[i+j].cache = 0;
+            }
+            i += caches;
         }
     }
 }
@@ -2287,6 +2290,24 @@ _PyStaticCode_Fini(PyCodeObject *co)
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *)co);
         co->co_weakreflist = NULL;
+    }
+    _PyCoMonitoringData *data = co->_co_monitoring;
+    if (data) {
+        if (data->tools) {
+            PyMem_Free(data->tools);
+        }
+        if (data->lines) {
+            PyMem_Free(data->lines);
+        }
+        if (data->line_tools) {
+            PyMem_Free(data->line_tools);
+        }
+        if (data->per_instruction_opcodes) {
+            PyMem_Free(data->per_instruction_opcodes);
+        }
+        if (data->per_instruction_tools) {
+            PyMem_Free(data->per_instruction_tools);
+        }
     }
 }
 
