@@ -46,6 +46,9 @@ typedef struct {
     /* The interned Epoch datetime instance */
     PyObject *PyDateTime_Epoch;
 
+    /* strptime import */
+    PyObject *strptime;
+
     /* Types */
     PyTypeObject *PyDateTime_DateTimeType;
     PyTypeObject *PyDateTime_DateType;
@@ -5225,19 +5228,21 @@ datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
-    static PyObject *module = NULL;
     PyObject *string, *format;
 
     if (!PyArg_ParseTuple(args, "UU:strptime", &string, &format))
         return NULL;
 
-    if (module == NULL) {
-        module = PyImport_ImportModule("_strptime");
-        if (module == NULL)
+    datetime_state *st = find_module_state_by_def(cls);
+    if (st->strptime == NULL) {
+        st->strptime = PyImport_ImportModule("_strptime");
+        if (st->strptime == NULL) {
             return NULL;
+        }
     }
-    return PyObject_CallMethodObjArgs(module, &_Py_ID(_strptime_datetime),
-                                         cls, string, format, NULL);
+    return PyObject_CallMethodObjArgs(st->strptime,
+                                      &_Py_ID(_strptime_datetime),
+                                      cls, string, format, NULL);
 }
 
 /* Return new datetime from date/datetime and time arguments. */
@@ -6937,6 +6942,7 @@ module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->us_per_day);
     Py_VISIT(state->us_per_week);
     Py_VISIT(state->seconds_per_day);
+    Py_VISIT(state->strptime);
     Py_VISIT(state->PyDateTime_TimeZone_UTC);
     Py_VISIT(state->PyDateTime_Epoch);
     Py_VISIT(state->PyDateTime_DateTimeType);
@@ -6960,6 +6966,7 @@ module_clear(PyObject *module)
     Py_CLEAR(state->us_per_day);
     Py_CLEAR(state->us_per_week);
     Py_CLEAR(state->seconds_per_day);
+    Py_CLEAR(state->strptime);
     Py_CLEAR(state->PyDateTime_TimeZone_UTC);
     Py_CLEAR(state->PyDateTime_Epoch);
     Py_CLEAR(state->PyDateTime_DateTimeType);
