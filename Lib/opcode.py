@@ -154,8 +154,6 @@ hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
 name_op('IMPORT_FROM', 109)     # Index in name list
 jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
-jrel_op('JUMP_IF_FALSE_OR_POP', 111) # Number of words to skip
-jrel_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
 jrel_op('POP_JUMP_IF_FALSE', 114)
 jrel_op('POP_JUMP_IF_TRUE', 115)
 name_op('LOAD_GLOBAL', 116)     # Index in name list
@@ -193,8 +191,6 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
-def_op('COMPARE_AND_BRANCH', 141)   # Comparison and jump
-hascompare.append(141)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
@@ -316,10 +312,10 @@ _specializations = {
         "CALL_NO_KW_TUPLE_1",
         "CALL_NO_KW_TYPE_1",
     ],
-    "COMPARE_AND_BRANCH": [
-        "COMPARE_AND_BRANCH_FLOAT",
-        "COMPARE_AND_BRANCH_INT",
-        "COMPARE_AND_BRANCH_STR",
+    "COMPARE_OP": [
+        "COMPARE_OP_FLOAT",
+        "COMPARE_OP_INT",
+        "COMPARE_OP_STR",
     ],
     "FOR_ITER": [
         "FOR_ITER_LIST",
@@ -392,9 +388,6 @@ _cache_format = {
         "counter": 1,
     },
     "COMPARE_OP": {
-        "counter": 1,
-    },
-    "COMPARE_AND_BRANCH": {
         "counter": 1,
     },
     "BINARY_SUBSCR": {
