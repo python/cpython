@@ -66,18 +66,17 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
       Support for the :keyword:`with` statement was added.
 
    .. versionchanged:: 3.3
-      source_address argument was added.
+      *source_address* argument was added.
 
    .. versionadded:: 3.5
       The SMTPUTF8 extension (:rfc:`6531`) is now supported.
 
    .. versionchanged:: 3.9
       If the *timeout* parameter is set to be zero, it will raise a
-      :class:`ValueError` to prevent the creation of a non-blocking socket
+      :class:`ValueError` to prevent the creation of a non-blocking socket.
 
-.. class:: SMTP_SSL(host='', port=0, local_hostname=None, keyfile=None, \
-                    certfile=None [, timeout], context=None, \
-                    source_address=None)
+.. class:: SMTP_SSL(host='', port=0, local_hostname=None, * [, timeout], \
+                    context=None, source_address=None)
 
    An :class:`SMTP_SSL` instance behaves exactly the same as instances of
    :class:`SMTP`. :class:`SMTP_SSL` should be used for situations where SSL is
@@ -90,15 +89,11 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    aspects of the secure connection.  Please read :ref:`ssl-security` for
    best practices.
 
-   *keyfile* and *certfile* are a legacy alternative to *context*, and can
-   point to a PEM formatted private key and certificate chain file for the
-   SSL connection.
-
    .. versionchanged:: 3.3
       *context* was added.
 
    .. versionchanged:: 3.3
-      source_address argument was added.
+      The *source_address* argument was added.
 
    .. versionchanged:: 3.4
       The class now supports hostname check with
@@ -116,13 +111,16 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket
 
+   .. versionchanged:: 3.12
+       The deprecated *keyfile* and *certfile* parameters have been removed.
+
 .. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None, \
                 source_address=None[, timeout])
 
    The LMTP protocol, which is very similar to ESMTP, is heavily based on the
    standard SMTP client. It's common to use Unix sockets for LMTP, so our
    :meth:`connect` method must support that as well as a regular host:port
-   server. The optional arguments local_hostname and source_address have the
+   server. The optional arguments *local_hostname* and *source_address* have the
    same meaning as they do in the :class:`SMTP` class. To specify a Unix
    socket, you must use an absolute path for *host*, starting with a '/'.
 
@@ -360,7 +358,7 @@ An :class:`SMTP` instance has the following methods:
    be used as argument to the ``AUTH`` command; the valid values are
    those listed in the ``auth`` element of :attr:`esmtp_features`.
 
-   *authobject* must be a callable object taking an optional single argument:
+   *authobject* must be a callable object taking an optional single argument::
 
      data = authobject(challenge=None)
 
@@ -393,7 +391,7 @@ An :class:`SMTP` instance has the following methods:
    .. versionadded:: 3.5
 
 
-.. method:: SMTP.starttls(keyfile=None, certfile=None, context=None)
+.. method:: SMTP.starttls(*, context=None)
 
    Put the SMTP connection in TLS (Transport Layer Security) mode.  All SMTP
    commands that follow will be encrypted.  You should then call :meth:`ehlo`
@@ -415,6 +413,9 @@ An :class:`SMTP` instance has the following methods:
        Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
        :func:`ssl.create_default_context` select the system's trusted CA
        certificates for you.
+
+   .. versionchanged:: 3.12
+       The deprecated *keyfile* and *certfile* parameters have been removed.
 
    :exc:`SMTPHeloError`
       The server didn't reply properly to the ``HELO`` greeting.

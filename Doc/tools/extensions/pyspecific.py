@@ -28,6 +28,7 @@ except ImportError:
     from sphinx.environment import NoUri
 from sphinx.locale import _ as sphinx_gettext
 from sphinx.util import status_iterator, logging
+from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
 
@@ -119,7 +120,7 @@ class ImplementationDetail(Directive):
 
 # Support for documenting platform availability
 
-class Availability(Directive):
+class Availability(SphinxDirective):
 
     has_content = True
     required_arguments = 1
@@ -139,18 +140,19 @@ class Availability(Directive):
 
     def run(self):
         availability_ref = ':ref:`Availability <availability>`: '
+        avail_nodes, avail_msgs = self.state.inline_text(
+            availability_ref + self.arguments[0],
+            self.lineno)
         pnode = nodes.paragraph(availability_ref + self.arguments[0],
-                                classes=["availability"],)
-        n, m = self.state.inline_text(availability_ref, self.lineno)
-        pnode.extend(n + m)
-        n, m = self.state.inline_text(self.arguments[0], self.lineno)
-        pnode.extend(n + m)
+                                '', *avail_nodes, *avail_msgs)
+        self.set_source_info(pnode)
+        cnode = nodes.container("", pnode, classes=["availability"])
+        self.set_source_info(cnode)
         if self.content:
-            self.state.nested_parse(self.content, self.content_offset, pnode)
-
+            self.state.nested_parse(self.content, self.content_offset, cnode)
         self.parse_platforms()
 
-        return [pnode]
+        return [cnode]
 
     def parse_platforms(self):
         """Parse platform information from arguments

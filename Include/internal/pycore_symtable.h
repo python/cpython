@@ -90,6 +90,8 @@ PyAPI_FUNC(PySTEntryObject *) PySymtable_Lookup(struct symtable *, void *);
 
 extern void _PySymtable_Free(struct symtable *);
 
+extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
+
 /* Flags for def-use information */
 
 #define DEF_GLOBAL 1           /* global stmt */
@@ -127,6 +129,11 @@ extern struct symtable* _Py_SymtableStringObjectFlags(
     PyObject *filename,
     int start,
     PyCompilerFlags *flags);
+
+int _PyFuture_FromAST(
+    struct _mod * mod,
+    PyObject *filename,
+    PyFutureFeatures* futures);
 
 #ifdef __cplusplus
 }

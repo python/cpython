@@ -271,7 +271,8 @@ The special characters are:
 
    * To match a literal ``']'`` inside a set, precede it with a backslash, or
      place it at the beginning of the set.  For example, both ``[()[\]{}]`` and
-     ``[]()[{}]`` will both match a parenthesis.
+     ``[]()[{}]`` will match a right bracket, as well as left bracket, braces,
+     and parentheses.
 
    .. .. index:: single: --; in regular expressions
    .. .. index:: single: &&; in regular expressions
@@ -395,9 +396,9 @@ The special characters are:
 ``(?P<name>...)``
    Similar to regular parentheses, but the substring matched by the group is
    accessible via the symbolic group name *name*.  Group names must be valid
-   Python identifiers, and in bytes patterns they must contain only characters
-   in the ASCII range.  Each group name must be defined only once within a
-   regular expression.  A symbolic group is also a numbered group, just as if
+   Python identifiers, and in :class:`bytes` patterns they can only contain
+   bytes in the ASCII range.  Each group name must be defined only once within
+   a regular expression.  A symbolic group is also a numbered group, just as if
    the group were not named.
 
    Named groups can be referenced in three contexts.  If the pattern is
@@ -419,8 +420,8 @@ The special characters are:
    +---------------------------------------+----------------------------------+
 
    .. versionchanged:: 3.12
-      In bytes patterns group names must contain only characters in
-      the ASCII range.
+      In :class:`bytes` patterns, group *name* can only contain bytes
+      in the ASCII range (``b'\x00'``-``b'\x7f'``).
 
 .. index:: single: (?P=; in regular expressions
 
@@ -496,6 +497,8 @@ The special characters are:
 
    .. versionchanged:: 3.12
       Group *id* can only contain ASCII digits.
+      In :class:`bytes` patterns, group *name* can only contain bytes
+      in the ASCII range (``b'\x00'``-``b'\x7f'``).
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
@@ -1018,8 +1021,8 @@ Functions
 
    .. versionchanged:: 3.12
       Group *id* can only contain ASCII digits.
-      In bytes replacement strings group names must contain only characters
-      in the ASCII range.
+      In :class:`bytes` replacement strings, group *name* can only contain bytes
+      in the ASCII range (``b'\x00'``-``b'\x7f'``).
 
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)

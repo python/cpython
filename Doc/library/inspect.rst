@@ -574,6 +574,8 @@ Retrieving source code
    object and the line number indicates where in the original source file the first
    line of code was found.  An :exc:`OSError` is raised if the source code cannot
    be retrieved.
+   A :exc:`TypeError` is raised if the object is a built-in module, class, or
+   function.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
@@ -586,6 +588,8 @@ Retrieving source code
    class, method, function, traceback, frame, or code object.  The source code is
    returned as a single string.  An :exc:`OSError` is raised if the source code
    cannot be retrieved.
+   A :exc:`TypeError` is raised if the object is a built-in module, class, or
+   function.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
@@ -689,7 +693,7 @@ function.
    modified copy.
 
    .. versionchanged:: 3.5
-      Signature objects are picklable and hashable.
+      Signature objects are picklable and :term:`hashable`.
 
    .. attribute:: Signature.empty
 
@@ -768,7 +772,7 @@ function.
    you can use :meth:`Parameter.replace` to create a modified copy.
 
    .. versionchanged:: 3.5
-      Parameter objects are picklable and hashable.
+      Parameter objects are picklable and :term:`hashable`.
 
    .. attribute:: Parameter.empty
 
@@ -802,8 +806,9 @@ function.
 
    .. attribute:: Parameter.kind
 
-      Describes how argument values are bound to the parameter.  Possible values
-      (accessible via :class:`Parameter`, like ``Parameter.KEYWORD_ONLY``):
+      Describes how argument values are bound to the parameter.  The possible
+      values are accessible via :class:`Parameter` (like ``Parameter.KEYWORD_ONLY``),
+      and support comparison and ordering, in the following order:
 
       .. tabularcolumns:: |l|L|
 
@@ -1439,8 +1444,8 @@ code execution::
            pass
 
 
-Current State of Generators and Coroutines
-------------------------------------------
+Current State of Generators, Coroutines, and Asynchronous Generators
+--------------------------------------------------------------------
 
 When implementing coroutine schedulers and for other advanced uses of
 generators, it is useful to determine whether a generator is currently
@@ -1475,6 +1480,22 @@ generator to be determined easily.
 
    .. versionadded:: 3.5
 
+.. function:: getasyncgenstate(agen)
+
+   Get current state of an asynchronous generator object.  The function is
+   intended to be used with asynchronous iterator objects created by
+   :keyword:`async def` functions which use the :keyword:`yield` statement,
+   but will accept any asynchronous generator-like object that has
+   ``ag_running`` and ``ag_frame`` attributes.
+
+   Possible states are:
+    * AGEN_CREATED: Waiting to start execution.
+    * AGEN_RUNNING: Currently being executed by the interpreter.
+    * AGEN_SUSPENDED: Currently suspended at a yield expression.
+    * AGEN_CLOSED: Execution has completed.
+
+   .. versionadded:: 3.12
+
 The current internal state of the generator can also be queried. This is
 mostly useful for testing purposes, to ensure that internal state is being
 updated as expected:
@@ -1505,6 +1526,14 @@ updated as expected:
    works for coroutine objects created by :keyword:`async def` functions.
 
    .. versionadded:: 3.5
+
+.. function:: getasyncgenlocals(agen)
+
+   This function is analogous to :func:`~inspect.getgeneratorlocals`, but
+   works for asynchronous generator objects created by :keyword:`async def`
+   functions which use the :keyword:`yield` statement.
+
+   .. versionadded:: 3.12
 
 
 .. _inspect-module-co-flags:
