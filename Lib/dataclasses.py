@@ -222,25 +222,27 @@ _POST_INIT_NAME = '__post_init__'
 # https://bugs.python.org/issue33453 for details.
 _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
-# Types for which deepcopy(obj) returns obj unmodified
-# Used to skip deepcopy in asdict and astuple
+# Types for which deepcopy(obj) is known to return obj unmodified
+# Used to skip deepcopy in asdict and astuple for performance
 _ATOMIC_TYPES = {
+    # Common JSON Serializable types
     types.NoneType,
-    types.EllipsisType,
-    types.NotImplementedType,
+    bool,
     int,
     float,
-    bool,
     complex,
     bytes,
     str,
+    # Other types that are also unaffected by deepcopy
+    types.EllipsisType,
+    types.NotImplementedType,
     types.CodeType,
-    type,
-    range,
     types.BuiltinFunctionType,
     types.FunctionType,
-    # weakref.ref,  # weakref is not currently imported by dataclasses directly
+    type,
+    range,
     property,
+    # weakref.ref,  # weakref is not currently imported by dataclasses directly
 }
 
 # This function's logic is copied from "recursive_repr" function in
