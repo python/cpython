@@ -1,0 +1,3 @@
+Reduce the number of inline :opcode:`CACHE` entries for :opcode:`LOAD_ATTR`
+instructions by adding a shared array of cached methods to the
+:c:type:`PyTypeObject` struct.
