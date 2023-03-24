@@ -7,6 +7,7 @@
 #include "opcode.h"
 #include "pycore_ceval.h"
 #include "pycore_instruments.h"
+#include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -336,7 +337,7 @@ sys_trace_exception_handled(
 
 
 PyTypeObject _PyLegacyEventHandler_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_IMMORTAL_INIT(&PyType_Type, 0),
     "sys.legacy_event_handler",
     sizeof(_PyLegacyEventHandler),
     .tp_dealloc = (destructor)dealloc,
