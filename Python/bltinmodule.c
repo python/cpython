@@ -2503,7 +2503,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(iter);
                 if (PyErr_Occurred())
                     return NULL;
-                return PyLong_FromLong(i_result);
+                return PyLong_FromSsize_t(i_result);
             }
             if (PyLong_CheckExact(item) || PyBool_Check(item)) {
                 Py_ssize_t b;
@@ -2525,7 +2525,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 }
             }
             /* Either overflowed or is not an int. Restore real objects and process normally */
-            result = PyLong_FromLong(i_result);
+            result = PyLong_FromSsize_t(i_result);
             if (result == NULL) {
                 Py_DECREF(item);
                 Py_DECREF(iter);
