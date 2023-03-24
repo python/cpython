@@ -1330,16 +1330,18 @@ _Py_Specialize_BinarySubscr(
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
             goto fail;
         }
-        int version = _PyFunction_GetVersionForCurrentState(func);
-        if (version == 0 || version != (uint16_t)version) {
-            SPECIALIZATION_FAIL(BINARY_SUBSCR, version == 0 ?
-                SPEC_FAIL_OUT_OF_VERSIONS : SPEC_FAIL_OUT_OF_RANGE);
+        uint32_t version = _PyFunction_GetVersionForCurrentState(func);
+        if (version == 0) {
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_OUT_OF_VERSIONS);
             goto fail;
         }
-        cache->func_version = version;
         PyHeapTypeObject *ht = (PyHeapTypeObject *)container_type;
-        assert(ht->_spec_cache.getitem == descriptor||
-               ht->_spec_cache.getitem == NULL);
+        if (ht->_spec_cache.getitem == NULL) {
+            ht->_spec_cache.getitem = descriptor;
+            ht->_spec_cache.getitem_version = version;
+        }
+        assert(ht->_spec_cache.getitem == descriptor && 
+               ht->_spec_cache.getitem_version == version);
         ht->_spec_cache.getitem = descriptor;
         instr->op.code = BINARY_SUBSCR_GETITEM;
         goto success;

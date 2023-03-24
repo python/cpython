@@ -392,7 +392,6 @@ _cache_format = {
     },
     "BINARY_SUBSCR": {
         "counter": 1,
-        "func_version": 1,
     },
     "FOR_ITER": {
         "counter": 1,
