@@ -198,14 +198,15 @@ class Queue:
                 raise ValueError("'timeout' must be a non-negative number")
 
             else:  # timeout is either None or >= 0
-                if not self.not_empty.wait_for(self._qsize, timeout=timeout):
-                    raise Empty
-                if self.cancelling.acquire(blocking=False):  # cancel?
-                    raise Cancelled  # if decrement sem counter: cancelled
 
             item = self._get()
             self.not_full.notify()
             return item
+                while not self._qsize():
+                    if not self.not_empty.wait(timeout=timeout):
+                        raise Empty
+                    if self.cancelling.acquire(blocking=False):  # cancel?
+                        raise Cancelled  # if decrement sem counter: cancelled
 
     def put_nowait(self, item):
         '''Put an item into the queue without blocking.
