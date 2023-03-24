@@ -242,7 +242,6 @@ _ATOMIC_TYPES = {
     type,
     range,
     property,
-    # weakref.ref,  # weakref is not currently imported by dataclasses directly
 }
 
 # This function's logic is copied from "recursive_repr" function in
