@@ -26,8 +26,7 @@ class Full(Exception):
 
 
 class Cancelled(Exception):
-    'Exception raised by Queue.get(block=True) when cancelled'
-    pass
+    '''Exception raised by Queue.get(block=True) when cancelled'''
 
 
 class Queue:
