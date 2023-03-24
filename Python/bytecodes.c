@@ -99,11 +99,12 @@ dummy_func(
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = _Py_call_instrumentation(
                         tstate, oparg > 0, frame, next_instr-1);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                frame->stacktop = -1;
                 ERROR_IF(err, error);
                 if (frame->prev_instr != next_instr-1) {
                     /* Instrumentation has jumped */
                     next_instr = frame->prev_instr;
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     DISPATCH();
                 }
                 if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
@@ -3139,6 +3140,7 @@ dummy_func(
             int original_opcode = _Py_call_instrumentation_line(
                     tstate, frame, here);
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            frame->stacktop = -1;
             if (original_opcode < 0) {
                 next_instr = here+1;
                 goto error;
