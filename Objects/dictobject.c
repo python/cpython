@@ -304,7 +304,7 @@ static inline void
 dictkeys_incref(PyDictKeysObject *dk)
 {
 #ifdef Py_REF_DEBUG
-    _Py_IncRefTotal();
+    _Py_IncRefTotal(_PyInterpreterState_GET());
 #endif
     dk->dk_refcnt++;
 }
@@ -314,7 +314,7 @@ dictkeys_decref(PyInterpreterState *interp, PyDictKeysObject *dk)
 {
     assert(dk->dk_refcnt > 0);
 #ifdef Py_REF_DEBUG
-    _Py_DecRefTotal();
+    _Py_DecRefTotal(_PyInterpreterState_GET());
 #endif
     if (--dk->dk_refcnt == 0) {
         free_keys_object(interp, dk);
@@ -634,7 +634,7 @@ new_keys_object(PyInterpreterState *interp, uint8_t log2_size, bool unicode)
         }
     }
 #ifdef Py_REF_DEBUG
-    _Py_IncRefTotal();
+    _Py_IncRefTotal(_PyInterpreterState_GET());
 #endif
     dk->dk_refcnt = 1;
     dk->dk_log2_size = log2_size;
@@ -824,7 +824,7 @@ clone_combined_dict_keys(PyDictObject *orig)
        we have it now; calling dictkeys_incref would be an error as
        keys->dk_refcnt is already set to 1 (after memcpy). */
 #ifdef Py_REF_DEBUG
-    _Py_IncRefTotal();
+    _Py_IncRefTotal(_PyInterpreterState_GET());
 #endif
     return keys;
 }
@@ -1530,7 +1530,7 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
         // We can not use free_keys_object here because key's reference
         // are moved already.
 #ifdef Py_REF_DEBUG
-        _Py_DecRefTotal();
+        _Py_DecRefTotal(_PyInterpreterState_GET());
 #endif
         if (oldkeys == Py_EMPTY_KEYS) {
             oldkeys->dk_refcnt--;

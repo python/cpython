@@ -10,6 +10,7 @@ import stat
 import fnmatch
 import collections
 import errno
+import warnings
 
 try:
     import zlib
@@ -692,6 +693,11 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     onerror is deprecated and only remains for backwards compatibility.
     If both onerror and onexc are set, onerror is ignored and onexc is used.
     """
+
+    if onerror is not None:
+        warnings.warn("onerror argument is deprecated, use onexc instead",
+                      DeprecationWarning)
+
     sys.audit("shutil.rmtree", path, dir_fd)
     if ignore_errors:
         def onexc(*args):
