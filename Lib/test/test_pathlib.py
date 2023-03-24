@@ -13,6 +13,7 @@ import unittest
 from unittest import mock
 
 from test.support import import_helper
+from test.support import set_recursion_limit
 from test.support import is_emscripten, is_wasi
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
@@ -122,6 +123,13 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
         # the second path is relative.
         check(['c:/a/b', 'c:x/y'], ('c:', '\\', ['c:\\', 'a', 'b', 'x', 'y']))
         check(['c:/a/b', 'c:/x/y'], ('c:', '\\', ['c:\\', 'x', 'y']))
+        # Paths to files with NTFS alternate data streams
+        check(['./c:s'],                ('', '', ['c:s']))
+        check(['cc:s'],                 ('', '', ['cc:s']))
+        check(['C:c:s'],                ('C:', '', ['C:', 'c:s']))
+        check(['C:/c:s'],               ('C:', '\\', ['C:\\', 'c:s']))
+        check(['D:a', './c:b'],         ('D:', '', ['D:', 'a', 'c:b']))
+        check(['D:/a', './c:b'],        ('D:', '\\', ['D:\\', 'a', 'c:b']))
 
 
 #
@@ -165,6 +173,34 @@ class _BasePurePathTest(object):
         self.assertEqual(P(P('a'), 'b'), P('a/b'))
         self.assertEqual(P(P('a'), P('b')), P('a/b'))
         self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
+        self.assertEqual(P(P('./a:b')), P('./a:b'))
+
+    def test_bytes(self):
+        P = self.cls
+        message = (r"argument should be a str or an os\.PathLike object "
+                   r"where __fspath__ returns a str, not 'bytes'")
+        with self.assertRaisesRegex(TypeError, message):
+            P(b'a')
+        with self.assertRaises(TypeError):
+            P(b'a', 'b')
+        with self.assertRaises(TypeError):
+            P('a', b'b')
+        with self.assertRaises(TypeError):
+            P('a').joinpath(b'b')
+        with self.assertRaises(TypeError):
+            P('a') / b'b'
+        with self.assertRaises(TypeError):
+            b'a' / P('b')
+        with self.assertRaises(TypeError):
+            P('a').match(b'b')
+        with self.assertRaises(TypeError):
+            P('a').relative_to(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_name(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_stem(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_suffix(b'b')
 
     def _check_str_subclass(self, *args):
         # Issue #21127: it should be possible to construct a PurePath object
@@ -787,7 +823,8 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
 
     equivalences = _BasePurePathTest.equivalences.copy()
     equivalences.update({
-        'c:a': [ ('c:', 'a'), ('c:', 'a/'), ('/', 'c:', 'a') ],
+        './a:b': [ ('./a:b',) ],
+        'c:a': [ ('c:', 'a'), ('c:', 'a/'), ('.', 'c:', 'a') ],
         'c:/a': [
             ('c:/', 'a'), ('c:', '/', 'a'), ('c:', '/a'),
             ('/z', 'c:/', 'a'), ('//x/y', 'c:/', 'a'),
@@ -811,6 +848,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(str(p), '\\\\a\\b\\c\\d')
 
     def test_str_subclass(self):
+        self._check_str_subclass('.\\a:b')
         self._check_str_subclass('c:')
         self._check_str_subclass('c:a')
         self._check_str_subclass('c:a\\b.txt')
@@ -978,6 +1016,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(P('//a/b').drive, '\\\\a\\b')
         self.assertEqual(P('//a/b/').drive, '\\\\a\\b')
         self.assertEqual(P('//a/b/c/d').drive, '\\\\a\\b')
+        self.assertEqual(P('./c:a').drive, '')
 
     def test_root(self):
         P = self.cls
@@ -1314,6 +1353,14 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(pp, P('C:/a/b/x/y'))
         pp = p.joinpath('c:/x/y')
         self.assertEqual(pp, P('C:/x/y'))
+        # Joining with files with NTFS data streams => the filename should
+        # not be parsed as a drive letter
+        pp = p.joinpath(P('./d:s'))
+        self.assertEqual(pp, P('C:/a/b/d:s'))
+        pp = p.joinpath(P('./dd:s'))
+        self.assertEqual(pp, P('C:/a/b/dd:s'))
+        pp = p.joinpath(P('E:d:s'))
+        self.assertEqual(pp, P('E:d:s'))
 
     def test_div(self):
         # Basically the same as joinpath().
@@ -1334,6 +1381,11 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         # the second path is relative.
         self.assertEqual(p / 'c:x/y', P('C:/a/b/x/y'))
         self.assertEqual(p / 'c:/x/y', P('C:/x/y'))
+        # Joining with files with NTFS data streams => the filename should
+        # not be parsed as a drive letter
+        self.assertEqual(p / P('./d:s'), P('C:/a/b/d:s'))
+        self.assertEqual(p / P('./dd:s'), P('C:/a/b/dd:s'))
+        self.assertEqual(p / P('E:d:s'), P('E:d:s'))
 
     def test_is_reserved(self):
         P = self.cls
@@ -1599,6 +1651,8 @@ class _BasePathTest(object):
         self.assertEqual(p.expanduser(), p)
         p = P(P('').absolute().anchor) / '~'
         self.assertEqual(p.expanduser(), p)
+        p = P('~/a:b')
+        self.assertEqual(p.expanduser(), P(os.path.expanduser('~'), './a:b'))
 
     def test_exists(self):
         P = self.cls
@@ -1911,7 +1965,7 @@ class _BasePathTest(object):
 
     @os_helper.skip_unless_symlink
     def test_resolve_dot(self):
-        # See https://bitbucket.org/pitrou/pathlib/issue/9/pathresolve-fails-on-complex-symlinks
+        # See http://web.archive.org/web/20200623062557/https://bitbucket.org/pitrou/pathlib/issues/9/
         p = self.cls(BASE)
         self.dirlink('.', join('0'))
         self.dirlink(os.path.join('0', '0'), join('1'))
@@ -2739,6 +2793,18 @@ class WalkTests(unittest.TestCase):
             for it in iters:
                 self.assertEqual(next(it), expected)
             path = path / 'd'
+
+    def test_walk_above_recursion_limit(self):
+        recursion_limit = 40
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = pathlib.Path(os_helper.TESTFN, 'deep')
+        path = pathlib.Path(base, *(['d'] * directory_depth))
+        path.mkdir(parents=True)
+
+        with set_recursion_limit(recursion_limit):
+            list(base.walk())
+            list(base.walk(top_down=False))
 
 
 class PathTest(_BasePathTest, unittest.TestCase):

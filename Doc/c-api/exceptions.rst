@@ -86,6 +86,12 @@ Printing and clearing
 
    An exception must be set when calling this function.
 
+.. c:function: void PyErr_DisplayException(PyObject *exc)
+
+   Print the standard traceback display of ``exc`` to ``sys.stderr``, including
+   chained exceptions and notes.
+
+   .. versionadded:: 3.12
 
 Raising exceptions
 ==================

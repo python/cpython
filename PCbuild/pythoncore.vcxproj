@@ -216,6 +216,7 @@
     <ClInclude Include="..\Include\internal\pycore_exceptions.h" />
     <ClInclude Include="..\Include\internal\pycore_faulthandler.h" />
     <ClInclude Include="..\Include\internal\pycore_fileutils.h" />
+    <ClInclude Include="..\Include\internal\pycore_fileutils_windows.h" />
     <ClInclude Include="..\Include\internal\pycore_floatobject.h" />
     <ClInclude Include="..\Include\internal\pycore_format.h" />
     <ClInclude Include="..\Include\internal\pycore_frame.h" />
@@ -238,6 +239,7 @@
     <ClInclude Include="..\Include\internal\pycore_moduleobject.h" />
     <ClInclude Include="..\Include\internal\pycore_namespace.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
+    <ClInclude Include="..\Include\internal\pycore_object_state.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc_init.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
