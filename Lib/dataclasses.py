@@ -1389,12 +1389,12 @@ def astuple(obj, *, tuple_factory=tuple):
 
 
 def _astuple_inner(obj, tuple_factory):
-    if _is_dataclass_instance(obj):
+    if type(obj) in _ATOMIC_TYPES:
+        return obj
+    elif _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):
-            value = getattr(obj, f.name)
-            if type(value) not in _ATOMIC_TYPES:
-                value = _astuple_inner(value, tuple_factory)
+            value = _astuple_inner(getattr(obj, f.name), tuple_factory)
             result.append(value)
         return tuple_factory(result)
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
@@ -1404,18 +1404,12 @@ def _astuple_inner(obj, tuple_factory):
         # treated (see below), but we just need to create them
         # differently because a namedtuple's __init__ needs to be
         # called differently (see bpo-34363).
-        return type(obj)(*[
-            v if type(v) in _ATOMIC_TYPES else _astuple_inner(v, tuple_factory)
-            for v in obj
-        ])
+        return type(obj)(*[_astuple_inner(v, tuple_factory) for v in obj])
     elif isinstance(obj, (list, tuple)):
         # Assume we can create an object of this type by passing in a
         # generator (which is not true for namedtuples, handled
         # above).
-        return type(obj)(
-            v if type(v) in _ATOMIC_TYPES else _astuple_inner(v, tuple_factory)
-            for v in obj
-        )
+        return type(obj)(_astuple_inner(v, tuple_factory) for v in obj)
     elif isinstance(obj, dict):
         obj_type = type(obj)
         if hasattr(obj_type, 'default_factory'):
@@ -1423,14 +1417,10 @@ def _astuple_inner(obj, tuple_factory):
             # dict as it requires the default_factory as its first arg.
             result = obj_type(getattr(obj, 'default_factory'))
             for k, v in obj.items():
-                k = k if type(k) in _ATOMIC_TYPES else _astuple_inner(k, tuple_factory)
-                v = v if type(v) in _ATOMIC_TYPES else _astuple_inner(v, tuple_factory)
-                result[k] = v
+                result[_astuple_inner(k, tuple_factory)] = _astuple_inner(v, tuple_factory)
             return result
-        return obj_type(
-            (k if type(k) in _ATOMIC_TYPES else _astuple_inner(k, tuple_factory),
-             v if type(v) in _ATOMIC_TYPES else _astuple_inner(v, tuple_factory))
-            for k, v in obj.items())
+        return obj_type((_astuple_inner(k, tuple_factory), _astuple_inner(v, tuple_factory))
+                          for k, v in obj.items())
     else:
         return copy.deepcopy(obj)
 
