@@ -647,6 +647,12 @@ class DictConfigurator(BaseConfigurator):
         finally:
             logging._releaseLock()
 
+    def _check_config_keys(self, config, keys):
+        """Make sure config only contains keys provided"""
+        for key in config:
+            if key not in keys:
+                raise ValueError(f'{key} is not a valid config key')
+
     def configure_formatter(self, config):
         """Configure a formatter from a dictionary."""
         if '()' in config:
@@ -664,6 +670,7 @@ class DictConfigurator(BaseConfigurator):
                 config['()'] = factory
                 result = self.configure_custom(config)
         else:
+            self._check_config_keys(config, ('format', 'datefmt', 'style', 'validate', 'class'))
             fmt = config.get('format', None)
             dfmt = config.get('datefmt', None)
             style = config.get('style', '%')
@@ -688,6 +695,7 @@ class DictConfigurator(BaseConfigurator):
         if '()' in config:
             result = self.configure_custom(config)
         else:
+            self._check_config_keys(config, ('name',))
             name = config.get('name', '')
             result = logging.Filter(name)
         return result
@@ -867,6 +875,7 @@ class DictConfigurator(BaseConfigurator):
 
     def configure_logger(self, name, config, incremental=False):
         """Configure a non-root logger from a dictionary."""
+        self._check_config_keys(config, ('level', 'propagate', 'filters', 'handlers'))
         logger = logging.getLogger(name)
         self.common_logger_config(logger, config, incremental)
         logger.disabled = False
