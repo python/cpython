@@ -222,8 +222,8 @@ _POST_INIT_NAME = '__post_init__'
 # https://bugs.python.org/issue33453 for details.
 _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
-# Types for which deepcopy(obj) is known to return obj unmodified
-# Used to skip deepcopy in asdict and astuple for performance
+# Atomic immutable types which don't require any recursive handling and for which deepcopy
+# returns the same object. We can provide a fast-path for these types in asdict and astuple.
 _ATOMIC_TYPES = {
     # Common JSON Serializable types
     types.NoneType,
