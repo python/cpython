@@ -126,6 +126,8 @@ bytes(cdata)
 
 #include "pycore_long.h"          // _PyLong_GetZero()
 
+ctypes_state global_state;
+
 PyObject *PyExc_ArgError = NULL;
 
 /* This dict maps ctypes types to POINTER types */

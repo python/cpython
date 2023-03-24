@@ -32,6 +32,13 @@
 #endif
 #endif
 
+typedef struct {
+} ctypes_state;
+
+extern ctypes_state global_state;
+
+#define GLOBAL_STATE() (&global_state)
+
 typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;
 typedef PyObject *(* GETFUNC)(void *, Py_ssize_t size);
