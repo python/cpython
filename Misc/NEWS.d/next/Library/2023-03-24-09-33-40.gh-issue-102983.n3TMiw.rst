@@ -1,0 +1,1 @@
+Blocking calls to get for queue.Queue (and subclasses like LifoQueue, PriorityQueue) can be cancelled from another thread with ``cancel(n=1)`` or ``cancel_all()``, waking up the blocked thread with an exception of type: ``queue.Cancelled``.
