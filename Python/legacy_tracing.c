@@ -196,7 +196,6 @@ sys_trace_instruction_func(
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 2);
     PyFrameObject* frame = PyEval_GetFrame();
-    assert(frame);
     if (frame == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Missing frame when calling trace function.");
@@ -253,7 +252,6 @@ sys_trace_line_func(
     int line = _PyLong_AsInt(args[1]);
     assert(line >= 0);
     PyFrameObject* frame = PyEval_GetFrame();
-    assert(frame);
     if (frame == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Missing frame when calling trace function.");
@@ -284,7 +282,6 @@ sys_trace_jump_func(
     int to = _PyLong_AsInt(args[2]);
     assert(to >= 0);
     PyFrameObject* frame = PyEval_GetFrame();
-    assert(frame);
     if (frame == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Missing frame when calling trace function.");
