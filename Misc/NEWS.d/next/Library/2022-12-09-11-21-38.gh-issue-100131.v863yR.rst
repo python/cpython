@@ -1,1 +1,1 @@
-Add optional delete parameter to tempfile.TemporaryDirectory()
+Added an optional ``delete`` keyword argument to :class:`tempfile.TemporaryDirectory`.
