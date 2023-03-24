@@ -693,51 +693,6 @@ normalize_datetime(int *year, int *month, int *day,
 }
 
 /* ---------------------------------------------------------------------------
- * Basic object allocation:  tp_alloc implementations.  These allocate
- * Python objects of the right size and type, and do the Python object-
- * initialization bit.  If there's not enough memory, they return NULL after
- * setting MemoryError.  All data members remain uninitialized trash.
- *
- * We abuse the tp_alloc "nitems" argument to communicate whether a tzinfo
- * member is needed.  This is ugly, imprecise, and possibly insecure.
- * tp_basicsize for the time and datetime types is set to the size of the
- * struct that has room for the tzinfo member, so subclasses in Python will
- * allocate enough space for a tzinfo member whether or not one is actually
- * needed.  That's the "ugly and imprecise" parts.  The "possibly insecure"
- * part is that PyType_GenericAlloc() (which subclasses in Python end up
- * using) just happens today to effectively ignore the nitems argument
- * when tp_itemsize is 0, which it is for these type objects.  If that
- * changes, perhaps the callers of tp_alloc slots in this file should
- * be changed to force a 0 nitems argument unless the type being allocated
- * is a base type implemented in this file (so that tp_alloc is time_alloc
- * or datetime_alloc below, which know about the nitems abuse).
- */
-
-static PyObject *
-time_alloc(PyTypeObject *type, Py_ssize_t aware)
-{
-    size_t size = aware ? sizeof(PyDateTime_Time) : sizeof(_PyDateTime_BaseTime);
-    PyObject *self = (PyObject *)PyObject_Malloc(size);
-    if (self == NULL) {
-        return PyErr_NoMemory();
-    }
-    _PyObject_Init(self, type);
-    return self;
-}
-
-static PyObject *
-datetime_alloc(PyTypeObject *type, Py_ssize_t aware)
-{
-    size_t size = aware ? sizeof(PyDateTime_DateTime) : sizeof(_PyDateTime_BaseDateTime);
-    PyObject *self = (PyObject *)PyObject_Malloc(size);
-    if (self == NULL) {
-        return PyErr_NoMemory();
-    }
-    _PyObject_Init(self, type);
-    return self;
-}
-
-/* ---------------------------------------------------------------------------
  * Helpers for setting object fields.  These work on pointers to the
  * appropriate base class.
  */
@@ -4853,7 +4808,6 @@ static PyType_Slot time_slots[] = {
     {Py_tp_richcompare, time_richcompare},
     {Py_tp_methods, time_methods},
     {Py_tp_getset, time_getset},
-    // {Py_tp_alloc, time_alloc}, FIXME
     {Py_tp_new, time_new},
     {0, NULL},
 };
@@ -6718,7 +6672,6 @@ static PyType_Slot datetime_slots[] = {
     {Py_tp_richcompare, datetime_richcompare},
     {Py_tp_methods, datetime_methods},
     {Py_tp_getset, datetime_getset},
-    //{Py_tp_alloc, datetime_alloc}, FIXME
     {Py_tp_new, datetime_new},
 
     // Number protocol
