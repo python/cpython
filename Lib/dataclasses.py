@@ -230,9 +230,10 @@ _ATOMIC_TYPES = frozenset({
     bool,
     int,
     float,
+    str,
+    # Other common types
     complex,
     bytes,
-    str,
     # Other types that are also unaffected by deepcopy
     types.EllipsisType,
     types.NotImplementedType,
