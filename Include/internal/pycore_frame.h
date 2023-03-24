@@ -138,10 +138,16 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
     return frame->localsplus;
 }
 
+/* Fetches the stack pointer, and sets stacktop to -1.
+    Having stacktop <= 0 ensures that invalid
+    values are not visible to the cycle GC.
+    We choose -1 rather than 0 to assist debugging. */
 static inline PyObject**
-_PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
+_PyFrame_FetchStackPointer(_PyInterpreterFrame *frame)
 {
-    return frame->localsplus+frame->stacktop;
+    PyObject **sp = frame->localsplus+frame->stacktop;
+    frame->stacktop = -1;
+    return sp;
 }
 
 static inline void

@@ -214,20 +214,6 @@ _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
     "cannot access free variable '%s' where it is not associated with a" \
     " value in enclosing scope"
 
-#define UPDATE_NEXT_OR_JUMP(offset) \
-do { \
-    assert(frame->stacktop >= 0); \
-    if (frame->prev_instr != next_instr-1) { \
-        next_instr = frame->prev_instr; \
-        stack_pointer = _PyFrame_GetStackPointer(frame); \
-    } \
-    else { \
-        assert(stack_pointer == _PyFrame_GetStackPointer(frame)); \
-        JUMPBY(offset); \
-    } \
-    frame->stacktop = -1; \
-} while (0)
-
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
@@ -631,8 +617,7 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 do { \
     _PyFrame_SetStackPointer(frame, stack_pointer); \
     int err = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
-    stack_pointer = _PyFrame_GetStackPointer(frame); \
-    frame->stacktop = -1; \
+    stack_pointer = _PyFrame_FetchStackPointer(frame); \
     if (err) { \
         next_instr = (dest)+1; \
         goto error; \
@@ -738,15 +723,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     assert(_PyInterpreterFrame_LASTI(frame) >= -1); \
     /* Jump back to the last instruction executed... */ \
     next_instr = frame->prev_instr + 1; \
-    stack_pointer = _PyFrame_GetStackPointer(frame); \
-    /* Set stackdepth to -1. \
-        Update when returning or calling trace function. \
-        Having stackdepth <= 0 ensures that invalid \
-        values are not visible to the cycle GC. \
-        We choose -1 rather than 0 to assist debugging. \
-        */ \
-    frame->stacktop = -1;
-
+    stack_pointer = _PyFrame_FetchStackPointer(frame);
 
 start_frame:
     if (_Py_EnterRecursivePy(tstate)) {
