@@ -988,15 +988,15 @@ get_tools_for_instruction(PyCodeObject * code, int i, int event)
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
     assert(instrumentation_cross_checks(PyThreadState_GET()->interp, code));
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
-    if (monitoring->tools) {
+    if (event >= PY_MONITORING_UNGROUPED_EVENTS) {
+        assert(event == PY_MONITORING_EVENT_C_RAISE ||
+                event == PY_MONITORING_EVENT_C_RETURN);
+        event = PY_MONITORING_EVENT_CALL;
+    }
+    if (event < PY_MONITORING_INSTRUMENTED_EVENTS && monitoring->tools) {
         tools = monitoring->tools[i];
     }
     else {
-        if (event >= PY_MONITORING_UNGROUPED_EVENTS) {
-            assert(event == PY_MONITORING_EVENT_C_RAISE ||
-                   event == PY_MONITORING_EVENT_C_RETURN);
-            event = PY_MONITORING_EVENT_CALL;
-        }
         tools = code->_co_monitoring->active_monitors.tools[event];
     }
     CHECK(tools_is_subset_for_event(code, event, tools));
@@ -1034,24 +1034,39 @@ call_instrument(PyThreadState *tstate, PyCodeObject *code, int event,
     return 0;
 }
 
-int
-_Py_call_instrumentation(
+static int
+call_instrumentation_vector(
     PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr)
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, Py_ssize_t nargsf, PyObject *args[])
 {
+    assert(!_PyErr_Occurred(tstate));
+    assert(args[0] == NULL);
     PyCodeObject *code = frame->f_code;
+    assert(code->_co_instrumentation_version == tstate->interp->monitoring_version);
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
+    assert(args[1] == NULL);
+    args[1] = (PyObject *)code;
     int offset = instr - _PyCode_CODE(code);
     PyObject *offset_obj = PyLong_FromSsize_t(offset);
     if (offset_obj == NULL) {
         return -1;
     }
+    assert(args[2] == NULL);
+    args[2] = offset_obj;
     uint8_t tools = get_tools_for_instruction(code, offset, event);
-    PyObject *args[3] = { NULL, (PyObject *)code, offset_obj };
-    int err = call_instrument(tstate, code, event, &args[1], 2 | PY_VECTORCALL_ARGUMENTS_OFFSET, offset, tools);
+    int err = call_instrument(tstate, code, event, &args[1], nargsf | PY_VECTORCALL_ARGUMENTS_OFFSET, offset, tools);
     Py_DECREF(offset_obj);
     return err;
+}
+
+int
+_Py_call_instrumentation(
+    PyThreadState *tstate, int event,
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr)
+{
+    PyObject *args[3] = { NULL, NULL, NULL };
+    return call_instrumentation_vector(tstate, event, frame, instr, 2, args);
 }
 
 int
@@ -1059,19 +1074,8 @@ _Py_call_instrumentation_arg(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg)
 {
-    PyCodeObject *code = frame->f_code;
-    assert(is_version_up_to_date(code, tstate->interp));
-    assert(instrumentation_cross_checks(tstate->interp, code));
-    int offset = instr - _PyCode_CODE(code);
-    PyObject *offset_obj = PyLong_FromSsize_t(offset);
-    if (offset_obj == NULL) {
-        return -1;
-    }
-    uint8_t tools = get_tools_for_instruction(code, offset, event);
-    PyObject *args[4] = { NULL, (PyObject *)code, offset_obj, arg };
-    int err = call_instrument(tstate, code, event, &args[1], 3 | PY_VECTORCALL_ARGUMENTS_OFFSET, offset, tools);
-    Py_DECREF(offset_obj);
-    return err;
+    PyObject *args[4] = { NULL, NULL, NULL, arg };
+    return call_instrumentation_vector(tstate, event, frame, instr, 3, args);
 }
 
 int
@@ -1079,19 +1083,8 @@ _Py_call_instrumentation_2args(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1)
 {
-    PyCodeObject *code = frame->f_code;
-    assert(is_version_up_to_date(code, tstate->interp));
-    assert(instrumentation_cross_checks(tstate->interp, code));
-    int offset = instr - _PyCode_CODE(code);
-    PyObject *offset_obj = PyLong_FromSsize_t(offset);
-    if (offset_obj == NULL) {
-        return -1;
-    }
-    uint8_t tools = get_tools_for_instruction(code, offset, event);
-    PyObject *args[5] = { NULL, (PyObject *)code, offset_obj, arg0, arg1 };
-    int err = call_instrument(tstate, code, event, &args[1], 4 | PY_VECTORCALL_ARGUMENTS_OFFSET, offset, tools);
-    Py_DECREF(offset_obj);
-    return err;
+    PyObject *args[5] = { NULL, NULL, NULL, arg0, arg1 };
+    return call_instrumentation_vector(tstate, event, frame, instr, 4, args);
 }
 
 int
@@ -1104,55 +1097,25 @@ _Py_call_instrumentation_jump(
     assert(frame->prev_instr == instr);
     frame->prev_instr = target;
     PyCodeObject *code = frame->f_code;
-    int offset = instr - _PyCode_CODE(code);
     int to = target - _PyCode_CODE(code);
     PyObject *to_obj = PyLong_FromLong(to);
     if (to_obj == NULL) {
         return -1;
     }
-    PyObject *from_obj = PyLong_FromLong(offset);
-    if (from_obj == NULL) {
-        Py_DECREF(to_obj);
-        return -1;
-    }
-    uint8_t tools = get_tools_for_instruction(code, offset, event);
-    PyObject *args[4] = { NULL, (PyObject *)code, from_obj, to_obj };
-    int err = call_instrument(tstate, code, event, &args[1], 3 | PY_VECTORCALL_ARGUMENTS_OFFSET, offset, tools);
+    PyObject *args[4] = { NULL, NULL, NULL, to_obj };
+    int err = call_instrumentation_vector(tstate, event, frame, instr, 3, args);
     Py_DECREF(to_obj);
-    Py_DECREF(from_obj);
-    if (err) {
-        /* Error handling expects next_instr to point to instruction + 1.
-         * So we add one here. */
-        frame->prev_instr++;
-    }
     return err;
 }
 
-void
-_Py_call_instrumentation_exc_vector(
+static void
+call_instrumentation_vector_protected(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, Py_ssize_t nargsf, PyObject *args[])
 {
     assert(_PyErr_Occurred(tstate));
-    assert(args[0] == NULL);
     PyObject *exc = _PyErr_GetRaisedException(tstate);
-    PyCodeObject *code = frame->f_code;
-    assert(args[1] == NULL);
-    args[1] = (PyObject *)code;
-    assert(code->_co_instrumentation_version == tstate->interp->monitoring_version);
-    int offset = instr - _PyCode_CODE(code);
-    uint8_t tools = code->_co_monitoring->active_monitors.tools[event];
-    PyObject *offset_obj = PyLong_FromSsize_t(offset);
-    int err;
-    if (offset_obj == NULL) {
-        err = -1;
-    }
-    else {
-        assert(args[2] == NULL);
-        args[2] = offset_obj;
-        err = call_instrument(tstate, code, event, &args[1], nargsf, offset, tools);
-        Py_DECREF(offset_obj);
-    }
+    int err = call_instrumentation_vector(tstate, event, frame, instr, nargsf, args);
     if (err) {
         Py_XDECREF(exc);
     }
@@ -1169,8 +1132,7 @@ _Py_call_instrumentation_exc0(
 {
     assert(_PyErr_Occurred(tstate));
     PyObject *args[3] = { NULL, NULL, NULL };
-    Py_ssize_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
-    _Py_call_instrumentation_exc_vector(tstate, event, frame, instr, nargsf, args);
+    call_instrumentation_vector_protected(tstate, event, frame, instr, 2, args);
 }
 
 void
@@ -1180,8 +1142,7 @@ _Py_call_instrumentation_exc2(
 {
     assert(_PyErr_Occurred(tstate));
     PyObject *args[5] = { NULL, NULL, NULL, arg0, arg1 };
-    Py_ssize_t nargsf = 4 | PY_VECTORCALL_ARGUMENTS_OFFSET;
-    _Py_call_instrumentation_exc_vector(tstate, event, frame, instr, nargsf, args);
+    call_instrumentation_vector_protected(tstate, event, frame, instr, 4, args);
 }
 
 
