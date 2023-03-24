@@ -59,8 +59,8 @@ class Queue:
         self.all_tasks_done = threading.Condition(self.mutex)
         self.unfinished_tasks = 0
 
-        # Support cancelling queues blocking on get
-        self.cancelling = threading.Semaphore()
+        # Support cancelling queues blocking on get, start with 0 cancellations
+        self.cancelling = threading.Semaphore(value=0)
 
     def task_done(self):
         '''Indicate that a formerly enqueued task is complete.
