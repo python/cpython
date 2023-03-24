@@ -539,29 +539,56 @@ class OperatorTestCase:
 
         data1 = ListSubclass([1, 2])
         data2 = ListSubclass(['a', 'b'])
-
         res = operator.concat(data1, data2)
-        self.assertIsInstance(res, list)
+        self.assertIs(type(res), list)
         self.assertEqual(res, [1, 2, 'a', 'b'])
-        self.assertIsInstance(data1, ListSubclass)
         self.assertEqual(data1, ListSubclass([1, 2]))  # must not change
-        self.assertIsInstance(data2, ListSubclass)
+        self.assertEqual(data2, ListSubclass(['a', 'b']))  # must not change
+
+        data1 = ListSubclass([1, 2])
+        data2 = ['a', 'b']
+        res = operator.concat(data1, data2)
+        self.assertIs(type(res), list)
+        self.assertEqual(res, [1, 2, 'a', 'b'])
+        self.assertEqual(data1, ListSubclass([1, 2]))  # must not change
+        self.assertEqual(data2, ['a', 'b'])  # must not change
+
+        data1 = [1, 2]
+        data2 = ListSubclass(['a', 'b'])
+        res = operator.concat(data1, data2)
+        self.assertIs(type(res), list)
+        self.assertEqual(res, [1, 2, 'a', 'b'])
+        self.assertEqual(data1, [1, 2])  # must not change
         self.assertEqual(data2, ListSubclass(['a', 'b']))  # must not change
 
         # Custom type with `__add__`:
         class TupleSubclass(tuple):
             def __add__(self, other):
-                return TupleSubclass(other + self)
+                return TupleSubclass(list(other) + list(self))
+
+        data1 = TupleSubclass([1, 2])
+        data2 = TupleSubclass(['a', 'b'])
+        res = operator.concat(data1, data2)
+        self.assertIsInstance(res, TupleSubclass)
+        self.assertEqual(res, TupleSubclass(['a', 'b', 1, 2]))
+        self.assertEqual(data1, TupleSubclass([1, 2]))  # must not change
+        self.assertEqual(data2, TupleSubclass(['a', 'b']))  # must not change
 
         data1 = TupleSubclass([1, 2])
         data2 = ('a', 'b')
         res = operator.concat(data1, data2)
         self.assertIsInstance(res, TupleSubclass)
         self.assertEqual(res, TupleSubclass(['a', 'b', 1, 2]))
-        self.assertIsInstance(data1, TupleSubclass)
         self.assertEqual(data1, TupleSubclass([1, 2]))  # must not change
-        self.assertIsInstance(data2, tuple)
         self.assertEqual(data2, ('a', 'b'))  # must not change
+
+        data1 = (1, 2)
+        data2 = TupleSubclass(['a', 'b'])
+        res = operator.concat(data1, data2)
+        self.assertIs(type(res), tuple)
+        self.assertEqual(res, (1, 2, 'a', 'b'))
+        self.assertEqual(data1, (1, 2))  # must not change
+        self.assertEqual(data2, TupleSubclass(['a', 'b']))  # must not change
 
         # Corner cases:
         self.assertEqual(operator.concat([1, 2], []), [1, 2])
@@ -615,26 +642,57 @@ class OperatorTestCase:
         data2 = ListSubclass(['a', 'b'])
         res = operator.iconcat(data1, data2)
         self.assertIsInstance(res, ListSubclass)
-        self.assertEqual(res, [1, 2, 'a', 'b'])
+        self.assertEqual(res, ListSubclass([1, 2, 'a', 'b']))
         self.assertIsInstance(data1, ListSubclass)
         self.assertEqual(data1, ListSubclass([1, 2, 'a', 'b']))  # must change
-        self.assertIsInstance(data2, ListSubclass)
+        self.assertEqual(data2, ListSubclass(['a', 'b']))  # must not change
+
+        data1 = ListSubclass([1, 2])
+        data2 = ['a', 'b']
+        res = operator.iconcat(data1, data2)
+        self.assertIsInstance(res, ListSubclass)
+        self.assertEqual(res, ListSubclass([1, 2, 'a', 'b']))
+        self.assertIsInstance(data1, ListSubclass)
+        self.assertEqual(data1, ListSubclass([1, 2, 'a', 'b']))  # must change
+        self.assertEqual(data2, ['a', 'b'])  # must not change
+
+        data1 = [1, 2]
+        data2 = ListSubclass(['a', 'b'])
+        res = operator.iconcat(data1, data2)
+        self.assertIs(type(res), list)
+        self.assertEqual(res, [1, 2, 'a', 'b'])
+        self.assertIs(type(data1), list)
+        self.assertEqual(data1, [1, 2, 'a', 'b'])  # must change
         self.assertEqual(data2, ListSubclass(['a', 'b']))  # must not change
 
         # Custom type with `__add__`:
         class TupleSubclass(tuple):
             def __add__(self, other):
-                return TupleSubclass(other + self)
+                return TupleSubclass(list(other) + list(self))
+
+        data1 = TupleSubclass([1, 2])
+        data2 = TupleSubclass(['a', 'b'])
+        res = operator.iconcat(data1, data2)
+        self.assertIsInstance(res, TupleSubclass)
+        self.assertEqual(res, TupleSubclass(['a', 'b', 1, 2]))
+        self.assertEqual(data1, TupleSubclass([1, 2]))  # must not change
+        self.assertEqual(data2, TupleSubclass(['a', 'b']))  # must not change
 
         data1 = TupleSubclass([1, 2])
         data2 = ('a', 'b')
         res = operator.iconcat(data1, data2)
         self.assertIsInstance(res, TupleSubclass)
         self.assertEqual(res, TupleSubclass(['a', 'b', 1, 2]))
-        self.assertIsInstance(data1, TupleSubclass)
         self.assertEqual(data1, TupleSubclass([1, 2]))  # must not change
-        self.assertIsInstance(data2, tuple)
         self.assertEqual(data2, ('a', 'b'))  # must not change
+
+        data1 = (1, 2)
+        data2 = TupleSubclass(['a', 'b'])
+        res = operator.iconcat(data1, data2)
+        self.assertIs(type(res), tuple)
+        self.assertEqual(res, TupleSubclass([1, 2, 'a', 'b']))
+        self.assertEqual(data1, (1, 2))  # must not change
+        self.assertEqual(data2, TupleSubclass(['a', 'b']))  # must not change
 
         # Corner cases:
         self.assertEqual(operator.iconcat([1, 2], []), [1, 2])
