@@ -593,6 +593,7 @@ def test_pdb_display_command():
     ...     'n',
     ...     'display a',
     ...     'undisplay',
+    ...     'display a < 1',
     ...     'n',
     ...     'continue',
     ... ]):
@@ -615,6 +616,8 @@ def test_pdb_display_command():
     (Pdb) display a
     display a: 2
     (Pdb) undisplay
+    (Pdb) display a < 1
+    display a < 1: False
     (Pdb) n
     > <doctest test.test_pdb.test_pdb_display_command[0]>(7)test_function()
     -> a = 4
