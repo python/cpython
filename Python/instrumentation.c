@@ -1,6 +1,7 @@
 
 
 #include "Python.h"
+#include "pycore_call.h"
 #include "pycore_frame.h"
 #include "pycore_interp.h"
 #include "pycore_namespace.h"
@@ -857,7 +858,6 @@ add_tools(PyCodeObject * code, int offset, int event, int tools)
         /* Single tool */
         assert(_Py_popcount32(tools) == 1);
         assert(tools_is_subset_for_event(code, event, tools));
-        assert(_Py_popcount32(tools) == 1);
     }
     instrument(code, offset);
 }
@@ -934,7 +934,7 @@ call_one_instrument(
     int old_what = tstate->what_event;
     tstate->what_event = event;
     tstate->tracing++;
-    PyObject *res = PyObject_Vectorcall(instrument, args, nargsf, NULL);
+    PyObject *res = _PyObject_VectorcallTstate(tstate, instrument, args, nargsf, NULL);
     tstate->tracing--;
     tstate->what_event = old_what;
     if (res == NULL) {
@@ -1005,40 +1005,13 @@ get_tools_for_instruction(PyCodeObject * code, int i, int event)
 }
 
 static int
-call_instrument(PyThreadState *tstate, PyCodeObject *code, int event,
-    PyObject **args, Py_ssize_t nargsf, int offset, uint8_t tools)
+call_instrumentation_vector(
+    PyThreadState *tstate, int event,
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, Py_ssize_t nargs, PyObject *args[])
 {
-    //sanity_check_instrumentation(code);
     if (tstate->tracing) {
         return 0;
     }
-    PyInterpreterState *interp = tstate->interp;
-    while (tools) {
-        int tool = most_significant_bit(tools);
-        assert(tool >= 0 && tool < 8);
-        assert(tools & (1 << tool));
-        tools &= ~(1 << tool);
-        int res = call_one_instrument(interp, tstate, args, nargsf, tool, event);
-        if (res == 0) {
-            /* Nothing to do */
-        }
-        else if (res < 0) {
-            /* error */
-            return -1;
-        }
-        else {
-            /* DISABLE */
-            remove_tools(code, offset, event, 1 << tool);
-        }
-    }
-    return 0;
-}
-
-static int
-call_instrumentation_vector(
-    PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, Py_ssize_t nargsf, PyObject *args[])
-{
     assert(!_PyErr_Occurred(tstate));
     assert(args[0] == NULL);
     PyCodeObject *code = frame->f_code;
@@ -1055,7 +1028,29 @@ call_instrumentation_vector(
     assert(args[2] == NULL);
     args[2] = offset_obj;
     uint8_t tools = get_tools_for_instruction(code, offset, event);
-    int err = call_instrument(tstate, code, event, &args[1], nargsf | PY_VECTORCALL_ARGUMENTS_OFFSET, offset, tools);
+    Py_ssize_t nargsf = nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject **callargs = &args[1];
+    int err = 0;
+    PyInterpreterState *interp = tstate->interp;
+    while (tools) {
+        int tool = most_significant_bit(tools);
+        assert(tool >= 0 && tool < 8);
+        assert(tools & (1 << tool));
+        tools ^= (1 << tool);
+        int res = call_one_instrument(interp, tstate, callargs, nargsf, tool, event);
+        if (res == 0) {
+            /* Nothing to do */
+        }
+        else if (res < 0) {
+            /* error */
+            err = -1;
+            break;
+        }
+        else {
+            /* DISABLE */
+            remove_tools(code, offset, event, 1 << tool);
+        }
+    }
     Py_DECREF(offset_obj);
     return err;
 }
@@ -1111,11 +1106,11 @@ _Py_call_instrumentation_jump(
 static void
 call_instrumentation_vector_protected(
     PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, Py_ssize_t nargsf, PyObject *args[])
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, Py_ssize_t nargs, PyObject *args[])
 {
     assert(_PyErr_Occurred(tstate));
     PyObject *exc = _PyErr_GetRaisedException(tstate);
-    int err = call_instrumentation_vector(tstate, event, frame, instr, nargsf, args);
+    int err = call_instrumentation_vector(tstate, event, frame, instr, nargs, args);
     if (err) {
         Py_XDECREF(exc);
     }
