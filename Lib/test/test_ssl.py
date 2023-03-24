@@ -1289,6 +1289,8 @@ class ContextTests(unittest.TestCase):
             "not enough data: cadata does not contain a certificate"
         ):
             ctx.load_verify_locations(cadata=b"broken")
+        with self.assertRaises(ssl.SSLError):
+            ctx.load_verify_locations(cadata=cacert_der + b"A")
 
     @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_load_dh_params(self):
