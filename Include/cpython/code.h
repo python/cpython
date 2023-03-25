@@ -11,6 +11,7 @@ extern "C" {
 #define PY_MONITORING_EVENTS 16
 #define PY_MONITORING_UNGROUPED_EVENTS 14
 
+/* Table of which tools are active for each monitored event. */
 typedef struct _Py_Monitors {
     uint8_t tools[PY_MONITORING_UNGROUPED_EVENTS];
 } _Py_Monitors;
