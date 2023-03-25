@@ -1546,12 +1546,10 @@ float_fromhex(PyTypeObject *type, PyObject *string)
 /*[clinic input]
 float.as_integer_ratio
 
-Return integer ratio.
+Return a pair of integers, whose ratio is exactly equal to the original float.
 
-Return a pair of integers, whose ratio is exactly equal to the original float
-and with a positive denominator.
-
-Raise OverflowError on infinities and a ValueError on NaNs.
+The ratio is in lowest terms and has a positive denominator.  Raise
+OverflowError on infinities and a ValueError on NaNs.
 
 >>> (10.0).as_integer_ratio()
 (10, 1)
@@ -1563,7 +1561,7 @@ Raise OverflowError on infinities and a ValueError on NaNs.
 
 static PyObject *
 float_as_integer_ratio_impl(PyObject *self)
-/*[clinic end generated code: output=65f25f0d8d30a712 input=e21d08b4630c2e44]*/
+/*[clinic end generated code: output=65f25f0d8d30a712 input=d5ba7765655d75bd]*/
 {
     double self_double;
     double float_part;

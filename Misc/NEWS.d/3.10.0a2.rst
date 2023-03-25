@@ -888,7 +888,7 @@ file descriptors.
 .. nonce: JUPE59
 .. section: C API
 
-:c:data:`Py_FileSystemDefaultEncodeErrors` and :c:data:`Py_UTF8Mode` are
+:c:data:`!Py_FileSystemDefaultEncodeErrors` and :c:data:`!Py_UTF8Mode` are
 available again in limited API.
 
 ..

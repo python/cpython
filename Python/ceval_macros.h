@@ -100,7 +100,7 @@
 
 #define DISPATCH_SAME_OPARG() \
     { \
-        opcode = _Py_OPCODE(*next_instr); \
+        opcode = next_instr->op.code; \
         PRE_DISPATCH_GOTO(); \
         opcode |= cframe.use_tracing OR_DTRACE_LINE; \
         DISPATCH_GOTO(); \
@@ -143,8 +143,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(frame->f_code)))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
-        opcode = _Py_OPCODE(word); \
-        oparg = _Py_OPARG(word); \
+        opcode = word.op.code; \
+        oparg = word.op.arg; \
     } while (0)
 #define JUMPTO(x)       (next_instr = _PyCode_CODE(frame->f_code) + (x))
 #define JUMPBY(x)       (next_instr += (x))
@@ -180,14 +180,14 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #if USE_COMPUTED_GOTOS
 #define PREDICT(op)             if (0) goto PREDICT_ID(op)
 #else
-#define PREDICT(op) \
+#define PREDICT(next_op) \
     do { \
         _Py_CODEUNIT word = *next_instr; \
-        opcode = _Py_OPCODE(word) | cframe.use_tracing OR_DTRACE_LINE; \
-        if (opcode == op) { \
-            oparg = _Py_OPARG(word); \
-            INSTRUCTION_START(op); \
-            goto PREDICT_ID(op); \
+        opcode = word.op.code | cframe.use_tracing OR_DTRACE_LINE; \
+        if (opcode == next_op) { \
+            oparg = word.op.arg; \
+            INSTRUCTION_START(next_op); \
+            goto PREDICT_ID(next_op); \
         } \
     } while(0)
 #endif
@@ -310,6 +310,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         _PyFrame_SetStackPointer(frame, stack_pointer); \
         int err = trace_function_entry(tstate, frame); \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
+        frame->stacktop = -1; \
         if (err) { \
             goto error; \
         } \
@@ -350,3 +351,23 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #define KWNAMES_LEN() \
     (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
+
+#define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) \
+do { \
+    if (Py_REFCNT(left) == 1) { \
+        ((PyFloatObject *)left)->ob_fval = (dval); \
+        _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);\
+        result = (left); \
+    } \
+    else if (Py_REFCNT(right) == 1)  {\
+        ((PyFloatObject *)right)->ob_fval = (dval); \
+        _Py_DECREF_NO_DEALLOC(left); \
+        result = (right); \
+    }\
+    else { \
+        result = PyFloat_FromDouble(dval); \
+        if ((result) == NULL) goto error; \
+        _Py_DECREF_NO_DEALLOC(left); \
+        _Py_DECREF_NO_DEALLOC(right); \
+    } \
+} while (0)

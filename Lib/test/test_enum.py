@@ -11,7 +11,7 @@ import typing
 import builtins as bltns
 from collections import OrderedDict
 from datetime import date
-from enum import Enum, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
+from enum import Enum, EnumMeta, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
 from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
 from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS, ReprEnum
 from enum import member, nonmember, _iter_bits_lsb
@@ -20,7 +20,6 @@ from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from test.support import ALWAYS_EQ
 from test.support import threading_helper
-from textwrap import dedent
 from datetime import timedelta
 
 python_version = sys.version_info[:2]
@@ -645,6 +644,13 @@ class _EnumTests:
             theother = auto()
         self.assertEqual(repr(MySubEnum.that), "My name is that.")
 
+    def test_multiple_superclasses_repr(self):
+        class _EnumSuperClass(metaclass=EnumMeta):
+            pass
+        class E(_EnumSuperClass, Enum):
+            A = 1
+        self.assertEqual(repr(E.A), "<E.A: 1>")
+
     def test_reversed_iteration_order(self):
         self.assertEqual(
                 list(reversed(self.MainEnum)),
@@ -1187,7 +1193,6 @@ class TestSpecial(unittest.TestCase):
         #
         class SillyInt(HexInt):
             __qualname__ = 'SillyInt'
-            pass
         class MyOtherEnum(SillyInt, enum.Enum):
             __qualname__ = 'MyOtherEnum'
             D = 4
@@ -4581,15 +4586,14 @@ class MiscTestCase(unittest.TestCase):
             TWO = 2
         self.assertEqual(Double.__doc__, None)
 
-
-    def test_doc_1(self):
+    def test_doc_3(self):
         class Triple(Enum):
             ONE = 1
             TWO = 2
             THREE = 3
         self.assertEqual(Triple.__doc__, None)
 
-    def test_doc_1(self):
+    def test_doc_4(self):
         class Quadruple(Enum):
             ONE = 1
             TWO = 2

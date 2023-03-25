@@ -556,6 +556,15 @@ class StatAttributeTests(unittest.TestCase):
             nanosecondy = getattr(result, name + "_ns") // 10000
             self.assertAlmostEqual(floaty, nanosecondy, delta=2)
 
+        # Ensure both birthtime and birthtime_ns roughly agree, if present
+        try:
+            floaty = int(result.st_birthtime * 100000)
+            nanosecondy = result.st_birthtime_ns // 10000
+        except AttributeError:
+            pass
+        else:
+            self.assertAlmostEqual(floaty, nanosecondy, delta=2)
+
         try:
             result[200]
             self.fail("No exception raised")
@@ -2221,6 +2230,26 @@ class TestInvalidFD(unittest.TestCase):
     def test_dup2(self):
         self.check(os.dup2, 20)
 
+    @unittest.skipUnless(hasattr(os, 'dup2'), 'test needs os.dup2()')
+    @unittest.skipIf(
+        support.is_emscripten,
+        "dup2() with negative fds is broken on Emscripten (see gh-102179)"
+    )
+    def test_dup2_negative_fd(self):
+        valid_fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, valid_fd)
+        fds = [
+            valid_fd,
+            -1,
+            -2**31,
+        ]
+        for fd, fd2 in itertools.product(fds, repeat=2):
+            if fd != fd2:
+                with self.subTest(fd=fd, fd2=fd2):
+                    with self.assertRaises(OSError) as ctx:
+                        os.dup2(fd, fd2)
+                    self.assertEqual(ctx.exception.errno, errno.EBADF)
+
     @unittest.skipUnless(hasattr(os, 'fchmod'), 'test needs os.fchmod()')
     def test_fchmod(self):
         self.check(os.fchmod, 0)
@@ -2626,6 +2655,54 @@ class Win32ListdirTests(unittest.TestCase):
         self.assertEqual(
                 sorted(os.listdir(path)),
                 [os.fsencode(path) for path in self.created_paths])
+
+
+@unittest.skipUnless(os.name == "nt", "NT specific tests")
+class Win32ListdriveTests(unittest.TestCase):
+    """Test listdrive, listmounts and listvolume on Windows."""
+
+    def setUp(self):
+        # Get drives and volumes from fsutil
+        out = subprocess.check_output(
+            ["fsutil.exe", "volume", "list"],
+            cwd=os.path.join(os.getenv("SystemRoot", "\\Windows"), "System32"),
+            encoding="mbcs",
+            errors="ignore",
+        )
+        lines = out.splitlines()
+        self.known_volumes = {l for l in lines if l.startswith('\\\\?\\')}
+        self.known_drives = {l for l in lines if l[1:] == ':\\'}
+        self.known_mounts = {l for l in lines if l[1:3] == ':\\'}
+
+    def test_listdrives(self):
+        drives = os.listdrives()
+        self.assertIsInstance(drives, list)
+        self.assertSetEqual(
+            self.known_drives,
+            self.known_drives & set(drives),
+        )
+
+    def test_listvolumes(self):
+        volumes = os.listvolumes()
+        self.assertIsInstance(volumes, list)
+        self.assertSetEqual(
+            self.known_volumes,
+            self.known_volumes & set(volumes),
+        )
+
+    def test_listmounts(self):
+        for volume in os.listvolumes():
+            try:
+                mounts = os.listmounts(volume)
+            except OSError as ex:
+                if support.verbose:
+                    print("Skipping", volume, "because of", ex)
+            else:
+                self.assertIsInstance(mounts, list)
+                self.assertSetEqual(
+                    set(mounts),
+                    self.known_mounts & set(mounts),
+                )
 
 
 @unittest.skipUnless(hasattr(os, 'readlink'), 'needs os.readlink()')
@@ -3064,11 +3141,13 @@ class DeviceEncodingTests(unittest.TestCase):
 class PidTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'getppid'), "test needs os.getppid")
     def test_getppid(self):
-        p = subprocess.Popen([sys.executable, '-c',
+        p = subprocess.Popen([sys._base_executable, '-c',
                               'import os; print(os.getppid())'],
-                             stdout=subprocess.PIPE)
-        stdout, _ = p.communicate()
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        stdout, error = p.communicate()
         # We are the parent of our subprocess
+        self.assertEqual(error, b'')
         self.assertEqual(int(stdout), os.getpid())
 
     def check_waitpid(self, code, exitcode, callback=None):
@@ -4099,6 +4178,7 @@ class PathTConverterTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'get_blocking'),
                      'needs os.get_blocking() and os.set_blocking()')
 @unittest.skipIf(support.is_emscripten, "Cannot unset blocking flag")
+@unittest.skipIf(sys.platform == 'win32', 'Windows only supports blocking on pipes')
 class BlockingTests(unittest.TestCase):
     def test_blocking(self):
         fd = os.open(__file__, os.O_RDONLY)
@@ -4163,7 +4243,8 @@ class TestScandir(unittest.TestCase):
             for attr in dir(stat1):
                 if not attr.startswith("st_"):
                     continue
-                if attr in ("st_dev", "st_ino", "st_nlink"):
+                if attr in ("st_dev", "st_ino", "st_nlink", "st_ctime",
+                            "st_ctime_ns"):
                     continue
                 self.assertEqual(getattr(stat1, attr),
                                  getattr(stat2, attr),
