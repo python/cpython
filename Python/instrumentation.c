@@ -238,7 +238,8 @@ compute_line(PyCodeObject *code, int offset, int8_t line_delta)
     }
 }
 
-int instruction_length(PyCodeObject *code, int offset)
+static int
+instruction_length(PyCodeObject *code, int offset)
 {
     int opcode = _PyCode_CODE(code)[offset].op.code;
     assert(opcode != 0);
