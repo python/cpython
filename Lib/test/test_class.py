@@ -503,6 +503,58 @@ class ClassTests(unittest.TestCase):
 
         self.assertRaises(TypeError, hash, C2())
 
+    def testPredefinedAttrs(self):
+        o = object()
+
+        class Custom:
+            pass
+
+        c = Custom()
+
+        methods = (
+            "__new__", "__init__",
+            "__repr__", "__str__", "__format__",
+            "__eq__", "__ne__", "__lt__", "__le__", "__gt__", "__ge__",
+            "__hash__",
+            "__getattribute__", "__setattr__", "__delattr__", "__dir__",
+        )
+        for name in methods:
+            with self.subTest(name):
+                self.assertTrue(callable(getattr(object, name)))
+                self.assertTrue(callable(getattr(o, name)))
+                self.assertTrue(callable(getattr(Custom, name)))
+                self.assertTrue(callable(getattr(c, name)))
+
+        not_defined = [
+            "__bool__", "__bytes__", "__del__", "__getattr__", "__len__",
+            "__get__", "__set__", "__delete__", "__objclass__",
+            "__len__", "__length_hint__", "__iter__", "__reversed__",
+            "__getitem__", "__setitem__", "__delitem__",
+            "__contains__", "__missing__",
+            "__divmod__", "__rdivmod__",
+            "__neg__", "__pos__", "__abs__", "__invert__",
+            "__complex__", "__int__", "__float__", "__round__", "__index__",
+            "__enter__", "__exit__",
+            "__await__", "__aiter__", "__anext__", "__aenter__", "__aexit__",
+        ]
+        augment = (
+            "add", "sub",
+            "mul", "matmul", "truediv", "floordiv", "mod", "pow",
+            "lshift", "rshift", "and", "xor", "or",
+        )
+        not_defined.extend(map("__{}__".format, augment))
+        not_defined.extend(map("__r{}__".format, augment))
+        not_defined.extend(map("__i{}__".format, augment))
+        for name in not_defined:
+            with self.subTest(name):
+                self.assertFalse(hasattr(object, name))
+                self.assertFalse(hasattr(o, name))
+                self.assertFalse(hasattr(Custom, name))
+                self.assertFalse(hasattr(c, name))
+
+        # __call__() is defined on the metaclass but not the class
+        self.assertFalse(hasattr(o, "__call__"))
+        self.assertFalse(hasattr(c, "__call__"))
 
     def testSFBug532646(self):
         # Test for SF bug 532646
