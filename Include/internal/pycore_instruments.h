@@ -43,14 +43,10 @@ extern "C" {
 #define PY_MONITORING_EVENT_C_RAISE 15
 
 
-/* #define INSTRUMENT_EVENT_BRANCH_NOT_TAKEN xxx  -- If we can afford this */
-
-
 typedef uint32_t _PyMonitoringEventSet;
 
 /* Reserved IDs */
 
-#define PY_INSTRUMENT_PEP_523 5
 #define PY_INSTRUMENT_SYS_PROFILE 6
 #define PY_INSTRUMENT_SYS_TRACE 7
 
