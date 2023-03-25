@@ -57,6 +57,8 @@ jobs:
     - name: 'Get list of changed files'
       id: changed_files
       uses: Ana06/get-changed-files@v2.2.0
+      with:
+        filter: "Doc/**"
     - name: 'Build changed files in nit-picky mode'
       continue-on-error: true
       run: |
