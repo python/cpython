@@ -4551,8 +4551,16 @@
         }
 
         TARGET(RESERVED) {
+            PyObject **unused5 = (stack_pointer - 1000);
+            PyObject *unused1 = read_obj(&next_instr[0].cache);
+            PyObject *unused2 = read_obj(&next_instr[4].cache);
+            PyObject *unused3 = read_obj(&next_instr[8].cache);
+            PyObject *unused4 = read_obj(&next_instr[12].cache);
             #line 3249 "Python/bytecodes.c"
+            /* In case we haven't crashed already */
             assert(0 && "Executing RESERVED instruction.");
-            #line 4557 "Python/generated_cases.c.h"
+            #line 4563 "Python/generated_cases.c.h"
+            STACK_SHRINK(1000);
+            next_instr += 16;
             DISPATCH();
         }

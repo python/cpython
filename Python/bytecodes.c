@@ -3245,7 +3245,8 @@ dummy_func(
             Py_UNREACHABLE();
         }
 
-        inst(RESERVED, (--)) {
+        inst(RESERVED, (unused1/4, unused2/4, unused3/4, unused4/4, unused5[1000] --)) {
+            /* In case we haven't crashed already */
             assert(0 && "Executing RESERVED instruction.");
         }
 
