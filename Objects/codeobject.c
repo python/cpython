@@ -1643,6 +1643,30 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
 }
 
 static void
+free_monitoring_data(_PyCoMonitoringData *data)
+{
+    if (data == NULL) {
+        return;
+    }
+    if (data->tools) {
+        PyMem_Free(data->tools);
+    }
+    if (data->lines) {
+        PyMem_Free(data->lines);
+    }
+    if (data->line_tools) {
+        PyMem_Free(data->line_tools);
+    }
+    if (data->per_instruction_opcodes) {
+        PyMem_Free(data->per_instruction_opcodes);
+    }
+    if (data->per_instruction_tools) {
+        PyMem_Free(data->per_instruction_tools);
+    }
+    PyMem_Free(data);
+}
+
+static void
 code_dealloc(PyCodeObject *co)
 {
     assert(Py_REFCNT(co) == 0);
@@ -1688,24 +1712,7 @@ code_dealloc(PyCodeObject *co)
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)co);
     }
-    _PyCoMonitoringData *data = co->_co_monitoring;
-    if (data) {
-        if (data->tools) {
-            PyMem_Free(data->tools);
-        }
-        if (data->lines) {
-            PyMem_Free(data->lines);
-        }
-        if (data->line_tools) {
-            PyMem_Free(data->line_tools);
-        }
-        if (data->per_instruction_opcodes) {
-            PyMem_Free(data->per_instruction_opcodes);
-        }
-        if (data->per_instruction_tools) {
-            PyMem_Free(data->per_instruction_tools);
-        }
-    }
+    free_monitoring_data(co->_co_monitoring);
     PyObject_Free(co);
 }
 
@@ -2288,24 +2295,7 @@ _PyStaticCode_Fini(PyCodeObject *co)
         PyObject_ClearWeakRefs((PyObject *)co);
         co->co_weakreflist = NULL;
     }
-    _PyCoMonitoringData *data = co->_co_monitoring;
-    if (data) {
-        if (data->tools) {
-            PyMem_Free(data->tools);
-        }
-        if (data->lines) {
-            PyMem_Free(data->lines);
-        }
-        if (data->line_tools) {
-            PyMem_Free(data->line_tools);
-        }
-        if (data->per_instruction_opcodes) {
-            PyMem_Free(data->per_instruction_opcodes);
-        }
-        if (data->per_instruction_tools) {
-            PyMem_Free(data->per_instruction_tools);
-        }
-    }
+    free_monitoring_data(co->_co_monitoring);
 }
 
 int
