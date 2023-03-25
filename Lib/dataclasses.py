@@ -1421,8 +1421,8 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
 
     For the bases and namespace parameters, see the builtin type() function.
 
-    The parameters init, repr, eq, order, unsafe_hash, and frozen are passed to
-    dataclass().
+    The parameters init, repr, eq, order, unsafe_hash, frozen, kw_only, slots,
+    and weakref_slot are passed to dataclass().
     """
 
     if namespace is None:
