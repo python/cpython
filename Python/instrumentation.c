@@ -11,7 +11,7 @@
 #include "pycore_pystate.h"
 
 /* Uncomment this to dump debugging output when assertions fail */
-#define INSTRUMENT_DEBUG 1
+// #define INSTRUMENT_DEBUG 1
 
 static PyObject DISABLE =
 {
@@ -55,38 +55,6 @@ static const int8_t EVENT_FOR_OPCODE[256] = {
     [INSTRUMENTED_END_FOR] = PY_MONITORING_EVENT_STOP_ITERATION,
     [END_SEND] = PY_MONITORING_EVENT_STOP_ITERATION,
     [INSTRUMENTED_END_SEND] = PY_MONITORING_EVENT_STOP_ITERATION,
-};
-
-static const bool OPCODE_HAS_EVENT[256] = {
-    [RETURN_CONST] = true,
-    [INSTRUMENTED_RETURN_CONST] = true,
-    [RETURN_VALUE] = true,
-    [INSTRUMENTED_RETURN_VALUE] = true,
-    [CALL] = true,
-    [INSTRUMENTED_CALL] = true,
-    [CALL_FUNCTION_EX] = true,
-    [INSTRUMENTED_CALL_FUNCTION_EX] = true,
-    [RESUME] = true,
-    [INSTRUMENTED_RESUME] = true,
-    [YIELD_VALUE] = true,
-    [INSTRUMENTED_YIELD_VALUE] = true,
-    [JUMP_FORWARD] = true,
-    [JUMP_BACKWARD] = true,
-    [POP_JUMP_IF_FALSE] = true,
-    [POP_JUMP_IF_TRUE] = true,
-    [POP_JUMP_IF_NONE] = true,
-    [POP_JUMP_IF_NOT_NONE] = true,
-    [INSTRUMENTED_JUMP_FORWARD] = true,
-    [INSTRUMENTED_JUMP_BACKWARD] = true,
-    [INSTRUMENTED_POP_JUMP_IF_FALSE] = true,
-    [INSTRUMENTED_POP_JUMP_IF_TRUE] = true,
-    [INSTRUMENTED_POP_JUMP_IF_NONE] = true,
-    [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = true,
-    [INSTRUMENTED_FOR_ITER] = true,
-    [END_FOR] = true,
-    [INSTRUMENTED_END_FOR] = true,
-    [END_SEND] = true,
-    [INSTRUMENTED_END_SEND] = true,
 };
 
 static const uint8_t DE_INSTRUMENT[256] = {
@@ -140,6 +108,12 @@ static const uint8_t INSTRUMENTED_OPCODES[256] = {
     [INSTRUMENTED_LINE] = INSTRUMENTED_LINE,
     [INSTRUMENTED_INSTRUCTION] = INSTRUMENTED_INSTRUCTION,
 };
+
+static inline bool
+opcode_has_event(int opcode) {
+    return opcode < INSTRUMENTED_LINE &&
+        INSTRUMENTED_OPCODES[opcode] > 0;
+}
 
 static inline bool
 is_instrumented(int opcode) {
@@ -559,8 +533,6 @@ int _Py_GetBaseOpcode(PyCodeObject *code, int i)
     if (deinstrumented) {
         return deinstrumented;
     }
-    CHECK(_PyOpcode_Deopt[opcode] != 0);
-    CHECK(opcode != RESERVED);
     return _PyOpcode_Deopt[opcode];
 }
 
@@ -754,8 +726,7 @@ instruction_has_event(PyCodeObject *code, int offset)
     if (opcode == INSTRUMENTED_LINE) {
         opcode = code->_co_monitoring->lines[offset].original_opcode;
     }
-    assert(DE_INSTRUMENT[opcode] == 0 || OPCODE_HAS_EVENT[DE_INSTRUMENT[opcode]] == OPCODE_HAS_EVENT[opcode]);
-    return OPCODE_HAS_EVENT[opcode];
+    return opcode_has_event(opcode);
 }
 #endif
 
@@ -1264,7 +1235,7 @@ initialize_tools(PyCodeObject *code)
             assert(opcode != 0);
         }
         opcode = _PyOpcode_Deopt[opcode];
-        if (OPCODE_HAS_EVENT[opcode]) {
+        if (opcode_has_event(opcode)) {
             if (instrumented) {
                 int8_t event;
                 if (opcode == RESUME) {
@@ -1510,7 +1481,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         }
         CHECK(instr->op.code != 0);
         int base_opcode = _Py_GetBaseOpcode(code, i);
-        if (OPCODE_HAS_EVENT[base_opcode]) {
+        if (opcode_has_event(base_opcode)) {
             int8_t event;
             if (base_opcode == RESUME) {
                 event = instr->op.arg > 0;

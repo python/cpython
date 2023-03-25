@@ -3242,12 +3242,13 @@ dummy_func(
         }
 
         inst(CACHE, (--)) {
+            assert(0 && "Executing a cache.");
             Py_UNREACHABLE();
         }
 
-        inst(RESERVED, (unused1/4, unused2/4, unused3/4, unused4/4, unused5[1000] --)) {
-            /* In case we haven't crashed already */
+        inst(RESERVED, (--)) {
             assert(0 && "Executing RESERVED instruction.");
+            Py_UNREACHABLE();
         }
 
 
