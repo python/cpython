@@ -1,0 +1,3 @@
+Added a server into ``socketserver`` that handles client connection in new
+``multiprocessing.Process`` processes as opposed to threads or processes
+created via ``os.fork()``
