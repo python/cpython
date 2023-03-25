@@ -375,8 +375,8 @@ that they can be converted to the required C data type::
 
 .. _ctypes-calling-variadic-functions:
 
-Calling varadic functions
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Calling variadic functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 On a lot of platforms calling variadic functions through ctypes is exactly the same
 as calling functions with a fixed number of parameters. On some platforms, and in
