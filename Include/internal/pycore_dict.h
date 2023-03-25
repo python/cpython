@@ -37,7 +37,8 @@ extern PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 
 /* Gets a version number unique to the current state of the keys of dict, if possible.
  * Returns the version number, or zero if it was not possible to get a version number. */
-extern uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictKeysObject *dictkeys);
+extern uint32_t _PyDictKeys_GetVersionForCurrentState(
+        PyInterpreterState *interp, PyDictKeysObject *dictkeys);
 
 extern size_t _PyDict_KeysSize(PyDictKeysObject *keys);
 
@@ -148,8 +149,8 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_VERSION_INCREMENT (1 << DICT_MAX_WATCHERS)
 #define DICT_VERSION_MASK (DICT_VERSION_INCREMENT - 1)
 
-#define DICT_NEXT_VERSION() \
-    (_PyRuntime.dict_state.global_version += DICT_VERSION_INCREMENT)
+#define DICT_NEXT_VERSION(INTERP) \
+    ((INTERP)->dict_state.global_version += DICT_VERSION_INCREMENT)
 
 void
 _PyDict_SendEvent(int watcher_bits,
@@ -159,17 +160,19 @@ _PyDict_SendEvent(int watcher_bits,
                   PyObject *value);
 
 static inline uint64_t
-_PyDict_NotifyEvent(PyDict_WatchEvent event,
+_PyDict_NotifyEvent(PyInterpreterState *interp,
+                    PyDict_WatchEvent event,
                     PyDictObject *mp,
                     PyObject *key,
                     PyObject *value)
 {
+    assert(Py_REFCNT((PyObject*)mp) > 0);
     int watcher_bits = mp->ma_version_tag & DICT_VERSION_MASK;
     if (watcher_bits) {
         _PyDict_SendEvent(watcher_bits, event, mp, key, value);
-        return DICT_NEXT_VERSION() | watcher_bits;
+        return DICT_NEXT_VERSION(interp) | watcher_bits;
     }
-    return DICT_NEXT_VERSION();
+    return DICT_NEXT_VERSION(interp);
 }
 
 extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);

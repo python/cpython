@@ -186,43 +186,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(math_log__doc__,
-"log($module, x, base=None, /)\n"
-"--\n"
-"\n"
-"Return the logarithm of x to the given base.\n"
-"\n"
-"If the base is not specified or is None, returns the natural\n"
-"logarithm (base e) of x.");
-
-#define MATH_LOG_METHODDEF    \
-    {"log", _PyCFunction_CAST(math_log), METH_FASTCALL, math_log__doc__},
-
-static PyObject *
-math_log_impl(PyObject *module, PyObject *x, PyObject *base);
-
-static PyObject *
-math_log(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *x;
-    PyObject *base = Py_None;
-
-    if (!_PyArg_CheckPositional("log", nargs, 1, 2)) {
-        goto exit;
-    }
-    x = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
-    base = args[1];
-skip_optional:
-    return_value = math_log_impl(module, x, base);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(math_log2__doc__,
 "log2($module, x, /)\n"
 "--\n"
@@ -948,4 +911,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=afec63ebb0da709a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a6437a3ba18c486a input=a9049054013a1b77]*/

@@ -4,6 +4,8 @@ import zipfile
 import itertools
 import contextlib
 import pathlib
+import re
+import fnmatch
 
 
 __all__ = ['Path']
@@ -84,6 +86,11 @@ class CompleteDirs(InitializedState, zipfile.ZipFile):
     """
     A ZipFile subclass that ensures that implied directories
     are always included in the namelist.
+
+    >>> list(CompleteDirs._implied_dirs(['foo/bar.txt', 'foo/bar/baz.txt']))
+    ['foo/', 'foo/bar/']
+    >>> list(CompleteDirs._implied_dirs(['foo/bar.txt', 'foo/bar/baz.txt', 'foo/bar/']))
+    ['foo/']
     """
 
     @staticmethod
@@ -93,7 +100,7 @@ class CompleteDirs(InitializedState, zipfile.ZipFile):
         return _dedupe(_difference(as_dirs, names))
 
     def namelist(self):
-        names = super(CompleteDirs, self).namelist()
+        names = super().namelist()
         return names + list(self._implied_dirs(names))
 
     def _name_set(self):
@@ -108,6 +115,17 @@ class CompleteDirs(InitializedState, zipfile.ZipFile):
         dirname = name + '/'
         dir_match = name not in names and dirname in names
         return dirname if dir_match else name
+
+    def getinfo(self, name):
+        """
+        Supplement getinfo for implied dirs.
+        """
+        try:
+            return super().getinfo(name)
+        except KeyError:
+            if not name.endswith('/') or name not in self._name_set():
+                raise
+            return zipfile.ZipInfo(filename=name)
 
     @classmethod
     def make(cls, source):
@@ -138,13 +156,13 @@ class FastLookup(CompleteDirs):
     def namelist(self):
         with contextlib.suppress(AttributeError):
             return self.__names
-        self.__names = super(FastLookup, self).namelist()
+        self.__names = super().namelist()
         return self.__names
 
     def _name_set(self):
         with contextlib.suppress(AttributeError):
             return self.__lookup
-        self.__lookup = super(FastLookup, self)._name_set()
+        self.__lookup = super()._name_set()
         return self.__lookup
 
 
@@ -202,7 +220,7 @@ class Path:
 
     Read text:
 
-    >>> c.read_text()
+    >>> c.read_text(encoding='utf-8')
     'content of c'
 
     existence:
@@ -245,6 +263,18 @@ class Path:
         """
         self.root = FastLookup.make(root)
         self.at = at
+
+    def __eq__(self, other):
+        """
+        >>> Path(zipfile.ZipFile(io.BytesIO(), 'w')) == 'foo'
+        False
+        """
+        if self.__class__ is not other.__class__:
+            return NotImplemented
+        return (self.root, self.at) == (other.root, other.at)
+
+    def __hash__(self):
+        return hash((self.root, self.at))
 
     def open(self, mode='r', *args, pwd=None, **kwargs):
         """
@@ -315,6 +345,38 @@ class Path:
             raise ValueError("Can't listdir a file")
         subs = map(self._next, self.root.namelist())
         return filter(self._is_child, subs)
+
+    def match(self, path_pattern):
+        return pathlib.Path(self.at).match(path_pattern)
+
+    def is_symlink(self):
+        """
+        Return whether this path is a symlink. Always false (python/cpython#82102).
+        """
+        return False
+
+    def _descendants(self):
+        for child in self.iterdir():
+            yield child
+            if child.is_dir():
+                yield from child._descendants()
+
+    def glob(self, pattern):
+        if not pattern:
+            raise ValueError(f"Unacceptable pattern: {pattern!r}")
+
+        matches = re.compile(fnmatch.translate(pattern)).fullmatch
+        return (
+            child
+            for child in self._descendants()
+            if matches(str(child.relative_to(self)))
+        )
+
+    def rglob(self, pattern):
+        return self.glob(f'**/{pattern}')
+
+    def relative_to(self, other, *extra):
+        return posixpath.relpath(str(self), str(other.joinpath(*extra)))
 
     def __str__(self):
         return posixpath.join(self.root.filename, self.at)

@@ -23,7 +23,7 @@ Data members:
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_IS_GC()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
-#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
@@ -66,12 +66,11 @@ _PySys_GetAttr(PyThreadState *tstate, PyObject *name)
     if (sd == NULL) {
         return NULL;
     }
-    PyObject *exc_type, *exc_value, *exc_tb;
-    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
     /* XXX Suppress a new exception if it was raised and restore
      * the old one. */
     PyObject *value = _PyDict_GetItemWithError(sd, name);
-    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
+    _PyErr_SetRaisedException(tstate, exc);
     return value;
 }
 
@@ -90,12 +89,11 @@ PySys_GetObject(const char *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    PyObject *exc_type, *exc_value, *exc_tb;
-    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
     PyObject *value = _PySys_GetObject(tstate->interp, name);
     /* XXX Suppress a new exception if it was raised and restore
      * the old one. */
-    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
+    _PyErr_SetRaisedException(tstate, exc);
     return value;
 }
 
@@ -141,6 +139,20 @@ PySys_SetObject(const char *name, PyObject *v)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return sys_set_object_str(interp, name, v);
+}
+
+int
+_PySys_ClearAttrString(PyInterpreterState *interp,
+                       const char *name, int verbose)
+{
+    if (verbose) {
+        PySys_WriteStderr("# clear sys.%s\n", name);
+    }
+    /* To play it safe, we set the attr to None instead of deleting it. */
+    if (PyDict_SetItemString(interp->sysdict, name, Py_None) < 0) {
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -190,8 +202,8 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
 
     int dtrace = PyDTrace_AUDIT_ENABLED();
 
-    PyObject *exc_type, *exc_value, *exc_tb;
-    _PyErr_Fetch(ts, &exc_type, &exc_value, &exc_tb);
+
+    PyObject *exc = _PyErr_GetRaisedException(ts);
 
     /* Initialize event args now */
     if (argFormat && argFormat[0]) {
@@ -274,13 +286,11 @@ exit:
     Py_XDECREF(eventArgs);
 
     if (!res) {
-        _PyErr_Restore(ts, exc_type, exc_value, exc_tb);
+        _PyErr_SetRaisedException(ts, exc);
     }
     else {
         assert(_PyErr_Occurred(ts));
-        Py_XDECREF(exc_type);
-        Py_XDECREF(exc_value);
-        Py_XDECREF(exc_tb);
+        Py_XDECREF(exc);
     }
 
     return res;
@@ -732,7 +742,7 @@ sys_excepthook_impl(PyObject *module, PyObject *exctype, PyObject *value,
                     PyObject *traceback)
 /*[clinic end generated code: output=18d99fdda21b6b5e input=ecf606fa826f19d9]*/
 {
-    PyErr_Display(exctype, value, traceback);
+    PyErr_Display(NULL, value, traceback);
     Py_RETURN_NONE;
 }
 
@@ -1480,6 +1490,9 @@ static PyStructSequence_Desc windows_version_desc = {
 static PyObject *
 _sys_getwindowsversion_from_kernel32()
 {
+#ifndef MS_WINDOWS_DESKTOP
+    return NULL;
+#else
     HANDLE hKernel32;
     wchar_t kernel32_path[MAX_PATH];
     LPVOID verblock;
@@ -1513,6 +1526,7 @@ _sys_getwindowsversion_from_kernel32()
     realBuild = HIWORD(ffi->dwProductVersionLS);
     PyMem_RawFree(verblock);
     return Py_BuildValue("(kkk)", realMajor, realMinor, realBuild);
+#endif /* !MS_WINDOWS_DESKTOP */
 }
 
 /* Disable deprecation warnings about GetVersionEx as the result is
@@ -1651,7 +1665,7 @@ sys_setdlopenflags_impl(PyObject *module, int new_val)
 /*[clinic end generated code: output=ec918b7fe0a37281 input=4c838211e857a77f]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    interp->dlopenflags = new_val;
+    _PyImport_SetDLOpenFlags(interp, new_val);
     Py_RETURN_NONE;
 }
 
@@ -1669,7 +1683,8 @@ sys_getdlopenflags_impl(PyObject *module)
 /*[clinic end generated code: output=e92cd1bc5005da6e input=dc4ea0899c53b4b6]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromLong(interp->dlopenflags);
+    return PyLong_FromLong(
+            _PyImport_GetDLOpenFlags(interp));
 }
 
 #endif  /* HAVE_DLOPEN */
@@ -1839,7 +1854,9 @@ static Py_ssize_t
 sys_gettotalrefcount_impl(PyObject *module)
 /*[clinic end generated code: output=4103886cf17c25bc input=53b744faa5d2e4f6]*/
 {
-    return _Py_GetRefTotal();
+    /* It may make sense to return the total for the current interpreter
+       or have a second function that does so. */
+    return _Py_GetGlobalRefTotal();
 }
 
 #endif /* Py_REF_DEBUG */
@@ -2280,21 +2297,9 @@ static PyMethodDef sys_methods[] = {
 static PyObject *
 list_builtin_module_names(void)
 {
-    PyObject *list = PyList_New(0);
+    PyObject *list = _PyImport_GetBuiltinModuleNames();
     if (list == NULL) {
         return NULL;
-    }
-    struct _inittab *inittab = _PyRuntime.imports.inittab;
-    for (Py_ssize_t i = 0; inittab[i].name != NULL; i++) {
-        PyObject *name = PyUnicode_FromString(inittab[i].name);
-        if (name == NULL) {
-            goto error;
-        }
-        if (PyList_Append(list, name) < 0) {
-            Py_DECREF(name);
-            goto error;
-        }
-        Py_DECREF(name);
     }
     if (PyList_Sort(list) != 0) {
         goto error;
@@ -2667,11 +2672,13 @@ stderr -- standard error object; used for error messages\n\
   By assigning other file objects (or objects that behave like files)\n\
   to these, it is possible to redirect all of the interpreter's I/O.\n\
 \n\
+last_exc - the last uncaught exception\n\
+  Only available in an interactive session after a\n\
+  traceback has been printed.\n\
 last_type -- type of last uncaught exception\n\
 last_value -- value of last uncaught exception\n\
 last_traceback -- traceback of last uncaught exception\n\
-  These three are only available in an interactive session after a\n\
-  traceback has been printed.\n\
+  These three are the (deprecated) legacy representation of last_exc.\n\
 "
 )
 /* concatenating string here */
@@ -3412,11 +3419,10 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 
     PyInterpreterState *interp = tstate->interp;
 
-    PyObject *modules = PyDict_New();
+    PyObject *modules = _PyImport_InitModules(interp);
     if (modules == NULL) {
         goto error;
     }
-    interp->modules = modules;
 
     PyObject *sysmod = _PyModule_CreateInitialized(&sysmodule, PYTHON_API_VERSION);
     if (sysmod == NULL) {
@@ -3429,7 +3435,12 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     }
     interp->sysdict = Py_NewRef(sysdict);
 
-    if (PyDict_SetItemString(sysdict, "modules", interp->modules) < 0) {
+    interp->sysdict_copy = PyDict_Copy(sysdict);
+    if (interp->sysdict_copy == NULL) {
+        goto error;
+    }
+
+    if (PyDict_SetItemString(sysdict, "modules", modules) < 0) {
         goto error;
     }
 
@@ -3443,7 +3454,7 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         return status;
     }
 
-    if (_PyImport_FixupBuiltin(sysmod, "sys", interp->modules) < 0) {
+    if (_PyImport_FixupBuiltin(sysmod, "sys", modules) < 0) {
         goto error;
     }
 
@@ -3660,12 +3671,11 @@ static void
 sys_write(PyObject *key, FILE *fp, const char *format, va_list va)
 {
     PyObject *file;
-    PyObject *error_type, *error_value, *error_traceback;
     char buffer[1001];
     int written;
     PyThreadState *tstate = _PyThreadState_GET();
 
-    _PyErr_Fetch(tstate, &error_type, &error_value, &error_traceback);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
     file = _PySys_GetAttr(tstate, key);
     written = PyOS_vsnprintf(buffer, sizeof(buffer), format, va);
     if (sys_pyfile_write(buffer, file) != 0) {
@@ -3677,7 +3687,7 @@ sys_write(PyObject *key, FILE *fp, const char *format, va_list va)
         if (sys_pyfile_write(truncated, file) != 0)
             fputs(truncated, fp);
     }
-    _PyErr_Restore(tstate, error_type, error_value, error_traceback);
+    _PyErr_SetRaisedException(tstate, exc);
 }
 
 void
@@ -3704,11 +3714,10 @@ static void
 sys_format(PyObject *key, FILE *fp, const char *format, va_list va)
 {
     PyObject *file, *message;
-    PyObject *error_type, *error_value, *error_traceback;
     const char *utf8;
     PyThreadState *tstate = _PyThreadState_GET();
 
-    _PyErr_Fetch(tstate, &error_type, &error_value, &error_traceback);
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
     file = _PySys_GetAttr(tstate, key);
     message = PyUnicode_FromFormatV(format, va);
     if (message != NULL) {
@@ -3720,7 +3729,7 @@ sys_format(PyObject *key, FILE *fp, const char *format, va_list va)
         }
         Py_DECREF(message);
     }
-    _PyErr_Restore(tstate, error_type, error_value, error_traceback);
+    _PyErr_SetRaisedException(tstate, exc);
 }
 
 void

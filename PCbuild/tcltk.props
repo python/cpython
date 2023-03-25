@@ -2,22 +2,25 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="pyproject.props" Condition="$(__PyProject_Props_Imported) != 'true'" />
   <PropertyGroup>
-    <TclMajorVersion>8</TclMajorVersion>
-    <TclMinorVersion>6</TclMinorVersion>
-    <TclPatchLevel>13</TclPatchLevel>
-    <TclRevision>0</TclRevision>
-    <TkMajorVersion>$(TclMajorVersion)</TkMajorVersion>
-    <TkMinorVersion>$(TclMinorVersion)</TkMinorVersion>
-    <TkPatchLevel>$(TclPatchLevel)</TkPatchLevel>
-    <TkRevision>$(TclRevision)</TkRevision>
-    <TixMajorVersion>8</TixMajorVersion>
-    <TixMinorVersion>4</TixMinorVersion>
-    <TixPatchLevel>3</TixPatchLevel>
-    <TixRevision>6</TixRevision>
-    <tclDir>$(ExternalsDir)tcl-core-$(TclMajorVersion).$(TclMinorVersion).$(TclPatchLevel).$(TclRevision)\</tclDir>
-    <tkDir>$(ExternalsDir)tk-$(TkMajorVersion).$(TkMinorVersion).$(TkPatchLevel).$(TkRevision)\</tkDir>
-    <tixDir>$(ExternalsDir)tix-$(TixMajorVersion).$(TixMinorVersion).$(TixPatchLevel).$(TixRevision)\</tixDir>
-    <tcltkDir>$(ExternalsDir)tcltk-$(TclMajorVersion).$(TclMinorVersion).$(TclPatchLevel).$(TclRevision)\$(ArchName)\</tcltkDir>
+    <TclVersion Condition="$(TclVersion) == ''">8.6.13.0</TclVersion>
+    <TkVersion Condition="$(TkVersion) == ''">$(TclVersion)</TkVersion>
+    <TixVersion Condition="$(TixVersion) == ''">8.4.3.6</TixVersion>
+    <TclMajorVersion>$([System.Version]::Parse($(TclVersion)).Major)</TclMajorVersion>
+    <TclMinorVersion>$([System.Version]::Parse($(TclVersion)).Minor)</TclMinorVersion>
+    <TclPatchLevel>$([System.Version]::Parse($(TclVersion)).Build)</TclPatchLevel>
+    <TclRevision>$([System.Version]::Parse($(TclVersion)).Revision)</TclRevision>
+    <TkMajorVersion>$([System.Version]::Parse($(TkVersion)).Major)</TkMajorVersion>
+    <TkMinorVersion>$([System.Version]::Parse($(TkVersion)).Minor)</TkMinorVersion>
+    <TkPatchLevel>$([System.Version]::Parse($(TkVersion)).Build)</TkPatchLevel>
+    <TkRevision>$([System.Version]::Parse($(TkVersion)).Revision)</TkRevision>
+    <TixMajorVersion>$([System.Version]::Parse($(TixVersion)).Major)</TixMajorVersion>
+    <TixMinorVersion>$([System.Version]::Parse($(TixVersion)).Minor)</TixMinorVersion>
+    <TixPatchLevel>$([System.Version]::Parse($(TixVersion)).Build)</TixPatchLevel>
+    <TixRevision>$([System.Version]::Parse($(TixVersion)).Revision)</TixRevision>
+    <tclDir Condition="$(tclDir) == ''">$(ExternalsDir)tcl-core-$(TclVersion)\</tclDir>
+    <tkDir Condition="$(tkDir) == ''">$(ExternalsDir)tk-$(TkVersion)\</tkDir>
+    <tixDir Condition="$(tixDir) == ''">$(ExternalsDir)tix-$(TixVersion)\</tixDir>
+    <tcltkDir Condition="$(tcltkDir) == ''">$(ExternalsDir)tcltk-$(TclVersion)\$(ArchName)\</tcltkDir>
     <tclWin32Exe Condition="$(Platform) == 'Win32'">$(tcltkDir)\bin\tclsh$(TclMajorVersion)$(TclMinorVersion)t.exe</tclWin32Exe>
     <tclWin32Exe Condition="$(Platform) != 'Win32'">$(tcltkDir)\..\win32\bin\tclsh$(TclMajorVersion)$(TclMinorVersion)t.exe</tclWin32Exe>
 
