@@ -126,11 +126,13 @@ The standard type hierarchy
    pair: extension; module
    pair: C; language
 
-Below is a list of the types that are built into Python.  Extension modules
-(written in C, Java, or other languages, depending on the implementation) can
-define additional types.  Future versions of Python may add types to the type
-hierarchy (e.g., rational numbers, efficiently stored arrays of integers, etc.),
-although such additions will often be provided via the standard library instead.
+Below is a list of the types that are built into Python. The fundamental type
+is :class:`object`; all other types, whether built-in or not, are derived
+from it. Extension modules (written in C, Java, or other languages,
+depending on the implementation) can define additional types.  Future versions
+of Python may add types to the type hierarchy (e.g., rational numbers,
+efficiently stored arrays of integers, etc.), although such additions will
+often be provided via the standard library instead.
 
 .. index::
    single: attribute
@@ -1269,10 +1271,11 @@ Basic customization
    class).  The return value of :meth:`__new__` should be the new object instance
    (usually an instance of *cls*).
 
-   Typical implementations create a new instance of the class by invoking the
+   Typical custom implementations create a new instance of the class by invoking the
    superclass's :meth:`__new__` method using ``super().__new__(cls[, ...])``
-   with appropriate arguments and then modifying the newly created instance
-   as necessary before returning it.
+   with appropriate arguments and then modify the newly-created instance as necessary
+   before returning it. The base implementation in :class:`object` should only be
+   passed the *cls* argument, and returns an uninitialized instance of that class.
 
    If :meth:`__new__` is invoked during object construction and it returns an
    instance of *cls*, then the new instance’s :meth:`__init__` method
@@ -1294,9 +1297,14 @@ Basic customization
    Called after the instance has been created (by :meth:`__new__`), but before
    it is returned to the caller.  The arguments are those passed to the
    class constructor expression.  If a base class has an :meth:`__init__`
-   method, the derived class's :meth:`__init__` method, if any, must explicitly
+   method, the derived class's :meth:`__init__` method, if any, may need to
    call it to ensure proper initialization of the base class part of the
    instance; for example: ``super().__init__([args...])``.
+   Any :meth:`__init__` method that is overridden is not implicitly called.
+
+   A base implementation in :class:`object` is provided, but it does not
+   need to be called.  If it is only passed the *self* argument, it has
+   no effect.
 
    Because :meth:`__new__` and :meth:`__init__` work together in constructing
    objects (:meth:`__new__` to create it, and :meth:`__init__` to customize it),
@@ -1315,7 +1323,8 @@ Basic customization
    finalizer or (improperly) a destructor.  If a base class has a
    :meth:`__del__` method, the derived class's :meth:`__del__` method,
    if any, must explicitly call it to ensure proper deletion of the base
-   class part of the instance.
+   class part of the instance.The :class:`object` class itself does not have a
+   :meth:`__del__` method.
 
    It is possible (though not recommended!) for the :meth:`__del__` method
    to postpone destruction of the instance by creating a new reference to
@@ -1383,7 +1392,8 @@ Basic customization
    "informal" string representation of instances of that class is required.
 
    This is typically used for debugging, so it is important that the representation
-   is information-rich and unambiguous.
+   is information-rich and unambiguous. A default implementation is provided by the
+   :class:`object` class itself.
 
    .. index::
       single: string; __str__() (object method)
@@ -1393,8 +1403,8 @@ Basic customization
 
 .. method:: object.__str__(self)
 
-   Called by :func:`str(object) <str>` and the built-in functions
-   :func:`format` and :func:`print` to compute the "informal" or nicely
+   Called by :func:`str(object) <str>`, the default :meth:`__format__` implementation,
+   and the built-in function :func:`print`, to compute the "informal" or nicely
    printable string representation of an object.  The return value must be a
    :ref:`string <textseq>` object.
 
@@ -1413,7 +1423,8 @@ Basic customization
    .. index:: builtin: bytes
 
    Called by :ref:`bytes <func-bytes>` to compute a byte-string representation
-   of an object. This should return a :class:`bytes` object.
+   of an object. This should return a :class:`bytes` object. The :class:`object`
+   class itself does not provide this method.
 
    .. index::
       single: string; __format__() (object method)
@@ -1436,6 +1447,9 @@ Basic customization
    See :ref:`formatspec` for a description of the standard formatting syntax.
 
    The return value must be a string object.
+
+   The default implementation by the ``object`` class should be given
+   an empty ``format_spec`` string. It delegates to :meth:`__str__`
 
    .. versionchanged:: 3.4
       The __format__ method of ``object`` itself raises a :exc:`TypeError`
@@ -1478,6 +1492,11 @@ Basic customization
    comparison operators or default implementations; for example, the truth of
    ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
    operations from a single root operation, see :func:`functools.total_ordering`.
+
+   By default, the :class:`object` class provides implementations consistent
+   with :ref:`comparisons`: equality compares according to object identity,
+   and order comparisons raise :exc:`TypeError`. Each default method may generate
+   these results directly, but may also return ``NotImplemented``.
 
    See the paragraph on :meth:`__hash__` for
    some important notes on creating :term:`hashable` objects which support
@@ -1530,10 +1549,10 @@ Basic customization
    immutable (if the object's hash value changes, it will be in the wrong hash
    bucket).
 
-   User-defined classes have :meth:`__eq__` and :meth:`__hash__` methods
-   by default; with them, all objects compare unequal (except with themselves)
-   and ``x.__hash__()`` returns an appropriate value such that ``x == y``
-   implies both that ``x is y`` and ``hash(x) == hash(y)``.
+   User-defined classes (and the :class:`object` class itself) have :meth:`__eq__`
+   and :meth:`__hash__` methods by default; with them, all objects compare
+   unequal (except with themselves) and ``x.__hash__()`` returns an appropriate
+   value such that ``x == y`` implies both that ``x is y`` and ``hash(x) == hash(y)``.
 
    A class that overrides :meth:`__eq__` and does not define :meth:`__hash__`
    will have its :meth:`__hash__` implicitly set to ``None``.  When the
@@ -1583,8 +1602,8 @@ Basic customization
    ``bool()``; should return ``False`` or ``True``.  When this method is not
    defined, :meth:`__len__` is called, if it is defined, and the object is
    considered true if its result is nonzero.  If a class defines neither
-   :meth:`__len__` nor :meth:`__bool__`, all its instances are considered
-   true.
+   :meth:`__len__` nor :meth:`__bool__` (which is true of the :class:`object`
+   class itself), all its instances are considered true.
 
 
 .. _attribute-access:
@@ -1606,6 +1625,7 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    for ``self``; or :meth:`__get__` of a *name* property raises
    :exc:`AttributeError`).  This method should either return the (computed)
    attribute value or raise an :exc:`AttributeError` exception.
+   The :class:`object` class itself does not provide this method.
 
    Note that if the attribute is found through the normal mechanism,
    :meth:`__getattr__` is not called.  (This is an intentional asymmetry between
@@ -1674,7 +1694,10 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 .. method:: object.__dir__(self)
 
    Called when :func:`dir` is called on the object. A sequence must be
-   returned. :func:`dir` converts the returned sequence to a list and sorts it.
+   returned. The :func:`dir` function converts the returned sequence to
+   a list and sorts it. The :class:`object` class itself provides an
+   implementation consistent with the :func:`dir` behaviour for
+   arbitrary objects.
 
 
 Customizing module attribute access
@@ -1743,8 +1766,8 @@ method (a so-called *descriptor* class) appears in an *owner* class (the
 descriptor must be in either the owner's class dictionary or in the class
 dictionary for one of its parents).  In the examples below, "the attribute"
 refers to the attribute whose name is the key of the property in the owner
-class' :attr:`~object.__dict__`.
-
+class' :attr:`__dict__`.  The :class:`object` class itself does not
+implement any of these protocols.
 
 .. method:: object.__get__(self, instance, owner=None)
 
@@ -2419,15 +2442,16 @@ Emulating callable objects
 
    Called when the instance is "called" as a function; if this method is defined,
    ``x(arg1, arg2, ...)`` roughly translates to ``type(x).__call__(x, arg1, ...)``.
-
+   The :class:`object` class itself does not provide this method.
 
 .. _sequence-types:
 
 Emulating container types
 -------------------------
 
-The following methods can be defined to implement container objects.  Containers
-usually are :term:`sequences <sequence>` (such as :class:`lists <list>` or
+The following methods can be defined to implement container objects. None of them
+are provided by the :class:`object` class itself. Containers usually are
+:term:`sequences <sequence>` (such as :class:`lists <list>` or
 :class:`tuples <tuple>`) or :term:`mappings <mapping>` (like
 :class:`dictionaries <dict>`),
 but can represent other containers as well.  The first set of methods is used
@@ -2789,6 +2813,7 @@ Typical uses of context managers include saving and restoring various kinds of
 global state, locking and unlocking resources, closing opened files, etc.
 
 For more information on context managers, see :ref:`typecontextmanager`.
+The :class:`object` class itself does not provide the context manager methods.
 
 
 .. method:: object.__enter__(self)
@@ -2952,6 +2977,8 @@ are awaitable.
    Must return an :term:`iterator`.  Should be used to implement
    :term:`awaitable` objects.  For instance, :class:`asyncio.Future` implements
    this method to be compatible with the :keyword:`await` expression.
+   The :class:`object` class itself is not awaitable and does not provide
+   this method.
 
    .. note::
 
@@ -3037,6 +3064,9 @@ its ``__anext__`` method.
 
 Asynchronous iterators can be used in an :keyword:`async for` statement.
 
+The :class:`object` class itself does not provide these methods.
+
+
 .. method:: object.__aiter__(self)
 
    Must return an *asynchronous iterator* object.
@@ -3082,6 +3112,8 @@ An *asynchronous context manager* is a *context manager* that is able to
 suspend execution in its ``__aenter__`` and ``__aexit__`` methods.
 
 Asynchronous context managers can be used in an :keyword:`async with` statement.
+
+The :class:`object` class itself does not provide these methods.
 
 .. method:: object.__aenter__(self)
 
