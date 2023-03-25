@@ -64,11 +64,17 @@ typedef struct {
     PyObject *_co_freevars;
 } _PyCoCached;
 
+/* Ancilliary data structure used for instrumentation.
+   Line instrumentation creates an array of
+   these. One entry per code unit.*/
 typedef struct {
     uint8_t original_opcode;
     int8_t line_delta;
 } _PyCoLineInstrumentationData;
 
+/* Main data structure used for instrumentation.
+ * This is allocated when needed for instrumentation
+ */
 typedef struct {
     _Py_Monitors local_monitors;
     _Py_Monitors active_monitors;
