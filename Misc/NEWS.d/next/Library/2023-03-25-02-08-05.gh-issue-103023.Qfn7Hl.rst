@@ -1,0 +1,1 @@
+Added SyntaxError check on :mod:`pdb`'s display command
