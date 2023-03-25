@@ -395,6 +395,10 @@ def decode_long(data):
     """
     return int.from_bytes(data, byteorder='little', signed=True)
 
+class _NoValue:
+    pass
+
+NoValue = _NoValue()
 
 # Pickling machinery
 
@@ -542,8 +546,8 @@ class _Pickler:
             return
 
         rv = NotImplemented
-        reduce = getattr(self, "reducer_override", None)
-        if reduce is not None:
+        reduce = getattr(self, "reducer_override", NoValue)
+        if reduce is not NoValue:
             rv = reduce(obj)
 
         if rv is NotImplemented:
@@ -567,12 +571,12 @@ class _Pickler:
                     return
 
                 # Check for a __reduce_ex__ method, fall back to __reduce__
-                reduce = getattr(obj, "__reduce_ex__", None)
-                if reduce is not None:
+                reduce = getattr(obj, "__reduce_ex__", NoValue)
+                if reduce is not NoValue:
                     rv = reduce(self.proto)
                 else:
-                    reduce = getattr(obj, "__reduce__", None)
-                    if reduce is not None:
+                    reduce = getattr(obj, "__reduce__", NoValue)
+                    if reduce is not NoValue:
                         rv = reduce()
                     else:
                         raise PicklingError("Can't pickle %r object: %r" %
@@ -1705,8 +1709,8 @@ class _Unpickler:
         stack = self.stack
         state = stack.pop()
         inst = stack[-1]
-        setstate = getattr(inst, "__setstate__", None)
-        if setstate is not None:
+        setstate = getattr(inst, "__setstate__", NoValue)
+        if setstate is not NoValue:
             setstate(state)
             return
         slotstate = None

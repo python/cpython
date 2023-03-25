@@ -56,6 +56,11 @@ class Error(Exception):
     pass
 error = Error   # backward compatibility
 
+class _NoValue:
+    pass
+
+NoValue = _NoValue()
+
 __all__ = ["Error", "copy", "deepcopy"]
 
 def copy(x):
@@ -74,20 +79,20 @@ def copy(x):
         # treat it as a regular class:
         return _copy_immutable(x)
 
-    copier = getattr(cls, "__copy__", None)
-    if copier is not None:
+    copier = getattr(cls, "__copy__", NoValue)
+    if copier is not NoValue:
         return copier(x)
 
     reductor = dispatch_table.get(cls)
     if reductor is not None:
         rv = reductor(x)
     else:
-        reductor = getattr(x, "__reduce_ex__", None)
-        if reductor is not None:
+        reductor = getattr(x, "__reduce_ex__", NoValue)
+        if reductor is not NoValue:
             rv = reductor(4)
         else:
-            reductor = getattr(x, "__reduce__", None)
-            if reductor:
+            reductor = getattr(x, "__reduce__", NoValue)
+            if reductor is not NoValue:
                 rv = reductor()
             else:
                 raise Error("un(shallow)copyable object of type %s" % cls)
@@ -131,27 +136,27 @@ def deepcopy(x, memo=None, _nil=[]):
 
     cls = type(x)
 
-    copier = _deepcopy_dispatch.get(cls)
-    if copier is not None:
+    copier = _deepcopy_dispatch.get(cls, NoValue)
+    if copier is not NoValue:
         y = copier(x, memo)
     else:
         if issubclass(cls, type):
             y = _deepcopy_atomic(x, memo)
         else:
-            copier = getattr(x, "__deepcopy__", None)
-            if copier is not None:
+            copier = getattr(x, "__deepcopy__", NoValue)
+            if copier is not NoValue:
                 y = copier(memo)
             else:
                 reductor = dispatch_table.get(cls)
                 if reductor:
                     rv = reductor(x)
                 else:
-                    reductor = getattr(x, "__reduce_ex__", None)
-                    if reductor is not None:
+                    reductor = getattr(x, "__reduce_ex__", NoValue)
+                    if reductor is not NoValue:
                         rv = reductor(4)
                     else:
-                        reductor = getattr(x, "__reduce__", None)
-                        if reductor:
+                        reductor = getattr(x, "__reduce__", NoValue)
+                        if reductor is not NoValue:
                             rv = reductor()
                         else:
                             raise Error(
