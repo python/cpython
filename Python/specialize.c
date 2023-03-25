@@ -1627,17 +1627,12 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     assert(nargs <= argcount && nargs >= min_args);
     assert(min_args >= 0 && defcount >= 0);
     assert(defcount == 0 || func->func_defaults != NULL);
-    if (min_args > 0xffff) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_RANGE);
-        return -1;
-    }
     int version = _PyFunction_GetVersionForCurrentState(func);
     if (version == 0) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }
     write_u32(cache->func_version, version);
-    cache->min_args = min_args;
     if (argcount == nargs) {
         instr->op.code = bound_method ? CALL_BOUND_METHOD_EXACT_ARGS : CALL_PY_EXACT_ARGS;
     }
