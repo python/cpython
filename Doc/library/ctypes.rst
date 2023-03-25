@@ -485,7 +485,7 @@ a string pointer and a char, and returns a pointer to a string::
 
 If you want to avoid the ``ord("x")`` calls above, you can set the
 :attr:`argtypes` attribute, and the second argument will be converted from a
-single character Python bytes object into a C char:
+single character Python bytes object into a C char::
 
    >>> strchr.restype = c_char_p
    >>> strchr.argtypes = [c_char_p, c_char]
