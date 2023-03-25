@@ -273,7 +273,8 @@ _PyCode_Quicken(PyCodeObject *code)
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     for (int i = 0; i < Py_SIZE(code); i++) {
         int previous_opcode = opcode;
-        opcode = _PyOpcode_Deopt[instructions[i].op.code];
+        opcode = _Py_GetBaseOpcode(code, i);
+        assert(opcode < 230);
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
             instructions[i + 1].cache = adaptive_counter_warmup();

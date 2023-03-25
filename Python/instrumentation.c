@@ -268,28 +268,6 @@ compute_line(PyCodeObject *code, int offset, int8_t line_delta)
     }
 }
 
-/* We need to parse instructions from code objects a lot,
- * so add a couple of utilities */
-int _Py_GetBaseOpcode(PyCodeObject *code, int offset)
-{
-    int opcode = _PyCode_CODE(code)[offset].op.code;
-    if (opcode == INSTRUMENTED_INSTRUCTION) {
-        opcode = code->_co_monitoring->per_instruction_opcodes[offset];
-    }
-    if (opcode == INSTRUMENTED_LINE) {
-        opcode = code->_co_monitoring->lines[offset].original_opcode;
-    }
-    assert(opcode != INSTRUMENTED_INSTRUCTION);
-    assert(opcode != INSTRUMENTED_LINE);
-    int deinstrumented = DE_INSTRUMENT[opcode];
-    if (deinstrumented) {
-        return deinstrumented;
-    }
-    assert(_PyOpcode_Deopt[opcode] != 0);
-    assert(opcode != RESERVED);
-    return _PyOpcode_Deopt[opcode];
-}
-
 int instruction_length(PyCodeObject *code, int offset)
 {
     int opcode = _PyCode_CODE(code)[offset].op.code;
@@ -325,38 +303,6 @@ typedef struct _Instruction {
     bool is_specialized_instrumented;
 } Instruction;
 
-static Instruction
-read_instruction(PyCodeObject *code, int offset)
-{
-    Instruction result = (Instruction){0};
-    int opcode = result.actual_opcode = _PyCode_CODE(code)[offset].op.code;
-    if (opcode == INSTRUMENTED_INSTRUCTION) {
-        opcode = code->_co_monitoring->per_instruction_opcodes[offset];
-        result.is_prefix_instrumented = true;
-    }
-
-    if (opcode == INSTRUMENTED_LINE) {
-        opcode = code->_co_monitoring->lines[offset].original_opcode;
-        result.is_prefix_instrumented = true;
-    }
-    while (opcode == EXTENDED_ARG) {
-        result.extended_args += 1;
-        offset++;
-        opcode = _PyCode_CODE(code)[offset].op.code;
-    }
-    result.length = result.extended_args + 1;
-    int deinstrumented = DE_INSTRUMENT[opcode];
-    if (deinstrumented) {
-        result.deinstrumented_opcode = deinstrumented;
-        result.is_specialized_instrumented = true;
-    }
-    else {
-        result.deinstrumented_opcode = opcode;
-    }
-    result.length = result.extended_args + instruction_length(code, offset);
-    return result;
-}
-
 #ifdef INSTRUMENT_DEBUG
 
 static void
@@ -378,9 +324,6 @@ dump_instrumentation_data_lines(PyCodeObject *code, _PyCoLineInstrumentationData
     }
     else if (lines[i].original_opcode == 0) {
         fprintf(out, ", lines = {original_opcode = No LINE (0), line_delta = %d)", lines[i].line_delta);
-    }
-    else if (lines[i].original_opcode == 255) {
-        fprintf(out, ", lines = {original_opcode = LINE_MARKER, line_delta = %d)", lines[i].line_delta);
     }
     else {
         fprintf(out, ", lines = {original_opcode = %s, line_delta = %d)", _PyOpcode_OpName[lines[i].original_opcode], lines[i].line_delta);
@@ -508,7 +451,9 @@ dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
 } while (0)
 
 bool valid_opcode(int opcode) {
-    if (opcode > 0 && opcode < 255 &&
+    if (opcode > 0 &&
+        opcode != RESERVED &&
+        opcode < 255 &&
         _PyOpcode_OpName[opcode] &&
         _PyOpcode_OpName[opcode][0] != '<'
     ) {
@@ -535,8 +480,8 @@ sanity_check_instrumentation(PyCodeObject *code)
     );
     int code_len = (int)Py_SIZE(code);
     for (int i = 0; i < code_len;) {
-        Instruction inst = read_instruction(code, i);
-        int opcode = inst.actual_opcode;
+        int opcode = _PyCode_CODE(code)[i].op.code;
+        int base_opcode = _Py_GetBaseOpcode(code, i);
         if (opcode == INSTRUMENTED_INSTRUCTION) {
             opcode = data->per_instruction_opcodes[i];
             if (!is_instrumented(opcode)) {
@@ -547,7 +492,7 @@ sanity_check_instrumentation(PyCodeObject *code)
         if (opcode == INSTRUMENTED_LINE) {
             CHECK(data->lines);
             CHECK(valid_opcode(data->lines[i].original_opcode));
-            int opcode = data->lines[i].original_opcode;
+            opcode = data->lines[i].original_opcode;
             CHECK(opcode != END_FOR);
             CHECK(opcode != RESUME);
             CHECK(opcode != INSTRUMENTED_RESUME);
@@ -556,38 +501,32 @@ sanity_check_instrumentation(PyCodeObject *code)
             }
             CHECK(opcode != INSTRUMENTED_LINE);
         }
-        else if (data->lines) {
+        else if (data->lines && !is_instrumented(opcode)) {
             CHECK(data->lines[i].original_opcode == 0 ||
-                  data->lines[i].original_opcode == 255);
+                  data->lines[i].original_opcode == base_opcode);
         }
-        if (inst.is_specialized_instrumented) {
-            int event = EVENT_FOR_OPCODE[inst.deinstrumented_opcode];
+        if (is_instrumented(opcode)) {
+            CHECK(DE_INSTRUMENT[opcode] == base_opcode);
+            int event = EVENT_FOR_OPCODE[DE_INSTRUMENT[opcode]];
             if (event < 0) {
                 /* RESUME fixup */
-                event = _PyCode_CODE(code)[i + inst.extended_args].op.arg;
+                event = _PyCode_CODE(code)[i].op.arg;
             }
             CHECK(active_monitors.tools[event] != 0);
         }
-        if (data->lines && inst.deinstrumented_opcode != END_FOR) {
+        if (data->lines && base_opcode != END_FOR) {
             int line1 = compute_line(code, i, data->lines[i].line_delta);
             int line2 = PyCode_Addr2Line(code, i*sizeof(_Py_CODEUNIT));
             CHECK(line1 == line2);
         }
-        CHECK(valid_opcode(inst.deinstrumented_opcode));
-        if (inst.is_prefix_instrumented) {
-            CHECK(inst.extended_args || _PyOpcode_Deopt[inst.deinstrumented_opcode] == inst.deinstrumented_opcode);
-        }
-        if (inst.is_specialized_instrumented) {
-            CHECK(_PyOpcode_Deopt[inst.deinstrumented_opcode] == inst.deinstrumented_opcode);
-        }
+        CHECK(valid_opcode(opcode));
         if (data->tools) {
-            uint8_t local_tools = data->tools[i + inst.extended_args];
-            int deopt = _PyOpcode_Deopt[inst.deinstrumented_opcode];
-            if (OPCODE_HAS_EVENT[deopt]) {
-                int event = EVENT_FOR_OPCODE[deopt];
+            uint8_t local_tools = data->tools[i];
+            if (OPCODE_HAS_EVENT[base_opcode]) {
+                int event = EVENT_FOR_OPCODE[base_opcode];
                 if (event == -1) {
                     /* RESUME fixup */
-                    event = _PyCode_CODE(code)[i + inst.extended_args].op.arg;
+                    event = _PyCode_CODE(code)[i].op.arg;
                 }
                 CHECK((active_monitors.tools[event] & local_tools) == local_tools);
             }
@@ -595,7 +534,7 @@ sanity_check_instrumentation(PyCodeObject *code)
                 CHECK(local_tools == 0xff);
             }
         }
-        i += inst.length;
+        i += instruction_length(code, i);
         assert(i <= code_len);
     }
 }
@@ -604,6 +543,27 @@ sanity_check_instrumentation(PyCodeObject *code)
 #define CHECK(test) assert(test)
 
 #endif
+
+/* Get the underlying opcode, stripping instrumentation */
+int _Py_GetBaseOpcode(PyCodeObject *code, int i)
+{
+    int opcode = _PyCode_CODE(code)[i].op.code;
+    if (opcode == INSTRUMENTED_INSTRUCTION) {
+        opcode = code->_co_monitoring->per_instruction_opcodes[i];
+    }
+    if (opcode == INSTRUMENTED_LINE) {
+        opcode = code->_co_monitoring->lines[i].original_opcode;
+    }
+    CHECK(opcode != INSTRUMENTED_INSTRUCTION);
+    CHECK(opcode != INSTRUMENTED_LINE);
+    int deinstrumented = DE_INSTRUMENT[opcode];
+    if (deinstrumented) {
+        return deinstrumented;
+    }
+    CHECK(_PyOpcode_Deopt[opcode] != 0);
+    CHECK(opcode != RESERVED);
+    return _PyOpcode_Deopt[opcode];
+}
 
 static void
 de_instrument(PyCodeObject *code, int offset, int event)
@@ -682,8 +642,6 @@ de_instrument_line(PyCodeObject *code, int i)
         instr->op.code = original_opcode;
     }
     assert(instr->op.code != INSTRUMENTED_LINE);
-    /* Mark instruction as candidate for line instrumentation */
-    lines->original_opcode = 255;
 }
 
 
@@ -752,19 +710,15 @@ instrument_line(PyCodeObject *code, int i)
         return;
     }
     _PyCoLineInstrumentationData *lines = &code->_co_monitoring->lines[i];
-    CHECK(lines->original_opcode == 255);
-    if (is_instrumented(opcode)) {
-        lines->original_opcode = opcode;
-    }
-    else {
-        assert(opcode != 0);
-        assert(_PyOpcode_Deopt[opcode] != RESUME);
-        lines->original_opcode = _PyOpcode_Deopt[opcode];
-        CHECK(lines->original_opcode != 0);
-    }
-    assert(lines->original_opcode > 0);
+    CHECK(_PyOpcode_Deopt[opcode] == lines->original_opcode ||
+        (
+            is_instrumented(opcode) &&
+            lines->original_opcode == DE_INSTRUMENT[opcode]
+        )
+    );
+    lines->original_opcode = _PyOpcode_Deopt[opcode];
+    CHECK(lines->original_opcode > 0);
     instr->op.code = INSTRUMENTED_LINE;
-    CHECK(code->_co_monitoring->lines[i].original_opcode != 0);
 }
 
 static void
@@ -1343,8 +1297,6 @@ initialize_tools(PyCodeObject *code)
     }
 }
 
-#define LINE_MARKER 255
-
 #define NO_LINE -128
 
 static void
@@ -1377,7 +1329,7 @@ initialize_lines(PyCodeObject *code)
                 break;
             default:
                 if (line != current_line && line >= 0) {
-                    line_data[i].original_opcode = LINE_MARKER;
+                    line_data[i].original_opcode = opcode;
                 }
                 else {
                     line_data[i].original_opcode = 0;

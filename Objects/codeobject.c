@@ -1487,13 +1487,10 @@ deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
         int opcode = _Py_GetBaseOpcode(code, i);
         int caches = _PyOpcode_Caches[opcode];
         instructions[i].op.code = opcode;
-        if (caches) {
-            instructions[i+1].cache = adaptive_counter_warmup();
-            for (int j = 2; j <= caches; j++) {
-                instructions[i+j].cache = 0;
-            }
-            i += caches;
+        for (int j = 1; j <= caches; j++) {
+            instructions[i+j].cache = 0;
         }
+        i += caches;
     }
 }
 
