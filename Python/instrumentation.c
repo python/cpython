@@ -145,7 +145,7 @@ static inline bool
 is_instrumented(int opcode) {
     assert(opcode != 0);
     assert(opcode != RESERVED);
-    return INSTRUMENTED_OPCODES[opcode] == opcode;
+    return opcode >= MIN_INSTRUMENTED_OPCODE;
 }
 
 static inline bool
@@ -190,7 +190,7 @@ monitors_or(_Py_Monitors a, _Py_Monitors b)
 }
 
 static inline bool
-monitors_empty(_Py_Monitors m)
+monitors_are_empty(_Py_Monitors m)
 {
     for (int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
         if (m.tools[i]) {
@@ -200,7 +200,7 @@ monitors_empty(_Py_Monitors m)
     return true;
 }
 
-static inline int
+static inline bool
 multiple_tools(_Py_Monitors *m)
 {
     for (int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
@@ -227,7 +227,7 @@ get_events(_Py_Monitors *m, int tool_id)
  * 8 bit value.
  * if line_delta == -128:
  *     line = None # represented as -1
- * elif line == -127:
+ * elif line_delta == -127:
  *     line = PyCode_Addr2Line(code, offset * sizeof(_Py_CODEUNIT));
  * else:
  *     line = first_line  + (offset >> OFFSET_SHIFT) + line_delta;
@@ -241,9 +241,6 @@ compute_line_delta(PyCodeObject *code, int offset, int line)
     if (line < 0) {
         return -128;
     }
-    // assert(line >= code->co_firstlineno);
-    // assert(offset >= code->_co_firsttraceable);
-    // assert(offset < Py_SIZE(code));
     int delta = line - code->co_firstlineno - (offset >> OFFSET_SHIFT);
     if (delta < 128 && delta > -128) {
         return delta;
@@ -255,7 +252,6 @@ static int
 compute_line(PyCodeObject *code, int offset, int8_t line_delta)
 {
     if (line_delta > -127) {
-        // assert((offset >> OFFSET_SHIFT) + line_delta >= 0);
         return code->co_firstlineno + (offset >> OFFSET_SHIFT) + line_delta;
     }
     if (line_delta == -128) {
@@ -482,6 +478,8 @@ sanity_check_instrumentation(PyCodeObject *code)
     for (int i = 0; i < code_len;) {
         int opcode = _PyCode_CODE(code)[i].op.code;
         int base_opcode = _Py_GetBaseOpcode(code, i);
+        CHECK(valid_opcode(opcode));
+        CHECK(valid_opcode(base_opcode));
         if (opcode == INSTRUMENTED_INSTRUCTION) {
             opcode = data->per_instruction_opcodes[i];
             if (!is_instrumented(opcode)) {
@@ -503,7 +501,8 @@ sanity_check_instrumentation(PyCodeObject *code)
         }
         else if (data->lines && !is_instrumented(opcode)) {
             CHECK(data->lines[i].original_opcode == 0 ||
-                  data->lines[i].original_opcode == base_opcode);
+                  data->lines[i].original_opcode == base_opcode ||
+                  DE_INSTRUMENT[data->lines[i].original_opcode] == base_opcode);
         }
         if (is_instrumented(opcode)) {
             CHECK(DE_INSTRUMENT[opcode] == base_opcode);
@@ -1493,11 +1492,11 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
     else {
         removed_events = monitors_sub(code->_co_monitoring->active_monitors, active_events);
         new_events = monitors_sub(active_events, code->_co_monitoring->active_monitors);
-        assert(monitors_empty(monitors_and(new_events, removed_events)));
+        assert(monitors_are_empty(monitors_and(new_events, removed_events)));
     }
     code->_co_monitoring->active_monitors = active_events;
     code->_co_instrumentation_version = interp->monitoring_version;
-    if (monitors_empty(new_events) && monitors_empty(removed_events)) {
+    if (monitors_are_empty(new_events) && monitors_are_empty(removed_events)) {
 #ifdef INSTRUMENT_DEBUG
         sanity_check_instrumentation(code);
 #endif
