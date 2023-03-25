@@ -380,7 +380,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case CACHE:
             return 0;
         case RESERVED:
-            return 1000;
+            return 0;
         default:
             return -1;
     }
@@ -771,7 +771,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000, INSTR_FMT_IXC000000000000000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
 struct opcode_metadata {
     bool valid_entry;
     enum InstructionFormat instr_format;
@@ -811,13 +811,13 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BINARY_OP_INPLACE_ADD_UNICODE] = { true, INSTR_FMT_IX },
     [BINARY_OP_ADD_FLOAT] = { true, INSTR_FMT_IXC },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IXC },
-    [BINARY_SUBSCR] = { true, INSTR_FMT_IXC000 },
+    [BINARY_SUBSCR] = { true, INSTR_FMT_IXC },
     [BINARY_SLICE] = { true, INSTR_FMT_IX },
     [STORE_SLICE] = { true, INSTR_FMT_IX },
-    [BINARY_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC000 },
-    [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC000 },
-    [BINARY_SUBSCR_DICT] = { true, INSTR_FMT_IXC000 },
-    [BINARY_SUBSCR_GETITEM] = { true, INSTR_FMT_IXC000 },
+    [BINARY_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC },
+    [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC },
+    [BINARY_SUBSCR_DICT] = { true, INSTR_FMT_IXC },
+    [BINARY_SUBSCR_GETITEM] = { true, INSTR_FMT_IXC },
     [LIST_APPEND] = { true, INSTR_FMT_IB },
     [SET_ADD] = { true, INSTR_FMT_IB },
     [STORE_SUBSCR] = { true, INSTR_FMT_IXC },
@@ -966,6 +966,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB },
     [EXTENDED_ARG] = { true, INSTR_FMT_IB },
     [CACHE] = { true, INSTR_FMT_IX },
-    [RESERVED] = { true, INSTR_FMT_IXC000000000000000 },
+    [RESERVED] = { true, INSTR_FMT_IX },
 };
 #endif

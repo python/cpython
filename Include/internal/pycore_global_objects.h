@@ -23,17 +23,6 @@ extern "C" {
 // Only immutable objects should be considered runtime-global.
 // All others must be per-interpreter.
 
-#define _Py_CACHED_OBJECT(NAME) \
-    _PyRuntime.cached_objects.NAME
-
-struct _Py_cached_objects {
-    PyObject *interned_strings;
-    /* A thread state tied to the main interpreter,
-       used exclusively for when a global object (e.g. interned strings)
-       is resized (i.e. deallocated + allocated) from an arbitrary thread. */
-    PyThreadState main_tstate;
-};
-
 #define _Py_GLOBAL_OBJECT(NAME) \
     _PyRuntime.static_objects.NAME
 #define _Py_SINGLETON(NAME) \
@@ -69,6 +58,8 @@ struct _Py_static_objects {
     (interp)->cached_objects.NAME
 
 struct _Py_interp_cached_objects {
+    PyObject *interned_strings;
+
     /* AST */
     PyObject *str_replace_inf;
 

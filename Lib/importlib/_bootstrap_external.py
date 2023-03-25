@@ -435,9 +435,11 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a6 3519 (Modify SEND instruction)
 #     Python 3.12a6 3520 (Remove PREP_RERAISE_STAR, add CALL_INTRINSIC_2)
 #     Python 3.12a7 3521 (Shrink the LOAD_GLOBAL caches)
+#     Python 3.12a7 3522 (Removed JUMP_IF_FALSE_OR_POP/JUMP_IF_TRUE_OR_POP)
 #     Python 3.12a7 3523 (Convert COMPARE_AND_BRANCH back to COMPARE_OP)
+#     Python 3.12a7 3524 (Shrink the BINARY_SUBSCR caches)
 
-#     Python 3.12a? 35xx (Add instrumentation support)
+#     Python 3.12a? 3526 (Add instrumentation support)
 
 #     Python 3.13 will start with 3550
 

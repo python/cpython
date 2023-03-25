@@ -2049,6 +2049,48 @@ class BaseCallableTests:
                          Callable[Concatenate[int, str, P2], int])
         self.assertEqual(C[...], Callable[Concatenate[int, ...], int])
 
+    def test_nested_paramspec(self):
+        # Since Callable has some special treatment, we want to be sure
+        # that substituion works correctly, see gh-103054
+        Callable = self.Callable
+        P = ParamSpec('P')
+        P2 = ParamSpec('P2')
+        T = TypeVar('T')
+        T2 = TypeVar('T2')
+        Ts = TypeVarTuple('Ts')
+        class My(Generic[P, T]):
+            pass
+
+        self.assertEqual(My.__parameters__, (P, T))
+
+        C1 = My[[int, T2], Callable[P2, T2]]
+        self.assertEqual(C1.__args__, ((int, T2), Callable[P2, T2]))
+        self.assertEqual(C1.__parameters__, (T2, P2))
+        self.assertEqual(C1[str, [list[int], bytes]],
+                         My[[int, str], Callable[[list[int], bytes], str]])
+
+        C2 = My[[Callable[[T2], int], list[T2]], str]
+        self.assertEqual(C2.__args__, ((Callable[[T2], int], list[T2]), str))
+        self.assertEqual(C2.__parameters__, (T2,))
+        self.assertEqual(C2[list[str]],
+                         My[[Callable[[list[str]], int], list[list[str]]], str])
+
+        C3 = My[[Callable[P2, T2], T2], T2]
+        self.assertEqual(C3.__args__, ((Callable[P2, T2], T2), T2))
+        self.assertEqual(C3.__parameters__, (P2, T2))
+        self.assertEqual(C3[[], int],
+                         My[[Callable[[], int], int], int])
+        self.assertEqual(C3[[str, bool], int],
+                         My[[Callable[[str, bool], int], int], int])
+        self.assertEqual(C3[[str, bool], T][int],
+                         My[[Callable[[str, bool], int], int], int])
+
+        C4 = My[[Callable[[int, *Ts, str], T2], T2], T2]
+        self.assertEqual(C4.__args__, ((Callable[[int, *Ts, str], T2], T2), T2))
+        self.assertEqual(C4.__parameters__, (Ts, T2))
+        self.assertEqual(C4[bool, bytes, float],
+                         My[[Callable[[int, bool, bytes, str], float], float], float])
+
     def test_errors(self):
         Callable = self.Callable
         alias = Callable[[int, str], float]
