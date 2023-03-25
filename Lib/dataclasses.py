@@ -1423,7 +1423,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
 
     The parameters init, repr, eq, order, unsafe_hash, frozen, kw_only, slots,
     and weakref_slot are passed to dataclass().
-    
+
     If module parameter is defined, the '__module__' attribute of the dataclass is
     set to that value.
     """
