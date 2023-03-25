@@ -1436,9 +1436,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Without expression, list all display expressions for the current frame.
         """
         if not arg:
-            self.message('Currently displaying:')
-            for item in self.displaying.get(self.curframe, {}).items():
-                self.message('%s: %r' % item)
+            if self.displaying:
+                self.message('Currently displaying:')
+                for item in self.displaying.get(self.curframe, {}).items():
+                    self.message('%s: %r' % item)
+            else:
+                self.message('No expression is being displayed')
         else:
             val, exc = self._getval_except(arg)
             if isinstance(exc, SyntaxError):
