@@ -400,7 +400,7 @@ typing
   objects which used to be considered instances of a runtime-checkable protocol
   may no longer be considered instances of that protocol on Python 3.12+, and
   vice versa. Most users are unlikely to be affected by this change.
-  (Contributed by Alex Waygood in :gh:`102344`.)
+  (Contributed by Alex Waygood in :gh:`102433`.)
 
 sys
 ---
