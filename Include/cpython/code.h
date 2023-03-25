@@ -77,12 +77,20 @@ typedef struct {
  * This is allocated when needed for instrumentation
  */
 typedef struct {
+    /* Monitoring specific to this code object */
     _Py_Monitors local_monitors;
+    /* Monitoring that is active on this code object */
     _Py_Monitors active_monitors;
+    /* The tools that are to be notified for events for the matching code unit */
     uint8_t *tools;
+    /* Information to support line events */
     _PyCoLineInstrumentationData *lines;
+    /* The tools that are to be notified for line events for the matching code unit */
     uint8_t *line_tools;
+    /* Information to support instruction events */
+    /* The underlying instructions, which can themselves be instrumented */
     uint8_t *per_instruction_opcodes;
+    /* The tools that are to be notified for instruction events for the matching code unit */
     uint8_t *per_instruction_tools;
 } _PyCoMonitoringData;
 
