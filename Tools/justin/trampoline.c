@@ -9,7 +9,7 @@ extern int _justin_continue(PyThreadState *tstate, _PyInterpreterFrame *frame,
                             PyObject **stack_pointer);
 
 int
-_justin_entry(void)
+_justin_trampoline(void)
 {
     PyThreadState *tstate = PyThreadState_GET();
     _PyInterpreterFrame *tracer = _PyThreadState_GetFrame(tstate);

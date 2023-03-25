@@ -21,7 +21,11 @@ TOOLS_JUSTIN_TEMPLATE = TOOLS_JUSTIN / "template.c"
 TOOLS_JUSTIN_TRAMPOLINE = TOOLS_JUSTIN / "trampoline.c"
 PYTHON_GENERATED_CASES_C_H = TOOLS_JUSTIN.parent.parent / "Python" / "generated_cases.c.h"
 
-WRAPPER_TYPE = ctypes.PYFUNCTYPE(ctypes.c_int)
+WRAPPER_TYPE = ctypes.PYFUNCTYPE(ctypes.c_double)
+
+COMPILED_TIME = 0.0
+COMPILING_TIME = 0.0
+TRACING_TIME = 0.0
 
 # XXX: Do --reloc, then --headers, then --full-contents (per-section)
 # Maybe need --syms to check that justin_entry is indeed first/only?
@@ -102,7 +106,7 @@ class ObjectParser:
                 if match is None:
                     break
                 offset, type, value, addend = match.groups()
-                assert type == self._type
+                assert type == self._type, type
                 addend = int(addend, 16) if addend else 0
                 assert value.startswith(self._symbol_prefix)
                 value = value.removeprefix(self._symbol_prefix)
@@ -134,8 +138,8 @@ class ObjectParser:
         holes = []
         offsets = {}
         for name, size, type in self._parse_headers():
-            holes += relocs[name]
             size_before = len(body)
+            holes += [Hole(hole.symbol, hole.kind, hole.offset+size_before, hole.addend) for hole in relocs[name]]
             offsets[name] = size_before
             body += self._parse_full_contents(name)
             assert len(body) - size_before == size
@@ -188,6 +192,8 @@ def _get_object_parser(path: str) -> ObjectParser:
         except NotImplementedError:
             pass
         else:
+            lines = p._dump("--disassemble", "--reloc")
+            print("\n".join(lines))
             return p
     raise NotImplementedError(sys.platform)
 
@@ -222,6 +228,7 @@ class Stencil:
         for hole in self.holes:
             value = self._get_address(hole.symbol)
             if value is not None:
+                # print(hole.symbol)
                 hole.patch(new_body, value)
             else:
                 # if not hole.symbol.startswith("_justin") and hole.symbol != "_cstring":
@@ -289,21 +296,31 @@ class Engine:
         # Need this to leave room for patching our 64-bit pointers:
         "-mcmodel=large",
         # Don't want relocations to use the global offset table:
-        "-fno-pic"
+        "-fno-pic",
     ]
     _OFFSETOF_CO_CODE_ADAPTIVE = 192
-    _WINDOW = 2
+    _WINDOW = 1
     _OPS = [
+        "BINARY_OP",
         "BINARY_OP_ADD_FLOAT",
+        "BINARY_OP_MULTIPLY_FLOAT",
         "BINARY_OP_SUBTRACT_FLOAT",
-        "COMPARE_AND_BRANCH_FLOAT",
+        "BINARY_SUBSCR_LIST_INT",
+        "COPY",
+        "FOR_ITER_LIST",
         "JUMP_BACKWARD",
         "LOAD_CONST",
         "LOAD_FAST",
         "LOAD_FAST__LOAD_CONST",
         "LOAD_FAST__LOAD_FAST",
+        "STORE_FAST",
         "STORE_FAST__LOAD_FAST",
         "STORE_FAST__STORE_FAST",
+        "STORE_SUBSCR_LIST_INT",
+        "SWAP",
+        "UNPACK_SEQUENCE_LIST",
+        "UNPACK_SEQUENCE_TUPLE",
+        "UNPACK_SEQUENCE_TWO_TUPLE",
     ]
 
     def __init__(self, *, verbose: bool = False) -> None:
@@ -321,12 +338,21 @@ class Engine:
         self._stderr(f"Building stencil for {' + '.join(opnames)}.")
         defines = []
         for i, opname in enumerate(opnames):
-            branches = str("BRANCH" in opname or "JUMP_IF" in opname).lower()
+            branches = int("JUMP_IF" in opname or "FOR_ITER" in opname)
             defines.append(f"-D_JUSTIN_CHECK_{i}={branches}")
             defines.append(f"-D_JUSTIN_OPCODE_{i}={opname}")
-        with tempfile.NamedTemporaryFile(suffix=".o") as o:
+        with tempfile.NamedTemporaryFile(suffix=".o") as o, tempfile.NamedTemporaryFile(suffix=".ll") as ll:
             subprocess.run(
-                ["clang", *self._CC_FLAGS, *defines, path, "-o",  o.name],
+                ["clang", *self._CC_FLAGS, *defines, path, "-emit-llvm", "-S", "-o",  ll.name],
+                check=True,
+            )
+            llp = pathlib.Path(ll.name)
+            ir = llp.read_text()
+            ir = ir.replace("i32 @_justin_continue", "ghccc i32 @_justin_continue")
+            ir = ir.replace("i32 @_justin_entry", "ghccc i32 @_justin_entry")
+            llp.write_text(ir)
+            subprocess.run(
+                ["llc-14", "-O3", "--code-model", "large", "--filetype", "obj", ll.name, "-o",  o.name],
                 check=True,
             )
             return _get_object_parser(o.name).parse()
@@ -341,6 +367,8 @@ class Engine:
         self._TRUE_OPS = []
         for w in range(1, self._WINDOW + 1):
             self._TRUE_OPS += itertools.product(self._OPS, repeat=w)
+        if ("FOR_ITER_LIST", "FOR_ITER_LIST") in self._TRUE_OPS:
+            self._TRUE_OPS.remove(("FOR_ITER_LIST", "FOR_ITER_LIST"))  # XXX
         for opnames in self._TRUE_OPS:
             parts = []
             for i, opname in enumerate(opnames):
@@ -364,29 +392,40 @@ class Engine:
             self._stencils_loaded[opnames] = stencil.load()
         self._trampoline_loaded = self._trampoline_built.load()
 
-    def trace(self, f, *, warmup: int = 1):
-        recorded = collections.deque(maxlen=20)
+    def trace(self, f, *, warmup: int = 2):
+        recorded = {}
         compiled = {}
         def tracer(frame: types.FrameType, event: str, arg: object):
+            global TRACING_TIME, COMPILED_TIME
+            start = time.perf_counter()
             # This needs to be *fast*.
             assert frame.f_code is f.__code__
             if event == "opcode":
                 i = frame.f_lasti
                 if i in recorded:
-                    ix = recorded.index(i)
+                    ix = recorded[i]
                     traced = list(recorded)[ix:]
+                    self._stderr(f"Compiling trace for {frame.f_code.co_filename}:{frame.f_lineno}.")
+                    TRACING_TIME += time.perf_counter() - start
                     wrapper = self._compile_trace(frame.f_code, traced)
+                    start = time.perf_counter()
                     compiled[i] = wrapper
-                    recorded.clear()
                 if i in compiled:
-                    self._stderr(f"Entering trace for {frame.f_code.co_qualname}.")
+                    # self._stderr(f"Entering trace for {frame.f_code.co_filename}:{frame.f_lineno}.")
+                    TRACING_TIME += time.perf_counter() - start
+                    start = time.perf_counter()
                     status = compiled[i]()
-                    self._stderr(f"Exiting trace for {frame.f_code.co_qualname} with status {status}.")
+                    COMPILED_TIME += time.perf_counter() - start
+                    start = time.perf_counter()
+                    # self._stderr(f"Exiting trace for {frame.f_code.co_filename}:{frame.f_lineno} with status {status}.")
+                    recorded.clear()
                 else:
-                    recorded.append(i)
+                    recorded[i] = len(recorded)
             elif event == "call":
+                frame.f_trace_lines = False
                 frame.f_trace_opcodes = True
                 recorded.clear()
+            TRACING_TIME += time.perf_counter() - start
             return tracer
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
@@ -404,7 +443,7 @@ class Engine:
 
     def _compile_trace(self, code: types.CodeType, trace: typing.Sequence[int]):
         # This needs to be *fast*.
-        start = time.time()
+        start = time.perf_counter()
         pre = []
         skip = 0
         for x in range(len(trace)):
@@ -435,7 +474,7 @@ class Engine:
                     x += w
                     break
             else:
-                assert False
+                print(f"Failed to find stencil for {pre[x]}.")
         lengths = [
             len(self._trampoline_loaded),  *(len(stencil) for stencil, _, _, _ in bundles)
         ]
@@ -463,6 +502,7 @@ class Engine:
                 patches[f"_justin_next_trace_{x}"] = first_instr + j
                 patches[f"_justin_oparg_{x}"] = oparg
             patches[".rodata.str1.1"] = base + len(buffer)
+            patches[".rodata"] = base + len(buffer)
             buffer += (
                 stencil.copy_and_patch(
                     _cstring=base + len(buffer),
@@ -475,5 +515,8 @@ class Engine:
         assert len(buffer) == size
         memory[:] = buffer
         wrapper = ctypes.cast(memory, WRAPPER_TYPE)
-        self._stderr(f"Compiled {size:,} bytes in {(time.time() - start) * 1_000:0.3} ms")
+        global COMPILING_TIME
+        diff = time.perf_counter() - start
+        COMPILING_TIME += diff
+        self._stderr(f"Compiled {size:,} bytes in {diff * 1_000:0.3} ms")
         return wrapper
