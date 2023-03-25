@@ -120,7 +120,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
             return -1;
         if (fd < 0) {
             PyErr_SetString(PyExc_ValueError,
-                            "file is not a valid file descripter");
+                            "file is not a valid file descriptor");
             return -1;
         }
         *file_ptr = NULL;
