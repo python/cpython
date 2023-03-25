@@ -511,6 +511,8 @@ PyType_Modified(PyTypeObject *type)
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // This field *must* be invalidated if the type is modified (see the
+        // comment on struct _specialization_cache):
         ((PyHeapTypeObject *)type)->_spec_cache.getitem = NULL;
     }
 }
@@ -567,6 +569,8 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // This field *must* be invalidated if the type is modified (see the
+        // comment on struct _specialization_cache):
         ((PyHeapTypeObject *)type)->_spec_cache.getitem = NULL;
     }
 }

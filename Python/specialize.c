@@ -1336,6 +1336,8 @@ _Py_Specialize_BinarySubscr(
             goto fail;
         }
         PyHeapTypeObject *ht = (PyHeapTypeObject *)container_type;
+        // This pointer is invalidated by PyType_Modified (see the comment on
+        // struct _specialization_cache):
         ht->_spec_cache.getitem = descriptor;
         ht->_spec_cache.getitem_version = version;
         instr->op.code = BINARY_SUBSCR_GETITEM;
