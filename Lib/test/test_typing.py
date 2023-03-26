@@ -2637,7 +2637,15 @@ class ProtocolTests(BaseTestCase):
         class PG1(Protocol[T]):
             attr: T
 
-        for protocol_class in P, P1, PG, PG1:
+        @runtime_checkable
+        class MethodP(Protocol):
+            def attr(self): ...
+
+        @runtime_checkable
+        class MethodPG(Protocol[T]):
+            def attr(self) -> T: ...
+
+        for protocol_class in P, P1, PG, PG1, MethodP, MethodPG:
             for klass in C, D, E, F:
                 with self.subTest(
                     klass=klass.__name__,
@@ -2662,7 +2670,12 @@ class ProtocolTests(BaseTestCase):
         class BadPG1(Protocol[T]):
             attr: T
 
-        for obj in PG[T], PG[C], PG1[T], PG1[C], BadP, BadP1, BadPG, BadPG1:
+        cases = (
+            PG[T], PG[C], PG1[T], PG1[C], MethodPG[T],
+            MethodPG[C], BadP, BadP1, BadPG, BadPG1
+        )
+
+        for obj in cases:
             for klass in C, D, E, F, Empty:
                 with self.subTest(klass=klass.__name__, obj=obj):
                     with self.assertRaises(TypeError):
@@ -2684,6 +2697,82 @@ class ProtocolTests(BaseTestCase):
 
         self.assertIsInstance(CustomDirWithX(), HasX)
         self.assertNotIsInstance(CustomDirWithoutX(), HasX)
+
+    def test_protocols_isinstance_attribute_access_with_side_effects(self):
+        class C:
+            @property
+            def attr(self):
+                raise AttributeError('no')
+
+        class CustomDescriptor:
+            def __get__(self, obj, objtype=None):
+                raise RuntimeError("NO")
+
+        class D:
+            attr = CustomDescriptor()
+
+        # Check that properties set on superclasses
+        # are still found by the isinstance() logic
+        class E(C): ...
+        class F(D): ...
+
+        class WhyWouldYouDoThis:
+            def __getattr__(self, name):
+                raise RuntimeError("wut")
+
+        T = TypeVar('T')
+
+        @runtime_checkable
+        class P(Protocol):
+            @property
+            def attr(self): ...
+
+        @runtime_checkable
+        class P1(Protocol):
+            attr: int
+
+        @runtime_checkable
+        class PG(Protocol[T]):
+            @property
+            def attr(self): ...
+
+        @runtime_checkable
+        class PG1(Protocol[T]):
+            attr: T
+
+        @runtime_checkable
+        class MethodP(Protocol):
+            def attr(self): ...
+
+        @runtime_checkable
+        class MethodPG(Protocol[T]):
+            def attr(self) -> T: ...
+
+        for protocol_class in P, P1, PG, PG1, MethodP, MethodPG:
+            for klass in C, D, E, F:
+                with self.subTest(
+                    klass=klass.__name__,
+                    protocol_class=protocol_class.__name__
+                ):
+                    self.assertIsInstance(klass(), protocol_class)
+
+            with self.subTest(
+                klass="WhyWouldYouDoThis",
+                protocol_class=protocol_class.__name__
+            ):
+                self.assertNotIsInstance(WhyWouldYouDoThis(), protocol_class)
+
+    def test_protocols_isinstance___slots__(self):
+        # As per the consensus in https://github.com/python/typing/issues/1367,
+        # this is desirable behaviour
+        @runtime_checkable
+        class HasX(Protocol):
+            x: int
+
+        class HasNothingButSlots:
+            __slots__ = ("x",)
+
+        self.assertIsInstance(HasNothingButSlots(), HasX)
 
     def test_protocols_isinstance_py36(self):
         class APoint:

@@ -72,8 +72,7 @@ jobs:
     - name: 'Build known-good files in nit-picky mode'
       run: |
         # Mark files that must pass nit-picky
-        touch Doc/whatsnew/3.12.rst
-        touch Doc/library/sqlite3.rst
+        python Doc/tools/touch-clean-files.py
         # Build docs with the '-n' (nit-picky) option, convert warnings to errors (-W)
         make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n -W --keep-going" html 2>&1
 

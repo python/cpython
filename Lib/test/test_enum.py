@@ -2916,6 +2916,26 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(FlagFromChar.a, 158456325028528675187087900672)
         self.assertEqual(FlagFromChar.a|1, 158456325028528675187087900673)
 
+    def test_init_exception(self):
+        class Base:
+            def __init__(self, x):
+                raise ValueError("I don't like", x)
+        with self.assertRaises(TypeError):
+            class MyEnum(Base, enum.Enum):
+                A = 'a'
+                def __init__(self, y):
+                    self.y = y
+        with self.assertRaises(ValueError):
+            class MyEnum(Base, enum.Enum):
+                A = 'a'
+                def __init__(self, y):
+                    self.y = y
+                def __new__(cls, value):
+                    member = Base.__new__(cls)
+                    member._value_ = Base(value)
+                    return member
+
+
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
 

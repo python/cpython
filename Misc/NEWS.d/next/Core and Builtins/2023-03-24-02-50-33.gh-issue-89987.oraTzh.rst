@@ -1,0 +1,2 @@
+Reduce the number of inline :opcode:`CACHE` entries for
+:opcode:`BINARY_SUBSCR`.

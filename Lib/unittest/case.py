@@ -9,6 +9,7 @@ import warnings
 import collections
 import contextlib
 import traceback
+import time
 import types
 
 from . import result
@@ -572,6 +573,15 @@ class TestCase(object):
         else:
             addUnexpectedSuccess(self)
 
+    def _addDuration(self, result, elapsed):
+        try:
+            addDuration = result.addDuration
+        except AttributeError:
+            warnings.warn("TestResult has no addDuration method",
+                          RuntimeWarning)
+        else:
+            addDuration(self, elapsed)
+
     def _callSetUp(self):
         self.setUp()
 
@@ -612,6 +622,7 @@ class TestCase(object):
                 getattr(testMethod, "__unittest_expecting_failure__", False)
             )
             outcome = _Outcome(result)
+            start_time = time.perf_counter()
             try:
                 self._outcome = outcome
 
@@ -625,6 +636,7 @@ class TestCase(object):
                     with outcome.testPartExecutor(self):
                         self._callTearDown()
                 self.doCleanups()
+                self._addDuration(result, (time.perf_counter() - start_time))
 
                 if outcome.success:
                     if expecting_failure:

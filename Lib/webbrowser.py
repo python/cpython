@@ -292,19 +292,8 @@ class Mozilla(UnixBrowser):
     background = True
 
 
-class Netscape(UnixBrowser):
-    """Launcher class for Netscape browser."""
-
-    raise_opts = ["-noraise", "-raise"]
-    remote_args = ['-remote', 'openURL(%s%action)']
-    remote_action = ""
-    remote_action_newwin = ",new-window"
-    remote_action_newtab = ",new-tab"
-    background = True
-
-
-class Galeon(UnixBrowser):
-    """Launcher class for Galeon/Epiphany browsers."""
+class Epiphany(UnixBrowser):
+    """Launcher class for Epiphany browser."""
 
     raise_opts = ["-noraise", ""]
     remote_args = ['%action', '%s']
@@ -402,44 +391,6 @@ class Konqueror(BaseBrowser):
             return (p.poll() is None)
 
 
-class Grail(BaseBrowser):
-    # There should be a way to maintain a connection to Grail, but the
-    # Grail remote control protocol doesn't really allow that at this
-    # point.  It probably never will!
-    def _find_grail_rc(self):
-        import glob
-        import pwd
-        import socket
-        import tempfile
-        tempdir = os.path.join(tempfile.gettempdir(),
-                               ".grail-unix")
-        user = pwd.getpwuid(os.getuid())[0]
-        filename = os.path.join(glob.escape(tempdir), glob.escape(user) + "-*")
-        maybes = glob.glob(filename)
-        if not maybes:
-            return None
-        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        for fn in maybes:
-            # need to PING each one until we find one that's live
-            try:
-                s.connect(fn)
-            except OSError:
-                # no good; attempt to clean it out, but don't fail:
-                try:
-                    os.unlink(fn)
-                except OSError:
-                    pass
-            else:
-                return s
-
-    def _remote(self, action):
-        s = self._find_grail_rc()
-        if not s:
-            return 0
-        s.send(action)
-        s.close()
-        return 1
-
     def open(self, url, new=0, autoraise=True):
         sys.audit("webbrowser.open", url)
         if new:
@@ -475,20 +426,15 @@ def register_X_browsers():
     if "KDE_FULL_SESSION" in os.environ and shutil.which("kfmclient"):
         register("kfmclient", Konqueror, Konqueror("kfmclient"))
 
+    # Common symbolic link for the default X11 browser
     if shutil.which("x-www-browser"):
         register("x-www-browser", None, BackgroundBrowser("x-www-browser"))
 
     # The Mozilla browsers
-    for browser in ("firefox", "iceweasel", "iceape", "seamonkey"):
+    for browser in ("firefox", "iceweasel", "seamonkey", "mozilla-firefox",
+                    "mozilla"):
         if shutil.which(browser):
             register(browser, None, Mozilla(browser))
-
-    # The Netscape and old Mozilla browsers
-    for browser in ("mozilla-firefox",
-                    "mozilla-firebird", "firebird",
-                    "mozilla", "netscape"):
-        if shutil.which(browser):
-            register(browser, None, Netscape(browser))
 
     # Konqueror/kfm, the KDE browser.
     if shutil.which("kfm"):
@@ -496,14 +442,9 @@ def register_X_browsers():
     elif shutil.which("konqueror"):
         register("konqueror", Konqueror, Konqueror("konqueror"))
 
-    # Gnome's Galeon and Epiphany
-    for browser in ("galeon", "epiphany"):
-        if shutil.which(browser):
-            register(browser, None, Galeon(browser))
-
-    # Skipstone, another Gtk/Mozilla based browser
-    if shutil.which("skipstone"):
-        register("skipstone", None, BackgroundBrowser("skipstone"))
+    # Gnome's Epiphany
+    if shutil.which("epiphany"):
+        register("epiphany", None, Epiphany("epiphany"))
 
     # Google Chrome/Chromium browsers
     for browser in ("google-chrome", "chrome", "chromium", "chromium-browser"):
@@ -514,13 +455,6 @@ def register_X_browsers():
     if shutil.which("opera"):
         register("opera", None, Opera("opera"))
 
-    # Next, Mosaic -- old but still in use.
-    if shutil.which("mosaic"):
-        register("mosaic", None, BackgroundBrowser("mosaic"))
-
-    # Grail, the Python browser. Does anybody still use it?
-    if shutil.which("grail"):
-        register("grail", Grail, None)
 
 def register_standard_browsers():
     global _tryorder
@@ -549,7 +483,7 @@ def register_standard_browsers():
         # location in 32-bit Windows
         edge32 = os.path.join(os.environ.get("PROGRAMFILES", "C:\\Program Files"),
                               "Microsoft\\Edge\\Application\\msedge.exe")
-        for browser in ("firefox", "firebird", "seamonkey", "mozilla",
+        for browser in ("firefox", "seamonkey", "mozilla", "chrome",
                         "opera", edge64, edge32):
             if shutil.which(browser):
                 register(browser, None, BackgroundBrowser(browser))
@@ -570,14 +504,15 @@ def register_standard_browsers():
 
         # Also try console browsers
         if os.environ.get("TERM"):
+            # Common symbolic link for the default text-based browser
             if shutil.which("www-browser"):
                 register("www-browser", None, GenericBrowser("www-browser"))
-            # The Links/elinks browsers <http://artax.karlin.mff.cuni.cz/~mikulas/links/>
+            # The Links/elinks browsers <http://links.twibright.com/>
             if shutil.which("links"):
                 register("links", None, GenericBrowser("links"))
             if shutil.which("elinks"):
                 register("elinks", None, Elinks("elinks"))
-            # The Lynx browser <http://lynx.isc.org/>, <http://lynx.browser.org/>
+            # The Lynx browser <https://lynx.invisible-island.net/>, <http://lynx.browser.org/>
             if shutil.which("lynx"):
                 register("lynx", None, GenericBrowser("lynx"))
             # The w3m browser <http://w3m.sourceforge.net/>
@@ -727,7 +662,7 @@ def main():
     for o, a in opts:
         if o == '-n': new_win = 1
         elif o == '-t': new_win = 2
-        elif o == '-h' or o == '--help': 
+        elif o == '-h' or o == '--help':
             print(usage, file=sys.stderr)
             sys.exit()
     if len(args) != 1:

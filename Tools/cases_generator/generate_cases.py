@@ -930,7 +930,7 @@ class Analyzer:
             direction: str, data: list[tuple[AnyInstruction, str]]
         ) -> None:
             self.out.emit("")
-            self.out.emit("#ifndef NEED_OPCODE_TABLES")
+            self.out.emit("#ifndef NEED_OPCODE_METADATA")
             self.out.emit(f"extern int _PyOpcode_num_{direction}(int opcode, int oparg, bool jump);")
             self.out.emit("#else")
             self.out.emit("int")
@@ -999,7 +999,7 @@ class Analyzer:
             self.out.emit("")
 
             # Write metadata array declaration
-            self.out.emit("#ifndef NEED_OPCODE_TABLES")
+            self.out.emit("#ifndef NEED_OPCODE_METADATA")
             self.out.emit("extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];")
             self.out.emit("#else")
             self.out.emit("const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {")

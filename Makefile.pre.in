@@ -374,6 +374,7 @@ PYTHON_OBJS=	\
 		Python/ast_unparse.o \
 		Python/bltinmodule.o \
 		Python/ceval.o \
+		Python/flowgraph.o \
 		Python/codecs.o \
 		Python/compile.o \
 		Python/context.o \
@@ -1702,6 +1703,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_object_state.h \
 		$(srcdir)/Include/internal/pycore_obmalloc.h \
 		$(srcdir)/Include/internal/pycore_obmalloc_init.h \
+		$(srcdir)/Include/internal/pycore_opcode.h \
+		$(srcdir)/Include/internal/pycore_opcode_utils.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyarena.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \

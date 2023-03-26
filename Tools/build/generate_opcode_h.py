@@ -60,7 +60,7 @@ def write_int_array_from_ops(name, ops, out):
     bits = 0
     for op in ops:
         bits |= 1<<op
-    out.write(f"static const uint32_t {name}[9] = {{\n")
+    out.write(f"const uint32_t {name}[9] = {{\n")
     for i in range(9):
         out.write(f"    {bits & UINT32_MASK}U,\n")
         bits >>= 32
@@ -130,6 +130,8 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
         for name, op in specialized_opmap.items():
             fobj.write(DEFINE.format(name, op))
 
+        iobj.write("\nextern const uint32_t _PyOpcode_RelativeJump[9];\n")
+        iobj.write("\nextern const uint32_t _PyOpcode_Jump[9];\n")
         iobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
         iobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
         iobj.write("\n#ifdef NEED_OPCODE_TABLES\n")

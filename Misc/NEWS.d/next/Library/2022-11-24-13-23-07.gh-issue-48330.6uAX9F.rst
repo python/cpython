@@ -1,0 +1,8 @@
+Added ``--durations`` command line option, showing the N slowest test cases.
+:class:`unittest.TextTestRunner` and :class:`unittest.TextTestResult`
+constructors accept a new *durations* keyword argument. Subclasses should take
+this into account or accept ``**kwargs``. Added
+:meth:`unittest.TestResult.addDuration` method and
+:attr:`unittest.TestResult.collectedDurations` attribute.
+
+(Contributed by Giampaolo Rodola)
