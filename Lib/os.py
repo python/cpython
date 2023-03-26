@@ -491,7 +491,6 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         # necessary, it can be adapted to only require O(1) FDs, see issue
         # bpo-13734 (gh-57943).
         stack = [(_WalkAction.WALK, (topfd, toppath))]
-        close_action = (_WalkAction.CLOSE, None)
         try:
             while stack:
                 action, value = stack.pop()
