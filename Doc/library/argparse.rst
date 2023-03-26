@@ -223,7 +223,8 @@ ArgumentParser objects
    * conflict_handler_ - The strategy for resolving conflicting optionals
      (usually unnecessary)
 
-   * add_help_ - Add a ``-h/--help`` option to the parser (default: ``True``)
+   * add_help_ - Add a ``-h/--help`` option to the parser (default: ``True``),
+     or specify string to enable and custom help message
 
    * allow_abbrev_ - Allows long options to be abbreviated if the
      abbreviation is unambiguous. (default: ``True``)
