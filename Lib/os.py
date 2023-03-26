@@ -492,6 +492,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         # bpo-13734 (gh-57943).
         stack = [(_WalkAction.WALK, (topfd, toppath))]
         fd_stack = []
+        close_action = (_WalkAction.CLOSE, None)
         try:
             while stack:
                 action, value = stack.pop()
@@ -499,10 +500,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                     yield value
                     continue
                 elif action is _WalkAction.CLOSE:
-                    # Don't remove any fd from fd_stack until after it
-                    # is closed
-                    close(fd_stack[-1])
-                    fd_stack.pop()
+                    close(fd_stack.pop())
                     continue
                 elif action is _WalkAction.WALK:
                     topfd, toppath = value
@@ -560,7 +558,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                     # Note that we use a stack, so actions appended first are
                     # executed last.
                     fd_stack.append(dirfd)
-                    stack.append((_WalkAction.CLOSE, None))
+                    stack.append(close_action)
                     # Walk all subdirs
                     if follow_symlinks or path.samestat(orig_st, stat(dirfd)):
                         dirpath = path.join(toppath, name)
