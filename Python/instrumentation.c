@@ -1908,7 +1908,7 @@ add_power2_constant(PyObject *obj, const char *name, int i)
     return err;
 }
 
-const char *const event_names [] = {
+static const char *const event_names [] = {
     [PY_MONITORING_EVENT_PY_START] = "PY_START",
     [PY_MONITORING_EVENT_PY_RESUME] = "PY_RESUME",
     [PY_MONITORING_EVENT_PY_RETURN] = "PY_RETURN",
