@@ -1,0 +1,1 @@
+Display current line label correctly for :mod:`dis` when CACHE entries exist
