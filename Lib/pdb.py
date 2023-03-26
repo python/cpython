@@ -1445,7 +1445,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             val, exc = self._getval_except(arg)
             if isinstance(exc, SyntaxError):
-                self.message(f'Unable to display "{arg}": SyntaxError')
+                self.message('Unable to display %s: %r' % (arg, val))
             else:
                 self.displaying.setdefault(self.curframe, {})[arg] = val
                 self.message('display %s: %r' % (arg, val))
