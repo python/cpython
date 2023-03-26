@@ -558,8 +558,8 @@ class _Pickler:
 
             # Check private dispatch table if any, or else
             # copyreg.dispatch_table
-            reduce = getattr(self, 'dispatch_table', dispatch_table).get(t)
-            if reduce is not None:
+            reduce = getattr(self, 'dispatch_table', dispatch_table).get(t, NoValue)
+            if reduce is not NoValue:
                 rv = reduce(obj)
             else:
                 # Check for a class with a custom metaclass; treat as regular
