@@ -1198,6 +1198,17 @@ class DisTests(DisTestBase):
                     self.assertEqual(caches.count(""), empty_caches)
                     self.assertEqual(len(caches), total_caches)
 
+    @cpython_only
+    def test_show_currinstr_with_cache(self):
+        def f():
+            print(a)
+        # The code above should generate a LOAD_GLOBAL which has CACHE instr after
+        # Make sure that with lasti pointing to CACHE, it still shows the current
+        # line correctly
+        self.assertEqual(self.get_disassembly(f.__code__, lasti=2, wrapper=False),
+                         self.get_disassembly(f.__code__, lasti=4, wrapper=False))
+
+
 class DisWithFileTests(DisTests):
 
     # Run the tests again, using the file arg instead of print
