@@ -207,35 +207,37 @@ get_events(_Py_Monitors *m, int tool_id)
  *     line = first_line  + (offset >> OFFSET_SHIFT) + line_delta;
  */
 
+#define NO_LINE -128
+#define COMPUTED_LINE -127
+
 #define OFFSET_SHIFT 4
 
 static int8_t
 compute_line_delta(PyCodeObject *code, int offset, int line)
 {
     if (line < 0) {
-        return -128;
+        return NO_LINE;
     }
     int delta = line - code->co_firstlineno - (offset >> OFFSET_SHIFT);
-    if (delta < 128 && delta > -128) {
+    if (delta <= INT8_MAX && delta > COMPUTED_LINE) {
         return delta;
     }
-    return -127;
+    return COMPUTED_LINE;
 }
 
 static int
 compute_line(PyCodeObject *code, int offset, int8_t line_delta)
 {
-    if (line_delta > -127) {
+    if (line_delta > COMPUTED_LINE) {
         return code->co_firstlineno + (offset >> OFFSET_SHIFT) + line_delta;
     }
-    if (line_delta == -128) {
+    if (line_delta == NO_LINE) {
+
         return -1;
     }
-    else {
-        assert(line_delta == -127);
-        /* Look it up */
-        return PyCode_Addr2Line(code, offset * sizeof(_Py_CODEUNIT));
-    }
+    assert(line_delta == COMPUTED_LINE);
+    /* Look it up */
+    return PyCode_Addr2Line(code, offset * sizeof(_Py_CODEUNIT));
 }
 
 static int
