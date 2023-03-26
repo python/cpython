@@ -6,14 +6,15 @@ build           Automatically generated directory by the build system
 
 buildbot        Batchfiles for running on Windows buildbot workers.
 
-c-analyzer      CPython's C code makes extensive use of global variables.
+c-analyzer      Tools to check no new global variables have been added.
 
-cases_generator A Python tool for providing test cases for Python's parser module.
+cases_generator Tooling to generate interpreters.
 
 ccbench         A Python threads-based concurrency benchmark. (*)
 
-clinic          Tool for generating C code that interfaces with Python's
-                C API.
+clinic          A preprocessor for CPython C files in order to automate
+                the boilerplate involved with writing argument parsing
+                code for "builtins".
 
 freeze          Create a stand-alone executable from a Python program.
 
@@ -31,7 +32,7 @@ iobench         Benchmark for the new Python I/O system. (*)
 
 msi             Support for packaging Python as an MSI package on Windows.
 
-nuget           A package manager for Microsoft . NET applications.
+nuget           Files for the NuGet package manager for .NET.
 
 patchcheck      Tools for checking and applying patches to the Python source code
                 and verifying the integrity of patch files.
