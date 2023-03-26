@@ -1728,7 +1728,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             additional arguments
         - argument_default -- The default value for all arguments
         - conflict_handler -- String indicating how to handle conflicts
-        - add_help -- Add a -h/-help option
+        - add_help -- Add a -h/-help option, specify string to enable and 
+            custom help message
         - allow_abbrev -- Allow long options to be abbreviated unambiguously
         - exit_on_error -- Determines whether or not ArgumentParser exits with
             error info when an error occurs
@@ -1764,7 +1765,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.epilog = epilog
         self.formatter_class = formatter_class
         self.fromfile_prefix_chars = fromfile_prefix_chars
-        self.add_help = add_help
+        if isinstance(self.add_help, str):
+            self.help_msg = self.add_help
+            self.add_help = True
+        else:
+            self.help_msg = _('show this help message and exit')
+            self.add_help = add_help
         self.allow_abbrev = allow_abbrev
         self.exit_on_error = exit_on_error
 
@@ -1785,7 +1791,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             self.add_argument(
                 default_prefix+'h', default_prefix*2+'help',
                 action='help', default=SUPPRESS,
-                help=_('show this help message and exit'))
+                help=self.help_msg)
 
         # add parent arguments and defaults
         for parent in parents:
