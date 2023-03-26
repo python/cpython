@@ -11,7 +11,7 @@
 #include "pycore_pystate.h"
 
 /* Uncomment this to dump debugging output when assertions fail */
-// #define INSTRUMENT_DEBUG 1
+#define INSTRUMENT_DEBUG 1
 
 static PyObject DISABLE =
 {
@@ -401,7 +401,6 @@ dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
         dump_instrumentation_data_lines(code, data->lines, i, out);
         dump_instrumentation_data_line_tools(code, data->line_tools, i, out);
         dump_instrumentation_data_per_instruction(code, data, i, out);
-        /* TO DO -- per instruction data */
         fprintf(out, "\n");
         ;
     }
@@ -462,7 +461,10 @@ sanity_check_instrumentation(PyCodeObject *code)
             if (!is_instrumented(opcode)) {
                 CHECK(_PyOpcode_Deopt[opcode] == opcode);
             }
-            /* TO DO -- check tools */
+            if (data->per_instruction_tools) {
+                uint8_t tools = active_monitors.tools[PY_MONITORING_EVENT_INSTRUCTION];
+                CHECK((tools & data->per_instruction_tools[i]) == data->per_instruction_tools[i]);
+            }
         }
         if (opcode == INSTRUMENTED_LINE) {
             CHECK(data->lines);
@@ -498,7 +500,7 @@ sanity_check_instrumentation(PyCodeObject *code)
         CHECK(valid_opcode(opcode));
         if (data->tools) {
             uint8_t local_tools = data->tools[i];
-            if (OPCODE_HAS_EVENT[base_opcode]) {
+            if (opcode_has_event(base_opcode)) {
                 int event = EVENT_FOR_OPCODE[base_opcode];
                 if (event == -1) {
                     /* RESUME fixup */
