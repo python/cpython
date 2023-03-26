@@ -2480,6 +2480,7 @@ dummy_func(
             DEOPT_IF(func->func_version != func_version, CALL);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             assert(func->func_defaults);
+            assert(PyTuple_CheckExact(func->func_defaults));
             int defcount = (int)PyTuple_GET_SIZE(func->func_defaults);
             assert(defcount <= code->co_argcount);
             int min_args = code->co_argcount - defcount;
