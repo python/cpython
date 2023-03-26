@@ -1765,7 +1765,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.epilog = epilog
         self.formatter_class = formatter_class
         self.fromfile_prefix_chars = fromfile_prefix_chars
-        if isinstance(self.add_help, str):
+        if isinstance(add_help, str):
             self.help_msg = self.add_help
             self.add_help = True
         else:
