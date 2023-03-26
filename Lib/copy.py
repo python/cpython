@@ -56,10 +56,7 @@ class Error(Exception):
     pass
 error = Error   # backward compatibility
 
-class _NoValue:
-    pass
-
-NoValue = _NoValue()
+NoValue = object()
 
 __all__ = ["Error", "copy", "deepcopy"]
 

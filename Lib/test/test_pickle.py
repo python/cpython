@@ -542,6 +542,22 @@ class CompatPickleTests(unittest.TestCase):
                                  ('multiprocessing.context', name))
 
 
+class PickleReductionMethodsTests(unittest.TestCase):
+
+    def test_pickle_invalid_reduction_method(self):
+        class C:
+            __reduce_ex__ = None
+        c = C()
+        with self.assertRaises(TypeError):
+            pickle.dumps(c)
+
+        class C:
+            __reduce__ = None
+        c = C()
+        with self.assertRaises(TypeError):
+            pickle.dumps(c)
+
+
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
     return tests
