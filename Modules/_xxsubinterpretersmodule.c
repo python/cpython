@@ -481,7 +481,7 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
     }
 
     // Run the script.
-    _sharedexception exc;
+    _sharedexception exc = no_exception;
     int result = _run_script(interp, codestr, shared, &exc);
 
     // Switch back.
