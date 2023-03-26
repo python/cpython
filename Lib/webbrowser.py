@@ -390,6 +390,7 @@ class Konqueror(BaseBrowser):
         else:
             return (p.poll() is None)
 
+
     def open(self, url, new=0, autoraise=True):
         sys.audit("webbrowser.open", url)
         if new:
@@ -661,7 +662,7 @@ def main():
     for o, a in opts:
         if o == '-n': new_win = 1
         elif o == '-t': new_win = 2
-        elif o == '-h' or o == '--help': 
+        elif o == '-h' or o == '--help':
             print(usage, file=sys.stderr)
             sys.exit()
     if len(args) != 1:
