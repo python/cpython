@@ -1249,9 +1249,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return eval(arg, self.curframe.f_globals, self.curframe_locals), None
             else:
                 return eval(arg, frame.f_globals, frame.f_locals), None
-        except Exception as e:
-            err = traceback.format_exception_only(e)[-1].strip()
-            return _rstr('** raised %s **' % err), e
+        except BaseException as exc:
+            err = traceback.format_exception_only(exc)[-1].strip()
+            return _rstr('** raised %s **' % err), exc
 
     def _error_exc(self):
         exc_info = sys.exc_info()[:2]
