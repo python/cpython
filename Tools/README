@@ -45,14 +45,12 @@ scripts         A number of useful single-file programs, e.g. tabnanny.py
                 to Python 3 code.
 
 ssl             Scripts to generate ssl_data.h from OpenSSL sources, and run
-                tests against multiple installations of OpenSSL and LibreSSL.
-                
+                tests against multiple installations of OpenSSL and LibreSSL.           
 
 stringbench     A suite of micro-benchmarks for various operations on
                 strings (both 8-bit and unicode). (*)
 
 tz              A script to dump timezone from /usr/share/zoneinfo.
-
 
 unicode         Tools for generating unicodedata and codecs from unicode.org
                 and other mapping files (by Fredrik Lundh, Marc-Andre Lemburg
