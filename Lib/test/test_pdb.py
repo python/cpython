@@ -603,7 +603,7 @@ def test_pdb_display_command():
     > <doctest test.test_pdb.test_pdb_display_command[0]>(4)test_function()
     -> a = 1
     (Pdb) display +
-    Unable to display "+": SyntaxError
+    Unable to display +: ** raised SyntaxError: invalid syntax **
     (Pdb) display
     No expression is being displayed
     (Pdb) display a
