@@ -767,6 +767,168 @@ class TestManyEvents(CheckEvents):
             ('line', 'check_events', 11),
             ('call', 'set_events', 2)])
 
+class InstructionRecorder:
+
+    event_type = E.INSTRUCTION
+
+    def __init__(self, events):
+        self.events = events
+
+    def __call__(self, code, offset):
+        # Filter out instructions in check_events to lower noise
+        if code.co_name != "check_events":
+            self.events.append(("instruction", code.co_name, offset))
+
+
+LINE_AND_INSTRUCTION_RECORDERS = InstructionRecorder, LineRecorder
+
+class TestLineAndInstructionEvents(CheckEvents):
+    maxDiff = None
+
+    def test_simple(self):
+
+        def func1():
+            line1 = 1
+            line2 = 2
+            line3 = 3
+
+        self.check_events(func1, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('instruction', 'func1', 1),
+            ('line', 'func1', 1),
+            ('instruction', 'func1', 2),
+            ('instruction', 'func1', 3),
+            ('line', 'func1', 2),
+            ('instruction', 'func1', 4),
+            ('instruction', 'func1', 5),
+            ('line', 'func1', 3),
+            ('instruction', 'func1', 6),
+            ('instruction', 'func1', 7),
+            ('line', 'check_events', 11)])
+
+    def test_c_call(self):
+
+        def func2():
+            line1 = 1
+            [].append(2)
+            line3 = 3
+
+        self.check_events(func2, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('instruction', 'func2', 1),
+            ('line', 'func2', 1),
+            ('instruction', 'func2', 2),
+            ('instruction', 'func2', 3),
+            ('line', 'func2', 2),
+            ('instruction', 'func2', 4),
+            ('instruction', 'func2', 14),
+            ('instruction', 'func2', 15),
+            ('instruction', 'func2', 20),
+            ('instruction', 'func2', 21),
+            ('line', 'func2', 3),
+            ('instruction', 'func2', 22),
+            ('instruction', 'func2', 23),
+            ('line', 'check_events', 11)])
+
+    def test_try_except(self):
+
+        def func3():
+            try:
+                line = 2
+                raise KeyError
+            except:
+                line = 5
+            line = 6
+
+        self.check_events(func3, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('instruction', 'func3', 1),
+            ('line', 'func3', 1),
+            ('instruction', 'func3', 2),
+            ('line', 'func3', 2),
+            ('instruction', 'func3', 3),
+            ('instruction', 'func3', 4),
+            ('line', 'func3', 3),
+            ('instruction', 'func3', 9),
+            ('instruction', 'func3', 10),
+            ('instruction', 'func3', 11),
+            ('line', 'func3', 4),
+            ('instruction', 'func3', 12),
+            ('line', 'func3', 5),
+            ('instruction', 'func3', 13),
+            ('instruction', 'func3', 14),
+            ('instruction', 'func3', 15),
+            ('line', 'func3', 6),
+            ('instruction', 'func3', 16),
+            ('instruction', 'func3', 17),
+            ('line', 'check_events', 11)])
+
+class TestInstallIncrementallly(unittest.TestCase):
+
+    def check_events(self, func, must_include, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
+        try:
+            self.assertEqual(sys.monitoring._all_events(), {})
+            event_list = []
+            all_events = 0
+            for recorder in recorders:
+                all_events |= recorder.event_type
+                sys.monitoring.set_events(tool, all_events)
+            for recorder in recorders:
+                sys.monitoring.register_callback(tool, recorder.event_type, recorder(event_list))
+            func()
+            sys.monitoring.set_events(tool, 0)
+            for recorder in recorders:
+                sys.monitoring.register_callback(tool, recorder.event_type, None)
+            for line in must_include:
+                self.assertIn(line, event_list)
+        finally:
+            sys.monitoring.set_events(tool, 0)
+            for recorder in recorders:
+                sys.monitoring.register_callback(tool, recorder.event_type, None)
+
+    @staticmethod
+    def func1():
+        line1 = 1
+
+    MUST_INCLUDE_LI = [
+            ('instruction', 'func1', 1),
+            ('line', 'func1', 1),
+            ('instruction', 'func1', 2),
+            ('instruction', 'func1', 3)]
+
+    def test_line_then_instruction(self):
+        recorders = [ LineRecorder, InstructionRecorder ]
+        self.check_events(self.func1,
+                          recorders = recorders, must_include = self.EXPECTED_LI)
+
+    def test_instruction_then_line(self):
+        recorders = [ InstructionRecorder, LineRecorderLowNoise ]
+        self.check_events(self.func1,
+                          recorders = recorders, must_include = self.EXPECTED_LI)
+
+    @staticmethod
+    def func2():
+        len(())
+
+    MUST_INCLUDE_CI = [
+            ('instruction', 'func2', 1),
+            ('call', 'func2', sys.monitoring.MISSING),
+            ('call', 'len', ()),
+            ('instruction', 'func2', 6),
+            ('instruction', 'func2', 7)]
+
+
+
+    def test_line_then_instruction(self):
+        recorders = [ CallRecorder, InstructionRecorder ]
+        self.check_events(self.func2,
+                          recorders = recorders, must_include = self.MUST_INCLUDE_CI)
+
+    def test_instruction_then_line(self):
+        recorders = [ InstructionRecorder, CallRecorder ]
+        self.check_events(self.func2,
+                          recorders = recorders, must_include = self.MUST_INCLUDE_CI)
+
 class TestLocalEvents(unittest.TestCase):
 
     def check_events(self, func, expected, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):

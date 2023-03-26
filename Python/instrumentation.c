@@ -652,24 +652,26 @@ static void
 instrument(PyCodeObject *code, int i)
 {
     _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
-    int opcode = _Py_OPCODE(*instr);
-    /* TO DO -- handle INSTRUMENTED_INSTRUCTION */
-    CHECK(opcode != INSTRUMENTED_INSTRUCTION);
+    uint8_t *opcode_ptr = &instr->op.code;
+    int opcode =*opcode_ptr;
+    if (opcode == INSTRUMENTED_INSTRUCTION) {
+        opcode_ptr = &code->_co_monitoring->per_instruction_opcodes[i];
+        opcode = *opcode_ptr;
+    }
     if (opcode == INSTRUMENTED_LINE) {
         _PyCoLineInstrumentationData *lines = &code->_co_monitoring->lines[i];
-        opcode = lines->original_opcode;
-        CHECK(opcode != 0);
+         opcode_ptr = &lines->original_opcode;
+        opcode = *opcode_ptr;
         CHECK(!is_instrumented(opcode));
         CHECK(opcode == _PyOpcode_Deopt[opcode]);
-        lines->original_opcode = INSTRUMENTED_OPCODES[opcode];
-        CHECK(lines->original_opcode != 0);
     }
-    else if (!is_instrumented(opcode)) {
-        opcode = _PyOpcode_Deopt[opcode];
-        int instrumented = INSTRUMENTED_OPCODES[opcode];
+    CHECK(opcode != 0);
+    if (!is_instrumented(opcode)) {
+        int deopt = _PyOpcode_Deopt[opcode];
+        int instrumented = INSTRUMENTED_OPCODES[deopt];
         assert(instrumented);
-        instr->op.code = instrumented;
-        if (_PyOpcode_Caches[opcode]) {
+        *opcode_ptr = instrumented;
+        if (_PyOpcode_Caches[deopt]) {
             instr[1].cache = adaptive_counter_warmup();
         }
     }
@@ -678,10 +680,12 @@ instrument(PyCodeObject *code, int i)
 static void
 instrument_line(PyCodeObject *code, int i)
 {
-    _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
-    int opcode = _Py_OPCODE(*instr);
-    /* TO DO -- handle INSTRUMENTED_INSTRUCTION */
-    CHECK(opcode != INSTRUMENTED_INSTRUCTION);
+    uint8_t *opcode_ptr = &_PyCode_CODE(code)[i].op.code;
+    int opcode =*opcode_ptr;
+    if (opcode == INSTRUMENTED_INSTRUCTION) {
+        opcode_ptr = &code->_co_monitoring->per_instruction_opcodes[i];
+        opcode = *opcode_ptr;
+    }
     if (opcode == INSTRUMENTED_LINE) {
         return;
     }
@@ -694,7 +698,7 @@ instrument_line(PyCodeObject *code, int i)
     );
     lines->original_opcode = _PyOpcode_Deopt[opcode];
     CHECK(lines->original_opcode > 0);
-    instr->op.code = INSTRUMENTED_LINE;
+    *opcode_ptr = INSTRUMENTED_LINE;
 }
 
 static void
