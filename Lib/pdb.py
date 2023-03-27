@@ -230,6 +230,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             pass
         self.allow_kbdint = False
         self.nosigint = nosigint
+        self.assem_mode = False
 
         # Read ~/.pdbrc and ./.pdbrc
         self.rcLines = []
@@ -1287,6 +1288,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     complete_p = _complete_expression
     complete_pp = _complete_expression
 
+    def do_assem(self, arg):
+        """assem [on | off]
+        Toggle/Set assembly mode
+        """
+        if not arg:
+            self.assem_mode = not self.assem_mode
+        elif arg == "on":
+            self.assem_mode = True
+        elif arg == "off":
+            self.assem_mode = False
+        else:
+            self.message("usage: assem [on | off]")
+
     def do_list(self, arg):
         """l(ist) [first [,last] | .]
 
@@ -1336,7 +1350,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             lines = linecache.getlines(filename, self.curframe.f_globals)
             self._print_lines(lines[first-1:last], first, breaklist,
-                              self.curframe)
+                              self.curframe,
+                              dis.get_instructions(self.curframe.f_code))
             self.lineno = min(last, len(lines))
             if len(lines) < last:
                 self.message('[EOF]')
@@ -1355,7 +1370,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except OSError as err:
             self.error(err)
             return
-        self._print_lines(lines, lineno, breaklist, self.curframe)
+        self._print_lines(lines, lineno, breaklist, self.curframe,
+                dis.get_instructions(self.curframe.f_code))
     do_ll = do_longlist
 
     def do_source(self, arg):
@@ -1375,13 +1391,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     complete_source = _complete_expression
 
-    def _print_lines(self, lines, start, breaks=(), frame=None):
+    def _print_lines(self, lines, start, breaks=(), frame=None, instructions=None):
         """Print a range of lines."""
         if frame:
             current_lineno = frame.f_lineno
             exc_lineno = self.tb_lineno.get(frame, -1)
         else:
             current_lineno = exc_lineno = -1
+        if self.assem_mode and instructions:
+            inst = next(instructions)
         for lineno, line in enumerate(lines, start):
             s = str(lineno).rjust(3)
             if len(s) < 4:
@@ -1395,6 +1413,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             elif lineno == exc_lineno:
                 s += '>>'
             self.message(s + '\t' + line.rstrip())
+            if self.assem_mode and instructions:
+                while True:
+                    if inst.positions.lineno == lineno:
+                        current_inst = frame and frame.f_lasti == inst.offset
+                        disassem = inst._disassemble(lineno_width=None,
+                                                     mark_as_current=current_inst)
+                        self.message(f"     {disassem}")
+                    elif inst.positions.lineno is not None and inst.positions.lineno > lineno:
+                        break
+                    try:
+                        inst = next(instructions)
+                    except StopIteration:
+                        break
+
 
     def do_whatis(self, arg):
         """whatis arg
