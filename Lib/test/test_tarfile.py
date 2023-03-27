@@ -6,12 +6,9 @@ from contextlib import contextmanager, ExitStack
 from random import Random
 import pathlib
 import shutil
-import time
 import re
-import datetime
 import warnings
 import stat
-import inspect
 
 import unittest
 import unittest.mock
@@ -3131,23 +3128,23 @@ class NoneInfoExtractTests(ReadTest):
                                          regular_file_mode)
 
     def test_extractall_none_uid(self):
-        with self.extract_with_none('uid') as DIR:
+        with self.extract_with_none('uid'):
             pass
 
     def test_extractall_none_gid(self):
-        with self.extract_with_none('gid') as DIR:
+        with self.extract_with_none('gid'):
             pass
 
     def test_extractall_none_uname(self):
-        with self.extract_with_none('uname') as DIR:
+        with self.extract_with_none('uname'):
             pass
 
     def test_extractall_none_gname(self):
-        with self.extract_with_none('gname') as DIR:
+        with self.extract_with_none('gname'):
             pass
 
     def test_extractall_none_ownership(self):
-        with self.extract_with_none('uid', 'gid', 'uname', 'gname') as DIR:
+        with self.extract_with_none('uid', 'gid', 'uname', 'gname'):
             pass
 
 class NoneInfoExtractTests_Data(NoneInfoExtractTests, unittest.TestCase):
@@ -3541,7 +3538,7 @@ class TestExtractionFilters(unittest.TestCase):
         with self.check_context(arc.open(), 'data'):
             self.expect_exception(
                 tarfile.AbsoluteLinkError,
-                f"'parent' is a symlink to an absolute path")
+                "'parent' is a symlink to an absolute path")
 
     def test_sly_relative0(self):
         # Inspired by 'relative0' in jwilk/traversal-archives
@@ -3572,8 +3569,8 @@ class TestExtractionFilters(unittest.TestCase):
             with self.check_context(arc.open(), filter):
                 self.expect_exception(
                         tarfile.OutsideDestinationError,
-                        f"'../moo' would be extracted to "
-                        + f"'.*moo', which is outside "
+                        "'../moo' would be extracted to "
+                        + "'.*moo', which is outside "
                         + "the destination")
 
     def test_sly_relative2(self):
