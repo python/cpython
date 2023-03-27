@@ -267,9 +267,9 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 //   This flag is used to determine if the type context of a new bb
 //   requires a stack element to be popped.
 #define BB_TEST(gen_bb_is_successor, gen_bb_requires_pop) \
-    ((gen_bb_is_successor << 1) + gen_bb_requires_pop)
-#define BB_TEST_IS_SUCCESSOR(bb_test) (bb_test >> 1)
-#define BB_TEST_IS_REQUIRES_POP(bb_test) (bb_test & 1) 
+    (((gen_bb_is_successor) << 1) + (gen_bb_requires_pop))
+#define BB_TEST_IS_SUCCESSOR(bb_test) ((bb_test) >> 1)
+#define BB_TEST_IS_REQUIRES_POP(bb_test) ((bb_test) & 1) 
 
 extern _Py_CODEUNIT *_PyCode_Tier2Warmup(struct _PyInterpreterFrame *,
     _Py_CODEUNIT *);
