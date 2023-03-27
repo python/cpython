@@ -189,6 +189,8 @@ Other Language Changes
   part of comprehensions (like ``a``) is still disallowed, as per :pep:`572`.
   (Contributed by Nikita Sobolev in :gh:`100581`.)
 
+* :class:`slice` objects are now hashable, allowing them to be used as dict keys and
+  set items. (Contributed by Furkan Onder in :gh:`101264`.)
 
 New Modules
 ===========
@@ -235,12 +237,23 @@ asyncio
 * Add C implementation of :func:`asyncio.current_task` for 4x-6x speedup.
   (Contributed by Itamar Ostricher and Pranav Thulasiram Bhat in :gh:`100344`.)
 
+* :func:`asyncio.iscoroutine` now returns ``False`` for generators as
+  :mod:`asyncio` does not support legacy generator-based coroutines.
+  (Contributed by Kumar Aditya in :gh:`102748`.)
+
+* :func:`asyncio.wait` now accepts generators yielding tasks.
+  (Contributed by Kumar Aditya in :gh:`78530`.)
+
 inspect
 -------
 
 * Add :func:`inspect.markcoroutinefunction` to mark sync functions that return
   a :term:`coroutine` for use with :func:`iscoroutinefunction`.
   (Contributed Carlton Gibson in :gh:`99247`.)
+
+* Add :func:`inspect.getasyncgenstate` and :func:`inspect.getasyncgenlocals`
+  for determining the current state of asynchronous generators.
+  (Contributed by Thomas Krennwallner in :issue:`35759`.)
 
 pathlib
 -------
@@ -292,6 +305,20 @@ os
   method to check if the entry is a junction.
   (Contributed by Charles Machalow in :gh:`99547`.)
 
+* Add :func:`os.listdrives`, :func:`os.listvolumes` and :func:`os.listmounts`
+  functions on Windows for enumerating drives, volumes and mount points.
+  (Contributed by Steve Dower in :gh:`102519`.)
+
+* :func:`os.stat` and :func:`os.lstat` are now more accurate on Windows.
+  The ``st_birthtime`` field will now be filled with the creation time
+  of the file, and ``st_ctime`` is deprecated but still contains the
+  creation time (but in the future will return the last metadata change,
+  for consistency with other platforms). ``st_dev`` may be up to 64 bits
+  and ``st_ino`` up to 128 bits depending on your file system, and
+  ``st_rdev`` is always set to zero rather than incorrect values.
+  Both functions may be significantly faster on newer releases of
+  Windows. (Contributed by Steve Dower in :gh:`99726`.)
+
 os.path
 -------
 
@@ -309,6 +336,12 @@ shutil
   In this case it no longer temporarily changes the current working directory
   of the process to *root_dir* to perform archiving.
   (Contributed by Serhiy Storchaka in :gh:`74696`.)
+
+* :func:`shutil.rmtree` now accepts a new argument *onexc* which is an
+  error handler like *onerror* but which expects an exception instance
+  rather than a *(typ, val, tb)* triplet. *onerror* is deprecated and
+  will be removed in Python 3.14.
+  (Contributed by Irit Katriel in :gh:`102828`.)
 
 
 sqlite3
@@ -370,6 +403,12 @@ sys
   with contributions from Gregory P. Smith [Google] and Mark Shannon
   in :gh:`96123`.)
 
+* Add :data:`sys.last_exc` which holds the last unhandled exception that
+  was raised (for post-mortem debugging use cases). Deprecate the
+  three fields that have the same information in its legacy form:
+  :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`.
+  (Contributed by Irit Katriel in :gh:`102778`.)
+
 
 Optimizations
 =============
@@ -395,6 +434,9 @@ CPython bytecode changes
   :opcode:`LOAD_ATTR`. :opcode:`LOAD_ATTR` will now behave like the old
   :opcode:`LOAD_METHOD` instruction if the low bit of its oparg is set.
   (Contributed by Ken Jin in :gh:`93429`.)
+
+* Removed the :opcode:`JUMP_IF_FALSE_OR_POP` and :opcode:`JUMP_IF_TRUE_OR_POP`
+  instructions. (Contributed by Irit Katriel in :gh:`102859`.)
 
 
 Demos and Tools
@@ -455,6 +497,20 @@ Deprecated
   warning at compile time. This field will be removed in Python 3.14.
   (Contributed by Ramvikrams and Kumar Aditya in :gh:`101193`. PEP by Ken Jin.)
 
+* The ``st_ctime`` fields return by :func:`os.stat` and :func:`os.lstat` on
+  Windows are deprecated. In a future release, they will contain the last
+  metadata change time, consistent with other platforms. For now, they still
+  contain the creation time, which is also available in the new ``st_birthtime``
+  field. (Contributed by Steve Dower in :gh:`99726`.)
+
+* The :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`
+  fields are deprecated. Use :data:`sys.last_exc` instead.
+  (Contributed by Irit Katriel in :gh:`102778`.)
+
+* The *onerror* argument of :func:`shutil.rmtree` is deprecated as will be removed
+  in Python 3.14. Use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
+
+
 Pending Removal in Python 3.13
 ------------------------------
 
@@ -513,6 +569,9 @@ Pending Removal in Python 3.14
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases using the C API.
 
+* Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
+  (Contributed by Alan Williams in :gh:`72346`.)
+
 * ``__package__`` and ``__cached__`` will cease to be set or taken
   into consideration by the import system (:gh:`97879`).
 
@@ -530,6 +589,9 @@ Pending Removal in Python 3.14
 * :mod:`pty` has two undocumented ``master_open()`` and ``slave_open()``
   functions that have been deprecated since Python 2 but only gained a
   proper :exc:`DeprecationWarning` in 3.12. Remove them in 3.14.
+
+* The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
+  and will be removed in 3.14.
 
 Pending Removal in Future Versions
 ----------------------------------
@@ -914,6 +976,10 @@ New Features
   the :attr:`~BaseException.args` passed to the exception's constructor.
   (Contributed by Mark Shannon in :gh:`101578`.)
 
+* Add :c:func:`PyErr_DisplayException`, which takes an exception instance,
+  to replace the legacy-api :c:func:`PyErr_Display`. (Contributed by
+  Irit Katriel in :gh:`102755`).
+
 Porting to Python 3.12
 ----------------------
 
@@ -971,6 +1037,16 @@ Porting to Python 3.12
   macros now only evaluate their arguments once. If an argument has side
   effects, these side effects are no longer duplicated.
   (Contributed by Victor Stinner in :gh:`98724`.)
+
+* The interpreter's error indicator is now always normalized. This means
+  that :c:func:`PyErr_SetObject`, :c:func:`PyErr_SetString` and the other
+  functions that set the error indicator now normalize the exception
+  before storing it. (Contributed by Mark Shannon in :gh:`101578`.)
+
+* ``_Py_RefTotal`` is no longer authoritative and only kept around
+  for ABI compabitility.  Note that it is an internal global and only
+  available on debug builds.  If you happen to be using it then you'll
+  need to start using ``_Py_GetGlobalRefTotal()``.
 
 Deprecated
 ----------
@@ -1041,6 +1117,9 @@ Deprecated
   Use :c:func:`PyErr_GetRaisedException` and
   :c:func:`PyErr_SetRaisedException` instead.
   (Contributed by Mark Shannon in :gh:`101578`.)
+
+* :c:func:`PyErr_Display` is deprecated. Use :c:func:`PyErr_DisplayException`
+  instead. (Contributed by Irit Katriel in :gh:`102755`).
 
 
 Removed

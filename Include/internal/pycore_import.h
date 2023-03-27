@@ -21,17 +21,6 @@ struct _import_runtime_state {
        This is initialized lazily in _PyImport_FixupExtensionObject().
        Modules are added there and looked up in _imp.find_extension(). */
     PyObject *extensions;
-    /* The global import lock. */
-    struct {
-        PyThread_type_lock mutex;
-        unsigned long thread;
-        int level;
-    } lock;
-    struct {
-        int import_level;
-        _PyTime_t accumulated;
-        int header;
-    } find_and_load;
     /* Package context -- the full module name for package imports */
     const char * pkgcontext;
 };
@@ -69,6 +58,18 @@ struct _import_state {
     int dlopenflags;
 #endif
     PyObject *import_func;
+    /* The global import lock. */
+    struct {
+        PyThread_type_lock mutex;
+        unsigned long thread;
+        int level;
+    } lock;
+    /* diagnostic info in PyImport_ImportModuleLevelObject() */
+    struct {
+        int import_level;
+        _PyTime_t accumulated;
+        int header;
+    } find_and_load;
 };
 
 #ifdef HAVE_DLOPEN
@@ -86,8 +87,15 @@ struct _import_state {
 
 #define IMPORTS_INIT \
     { \
-        .override_frozen_modules = 0, \
         DLOPENFLAGS_INIT \
+        .lock = { \
+            .mutex = NULL, \
+            .thread = PYTHREAD_INVALID_THREAD_ID, \
+            .level = 0, \
+        }, \
+        .find_and_load = { \
+            .header = 1, \
+        }, \
     }
 
 extern void _PyImport_ClearCore(PyInterpreterState *interp);
@@ -138,7 +146,7 @@ extern void _PyImport_FiniExternal(PyInterpreterState *interp);
 
 
 #ifdef HAVE_FORK
-extern PyStatus _PyImport_ReInitLock(void);
+extern PyStatus _PyImport_ReInitLock(PyInterpreterState *interp);
 #endif
 
 

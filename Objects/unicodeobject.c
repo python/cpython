@@ -236,18 +236,16 @@ static inline PyObject *get_interned_dict(PyInterpreterState *interp)
     return _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
 }
 
-static PyObject *
-ensure_interned_dict(PyInterpreterState *interp)
+static int
+init_interned_dict(PyInterpreterState *interp)
 {
-    PyObject *interned = get_interned_dict(interp);
+    assert(get_interned_dict(interp) == NULL);
+    PyObject *interned = interned = PyDict_New();
     if (interned == NULL) {
-        interned = PyDict_New();
-        if (interned == NULL) {
-            return NULL;
-        }
-        _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = interned;
+        return -1;
     }
-    return interned;
+    _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = interned;
+    return 0;
 }
 
 static void
@@ -967,21 +965,18 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(unicode);
 #endif
 
     new_unicode = (PyObject *)PyObject_Realloc(unicode, new_size);
     if (new_unicode == NULL) {
-        _Py_NewReference(unicode);
+        _Py_NewReferenceNoTotal(unicode);
         PyErr_NoMemory();
         return NULL;
     }
     unicode = new_unicode;
-    _Py_NewReference(unicode);
+    _Py_NewReferenceNoTotal(unicode);
 
     _PyUnicode_LENGTH(unicode) = length;
 #ifdef Py_DEBUG
@@ -14554,21 +14549,29 @@ _PyUnicode_InitState(PyInterpreterState *interp)
 PyStatus
 _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
 {
-    /* Intern statically allocated string identifiers and deepfreeze strings.
-     * This must be done before any module initialization so that statically
-     * allocated string identifiers are used instead of heap allocated strings.
-     * Deepfreeze uses the interned identifiers if present to save space
-     * else generates them and they are interned to speed up dict lookups.
-    */
-    _PyUnicode_InitStaticStrings(interp);
+    // Initialize the global interned dict
+    if (init_interned_dict(interp)) {
+        PyErr_Clear();
+        return _PyStatus_ERR("failed to create interned dict");
+    }
+
+    if (_Py_IsMainInterpreter(interp)) {
+        /* Intern statically allocated string identifiers and deepfreeze strings.
+         * This must be done before any module initialization so that statically
+         * allocated string identifiers are used instead of heap allocated strings.
+         * Deepfreeze uses the interned identifiers if present to save space
+         * else generates them and they are interned to speed up dict lookups.
+        */
+        _PyUnicode_InitStaticStrings(interp);
 
 #ifdef Py_DEBUG
-    assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
+        assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
 
-    for (int i = 0; i < 256; i++) {
-        assert(_PyUnicode_CheckConsistency(LATIN1(i), 1));
-    }
+        for (int i = 0; i < 256; i++) {
+            assert(_PyUnicode_CheckConsistency(LATIN1(i), 1));
+        }
 #endif
+    }
 
     return _PyStatus_OK();
 }
@@ -14620,11 +14623,8 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
         return;
     }
 
-    PyObject *interned = ensure_interned_dict(interp);
-    if (interned == NULL) {
-        PyErr_Clear(); /* Don't leave an exception */
-        return;
-    }
+    PyObject *interned = get_interned_dict(interp);
+    assert(interned != NULL);
 
     PyObject *t = PyDict_SetDefault(interned, s, s);
     if (t == NULL) {

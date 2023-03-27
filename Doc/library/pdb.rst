@@ -58,7 +58,7 @@ of the debugger is::
 :file:`pdb.py` can also be invoked as a script to debug other scripts.  For
 example::
 
-   python3 -m pdb myscript.py
+   python -m pdb myscript.py
 
 When invoked as a script, pdb will automatically enter post-mortem debugging if
 the program being debugged exits abnormally.  After post-mortem debugging (or
@@ -72,7 +72,7 @@ useful than quitting the debugger upon program's exit.
 
 .. versionadded:: 3.7
    :file:`pdb.py` now accepts a ``-m`` option that execute modules similar to the way
-   ``python3 -m`` does. As with a script, the debugger will pause execution just
+   ``python -m`` does. As with a script, the debugger will pause execution just
    before the first line of the module.
 
 
@@ -513,7 +513,7 @@ can be overridden by the local file.
    :file:`.pdbrc` file)::
 
       # Print instance variables (usage "pi classInst")
-      alias pi for k in %1.__dict__.keys(): print("%1.",k,"=",%1.__dict__[k])
+      alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
       # Print instance variables in self
       alias ps pi self
 

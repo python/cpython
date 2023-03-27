@@ -10,13 +10,12 @@ extern "C" {
 
 #include "pycore_atomic.h"          /* _Py_atomic_address */
 #include "pycore_ceval_state.h"     // struct _ceval_runtime_state
-#include "pycore_dict_state.h"      // struct _Py_dict_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
 #include "pycore_faulthandler.h"    // struct _faulthandler_runtime_state
-#include "pycore_function.h"        // struct _func_runtime_state
 #include "pycore_global_objects.h"  // struct _Py_global_objects
 #include "pycore_import.h"          // struct _import_runtime_state
 #include "pycore_interp.h"          // PyInterpreterState
+#include "pycore_object_state.h"    // struct _py_object_runtime_state
 #include "pycore_parser.h"          // struct _parser_runtime_state
 #include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pyhash.h"          // struct pyhash_runtime_state
@@ -152,10 +151,9 @@ typedef struct pyruntimestate {
     void *open_code_userdata;
     _Py_AuditHookEntry *audit_hook_head;
 
+    struct _py_object_runtime_state object_state;
     struct _Py_float_runtime_state float_state;
     struct _Py_unicode_runtime_state unicode_state;
-    struct _Py_dict_runtime_state dict_state;
-    struct _py_func_runtime_state func_state;
 
     struct {
         /* Used to set PyTypeObject.tp_version_tag */

@@ -57,9 +57,9 @@ the following command can be used to display the disassembly of
      2           0 RESUME                   0
    <BLANKLINE>
      3           2 LOAD_GLOBAL              1 (NULL + len)
-                14 LOAD_FAST                0 (alist)
-                16 CALL                     1
-                26 RETURN_VALUE
+                12 LOAD_FAST                0 (alist)
+                14 CALL                     1
+                24 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -1151,30 +1151,6 @@ iterations of the loop.
 
    .. versionchanged:: 3.12
       This is no longer a pseudo-instruction.
-
-
-.. opcode:: JUMP_IF_TRUE_OR_POP (delta)
-
-   If ``STACK[-1]`` is true, increments the bytecode counter by *delta* and leaves
-   ``STACK[-1]`` on the stack.  Otherwise (``STACK[-1]`` is false), ``STACK[-1]``
-   is popped.
-
-   .. versionadded:: 3.1
-
-   .. versionchanged:: 3.11
-      The oparg is now a relative delta rather than an absolute target.
-
-.. opcode:: JUMP_IF_FALSE_OR_POP (delta)
-
-   If ``STACK[-1]`` is false, increments the bytecode counter by *delta* and leaves
-   ``STACK[-1]`` on the stack. Otherwise (``STACK[-1]`` is true), ``STACK[-1]`` is
-   popped.
-
-   .. versionadded:: 3.1
-
-   .. versionchanged:: 3.11
-      The oparg is now a relative delta rather than an absolute target.
-
 
 .. opcode:: FOR_ITER (delta)
 
