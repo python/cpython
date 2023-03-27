@@ -14609,11 +14609,16 @@ PyUnicode_InternInPlace(PyObject **p)
     }
 
     PyObject *interned = get_interned_dict();
-    PyObject *t = _Py_AddToGlobalDict(interned, s, s);
+    assert(interned != NULL);
+
+    PyObject *t = PyDict_SetDefault(interned, s, s);
+    if (t == NULL) {
+        PyErr_Clear();
+        return;
+    }
+
     if (t != s) {
-        if (t != NULL) {
-            Py_SETREF(*p, Py_NewRef(t));
-        }
+        Py_SETREF(*p, Py_NewRef(t));
         return;
     }
 
