@@ -1,6 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "structmember.h"
+#include <stddef.h> /* for offsetof() */
 
 typedef struct {
     PyObject_HEAD
@@ -42,7 +42,7 @@ static int
 Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"first", "last", "number", NULL};
-    PyObject *first = NULL, *last = NULL, *tmp;
+    PyObject *first = NULL, *last = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOi", kwlist,
                                      &first, &last,
@@ -50,26 +50,20 @@ Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     if (first) {
-        tmp = self->first;
-        Py_INCREF(first);
-        self->first = first;
-        Py_XDECREF(tmp);
+        Py_XSETREF(self->first, Py_NewRef(first));
     }
     if (last) {
-        tmp = self->last;
-        Py_INCREF(last);
-        self->last = last;
-        Py_XDECREF(tmp);
+        Py_XSETREF(self->last, Py_NewRef(last));
     }
     return 0;
 }
 
 static PyMemberDef Custom_members[] = {
-    {"first", T_OBJECT_EX, offsetof(CustomObject, first), 0,
+    {"first", Py_T_OBJECT_EX, offsetof(CustomObject, first), 0,
      "first name"},
-    {"last", T_OBJECT_EX, offsetof(CustomObject, last), 0,
+    {"last", Py_T_OBJECT_EX, offsetof(CustomObject, last), 0,
      "last name"},
-    {"number", T_INT, offsetof(CustomObject, number), 0,
+    {"number", Py_T_INT, offsetof(CustomObject, number), 0,
      "custom number"},
     {NULL}  /* Sentinel */
 };
@@ -127,9 +121,7 @@ PyInit_custom2(void)
     if (m == NULL)
         return NULL;
 
-    Py_INCREF(&CustomType);
-    if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
-        Py_DECREF(&CustomType);
+    if (PyModule_AddObjectRef(m, "Custom", (PyObject *) &CustomType) < 0) {
         Py_DECREF(m);
         return NULL;
     }

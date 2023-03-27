@@ -24,7 +24,6 @@
            negative exponential
            gamma
            beta
-           binomial
            pareto
            Weibull
 
@@ -32,6 +31,11 @@
     ---------------------------------------------
            circular uniform
            von Mises
+
+    discrete distributions
+    ----------------------
+           binomial
+
 
 General notes on the underlying Mersenne Twister core generator:
 
@@ -336,7 +340,10 @@ class Random(_random.Random):
 
     def choice(self, seq):
         """Choose a random element from a non-empty sequence."""
-        if not seq:
+
+        # As an accommodation for NumPy, we don't use "if not seq"
+        # because bool(numpy.array()) raises a ValueError.
+        if not len(seq):
             raise IndexError('Cannot choose from an empty sequence')
         return seq[self._randbelow(len(seq))]
 
@@ -577,7 +584,7 @@ class Random(_random.Random):
         """
         return _exp(self.normalvariate(mu, sigma))
 
-    def expovariate(self, lambd):
+    def expovariate(self, lambd=1.0):
         """Exponential distribution.
 
         lambd is 1.0 divided by the desired mean.  It should be
@@ -728,6 +735,26 @@ class Random(_random.Random):
             return y / (y + self.gammavariate(beta, 1.0))
         return 0.0
 
+    def paretovariate(self, alpha):
+        """Pareto distribution.  alpha is the shape parameter."""
+        # Jain, pg. 495
+
+        u = 1.0 - self.random()
+        return u ** (-1.0 / alpha)
+
+    def weibullvariate(self, alpha, beta):
+        """Weibull distribution.
+
+        alpha is the scale parameter and beta is the shape parameter.
+
+        """
+        # Jain, pg. 499; bug fix courtesy Bill Arms
+
+        u = 1.0 - self.random()
+        return alpha * (-_log(u)) ** (1.0 / beta)
+
+
+    ## -------------------- discrete  distributions  ---------------------
 
     def binomialvariate(self, n=1, p=0.5):
         """Binomial random variable.
@@ -813,25 +840,6 @@ class Random(_random.Random):
                 return k
 
 
-    def paretovariate(self, alpha):
-        """Pareto distribution.  alpha is the shape parameter."""
-        # Jain, pg. 495
-
-        u = 1.0 - self.random()
-        return u ** (-1.0 / alpha)
-
-    def weibullvariate(self, alpha, beta):
-        """Weibull distribution.
-
-        alpha is the scale parameter and beta is the shape parameter.
-
-        """
-        # Jain, pg. 499; bug fix courtesy Bill Arms
-
-        u = 1.0 - self.random()
-        return alpha * (-_log(u)) ** (1.0 / beta)
-
-
 ## ------------------------------------------------------------------
 ## --------------- Operating System Random Source  ------------------
 
@@ -846,7 +854,7 @@ class SystemRandom(Random):
     """
 
     def random(self):
-        """Get the next random number in the range [0.0, 1.0)."""
+        """Get the next random number in the range 0.0 <= X < 1.0."""
         return (int.from_bytes(_urandom(7)) >> 3) * RECIP_BPF
 
     def getrandbits(self, k):

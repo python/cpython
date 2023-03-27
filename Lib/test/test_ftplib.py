@@ -21,11 +21,9 @@ from test import support
 from test.support import threading_helper
 from test.support import socket_helper
 from test.support import warnings_helper
+from test.support import asynchat
+from test.support import asyncore
 from test.support.socket_helper import HOST, HOSTv6
-
-
-asynchat = warnings_helper.import_deprecated('asynchat')
-asyncore = warnings_helper.import_deprecated('asyncore')
 
 
 support.requires_working_socket(module=True)

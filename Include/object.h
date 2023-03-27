@@ -138,8 +138,13 @@ static inline PyTypeObject* Py_TYPE(PyObject *ob) {
 #  define Py_TYPE(ob) Py_TYPE(_PyObject_CAST(ob))
 #endif
 
+PyAPI_DATA(PyTypeObject) PyLong_Type;
+PyAPI_DATA(PyTypeObject) PyBool_Type;
+
 // bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
 static inline Py_ssize_t Py_SIZE(PyObject *ob) {
+    assert(ob->ob_type != &PyLong_Type);
+    assert(ob->ob_type != &PyBool_Type);
     PyVarObject *var_ob = _PyVarObject_CAST(ob);
     return var_ob->ob_size;
 }
@@ -171,8 +176,9 @@ static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
 #  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
 #endif
 
-
 static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
+    assert(ob->ob_base.ob_type != &PyLong_Type);
+    assert(ob->ob_base.ob_type != &PyBool_Type);
     ob->ob_size = size;
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
@@ -490,7 +496,16 @@ you can count such references to the type object.)
 */
 
 #ifdef Py_REF_DEBUG
-PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
+#  if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030A0000
+extern Py_ssize_t _Py_RefTotal;
+#    define _Py_INC_REFTOTAL() _Py_RefTotal++
+#    define _Py_DEC_REFTOTAL() _Py_RefTotal--
+#  elif !defined(Py_LIMITED_API) || Py_LIMITED_API+0 > 0x030C0000
+PyAPI_FUNC(void) _Py_IncRefTotal_DO_NOT_USE_THIS(void);
+PyAPI_FUNC(void) _Py_DecRefTotal_DO_NOT_USE_THIS(void);
+#    define _Py_INC_REFTOTAL() _Py_IncRefTotal_DO_NOT_USE_THIS()
+#    define _Py_DEC_REFTOTAL() _Py_DecRefTotal_DO_NOT_USE_THIS()
+#  endif
 PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
                                       PyObject *op);
 #endif /* Py_REF_DEBUG */
@@ -519,8 +534,8 @@ static inline void Py_INCREF(PyObject *op)
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
+    _Py_INC_REFTOTAL();
+#endif  // Py_REF_DEBUG
     op->ob_refcnt++;
 #endif
 }
@@ -539,7 +554,7 @@ static inline void Py_DECREF(PyObject *op) {
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
     _Py_DECREF_STAT_INC();
-    _Py_RefTotal--;
+    _Py_DEC_REFTOTAL();
     if (--op->ob_refcnt != 0) {
         if (op->ob_refcnt < 0) {
             _Py_NegativeRefcount(filename, lineno, op);
@@ -563,6 +578,9 @@ static inline void Py_DECREF(PyObject *op)
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 #endif
+
+#undef _Py_INC_REFTOTAL
+#undef _Py_DEC_REFTOTAL
 
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
@@ -598,15 +616,44 @@ static inline void Py_DECREF(PyObject *op)
  * one of those can't cause problems -- but in part that relies on that
  * Python integers aren't currently weakly referencable.  Best practice is
  * to use Py_CLEAR() even if you can't think of a reason for why you need to.
+ *
+ * gh-98724: Use a temporary variable to only evaluate the macro argument once,
+ * to avoid the duplication of side effects if the argument has side effects.
+ *
+ * gh-99701: If the PyObject* type is used with casting arguments to PyObject*,
+ * the code can be miscompiled with strict aliasing because of type punning.
+ * With strict aliasing, a compiler considers that two pointers of different
+ * types cannot read or write the same memory which enables optimization
+ * opportunities.
+ *
+ * If available, use _Py_TYPEOF() to use the 'op' type for temporary variables,
+ * and so avoid type punning. Otherwise, use memcpy() which causes type erasure
+ * and so prevents the compiler to reuse an old cached 'op' value after
+ * Py_CLEAR().
  */
-#define Py_CLEAR(op)                            \
-    do {                                        \
-        PyObject *_py_tmp = _PyObject_CAST(op); \
-        if (_py_tmp != NULL) {                  \
-            (op) = NULL;                        \
-            Py_DECREF(_py_tmp);                 \
-        }                                       \
+#ifdef _Py_TYPEOF
+#define Py_CLEAR(op) \
+    do { \
+        _Py_TYPEOF(op)* _tmp_op_ptr = &(op); \
+        _Py_TYPEOF(op) _tmp_old_op = (*_tmp_op_ptr); \
+        if (_tmp_old_op != NULL) { \
+            *_tmp_op_ptr = _Py_NULL; \
+            Py_DECREF(_tmp_old_op); \
+        } \
     } while (0)
+#else
+#define Py_CLEAR(op) \
+    do { \
+        PyObject **_tmp_op_ptr = _Py_CAST(PyObject**, &(op)); \
+        PyObject *_tmp_old_op = (*_tmp_op_ptr); \
+        if (_tmp_old_op != NULL) { \
+            PyObject *_null_ptr = _Py_NULL; \
+            memcpy(_tmp_op_ptr, &_null_ptr, sizeof(PyObject*)); \
+            Py_DECREF(_tmp_old_op); \
+        } \
+    } while (0)
+#endif
+
 
 /* Function to use in case the object pointer can be NULL: */
 static inline void Py_XINCREF(PyObject *op)

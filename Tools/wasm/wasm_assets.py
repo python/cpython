@@ -43,8 +43,6 @@ OMIT_FILES = (
     # build system
     "lib2to3/",
     # deprecated
-    "asyncore.py",
-    "asynchat.py",
     "uu.py",
     "xdrlib.py",
     # other platforms

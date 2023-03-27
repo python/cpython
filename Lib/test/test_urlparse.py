@@ -668,6 +668,24 @@ class UrlParseTestCase(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             p.port
 
+    def test_attributes_bad_scheme(self):
+        """Check handling of invalid schemes."""
+        for bytes in (False, True):
+            for parse in (urllib.parse.urlsplit, urllib.parse.urlparse):
+                for scheme in (".", "+", "-", "0", "http&", "६http"):
+                    with self.subTest(bytes=bytes, parse=parse, scheme=scheme):
+                        url = scheme + "://www.example.net"
+                        if bytes:
+                            if url.isascii():
+                                url = url.encode("ascii")
+                            else:
+                                continue
+                        p = parse(url)
+                        if bytes:
+                            self.assertEqual(p.scheme, b"")
+                        else:
+                            self.assertEqual(p.scheme, "")
+
     def test_attributes_without_netloc(self):
         # This example is straight from RFC 3261.  It looks like it
         # should allow the username, hostname, and port to be filled

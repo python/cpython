@@ -3,7 +3,7 @@ Token = lx.Token
 
 
 class PLexer:
-    def __init__(self, src: str, filename: str|None = None):
+    def __init__(self, src: str, filename: str):
         self.src = src
         self.filename = filename
         self.tokens = list(lx.tokenize(self.src, filename=filename))
@@ -89,16 +89,17 @@ if __name__ == "__main__":
         filename = sys.argv[1]
         if filename == "-c" and sys.argv[2:]:
             src = sys.argv[2]
-            filename = None
+            filename = "<string>"
         else:
             with open(filename) as f:
                 src = f.read()
     else:
-        filename = None
+        filename = "<default>"
         src = "if (x) { x.foo; // comment\n}"
     p = PLexer(src, filename)
     while not p.eof():
         tok = p.next(raw=True)
+        assert tok
         left = repr(tok)
         right = lx.to_text([tok]).rstrip()
         print(f"{left:40.40} {right}")

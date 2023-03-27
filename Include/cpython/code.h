@@ -16,21 +16,38 @@ extern "C" {
  * 2**32 - 1, rather than INT_MAX.
  */
 
-typedef uint16_t _Py_CODEUNIT;
+typedef union {
+    uint16_t cache;
+    struct {
+        uint8_t code;
+        uint8_t arg;
+    } op;
+} _Py_CODEUNIT;
 
-#ifdef WORDS_BIGENDIAN
-#  define _Py_OPCODE(word) ((word) >> 8)
-#  define _Py_OPARG(word) ((word) & 255)
-#  define _Py_MAKECODEUNIT(opcode, oparg) (((opcode)<<8)|(oparg))
-#else
-#  define _Py_OPCODE(word) ((word) & 255)
-#  define _Py_OPARG(word) ((word) >> 8)
-#  define _Py_MAKECODEUNIT(opcode, oparg) ((opcode)|((oparg)<<8))
-#endif
 
-// Use "unsigned char" instead of "uint8_t" here to avoid illegal aliasing:
-#define _Py_SET_OPCODE(word, opcode) \
-    do { ((unsigned char *)&(word))[0] = (opcode); } while (0)
+/* These macros only remain defined for compatibility. */
+#define _Py_OPCODE(word) ((word).op.code)
+#define _Py_OPARG(word) ((word).op.arg)
+
+static inline _Py_CODEUNIT
+_py_make_codeunit(uint8_t opcode, uint8_t oparg)
+{
+    // No designated initialisers because of C++ compat
+    _Py_CODEUNIT word;
+    word.op.code = opcode;
+    word.op.arg = oparg;
+    return word;
+}
+
+static inline void
+_py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
+{
+    word->op.code = opcode;
+}
+
+#define _Py_MAKE_CODEUNIT(opcode, oparg) _py_make_codeunit((opcode), (oparg))
+#define _Py_SET_OPCODE(word, opcode) _py_set_opcode(&(word), (opcode))
+
 
 typedef struct {
     PyObject *_co_code;
@@ -84,9 +101,9 @@ typedef struct {
     int co_nlocalsplus;           /* number of local + cell + free variables */ \
     int co_framesize;             /* Size of frame in words */                 \
     int co_nlocals;               /* number of local variables */              \
-    int co_nplaincellvars;        /* number of non-arg cell variables */       \
     int co_ncellvars;             /* total number of cell variables */         \
     int co_nfreevars;             /* number of free variables */               \
+    uint32_t co_version;          /* version number */                         \
                                                                                \
     PyObject *co_localsplusnames; /* tuple mapping offsets to names */         \
     PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte    \
@@ -147,23 +164,54 @@ struct PyCodeObject _PyCode_DEF(1);
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) Py_IS_TYPE((op), &PyCode_Type)
-#define PyCode_GetNumFree(op) ((op)->co_nfreevars)
-#define _PyCode_CODE(CO) ((_Py_CODEUNIT *)(CO)->co_code_adaptive)
+
+static inline Py_ssize_t PyCode_GetNumFree(PyCodeObject *op) {
+    assert(PyCode_Check(op));
+    return op->co_nfreevars;
+}
+
+static inline int PyCode_GetFirstFree(PyCodeObject *op) {
+    assert(PyCode_Check(op));
+    return op->co_nlocalsplus - op->co_nfreevars;
+}
+
+#define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
 #define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
 
-/* Public interface */
-PyAPI_FUNC(PyCodeObject *) PyCode_New(
+/* Unstable public interface */
+PyAPI_FUNC(PyCodeObject *) PyUnstable_Code_New(
         int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, int, PyObject *,
         PyObject *);
 
-PyAPI_FUNC(PyCodeObject *) PyCode_NewWithPosOnlyArgs(
+PyAPI_FUNC(PyCodeObject *) PyUnstable_Code_NewWithPosOnlyArgs(
         int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, int, PyObject *,
         PyObject *);
         /* same as struct above */
+// Old names -- remove when this API changes:
+_Py_DEPRECATED_EXTERNALLY(3.12) static inline PyCodeObject *
+PyCode_New(
+        int a, int b, int c, int d, int e, PyObject *f, PyObject *g,
+        PyObject *h, PyObject *i, PyObject *j, PyObject *k,
+        PyObject *l, PyObject *m, PyObject *n, int o, PyObject *p,
+        PyObject *q)
+{
+    return PyUnstable_Code_New(
+        a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q);
+}
+_Py_DEPRECATED_EXTERNALLY(3.12) static inline PyCodeObject *
+PyCode_NewWithPosOnlyArgs(
+        int a, int poac, int b, int c, int d, int e, PyObject *f, PyObject *g,
+        PyObject *h, PyObject *i, PyObject *j, PyObject *k,
+        PyObject *l, PyObject *m, PyObject *n, int o, PyObject *p,
+        PyObject *q)
+{
+    return PyUnstable_Code_NewWithPosOnlyArgs(
+        a, poac, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q);
+}
 
 /* Creates a new empty code object with the specified source location. */
 PyAPI_FUNC(PyCodeObject *)
@@ -175,6 +223,46 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno);
 PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 PyAPI_FUNC(int) PyCode_Addr2Location(PyCodeObject *, int, int *, int *, int *, int *);
+
+#define PY_FOREACH_CODE_EVENT(V) \
+    V(CREATE)                 \
+    V(DESTROY)
+
+typedef enum {
+    #define PY_DEF_EVENT(op) PY_CODE_EVENT_##op,
+    PY_FOREACH_CODE_EVENT(PY_DEF_EVENT)
+    #undef PY_DEF_EVENT
+} PyCodeEvent;
+
+
+/*
+ * A callback that is invoked for different events in a code object's lifecycle.
+ *
+ * The callback is invoked with a borrowed reference to co, after it is
+ * created and before it is destroyed.
+ *
+ * If the callback sets an exception, it must return -1. Otherwise
+ * it should return 0.
+ */
+typedef int (*PyCode_WatchCallback)(
+  PyCodeEvent event,
+  PyCodeObject* co);
+
+/*
+ * Register a per-interpreter callback that will be invoked for code object
+ * lifecycle events.
+ *
+ * Returns a handle that may be passed to PyCode_ClearWatcher on success,
+ * or -1 and sets an error if no more handles are available.
+ */
+PyAPI_FUNC(int) PyCode_AddWatcher(PyCode_WatchCallback callback);
+
+/*
+ * Clear the watcher associated with the watcher_id handle.
+ *
+ * Returns 0 on success or -1 if no watcher exists for the provided id.
+ */
+PyAPI_FUNC(int) PyCode_ClearWatcher(int watcher_id);
 
 /* for internal use only */
 struct _opaque {
@@ -207,11 +295,21 @@ PyAPI_FUNC(PyObject*) _PyCode_ConstantKey(PyObject *obj);
 PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
                                       PyObject *names, PyObject *lnotab);
 
-
-PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
-                                 void **extra);
-PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
-                                 void *extra);
+PyAPI_FUNC(int) PyUnstable_Code_GetExtra(
+    PyObject *code, Py_ssize_t index, void **extra);
+PyAPI_FUNC(int) PyUnstable_Code_SetExtra(
+    PyObject *code, Py_ssize_t index, void *extra);
+// Old names -- remove when this API changes:
+_Py_DEPRECATED_EXTERNALLY(3.12) static inline int
+_PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
+{
+    return PyUnstable_Code_GetExtra(code, index, extra);
+}
+_Py_DEPRECATED_EXTERNALLY(3.12) static inline int
+_PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
+{
+    return PyUnstable_Code_SetExtra(code, index, extra);
+}
 
 /* Equivalent to getattr(code, 'co_code') in Python.
    Returns a strong reference to a bytes object. */

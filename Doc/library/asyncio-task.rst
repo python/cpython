@@ -18,6 +18,10 @@ and Tasks.
 Coroutines
 ==========
 
+**Source code:** :source:`Lib/asyncio/coroutines.py`
+
+----------------------------------------------------
+
 :term:`Coroutines <coroutine>` declared with the async/await syntax is the
 preferred way of writing asyncio applications.  For example, the following
 snippet of code prints "hello", waits 1 second,
@@ -117,7 +121,7 @@ To actually run a coroutine, asyncio provides the following mechanisms:
 
               print(f"started at {time.strftime('%X')}")
 
-          # The wait is implicit when the context manager exits.
+          # The await is implicit when the context manager exits.
 
           print(f"finished at {time.strftime('%X')}")
 
@@ -230,6 +234,10 @@ is :meth:`loop.run_in_executor`.
 Creating Tasks
 ==============
 
+**Source code:** :source:`Lib/asyncio/tasks.py`
+
+-----------------------------------------------
+
 .. function:: create_task(coro, *, name=None, context=None)
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
@@ -292,13 +300,17 @@ in the task at the next opportunity.
 It is recommended that coroutines use ``try/finally`` blocks to robustly
 perform clean-up logic. In case :exc:`asyncio.CancelledError`
 is explicitly caught, it should generally be propagated when
-clean-up is complete. Most code can safely ignore :exc:`asyncio.CancelledError`.
+clean-up is complete. :exc:`asyncio.CancelledError` directly subclasses
+:exc:`BaseException` so most code will not need to be aware of it.
 
 The asyncio components that enable structured concurrency, like
 :class:`asyncio.TaskGroup` and :func:`asyncio.timeout`,
 are implemented using cancellation internally and might misbehave if
 a coroutine swallows :exc:`asyncio.CancelledError`. Similarly, user code
-should not call :meth:`uncancel <asyncio.Task.uncancel>`.
+should not generally call :meth:`uncancel <asyncio.Task.uncancel>`.
+However, in cases when suppressing :exc:`asyncio.CancelledError` is
+truly desired, it is necessary to also call ``uncancel()`` to completely
+remove the cancellation state.
 
 .. _taskgroups:
 
@@ -612,32 +624,26 @@ Timeouts
     The context manager produced by :func:`asyncio.timeout` can be
     rescheduled to a different deadline and inspected.
 
-    .. class:: Timeout()
+    .. class:: Timeout(when)
 
        An :ref:`asynchronous context manager <async-context-managers>`
-       that limits time spent inside of it.
+       for cancelling overdue coroutines.
 
-        .. versionadded:: 3.11
+       ``when`` should be an absolute time at which the context should time out,
+       as measured by the event loop's clock:
+
+       - If ``when`` is ``None``, the timeout will never trigger.
+       - If ``when < loop.time()``, the timeout will trigger on the next
+         iteration of the event loop.
 
         .. method:: when() -> float | None
 
            Return the current deadline, or ``None`` if the current
            deadline is not set.
 
-           The deadline is a float, consistent with the time returned by
-           :meth:`loop.time`.
-
         .. method:: reschedule(when: float | None)
 
-            Change the time the timeout will trigger.
-
-            If *when* is ``None``, any current deadline will be removed, and the
-            context manager will wait indefinitely.
-
-            If *when* is a float, it is set as the new deadline.
-
-            if *when* is in the past, the timeout will trigger on the next
-            iteration of the event loop.
+            Reschedule the timeout.
 
         .. method:: expired() -> bool
 
@@ -658,7 +664,7 @@ Timeouts
             except TimeoutError:
                 pass
 
-            if cm.expired:
+            if cm.expired():
                 print("Looks like we haven't finished on time.")
 
     Timeout context managers can be safely nested.
@@ -796,6 +802,10 @@ Waiting Primitives
    .. versionchanged:: 3.11
       Passing coroutine objects to ``wait()`` directly is forbidden.
 
+   .. versionchanged:: 3.12
+      Added support for generators yielding tasks.
+
+
 .. function:: as_completed(aws, *, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
@@ -805,9 +815,6 @@ Waiting Primitives
 
    Raises :exc:`TimeoutError` if the timeout occurs before
    all Futures are done.
-
-   .. versionchanged:: 3.10
-      Removed the *loop* parameter.
 
    Example::
 
@@ -953,6 +960,13 @@ Introspection
    .. versionadded:: 3.7
 
 
+.. function:: iscoroutine(obj)
+
+   Return ``True`` if *obj* is a coroutine object.
+
+   .. versionadded:: 3.4
+
+
 Task Object
 ===========
 
@@ -1089,7 +1103,7 @@ Task Object
       The *limit* argument is passed to :meth:`get_stack` directly.
 
       The *file* argument is an I/O stream to which the output
-      is written; by default output is written to :data:`sys.stderr`.
+      is written; by default output is written to :data:`sys.stdout`.
 
    .. method:: get_coro()
 
@@ -1139,7 +1153,9 @@ Task Object
       Therefore, unlike :meth:`Future.cancel`, :meth:`Task.cancel` does
       not guarantee that the Task will be cancelled, although
       suppressing cancellation completely is not common and is actively
-      discouraged.
+      discouraged.  Should the coroutine nevertheless decide to suppress
+      the cancellation, it needs to call :meth:`Task.uncancel` in addition
+      to catching the exception.
 
       .. versionchanged:: 3.9
          Added the *msg* parameter.
@@ -1228,6 +1244,10 @@ Task Object
       continue running even in case of the timeout.  This is implemented
       with :meth:`uncancel`.  :class:`TaskGroup` context managers use
       :func:`uncancel` in a similar fashion.
+
+      If end-user code is, for some reason, suppresing cancellation by
+      catching :exc:`CancelledError`, it needs to call this method to remove
+      the cancellation state.
 
    .. method:: cancelling()
 
