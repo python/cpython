@@ -594,7 +594,7 @@ class PurePath(object):
 
     def __rtruediv__(self, key):
         try:
-            return self.__class__(key, self._raw_path)
+            return type(self)(key, self._raw_path)
         except TypeError:
             return NotImplemented
 
@@ -818,7 +818,7 @@ class Path(PurePath):
             cwd = self._flavour.abspath(self.drive)
         else:
             cwd = os.getcwd()
-        return self.__class__(cwd, self._raw_path)
+        return type(self)(cwd, self._raw_path)
 
     def resolve(self, strict=False):
         """
@@ -836,7 +836,7 @@ class Path(PurePath):
         except OSError as e:
             check_eloop(e)
             raise
-        p = self.__class__(s)
+        p = type(self)(s)
 
         # In non-strict mode, realpath() doesn't raise on symlink loops.
         # Ensure we get an exception by calling stat()
@@ -926,7 +926,7 @@ class Path(PurePath):
         """
         if not hasattr(os, "readlink"):
             raise NotImplementedError("os.readlink() not available on this system")
-        return self.__class__(os.readlink(self))
+        return type(self)(os.readlink(self))
 
     def touch(self, mode=0o666, exist_ok=True):
         """
