@@ -862,6 +862,18 @@ Generally, when multiple interpreters are involved, some of the above
 gets even messier.
 */
 
+static inline void
+extensions_lock_acquire(void)
+{
+    // XXX For now the GIL is sufficient.
+}
+
+static inline void
+extensions_lock_release(void)
+{
+    // XXX For now the GIL is sufficient.
+}
+
 /* Magic for extension modules (built-in as well as dynamically
    loaded).  To prevent initializing an extension module more than
    once, we keep a static dictionary 'extensions' keyed by the tuple
@@ -881,67 +893,93 @@ gets even messier.
 static PyModuleDef *
 _extensions_cache_get(PyObject *filename, PyObject *name)
 {
+    PyModuleDef *def = NULL;
+    extensions_lock_acquire();
+
     PyObject *extensions = EXTENSIONS.dict;
     if (extensions == NULL) {
-        return NULL;
+        goto finally;
     }
     PyObject *key = PyTuple_Pack(2, filename, name);
     if (key == NULL) {
-        return NULL;
+        goto finally;
     }
-    PyModuleDef *def = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
+    def = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
     Py_DECREF(key);
+
+finally:
+    extensions_lock_release();
     return def;
 }
 
 static int
 _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
 {
+    int res = -1;
+    extensions_lock_acquire();
+
     PyObject *extensions = EXTENSIONS.dict;
     if (extensions == NULL) {
         extensions = PyDict_New();
         if (extensions == NULL) {
-            return -1;
+            goto finally;
         }
+        extensions_lock_acquire();
         EXTENSIONS.dict = extensions;
     }
     PyObject *key = PyTuple_Pack(2, filename, name);
     if (key == NULL) {
-        return -1;
+        goto finally;
     }
-    int res = PyDict_SetItem(extensions, key, (PyObject *)def);
+    res = PyDict_SetItem(extensions, key, (PyObject *)def);
     Py_DECREF(key);
     if (res < 0) {
-        return -1;
+        res = -1;
+        goto finally;
     }
-    return 0;
+    res = 0;
+
+finally:
+    extensions_lock_release();
+    return res;
 }
 
 static int
 _extensions_cache_delete(PyObject *filename, PyObject *name)
 {
+    int res = -1;
+    extensions_lock_acquire();
+
     PyObject *extensions = EXTENSIONS.dict;
     if (extensions == NULL) {
-        return 0;
+        res = 0;
+        goto finally;
     }
     PyObject *key = PyTuple_Pack(2, filename, name);
     if (key == NULL) {
-        return -1;
+        goto finally;
     }
     if (PyDict_DelItem(extensions, key) < 0) {
         if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
             Py_DECREF(key);
-            return -1;
+            goto finally;
         }
         PyErr_Clear();
     }
     Py_DECREF(key);
-    return 0;
+    res = 0;
+
+finally:
+    extensions_lock_release();
+    return res;
 }
 
 static void
 _extensions_cache_clear_all(void)
 {
+    /* The runtime (i.e. main interpreter) must be finalizing,
+       so we don't need to worry about the lock. */
+    assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
     Py_CLEAR(EXTENSIONS.dict);
 }
 
