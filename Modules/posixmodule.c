@@ -4891,6 +4891,8 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
     FILE_BASIC_INFO info;
     path_t _path = PATH_T_INITIALIZE("isfile", "path", 0, 1);
     int result;
+    BOOL slow_path = TRUE;
+    FILE_STAT_BASIC_INFORMATION statInfo;
 
     if (!path_converter(path, &_path)) {
         path_cleanup(&_path);
@@ -4902,15 +4904,37 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
+    if(_path.wide){    
+        if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo,
+                                         &statInfo, sizeof(statInfo))) {
+            if (// Cannot use fast path for reparse points ...
+                !(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+            ) {
+                slow_path = FALSE;
+            }
+        } else {
+            switch(GetLastError()) {
+                case ERROR_FILE_NOT_FOUND:
+                case ERROR_PATH_NOT_FOUND:
+                case ERROR_NOT_READY:
+                case ERROR_BAD_NET_NAME:
+                    /* These errors aren't worth retrying with the slow path */
+                    slow_path = FALSE;
+                case ERROR_NOT_SUPPORTED:
+                    /* indicates the API couldn't be loaded */
+                    break;
+            }
+        }
+    }
     if (_path.fd != -1) {
         hfile = _Py_get_osfhandle_noraise(_path.fd);
         close_file = FALSE;
     }
-    else {
+    else if(slow_path){
         hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
                             OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
     }
-    if (hfile != INVALID_HANDLE_VALUE) {
+    if (slow_path && hfile != INVALID_HANDLE_VALUE) {
         if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
                                          sizeof(info)))
         {
@@ -4968,6 +4992,8 @@ os__path_exists_impl(PyObject *module, PyObject *path)
     BOOL close_file = TRUE;
     path_t _path = PATH_T_INITIALIZE("exists", "path", 0, 1);
     int result;
+    BOOL slow_path = TRUE;
+    FILE_STAT_BASIC_INFORMATION statInfo;
 
     if (!path_converter(path, &_path)) {
         path_cleanup(&_path);
@@ -4979,15 +5005,37 @@ os__path_exists_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
+    if(_path.wide){    
+        if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo,
+                                         &statInfo, sizeof(statInfo))) {
+            if (// Cannot use fast path for reparse points ...
+                !(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+            ) {
+                slow_path = FALSE;
+            }
+        } else {
+            switch(GetLastError()) {
+                case ERROR_FILE_NOT_FOUND:
+                case ERROR_PATH_NOT_FOUND:
+                case ERROR_NOT_READY:
+                case ERROR_BAD_NET_NAME:
+                    /* These errors aren't worth retrying with the slow path */
+                    slow_path = FALSE;
+                case ERROR_NOT_SUPPORTED:
+                    /* indicates the API couldn't be loaded */
+                    break;
+            }
+        }
+    }
     if (_path.fd != -1) {
         hfile = _Py_get_osfhandle_noraise(_path.fd);
         close_file = FALSE;
     }
-    else {
+    else if(slow_path){
         hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
                             OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
     }
-    if (hfile != INVALID_HANDLE_VALUE) {
+    if (slow_path && hfile != INVALID_HANDLE_VALUE) {
         result = 1;
         if (close_file) {
             CloseHandle(hfile);
