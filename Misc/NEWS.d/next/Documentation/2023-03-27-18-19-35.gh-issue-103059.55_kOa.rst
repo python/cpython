@@ -1,0 +1,1 @@
+Clarify ``gc.freeze()`` docs to explain when/why using it can help.
