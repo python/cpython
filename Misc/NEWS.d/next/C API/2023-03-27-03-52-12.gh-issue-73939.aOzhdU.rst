@@ -1,0 +1,2 @@
+Fixes bitfield ABI for Linux/Mac for certain bitfields.
+Adds unit test to verify C bitfield ABI matches python ABI.
