@@ -2566,17 +2566,17 @@
             PyObject *cond = stack_pointer[-1];
             if (Py_IsFalse(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
-                bb_test = BB_TEST(1, 0);;
+                bb_test = BB_TEST(1, 0);
             }
             else if (Py_IsTrue(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
-                bb_test = BB_TEST(0, 0);;
+                bb_test = BB_TEST(0, 0);
             }
             else {
                 int err = PyObject_IsTrue(cond);
                 Py_DECREF(cond);
                 if (err > 0) {
-                    bb_test = BB_TEST(0, 0);;
+                    bb_test = BB_TEST(0, 0);
                 }
                 else {
                     if (err < 0) goto pop_1_error;
@@ -2603,11 +2603,11 @@
             PyObject *value = stack_pointer[-1];
             if (!Py_IsNone(value)) {
                 Py_DECREF(value);
-                bb_test = BB_TEST(0, 0);;
+                bb_test = BB_TEST(0, 0);
             }
             else {
                 _Py_DECREF_NO_DEALLOC(value);
-                bb_test = BB_TEST(1, 0);;
+                bb_test = BB_TEST(1, 0);
             }
             STACK_SHRINK(1);
             DISPATCH();
@@ -2621,6 +2621,20 @@
             }
             else {
                 Py_DECREF(value);
+            }
+            STACK_SHRINK(1);
+            DISPATCH();
+        }
+
+        TARGET(BB_TEST_POP_IF_NONE) {
+            PyObject *value = stack_pointer[-1];
+            if (Py_IsNone(value)) {
+                Py_DECREF(value);
+                bb_test = BB_TEST(0, 0);
+            }
+            else {
+                _Py_DECREF_NO_DEALLOC(value);
+                bb_test = BB_TEST(1, 0);
             }
             STACK_SHRINK(1);
             DISPATCH();

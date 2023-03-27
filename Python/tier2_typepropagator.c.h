@@ -745,6 +745,11 @@
             break;
         }
 
+        TARGET(BB_TEST_POP_IF_NONE) {
+            STACK_SHRINK(1);
+            break;
+        }
+
         TARGET(JUMP_BACKWARD_NO_INTERRUPT) {
             break;
         }

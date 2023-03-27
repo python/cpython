@@ -1979,17 +1979,17 @@ dummy_func(
         inst(BB_TEST_POP_IF_TRUE, (cond -- )) {
             if (Py_IsFalse(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
-                bb_test = BB_TEST(1, 0);;
+                bb_test = BB_TEST(1, 0);
             }
             else if (Py_IsTrue(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
-                bb_test = BB_TEST(0, 0);;
+                bb_test = BB_TEST(0, 0);
             }
             else {
                 int err = PyObject_IsTrue(cond);
                 Py_DECREF(cond);
                 if (err > 0) {
-                    bb_test = BB_TEST(0, 0);;
+                    bb_test = BB_TEST(0, 0);
                 }
                 else {
                     ERROR_IF(err < 0, error);
@@ -2011,11 +2011,11 @@ dummy_func(
         inst(BB_TEST_POP_IF_NOT_NONE, (value -- )) {
             if (!Py_IsNone(value)) {
                 Py_DECREF(value);
-                bb_test = BB_TEST(0, 0);;
+                bb_test = BB_TEST(0, 0);
             }
             else {
                 _Py_DECREF_NO_DEALLOC(value);
-                bb_test = BB_TEST(1, 0);;
+                bb_test = BB_TEST(1, 0);
             }
         }
 
@@ -2026,6 +2026,17 @@ dummy_func(
             }
             else {
                 DECREF_INPUTS();
+            }
+        }
+
+        inst(BB_TEST_POP_IF_NONE, (value -- )) {
+            if (Py_IsNone(value)) {
+                Py_DECREF(value);
+                bb_test = BB_TEST(0, 0);
+            }
+            else {
+                _Py_DECREF_NO_DEALLOC(value);
+                bb_test = BB_TEST(1, 0);
             }
         }
 
