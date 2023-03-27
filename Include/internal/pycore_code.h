@@ -265,7 +265,6 @@ extern _Py_CODEUNIT *_PyTier2_GenerateNextBB(
     _Py_CODEUNIT *curr_executing_instr,
     int jumpby,
     _Py_CODEUNIT **tier1_fallback,
-    char gen_bb_requires_pop,
     char gen_bb_is_successor);
 extern _Py_CODEUNIT *_PyTier2_LocateJumpBackwardsBB(
     struct _PyInterpreterFrame *frame, uint16_t bb_id, int jumpby,

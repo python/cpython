@@ -412,8 +412,6 @@ static const char *const _PyOpcode_OpName[263] = {
     [BB_JUMP_IF_FLAG_UNSET] = "BB_JUMP_IF_FLAG_UNSET",
     [BB_JUMP_IF_FLAG_SET] = "BB_JUMP_IF_FLAG_SET",
     [BB_TEST_ITER] = "BB_TEST_ITER",
-    [BB_TEST_IF_FALSE_OR_POP] = "BB_TEST_IF_FALSE_OR_POP",
-    [BB_TEST_IF_TRUE_OR_POP] = "BB_TEST_IF_TRUE_OR_POP",
     [BB_TEST_POP_IF_FALSE] = "BB_TEST_POP_IF_FALSE",
     [BB_TEST_POP_IF_TRUE] = "BB_TEST_POP_IF_TRUE",
     [BB_TEST_POP_IF_NOT_NONE] = "BB_TEST_POP_IF_NOT_NONE",
@@ -431,6 +429,8 @@ static const char *const _PyOpcode_OpName[263] = {
     [STORE_FAST_BOXED_UNBOXED] = "STORE_FAST_BOXED_UNBOXED",
     [STORE_FAST_UNBOXED_BOXED] = "STORE_FAST_UNBOXED_BOXED",
     [STORE_FAST_UNBOXED_UNBOXED] = "STORE_FAST_UNBOXED_UNBOXED",
+    [196] = "<196>",
+    [197] = "<197>",
     [198] = "<198>",
     [199] = "<199>",
     [200] = "<200>",
@@ -501,6 +501,8 @@ static const char *const _PyOpcode_OpName[263] = {
 
 
 #define EXTRA_CASES \
+    case 196: \
+    case 197: \
     case 198: \
     case 199: \
     case 200: \

@@ -268,25 +268,23 @@ extern "C" {
 #define BB_JUMP_IF_FLAG_UNSET                  176
 #define BB_JUMP_IF_FLAG_SET                    177
 #define BB_TEST_ITER                           178
-#define BB_TEST_IF_FALSE_OR_POP                179
-#define BB_TEST_IF_TRUE_OR_POP                 180
-#define BB_TEST_POP_IF_FALSE                   181
-#define BB_TEST_POP_IF_TRUE                    182
-#define BB_TEST_POP_IF_NOT_NONE                183
-#define BB_TEST_POP_IF_NONE                    184
-#define BB_JUMP_BACKWARD_LAZY                  185
-#define BINARY_CHECK_INT                       186
-#define BINARY_CHECK_FLOAT                     187
-#define UNARY_CHECK_FLOAT                      188
-#define BINARY_OP_ADD_INT_REST                 189
-#define BINARY_OP_ADD_FLOAT_UNBOXED            190
-#define POP_TOP_NO_DECREF                      191
-#define UNBOX_FLOAT                            192
-#define BOX_FLOAT                              193
-#define LOAD_FAST_NO_INCREF                    194
-#define STORE_FAST_BOXED_UNBOXED               195
-#define STORE_FAST_UNBOXED_BOXED               196
-#define STORE_FAST_UNBOXED_UNBOXED             197
+#define BB_TEST_POP_IF_FALSE                   179
+#define BB_TEST_POP_IF_TRUE                    180
+#define BB_TEST_POP_IF_NOT_NONE                181
+#define BB_TEST_POP_IF_NONE                    182
+#define BB_JUMP_BACKWARD_LAZY                  183
+#define BINARY_CHECK_INT                       184
+#define BINARY_CHECK_FLOAT                     185
+#define UNARY_CHECK_FLOAT                      186
+#define BINARY_OP_ADD_INT_REST                 187
+#define BINARY_OP_ADD_FLOAT_UNBOXED            188
+#define POP_TOP_NO_DECREF                      189
+#define UNBOX_FLOAT                            190
+#define BOX_FLOAT                              191
+#define LOAD_FAST_NO_INCREF                    192
+#define STORE_FAST_BOXED_UNBOXED               193
+#define STORE_FAST_UNBOXED_BOXED               194
+#define STORE_FAST_UNBOXED_UNBOXED             195
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \

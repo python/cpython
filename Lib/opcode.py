@@ -465,9 +465,6 @@ _uops = [
     # These tests correspond to the jump instructions
     # FOR_ITER's null (iterator) check
     'BB_TEST_ITER',
-    # JUMP_IF_FALSE_OR_POP, JUMP_IF_TRUE_OR_POP
-    'BB_TEST_IF_FALSE_OR_POP',
-    'BB_TEST_IF_TRUE_OR_POP',
     # POP_JUMP_IF_FALSE, POP_JUMP_IF_TRUE
     'BB_TEST_POP_IF_FALSE',
     'BB_TEST_POP_IF_TRUE',

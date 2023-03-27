@@ -682,9 +682,7 @@ IS_JREL_OPCODE(int opcode)
     switch (opcode) {
     case FOR_ITER:
     case JUMP_FORWARD:
-    case JUMP_IF_FALSE_OR_POP:
-    case JUMP_IF_TRUE_OR_POP:
-        // These two tend to be after a COMPARE_AND_BRANCH.
+        // These two tend to be after a COMPARE_OP
     case POP_JUMP_IF_FALSE:
     case POP_JUMP_IF_TRUE:
     case SEND:
@@ -720,7 +718,7 @@ IS_JUMP_OPCODE(int opcode)
 static inline int
 IS_COMPARE_OPCODE(int opcode)
 {
-    return opcode == COMPARE_OP || opcode == COMPARE_AND_BRANCH;
+    return opcode == COMPARE_OP;
 }
 
 static inline int
@@ -878,9 +876,9 @@ emit_type_guard(_Py_CODEUNIT *write_curr, int guard_opcode, int bb_id)
 
 // Converts the tier 1 branch bytecode to tier 2 branch bytecode.
 // This converts sequence of instructions like
-// JUMP_IF_FALSE_OR_POP
+// POP_JUMP_IF_FALSE
 // to
-// BB_TEST_IF_FALSE_OR_POP
+// BB_TEST_POP_IF_FALSE
 // BB_BRANCH
 // CACHE (bb_id of the current BB << 1 | is_type_branch)
 static inline _Py_CODEUNIT *
@@ -902,16 +900,6 @@ emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr,
     case FOR_ITER:
         opcode = BB_TEST_ITER;
         type_propagate(opcode, oparg, type_context, NULL);
-        break;
-    case JUMP_IF_FALSE_OR_POP:
-        opcode = BB_TEST_IF_FALSE_OR_POP;
-        // This inst has conditional stack effect according to whether the branch is taken.
-        // This inst sets the `gen_bb_requires_pop` flag to handle stack effect of this opcode in BB_BRANCH
-        break;
-    case JUMP_IF_TRUE_OR_POP:
-        opcode = BB_TEST_IF_TRUE_OR_POP;
-        // This inst has conditional stack effect according to whether the branch is taken.
-        // This inst sets the `gen_bb_requires_pop` flag to handle stack effect of this opcode in BB_BRANCH
         break;
     case POP_JUMP_IF_FALSE:
         opcode = BB_TEST_POP_IF_FALSE;
@@ -1240,9 +1228,6 @@ _PyTier2_Code_DetectAndEmitBB(
         switch (opcode) {
         case RESUME:
             opcode = RESUME_QUICK;
-            DISPATCH();
-        case COMPARE_AND_BRANCH:
-            opcode = specop = COMPARE_OP;
             DISPATCH();
         case END_FOR:
             // Assert that we are the start of a BB
@@ -1822,7 +1807,6 @@ _PyTier2_GenerateNextBB(
     _Py_CODEUNIT *curr_executing_instr,
     int jumpby,
     _Py_CODEUNIT **tier1_fallback,
-    char gen_bb_requires_pop,
     char gen_bb_is_successor)
 {
     PyCodeObject *co = frame->f_code;
@@ -1848,19 +1832,10 @@ _PyTier2_GenerateNextBB(
     if (type_context_copy == NULL) {
         return NULL;
     }
-    // If this flag is set, it means that either BB_TEST_IF_FALSE_OR_POP or
-    // BB_TEST_IF_TRUE_OR_POP was ran and the conditional stack effect was performed
-    // This means we have to pop an element from the type stack.
-    if (gen_bb_requires_pop) {
-        type_context_copy->type_stack_ptr--;
-    }
     // For type branches, they directly precede the bb branch instruction
     _Py_CODEUNIT *prev_type_guard = BB_IS_TYPE_BRANCH(bb_id_tagged)
         ? curr_executing_instr - 1 : NULL;
     if (gen_bb_is_successor && prev_type_guard != NULL) {
-        // Is a type branch, so the previous instruction shouldn't be
-        // one of those conditional pops.
-        assert(!gen_bb_requires_pop);
         // Propagate the type guard information.
 #if TYPEPROP_DEBUG && defined(Py_DEBUG)
         fprintf(stderr,

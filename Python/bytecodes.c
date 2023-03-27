@@ -3166,8 +3166,7 @@ dummy_func(
                 // Generate consequent.
                 t2_nextinstr = _PyTier2_GenerateNextBB(
                     frame, cache->bb_id_tagged, next_instr - 1,
-                    0, &tier1_fallback, gen_bb_requires_pop, bb_test);
-                gen_bb_requires_pop = false;
+                    0, &tier1_fallback, bb_test);
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
                     next_instr = tier1_fallback;
@@ -3180,8 +3179,7 @@ dummy_func(
                 // Generate alternative.
                 t2_nextinstr = _PyTier2_GenerateNextBB(
                     frame, cache->bb_id_tagged, next_instr - 1,
-                    oparg, &tier1_fallback, gen_bb_requires_pop, bb_test);
-                gen_bb_requires_pop = false;
+                    oparg, &tier1_fallback, bb_test);
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
                     next_instr = tier1_fallback + oparg;
@@ -3204,8 +3202,7 @@ dummy_func(
 
                 t2_nextinstr = _PyTier2_GenerateNextBB(
                     frame, cache->bb_id_tagged, next_instr - 1,
-                    oparg, &tier1_fallback, gen_bb_requires_pop, bb_test);
-                gen_bb_requires_pop = false;
+                    oparg, &tier1_fallback, bb_test);
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
                     next_instr = tier1_fallback;
@@ -3237,8 +3234,7 @@ dummy_func(
 
                 t2_nextinstr = _PyTier2_GenerateNextBB(
                     frame, cache->bb_id_tagged, next_instr - 1,
-                    oparg, &tier1_fallback, gen_bb_requires_pop, bb_test);
-                gen_bb_requires_pop = false;
+                    oparg, &tier1_fallback, bb_test);
                 if (t2_nextinstr == NULL) {
                     // Fall back to tier 1.
                     next_instr = tier1_fallback;
