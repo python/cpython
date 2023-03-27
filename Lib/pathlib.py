@@ -263,7 +263,7 @@ class PurePath(object):
         """
         if cls is PurePath:
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
-        return super().__new__(cls)
+        return object.__new__(cls)
 
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
@@ -705,7 +705,7 @@ class Path(PurePath):
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
-        return super().__new__(cls, *args, **kwargs)
+        return object.__new__(cls)
 
     def _make_child_relpath(self, part):
         # This is an optimization used for dir walking.  `part` must be
