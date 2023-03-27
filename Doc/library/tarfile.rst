@@ -38,7 +38,7 @@ Some facts and figures:
 
 .. versionchanged:: 3.12
    Archives are extracted using a :ref:`filter <tarfile-extraction-filter>`,
-   which makes easy to either limit surprising/dangerous features,
+   which makes it easy to either limit surprising/dangerous features,
    or to acknowledge that they are expected and the archive is fully trusted.
    By default, archives are fully trusted, but this default is deprecated
    and slated to change in Python 3.14.
@@ -985,8 +985,8 @@ Here is an incomplete list of things to consider:
   etc.).
 * Check that filenames have expected extensions (discouraging files that
   execute when you “click on them”, or extension-less files like Windows special device names),
-* Limiting the number of extracted files, total size of extracted data,
-  filename length (including symlink length), size of individual files.
+* Limit the number of extracted files, total size of extracted data,
+  filename length (including symlink length), and size of individual files.
 * Check for files that would be shadowed on case-insensitive filesystems.
 
 Also note that:

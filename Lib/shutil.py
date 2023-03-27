@@ -1300,7 +1300,7 @@ def unpack_archive(filename, extract_dir=None, format=None, filter=None):
 
     In case none is found, a ValueError is raised.
 
-    If `filter` is given, it is passed to he underlying
+    If `filter` is given, it is passed to the underlying
     extraction function.
     """
     sys.audit("shutil.unpack_archive", filename, extract_dir, format)
