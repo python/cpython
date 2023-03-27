@@ -790,14 +790,14 @@
         }
 
         TARGET(FOR_ITER) {
-            STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            fprintf(stderr, "Type propagation across `FOR_ITER` shouldn't be handled statically!\n");
+            Py_UNREACHABLE();
             break;
         }
 
         TARGET(BB_TEST_ITER) {
-            STACK_GROW(1);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            fprintf(stderr, "Type propagation across `BB_TEST_ITER` shouldn't be handled statically!\n");
+            Py_UNREACHABLE();
             break;
         }
 

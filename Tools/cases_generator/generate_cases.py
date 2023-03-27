@@ -55,6 +55,8 @@ TYPE_PROPAGATOR_FORBIDDEN = [
     # Type propagator shouldn't see these
     "JUMP_IF_FALSE_OR_POP",
     "JUMP_IF_TRUE_OR_POP",
+    "BB_TEST_ITER",
+    "FOR_ITER",
     "SEND",
     "SEND_GEN",
     "YIELD_VALUE",

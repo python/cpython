@@ -124,7 +124,7 @@ dummy_func(
         }
 
         inst(LOAD_CONST, (-- value : consts[oparg])) {
-            value = GETITEM(consts, oparg);
+            value = GETITEM(frame->f_code->co_consts, oparg);
             Py_INCREF(value);
         }
 
@@ -307,18 +307,21 @@ dummy_func(
                    right_unboxed: {<<= PyFloat_Type, PyRawFloat_Type})
             ) {
             assert(cframe.use_tracing == 0);
-            bb_test = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
-            left_unboxed = (bb_test
+            char is_successor = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
+            bb_test = BB_TEST(is_successor ? 1 : 0, 0);
+
+            left_unboxed = (is_successor
                 ? *((PyObject **)(&(((PyFloatObject *)left)->ob_fval)))
                 : left);
-            right_unboxed = (bb_test
+            right_unboxed = (is_successor
                 ? *((PyObject **)(&(((PyFloatObject *)right)->ob_fval)))
                 : right);
         }
 
         inst(UNARY_CHECK_FLOAT, (arg, unused[oparg] -- arg : PyFloat_Type, unused[oparg])) {
             assert(cframe.use_tracing == 0);
-            bb_test = PyFloat_CheckExact(arg);
+            char is_successor = PyFloat_CheckExact(arg);
+            bb_test = BB_TEST(is_successor ? 1 : 0, 0);
         }
 
         inst(BINARY_OP_ADD_FLOAT_UNBOXED, (left, right -- sum : PyRawFloat_Type)) {
@@ -346,7 +349,8 @@ dummy_func(
 
         inst(BINARY_CHECK_INT, (left, right -- left : <<= PyLong_Type, right : <<= PyLong_Type)) {
             assert(cframe.use_tracing == 0);
-            bb_test = PyLong_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
+            char is_successor = PyLong_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
+            bb_test = BB_TEST(is_successor ? 1 : 0, 0);
         }
 
         u_inst(BINARY_OP_ADD_INT_REST, (left, right -- sum : PyLong_Type)) {
@@ -1934,17 +1938,17 @@ dummy_func(
         inst(BB_TEST_POP_IF_FALSE, (cond -- )) {
             if (Py_IsTrue(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
-                bb_test = true;
+                bb_test = BB_TEST(1, 0);
             }
             else if (Py_IsFalse(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
-                bb_test = false;
+                bb_test = BB_TEST(0, 0);
             }
             else {
                 int err = PyObject_IsTrue(cond);
                 Py_DECREF(cond);
                 if (err == 0) {
-                    bb_test = false;
+                    bb_test = BB_TEST(0, 0);
                 }
                 else {
                     ERROR_IF(err < 0, error);
@@ -1975,17 +1979,17 @@ dummy_func(
         inst(BB_TEST_POP_IF_TRUE, (cond -- )) {
             if (Py_IsFalse(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
-                bb_test = true;
+                bb_test = BB_TEST(1, 0);;
             }
             else if (Py_IsTrue(cond)) {
                 _Py_DECREF_NO_DEALLOC(cond);
-                bb_test = false;
+                bb_test = BB_TEST(0, 0);;
             }
             else {
                 int err = PyObject_IsTrue(cond);
                 Py_DECREF(cond);
                 if (err > 0) {
-                    bb_test = false;
+                    bb_test = BB_TEST(0, 0);;
                 }
                 else {
                     ERROR_IF(err < 0, error);
@@ -2007,11 +2011,11 @@ dummy_func(
         inst(BB_TEST_POP_IF_NOT_NONE, (value -- )) {
             if (!Py_IsNone(value)) {
                 Py_DECREF(value);
-                bb_test = false;
+                bb_test = BB_TEST(0, 0);;
             }
             else {
                 _Py_DECREF_NO_DEALLOC(value);
-                bb_test = true;
+                bb_test = BB_TEST(1, 0);;
             }
         }
 
@@ -2175,11 +2179,11 @@ dummy_func(
                 /* iterator ended normally */
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
-                bb_test = false;
+                bb_test = BB_TEST(0, 1);
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
                 DISPATCH();
             }
-            bb_test = true;
+            bb_test = BB_TEST(1, 0);
         }
 
         inst(FOR_ITER_LIST, (unused/1, iter -- iter, next)) {
@@ -3160,7 +3164,7 @@ dummy_func(
             _Py_CODEUNIT *t2_nextinstr = NULL;
             _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
             _Py_CODEUNIT *tier1_fallback = NULL;
-            if (bb_test) {
+            if (BB_TEST_IS_SUCCESSOR(bb_test)) {
                 // Rewrite self
                 _py_set_opcode(next_instr - 1, BB_BRANCH_IF_FLAG_UNSET);
                 // Generate consequent.
@@ -3194,7 +3198,7 @@ dummy_func(
         }
 
         inst(BB_BRANCH_IF_FLAG_UNSET, (unused/1 --)) {
-            if (!bb_test) {
+            if (!BB_TEST_IS_SUCCESSOR(bb_test)) {
                 _Py_CODEUNIT *curr = next_instr - 1;
                 _Py_CODEUNIT *t2_nextinstr = NULL;
                 _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
@@ -3216,7 +3220,7 @@ dummy_func(
         }
 
         inst(BB_JUMP_IF_FLAG_UNSET, (unused/1 --)) {
-            if (!bb_test) {
+            if (!BB_TEST_IS_SUCCESSOR(bb_test)) {
                 JUMPBY(oparg);
                 DISPATCH();
             }
@@ -3224,7 +3228,7 @@ dummy_func(
         }
 
         inst(BB_BRANCH_IF_FLAG_SET, (unused/1 --)) {
-            if (bb_test) {
+            if (BB_TEST_IS_SUCCESSOR(bb_test)) {
                 _Py_CODEUNIT *curr = next_instr - 1;
                 _Py_CODEUNIT *t2_nextinstr = NULL;
                 _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
@@ -3248,7 +3252,7 @@ dummy_func(
         }
 
         inst(BB_JUMP_IF_FLAG_SET, (unused/1 --)) {
-            if (bb_test) {
+            if (BB_TEST_IS_SUCCESSOR(bb_test)) {
                 JUMPBY(oparg);
                 DISPATCH();
             }

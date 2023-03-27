@@ -724,9 +724,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _PyCFrame cframe;
     _PyInterpreterFrame  entry_frame;
     PyObject *kwnames = NULL; // Borrowed reference. Reset by CALL instructions.
-    // true = successor
-    // false = alternate
-    char bb_test = true;
+
+    char bb_test = BB_TEST(0, 0);
 
     /* WARNING: Because the _PyCFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)

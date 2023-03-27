@@ -257,6 +257,20 @@ extern void _PyStaticCode_Fini(PyCodeObject *co);
 extern int _PyStaticCode_Init(PyCodeObject *co);
 
 /* Tier 2 interpreter */
+
+// gen_bb_is_successor:
+//   true = successor
+//   false = alternate
+// gen_bb_requires_pop:
+//   For tier2 type propagation, handling of jump instructions with
+//   runtime-dependent stack effect.
+//   This flag is used to determine if the type context of a new bb
+//   requires a stack element to be popped.
+#define BB_TEST(gen_bb_is_successor, gen_bb_requires_pop) \
+    ((gen_bb_is_successor << 1) + gen_bb_requires_pop)
+#define BB_TEST_IS_SUCCESSOR(bb_test) (bb_test >> 1)
+#define BB_TEST_IS_REQUIRES_POP(bb_test) (bb_test & 1) 
+
 extern _Py_CODEUNIT *_PyCode_Tier2Warmup(struct _PyInterpreterFrame *,
     _Py_CODEUNIT *);
 extern _Py_CODEUNIT *_PyTier2_GenerateNextBB(
@@ -265,7 +279,7 @@ extern _Py_CODEUNIT *_PyTier2_GenerateNextBB(
     _Py_CODEUNIT *curr_executing_instr,
     int jumpby,
     _Py_CODEUNIT **tier1_fallback,
-    char gen_bb_is_successor);
+    char bb_flag);
 extern _Py_CODEUNIT *_PyTier2_LocateJumpBackwardsBB(
     struct _PyInterpreterFrame *frame, uint16_t bb_id, int jumpby,
     _Py_CODEUNIT **tier1_fallback);

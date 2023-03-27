@@ -375,7 +375,7 @@ __type_propagate_TYPE_OVERWRITE(
 }
 
 static void
-__type_stack_shrink(_PyTier2TypeContext *type_context, _Py_TYPENODE_t **type_stackptr, int idx)
+__type_stack_shrink(_Py_TYPENODE_t **type_stackptr, int idx)
 {
     // TODO:
     //   If we don't touch the stack elements
@@ -491,7 +491,7 @@ type_propagate(
 #define STACK_GROW(idx)             *type_stackptr += (idx)
 
 // Stack shrinking has to NULL the nodes
-#define STACK_SHRINK(idx)           __type_stack_shrink(type_context, type_stackptr, (idx))
+#define STACK_SHRINK(idx)           __type_stack_shrink(type_stackptr, (idx))
 
 #if TYPEPROP_DEBUG
     fprintf(stderr, "  [-] Type stack bef: %llu\n", (uint64_t)(*type_stackptr - type_stack));
@@ -577,7 +577,7 @@ _PyTier2_BBSpaceCheckAndReallocIfNeeded(PyCodeObject *co, Py_ssize_t space_reque
         // Note: overallocate
         Py_ssize_t new_size = sizeof(_PyTier2BBSpace) + (curr->water_level + space_requested) * 2;
 #if BB_DEBUG
-        fprintf(stderr, "Allocating new BB of size %lld\n", new_size);
+        fprintf(stderr, "Allocating new BB of size %lld\n", (int64_t)new_size);
 #endif
         // @TODO We can't Realloc, we actually need to do the linked list method.
         _PyTier2BBSpace *new_space = PyMem_Realloc(curr, new_size);
@@ -899,7 +899,8 @@ emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr,
         break;
     case FOR_ITER:
         opcode = BB_TEST_ITER;
-        type_propagate(opcode, oparg, type_context, NULL);
+        // This inst has conditional stack effect according to whether the branch is taken.
+        // This inst sets the `gen_bb_requires_pop` flag to handle stack effect of this opcode in BB_BRANCH
         break;
     case POP_JUMP_IF_FALSE:
         opcode = BB_TEST_POP_IF_FALSE;
@@ -1225,6 +1226,9 @@ _PyTier2_Code_DetectAndEmitBB(
         // We need to check whether we can eliminate the guard based on the current type context.
 
     dispatch_opcode:
+#if TYPEPROP_DEBUG
+        fprintf(stderr, "offset: %Id\n", curr - _PyCode_CODE(co));
+#endif
         switch (opcode) {
         case RESUME:
             opcode = RESUME_QUICK;
@@ -1378,7 +1382,7 @@ _PyTier2_Code_DetectAndEmitBB(
             write_i = rebox_stack(write_i, starting_type_context, 4);
             DISPATCH();
         default:
-#if BB_DEBUG || TYPEPROP_DEBUG
+#if BB_DEBUG && !TYPEPROP_DEBUG
             fprintf(stderr, "offset: %Id\n", curr - _PyCode_CODE(co));
 #endif
             if (IS_BACKWARDS_JUMP_TARGET(co, curr)) {
@@ -1807,7 +1811,7 @@ _PyTier2_GenerateNextBB(
     _Py_CODEUNIT *curr_executing_instr,
     int jumpby,
     _Py_CODEUNIT **tier1_fallback,
-    char gen_bb_is_successor)
+    char bb_flag)
 {
     PyCodeObject *co = frame->f_code;
     assert(co->_tier2_info != NULL);
@@ -1832,10 +1836,14 @@ _PyTier2_GenerateNextBB(
     if (type_context_copy == NULL) {
         return NULL;
     }
+
+    if (BB_TEST_IS_REQUIRES_POP(bb_flag)) {
+        __type_stack_shrink(&(type_context_copy->type_stack_ptr), 1);
+    }
     // For type branches, they directly precede the bb branch instruction
     _Py_CODEUNIT *prev_type_guard = BB_IS_TYPE_BRANCH(bb_id_tagged)
         ? curr_executing_instr - 1 : NULL;
-    if (gen_bb_is_successor && prev_type_guard != NULL) {
+    if (BB_TEST_IS_SUCCESSOR(bb_flag) && prev_type_guard != NULL) {
         // Propagate the type guard information.
 #if TYPEPROP_DEBUG && defined(Py_DEBUG)
         fprintf(stderr,
