@@ -46,7 +46,7 @@ dis_c_instance_method = """\
 
 %3d        LOAD_FAST                1 (x)
            LOAD_CONST               1 (1)
-           COMPARE_OP              32 (==)
+           COMPARE_OP              40 (==)
            LOAD_FAST                0 (self)
            STORE_ATTR               0 (x)
            RETURN_CONST             0 (None)
@@ -56,7 +56,7 @@ dis_c_instance_method_bytes = """\
        RESUME                   0
        LOAD_FAST                1
        LOAD_CONST               1
-       COMPARE_OP              32 (==)
+       COMPARE_OP              40 (==)
        LOAD_FAST                0
        STORE_ATTR               0
        RETURN_CONST             0
@@ -67,7 +67,7 @@ dis_c_class_method = """\
 
 %3d        LOAD_FAST                1 (x)
            LOAD_CONST               1 (1)
-           COMPARE_OP              32 (==)
+           COMPARE_OP              40 (==)
            LOAD_FAST                0 (cls)
            STORE_ATTR               0 (x)
            RETURN_CONST             0 (None)
@@ -78,7 +78,7 @@ dis_c_static_method = """\
 
 %3d        LOAD_FAST                0 (x)
            LOAD_CONST               1 (1)
-           COMPARE_OP              32 (==)
+           COMPARE_OP              40 (==)
            STORE_FAST               0 (x)
            RETURN_CONST             0 (None)
 """ % (_C.sm.__code__.co_firstlineno, _C.sm.__code__.co_firstlineno + 2,)
@@ -1198,6 +1198,35 @@ class DisTests(DisTestBase):
                     self.assertEqual(caches.count(""), empty_caches)
                     self.assertEqual(len(caches), total_caches)
 
+    @cpython_only
+    def test_show_currinstr_with_cache(self):
+        """
+        Make sure that with lasti pointing to CACHE, it still shows the current
+        line correctly
+        """
+        def f():
+            print(a)
+        # The code above should generate a LOAD_GLOBAL which has CACHE instr after
+        # However, this might change in the future. So we explicitly try to find
+        # a CACHE entry in the instructions. If we can't do that, fail the test
+
+        for inst in dis.get_instructions(f, show_caches=True):
+            if inst.opname == "CACHE":
+                op_offset = inst.offset - 2
+                cache_offset = inst.offset
+                break
+        else:
+            self.fail("Can't find a CACHE entry in the function provided to do the test")
+
+        assem_op = self.get_disassembly(f.__code__, lasti=op_offset, wrapper=False)
+        assem_cache = self.get_disassembly(f.__code__, lasti=cache_offset, wrapper=False)
+
+        # Make sure --> exists and points to the correct offset
+        self.assertRegex(assem_op, fr"-->\s+{op_offset}")
+        # Make sure when lasti points to cache, it shows the same disassembly
+        self.assertEqual(assem_op, assem_cache)
+
+
 class DisWithFileTests(DisTests):
 
     # Run the tests again, using the file arg instead of print
@@ -1554,12 +1583,12 @@ expected_opinfo_jumpy = [
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=54, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=56, starts_line=5, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_CONST', opcode=100, arg=2, argval=4, argrepr='4', offset=58, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='COMPARE_AND_BRANCH', opcode=141, arg=13, argval='<', argrepr='<', offset=60, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='COMPARE_OP', opcode=107, arg=2, argval='<', argrepr='<', offset=60, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_JUMP_IF_FALSE', opcode=114, arg=1, argval=68, argrepr='to 68', offset=64, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='JUMP_BACKWARD', opcode=140, arg=21, argval=26, argrepr='to 26', offset=66, starts_line=6, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=68, starts_line=7, is_jump_target=True, positions=None),
   Instruction(opname='LOAD_CONST', opcode=100, arg=3, argval=6, argrepr='6', offset=70, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='COMPARE_AND_BRANCH', opcode=141, arg=68, argval='>', argrepr='>', offset=72, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='COMPARE_OP', opcode=107, arg=68, argval='>', argrepr='>', offset=72, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_JUMP_IF_TRUE', opcode=115, arg=1, argval=80, argrepr='to 80', offset=76, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='JUMP_BACKWARD', opcode=140, arg=27, argval=26, argrepr='to 26', offset=78, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=80, starts_line=8, is_jump_target=True, positions=None),
@@ -1581,12 +1610,12 @@ expected_opinfo_jumpy = [
   Instruction(opname='STORE_FAST', opcode=125, arg=0, argval='i', argrepr='i', offset=146, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=148, starts_line=14, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_CONST', opcode=100, arg=3, argval=6, argrepr='6', offset=150, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='COMPARE_AND_BRANCH', opcode=141, arg=75, argval='>', argrepr='>', offset=152, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='COMPARE_OP', opcode=107, arg=68, argval='>', argrepr='>', offset=152, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_JUMP_IF_FALSE', opcode=114, arg=1, argval=160, argrepr='to 160', offset=156, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='JUMP_BACKWARD', opcode=140, arg=25, argval=110, argrepr='to 110', offset=158, starts_line=15, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=160, starts_line=16, is_jump_target=True, positions=None),
   Instruction(opname='LOAD_CONST', opcode=100, arg=2, argval=4, argrepr='4', offset=162, starts_line=None, is_jump_target=False, positions=None),
-  Instruction(opname='COMPARE_AND_BRANCH', opcode=141, arg=13, argval='<', argrepr='<', offset=164, starts_line=None, is_jump_target=False, positions=None),
+  Instruction(opname='COMPARE_OP', opcode=107, arg=2, argval='<', argrepr='<', offset=164, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='POP_JUMP_IF_FALSE', opcode=114, arg=1, argval=172, argrepr='to 172', offset=168, starts_line=None, is_jump_target=False, positions=None),
   Instruction(opname='JUMP_FORWARD', opcode=110, arg=15, argval=202, argrepr='to 202', offset=170, starts_line=17, is_jump_target=False, positions=None),
   Instruction(opname='LOAD_FAST', opcode=124, arg=0, argval='i', argrepr='i', offset=172, starts_line=11, is_jump_target=True, positions=None),
