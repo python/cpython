@@ -76,7 +76,7 @@
     <ClCompile Include="..\Python\ceval.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\cfg.c">
+    <ClCompile Include="..\Python\cfg_opt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\classobject.c">

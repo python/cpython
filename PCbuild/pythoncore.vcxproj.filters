@@ -1106,7 +1106,7 @@
     <ClCompile Include="..\Python\ceval.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\cfg.c">
+    <ClCompile Include="..\Python\cfg_opt.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\codecs.c">
