@@ -1,1 +1,2 @@
-Added SyntaxError check on :mod:`pdb`'s display command
+It's no longer possible to register expressions to display in
+:class:`~pdb.Pdb` that raise :exc:`SyntaxError`. Patch by Tian Gao.
