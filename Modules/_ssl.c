@@ -665,6 +665,16 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
                     ERR_GET_REASON(e) == SSL_R_CERTIFICATE_VERIFY_FAILED) {
                 type = state->PySSLCertVerificationErrorObject;
             }
+#if defined(SSL_R_UNEXPECTED_EOF_WHILE_READING)
+            /* OpenSSL 3.0 changed transport EOF from SSL_ERROR_SYSCALL with
+             * zero return value to SSL_ERROR_SSL with a special error code. */
+            if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
+                    ERR_GET_REASON(e) == SSL_R_UNEXPECTED_EOF_WHILE_READING) {
+                p = PY_SSL_ERROR_EOF;
+                type = state->PySSLEOFErrorObject;
+                errstr = "EOF occurred in violation of protocol";
+            }
+#endif
             break;
         }
         default:
@@ -3133,10 +3143,6 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 #endif
 #ifdef SSL_OP_SINGLE_ECDH_USE
     options |= SSL_OP_SINGLE_ECDH_USE;
-#endif
-#ifdef SSL_OP_IGNORE_UNEXPECTED_EOF
-    /* Make OpenSSL 3.0.0 behave like 1.1.1 */
-    options |= SSL_OP_IGNORE_UNEXPECTED_EOF;
 #endif
     SSL_CTX_set_options(self->ctx, options);
 
