@@ -95,8 +95,7 @@ int _PyCfg_OptimizeCodeUnit(_PyCfgBuilder *g, PyObject *consts, PyObject *const_
 int _PyCfg_Stackdepth(_PyCfgBasicblock *entryblock, int code_flags);
 void _PyCfg_ConvertExceptionHandlersToNops(_PyCfgBasicblock *entryblock);
 int _PyCfg_ResolveLineNumbers(_PyCfgBuilder *g, int firstlineno);
-void _PyCfg_ResolveJumpOffsets(_PyCfgBasicblock *entryblock);
-int _PyCfg_NormalizeJumps(_PyCfgBuilder *g);
+int _PyCfg_ResolveJumps(_PyCfgBuilder *g);
 int _PyCfg_InstrSize(_PyCfgInstruction *instruction);
 
 

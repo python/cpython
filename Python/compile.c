@@ -36,10 +36,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
 
-#define NEED_OPCODE_METADATA
 #include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
-#undef NEED_OPCODE_METADATA
-
 
 #define DEFAULT_CODE_SIZE 128
 #define DEFAULT_LNOTAB_SIZE 16
@@ -7344,55 +7341,6 @@ fix_cell_offsets(struct compiler_unit *u, basicblock *entryblock, int *fixedmap)
 }
 
 
-#ifndef NDEBUG
-
-static bool
-no_redundant_jumps(cfg_builder *g) {
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        cfg_instr *last = _PyCfg_BasicblockLastInstr(b);
-        if (last != NULL) {
-            if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
-                assert(last->i_target != b->b_next);
-                if (last->i_target == b->b_next) {
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
-}
-
-static bool
-opcode_metadata_is_sane(cfg_builder *g) {
-    bool result = true;
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        for (int i = 0; i < b->b_iused; i++) {
-            cfg_instr *instr = &b->b_instr[i];
-            int opcode = instr->i_opcode;
-            int oparg = instr->i_oparg;
-            assert(opcode <= MAX_REAL_OPCODE);
-            for (int jump = 0; jump <= 1; jump++) {
-                int popped = _PyOpcode_num_popped(opcode, oparg, jump ? true : false);
-                int pushed = _PyOpcode_num_pushed(opcode, oparg, jump ? true : false);
-                assert((pushed < 0) == (popped < 0));
-                if (pushed >= 0) {
-                    assert(_PyOpcode_opcode_metadata[opcode].valid_entry);
-                    int effect = stack_effect(opcode, instr->i_oparg, jump);
-                    if (effect != pushed - popped) {
-                       fprintf(stderr,
-                               "op=%d arg=%d jump=%d: stack_effect (%d) != pushed (%d) - popped (%d)\n",
-                               opcode, oparg, jump, effect, pushed, popped);
-                       result = false;
-                    }
-                }
-            }
-        }
-    }
-    return result;
-}
-
-#endif
-
 static int
 prepare_localsplus(struct compiler_unit* u, cfg_builder *g, int code_flags)
 {
@@ -7489,14 +7437,12 @@ assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     _PyCfg_ConvertExceptionHandlersToNops(g.g_entryblock);
 
     /* Order of basic blocks must have been determined by now */
-    if (_PyCfg_NormalizeJumps(&g) < 0) {
+
+    if (_PyCfg_ResolveJumps(&g) < 0) {
         goto error;
     }
-    assert(no_redundant_jumps(&g));
-    assert(opcode_metadata_is_sane(&g));
 
     /* Can't modify the bytecode after computing jump offsets. */
-    _PyCfg_ResolveJumpOffsets(g.g_entryblock);
 
     struct assembler a;
     int res = assemble_emit(&a, g.g_entryblock, u->u_firstlineno, const_cache);
