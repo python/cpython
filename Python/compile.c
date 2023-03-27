@@ -28,7 +28,7 @@
 #define NEED_OPCODE_TABLES
 #include "pycore_opcode_utils.h"
 #undef NEED_OPCODE_TABLES
-#include "pycore_cfg.h"
+#include "pycore_cfg_opt.h"
 #include "pycore_code.h"          // _PyCode_New()
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"
