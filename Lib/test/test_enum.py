@@ -1386,7 +1386,6 @@ class TestSpecial(unittest.TestCase):
             class Huh(MyStr, MyInt, Enum):
                 One = 1
 
-
     def test_pickle_enum(self):
         if isinstance(Stooges, Exception):
             raise Stooges
