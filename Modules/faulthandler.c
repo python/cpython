@@ -120,7 +120,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
             return -1;
         if (fd < 0) {
             PyErr_SetString(PyExc_ValueError,
-                            "file is not a valid file descripter");
+                            "file is not a valid file descriptor");
             return -1;
         }
         *file_ptr = NULL;
@@ -953,7 +953,7 @@ faulthandler_unregister_py(PyObject *self, PyObject *args)
 static void
 faulthandler_suppress_crash_report(void)
 {
-#ifdef MS_WINDOWS
+#ifdef MS_WINDOWS_DESKTOP
     UINT mode;
 
     /* Configure Windows to not display the Windows Error Reporting dialog */

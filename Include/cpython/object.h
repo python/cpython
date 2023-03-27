@@ -11,7 +11,11 @@ PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
 #endif
 
 #ifdef Py_REF_DEBUG
-PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
+/* These are useful as debugging aids when chasing down refleaks. */
+PyAPI_FUNC(Py_ssize_t) _Py_GetGlobalRefTotal(void);
+#  define _Py_GetRefTotal() _Py_GetGlobalRefTotal()
+PyAPI_FUNC(Py_ssize_t) _Py_GetLegacyRefTotal(void);
+PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_GetRefTotal(PyInterpreterState *);
 #endif
 
 

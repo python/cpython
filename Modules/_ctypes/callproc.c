@@ -1013,41 +1013,43 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
 void _ctypes_extend_error(PyObject *exc_class, const char *fmt, ...)
 {
     va_list vargs;
-    PyObject *tp, *v, *tb, *s, *cls_str, *msg_str;
 
     va_start(vargs, fmt);
-    s = PyUnicode_FromFormatV(fmt, vargs);
+    PyObject *s = PyUnicode_FromFormatV(fmt, vargs);
     va_end(vargs);
-    if (!s)
+    if (s == NULL) {
         return;
+    }
 
-    PyErr_Fetch(&tp, &v, &tb);
-    PyErr_NormalizeException(&tp, &v, &tb);
-    if (PyType_Check(tp))
-        cls_str = PyType_GetName((PyTypeObject *)tp);
-    else
-        cls_str = PyObject_Str(tp);
+    assert(PyErr_Occurred());
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(exc != NULL);
+    PyObject *cls_str = PyType_GetName(Py_TYPE(exc));
     if (cls_str) {
         PyUnicode_AppendAndDel(&s, cls_str);
         PyUnicode_AppendAndDel(&s, PyUnicode_FromString(": "));
-        if (s == NULL)
+        if (s == NULL) {
             goto error;
-    } else
+        }
+    }
+    else {
         PyErr_Clear();
-    msg_str = PyObject_Str(v);
-    if (msg_str)
+    }
+
+    PyObject *msg_str = PyObject_Str(exc);
+    if (msg_str) {
         PyUnicode_AppendAndDel(&s, msg_str);
+    }
     else {
         PyErr_Clear();
         PyUnicode_AppendAndDel(&s, PyUnicode_FromString("???"));
     }
-    if (s == NULL)
+    if (s == NULL) {
         goto error;
+    }
     PyErr_SetObject(exc_class, s);
 error:
-    Py_XDECREF(tp);
-    Py_XDECREF(v);
-    Py_XDECREF(tb);
+    Py_XDECREF(exc);
     Py_XDECREF(s);
 }
 

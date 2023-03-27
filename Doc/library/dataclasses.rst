@@ -389,7 +389,7 @@ Module contents
    :func:`astuple` raises :exc:`TypeError` if ``obj`` is not a dataclass
    instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None)
 
    Creates a new dataclass with name ``cls_name``, fields as defined
    in ``fields``, base classes as given in ``bases``, and initialized
@@ -400,6 +400,10 @@ Module contents
    ``repr``, ``eq``, ``order``, ``unsafe_hash``, ``frozen``,
    ``match_args``, ``kw_only``, ``slots``, and ``weakref_slot`` have
    the same meaning as they do in :func:`dataclass`.
+
+   If ``module`` is defined, the ``__module__`` attribute
+   of the dataclass is set to that value.
+   By default, it is set to the module name of the caller.
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with ``__annotations__`` can
