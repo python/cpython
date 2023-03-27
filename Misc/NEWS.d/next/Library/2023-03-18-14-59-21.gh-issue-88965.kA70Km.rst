@@ -1,0 +1,7 @@
+typing: Fix a bug relating to substitution in custom classes generic over a
+:class:`~typing.ParamSpec`. Previously, if the ``ParamSpec`` was substituted
+with a parameters list that itself contained a :class:`~typing.TypeVar`, the
+``TypeVar`` in the parameters list could not be subsequently substituted. This
+is now fixed.
+
+Patch by Nikita Sobolev.
