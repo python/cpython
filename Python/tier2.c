@@ -863,7 +863,7 @@ emit_type_guard(_Py_CODEUNIT *write_curr, int guard_opcode, int bb_id)
         _PyOpcode_OpName[guard_opcode]);
 #endif
     write_curr->op.code = guard_opcode;
-    write_curr->op.arg = type_guard_to_index[BINARY_CHECK_INT];
+    write_curr->op.arg = type_guard_to_index[guard_opcode];
     write_curr++;
     _py_set_opcode(write_curr, BB_BRANCH);
     write_curr->op.arg = 0;
