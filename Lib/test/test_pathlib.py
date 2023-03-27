@@ -27,7 +27,7 @@ class _BaseFlavourTest(object):
 
     def _check_parse_parts(self, arg, expected):
         def f(parts):
-            path = self.flavour.join(*parts) if parts else ''
+            path = self.cls(*parts)._raw_path
             return self.cls._parse_path(path)
         sep = self.flavour.sep
         altsep = self.flavour.altsep
