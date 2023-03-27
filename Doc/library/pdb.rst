@@ -125,7 +125,7 @@ slightly different way:
 
    Evaluate the *expression* (given as a string or a code object) under debugger
    control.  When :func:`runeval` returns, it returns the value of the
-   expression.  Otherwise this function is similar to :func:`run`.
+   *expression*.  Otherwise this function is similar to :func:`run`.
 
 
 .. function:: runcall(function, *args, **kwds)
@@ -178,7 +178,7 @@ access further features, you have to do this yourself:
    that matches one of these patterns. [1]_
 
    By default, Pdb sets a handler for the SIGINT signal (which is sent when the
-   user presses :kbd:`Ctrl-C` on the console) when you give a ``continue`` command.
+   user presses :kbd:`Ctrl-C` on the console) when you give a :pdbcmd:`continue` command.
    This allows you to break into the debugger again by pressing :kbd:`Ctrl-C`.  If you
    want Pdb not to touch the SIGINT handler, set *nosigint* to true.
 
@@ -328,9 +328,9 @@ can be overridden by the local file.
 
 .. pdbcommand:: ignore bpnumber [count]
 
-   Set the ignore count for the given breakpoint number.  If count is omitted,
+   Set the ignore count for the given breakpoint number.  If *count* is omitted,
    the ignore count is set to 0.  A breakpoint becomes active when the ignore
-   count is zero.  When non-zero, the count is decremented each time the
+   count is zero.  When non-zero, the *count* is decremented each time the
    breakpoint is reached and the breakpoint is not disabled and any associated
    condition evaluates to true.
 
@@ -369,7 +369,7 @@ can be overridden by the local file.
    breakpoint—which could have its own command list, leading to ambiguities about
    which list to execute.
 
-   If you use the 'silent' command in the command list, the usual message about
+   If you use the ``silent`` command in the command list, the usual message about
    stopping at a breakpoint is not printed.  This may be desirable for breakpoints
    that are to print a specific message and then continue.  If none of the other
    commands print anything, you see no sign that the breakpoint was reached.
@@ -392,8 +392,8 @@ can be overridden by the local file.
    Without argument, continue execution until the line with a number greater
    than the current one is reached.
 
-   With a line number, continue execution until a line with a number greater or
-   equal to that is reached.  In both cases, also stop when the current frame
+   With *lineno*, continue execution until a line with a number greater or
+   equal to *lineno* is reached.  In both cases, also stop when the current frame
    returns.
 
    .. versionchanged:: 3.2
@@ -446,7 +446,7 @@ can be overridden by the local file.
 
 .. pdbcommand:: p expression
 
-   Evaluate the *expression* in the current context and print its value.
+   Evaluate *expression* in the current context and print its value.
 
    .. note::
 
@@ -456,32 +456,32 @@ can be overridden by the local file.
 
 .. pdbcommand:: pp expression
 
-   Like the :pdbcmd:`p` command, except the value of the expression is
+   Like the :pdbcmd:`p` command, except the value of *expression* is
    pretty-printed using the :mod:`pprint` module.
 
 .. pdbcommand:: whatis expression
 
-   Print the type of the *expression*.
+   Print the type of *expression*.
 
 .. pdbcommand:: source expression
 
-   Try to get source code for the given object and display it.
+   Try to get source code of *expression* and display it.
 
    .. versionadded:: 3.2
 
 .. pdbcommand:: display [expression]
 
-   Display the value of the expression if it changed, each time execution stops
+   Display the value of *expression* if it changed, each time execution stops
    in the current frame.
 
-   Without expression, list all display expressions for the current frame.
+   Without *expression*, list all display expressions for the current frame.
 
    .. versionadded:: 3.2
 
 .. pdbcommand:: undisplay [expression]
 
-   Do not display the expression any more in the current frame.  Without
-   expression, clear all display expressions for the current frame.
+   Do not display *expression* anymore in the current frame.  Without
+   *expression*, clear all display expressions for the current frame.
 
    .. versionadded:: 3.2
 
@@ -497,10 +497,10 @@ can be overridden by the local file.
 
 .. pdbcommand:: alias [name [command]]
 
-   Create an alias called *name* that executes *command*.  The command must
+   Create an alias called *name* that executes *command*.  The *command* must
    *not* be enclosed in quotes.  Replaceable parameters can be indicated by
    ``%1``, ``%2``, and so on, while ``%*`` is replaced by all the parameters.
-   If no command is given, the current alias for *name* is shown. If no
+   If *command* is omitted, the current alias for *name* is shown. If no
    arguments are given, all aliases are listed.
 
    Aliases may be nested and can contain anything that can be legally typed at
@@ -519,7 +519,7 @@ can be overridden by the local file.
 
 .. pdbcommand:: unalias name
 
-   Delete the specified alias.
+   Delete the specified alias *name*.
 
 .. pdbcommand:: ! statement
 
@@ -535,7 +535,7 @@ can be overridden by the local file.
 .. pdbcommand:: run [args ...]
                 restart [args ...]
 
-   Restart the debugged Python program.  If an argument is supplied, it is split
+   Restart the debugged Python program.  If *args* is supplied, it is split
    with :mod:`shlex` and the result is used as the new :data:`sys.argv`.
    History, breakpoints, actions and debugger options are preserved.
    :pdbcmd:`restart` is an alias for :pdbcmd:`run`.
@@ -546,8 +546,8 @@ can be overridden by the local file.
 
 .. pdbcommand:: debug code
 
-   Enter a recursive debugger that steps through the code
-   argument (which is an arbitrary expression or statement to be
+   Enter a recursive debugger that steps through *code*
+   (which is an arbitrary expression or statement to be
    executed in the current environment).
 
 .. pdbcommand:: retval

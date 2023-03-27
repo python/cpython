@@ -285,6 +285,23 @@ class TestCase(unittest.TestCase):
         c = C(5)
         self.assertEqual(c.BUILTINS, 5)
 
+    def test_field_with_special_single_underscore_names(self):
+        # gh-98886
+
+        @dataclass
+        class X:
+            x: int = field(default_factory=lambda: 111)
+            _dflt_x: int = field(default_factory=lambda: 222)
+
+        X()
+
+        @dataclass
+        class Y:
+            y: int = field(default_factory=lambda: 111)
+            _HAS_DEFAULT_FACTORY: int = 222
+
+        assert Y(y=222).y == 222
+
     def test_field_named_like_builtin(self):
         # Attribute names can shadow built-in names
         # since code generation is used.
