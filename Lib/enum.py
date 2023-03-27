@@ -518,8 +518,13 @@ class EnumType(type):
         #
         # adjust the sunders
         _order_ = classdict.pop('_order_', None)
+        _gnv = classdict.get('_generate_next_value_')
+        if _gnv is not None and type(_gnv) is not staticmethod:
+            _gnv = staticmethod(_gnv)
         # convert to normal dict
         classdict = dict(classdict.items())
+        if _gnv is not None:
+            classdict['_generate_next_value_'] = _gnv
         #
         # data type of member and the controlling Enum class
         member_type, first_enum = metacls._get_mixins_(cls, bases)
