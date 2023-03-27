@@ -231,6 +231,31 @@ _testfunc_bitfield_by_reference2(Test7 *in) {
     return result;
 }
 
+typedef struct{
+    uint16_t A ;
+    uint16_t B : 9;
+    uint16_t C : 1;
+    uint16_t D : 1;
+    uint16_t E : 1;
+    uint16_t F : 1;
+    uint16_t G : 3;
+    uint32_t H : 10;
+    uint32_t I : 20;
+    uint32_t J : 2;
+} Test9;
+
+EXPORT(long)
+_testfunc_bitfield_by_reference3(Test9 *in, long pos) {
+    long data[] = {in->A , in->B , in->C , in->D , in->E , in->F , in->G , in->H , in->I , in->J};
+    long data_length = (long) (sizeof(data)/sizeof(data[0]));
+    if(pos < 0)
+        return -1;
+    if(pos >= data_length)
+        return -1;
+
+    return data[pos];
+}
+
 typedef union {
     signed int A: 1, B:2, C:3, D:2;
 } Test8;

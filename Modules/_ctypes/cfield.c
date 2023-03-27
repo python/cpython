@@ -86,6 +86,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 #ifndef MS_WIN32
     } else if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
+        && *pfield_size != *pbitofs /* Current field has been filled, start new one */
         && dict->size * 8 >= *pfield_size
         && (*pbitofs + bitsize) <= dict->size * 8) {
         /* expand bit field */
