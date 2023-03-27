@@ -760,8 +760,8 @@ A ``TarInfo`` object has the following public data attributes:
 
    A dictionary containing key-value pairs of an associated pax extended header.
 
-.. method:: TarInfo.replace(name=..., mtime=..., mode=..., linkname=..., \
-                            uid=..., gid=..., uname=..., gname=..., \
+.. method:: TarInfo.replace(name=..., mtime=..., mode=..., linkname=...,
+                            uid=..., gid=..., uname=..., gname=...,
                             deep=True)
 
    .. versionadded:: 3.12
