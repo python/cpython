@@ -444,7 +444,7 @@ def register_X_browsers():
 
     # Gnome's Epiphany
     if shutil.which("epiphany"):
-        register(browser, None, Epiphany("epiphany"))
+        register("epiphany", None, Epiphany("epiphany"))
 
     # Google Chrome/Chromium browsers
     for browser in ("google-chrome", "chrome", "chromium", "chromium-browser"):
