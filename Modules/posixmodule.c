@@ -4811,16 +4811,17 @@ os__path_isdir_impl(PyObject *module, PyObject *path)
                 slow_path = FALSE;
             }
         } else {
-        switch(GetLastError()) {
-        case ERROR_FILE_NOT_FOUND:
-        case ERROR_PATH_NOT_FOUND:
-        case ERROR_NOT_READY:
-        case ERROR_BAD_NET_NAME:
-            /* These errors aren't worth retrying with the slow path */
-            slow_path = FALSE;
-        case ERROR_NOT_SUPPORTED:
-            /* indicates the API couldn't be loaded */
-            break;
+            switch(GetLastError()) {
+                case ERROR_FILE_NOT_FOUND:
+                case ERROR_PATH_NOT_FOUND:
+                case ERROR_NOT_READY:
+                case ERROR_BAD_NET_NAME:
+                    /* These errors aren't worth retrying with the slow path */
+                    slow_path = FALSE;
+                case ERROR_NOT_SUPPORTED:
+                    /* indicates the API couldn't be loaded */
+                    break;
+            }
         }
     }
     if (_path.fd != -1) {
