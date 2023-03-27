@@ -1,1 +1,1 @@
-Display current line label correctly for :mod:`dis` when CACHE entries exist
+Display current line label correctly in :mod:`dis` when ``show_caches`` is False and ``lasti`` points to a CACHE entry.
