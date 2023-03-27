@@ -923,7 +923,7 @@ class EnumType(type):
     def _check_for_existing_members_(mcls, class_name, bases):
         for chain in bases:
             for base in chain.__mro__:
-                if issubclass(base, Enum) and base._member_names_:
+                if isinstance(base, EnumType) and base._member_names_:
                     raise TypeError(
                             "<enum %r> cannot extend %r"
                             % (class_name, base)
@@ -942,7 +942,7 @@ class EnumType(type):
         # ensure final parent class is an Enum derivative, find any concrete
         # data type, and check that Enum has no members
         first_enum = bases[-1]
-        if not issubclass(first_enum, Enum):
+        if not isinstance(first_enum, EnumType):
             raise TypeError("new enumerations should be created as "
                     "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
         member_type = mcls._find_data_type_(class_name, bases) or object
