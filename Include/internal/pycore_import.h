@@ -15,6 +15,10 @@ struct _import_runtime_state {
        See PyInterpreterState.modules_by_index for more info. */
     Py_ssize_t last_module_index;
     struct {
+        /* A thread state tied to the main interpreter,
+           used exclusively for when the extensions dict is access/modified
+           from an arbitrary thread. */
+        PyThreadState main_tstate;
         /* A dict mapping (filename, name) to PyModuleDef for modules.
            Only legacy (single-phase init) extension modules are added
            and only if they support multiple initialization (m_size >- 0)

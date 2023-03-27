@@ -890,6 +890,15 @@ extensions_lock_release(void)
    dictionary, to avoid loading shared libraries twice.
 */
 
+static void
+_extensions_cache_init(void)
+{
+    /* The runtime (i.e. main interpreter) must be initializing,
+       so we don't need to worry about the lock. */
+    _PyThreadState_InitDetached(&EXTENSIONS.main_tstate,
+                                _PyInterpreterState_Main());
+}
+
 static PyModuleDef *
 _extensions_cache_get(PyObject *filename, PyObject *name)
 {
@@ -981,6 +990,7 @@ _extensions_cache_clear_all(void)
        so we don't need to worry about the lock. */
     assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
     Py_CLEAR(EXTENSIONS.dict);
+    _PyThreadState_ClearDetached(&EXTENSIONS.main_tstate);
 }
 
 
@@ -2979,6 +2989,10 @@ _PyImport_Fini2(void)
 PyStatus
 _PyImport_InitCore(PyThreadState *tstate, PyObject *sysmod, int importlib)
 {
+    if (_Py_IsMainInterpreter(tstate->interp)) {
+        _extensions_cache_init();
+    }
+
     // XXX Initialize here: interp->modules and interp->import_func.
     // XXX Initialize here: sys.modules and sys.meta_path.
 
