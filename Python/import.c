@@ -881,7 +881,7 @@ gets even messier.
 static PyModuleDef *
 _extensions_cache_get(PyObject *filename, PyObject *name)
 {
-    PyObject *extensions = EXTENSIONS;
+    PyObject *extensions = EXTENSIONS.dict;
     if (extensions == NULL) {
         return NULL;
     }
@@ -897,13 +897,13 @@ _extensions_cache_get(PyObject *filename, PyObject *name)
 static int
 _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
 {
-    PyObject *extensions = EXTENSIONS;
+    PyObject *extensions = EXTENSIONS.dict;
     if (extensions == NULL) {
         extensions = PyDict_New();
         if (extensions == NULL) {
             return -1;
         }
-        EXTENSIONS = extensions;
+        EXTENSIONS.dict = extensions;
     }
     PyObject *key = PyTuple_Pack(2, filename, name);
     if (key == NULL) {
@@ -920,7 +920,7 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
 static int
 _extensions_cache_delete(PyObject *filename, PyObject *name)
 {
-    PyObject *extensions = EXTENSIONS;
+    PyObject *extensions = EXTENSIONS.dict;
     if (extensions == NULL) {
         return 0;
     }
@@ -942,7 +942,7 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
 static void
 _extensions_cache_clear_all(void)
 {
-    Py_CLEAR(EXTENSIONS);
+    Py_CLEAR(EXTENSIONS.dict);
 }
 
 
