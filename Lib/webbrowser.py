@@ -507,7 +507,7 @@ def register_standard_browsers():
             # Common symbolic link for the default text-based browser
             if shutil.which("www-browser"):
                 register("www-browser", None, GenericBrowser("www-browser"))
-            # The Links/elinks browsers <http://links.twibright.com//>
+            # The Links/elinks browsers <http://links.twibright.com/>
             if shutil.which("links"):
                 register("links", None, GenericBrowser("links"))
             if shutil.which("elinks"):
