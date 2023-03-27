@@ -59,7 +59,7 @@
                 "python.analysis.diagnosticSeverityOverrides": {
                     // Complains about shadowing the stdlib w/ the stdlib.
                     "reportShadowedImports": "none",
-                    // Dodesn't like _frozen_importlib.
+                    // Doesn't like _frozen_importlib.
                     "reportMissingImports": "none"
                 },
                 "python.analysis.extraPaths": [
