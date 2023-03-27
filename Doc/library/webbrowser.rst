@@ -166,6 +166,11 @@ Notes:
 .. versionadded:: 3.3
    Support for Chrome/Chromium has been added.
 
+.. versionchanged:: 3.12
+   Support for several obsolete browsers has been removed.
+   Removed browsers include Grail, Mosaic, Netscape, Galeon,
+   Skipstone, Iceape, and Firefox versions 35 and below.
+
 .. deprecated-removed:: 3.11 3.13
    :class:`MacOSX` is deprecated, use :class:`MacOSXOSAScript` instead.
 
