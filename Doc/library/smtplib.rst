@@ -33,7 +33,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    than a success code, an :exc:`SMTPConnectError` is raised. The optional
    *timeout* parameter specifies a timeout in seconds for blocking operations
    like the connection attempt (if not specified, the global default timeout
-   setting will be used (see :func:`socket.getdefaulttimeout` for details).  If the timeout expires, :exc:`TimeoutError` is
+   setting will be used; see :func:`socket.getdefaulttimeout` for details).  If the timeout expires, :exc:`TimeoutError` is
    raised.  The optional source_address parameter allows binding
    to some specific source address in a machine with multiple network
    interfaces, and/or to some specific source TCP port. It takes a 2-tuple
