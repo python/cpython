@@ -204,7 +204,7 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
                     _Py_error_handler error_handler, const char *errors,
                     Py_ssize_t *consumed);
 #ifdef Py_DEBUG
-static inline int unicode_is_finalizing(PyInterpreterState *);
+static inline int unicode_is_finalizing(void);
 static int unicode_is_singleton(PyObject *unicode);
 #endif
 
@@ -1545,7 +1545,7 @@ unicode_dealloc(PyObject *unicode)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
 #ifdef Py_DEBUG
-    if (!unicode_is_finalizing(interp) && unicode_is_singleton(unicode)) {
+    if (!unicode_is_finalizing() && unicode_is_singleton(unicode)) {
         _Py_FatalRefcountError("deallocating an Unicode singleton");
     }
 #endif
@@ -15121,9 +15121,9 @@ _PyUnicode_EnableLegacyWindowsFSEncoding(void)
 
 #ifdef Py_DEBUG
 static inline int
-unicode_is_finalizing(PyInterpreterState *interp)
+unicode_is_finalizing(void)
 {
-    return (get_interned_dict(interp) == NULL);
+    return (get_interned_dict(_PyInterpreterState_Main()) == NULL);
 }
 #endif
 
