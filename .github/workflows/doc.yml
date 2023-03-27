@@ -53,6 +53,30 @@ jobs:
     - name: 'Build HTML documentation'
       run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
 
+    # Add pull request annotations for Sphinx nitpicks (missing references)
+    - name: 'Get list of changed files'
+      id: changed_files
+      uses: Ana06/get-changed-files@v2.2.0
+      with:
+        filter: "Doc/**"
+    - name: 'Build changed files in nit-picky mode'
+      continue-on-error: true
+      run: |
+        # Mark files the pull request modified
+        touch ${{ steps.changed_files.outputs.added_modified }}
+        # Build docs with the '-n' (nit-picky) option; convert warnings to annotations
+        make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n --keep-going" html 2>&1 |
+            python Doc/tools/warnings-to-gh-actions.py
+
+    # Ensure some files always pass Sphinx nit-picky mode (no missing references)
+    - name: 'Build known-good files in nit-picky mode'
+      run: |
+        # Mark files that must pass nit-picky
+        touch Doc/whatsnew/3.12.rst
+        touch Doc/library/sqlite3.rst
+        # Build docs with the '-n' (nit-picky) option, convert warnings to errors (-W)
+        make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n -W --keep-going" html 2>&1
+
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
     name: 'Doctest'

@@ -574,6 +574,162 @@ def test_pdb_whatis_command():
     (Pdb) continue
     """
 
+def test_pdb_display_command():
+    """Test display command
+
+    >>> def test_function():
+    ...     a = 0
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     a = 1
+    ...     a = 2
+    ...     a = 3
+    ...     a = 4
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'display +',
+    ...     'display',
+    ...     'display a',
+    ...     'n',
+    ...     'display',
+    ...     'undisplay a',
+    ...     'n',
+    ...     'display a',
+    ...     'undisplay',
+    ...     'display a < 1',
+    ...     'n',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(4)test_function()
+    -> a = 1
+    (Pdb) display +
+    Unable to display +: ** raised SyntaxError: invalid syntax **
+    (Pdb) display
+    No expression is being displayed
+    (Pdb) display a
+    display a: 0
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(5)test_function()
+    -> a = 2
+    display a: 1  [old: 0]
+    (Pdb) display
+    Currently displaying:
+    a: 1
+    (Pdb) undisplay a
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(6)test_function()
+    -> a = 3
+    (Pdb) display a
+    display a: 2
+    (Pdb) undisplay
+    (Pdb) display a < 1
+    display a < 1: False
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(7)test_function()
+    -> a = 4
+    (Pdb) continue
+    """
+
+def test_pdb_alias_command():
+    """Test alias command
+
+    >>> class A:
+    ...     def __init__(self):
+    ...         self.attr1 = 10
+    ...         self.attr2 = 'str'
+    ...     def method(self):
+    ...         pass
+
+    >>> def test_function():
+    ...     o = A()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     o.method()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")',
+    ...     'alias ps pi self',
+    ...     'pi o',
+    ...     's',
+    ...     'ps',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_alias_command[1]>(4)test_function()
+    -> o.method()
+    (Pdb) alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
+    (Pdb) alias ps pi self
+    (Pdb) pi o
+    o.attr1 = 10
+    o.attr2 = str
+    (Pdb) s
+    --Call--
+    > <doctest test.test_pdb.test_pdb_alias_command[0]>(5)method()
+    -> def method(self):
+    (Pdb) ps
+    self.attr1 = 10
+    self.attr2 = str
+    (Pdb) continue
+    """
+
+def test_pdb_where_command():
+    """Test where command
+
+    >>> def g():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> def f():
+    ...     g();
+
+    >>> def test_function():
+    ...     f()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'w',
+    ...     'where',
+    ...     'u',
+    ...     'w',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) w
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+      <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) where
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+      <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) u
+    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+    (Pdb) w
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+      <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) continue
+    """
+
 def test_post_mortem():
     """Test post mortem traceback debugging.
 
