@@ -4,7 +4,6 @@ csv.py - read/write/investigate CSV files
 """
 
 import re
-import types
 from _csv import Error, __version__, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
                  field_size_limit, \
@@ -81,8 +80,6 @@ register_dialect("unix", unix_dialect)
 class DictReader:
     def __init__(self, f, fieldnames=None, restkey=None, restval=None,
                  dialect="excel", *args, **kwds):
-        if fieldnames is not None and iter(fieldnames) is fieldnames:
-            fieldnames = list(fieldnames)
         self._fieldnames = fieldnames   # list of keys for the dict
         self.restkey = restkey          # key to catch long rows
         self.restval = restval          # default value for short rows
@@ -129,18 +126,13 @@ class DictReader:
                 d[key] = self.restval
         return d
 
-    __class_getitem__ = classmethod(types.GenericAlias)
-
 
 class DictWriter:
     def __init__(self, f, fieldnames, restval="", extrasaction="raise",
                  dialect="excel", *args, **kwds):
-        if fieldnames is not None and iter(fieldnames) is fieldnames:
-            fieldnames = list(fieldnames)
         self.fieldnames = fieldnames    # list of keys for the dict
         self.restval = restval          # for writing short dicts
-        extrasaction = extrasaction.lower()
-        if extrasaction not in ("raise", "ignore"):
+        if extrasaction.lower() not in ("raise", "ignore"):
             raise ValueError("extrasaction (%s) must be 'raise' or 'ignore'"
                              % extrasaction)
         self.extrasaction = extrasaction
@@ -164,8 +156,11 @@ class DictWriter:
     def writerows(self, rowdicts):
         return self.writer.writerows(map(self._dict_to_list, rowdicts))
 
-    __class_getitem__ = classmethod(types.GenericAlias)
-
+# Guard Sniffer's type checking against builds that exclude complex()
+try:
+    complex
+except NameError:
+    complex = float
 
 class Sniffer:
     '''
@@ -396,15 +391,16 @@ class Sniffer:
         # subtracting from the likelihood of the first row being a header.
 
         rdr = reader(StringIO(sample), self.sniff(sample))
-
+       
         header = next(rdr) # assume first row is header
-
         columns = len(header)
         columnTypes = {}
+        average_size = 0 
+        col_are_strings = True
         for i in range(columns): columnTypes[i] = None
-
         checked = 0
         for row in rdr:
+           
             # arbitrary number of rows to check, to keep it sane
             if checked > 20:
                 break
@@ -413,27 +409,45 @@ class Sniffer:
             if len(row) != columns:
                 continue # skip rows that have irregular number of columns
 
+            #checking if all col are strings
+            for cols in list(columnTypes.keys()):
+                if row[cols].isnumeric():
+                    col_are_strings = False
+                    break
+
             for col in list(columnTypes.keys()):
                 thisType = complex
+                
+                
                 try:
                     thisType(row[col])
+                    
                 except (ValueError, OverflowError):
                     # fallback to length of string
                     thisType = len(row[col])
-
+                   
+                
                 if thisType != columnTypes[col]:
                     if columnTypes[col] is None: # add new column type
                         columnTypes[col] = thisType
+                        average_size += len(row[col])
                     else:
                         # type is inconsistent, remove column from
                         # consideration
                         del columnTypes[col]
+            
+
+                     
 
         # finally, compare results against first row and "vote"
         # on whether it's a header
         hasHeader = 0
+        # here we added the special case where all cols are strings and dictionnary has been emptied
+        if not columnTypes and col_are_strings==True and columns>0:
+            #dictionary now takes the average length of strings
+            columnTypes[0] = int(average_size/columns)
         for col, colType in columnTypes.items():
-            if isinstance(colType, int): # it's a length
+            if type(colType) == type(0): # it's a length
                 if len(header[col]) != colType:
                     hasHeader += 1
                 else:
