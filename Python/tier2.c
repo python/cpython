@@ -77,6 +77,8 @@ _PyTier2TypeContext_Copy(const _PyTier2TypeContext *type_context)
 
 #if TYPEPROP_DEBUG
     fprintf(stderr, "  [*] Copying type context\n");
+    static void print_typestack(const _PyTier2TypeContext * type_context);
+    print_typestack(type_context);
 #endif
 
     _Py_TYPENODE_t *orig_type_locals = type_context->type_locals;
@@ -1962,10 +1964,10 @@ _PyTier2_RewriteForwardJump(_Py_CODEUNIT *bb_branch, _Py_CODEUNIT *target)
     assert(oparg <= 0xFFFF);
     if (requires_extended) {
         _py_set_opcode(write_curr, EXTENDED_ARG);
-        write_curr->op.arg = (oparg >> 8) & 0xFF;
-        write_curr++;
         // -1 to oparg because now the jump instruction moves one unit forward.
         oparg--;
+        write_curr->op.arg = (oparg >> 8) & 0xFF;
+        write_curr++;
     }
     _py_set_opcode(write_curr,
         branch == BB_BRANCH_IF_FLAG_SET ? BB_JUMP_IF_FLAG_SET : BB_JUMP_IF_FLAG_UNSET);
