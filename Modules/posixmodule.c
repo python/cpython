@@ -4824,43 +4824,45 @@ os__path_isdir_impl(PyObject *module, PyObject *path)
             }
         }
     }
-    if (_path.fd != -1) {
-        hfile = _Py_get_osfhandle_noraise(_path.fd);
-        close_file = FALSE;
-    }
-    else if(slow_path){
-        hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-    }
-    if (slow_path && hfile != INVALID_HANDLE_VALUE) {
-        if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
-                                         sizeof(info)))
-        {
-            result = info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+    if (slow_path){
+        if (_path.fd != -1) {
+            hfile = _Py_get_osfhandle_noraise(_path.fd);
+            close_file = FALSE;
         }
         else {
-            result = 0;
+            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
+                                OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
         }
-        if (close_file) {
-            CloseHandle(hfile);
-        }
-    }
-    else {
-        STRUCT_STAT st;
-        switch (GetLastError()) {
-        case ERROR_ACCESS_DENIED:
-        case ERROR_SHARING_VIOLATION:
-        case ERROR_CANT_ACCESS_FILE:
-        case ERROR_INVALID_PARAMETER:
-            if (STAT(_path.wide, &st)) {
-                result = 0;
+        if (hfile != INVALID_HANDLE_VALUE) {
+            if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
+                                            sizeof(info)))
+            {
+                result = info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
             }
             else {
-                result = S_ISDIR(st.st_mode);
+                result = 0;
             }
-            break;
-        default:
-            result = 0;
+            if (close_file) {
+                CloseHandle(hfile);
+            }
+        }
+        else {
+            STRUCT_STAT st;
+            switch (GetLastError()) {
+            case ERROR_ACCESS_DENIED:
+            case ERROR_SHARING_VIOLATION:
+            case ERROR_CANT_ACCESS_FILE:
+            case ERROR_INVALID_PARAMETER:
+                if (STAT(_path.wide, &st)) {
+                    result = 0;
+                }
+                else {
+                    result = S_ISDIR(st.st_mode);
+                }
+                break;
+            default:
+                result = 0;
+            }
         }
     }
     Py_END_ALLOW_THREADS
@@ -4926,43 +4928,45 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
             }
         }
     }
-    if (_path.fd != -1) {
-        hfile = _Py_get_osfhandle_noraise(_path.fd);
-        close_file = FALSE;
-    }
-    else if(slow_path){
-        hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-    }
-    if (slow_path && hfile != INVALID_HANDLE_VALUE) {
-        if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
-                                         sizeof(info)))
-        {
-            result = !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+    if (slow_path){
+        if (_path.fd != -1) {
+            hfile = _Py_get_osfhandle_noraise(_path.fd);
+            close_file = FALSE;
         }
         else {
-            result = 0;
+            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
+                                OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
         }
-        if (close_file) {
-            CloseHandle(hfile);
-        }
-    }
-    else {
-        STRUCT_STAT st;
-        switch (GetLastError()) {
-        case ERROR_ACCESS_DENIED:
-        case ERROR_SHARING_VIOLATION:
-        case ERROR_CANT_ACCESS_FILE:
-        case ERROR_INVALID_PARAMETER:
-            if (STAT(_path.wide, &st)) {
-                result = 0;
+        if (hfile != INVALID_HANDLE_VALUE) {
+            if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
+                                            sizeof(info)))
+            {
+                result = !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
             }
             else {
-                result = S_ISREG(st.st_mode);
+                result = 0;
             }
-            break;
-        default:
-            result = 0;
+            if (close_file) {
+                CloseHandle(hfile);
+            }
+        }
+        else {
+            STRUCT_STAT st;
+            switch (GetLastError()) {
+            case ERROR_ACCESS_DENIED:
+            case ERROR_SHARING_VIOLATION:
+            case ERROR_CANT_ACCESS_FILE:
+            case ERROR_INVALID_PARAMETER:
+                if (STAT(_path.wide, &st)) {
+                    result = 0;
+                }
+                else {
+                    result = S_ISREG(st.st_mode);
+                }
+                break;
+            default:
+                result = 0;
+            }
         }
     }
     Py_END_ALLOW_THREADS
@@ -5027,36 +5031,38 @@ os__path_exists_impl(PyObject *module, PyObject *path)
             }
         }
     }
-    if (_path.fd != -1) {
-        hfile = _Py_get_osfhandle_noraise(_path.fd);
-        close_file = FALSE;
-    }
-    else if(slow_path){
-        hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-    }
-    if (slow_path && hfile != INVALID_HANDLE_VALUE) {
-        result = 1;
-        if (close_file) {
-            CloseHandle(hfile);
+    if (slow_path){
+        if (_path.fd != -1) {
+            hfile = _Py_get_osfhandle_noraise(_path.fd);
+            close_file = FALSE;
         }
-    }
-    else {
-        STRUCT_STAT st;
-        switch (GetLastError()) {
-        case ERROR_ACCESS_DENIED:
-        case ERROR_SHARING_VIOLATION:
-        case ERROR_CANT_ACCESS_FILE:
-        case ERROR_INVALID_PARAMETER:
-            if (STAT(_path.wide, &st)) {
+        else {
+            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
+                                OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+        }
+        if (hfile != INVALID_HANDLE_VALUE) {
+            result = 1;
+            if (close_file) {
+                CloseHandle(hfile);
+            }
+        }
+        else {
+            STRUCT_STAT st;
+            switch (GetLastError()) {
+            case ERROR_ACCESS_DENIED:
+            case ERROR_SHARING_VIOLATION:
+            case ERROR_CANT_ACCESS_FILE:
+            case ERROR_INVALID_PARAMETER:
+                if (STAT(_path.wide, &st)) {
+                    result = 0;
+                }
+                else {
+                    result = 1;
+                }
+                break;
+            default:
                 result = 0;
             }
-            else {
-                result = 1;
-            }
-            break;
-        default:
-            result = 0;
         }
     }
     Py_END_ALLOW_THREADS
@@ -5087,6 +5093,8 @@ os__path_islink_impl(PyObject *module, PyObject *path)
     FILE_ATTRIBUTE_TAG_INFO info;
     path_t _path = PATH_T_INITIALIZE("islink", "path", 0, 1);
     int result;
+    BOOL slow_path = TRUE;
+    FILE_STAT_BASIC_INFORMATION statInfo;
 
     if (!path_converter(path, &_path)) {
         path_cleanup(&_path);
@@ -5098,45 +5106,71 @@ os__path_islink_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.fd != -1) {
-        hfile = _Py_get_osfhandle_noraise(_path.fd);
-        close_file = FALSE;
+    if(_path.wide){    
+        if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo,
+                                         &statInfo, sizeof(statInfo))) {
+            if (// Cannot use fast path for reparse points ...
+                !(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+                // ... unless it's a name surrogate (symlink) and we're not following
+                || IsReparseTagNameSurrogate(statInfo.ReparseTag)
+            ) {
+                slow_path = FALSE;
+            }
+        } else {
+            switch(GetLastError()) {
+                case ERROR_FILE_NOT_FOUND:
+                case ERROR_PATH_NOT_FOUND:
+                case ERROR_NOT_READY:
+                case ERROR_BAD_NET_NAME:
+                    /* These errors aren't worth retrying with the slow path */
+                    slow_path = FALSE;
+                case ERROR_NOT_SUPPORTED:
+                    /* indicates the API couldn't be loaded */
+                    break;
+            }
+        }
     }
-    else {
-        hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                            OPEN_EXISTING,
-                            FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
-                            NULL);
-    }
-    if (hfile != INVALID_HANDLE_VALUE) {
-        if (GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
-                                         sizeof(info)))
-        {
-            result = (info.ReparseTag == IO_REPARSE_TAG_SYMLINK);
+    if (slow_path){
+        if (_path.fd != -1) {
+            hfile = _Py_get_osfhandle_noraise(_path.fd);
+            close_file = FALSE;
         }
         else {
-            result = 0;
+            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
+                                OPEN_EXISTING,
+                                FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
+                                NULL);
         }
-        if (close_file) {
-            CloseHandle(hfile);
-        }
-    }
-    else {
-        STRUCT_STAT st;
-        switch (GetLastError()) {
-        case ERROR_ACCESS_DENIED:
-        case ERROR_SHARING_VIOLATION:
-        case ERROR_CANT_ACCESS_FILE:
-        case ERROR_INVALID_PARAMETER:
-            if (LSTAT(_path.wide, &st)) {
-                result = 0;
+        if (hfile != INVALID_HANDLE_VALUE) {
+            if (GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
+                                            sizeof(info)))
+            {
+                result = (info.ReparseTag == IO_REPARSE_TAG_SYMLINK);
             }
             else {
-                result = S_ISLNK(st.st_mode);
+                result = 0;
             }
-            break;
-        default:
-            result = 0;
+            if (close_file) {
+                CloseHandle(hfile);
+            }
+        }
+        else {
+            STRUCT_STAT st;
+            switch (GetLastError()) {
+            case ERROR_ACCESS_DENIED:
+            case ERROR_SHARING_VIOLATION:
+            case ERROR_CANT_ACCESS_FILE:
+            case ERROR_INVALID_PARAMETER:
+                if (LSTAT(_path.wide, &st)) {
+                    result = 0;
+                }
+                else {
+                    result = S_ISLNK(st.st_mode);
+                }
+                break;
+            default:
+                result = 0;
+            }
         }
     }
     Py_END_ALLOW_THREADS
