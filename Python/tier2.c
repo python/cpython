@@ -749,7 +749,7 @@ IS_TERMINATOR_OPCODE(int opcode)
 // Opcodes that we can't handle at the moment. If we see them,
 // ditch tier 2 attempts.
 static inline int
-IS_FORBIDDEN_OPCODE(int opcode)
+IS_FORBIDDEN_OPCODE(int opcode, int nextop)
 {
     switch (opcode) {
         // Modifying containers
@@ -788,11 +788,10 @@ IS_FORBIDDEN_OPCODE(int opcode)
     case MATCH_MAPPING:
     case MATCH_SEQUENCE:
     case MATCH_KEYS:
-        // Too large arguments, we can handle this, just
-        // increases complexity
-    case EXTENDED_ARG:
         return 1;
-
+        // Two simultaneous EXTENDED_ARG
+    case EXTENDED_ARG:
+        return nextop == EXTENDED_ARG;
     default:
         return 0;
     }
@@ -885,10 +884,10 @@ emit_type_guard(_Py_CODEUNIT *write_curr, int guard_opcode, int bb_id)
 // BB_BRANCH
 // CACHE (bb_id of the current BB << 1 | is_type_branch)
 static inline _Py_CODEUNIT *
-emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr, _Py_CODEUNIT branch, int bb_id)
+emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr,
+    _Py_CODEUNIT branch, int bb_id, int oparg)
 {
     int opcode;
-    int oparg = _Py_OPARG(branch);
     // @TODO handle JUMP_BACKWARDS and JUMP_BACKWARDS_NO_INTERRUPT
     switch (_PyOpcode_Deopt[_Py_OPCODE(branch)]) {
     case JUMP_BACKWARD_QUICK:
@@ -930,7 +929,8 @@ emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr,
 #endif
         Py_UNREACHABLE();
     }
-    assert(oparg <= 0XFF);
+    assert(oparg <= 0XFFFF);
+    bool requires_extended_arg = oparg > 0xFF;
     // Backwards jumps should be handled specially.
     if (opcode == BB_JUMP_BACKWARD_LAZY) {
 #if BB_DEBUG
@@ -938,13 +938,13 @@ emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr,
             _Py_OPCODE(branch));
 #endif
         // Just in case, can be swapped out with an EXTENDED_ARG
-        _py_set_opcode(write_curr, NOP);
-        write_curr->op.arg = 0;
+        _py_set_opcode(write_curr, requires_extended_arg ? EXTENDED_ARG : NOP);
+        write_curr->op.arg = (oparg >> 8) & 0xFF;
         write_curr++;
         // We don't need to recalculate the backward jump, because that only needs to be done
         // when it locates the next BB in JUMP_BACKWARD_LAZY.
         _py_set_opcode(write_curr, BB_JUMP_BACKWARD_LAZY);
-        write_curr->op.arg = oparg;
+        write_curr->op.arg = oparg & 0xFF;
         write_curr++;
         _PyBBBranchCache *cache = (_PyBBBranchCache *)write_curr;
         write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_BB_BRANCH);
@@ -963,15 +963,19 @@ emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr,
         // NOTE: IF YOU CHANGE ANY OF THE INSTRUCTIONS BELOW, MAKE SURE
         // TO UPDATE THE CALCULATION OF OPARG. THIS IS EXTREMELY IMPORTANT.
         oparg = INLINE_CACHE_ENTRIES_FOR_ITER + oparg;
+        requires_extended_arg = oparg > 0xFF;
+        _py_set_opcode(write_curr, requires_extended_arg ? EXTENDED_ARG : NOP);
+        write_curr->op.arg = (oparg >> 8) & 0xFF;
+        write_curr++;
         _py_set_opcode(write_curr, BB_TEST_ITER);
-        write_curr->op.arg = oparg;
+        write_curr->op.arg = oparg & 0xFF;
         write_curr++;
         write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_FOR_ITER);
-        // Just in case, can be swapped out with an EXTENDED_ARG
-        _py_set_opcode(write_curr, NOP);
+        _py_set_opcode(write_curr, requires_extended_arg ? EXTENDED_ARG : NOP);
+        write_curr->op.arg = (oparg >> 8) & 0xFF;
         write_curr++;
         _py_set_opcode(write_curr, BB_BRANCH);
-        write_curr->op.arg = oparg;
+        write_curr->op.arg = oparg & 0xFF;
         write_curr++;
         _PyBBBranchCache *cache = (_PyBBBranchCache *)write_curr;
         write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_BB_BRANCH);
@@ -983,12 +987,14 @@ emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr,
         fprintf(stderr, "emitted logical branch %p %d\n", write_curr,
             _Py_OPCODE(branch));
 #endif
-        //_Py_CODEUNIT *start = write_curr;
-        _py_set_opcode(write_curr, opcode);
-        write_curr->op.arg = oparg;
+        _py_set_opcode(write_curr, requires_extended_arg ? EXTENDED_ARG : NOP);
+        write_curr->op.arg = (oparg >> 8) & 0xFF;
         write_curr++;
-        _py_set_opcode(write_curr, NOP);
-        // Just in case, can be swapped out with an EXTENDED_ARG
+        _py_set_opcode(write_curr, opcode);
+        write_curr->op.arg = oparg & 0xFF;
+        write_curr++;
+        _py_set_opcode(write_curr, requires_extended_arg ? EXTENDED_ARG : NOP);
+        write_curr->op.arg = (oparg >> 8) & 0xFF;
         write_curr++;
         _py_set_opcode(write_curr, BB_BRANCH);
         write_curr->op.arg = oparg & 0xFF;
@@ -1239,8 +1245,16 @@ _PyTier2_Code_DetectAndEmitBB(
         fprintf(stderr, "offset: %Id\n", curr - _PyCode_CODE(co));
 #endif
         switch (opcode) {
+        case EXTENDED_ARG:
+            specop = next_instr->op.code;
+            opcode = _PyOpcode_Deopt[specop];
+            oparg = oparg << 8 | next_instr->op.arg;
+            curr++;
+            next_instr++;
+            i+=2;
+            DISPATCH_GOTO();
         case RESUME:
-            opcode = RESUME_QUICK;
+            opcode = specop = RESUME_QUICK;
             DISPATCH();
         case END_FOR:
             // Assert that we are the start of a BB
@@ -1359,7 +1373,8 @@ _PyTier2_Code_DetectAndEmitBB(
                     write_i, starting_type_context,
                     co->_tier2_info->bb_data_curr);
                 if (possible_next == NULL) {
-                    DISPATCH();
+                    write_i = rebox_stack(write_i, starting_type_context, 2);
+                    DISPATCH()
                 }
                 write_i = possible_next;
                 if (needs_guard) {
@@ -1452,7 +1467,7 @@ _PyTier2_Code_DetectAndEmitBB(
                 // Get the BB ID without incrementing it.
                 // AllocateBBMetaData will increment.
                 write_i = emit_logical_branch(starting_type_context, write_i, *curr,
-                    co->_tier2_info->bb_data_curr);
+                    co->_tier2_info->bb_data_curr, oparg);
                 i += caches;
                 END();
             }
@@ -1714,7 +1729,10 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
     for (Py_ssize_t curr = 0; curr < Py_SIZE(co); curr++) {
         _Py_CODEUNIT *curr_instr = _PyCode_CODE(co) + curr;
         int deopt = _PyOpcode_Deopt[_Py_OPCODE(*curr_instr)];
-        if (IS_FORBIDDEN_OPCODE(deopt)) {
+        int next = curr < Py_SIZE(co) - 1
+            ? _PyOpcode_Deopt[(curr_instr + 1)->op.code]
+            : 255;
+        if (IS_FORBIDDEN_OPCODE(deopt, next)) {
 #if BB_DEBUG
 #ifdef Py_DEBUG
             fprintf(stderr, "FORBIDDEN OPCODE %s\n", _PyOpcode_OpName[_Py_OPCODE(*curr_instr)]);
