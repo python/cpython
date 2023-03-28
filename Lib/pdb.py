@@ -377,8 +377,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # stop when the debuggee is returning from such generators.
         prefix = 'Internal ' if (not exc_traceback
                                     and exc_type is StopIteration) else ''
-        self.message('%s%s' % (prefix,
-            traceback.format_exception_only(exc_type, exc_value)[-1].strip()))
+        self.message('%s%s' % (prefix, self._format_exc(exc_value)))
         self.interaction(frame, exc_traceback)
 
     # General interaction function
@@ -851,7 +850,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             compile(expr, "<stdin>", "eval")
         except SyntaxError as exc:
-            return _rstr(traceback.format_exception_only(exc)[-1].strip())
+            return _rstr(self._format_exc(exc))
         return None
 
     def do_enable(self, arg):
@@ -1267,12 +1266,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 return eval(arg, frame.f_globals, frame.f_locals)
         except BaseException as exc:
-            err = traceback.format_exception_only(exc)[-1].strip()
-            return _rstr('** raised %s **' % err)
+            return _rstr('** raised %s **' % self._format_exc(exc))
 
     def _error_exc(self):
-        exc_info = sys.exc_info()[:2]
-        self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+        exc = sys.exc_info()[1]
+        self.error(self._format_exc(exc))
 
     def _msg_val_func(self, arg, func):
         try:
@@ -1663,6 +1661,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         __main__.__dict__.update(target.namespace)
 
         self.run(target.code)
+
+    def _format_exc(self, exc: BaseException):
+        return traceback.format_exception_only(exc)[-1].strip()
 
 
 # Collect all command help into docstring, if not run with -OO
