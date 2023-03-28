@@ -1,0 +1,1 @@
+Breakpoint's condition expression is checked for SyntaxError on :mod:`pdb`.
