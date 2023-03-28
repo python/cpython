@@ -939,6 +939,13 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
         _PyThreadState_BindDetached(main_tstate);
         oldts = _PyThreadState_Swap(interp->runtime, main_tstate);
         assert(!_Py_IsMainInterpreter(oldts->interp));
+
+        /* Make sure the name and filename objects are owned
+           by the main interpreter. */
+        name = PyUnicode_InternFromString(PyUnicode_AsUTF8(name));
+        assert(name != NULL);
+        filename = PyUnicode_InternFromString(PyUnicode_AsUTF8(filename));
+        assert(filename != NULL);
     }
 
     PyObject *key = PyTuple_Pack(2, filename, name);
