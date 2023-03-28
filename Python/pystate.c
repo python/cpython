@@ -1603,8 +1603,9 @@ _PyThreadState_ClearDetached(PyThreadState *tstate)
 void
 _PyThreadState_BindDetached(PyThreadState *tstate)
 {
+    assert(!_Py_IsMainInterpreter(
+        current_fast_get(tstate->interp->runtime)->interp));
     assert(_Py_IsMainInterpreter(tstate->interp));
-    assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
     bind_tstate(tstate);
     /* Unlike _PyThreadState_Bind(), we do not modify gilstate TSS. */
 }
@@ -1612,8 +1613,9 @@ _PyThreadState_BindDetached(PyThreadState *tstate)
 void
 _PyThreadState_UnbindDetached(PyThreadState *tstate)
 {
+    assert(!_Py_IsMainInterpreter(
+        current_fast_get(tstate->interp->runtime)->interp));
     assert(_Py_IsMainInterpreter(tstate->interp));
-    assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
     assert(tstate_is_alive(tstate));
     assert(!tstate->_status.active);
     assert(gilstate_tss_get(tstate->interp->runtime) != tstate);
