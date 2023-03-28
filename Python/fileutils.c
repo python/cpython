@@ -1166,13 +1166,8 @@ _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *info,
     /* File systems with less than 128-bits zero pad into this field */
     id_128_to_ino file_id;
     file_id.id = info->FileId128;
-    if (file_id.st_ino && file_id.st_ino_high) {
-        result->st_ino = file_id.st_ino;
-        result->st_ino_high = file_id.st_ino_high;
-    } else {
-        result->st_ino = info->FileId.QuadPart;
-        result->st_ino_high = 0;
-    }
+    result->st_ino = file_id.st_ino;
+    result->st_ino_high = file_id.st_ino_high;
     /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
        open other name surrogate reparse points without traversing them. To
        detect/handle these, check st_file_attributes and st_reparse_tag. */
