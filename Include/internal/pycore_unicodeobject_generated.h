@@ -987,6 +987,9 @@ _PyUnicode_InitStaticStrings(void) {
     string = &_Py_ID(endpos);
     assert(_PyUnicode_CheckConsistency(string, 1));
     PyUnicode_InternInPlace(&string);
+    string = &_Py_ID(entrypoint);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    PyUnicode_InternInPlace(&string);
     string = &_Py_ID(env);
     assert(_PyUnicode_CheckConsistency(string, 1));
     PyUnicode_InternInPlace(&string);
