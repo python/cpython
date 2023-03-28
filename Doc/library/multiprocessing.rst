@@ -845,7 +845,8 @@ For an example of the usage of queues for interprocess communication see
       free slot was available within that time.  Otherwise (*block* is
       ``False``), put an item on the queue if a free slot is immediately
       available, else raise the :exc:`queue.Full` exception (*timeout* is
-      ignored in that case).
+      ignored in that case).  Raises :exc:`ShutDown` if the queue has been shut
+      down.
 
       .. versionchanged:: 3.8
          If the queue is closed, :exc:`ValueError` is raised instead of
@@ -863,7 +864,9 @@ For an example of the usage of queues for interprocess communication see
       it blocks at most *timeout* seconds and raises the :exc:`queue.Empty`
       exception if no item was available within that time.  Otherwise (block is
       ``False``), return an item if one is immediately available, else raise the
-      :exc:`queue.Empty` exception (*timeout* is ignored in that case).
+      :exc:`queue.Empty` exception (*timeout* is ignored in that case).  Raises
+      :exc:`queue.ShutDown` if the queue has been shut down and is empty, or if
+      the queue has been shut down immediately.
 
       .. versionchanged:: 3.8
          If the queue is closed, :exc:`ValueError` is raised instead of
@@ -872,6 +875,19 @@ For an example of the usage of queues for interprocess communication see
    .. method:: get_nowait()
 
       Equivalent to ``get(False)``.
+
+   .. method:: shutdown(immediate=False)
+
+      Shut-down the queue, making queue gets and puts raise
+      :exc:`queue.ShutDown`.
+
+      By default, gets will only raise once the queue is empty.  Set
+      *immediate* to true to make gets raise immediately instead.
+
+      All blocked callers of put() will be unblocked, and also get()
+      and join() if *immediate* is true.
+
+      .. versionadded:: 3.12
 
    :class:`multiprocessing.Queue` has a few additional methods not found in
    :class:`queue.Queue`.  These methods are usually unnecessary for most
@@ -962,6 +978,8 @@ For an example of the usage of queues for interprocess communication see
       Raises a :exc:`ValueError` if called more times than there were items
       placed in the queue.
 
+      Raises :exc:`queue.ShutDown` if the queue has been shut down immediately.
+
 
    .. method:: join()
 
@@ -972,6 +990,8 @@ For an example of the usage of queues for interprocess communication see
       :meth:`task_done` to indicate that the item was retrieved and all work on
       it is complete.  When the count of unfinished tasks drops to zero,
       :meth:`~queue.Queue.join` unblocks.
+
+      Raises :exc:`queue.ShutDown` if the queue has been shut down immediately.
 
 
 Miscellaneous
