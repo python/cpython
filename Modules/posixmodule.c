@@ -4807,6 +4807,7 @@ os__path_isdir_impl(PyObject *module, PyObject *path)
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
+                result = statInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
             }
         } else {
             switch(GetLastError()) {
@@ -4909,6 +4910,7 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
+                result = !(statInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
             }
         } else {
             switch(GetLastError()) {
@@ -5010,6 +5012,10 @@ os__path_exists_impl(PyObject *module, PyObject *path)
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
+                result = 1;
+                if (close_file) {
+                    CloseHandle(hfile);
+                }
             }
         } else {
             switch(GetLastError()) {
@@ -5109,6 +5115,7 @@ os__path_islink_impl(PyObject *module, PyObject *path)
                 || IsReparseTagNameSurrogate(statInfo.ReparseTag)
             ) {
                 slow_path = FALSE;
+                result = (statInfo.ReparseTag == IO_REPARSE_TAG_SYMLINK);
             }
         } else {
             switch(GetLastError()) {
