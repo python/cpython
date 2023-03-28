@@ -239,6 +239,7 @@ static inline PyObject *get_interned_dict(void)
 static inline void set_interned_dict(PyObject *dict)
 {
     _Py_CACHED_OBJECT(interned_strings) = dict;
+    _Py_SetImmortal(dict);
 }
 
 #define _Py_RETURN_UNICODE_EMPTY()   \
@@ -14609,16 +14610,11 @@ PyUnicode_InternInPlace(PyObject **p)
     }
 
     PyObject *interned = get_interned_dict();
-    assert(interned != NULL);
-
-    PyObject *t = PyDict_SetDefault(interned, s, s);
-    if (t == NULL) {
-        PyErr_Clear();
-        return;
-    }
-
+    PyObject *t = _Py_AddToGlobalDict(interned, s, s);
     if (t != s) {
-        Py_SETREF(*p, Py_NewRef(t));
+        if (t != NULL) {
+            Py_SETREF(*p, Py_NewRef(t));
+        }
         return;
     }
 
