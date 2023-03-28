@@ -70,7 +70,6 @@ TYPE_PROPAGATOR_FORBIDDEN = [
     "MATCH_MAPPING",
     "MATCH_SEQUENCE",
     "MATCH_KEYS",
-    "EXTENDED_ARG",
     "WITH_EXCEPT_START",
     # Type propagation across these instructions are forbidden
     # due to conditional effects that can't be determined statically

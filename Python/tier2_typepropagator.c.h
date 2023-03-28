@@ -1054,8 +1054,6 @@
         }
 
         TARGET(EXTENDED_ARG) {
-            fprintf(stderr, "Type propagation across `EXTENDED_ARG` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
             break;
         }
 
