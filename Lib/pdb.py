@@ -701,7 +701,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if comma > 0:
             # parse stuff after comma: "condition"
             cond = arg[comma+1:].lstrip()
-            if err := self.checkexpr(cond):
+            if err := self._compile_error_message(cond):
                 self.error('Invalid condition %s: %r' % (cond, err))
                 return
             arg = arg[:comma].rstrip()
@@ -842,17 +842,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return 0
         return lineno
 
-    def checkexpr(self, expr):
-        """ Check whether `expr` is a valid expression
-
-        Return the error message if there's a syntax error, otherwise None
-        """
-        try:
-            compile(expr, "<stdin>", "eval")
-        except SyntaxError as exc:
-            return _rstr(self._format_exc(exc))
-        return None
-
     def do_enable(self, arg):
         """enable bpnumber [bpnumber ...]
         Enables the breakpoints given as a space separated list of
@@ -900,7 +889,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         args = arg.split(' ', 1)
         try:
             cond = args[1]
-            if err := self.checkexpr(cond):
+            if err := self._compile_error_message(cond):
                 self.error('Invalid condition %s: %r' % (cond, err))
                 return
         except IndexError:
@@ -1458,7 +1447,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 self.message('No expression is being displayed')
         else:
-            if err := self.checkexpr(arg):
+            if err := self._compile_error_message(arg):
                 self.error('Unable to display %s: %r' % (arg, err))
             else:
                 val = self._getval_except(arg)
@@ -1665,6 +1654,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def _format_exc(self, exc: BaseException):
         return traceback.format_exception_only(exc)[-1].strip()
 
+    def _compile_error_message(self, expr):
+        """Return the error message as string if compiling `expr` fails."""
+        try:
+            compile(expr, "<stdin>", "eval")
+        except SyntaxError as exc:
+            return _rstr(self._format_exc(exc))
+        return ""
 
 # Collect all command help into docstring, if not run with -OO
 
