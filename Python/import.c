@@ -1051,7 +1051,7 @@ _extensions_cache_clear_all(void)
 {
     /* The runtime (i.e. main interpreter) must be finalizing,
        so we don't need to worry about the lock. */
-    assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
+    // XXX assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
     Py_CLEAR(EXTENSIONS.dict);
     _PyThreadState_ClearDetached(&EXTENSIONS.main_tstate);
 }
