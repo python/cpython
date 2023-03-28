@@ -68,7 +68,7 @@
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op) (frame->prev_instr = next_instr++)
+#define INSTRUCTION_START(op) (frame->prev_instr = next_instr++); /* fprintf(stderr, "%d: %s\n", INSTR_OFFSET(), _PyOpcode_OpName[op]); */
 #endif
 
 #if USE_COMPUTED_GOTOS

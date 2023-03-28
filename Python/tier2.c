@@ -1942,13 +1942,6 @@ BB_TEST_POP_IF_TRUE
 BB_JUMP_IF_FLAG_SET
 CACHE (will be converted to EXTENDED_ARGS if we need a bigger jump)
 
-Some instructions will be special since they need CACHE entries. E.g. FOR_ITER
-
-BB_TEST_ITER
-CACHE
-BB_BRANCH_IF_FLAG_SET
-CACHE
-
 Backwards jumps are handled by another function.
 */
 
@@ -1958,6 +1951,7 @@ _PyTier2_RewriteForwardJump(_Py_CODEUNIT *bb_branch, _Py_CODEUNIT *target)
     _Py_CODEUNIT *write_curr = bb_branch;
     // -1 because the PC is auto incremented
     int oparg = (int)(target - bb_branch - 1);
+    assert(oparg > 0);
     int branch = _Py_OPCODE(*bb_branch);
     assert(branch == BB_BRANCH_IF_FLAG_SET || branch == BB_BRANCH_IF_FLAG_UNSET);
     bool requires_extended = oparg > 0xFF;
@@ -1985,14 +1979,14 @@ _PyTier2_RewriteForwardJump(_Py_CODEUNIT *bb_branch, _Py_CODEUNIT *target)
 Before:
 
 EXTENDED_ARG/NOP
-JUMP_BACKWARD_LAZY
+BB_JUMP_BACKWARD_LAZY
 CACHE
 
 
 After:
 
 EXTENDED_ARG (if needed, else NOP)
-JUMP_BACKWARD_LAZY
+JUMP_BACKWARD_QUICK
 END_FOR
 */
 

@@ -3245,8 +3245,6 @@ dummy_func(
                 _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
                 _Py_CODEUNIT *tier1_fallback = NULL;
 
-                // @TODO: Rewrite TEST intruction above to a JUMP above..
-
                 t2_nextinstr = _PyTier2_GenerateNextBB(
                     frame, cache->bb_id_tagged, next_instr - 1,
                     oparg, &tier1_fallback, bb_test);
