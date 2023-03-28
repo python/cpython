@@ -4802,12 +4802,10 @@ os__path_isdir_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if(_path.wide){    
+    if (_path.wide) {    
         if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
-            if (// Cannot use fast path for reparse points ...
-                !(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
-            ) {
+            if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
             }
         } else {
@@ -4824,7 +4822,7 @@ os__path_isdir_impl(PyObject *module, PyObject *path)
             }
         }
     }
-    if (slow_path){
+    if (slow_path) {
         if (_path.fd != -1) {
             hfile = _Py_get_osfhandle_noraise(_path.fd);
             close_file = FALSE;
@@ -4906,12 +4904,10 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if(_path.wide){    
+    if (_path.wide) {    
         if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
-            if (// Cannot use fast path for reparse points ...
-                !(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
-            ) {
+            if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
             }
         } else {
@@ -4928,7 +4924,7 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
             }
         }
     }
-    if (slow_path){
+    if (slow_path) {
         if (_path.fd != -1) {
             hfile = _Py_get_osfhandle_noraise(_path.fd);
             close_file = FALSE;
@@ -5009,12 +5005,10 @@ os__path_exists_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if(_path.wide){    
+    if (_path.wide) {    
         if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
-            if (// Cannot use fast path for reparse points ...
-                !(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
-            ) {
+            if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
             }
         } else {
@@ -5031,7 +5025,7 @@ os__path_exists_impl(PyObject *module, PyObject *path)
             }
         }
     }
-    if (slow_path){
+    if (slow_path) {
         if (_path.fd != -1) {
             hfile = _Py_get_osfhandle_noraise(_path.fd);
             close_file = FALSE;
@@ -5106,12 +5100,12 @@ os__path_islink_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if(_path.wide){    
+    if (_path.wide) {    
         if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             if (// Cannot use fast path for reparse points ...
                 !(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
-                // ... unless it's a name surrogate (symlink) and we're not following
+                // ... unless it's a name surrogate (symlink)
                 || IsReparseTagNameSurrogate(statInfo.ReparseTag)
             ) {
                 slow_path = FALSE;
@@ -5130,7 +5124,7 @@ os__path_islink_impl(PyObject *module, PyObject *path)
             }
         }
     }
-    if (slow_path){
+    if (slow_path) {
         if (_path.fd != -1) {
             hfile = _Py_get_osfhandle_noraise(_path.fd);
             close_file = FALSE;
