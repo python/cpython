@@ -2153,11 +2153,11 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
         instr->op.code = FOR_ITER_RANGE;
         goto success;
     }
-    else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
-        assert(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == END_FOR);
-        instr->op.code = FOR_ITER_GEN;
-        goto success;
-    }
+    //else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
+    //    assert(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == END_FOR);
+    //    instr->op.code = FOR_ITER_GEN;
+    //    goto success;
+    //}
     SPECIALIZATION_FAIL(FOR_ITER,
                         _PySpecialization_ClassifyIterator(iter));
     STAT_INC(FOR_ITER, failure);

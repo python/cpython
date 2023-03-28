@@ -582,13 +582,14 @@ _PyTier2_BBSpaceCheckAndReallocIfNeeded(PyCodeObject *co, Py_ssize_t space_reque
         fprintf(stderr, "Allocating new BB of size %lld\n", (int64_t)new_size);
 #endif
         // @TODO We can't Realloc, we actually need to do the linked list method.
-        _PyTier2BBSpace *new_space = PyMem_Realloc(curr, new_size);
-        if (new_space == NULL) {
-            return NULL;
-        }
-        co->_tier2_info->_bb_space = new_space;
-        new_space->max_capacity = new_size;
-        return new_space;
+        Py_UNREACHABLE();
+        //_PyTier2BBSpace *new_space = PyMem_Realloc(curr, new_size);
+        //if (new_space == NULL) {
+        //    return NULL;
+        //}
+        //co->_tier2_info->_bb_space = new_space;
+        //new_space->max_capacity = new_size;
+        //return new_space;
     }
     // We have enouogh space. Don't do anything, j
     return curr;
@@ -936,8 +937,8 @@ emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr,
         fprintf(stderr, "emitted backwards jump %p %d\n", write_curr,
             _Py_OPCODE(branch));
 #endif
-        // Just in case
-        _py_set_opcode(write_curr, EXTENDED_ARG);
+        // Just in case, can be swapped out with an EXTENDED_ARG
+        _py_set_opcode(write_curr, NOP);
         write_curr->op.arg = 0;
         write_curr++;
         // We don't need to recalculate the backward jump, because that only needs to be done
@@ -966,6 +967,9 @@ emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr,
         write_curr->op.arg = oparg;
         write_curr++;
         write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_FOR_ITER);
+        // Just in case, can be swapped out with an EXTENDED_ARG
+        _py_set_opcode(write_curr, NOP);
+        write_curr++;
         _py_set_opcode(write_curr, BB_BRANCH);
         write_curr->op.arg = oparg;
         write_curr++;
@@ -982,6 +986,9 @@ emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr,
         //_Py_CODEUNIT *start = write_curr;
         _py_set_opcode(write_curr, opcode);
         write_curr->op.arg = oparg;
+        write_curr++;
+        _py_set_opcode(write_curr, NOP);
+        // Just in case, can be swapped out with an EXTENDED_ARG
         write_curr++;
         _py_set_opcode(write_curr, BB_BRANCH);
         write_curr->op.arg = oparg & 0xFF;
@@ -1948,30 +1955,28 @@ Backwards jumps are handled by another function.
 void
 _PyTier2_RewriteForwardJump(_Py_CODEUNIT *bb_branch, _Py_CODEUNIT *target)
 {
-    _Py_CODEUNIT *write_curr = bb_branch;
+    int branch = _Py_OPCODE(*bb_branch);
+    assert(branch == BB_BRANCH_IF_FLAG_SET ||
+        branch == BB_BRANCH_IF_FLAG_UNSET);
+    _Py_CODEUNIT *write_curr = bb_branch - 1;
     // -1 because the PC is auto incremented
     int oparg = (int)(target - bb_branch - 1);
     assert(oparg > 0);
-    int branch = _Py_OPCODE(*bb_branch);
-    assert(branch == BB_BRANCH_IF_FLAG_SET || branch == BB_BRANCH_IF_FLAG_UNSET);
     bool requires_extended = oparg > 0xFF;
     assert(oparg <= 0xFFFF);
     if (requires_extended) {
         _py_set_opcode(write_curr, EXTENDED_ARG);
-        // -1 to oparg because now the jump instruction moves one unit forward.
-        oparg--;
         write_curr->op.arg = (oparg >> 8) & 0xFF;
+        write_curr++;
+    }
+    else {
+        _py_set_opcode(write_curr, NOP);
         write_curr++;
     }
     _py_set_opcode(write_curr,
         branch == BB_BRANCH_IF_FLAG_SET ? BB_JUMP_IF_FLAG_SET : BB_JUMP_IF_FLAG_UNSET);
     write_curr->op.arg = oparg & 0xFF;
     write_curr++;
-    if (!requires_extended) {
-        _py_set_opcode(write_curr, NOP);
-        write_curr++;
-    }
-
 }
 
 
@@ -1996,7 +2001,8 @@ _PyTier2_RewriteBackwardJump(_Py_CODEUNIT *jump_backward_lazy, _Py_CODEUNIT *tar
     _Py_CODEUNIT *write_curr = jump_backward_lazy - 1;
     _Py_CODEUNIT *prev = jump_backward_lazy - 1;
     assert(_Py_OPCODE(*jump_backward_lazy) == BB_JUMP_BACKWARD_LAZY);
-    assert(_Py_OPCODE(*prev) == EXTENDED_ARG);
+    assert(_Py_OPCODE(*prev) == EXTENDED_ARG ||
+        _Py_OPCODE(*prev) == NOP);
 
     // +1 because we increment the PC before JUMPBY
     int oparg = (int)(target - (jump_backward_lazy + 1));
