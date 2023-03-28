@@ -605,12 +605,7 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                            instr.offset > 0)
         if new_source_line:
             print(file=file)
-        if show_caches:
-            is_current_instr = instr.offset == lasti
-        else:
-            # Each CACHE takes 2 bytes
-            is_current_instr = instr.offset <= lasti \
-                <= instr.offset + 2 * _inline_cache_entries[_deoptop(instr.opcode)]
+        is_current_instr = instr.offset == lasti
         print(instr._disassemble(lineno_width, is_current_instr, offset_width),
               file=file)
     if exception_entries:

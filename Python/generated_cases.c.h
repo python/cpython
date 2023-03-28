@@ -2633,7 +2633,7 @@
                 bb_test = BB_TEST(0, 0);
             }
             else {
-                Py_DECREF(value);
+                _Py_DECREF_NO_DEALLOC(value);
                 bb_test = BB_TEST(1, 0);
             }
             STACK_SHRINK(1);
@@ -4118,6 +4118,8 @@
                 _Py_CODEUNIT *t2_nextinstr = NULL;
                 _PyBBBranchCache *cache = (_PyBBBranchCache *)next_instr;
                 _Py_CODEUNIT *tier1_fallback = NULL;
+
+                // @TODO: Rewrite TEST intruction above to a JUMP above..
 
                 t2_nextinstr = _PyTier2_GenerateNextBB(
                     frame, cache->bb_id_tagged, next_instr - 1,
