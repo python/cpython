@@ -905,18 +905,19 @@ _extensions_cache_get(PyObject *filename, PyObject *name)
     PyModuleDef *def = NULL;
     extensions_lock_acquire();
 
-    PyObject *extensions = EXTENSIONS.dict;
-    if (extensions == NULL) {
-        goto finally;
-    }
     PyObject *key = PyTuple_Pack(2, filename, name);
     if (key == NULL) {
         goto finally;
     }
+
+    PyObject *extensions = EXTENSIONS.dict;
+    if (extensions == NULL) {
+        goto finally;
+    }
     def = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
-    Py_DECREF(key);
 
 finally:
+    Py_XDECREF(key);
     extensions_lock_release();
     return def;
 }
@@ -925,7 +926,25 @@ static int
 _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
 {
     int res = -1;
+    PyThreadState *oldts = NULL;
     extensions_lock_acquire();
+
+    /* Swap to the main interpreter, if necessary.  This matters if
+       the dict hasn't been created yet or if the item isn't in the
+       dict yet.  In both cases we must ensure the relevant objects
+       are created using the main interpreter. */
+    PyThreadState *main_tstate = &EXTENSIONS.main_tstate;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!_Py_IsMainInterpreter(interp)) {
+        _PyThreadState_BindDetached(main_tstate);
+        oldts = _PyThreadState_Swap(interp->runtime, main_tstate);
+        assert(!_Py_IsMainInterpreter(oldts->interp));
+    }
+
+    PyObject *key = PyTuple_Pack(2, filename, name);
+    if (key == NULL) {
+        goto finally;
+    }
 
     PyObject *extensions = EXTENSIONS.dict;
     if (extensions == NULL) {
@@ -933,15 +952,23 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
         if (extensions == NULL) {
             goto finally;
         }
-        extensions_lock_acquire();
         EXTENSIONS.dict = extensions;
     }
-    PyObject *key = PyTuple_Pack(2, filename, name);
-    if (key == NULL) {
+
+    PyModuleDef *actual = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
+    if (PyErr_Occurred()) {
         goto finally;
     }
+    else if (actual != NULL) {
+        /* We expect it to be static, so it must be the same pointer. */
+        assert(def == actual);
+        res = 0;
+        goto finally;
+    }
+
+    /* This might trigger a resize, which is why we must switch
+       to the main interpreter. */
     res = PyDict_SetItem(extensions, key, (PyObject *)def);
-    Py_DECREF(key);
     if (res < 0) {
         res = -1;
         goto finally;
@@ -949,6 +976,10 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
     res = 0;
 
 finally:
+    if (oldts != NULL) {
+        _PyThreadState_UnbindDetached(main_tstate);
+    }
+    Py_XDECREF(key);
     extensions_lock_release();
     return res;
 }
@@ -957,28 +988,51 @@ static int
 _extensions_cache_delete(PyObject *filename, PyObject *name)
 {
     int res = -1;
+    PyThreadState *oldts = NULL;
     extensions_lock_acquire();
+
+    PyObject *key = PyTuple_Pack(2, filename, name);
+    if (key == NULL) {
+        goto finally;
+    }
+
+    _PyThreadState_BindDetached(&EXTENSIONS.main_tstate);
 
     PyObject *extensions = EXTENSIONS.dict;
     if (extensions == NULL) {
         res = 0;
         goto finally;
     }
-    PyObject *key = PyTuple_Pack(2, filename, name);
-    if (key == NULL) {
+
+    PyModuleDef *actual = (PyModuleDef *)PyDict_GetItemWithError(extensions, key);
+    if (PyErr_Occurred()) {
         goto finally;
     }
-    if (PyDict_DelItem(extensions, key) < 0) {
-        if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
-            Py_DECREF(key);
-            goto finally;
-        }
-        PyErr_Clear();
+    else if (actual == NULL) {
+        /* It was already removed or never added. */
+        res = 0;
+        goto finally;
     }
-    Py_DECREF(key);
+
+    /* Swap to the main interpreter, if necessary. */
+    PyThreadState *main_tstate = &EXTENSIONS.main_tstate;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!_Py_IsMainInterpreter(interp)) {
+        _PyThreadState_BindDetached(main_tstate);
+        oldts = _PyThreadState_Swap(interp->runtime, main_tstate);
+        assert(!_Py_IsMainInterpreter(oldts->interp));
+    }
+
+    if (PyDict_DelItem(extensions, key) < 0) {
+        goto finally;
+    }
     res = 0;
 
 finally:
+    if (oldts != NULL) {
+        _PyThreadState_UnbindDetached(main_tstate);
+    }
+    Py_XDECREF(key);
     extensions_lock_release();
     return res;
 }
