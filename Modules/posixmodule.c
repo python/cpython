@@ -4808,6 +4808,9 @@ os__path_isdir_impl(PyObject *module, PyObject *path)
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
                 result = statInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+            } else if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+                slow_path = FALSE;
+                result = 0;
             }
         } else {
             switch(GetLastError()) {
@@ -4912,6 +4915,9 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
                 result = !(statInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+            } else if (statInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+                slow_path = FALSE;
+                result = 0;
             }
         } else {
             switch(GetLastError()) {
