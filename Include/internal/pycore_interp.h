@@ -164,7 +164,6 @@ struct _is {
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
-
     /* The following fields are here to avoid allocation during init.
        The data is exposed through PyInterpreterState pointer fields.
        These fields should not be accessed directly outside of init.

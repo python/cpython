@@ -28,10 +28,6 @@ extern "C" {
 
 struct _Py_cached_objects {
     PyObject *interned_strings;
-    /* A thread state tied to the main interpreter,
-       used exclusively for when a global object (e.g. interned strings)
-       is resized (i.e. deallocated + allocated) from an arbitrary thread. */
-    PyThreadState main_tstate;
 };
 
 #define _Py_GLOBAL_OBJECT(NAME) \
