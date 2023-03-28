@@ -59,6 +59,7 @@ struct _Py_unicode_state {
     struct _Py_unicode_ids ids;
 };
 
+extern void _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p);
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
 
