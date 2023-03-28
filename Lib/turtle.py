@@ -953,7 +953,7 @@ class Tbuffer(object):
 
 
 class TurtleScreen(TurtleScreenBase):
-    """Provides screen oriented methods like setbg etc.
+    """Provides screen oriented methods like bgcolor etc.
 
     Only relies upon the methods of TurtleScreenBase and NOT
     upon components of the underlying graphics toolkit -

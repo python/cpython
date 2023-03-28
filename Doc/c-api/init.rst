@@ -391,7 +391,7 @@ Process-wide parameters
    program name is ``'/usr/local/bin/python'``, the prefix is ``'/usr/local'``. The
    returned string points into static storage; the caller should not modify its
    value.  This corresponds to the :makevar:`prefix` variable in the top-level
-   :file:`Makefile` and the ``--prefix`` argument to the :program:`configure`
+   :file:`Makefile` and the :option:`--prefix` argument to the :program:`configure`
    script at build time.  The value is available to Python code as ``sys.prefix``.
    It is only useful on Unix.  See also the next function.
 
@@ -662,7 +662,7 @@ Process-wide parameters
    :c:expr:`wchar_*` string.
 
 
-.. c:function:: w_char* Py_GetPythonHome()
+.. c:function:: wchar_t* Py_GetPythonHome()
 
    Return the default "home", that is, the value set by a previous call to
    :c:func:`Py_SetPythonHome`, or the value of the :envvar:`PYTHONHOME`
