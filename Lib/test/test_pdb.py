@@ -603,6 +603,7 @@ def test_pdb_display_command():
     ...     'undisplay',
     ...     'display a < 1',
     ...     'n',
+    ...     'display undefined',
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -633,6 +634,8 @@ def test_pdb_display_command():
     (Pdb) n
     > <doctest test.test_pdb.test_pdb_display_command[0]>(7)test_function()
     -> a = 4
+    (Pdb) display undefined
+    display undefined: ** raised NameError: name 'undefined' is not defined **
     (Pdb) continue
     """
 
