@@ -984,6 +984,7 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
 
 finally:
     if (oldts != NULL) {
+        _PyThreadState_Swap(interp->runtime, oldts);
         _PyThreadState_UnbindDetached(main_tstate);
     }
     Py_XDECREF(key);
@@ -1037,6 +1038,7 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
 
 finally:
     if (oldts != NULL) {
+        _PyThreadState_Swap(interp->runtime, oldts);
         _PyThreadState_UnbindDetached(main_tstate);
     }
     Py_XDECREF(key);
