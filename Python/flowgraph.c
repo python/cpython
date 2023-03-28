@@ -2,7 +2,7 @@
 #include <stdbool.h>
 
 #include "Python.h"
-#include "pycore_cfg_opt.h"
+#include "pycore_flowgraph.h"
 #include "pycore_compile.h"
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 
