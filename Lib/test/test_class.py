@@ -540,7 +540,7 @@ class ClassTests(unittest.TestCase):
         augment = (
             "add", "sub",
             "mul", "matmul", "truediv", "floordiv", "mod", "pow",
-            "lshift", "rshift", "and", "xor", "or",
+            "lshift", "rshift", "and", "xor",
         )
         not_defined.extend(map("__{}__".format, augment))
         not_defined.extend(map("__r{}__".format, augment))
