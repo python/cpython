@@ -586,6 +586,8 @@ def test_pdb_display_command():
     ...     a = 4
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'display +',
+    ...     'display',
     ...     'display a',
     ...     'n',
     ...     'display',
@@ -600,6 +602,10 @@ def test_pdb_display_command():
     ...    test_function()
     > <doctest test.test_pdb.test_pdb_display_command[0]>(4)test_function()
     -> a = 1
+    (Pdb) display +
+    Unable to display +: ** raised SyntaxError: invalid syntax **
+    (Pdb) display
+    No expression is being displayed
     (Pdb) display a
     display a: 0
     (Pdb) n

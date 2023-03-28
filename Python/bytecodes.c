@@ -2035,7 +2035,7 @@ dummy_func(
                 bb_test = BB_TEST(0, 0);
             }
             else {
-                _Py_DECREF_NO_DEALLOC(value);
+                DECREF_INPUTS();
                 bb_test = BB_TEST(1, 0);
             }
         }
