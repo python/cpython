@@ -4817,6 +4817,7 @@ os__path_isdir_impl(PyObject *module, PyObject *path)
                 case ERROR_BAD_NET_NAME:
                     /* These errors aren't worth retrying with the slow path */
                     slow_path = FALSE;
+                    result = 0;
                 case ERROR_NOT_SUPPORTED:
                     /* indicates the API couldn't be loaded */
                     break;
@@ -4920,6 +4921,7 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
                 case ERROR_BAD_NET_NAME:
                     /* These errors aren't worth retrying with the slow path */
                     slow_path = FALSE;
+                    result = 0;
                 case ERROR_NOT_SUPPORTED:
                     /* indicates the API couldn't be loaded */
                     break;
@@ -5025,6 +5027,7 @@ os__path_exists_impl(PyObject *module, PyObject *path)
                 case ERROR_BAD_NET_NAME:
                     /* These errors aren't worth retrying with the slow path */
                     slow_path = FALSE;
+                    result = 0;
                 case ERROR_NOT_SUPPORTED:
                     /* indicates the API couldn't be loaded */
                     break;
@@ -5125,6 +5128,7 @@ os__path_islink_impl(PyObject *module, PyObject *path)
                 case ERROR_BAD_NET_NAME:
                     /* These errors aren't worth retrying with the slow path */
                     slow_path = FALSE;
+                    result = 0;
                 case ERROR_NOT_SUPPORTED:
                     /* indicates the API couldn't be loaded */
                     break;
