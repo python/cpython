@@ -41,9 +41,16 @@ For a summary of deprecated features and a deprecation timeline, please see
 
 .. seealso::
 
+   The documentation at https://mypy.readthedocs.io/ provides accessible and
+   descriptions of various type system features. Particularly refer to the "Type
+   System Reference" section of the docs -- since the Python typing system is
+   standardised via PEPs, this information should apply to most Python type
+   checkers.
+
+.. seealso::
+
    The documentation at https://typing.readthedocs.io/ serves as useful reference
    for type system features, useful typing related tools and typing best practices.
-
 
 .. _relevant-peps:
 
