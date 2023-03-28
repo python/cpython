@@ -1,0 +1,1 @@
+Include the "object" type in the lists of documented types. Co-Authored-By: @cjerdonek
