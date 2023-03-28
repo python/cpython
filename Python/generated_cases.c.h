@@ -434,7 +434,7 @@
             PyObject *right_unboxed;
             assert(cframe.use_tracing == 0);
             char is_successor = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
-            bb_test = BB_TEST(is_successor ? 1 : 0, 0);
+            bb_test = BB_TEST(is_successor, 0);
 
             left_unboxed = (is_successor
                 ? *((PyObject **)(&(((PyFloatObject *)left)->ob_fval)))
@@ -451,7 +451,7 @@
             PyObject *arg = stack_pointer[-(1 + oparg)];
             assert(cframe.use_tracing == 0);
             char is_successor = PyFloat_CheckExact(arg);
-            bb_test = BB_TEST(is_successor ? 1 : 0, 0);
+            bb_test = BB_TEST(is_successor, 0);
             DISPATCH();
         }
 
@@ -504,7 +504,7 @@
             PyObject *left = stack_pointer[-2];
             assert(cframe.use_tracing == 0);
             char is_successor = PyLong_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
-            bb_test = BB_TEST(is_successor ? 1 : 0, 0);
+            bb_test = BB_TEST(is_successor, 0);
             DISPATCH();
         }
 

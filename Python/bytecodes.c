@@ -308,7 +308,7 @@ dummy_func(
             ) {
             assert(cframe.use_tracing == 0);
             char is_successor = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
-            bb_test = BB_TEST(is_successor ? 1 : 0, 0);
+            bb_test = BB_TEST(is_successor, 0);
 
             left_unboxed = (is_successor
                 ? *((PyObject **)(&(((PyFloatObject *)left)->ob_fval)))
@@ -321,7 +321,7 @@ dummy_func(
         inst(UNARY_CHECK_FLOAT, (arg, unused[oparg] -- arg : PyFloat_Type, unused[oparg])) {
             assert(cframe.use_tracing == 0);
             char is_successor = PyFloat_CheckExact(arg);
-            bb_test = BB_TEST(is_successor ? 1 : 0, 0);
+            bb_test = BB_TEST(is_successor, 0);
         }
 
         inst(BINARY_OP_ADD_FLOAT_UNBOXED, (left, right -- sum : PyRawFloat_Type)) {
@@ -350,7 +350,7 @@ dummy_func(
         inst(BINARY_CHECK_INT, (left, right -- left : <<= PyLong_Type, right : <<= PyLong_Type)) {
             assert(cframe.use_tracing == 0);
             char is_successor = PyLong_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
-            bb_test = BB_TEST(is_successor ? 1 : 0, 0);
+            bb_test = BB_TEST(is_successor, 0);
         }
 
         u_inst(BINARY_OP_ADD_INT_REST, (left, right -- sum : PyLong_Type)) {
