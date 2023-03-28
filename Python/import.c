@@ -1004,8 +1004,6 @@ _extensions_cache_delete(PyObject *filename, PyObject *name)
         goto finally;
     }
 
-    _PyThreadState_BindDetached(&EXTENSIONS.main_tstate);
-
     PyObject *extensions = EXTENSIONS.dict;
     if (extensions == NULL) {
         res = 0;
