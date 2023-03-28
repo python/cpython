@@ -498,7 +498,6 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                 argval = arg*2
                 argrepr = "to " + repr(argval)
             elif deop in _bb_jumps:
-                print("HI")
                 signed_arg = -arg if _is_backward_jump(deop) else arg
                 argval = offset + 2 + signed_arg*2
                 argval += 2 * caches
