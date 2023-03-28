@@ -21,7 +21,7 @@
     <LinkIncremental Condition="$(Configuration) != 'Debug'">false</LinkIncremental>
   </PropertyGroup>
 
-  <PropertyGroup Label="MSVC Bug Workarounds">
+  <PropertyGroup Label="MSVC Bug Workarounds" Condition="$(VCToolsVersion) != ''">
     <_VCToolsVersion>$([System.Version]::Parse(`$(VCToolsVersion)`).Major).$([System.Version]::Parse(`$(VCToolsVersion)`).Minor)</_VCToolsVersion>
 
     <!-- See https://developercommunity.visualstudio.com/t/Regression-in-MSVC-1433-1434-ARM64-co/10224361 -->
