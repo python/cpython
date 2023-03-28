@@ -59,9 +59,6 @@ extern PyTypeObject _PyExc_MemoryError;
         .types = { \
             .next_version_tag = 1, \
         }, \
-        .cached_objects = { \
-            .main_tstate = _PyThreadState_INIT, \
-        }, \
         .static_objects = { \
             .singletons = { \
                 .small_ints = _Py_small_ints_INIT, \
