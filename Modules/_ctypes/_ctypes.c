@@ -798,7 +798,8 @@ CDataType_from_param(PyObject *type, PyObject *value)
     if (res) {
         return Py_NewRef(value);
     }
-    if (PyCArg_CheckExact(value)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (PyCArg_CheckExact(st, value)) {
         PyCArgObject *p = (PyCArgObject *)value;
         PyObject *ob = p->obj;
         const char *ob_name;
@@ -1681,7 +1682,8 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
             return Py_NewRef(value);
         }
     }
-    if (PyCArg_CheckExact(value)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (PyCArg_CheckExact(st, value)) {
         /* byref(c_char(...)) */
         PyCArgObject *a = (PyCArgObject *)value;
         StgDictObject *dict = PyObject_stgdict(a->obj);
@@ -1744,7 +1746,8 @@ c_char_p_from_param(PyObject *type, PyObject *value)
             return Py_NewRef(value);
         }
     }
-    if (PyCArg_CheckExact(value)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (PyCArg_CheckExact(st, value)) {
         /* byref(c_char(...)) */
         PyCArgObject *a = (PyCArgObject *)value;
         StgDictObject *dict = PyObject_stgdict(a->obj);
@@ -1845,7 +1848,8 @@ c_void_p_from_param(PyObject *type, PyObject *value)
         return Py_NewRef(value);
     }
 /* byref(...) */
-    if (PyCArg_CheckExact(value)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (PyCArg_CheckExact(st, value)) {
         /* byref(c_xxx()) */
         PyCArgObject *a = (PyCArgObject *)value;
         if (a->tag == 'P') {
@@ -5642,11 +5646,13 @@ _ctypes_add_types(PyObject *mod)
         TP = (PyTypeObject *)type; \
     } while (0)
 
+    ctypes_state *st = GLOBAL_STATE();
+
     /* Note:
        ob_type is the metatype (the 'type'), defaults to PyType_Type,
        tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
     */
-    TYPE_READY(&PyCArg_Type);
+    CREATE_TYPE(mod, st->PyCArg_Type, &carg_spec);
     TYPE_READY(&PyCThunk_Type);
     TYPE_READY(&PyCData_Type);
     /* StgDict is derived from PyDict_Type */
@@ -5688,7 +5694,6 @@ _ctypes_add_types(PyObject *mod)
      * Other stuff
      */
 
-    ctypes_state *st = GLOBAL_STATE();
     CREATE_TYPE(mod, st->DictRemover_Type, &dictremover_spec);
     TYPE_READY(&StructParam_Type);
 

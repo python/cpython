@@ -34,11 +34,14 @@
 
 typedef struct {
     PyTypeObject *DictRemover_Type;
+    PyTypeObject *PyCArg_Type;
 } ctypes_state;
 
 extern ctypes_state global_state;
 
 #define GLOBAL_STATE() (&global_state)
+
+extern PyType_Spec carg_spec;
 
 typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;
@@ -342,8 +345,7 @@ struct tagPyCArgObject {
     Py_ssize_t size; /* for the 'V' tag */
 };
 
-extern PyTypeObject PyCArg_Type;
-#define PyCArg_CheckExact(v)        Py_IS_TYPE(v, &PyCArg_Type)
+#define PyCArg_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCArg_Type)
 extern PyCArgObject *PyCArgObject_new(void);
 
 extern PyObject *
