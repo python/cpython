@@ -240,9 +240,11 @@ def test_pdb_breakpoint_commands():
 
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'break 3',
+    ...     'break 4, +',
     ...     'disable 1',
     ...     'ignore 1 10',
     ...     'condition 1 1 < 2',
+    ...     'condition 1 1 <',
     ...     'break 4',
     ...     'break 4',
     ...     'break',
@@ -271,12 +273,16 @@ def test_pdb_breakpoint_commands():
     -> print(1)
     (Pdb) break 3
     Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
+    (Pdb) break 4, +
+    *** Invalid condition +: SyntaxError: invalid syntax
     (Pdb) disable 1
     Disabled breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
     (Pdb) ignore 1 10
     Will ignore next 10 crossings of breakpoint 1.
     (Pdb) condition 1 1 < 2
     New condition set for breakpoint 1.
+    (Pdb) condition 1 1 <
+    *** Invalid condition 1 <: SyntaxError: invalid syntax
     (Pdb) break 4
     Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
     (Pdb) break 4
@@ -603,7 +609,7 @@ def test_pdb_display_command():
     > <doctest test.test_pdb.test_pdb_display_command[0]>(4)test_function()
     -> a = 1
     (Pdb) display +
-    Unable to display +: ** raised SyntaxError: invalid syntax **
+    *** Unable to display +: SyntaxError: invalid syntax
     (Pdb) display
     No expression is being displayed
     (Pdb) display a

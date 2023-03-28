@@ -399,7 +399,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         displaying = self.displaying.get(self.curframe)
         if displaying:
             for expr, oldvalue in displaying.items():
-                newvalue, _ = self._getval_except(expr)
+                newvalue = self._getval_except(expr)
                 # check for identity first; this prevents custom __eq__ to
                 # be called at every loop, and also prevents instances whose
                 # fields are changed to be displayed
@@ -702,6 +702,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if comma > 0:
             # parse stuff after comma: "condition"
             cond = arg[comma+1:].lstrip()
+            if err := self.checkexpr(cond):
+                self.error('Invalid condition %s: %r' % (cond, err))
+                return
             arg = arg[:comma].rstrip()
         # parse stuff before comma: [filename:]lineno | function
         colon = arg.rfind(':')
@@ -840,6 +843,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return 0
         return lineno
 
+    def checkexpr(self, expr):
+        """ Check whether `expr` is a valid expression
+
+        Return the error message if there's a syntax error, otherwise None
+        """
+        try:
+            compile(expr, "<stdin>", "eval")
+        except SyntaxError as exc:
+            return _rstr(traceback.format_exception_only(exc)[-1].strip())
+        return None
+
     def do_enable(self, arg):
         """enable bpnumber [bpnumber ...]
         Enables the breakpoints given as a space separated list of
@@ -887,6 +901,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         args = arg.split(' ', 1)
         try:
             cond = args[1]
+            if err := self.checkexpr(cond):
+                self.error('Invalid condition %s: %r' % (cond, err))
+                return
         except IndexError:
             cond = None
         try:
@@ -1246,12 +1263,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def _getval_except(self, arg, frame=None):
         try:
             if frame is None:
-                return eval(arg, self.curframe.f_globals, self.curframe_locals), None
+                return eval(arg, self.curframe.f_globals, self.curframe_locals)
             else:
-                return eval(arg, frame.f_globals, frame.f_locals), None
+                return eval(arg, frame.f_globals, frame.f_locals)
         except BaseException as exc:
             err = traceback.format_exception_only(exc)[-1].strip()
-            return _rstr('** raised %s **' % err), exc
+            return _rstr('** raised %s **' % err)
 
     def _error_exc(self):
         exc_info = sys.exc_info()[:2]
@@ -1443,10 +1460,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 self.message('No expression is being displayed')
         else:
-            val, exc = self._getval_except(arg)
-            if isinstance(exc, SyntaxError):
-                self.message('Unable to display %s: %r' % (arg, val))
+            if err := self.checkexpr(arg):
+                self.error('Unable to display %s: %r' % (arg, err))
             else:
+                val = self._getval_except(arg)
                 self.displaying.setdefault(self.curframe, {})[arg] = val
                 self.message('display %s: %r' % (arg, val))
 
