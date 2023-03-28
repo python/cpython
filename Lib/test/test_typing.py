@@ -2050,7 +2050,7 @@ class BaseCallableTests:
         self.assertEqual(C[...], Callable[Concatenate[int, ...], int])
 
     def test_nested_paramspec(self):
-        # Since Callable has some special treatmeant, we want to be sure
+        # Since Callable has some special treatment, we want to be sure
         # that substituion works correctly, see gh-103054
         Callable = self.Callable
         P = ParamSpec('P')
