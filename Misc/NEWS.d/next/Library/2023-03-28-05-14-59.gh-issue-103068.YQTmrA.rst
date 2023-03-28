@@ -1,1 +1,2 @@
-Breakpoint's condition expression is checked for SyntaxError on :mod:`pdb`.
+It's no longer possible to register conditional breakpoints in
+:class:`~pdb.Pdb` that raise :exc:`SyntaxError`. Patch by Tian Gao.
