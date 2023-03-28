@@ -250,7 +250,7 @@ _PyPegen_fill_token(Parser *p)
 #define memo_statistics _PyRuntime.parser.memo_statistics
 
 void
-_PyPegen_clear_memo_statistics()
+_PyPegen_clear_memo_statistics(void)
 {
     for (int i = 0; i < NSTATISTICS; i++) {
         memo_statistics[i] = 0;
@@ -258,7 +258,7 @@ _PyPegen_clear_memo_statistics()
 }
 
 PyObject *
-_PyPegen_get_memo_statistics()
+_PyPegen_get_memo_statistics(void)
 {
     PyObject *ret = PyList_New(NSTATISTICS);
     if (ret == NULL) {
