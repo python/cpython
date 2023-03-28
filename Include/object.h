@@ -861,6 +861,15 @@ static inline int PyType_CheckExact(PyObject *op) {
 #  define PyType_CheckExact(op) PyType_CheckExact(_PyObject_CAST(op))
 #endif
 
+#if !defined(Py_LIMITED_API)
+/* Attempt to assign a version tag to the given type.
+ *
+ * Returns 1 if the type already had a valid version tag or a new one was
+ * assigned, or 0 if a new tag could not be assigned.
+ */
+PyAPI_FUNC(int) PyType_AssignVersionTag(PyTypeObject *type);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
