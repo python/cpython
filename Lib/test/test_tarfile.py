@@ -479,6 +479,13 @@ class CommonReadTest(ReadTest):
             with tarfile.open(support.findfile('recursion.tar')) as tar:
                 pass
 
+    def test_extractfile_name(self):
+        # gh-74468: TarFile.name must name a file, not a parent archive.
+        file = self.tar.getmember('ustar/regtype')
+        with self.tar.extractfile(file) as fobj:
+            self.assertEqual(fobj.name, 'ustar/regtype')
+
+
 class MiscReadTestBase(CommonReadTest):
     def requires_name_attribute(self):
         pass

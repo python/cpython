@@ -11,6 +11,7 @@ import weakref
 from textwrap import dedent
 
 from test import support
+from test.support import os_helper, script_helper
 from test.support.ast_helper import ASTTestMixin
 
 def to_tuple(t):
@@ -2562,6 +2563,25 @@ class ModuleStateTests(unittest.TestCase):
         ''')
         res = support.run_in_subinterp(code)
         self.assertEqual(res, 0)
+
+
+class ASTMainTests(unittest.TestCase):
+    # Tests `ast.main()` function.
+
+    def test_cli_file_input(self):
+        code = "print(1, 2, 3)"
+        expected = ast.dump(ast.parse(code), indent=3)
+
+        with os_helper.temp_dir() as tmp_dir:
+            filename = os.path.join(tmp_dir, "test_module.py")
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(code)
+            res, _ = script_helper.run_python_until_end("-m", "ast", filename)
+
+        self.assertEqual(res.err, b"")
+        self.assertEqual(expected.splitlines(),
+                         res.out.decode("utf8").splitlines())
+        self.assertEqual(res.rc, 0)
 
 
 def main():

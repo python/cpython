@@ -320,8 +320,9 @@ class PurePath(object):
     def _format_parsed_parts(cls, drv, root, parts):
         if drv or root:
             return drv + root + cls._flavour.sep.join(parts[1:])
-        else:
-            return cls._flavour.sep.join(parts)
+        elif parts and cls._flavour.splitdrive(parts[0])[0]:
+            parts = ['.'] + parts
+        return cls._flavour.sep.join(parts)
 
     def __str__(self):
         """Return the string representation of the path, suitable for
@@ -1188,52 +1189,55 @@ class Path(PurePath):
             homedir = self._flavour.expanduser(self._parts[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
-            return self._from_parts([homedir] + self._parts[1:])
+            drv, root, parts = self._parse_parts((homedir,))
+            return self._from_parsed_parts(drv, root, parts + self._parts[1:])
 
         return self
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
         sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
-        return self._walk(top_down, on_error, follow_symlinks)
+        paths = [self]
 
-    def _walk(self, top_down, on_error, follow_symlinks):
-        # We may not have read permission for self, in which case we can't
-        # get a list of the files the directory contains. os.walk
-        # always suppressed the exception then, rather than blow up for a
-        # minor reason when (say) a thousand readable directories are still
-        # left to visit. That logic is copied here.
-        try:
-            scandir_it = self._scandir()
-        except OSError as error:
-            if on_error is not None:
-                on_error(error)
-            return
+        while paths:
+            path = paths.pop()
+            if isinstance(path, tuple):
+                yield path
+                continue
 
-        with scandir_it:
-            dirnames = []
-            filenames = []
-            for entry in scandir_it:
-                try:
-                    is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
-                except OSError:
-                    # Carried over from os.path.isdir().
-                    is_dir = False
+            # We may not have read permission for self, in which case we can't
+            # get a list of the files the directory contains. os.walk()
+            # always suppressed the exception in that instance, rather than
+            # blow up for a minor reason when (say) a thousand readable
+            # directories are still left to visit. That logic is copied here.
+            try:
+                scandir_it = path._scandir()
+            except OSError as error:
+                if on_error is not None:
+                    on_error(error)
+                continue
 
-                if is_dir:
-                    dirnames.append(entry.name)
-                else:
-                    filenames.append(entry.name)
+            with scandir_it:
+                dirnames = []
+                filenames = []
+                for entry in scandir_it:
+                    try:
+                        is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
+                    except OSError:
+                        # Carried over from os.path.isdir().
+                        is_dir = False
 
-        if top_down:
-            yield self, dirnames, filenames
+                    if is_dir:
+                        dirnames.append(entry.name)
+                    else:
+                        filenames.append(entry.name)
 
-        for dirname in dirnames:
-            dirpath = self._make_child_relpath(dirname)
-            yield from dirpath._walk(top_down, on_error, follow_symlinks)
+            if top_down:
+                yield path, dirnames, filenames
+            else:
+                paths.append((path, dirnames, filenames))
 
-        if not top_down:
-            yield self, dirnames, filenames
+            paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
 
 
 class PosixPath(Path, PurePosixPath):
