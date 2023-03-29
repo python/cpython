@@ -319,7 +319,6 @@ typedef struct {
 
 /**** Error Handling ****/
 
-static PyObject *Tkinter_TclError;
 static int quitMainLoop = 0;
 static int errorInCmd = 0;
 static PyObject *excInCmd;
@@ -336,7 +335,8 @@ Tkinter_Error(TkappObject *self)
 {
     PyObject *res = Tkapp_UnicodeResult(self);
     if (res != NULL) {
-        PyErr_SetObject(Tkinter_TclError, res);
+        module_state *st = GLOBAL_STATE();
+        PyErr_SetObject(st->Tkinter_TclError, res);
         Py_DECREF(res);
     }
     return NULL;
@@ -1438,7 +1438,8 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
                 PyErr_SetRaisedException(exc);
             }
             else {
-                PyErr_SetObject(Tkinter_TclError, exc);
+                module_state *st = GLOBAL_STATE();
+                PyErr_SetObject(st->Tkinter_TclError, exc);
             }
         }
         Tcl_ConditionFinalize(&cond);
@@ -2353,7 +2354,8 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
         LEAVE_TCL
     }
     if (err) {
-        PyErr_SetString(Tkinter_TclError, "can't create Tcl command");
+        module_state *st = GLOBAL_STATE();
+        PyErr_SetString(st->Tkinter_TclError, "can't create Tcl command");
         PyMem_Free(data);
         return NULL;
     }
@@ -2404,7 +2406,8 @@ _tkinter_tkapp_deletecommand_impl(TkappObject *self, const char *name)
         LEAVE_TCL
     }
     if (err == -1) {
-        PyErr_SetString(Tkinter_TclError, "can't delete Tcl command");
+        module_state *st = GLOBAL_STATE();
+        PyErr_SetString(st->Tkinter_TclError, "can't delete Tcl command");
         return NULL;
     }
     Py_RETURN_NONE;
@@ -2819,7 +2822,8 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
      * a static variable.
      */
     if (tk_load_failed) {
-        PyErr_SetString(Tkinter_TclError, TKINTER_LOADTK_ERRMSG);
+        module_state *st = GLOBAL_STATE();
+        PyErr_SetString(st->Tkinter_TclError, TKINTER_LOADTK_ERRMSG);
         return NULL;
     }
 #endif
@@ -3285,12 +3289,13 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    if (PyModule_AddObject(m, "TclError", Py_NewRef(o))) {
+    if (PyModule_AddObjectRef(m, "TclError", o)) {
         Py_DECREF(o);
         Py_DECREF(m);
         return NULL;
     }
-    Tkinter_TclError = o;
+    module_state *st = GLOBAL_STATE();
+    st->Tkinter_TclError = o;
 
     if (PyModule_AddIntConstant(m, "READABLE", TCL_READABLE)) {
         Py_DECREF(m);
@@ -3347,7 +3352,6 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    module_state *st = GLOBAL_STATE();
     st->Tkapp_Type = o;
 
     o = PyType_FromMetaclass(NULL, m, &Tktt_Type_spec, NULL);

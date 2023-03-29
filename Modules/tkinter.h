@@ -28,6 +28,7 @@ typedef struct {
     PyObject *PyTclObject_Type;
     PyObject *Tkapp_Type;
     PyObject *Tktt_Type;
+    PyObject *Tkinter_TclError;
 } module_state;
 
 extern module_state global_state;
