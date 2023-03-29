@@ -3280,15 +3280,10 @@ DisableEventHook(void)
 
 
 static struct PyModuleDef _tkintermodule = {
-    PyModuleDef_HEAD_INIT,
-    "_tkinter",
-    NULL,
-    -1,
-    moduleMethods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_tkinter",
+    .m_size = sizeof(module_state),
+    .m_methods = moduleMethods,
 };
 
 PyMODINIT_FUNC
