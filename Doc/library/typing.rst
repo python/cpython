@@ -44,7 +44,7 @@ For a summary of deprecated features and a deprecation timeline, please see
    The "Type System Reference" section of https://mypy.readthedocs.io/ -- since
    the Python typing system is standardised via PEPs, this reference should
    broadly apply to most Python type checkers, although some parts may still be
-   mypy specific.
+   specific to mypy.
 
 .. seealso::
 
