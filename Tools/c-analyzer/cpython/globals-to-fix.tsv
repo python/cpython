@@ -527,7 +527,6 @@ Modules/_ssl/debughelpers.c	_PySSL_keylog_callback	lock	-
 Modules/_tkinter.c	-	call_mutex	-
 Modules/_tkinter.c	-	var_mutex	-
 Modules/_tkinter.c	-	command_mutex	-
-Modules/_tkinter.c	-	stdin_ready	-
 Modules/_tkinter.c	-	event_tstate	-
 Modules/_xxinterpchannelsmodule.c	-	_globals	-
 Modules/readline.c	-	completer_word_break_characters	-

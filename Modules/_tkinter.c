@@ -3191,13 +3191,12 @@ static PyMethodDef moduleMethods[] =
 
 #ifdef WAIT_FOR_STDIN
 
-static int stdin_ready = 0;
-
 #ifndef MS_WINDOWS
 static void
 MyFileProc(void *clientData, int mask)
 {
-    stdin_ready = 1;
+    module_state *st = GLOBAL_STATE();
+    st->stdin_ready = 1;
 }
 #endif
 
@@ -3211,17 +3210,17 @@ EventHook(void)
     int tfile;
 #endif
     PyEval_RestoreThread(event_tstate);
-    stdin_ready = 0;
+    st->stdin_ready = 0;
     st->errorInCmd = 0;
 #ifndef MS_WINDOWS
     tfile = fileno(stdin);
     Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc, NULL);
 #endif
-    while (!st->errorInCmd && !stdin_ready) {
+    while (!st->errorInCmd && !st->stdin_ready) {
         int result;
 #ifdef MS_WINDOWS
         if (_kbhit()) {
-            stdin_ready = 1;
+            st->stdin_ready = 1;
             break;
         }
 #endif
