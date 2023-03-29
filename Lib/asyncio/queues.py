@@ -151,8 +151,7 @@ class Queue(mixins._LoopBoundMixin):
                     self._putters.remove(putter)
                 except ValueError:
                     # The putter could be removed from self._putters by a
-                    # previous get_nowait call,
-                    # or a shutdown call.
+                    # previous get_nowait call or a shutdown call.
                     pass
                 if not self.full() and not putter.cancelled():
                     # We were woken up by get_nowait(), but can't take
