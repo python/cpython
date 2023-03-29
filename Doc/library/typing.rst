@@ -41,11 +41,10 @@ For a summary of deprecated features and a deprecation timeline, please see
 
 .. seealso::
 
-   The documentation at https://mypy.readthedocs.io/ provides accessible
-   descriptions of various type system features. Particularly refer to the "Type
-   System Reference" section of the docs -- since the Python typing system is
-   standardised via PEPs, this information should apply to most Python type
-   checkers.
+   The "Type System Reference" section of https://mypy.readthedocs.io/ -- since
+   the Python typing system is standardised via PEPs, this reference should
+   broadly apply to most Python type checkers, although some parts may still be
+   mypy specific.
 
 .. seealso::
 
