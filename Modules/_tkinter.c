@@ -3200,8 +3200,6 @@ MyFileProc(void *clientData, int mask)
 }
 #endif
 
-static PyThreadState *event_tstate = NULL;
-
 static int
 EventHook(void)
 {
@@ -3209,7 +3207,7 @@ EventHook(void)
 #ifndef MS_WINDOWS
     int tfile;
 #endif
-    PyEval_RestoreThread(event_tstate);
+    PyEval_RestoreThread(st->event_tstate);
     st->stdin_ready = 0;
     st->errorInCmd = 0;
 #ifndef MS_WINDOWS
@@ -3228,7 +3226,7 @@ EventHook(void)
         if (st->tcl_lock) {
             PyThread_acquire_lock(st->tcl_lock, 1);
         }
-        tcl_tstate = event_tstate;
+        tcl_tstate = st->event_tstate;
 
         result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 
@@ -3263,7 +3261,8 @@ EnableEventHook(void)
 {
 #ifdef WAIT_FOR_STDIN
     if (PyOS_InputHook == NULL) {
-        event_tstate = PyThreadState_Get();
+        module_state *st = GLOBAL_STATE();
+        st->event_tstate = PyThreadState_Get();
         PyOS_InputHook = EventHook;
     }
 #endif

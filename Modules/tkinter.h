@@ -43,6 +43,7 @@ typedef struct {
     int Tkinter_busywaitinterval;
     struct _fhcdata *HeadFHCD;
     int stdin_ready;
+    PyThreadState *event_tstate;
 } module_state;
 
 extern module_state global_state;
