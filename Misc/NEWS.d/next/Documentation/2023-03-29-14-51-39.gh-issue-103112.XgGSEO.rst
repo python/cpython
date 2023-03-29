@@ -1,1 +1,1 @@
-documentation of http.client.HTTPResponse.read, Parameter amt fixed.
+Add http.client.HTTPResponse.read docstring and fix help output.
