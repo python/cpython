@@ -101,8 +101,7 @@ class Queue:
 
         When the count of unfinished tasks drops to zero, join() unblocks.
 
-        Raises a ShutDown if shutdown_state attribute is set to
-        `_queue_shutdown_immediate`.
+        Raises ShutDown if the queue has been shut down immediately.
         '''
         with self.all_tasks_done:
             if self._is_shutdown_immediate():
