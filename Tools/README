@@ -1,9 +1,19 @@
 This directory contains a number of Python programs that are useful
 while building or extending Python.
 
+build           ...
+
 buildbot        Batchfiles for running on Windows buildbot workers.
 
+c-analyzer      Converter functions for primitive type casting and creating 
+                new docstrings.
+
+cases_generator Parses instruction definitions from Python/bytecodes.c, 
+                writes each generated case to Python/generated_cases.c.h.
+
 ccbench         A Python threads-based concurrency benchmark. (*)
+
+clinic          ...
 
 freeze          Create a stand-alone executable from a Python program.
 
@@ -14,10 +24,19 @@ i18n            Tools for internationalization. pygettext.py
                 parses Python source code and generates .pot files,
                 and msgfmt.py generates a binary message catalog
                 from a catalog in text format.
+                
+importbench     A set of micro-benchmarks for various import scenarios.
+                Can be used to to measure impact of possible code changes.
 
 iobench         Benchmark for the new Python I/O system. (*)
 
 msi             Support for packaging Python as an MSI package on Windows.
+
+nuget           Runs Python tests against multiple installations of OpenSSL 
+                and LibreSSL. Contains tools to download the 
+                OpenSSL/LibreSSL tar bundle.
+
+patchcheck      ...
 
 parser          Un-parsing tool to generate code from an AST.
 
@@ -27,9 +46,13 @@ scripts         A number of useful single-file programs, e.g. tabnanny.py
                 by Tim Peters, which checks for inconsistent mixing of
                 tabs and spaces, and 2to3, which converts Python 2 code
                 to Python 3 code.
+                
+ssl             ...
 
 stringbench     A suite of micro-benchmarks for various operations on
                 strings (both 8-bit and unicode). (*)
+                
+tz              ...
 
 unicode         Tools for generating unicodedata and codecs from unicode.org
                 and other mapping files (by Fredrik Lundh, Marc-Andre Lemburg
@@ -37,6 +60,9 @@ unicode         Tools for generating unicodedata and codecs from unicode.org
 
 unittestgui     A Tkinter based GUI test runner for unittest, with test
                 discovery.
+                
+wasm            Tools for facilitating cross-compilation of CPython to 
+                WebAssmebly (WASM).
 
 
 (*) A generic benchmark suite is maintained separately at https://github.com/python/performance
