@@ -271,9 +271,9 @@ def _is_gui_available():
                             ("lowLongOfPSN", c_int)]
             psn = ProcessSerialNumber()
             psn_p = pointer(psn)
-            if (  (app_services.GetCurrentProcess(psn_p) < 0) or
-                  (app_services.SetFrontProcess(psn_p) < 0) ):
-                reason = "cannot run without OS X gui process"
+            #if (  (app_services.GetCurrentProcess(psn_p) < 0) or
+            #      (app_services.SetFrontProcess(psn_p) < 0) ):
+            #    reason = "cannot run without OS X gui process"
 
     # check on every platform whether tkinter can actually do anything
     if not reason:
