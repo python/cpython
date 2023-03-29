@@ -79,8 +79,7 @@ class Queue:
         Raises a ValueError if called more times than there were items
         placed in the queue.
 
-        Raises a ShutDown if shutdown_state attribute is set to
-        `_queue_shutdown_immediate`.
+        Raises ShutDown if the queue has been shut down immediately.
         '''
         with self.all_tasks_done:
             if self._is_shutdown_immediate():
