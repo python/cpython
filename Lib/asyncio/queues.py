@@ -167,8 +167,7 @@ class Queue(mixins._LoopBoundMixin):
 
         If no free slot is immediately available, raise QueueFull.
 
-        Raise a QueueShutDown if _shutdown_state is not set to
-        `ALIVE`.
+        Raises QueueShutDown if the queue has been shut down.
         """
         if not self._is_alive():
             raise QueueShutDown
