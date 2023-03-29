@@ -135,7 +135,7 @@ class Queue(mixins._LoopBoundMixin):
         Put an item into the queue. If the queue is full, wait until a free
         slot is available before adding item.
 
-        Raise a QueueShutDown if _shutdown_state is not set to `ALIVE`.
+        Raises QueueShutDown if the queue has been shut down.
         """
         if not self._is_alive():
             raise QueueShutDown
