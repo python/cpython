@@ -659,6 +659,7 @@ struct _obmalloc_usage {
 
 struct _obmalloc_global_state {
     int dump_debug_stats;
+    Py_ssize_t interpreter_leaks;
 };
 
 struct _obmalloc_state {
@@ -682,6 +683,7 @@ extern Py_ssize_t _Py_GetGlobalAllocatedBlocks(void);
 #define _Py_GetAllocatedBlocks() \
     _Py_GetGlobalAllocatedBlocks()
 extern Py_ssize_t _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *);
+extern void _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *);
 
 
 #ifdef WITH_PYMALLOC

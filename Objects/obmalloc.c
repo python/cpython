@@ -790,11 +790,22 @@ _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *interp)
     return n;
 }
 
+void
+_PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
+{
+    if (has_own_state(interp)) {
+        Py_ssize_t leaked = _PyInterpreterState_GetAllocatedBlocks(interp);
+        assert(has_own_state(interp) || leaked == 0);
+        interp->runtime->obmalloc.interpreter_leaks += leaked;
+    }
+}
+
 Py_ssize_t
 _Py_GetGlobalAllocatedBlocks(void)
 {
     Py_ssize_t total = 0;
-    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(&_PyRuntime);
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
     if (finalizing != NULL) {
         assert(finalizing->interp != NULL);
         PyInterpreterState *interp = _PyInterpreterState_Main();
@@ -812,7 +823,7 @@ _Py_GetGlobalAllocatedBlocks(void)
         total += _PyInterpreterState_GetAllocatedBlocks(interp);
     }
     else {
-        HEAD_LOCK(&_PyRuntime);
+        HEAD_LOCK(runtime);
         PyInterpreterState *interp = PyInterpreterState_Head();
         assert(interp != NULL);
 #ifdef Py_DEBUG
@@ -830,11 +841,12 @@ _Py_GetGlobalAllocatedBlocks(void)
                 total += _PyInterpreterState_GetAllocatedBlocks(interp);
             }
         }
-        HEAD_UNLOCK(&_PyRuntime);
+        HEAD_UNLOCK(runtime);
 #ifdef Py_DEBUG
         assert(got_main);
 #endif
     }
+    total += runtime->obmalloc.interpreter_leaks;
     return total;
 }
 
