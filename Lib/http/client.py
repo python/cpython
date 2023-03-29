@@ -448,22 +448,7 @@ class HTTPResponse(io.BufferedIOBase):
         return self.fp is None
 
     def read(self, amt=None):
-        '''Read and return up to amt bytes.
-        
-        If the argument is omitted, None, or negative, reads and
-        returns all data until EOF.
-        
-        If the argument is positive, and the underlying raw stream is
-        not 'interactive', multiple raw reads may be issued to satisfy
-        the byte count (unless EOF is reached first).  But for
-        interactive raw streams (as well as sockets and pipes), at most
-        one raw read will be issued, and a short result does not imply
-        that EOF is imminent.
-        
-        Returns an empty bytes object on EOF.
-        
-        Returns None if the underlying raw stream was open in non-blocking
-        mode and no data is available at the moment.'''
+        """    Read and return the response body, or up to the next amt bytes."""
         if self.fp is None:
             return b""
 
