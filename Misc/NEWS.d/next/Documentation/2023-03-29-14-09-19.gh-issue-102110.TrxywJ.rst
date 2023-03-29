@@ -1,0 +1,17 @@
+Added all cpython/Tools modules to the README and included descriptions for the following modules:
+-------------------
+- c-analyzer
+- cases_generator
+- importbench
+- nuget
+- wasm
+-------------------
+
+Several modules still require descriptions. These modules include the following:
+-------------------
+- build
+- clinic
+- patchcheck
+- ssl
+- tz
+-------------------
