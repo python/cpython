@@ -13,5 +13,5 @@ CLEAN = [
 ]
 print("Touching:")
 for filename in CLEAN:
-    print(f"{filename}")
+    print(filename)
     Path(filename).touch()
