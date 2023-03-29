@@ -819,22 +819,21 @@ static Py_ssize_t
 get_num_global_allocated_blocks(_PyRuntimeState *runtime)
 {
     Py_ssize_t total = 0;
-    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
-    if (finalizing != NULL) {
-        assert(finalizing->interp != NULL);
+    if (_PyRuntimeState_GetFinalizing(runtime) != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_Main();
         if (interp == NULL) {
-            /* We are at the very end of runtime finalization. */
+            /* We are at the very end of runtime finalization.
+               We can't rely on finalizing->interp since that thread
+               state is probably already freed, so we don't worry
+               about it. */
             assert(PyInterpreterState_Head() == NULL);
-            interp = finalizing->interp;
         }
         else {
             assert(interp != NULL);
-            assert(finalizing->interp == interp);
-            assert(PyInterpreterState_Head() == interp);
+            /* It is probably the last interpreter but not necessarily. */
+            assert(PyInterpreterState_Next(interp) == NULL);
+            total += _PyInterpreterState_GetAllocatedBlocks(interp);
         }
-        assert(PyInterpreterState_Next(interp) == NULL);
-        total += _PyInterpreterState_GetAllocatedBlocks(interp);
     }
     else {
         HEAD_LOCK(runtime);
