@@ -122,8 +122,10 @@ class Queue(object):
     def get(self, block=True, timeout=None):
         if self._closed:
             raise ValueError(f"Queue {self!r} is closed")
-        if self._is_shutdown_immediate() or\
-            (self._is_shutdown() and self.empty()):
+        if (
+            self._is_shutdown_immediate()
+            or (self._is_shutdown() and self.empty())
+        ):
             raise ShutDown
         if block and timeout is None:
             with self._rlock:
