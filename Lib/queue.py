@@ -193,11 +193,8 @@ class Queue:
         available, else raise the Empty exception ('timeout' is ignored
         in that case).
 
-        Raises a ShutDown if shutdown_state attribute is set to
-        `_queue_shutdown` and queue is empty.
-
-        Raises a ShutDown if shutdown_state attribute is set to
-        `_queue_shutdown_immediate`
+        Raises ShutDown if the queue has been shut down and is empty,
+        or if the queue has been shut down immediately.
         '''
         with self.not_empty:
             if self._is_shutdown_immediate() or\
