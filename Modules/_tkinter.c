@@ -238,6 +238,8 @@ _get_tcl_lib_path()
 
 */
 
+module_state global_state;
+
 static PyThread_type_lock tcl_lock = 0;
 
 #ifdef TCL_THREADS

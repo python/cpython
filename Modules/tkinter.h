@@ -24,4 +24,11 @@
         "Calling Tk_Init again after a previous call failed might deadlock"
 #endif
 
+typedef struct {
+} module_state;
+
+extern module_state global_state;
+
+#define GLOBAL_STATE() (&global_state)
+
 #endif /* !TKINTER_H */
