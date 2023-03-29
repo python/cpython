@@ -46,8 +46,6 @@ For a summary of deprecated features and a deprecation timeline, please see
    broadly apply to most Python type checkers, although some parts may still be
    specific to mypy.
 
-.. seealso::
-
    The documentation at https://typing.readthedocs.io/ serves as useful reference
    for type system features, useful typing related tools and typing best practices.
 
