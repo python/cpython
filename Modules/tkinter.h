@@ -68,10 +68,16 @@ get_module_state_by_cls(PyTypeObject *cls)
 
 extern struct PyModuleDef _tkintermodule;
 
+static inline PyObject *
+find_module_by_type(PyTypeObject *tp)
+{
+    return PyType_GetModuleByDef(tp, &_tkintermodule);
+}
+
 static inline module_state *
 find_module_state_by_type(PyTypeObject *tp)
 {
-    PyObject *mod = PyType_GetModuleByDef(tp, &_tkintermodule);
+    PyObject *mod = find_module_by_type(tp);
     assert(mod != NULL);
     return get_module_state(mod);
 }
