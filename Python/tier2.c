@@ -376,6 +376,74 @@ __type_propagate_TYPE_OVERWRITE(
     }
 }
 
+// src and dst are assumed to already be within the type context
+static void
+__type_propagate_TYPE_SWAP(
+    _PyTier2TypeContext *type_context,
+    _Py_TYPENODE_t *src, _Py_TYPENODE_t *dst)
+{
+    // Check if they are the same tree
+    _Py_TYPENODE_t *srcrootref = src;
+    _Py_TYPENODE_t *dstrootref = dst;
+    uintptr_t dsttag = _Py_TYPENODE_GET_TAG(*dst);
+    uintptr_t srctag = _Py_TYPENODE_GET_TAG(*src);
+    switch (dsttag) {
+    case TYPE_REF: dstrootref = __typenode_get_rootptr(*dst);
+    case TYPE_ROOT:
+        switch (srctag) {
+        case TYPE_REF: srcrootref = __typenode_get_rootptr(*src);
+        case TYPE_ROOT:
+            if (srcrootref == dstrootref) {
+                // Same tree, no point swapping
+                return;
+            }
+            break;
+        default:
+            Py_UNREACHABLE();
+        }
+        break;
+    default:
+        Py_UNREACHABLE();
+    }
+
+    // src and dst are different tree,
+    // Make all children of src be children of dst and vice versa
+
+    _Py_TYPENODE_t src_child_test = _Py_TYPENODE_MAKE_REF(
+        _Py_TYPENODE_CLEAR_TAG((_Py_TYPENODE_t)src));
+    _Py_TYPENODE_t dst_child_test = _Py_TYPENODE_MAKE_REF(
+        _Py_TYPENODE_CLEAR_TAG((_Py_TYPENODE_t)dst));
+
+    // Search locals for children
+    int nlocals = type_context->type_locals_len;
+    for (int i = 0; i < nlocals; i++) {
+        _Py_TYPENODE_t *node_ptr = &(type_context->type_locals[i]);
+        if (*node_ptr == src_child_test) {
+            *node_ptr = dst_child_test;
+        }
+        else if (*node_ptr == dst_child_test) {
+            *node_ptr = src_child_test;
+        }
+    }
+
+    // Search stack for children
+    int nstack = type_context->type_stack_len;
+    for (int i = 0; i < nstack; i++) {
+        _Py_TYPENODE_t *node_ptr = &(type_context->type_stack[i]);
+        if (*node_ptr == src_child_test) {
+            *node_ptr = dst_child_test;
+        }
+        else if (*node_ptr == dst_child_test) {
+            *node_ptr = src_child_test;
+        }
+    }
+
+    // Finally, actually swap the nodes
+    *src ^= *dst;
+    *dst ^= *src;
+    *src ^= *dst;
+}
+
 static void
 __type_stack_shrink(_Py_TYPENODE_t **type_stackptr, int idx)
 {
@@ -489,6 +557,7 @@ type_propagate(
 
 #define TYPE_SET(src, dst, flag)        __type_propagate_TYPE_SET((src), (dst), (flag))
 #define TYPE_OVERWRITE(src, dst, flag)  __type_propagate_TYPE_OVERWRITE(type_context, (src), (dst), (flag))
+#define TYPE_SWAP(src, dst)             __type_propagate_TYPE_SWAP(type_context, (src), (dst))
 
 #define STACK_GROW(idx)             *type_stackptr += (idx)
 
@@ -504,8 +573,18 @@ type_propagate(
 
     switch (opcode) {
 #include "tier2_typepropagator.c.h"
+    TARGET(SWAP) {
+        _Py_TYPENODE_t *top = TYPESTACK_PEEK(1);
+        _Py_TYPENODE_t * bottom = TYPESTACK_PEEK(2 + (oparg - 2));
+        TYPE_SWAP(top, bottom);
+        break;
+    }
     default:
+#ifdef Py_DEBUG
+        fprintf(stderr, "Unsupported opcode in type propagator: %s : %d\n", _PyOpcode_OpName[opcode], oparg);
+#else
         fprintf(stderr, "Unsupported opcode in type propagator: %d\n", opcode);
+#endif
         Py_UNREACHABLE();
     }
 

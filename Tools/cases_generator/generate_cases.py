@@ -53,9 +53,9 @@ BITS_PER_CODE_UNIT = 16
 
 TYPE_PROPAGATOR_FORBIDDEN = [
     # Type propagator shouldn't see these
-    "JUMP_IF_FALSE_OR_POP",
-    "JUMP_IF_TRUE_OR_POP",
     "FOR_ITER",
+    "SWAP",
+    # Not supported
     "SEND",
     "SEND_GEN",
     "YIELD_VALUE",
@@ -71,12 +71,6 @@ TYPE_PROPAGATOR_FORBIDDEN = [
     "MATCH_KEYS",
     "EXTENDED_ARG",
     "WITH_EXCEPT_START",
-    # Type propagation across these instructions are forbidden
-    # due to conditional effects that can't be determined statically
-    # The handling of type propagation across these opcodes are handled elsewhere
-    # within tier2.
-    "BB_TEST_IF_FALSE_OR_POP",
-    "BB_TEST_IF_TRUE_OR_POP" # Type propagator handles this in BB_BRANCH
 ]
 
 arg_parser = argparse.ArgumentParser(
@@ -344,10 +338,7 @@ class Instruction:
     def write_typeprop(self, out: Formatter) -> None:
         """Write one instruction's type propagation rules"""
 
-        if self.name in TYPE_PROPAGATOR_FORBIDDEN:
-            out.emit(f'fprintf(stderr, "Type propagation across `{self.name}` shouldn\'t be handled statically!\\n");')
-            out.emit("Py_UNREACHABLE();")
-            return
+        # TODO: Detect loops like in SWAP
 
         need_to_declare = []
         # Stack input is used in local effect
@@ -643,11 +634,6 @@ class Instruction:
 
     def write_typeprop(self, out: Formatter) -> None:
         """Write one instruction's type propagation rules"""
-
-        if self.name in TYPE_PROPAGATOR_FORBIDDEN:
-            out.emit(f'fprintf(stderr, "Type propagation across `{self.name}` shouldn\'t be handled statically!\\n");')
-            out.emit("Py_UNREACHABLE();")
-            return
 
         need_to_declare = []
         # Stack input is used in local effect
@@ -1328,6 +1314,8 @@ class Analyzer:
             self.out = Formatter(f, 8)
 
             for thing in self.everything:
+                if thing.name in TYPE_PROPAGATOR_FORBIDDEN:
+                    continue
                 match thing:
                     case parser.InstDef(kind=kind, name=name):
                         match kind:

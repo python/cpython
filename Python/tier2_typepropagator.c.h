@@ -284,12 +284,6 @@
             break;
         }
 
-        TARGET(RAISE_VARARGS) {
-            fprintf(stderr, "Type propagation across `RAISE_VARARGS` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
-            break;
-        }
-
         TARGET(INTERPRETER_EXIT) {
             STACK_SHRINK(1);
             break;
@@ -317,36 +311,6 @@
 
         TARGET(GET_AWAITABLE) {
             TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
-            break;
-        }
-
-        TARGET(SEND) {
-            fprintf(stderr, "Type propagation across `SEND` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
-            break;
-        }
-
-        TARGET(SEND_GEN) {
-            fprintf(stderr, "Type propagation across `SEND_GEN` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
-            break;
-        }
-
-        TARGET(YIELD_VALUE) {
-            fprintf(stderr, "Type propagation across `YIELD_VALUE` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
-            break;
-        }
-
-        TARGET(POP_EXCEPT) {
-            fprintf(stderr, "Type propagation across `POP_EXCEPT` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
-            break;
-        }
-
-        TARGET(RERAISE) {
-            fprintf(stderr, "Type propagation across `RERAISE` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
             break;
         }
 
@@ -464,18 +428,6 @@
             break;
         }
 
-        TARGET(DELETE_FAST) {
-            fprintf(stderr, "Type propagation across `DELETE_FAST` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
-            break;
-        }
-
-        TARGET(MAKE_CELL) {
-            fprintf(stderr, "Type propagation across `MAKE_CELL` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
-            break;
-        }
-
         TARGET(DELETE_DEREF) {
             break;
         }
@@ -483,12 +435,6 @@
         TARGET(LOAD_CLASSDEREF) {
             STACK_GROW(1);
             TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
-            break;
-        }
-
-        TARGET(LOAD_DEREF) {
-            fprintf(stderr, "Type propagation across `LOAD_DEREF` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
             break;
         }
 
@@ -766,24 +712,6 @@
             break;
         }
 
-        TARGET(MATCH_MAPPING) {
-            fprintf(stderr, "Type propagation across `MATCH_MAPPING` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
-            break;
-        }
-
-        TARGET(MATCH_SEQUENCE) {
-            fprintf(stderr, "Type propagation across `MATCH_SEQUENCE` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
-            break;
-        }
-
-        TARGET(MATCH_KEYS) {
-            fprintf(stderr, "Type propagation across `MATCH_KEYS` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
-            break;
-        }
-
         TARGET(GET_ITER) {
             TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
@@ -791,12 +719,6 @@
 
         TARGET(GET_YIELD_FROM_ITER) {
             TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
-            break;
-        }
-
-        TARGET(FOR_ITER) {
-            fprintf(stderr, "Type propagation across `FOR_ITER` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
             break;
         }
 
@@ -840,18 +762,6 @@
             STACK_GROW(1);
             TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(2), true);
-            break;
-        }
-
-        TARGET(WITH_EXCEPT_START) {
-            fprintf(stderr, "Type propagation across `WITH_EXCEPT_START` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
-            break;
-        }
-
-        TARGET(PUSH_EXC_INFO) {
-            fprintf(stderr, "Type propagation across `PUSH_EXC_INFO` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
             break;
         }
 
@@ -1042,20 +952,6 @@
         TARGET(BINARY_OP) {
             STACK_SHRINK(1);
             TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
-            break;
-        }
-
-        TARGET(SWAP) {
-            _Py_TYPENODE_t *top = TYPESTACK_PEEK(1);
-            _Py_TYPENODE_t *bottom = TYPESTACK_PEEK(2 + (oparg-2));
-            TYPE_OVERWRITE(bottom, TYPESTACK_PEEK(1), false);
-            TYPE_OVERWRITE(top, TYPESTACK_PEEK(2 + (oparg-2)), false);
-            break;
-        }
-
-        TARGET(EXTENDED_ARG) {
-            fprintf(stderr, "Type propagation across `EXTENDED_ARG` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
             break;
         }
 
