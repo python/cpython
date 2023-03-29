@@ -153,8 +153,7 @@ class Queue:
         is immediately available, else raise the Full exception ('timeout'
         is ignored in that case).
 
-        Raises a ShutDown if shutdown_state attribute is not set to
-        `_queue_alive`.
+        Raises ShutDown if the queue has been shut down.
         '''
         with self.not_full:
             if not self._is_alive():
