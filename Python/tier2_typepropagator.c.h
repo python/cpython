@@ -801,8 +801,8 @@
         }
 
         TARGET(BB_TEST_ITER) {
-            fprintf(stderr, "Type propagation across `BB_TEST_ITER` shouldn't be handled statically!\n");
-            Py_UNREACHABLE();
+            STACK_GROW(1);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 

@@ -55,7 +55,6 @@ TYPE_PROPAGATOR_FORBIDDEN = [
     # Type propagator shouldn't see these
     "JUMP_IF_FALSE_OR_POP",
     "JUMP_IF_TRUE_OR_POP",
-    "BB_TEST_ITER",
     "FOR_ITER",
     "SEND",
     "SEND_GEN",
@@ -361,7 +360,7 @@ class Instruction:
             ops = typ.ops
             for op in ops:
                 if not isinstance(src := op.src, TypeSrcStackInput): continue
-                if oeffect.name in self.unmoved_names and oeffect.name == src.name: 
+                if oeffect.name in self.unmoved_names and oeffect.name == src.name:
                     print(
                         f"Warn: {self.name} type annotation for {oeffect.name} will be ignored "
                         "as it is unmoved")
@@ -400,7 +399,7 @@ class Instruction:
             typ_op = "TYPE_OVERWRITE"
             dst = f"TYPELOCALS_GET({idx})"
             match val:
-                case TypeSrcLiteral(name=valstr): 
+                case TypeSrcLiteral(name=valstr):
                     if valstr == "NULL":
                         src = "(_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT"
                         flag = "true"
@@ -438,7 +437,7 @@ class Instruction:
 
             # Check if it's even used
             if oeffect.name == UNUSED: continue
-            
+
             # Check if there's type info
             if typ := oeffect.type_annotation:
                 for op in typ.ops:
@@ -463,7 +462,7 @@ class Instruction:
                             flag = "false"
                         case _:
                             typing.assert_never(op.src)
-                    
+
                     opstr = f"{op.op}({src}, {dst}, {flag})"
                     if oeffect.cond:
                         out.emit(f"if ({oeffect.cond}) {{ {opstr}; }}")
@@ -474,7 +473,7 @@ class Instruction:
             # Don't touch unmoved stack vars
             if oeffect.name in self.unmoved_names:
                 continue
-            
+
             # Just output null
             typ_op = "TYPE_OVERWRITE"
             src = "(_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT"
@@ -661,7 +660,7 @@ class Instruction:
             ops = typ.ops
             for op in ops:
                 if not isinstance(src := op.src, TypeSrcStackInput): continue
-                if oeffect.name in self.unmoved_names and oeffect.name == src.name: 
+                if oeffect.name in self.unmoved_names and oeffect.name == src.name:
                     print(
                         f"Warn: {self.name} type annotation for {oeffect.name} will be ignored "
                         "as it is unmoved")
@@ -700,7 +699,7 @@ class Instruction:
             typ_op = "TYPE_OVERWRITE"
             dst = f"TYPELOCALS_GET({idx})"
             match val:
-                case TypeSrcLiteral(name=valstr): 
+                case TypeSrcLiteral(name=valstr):
                     if valstr == "NULL":
                         src = "(_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT"
                         flag = "true"
@@ -738,7 +737,7 @@ class Instruction:
 
             # Check if it's even used
             if oeffect.name == UNUSED: continue
-            
+
             # Check if there's type info
             if typ := oeffect.type_annotation:
                 for op in typ.ops:
@@ -763,7 +762,7 @@ class Instruction:
                             flag = "false"
                         case _:
                             typing.assert_never(op.src)
-                    
+
                     opstr = f"{op.op}({src}, {dst}, {flag})"
                     if oeffect.cond:
                         out.emit(f"if ({oeffect.cond}) {{ {opstr}; }}")
@@ -774,7 +773,7 @@ class Instruction:
             # Don't touch unmoved stack vars
             if oeffect.name in self.unmoved_names:
                 continue
-            
+
             # Just output null
             typ_op = "TYPE_OVERWRITE"
             src = "(_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT"
@@ -1315,7 +1314,7 @@ class Analyzer:
         write_function("popped", popped_data)
         write_function("pushed", pushed_data)
         self.out.emit("")
-    
+
     def write_typepropagator(self) -> None:
         """Write the type propagator"""
 
@@ -1574,7 +1573,7 @@ class Analyzer:
         ...
 
     def write_macro_typeprop(self, mac: MacroInstruction) -> None:
-        # TODO: Make the code emitted more efficient by 
+        # TODO: Make the code emitted more efficient by
         #  combining stack effect
         name = mac.name
         self.out.emit("")
