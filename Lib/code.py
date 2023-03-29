@@ -170,7 +170,7 @@ class InteractiveConsole(InteractiveInterpreter):
 
     """
 
-    def __init__(self, locals=None, filename="<console>"):
+    def __init__(self, locals=None, filename="<console>", block_exit=False):
         """Constructor.
 
         The optional locals argument will be passed to the
@@ -182,6 +182,7 @@ class InteractiveConsole(InteractiveInterpreter):
         """
         InteractiveInterpreter.__init__(self, locals)
         self.filename = filename
+        self.block_exit = block_exit
         self.resetbuffer()
 
     def resetbuffer(self):
@@ -226,19 +227,21 @@ class InteractiveConsole(InteractiveInterpreter):
         # process. exit and quit in builtins closes sys.stdin which makes
         # it super difficult to restore
         #
-        # We overwrite the builtins so exit() and quit() only raises
-        # SystemExit and we can catch that to only exit the interactive
-        # shell
+        # When self.block_exit is True, we overwrite the builtins so
+        # exit() and quit() only raises SystemExit and we can catch that
+        # to only exit the interactive shell
 
         _exit = None
-        if hasattr(builtins, "exit"):
-            _exit = builtins.exit
-            builtins.exit = Quitter("exit")
-
         _quit = None
-        if hasattr(builtins, "quit"):
-            _quit = builtins.quit
-            builtins.quit = Quitter("quit")
+
+        if self.block_exit:
+            if hasattr(builtins, "exit"):
+                _exit = builtins.exit
+                builtins.exit = Quitter("exit")
+
+            if hasattr(builtins, "quit"):
+                _quit = builtins.quit
+                builtins.quit = Quitter("quit")
 
         try:
             while True:
@@ -258,11 +261,14 @@ class InteractiveConsole(InteractiveInterpreter):
                     self.write("\nKeyboardInterrupt\n")
                     self.resetbuffer()
                     more = 0
-                except SystemExit:
-                    self.write("\n")
-                    break
+                except SystemExit as e:
+                    if self.block_exit:
+                        self.write("\n")
+                        break
+                    else:
+                        raise e
         finally:
-            # restore exit and quit in builtins
+            # restore exit and quit in builtins if they were modified
             if _exit is not None:
                 builtins.exit = _exit
 
@@ -322,7 +328,7 @@ class Quitter:
         raise SystemExit(code)
 
 
-def interact(banner=None, readfunc=None, local=None, exitmsg=None):
+def interact(banner=None, readfunc=None, local=None, exitmsg=None, block_exit=False):
     """Closely emulate the interactive Python interpreter.
 
     This is a backwards compatible interface to the InteractiveConsole
@@ -337,7 +343,7 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None):
     exitmsg -- passed to InteractiveConsole.interact()
 
     """
-    console = InteractiveConsole(local)
+    console = InteractiveConsole(local, block_exit=block_exit)
     if readfunc is not None:
         console.raw_input = readfunc
     else:
