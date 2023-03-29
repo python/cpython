@@ -5021,9 +5021,6 @@ os__path_exists_impl(PyObject *module, PyObject *path)
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
                 result = 1;
-                if (close_file) {
-                    CloseHandle(hfile);
-                }
             }
         } else {
             switch(GetLastError()) {
