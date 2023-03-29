@@ -246,8 +246,7 @@ class Queue(mixins._LoopBoundMixin):
         Raises ValueError if called more times than there were items placed in
         the queue.
 
-        Raise a QueueShutDown if _shutdown_state is set to
-        `SHUTDOWN_IMMEDIATE`.
+        Raises QueueShutDown if the queue has been shut down immediately.
         """
         if self._is_shutdown_immediate():
             raise QueueShutDown
