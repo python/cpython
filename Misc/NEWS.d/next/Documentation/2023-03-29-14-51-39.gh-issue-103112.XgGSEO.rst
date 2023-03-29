@@ -1,1 +1,1 @@
-Add http.client.HTTPResponse.read docstring and fix pydoc output.
+Add docstring to :meth:`http.client.HTTPResponse.read` to fix :cmd:`pydoc` output.
