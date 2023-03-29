@@ -506,11 +506,11 @@ unicodeFromTclObj(Tcl_Obj *value)
 
 /*[clinic input]
 module _tkinter
-class _tkinter.tkapp "TkappObject *" "clinic_state()->Tkapp_Type_spec"
+class _tkinter.tkapp "TkappObject *" "clinic_state()->Tkapp_Type"
 class _tkinter.Tcl_Obj "PyTclObject *" "clinic_state()->PyTclObject_Type"
-class _tkinter.tktimertoken "TkttObject *" "&Tktt_Type_spec"
+class _tkinter.tktimertoken "TkttObject *" "clinic_state()->Tktt_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=70f3cd987a58ce0c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=33b8c4ee3110e8c2]*/
 
 /**** Tkapp Object ****/
 
@@ -2548,8 +2548,6 @@ _tkinter_tkapp_deletefilehandler(TkappObject *self, PyObject *file)
 
 /**** Tktt Object (timer token) ****/
 
-static PyObject *Tktt_Type;
-
 typedef struct {
     PyObject_HEAD
     Tcl_TimerToken token;
@@ -2585,27 +2583,42 @@ Tktt_New(PyObject *func)
 {
     TkttObject *v;
 
-    v = PyObject_New(TkttObject, (PyTypeObject *) Tktt_Type);
+    module_state *st = GLOBAL_STATE();
+    v = PyObject_GC_New(TkttObject, (PyTypeObject *)st->Tktt_Type);
     if (v == NULL)
         return NULL;
 
     v->token = NULL;
     v->func = Py_NewRef(func);
+    PyObject_GC_Track(v);
 
     /* Extra reference, deleted when called or when handler is deleted */
     return (TkttObject*)Py_NewRef(v);
+}
+
+static int
+Tktt_Traverse(TkttObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->func);
+    return 0;
+}
+
+static int
+Tktt_Clear(TkttObject *self)
+{
+    Py_CLEAR(self->func);
+    return 0;
 }
 
 static void
 Tktt_Dealloc(PyObject *self)
 {
     TkttObject *v = (TkttObject *)self;
-    PyObject *func = v->func;
-    PyObject *tp = (PyObject *) Py_TYPE(self);
-
-    Py_XDECREF(func);
-
-    PyObject_Free(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    (void)Tktt_Clear(v);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -3076,17 +3089,19 @@ static PyMethodDef Tktt_methods[] =
 
 static PyType_Slot Tktt_Type_slots[] = {
     {Py_tp_dealloc, Tktt_Dealloc},
+    {Py_tp_clear, Tktt_Clear},
+    {Py_tp_traverse, Tktt_Traverse},
     {Py_tp_repr, Tktt_Repr},
     {Py_tp_methods, Tktt_methods},
     {0, 0}
 };
 
 static PyType_Spec Tktt_Type_spec = {
-    "_tkinter.tktimertoken",
-    sizeof(TkttObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    Tktt_Type_slots,
+    .name = "_tkinter.tktimertoken",
+    .basicsize = sizeof(TkttObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_HAVE_GC),
+    .slots = Tktt_Type_slots,
 };
 
 
@@ -3335,7 +3350,7 @@ PyInit__tkinter(void)
     module_state *st = GLOBAL_STATE();
     st->Tkapp_Type = o;
 
-    o = PyType_FromSpec(&Tktt_Type_spec);
+    o = PyType_FromMetaclass(NULL, m, &Tktt_Type_spec, NULL);
     if (o == NULL) {
         Py_DECREF(m);
         return NULL;
@@ -3345,7 +3360,7 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    Tktt_Type = o;
+    st->Tktt_Type = o;
 
     o = PyType_FromMetaclass(NULL, m, &PyTclObject_Type_spec, NULL);
     if (o == NULL) {
