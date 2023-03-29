@@ -614,12 +614,6 @@ allocate_bb_metadata(PyCodeObject *co, _Py_CODEUNIT *tier2_start,
     return metadata;
 }
 
-static int
-update_backward_jump_target_bb_ids(PyCodeObject *co, _PyTier2BBMetadata *metadata)
-{
-    assert(co->_tier2_info != NULL);
-
-}
 
 // Writes BB metadata to code object's tier2info bb_data field.
 // 0 on success, 1 on error.
@@ -1081,7 +1075,8 @@ IS_BACKWARDS_JUMP_TARGET(PyCodeObject *co, _Py_CODEUNIT *curr)
 // 1 for error, 0 for success.
 static inline int
 add_metadata_to_jump_2d_array(_PyTier2Info *t2_info, _PyTier2BBMetadata *meta,
-    int backwards_jump_target)
+    int backwards_jump_target, _PyTier2TypeContext *starting_context,
+    _Py_CODEUNIT *tier1_start)
 {
     // Locate where to insert the BB ID
     int backward_jump_offset_index = 0;
@@ -1098,8 +1093,12 @@ add_metadata_to_jump_2d_array(_PyTier2Info *t2_info, _PyTier2BBMetadata *meta,
     int jump_i = 0;
     found = false;
     for (; jump_i < MAX_BB_VERSIONS; jump_i++) {
-        if (t2_info->backward_jump_target_bb_ids[backward_jump_offset_index][jump_i] == -1) {
-            t2_info->backward_jump_target_bb_ids[backward_jump_offset_index][jump_i] = meta->id;
+        if (t2_info->backward_jump_target_bb_pairs[backward_jump_offset_index][jump_i].id ==
+            -1) {
+            t2_info->backward_jump_target_bb_pairs[backward_jump_offset_index][jump_i].id =
+                meta->id;
+            t2_info->backward_jump_target_bb_pairs[backward_jump_offset_index][jump_i].start_type_context = starting_context;
+            t2_info->backward_jump_target_bb_pairs[backward_jump_offset_index][jump_i].tier1_start = tier1_start;
             found = true;
             break;
         }
@@ -1148,15 +1147,17 @@ infer_BINARY_OP_ADD(
         }
     }
     // Unknown, time to emit the chain of guards.
-    write_curr = rebox_stack(write_curr, type_context, 2);
-    *needs_guard = true;
     if (prev_type_guard == NULL) {
+        write_curr = rebox_stack(write_curr, type_context, 2);
+        *needs_guard = true;
         return emit_type_guard(write_curr, BINARY_CHECK_INT, bb_id);
     }
     else {
         int next_guard = type_guard_ladder[
             type_guard_to_index[prev_type_guard->op.code] + 1];
         if (next_guard != -1) {
+            write_curr = rebox_stack(write_curr, type_context, 2);
+            *needs_guard = true;
             return emit_type_guard(write_curr, next_guard, bb_id);
         }
         // End of ladder, fall through
@@ -1205,6 +1206,13 @@ _PyTier2_Code_DetectAndEmitBB(
                           i += caches; \
                           type_propagate(opcode, oparg, starting_type_context, consts); \
                           continue;
+
+#define DISPATCH_REBOX(x) write_i = rebox_stack(write_i, starting_type_context, x); \
+                          write_i = emit_i(write_i, specop, oparg); \
+                          write_i = copy_cache_entries(write_i, curr+1, caches); \
+                          i += caches; \
+                          type_propagate(opcode, oparg, starting_type_context, consts); \
+                          continue;
 #define DISPATCH_GOTO() goto dispatch_opcode;
 #define TYPECONST_GET_RAWTYPE(idx) Py_TYPE(PyTuple_GET_ITEM(consts, idx))
 
@@ -1228,6 +1236,8 @@ _PyTier2_Code_DetectAndEmitBB(
     bool starts_with_backwards_jump_target = false;
     int backwards_jump_target_offset = -1;
     bool virtual_start = false;
+    _PyTier2TypeContext *start_type_context_copy = NULL;
+    _Py_CODEUNIT *virtual_tier1_start = NULL;
 
     // A meta-interpreter for types.
     Py_ssize_t i = (tier1_start - _PyCode_CODE(co));
@@ -1354,18 +1364,12 @@ _PyTier2_Code_DetectAndEmitBB(
         }
         // Need to handle reboxing at these boundaries.
         case CALL:
-            write_i = rebox_stack(write_i, starting_type_context,
-                oparg + 2);
-            DISPATCH();
+            DISPATCH_REBOX(oparg + 2);
         case BUILD_MAP:
-            write_i = rebox_stack(write_i, starting_type_context,
-                oparg * 2);
-            DISPATCH();
+            DISPATCH_REBOX(oparg * 2);
         case BUILD_STRING:
         case BUILD_LIST:
-            write_i = rebox_stack(write_i, starting_type_context,
-                oparg);
-            DISPATCH();
+            DISPATCH_REBOX(oparg);
         case BINARY_OP:
             if (oparg == NB_ADD) {
                 // Add operation. Need to check if we can infer types.
@@ -1375,8 +1379,7 @@ _PyTier2_Code_DetectAndEmitBB(
                     write_i, starting_type_context,
                     co->_tier2_info->bb_data_curr);
                 if (possible_next == NULL) {
-                    write_i = rebox_stack(write_i, starting_type_context, 2);
-                    DISPATCH()
+                    DISPATCH_REBOX(2);
                 }
                 write_i = possible_next;
                 if (needs_guard) {
@@ -1389,24 +1392,20 @@ _PyTier2_Code_DetectAndEmitBB(
                 i += caches;
                 continue;
             }
-            write_i = rebox_stack(write_i, starting_type_context, 2);
-            DISPATCH()
+            DISPATCH_REBOX(2);
         case LOAD_ATTR:
         case CALL_INTRINSIC_1:
         case UNARY_NEGATIVE:
         case UNARY_NOT:
         case UNARY_INVERT:
         case GET_LEN:
-            write_i = rebox_stack(write_i, starting_type_context, 1);
-            DISPATCH();
+            DISPATCH_REBOX(1);
         case CALL_INTRINSIC_2:
         case BINARY_SUBSCR:
         case BINARY_SLICE:
-            write_i = rebox_stack(write_i, starting_type_context, 2);
-            DISPATCH();
+            DISPATCH_REBOX(2);
         case STORE_SLICE:
-            write_i = rebox_stack(write_i, starting_type_context, 4);
-            DISPATCH();
+            DISPATCH_REBOX(4);
         default:
 #if BB_DEBUG && !TYPEPROP_DEBUG
             fprintf(stderr, "offset: %Id\n", curr - _PyCode_CODE(co));
@@ -1424,6 +1423,12 @@ _PyTier2_Code_DetectAndEmitBB(
                     starts_with_backwards_jump_target = true;
                     backwards_jump_target_offset = (int)(curr - _PyCode_CODE(co));
                     virtual_start = false;
+                    start_type_context_copy = _PyTier2TypeContext_Copy(starting_type_context);
+                    virtual_tier1_start = _PyCode_CODE(co) + i;
+                    if (start_type_context_copy == NULL) {
+                        _PyTier2TypeContext_Free(starting_type_context);
+                        return NULL;
+                    }
                     goto fall_through;
                 }
 #if TYPEPROP_DEBUG
@@ -1432,12 +1437,11 @@ _PyTier2_Code_DetectAndEmitBB(
                 // Else, create a virtual end to the basic block.
                 // But generate the block after that so it can fall through.
                 i--;
-                // Make a copy of the type context
                 _PyTier2TypeContext *type_context_copy = _PyTier2TypeContext_Copy(starting_type_context);
                 if (type_context_copy == NULL) {
                     return NULL;
                 }
-                jump_end_meta = meta = _PyTier2_AllocateBBMetaData(co,
+                meta = _PyTier2_AllocateBBMetaData(co,
                     t2_start, _PyCode_CODE(co) + i, type_context_copy);
                 if (meta == NULL) {
                     _PyTier2TypeContext_Free(type_context_copy);
@@ -1502,9 +1506,11 @@ end:
     }
     if (starts_with_backwards_jump_target) {
         // Add the basic block to the jump ids
-        assert(jump_end_meta != NULL);
-        if (add_metadata_to_jump_2d_array(t2_info, jump_end_meta,
-            backwards_jump_target_offset) < 0) {
+        assert(start_type_context_copy != NULL);
+        assert(virtual_tier1_start != NULL);
+        if (add_metadata_to_jump_2d_array(t2_info, temp_meta,
+            backwards_jump_target_offset, start_type_context_copy,
+            virtual_tier1_start) < 0) {
             PyMem_Free(meta);
             if (meta != temp_meta) {
                 PyMem_Free(temp_meta);
@@ -1534,24 +1540,26 @@ compare_ints(const void *a, const void *b)
 }
 
 static int
-allocate_jump_offset_2d_array(int backwards_jump_count, int **backward_jump_target_bb_ids)
+allocate_jump_offset_2d_array(int backwards_jump_count,
+    _PyTier2BBStartTypeContextTriplet **backward_jump_target_bb_pairs)
 {
     int done = 0;
     for (int i = 0; i < backwards_jump_count; i++) {
-        int *jump_offsets = PyMem_Malloc(sizeof(int) * MAX_BB_VERSIONS);
-        if (jump_offsets == NULL) {
+        _PyTier2BBStartTypeContextTriplet *pair =
+            PyMem_Malloc(sizeof(_PyTier2BBStartTypeContextTriplet) * MAX_BB_VERSIONS);
+        if (pair == NULL) {
             goto error;
         }
         for (int i = 0; i < MAX_BB_VERSIONS; i++) {
-            jump_offsets[i] = -1;
+            pair[i].id = -1;
         }
         done++;
-        backward_jump_target_bb_ids[i] = jump_offsets;
+        backward_jump_target_bb_pairs[i] = pair;
     }
     return 0;
 error:
     for (int i = 0; i < done; i++) {
-        PyMem_Free(backward_jump_target_bb_ids[i]);
+        PyMem_Free(backward_jump_target_bb_pairs[i]);
     }
     return 1;
 }
@@ -1589,15 +1597,16 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
     if (backward_jump_offsets == NULL) {
         return 1;
     }
-    int **backward_jump_target_bb_ids = PyMem_Malloc(backwards_jump_count * sizeof(int *));
-    if (backward_jump_target_bb_ids == NULL) {
+    _PyTier2BBStartTypeContextTriplet **backward_jump_target_bb_pairs =
+        PyMem_Malloc(backwards_jump_count * sizeof(_PyTier2BBStartTypeContextTriplet *));
+    if (backward_jump_target_bb_pairs == NULL) {
         PyMem_Free(backward_jump_offsets);
         return 1;
     }
     if (allocate_jump_offset_2d_array((int)backwards_jump_count,
-        backward_jump_target_bb_ids)) {
+        backward_jump_target_bb_pairs)) {
         PyMem_Free(backward_jump_offsets);
-        PyMem_Free(backward_jump_target_bb_ids);
+        PyMem_Free(backward_jump_target_bb_pairs);
         return 1;
     }
 
@@ -1623,6 +1632,18 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
     assert(curr_i == backwards_jump_count);
     qsort(backward_jump_offsets, backwards_jump_count,
         sizeof(int), compare_ints);
+    // Deduplicate
+    int backwards_jump_count_new = backwards_jump_count;
+    for (int i = 0; i < backwards_jump_count - 1; i++) {
+        for (int x = i + 1; x < backwards_jump_count; x++) {
+            if (backward_jump_offsets[i] == backward_jump_offsets[x]) {
+                backward_jump_offsets[x] = -1;
+                backwards_jump_count_new--;
+            }
+        }
+    }
+    qsort(backward_jump_offsets, backwards_jump_count,
+        sizeof(int), compare_ints);
 #if BB_DEBUG
     fprintf(stderr, "BACKWARD JUMP COUNT : %Id\n", backwards_jump_count);
     fprintf(stderr, "BACKWARD JUMP TARGET OFFSETS (FROM START OF CODE): ");
@@ -1633,7 +1654,7 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
 #endif
     co->_tier2_info->backward_jump_count = (int)backwards_jump_count;
     co->_tier2_info->backward_jump_offsets = backward_jump_offsets;
-    co->_tier2_info->backward_jump_target_bb_ids = backward_jump_target_bb_ids;
+    co->_tier2_info->backward_jump_target_bb_pairs = backward_jump_target_bb_pairs;
     return 0;
 }
 
@@ -1841,13 +1862,15 @@ _PyTier2_GenerateNextBBMetaWithTypeContext(
     int jumpby,
     _Py_CODEUNIT **tier1_fallback,
     char bb_flag,
-    _PyTier2TypeContext *type_context_copy)
+    _PyTier2TypeContext *type_context_copy,
+    _Py_CODEUNIT *custom_tier1_end)
 {
     PyCodeObject *co = frame->f_code;
     assert(co->_tier2_info != NULL);
     assert(BB_ID(bb_id_tagged) <= co->_tier2_info->bb_data_curr);
     _PyTier2BBMetadata *meta = co->_tier2_info->bb_data[BB_ID(bb_id_tagged)];
-    _Py_CODEUNIT *tier1_end = meta->tier1_end + jumpby;
+    _Py_CODEUNIT *tier1_end = custom_tier1_end == NULL
+        ? meta->tier1_end + jumpby : custom_tier1_end;
     *tier1_fallback = tier1_end;
     // Be a pessimist and assume we need to write the entire rest of code into the BB.
     // The size of the BB generated will definitely be equal to or smaller than this.
@@ -1916,7 +1939,8 @@ _PyTier2_GenerateNextBBMeta(
         jumpby,
         tier1_fallback,
         bb_flag,
-        type_context_copy
+        type_context_copy,
+        NULL
     );
 
     if (next == NULL) {
@@ -1954,6 +1978,8 @@ _PyTier2_GenerateNextBB(
 static int
 diff_typecontext(_PyTier2TypeContext *ctx1, _PyTier2TypeContext *ctx2)
 {
+    assert(ctx1 != NULL);
+    assert(ctx2 != NULL);
 #if BB_DEBUG
     fprintf(stderr, "  [*] Diffing type contexts\n");
     static void print_typestack(const _PyTier2TypeContext * type_context);
@@ -1976,6 +2002,7 @@ diff_typecontext(_PyTier2TypeContext *ctx1, _PyTier2TypeContext *ctx2)
         // 2. Int -> Unknown/NULL (bueno, diff + 1)
         // 3. Unknown -> Int (no bueno)
         // 4. Int -> Float (no bueno)
+        // 5. Unboxed type -> Unknown/Boxed type (no bueno)
 
         // Case 3. Widening operation.
         if (a == NULL && b != NULL) {
@@ -1987,6 +2014,11 @@ diff_typecontext(_PyTier2TypeContext *ctx1, _PyTier2TypeContext *ctx2)
             return INT_MAX;
         }
 
+        // Case 5. Boxed to unboxed conversion.
+        if (is_unboxed_type(a) && a != b) {
+            return INT_MAX;
+        }
+
         // Case 1 and 2. Diff increases if 2.
         diff += (a != b);
     }
@@ -1994,14 +2026,19 @@ diff_typecontext(_PyTier2TypeContext *ctx1, _PyTier2TypeContext *ctx2)
     // Check the difference in the type stack.
     for (int i = 0; i < stack_elems1; i++) {
         // Exact same as above.
-        PyTypeObject *a = typenode_get_type(ctx1->type_locals[i]);
-        PyTypeObject *b = typenode_get_type(ctx2->type_locals[i]);
+        PyTypeObject *a = typenode_get_type(ctx1->type_stack[i]);
+        PyTypeObject *b = typenode_get_type(ctx2->type_stack[i]);
 
         if (a == NULL && b != NULL) {
             return INT_MAX;
         }
 
         if (a != b && b != NULL) {
+            return INT_MAX;
+        }
+
+        // Case 5. Boxed to unboxed conversion.
+        if (is_unboxed_type(a) && a != b) {
             return INT_MAX;
         }
 
@@ -2041,6 +2078,7 @@ _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id_tagged
     int candidate_bb_id = -1;
     int min_diff = INT_MAX;
     int jump_offset_id = -1;
+    _Py_CODEUNIT *candidate_bb_tier1_start = NULL;
 
 #if BB_DEBUG
     fprintf(stderr, "finding jump target: %d\n", jump_offset);
@@ -2052,15 +2090,16 @@ _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id_tagged
         if (t2_info->backward_jump_offsets[i] == jump_offset) {
             jump_offset_id = i;
             for (int x = 0; x < MAX_BB_VERSIONS; x++) {
-                int target_bb_id = t2_info->backward_jump_target_bb_ids[i][x];
+                int target_bb_id = t2_info->backward_jump_target_bb_pairs[i][x].id;
                 if (target_bb_id >= 0) {
                     candidate_bb_id = target_bb_id;
+                    candidate_bb_tier1_start = t2_info->backward_jump_target_bb_pairs[i][x].tier1_start;
 #if BB_DEBUG
                     fprintf(stderr, "candidate jump target BB ID: %d\n",
                         candidate_bb_id);
 #endif
                     int diff = diff_typecontext(curr_type_context,
-                        co->_tier2_info->bb_data[target_bb_id]->type_context);
+                        t2_info->backward_jump_target_bb_pairs[i][x].start_type_context);
                     if (diff < min_diff) {
                         min_diff = diff;
                         matching_bb_id = target_bb_id;
@@ -2072,6 +2111,7 @@ _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id_tagged
     }
     assert(jump_offset_id >= 0);
     assert(candidate_bb_id >= 0);
+    assert(candidate_bb_tier1_start != NULL);
     // We couldn't find a matching BB to jump to. Time to generate our own.
     // This also requires rewriting our backwards jump to a forward jump later.
     if (matching_bb_id == -1) {
@@ -2080,25 +2120,33 @@ _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id_tagged
         if (copied == NULL) {
             return NULL;
         }
+        _PyTier2TypeContext *second_copy = _PyTier2TypeContext_Copy(curr_type_context);
+        if (second_copy == NULL) {
+            return NULL;
+        }
         _PyTier2BBMetadata *meta = _PyTier2_GenerateNextBBMetaWithTypeContext(
             frame, MAKE_TAGGED_BB_ID(candidate_bb_id, 0),
             NULL,
-            1,
+             0,
             tier1_fallback,
             0,
-            copied);
+            copied,
+            candidate_bb_tier1_start);
         if (meta == NULL) {
-            PyMem_Free(copied);
+            _PyTier2TypeContext_Free(copied);
+            _PyTier2TypeContext_Free(second_copy);
             return NULL;
         }
         // Store the metadata in the jump ids.
         assert(t2_info->backward_jump_offsets[jump_offset_id] == jump_offset);
         bool found = false;
         for (int x = 0; x < MAX_BB_VERSIONS; x++) {
-            int target_bb_id = t2_info->backward_jump_target_bb_ids[jump_offset_id][x];
+            int target_bb_id = t2_info->backward_jump_target_bb_pairs[jump_offset_id][x].id;
             // Write to an available space
             if (target_bb_id < 0) {
-                t2_info->backward_jump_target_bb_ids[jump_offset_id][x] = meta->id;
+                t2_info->backward_jump_target_bb_pairs[jump_offset_id][x].id = meta->id;
+                t2_info->backward_jump_target_bb_pairs[jump_offset_id][x].start_type_context = second_copy;
+                t2_info->backward_jump_target_bb_pairs[jump_offset_id][x].tier1_start = candidate_bb_tier1_start;
                 found = true;
                 break;
             }

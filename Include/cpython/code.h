@@ -108,6 +108,13 @@ typedef struct _PyTier2BBSpace  {
     _Py_CODEUNIT u_code[1];
 } _PyTier2BBSpace;
 
+typedef struct _PyTier2BBStartTypeContextTriplet {
+    int id;
+    _Py_CODEUNIT *tier1_start;
+    // This is a strong reference. So during cleanup we need to free this.
+    _PyTier2TypeContext *start_type_context;
+} _PyTier2BBStartTypeContextTriplet;
+
 // Tier 2 info stored in the code object. Lazily allocated.
 typedef struct _PyTier2Info {
     /* the tier 2 basic block to execute (if any) */
@@ -122,7 +129,7 @@ typedef struct _PyTier2Info {
     // So backward jump offset [1, 2, 3 ,4]
     // will have [[BB_ID1, BB_ID2], [BB_ID3,], [], []]
     // etc.
-    int **backward_jump_target_bb_ids;
+    _PyTier2BBStartTypeContextTriplet **backward_jump_target_bb_pairs;
     // Max len of bb_data
     int bb_data_len;
     // Current index to write into in bb_data. Incremented after each write.
