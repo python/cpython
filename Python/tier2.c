@@ -1576,20 +1576,14 @@ backward_jump_target:
         }
 
     }
-    _PyTier2TypeContext *type_context_copy = NULL;
 end:
     // Create the tier 2 BB
 
-    // Make a copy of the type context
-    type_context_copy = _PyTier2TypeContext_Copy(starting_type_context);
-    if (type_context_copy == NULL) {
-        return NULL;
-    }
     temp_meta = _PyTier2_AllocateBBMetaData(co, t2_start,
         // + 1 because we want to start with the NEXT instruction for the scan
-        _PyCode_CODE(co) + i + 1, type_context_copy);
+        _PyCode_CODE(co) + i + 1, starting_type_context);
     if (temp_meta == NULL) {
-        _PyTier2TypeContext_Free(type_context_copy);
+        _PyTier2TypeContext_Free(starting_type_context);
         return NULL;
     }
     // We need to return the first block to enter into. If there is already a block generated
@@ -1608,7 +1602,7 @@ end:
             if (meta != temp_meta) {
                 PyMem_Free(temp_meta);
             }
-            _PyTier2TypeContext_Free(type_context_copy);
+            _PyTier2TypeContext_Free(starting_type_context);
             return NULL;
         }
     }
