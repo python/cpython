@@ -448,7 +448,7 @@ class HTTPResponse(io.BufferedIOBase):
         return self.fp is None
 
     def read(self, amt=None):
-        """    Read and return the response body, or up to the next amt bytes."""
+        """Read and return the response body, or up to the next amt bytes."""
         if self.fp is None:
             return b""
 
