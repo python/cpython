@@ -1987,6 +1987,80 @@ to speed up repeated connections from the same clients.
          >>> ssl.create_default_context().verify_mode  # doctest: +SKIP
          <VerifyMode.CERT_REQUIRED: 2>
 
+.. method:: SSLContext.set_psk_client_callback(callback)
+
+   Enables TLS-PSK (pre-shared key) authentication on a client-side connection.
+
+   In general, certificate based authentication should be preferred over this method.
+
+   The parameter ``callback`` is a callable object with the signature:
+   ``def callback(hint: str | None) -> tuple[str | None, bytes]``.
+   The ``hint`` parameter is an optional identity hint sent by the server.
+   The return value is a tuple in the form (client-identity, psk).
+   Client-identity is an optional string which may be used by the server to
+   select a corresponding PSK for the client. PSK is a
+   :term:`bytes-like object` representing the pre-shared key.
+
+   Setting ``callback`` to :const:`None` removes any existing callback.
+
+   Example usage::
+
+      context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+      context.check_hostname = False
+      context.verify_mode = ssl.CERT_NONE
+      context.maximum_version = ssl.TLSVersion.TLSv1_2
+      context.set_ciphers('PSK')
+
+      # A simple lambda:
+      psk = bytes.fromhex('deadbeef')
+      context.set_psk_client_callback(lambda hint: (None, psk))
+
+      # A table using the hint from the server:
+      psk_table = { 'ServerId_1': bytes.fromhex('deadbeef'),
+                    'ServerId_2': bytes.fromhex('cafebabe')
+      }
+      def callback(hint):
+          return 'ClientId_1', psk_table[hint]
+      context.set_psk_client_callback(callback)
+
+   .. versionadded:: 3.12
+
+.. method:: SSLContext.set_psk_server_callback(callback, identity_hint=None)
+
+   Enables TLS-PSK (pre-shared key) authentication on a server-side connection.
+
+   In general, certificate based authentication should be preferred over this method.
+
+   The parameter ``callback`` is a callable object with the signature:
+   ``def callback(identity: str | None) -> bytes``.
+   The ``identity`` parameter is an optional identity sent by the client which can
+   be used to select a corresponding PSK.
+   The return value is a :term:`bytes-like object` representing the pre-shared key.
+
+   Setting ``callback`` to :const:`None` removes any existing callback.
+
+   The parameter ``identity_hint`` is an optional identity hint sent to the client.
+
+   Example usage::
+
+      context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+      context.maximum_version = ssl.TLSVersion.TLSv1_2
+      context.set_ciphers('PSK')
+
+      # A simple lambda:
+      psk = bytes.fromhex('deadbeef')
+      context.set_psk_server_callback(lambda identity: psk)
+
+      # A table using the identity of the client:
+      psk_table = { 'ClientId_1': bytes.fromhex('deadbeef'),
+                    'ClientId_2': bytes.fromhex('cafed00d')
+      }
+      def callback(identity):
+          return psk_table[identity]
+      context.set_psk_server_callback(callback, 'ServerId_1')
+
+   .. versionadded:: 3.12
+
 .. index:: single: certificates
 
 .. index:: single: X509 certificate
