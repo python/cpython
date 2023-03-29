@@ -33,6 +33,13 @@ _Py_IsMainInterpreter(PyInterpreterState *interp)
     return (interp == _PyInterpreterState_Main());
 }
 
+static inline int
+_Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
+{
+    return (_PyRuntimeState_GetFinalizing(interp->runtime) != NULL &&
+            interp == &interp->runtime->_main_interpreter);
+}
+
 
 static inline const PyConfig *
 _Py_GetMainConfig(void)

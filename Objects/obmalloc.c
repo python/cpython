@@ -727,11 +727,19 @@ static int running_on_valgrind = -1;
 
 typedef struct _obmalloc_state OMState;
 
+static inline int
+has_own_state(PyInterpreterState *interp)
+{
+    return (_Py_IsMainInterpreter(interp) ||
+            !(interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) ||
+            _Py_IsMainInterpreterFinalizing(interp));
+}
+
 static inline OMState *
 get_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC) {
+    if (!has_own_state(interp)) {
         interp = _PyInterpreterState_Main();
     }
     return &interp->obmalloc;
@@ -752,6 +760,14 @@ get_state(void)
 Py_ssize_t
 _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *interp)
 {
+#ifdef Py_DEBUG
+    assert(has_own_state(interp));
+#else
+    if (!has_own_state(interp)) {
+        _Py_FatalErrorFunc(__func__,
+                           "the interpreter doesn't have its own allocator");
+    }
+#endif
     OMState *state = &interp->obmalloc;
 
     Py_ssize_t n = raw_allocated_blocks;
@@ -784,24 +800,40 @@ _Py_GetGlobalAllocatedBlocks(void)
         PyInterpreterState *interp = _PyInterpreterState_Main();
         if (interp == NULL) {
             /* We are at the very end of runtime finalization. */
+            assert(PyInterpreterState_Head() == NULL);
             interp = finalizing->interp;
         }
         else {
             assert(interp != NULL);
             assert(finalizing->interp == interp);
             assert(PyInterpreterState_Head() == interp);
-            assert(PyInterpreterState_Next(interp) == NULL);
         }
+        assert(PyInterpreterState_Next(interp) == NULL);
         total += _PyInterpreterState_GetAllocatedBlocks(interp);
     }
     else {
         HEAD_LOCK(&_PyRuntime);
         PyInterpreterState *interp = PyInterpreterState_Head();
         assert(interp != NULL);
+#ifdef Py_DEBUG
+        int got_main = 0;
+#endif
         for (; interp != NULL; interp = PyInterpreterState_Next(interp)) {
-            total += _PyInterpreterState_GetAllocatedBlocks(interp);
+#ifdef Py_DEBUG
+            if (_Py_IsMainInterpreter(interp)) {
+                assert(!got_main);
+                got_main = 1;
+                assert(has_own_state(interp));
+            }
+#endif
+            if (has_own_state(interp)) {
+                total += _PyInterpreterState_GetAllocatedBlocks(interp);
+            }
         }
         HEAD_UNLOCK(&_PyRuntime);
+#ifdef Py_DEBUG
+        assert(got_main);
+#endif
     }
     return total;
 }
