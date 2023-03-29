@@ -223,11 +223,8 @@ class Queue(mixins._LoopBoundMixin):
 
         Return an item if one is immediately available, else raise QueueEmpty.
 
-        Raise a QueueShutDown if _shutdown_state is set to
-        `SHUTDOWN_IMMEDIATE`.
-
-        Raise a QueueShutDown if _shutdown_state is set to
-        `SHUTDOWN` and queue is empty.
+        Raises QueueShutDown if the queue has been shut down and is empty, or
+        if the queue has been shut down immediately.
         """
         if self._is_shutdown_immediate():
             raise QueueShutDown
