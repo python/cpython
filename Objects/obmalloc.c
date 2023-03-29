@@ -800,11 +800,25 @@ _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
     }
 }
 
-Py_ssize_t
-_Py_GetGlobalAllocatedBlocks(void)
+static Py_ssize_t get_num_global_allocated_blocks(_PyRuntimeState *);
+
+/* We preserve the number of blockss leaked during runtime finalization,
+   so they can be reported if the runtime is initialized again. */
+// XXX We don't lose any information by dropping this,
+// so we should consider doing so.
+static Py_ssize_t last_final_leaks = 0;
+
+void
+_Py_FinalizeAllocatedBlocks(_PyRuntimeState *runtime)
+{
+    last_final_leaks = get_num_global_allocated_blocks(runtime);
+    runtime->object_state.interpreter_leaks = 0;
+}
+
+static Py_ssize_t
+get_num_global_allocated_blocks(_PyRuntimeState *runtime)
 {
     Py_ssize_t total = 0;
-    _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
     if (finalizing != NULL) {
         assert(finalizing->interp != NULL);
@@ -847,7 +861,14 @@ _Py_GetGlobalAllocatedBlocks(void)
 #endif
     }
     total += runtime->obmalloc.interpreter_leaks;
+    total += last_final_leaks;
     return total;
+}
+
+Py_ssize_t
+_Py_GetGlobalAllocatedBlocks(void)
+{
+    return get_num_global_allocated_blocks(&_PyRuntime);
 }
 
 #if WITH_PYMALLOC_RADIX_TREE
