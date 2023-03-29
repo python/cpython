@@ -240,8 +240,6 @@ _get_tcl_lib_path()
 
 module_state global_state;
 
-static PyThread_type_lock tcl_lock = 0;
-
 #ifdef TCL_THREADS
 static Tcl_ThreadDataKey state_key;
 typedef PyThreadState *ThreadSpecificData;
@@ -253,30 +251,44 @@ static PyThreadState *tcl_tstate = NULL;
 
 #define ENTER_TCL \
     { PyThreadState *tstate = PyThreadState_Get(); \
+      module_state *st = GLOBAL_STATE(); \
       Py_BEGIN_ALLOW_THREADS \
-      if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
+      if (st->tcl_lock) { \
+        PyThread_acquire_lock(st->tcl_lock, 1); \
+      } \
       tcl_tstate = tstate;
 
 #define LEAVE_TCL \
     tcl_tstate = NULL; \
-    if(tcl_lock)PyThread_release_lock(tcl_lock); \
+    if (st->tcl_lock) { \
+        PyThread_release_lock(st->tcl_lock); \
+    } \
     Py_END_ALLOW_THREADS}
 
 #define ENTER_OVERLAP \
     Py_END_ALLOW_THREADS
 
 #define LEAVE_OVERLAP_TCL \
-    tcl_tstate = NULL; if(tcl_lock)PyThread_release_lock(tcl_lock); }
+    tcl_tstate = NULL; \
+    if (st->tcl_lock) { \
+        PyThread_release_lock(st->tcl_lock); \
+    } \
+  }
 
 #define ENTER_PYTHON \
     { PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; \
-      if(tcl_lock) \
-        PyThread_release_lock(tcl_lock); \
+      module_state *st = GLOBAL_STATE(); \
+      if(st->tcl_lock) { \
+        PyThread_release_lock(st->tcl_lock); \
+      } \
       PyEval_RestoreThread((tstate)); }
 
 #define LEAVE_PYTHON \
     { PyThreadState *tstate = PyEval_SaveThread(); \
-      if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
+      module_state *st = GLOBAL_STATE(); \
+      if (st->tcl_lock) { \
+        PyThread_acquire_lock(st->tcl_lock, 1); \
+      } \
       tcl_tstate = tstate; }
 
 #define CHECK_TCL_APPARTMENT \
@@ -589,10 +601,10 @@ Tkapp_New(const char *screenName, const char *className,
         return 0;
     }
 #endif
-    if (v->threaded && tcl_lock) {
+    if (v->threaded && st->tcl_lock) {
         /* If Tcl is threaded, we don't need the lock. */
-        PyThread_free_lock(tcl_lock);
-        tcl_lock = NULL;
+        PyThread_free_lock(st->tcl_lock);
+        st->tcl_lock = NULL;
     }
 
     v->OldBooleanType = Tcl_GetObjType("boolean");
@@ -2716,6 +2728,7 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
     CHECK_TCL_APPARTMENT;
     self->dispatching = 1;
 
+    module_state *st = GLOBAL_STATE();
     quitMainLoop = 0;
     while (Tk_GetNumMainWindows() > threshold &&
            !quitMainLoop &&
@@ -2731,11 +2744,15 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
         }
         else {
             Py_BEGIN_ALLOW_THREADS
-            if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
+            if (st->tcl_lock) {
+                PyThread_acquire_lock(st->tcl_lock, 1);
+            }
             tcl_tstate = tstate;
             result = Tcl_DoOneEvent(TCL_DONT_WAIT);
             tcl_tstate = NULL;
-            if(tcl_lock)PyThread_release_lock(tcl_lock);
+            if (st->tcl_lock) {
+                PyThread_release_lock(st->tcl_lock);
+            }
             if (result == 0)
                 Sleep(Tkinter_busywaitinterval);
             Py_END_ALLOW_THREADS
@@ -3199,6 +3216,7 @@ EventHook(void)
     tfile = fileno(stdin);
     Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc, NULL);
 #endif
+    module_state *st = GLOBAL_STATE();
     while (!errorInCmd && !stdin_ready) {
         int result;
 #ifdef MS_WINDOWS
@@ -3208,13 +3226,17 @@ EventHook(void)
         }
 #endif
         Py_BEGIN_ALLOW_THREADS
-        if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
+        if (st->tcl_lock) {
+            PyThread_acquire_lock(st->tcl_lock, 1);
+        }
         tcl_tstate = event_tstate;
 
         result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 
         tcl_tstate = NULL;
-        if(tcl_lock)PyThread_release_lock(tcl_lock);
+        if (st->tcl_lock) {
+            PyThread_release_lock(st->tcl_lock);
+        }
         if (result == 0)
             Sleep(Tkinter_busywaitinterval);
         Py_END_ALLOW_THREADS
@@ -3276,8 +3298,9 @@ PyInit__tkinter(void)
 {
   PyObject *m, *uexe, *cexe, *o;
 
-    tcl_lock = PyThread_allocate_lock();
-    if (tcl_lock == NULL)
+    module_state *st = GLOBAL_STATE();
+    st->tcl_lock = PyThread_allocate_lock();
+    if (st->tcl_lock == NULL)
         return NULL;
 
     m = PyModule_Create(&_tkintermodule);
@@ -3294,7 +3317,6 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    module_state *st = GLOBAL_STATE();
     st->Tkinter_TclError = o;
 
     if (PyModule_AddIntConstant(m, "READABLE", TCL_READABLE)) {

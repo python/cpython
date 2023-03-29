@@ -459,7 +459,6 @@ Modules/arraymodule.c	array_array___reduce_ex___impl	array_reconstructor	-
 Modules/_asynciomodule.c	-	fi_freelist	-
 Modules/_asynciomodule.c	-	fi_freelist_len	-
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
-Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
 Modules/_tkinter.c	-	trbInCmd	-
