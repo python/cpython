@@ -518,8 +518,13 @@ class EnumType(type):
         #
         # adjust the sunders
         _order_ = classdict.pop('_order_', None)
+        _gnv = classdict.get('_generate_next_value_')
+        if _gnv is not None and type(_gnv) is not staticmethod:
+            _gnv = staticmethod(_gnv)
         # convert to normal dict
         classdict = dict(classdict.items())
+        if _gnv is not None:
+            classdict['_generate_next_value_'] = _gnv
         #
         # data type of member and the controlling Enum class
         member_type, first_enum = metacls._get_mixins_(cls, bases)
@@ -923,7 +928,7 @@ class EnumType(type):
     def _check_for_existing_members_(mcls, class_name, bases):
         for chain in bases:
             for base in chain.__mro__:
-                if issubclass(base, Enum) and base._member_names_:
+                if isinstance(base, EnumType) and base._member_names_:
                     raise TypeError(
                             "<enum %r> cannot extend %r"
                             % (class_name, base)
@@ -942,7 +947,7 @@ class EnumType(type):
         # ensure final parent class is an Enum derivative, find any concrete
         # data type, and check that Enum has no members
         first_enum = bases[-1]
-        if not issubclass(first_enum, Enum):
+        if not isinstance(first_enum, EnumType):
             raise TypeError("new enumerations should be created as "
                     "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
         member_type = mcls._find_data_type_(class_name, bases) or object
@@ -954,7 +959,7 @@ class EnumType(type):
             for base in chain.__mro__:
                 if base is object:
                     continue
-                elif issubclass(base, Enum):
+                elif isinstance(base, EnumType):
                     # if we hit an Enum, use it's _value_repr_
                     return base._value_repr_
                 elif '__repr__' in base.__dict__:
@@ -980,12 +985,12 @@ class EnumType(type):
                 base_chain.add(base)
                 if base is object:
                     continue
-                elif issubclass(base, Enum):
+                elif isinstance(base, EnumType):
                     if base._member_type_ is not object:
                         data_types.add(base._member_type_)
                         break
                 elif '__new__' in base.__dict__ or '__init__' in base.__dict__:
-                    if issubclass(base, Enum):
+                    if isinstance(base, EnumType):
                         continue
                     data_types.add(candidate or base)
                     break

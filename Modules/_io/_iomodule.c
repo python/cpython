@@ -318,7 +318,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     _PyIO_State *state = get_io_state(module);
     {
         PyObject *RawIO_class = (PyObject *)state->PyFileIO_Type;
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
         const PyConfig *config = _Py_GetConfig();
         if (!config->legacy_windows_stdio && _PyIO_get_console_type(path_or_fd) != '\0') {
             RawIO_class = (PyObject *)&PyWindowsConsoleIO_Type;
@@ -661,7 +661,7 @@ static PyTypeObject* static_types[] = {
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
     &_PyBytesIOBuffer_Type,
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     &PyWindowsConsoleIO_Type,
 #endif
 };
@@ -673,6 +673,11 @@ _PyIO_InitTypes(PyInterpreterState *interp)
     if (!_Py_IsMainInterpreter(interp)) {
         return _PyStatus_OK();
     }
+
+    // Set type base classes
+#ifdef HAVE_WINDOWS_CONSOLE_IO
+    PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
+#endif
 
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
@@ -740,11 +745,6 @@ PyInit__io(void)
                               (PyObject *) PyExc_BlockingIOError) < 0) {
         goto fail;
     }
-
-    // Set type base classes
-#ifdef MS_WINDOWS
-    PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
-#endif
 
     // Add types
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {

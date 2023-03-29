@@ -718,8 +718,6 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    // XXX init collections module static types (_PyStaticType_InitBuiltin())
-
     status = _PyExc_InitGlobalObjects(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -824,6 +822,11 @@ pycore_interp_init(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     PyStatus status;
     PyObject *sysmod = NULL;
+
+    // This is a temporary fix until we have immortal objects.
+    // (See _PyType_InitCache() in typeobject.c.)
+    extern void _PyType_FixCacheRefcounts(void);
+    _PyType_FixCacheRefcounts();
 
     // Create singletons before the first PyType_Ready() call, since
     // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)
@@ -1327,7 +1330,7 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
 {
     // List of names to clear in sys
     static const char * const sys_deletes[] = {
-        "path", "argv", "ps1", "ps2",
+        "path", "argv", "ps1", "ps2", "last_exc",
         "last_type", "last_value", "last_traceback",
         "__interactivehook__",
         // path_hooks and path_importer_cache are cleared
@@ -1953,6 +1956,7 @@ Py_FinalizeEx(void)
     if (show_ref_count) {
         _PyDebug_PrintTotalRefs();
     }
+    _Py_FinalizeRefTotal(runtime);
 #endif
 
 #ifdef Py_TRACE_REFS
@@ -2316,7 +2320,7 @@ create_stdio(const PyConfig *config, PyObject* io,
         raw = Py_NewRef(buf);
     }
 
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     /* Windows console IO is always UTF-8 encoded */
     PyTypeObject *winconsoleio_type = (PyTypeObject *)_PyImport_GetModuleAttr(
             &_Py_ID(_io), &_Py_ID(_WindowsConsoleIO));
@@ -2564,41 +2568,29 @@ _Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
 static int
 _Py_FatalError_PrintExc(PyThreadState *tstate)
 {
-    PyObject *ferr, *res;
-    PyObject *exception, *v, *tb;
-    int has_tb;
-
-    _PyErr_Fetch(tstate, &exception, &v, &tb);
-    if (exception == NULL) {
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    if (exc == NULL) {
         /* No current exception */
         return 0;
     }
 
-    ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
     if (ferr == NULL || ferr == Py_None) {
         /* sys.stderr is not set yet or set to None,
            no need to try to display the exception */
+        Py_DECREF(exc);
         return 0;
     }
 
-    _PyErr_NormalizeException(tstate, &exception, &v, &tb);
-    if (tb == NULL) {
-        tb = Py_NewRef(Py_None);
-    }
-    PyException_SetTraceback(v, tb);
-    if (exception == NULL) {
-        /* PyErr_NormalizeException() failed */
-        return 0;
-    }
+    PyErr_DisplayException(exc);
 
-    has_tb = (tb != Py_None);
-    PyErr_Display(exception, v, tb);
-    Py_XDECREF(exception);
-    Py_XDECREF(v);
+    PyObject *tb = PyException_GetTraceback(exc);
+    int has_tb = (tb != NULL) && (tb != Py_None);
     Py_XDECREF(tb);
+    Py_DECREF(exc);
 
     /* sys.stderr may be buffered: call sys.stderr.flush() */
-    res = PyObject_CallMethodNoArgs(ferr, &_Py_ID(flush));
+    PyObject *res = PyObject_CallMethodNoArgs(ferr, &_Py_ID(flush));
     if (res == NULL) {
         _PyErr_Clear(tstate);
     }

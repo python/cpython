@@ -8,7 +8,6 @@
 #include <stdlib.h>               // malloc()
 #include <stdbool.h>
 
-
 #undef  uint
 #define uint pymem_uint
 

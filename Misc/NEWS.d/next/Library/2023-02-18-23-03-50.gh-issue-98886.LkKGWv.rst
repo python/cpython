@@ -1,0 +1,1 @@
+Fix issues when defining dataclasses that have fields with specific underscore names that aren't clearly reserved by :mod:`dataclasses`.
