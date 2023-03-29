@@ -264,8 +264,7 @@ class Queue(mixins._LoopBoundMixin):
         indicate that the item was retrieved and all work on it is complete.
         When the count of unfinished tasks drops to zero, join() unblocks.
 
-        Raise a QueueShutDown if _shutdown_state is set to
-        `SHUTDOWN_IMMEDIATE`.
+        Raises QueueShutDown if the queue has been shut down immediately.
         """
         if self._is_shutdown_immediate():
             raise QueueShutDown
