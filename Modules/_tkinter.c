@@ -509,7 +509,7 @@ unicodeFromTclObj(Tcl_Obj *value)
 /*[clinic input]
 module _tkinter
 class _tkinter.tkapp "TkappObject *" "&Tkapp_Type_spec"
-class _tkinter.Tcl_Obj "PyTclObject *" "&PyTclObject_Type_spec"
+class _tkinter.Tcl_Obj "PyTclObject *" "clinic_state()->PyTclObject_Type"
 class _tkinter.tktimertoken "TkttObject *" "&Tktt_Type_spec"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b1ebf15c162ee229]*/
@@ -748,29 +748,38 @@ typedef struct {
     PyObject *string; /* This cannot cause cycles. */
 } PyTclObject;
 
-static PyObject *PyTclObject_Type;
-#define PyTclObject_Check(v) Py_IS_TYPE(v, (PyTypeObject *) PyTclObject_Type)
+#define PyTclObject_Check(st, v) Py_IS_TYPE(v, (PyTypeObject *)st->PyTclObject_Type)
 
 static PyObject *
 newPyTclObject(Tcl_Obj *arg)
 {
     PyTclObject *self;
-    self = PyObject_New(PyTclObject, (PyTypeObject *) PyTclObject_Type);
+    module_state *st = GLOBAL_STATE();
+    self = PyObject_GC_New(PyTclObject, (PyTypeObject *)st->PyTclObject_Type);
     if (self == NULL)
         return NULL;
     Tcl_IncrRefCount(arg);
     self->value = arg;
     self->string = NULL;
+    PyObject_GC_Track(self);
     return (PyObject*)self;
+}
+
+static int
+PyTclObject_traverse(PyTclObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
 }
 
 static void
 PyTclObject_dealloc(PyTclObject *self)
 {
-    PyObject *tp = (PyObject *) Py_TYPE(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
     Tcl_DecrRefCount(self->value);
     Py_XDECREF(self->string);
-    PyObject_Free(self);
+    tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
 }
 
@@ -823,7 +832,8 @@ PyTclObject_richcompare(PyObject *self, PyObject *other, int op)
     }
 
     /* both arguments should be instances of PyTclObject */
-    if (!PyTclObject_Check(self) || !PyTclObject_Check(other)) {
+    module_state *st = GLOBAL_STATE();
+    if (!PyTclObject_Check(st, self) || !PyTclObject_Check(st, other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
@@ -854,6 +864,7 @@ static PyGetSetDef PyTclObject_getsetlist[] = {
 
 static PyType_Slot PyTclObject_Type_slots[] = {
     {Py_tp_dealloc, (destructor)PyTclObject_dealloc},
+    {Py_tp_traverse, PyTclObject_traverse},
     {Py_tp_repr, (reprfunc)PyTclObject_repr},
     {Py_tp_str, (reprfunc)PyTclObject_str},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -863,11 +874,11 @@ static PyType_Slot PyTclObject_Type_slots[] = {
 };
 
 static PyType_Spec PyTclObject_Type_spec = {
-    "_tkinter.Tcl_Obj",
-    sizeof(PyTclObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    PyTclObject_Type_slots,
+    .name = "_tkinter.Tcl_Obj",
+    .basicsize = sizeof(PyTclObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_HAVE_GC),
+    .slots = PyTclObject_Type_slots,
 };
 
 
@@ -1042,7 +1053,8 @@ AsObj(PyObject *value)
         return result;
     }
 
-    if (PyTclObject_Check(value)) {
+    module_state *st = GLOBAL_STATE();
+    if (PyTclObject_Check(st, value)) {
         return ((PyTclObject*)value)->value;
     }
 
@@ -1629,7 +1641,8 @@ varname_converter(PyObject *in, void *_out)
         *out = s;
         return 1;
     }
-    if (PyTclObject_Check(in)) {
+    module_state *st = GLOBAL_STATE();
+    if (PyTclObject_Check(st, in)) {
         *out = Tcl_GetString(((PyTclObject *)in)->value);
         return 1;
     }
@@ -1875,7 +1888,8 @@ _tkinter_tkapp_getint(TkappObject *self, PyObject *arg)
         return Py_NewRef(arg);
     }
 
-    if (PyTclObject_Check(arg)) {
+    module_state *st = GLOBAL_STATE();
+    if (PyTclObject_Check(st, arg)) {
         value = ((PyTclObject*)arg)->value;
         Tcl_IncrRefCount(value);
     }
@@ -1923,7 +1937,8 @@ _tkinter_tkapp_getdouble(TkappObject *self, PyObject *arg)
         return PyNumber_Float(arg);
     }
 
-    if (PyTclObject_Check(arg)) {
+    module_state *st = GLOBAL_STATE();
+    if (PyTclObject_Check(st, arg)) {
         if (Tcl_GetDoubleFromObj(Tkapp_Interp(self),
                                  ((PyTclObject*)arg)->value,
                                  &v) == TCL_ERROR)
@@ -1958,7 +1973,8 @@ _tkinter_tkapp_getboolean(TkappObject *self, PyObject *arg)
         return PyBool_FromLong(!_PyLong_IsZero((PyLongObject *)arg));
     }
 
-    if (PyTclObject_Check(arg)) {
+    module_state *st = GLOBAL_STATE();
+    if (PyTclObject_Check(st, arg)) {
         if (Tcl_GetBooleanFromObj(Tkapp_Interp(self),
                                   ((PyTclObject*)arg)->value,
                                   &v) == TCL_ERROR)
@@ -2111,7 +2127,8 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
     PyObject *v;
     int i;
 
-    if (PyTclObject_Check(arg)) {
+    module_state *st = GLOBAL_STATE();
+    if (PyTclObject_Check(st, arg)) {
         int objc;
         Tcl_Obj **objv;
         if (Tcl_ListObjGetElements(Tkapp_Interp(self),
@@ -3320,7 +3337,7 @@ PyInit__tkinter(void)
     }
     Tktt_Type = o;
 
-    o = PyType_FromSpec(&PyTclObject_Type_spec);
+    o = PyType_FromMetaclass(NULL, m, &PyTclObject_Type_spec, NULL);
     if (o == NULL) {
         Py_DECREF(m);
         return NULL;
@@ -3330,7 +3347,8 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    PyTclObject_Type = o;
+    module_state *st = GLOBAL_STATE();
+    st->PyTclObject_Type = o;
 
 #ifdef TK_AQUA
     /* Tk_MacOSXSetupTkNotifier must be called before Tcl's subsystems
