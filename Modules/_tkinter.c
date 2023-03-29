@@ -2432,19 +2432,18 @@ typedef struct _fhcdata {
     struct _fhcdata *next;
 } FileHandler_ClientData;
 
-static FileHandler_ClientData *HeadFHCD;
-
 static FileHandler_ClientData *
 NewFHCD(PyObject *func, PyObject *file, int id)
 {
     FileHandler_ClientData *p;
     p = PyMem_NEW(FileHandler_ClientData, 1);
     if (p != NULL) {
+        module_state *st = GLOBAL_STATE();
         p->func = Py_XNewRef(func);
         p->file = Py_XNewRef(file);
         p->id = id;
-        p->next = HeadFHCD;
-        HeadFHCD = p;
+        p->next = st->HeadFHCD;
+        st->HeadFHCD = p;
     }
     return p;
 }
@@ -2454,7 +2453,8 @@ DeleteFHCD(int id)
 {
     FileHandler_ClientData *p, **pp;
 
-    pp = &HeadFHCD;
+    module_state *st = GLOBAL_STATE();
+    pp = &st->HeadFHCD;
     while ((p = *pp) != NULL) {
         if (p->id == id) {
             *pp = p->next;

@@ -41,6 +41,7 @@ typedef struct {
 
     // Util
     int Tkinter_busywaitinterval;
+    struct _fhcdata *HeadFHCD;
 } module_state;
 
 extern module_state global_state;
