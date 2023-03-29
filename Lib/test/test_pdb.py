@@ -266,6 +266,8 @@ def test_pdb_breakpoint_commands():
     ...     'commands 10',  # out of range
     ...     'commands a',   # display help
     ...     'commands 4',   # already deleted
+    ...     'break 6, undefined', # condition causing `NameError` during evaluation
+    ...     'continue', # will stop, ignoring runtime error
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -337,8 +339,13 @@ def test_pdb_breakpoint_commands():
             end
     (Pdb) commands 4
     *** cannot set commands: Breakpoint 4 already deleted
+    (Pdb) break 6, undefined
+    Breakpoint 5 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:6
     (Pdb) continue
     3
+    > <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>(6)test_function()
+    -> print(4)
+    (Pdb) continue
     4
     """
 
