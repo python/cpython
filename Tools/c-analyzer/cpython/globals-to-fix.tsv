@@ -410,7 +410,6 @@ Modules/xxsubtype.c	-	spamlist_type	-
 ## heap types
 Modules/_decimal/_decimal.c	-	DecimalTuple	-
 Modules/_decimal/_decimal.c	-	PyDecSignalDict_Type	-
-Modules/_tkinter.c	-	Tkapp_Type	-
 Modules/_tkinter.c	-	Tktt_Type	-
 Modules/xxlimited_35.c	-	Xxo_Type	-
 

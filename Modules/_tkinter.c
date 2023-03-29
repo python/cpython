@@ -293,8 +293,6 @@ static PyThreadState *tcl_tstate = NULL;
 
 /**** Tkapp Object Declaration ****/
 
-static PyObject *Tkapp_Type;
-
 typedef struct {
     PyObject_HEAD
     Tcl_Interp *interp;
@@ -508,11 +506,11 @@ unicodeFromTclObj(Tcl_Obj *value)
 
 /*[clinic input]
 module _tkinter
-class _tkinter.tkapp "TkappObject *" "&Tkapp_Type_spec"
+class _tkinter.tkapp "TkappObject *" "clinic_state()->Tkapp_Type_spec"
 class _tkinter.Tcl_Obj "PyTclObject *" "clinic_state()->PyTclObject_Type"
 class _tkinter.tktimertoken "TkttObject *" "&Tktt_Type_spec"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b1ebf15c162ee229]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=70f3cd987a58ce0c]*/
 
 /**** Tkapp Object ****/
 
@@ -571,7 +569,8 @@ Tkapp_New(const char *screenName, const char *className,
     TkappObject *v;
     char *argv0;
 
-    v = PyObject_New(TkappObject, (PyTypeObject *) Tkapp_Type);
+    module_state *st = GLOBAL_STATE();
+    v = PyObject_GC_New(TkappObject, (PyTypeObject *)st->Tkapp_Type);
     if (v == NULL)
         return NULL;
 
@@ -721,6 +720,7 @@ Tkapp_New(const char *screenName, const char *className,
     }
 
     EnableEventHook();
+    PyObject_GC_Track(v);
 
     return v;
 }
@@ -2870,15 +2870,23 @@ _tkinter_tkapp_willdispatch_impl(TkappObject *self)
 
 /**** Tkapp Type Methods ****/
 
+static int
+Tkapp_Traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static void
 Tkapp_Dealloc(PyObject *self)
 {
-    PyObject *tp = (PyObject *) Py_TYPE(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
     /*CHECK_TCL_APPARTMENT;*/
     ENTER_TCL
     Tcl_DeleteInterp(Tkapp_Interp(self));
     LEAVE_TCL
-    PyObject_Free(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
     DisableEventHook();
 }
@@ -3122,17 +3130,18 @@ static PyMethodDef Tkapp_methods[] =
 
 static PyType_Slot Tkapp_Type_slots[] = {
     {Py_tp_dealloc, Tkapp_Dealloc},
+    {Py_tp_traverse, Tkapp_Traverse},
     {Py_tp_methods, Tkapp_methods},
     {0, 0}
 };
 
 
 static PyType_Spec Tkapp_Type_spec = {
-    "_tkinter.tkapp",
-    sizeof(TkappObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    Tkapp_Type_slots,
+    .name = "_tkinter.tkapp",
+    .basicsize = sizeof(TkappObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_HAVE_GC),
+    .slots = Tkapp_Type_slots,
 };
 
 static PyMethodDef moduleMethods[] =
@@ -3313,7 +3322,7 @@ PyInit__tkinter(void)
         return NULL;
     }
 
-    o = PyType_FromSpec(&Tkapp_Type_spec);
+    o = PyType_FromMetaclass(NULL, m, &Tkapp_Type_spec, NULL);
     if (o == NULL) {
         Py_DECREF(m);
         return NULL;
@@ -3323,7 +3332,8 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    Tkapp_Type = o;
+    module_state *st = GLOBAL_STATE();
+    st->Tkapp_Type = o;
 
     o = PyType_FromSpec(&Tktt_Type_spec);
     if (o == NULL) {
@@ -3347,7 +3357,6 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    module_state *st = GLOBAL_STATE();
     st->PyTclObject_Type = o;
 
 #ifdef TK_AQUA
