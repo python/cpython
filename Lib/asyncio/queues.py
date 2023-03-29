@@ -183,11 +183,8 @@ class Queue(mixins._LoopBoundMixin):
 
         If queue is empty, wait until an item is available.
 
-        Raise a QueueShutDown if _shutdown_state is set to
-        `SHUTDOWN_IMMEDIATE`.
-
-        Raise a QueueShutDown if _shutdown_state is set to
-        `SHUTDOWN` and queue is empty.
+        Raises QueueShutDown if the queue has been shut down and is empty, or
+        if the queue has been shut down immediately.
         """
         if self._is_shutdown_immediate():
             raise QueueShutDown
