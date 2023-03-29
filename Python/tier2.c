@@ -1525,14 +1525,16 @@ _PyTier2_Code_DetectAndEmitBB(
                 virtual_start = true;
 
                 if (opcode == EXTENDED_ARG) {
+                    write_i = emit_i(write_i, specop, oparg);
                     // Note: EXTENDED_ARG could be a jump target!!!!!
-                    caches = _PyOpcode_Caches[opcode];
                     specop = next_instr->op.code;
                     opcode = _PyOpcode_Deopt[specop];
+                    caches = _PyOpcode_Caches[opcode];
                     oparg = oparg << 8 | next_instr->op.arg;
                     curr++;
                     next_instr++;
-                    i += 2;
+                    i += 1;
+                    DISPATCH_GOTO();
                 }
                 // Don't change opcode or oparg, let us handle it again.
                 DISPATCH_GOTO();
@@ -1561,14 +1563,15 @@ _PyTier2_Code_DetectAndEmitBB(
                 END();
             }
             if (opcode == EXTENDED_ARG) {
+                write_i = emit_i(write_i, specop, oparg);
                 // Note: EXTENDED_ARG could be a jump target!!!!!
-                caches = _PyOpcode_Caches[opcode];
                 specop = next_instr->op.code;
                 opcode = _PyOpcode_Deopt[specop];
+                caches = _PyOpcode_Caches[opcode];
                 oparg = oparg << 8 | next_instr->op.arg;
                 curr++;
                 next_instr++;
-                i += 2;
+                i += 1;
                 DISPATCH_GOTO();
             }
             DISPATCH();
@@ -2150,9 +2153,12 @@ _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id_tagged
     assert(co->_tier2_info != NULL);
     assert(BB_ID(bb_id_tagged) <= co->_tier2_info->bb_data_curr);
     _PyTier2BBMetadata *meta = co->_tier2_info->bb_data[BB_ID(bb_id_tagged)];
-    // We assert that there are as many items on the operand stack as there are in the
+#ifdef Py_DEBUG
+    // We assert that there are as many items on the operand stack as there are on the
     // saved type stack.
-    assert((meta->type_context->type_stack_ptr - meta->type_context->type_stack) == stacklevel);
+    int typestack_level = meta->type_context->type_stack_ptr - meta->type_context->type_stack;
+    assert(typestack_level == stacklevel);
+#endif
     // The jump target
     _Py_CODEUNIT *tier1_jump_target = meta->tier1_end + jumpby - ((curr-1)->op.code == EXTENDED_ARG && (curr-1)->op.arg > 0);
     *tier1_fallback = tier1_jump_target;
