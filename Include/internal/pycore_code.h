@@ -47,8 +47,6 @@ typedef struct {
 
 typedef struct {
     uint16_t counter;
-    uint16_t type_version[2];
-    uint16_t func_version;
 } _PyBinarySubscrCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_SUBSCR CACHE_ENTRIES(_PyBinarySubscrCache)
