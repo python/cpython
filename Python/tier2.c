@@ -12,8 +12,8 @@
 #define TYPEPROP_DEBUG 1
 // Max typed version basic blocks per basic block
 #define MAX_BB_VERSIONS 5
-// Number of potential extra instructions at end of a BB, for branch or cleanup purposes.
-#define BB_EPILOG 0
+
+#define OVERALLOCATE_FACTOR 4
 
 
 /* Dummy types used by the types propagator */
@@ -1336,14 +1336,6 @@ _PyTier2_Code_DetectAndEmitBB(
         fprintf(stderr, "offset: %Id\n", curr - _PyCode_CODE(co));
 #endif
         switch (opcode) {
-        case EXTENDED_ARG:
-            specop = next_instr->op.code;
-            opcode = _PyOpcode_Deopt[specop];
-            oparg = oparg << 8 | next_instr->op.arg;
-            curr++;
-            next_instr++;
-            i+=2;
-            DISPATCH_GOTO();
         case RESUME:
             opcode = specop = RESUME_QUICK;
             DISPATCH();
@@ -1489,27 +1481,26 @@ _PyTier2_Code_DetectAndEmitBB(
 #if BB_DEBUG && !TYPEPROP_DEBUG
             fprintf(stderr, "offset: %Id\n", curr - _PyCode_CODE(co));
 #endif
+            // This should be the end of another basic block, or the start of a new.
+            // Start of a new basic block, just ignore and continue.
+            if (virtual_start) {
+#if BB_DEBUG
+                fprintf(stderr, "Emitted virtual start of basic block\n");
+#endif
+                starts_with_backwards_jump_target = true;
+                virtual_start = false;
+                start_type_context_copy = _PyTier2TypeContext_Copy(starting_type_context);
+                if (start_type_context_copy == NULL) {
+                    _PyTier2TypeContext_Free(starting_type_context);
+                    return NULL;
+                }
+                goto fall_through;
+            }
             if (IS_BACKWARDS_JUMP_TARGET(co, curr)) {
+backward_jump_target:
 #if BB_DEBUG
                 fprintf(stderr, "Encountered a backward jump target\n");
 #endif
-                // This should be the end of another basic block, or the start of a new.
-                // Start of a new basic block, just ignore and continue.
-                if (virtual_start) {
-#if BB_DEBUG
-                    fprintf(stderr, "Emitted virtual start of basic block\n");
-#endif
-                    starts_with_backwards_jump_target = true;
-                    backwards_jump_target_offset = (int)(curr - _PyCode_CODE(co));
-                    virtual_start = false;
-                    start_type_context_copy = _PyTier2TypeContext_Copy(starting_type_context);
-                    virtual_tier1_start = _PyCode_CODE(co) + i;
-                    if (start_type_context_copy == NULL) {
-                        _PyTier2TypeContext_Free(starting_type_context);
-                        return NULL;
-                    }
-                    goto fall_through;
-                }
 #if TYPEPROP_DEBUG
                 print_typestack(starting_type_context);
 #endif
@@ -1530,8 +1521,20 @@ _PyTier2_Code_DetectAndEmitBB(
                 // Reset all our values
                 t2_start = write_i;
                 i++;
+                virtual_tier1_start = _PyCode_CODE(co) + i;
+                backwards_jump_target_offset = (int)(curr - _PyCode_CODE(co));
                 virtual_start = true;
 
+                if (opcode == EXTENDED_ARG) {
+                    // Note: EXTENDED_ARG could be a jump target!!!!!
+                    caches = _PyOpcode_Caches[opcode];
+                    specop = next_instr->op.code;
+                    opcode = _PyOpcode_Deopt[specop];
+                    oparg = oparg << 8 | next_instr->op.arg;
+                    curr++;
+                    next_instr++;
+                    i += 2;
+                }
                 // Don't change opcode or oparg, let us handle it again.
                 DISPATCH_GOTO();
             }
@@ -1557,6 +1560,17 @@ _PyTier2_Code_DetectAndEmitBB(
                     co->_tier2_info->bb_data_curr, oparg);
                 i += caches;
                 END();
+            }
+            if (opcode == EXTENDED_ARG) {
+                // Note: EXTENDED_ARG could be a jump target!!!!!
+                caches = _PyOpcode_Caches[opcode];
+                specop = next_instr->op.code;
+                opcode = _PyOpcode_Deopt[specop];
+                oparg = oparg << 8 | next_instr->op.arg;
+                curr++;
+                next_instr++;
+                i += 2;
+                DISPATCH_GOTO();
             }
             DISPATCH();
         }
@@ -1691,11 +1705,12 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
 
     _Py_CODEUNIT *start = _PyCode_CODE(co);
     int curr_i = 0;
+    int oparg = 0;
     for (Py_ssize_t i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT *curr = start + i;
-        _Py_CODEUNIT instr = *curr;
-        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instr)];
-        int oparg = _Py_OPARG(instr);
+        int opcode = _PyOpcode_Deopt[curr->op.code];
+        oparg = curr->op.arg;
+    dispatch_same_oparg:
         if (IS_JUMP_BACKWARDS_OPCODE(opcode)) {
             // + 1 because it's calculated from nextinstr (see JUMPBY in ceval.c)
             _Py_CODEUNIT *target = curr + 1 - oparg;
@@ -1705,6 +1720,13 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
             // (in terms of offset from start of co_code_adaptive)
             backward_jump_offsets[curr_i] = (int)(target - start);
             curr_i++;
+        }
+        else if (opcode == EXTENDED_ARG) {
+            oparg = oparg << 8 | (curr+1)->op.arg;
+            opcode = _PyOpcode_Deopt[(curr+1)->op.code];
+            i++;
+            curr++;
+            goto dispatch_same_oparg;
         }
         i += _PyOpcode_Caches[opcode];
     }
@@ -1868,7 +1890,7 @@ _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
     fprintf(stderr, "INITIALIZING\n");
 #endif
 
-    Py_ssize_t space_to_alloc = (_PyCode_NBYTES(co)) * 3;
+    Py_ssize_t space_to_alloc = (_PyCode_NBYTES(co)) * OVERALLOCATE_FACTOR;
 
     _PyTier2BBSpace *bb_space = _PyTier2_CreateBBSpace(space_to_alloc);
     if (bb_space == NULL) {
@@ -2128,14 +2150,15 @@ diff_typecontext(_PyTier2TypeContext *ctx1, _PyTier2TypeContext *ctx2)
 
 _Py_CODEUNIT *
 _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id_tagged, int jumpby,
-    _Py_CODEUNIT **tier1_fallback)
+    _Py_CODEUNIT **tier1_fallback,
+    _Py_CODEUNIT *curr)
 {
     PyCodeObject *co = frame->f_code;
     assert(co->_tier2_info != NULL);
     assert(BB_ID(bb_id_tagged) <= co->_tier2_info->bb_data_curr);
     _PyTier2BBMetadata *meta = co->_tier2_info->bb_data[BB_ID(bb_id_tagged)];
     // The jump target
-    _Py_CODEUNIT *tier1_jump_target = meta->tier1_end + jumpby;
+    _Py_CODEUNIT *tier1_jump_target = meta->tier1_end + jumpby - ((curr-1)->op.code == EXTENDED_ARG && (curr-1)->op.arg > 0);
     *tier1_fallback = tier1_jump_target;
     // Be a pessimist and assume we need to write the entire rest of code into the BB.
     // The size of the BB generated will definitely be equal to or smaller than this.

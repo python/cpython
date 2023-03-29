@@ -3276,7 +3276,7 @@ dummy_func(
             _Py_CODEUNIT *tier1_fallback = NULL;
 
             t2_nextinstr = _PyTier2_LocateJumpBackwardsBB(
-                frame, cache->bb_id_tagged, -oparg, &tier1_fallback);
+                frame, cache->bb_id_tagged, -oparg, &tier1_fallback, curr);
             if (t2_nextinstr == NULL) {
                 // Fall back to tier 1.
                 next_instr = tier1_fallback;

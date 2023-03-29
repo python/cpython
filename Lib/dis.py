@@ -58,6 +58,7 @@ _uop_hasoparg = []
 _empty_slot = [slot for slot, name in enumerate(_all_opname) if name.startswith("<")]
 for uop_opcode, uop in zip(_empty_slot, _uops):
     _all_opname[uop_opcode] = uop
+    _all_opmap[uop] = uop_opcode
     if uop.startswith('BB_BRANCH') or uop.startswith('BB_JUMP'):
         if uop.startswith('BB_JUMP'):
             _bb_jumps.append(uop_opcode)
@@ -69,6 +70,15 @@ deoptmap = {
     specialized: base for base, family in _specializations.items() for specialized in family
 }
 
+_TIER2_STORE_OPS = (
+    # 'LOAD_FAST_NO_INCREF',
+    # 'STORE_FAST_BOXED_UNBOXED',
+    # 'STORE_FAST_UNBOXED_BOXED',
+    # 'STORE_FAST_UNBOXED_UNBOXED',
+)
+for store_op in ([_all_opmap[op] for op in _TIER2_STORE_OPS]):
+    hasname.append(store_op)
+    hasarg.append(store_op)
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
        then as a statement if the first approach fails.
@@ -442,7 +452,7 @@ def _parse_exception_table(code):
         return entries
 
 def _is_backward_jump(op):
-    return 'JUMP_BACKWARD' in opname[op]
+    return 'JUMP_BACKWARD' in opname[op] or 'JUMP_BACKWARD_QUICK' in opname[op]
 
 def _get_instructions_bytes(code, varname_from_oparg=None,
                             names=None, co_consts=None,
