@@ -1497,7 +1497,6 @@ _PyTier2_Code_DetectAndEmitBB(
                 goto fall_through;
             }
             if (IS_BACKWARDS_JUMP_TARGET(co, curr)) {
-backward_jump_target:
 #if BB_DEBUG
                 fprintf(stderr, "Encountered a backward jump target\n");
 #endif
@@ -2145,12 +2144,15 @@ diff_typecontext(_PyTier2TypeContext *ctx1, _PyTier2TypeContext *ctx2)
 _Py_CODEUNIT *
 _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id_tagged, int jumpby,
     _Py_CODEUNIT **tier1_fallback,
-    _Py_CODEUNIT *curr)
+    _Py_CODEUNIT *curr, int stacklevel)
 {
     PyCodeObject *co = frame->f_code;
     assert(co->_tier2_info != NULL);
     assert(BB_ID(bb_id_tagged) <= co->_tier2_info->bb_data_curr);
     _PyTier2BBMetadata *meta = co->_tier2_info->bb_data[BB_ID(bb_id_tagged)];
+    // We assert that there are as many items on the operand stack as there are in the
+    // saved type stack.
+    assert((meta->type_context->type_stack_ptr - meta->type_context->type_stack) == stacklevel);
     // The jump target
     _Py_CODEUNIT *tier1_jump_target = meta->tier1_end + jumpby - ((curr-1)->op.code == EXTENDED_ARG && (curr-1)->op.arg > 0);
     *tier1_fallback = tier1_jump_target;
