@@ -1,1 +1,1 @@
-Add http.client.HTTPResponse.read docstring and fix help output.
+Add http.client.HTTPResponse.read docstring and fix pydoc output.
