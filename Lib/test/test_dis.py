@@ -1108,7 +1108,7 @@ class DisTests(DisTestBase):
   1           2 LOAD_NAME                0 (a)
               4 LOAD_CONST               0 (0)
               6 %s
-             16 RETURN_VALUE
+             10 RETURN_VALUE
 """
         co_list = compile('a[0]', "<list>", "eval")
         self.code_quicken(lambda: exec(co_list, {}, {'a': [0]}))
