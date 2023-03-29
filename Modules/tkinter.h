@@ -50,4 +50,30 @@ extern module_state global_state;
 
 #define GLOBAL_STATE() (&global_state)
 
+static inline module_state *
+get_module_state(PyObject *mod)
+{
+    void *state = _PyModule_GetState(mod);
+    assert(state != NULL);
+    return (module_state *)state;
+}
+
+static inline module_state *
+get_module_state_by_cls(PyTypeObject *cls)
+{
+    void *state = _PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (module_state *)state;
+}
+
+extern struct PyModuleDef _tkintermodule;
+
+static inline module_state *
+find_module_state_by_type(PyTypeObject *tp)
+{
+    PyObject *mod = PyType_GetModuleByDef(tp, &_tkintermodule);
+    assert(mod != NULL);
+    return get_module_state(mod);
+}
+
 #endif /* !TKINTER_H */
