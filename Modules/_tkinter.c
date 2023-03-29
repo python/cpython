@@ -251,17 +251,16 @@ static PyThreadState *tcl_tstate = NULL;
 
 #define ENTER_TCL \
     { PyThreadState *tstate = PyThreadState_Get(); \
-      module_state *st = GLOBAL_STATE(); \
       Py_BEGIN_ALLOW_THREADS \
-      if (st->tcl_lock) { \
-        PyThread_acquire_lock(st->tcl_lock, 1); \
+      if (self->state->tcl_lock) { \
+        PyThread_acquire_lock(self->state->tcl_lock, 1); \
       } \
       tcl_tstate = tstate;
 
 #define LEAVE_TCL \
     tcl_tstate = NULL; \
-    if (st->tcl_lock) { \
-        PyThread_release_lock(st->tcl_lock); \
+    if (self->state->tcl_lock) { \
+        PyThread_release_lock(self->state->tcl_lock); \
     } \
     Py_END_ALLOW_THREADS}
 
@@ -270,22 +269,20 @@ static PyThreadState *tcl_tstate = NULL;
 
 #define LEAVE_OVERLAP_TCL \
     tcl_tstate = NULL; \
-    if (st->tcl_lock) { \
-        PyThread_release_lock(st->tcl_lock); \
+    if (self->state->tcl_lock) { \
+        PyThread_release_lock(self->state->tcl_lock); \
     } \
   }
 
-#define ENTER_PYTHON \
+#define ENTER_PYTHON(st) \
     { PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; \
-      module_state *st = GLOBAL_STATE(); \
       if(st->tcl_lock) { \
         PyThread_release_lock(st->tcl_lock); \
       } \
       PyEval_RestoreThread((tstate)); }
 
-#define LEAVE_PYTHON \
+#define LEAVE_PYTHON(st) \
     { PyThreadState *tstate = PyEval_SaveThread(); \
-      module_state *st = GLOBAL_STATE(); \
       if (st->tcl_lock) { \
         PyThread_acquire_lock(st->tcl_lock, 1); \
       } \
@@ -1365,18 +1362,18 @@ Tkapp_CallProc(Tkapp_CallEvent *e, int flags)
     Tcl_Obj **objv;
     int objc;
     int i;
-    ENTER_PYTHON
     module_state *st = e->self->state;
+    ENTER_PYTHON(st)
     objv = Tkapp_CallArgs(st, e->args, objStore, &objc);
     if (!objv) {
         *(e->exc) = PyErr_GetRaisedException();
         *(e->res) = NULL;
     }
-    LEAVE_PYTHON
+    LEAVE_PYTHON(st)
     if (!objv)
         goto done;
     i = Tcl_EvalObjv(e->self->interp, objc, objv, e->flags);
-    ENTER_PYTHON
+    ENTER_PYTHON(st)
     if (i == TCL_ERROR) {
         *(e->res) = Tkinter_Error(e->self);
     }
@@ -1386,7 +1383,7 @@ Tkapp_CallProc(Tkapp_CallEvent *e, int flags)
     if (*(e->res) == NULL) {
         *(e->exc) = PyErr_GetRaisedException();
     }
-    LEAVE_PYTHON
+    LEAVE_PYTHON(st)
 
     Tkapp_CallDeallocArgs(objv, objStore, objc);
 done:
@@ -1685,12 +1682,13 @@ var_perform(VarEvent *ev)
 static int
 var_proc(VarEvent* ev, int flags)
 {
-    ENTER_PYTHON
+    module_state *st = ev->self->state;
+    ENTER_PYTHON(st)
     var_perform(ev);
     Tcl_MutexLock(&var_mutex);
     Tcl_ConditionNotify(ev->cond);
     Tcl_MutexUnlock(&var_mutex);
-    LEAVE_PYTHON
+    LEAVE_PYTHON(st)
     return 1;
 }
 
@@ -2216,7 +2214,7 @@ PythonCmd_Error(module_state *st, Tcl_Interp *interp)
 {
     st->errorInCmd = 1;
     st->excInCmd = PyErr_GetRaisedException();
-    LEAVE_PYTHON
+    LEAVE_PYTHON(st)
     return TCL_ERROR;
 }
 
@@ -2233,7 +2231,7 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     Tcl_Obj *obj_res;
     module_state *st = ((TkappObject *)data->self)->state;
 
-    ENTER_PYTHON
+    ENTER_PYTHON(st)
 
     /* Create argument tuple (objv1, ..., objvN) */
     if (!(args = PyTuple_New(objc - 1)))
@@ -2262,7 +2260,7 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     Tcl_SetObjResult(interp, obj_res);
     Py_DECREF(res);
 
-    LEAVE_PYTHON
+    LEAVE_PYTHON(st)
 
     return TCL_OK;
 }
@@ -2272,12 +2270,13 @@ static void
 PythonCmdDelete(ClientData clientData)
 {
     PythonCmd_ClientData *data = (PythonCmd_ClientData *)clientData;
+    module_state *st = ((TkappObject *)data->self)->state;
 
-    ENTER_PYTHON
+    ENTER_PYTHON(st)
     Py_XDECREF(data->self);
     Py_XDECREF(data->func);
     PyMem_Free(data);
-    LEAVE_PYTHON
+    LEAVE_PYTHON(st)
 }
 
 
@@ -2481,18 +2480,18 @@ FileHandler(ClientData clientData, int mask)
     FileHandler_ClientData *data = (FileHandler_ClientData *)clientData;
     PyObject *func, *file, *res;
 
-    ENTER_PYTHON
+    module_state *st = data->state;
+    ENTER_PYTHON(st)
     func = data->func;
     file = data->file;
 
     res = PyObject_CallFunction(func, "Oi", file, mask);
     if (res == NULL) {
-        module_state *st = data->state;
         st->errorInCmd = 1;
         st->excInCmd = PyErr_GetRaisedException();
     }
     Py_XDECREF(res);
-    LEAVE_PYTHON
+    LEAVE_PYTHON(st)
 }
 
 /*[clinic input]
@@ -2663,21 +2662,21 @@ TimerHandler(ClientData clientData)
 
     v->func = NULL;
 
-    ENTER_PYTHON
+    module_state *st = get_module_state_by_cls(Py_TYPE(v));
+    ENTER_PYTHON(st)
 
     res = PyObject_CallNoArgs(func);
     Py_DECREF(func);
     Py_DECREF(v); /* See Tktt_New() */
 
     if (res == NULL) {
-        module_state *st = get_module_state_by_cls(Py_TYPE(v));
         st->errorInCmd = 1;
         st->excInCmd = PyErr_GetRaisedException();
     }
     else
         Py_DECREF(res);
 
-    LEAVE_PYTHON
+    LEAVE_PYTHON(st)
 }
 
 /*[clinic input]
@@ -2917,7 +2916,7 @@ Tkapp_Traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static void
-Tkapp_Dealloc(PyObject *self)
+Tkapp_Dealloc(TkappObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -2925,7 +2924,7 @@ Tkapp_Dealloc(PyObject *self)
     ENTER_TCL
     Tcl_DeleteInterp(Tkapp_Interp(self));
     LEAVE_TCL
-    tp->tp_free(self);
+    tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
     DisableEventHook();
 }
