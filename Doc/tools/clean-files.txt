@@ -1,0 +1,6 @@
+
+Doc/library/gc.rst
+
+Doc/library/sqlite3.rst
+
+Doc/whatsnew/3.12.rst

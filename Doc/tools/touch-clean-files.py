@@ -6,12 +6,11 @@ so they are rebuilt and we can catch regressions.
 
 from pathlib import Path
 
-CLEAN = [
-    "Doc/library/gc.rst",
-    "Doc/library/sqlite3.rst",
-    "Doc/whatsnew/3.12.rst",
-]
+# Input file has blank line between entries to reduce merge conflicts
+CLEAN = Path("Doc/tools/clean-files.txt").read_text(encoding="UTF-8").split("\n")
+
 print("Touching:")
 for filename in CLEAN:
-    print(filename)
-    Path(filename).touch()
+    if filename:
+        print(filename)
+        Path(filename).touch()
