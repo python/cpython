@@ -459,7 +459,6 @@ Modules/arraymodule.c	array_array___reduce_ex___impl	array_reconstructor	-
 Modules/_asynciomodule.c	-	fi_freelist	-
 Modules/_asynciomodule.c	-	fi_freelist_len	-
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
-Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
 Modules/_tkinter.c	-	trbInCmd	-
 
@@ -525,8 +524,6 @@ Modules/_ctypes/cfield.c	-	formattable	-
 Modules/_ctypes/malloc_closure.c	-	free_list	-
 Modules/_curses_panel.c	-	lop	-
 Modules/_ssl/debughelpers.c	_PySSL_keylog_callback	lock	-
-Modules/_tkinter.c	-	quitMainLoop	-
-Modules/_tkinter.c	-	errorInCmd	-
 Modules/_tkinter.c	-	Tkinter_busywaitinterval	-
 Modules/_tkinter.c	-	call_mutex	-
 Modules/_tkinter.c	-	var_mutex	-

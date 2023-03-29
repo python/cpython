@@ -25,11 +25,19 @@
 #endif
 
 typedef struct {
+    // Types and exceptions
     PyObject *PyTclObject_Type;
     PyObject *Tkapp_Type;
     PyObject *Tktt_Type;
     PyObject *Tkinter_TclError;
+
+    // Locking
     PyThread_type_lock tcl_lock;
+
+    // Error handling
+    PyObject *excInCmd;
+    int errorInCmd;
+    int quitMainLoop;
 } module_state;
 
 extern module_state global_state;

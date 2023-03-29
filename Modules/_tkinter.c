@@ -331,10 +331,6 @@ typedef struct {
 
 /**** Error Handling ****/
 
-static int quitMainLoop = 0;
-static int errorInCmd = 0;
-static PyObject *excInCmd;
-
 #ifdef TKINTER_PROTECT_LOADTK
 static int tk_load_failed = 0;
 #endif
@@ -2212,8 +2208,9 @@ typedef struct {
 static int
 PythonCmd_Error(Tcl_Interp *interp)
 {
-    errorInCmd = 1;
-    excInCmd = PyErr_GetRaisedException();
+    module_state *st = GLOBAL_STATE();
+    st->errorInCmd = 1;
+    st->excInCmd = PyErr_GetRaisedException();
     LEAVE_PYTHON
     return TCL_ERROR;
 }
@@ -2484,8 +2481,9 @@ FileHandler(ClientData clientData, int mask)
 
     res = PyObject_CallFunction(func, "Oi", file, mask);
     if (res == NULL) {
-        errorInCmd = 1;
-        excInCmd = PyErr_GetRaisedException();
+        module_state *st = GLOBAL_STATE();
+        st->errorInCmd = 1;
+        st->excInCmd = PyErr_GetRaisedException();
     }
     Py_XDECREF(res);
     LEAVE_PYTHON
@@ -2667,8 +2665,9 @@ TimerHandler(ClientData clientData)
     Py_DECREF(v); /* See Tktt_New() */
 
     if (res == NULL) {
-        errorInCmd = 1;
-        excInCmd = PyErr_GetRaisedException();
+        module_state *st = GLOBAL_STATE();
+        st->errorInCmd = 1;
+        st->excInCmd = PyErr_GetRaisedException();
     }
     else
         Py_DECREF(res);
@@ -2729,10 +2728,10 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
     self->dispatching = 1;
 
     module_state *st = GLOBAL_STATE();
-    quitMainLoop = 0;
+    st->quitMainLoop = 0;
     while (Tk_GetNumMainWindows() > threshold &&
-           !quitMainLoop &&
-           !errorInCmd)
+           !st->quitMainLoop &&
+           !st->errorInCmd)
     {
         int result;
 
@@ -2766,12 +2765,12 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
             break;
     }
     self->dispatching = 0;
-    quitMainLoop = 0;
+    st->quitMainLoop = 0;
 
-    if (errorInCmd) {
-        errorInCmd = 0;
-        PyErr_SetRaisedException(excInCmd);
-        excInCmd = NULL;
+    if (st->errorInCmd) {
+        st->errorInCmd = 0;
+        PyErr_SetRaisedException(st->excInCmd);
+        st->excInCmd = NULL;
         return NULL;
     }
     Py_RETURN_NONE;
@@ -2805,7 +2804,8 @@ static PyObject *
 _tkinter_tkapp_quit_impl(TkappObject *self)
 /*[clinic end generated code: output=7f21eeff481f754f input=e03020dc38aff23c]*/
 {
-    quitMainLoop = 1;
+    module_state *st = GLOBAL_STATE();
+    st->quitMainLoop = 1;
     Py_RETURN_NONE;
 }
 
@@ -3206,18 +3206,18 @@ static PyThreadState *event_tstate = NULL;
 static int
 EventHook(void)
 {
+    module_state *st = GLOBAL_STATE();
 #ifndef MS_WINDOWS
     int tfile;
 #endif
     PyEval_RestoreThread(event_tstate);
     stdin_ready = 0;
-    errorInCmd = 0;
+    st->errorInCmd = 0;
 #ifndef MS_WINDOWS
     tfile = fileno(stdin);
     Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc, NULL);
 #endif
-    module_state *st = GLOBAL_STATE();
-    while (!errorInCmd && !stdin_ready) {
+    while (!st->errorInCmd && !stdin_ready) {
         int result;
 #ifdef MS_WINDOWS
         if (_kbhit()) {
@@ -3247,10 +3247,10 @@ EventHook(void)
 #ifndef MS_WINDOWS
     Tcl_DeleteFileHandler(tfile);
 #endif
-    if (errorInCmd) {
-        errorInCmd = 0;
-        PyErr_SetRaisedException(excInCmd);
-        excInCmd = NULL;
+    if (st->errorInCmd) {
+        st->errorInCmd = 0;
+        PyErr_SetRaisedException(st->excInCmd);
+        st->excInCmd = NULL;
         PyErr_Print();
     }
     PyEval_SaveThread();
