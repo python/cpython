@@ -354,8 +354,6 @@ Tkinter_Error(TkappObject *self)
 
 /**** Utils ****/
 
-static int Tkinter_busywaitinterval = 20;
-
 #ifndef MS_WINDOWS
 
 /* Millisecond sleep() for Unix platforms. */
@@ -2753,7 +2751,7 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
                 PyThread_release_lock(st->tcl_lock);
             }
             if (result == 0)
-                Sleep(Tkinter_busywaitinterval);
+                Sleep(st->Tkinter_busywaitinterval);
             Py_END_ALLOW_THREADS
         }
 
@@ -3083,7 +3081,8 @@ _tkinter_setbusywaitinterval_impl(PyObject *module, int new_val)
                         "busywaitinterval must be >= 0");
         return NULL;
     }
-    Tkinter_busywaitinterval = new_val;
+    module_state *st = GLOBAL_STATE();
+    st->Tkinter_busywaitinterval = new_val;
     Py_RETURN_NONE;
 }
 
@@ -3097,7 +3096,8 @@ static int
 _tkinter_getbusywaitinterval_impl(PyObject *module)
 /*[clinic end generated code: output=23b72d552001f5c7 input=a695878d2d576a84]*/
 {
-    return Tkinter_busywaitinterval;
+    module_state *st = GLOBAL_STATE();
+    return st->Tkinter_busywaitinterval;
 }
 
 #include "clinic/_tkinter.c.h"
@@ -3238,7 +3238,7 @@ EventHook(void)
             PyThread_release_lock(st->tcl_lock);
         }
         if (result == 0)
-            Sleep(Tkinter_busywaitinterval);
+            Sleep(st->Tkinter_busywaitinterval);
         Py_END_ALLOW_THREADS
 
         if (result < 0)
@@ -3299,6 +3299,8 @@ PyInit__tkinter(void)
   PyObject *m, *uexe, *cexe, *o;
 
     module_state *st = GLOBAL_STATE();
+    st->Tkinter_busywaitinterval = 20;
+
     st->tcl_lock = PyThread_allocate_lock();
     if (st->tcl_lock == NULL)
         return NULL;

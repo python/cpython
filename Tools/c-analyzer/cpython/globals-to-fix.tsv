@@ -524,7 +524,6 @@ Modules/_ctypes/cfield.c	-	formattable	-
 Modules/_ctypes/malloc_closure.c	-	free_list	-
 Modules/_curses_panel.c	-	lop	-
 Modules/_ssl/debughelpers.c	_PySSL_keylog_callback	lock	-
-Modules/_tkinter.c	-	Tkinter_busywaitinterval	-
 Modules/_tkinter.c	-	call_mutex	-
 Modules/_tkinter.c	-	var_mutex	-
 Modules/_tkinter.c	-	command_mutex	-

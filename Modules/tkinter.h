@@ -38,6 +38,9 @@ typedef struct {
     PyObject *excInCmd;
     int errorInCmd;
     int quitMainLoop;
+
+    // Util
+    int Tkinter_busywaitinterval;
 } module_state;
 
 extern module_state global_state;
