@@ -9,13 +9,12 @@ from pathlib import Path
 # Input file has blank line between entries to reduce merge conflicts
 with Path("Doc/tools/clean-files.txt").open() as clean_files:
     CLEAN = [
-        filename.strip()
+        Path(filename.strip())
         for filename in clean_files
         if filename.strip() and not filename.startswith("#")
     ]
 
 print("Touching:")
 for filename in CLEAN:
-    if filename:
-        print(filename)
-        Path(filename).touch()
+    print(filename)
+    filename.touch()
