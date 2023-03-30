@@ -203,10 +203,14 @@ dummy_func(
         };
 
 
-        inst(BINARY_OP_MULTIPLY_INT, (unused/1, left, right -- prod)) {
+        macro_inst(BINARY_OP_MULTIPLY_INT, (unused/1, left, right -- prod)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
+            U_INST(BINARY_OP_MULTIPLY_INT_REST);
+        }
+
+        u_inst(BINARY_OP_MULTIPLY_INT_REST, (left, right -- prod : PyLong_Type)) {
             STAT_INC(BINARY_OP, hit);
             prod = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -224,10 +228,14 @@ dummy_func(
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dprod, prod);
         }
 
-        inst(BINARY_OP_SUBTRACT_INT, (unused/1, left, right -- sub)) {
+        macro_inst(BINARY_OP_SUBTRACT_INT, (unused/1, left, right -- sub)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(left), BINARY_OP);
             DEOPT_IF(!PyLong_CheckExact(right), BINARY_OP);
+            U_INST(BINARY_OP_SUBTRACT_INT_REST);
+        }
+
+        u_inst(BINARY_OP_SUBTRACT_INT_REST, (left, right -- sub : PyLong_Type)) {
             STAT_INC(BINARY_OP, hit);
             sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -318,16 +326,31 @@ dummy_func(
                 : right);
         }
 
-        inst(UNARY_CHECK_FLOAT, (arg, unused[oparg] -- arg : PyFloat_Type, unused[oparg])) {
+        inst(UNARY_CHECK_FLOAT, (arg, unused[oparg] -- arg_unboxed : { <<= PyFloat_Type, PyRawFloat_Type}, unused[oparg])) {
             assert(cframe.use_tracing == 0);
             char is_successor = PyFloat_CheckExact(arg);
             bb_test = BB_TEST(is_successor, 0);
+            arg_unboxed = (is_successor
+                ? *((PyObject **)(&(((PyFloatObject *)arg)->ob_fval)))
+                : arg);
         }
 
         inst(BINARY_OP_ADD_FLOAT_UNBOXED, (left, right -- sum : PyRawFloat_Type)) {
             STAT_INC(BINARY_OP, hit);
             double temp = *(double *)(&(left)) + *(double *)(&(right));
             sum = *(PyObject **)(&temp);
+        }
+
+        inst(BINARY_OP_SUBTRACT_FLOAT_UNBOXED, (left, right -- sum : PyRawFloat_Type)) {
+            STAT_INC(BINARY_OP, hit);
+            double temp = *(double *)(&(left)) - *(double *)(&(right));
+            sum = *(PyObject **)(&temp);
+        }
+
+        inst(BINARY_OP_MULTIPLY_FLOAT_UNBOXED, (left, right -- prod : PyRawFloat_Type)) {
+            STAT_INC(BINARY_OP, hit);
+            double temp = *(double *)(&(left)) * *(double *)(&(right));
+            prod = *(PyObject **)(&temp);
         }
 
         inst(UNBOX_FLOAT, (boxed_float, unused[oparg] -- unboxed_float : PyRawFloat_Type, unused[oparg])) {
@@ -3210,6 +3233,10 @@ dummy_func(
         inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top: *bottom)) {
             assert(oparg > 0);
             top = Py_NewRef(bottom);
+        }
+
+        inst(COPY_NO_INCREF, (bottom, unused[oparg - 1] -- bottom, unused[oparg - 1], top: *bottom)) {
+            assert(oparg > 0);
         }
 
         inst(BINARY_OP, (unused/1, lhs, rhs -- res)) {

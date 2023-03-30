@@ -443,6 +443,8 @@ _inline_cache_entries = [
 
 _macro_ops = [
     'BINARY_OP_ADD_INT',
+    'BINARY_OP_SUBTRACT_INT',
+    'BINARY_OP_MULTIPLY_INT',
     'BINARY_OP_ADD_FLOAT',
 ]
 _uops = [
@@ -493,13 +495,16 @@ _uops = [
     # 'BINARY_CHECK_STR',
     'BINARY_OP_ADD_INT_REST',
     'BINARY_OP_ADD_FLOAT_UNBOXED',
+    'BINARY_OP_SUBTRACT_INT_REST',
     'BINARY_OP_SUBTRACT_FLOAT_UNBOXED',
+    'BINARY_OP_MULTIPLY_INT_REST',
     'BINARY_OP_MULTIPLY_FLOAT_UNBOXED',
 
     # Boxing / unboxing ops
     'POP_TOP_NO_DECREF',
     'UNBOX_FLOAT',
     'BOX_FLOAT',
+    'COPY_NO_INCREF',
     'LOAD_FAST_NO_INCREF',
     # Storing a boxed value, overwriting an unboxed local.
     'STORE_FAST_BOXED_UNBOXED',

@@ -120,6 +120,12 @@
             break;
         }
 
+        TARGET(BINARY_OP_MULTIPLY_INT_REST) {
+            STACK_SHRINK(1);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&PyLong_Type), TYPESTACK_PEEK(1), true);
+            break;
+        }
+
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
             STACK_SHRINK(1);
             TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
@@ -129,6 +135,12 @@
         TARGET(BINARY_OP_SUBTRACT_INT) {
             STACK_SHRINK(1);
             TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            break;
+        }
+
+        TARGET(BINARY_OP_SUBTRACT_INT_REST) {
+            STACK_SHRINK(1);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&PyLong_Type), TYPESTACK_PEEK(1), true);
             break;
         }
 
@@ -164,11 +176,24 @@
         }
 
         TARGET(UNARY_CHECK_FLOAT) {
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&PyFloat_Type), TYPESTACK_PEEK(1 + oparg), true);
+            TYPE_SET((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&PyFloat_Type), TYPESTACK_PEEK(1 + oparg), true);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&PyRawFloat_Type), TYPESTACK_PEEK(1 + oparg), true);
             break;
         }
 
         TARGET(BINARY_OP_ADD_FLOAT_UNBOXED) {
+            STACK_SHRINK(1);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&PyRawFloat_Type), TYPESTACK_PEEK(1), true);
+            break;
+        }
+
+        TARGET(BINARY_OP_SUBTRACT_FLOAT_UNBOXED) {
+            STACK_SHRINK(1);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&PyRawFloat_Type), TYPESTACK_PEEK(1), true);
+            break;
+        }
+
+        TARGET(BINARY_OP_MULTIPLY_FLOAT_UNBOXED) {
             STACK_SHRINK(1);
             TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&PyRawFloat_Type), TYPESTACK_PEEK(1), true);
             break;
@@ -962,6 +987,13 @@
 
         TARGET(COPY) {
             _Py_TYPENODE_t *bottom = TYPESTACK_PEEK(1 + (oparg-1));
+            STACK_GROW(1);
+            TYPE_OVERWRITE(bottom, TYPESTACK_PEEK(1), false);
+            break;
+        }
+
+        TARGET(COPY_NO_INCREF) {
+            _Py_TYPENODE_t *bottom = TYPESTACK_PEEK(1 + (oparg - 1));
             STACK_GROW(1);
             TYPE_OVERWRITE(bottom, TYPESTACK_PEEK(1), false);
             break;

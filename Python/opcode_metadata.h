@@ -59,9 +59,13 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case BINARY_OP_MULTIPLY_INT:
             return 2;
+        case BINARY_OP_MULTIPLY_INT_REST:
+            return 2;
         case BINARY_OP_MULTIPLY_FLOAT:
             return 2;
         case BINARY_OP_SUBTRACT_INT:
+            return 2;
+        case BINARY_OP_SUBTRACT_INT_REST:
             return 2;
         case BINARY_OP_SUBTRACT_FLOAT:
             return 2;
@@ -76,6 +80,10 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case UNARY_CHECK_FLOAT:
             return oparg + 1;
         case BINARY_OP_ADD_FLOAT_UNBOXED:
+            return 2;
+        case BINARY_OP_SUBTRACT_FLOAT_UNBOXED:
+            return 2;
+        case BINARY_OP_MULTIPLY_FLOAT_UNBOXED:
             return 2;
         case UNBOX_FLOAT:
             return oparg + 1;
@@ -379,6 +387,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return (((oparg & FVS_MASK) == FVS_HAVE_SPEC) ? 1 : 0) + 1;
         case COPY:
             return (oparg-1) + 1;
+        case COPY_NO_INCREF:
+            return (oparg - 1) + 1;
         case BINARY_OP:
             return 2;
         case SWAP:
@@ -461,9 +471,13 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case BINARY_OP_MULTIPLY_INT:
             return 1;
+        case BINARY_OP_MULTIPLY_INT_REST:
+            return 1;
         case BINARY_OP_MULTIPLY_FLOAT:
             return 1;
         case BINARY_OP_SUBTRACT_INT:
+            return 1;
+        case BINARY_OP_SUBTRACT_INT_REST:
             return 1;
         case BINARY_OP_SUBTRACT_FLOAT:
             return 1;
@@ -478,6 +492,10 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case UNARY_CHECK_FLOAT:
             return oparg + 1;
         case BINARY_OP_ADD_FLOAT_UNBOXED:
+            return 1;
+        case BINARY_OP_SUBTRACT_FLOAT_UNBOXED:
+            return 1;
+        case BINARY_OP_MULTIPLY_FLOAT_UNBOXED:
             return 1;
         case UNBOX_FLOAT:
             return oparg + 1;
@@ -781,6 +799,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case COPY:
             return (oparg-1) + 2;
+        case COPY_NO_INCREF:
+            return (oparg - 1) + 2;
         case BINARY_OP:
             return 1;
         case SWAP:
@@ -842,8 +862,10 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [UNARY_NOT] = { true, INSTR_FMT_IX },
     [UNARY_INVERT] = { true, INSTR_FMT_IX },
     [BINARY_OP_MULTIPLY_INT] = { true, INSTR_FMT_IXC },
+    [BINARY_OP_MULTIPLY_INT_REST] = { true, INSTR_FMT_IX },
     [BINARY_OP_MULTIPLY_FLOAT] = { true, INSTR_FMT_IXC },
     [BINARY_OP_SUBTRACT_INT] = { true, INSTR_FMT_IXC },
+    [BINARY_OP_SUBTRACT_INT_REST] = { true, INSTR_FMT_IX },
     [BINARY_OP_SUBTRACT_FLOAT] = { true, INSTR_FMT_IXC },
     [BINARY_OP_ADD_UNICODE] = { true, INSTR_FMT_IXC },
     [BINARY_OP_INPLACE_ADD_UNICODE] = { true, INSTR_FMT_IX },
@@ -851,6 +873,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BINARY_CHECK_FLOAT] = { true, INSTR_FMT_IX },
     [UNARY_CHECK_FLOAT] = { true, INSTR_FMT_IB },
     [BINARY_OP_ADD_FLOAT_UNBOXED] = { true, INSTR_FMT_IX },
+    [BINARY_OP_SUBTRACT_FLOAT_UNBOXED] = { true, INSTR_FMT_IX },
+    [BINARY_OP_MULTIPLY_FLOAT_UNBOXED] = { true, INSTR_FMT_IX },
     [UNBOX_FLOAT] = { true, INSTR_FMT_IB },
     [BOX_FLOAT] = { true, INSTR_FMT_IB },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IXC },
@@ -1002,6 +1026,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BUILD_SLICE] = { true, INSTR_FMT_IB },
     [FORMAT_VALUE] = { true, INSTR_FMT_IB },
     [COPY] = { true, INSTR_FMT_IB },
+    [COPY_NO_INCREF] = { true, INSTR_FMT_IB },
     [BINARY_OP] = { true, INSTR_FMT_IBC },
     [SWAP] = { true, INSTR_FMT_IB },
     [EXTENDED_ARG] = { true, INSTR_FMT_IB },
