@@ -1696,7 +1696,7 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
    A decorator to suppress warnings. *category* is a subclass of :exc:`Warning`
    class. It is approximately equivalent to calling :func:`warnings.catch_warnings()`
    with :meth:`warnings.simplefilter` set to ``ignore``. If you want to suppress some
-   known warnings in test case, using code like the following::
+   specific known warnings in a test case, use code like the following::
 
       @warning_helper.ignore_warnings(category=DeprecationWarning)
       def test_suppress_warning():
