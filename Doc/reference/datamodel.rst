@@ -1448,7 +1448,7 @@ Basic customization
 
    The return value must be a string object.
 
-   The default implementation by the ``object`` class should be given
+   The default implementation by the :class:`object` class should be given
    an empty *format_spec* string. It delegates to :meth:`__str__`
 
    .. versionchanged:: 3.4
