@@ -5264,10 +5264,10 @@ sock_traverse(PySocketSockObject *s, visitproc visit, void *arg)
 static void
 sock_dealloc(PySocketSockObject *s)
 {
-    PyTypeObject *tp = Py_TYPE(s);
     if (PyObject_CallFinalizerFromDealloc((PyObject *)s) < 0) {
         return;
     }
+    PyTypeObject *tp = Py_TYPE(s);
     PyObject_GC_UnTrack(s);
     tp->tp_free((PyObject *)s);
     Py_DECREF(tp);
