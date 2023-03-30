@@ -1010,7 +1010,8 @@ exception_unwind:
                 PyObject **stackbase = _PyFrame_Stackbase(frame);
                 while (stack_pointer > stackbase) {
                     PyObject *o = POP();
-                    Py_XDECREF(o);
+                    // @TODO UNDO ME ONCE FINISHING DEBUGGING
+                    // Py_XDECREF(o);
                 }
                 assert(STACK_LEVEL() == 0);
                 _PyFrame_SetStackPointer(frame, stack_pointer);

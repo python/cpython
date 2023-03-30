@@ -1209,6 +1209,7 @@ add_metadata_to_jump_2d_array(_PyTier2Info *t2_info, _PyTier2BBMetadata *meta,
 // // The BINARY_ADD then goes to the next BB
 static inline _Py_CODEUNIT *
 infer_BINARY_OP(
+    _Py_CODEUNIT *t2_start,
     int oparg,
     bool *needs_guard,
     _Py_CODEUNIT *prev_type_guard,
@@ -1218,6 +1219,7 @@ infer_BINARY_OP(
     int bb_id)
 {
     assert(oparg == NB_ADD || oparg == NB_SUBTRACT || oparg == NB_MULTIPLY);
+    bool is_first_instr = (write_curr == t2_start);
     *needs_guard = false;
     PyTypeObject *right = typenode_get_type(type_context->type_stack_ptr[-1]);
     PyTypeObject *left = typenode_get_type(type_context->type_stack_ptr[-2]);
@@ -1262,9 +1264,12 @@ infer_BINARY_OP(
         type_propagate(opcode, 0, type_context, NULL);
         return write_curr;
     }
-    // Both side unknown
     // Unknown, time to emit the chain of guards.
-    if (prev_type_guard == NULL) {
+    // No type guard before this, or it's not the first in the new BB.
+    // First in new BB usually indicates it's already part of a pre-existing ladder.
+    if (prev_type_guard == NULL ||
+        (!is_first_instr && prev_type_guard != NULL &&
+            type_guard_ladder[type_guard_to_index[prev_type_guard->op.code] + 1] != -1)) {
         write_curr = rebox_stack(write_curr, type_context, 2);
         *needs_guard = true;
         return emit_type_guard(write_curr, BINARY_CHECK_FLOAT, bb_id);
@@ -1527,7 +1532,8 @@ _PyTier2_Code_DetectAndEmitBB(
         case BINARY_OP:
             if (oparg == NB_ADD || oparg == NB_SUBTRACT || oparg == NB_MULTIPLY) {
                 // Add operation. Need to check if we can infer types.
-                _Py_CODEUNIT *possible_next = infer_BINARY_OP(oparg, &needs_guard,
+                _Py_CODEUNIT *possible_next = infer_BINARY_OP(t2_start,
+                    oparg, &needs_guard,
                     prev_type_guard,
                     *curr,
                     write_i, starting_type_context,
