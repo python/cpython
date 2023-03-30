@@ -1,5 +1,11 @@
-Added all cpython/Tools modules to the README and included descriptions for the following modules:
+Added descriptions for the folllowing cpython/Tools modules to cpython/Tools/README:
+
 -------------------
+- build
+- clinic
+- patchcheck
+- ssl
+- tz
 - c-analyzer
 - cases_generator
 - importbench
@@ -7,11 +13,4 @@ Added all cpython/Tools modules to the README and included descriptions for the 
 - wasm
 -------------------
 
-Several modules still require descriptions. These modules include the following:
--------------------
-- build
-- clinic
-- patchcheck
-- ssl
-- tz
--------------------
+Removed parser from README, as this module no longer exists in cypthon/Tools.
