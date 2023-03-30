@@ -658,7 +658,7 @@ _PyTier2_BBSpaceCheckAndReallocIfNeeded(PyCodeObject *co, Py_ssize_t space_reque
         // Note: overallocate
         Py_ssize_t new_size = sizeof(_PyTier2BBSpace) + (curr->water_level + space_requested) * 2;
 #if BB_DEBUG
-        fprintf(stderr, "Allocating new BB of size %lld\n", (int64_t)new_size);
+        fprintf(stderr, "Space requested: %lld, Allocating new BB of size %lld\n", (int64_t)space_requested, (int64_t)new_size);
 #endif
         // @TODO We can't Realloc, we actually need to do the linked list method.
         Py_UNREACHABLE();
@@ -1113,8 +1113,13 @@ emit_scope_exit(_Py_CODEUNIT *write_curr, _Py_CODEUNIT exit,
 static inline _Py_CODEUNIT *
 emit_i(_Py_CODEUNIT *write_curr, int opcode, int oparg)
 {
+    if (oparg > 0xFF) {
+        _py_set_opcode(write_curr, EXTENDED_ARG);
+        write_curr->op.arg = (oparg >> 8) & 0xFF;
+        write_curr++;
+    }
     _py_set_opcode(write_curr, opcode);
-    write_curr->op.arg = oparg;
+    write_curr->op.arg = oparg & 0xFF;
     write_curr++;
     return write_curr;
 }
@@ -1280,14 +1285,14 @@ _PyTier2_Code_DetectAndEmitBB(
     );
 #define END() goto end;
 #define JUMPBY(x) i += x + 1;
-#define DISPATCH()        write_i = emit_i(write_i, specop, oparg); \
+#define DISPATCH()        write_i = emit_i(write_i, specop, curr->op.arg); \
                           write_i = copy_cache_entries(write_i, curr+1, caches); \
                           i += caches; \
                           type_propagate(opcode, oparg, starting_type_context, consts); \
                           continue;
 
 #define DISPATCH_REBOX(x) write_i = rebox_stack(write_i, starting_type_context, x); \
-                          write_i = emit_i(write_i, specop, oparg); \
+                          write_i = emit_i(write_i, specop, curr->op.arg); \
                           write_i = copy_cache_entries(write_i, curr+1, caches); \
                           i += caches; \
                           type_propagate(opcode, oparg, starting_type_context, consts); \
@@ -1525,7 +1530,6 @@ _PyTier2_Code_DetectAndEmitBB(
                 virtual_start = true;
 
                 if (opcode == EXTENDED_ARG) {
-                    write_i = emit_i(write_i, specop, oparg);
                     // Note: EXTENDED_ARG could be a jump target!!!!!
                     specop = next_instr->op.code;
                     opcode = _PyOpcode_Deopt[specop];
@@ -1563,7 +1567,6 @@ _PyTier2_Code_DetectAndEmitBB(
                 END();
             }
             if (opcode == EXTENDED_ARG) {
-                write_i = emit_i(write_i, specop, oparg);
                 // Note: EXTENDED_ARG could be a jump target!!!!!
                 specop = next_instr->op.code;
                 opcode = _PyOpcode_Deopt[specop];
@@ -2162,7 +2165,7 @@ _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id_tagged
     assert(typestack_level == stacklevel);
 #endif
     // The jump target
-    _Py_CODEUNIT *tier1_jump_target = meta->tier1_end + jumpby - ((curr-1)->op.code == EXTENDED_ARG && (curr-1)->op.arg > 0);
+    _Py_CODEUNIT *tier1_jump_target = meta->tier1_end + jumpby;
     *tier1_fallback = tier1_jump_target;
     // Be a pessimist and assume we need to write the entire rest of code into the BB.
     // The size of the BB generated will definitely be equal to or smaller than this.
