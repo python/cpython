@@ -48,6 +48,9 @@ typedef struct {
 
     /* Top level Exception; inherits from ArithmeticError */
     PyObject *DecimalException;
+
+    /* Basic and extended context templates */
+    PyObject *basic_context_template;
 } decimal_state;
 
 static decimal_state global_state;
@@ -150,8 +153,7 @@ static PyObject *current_context_var = NULL;
 /* Template for creating new thread contexts, calling Context() without
  * arguments and initializing the module_context on first access. */
 static PyObject *default_context_template = NULL;
-/* Basic and extended context templates */
-static PyObject *basic_context_template = NULL;
+
 static PyObject *extended_context_template = NULL;
 
 
@@ -1652,7 +1654,7 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
     /* If the new context is one of the templates, make a copy.
      * This is the current behavior of decimal.py. */
     if (v == default_context_template ||
-        v == basic_context_template ||
+        v == state->basic_context_template ||
         v == extended_context_template) {
         v = context_copy(v, NULL);
         if (v == NULL) {
@@ -1733,7 +1735,7 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
     /* If the new context is one of the templates, make a copy.
      * This is the current behavior of decimal.py. */
     if (v == default_context_template ||
-        v == basic_context_template ||
+        v == state->basic_context_template ||
         v == extended_context_template) {
         v = context_copy(v, NULL);
         if (v == NULL) {
@@ -6025,11 +6027,11 @@ PyInit__decimal(void)
     CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_NewRef(Py_True)));
 
     /* Init basic context template */
-    ASSIGN_PTR(basic_context_template,
+    ASSIGN_PTR(state->basic_context_template,
                PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL));
-    init_basic_context(basic_context_template);
+    init_basic_context(state->basic_context_template);
     CHECK_INT(PyModule_AddObject(m, "BasicContext",
-                                 Py_NewRef(basic_context_template)));
+                                 Py_NewRef(state->basic_context_template)));
 
     /* Init extended context template */
     ASSIGN_PTR(extended_context_template,
@@ -6082,7 +6084,7 @@ error:
 #else
     Py_CLEAR(current_context_var); /* GCOV_NOT_REACHED */
 #endif
-    Py_CLEAR(basic_context_template); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->basic_context_template); /* GCOV_NOT_REACHED */
     Py_CLEAR(extended_context_template); /* GCOV_NOT_REACHED */
     Py_CLEAR(m); /* GCOV_NOT_REACHED */
 
