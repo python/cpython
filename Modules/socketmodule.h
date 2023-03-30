@@ -311,8 +311,6 @@ typedef union sock_addr {
    like the address family, which is used to decode socket address
    arguments properly. */
 
-struct _socket_state;  // Forward decl.
-
 typedef struct {
     PyObject_HEAD
     SOCKET_T sock_fd;           /* Socket file descriptor */
