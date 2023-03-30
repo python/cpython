@@ -1449,7 +1449,7 @@ Basic customization
    The return value must be a string object.
 
    The default implementation by the ``object`` class should be given
-   an empty ``format_spec`` string. It delegates to :meth:`__str__`
+   an empty *format_spec* string. It delegates to :meth:`__str__`
 
    .. versionchanged:: 3.4
       The __format__ method of ``object`` itself raises a :exc:`TypeError`
