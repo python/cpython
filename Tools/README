@@ -2,7 +2,7 @@ This directory contains a number of Python programs that are useful
 while building or extending Python.
 
 build           Automatically generated directory by the build system
-                contain  build artifacts and intermediate files.
+                contain build artifacts and intermediate files.
 
 buildbot        Batchfiles for running on Windows buildbot workers.
 
@@ -45,7 +45,7 @@ scripts         A number of useful single-file programs, e.g. tabnanny.py
                 to Python 3 code.
 
 ssl             Scripts to generate ssl_data.h from OpenSSL sources, and run
-                tests against multiple installations of OpenSSL and LibreSSL.           
+                tests against multiple installations of OpenSSL and LibreSSL.
 
 stringbench     A suite of micro-benchmarks for various operations on
                 strings (both 8-bit and unicode). (*)
