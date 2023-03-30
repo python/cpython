@@ -7,7 +7,12 @@ so they are rebuilt and we can catch regressions.
 from pathlib import Path
 
 # Input file has blank line between entries to reduce merge conflicts
-CLEAN = Path("Doc/tools/clean-files.txt").read_text(encoding="UTF-8").split("\n")
+with Path("Doc/tools/clean-files.txt").open() as clean_files:
+    CLEAN = [
+        filename.strip()
+        for filename in clean_files
+        if filename.strip() and not filename.startswith("#")
+    ]
 
 print("Touching:")
 for filename in CLEAN:
