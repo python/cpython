@@ -2145,7 +2145,7 @@ dummy_func(
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 assert(cframe.use_tracing == 0);
                 next_instr--;
-                _Py_Specialize_ForIter(iter, next_instr, oparg);
+                _Py_Specialize_ForIter(iter, next_instr, oparg, 0);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(FOR_ITER, deferred);
@@ -2176,6 +2176,17 @@ dummy_func(
 
         // FOR_ITER
         inst(BB_TEST_ITER, (unused/1, iter -- iter, next)) {
+            #if ENABLE_SPECIALIZATION
+            _PyForIterCache *cache = (_PyForIterCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                assert(cframe.use_tracing == 0);
+                next_instr--;
+                _Py_Specialize_ForIter(iter, next_instr, oparg, 1);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(BB_TEST_ITER, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
@@ -2220,6 +2231,30 @@ dummy_func(
             // Common case: no jump, leave it to the code generator
         }
 
+        inst(BB_TEST_ITER_LIST, (unused/1, iter -- iter, next)) {
+            assert(cframe.use_tracing == 0);
+            DEOPT_IF(Py_TYPE(iter) != &PyListIter_Type, BB_TEST_ITER);
+            _PyListIterObject *it = (_PyListIterObject *)iter;
+            STAT_INC(FOR_ITER, hit);
+            PyListObject *seq = it->it_seq;
+            if (seq) {
+                if (it->it_index < PyList_GET_SIZE(seq)) {
+                    next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
+                    goto end_bb_iter_list;  // End of this instruction
+                }
+                it->it_seq = NULL;
+                Py_DECREF(seq);
+            }
+            Py_DECREF(iter);
+            STACK_SHRINK(1);
+            bb_test = BB_TEST(0, 2);
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
+            DISPATCH();
+        end_bb_iter_list:
+            // Common case: no jump, leave it to the code generator
+            bb_test = BB_TEST(1, 0);
+        }
+
         inst(FOR_ITER_TUPLE, (unused/1, iter -- iter, next)) {
             assert(cframe.use_tracing == 0);
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
@@ -2243,6 +2278,30 @@ dummy_func(
             // Common case: no jump, leave it to the code generator
         }
 
+        inst(BB_TEST_ITER_TUPLE, (unused/1, iter -- iter, next)) {
+            assert(cframe.use_tracing == 0);
+            _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
+            DEOPT_IF(Py_TYPE(it) != &PyTupleIter_Type, BB_TEST_ITER);
+            STAT_INC(FOR_ITER, hit);
+            PyTupleObject *seq = it->it_seq;
+            if (seq) {
+                if (it->it_index < PyTuple_GET_SIZE(seq)) {
+                    next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
+                    goto end_test_iter_tuple;  // End of this instruction
+                }
+                it->it_seq = NULL;
+                Py_DECREF(seq);
+            }
+            Py_DECREF(iter);
+            STACK_SHRINK(1);
+            bb_test = BB_TEST(0, 2);
+            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
+            DISPATCH();
+        end_test_iter_tuple:
+            // Common case: no jump, leave it to the code generator
+            bb_test = BB_TEST(1, 0);
+        }
+
         inst(FOR_ITER_RANGE, (unused/1, iter -- iter, next)) {
             assert(cframe.use_tracing == 0);
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
@@ -2262,6 +2321,28 @@ dummy_func(
             if (next == NULL) {
                 goto error;
             }
+        }
+
+        inst(BB_TEST_ITER_RANGE, (unused / 1, iter -- iter, next)) {
+            assert(cframe.use_tracing == 0);
+            _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
+            DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, BB_TEST_ITER);
+            STAT_INC(FOR_ITER, hit);
+            if (r->len <= 0) {
+                STACK_SHRINK(1);
+                Py_DECREF(r);
+                bb_test = BB_TEST(0, 2);
+                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
+                DISPATCH();
+            }
+            long value = r->start;
+            r->start = value + r->step;
+            r->len--;
+            next = PyLong_FromLong(value);
+            if (next == NULL) {
+                goto error;
+            }
+            bb_test = BB_TEST(1, 0);
         }
 
         inst(FOR_ITER_GEN, (unused/1, iter -- iter, unused)) {

@@ -734,13 +734,31 @@
             break;
         }
 
+        TARGET(BB_TEST_ITER_LIST) {
+            STACK_GROW(1);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            break;
+        }
+
         TARGET(FOR_ITER_TUPLE) {
             STACK_GROW(1);
             TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;
         }
 
+        TARGET(BB_TEST_ITER_TUPLE) {
+            STACK_GROW(1);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            break;
+        }
+
         TARGET(FOR_ITER_RANGE) {
+            STACK_GROW(1);
+            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
+            break;
+        }
+
+        TARGET(BB_TEST_ITER_RANGE) {
             STACK_GROW(1);
             TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(1), true);
             break;

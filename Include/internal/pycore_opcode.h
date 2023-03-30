@@ -412,6 +412,9 @@ static const char *const _PyOpcode_OpName[263] = {
     [BB_JUMP_IF_FLAG_UNSET] = "BB_JUMP_IF_FLAG_UNSET",
     [BB_JUMP_IF_FLAG_SET] = "BB_JUMP_IF_FLAG_SET",
     [BB_TEST_ITER] = "BB_TEST_ITER",
+    [BB_TEST_ITER_RANGE] = "BB_TEST_ITER_RANGE",
+    [BB_TEST_ITER_LIST] = "BB_TEST_ITER_LIST",
+    [BB_TEST_ITER_TUPLE] = "BB_TEST_ITER_TUPLE",
     [BB_TEST_POP_IF_FALSE] = "BB_TEST_POP_IF_FALSE",
     [BB_TEST_POP_IF_TRUE] = "BB_TEST_POP_IF_TRUE",
     [BB_TEST_POP_IF_NOT_NONE] = "BB_TEST_POP_IF_NOT_NONE",
@@ -422,6 +425,8 @@ static const char *const _PyOpcode_OpName[263] = {
     [UNARY_CHECK_FLOAT] = "UNARY_CHECK_FLOAT",
     [BINARY_OP_ADD_INT_REST] = "BINARY_OP_ADD_INT_REST",
     [BINARY_OP_ADD_FLOAT_UNBOXED] = "BINARY_OP_ADD_FLOAT_UNBOXED",
+    [BINARY_OP_SUBTRACT_FLOAT_UNBOXED] = "BINARY_OP_SUBTRACT_FLOAT_UNBOXED",
+    [BINARY_OP_MULTIPLY_FLOAT_UNBOXED] = "BINARY_OP_MULTIPLY_FLOAT_UNBOXED",
     [POP_TOP_NO_DECREF] = "POP_TOP_NO_DECREF",
     [UNBOX_FLOAT] = "UNBOX_FLOAT",
     [BOX_FLOAT] = "BOX_FLOAT",
@@ -429,11 +434,6 @@ static const char *const _PyOpcode_OpName[263] = {
     [STORE_FAST_BOXED_UNBOXED] = "STORE_FAST_BOXED_UNBOXED",
     [STORE_FAST_UNBOXED_BOXED] = "STORE_FAST_UNBOXED_BOXED",
     [STORE_FAST_UNBOXED_UNBOXED] = "STORE_FAST_UNBOXED_UNBOXED",
-    [196] = "<196>",
-    [197] = "<197>",
-    [198] = "<198>",
-    [199] = "<199>",
-    [200] = "<200>",
     [201] = "<201>",
     [202] = "<202>",
     [203] = "<203>",
@@ -501,11 +501,6 @@ static const char *const _PyOpcode_OpName[263] = {
 
 
 #define EXTRA_CASES \
-    case 196: \
-    case 197: \
-    case 198: \
-    case 199: \
-    case 200: \
     case 201: \
     case 202: \
     case 203: \

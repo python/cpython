@@ -2135,22 +2135,22 @@ int
 #endif
 
 void
-_Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
+_Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg, char is_bb)
 {
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
     _PyForIterCache *cache = (_PyForIterCache *)(instr + 1);
     PyTypeObject *tp = Py_TYPE(iter);
     if (tp == &PyListIter_Type) {
-        instr->op.code = FOR_ITER_LIST;
+        instr->op.code = is_bb ? BB_TEST_ITER_LIST : FOR_ITER_LIST;
         goto success;
     }
     else if (tp == &PyTupleIter_Type) {
-        instr->op.code = FOR_ITER_TUPLE;
+        instr->op.code = is_bb ? BB_TEST_ITER_TUPLE : FOR_ITER_TUPLE;
         goto success;
     }
     else if (tp == &PyRangeIter_Type) {
-        instr->op.code = FOR_ITER_RANGE;
+        instr->op.code = is_bb ? BB_TEST_ITER_RANGE : FOR_ITER_RANGE;
         goto success;
     }
     //else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
@@ -2158,14 +2158,14 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
     //    instr->op.code = FOR_ITER_GEN;
     //    goto success;
     //}
-    SPECIALIZATION_FAIL(FOR_ITER,
+    SPECIALIZATION_FAIL(is_bb ? BB_TEST_ITER : FOR_ITER,
                         _PySpecialization_ClassifyIterator(iter));
-    STAT_INC(FOR_ITER, failure);
-    instr->op.code = FOR_ITER;
+    STAT_INC(is_bb ? BB_TEST_ITER : FOR_ITER, failure);
+    instr->op.code = is_bb ? BB_TEST_ITER : FOR_ITER;
     cache->counter = adaptive_counter_backoff(cache->counter);
     return;
 success:
-    STAT_INC(FOR_ITER, success);
+    STAT_INC(is_bb ? BB_TEST_ITER : FOR_ITER, success);
     cache->counter = adaptive_counter_cooldown();
 }
 

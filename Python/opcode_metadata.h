@@ -303,9 +303,15 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case FOR_ITER_LIST:
             return 1;
+        case BB_TEST_ITER_LIST:
+            return 1;
         case FOR_ITER_TUPLE:
             return 1;
+        case BB_TEST_ITER_TUPLE:
+            return 1;
         case FOR_ITER_RANGE:
+            return 1;
+        case BB_TEST_ITER_RANGE:
             return 1;
         case FOR_ITER_GEN:
             return 1;
@@ -699,9 +705,15 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 2;
         case FOR_ITER_LIST:
             return 2;
+        case BB_TEST_ITER_LIST:
+            return 2;
         case FOR_ITER_TUPLE:
             return 2;
+        case BB_TEST_ITER_TUPLE:
+            return 2;
         case FOR_ITER_RANGE:
+            return 2;
+        case BB_TEST_ITER_RANGE:
             return 2;
         case FOR_ITER_GEN:
             return 2;
@@ -950,10 +962,13 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [GET_ITER] = { true, INSTR_FMT_IX },
     [GET_YIELD_FROM_ITER] = { true, INSTR_FMT_IX },
     [FOR_ITER] = { true, INSTR_FMT_IBC },
-    [BB_TEST_ITER] = { true, INSTR_FMT_IXC },
+    [BB_TEST_ITER] = { true, INSTR_FMT_IBC },
     [FOR_ITER_LIST] = { true, INSTR_FMT_IBC },
+    [BB_TEST_ITER_LIST] = { true, INSTR_FMT_IXC },
     [FOR_ITER_TUPLE] = { true, INSTR_FMT_IBC },
+    [BB_TEST_ITER_TUPLE] = { true, INSTR_FMT_IXC },
     [FOR_ITER_RANGE] = { true, INSTR_FMT_IBC },
+    [BB_TEST_ITER_RANGE] = { true, INSTR_FMT_IXC },
     [FOR_ITER_GEN] = { true, INSTR_FMT_IBC },
     [BEFORE_ASYNC_WITH] = { true, INSTR_FMT_IX },
     [BEFORE_WITH] = { true, INSTR_FMT_IX },

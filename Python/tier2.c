@@ -1043,6 +1043,8 @@ emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr,
         _py_set_opcode(write_curr, BB_TEST_ITER);
         write_curr->op.arg = oparg & 0xFF;
         write_curr++;
+        // Initialize adaptive interpreter counter
+        write_curr->cache = adaptive_counter_warmup();
         write_curr = emit_cache_entries(write_curr, INLINE_CACHE_ENTRIES_FOR_ITER);
         type_propagate(BB_TEST_ITER, oparg, type_context, NULL);
         _py_set_opcode(write_curr, requires_extended_arg ? EXTENDED_ARG : NOP);

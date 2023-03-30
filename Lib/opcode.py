@@ -465,6 +465,9 @@ _uops = [
     # These tests correspond to the jump instructions
     # FOR_ITER's null (iterator) check
     'BB_TEST_ITER',
+    'BB_TEST_ITER_RANGE',
+    'BB_TEST_ITER_LIST',
+    'BB_TEST_ITER_TUPLE',
     # POP_JUMP_IF_FALSE, POP_JUMP_IF_TRUE
     'BB_TEST_POP_IF_FALSE',
     'BB_TEST_POP_IF_TRUE',
@@ -490,6 +493,8 @@ _uops = [
     # 'BINARY_CHECK_STR',
     'BINARY_OP_ADD_INT_REST',
     'BINARY_OP_ADD_FLOAT_UNBOXED',
+    'BINARY_OP_SUBTRACT_FLOAT_UNBOXED',
+    'BINARY_OP_MULTIPLY_FLOAT_UNBOXED',
 
     # Boxing / unboxing ops
     'POP_TOP_NO_DECREF',

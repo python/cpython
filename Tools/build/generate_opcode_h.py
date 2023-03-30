@@ -112,7 +112,7 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
 
     # The Tier 2 ops
     next_op = 1
-    uop_opmap = specialized_opmap.copy()
+    uop_opmap = {}
     # Add microops
     for name in opcode['_uops']:
         while used[next_op]:
@@ -141,7 +141,8 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
                     fobj.write(DEFINE.format("MAX_PSEUDO_OPCODE", MAX_PSEUDO_OPCODE))
 
         for name, op in specialized_opmap.items():
-            fobj.write(DEFINE.format(name, op))
+            if name not in uop_opmap:
+                fobj.write(DEFINE.format(name, op))
 
         # Tier 2 opcodes
         fobj.write("// Tier 2 interpreter ops\n")
