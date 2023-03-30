@@ -51,6 +51,7 @@ typedef struct {
 
     /* Basic and extended context templates */
     PyObject *basic_context_template;
+    PyObject *extended_context_template;
 } decimal_state;
 
 static decimal_state global_state;
@@ -153,9 +154,6 @@ static PyObject *current_context_var = NULL;
 /* Template for creating new thread contexts, calling Context() without
  * arguments and initializing the module_context on first access. */
 static PyObject *default_context_template = NULL;
-
-static PyObject *extended_context_template = NULL;
-
 
 /* Error codes for functions that return signals or conditions */
 #define DEC_INVALID_SIGNALS (MPD_Max_status+1U)
@@ -1655,7 +1653,7 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
      * This is the current behavior of decimal.py. */
     if (v == default_context_template ||
         v == state->basic_context_template ||
-        v == extended_context_template) {
+        v == state->extended_context_template) {
         v = context_copy(v, NULL);
         if (v == NULL) {
             return NULL;
@@ -1736,7 +1734,7 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
      * This is the current behavior of decimal.py. */
     if (v == default_context_template ||
         v == state->basic_context_template ||
-        v == extended_context_template) {
+        v == state->extended_context_template) {
         v = context_copy(v, NULL);
         if (v == NULL) {
             return NULL;
@@ -6034,11 +6032,11 @@ PyInit__decimal(void)
                                  Py_NewRef(state->basic_context_template)));
 
     /* Init extended context template */
-    ASSIGN_PTR(extended_context_template,
+    ASSIGN_PTR(state->extended_context_template,
                PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL));
-    init_extended_context(extended_context_template);
+    init_extended_context(state->extended_context_template);
     CHECK_INT(PyModule_AddObject(m, "ExtendedContext",
-                                 Py_NewRef(extended_context_template)));
+                                 Py_NewRef(state->extended_context_template)));
 
 
     /* Init mpd_ssize_t constants */
@@ -6085,7 +6083,7 @@ error:
     Py_CLEAR(current_context_var); /* GCOV_NOT_REACHED */
 #endif
     Py_CLEAR(state->basic_context_template); /* GCOV_NOT_REACHED */
-    Py_CLEAR(extended_context_template); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->extended_context_template); /* GCOV_NOT_REACHED */
     Py_CLEAR(m); /* GCOV_NOT_REACHED */
 
     return NULL; /* GCOV_NOT_REACHED */
