@@ -1323,7 +1323,7 @@ Basic customization
    finalizer or (improperly) a destructor.  If a base class has a
    :meth:`__del__` method, the derived class's :meth:`__del__` method,
    if any, must explicitly call it to ensure proper deletion of the base
-   class part of the instance.The :class:`object` class itself does not have a
+   class part of the instance. The :class:`object` class itself does not have a
    :meth:`__del__` method.
 
    It is possible (though not recommended!) for the :meth:`__del__` method
