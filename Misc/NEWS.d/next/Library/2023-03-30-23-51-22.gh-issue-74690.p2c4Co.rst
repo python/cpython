@@ -1,0 +1,2 @@
+Speed up :func:`isinstance` checks against :func:`runtime-checkable
+protocols <typing.runtime_checkable>` by up to 6x. Patch by Alex Waygood

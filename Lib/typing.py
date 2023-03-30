@@ -1931,9 +1931,9 @@ def _get_protocol_attrs(cls):
     return attrs
 
 
-def _is_callable_members_only(cls):
+def _is_callable_members_only(cls, protocol_attrs):
     # PEP 544 prohibits using issubclass() with protocols that have non-method members.
-    return all(callable(getattr(cls, attr, None)) for attr in _get_protocol_attrs(cls))
+    return all(callable(getattr(cls, attr, None)) for attr in protocol_attrs)
 
 
 def _no_init_or_replace_init(self, *args, **kwargs):
@@ -2008,8 +2008,10 @@ class _ProtocolMeta(ABCMeta):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
 
+        protocol_attrs = _get_protocol_attrs(cls)
+
         if ((not getattr(cls, '_is_protocol', False) or
-                _is_callable_members_only(cls)) and
+                _is_callable_members_only(cls, protocol_attrs)) and
                 issubclass(instance.__class__, cls)):
             return True
         if cls._is_protocol:
@@ -2017,7 +2019,7 @@ class _ProtocolMeta(ABCMeta):
                     # All *methods* can be blocked by setting them to None.
                     (not callable(getattr(cls, attr, None)) or
                      getattr(instance, attr) is not None)
-                    for attr in _get_protocol_attrs(cls)):
+                    for attr in protocol_attrs):
                 return True
         return super().__instancecheck__(instance)
 
@@ -2074,7 +2076,10 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                     return NotImplemented
                 raise TypeError("Instance and class checks can only be used with"
                                 " @runtime_checkable protocols")
-            if not _is_callable_members_only(cls):
+
+            protocol_attrs = _get_protocol_attrs(cls)
+
+            if not _is_callable_members_only(cls, protocol_attrs):
                 if _allow_reckless_class_checks():
                     return NotImplemented
                 raise TypeError("Protocols with non-method members"
@@ -2084,7 +2089,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                 raise TypeError('issubclass() arg 1 must be a class')
 
             # Second, perform the actual structural compatibility check.
-            for attr in _get_protocol_attrs(cls):
+            for attr in protocol_attrs:
                 for base in other.__mro__:
                     # Check if the members appears in the class dictionary...
                     if attr in base.__dict__:
