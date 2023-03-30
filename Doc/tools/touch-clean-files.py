@@ -18,3 +18,4 @@ print("Touching:")
 for filename in CLEAN:
     print(filename)
     filename.touch()
+print(f"Touched {len(CLEAN)} files")
