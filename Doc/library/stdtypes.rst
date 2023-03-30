@@ -335,11 +335,10 @@ Notes:
       single: ceil() (in module math)
       single: trunc() (in module math)
       pair: numeric; conversions
-      pair: C; language
 
-   Conversion from floating point to integer may round or truncate
-   as in C; see functions :func:`math.floor` and :func:`math.ceil` for
-   well-defined conversions.
+   Conversion from :class:`float` to :class:`int` truncates, discarding the
+   fractional part. See functions :func:`math.floor` and :func:`math.ceil` for
+   alternative conversions.
 
 (4)
    float also accepts the strings "nan" and "inf" with an optional prefix "+"
@@ -530,11 +529,13 @@ class`. In addition, it provides a few more methods:
     is ``False``.
 
     The default values can be used to conveniently turn an integer into a
-    single byte object.  However, when using the default arguments, don't try
-    to convert a value greater than 255 or you'll get an :exc:`OverflowError`::
+    single byte object::
 
         >>> (65).to_bytes()
         b'A'
+
+    However, when using the default arguments, don't try
+    to convert a value greater than 255 or you'll get an :exc:`OverflowError`.
 
     Equivalent to::
 

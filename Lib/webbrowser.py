@@ -542,11 +542,15 @@ def register_standard_browsers():
         # First try to use the default Windows browser
         register("windows-default", WindowsDefault)
 
-        # Detect some common Windows browsers, fallback to IE
-        iexplore = os.path.join(os.environ.get("PROGRAMFILES", "C:\\Program Files"),
-                                "Internet Explorer\\IEXPLORE.EXE")
+        # Detect some common Windows browsers, fallback to Microsoft Edge
+        # location in 64-bit Windows
+        edge64 = os.path.join(os.environ.get("PROGRAMFILES(x86)", "C:\\Program Files (x86)"),
+                              "Microsoft\\Edge\\Application\\msedge.exe")
+        # location in 32-bit Windows
+        edge32 = os.path.join(os.environ.get("PROGRAMFILES", "C:\\Program Files"),
+                              "Microsoft\\Edge\\Application\\msedge.exe")
         for browser in ("firefox", "firebird", "seamonkey", "mozilla",
-                        "netscape", "opera", iexplore):
+                        "opera", edge64, edge32):
             if shutil.which(browser):
                 register(browser, None, BackgroundBrowser(browser))
     else:
@@ -709,11 +713,12 @@ if sys.platform == 'darwin':
 
 def main():
     import getopt
-    usage = """Usage: %s [-n | -t] url
+    usage = """Usage: %s [-n | -t | -h] url
     -n: open new window
-    -t: open new tab""" % sys.argv[0]
+    -t: open new tab
+    -h, --help: show help""" % sys.argv[0]
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'ntd')
+        opts, args = getopt.getopt(sys.argv[1:], 'ntdh',['help'])
     except getopt.error as msg:
         print(msg, file=sys.stderr)
         print(usage, file=sys.stderr)
@@ -722,6 +727,9 @@ def main():
     for o, a in opts:
         if o == '-n': new_win = 1
         elif o == '-t': new_win = 2
+        elif o == '-h' or o == '--help': 
+            print(usage, file=sys.stderr)
+            sys.exit()
     if len(args) != 1:
         print(usage, file=sys.stderr)
         sys.exit(1)

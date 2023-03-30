@@ -138,6 +138,7 @@ __all__ = [
     'NoReturn',
     'NotRequired',
     'overload',
+    'override',
     'ParamSpecArgs',
     'ParamSpecKwargs',
     'Required',
@@ -229,16 +230,20 @@ def _type_repr(obj):
     typically enough to uniquely identify a type.  For everything
     else, we fall back on repr(obj).
     """
-    if isinstance(obj, types.GenericAlias):
-        return repr(obj)
+    # When changing this function, don't forget about
+    # `_collections_abc._type_repr`, which does the same thing
+    # and must be consistent with this one.
     if isinstance(obj, type):
         if obj.__module__ == 'builtins':
             return obj.__qualname__
         return f'{obj.__module__}.{obj.__qualname__}'
     if obj is ...:
-        return('...')
+        return '...'
     if isinstance(obj, types.FunctionType):
         return obj.__name__
+    if isinstance(obj, tuple):
+        # Special case for `repr` of types with `ParamSpec`:
+        return '[' + ', '.join(_type_repr(t) for t in obj) + ']'
     return repr(obj)
 
 
@@ -250,10 +255,17 @@ def _collect_parameters(args):
     """
     parameters = []
     for t in args:
-        # We don't want __parameters__ descriptor of a bare Python class.
         if isinstance(t, type):
-            continue
-        if hasattr(t, '__typing_subst__'):
+            # We don't want __parameters__ descriptor of a bare Python class.
+            pass
+        elif isinstance(t, tuple):
+            # `t` might be a tuple, when `ParamSpec` is substituted with
+            # `[T, int]`, or `[int, *Ts]`, etc.
+            for x in t:
+                for collected in _collect_parameters([x]):
+                    if collected not in parameters:
+                        parameters.append(collected)
+        elif hasattr(t, '__typing_subst__'):
             if t not in parameters:
                 parameters.append(t)
         else:
@@ -1436,10 +1448,12 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
             raise TypeError(f"Too {'many' if alen > plen else 'few'} arguments for {self};"
                             f" actual {alen}, expected {plen}")
         new_arg_by_param = dict(zip(params, args))
+        return tuple(self._make_substitution(self.__args__, new_arg_by_param))
 
+    def _make_substitution(self, args, new_arg_by_param):
+        """Create a list of new type arguments."""
         new_args = []
-        for old_arg in self.__args__:
-
+        for old_arg in args:
             if isinstance(old_arg, type):
                 new_args.append(old_arg)
                 continue
@@ -1483,10 +1497,20 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
                 # should join all these types together in a flat list
                 # `(float, int, str)` - so again, we should `extend`.
                 new_args.extend(new_arg)
+            elif isinstance(old_arg, tuple):
+                # Corner case:
+                #    P = ParamSpec('P')
+                #    T = TypeVar('T')
+                #    class Base(Generic[P]): ...
+                # Can be substituted like this:
+                #    X = Base[[int, T]]
+                # In this case, `old_arg` will be a tuple:
+                new_args.append(
+                    tuple(self._make_substitution(old_arg, new_arg_by_param)),
+                )
             else:
                 new_args.append(new_arg)
-
-        return tuple(new_args)
+        return new_args
 
     def copy_with(self, args):
         return self.__class__(self.__origin__, args, name=self._name, inst=self._inst,
@@ -2657,6 +2681,7 @@ T_contra = TypeVar('T_contra', contravariant=True)  # Ditto contravariant.
 # Internal type variable used for Type[].
 CT_co = TypeVar('CT_co', covariant=True, bound=type)
 
+
 # A useful type variable with constraints.  This represents string types.
 # (This one *is* for export!)
 AnyStr = TypeVar('AnyStr', bytes, str)
@@ -2748,6 +2773,8 @@ Type.__doc__ = \
     At this point the type checker knows that joe has type BasicUser.
     """
 
+# Internal type variable for callables. Not for export.
+F = TypeVar("F", bound=Callable[..., Any])
 
 @runtime_checkable
 class SupportsInt(Protocol):
@@ -3448,3 +3475,40 @@ def dataclass_transform(
         }
         return cls_or_fn
     return decorator
+
+
+
+def override(method: F, /) -> F:
+    """Indicate that a method is intended to override a method in a base class.
+
+    Usage:
+
+        class Base:
+            def method(self) -> None: ...
+                pass
+
+        class Child(Base):
+            @override
+            def method(self) -> None:
+                super().method()
+
+    When this decorator is applied to a method, the type checker will
+    validate that it overrides a method or attribute with the same name on a
+    base class.  This helps prevent bugs that may occur when a base class is
+    changed without an equivalent change to a child class.
+
+    There is no runtime checking of this property. The decorator sets the
+    ``__override__`` attribute to ``True`` on the decorated object to allow
+    runtime introspection.
+
+    See PEP 698 for details.
+
+    """
+    try:
+        method.__override__ = True
+    except (AttributeError, TypeError):
+        # Skip the attribute silently if it is not writable.
+        # AttributeError happens if the object has __slots__ or a
+        # read-only property, TypeError if it's a builtin class.
+        pass
+    return method
