@@ -1496,7 +1496,7 @@ Basic customization
    By default, the :class:`object` class provides implementations consistent
    with :ref:`comparisons`: equality compares according to object identity,
    and order comparisons raise :exc:`TypeError`. Each default method may generate
-   these results directly, but may also return ``NotImplemented``.
+   these results directly, but may also return :data:`NotImplemented`.
 
    See the paragraph on :meth:`__hash__` for
    some important notes on creating :term:`hashable` objects which support
