@@ -1837,6 +1837,18 @@ _Py_GetGlobalAllocatedBlocks(void)
     return 0;
 }
 
+void
+_PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *Py_UNUSED(interp))
+{
+    return;
+}
+
+void
+_Py_FinalizeAllocatedBlocks(_PyRuntimeState *Py_UNUSED(runtime))
+{
+    return;
+}
+
 #endif /* WITH_PYMALLOC */
 
 
