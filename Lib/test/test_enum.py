@@ -11,7 +11,7 @@ import typing
 import builtins as bltns
 from collections import OrderedDict
 from datetime import date
-from enum import Enum, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
+from enum import Enum, EnumMeta, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
 from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
 from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS, ReprEnum
 from enum import member, nonmember, _iter_bits_lsb
@@ -270,6 +270,17 @@ class _EnumTests:
             first = auto()
         self.NewSubEnum = NewSubEnum
         #
+        class LazyGNV(self.enum_type):
+            def _generate_next_value_(name, start, last, values):
+                pass
+        self.LazyGNV = LazyGNV
+        #
+        class BusyGNV(self.enum_type):
+            @staticmethod
+            def _generate_next_value_(name, start, last, values):
+                pass
+        self.BusyGNV = BusyGNV
+        #
         self.is_flag = False
         self.names = ['first', 'second', 'third']
         if issubclass(MainEnum, StrEnum):
@@ -466,6 +477,12 @@ class _EnumTests:
         Main = self.MainEnum
         self.assertIs(Main(Main.first), Main.first)
 
+    def test_gnv_is_static(self):
+        lazy = self.LazyGNV
+        busy = self.BusyGNV
+        self.assertTrue(type(lazy.__dict__['_generate_next_value_']) is staticmethod)
+        self.assertTrue(type(busy.__dict__['_generate_next_value_']) is staticmethod)
+
     def test_hash(self):
         MainEnum = self.MainEnum
         mapping = {}
@@ -643,6 +660,13 @@ class _EnumTests:
             that = auto()
             theother = auto()
         self.assertEqual(repr(MySubEnum.that), "My name is that.")
+
+    def test_multiple_superclasses_repr(self):
+        class _EnumSuperClass(metaclass=EnumMeta):
+            pass
+        class E(_EnumSuperClass, Enum):
+            A = 1
+        self.assertEqual(repr(E.A), "<E.A: 1>")
 
     def test_reversed_iteration_order(self):
         self.assertEqual(
@@ -1361,7 +1385,6 @@ class TestSpecial(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'too many data types'):
             class Huh(MyStr, MyInt, Enum):
                 One = 1
-
 
     def test_pickle_enum(self):
         if isinstance(Stooges, Exception):

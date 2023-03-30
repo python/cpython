@@ -936,7 +936,7 @@ which incur interpreter overhead.
                n = quotient
                if n == 1:
                    return
-       if n >= 2:
+       if n > 1:
            yield n
 
    def flatten(list_of_lists):

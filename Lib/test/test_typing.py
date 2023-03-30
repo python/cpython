@@ -2049,6 +2049,48 @@ class BaseCallableTests:
                          Callable[Concatenate[int, str, P2], int])
         self.assertEqual(C[...], Callable[Concatenate[int, ...], int])
 
+    def test_nested_paramspec(self):
+        # Since Callable has some special treatment, we want to be sure
+        # that substituion works correctly, see gh-103054
+        Callable = self.Callable
+        P = ParamSpec('P')
+        P2 = ParamSpec('P2')
+        T = TypeVar('T')
+        T2 = TypeVar('T2')
+        Ts = TypeVarTuple('Ts')
+        class My(Generic[P, T]):
+            pass
+
+        self.assertEqual(My.__parameters__, (P, T))
+
+        C1 = My[[int, T2], Callable[P2, T2]]
+        self.assertEqual(C1.__args__, ((int, T2), Callable[P2, T2]))
+        self.assertEqual(C1.__parameters__, (T2, P2))
+        self.assertEqual(C1[str, [list[int], bytes]],
+                         My[[int, str], Callable[[list[int], bytes], str]])
+
+        C2 = My[[Callable[[T2], int], list[T2]], str]
+        self.assertEqual(C2.__args__, ((Callable[[T2], int], list[T2]), str))
+        self.assertEqual(C2.__parameters__, (T2,))
+        self.assertEqual(C2[list[str]],
+                         My[[Callable[[list[str]], int], list[list[str]]], str])
+
+        C3 = My[[Callable[P2, T2], T2], T2]
+        self.assertEqual(C3.__args__, ((Callable[P2, T2], T2), T2))
+        self.assertEqual(C3.__parameters__, (P2, T2))
+        self.assertEqual(C3[[], int],
+                         My[[Callable[[], int], int], int])
+        self.assertEqual(C3[[str, bool], int],
+                         My[[Callable[[str, bool], int], int], int])
+        self.assertEqual(C3[[str, bool], T][int],
+                         My[[Callable[[str, bool], int], int], int])
+
+        C4 = My[[Callable[[int, *Ts, str], T2], T2], T2]
+        self.assertEqual(C4.__args__, ((Callable[[int, *Ts, str], T2], T2), T2))
+        self.assertEqual(C4.__parameters__, (Ts, T2))
+        self.assertEqual(C4[bool, bytes, float],
+                         My[[Callable[[int, bool, bytes, str], float], float], float])
+
     def test_errors(self):
         Callable = self.Callable
         alias = Callable[[int, str], float]
@@ -7678,6 +7720,127 @@ class ParamSpecTests(BaseTestCase):
                     typing.Callable[P, T][arg, str]
                 with self.assertRaises(TypeError):
                     collections.abc.Callable[P, T][arg, str]
+
+    def test_type_var_subst_for_other_type_vars(self):
+        T = TypeVar('T')
+        T2 = TypeVar('T2')
+        P = ParamSpec('P')
+        P2 = ParamSpec('P2')
+        Ts = TypeVarTuple('Ts')
+
+        class Base(Generic[P]):
+            pass
+
+        A1 = Base[T]
+        self.assertEqual(A1.__parameters__, (T,))
+        self.assertEqual(A1.__args__, ((T,),))
+        self.assertEqual(A1[int], Base[int])
+
+        A2 = Base[[T]]
+        self.assertEqual(A2.__parameters__, (T,))
+        self.assertEqual(A2.__args__, ((T,),))
+        self.assertEqual(A2[int], Base[int])
+
+        A3 = Base[[int, T]]
+        self.assertEqual(A3.__parameters__, (T,))
+        self.assertEqual(A3.__args__, ((int, T),))
+        self.assertEqual(A3[str], Base[[int, str]])
+
+        A4 = Base[[T, int, T2]]
+        self.assertEqual(A4.__parameters__, (T, T2))
+        self.assertEqual(A4.__args__, ((T, int, T2),))
+        self.assertEqual(A4[str, bool], Base[[str, int, bool]])
+
+        A5 = Base[[*Ts, int]]
+        self.assertEqual(A5.__parameters__, (Ts,))
+        self.assertEqual(A5.__args__, ((*Ts, int),))
+        self.assertEqual(A5[str, bool], Base[[str, bool, int]])
+
+        A5_2 = Base[[int, *Ts]]
+        self.assertEqual(A5_2.__parameters__, (Ts,))
+        self.assertEqual(A5_2.__args__, ((int, *Ts),))
+        self.assertEqual(A5_2[str, bool], Base[[int, str, bool]])
+
+        A6 = Base[[T, *Ts]]
+        self.assertEqual(A6.__parameters__, (T, Ts))
+        self.assertEqual(A6.__args__, ((T, *Ts),))
+        self.assertEqual(A6[int, str, bool], Base[[int, str, bool]])
+
+        A7 = Base[[T, T]]
+        self.assertEqual(A7.__parameters__, (T,))
+        self.assertEqual(A7.__args__, ((T, T),))
+        self.assertEqual(A7[int], Base[[int, int]])
+
+        A8 = Base[[T, list[T]]]
+        self.assertEqual(A8.__parameters__, (T,))
+        self.assertEqual(A8.__args__, ((T, list[T]),))
+        self.assertEqual(A8[int], Base[[int, list[int]]])
+
+        A9 = Base[[Tuple[*Ts], *Ts]]
+        self.assertEqual(A9.__parameters__, (Ts,))
+        self.assertEqual(A9.__args__, ((Tuple[*Ts], *Ts),))
+        self.assertEqual(A9[int, str], Base[Tuple[int, str], int, str])
+
+        A10 = Base[P2]
+        self.assertEqual(A10.__parameters__, (P2,))
+        self.assertEqual(A10.__args__, (P2,))
+        self.assertEqual(A10[[int, str]], Base[[int, str]])
+
+        class DoubleP(Generic[P, P2]):
+            pass
+
+        B1 = DoubleP[P, P2]
+        self.assertEqual(B1.__parameters__, (P, P2))
+        self.assertEqual(B1.__args__, (P, P2))
+        self.assertEqual(B1[[int, str], [bool]], DoubleP[[int,  str], [bool]])
+        self.assertEqual(B1[[], []], DoubleP[[], []])
+
+        B2 = DoubleP[[int, str], P2]
+        self.assertEqual(B2.__parameters__, (P2,))
+        self.assertEqual(B2.__args__, ((int, str), P2))
+        self.assertEqual(B2[[bool, bool]], DoubleP[[int,  str], [bool, bool]])
+        self.assertEqual(B2[[]], DoubleP[[int,  str], []])
+
+        B3 = DoubleP[P, [bool, bool]]
+        self.assertEqual(B3.__parameters__, (P,))
+        self.assertEqual(B3.__args__, (P, (bool, bool)))
+        self.assertEqual(B3[[int, str]], DoubleP[[int,  str], [bool, bool]])
+        self.assertEqual(B3[[]], DoubleP[[], [bool, bool]])
+
+        B4 = DoubleP[[T, int], [bool, T2]]
+        self.assertEqual(B4.__parameters__, (T, T2))
+        self.assertEqual(B4.__args__, ((T, int), (bool, T2)))
+        self.assertEqual(B4[str, float], DoubleP[[str, int], [bool, float]])
+
+        B5 = DoubleP[[*Ts, int], [bool, T2]]
+        self.assertEqual(B5.__parameters__, (Ts, T2))
+        self.assertEqual(B5.__args__, ((*Ts, int), (bool, T2)))
+        self.assertEqual(B5[str, bytes, float],
+                         DoubleP[[str, bytes, int], [bool, float]])
+
+        B6 = DoubleP[[T, int], [bool, *Ts]]
+        self.assertEqual(B6.__parameters__, (T, Ts))
+        self.assertEqual(B6.__args__, ((T, int), (bool, *Ts)))
+        self.assertEqual(B6[str, bytes, float],
+                         DoubleP[[str, int], [bool, bytes, float]])
+
+        class PandT(Generic[P, T]):
+            pass
+
+        C1 = PandT[P, T]
+        self.assertEqual(C1.__parameters__, (P, T))
+        self.assertEqual(C1.__args__, (P, T))
+        self.assertEqual(C1[[int, str], bool], PandT[[int, str], bool])
+
+        C2 = PandT[[int, T], T]
+        self.assertEqual(C2.__parameters__, (T,))
+        self.assertEqual(C2.__args__, ((int, T), T))
+        self.assertEqual(C2[str], PandT[[int, str], str])
+
+        C3 = PandT[[int, *Ts], T]
+        self.assertEqual(C3.__parameters__, (Ts, T))
+        self.assertEqual(C3.__args__, ((int, *Ts), T))
+        self.assertEqual(C3[str, bool, bytes], PandT[[int, str, bool], bytes])
 
     def test_paramspec_in_nested_generics(self):
         # Although ParamSpec should not be found in __parameters__ of most

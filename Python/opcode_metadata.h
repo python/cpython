@@ -215,13 +215,11 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case COMPARE_OP:
             return 2;
-        case COMPARE_AND_BRANCH:
+        case COMPARE_OP_FLOAT:
             return 2;
-        case COMPARE_AND_BRANCH_FLOAT:
+        case COMPARE_OP_INT:
             return 2;
-        case COMPARE_AND_BRANCH_INT:
-            return 2;
-        case COMPARE_AND_BRANCH_STR:
+        case COMPARE_OP_STR:
             return 2;
         case IS_OP:
             return 2;
@@ -563,14 +561,12 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case COMPARE_OP:
             return 1;
-        case COMPARE_AND_BRANCH:
-            return 0;
-        case COMPARE_AND_BRANCH_FLOAT:
-            return 0;
-        case COMPARE_AND_BRANCH_INT:
-            return 0;
-        case COMPARE_AND_BRANCH_STR:
-            return 0;
+        case COMPARE_OP_FLOAT:
+            return 1;
+        case COMPARE_OP_INT:
+            return 1;
+        case COMPARE_OP_STR:
+            return 1;
         case IS_OP:
             return 1;
         case CONTAINS_OP:
@@ -699,7 +695,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC0, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
 struct opcode_metadata {
     bool valid_entry;
     enum InstructionFormat instr_format;
@@ -735,13 +731,13 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BINARY_OP_INPLACE_ADD_UNICODE] = { true, INSTR_FMT_IX },
     [BINARY_OP_ADD_FLOAT] = { true, INSTR_FMT_IXC },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IXC },
-    [BINARY_SUBSCR] = { true, INSTR_FMT_IXC000 },
+    [BINARY_SUBSCR] = { true, INSTR_FMT_IXC },
     [BINARY_SLICE] = { true, INSTR_FMT_IX },
     [STORE_SLICE] = { true, INSTR_FMT_IX },
-    [BINARY_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC000 },
-    [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC000 },
-    [BINARY_SUBSCR_DICT] = { true, INSTR_FMT_IXC000 },
-    [BINARY_SUBSCR_GETITEM] = { true, INSTR_FMT_IXC000 },
+    [BINARY_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC },
+    [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC },
+    [BINARY_SUBSCR_DICT] = { true, INSTR_FMT_IXC },
+    [BINARY_SUBSCR_GETITEM] = { true, INSTR_FMT_IXC },
     [LIST_APPEND] = { true, INSTR_FMT_IB },
     [SET_ADD] = { true, INSTR_FMT_IB },
     [STORE_SUBSCR] = { true, INSTR_FMT_IXC },
@@ -812,10 +808,9 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [STORE_ATTR_WITH_HINT] = { true, INSTR_FMT_IBC000 },
     [STORE_ATTR_SLOT] = { true, INSTR_FMT_IXC000 },
     [COMPARE_OP] = { true, INSTR_FMT_IBC },
-    [COMPARE_AND_BRANCH] = { true, INSTR_FMT_IBC0 },
-    [COMPARE_AND_BRANCH_FLOAT] = { true, INSTR_FMT_IBC0 },
-    [COMPARE_AND_BRANCH_INT] = { true, INSTR_FMT_IBC0 },
-    [COMPARE_AND_BRANCH_STR] = { true, INSTR_FMT_IBC0 },
+    [COMPARE_OP_FLOAT] = { true, INSTR_FMT_IBC },
+    [COMPARE_OP_INT] = { true, INSTR_FMT_IBC },
+    [COMPARE_OP_STR] = { true, INSTR_FMT_IBC },
     [IS_OP] = { true, INSTR_FMT_IB },
     [CONTAINS_OP] = { true, INSTR_FMT_IB },
     [CHECK_EG_MATCH] = { true, INSTR_FMT_IX },
