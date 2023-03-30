@@ -1,7 +1,8 @@
 This directory contains a number of Python programs that are useful
 while building or extending Python.
 
-build           ...
+build           Build-time toolkit for detecting, handling/avoiding 
+                various file and formatting errors.
 
 buildbot        Batchfiles for running on Windows buildbot workers.
 
@@ -13,7 +14,10 @@ cases_generator Parses instruction definitions from Python/bytecodes.c,
 
 ccbench         A Python threads-based concurrency benchmark. (*)
 
-clinic          ...
+clinic          Preprocessor for CPython C files. Automates all the 
+                boilerplates involved with writing argument parsing 
+                code for builtins and providing introspection signatures 
+                ("docstrings") for CPython builtins.
 
 freeze          Create a stand-alone executable from a Python program.
 
@@ -32,13 +36,10 @@ iobench         Benchmark for the new Python I/O system. (*)
 
 msi             Support for packaging Python as an MSI package on Windows.
 
-nuget           Runs Python tests against multiple installations of OpenSSL 
-                and LibreSSL. Contains tools to download the 
-                OpenSSL/LibreSSL tar bundle.
+nuget           Builds NuGet packages for CPython.
 
-patchcheck      ...
-
-parser          Un-parsing tool to generate code from an AST.
+patchcheck      Checks for common issues in the proposed changes of a 
+                given code patch.
 
 peg_generator   PEG-based parser generator (pegen) used for new parser.
 
@@ -47,12 +48,15 @@ scripts         A number of useful single-file programs, e.g. tabnanny.py
                 tabs and spaces, and 2to3, which converts Python 2 code
                 to Python 3 code.
                 
-ssl             ...
+ssl             Runs Python tests against multiple installations of OpenSSL 
+                and LibreSSL. Contains tools to download the 
+                OpenSSL/LibreSSL tar bundle.
 
 stringbench     A suite of micro-benchmarks for various operations on
                 strings (both 8-bit and unicode). (*)
                 
-tz              ...
+tz              Time Zone Database (tz) dump module. Enables reading from
+                /usr/share/zoneinfo to obtain zone data.
 
 unicode         Tools for generating unicodedata and codecs from unicode.org
                 and other mapping files (by Fredrik Lundh, Marc-Andre Lemburg
