@@ -1,0 +1,3 @@
+Added support for unicode logins/passwords for SMTP authentication.
+
+This includes SASLprep support, graciously contributed by MongoDB.com.

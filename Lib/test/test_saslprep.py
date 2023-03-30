@@ -13,12 +13,8 @@
 # limitations under the License.
 
 import sys
-
-sys.path[0:0] = [""]
-
-from test import unittest
-
-from pymongo.saslprep import saslprep
+import unittest
+from saslprep import saslprep
 
 
 class TestSASLprep(unittest.TestCase):
