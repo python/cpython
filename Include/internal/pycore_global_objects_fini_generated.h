@@ -919,7 +919,9 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fillvalue));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(filters));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(final));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(finalizer));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(find_class));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(firstiter));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fix_imports));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(flags));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(flush));
