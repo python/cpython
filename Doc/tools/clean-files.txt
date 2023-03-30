@@ -1,6 +1,7 @@
 # These files must pass Sphinx nit-picky mode, as tested on the CI
 # via touch-clean-files.py in doc.yml.
-# Add blank lines between files to help avoid merge conflicts.
+# Add blank lines between files and keep them sorted lexicographically
+# to help avoid merge conflicts.
 
 Doc/library/gc.rst
 
