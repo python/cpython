@@ -1,7 +1,7 @@
 This directory contains a number of Python programs that are useful
 while building or extending Python.
 
-build           Build-time toolkit for detecting, handling/avoiding 
+build           Build-time toolkit for detecting and handling/preventing 
                 various file and formatting errors.
 
 buildbot        Batchfiles for running on Windows buildbot workers.
