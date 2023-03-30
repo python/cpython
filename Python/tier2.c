@@ -1979,8 +1979,10 @@ _PyTier2_GenerateNextBBMetaWithTypeContext(
         // DEOPTIMIZE TO TIER 1?
         return NULL;
     }
-    if (BB_TEST_IS_REQUIRES_POP(bb_flag)) {
-        __type_stack_shrink(&(type_context_copy->type_stack_ptr), 1);
+
+    int n_required_pop = BB_TEST_GET_N_REQUIRES_POP(bb_flag);
+    if (n_required_pop) {
+        __type_stack_shrink(&(type_context_copy->type_stack_ptr), n_required_pop);
     }
     // For type branches, they directly precede the bb branch instruction
     _Py_CODEUNIT *prev_type_guard = BB_IS_TYPE_BRANCH(bb_id_tagged)

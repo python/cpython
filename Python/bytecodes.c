@@ -2190,7 +2190,7 @@ dummy_func(
                 /* iterator ended normally */
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
-                bb_test = BB_TEST(0, 1);
+                bb_test = BB_TEST(0, 2);
                 JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER);
                 DISPATCH();
             }
