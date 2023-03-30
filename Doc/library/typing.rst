@@ -38,6 +38,14 @@ provides backports of these new features to older versions of Python.
 
 .. seealso::
 
+   For a quick overview of type hints, refer to
+   `this cheat sheet <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_.
+
+   The "Type System Reference" section of https://mypy.readthedocs.io/ -- since
+   the Python typing system is standardised via PEPs, this reference should
+   broadly apply to most Python type checkers, although some parts may still be
+   specific to mypy.
+
    The documentation at https://typing.readthedocs.io/ serves as useful reference
    for type system features, useful typing related tools and typing best practices.
 
