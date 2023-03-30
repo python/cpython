@@ -41,7 +41,7 @@ static const uint32_t _PyOpcode_Jump[9] = {
 };
 
 const uint8_t _PyOpcode_Caches[256] = {
-    [BINARY_SUBSCR] = 4,
+    [BINARY_SUBSCR] = 1,
     [STORE_SUBSCR] = 1,
     [UNPACK_SEQUENCE] = 1,
     [FOR_ITER] = 1,

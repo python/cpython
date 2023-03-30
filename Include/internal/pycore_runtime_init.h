@@ -41,6 +41,11 @@ extern PyTypeObject _PyExc_MemoryError;
            in accordance with the specification. */ \
         .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
+        .imports = { \
+            .extensions = { \
+                .main_tstate = _PyThreadState_INIT, \
+            }, \
+        }, \
         .ceval = { \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
         }, \
@@ -58,9 +63,6 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .types = { \
             .next_version_tag = 1, \
-        }, \
-        .cached_objects = { \
-            .main_tstate = _PyThreadState_INIT, \
         }, \
         .static_objects = { \
             .singletons = { \
