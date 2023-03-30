@@ -1,1 +1,2 @@
-Include the "object" type in the lists of documented types. Co-Authored-By: @cjerdonek
+Include the :class:`object` type in the lists of documented types.
+Change by Furkan Onder and Martin Panter.
