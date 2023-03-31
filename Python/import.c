@@ -983,13 +983,13 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
     res = 0;
 
 finally:
+    Py_XDECREF(key);
     if (oldts != NULL) {
         _PyThreadState_Swap(interp->runtime, oldts);
         _PyThreadState_UnbindDetached(main_tstate);
         Py_DECREF(name);
         Py_DECREF(filename);
     }
-    Py_XDECREF(key);
     extensions_lock_release();
     return res;
 }
