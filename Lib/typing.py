@@ -2034,13 +2034,15 @@ class _ProtocolMeta(ABCMeta):
         if is_protocol_cls:
             sentinel = object()
             getattr_static = _lazy_load_getattr_static()
-            if all(
-                    (getattr_static(instance, attr, sentinel) is not sentinel) and
-                    # All *methods* can be blocked by setting them to None.
-                    (not callable(getattr(cls, attr, None)) or
-                     getattr(instance, attr) is not None)
-                    for attr in protocol_attrs):
+            for attr in protocol_attrs:
+                val = getattr_static(instance, attr, sentinel)
+                if val is sentinel:
+                    break
+                if callable(getattr(cls, attr, None)) and val is None:
+                    break
+            else:
                 return True
+
         return super().__instancecheck__(instance)
 
 

@@ -2705,7 +2705,15 @@ class ProtocolTests(BaseTestCase):
         class PG1(Protocol[T]):
             attr: T
 
-        for protocol_class in P, P1, PG, PG1:
+        @runtime_checkable
+        class MethodP(Protocol):
+            def attr(self): ...
+
+        @runtime_checkable
+        class MethodPG(Protocol[T]):
+            def attr(self) -> T: ...
+
+        for protocol_class in P, P1, PG, PG1, MethodP, MethodPG:
             for klass in C, D, E, F:
                 with self.subTest(
                     klass=klass.__name__,
@@ -2730,7 +2738,12 @@ class ProtocolTests(BaseTestCase):
         class BadPG1(Protocol[T]):
             attr: T
 
-        for obj in PG[T], PG[C], PG1[T], PG1[C], BadP, BadP1, BadPG, BadPG1:
+        cases = (
+            PG[T], PG[C], PG1[T], PG1[C], MethodPG[T],
+            MethodPG[C], BadP, BadP1, BadPG, BadPG1
+        )
+
+        for obj in cases:
             for klass in C, D, E, F, Empty:
                 with self.subTest(klass=klass.__name__, obj=obj):
                     with self.assertRaises(TypeError):
