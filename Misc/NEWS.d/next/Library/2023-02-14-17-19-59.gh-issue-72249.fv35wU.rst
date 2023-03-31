@@ -1,1 +1,2 @@
 Include the module name in the repr of partial object.
+Change by Furkan Onder and Anilyka Barry.
