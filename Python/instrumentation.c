@@ -1391,18 +1391,18 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
     return 0;
 }
 
-static const bool super_instructions[256] = {
-    [LOAD_FAST__LOAD_FAST] = true,
-    [LOAD_FAST__LOAD_CONST] = true,
-    [STORE_FAST__LOAD_FAST] = true,
-    [STORE_FAST__STORE_FAST] = true,
-    [LOAD_CONST__LOAD_FAST] = true,
+static const uint8_t super_instructions[256] = {
+    [LOAD_FAST__LOAD_FAST] = 1,
+    [LOAD_FAST__LOAD_CONST] = 1,
+    [STORE_FAST__LOAD_FAST] = 1,
+    [STORE_FAST__STORE_FAST] = 1,
+    [LOAD_CONST__LOAD_FAST] = 1,
 };
 
 /* Should use instruction metadata for this */
 static bool
 is_super_instruction(int opcode) {
-    return super_instructions[opcode];
+    return super_instructions[opcode] != 0;
 }
 
 int
