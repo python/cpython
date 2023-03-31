@@ -190,11 +190,11 @@ def addpackage(sitedir, name, known_paths):
                 if not dircase in known_paths and os.path.exists(dir):
                     sys.path.append(dir)
                     known_paths.add(dircase)
-            except Exception:
+            except Exception as exc:
                 print("Error processing line {:d} of {}:\n".format(n+1, fullname),
                       file=sys.stderr)
                 import traceback
-                for record in traceback.format_exception(*sys.exc_info()):
+                for record in traceback.format_exception(exc):
                     for line in record.splitlines():
                         print('  '+line, file=sys.stderr)
                 print("\nRemainder of file ignored", file=sys.stderr)

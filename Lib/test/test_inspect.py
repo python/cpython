@@ -430,7 +430,7 @@ class TestInterpreterStack(IsTestBase):
         git.abuse(7, 8, 9)
 
     def test_abuse_done(self):
-        self.istest(inspect.istraceback, 'git.ex[2]')
+        self.istest(inspect.istraceback, 'git.ex.__traceback__')
         self.istest(inspect.isframe, 'mod.fr')
 
     def test_stack(self):
