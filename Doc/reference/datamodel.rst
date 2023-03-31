@@ -1406,7 +1406,7 @@ Basic customization
    Called by :func:`str(object) <str>`, the default :meth:`__format__` implementation,
    and the built-in function :func:`print`, to compute the "informal" or nicely
    printable string representation of an object.  The return value must be a
-   :ref:`string <textseq>` object.
+   :class:`str` object.
 
    This method differs from :meth:`object.__repr__` in that there is no
    expectation that :meth:`__str__` return a valid Python expression: a more
