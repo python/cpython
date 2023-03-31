@@ -1903,15 +1903,19 @@ class _TypingEllipsis:
     """Internal placeholder for ... (ellipsis)."""
 
 
-_TYPING_INTERNALS = ['__parameters__', '__orig_bases__',  '__orig_class__',
-                     '_is_protocol', '_is_runtime_protocol']
+_TYPING_INTERNALS = frozenset({
+    '__parameters__', '__orig_bases__',  '__orig_class__',
+    '_is_protocol', '_is_runtime_protocol'
+})
 
-_SPECIAL_NAMES = ['__abstractmethods__', '__annotations__', '__dict__', '__doc__',
-                  '__init__', '__module__', '__new__', '__slots__',
-                  '__subclasshook__', '__weakref__', '__class_getitem__']
+_SPECIAL_NAMES = frozenset({
+    '__abstractmethods__', '__annotations__', '__dict__', '__doc__',
+    '__init__', '__module__', '__new__', '__slots__',
+    '__subclasshook__', '__weakref__', '__class_getitem__'
+})
 
 # These special attributes will be not collected as protocol members.
-EXCLUDED_ATTRIBUTES = _TYPING_INTERNALS + _SPECIAL_NAMES + ['_MutableMapping__marker']
+EXCLUDED_ATTRIBUTES = _TYPING_INTERNALS | _SPECIAL_NAMES | {'_MutableMapping__marker'}
 
 
 def _get_protocol_attrs(cls):
@@ -1922,10 +1926,10 @@ def _get_protocol_attrs(cls):
     """
     attrs = set()
     for base in cls.__mro__[:-1]:  # without object
-        if base.__name__ in ('Protocol', 'Generic'):
+        if base.__name__ in {'Protocol', 'Generic'}:
             continue
         annotations = getattr(base, '__annotations__', {})
-        for attr in list(base.__dict__.keys()) + list(annotations.keys()):
+        for attr in (*base.__dict__, *annotations):
             if not attr.startswith('_abc_') and attr not in EXCLUDED_ATTRIBUTES:
                 attrs.add(attr)
     return attrs
