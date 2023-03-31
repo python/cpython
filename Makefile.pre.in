@@ -1198,7 +1198,7 @@ DEEPFREEZE_DEPS=$(srcdir)/Tools/build/deepfreeze.py $(FREEZE_MODULE_DEPS) $(FROZ
 
 # BEGIN: deepfreeze modules
 Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
-	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/build/deepfreeze.py \
+	python3 $(srcdir)/Tools/build/deepfreeze.py \
 	Python/frozen_modules/importlib._bootstrap.h:importlib._bootstrap \
 	Python/frozen_modules/importlib._bootstrap_external.h:importlib._bootstrap_external \
 	Python/frozen_modules/zipimport.h:zipimport \
