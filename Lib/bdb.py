@@ -32,6 +32,9 @@ class Bdb:
         self.skip = set(skip) if skip else None
         self.breaks = {}
         self.fncache = {}
+        self._curframe = None
+        self.lasti = -1
+        self.trace_opcodes = False
         self.frame_returning = None
 
         self._load_breaks()
@@ -84,6 +87,8 @@ class Bdb:
 
         The arg parameter depends on the previous event.
         """
+        self._curframe = frame
+
         if self.quitting:
             return # None
         if event == 'line':
@@ -94,6 +99,8 @@ class Bdb:
             return self.dispatch_return(frame, arg)
         if event == 'exception':
             return self.dispatch_exception(frame, arg)
+        if event == 'opcode':
+            return self.dispatch_opcode(frame)
         if event == 'c_call':
             return self.trace_dispatch
         if event == 'c_exception':
@@ -115,6 +122,18 @@ class Bdb:
             if self.quitting: raise BdbQuit
         return self.trace_dispatch
 
+    def dispatch_opcode(self, frame):
+        """Invoke user function and return trace function for opcode event.
+
+        If the debugger stops on the current opcode, invoke
+        self.user_opcode(). Raise BdbQuit if self.quitting is set.
+        Return self.trace_dispatch to continue tracing in this scope.
+        """
+        if self.stop_here(frame) or self.break_here(frame):
+            self.user_opcode(frame)
+            if self.quitting: raise BdbQuit
+        return self.trace_dispatch
+
     def dispatch_call(self, frame, arg):
         """Invoke user function and return trace function for call event.
 
@@ -122,6 +141,11 @@ class Bdb:
         self.user_call(). Raise BdbQuit if self.quitting is set.
         Return self.trace_dispatch to continue tracing in this scope.
         """
+        if self.trace_opcodes:
+            frame.f_trace_opcodes = True
+        else:
+            frame.f_trace_opcodes = False
+
         # XXX 'arg' is no longer used
         if self.botframe is None:
             # First call of dispatch since reset()
@@ -209,9 +233,15 @@ class Bdb:
         if frame is self.stopframe:
             if self.stoplineno == -1:
                 return False
-            return frame.f_lineno >= self.stoplineno
+            if self.trace_opcodes:
+                return self.lasti != frame.f_lasti
+            else:
+                return frame.f_lineno >= self.stoplineno
         if not self.stopframe:
-            return True
+            if self.trace_opcodes:
+                return self.lasti != frame.f_lasti
+            else:
+                return True
         return False
 
     def break_here(self, frame):
@@ -272,7 +302,21 @@ class Bdb:
         """Called when we stop on an exception."""
         pass
 
-    def _set_stopinfo(self, stopframe, returnframe, stoplineno=0):
+    def user_opcode(self, frame):
+        """Called when we stop or break at a opcode."""
+        pass
+
+    def _set_trace_opcodes(self, trace_opcodes):
+        if trace_opcodes != self.trace_opcodes:
+            self.trace_opcodes = trace_opcodes
+            frame = self._curframe
+            while frame is not None:
+                frame.f_trace_opcodes = trace_opcodes
+                if frame is self.botframe:
+                    break
+                frame = frame.f_back
+
+    def _set_stopinfo(self, stopframe, returnframe, stoplineno=0, lasti=None):
         """Set the attributes for stopping.
 
         If stoplineno is greater than or equal to 0, then stop at line
@@ -285,6 +329,12 @@ class Bdb:
         # stoplineno >= 0 means: stop at line >= the stoplineno
         # stoplineno -1 means: don't stop at all
         self.stoplineno = stoplineno
+        if lasti:
+            # We are stopping at opcode level
+            self._set_trace_opcodes(True)
+            self.lasti = lasti
+        else:
+            self._set_trace_opcodes(False)
 
     # Derived classes and clients can call the following methods
     # to affect the stepping state.
@@ -309,9 +359,25 @@ class Bdb:
                 caller_frame.f_trace = self.trace_dispatch
         self._set_stopinfo(None, None)
 
+    def set_stepinst(self, frame):
+        """Stop after one opcode."""
+        # Issue #13183: pdb skips frames after hitting a breakpoint and running
+        # step commands.
+        # Restore the trace function in the caller (that may not have been set
+        # for performance reasons) when returning from the current frame.
+        if self.frame_returning:
+            caller_frame = self.frame_returning.f_back
+            if caller_frame and not caller_frame.f_trace:
+                caller_frame.f_trace = self.trace_dispatch
+        self._set_stopinfo(None, None, lasti=frame.f_lasti)
+
     def set_next(self, frame):
         """Stop on the next line in or below the given frame."""
         self._set_stopinfo(frame, None)
+
+    def set_nextinst(self, frame):
+        """Stop on the next line in or below the given frame."""
+        self._set_stopinfo(frame, None, lasti=frame.f_lasti)
 
     def set_return(self, frame):
         """Stop when returning from the given frame."""
