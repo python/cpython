@@ -73,6 +73,11 @@ typedef struct {
     PyObject *extended_context_template;
 
     PyObject *round_map[_PY_DEC_ROUND_GUARD];
+
+    /* Convert rationals for comparison */
+    PyObject *Rational;
+
+    PyObject *SignalTuple;
 } decimal_state;
 
 static decimal_state global_state;
@@ -563,11 +568,11 @@ signaldict_len(PyObject *self UNUSED)
     return SIGNAL_MAP_LEN;
 }
 
-static PyObject *SignalTuple;
 static PyObject *
 signaldict_iter(PyObject *self UNUSED)
 {
-    return PyTuple_Type.tp_iter(SignalTuple);
+    decimal_state *state = GLOBAL_STATE(); // FIXME: use find_module_state_by_def
+    return PyTuple_Type.tp_iter(state->SignalTuple);
 }
 
 static PyObject *
@@ -3006,8 +3011,6 @@ convert_op(int type_err, PyObject **conv, PyObject *v, PyObject *context)
 /*              Implicit conversions to Decimal for comparison                */
 /******************************************************************************/
 
-/* Convert rationals for comparison */
-static PyObject *Rational = NULL;
 static PyObject *
 multiply_by_denominator(PyObject *v, PyObject *r, PyObject *context)
 {
@@ -3136,7 +3139,7 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
         }
     }
     else {
-        int is_rational = PyObject_IsInstance(w, Rational);
+        int is_rational = PyObject_IsInstance(w, state->Rational);
         if (is_rational < 0) {
             *wcmp = NULL;
         }
@@ -5899,7 +5902,7 @@ PyInit__decimal(void)
                                         (PyObject *)state->PyDec_Type));
     Py_CLEAR(obj);
     /* Rational is a global variable used for fraction comparisons. */
-    ASSIGN_PTR(Rational, PyObject_GetAttrString(numbers, "Rational"));
+    ASSIGN_PTR(state->Rational, PyObject_GetAttrString(numbers, "Rational"));
     /* Done with numbers, Number */
     Py_CLEAR(numbers);
     Py_CLEAR(Number);
@@ -5946,7 +5949,7 @@ PyInit__decimal(void)
     CHECK_INT(PyModule_AddType(m, (PyTypeObject *)state->DecimalException));
 
     /* Create signal tuple */
-    ASSIGN_PTR(SignalTuple, PyTuple_New(SIGNAL_MAP_LEN));
+    ASSIGN_PTR(state->SignalTuple, PyTuple_New(SIGNAL_MAP_LEN));
 
     /* Add exceptions that correspond to IEEE signals */
     for (i = SIGNAL_MAP_LEN-1; i >= 0; i--) {
@@ -5986,7 +5989,7 @@ PyInit__decimal(void)
         CHECK_INT(PyModule_AddObject(m, cm->name, Py_NewRef(cm->ex)));
 
         /* add to signal tuple */
-        PyTuple_SET_ITEM(SignalTuple, i, Py_NewRef(cm->ex));
+        PyTuple_SET_ITEM(state->SignalTuple, i, Py_NewRef(cm->ex));
     }
 
     /*
@@ -6077,11 +6080,11 @@ error:
     Py_CLEAR(obj); /* GCOV_NOT_REACHED */
     Py_CLEAR(numbers); /* GCOV_NOT_REACHED */
     Py_CLEAR(Number); /* GCOV_NOT_REACHED */
-    Py_CLEAR(Rational); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->Rational); /* GCOV_NOT_REACHED */
     Py_CLEAR(collections); /* GCOV_NOT_REACHED */
     Py_CLEAR(collections_abc); /* GCOV_NOT_REACHED */
     Py_CLEAR(MutableMapping); /* GCOV_NOT_REACHED */
-    Py_CLEAR(SignalTuple); /* GCOV_NOT_REACHED */
+    Py_CLEAR(state->SignalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(state->DecimalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(state->default_context_template); /* GCOV_NOT_REACHED */
 #ifndef WITH_DECIMAL_CONTEXTVAR
