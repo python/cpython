@@ -86,7 +86,7 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
-   .. versionchanged:: 3.9
+   .. versionchanged:: 3.12
       Raise :exc:`SpecialFileError` instead of :exc:`OSError` when copying a
       Unix socket. Since the former is a subclass of the latter, this change is
       backward compatible.
