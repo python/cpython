@@ -41,6 +41,10 @@ def write_contents(f):
         while targets[next_op] != '_unknown_opcode':
             next_op += 1
         targets[next_op] = "TARGET_%s" % opname
+    for opname in opcode._uops:
+        while targets[next_op] != '_unknown_opcode':
+            next_op += 1
+        targets[next_op] = "TARGET_%s" % opname
     f.write("static void *opcode_targets[256] = {\n")
     f.write(",\n".join(["    &&%s" % s for s in targets]))
     f.write("\n};\n")
