@@ -582,7 +582,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case UNPACK_SEQUENCE_LIST:
             return oparg;
         case UNPACK_EX:
-            return (oparg & 0xFF) + (oparg >> 8) + 1;
+            return (oparg >> 8) + (oparg & 0xFF) + 1;
         case STORE_ATTR:
             return 0;
         case DELETE_ATTR:

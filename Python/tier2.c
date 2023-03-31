@@ -121,8 +121,8 @@ _PyTier2TypeContext_Copy(const _PyTier2TypeContext *type_context)
             }
             // Is part of stack
             else {
-#if TYPEPROP_DEBUG
                 int offset_stack = (int)(parent - type_context->type_stack);
+#if TYPEPROP_DEBUG
                 assert(0 <= offset_stack && offset_stack < nstack);
 #endif
                 type_locals[i] = _Py_TYPENODE_MAKE_REF((_Py_TYPENODE_t)(&type_stack[offset_stack]));
@@ -152,8 +152,8 @@ _PyTier2TypeContext_Copy(const _PyTier2TypeContext *type_context)
             }
             // Is part of stack
             else {
-#if TYPEPROP_DEBUG
                 int offset_stack = (int)(parent - type_context->type_stack);
+#if TYPEPROP_DEBUG
                 assert(0 <= offset_stack && offset_stack < nstack);
 #endif
                 type_stack[i] = _Py_TYPENODE_MAKE_REF((_Py_TYPENODE_t)(&type_stack[offset_stack]));

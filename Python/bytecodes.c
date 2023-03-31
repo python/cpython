@@ -978,7 +978,7 @@ dummy_func(
             UNPACK_SEQUENCE_LIST,
         };
 
-        inst(UNPACK_SEQUENCE, (unused/1, seq -- unused[oparg])) {
+        inst(UNPACK_SEQUENCE, (unused/1, seq -- values[oparg])) {
             #if ENABLE_SPECIALIZATION
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -1028,7 +1028,7 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(UNPACK_EX, (seq -- unused[oparg & 0xFF], unused, unused[oparg >> 8])) {
+        inst(UNPACK_EX, (seq -- unused[oparg >> 8], unused, values[oparg & 0xFF])) {
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
             PyObject **top = stack_pointer + totalargs - 1;
             int res = unpack_iterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
@@ -3237,6 +3237,7 @@ dummy_func(
 
         inst(COPY_NO_INCREF, (bottom, unused[oparg - 1] -- bottom, unused[oparg - 1], top: *bottom)) {
             assert(oparg > 0);
+            top = bottom;
         }
 
         inst(BINARY_OP, (unused/1, lhs, rhs -- res)) {

@@ -1318,6 +1318,7 @@
             PREDICTED(UNPACK_SEQUENCE);
             static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq = stack_pointer[-1];
+            PyObject **values = stack_pointer - (1);
             #if ENABLE_SPECIALIZATION
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -1391,12 +1392,13 @@
 
         TARGET(UNPACK_EX) {
             PyObject *seq = stack_pointer[-1];
+            PyObject **values = stack_pointer - (1) + 1 + (oparg >> 8);
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
             PyObject **top = stack_pointer + totalargs - 1;
             int res = unpack_iterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             Py_DECREF(seq);
             if (res == 0) goto pop_1_error;
-            STACK_GROW((oparg & 0xFF) + (oparg >> 8));
+            STACK_GROW((oparg >> 8) + (oparg & 0xFF));
             DISPATCH();
         }
 
@@ -4160,6 +4162,7 @@
             PyObject *bottom = stack_pointer[-(1 + (oparg - 1))];
             PyObject *top;
             assert(oparg > 0);
+            top = bottom;
             STACK_GROW(1);
             stack_pointer[-1] = top;
             DISPATCH();

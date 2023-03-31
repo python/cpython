@@ -343,6 +343,7 @@ class Parser(PLexer):
                 cond_text = cond.text.strip()
             size_text = ""
             if self.expect(lx.LBRACKET):
+                # TODO: Support type annotation for size output
                 if has_type_annotation or cond_text:
                     raise self.make_syntax_error("Unexpected [")
                 if not (size := self.expression()):

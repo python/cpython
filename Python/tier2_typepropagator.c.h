@@ -375,32 +375,34 @@
         TARGET(UNPACK_SEQUENCE) {
             STACK_SHRINK(1);
             STACK_GROW(oparg);
+            for (int i = 0; i < (oparg); i++) {TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(oparg - i), true);}
             break;
         }
 
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
             STACK_SHRINK(1);
             STACK_GROW(oparg);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(oparg), true);
+            for (int i = 0; i < (oparg); i++) {TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(oparg - i), true);}
             break;
         }
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
             STACK_SHRINK(1);
             STACK_GROW(oparg);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(oparg), true);
+            for (int i = 0; i < (oparg); i++) {TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(oparg - i), true);}
             break;
         }
 
         TARGET(UNPACK_SEQUENCE_LIST) {
             STACK_SHRINK(1);
             STACK_GROW(oparg);
-            TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(oparg), true);
+            for (int i = 0; i < (oparg); i++) {TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK(oparg - i), true);}
             break;
         }
 
         TARGET(UNPACK_EX) {
-            STACK_GROW((oparg & 0xFF) + (oparg >> 8));
+            STACK_GROW((oparg >> 8) + (oparg & 0xFF));
+            for (int i = 0; i < (oparg & 0xFF); i++) {TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_NULLROOT, TYPESTACK_PEEK((oparg & 0xFF) - i), true);}
             break;
         }
 
