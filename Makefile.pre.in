@@ -411,6 +411,7 @@ PYTHON_OBJS=	\
 		Python/pytime.o \
 		Python/bootstrap_hash.o \
 		Python/specialize.o \
+		Python/tier2.o \
 		Python/structmember.o \
 		Python/symtable.o \
 		Python/sysmodule.o \
