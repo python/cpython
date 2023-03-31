@@ -190,7 +190,7 @@ Other Language Changes
   (Contributed by Nikita Sobolev in :gh:`100581`.)
 
 * :class:`slice` objects are now hashable, allowing them to be used as dict keys and
-  set items. (Contributed by Furkan Onder in :gh:`101264`.)
+  set items. (Contributed by Will Bradshaw and Furkan Onder in :gh:`101264`.)
 
 New Modules
 ===========
@@ -776,6 +776,10 @@ Removed
 * :mod:`ftplib`: Remove the ``FTP_TLS.ssl_version`` class attribute: use the
   *context* parameter instead.
   (Contributed by Victor Stinner in :gh:`94172`.)
+
+* Remove support for obsolete browsers from :mod:`webbrowser`.
+  Removed browsers include: Grail, Mosaic, Netscape, Galeon, Skipstone,
+  Iceape, Firebird, and Firefox versions 35 and below (:gh:`102871`).
 
 
 Porting to Python 3.12
