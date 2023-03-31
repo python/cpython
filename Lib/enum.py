@@ -275,9 +275,11 @@ class _proto_member:
                 try:
                     enum_member._value_ = enum_class._member_type_(*args)
                 except Exception as exc:
-                    raise TypeError(
+                    new_exc = TypeError(
                             '_value_ not set in __new__, unable to create it'
-                            ) from None
+                            )
+                    new_exc.__cause__ = exc
+                    raise new_exc
         value = enum_member._value_
         enum_member._name_ = member_name
         enum_member.__objclass__ = enum_class
