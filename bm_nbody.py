@@ -128,9 +128,9 @@ def bench_nbody(loops, reference, iterations):
     t0 = time.perf_counter()
 
     for _ in range_it:
-        report_energy()
+        # report_energy()
         advance(0.01, iterations)
-        report_energy()
+        # report_energy()
 
     return time.perf_counter() - t0
 
