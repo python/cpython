@@ -644,6 +644,43 @@ _PyErr_StackItemToExcInfoTuple(_PyErr_StackItem *err_info)
 }
 
 
+/* Like PyErr_Restore(), but if an exception is already set,
+   set the context associated with it.
+
+   The caller is responsible for ensuring that this call won't create
+   any cycles in the exception context chain. */
+void
+_PyErr_ChainExceptions(PyObject *typ, PyObject *val, PyObject *tb)
+{
+    if (typ == NULL)
+        return;
+
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    if (!PyExceptionClass_Check(typ)) {
+        _PyErr_Format(tstate, PyExc_SystemError,
+                      "_PyErr_ChainExceptions: "
+                      "exception %R is not a BaseException subclass",
+                      typ);
+        return;
+    }
+
+    if (_PyErr_Occurred(tstate)) {
+        _PyErr_NormalizeException(tstate, &typ, &val, &tb);
+        if (tb != NULL) {
+            PyException_SetTraceback(val, tb);
+            Py_DECREF(tb);
+        }
+        Py_DECREF(typ);
+        PyObject *exc2 = _PyErr_GetRaisedException(tstate);
+        PyException_SetContext(exc2, val);
+        _PyErr_SetRaisedException(tstate, exc2);
+    }
+    else {
+        _PyErr_Restore(tstate, typ, val, tb);
+    }
+}
+
 /* Like PyErr_SetRaisedException(), but if an exception is already set,
    set the context associated with it.
 
