@@ -144,6 +144,6 @@ if __name__ == '__main__':
     bench_nbody(128, DEFAULT_REFERENCE, 128)
     # Showtime
     print("It's showtime")
-    taken = bench_nbody(DEFAULT_ITERATIONS, DEFAULT_REFERENCE, 10_000)
+    taken = bench_nbody(DEFAULT_ITERATIONS, DEFAULT_REFERENCE, 50_000)
     print("Time taken is", taken, "s")
     
