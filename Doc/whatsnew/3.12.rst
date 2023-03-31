@@ -984,7 +984,6 @@ New Features
   to replace the legacy-api :c:func:`PyErr_Display`. (Contributed by
   Irit Katriel in :gh:`102755`).
 
-
 Porting to Python 3.12
 ----------------------
 
