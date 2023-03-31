@@ -1693,16 +1693,17 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
 
 .. function:: ignore_warnings(*, category)
 
-   A decorator to suppress warnings. *category* is a subclass of :exc:`Warning`
-   class. It is approximately equivalent to calling :func:`warnings.catch_warnings()`
-   with :meth:`warnings.simplefilter` set to ``ignore``. If you want to suppress some
-   specific known warnings in a test case, use code like the following::
+   A decorator to suppress warnings. *category* is a subclass of
+   :exc:`Warning` class. It is approximately equivalent to calling
+   :func:`warnings.catch_warnings()` with :meth:`warnings.simplefilter`
+   set to ``ignore``. If you want to suppress some specific known warnings
+   in a test case, use code like the following::
 
       @warning_helper.ignore_warnings(category=DeprecationWarning)
       def test_suppress_warning():
           # do something
 
-   .. versionadded:: 3.8          
+   .. versionadded:: 3.8
 
 
 .. function:: check_no_resource_warning(testcase)
