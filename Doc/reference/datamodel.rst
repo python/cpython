@@ -1273,7 +1273,7 @@ Basic customization
 
    Typical custom implementations create a new instance of the class by invoking the
    superclass's :meth:`__new__` method using ``super().__new__(cls[, ...])``
-   with appropriate arguments and then modify the newly-created instance as necessary
+   with appropriate arguments and then modify the newly created instance as necessary
    before returning it. The base implementation in :class:`object` should only be
    passed the *cls* argument, and returns an uninitialized instance of that class.
 
