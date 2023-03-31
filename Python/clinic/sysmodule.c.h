@@ -553,6 +553,8 @@ PyDoc_STRVAR(sys_set_asyncgen_hooks__doc__,
 "                   finalizer=<unrepresentable>)\n"
 "--\n"
 "\n"
+"set_asyncgen_hooks(* [, firstiter] [, finalizer])\n"
+"\n"
 "Set a finalizer for async generators objects.");
 
 #define SYS_SET_ASYNCGEN_HOOKS_METHODDEF    \
@@ -893,6 +895,8 @@ exit:
 PyDoc_STRVAR(sys_getsizeof__doc__,
 "getsizeof($module, /, object, default=<unrepresentable>)\n"
 "--\n"
+"\n"
+"getsizeof(object [, default]) -> int\n"
 "\n"
 "Return the size of object in bytes.");
 
@@ -1518,4 +1522,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=a5e247703f29e539 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8bce5e0ebd57c3be input=a9049054013a1b77]*/

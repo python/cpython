@@ -1297,13 +1297,15 @@ sys.set_asyncgen_hooks
     firstiter: object = NULL
     finalizer: object = NULL
 
+set_asyncgen_hooks(* [, firstiter] [, finalizer])
+
 Set a finalizer for async generators objects.
 [clinic start generated code]*/
 
 static PyObject *
 sys_set_asyncgen_hooks_impl(PyObject *module, PyObject *firstiter,
                             PyObject *finalizer)
-/*[clinic end generated code: output=6fe3b2dd3f9a9db5 input=ef6a1e96361234be]*/
+/*[clinic end generated code: output=6fe3b2dd3f9a9db5 input=fa1bd81419c4f97b]*/
 {
     if (finalizer && finalizer != Py_None) {
         if (!PyCallable_Check(finalizer)) {
@@ -1793,12 +1795,14 @@ sys.getsizeof
     object: object
     default as dflt: object = NULL
 
+getsizeof(object [, default]) -> int
+
 Return the size of object in bytes.
 [clinic start generated code]*/
 
 static PyObject *
 sys_getsizeof_impl(PyObject *module, PyObject *object, PyObject *dflt)
-/*[clinic end generated code: output=3f326a2f59e30975 input=7712d53f10145836]*/
+/*[clinic end generated code: output=3f326a2f59e30975 input=d21ca2aef11d2ff4]*/
 {
     size_t size;
     PyThreadState *tstate = _PyThreadState_GET();
