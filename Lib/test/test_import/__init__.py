@@ -1528,7 +1528,9 @@ class SubinterpImportTests(unittest.TestCase):
         )
 
     def test_builtin_compat(self):
-        module = 'sys'
+        # For now we avoid using sys or builtins
+        # since they still don't implement multi-phase init.
+        module = '_imp'
         with self.subTest(f'{module}: not strict'):
             self.check_compatible_shared(module, strict=False)
         with self.subTest(f'{module}: strict, shared'):
