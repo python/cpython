@@ -1679,8 +1679,8 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
 static PyObject *
 init_current_context(void)
 {
-    PyObject *tl_context = context_copy(state->default_context_template, NULL);
     decimal_state *state = GLOBAL_STATE();
+    PyObject *tl_context = context_copy(state->default_context_template, NULL);
     if (tl_context == NULL) {
         return NULL;
     }
