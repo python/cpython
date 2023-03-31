@@ -1,1 +1,1 @@
-__subclasshook__() implemented  for the Finders and Loaders In the abc lib.
+__subclasshook__() implemented  for the Finders and Loaders In the abc lib. Patched by Furkan Onder and Eric Snow.
