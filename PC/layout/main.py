@@ -8,11 +8,8 @@ __author__ = "Steve Dower <steve.dower@python.org>"
 __version__ = "3.8"
 
 import argparse
-import functools
 import os
-import re
 import shutil
-import subprocess
 import sys
 import tempfile
 import zipfile
@@ -33,15 +30,12 @@ from .support.pip import *
 from .support.props import *
 from .support.nuspec import *
 
-BDIST_WININST_FILES_ONLY = FileNameSet("wininst-*", "bdist_wininst.py")
-BDIST_WININST_STUB = "PC/layout/support/distutils.command.bdist_wininst.py"
-
-TEST_PYDS_ONLY = FileStemSet("xxlimited", "_ctypes_test", "_test*")
+TEST_PYDS_ONLY = FileStemSet("xxlimited", "xxlimited_35", "_ctypes_test", "_test*")
 TEST_DIRS_ONLY = FileNameSet("test", "tests")
 
 IDLE_DIRS_ONLY = FileNameSet("idlelib")
 
-TCLTK_PYDS_ONLY = FileStemSet("tcl*", "tk*", "_tkinter")
+TCLTK_PYDS_ONLY = FileStemSet("tcl*", "tk*", "_tkinter", "zlib1")
 TCLTK_DIRS_ONLY = FileNameSet("tkinter", "turtledemo")
 TCLTK_FILES_ONLY = FileNameSet("turtle.py")
 
@@ -64,7 +58,7 @@ CDF_FILES = FileSuffixSet(".cdf")
 
 DATA_DIRS = FileNameSet("data")
 
-TOOLS_DIRS = FileNameSet("scripts", "i18n", "pynche", "demo", "parser")
+TOOLS_DIRS = FileNameSet("scripts", "i18n", "parser")
 TOOLS_FILES = FileSuffixSet(".py", ".pyw", ".txt")
 
 
@@ -100,16 +94,10 @@ def get_lib_layout(ns):
         else:
             if f in TCLTK_FILES_ONLY:
                 return ns.include_tcltk
-            if f in BDIST_WININST_FILES_ONLY:
-                return ns.include_bdist_wininst
         return True
 
     for dest, src in rglob(ns.source / "Lib", "**/*", _c):
         yield dest, src
-
-    if not ns.include_bdist_wininst:
-        src = ns.source / BDIST_WININST_STUB
-        yield Path("distutils/command/bdist_wininst.py"), src
 
 
 def get_tcltk_lib(ns):
@@ -173,8 +161,12 @@ def get_layout(ns):
     if ns.include_stable:
         yield from in_build(PYTHON_STABLE_DLL_NAME)
 
+    found_any = False
     for dest, src in rglob(ns.build, "vcruntime*.dll"):
+        found_any = True
         yield dest, src
+    if not found_any:
+        log_error("Failed to locate vcruntime DLL in the build.")
 
     yield "LICENSE.txt", ns.build / "LICENSE.txt"
 
@@ -216,12 +208,7 @@ def get_layout(ns):
 
     if ns.include_dev:
 
-        def _c(d):
-            if d.is_dir():
-                return d.name != "internal"
-            return True
-
-        for dest, src in rglob(ns.source / "Include", "**/*.h", _c):
+        for dest, src in rglob(ns.source / "Include", "**/*.h"):
             yield "include/{}".format(dest), src
         src = ns.source / "PC" / "pyconfig.h"
         yield "include/pyconfig.h", src
@@ -290,14 +277,13 @@ def _compile_one_py(src, dest, name, optimize, checked=True):
         log_warning("Failed to compile {}", src)
         return None
 
+
 # name argument added to address bpo-37641
 def _py_temp_compile(src, name, ns, dest_dir=None, checked=True):
     if not ns.precompile or src not in PY_FILES or src.parent in DATA_DIRS:
         return None
     dest = (dest_dir or ns.temp) / (src.stem + ".pyc")
-    return _compile_one_py(
-        src, dest, name, optimize=2, checked=checked
-    )
+    return _compile_one_py(src, dest, name, optimize=2, checked=checked)
 
 
 def _write_to_zip(zf, dest, src, ns, checked=True):
@@ -502,6 +488,13 @@ def main():
         "-b", "--build", metavar="dir", help="Specify the build directory", type=Path
     )
     parser.add_argument(
+        "--arch",
+        metavar="architecture",
+        help="Specify the target architecture",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
         "--doc-build",
         metavar="dir",
         help="Specify the docs build directory",
@@ -592,6 +585,8 @@ def main():
         ns.doc_build = (Path.cwd() / ns.doc_build).resolve()
     if ns.include_cat and not ns.include_cat.is_absolute():
         ns.include_cat = (Path.cwd() / ns.include_cat).resolve()
+    if not ns.arch:
+        ns.arch = "amd64" if sys.maxsize > 2 ** 32 else "win32"
 
     if ns.copy and not ns.copy.is_absolute():
         ns.copy = (Path.cwd() / ns.copy).resolve()
@@ -607,12 +602,22 @@ def main():
 Source: {ns.source}
 Build:  {ns.build}
 Temp:   {ns.temp}
+Arch:   {ns.arch}
 
 Copy to: {ns.copy}
 Zip to:  {ns.zip}
 Catalog: {ns.catalog}""",
         ns=ns,
     )
+
+    if ns.arch not in ("win32", "amd64", "arm32", "arm64"):
+        log_error("--arch is not a valid value (win32, amd64, arm32, arm64)")
+        return 4
+    if ns.arch in ("arm32", "arm64"):
+        for n in ("include_idle", "include_tcltk"):
+            if getattr(ns, n):
+                log_warning(f"Disabling --{n.replace('_', '-')} on unsupported platform")
+                setattr(ns, n, False)
 
     if ns.include_idle and not ns.include_tcltk:
         log_warning("Assuming --include-tcltk to support --include-idle")

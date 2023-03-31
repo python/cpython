@@ -198,7 +198,7 @@ Pack up a directory into an archive, and run it.
 The same can be done using the :func:`create_archive` function::
 
    >>> import zipapp
-   >>> zipapp.create_archive('myapp.pyz', 'myapp')
+   >>> zipapp.create_archive('myapp', 'myapp.pyz')
 
 To make the application directly executable on POSIX, specify an interpreter
 to use.
@@ -215,7 +215,7 @@ using the :func:`create_archive` function::
    >>> import zipapp
    >>> zipapp.create_archive('old_archive.pyz', 'new_archive.pyz', '/usr/bin/python3')
 
-To update the file in place, do the replacement in memory using a :class:`BytesIO`
+To update the file in place, do the replacement in memory using a :class:`~io.BytesIO`
 object, and then overwrite the source afterwards.  Note that there is a risk
 when overwriting a file in place that an error will result in the loss of
 the original file.  This code does not protect against such errors, but

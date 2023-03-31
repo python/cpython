@@ -6,7 +6,7 @@ of using the typical __path__/__name__ test).
 """
 import unittest
 import warnings
-from .. import util
+from test.test_importlib import util
 
 
 class Using__package__:
@@ -74,8 +74,8 @@ class Using__package__:
         self.assertEqual(module.__name__, 'pkg')
 
     def test_warn_when_package_and_spec_disagree(self):
-        # Raise an ImportWarning if __package__ != __spec__.parent.
-        with self.assertWarns(ImportWarning):
+        # Raise a DeprecationWarning if __package__ != __spec__.parent.
+        with self.assertWarns(DeprecationWarning):
             self.import_module({'__package__': 'pkg.fake',
                                 '__spec__': FakeSpec('pkg.fakefake')})
 
@@ -97,6 +97,16 @@ class FakeSpec:
 
 class Using__package__PEP302(Using__package__):
     mock_modules = util.mock_modules
+
+    def test_using___package__(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_using___package__()
+
+    def test_spec_fallback(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_spec_fallback()
 
 
 (Frozen_UsingPackagePEP302,
@@ -154,6 +164,21 @@ class Setting__package__:
 
 class Setting__package__PEP302(Setting__package__, unittest.TestCase):
     mock_modules = util.mock_modules
+
+    def test_top_level(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_top_level()
+
+    def test_package(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_package()
+
+    def test_submodule(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            super().test_submodule()
 
 class Setting__package__PEP451(Setting__package__, unittest.TestCase):
     mock_modules = util.mock_spec

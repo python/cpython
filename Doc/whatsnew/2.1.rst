@@ -425,7 +425,7 @@ PEP 232: Function Attributes
 In Python 2.1, functions can now have arbitrary information attached to them.
 People were often using docstrings to hold information about functions and
 methods, because the ``__doc__`` attribute was the only way of attaching any
-information to a function.  For example, in the Zope Web application server,
+information to a function.  For example, in the Zope web application server,
 functions are marked as safe for public access by having a docstring, and in
 John Aycock's SPARK parsing framework, docstrings hold parts of the BNF grammar
 to be parsed.  This overloading is unfortunate, since docstrings are really
@@ -542,8 +542,11 @@ PEP 241: Metadata in Python Packages
 
 A common complaint from Python users is that there's no single catalog of all
 the Python modules in existence.  T. Middleton's Vaults of Parnassus at
-http://www.vex.net/parnassus/ are the largest catalog of Python modules, but
-registering software at the Vaults is optional, and many people don't bother.
+``www.vex.net/parnassus/`` (retired in February 2009, `available in the
+Internet Archive Wayback Machine
+<https://web.archive.org/web/20090130140102/http://www.vex.net/parnassus/>`_)
+was the largest catalog of Python modules, but
+registering software at the Vaults is optional, and many people did not bother.
 
 As a first small step toward fixing the problem, Python software packaged using
 the Distutils :command:`sdist` command will include a file named

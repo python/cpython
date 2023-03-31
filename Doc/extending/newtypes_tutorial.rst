@@ -24,7 +24,7 @@ The Basics
 ==========
 
 The :term:`CPython` runtime sees all Python objects as variables of type
-:c:type:`PyObject\*`, which serves as a "base type" for all Python objects.
+:c:expr:`PyObject*`, which serves as a "base type" for all Python objects.
 The :c:type:`PyObject` structure itself only contains the object's
 :term:`reference count` and a pointer to the object's "type object".
 This is where the action is; the type object determines which (C) functions
@@ -67,9 +67,10 @@ The first bit is::
 This is what a Custom object will contain.  ``PyObject_HEAD`` is mandatory
 at the start of each object struct and defines a field called ``ob_base``
 of type :c:type:`PyObject`, containing a pointer to a type object and a
-reference count (these can be accessed using the macros :c:macro:`Py_REFCNT`
-and :c:macro:`Py_TYPE` respectively).  The reason for the macro is to
-abstract away the layout and to enable additional fields in debug builds.
+reference count (these can be accessed using the macros :c:macro:`Py_TYPE`
+and :c:macro:`Py_REFCNT` respectively).  The reason for the macro is to
+abstract away the layout and to enable additional fields in :ref:`debug builds
+<debug-build>`.
 
 .. note::
    There is no semicolon above after the :c:macro:`PyObject_HEAD` macro.
@@ -89,7 +90,7 @@ The second bit is the definition of the type object. ::
    static PyTypeObject CustomType = {
        PyVarObject_HEAD_INIT(NULL, 0)
        .tp_name = "custom.Custom",
-       .tp_doc = "Custom objects",
+       .tp_doc = PyDoc_STR("Custom objects"),
        .tp_basicsize = sizeof(CustomObject),
        .tp_itemsize = 0,
        .tp_flags = Py_TPFLAGS_DEFAULT,
@@ -160,7 +161,7 @@ you will need to OR the corresponding flags.
 
 We provide a doc string for the type in :c:member:`~PyTypeObject.tp_doc`. ::
 
-   .tp_doc = "Custom objects",
+   .tp_doc = PyDoc_STR("Custom objects"),
 
 To enable object creation, we have to provide a :c:member:`~PyTypeObject.tp_new`
 handler.  This is the equivalent of the Python method :meth:`__new__`, but
@@ -177,12 +178,12 @@ Everything else in the file should be familiar, except for some code in
 
 This initializes the :class:`Custom` type, filling in a number of members
 to the appropriate default values, including :attr:`ob_type` that we initially
-set to *NULL*. ::
+set to ``NULL``. ::
 
    Py_INCREF(&CustomType);
    if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
        Py_DECREF(&CustomType);
-       PY_DECREF(m);
+       Py_DECREF(m);
        return NULL;
    }
 
@@ -238,13 +239,6 @@ adds these capabilities:
 
 This version of the module has a number of changes.
 
-We've added an extra include::
-
-   #include <structmember.h>
-
-This include provides declarations that we use to handle attributes, as
-described a bit later.
-
 The  :class:`Custom` type now has three data attributes in its C struct,
 *first*, *last*, and *number*.  The *first* and *last* variables are Python
 strings containing first and last names.  The *number* attribute is a C integer.
@@ -275,7 +269,7 @@ which is assigned to the :c:member:`~PyTypeObject.tp_dealloc` member::
 
 This method first clears the reference counts of the two Python attributes.
 :c:func:`Py_XDECREF` correctly handles the case where its argument is
-*NULL* (which might happen here if ``tp_new`` failed midway).  It then
+``NULL`` (which might happen here if ``tp_new`` failed midway).  It then
 calls the :c:member:`~PyTypeObject.tp_free` member of the object's type
 (computed by ``Py_TYPE(self)``) to free the object's memory.  Note that
 the object's type might not be :class:`CustomType`, because the object may
@@ -321,7 +315,7 @@ objects of the type.  It is exposed in Python as the :meth:`__new__` method.
 It is not required to define a ``tp_new`` member, and indeed many extension
 types will simply reuse :c:func:`PyType_GenericNew` as done in the first
 version of the ``Custom`` type above.  In this case, we use the ``tp_new``
-handler to initialize the ``first`` and ``last`` attributes to non-*NULL*
+handler to initialize the ``first`` and ``last`` attributes to non-``NULL``
 default values.
 
 ``tp_new`` is passed the type being instantiated (not necessarily ``CustomType``,
@@ -341,7 +335,7 @@ slot to allocate memory::
    self = (CustomObject *) type->tp_alloc(type, 0);
 
 Since memory allocation may fail, we must check the :c:member:`~PyTypeObject.tp_alloc`
-result against *NULL* before proceeding.
+result against ``NULL`` before proceeding.
 
 .. note::
    We didn't fill the :c:member:`~PyTypeObject.tp_alloc` slot ourselves. Rather
@@ -416,7 +410,7 @@ But this would be risky.  Our type doesn't restrict the type of the
 ``first`` member, so it could be any kind of object.  It could have a
 destructor that causes code to be executed that tries to access the
 ``first`` member; or that destructor could release the
-:term:`Global interpreter Lock` and let arbitrary code run in other
+:term:`Global interpreter Lock <GIL>` and let arbitrary code run in other
 threads that accesses and modifies our object.
 
 To be paranoid and protect ourselves against this possibility, we almost
@@ -435,11 +429,11 @@ We want to expose our instance variables as attributes. There are a
 number of ways to do that. The simplest way is to define member definitions::
 
    static PyMemberDef Custom_members[] = {
-       {"first", T_OBJECT_EX, offsetof(CustomObject, first), 0,
+       {"first", Py_T_OBJECT_EX, offsetof(CustomObject, first), 0,
         "first name"},
-       {"last", T_OBJECT_EX, offsetof(CustomObject, last), 0,
+       {"last", Py_T_OBJECT_EX, offsetof(CustomObject, last), 0,
         "last name"},
-       {"number", T_INT, offsetof(CustomObject, number), 0,
+       {"number", Py_T_INT, offsetof(CustomObject, number), 0,
         "custom number"},
        {NULL}  /* Sentinel */
    };
@@ -455,9 +449,9 @@ below for details.
 A disadvantage of this approach is that it doesn't provide a way to restrict the
 types of objects that can be assigned to the Python attributes.  We expect the
 first and last names to be strings, but any Python objects can be assigned.
-Further, the attributes can be deleted, setting the C pointers to *NULL*.  Even
-though we can make sure the members are initialized to non-*NULL* values, the
-members can be set to *NULL* if the attributes are deleted.
+Further, the attributes can be deleted, setting the C pointers to ``NULL``.  Even
+though we can make sure the members are initialized to non-``NULL`` values, the
+members can be set to ``NULL`` if the attributes are deleted.
 
 We define a single method, :meth:`Custom.name()`, that outputs the objects name as the
 concatenation of the first and last names. ::
@@ -489,8 +483,8 @@ equivalent to the Python method:
        return "%s %s" % (self.first, self.last)
 
 Note that we have to check for the possibility that our :attr:`first` and
-:attr:`last` members are *NULL*.  This is because they can be deleted, in which
-case they are set to *NULL*.  It would be better to prevent deletion of these
+:attr:`last` members are ``NULL``.  This is because they can be deleted, in which
+case they are set to ``NULL``.  It would be better to prevent deletion of these
 attributes and to restrict the attribute values to be strings.  We'll see how to
 do that in the next section.
 
@@ -584,7 +578,7 @@ could, for example, be used to allow a single set of getter and setter functions
 that decide the attribute to get or set based on data in the closure.)
 
 The setter function is passed the :class:`Custom` object, the new value, and the
-closure.  The new value may be *NULL*, in which case the attribute is being
+closure.  The new value may be ``NULL``, in which case the attribute is being
 deleted.  In our setter, we raise an error if the attribute is deleted or if its
 new value is not a string.
 
@@ -603,12 +597,12 @@ and register it in the :c:member:`~PyTypeObject.tp_getset` slot::
    .tp_getset = Custom_getsetters,
 
 The last item in a :c:type:`PyGetSetDef` structure is the "closure" mentioned
-above.  In this case, we aren't using a closure, so we just pass *NULL*.
+above.  In this case, we aren't using a closure, so we just pass ``NULL``.
 
 We also remove the member definitions for these attributes::
 
    static PyMemberDef Custom_members[] = {
-       {"number", T_INT, offsetof(CustomObject, number), 0,
+       {"number", Py_T_INT, offsetof(CustomObject, number), 0,
         "custom number"},
        {NULL}  /* Sentinel */
    };
@@ -643,7 +637,7 @@ allow strings [#]_ to be passed::
    }
 
 With these changes, we can assure that the ``first`` and ``last`` members are
-never *NULL* so we can remove checks for *NULL* values in almost all cases.
+never ``NULL`` so we can remove checks for ``NULL`` values in almost all cases.
 This means that most of the :c:func:`Py_XDECREF` calls can be converted to
 :c:func:`Py_DECREF` calls.  The only place we can't change these calls is in
 the ``tp_dealloc`` implementation, where there is the possibility that the
@@ -749,7 +743,7 @@ participate in cycles::
 Notice the use of the :c:func:`Py_CLEAR` macro.  It is the recommended and safe
 way to clear data attributes of arbitrary types while decrementing
 their reference counts.  If you were to call :c:func:`Py_XDECREF` instead
-on the attribute before setting it to *NULL*, there is a possibility
+on the attribute before setting it to ``NULL``, there is a possibility
 that the attribute's destructor would call back into code that reads the
 attribute again (*especially* if there is a reference cycle).
 
