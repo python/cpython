@@ -1,1 +1,1 @@
-Add support for ``multiprocessing.Manager().list().clear()`` and ``.copy()``.
+Add support for ``multiprocessing.Manager().list().clear()`` and ``.copy()``. Add support for ``multiprocessing.Manager().dict().fromkeys`` and ``reversed(d)``, ``d | {}``, ``{} | d``, where ``d = multiprocessing.Manager().dict()``.
