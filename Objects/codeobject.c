@@ -2296,6 +2296,7 @@ _PyStaticCode_Fini(PyCodeObject *co)
         co->co_weakreflist = NULL;
     }
     free_monitoring_data(co->_co_monitoring);
+    co->_co_monitoring = NULL;
 }
 
 int

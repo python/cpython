@@ -815,6 +815,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
             Py_CLEAR(interp->monitoring_callables[t][e]);
         }
     }
+    for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
+        Py_CLEAR(interp->monitoring_tool_names[t]);
+    }
 
     PyConfig_Clear(&interp->config);
     Py_CLEAR(interp->codec_search_path);

@@ -480,7 +480,7 @@ class MultipleMonitorsTest(unittest.TestCase, MonitoringTestBase):
             self.assertEqual(sys.monitoring._all_events(), {})
             sys.monitoring.restart_events()
 
-class LineMontoringTest(unittest.TestCase):
+class LineMonitoringTest(unittest.TestCase):
 
     def test_lines_single(self):
         try:
@@ -492,7 +492,7 @@ class LineMontoringTest(unittest.TestCase):
             f1()
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
-            start = LineMontoringTest.test_lines_single.__code__.co_firstlineno
+            start = LineMonitoringTest.test_lines_single.__code__.co_firstlineno
             self.assertEqual(events, [start+7, 14, start+8])
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
@@ -510,7 +510,7 @@ class LineMontoringTest(unittest.TestCase):
             floop()
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
-            start = LineMontoringTest.test_lines_loop.__code__.co_firstlineno
+            start = LineMonitoringTest.test_lines_loop.__code__.co_firstlineno
             self.assertEqual(events, [start+7, 21, 22, 22, 21, start+8])
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
@@ -532,7 +532,7 @@ class LineMontoringTest(unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL, 0); sys.monitoring.set_events(TEST_TOOL2, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             sys.monitoring.register_callback(TEST_TOOL2, E.LINE, None)
-            start = LineMontoringTest.test_lines_two.__code__.co_firstlineno
+            start = LineMonitoringTest.test_lines_two.__code__.co_firstlineno
             expected = [start+10, 14, start+11]
             self.assertEqual(events, expected)
             self.assertEqual(events2, expected)

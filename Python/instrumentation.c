@@ -1705,6 +1705,7 @@ monitoring_register_callback_impl(PyObject *module, int tool_id, int event,
     }
     if (_Py_popcount32(event) != 1) {
         PyErr_SetString(PyExc_ValueError, "The callback can only be set for one event at a time");
+        return NULL;
     }
     int event_id = _Py_bit_length(event)-1;
     if (event_id < 0 || event_id >= PY_MONITORING_EVENTS) {
@@ -1913,7 +1914,10 @@ monitoring__all_events_impl(PyObject *module)
         if (tools == 0) {
             continue;
         }
-        int err = PyDict_SetItemString(res, event_names[e], PyLong_FromLong(tools));
+        PyObject *tools_obj = PyLong_FromLong(tools);
+        assert(tools_obj != NULL);
+        int err = PyDict_SetItemString(res, event_names[e], tools_obj);
+        Py_DECREF(tools_obj);
         if (err < 0) {
             Py_DECREF(res);
             return NULL;
