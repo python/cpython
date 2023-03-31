@@ -1702,6 +1702,8 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
       def test_suppress_warning():
           # do something
 
+   .. versionadded:: 3.8          
+
 
 .. function:: check_no_resource_warning(testcase)
 
