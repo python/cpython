@@ -270,6 +270,17 @@ class _EnumTests:
             first = auto()
         self.NewSubEnum = NewSubEnum
         #
+        class LazyGNV(self.enum_type):
+            def _generate_next_value_(name, start, last, values):
+                pass
+        self.LazyGNV = LazyGNV
+        #
+        class BusyGNV(self.enum_type):
+            @staticmethod
+            def _generate_next_value_(name, start, last, values):
+                pass
+        self.BusyGNV = BusyGNV
+        #
         self.is_flag = False
         self.names = ['first', 'second', 'third']
         if issubclass(MainEnum, StrEnum):
@@ -465,6 +476,12 @@ class _EnumTests:
     def test_enum_in_enum_out(self):
         Main = self.MainEnum
         self.assertIs(Main(Main.first), Main.first)
+
+    def test_gnv_is_static(self):
+        lazy = self.LazyGNV
+        busy = self.BusyGNV
+        self.assertTrue(type(lazy.__dict__['_generate_next_value_']) is staticmethod)
+        self.assertTrue(type(busy.__dict__['_generate_next_value_']) is staticmethod)
 
     def test_hash(self):
         MainEnum = self.MainEnum
@@ -1368,7 +1385,6 @@ class TestSpecial(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'too many data types'):
             class Huh(MyStr, MyInt, Enum):
                 One = 1
-
 
     def test_pickle_enum(self):
         if isinstance(Stooges, Exception):

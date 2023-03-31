@@ -636,8 +636,6 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    _PyThreadState_InitDetached(&runtime->cached_objects.main_tstate, interp);
-
     *tstate_p = tstate;
     return _PyStatus_OK();
 }
@@ -1933,8 +1931,6 @@ Py_FinalizeEx(void)
      */
     // XXX Do this sooner during finalization.
     // XXX Ensure finalizer errors are handled properly.
-
-    _PyThreadState_ClearDetached(&runtime->cached_objects.main_tstate);
 
     finalize_interp_clear(tstate);
     finalize_interp_delete(tstate->interp);
