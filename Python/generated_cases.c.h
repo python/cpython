@@ -501,12 +501,15 @@
             char is_successor = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
             bb_test = BB_TEST(is_successor, 0);
 
-            left_unboxed = (is_successor
-                ? *((PyObject **)(&(((PyFloatObject *)left)->ob_fval)))
-                : left);
-            right_unboxed = (is_successor
-                ? *((PyObject **)(&(((PyFloatObject *)right)->ob_fval)))
-                : right);
+            if (is_successor) {
+                left_unboxed = *((PyObject **)(&(((PyFloatObject *)left)->ob_fval)));
+                right_unboxed = *((PyObject **)(&(((PyFloatObject *)right)->ob_fval)));
+                Py_DECREF(left);
+                Py_DECREF(right);
+            } else {
+                left_unboxed = left;
+                right_unboxed = right;
+            }
             stack_pointer[-1] = right_unboxed;
             stack_pointer[-2] = left_unboxed;
             DISPATCH();

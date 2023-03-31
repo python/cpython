@@ -318,12 +318,14 @@ dummy_func(
             char is_successor = PyFloat_CheckExact(left) && (Py_TYPE(left) == Py_TYPE(right));
             bb_test = BB_TEST(is_successor, 0);
 
-            left_unboxed = (is_successor
-                ? *((PyObject **)(&(((PyFloatObject *)left)->ob_fval)))
-                : left);
-            right_unboxed = (is_successor
-                ? *((PyObject **)(&(((PyFloatObject *)right)->ob_fval)))
-                : right);
+            if (is_successor) {
+                left_unboxed = *((PyObject **)(&(((PyFloatObject *)left)->ob_fval)));
+                right_unboxed = *((PyObject **)(&(((PyFloatObject *)right)->ob_fval)));
+                DECREF_INPUTS();
+            } else {
+                left_unboxed = left;
+                right_unboxed = right;
+            }
         }
 
         inst(BINARY_OP_ADD_FLOAT_UNBOXED, (left, right -- sum : PyRawFloat_Type)) {
