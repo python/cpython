@@ -690,12 +690,6 @@ instrument_line(PyCodeObject *code, int i)
         return;
     }
     _PyCoLineInstrumentationData *lines = &code->_co_monitoring->lines[i];
-    CHECK(_PyOpcode_Deopt[opcode] == lines->original_opcode ||
-        (
-            is_instrumented(opcode) &&
-            lines->original_opcode == DE_INSTRUMENT[opcode]
-        )
-    );
     lines->original_opcode = _PyOpcode_Deopt[opcode];
     CHECK(lines->original_opcode > 0);
     *opcode_ptr = INSTRUMENTED_LINE;
