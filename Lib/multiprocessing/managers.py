@@ -1148,8 +1148,8 @@ class ValueProxy(BaseProxy):
 BaseListProxy = MakeProxyType('BaseListProxy', (
     '__add__', '__contains__', '__delitem__', '__getitem__', '__len__',
     '__mul__', '__reversed__', '__rmul__', '__setitem__',
-    'append', 'clear', 'count', 'extend', 'index', 'insert', 'pop', 'remove',
-    'reverse', 'sort', '__imul__'
+    'append', 'clear', 'copy', 'count', 'extend', 'index', 'insert', 'pop',
+    'remove', 'reverse', 'sort', '__imul__'
     ))
 class ListProxy(BaseListProxy):
     def __iadd__(self, value):
@@ -1162,8 +1162,9 @@ class ListProxy(BaseListProxy):
 
 DictProxy = MakeProxyType('DictProxy', (
     '__contains__', '__delitem__', '__getitem__', '__iter__', '__len__',
-    '__setitem__', 'clear', 'copy', 'get', 'items',
-    'keys', 'pop', 'popitem', 'setdefault', 'update', 'values'
+    '__or__', '__reversed__', '__ror__', '__setitem__', 'clear', 'copy',
+    'fromkeys', 'get', 'items', 'keys', 'pop', 'popitem', 'setdefault',
+    'update', 'values'
     ))
 DictProxy._method_to_typeid_ = {
     '__iter__': 'Iterator',
