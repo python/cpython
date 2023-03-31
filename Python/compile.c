@@ -228,10 +228,10 @@ typedef struct instr_sequence_ {
  *
  */
 int
-_PyCompile_EnsureArrayLargeEnough(int idx, void **arr_, int *alloc,
+_PyCompile_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
                                   int default_alloc, size_t item_size)
 {
-    void *arr = *arr_;
+    void *arr = *array;
     if (arr == NULL) {
         int new_alloc = default_alloc;
         if (idx >= new_alloc) {
@@ -268,7 +268,7 @@ _PyCompile_EnsureArrayLargeEnough(int idx, void **arr_, int *alloc,
         memset((char *)arr + oldsize, 0, newsize - oldsize);
     }
 
-    *arr_ = arr;
+    *array = arr;
     return SUCCESS;
 }
 

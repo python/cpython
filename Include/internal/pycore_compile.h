@@ -36,7 +36,7 @@ extern int _PyAST_Optimize(
 /* Utility for a number of growing arrays used in the compiler */
 int _PyCompile_EnsureArrayLargeEnough(
         int idx,
-        void **arr_,
+        void **array,
         int *alloc,
         int default_alloc,
         size_t item_size);

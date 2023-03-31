@@ -62,19 +62,6 @@ extern "C" {
          (opcode) == STORE_FAST__LOAD_FAST || \
          (opcode) == STORE_FAST__STORE_FAST)
 
-#define IS_SCOPE_EXIT_OPCODE(opcode) \
-        ((opcode) == RETURN_VALUE || \
-         (opcode) == RETURN_CONST || \
-         (opcode) == RAISE_VARARGS || \
-         (opcode) == RERAISE)
-
-#define IS_SUPERINSTRUCTION_OPCODE(opcode) \
-        ((opcode) == LOAD_FAST__LOAD_FAST || \
-         (opcode) == LOAD_FAST__LOAD_CONST || \
-         (opcode) == LOAD_CONST__LOAD_FAST || \
-         (opcode) == STORE_FAST__LOAD_FAST || \
-         (opcode) == STORE_FAST__STORE_FAST)
-
 
 #define LOG_BITS_PER_INT 5
 #define MASK_LOW_LOG_BITS 31
