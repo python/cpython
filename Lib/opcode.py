@@ -333,7 +333,6 @@ _specializations = {
         "BB_TEST_ITER_LIST",
         "BB_TEST_ITER_TUPLE",
         "BB_TEST_ITER_RANGE",
-        "BB_TEST_ITER_GEN",
     ],
     "LOAD_ATTR": [
         # These potentially push [NULL, bound method] onto the stack.
