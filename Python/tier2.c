@@ -4,6 +4,7 @@
 #include "pycore_frame.h"
 #include "pycore_opcode.h"
 #include "pycore_pystate.h"
+#include "pycore_long.h"
 #include "stdbool.h"
 
 #include "opcode.h"
@@ -17,11 +18,21 @@
 
 
 /* Dummy types used by the types propagator */
+
+// Represents a 64-bit unboxed double
 PyTypeObject PyRawFloat_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "rawfloat",
     sizeof(PyFloatObject),
 };
+
+// Represents a PyLong that fits in a 64-bit long.
+PyTypeObject PySmallInt_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "smallint",
+    sizeof(PyFloatObject),
+};
+
 
 static inline int IS_SCOPE_EXIT_OPCODE(int opcode);
 
@@ -173,7 +184,7 @@ _PyTier2TypeContext_Copy(const _PyTier2TypeContext *type_context)
     return new_type_context;
 }
 
-static void
+void
 _PyTier2TypeContext_Free(_PyTier2TypeContext *type_context)
 {
 
@@ -920,7 +931,7 @@ static int type_guard_ladder[256] = {
     BINARY_CHECK_FLOAT,
     BINARY_CHECK_INT,
     -1,
-    UNARY_CHECK_FLOAT,
+    CHECK_LIST,
     -1,
 };
 
@@ -929,19 +940,19 @@ static int type_guard_ladder[256] = {
 static int type_guard_to_index[256] = {
     [BINARY_CHECK_FLOAT] = 1,
     [BINARY_CHECK_INT] = 2,
-    [UNARY_CHECK_FLOAT] = 4,
+    [CHECK_LIST] = 4,
 };
 
 
 static inline _Py_CODEUNIT *
-emit_type_guard(_Py_CODEUNIT *write_curr, int guard_opcode, int bb_id)
+emit_type_guard(_Py_CODEUNIT *write_curr, int guard_opcode, int guard_oparg, int bb_id)
 {
 #if BB_DEBUG && defined(Py_DEBUG)
     fprintf(stderr, "emitted type guard %p %s\n", write_curr,
         _PyOpcode_OpName[guard_opcode]);
 #endif
     write_curr->op.code = guard_opcode;
-    write_curr->op.arg = type_guard_to_index[guard_opcode];
+    write_curr->op.arg = guard_oparg;
     write_curr++;
     _py_set_opcode(write_curr, BB_BRANCH);
     write_curr->op.arg = 0;
@@ -1267,12 +1278,10 @@ infer_BINARY_OP(
     // Unknown, time to emit the chain of guards.
     // No type guard before this, or it's not the first in the new BB.
     // First in new BB usually indicates it's already part of a pre-existing ladder.
-    if (prev_type_guard == NULL ||
-        (!is_first_instr && prev_type_guard != NULL &&
-            type_guard_ladder[type_guard_to_index[prev_type_guard->op.code] + 1] != -1)) {
+    if (prev_type_guard == NULL || !is_first_instr) {
         write_curr = rebox_stack(write_curr, type_context, 2);
         *needs_guard = true;
-        return emit_type_guard(write_curr, BINARY_CHECK_FLOAT, bb_id);
+        return emit_type_guard(write_curr, BINARY_CHECK_FLOAT, 0, bb_id);
     }
     else {
         int next_guard = type_guard_ladder[
@@ -1280,7 +1289,55 @@ infer_BINARY_OP(
         if (next_guard != -1) {
             write_curr = rebox_stack(write_curr, type_context, 2);
             *needs_guard = true;
-            return emit_type_guard(write_curr, next_guard, bb_id);
+            return emit_type_guard(write_curr, next_guard, 0, bb_id);
+        }
+        // End of ladder, fall through
+    }
+    return NULL;
+}
+
+static inline _Py_CODEUNIT *
+infer_BINARY_SUBSCR(
+    _Py_CODEUNIT *t2_start,
+    int oparg,
+    bool *needs_guard,
+    _Py_CODEUNIT *prev_type_guard,
+    _Py_CODEUNIT raw_op,
+    _Py_CODEUNIT *write_curr,
+    _PyTier2TypeContext *type_context,
+    int bb_id,
+    bool store)
+{
+    assert(oparg == NB_ADD || oparg == NB_SUBTRACT || oparg == NB_MULTIPLY);
+    bool is_first_instr = (write_curr == t2_start);
+    *needs_guard = false;
+    PyTypeObject *sub = typenode_get_type(type_context->type_stack_ptr[-1]);
+    PyTypeObject *container = typenode_get_type(type_context->type_stack_ptr[-2]);
+    if (container == &PyList_Type) {
+        if (sub == &PySmallInt_Type) {
+            int opcode = store
+                ? STORE_SUBSCR_LIST_INT_REST : BINARY_SUBSCR_LIST_INT_REST;
+            write_curr->op.code = opcode;
+            write_curr++;
+            type_propagate(opcode, 0, type_context, NULL);
+            return write_curr;
+        }
+    }
+    // Unknown, time to emit the chain of guards.
+    // No type guard before this, or it's not the first in the new BB.
+    // First in new BB usually indicates it's already part of a pre-existing ladder.
+    if (prev_type_guard == NULL || !is_first_instr) {
+        write_curr = rebox_stack(write_curr, type_context, 2);
+        *needs_guard = true;
+        return emit_type_guard(write_curr, CHECK_LIST, 1, bb_id);
+    }
+    else {
+        int next_guard = type_guard_ladder[
+            type_guard_to_index[prev_type_guard->op.code] + 1];
+        if (next_guard != -1) {
+            write_curr = rebox_stack(write_curr, type_context, store ? 3 : 2);
+            *needs_guard = true;
+            return emit_type_guard(write_curr, next_guard, 1, bb_id);
         }
         // End of ladder, fall through
     }
@@ -1317,7 +1374,8 @@ _PyTier2_Code_DetectAndEmitBB(
     assert(
         prev_type_guard == NULL ||
         prev_type_guard->op.code == BINARY_CHECK_INT ||
-        prev_type_guard->op.code == BINARY_CHECK_FLOAT
+        prev_type_guard->op.code == BINARY_CHECK_FLOAT ||
+        prev_type_guard->op.code == CHECK_LIST
     );
 #define END() goto end;
 #define JUMPBY(x) i += x + 1;
@@ -1335,6 +1393,7 @@ _PyTier2_Code_DetectAndEmitBB(
                           continue;
 #define DISPATCH_GOTO() goto dispatch_opcode;
 #define TYPECONST_GET_RAWTYPE(idx) Py_TYPE(PyTuple_GET_ITEM(consts, idx))
+#define GET_CONST(idx) PyTuple_GET_ITEM(consts, idx)
 
     assert(co->_tier2_info != NULL);
     // There are only two cases that a BB ends.
@@ -1410,16 +1469,29 @@ _PyTier2_Code_DetectAndEmitBB(
             DISPATCH();
         }
         case LOAD_CONST: {
-            if (TYPECONST_GET_RAWTYPE(oparg) == &PyFloat_Type) {
-                write_i->op.code = LOAD_CONST;
-                write_i->op.arg = oparg;
-                write_i++;
+            PyTypeObject *typ = TYPECONST_GET_RAWTYPE(oparg);
+            if (typ == &PyFloat_Type) {
+                write_i = emit_i(write_i, LOAD_CONST, curr->op.arg);
                 type_propagate(LOAD_CONST, oparg, starting_type_context, consts);
                 write_i->op.code = UNBOX_FLOAT;
                 write_i->op.arg = 0;
                 write_i++;
                 type_propagate(UNBOX_FLOAT, 0, starting_type_context, consts);
                 continue;
+            }
+            else if (typ == &PyLong_Type) {
+                // We break our own rules for more efficient code here.
+                // NOTE: THIS MODIFIES THE TYPE CONTEXT.
+                if (_PyLong_IsNonNegativeCompact((PyLongObject *)GET_CONST(oparg))) {
+                    write_i = emit_i(write_i, LOAD_CONST, curr->op.arg);
+
+                    // Type propagate
+                    _PyTier2TypeContext *type_context = starting_type_context;
+                    _Py_TYPENODE_t **type_stackptr = &type_context->type_stack_ptr;
+                    *type_stackptr += 1;
+                    TYPE_OVERWRITE((_Py_TYPENODE_t *)_Py_TYPENODE_MAKE_ROOT((_Py_TYPENODE_t)&PySmallInt_Type), TYPESTACK_PEEK(1), true);
+                    continue;
+                }
             }
             DISPATCH();
         }
@@ -1553,6 +1625,48 @@ _PyTier2_Code_DetectAndEmitBB(
                 continue;
             }
             DISPATCH_REBOX(2);
+        case BINARY_SUBSCR: {
+            _Py_CODEUNIT *possible_next = infer_BINARY_SUBSCR(
+                t2_start, oparg, &needs_guard,
+                prev_type_guard,
+                *curr,
+                write_i, starting_type_context,
+                co->_tier2_info->bb_data_curr, false);
+            if (possible_next == NULL) {
+                DISPATCH_REBOX(2);
+            }
+            write_i = possible_next;
+            if (needs_guard) {
+                // Point to the same instruction, because in this BB we emit
+                // the guard.
+                // The next BB emits the instruction.
+                i--;
+                END();
+            }
+            i += caches;
+            continue;
+        }
+        case STORE_SUBSCR: {
+            _Py_CODEUNIT *possible_next = infer_BINARY_SUBSCR(
+                t2_start, oparg, &needs_guard,
+                prev_type_guard,
+                *curr,
+                write_i, starting_type_context,
+                co->_tier2_info->bb_data_curr, true);
+            if (possible_next == NULL) {
+                DISPATCH_REBOX(3);
+            }
+            write_i = possible_next;
+            if (needs_guard) {
+                // Point to the same instruction, because in this BB we emit
+                // the guard.
+                // The next BB emits the instruction.
+                i--;
+                END();
+            }
+            i += caches;
+            continue;
+        }
         case LOAD_ATTR:
         case CALL_INTRINSIC_1:
         case UNARY_NEGATIVE:
@@ -1562,11 +1676,8 @@ _PyTier2_Code_DetectAndEmitBB(
         case UNPACK_SEQUENCE:
             DISPATCH_REBOX(1);
         case CALL_INTRINSIC_2:
-        case BINARY_SUBSCR:
         case BINARY_SLICE:
             DISPATCH_REBOX(2);
-        case STORE_SUBSCR:
-            DISPATCH_REBOX(4);
         case STORE_SLICE:
             DISPATCH_REBOX(4);
         default:
@@ -1820,12 +1931,10 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
     qsort(backward_jump_offsets, backwards_jump_count,
         sizeof(int), compare_ints);
     // Deduplicate
-    int backwards_jump_count_new = backwards_jump_count;
     for (int i = 0; i < backwards_jump_count - 1; i++) {
         for (int x = i + 1; x < backwards_jump_count; x++) {
             if (backward_jump_offsets[i] == backward_jump_offsets[x]) {
                 backward_jump_offsets[x] = -1;
-                backwards_jump_count_new--;
             }
         }
     }
@@ -2250,7 +2359,7 @@ _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id_tagged
 #ifdef Py_DEBUG
     // We assert that there are as many items on the operand stack as there are on the
     // saved type stack.
-    int typestack_level = meta->type_context->type_stack_ptr - meta->type_context->type_stack;
+    Py_ssize_t typestack_level = meta->type_context->type_stack_ptr - meta->type_context->type_stack;
     assert(typestack_level == stacklevel);
 #endif
     // The jump target
@@ -2466,3 +2575,4 @@ _PyTier2_RewriteBackwardJump(_Py_CODEUNIT *jump_backward_lazy, _Py_CODEUNIT *tar
 #undef TYPELOCALS_GET
 #undef TYPE_SET
 #undef TYPE_OVERWRITE
+#undef GET_CONST

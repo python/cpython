@@ -326,15 +326,6 @@ dummy_func(
                 : right);
         }
 
-        inst(UNARY_CHECK_FLOAT, (arg, unused[oparg] -- arg_unboxed : { <<= PyFloat_Type, PyRawFloat_Type}, unused[oparg])) {
-            assert(cframe.use_tracing == 0);
-            char is_successor = PyFloat_CheckExact(arg);
-            bb_test = BB_TEST(is_successor, 0);
-            arg_unboxed = (is_successor
-                ? *((PyObject **)(&(((PyFloatObject *)arg)->ob_fval)))
-                : arg);
-        }
-
         inst(BINARY_OP_ADD_FLOAT_UNBOXED, (left, right -- sum : PyRawFloat_Type)) {
             STAT_INC(BINARY_OP, hit);
             double temp = *(double *)(&(left)) + *(double *)(&(right));
@@ -439,14 +430,18 @@ dummy_func(
             ERROR_IF(err, error);
         }
 
-        inst(BINARY_SUBSCR_LIST_INT, (unused/4, list, sub -- res)) {
+        macro_inst(BINARY_SUBSCR_LIST_INT, (unused/4, list, sub -- res)) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(sub), BINARY_SUBSCR);
             DEOPT_IF(!PyList_CheckExact(list), BINARY_SUBSCR);
 
             // Deopt unless 0 <= sub < PyList_Size(list)
             DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            U_INST(BINARY_SUBSCR_LIST_INT_REST);
+        }
+
+        u_inst(BINARY_SUBSCR_LIST_INT_REST, (list, sub -- res)) {
+            Py_ssize_t index = ((PyLongObject *)sub)->long_value.ob_digit[0];
             DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             res = PyList_GET_ITEM(list, index);
@@ -454,6 +449,11 @@ dummy_func(
             Py_INCREF(res);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(list);
+        }
+
+        inst(CHECK_LIST, (container, unused[oparg] -- container : { <<= PyList_Type, PyList_Type}, unused[oparg])) {
+            char is_successor = PyList_CheckExact(container);
+            bb_test = BB_TEST(is_successor, 0);
         }
 
         inst(BINARY_SUBSCR_TUPLE_INT, (unused/4, tuple, sub -- res)) {
@@ -548,7 +548,7 @@ dummy_func(
             ERROR_IF(err, error);
         }
 
-        inst(STORE_SUBSCR_LIST_INT, (unused/1, value, list, sub -- )) {
+        macro_inst(STORE_SUBSCR_LIST_INT, (unused/1, value, list, sub -- )) {
             assert(cframe.use_tracing == 0);
             DEOPT_IF(!PyLong_CheckExact(sub), STORE_SUBSCR);
             DEOPT_IF(!PyList_CheckExact(list), STORE_SUBSCR);
@@ -556,7 +556,12 @@ dummy_func(
             // Ensure nonnegative, zero-or-one-digit ints.
             DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), STORE_SUBSCR);
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            // Ensure index < len(list)
+            U_INST(STORE_SUBSCR_LIST_INT_REST);
+        }
+
+        u_inst(STORE_SUBSCR_LIST_INT_REST, (value, list, sub -- )) {
+            Py_ssize_t index = ((PyLongObject *)sub)->long_value.ob_digit[0];
+            /* Ensure index < len(list) */
             DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);
             STAT_INC(STORE_SUBSCR, hit);
 

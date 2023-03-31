@@ -446,6 +446,7 @@ _macro_ops = [
     'BINARY_OP_SUBTRACT_INT',
     'BINARY_OP_MULTIPLY_INT',
     'BINARY_OP_ADD_FLOAT',
+    'BINARY_SUBSCR_LIST_INT',
 ]
 _uops = [
     # Tier 2 BB opcodes
@@ -491,14 +492,20 @@ _uops = [
     # single operand forms.
     'BINARY_CHECK_INT',
     'BINARY_CHECK_FLOAT',
-    'UNARY_CHECK_FLOAT',
-    # 'BINARY_CHECK_STR',
+    'CHECK_LIST',
+
+    # These are guardless instructions
+    ## Arithmetic
     'BINARY_OP_ADD_INT_REST',
     'BINARY_OP_ADD_FLOAT_UNBOXED',
     'BINARY_OP_SUBTRACT_INT_REST',
     'BINARY_OP_SUBTRACT_FLOAT_UNBOXED',
     'BINARY_OP_MULTIPLY_INT_REST',
     'BINARY_OP_MULTIPLY_FLOAT_UNBOXED',
+
+    # Containers
+    'BINARY_SUBSCR_LIST_INT_REST',
+    'STORE_SUBSCR_LIST_INT_REST',
 
     # Boxing / unboxing ops
     'POP_TOP_NO_DECREF',

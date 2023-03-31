@@ -1713,12 +1713,6 @@ code_tier2_fini(PyCodeObject *co)
     _PyTier2Info *t2_info = co->_tier2_info;
     t2_info->_entry_bb = NULL;
     if (t2_info->_bb_space != NULL) {
-        // Traverse the linked list
-        //for (_PyTier2BBSpace *curr = t2_info->_bb_space; curr != NULL;) {
-        //    _PyTier2BBSpace *prev = curr;
-        //    curr = curr->next;
-        //    PyMem_Free(prev);
-        //}
         PyMem_Free(t2_info->_bb_space);
         t2_info->_bb_space = NULL;
     }
@@ -1727,12 +1721,28 @@ code_tier2_fini(PyCodeObject *co)
         t2_info->backward_jump_offsets != NULL) {
         PyMem_Free(t2_info->backward_jump_offsets);
         t2_info->backward_jump_offsets = NULL;
+        _PyTier2BBStartTypeContextTriplet **backward_jump_target_bb_pairs = t2_info->backward_jump_target_bb_pairs;
+        //int backwards_jump_count = t2_info->backward_jump_count;
+        //for (int i = 0; i < backwards_jump_count; i++) {
+        //    PyMem_Free(backward_jump_target_bb_pairs[i]);
+        //}
+        PyMem_Free(backward_jump_target_bb_pairs);
     }
 
     t2_info->backward_jump_count = 0;
     if (t2_info->bb_data != NULL && t2_info->bb_data_len > 0) {
         PyMem_Free(t2_info->bb_data);
     }
+    //if (t2_info->bb_data != NULL) {
+    //    for (int i = 0; i < t2_info->bb_data_curr; i++) {
+    //        if (t2_info->bb_data[i] != NULL) {
+    //            _PyTier2BBMetadata *meta = t2_info->bb_data[i];
+    //            //_PyTier2TypeContext_Free(meta->type_context);
+    //            //PyMem_Free(meta);
+    //        }
+    //    }
+    //    PyMem_Free(t2_info->bb_data);
+    //}
     t2_info->bb_data_len = 0;
     PyMem_Free(t2_info);
 }

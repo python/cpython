@@ -77,8 +77,6 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case BINARY_CHECK_FLOAT:
             return 2;
-        case UNARY_CHECK_FLOAT:
-            return oparg + 1;
         case BINARY_OP_ADD_FLOAT_UNBOXED:
             return 2;
         case BINARY_OP_SUBTRACT_FLOAT_UNBOXED:
@@ -103,6 +101,10 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 4;
         case BINARY_SUBSCR_LIST_INT:
             return 2;
+        case BINARY_SUBSCR_LIST_INT_REST:
+            return 2;
+        case CHECK_LIST:
+            return oparg + 1;
         case BINARY_SUBSCR_TUPLE_INT:
             return 2;
         case BINARY_SUBSCR_DICT:
@@ -116,6 +118,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case STORE_SUBSCR:
             return 3;
         case STORE_SUBSCR_LIST_INT:
+            return 3;
+        case STORE_SUBSCR_LIST_INT_REST:
             return 3;
         case STORE_SUBSCR_DICT:
             return 3;
@@ -489,8 +493,6 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case BINARY_CHECK_FLOAT:
             return 2;
-        case UNARY_CHECK_FLOAT:
-            return oparg + 1;
         case BINARY_OP_ADD_FLOAT_UNBOXED:
             return 1;
         case BINARY_OP_SUBTRACT_FLOAT_UNBOXED:
@@ -515,6 +517,10 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case BINARY_SUBSCR_LIST_INT:
             return 1;
+        case BINARY_SUBSCR_LIST_INT_REST:
+            return 1;
+        case CHECK_LIST:
+            return oparg + 1;
         case BINARY_SUBSCR_TUPLE_INT:
             return 1;
         case BINARY_SUBSCR_DICT:
@@ -528,6 +534,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case STORE_SUBSCR:
             return 0;
         case STORE_SUBSCR_LIST_INT:
+            return 0;
+        case STORE_SUBSCR_LIST_INT_REST:
             return 0;
         case STORE_SUBSCR_DICT:
             return 0;
@@ -871,7 +879,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BINARY_OP_INPLACE_ADD_UNICODE] = { true, INSTR_FMT_IX },
     [BINARY_OP_ADD_FLOAT] = { true, INSTR_FMT_IXC },
     [BINARY_CHECK_FLOAT] = { true, INSTR_FMT_IX },
-    [UNARY_CHECK_FLOAT] = { true, INSTR_FMT_IB },
     [BINARY_OP_ADD_FLOAT_UNBOXED] = { true, INSTR_FMT_IX },
     [BINARY_OP_SUBTRACT_FLOAT_UNBOXED] = { true, INSTR_FMT_IX },
     [BINARY_OP_MULTIPLY_FLOAT_UNBOXED] = { true, INSTR_FMT_IX },
@@ -884,6 +891,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BINARY_SLICE] = { true, INSTR_FMT_IX },
     [STORE_SLICE] = { true, INSTR_FMT_IX },
     [BINARY_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC000 },
+    [BINARY_SUBSCR_LIST_INT_REST] = { true, INSTR_FMT_IX },
+    [CHECK_LIST] = { true, INSTR_FMT_IB },
     [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC000 },
     [BINARY_SUBSCR_DICT] = { true, INSTR_FMT_IXC000 },
     [BINARY_SUBSCR_GETITEM] = { true, INSTR_FMT_IXC000 },
@@ -891,6 +900,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [SET_ADD] = { true, INSTR_FMT_IB },
     [STORE_SUBSCR] = { true, INSTR_FMT_IXC },
     [STORE_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC },
+    [STORE_SUBSCR_LIST_INT_REST] = { true, INSTR_FMT_IX },
     [STORE_SUBSCR_DICT] = { true, INSTR_FMT_IXC },
     [DELETE_SUBSCR] = { true, INSTR_FMT_IX },
     [CALL_INTRINSIC_1] = { true, INSTR_FMT_IB },

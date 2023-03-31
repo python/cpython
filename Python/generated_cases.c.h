@@ -30,6 +30,33 @@
             if (sum == NULL) goto pop_2_error;\
         } while (0)
 
+        #define UOP_BINARY_SUBSCR_LIST_INT_REST() \
+        do { \
+            Py_ssize_t index = ((PyLongObject *)sub)->long_value.ob_digit[0];\
+            DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);\
+            STAT_INC(BINARY_SUBSCR, hit);\
+            res = PyList_GET_ITEM(list, index);\
+            assert(res != NULL);\
+            Py_INCREF(res);\
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);\
+            Py_DECREF(list);\
+        } while (0)
+
+        #define UOP_STORE_SUBSCR_LIST_INT_REST() \
+        do { \
+            Py_ssize_t index = ((PyLongObject *)sub)->long_value.ob_digit[0];\
+            /* Ensure index < len(list) */\
+            DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);\
+            STAT_INC(STORE_SUBSCR, hit);\
+\
+            PyObject *old_value = PyList_GET_ITEM(list, index);\
+            PyList_SET_ITEM(list, index, value);\
+            assert(old_value != NULL);\
+            Py_DECREF(old_value);\
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);\
+            Py_DECREF(list);\
+        } while (0)
+
         TARGET(NOP) {
             DISPATCH();
         }
@@ -485,19 +512,6 @@
             DISPATCH();
         }
 
-        TARGET(UNARY_CHECK_FLOAT) {
-            PyObject *arg = stack_pointer[-(1 + oparg)];
-            PyObject *arg_unboxed;
-            assert(cframe.use_tracing == 0);
-            char is_successor = PyFloat_CheckExact(arg);
-            bb_test = BB_TEST(is_successor, 0);
-            arg_unboxed = (is_successor
-                ? *((PyObject **)(&(((PyFloatObject *)arg)->ob_fval)))
-                : arg);
-            stack_pointer[-(1 + oparg)] = arg_unboxed;
-            DISPATCH();
-        }
-
         TARGET(BINARY_OP_ADD_FLOAT_UNBOXED) {
             PyObject *right = stack_pointer[-1];
             PyObject *left = stack_pointer[-2];
@@ -669,7 +683,18 @@
 
             // Deopt unless 0 <= sub < PyList_Size(list)
             DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), BINARY_SUBSCR);
-            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            UOP_BINARY_SUBSCR_LIST_INT_REST();
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            next_instr += 4;
+            DISPATCH();
+        }
+
+        TARGET(BINARY_SUBSCR_LIST_INT_REST) {
+            PyObject *sub = stack_pointer[-1];
+            PyObject *list = stack_pointer[-2];
+            PyObject *res;
+            Py_ssize_t index = ((PyLongObject *)sub)->long_value.ob_digit[0];
             DEOPT_IF(index >= PyList_GET_SIZE(list), BINARY_SUBSCR);
             STAT_INC(BINARY_SUBSCR, hit);
             res = PyList_GET_ITEM(list, index);
@@ -679,7 +704,13 @@
             Py_DECREF(list);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            next_instr += 4;
+            DISPATCH();
+        }
+
+        TARGET(CHECK_LIST) {
+            PyObject *container = stack_pointer[-(1 + oparg)];
+            char is_successor = PyList_CheckExact(container);
+            bb_test = BB_TEST(is_successor, 0);
             DISPATCH();
         }
 
@@ -819,7 +850,18 @@
             // Ensure nonnegative, zero-or-one-digit ints.
             DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub), STORE_SUBSCR);
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            // Ensure index < len(list)
+            UOP_STORE_SUBSCR_LIST_INT_REST();
+            STACK_SHRINK(3);
+            next_instr += 1;
+            DISPATCH();
+        }
+
+        TARGET(STORE_SUBSCR_LIST_INT_REST) {
+            PyObject *sub = stack_pointer[-1];
+            PyObject *list = stack_pointer[-2];
+            PyObject *value = stack_pointer[-3];
+            Py_ssize_t index = ((PyLongObject *)sub)->long_value.ob_digit[0];
+            /* Ensure index < len(list) */
             DEOPT_IF(index >= PyList_GET_SIZE(list), STORE_SUBSCR);
             STAT_INC(STORE_SUBSCR, hit);
 
@@ -830,7 +872,6 @@
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(list);
             STACK_SHRINK(3);
-            next_instr += 1;
             DISPATCH();
         }
 

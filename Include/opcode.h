@@ -206,21 +206,23 @@ extern "C" {
 #define BB_JUMP_BACKWARD_LAZY                  186
 #define BINARY_CHECK_INT                       187
 #define BINARY_CHECK_FLOAT                     188
-#define UNARY_CHECK_FLOAT                      189
+#define CHECK_LIST                             189
 #define BINARY_OP_ADD_INT_REST                 190
 #define BINARY_OP_ADD_FLOAT_UNBOXED            191
 #define BINARY_OP_SUBTRACT_INT_REST            192
 #define BINARY_OP_SUBTRACT_FLOAT_UNBOXED       193
 #define BINARY_OP_MULTIPLY_INT_REST            194
 #define BINARY_OP_MULTIPLY_FLOAT_UNBOXED       195
-#define POP_TOP_NO_DECREF                      196
-#define UNBOX_FLOAT                            197
-#define BOX_FLOAT                              198
-#define COPY_NO_INCREF                         199
-#define LOAD_FAST_NO_INCREF                    200
-#define STORE_FAST_BOXED_UNBOXED               201
-#define STORE_FAST_UNBOXED_BOXED               202
-#define STORE_FAST_UNBOXED_UNBOXED             203
+#define BINARY_SUBSCR_LIST_INT_REST            196
+#define STORE_SUBSCR_LIST_INT_REST             197
+#define POP_TOP_NO_DECREF                      198
+#define UNBOX_FLOAT                            199
+#define BOX_FLOAT                              200
+#define COPY_NO_INCREF                         201
+#define LOAD_FAST_NO_INCREF                    202
+#define STORE_FAST_BOXED_UNBOXED               203
+#define STORE_FAST_UNBOXED_BOXED               204
+#define STORE_FAST_UNBOXED_UNBOXED             205
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \

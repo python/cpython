@@ -285,6 +285,7 @@ extern _Py_CODEUNIT *_PyTier2_LocateJumpBackwardsBB(
     _Py_CODEUNIT **tier1_fallback, _Py_CODEUNIT *curr, int stacksize);
 extern void _PyTier2_RewriteForwardJump(_Py_CODEUNIT *bb_branch, _Py_CODEUNIT *target);
 extern void _PyTier2_RewriteBackwardJump(_Py_CODEUNIT *jump_backward_lazy, _Py_CODEUNIT *target);
+void _PyTier2TypeContext_Free(_PyTier2TypeContext *type_context);
 #ifdef Py_STATS
 
 
