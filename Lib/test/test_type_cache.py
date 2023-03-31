@@ -11,6 +11,7 @@ except ImportError:
 type_get_version = import_helper.import_module('_testcapi').type_get_version
 type_assign_version = import_helper.import_module('_testcapi').type_assign_version
 
+
 @support.cpython_only
 @unittest.skipIf(_clear_type_cache is None, "requires sys._clear_type_cache")
 class TypeCacheTests(unittest.TestCase):

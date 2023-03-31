@@ -2740,7 +2740,7 @@ type_assign_version(PyObject *self, PyObject *type)
         PyErr_SetString(PyExc_TypeError, "argument must be a type");
         return NULL;
     }
-    int res = PyType_AssignVersionTag((PyTypeObject *)type);
+    int res = PyUnstable_AssignVersionTag((PyTypeObject *)type);
     return PyLong_FromLong(res);
 }
 
@@ -3511,7 +3511,7 @@ static PyMethodDef TestMethods[] = {
     {"test_py_is_macros", test_py_is_macros, METH_NOARGS},
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"type_get_version", type_get_version, METH_O, PyDoc_STR("type->tp_version_tag")},
-    {"type_assign_version", type_assign_version, METH_O, PyDoc_STR("PyType_AssignVersionTag")},
+    {"type_assign_version", type_assign_version, METH_O, PyDoc_STR("PyUnstable_AssignVersionTag")},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"frame_getlocals", frame_getlocals, METH_O, NULL},
     {"frame_getglobals", frame_getglobals, METH_O, NULL},
