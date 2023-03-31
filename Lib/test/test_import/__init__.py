@@ -4,6 +4,9 @@ import errno
 import glob
 import importlib.util
 from importlib._bootstrap_external import _get_sourcefile
+from importlib.machinery import (
+    BuiltinImporter, ExtensionFileLoader, FrozenImporter, SourceFileLoader,
+)
 import marshal
 import os
 import py_compile
@@ -43,6 +46,49 @@ except ImportError:
 skip_if_dont_write_bytecode = unittest.skipIf(
         sys.dont_write_bytecode,
         "test meaningful only when writing bytecode")
+
+
+def _require_loader(module, loader, skip):
+    if isinstance(module, str):
+        module = __import__(module)
+
+    MODULE_KINDS = {
+        BuiltinImporter: 'built-in',
+        ExtensionFileLoader: 'extension',
+        FrozenImporter: 'frozen',
+        SourceFileLoader: 'pure Python',
+    }
+
+    expected = loader
+    assert isinstance(expected, type), expected
+    expected = MODULE_KINDS[expected]
+
+    actual = module.__spec__.loader
+    if not isinstance(actual, type):
+        actual = type(actual)
+    actual = MODULE_KINDS[actual]
+
+    if actual != expected:
+        err = f'expected module to be {expected}, got {module.__spec__}'
+        if skip:
+            raise unittest.SkipTest(err)
+        raise Exception(err)
+    return module
+
+def require_builtin(module, *, skip=False):
+    module = _require_loader(module, BuiltinImporter, skip)
+    assert module.__spec__.origin == 'built-in', module.__spec__
+
+def require_extension(module, *, skip=False):
+    _require_loader(module, ExtensionFileLoader, skip)
+
+def require_frozen(module, *, skip=True):
+    module = _require_loader(module, FrozenImporter, skip)
+    assert module.__spec__.origin == 'frozen', module.__spec__
+
+def require_pure_python(module, *, skip=False):
+    _require_loader(module, SourceFileLoader, skip)
+
 
 def remove_files(name):
     for f in (name + ".py",
@@ -1541,6 +1587,7 @@ class SubinterpImportTests(unittest.TestCase):
         # For now we avoid using sys or builtins
         # since they still don't implement multi-phase init.
         module = '_imp'
+        require_builtin(module)
         with self.subTest(f'{module}: not strict'):
             self.check_compatible_here(module, strict=False)
         with self.subTest(f'{module}: strict, not fresh'):
@@ -1549,6 +1596,7 @@ class SubinterpImportTests(unittest.TestCase):
     @cpython_only
     def test_frozen_compat(self):
         module = '_frozen_importlib'
+        require_frozen(module, skip=True)
         if __import__(module).__spec__.origin != 'frozen':
             raise unittest.SkipTest(f'{module} is unexpectedly not frozen')
         with self.subTest(f'{module}: not strict'):
@@ -1559,6 +1607,7 @@ class SubinterpImportTests(unittest.TestCase):
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
     def test_single_init_extension_compat(self):
         module = '_testsinglephase'
+        require_extension(module)
         with self.subTest(f'{module}: not strict'):
             self.check_compatible_here(module, strict=False)
         with self.subTest(f'{module}: strict, not fresh'):
@@ -1569,6 +1618,7 @@ class SubinterpImportTests(unittest.TestCase):
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_compat(self):
         module = '_testmultiphase'
+        require_extension(module)
         with self.subTest(f'{module}: not strict'):
             self.check_compatible_here(module, strict=False)
         with self.subTest(f'{module}: strict, not fresh'):
@@ -1578,8 +1628,7 @@ class SubinterpImportTests(unittest.TestCase):
 
     def test_python_compat(self):
         module = 'threading'
-        if __import__(module).__spec__.origin == 'frozen':
-            raise unittest.SkipTest(f'{module} is unexpectedly frozen')
+        require_pure_python(module)
         with self.subTest(f'{module}: not strict'):
             self.check_compatible_here(module, strict=False)
         with self.subTest(f'{module}: strict, not fresh'):
@@ -1590,6 +1639,7 @@ class SubinterpImportTests(unittest.TestCase):
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
     def test_singlephase_check_with_setting_and_override(self):
         module = '_testsinglephase'
+        require_extension(module)
 
         def check_compatible(setting, override):
             out = self.run_here(
