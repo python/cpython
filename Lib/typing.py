@@ -2000,21 +2000,27 @@ class _ProtocolMeta(ABCMeta):
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
         # assigned in __init__.
+        is_protocol_cls = getattr(cls, "_is_protocol", False)
         if (
-            getattr(cls, '_is_protocol', False) and
+            is_protocol_cls and
             not getattr(cls, '_is_runtime_protocol', False) and
             not _allow_reckless_class_checks(depth=2)
         ):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
 
+        if not is_protocol_cls and issubclass(instance.__class__, cls):
+            return True
+
         protocol_attrs = _get_protocol_attrs(cls)
 
-        if ((not getattr(cls, '_is_protocol', False) or
-                _is_callable_members_only(cls, protocol_attrs)) and
-                issubclass(instance.__class__, cls)):
+        if (
+            _is_callable_members_only(cls, protocol_attrs)
+            and issubclass(instance.__class__, cls)
+        ):
             return True
-        if cls._is_protocol:
+
+        if is_protocol_cls:
             if all(hasattr(instance, attr) and
                     # All *methods* can be blocked by setting them to None.
                     (not callable(getattr(cls, attr, None)) or
