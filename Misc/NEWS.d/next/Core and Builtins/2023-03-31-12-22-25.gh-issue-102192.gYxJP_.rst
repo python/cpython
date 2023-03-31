@@ -1,0 +1,2 @@
+Deprecated :c:func:`_PyErr_ChainExceptions` infavour of
+:c:func:`_PyErr_ChainExceptions1`.
