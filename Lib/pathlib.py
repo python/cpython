@@ -239,8 +239,9 @@ def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
                 fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
                 actions.append((_WalkAction.CLOSE, fd))
                 if orig_st and not os.path.samestat(orig_st, os.stat(fd)):
-                    # This can only happen if a directory is replaced with a symlink during the walk.
-                    return
+                    exc = NotADirectoryError("Will not walk into symbolic link")
+                    exc.func = os.path.islink
+                    raise exc
                 result = path, dirnames, filenames, fd
                 scandir_it = os.scandir(fd)
             except OSError as exc:

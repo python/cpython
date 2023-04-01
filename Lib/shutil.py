@@ -579,7 +579,7 @@ else:
 # version vulnerable to race conditions
 def _rmtree_unsafe(path, onexc):
     def on_walk_error(exc):
-        onexc(os.scandir, exc.filename, exc)
+        onexc(getattr(exc, 'func', os.scandir), exc.filename, exc)
     walker = path.walk(
         top_down=False,
         follow_symlinks=False,
@@ -596,15 +596,17 @@ def _rmtree_unsafe(path, onexc):
                 toppath._make_child_relpath(filename).unlink()
             except OSError as exc:
                 onexc(os.unlink, exc.filename, exc)
-    try:
-        path.rmdir()
-    except OSError as exc:
-        onexc(os.rmdir, exc.filename, exc)
+        if toppath == path:
+            try:
+                path.rmdir()
+            except OSError as exc:
+                onexc(os.rmdir, exc.filename, exc)
+
 
 # Version using fd-based APIs to protect against races
 def _rmtree_safe_fd(path, onexc, dir_fd):
     def on_walk_error(exc):
-        onexc(os.scandir, exc.filename, exc)
+        onexc(getattr(exc, 'func', os.scandir), exc.filename, exc)
     walker = path.fwalk(
         top_down=False,
         follow_symlinks=False,
@@ -623,11 +625,13 @@ def _rmtree_safe_fd(path, onexc, dir_fd):
             except OSError as exc:
                 exc.filename = str(toppath._make_child_relpath(filename))
                 onexc(os.unlink, exc.filename, exc)
-    try:
-        os.rmdir(path, dir_fd=dir_fd)
-    except OSError as exc:
-        exc.filename = str(path)
-        onexc(os.rmdir, exc.filename, exc)
+        if toppath == path:
+            try:
+                os.rmdir(path, dir_fd=dir_fd)
+            except OSError as exc:
+                exc.filename = str(path)
+                onexc(os.rmdir, exc.filename, exc)
+
 
 def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     """Recursively delete a directory tree.

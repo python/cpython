@@ -211,7 +211,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             shutil.rmtree(link, onerror=onerror)
         self.assertEqual(len(errors), 1)
-        self.assertIs(errors[0][0], os.rmdir)
+        self.assertIs(errors[0][0], os.path.islink)
         self.assertEqual(errors[0][1], link)
         self.assertIsInstance(errors[0][2][1], OSError)
 
@@ -230,7 +230,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
             errors.append(args)
         shutil.rmtree(link, onexc=onexc)
         self.assertEqual(len(errors), 1)
-        self.assertIs(errors[0][0], os.rmdir)
+        self.assertIs(errors[0][0], os.path.islink)
         self.assertEqual(errors[0][1], link)
         self.assertIsInstance(errors[0][2], OSError)
 
@@ -342,15 +342,11 @@ class TestRmTree(BaseTest, unittest.TestCase):
             errors.append(args)
         with self.assertWarns(DeprecationWarning):
             shutil.rmtree(filename, onerror=onerror)
-        self.assertEqual(len(errors), 2)
+        self.assertEqual(len(errors), 1)
         self.assertIs(errors[0][0], os.scandir)
         self.assertEqual(errors[0][1], filename)
         self.assertIsInstance(errors[0][2][1], NotADirectoryError)
         self.assertEqual(errors[0][2][1].filename, filename)
-        self.assertIs(errors[1][0], os.rmdir)
-        self.assertEqual(errors[1][1], filename)
-        self.assertIsInstance(errors[1][2][1], NotADirectoryError)
-        self.assertEqual(errors[1][2][1].filename, filename)
 
     def test_rmtree_errors_onexc(self):
         # filename is guaranteed not to exist
@@ -374,15 +370,11 @@ class TestRmTree(BaseTest, unittest.TestCase):
         def onexc(*args):
             errors.append(args)
         shutil.rmtree(filename, onexc=onexc)
-        self.assertEqual(len(errors), 2)
+        self.assertEqual(len(errors), 1)
         self.assertIs(errors[0][0], os.scandir)
         self.assertEqual(errors[0][1], filename)
         self.assertIsInstance(errors[0][2], NotADirectoryError)
         self.assertEqual(errors[0][2].filename, filename)
-        self.assertIs(errors[1][0], os.rmdir)
-        self.assertEqual(errors[1][1], filename)
-        self.assertIsInstance(errors[1][2], NotADirectoryError)
-        self.assertEqual(errors[1][2].filename, filename)
 
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
                      "This test can't be run on Cygwin (issue #1071513).")
