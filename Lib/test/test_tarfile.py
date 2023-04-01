@@ -2976,12 +2976,11 @@ class NumericOwnerTest(unittest.TestCase):
                               tarfl.extract, filename_1, TEMPDIR, False, True)
 
 
-# Enable this test when Issue 30438 is fixed
-# @unittest.skip
 class ExtractDoublyAddedReadonlyFile(unittest.TestCase):
 
     def test_extract_doubly_added_file(self):
-        "Issue 30438: tarring a readonly file twice, then extracting, should succeed"
+        # gh-74623: tarring a readonly file twice, then extracting,
+        # should succeed.
 
         file_name = os.path.join(TEMPDIR, 'read_only_file.txt')
 
