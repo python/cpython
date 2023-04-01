@@ -10,6 +10,7 @@ import stat
 import fnmatch
 import collections
 import errno
+import pathlib
 import warnings
 
 try:
@@ -562,111 +563,56 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
                      ignore_dangling_symlinks=ignore_dangling_symlinks,
                      dirs_exist_ok=dirs_exist_ok)
 
-if hasattr(os.stat_result, 'st_file_attributes'):
-    def _rmtree_islink(path):
-        try:
-            st = os.lstat(path)
-            return (stat.S_ISLNK(st.st_mode) or
-                (st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
-                 and st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT))
-        except OSError:
-            return False
-else:
-    def _rmtree_islink(path):
-        return os.path.islink(path)
 
 # version vulnerable to race conditions
 def _rmtree_unsafe(path, onexc):
-    try:
-        with os.scandir(path) as scandir_it:
-            entries = list(scandir_it)
-    except OSError as err:
-        onexc(os.scandir, path, err)
-        entries = []
-    for entry in entries:
-        fullname = entry.path
-        try:
-            is_dir = entry.is_dir(follow_symlinks=False)
-        except OSError:
-            is_dir = False
-
-        if is_dir and not entry.is_junction():
+    def on_walk_error(exc):
+        onexc(os.scandir, exc.filename, exc)
+    walker = path.walk(
+        top_down=False,
+        follow_symlinks=False,
+        follow_junctions=False,
+        on_error=on_walk_error)
+    for toppath, dirnames, filenames in walker:
+        for dirname in dirnames:
             try:
-                if entry.is_symlink():
-                    # This can only happen if someone replaces
-                    # a directory with a symlink after the call to
-                    # os.scandir or entry.is_dir above.
-                    raise OSError("Cannot call rmtree on a symbolic link")
-            except OSError as err:
-                onexc(os.path.islink, fullname, err)
-                continue
-            _rmtree_unsafe(fullname, onexc)
-        else:
+                toppath._make_child_relpath(dirname).rmdir()
+            except OSError as exc:
+                onexc(os.rmdir, str(toppath / dirname), exc)
+        for filename in filenames:
             try:
-                os.unlink(fullname)
-            except OSError as err:
-                onexc(os.unlink, fullname, err)
+                toppath._make_child_relpath(filename).unlink()
+            except OSError as exc:
+                onexc(os.unlink, str(toppath / filename), exc)
     try:
-        os.rmdir(path)
-    except OSError as err:
-        onexc(os.rmdir, path, err)
+        path.rmdir()
+    except OSError as exc:
+        onexc(os.rmdir, str(path), exc)
 
 # Version using fd-based APIs to protect against races
-def _rmtree_safe_fd(topfd, path, onexc):
+def _rmtree_safe_fd(path, onexc, dir_fd):
+    def on_walk_error(exc):
+        onexc(os.scandir, exc.filename, exc)
+    walker = path.fwalk(
+        top_down=False,
+        follow_symlinks=False,
+        on_error=on_walk_error,
+        dir_fd=dir_fd)
+    for toppath, dirnames, filenames, topfd in walker:
+        for dirname in dirnames:
+            try:
+                os.rmdir(dirname, dir_fd=topfd)
+            except OSError as exc:
+                onexc(os.rmdir, str(toppath / dirname), exc)
+        for filename in filenames:
+            try:
+                os.unlink(filename, dir_fd=topfd)
+            except OSError as exc:
+                onexc(os.unlink, str(toppath / filename), exc)
     try:
-        with os.scandir(topfd) as scandir_it:
-            entries = list(scandir_it)
-    except OSError as err:
-        err.filename = path
-        onexc(os.scandir, path, err)
-        return
-    for entry in entries:
-        fullname = os.path.join(path, entry.name)
-        try:
-            is_dir = entry.is_dir(follow_symlinks=False)
-        except OSError:
-            is_dir = False
-        else:
-            if is_dir:
-                try:
-                    orig_st = entry.stat(follow_symlinks=False)
-                    is_dir = stat.S_ISDIR(orig_st.st_mode)
-                except OSError as err:
-                    onexc(os.lstat, fullname, err)
-                    continue
-        if is_dir:
-            try:
-                dirfd = os.open(entry.name, os.O_RDONLY, dir_fd=topfd)
-                dirfd_closed = False
-            except OSError as err:
-                onexc(os.open, fullname, err)
-            else:
-                try:
-                    if os.path.samestat(orig_st, os.fstat(dirfd)):
-                        _rmtree_safe_fd(dirfd, fullname, onexc)
-                        try:
-                            os.close(dirfd)
-                            dirfd_closed = True
-                            os.rmdir(entry.name, dir_fd=topfd)
-                        except OSError as err:
-                            onexc(os.rmdir, fullname, err)
-                    else:
-                        try:
-                            # This can only happen if someone replaces
-                            # a directory with a symlink after the call to
-                            # os.scandir or stat.S_ISDIR above.
-                            raise OSError("Cannot call rmtree on a symbolic "
-                                          "link")
-                        except OSError as err:
-                            onexc(os.path.islink, fullname, err)
-                finally:
-                    if not dirfd_closed:
-                        os.close(dirfd)
-        else:
-            try:
-                os.unlink(entry.name, dir_fd=topfd)
-            except OSError as err:
-                onexc(os.unlink, fullname, err)
+        os.rmdir(path, dir_fd=dir_fd)
+    except OSError as exc:
+        onexc(os.rmdir, str(path), exc)
 
 _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
                      os.supports_dir_fd and
@@ -719,52 +665,14 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
                     exc_info = type(exc), exc, exc.__traceback__
                 return onerror(func, path, exc_info)
 
+    if isinstance(path, bytes):
+        path = os.fsdecode(path)
+    path = pathlib.Path(path)
     if _use_fd_functions:
-        # While the unsafe rmtree works fine on bytes, the fd based does not.
-        if isinstance(path, bytes):
-            path = os.fsdecode(path)
-        # Note: To guard against symlink races, we use the standard
-        # lstat()/open()/fstat() trick.
-        try:
-            orig_st = os.lstat(path, dir_fd=dir_fd)
-        except Exception as err:
-            onexc(os.lstat, path, err)
-            return
-        try:
-            fd = os.open(path, os.O_RDONLY, dir_fd=dir_fd)
-            fd_closed = False
-        except Exception as err:
-            onexc(os.open, path, err)
-            return
-        try:
-            if os.path.samestat(orig_st, os.fstat(fd)):
-                _rmtree_safe_fd(fd, path, onexc)
-                try:
-                    os.close(fd)
-                    fd_closed = True
-                    os.rmdir(path, dir_fd=dir_fd)
-                except OSError as err:
-                    onexc(os.rmdir, path, err)
-            else:
-                try:
-                    # symlinks to directories are forbidden, see bug #1669
-                    raise OSError("Cannot call rmtree on a symbolic link")
-                except OSError as err:
-                    onexc(os.path.islink, path, err)
-        finally:
-            if not fd_closed:
-                os.close(fd)
+        _rmtree_safe_fd(path, onexc, dir_fd)
     else:
         if dir_fd is not None:
             raise NotImplementedError("dir_fd unavailable on this platform")
-        try:
-            if _rmtree_islink(path):
-                # symlinks to directories are forbidden, see bug #1669
-                raise OSError("Cannot call rmtree on a symbolic link")
-        except OSError as err:
-            onexc(os.path.islink, path, err)
-            # can't continue even if onexc hook returns
-            return
         return _rmtree_unsafe(path, onexc)
 
 # Allow introspection of whether or not the hardening against symlink

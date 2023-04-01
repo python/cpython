@@ -205,6 +205,89 @@ class _RecursiveWildcardSelector(_Selector):
 
 
 #
+# Walking helpers
+#
+
+
+class _WalkAction:
+    WALK = object()
+    YIELD = object()
+    CLOSE = object()
+
+
+_supports_fwalk = (
+    {os.stat, os.open} <= os.supports_dir_fd and
+    {os.stat, os.scandir} <= os.supports_fd)
+
+
+def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
+    action, value = actions.pop()
+
+    if action is _WalkAction.WALK:
+        path, dir_fd, orig_st = value
+        dirstats = None
+        dirnames = []
+        filenames = []
+        if use_fd:
+            name = path if dir_fd is None else path.name
+            if not follow_symlinks:
+                if top_down:
+                    orig_st = os.stat(name, follow_symlinks=False, dir_fd=dir_fd)
+                else:
+                    dirstats = []
+            fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
+            actions.append((_WalkAction.CLOSE, fd))
+            if orig_st and not os.path.samestat(orig_st, os.stat(fd)):
+                # This can only happen if a directory is replaced with a symlink during the walk.
+                return
+            result = path, dirnames, filenames, fd
+            try:
+                scandir_it = os.scandir(fd)
+            except OSError as exc:
+                exc.filename = str(path)
+                raise exc
+        else:
+            fd = None
+            result = path, dirnames, filenames
+            scandir_it = path._scandir()
+
+        with scandir_it:
+            for entry in scandir_it:
+                try:
+                    is_dir = entry.is_dir(follow_symlinks=follow_symlinks) and (
+                        follow_junctions or not entry.is_junction())
+                    if is_dir:
+                        if dirstats is not None:
+                            dirstats.append(entry.stat(follow_symlinks=False))
+                        dirnames.append(entry.name)
+                    else:
+                        filenames.append(entry.name)
+
+                except OSError:
+                    filenames.append(entry.name)
+
+        if top_down:
+            yield result
+        else:
+            actions.append((_WalkAction.YIELD, result))
+
+        if dirstats:
+            actions += [
+                (_WalkAction.WALK, (path._make_child_relpath(dirname), fd, dirstat))
+                for dirname, dirstat in zip(reversed(dirnames), reversed(dirstats))]
+        else:
+            actions += [
+                (_WalkAction.WALK, (path._make_child_relpath(dirname), fd, None))
+                for dirname in reversed(dirnames)]
+
+    elif action is _WalkAction.YIELD:
+        yield value
+    elif action is _WalkAction.CLOSE:
+        os.close(value)
+    else:
+        raise AssertionError(f"unknown walk action: {action}")
+
+#
 # Public API
 #
 
@@ -1194,50 +1277,38 @@ class Path(PurePath):
 
         return self
 
-    def walk(self, top_down=True, on_error=None, follow_symlinks=False):
+    def walk(self, top_down=True, on_error=None, follow_symlinks=False, follow_junctions=True):
         """Walk the directory tree from this directory, similar to os.walk()."""
-        sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
-        paths = [self]
-
-        while paths:
-            path = paths.pop()
-            if isinstance(path, tuple):
-                yield path
-                continue
-
-            # We may not have read permission for self, in which case we can't
-            # get a list of the files the directory contains. os.walk()
-            # always suppressed the exception in that instance, rather than
-            # blow up for a minor reason when (say) a thousand readable
-            # directories are still left to visit. That logic is copied here.
+        sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks, follow_junctions)
+        actions = [(_WalkAction.WALK, (self, None, None))]
+        while actions:
             try:
-                scandir_it = path._scandir()
+                yield from _walk(top_down, follow_symlinks, follow_junctions, False, actions)
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
                 continue
 
-            with scandir_it:
-                dirnames = []
-                filenames = []
-                for entry in scandir_it:
+    if _supports_fwalk:
+        def fwalk(self, top_down=True, on_error=None, follow_symlinks=False, dir_fd=None):
+            """Walk the directory tree from this directory, similar to os.fwalk()."""
+            sys.audit("pathlib.Path.fwalk", self, on_error, follow_symlinks, dir_fd)
+            actions = [(_WalkAction.WALK, (self, dir_fd, None))]
+            try:
+                while actions:
                     try:
-                        is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
-                    except OSError:
-                        # Carried over from os.path.isdir().
-                        is_dir = False
-
-                    if is_dir:
-                        dirnames.append(entry.name)
-                    else:
-                        filenames.append(entry.name)
-
-            if top_down:
-                yield path, dirnames, filenames
-            else:
-                paths.append((path, dirnames, filenames))
-
-            paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
+                        yield from _walk(top_down, follow_symlinks, True, True, actions)
+                    except OSError as error:
+                        if on_error is not None:
+                            on_error(error)
+                        continue
+            finally:
+                for action, value in reversed(actions):
+                    if action is _WalkAction.CLOSE:
+                        try:
+                            os.close(value)
+                        except OSError:
+                            pass
 
 
 class PosixPath(Path, PurePosixPath):

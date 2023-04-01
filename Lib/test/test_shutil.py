@@ -211,7 +211,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             shutil.rmtree(link, onerror=onerror)
         self.assertEqual(len(errors), 1)
-        self.assertIs(errors[0][0], os.path.islink)
+        self.assertIs(errors[0][0], os.rmdir)
         self.assertEqual(errors[0][1], link)
         self.assertIsInstance(errors[0][2][1], OSError)
 
@@ -230,7 +230,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
             errors.append(args)
         shutil.rmtree(link, onexc=onexc)
         self.assertEqual(len(errors), 1)
-        self.assertIs(errors[0][0], os.path.islink)
+        self.assertIs(errors[0][0], os.rmdir)
         self.assertEqual(errors[0][1], link)
         self.assertIsInstance(errors[0][2], OSError)
 
