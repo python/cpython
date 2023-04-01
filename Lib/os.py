@@ -556,14 +556,13 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                     if follow_symlinks or path.samestat(orig_st, stat(dirfd)):
                         dirpath = path.join(top, name)
                         stack.append((_WalkAction.WALK, (dirfd, dirpath)))
-        except:
+        finally:
             for action, value in reversed(stack):
                 if action is _WalkAction.CLOSE:
                     try:
                         close(value)
                     except OSError:
                         pass
-            raise
 
     __all__.append("fwalk")
 
