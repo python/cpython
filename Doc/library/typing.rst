@@ -1619,6 +1619,13 @@ These are not used in annotations. They are building blocks for creating generic
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.11
+      Where a runtime-checkable protocol class ``X`` is decorated with
+      :func:`@typing.final <typing.final>`, an object ``y`` will now only be
+      considered an instance of ``X`` if the class of ``y`` is also decorated
+      with ``@final``. Runtime-checkable protocols decorated with ``@final``
+      can also no longer be used in :func:`issubclass` calls.
+
 Other special directives
 """"""""""""""""""""""""
 
