@@ -1935,11 +1935,6 @@ def _get_protocol_attrs(cls):
     return attrs
 
 
-def _is_callable_members_only(cls):
-    # PEP 544 prohibits using issubclass() with protocols that have non-method members.
-    return all(callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__)
-
-
 def _no_init_or_replace_init(self, *args, **kwargs):
     cls = type(self)
 
@@ -2016,9 +2011,7 @@ class _ProtocolMeta(ABCMeta):
         if not is_protocol_cls and issubclass(instance.__class__, cls):
             return True
 
-        if not hasattr(cls, "__protocol_attrs__"):
-            cls.__protocol_attrs__ = _get_protocol_attrs(cls)
-            cls.__callable_proto_members_only__ = _is_callable_members_only(cls)
+        cls.__lazy_protocol_init_subclass__()
 
         if cls.__callable_proto_members_only__ and issubclass(instance.__class__, cls):
             return True
@@ -2067,6 +2060,16 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
     _is_protocol = True
     _is_runtime_protocol = False
 
+    @classmethod
+    def __lazy_protocol_init_subclass__(cls):
+        if not hasattr(cls, "__protocol_attrs__"):
+            cls.__protocol_attrs__ = _get_protocol_attrs(cls)
+            # PEP 544 prohibits using issubclass()
+            # with protocols that have non-method members.
+            cls.__callable_proto_members_only__ = all(
+                callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
+            )
+
     def __init_subclass__(cls, *args, **kwargs):
         super().__init_subclass__(*args, **kwargs)
 
@@ -2086,9 +2089,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                 raise TypeError("Instance and class checks can only be used with"
                                 " @runtime_checkable protocols")
 
-            if not hasattr(cls, "__protocol_attrs__"):
-                cls.__protocol_attrs__ = _get_protocol_attrs(cls)
-                cls.__callable_proto_members_only__ = _is_callable_members_only(cls)
+            cls.__lazy_protocol_init_subclass__()
 
             if not cls.__callable_proto_members_only__ :
                 if _allow_reckless_class_checks():
