@@ -3948,6 +3948,30 @@ math_ulp_impl(PyObject *module, double x)
     return x2 - x;
 }
 
+/*
+   Future-proof pi in case we ever move away from IEEE 754.  Import time is
+   increased, but the added robustness makes this an acceptable trade-off.
+
+   TODO: Slightly better algorithms are known.
+*/
+static double
+math_calc_pi(void)
+{
+    double pi = 0.0;
+
+    for (int n = 0; ; ++n) {
+        double term = 4.0 / ((double) (2*n + 1));
+        if (n & 1)
+            term = -term;
+        double next_pi = pi + term;
+        if (next_pi == pi)
+            break;
+        pi = next_pi;
+    }
+
+    return pi;
+}
+
 static int
 math_exec(PyObject *module)
 {
@@ -3965,7 +3989,7 @@ math_exec(PyObject *module)
     if (state->str___trunc__ == NULL) {
         return -1;
     }
-    if (PyModule_AddObject(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
+    if (PyModule_AddObject(module, "π", PyFloat_FromDouble(math_calc_pi())) < 0) {
         return -1;
     }
     if (PyModule_AddObject(module, "e", PyFloat_FromDouble(Py_MATH_E)) < 0) {
