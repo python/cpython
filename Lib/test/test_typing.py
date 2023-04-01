@@ -2597,6 +2597,22 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaises(TypeError):
             isinstance(C(), BadPG)
 
+    def test_protocols_isinstance_final(self):
+        @final
+        @runtime_checkable
+        class FinalHasX(Protocol):
+            x: int
+
+        class Eggs:
+            x = 42
+
+        @final
+        class Spam:
+            x = 42
+
+        self.assertNotIsInstance(Eggs(), FinalHasX)
+        self.assertIsInstance(Spam(), FinalHasX)
+
     def test_protocols_isinstance_properties_and_descriptors(self):
         class C:
             @property
