@@ -203,11 +203,6 @@ class _RecursiveWildcardSelector(_Selector):
             return
 
 
-#
-# Walking helpers
-#
-
-
 class _WalkAction:
     WALK = object()
     YIELD = object()
@@ -221,7 +216,6 @@ _supports_fwalk = (
 
 def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
     action, value = actions.pop()
-
     if action is _WalkAction.WALK:
         path, dir_fd, entry = value
         entries = [] if use_fd and not top_down and not follow_symlinks else None
@@ -229,31 +223,16 @@ def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
         filenames = []
         try:
             if use_fd:
-                name = path if dir_fd is None else path.name
-                orig_st = None
-                if not follow_symlinks:
-                    if entry:
-                        orig_st = entry.stat(follow_symlinks=False)
-                    else:
-                        orig_st = os.stat(name, follow_symlinks=False, dir_fd=dir_fd)
-                fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
-                actions.append((_WalkAction.CLOSE, fd))
-                if orig_st and not os.path.samestat(orig_st, os.stat(fd)):
-                    error = NotADirectoryError("Will not walk into symbolic link")
-                    error.func = os.path.islink
-                    raise error
+                scandir_it, fd = path._fscandir(follow_symlinks, actions, dir_fd, entry)
                 result = path, dirnames, filenames, fd
-                scandir_it = os.scandir(fd)
             else:
-                fd = None
+                scandir_it, fd = path._scandir(), None
                 result = path, dirnames, filenames
-                scandir_it = path._scandir()
         except OSError as error:
             if not hasattr(error, 'func'):
                 error.func = os.scandir
             error.filename = str(path)
             raise error
-
         with scandir_it:
             for entry in scandir_it:
                 try:
@@ -265,15 +244,12 @@ def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
                         dirnames.append(entry.name)
                     else:
                         filenames.append(entry.name)
-
                 except OSError:
                     filenames.append(entry.name)
-
         if top_down:
             yield result
         else:
             actions.append((_WalkAction.YIELD, result))
-
         if entries:
             actions += [
                 (_WalkAction.WALK, (path._make_child_relpath(dirname), fd, entry))
@@ -282,7 +258,6 @@ def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
             actions += [
                 (_WalkAction.WALK, (path._make_child_relpath(dirname), fd, None))
                 for dirname in reversed(dirnames)]
-
     elif action is _WalkAction.YIELD:
         yield value
     elif action is _WalkAction.CLOSE:
@@ -1301,10 +1276,10 @@ class Path(PurePath):
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
-                continue
 
     if _supports_fwalk:
         def _fwalk(self, top_down=True, *, on_error=None, follow_symlinks=False, dir_fd=None):
+            """Walk the directory tree from this directory, similar to os.fwalk()."""
             sys.audit("pathlib.Path._fwalk", self, on_error, follow_symlinks, dir_fd)
             actions = [(_WalkAction.WALK, (self, dir_fd, None))]
             try:
@@ -1314,7 +1289,6 @@ class Path(PurePath):
                     except OSError as error:
                         if on_error is not None:
                             on_error(error)
-                        continue
             finally:
                 for action, value in reversed(actions):
                     if action is _WalkAction.CLOSE:
@@ -1322,6 +1296,25 @@ class Path(PurePath):
                             os.close(value)
                         except OSError:
                             pass
+
+        def _fscandir(self, follow_symlinks, actions, dir_fd, entry):
+            name = self if dir_fd is None else self.name
+            if not follow_symlinks:
+                # Note: To guard against symlink races, we use the standard
+                # lstat()/open()/fstat() trick.
+                if entry:
+                    orig_st = entry.stat(follow_symlinks=False)
+                else:
+                    orig_st = os.stat(name, follow_symlinks=False, dir_fd=dir_fd)
+            fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
+            actions.append((_WalkAction.CLOSE, fd))
+            if not follow_symlinks and not os.path.samestat(orig_st, os.stat(fd)):
+                # This can only happen if someone replaces a directory
+                # with a symbolic link after the call to stat() above.
+                error = NotADirectoryError("Cannot walk into a symbolic link")
+                error.func = os.path.islink
+                raise error
+            return os.scandir(fd), fd
 
         # Version using fd-based APIs to protect against races
         _rmtree.avoids_symlink_attacks = True
@@ -1331,24 +1324,24 @@ class Path(PurePath):
                 follow_symlinks=False,
                 on_error=on_error,
                 dir_fd=dir_fd)
-            for toppath, dirnames, filenames, topfd in walker:
+            for path, dirnames, filenames, fd in walker:
                 for dirname in dirnames:
                     try:
-                        os.rmdir(dirname, dir_fd=topfd)
+                        os.rmdir(dirname, dir_fd=fd)
                     except OSError as error:
                         if on_error is not None:
-                            error.filename = str(toppath._make_child_relpath(dirname))
+                            error.filename = str(path._make_child_relpath(dirname))
                             error.func = os.rmdir
                             on_error(error)
                 for filename in filenames:
                     try:
-                        os.unlink(filename, dir_fd=topfd)
+                        os.unlink(filename, dir_fd=fd)
                     except OSError as error:
                         if on_error is not None:
-                            error.filename = str(toppath._make_child_relpath(filename))
+                            error.filename = str(path._make_child_relpath(filename))
                             error.func = os.unlink
                             on_error(error)
-                if toppath == self:
+                if path == self:
                     try:
                         os.rmdir(self, dir_fd=dir_fd)
                     except OSError as error:
@@ -1372,6 +1365,7 @@ class Path(PurePath):
                 if on_error is not None:
                     error.func = os.path.islink
                     on_error(error)
+                # can't continue even if on_error hook returns
                 return
 
             walker = self.walk(
@@ -1379,22 +1373,22 @@ class Path(PurePath):
                 follow_symlinks=False,
                 follow_junctions=False,
                 on_error=on_error)
-            for toppath, dirnames, filenames in walker:
+            for path, dirnames, filenames in walker:
                 for dirname in dirnames:
                     try:
-                        toppath._make_child_relpath(dirname).rmdir()
+                        path._make_child_relpath(dirname).rmdir()
                     except OSError as error:
                         if on_error is not None:
                             error.func = os.rmdir
                             on_error(error)
                 for filename in filenames:
                     try:
-                        toppath._make_child_relpath(filename).unlink()
+                        path._make_child_relpath(filename).unlink()
                     except OSError as error:
                         if on_error is not None:
                             error.func = os.unlink
                             on_error(error)
-                if toppath == self:
+                if path == self:
                     try:
                         self.rmdir()
                     except OSError as error:
