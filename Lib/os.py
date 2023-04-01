@@ -471,27 +471,23 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             if 'CVS' in dirs:
                 dirs.remove('CVS')  # don't visit CVS directories
         """
+        # Note: This uses O(depth of the directory tree) file descriptors: if
+        # necessary, it can be adapted to only require O(1) FDs, see issue
+        # bpo-13734 (gh-57943).
         sys.audit("os.fwalk", top, topdown, onerror, follow_symlinks, dir_fd)
         top = fspath(top)
+        isbytes = isinstance(top, bytes)
         # Note: To guard against symlink races, we use the standard
         # lstat()/open()/fstat() trick.
         if not follow_symlinks:
             orig_st = stat(top, follow_symlinks=False, dir_fd=dir_fd)
         topfd = open(top, O_RDONLY, dir_fd=dir_fd)
+        stack = [(_WalkAction.CLOSE, topfd)]
         try:
             if (follow_symlinks or (st.S_ISDIR(orig_st.st_mode) and
                                     path.samestat(orig_st, stat(topfd)))):
-                yield from _fwalk(topfd, top, isinstance(top, bytes),
-                                  topdown, onerror, follow_symlinks)
-        finally:
-            close(topfd)
+                stack.append((_WalkAction.WALK, (topfd, top)))
 
-    def _fwalk(topfd, toppath, isbytes, topdown, onerror, follow_symlinks):
-        # Note: This uses O(depth of the directory tree) file descriptors: if
-        # necessary, it can be adapted to only require O(1) FDs, see issue
-        # bpo-13734 (gh-57943).
-        stack = [(_WalkAction.WALK, (topfd, toppath))]
-        try:
             while stack:
                 action, value = stack.pop()
                 if action is _WalkAction.YIELD:
@@ -501,7 +497,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                     close(value)
                     continue
                 elif action is _WalkAction.WALK:
-                    topfd, toppath = value
+                    topfd, top = value
                 else:
                     raise AssertionError(f"invalid walk action: {action!r}")
 
@@ -530,11 +526,11 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
 
                 if topdown:
                     # Yield top immediately, before walking subdirs
-                    yield toppath, dirs, nondirs, topfd
+                    yield top, dirs, nondirs, topfd
                 else:
                     # Yield top after walking subdirs
                     stack.append(
-                        (_WalkAction.YIELD, (toppath, dirs, nondirs, topfd)))
+                        (_WalkAction.YIELD, (top, dirs, nondirs, topfd)))
 
                 for name in (reversed(dirs) if entries is None
                              else zip(reversed(dirs), reversed(entries))):
@@ -558,7 +554,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                     stack.append((_WalkAction.CLOSE, dirfd))
                     # Walk all subdirs
                     if follow_symlinks or path.samestat(orig_st, stat(dirfd)):
-                        dirpath = path.join(toppath, name)
+                        dirpath = path.join(top, name)
                         stack.append((_WalkAction.WALK, (dirfd, dirpath)))
         except:
             for action, value in reversed(stack):
