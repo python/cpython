@@ -1,0 +1,2 @@
+Avoid untar errors when write-protected files are tarred twice. Patch by
+Catherine Devlin.
