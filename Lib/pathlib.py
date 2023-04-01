@@ -227,10 +227,10 @@ def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
         entries = [] if use_fd and not top_down and not follow_symlinks else None
         dirnames = []
         filenames = []
-        if use_fd:
-            name = path if dir_fd is None else path.name
-            orig_st = None
-            try:
+        try:
+            if use_fd:
+                name = path if dir_fd is None else path.name
+                orig_st = None
                 if not follow_symlinks:
                     if entry:
                         orig_st = entry.stat(follow_symlinks=False)
@@ -244,15 +244,15 @@ def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
                     raise exc
                 result = path, dirnames, filenames, fd
                 scandir_it = os.scandir(fd)
-            except OSError as exc:
-                if not hasattr(exc, 'func'):
-                    exc.func = os.scandir
-                exc.filename = str(path)
-                raise exc
-        else:
-            fd = None
-            result = path, dirnames, filenames
-            scandir_it = path._scandir()
+            else:
+                fd = None
+                result = path, dirnames, filenames
+                scandir_it = path._scandir()
+        except OSError as exc:
+            if not hasattr(exc, 'func'):
+                exc.func = os.scandir
+            exc.filename = str(path)
+            raise exc
 
         with scandir_it:
             for entry in scandir_it:
