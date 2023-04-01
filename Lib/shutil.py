@@ -563,6 +563,18 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
                      ignore_dangling_symlinks=ignore_dangling_symlinks,
                      dirs_exist_ok=dirs_exist_ok)
 
+if hasattr(os.stat_result, 'st_file_attributes'):
+    def _rmtree_islink(path):
+        try:
+            st = os.lstat(path)
+            return (stat.S_ISLNK(st.st_mode) or
+                (st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
+                 and st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT))
+        except OSError:
+            return False
+else:
+    def _rmtree_islink(path):
+        return os.path.islink(path)
 
 # version vulnerable to race conditions
 def _rmtree_unsafe(path, onexc):
@@ -673,6 +685,14 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     else:
         if dir_fd is not None:
             raise NotImplementedError("dir_fd unavailable on this platform")
+        try:
+            if _rmtree_islink(path):
+                # symlinks to directories are forbidden, see bug #1669
+                raise OSError("Cannot call rmtree on a symbolic link")
+        except OSError as err:
+            onexc(os.path.islink, path, err)
+            # can't continue even if onexc hook returns
+            return
         return _rmtree_unsafe(path, onexc)
 
 # Allow introspection of whether or not the hardening against symlink
