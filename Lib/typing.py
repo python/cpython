@@ -1996,6 +1996,15 @@ _PROTO_ALLOWLIST = {
 class _ProtocolMeta(ABCMeta):
     # This metaclass is really unfortunate and exists only because of
     # the lack of __instancehook__.
+    def __lazy_protocol_init_subclass__(cls):
+        if not hasattr(cls, "__protocol_attrs__"):
+            cls.__protocol_attrs__ = _get_protocol_attrs(cls)
+            # PEP 544 prohibits using issubclass()
+            # with protocols that have non-method members.
+            cls.__callable_proto_members_only__ = all(
+                callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
+            )
+
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
         # assigned in __init__.
@@ -2059,16 +2068,6 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
     __slots__ = ()
     _is_protocol = True
     _is_runtime_protocol = False
-
-    @classmethod
-    def __lazy_protocol_init_subclass__(cls):
-        if not hasattr(cls, "__protocol_attrs__"):
-            cls.__protocol_attrs__ = _get_protocol_attrs(cls)
-            # PEP 544 prohibits using issubclass()
-            # with protocols that have non-method members.
-            cls.__callable_proto_members_only__ = all(
-                callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
-            )
 
     def __init_subclass__(cls, *args, **kwargs):
         super().__init_subclass__(*args, **kwargs)
