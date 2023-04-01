@@ -628,7 +628,6 @@ static inline void Py_INCREF(PyObject *op)
 #endif
     _Py_INCREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
     _Py_INC_REFTOTAL();
 #endif
 #endif

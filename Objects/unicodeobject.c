@@ -1538,7 +1538,6 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
 static void
 unicode_dealloc(PyObject *unicode)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 #ifdef Py_DEBUG
     if (!unicode_is_finalizing() && unicode_is_singleton(unicode)) {
         _Py_FatalRefcountError("deallocating an Unicode singleton");
