@@ -150,6 +150,53 @@ a = A(destroyed)"""
         if 'test.test_module.bad_getattr2' in sys.modules:
             del sys.modules['test.test_module.bad_getattr2']
 
+    def test_module_setattr(self):
+        import test.good_setattr as gsa
+        self.assertEqual(gsa.foo, 1)
+        with self.assertRaises(AttributeError):
+            gsa.bar
+        with self.assertRaisesRegex(AttributeError, "Read-only attribute"):
+            gsa.foo = 2
+        gsa.bar = 3
+        self.assertEqual(gsa.bar, 3)
+
+    def test_module_setattr_errors(self):
+        import test.bad_setattr as bsa
+        from test import bad_setattr2
+        self.assertEqual(bsa.foo, 1)
+        self.assertEqual(bad_setattr2.foo, 1)
+        with self.assertRaises(TypeError):
+            bsa.foo = 2
+        with self.assertRaises(TypeError):
+            bad_setattr2.foo = 2
+        del sys.modules['test.bad_setattr']
+        del sys.modules['test.bad_setattr2']
+
+    def test_module_delattr(self):
+        import test.good_delattr as gda
+        self.assertEqual(gda.foo, 1)
+        with self.assertRaises(AttributeError):
+            gda.bar
+        with self.assertRaisesRegex(AttributeError, "Read-only attribute"):
+            del gda.foo
+        gda.bar = 3
+        self.assertEqual(gda.bar, 3)
+        del gda.bar
+        with self.assertRaises(AttributeError):
+            gda.bar
+
+    def test_module_delattr_errors(self):
+        import test.bad_delattr as bda
+        from test import bad_delattr2
+        self.assertEqual(bda.foo, 1)
+        self.assertEqual(bad_delattr2.foo, 1)
+        with self.assertRaises(TypeError):
+            del bda.foo
+        with self.assertRaises(TypeError):
+            del bad_delattr2.foo
+        del sys.modules['test.bad_delattr']
+        del sys.modules['test.bad_delattr2']
+
     def test_module_dir(self):
         import test.test_module.good_getattr as gga
         self.assertEqual(dir(gga), ['a', 'b', 'c'])

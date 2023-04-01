@@ -867,6 +867,40 @@ _Py_module_getattro(PyModuleObject *m, PyObject *name)
 }
 
 static int
+module_setattro(PyModuleObject *m, PyObject *name, PyObject *value)
+{
+    PyObject *setattr, *delattr;
+    assert(m->md_dict != NULL);
+    PyErr_Clear();
+    if (value == NULL) {
+        delattr = PyDict_GetItemWithError(m->md_dict, &_Py_ID(__delattr__));
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        if (delattr) {
+            PyObject_CallFunctionObjArgs(delattr, name, NULL);
+            if (PyErr_Occurred()) {
+                return -1;
+            }
+            return 0;
+        }
+    } else {
+        setattr = PyDict_GetItemWithError(m->md_dict, &_Py_ID(__setattr__));
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        if (setattr) {
+            PyObject_CallFunctionObjArgs(setattr, name, value, NULL);
+            if (PyErr_Occurred()) {
+                return -1;
+            }
+            return 0;
+        }
+    }
+    return PyObject_GenericSetAttr((PyObject *)m, name, value);
+}
+
+static int
 module_traverse(PyModuleObject *m, visitproc visit, void *arg)
 {
     /* bpo-39824: Don't call m_traverse() if m_size > 0 and md_state=NULL */
@@ -1018,7 +1052,7 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     (getattrofunc)_Py_module_getattro,          /* tp_getattro */
-    PyObject_GenericSetAttr,                    /* tp_setattro */
+    (setattrofunc)module_setattro,              /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,                    /* tp_flags */

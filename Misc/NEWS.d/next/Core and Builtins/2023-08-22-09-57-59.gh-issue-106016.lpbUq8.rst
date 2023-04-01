@@ -1,0 +1,2 @@
+Add support for module ``__setattr__`` and ``__delattr__``. Patch by Sergey
+B Kirpichev.

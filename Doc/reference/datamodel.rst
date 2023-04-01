@@ -1695,11 +1695,15 @@ Customizing module attribute access
 
 .. index::
    single: __getattr__ (module attribute)
+   single: __setattr__ (module attribute)
+   single: __delattr__ (module attribute)
    single: __dir__ (module attribute)
    single: __class__ (module attribute)
 
-Special names ``__getattr__`` and ``__dir__`` can be also used to customize
-access to module attributes. The ``__getattr__`` function at the module level
+Special names ``__getattr__``, ``__setattr__``, ``__delattr__`` and ``__dir__``
+can be also used to customize access to module attributes.
+
+The ``__getattr__`` function at the module level
 should accept one argument which is the name of an attribute and return the
 computed value or raise an :exc:`AttributeError`. If an attribute is
 not found on a module object through the normal lookup, i.e.
@@ -1707,38 +1711,50 @@ not found on a module object through the normal lookup, i.e.
 the module ``__dict__`` before raising an :exc:`AttributeError`. If found,
 it is called with the attribute name and the result is returned.
 
+The ``__setattr__`` function should accept two arguments, respectively, the
+name of an attribute and the value to be assigned and return :const:`None` or
+raise an :exc:`AttributeError`.  If present, this function overrides the
+standard :func:`setattr` behaviour on a module.  For example::
+
+   def __setattr__(name, value):
+       print(f'Setting {name} to {value}...')
+       globals()[name] = value
+
+The ``__delattr__`` function should accept one argument which is the name of an
+attribute and return :const:`None` or raise an :exc:`AttributeError`.  If present,
+this function overrides the standard :func:`delattr` behaviour on a module.
+
 The ``__dir__`` function should accept no arguments, and return a sequence of
 strings that represents the names accessible on module. If present, this
 function overrides the standard :func:`dir` search on a module.
 
-For a more fine grained customization of the module behavior (setting
-attributes, properties, etc.), one can set the ``__class__`` attribute of
-a module object to a subclass of :class:`types.ModuleType`. For example::
+For a more fine grained customization of the module behavior, one can set the
+``__class__`` attribute of a module object to a subclass of
+:class:`types.ModuleType`. For example::
 
    import sys
    from types import ModuleType
 
-   class VerboseModule(ModuleType):
-       def __repr__(self):
-           return f'Verbose {self.__name__}'
+   class CallableModule(ModuleType):
+       def __call__(self, *args, **kwargs):
+           raise RuntimeError("NO-body expects the Spanish Inquisition!")
 
-       def __setattr__(self, attr, value):
-           print(f'Setting {attr}...')
-           super().__setattr__(attr, value)
-
-   sys.modules[__name__].__class__ = VerboseModule
+   sys.modules[__name__].__class__ = CallableModule
 
 .. note::
-   Defining module ``__getattr__`` and setting module ``__class__`` only
-   affect lookups made using the attribute access syntax -- directly accessing
-   the module globals (whether by code within the module, or via a reference
-   to the module's globals dictionary) is unaffected.
+   Defining module ``__getattr__``/``__setattr__``/``__delattr__`` and setting
+   module ``__class__`` only affect lookups made using the attribute access
+   syntax -- directly accessing the module globals (whether by code within the
+   module, or via a reference to the module's globals dictionary) is unaffected.
 
 .. versionchanged:: 3.5
    ``__class__`` module attribute is now writable.
 
 .. versionadded:: 3.7
    ``__getattr__`` and ``__dir__`` module attributes.
+
+.. versionadded:: 3.13
+   ``__setattr__`` and ``__delattr__`` module attributes.
 
 .. seealso::
 
