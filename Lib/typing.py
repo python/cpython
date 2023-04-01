@@ -1998,6 +1998,7 @@ class _ProtocolMeta(ABCMeta):
     # This metaclass is really unfortunate and exists only because of
     # the lack of __instancehook__.
     def __init__(cls, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         cls.__protocol_attrs__ = _get_protocol_attrs(cls)
         # PEP 544 prohibits using issubclass()
         # with protocols that have non-method members.
