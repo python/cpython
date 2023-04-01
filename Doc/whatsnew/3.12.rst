@@ -972,7 +972,7 @@ New Features
   (Contributed by Mark Shannon in :gh:`101578`.)
 
 * Add ``_PyErr_ChainExceptions1``, which takes an exception instance,
-  to replace the legacy-api ``_PyErr_ChainExceptions``, which is now
+  to replace the legacy-API ``_PyErr_ChainExceptions``, which is now
   deprecated. (Contributed by Mark Shannon in :gh:`101578`.)
 
 * Add :c:func:`PyException_GetArgs` and :c:func:`PyException_SetArgs`
