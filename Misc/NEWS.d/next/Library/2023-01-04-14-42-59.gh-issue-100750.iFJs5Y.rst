@@ -1,1 +1,0 @@
-pass encoding kwarg to subprocess in platform

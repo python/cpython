@@ -41,9 +41,16 @@ For a summary of deprecated features and a deprecation timeline, please see
 
 .. seealso::
 
+   For a quick overview of type hints, refer to
+   `this cheat sheet <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_.
+
+   The "Type System Reference" section of https://mypy.readthedocs.io/ -- since
+   the Python typing system is standardised via PEPs, this reference should
+   broadly apply to most Python type checkers, although some parts may still be
+   specific to mypy.
+
    The documentation at https://typing.readthedocs.io/ serves as useful reference
    for type system features, useful typing related tools and typing best practices.
-
 
 .. _relevant-peps:
 
@@ -91,6 +98,8 @@ annotations. These include:
     *Introducing* :data:`LiteralString`
 * :pep:`681`: Data Class Transforms
     *Introducing* the :func:`@dataclass_transform<dataclass_transform>` decorator
+* :pep:`698`: Adding an override decorator to typing
+    *Introducing* the :func:`@override<override>` decorator
 
 .. _type-aliases:
 
@@ -439,7 +448,7 @@ are intended primarily for static type checking.
 
 A user-defined generic class can have ABCs as base classes without a metaclass
 conflict. Generic metaclasses are not supported. The outcome of parameterizing
-generics is cached, and most types in the typing module are hashable and
+generics is cached, and most types in the typing module are :term:`hashable` and
 comparable for equality.
 
 
@@ -1343,7 +1352,7 @@ These are not used in annotations. They are building blocks for creating generic
 
         x: Ts          # Not valid
         x: tuple[Ts]   # Not valid
-        x: tuple[*Ts]  # The correct way to to do it
+        x: tuple[*Ts]  # The correct way to do it
 
     Type variable tuples can be used in the same contexts as normal type
     variables. For example, in class definitions, arguments, and return types::
@@ -1582,15 +1591,31 @@ These are not used in annotations. They are building blocks for creating generic
 
       assert isinstance(open('/some/file'), Closable)
 
+      @runtime_checkable
+      class Named(Protocol):
+          name: str
+
+      import threading
+      assert isinstance(threading.Thread(name='Bob'), Named)
+
    .. note::
 
-        :func:`runtime_checkable` will check only the presence of the required
-        methods, not their type signatures. For example, :class:`ssl.SSLObject`
+        :func:`!runtime_checkable` will check only the presence of the required
+        methods or attributes, not their type signatures or types.
+        For example, :class:`ssl.SSLObject`
         is a class, therefore it passes an :func:`issubclass`
         check against :data:`Callable`.  However, the
-        :meth:`ssl.SSLObject.__init__` method exists only to raise a
+        ``ssl.SSLObject.__init__`` method exists only to raise a
         :exc:`TypeError` with a more informative message, therefore making
         it impossible to call (instantiate) :class:`ssl.SSLObject`.
+
+   .. note::
+
+        An :func:`isinstance` check against a runtime-checkable protocol can be
+        surprisingly slow compared to an ``isinstance()`` check against
+        a non-protocol class. Consider using alternative idioms such as
+        :func:`hasattr` calls for structural checks in performance-sensitive
+        code.
 
    .. versionadded:: 3.8
 
@@ -2721,6 +2746,42 @@ Functions and decorators
 
    This wraps the decorator with something that wraps the decorated
    function in :func:`no_type_check`.
+
+
+.. decorator:: override
+
+   A decorator for methods that indicates to type checkers that this method
+   should override a method or attribute with the same name on a base class.
+   This helps prevent bugs that may occur when a base class is changed without
+   an equivalent change to a child class.
+
+   For example::
+
+      class Base:
+           def log_status(self)
+
+      class Sub(Base):
+          @override
+          def log_status(self) -> None:  # Okay: overrides Base.log_status
+              ...
+
+          @override
+          def done(self) -> None:  # Error reported by type checker
+              ...
+
+   There is no runtime checking of this property.
+
+   The decorator will set the ``__override__`` attribute to ``True`` on
+   the decorated object. Thus, a check like
+   ``if getattr(obj, "__override__", False)`` can be used at runtime to determine
+   whether an object ``obj`` has been marked as an override.  If the decorated object
+   does not support setting attributes, the decorator returns the object unchanged
+   without raising an exception.
+
+   See :pep:`698` for more details.
+
+   .. versionadded:: 3.12
+
 
 .. decorator:: type_check_only
 

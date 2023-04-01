@@ -57,9 +57,9 @@ the following command can be used to display the disassembly of
      2           0 RESUME                   0
    <BLANKLINE>
      3           2 LOAD_GLOBAL              1 (NULL + len)
-                14 LOAD_FAST                0 (alist)
-                16 CALL                     1
-                26 RETURN_VALUE
+                12 LOAD_FAST                0 (alist)
+                14 CALL                     1
+                24 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -616,10 +616,9 @@ not have to be) the original ``STACK[-2]``.
 .. opcode:: END_ASYNC_FOR
 
    Terminates an :keyword:`async for` loop.  Handles an exception raised
-   when awaiting a next item.  If ``STACK[-1]`` is :exc:`StopAsyncIteration` pop 3
-   values from the stack and restore the exception state using the second
-   of them.  Otherwise re-raise the exception using the value
-   from the stack.  An exception handler block is removed from the block stack.
+   when awaiting a next item. The stack contains the async iterable in
+   ``STACK[-2]`` and the raised exception in ``STACK[-1]``. Both are popped.
+   If the exception is not :exc:`StopAsyncIteration`, it is re-raised.
 
    .. versionadded:: 3.8
 
@@ -695,6 +694,13 @@ iterations of the loop.
    Returns with ``STACK[-1]`` to the caller of the function.
 
 
+.. opcode:: RETURN_CONST (consti)
+
+   Returns with ``co_consts[consti]`` to the caller of the function.
+
+   .. versionadded:: 3.12
+
+
 .. opcode:: YIELD_VALUE
 
    Yields ``STACK.pop()`` from a :term:`generator`.
@@ -759,16 +765,6 @@ iterations of the loop.
    non-matching subgroup (``None`` in case of full match) followed by the
    matching subgroup. When there is no match, pops one item (the match
    type) and pushes ``None``.
-
-   .. versionadded:: 3.11
-
-.. opcode:: PREP_RERAISE_STAR
-
-   Combines the raised and reraised exceptions list from ``STACK[-1]``, into an
-   exception group to propagate from a try-except* block. Uses the original exception
-   group from ``STACK[-2]`` to reconstruct the structure of reraised exceptions. Pops
-   two items from the stack and pushes the exception to reraise or ``None``
-   if there isn't one.
 
    .. versionadded:: 3.11
 
@@ -1046,15 +1042,6 @@ iterations of the loop.
    ``cmp_op[opname]``.
 
 
-.. opcode:: COMPARE_AND_BRANCH (opname)
-
-   Compares the top two values on the stack, popping them, then branches.
-   The direction and offset of the jump is embedded as a ``POP_JUMP_IF_TRUE``
-   or ``POP_JUMP_IF_FALSE`` instruction immediately following the cache.
-
-   .. versionadded:: 3.12
-
-
 .. opcode:: IS_OP (invert)
 
    Performs ``is`` comparison, or ``is not`` if ``invert`` is 1.
@@ -1155,30 +1142,6 @@ iterations of the loop.
 
    .. versionchanged:: 3.12
       This is no longer a pseudo-instruction.
-
-
-.. opcode:: JUMP_IF_TRUE_OR_POP (delta)
-
-   If ``STACK[-1]`` is true, increments the bytecode counter by *delta* and leaves
-   ``STACK[-1]`` on the stack.  Otherwise (``STACK[-1]`` is false), ``STACK[-1]``
-   is popped.
-
-   .. versionadded:: 3.1
-
-   .. versionchanged:: 3.11
-      The oparg is now a relative delta rather than an absolute target.
-
-.. opcode:: JUMP_IF_FALSE_OR_POP (delta)
-
-   If ``STACK[-1]`` is false, increments the bytecode counter by *delta* and leaves
-   ``STACK[-1]`` on the stack. Otherwise (``STACK[-1]`` is true), ``STACK[-1]`` is
-   popped.
-
-   .. versionadded:: 3.1
-
-   .. versionchanged:: 3.11
-      The oparg is now a relative delta rather than an absolute target.
-
 
 .. opcode:: FOR_ITER (delta)
 
@@ -1509,7 +1472,8 @@ iterations of the loop.
 .. opcode:: CALL_INTRINSIC_1
 
    Calls an intrinsic function with one argument. Passes ``STACK[-1]`` as the
-   argument and sets ``STACK[-1]`` to the result. Used to implement functionality that is necessary but not performance critical.
+   argument and sets ``STACK[-1]`` to the result. Used to implement
+   functionality that is necessary but not performance critical.
 
     The operand determines which intrinsic function is called:
 
@@ -1520,6 +1484,19 @@ iterations of the loop.
     * ``4`` Wraps an aync generator value
     * ``5`` Performs the unary ``+`` operation
     * ``6`` Converts a list to a tuple
+
+   .. versionadded:: 3.12
+
+.. opcode:: CALL_INTRINSIC_2
+
+   Calls an intrinsic function with two arguments. Passes ``STACK[-2]``, ``STACK[-1]`` as the
+   arguments and sets ``STACK[-1]`` to the result. Used to implement functionality that is
+   necessary but not performance critical.
+
+    The operand determines which intrinsic function is called:
+
+    * ``0`` Not valid
+    * ``1`` Calculates the :exc:`ExceptionGroup` to raise from a ``try-except*``.
 
    .. versionadded:: 3.12
 

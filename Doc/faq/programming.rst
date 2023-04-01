@@ -1979,7 +1979,7 @@ method result will be released right away.  The disadvantage is that if
 instances accumulate, so too will the accumulated method results.  They
 can grow without bound.
 
-The *lru_cache* approach works with methods that have hashable
+The *lru_cache* approach works with methods that have :term:`hashable`
 arguments.  It creates a reference to the instance unless special
 efforts are made to pass in weak references.
 

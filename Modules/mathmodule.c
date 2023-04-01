@@ -93,6 +93,113 @@ get_math_module_state(PyObject *module)
 }
 
 /*
+Double and triple length extended precision algorithms from:
+
+  Accurate Sum and Dot Product
+  by Takeshi Ogita, Siegfried M. Rump, and Shin’Ichi Oishi
+  https://doi.org/10.1137/030601818
+  https://www.tuhh.de/ti3/paper/rump/OgRuOi05.pdf
+
+*/
+
+typedef struct{ double hi; double lo; } DoubleLength;
+
+static DoubleLength
+dl_fast_sum(double a, double b)
+{
+    /* Algorithm 1.1. Compensated summation of two floating point numbers. */
+    assert(fabs(a) >= fabs(b));
+    double x = a + b;
+    double y = (a - x) + b;
+    return (DoubleLength) {x, y};
+}
+
+static DoubleLength
+dl_sum(double a, double b)
+{
+    /* Algorithm 3.1 Error-free transformation of the sum */
+    double x = a + b;
+    double z = x - a;
+    double y = (a - (x - z)) + (b - z);
+    return (DoubleLength) {x, y};
+}
+
+#ifndef UNRELIABLE_FMA
+
+static DoubleLength
+dl_mul(double x, double y)
+{
+    /* Algorithm 3.5. Error-free transformation of a product */
+    double z = x * y;
+    double zz = fma(x, y, -z);
+    return (DoubleLength) {z, zz};
+}
+
+#else
+
+/*
+   The default implementation of dl_mul() depends on the C math library
+   having an accurate fma() function as required by § 7.12.13.1 of the
+   C99 standard.
+
+   The UNRELIABLE_FMA option is provided as a slower but accurate
+   alternative for builds where the fma() function is found wanting.
+   The speed penalty may be modest (17% slower on an Apple M1 Max),
+   so don't hesitate to enable this build option.
+
+   The algorithms are from the T. J. Dekker paper:
+   A Floating-Point Technique for Extending the Available Precision
+   https://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
+*/
+
+static DoubleLength
+dl_split(double x) {
+    // Dekker (5.5) and (5.6).
+    double t = x * 134217729.0;  // Veltkamp constant = 2.0 ** 27 + 1
+    double hi = t - (t - x);
+    double lo = x - hi;
+    return (DoubleLength) {hi, lo};
+}
+
+static DoubleLength
+dl_mul(double x, double y)
+{
+    // Dekker (5.12) and mul12()
+    DoubleLength xx = dl_split(x);
+    DoubleLength yy = dl_split(y);
+    double p = xx.hi * yy.hi;
+    double q = xx.hi * yy.lo + xx.lo * yy.hi;
+    double z = p + q;
+    double zz = p - z + q + xx.lo * yy.lo;
+    return (DoubleLength) {z, zz};
+}
+
+#endif
+
+typedef struct { double hi; double lo; double tiny; } TripleLength;
+
+static const TripleLength tl_zero = {0.0, 0.0, 0.0};
+
+static TripleLength
+tl_fma(double x, double y, TripleLength total)
+{
+    /* Algorithm 5.10 with SumKVert for K=3 */
+    DoubleLength pr = dl_mul(x, y);
+    DoubleLength sm = dl_sum(total.hi, pr.hi);
+    DoubleLength r1 = dl_sum(total.lo, pr.lo);
+    DoubleLength r2 = dl_sum(r1.hi, sm.lo);
+    return (TripleLength) {sm.hi, r2.hi, total.tiny + r1.lo + r2.lo};
+}
+
+static double
+tl_to_d(TripleLength total)
+{
+    DoubleLength last = dl_sum(total.lo, total.hi);
+    return total.tiny + last.lo + last.hi;
+}
+
+
+/*
    sin(pi*x), giving accurate results for all finite x (especially x
    integral or close to an integer).  This is here for use in the
    reflection formula for the gamma function.  It conforms to IEEE
@@ -101,10 +208,6 @@ get_math_module_state(PyObject *module)
 
 static const double pi = 3.141592653589793238462643383279502884197;
 static const double logpi = 1.144729885849400174143427351353058711647;
-#if !defined(HAVE_ERF) || !defined(HAVE_ERFC)
-static const double sqrtpi = 1.772453850905516027298167483341145182798;
-#endif /* !defined(HAVE_ERF) || !defined(HAVE_ERFC) */
-
 
 /* Version of PyFloat_AsDouble() with in-line fast paths
    for exact floats and integers.  Gives a substantial
@@ -162,7 +265,9 @@ m_sinpi(double x)
     return copysign(1.0, x)*r;
 }
 
-/* Implementation of the real gamma function.  In extensive but non-exhaustive
+/* Implementation of the real gamma function.  Kept here to work around
+   issues (see e.g. gh-70309) with quality of libm's tgamma/lgamma implementations
+   on various platforms (Windows, MacOS).  In extensive but non-exhaustive
    random tests, this function proved accurate to within <= 10 ulps across the
    entire float domain.  Note that accuracy may depend on the quality of the
    system math functions, the pow function in particular.  Special cases
@@ -458,163 +563,6 @@ m_lgamma(double x)
     return r;
 }
 
-#if !defined(HAVE_ERF) || !defined(HAVE_ERFC)
-
-/*
-   Implementations of the error function erf(x) and the complementary error
-   function erfc(x).
-
-   Method: we use a series approximation for erf for small x, and a continued
-   fraction approximation for erfc(x) for larger x;
-   combined with the relations erf(-x) = -erf(x) and erfc(x) = 1.0 - erf(x),
-   this gives us erf(x) and erfc(x) for all x.
-
-   The series expansion used is:
-
-      erf(x) = x*exp(-x*x)/sqrt(pi) * [
-                     2/1 + 4/3 x**2 + 8/15 x**4 + 16/105 x**6 + ...]
-
-   The coefficient of x**(2k-2) here is 4**k*factorial(k)/factorial(2*k).
-   This series converges well for smallish x, but slowly for larger x.
-
-   The continued fraction expansion used is:
-
-      erfc(x) = x*exp(-x*x)/sqrt(pi) * [1/(0.5 + x**2 -) 0.5/(2.5 + x**2 - )
-                              3.0/(4.5 + x**2 - ) 7.5/(6.5 + x**2 - ) ...]
-
-   after the first term, the general term has the form:
-
-      k*(k-0.5)/(2*k+0.5 + x**2 - ...).
-
-   This expansion converges fast for larger x, but convergence becomes
-   infinitely slow as x approaches 0.0.  The (somewhat naive) continued
-   fraction evaluation algorithm used below also risks overflow for large x;
-   but for large x, erfc(x) == 0.0 to within machine precision.  (For
-   example, erfc(30.0) is approximately 2.56e-393).
-
-   Parameters: use series expansion for abs(x) < ERF_SERIES_CUTOFF and
-   continued fraction expansion for ERF_SERIES_CUTOFF <= abs(x) <
-   ERFC_CONTFRAC_CUTOFF.  ERFC_SERIES_TERMS and ERFC_CONTFRAC_TERMS are the
-   numbers of terms to use for the relevant expansions.  */
-
-#define ERF_SERIES_CUTOFF 1.5
-#define ERF_SERIES_TERMS 25
-#define ERFC_CONTFRAC_CUTOFF 30.0
-#define ERFC_CONTFRAC_TERMS 50
-
-/*
-   Error function, via power series.
-
-   Given a finite float x, return an approximation to erf(x).
-   Converges reasonably fast for small x.
-*/
-
-static double
-m_erf_series(double x)
-{
-    double x2, acc, fk, result;
-    int i, saved_errno;
-
-    x2 = x * x;
-    acc = 0.0;
-    fk = (double)ERF_SERIES_TERMS + 0.5;
-    for (i = 0; i < ERF_SERIES_TERMS; i++) {
-        acc = 2.0 + x2 * acc / fk;
-        fk -= 1.0;
-    }
-    /* Make sure the exp call doesn't affect errno;
-       see m_erfc_contfrac for more. */
-    saved_errno = errno;
-    result = acc * x * exp(-x2) / sqrtpi;
-    errno = saved_errno;
-    return result;
-}
-
-/*
-   Complementary error function, via continued fraction expansion.
-
-   Given a positive float x, return an approximation to erfc(x).  Converges
-   reasonably fast for x large (say, x > 2.0), and should be safe from
-   overflow if x and nterms are not too large.  On an IEEE 754 machine, with x
-   <= 30.0, we're safe up to nterms = 100.  For x >= 30.0, erfc(x) is smaller
-   than the smallest representable nonzero float.  */
-
-static double
-m_erfc_contfrac(double x)
-{
-    double x2, a, da, p, p_last, q, q_last, b, result;
-    int i, saved_errno;
-
-    if (x >= ERFC_CONTFRAC_CUTOFF)
-        return 0.0;
-
-    x2 = x*x;
-    a = 0.0;
-    da = 0.5;
-    p = 1.0; p_last = 0.0;
-    q = da + x2; q_last = 1.0;
-    for (i = 0; i < ERFC_CONTFRAC_TERMS; i++) {
-        double temp;
-        a += da;
-        da += 2.0;
-        b = da + x2;
-        temp = p; p = b*p - a*p_last; p_last = temp;
-        temp = q; q = b*q - a*q_last; q_last = temp;
-    }
-    /* Issue #8986: On some platforms, exp sets errno on underflow to zero;
-       save the current errno value so that we can restore it later. */
-    saved_errno = errno;
-    result = p / q * x * exp(-x2) / sqrtpi;
-    errno = saved_errno;
-    return result;
-}
-
-#endif /* !defined(HAVE_ERF) || !defined(HAVE_ERFC) */
-
-/* Error function erf(x), for general x */
-
-static double
-m_erf(double x)
-{
-#ifdef HAVE_ERF
-    return erf(x);
-#else
-    double absx, cf;
-
-    if (Py_IS_NAN(x))
-        return x;
-    absx = fabs(x);
-    if (absx < ERF_SERIES_CUTOFF)
-        return m_erf_series(x);
-    else {
-        cf = m_erfc_contfrac(absx);
-        return x > 0.0 ? 1.0 - cf : cf - 1.0;
-    }
-#endif
-}
-
-/* Complementary error function erfc(x), for general x. */
-
-static double
-m_erfc(double x)
-{
-#ifdef HAVE_ERFC
-    return erfc(x);
-#else
-    double absx, cf;
-
-    if (Py_IS_NAN(x))
-        return x;
-    absx = fabs(x);
-    if (absx < ERF_SERIES_CUTOFF)
-        return 1.0 - m_erf_series(x);
-    else {
-        cf = m_erfc_contfrac(absx);
-        return x > 0.0 ? cf : 2.0 - cf;
-    }
-#endif
-}
-
 /*
    wrapper for atan2 that deals directly with special cases before
    delegating to the platform libm for the remaining cases.  This
@@ -801,25 +749,7 @@ m_log2(double x)
     }
 
     if (x > 0.0) {
-#ifdef HAVE_LOG2
         return log2(x);
-#else
-        double m;
-        int e;
-        m = frexp(x, &e);
-        /* We want log2(m * 2**e) == log(m) / log(2) + e.  Care is needed when
-         * x is just greater than 1.0: in that case e is 1, log(m) is negative,
-         * and we get significant cancellation error from the addition of
-         * log(m) / log(2) to e.  The slight rewrite of the expression below
-         * avoids this problem.
-         */
-        if (x >= 1.0) {
-            return log(2.0 * m) / log(2.0) + (e - 1);
-        }
-        else {
-            return log(m) / log(2.0) + e;
-        }
-#endif
     }
     else if (x == 0.0) {
         errno = EDOM;
@@ -906,7 +836,7 @@ long_lcm(PyObject *a, PyObject *b)
 {
     PyObject *g, *m, *f, *ab;
 
-    if (Py_SIZE(a) == 0 || Py_SIZE(b) == 0) {
+    if (_PyLong_IsZero((PyLongObject *)a) || _PyLong_IsZero((PyLongObject *)b)) {
         return PyLong_FromLong(0);
     }
     g = _PyLong_GCD(a, b);
@@ -1052,9 +982,7 @@ is_error(double x)
 */
 
 static PyObject *
-math_1_to_whatever(PyObject *arg, double (*func) (double),
-                   PyObject *(*from_double_func) (double),
-                   int can_overflow)
+math_1(PyObject *arg, double (*func) (double), int can_overflow)
 {
     double x, r;
     x = PyFloat_AsDouble(arg);
@@ -1080,7 +1008,7 @@ math_1_to_whatever(PyObject *arg, double (*func) (double),
         /* this branch unnecessary on most platforms */
         return NULL;
 
-    return (*from_double_func)(r);
+    return PyFloat_FromDouble(r);
 }
 
 /* variant of math_1, to be used when the function being wrapped is known to
@@ -1127,12 +1055,6 @@ math_1a(PyObject *arg, double (*func) (double))
    ValueError and the 'overflow' floating-point exception mapping to
    OverflowError.
 */
-
-static PyObject *
-math_1(PyObject *arg, double (*func) (double), int can_overflow)
-{
-    return math_1_to_whatever(arg, func, PyFloat_FromDouble, can_overflow);
-}
 
 static PyObject *
 math_2(PyObject *const *args, Py_ssize_t nargs,
@@ -1261,10 +1183,10 @@ FUNC1(cos, cos, 0,
 FUNC1(cosh, cosh, 1,
       "cosh($module, x, /)\n--\n\n"
       "Return the hyperbolic cosine of x.")
-FUNC1A(erf, m_erf,
+FUNC1A(erf, erf,
        "erf($module, x, /)\n--\n\n"
        "Error function at x.")
-FUNC1A(erfc, m_erfc,
+FUNC1A(erfc, erfc,
        "erfc($module, x, /)\n--\n\n"
        "Complementary error function at x.")
 FUNC1(exp, exp, 1,
@@ -1804,13 +1726,13 @@ math_isqrt(PyObject *module, PyObject *n)
         return NULL;
     }
 
-    if (_PyLong_Sign(n) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
         PyErr_SetString(
             PyExc_ValueError,
             "isqrt() argument must be nonnegative");
         goto error;
     }
-    if (_PyLong_Sign(n) == 0) {
+    if (_PyLong_IsZero((PyLongObject *)n)) {
         Py_DECREF(n);
         return PyLong_FromLong(0);
     }
@@ -2332,7 +2254,7 @@ loghelper(PyObject* arg, double (*func)(double))
         Py_ssize_t e;
 
         /* Negative or zero inputs give a ValueError. */
-        if (Py_SIZE(arg) <= 0) {
+        if (!_PyLong_IsPositive((PyLongObject *)arg)) {
             PyErr_SetString(PyExc_ValueError,
                             "math domain error");
             return NULL;
@@ -2362,33 +2284,22 @@ loghelper(PyObject* arg, double (*func)(double))
 }
 
 
-/*[clinic input]
-math.log
-
-    x:    object
-    [
-    base: object(c_default="NULL") = math.e
-    ]
-    /
-
-Return the logarithm of x to the given base.
-
-If the base not specified, returns the natural logarithm (base e) of x.
-[clinic start generated code]*/
-
+/* AC: cannot convert yet, see gh-102839 and gh-89381, waiting
+   for support of multiple signatures */
 static PyObject *
-math_log_impl(PyObject *module, PyObject *x, int group_right_1,
-              PyObject *base)
-/*[clinic end generated code: output=7b5a39e526b73fc9 input=0f62d5726cbfebbd]*/
+math_log(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
     PyObject *num, *den;
     PyObject *ans;
 
-    num = loghelper(x, m_log);
-    if (num == NULL || base == NULL)
+    if (!_PyArg_CheckPositional("log", nargs, 1, 2))
+        return NULL;
+
+    num = loghelper(args[0], m_log);
+    if (num == NULL || nargs == 1)
         return num;
 
-    den = loghelper(base, m_log);
+    den = loghelper(args[1], m_log);
     if (den == NULL) {
         Py_DECREF(num);
         return NULL;
@@ -2400,6 +2311,10 @@ math_log_impl(PyObject *module, PyObject *x, int group_right_1,
     return ans;
 }
 
+PyDoc_STRVAR(math_log_doc,
+"log(x, [base=math.e])\n\
+Return the logarithm of x to the given base.\n\n\
+If the base not specified, returns the natural logarithm (base e) of x.");
 
 /*[clinic input]
 math.log2
@@ -2486,6 +2401,7 @@ that are almost always correctly rounded, four techniques are used:
 
 * lossless scaling using a power-of-two scaling factor
 * accurate squaring using Veltkamp-Dekker splitting [1]
+  or an equivalent with an fma() call
 * compensated summation using a variant of the Neumaier algorithm [2]
 * differential correction of the square root [3]
 
@@ -2524,9 +2440,8 @@ Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
 To minimize loss of information during the accumulation of fractional
 values, each term has a separate accumulator.  This also breaks up
 sequential dependencies in the inner loop so the CPU can maximize
-floating point throughput. [4]  On a 2.6 GHz Haswell, adding one
-dimension has an incremental cost of only 5ns -- for example when
-moving from hypot(x,y) to hypot(x,y,z).
+floating point throughput. [4]  On an Apple M1 Max, hypot(*vec)
+takes only 3.33 µsec when len(vec) == 1000.
 
 The square root differential correction is needed because a
 correctly rounded square root of a correctly rounded sum of
@@ -2544,14 +2459,21 @@ algorithm, effectively doubling the number of accurate bits.
 This technique is used in Dekker's SQRT2 algorithm and again in
 Borges' ALGORITHM 4 and 5.
 
-Without proof for all cases, hypot() cannot claim to be always
-correctly rounded.  However for n <= 1000, prior to the final addition
-that rounds the overall result, the internal accuracy of "h" together
-with its correction of "x / (2.0 * h)" is at least 100 bits. [6]
-Also, hypot() was tested against a Decimal implementation with
-prec=300.  After 100 million trials, no incorrectly rounded examples
-were found.  In addition, perfect commutativity (all permutations are
-exactly equal) was verified for 1 billion random inputs with n=5. [7]
+The hypot() function is faithfully rounded (less than 1 ulp error)
+and usually correctly rounded (within 1/2 ulp).  The squaring
+step is exact.  The Neumaier summation computes as if in doubled
+precision (106 bits) and has the advantage that its input squares
+are non-negative so that the condition number of the sum is one.
+The square root with a differential correction is likewise computed
+as if in doubled precision.
+
+For n <= 1000, prior to the final addition that rounds the overall
+result, the internal accuracy of "h" together with its correction of
+"x / (2.0 * h)" is at least 100 bits. [6] Also, hypot() was tested
+against a Decimal implementation with prec=300.  After 100 million
+trials, no incorrectly rounded examples were found.  In addition,
+perfect commutativity (all permutations are exactly equal) was
+verified for 1 billion random inputs with n=5. [7]
 
 References:
 
@@ -2568,9 +2490,8 @@ References:
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    const double T27 = 134217729.0;     /* ldexp(1.0, 27) + 1.0) */
-    double x, scale, oldcsum, csum = 1.0, frac1 = 0.0, frac2 = 0.0, frac3 = 0.0;
-    double t, hi, lo, h;
+    double x, h, scale, csum = 1.0, frac1 = 0.0, frac2 = 0.0;
+    DoubleLength pr, sm;
     int max_e;
     Py_ssize_t i;
 
@@ -2584,82 +2505,37 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         return max;
     }
     frexp(max, &max_e);
-    if (max_e >= -1023) {
-        scale = ldexp(1.0, -max_e);
-        assert(max * scale >= 0.5);
-        assert(max * scale < 1.0);
+    if (max_e < -1023) {
+        /* When max_e < -1023, ldexp(1.0, -max_e) would overflow. */
         for (i=0 ; i < n ; i++) {
-            x = vec[i];
-            assert(Py_IS_FINITE(x) && fabs(x) <= max);
-
-            x *= scale;
-            assert(fabs(x) < 1.0);
-
-            t = x * T27;
-            hi = t - (t - x);
-            lo = x - hi;
-            assert(hi + lo == x);
-
-            x = hi * hi;
-            assert(x <= 1.0);
-            assert(fabs(csum) >= fabs(x));
-            oldcsum = csum;
-            csum += x;
-            frac1 += (oldcsum - csum) + x;
-
-            x = 2.0 * hi * lo;
-            assert(fabs(csum) >= fabs(x));
-            oldcsum = csum;
-            csum += x;
-            frac2 += (oldcsum - csum) + x;
-
-            assert(csum + lo * lo == csum);
-            frac3 += lo * lo;
+            vec[i] /= DBL_MIN;          // convert subnormals to normals
         }
-        h = sqrt(csum - 1.0 + (frac1 + frac2 + frac3));
-
-        x = h;
-        t = x * T27;
-        hi = t - (t - x);
-        lo = x - hi;
-        assert (hi + lo == x);
-
-        x = -hi * hi;
-        assert(fabs(csum) >= fabs(x));
-        oldcsum = csum;
-        csum += x;
-        frac1 += (oldcsum - csum) + x;
-
-        x = -2.0 * hi * lo;
-        assert(fabs(csum) >= fabs(x));
-        oldcsum = csum;
-        csum += x;
-        frac2 += (oldcsum - csum) + x;
-
-        x = -lo * lo;
-        assert(fabs(csum) >= fabs(x));
-        oldcsum = csum;
-        csum += x;
-        frac3 += (oldcsum - csum) + x;
-
-        x = csum - 1.0 + (frac1 + frac2 + frac3);
-        return (h + x / (2.0 * h)) / scale;
+        return DBL_MIN * vector_norm(n, vec, max / DBL_MIN, found_nan);
     }
-    /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
-       So instead of multiplying by a scale, we just divide by *max*.
-    */
+    scale = ldexp(1.0, -max_e);
+    assert(max * scale >= 0.5);
+    assert(max * scale < 1.0);
     for (i=0 ; i < n ; i++) {
         x = vec[i];
         assert(Py_IS_FINITE(x) && fabs(x) <= max);
-        x /= max;
-        x = x*x;
-        assert(x <= 1.0);
-        assert(fabs(csum) >= fabs(x));
-        oldcsum = csum;
-        csum += x;
-        frac1 += (oldcsum - csum) + x;
+        x *= scale;                     // lossless scaling
+        assert(fabs(x) < 1.0);
+        pr = dl_mul(x, x);              // lossless squaring
+        assert(pr.hi <= 1.0);
+        sm = dl_fast_sum(csum, pr.hi);  // lossless addition
+        csum = sm.hi;
+        frac1 += pr.lo;                 // lossy addition
+        frac2 += sm.lo;                 // lossy addition
     }
-    return max * sqrt(csum - 1.0 + frac1);
+    h = sqrt(csum - 1.0 + (frac1 + frac2));
+    pr = dl_mul(-h, h);
+    sm = dl_fast_sum(csum, pr.hi);
+    csum = sm.hi;
+    frac1 += pr.lo;
+    frac2 += sm.lo;
+    x = csum - 1.0 + (frac1 + frac2);
+    h +=  x / (2.0 * h);                 // differential correction
+    return h / scale;
 }
 
 #define NUM_STACK_ELEMS 16
@@ -2829,59 +2705,6 @@ static inline bool
 long_add_would_overflow(long a, long b)
 {
     return (a > 0) ? (b > LONG_MAX - a) : (b < LONG_MIN - a);
-}
-
-/*
-Double and triple length extended precision algorithms from:
-
-  Accurate Sum and Dot Product
-  by Takeshi Ogita, Siegfried M. Rump, and Shin’Ichi Oishi
-  https://doi.org/10.1137/030601818
-  https://www.tuhh.de/ti3/paper/rump/OgRuOi05.pdf
-
-*/
-
-typedef struct{ double hi; double lo; } DoubleLength;
-
-static DoubleLength
-dl_sum(double a, double b)
-{
-    /* Algorithm 3.1 Error-free transformation of the sum */
-    double x = a + b;
-    double z = x - a;
-    double y = (a - (x - z)) + (b - z);
-    return (DoubleLength) {x, y};
-}
-
-static DoubleLength
-dl_mul(double x, double y)
-{
-    /* Algorithm 3.5. Error-free transformation of a product */
-    double z = x * y;
-    double zz = fma(x, y, -z);
-    return (DoubleLength) {z, zz};
-}
-
-typedef struct { double hi; double lo; double tiny; } TripleLength;
-
-static const TripleLength tl_zero = {0.0, 0.0, 0.0};
-
-static TripleLength
-tl_fma(double x, double y, TripleLength total)
-{
-    /* Algorithm 5.10 with SumKVert for K=3 */
-    DoubleLength pr = dl_mul(x, y);
-    DoubleLength sm = dl_sum(total.hi, pr.hi);
-    DoubleLength r1 = dl_sum(total.lo, pr.lo);
-    DoubleLength r2 = dl_sum(r1.hi, sm.lo);
-    return (TripleLength) {sm.hi, r2.hi, total.tiny + r1.lo + r2.lo};
-}
-
-static double
-tl_to_d(TripleLength total)
-{
-    DoubleLength last = dl_sum(total.lo, total.hi);
-    return total.tiny + last.lo + last.hi;
 }
 
 /*[clinic input]
@@ -3893,12 +3716,12 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
     }
     assert(PyLong_CheckExact(n) && PyLong_CheckExact(k));
 
-    if (Py_SIZE(n) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
         PyErr_SetString(PyExc_ValueError,
                         "n must be a non-negative integer");
         goto error;
     }
-    if (Py_SIZE(k) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)k)) {
         PyErr_SetString(PyExc_ValueError,
                         "k must be a non-negative integer");
         goto error;
@@ -3985,12 +3808,12 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     }
     assert(PyLong_CheckExact(n) && PyLong_CheckExact(k));
 
-    if (Py_SIZE(n) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
         PyErr_SetString(PyExc_ValueError,
                         "n must be a non-negative integer");
         goto error;
     }
-    if (Py_SIZE(k) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)k)) {
         PyErr_SetString(PyExc_ValueError,
                         "k must be a non-negative integer");
         goto error;
@@ -4022,7 +3845,8 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         if (temp == NULL) {
             goto error;
         }
-        if (Py_SIZE(temp) < 0) {
+        assert(PyLong_Check(temp));
+        if (_PyLong_IsNegative((PyLongObject *)temp)) {
             Py_DECREF(temp);
             result = PyLong_FromLong(0);
             goto done;
@@ -4215,7 +4039,7 @@ static PyMethodDef math_methods[] = {
     {"lcm",             _PyCFunction_CAST(math_lcm),       METH_FASTCALL,  math_lcm_doc},
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
-    MATH_LOG_METHODDEF
+    {"log",             _PyCFunction_CAST(math_log),       METH_FASTCALL,  math_log_doc},
     {"log1p",           math_log1p,     METH_O,         math_log1p_doc},
     MATH_LOG10_METHODDEF
     MATH_LOG2_METHODDEF

@@ -382,20 +382,27 @@ PyObject *PyCodec_StreamWriter(const char *encoding,
     return codec_getstreamcodec(encoding, stream, errors, 3);
 }
 
-/* Helper that tries to ensure the reported exception chain indicates the
- * codec that was invoked to trigger the failure without changing the type
- * of the exception raised.
- */
 static void
-wrap_codec_error(const char *operation,
-                 const char *encoding)
+add_note_to_codec_error(const char *operation,
+                        const char *encoding)
 {
-    /* TrySetFromCause will replace the active exception with a suitably
-     * updated clone if it can, otherwise it will leave the original
-     * exception alone.
-     */
-    _PyErr_TrySetFromCause("%s with '%s' codec failed",
-                           operation, encoding);
+    PyObject *exc = PyErr_GetRaisedException();
+    if (exc == NULL) {
+        return;
+    }
+    PyObject *note = PyUnicode_FromFormat("%s with '%s' codec failed",
+                                          operation, encoding);
+    if (note == NULL) {
+        _PyErr_ChainExceptions1(exc);
+        return;
+    }
+    int res = _PyException_AddNote(exc, note);
+    Py_DECREF(note);
+    if (res < 0) {
+        _PyErr_ChainExceptions1(exc);
+        return;
+    }
+    PyErr_SetRaisedException(exc);
 }
 
 /* Encode an object (e.g. a Unicode object) using the given encoding
@@ -418,7 +425,7 @@ _PyCodec_EncodeInternal(PyObject *object,
 
     result = PyObject_Call(encoder, args, NULL);
     if (result == NULL) {
-        wrap_codec_error("encoding", encoding);
+        add_note_to_codec_error("encoding", encoding);
         goto onError;
     }
 
@@ -463,7 +470,7 @@ _PyCodec_DecodeInternal(PyObject *object,
 
     result = PyObject_Call(decoder, args, NULL);
     if (result == NULL) {
-        wrap_codec_error("decoding", encoding);
+        add_note_to_codec_error("decoding", encoding);
         goto onError;
     }
     if (!PyTuple_Check(result) ||

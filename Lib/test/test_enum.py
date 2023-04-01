@@ -11,7 +11,7 @@ import typing
 import builtins as bltns
 from collections import OrderedDict
 from datetime import date
-from enum import Enum, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
+from enum import Enum, EnumMeta, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
 from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
 from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS, ReprEnum
 from enum import member, nonmember, _iter_bits_lsb
@@ -20,7 +20,6 @@ from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from test.support import ALWAYS_EQ
 from test.support import threading_helper
-from textwrap import dedent
 from datetime import timedelta
 
 python_version = sys.version_info[:2]
@@ -271,6 +270,17 @@ class _EnumTests:
             first = auto()
         self.NewSubEnum = NewSubEnum
         #
+        class LazyGNV(self.enum_type):
+            def _generate_next_value_(name, start, last, values):
+                pass
+        self.LazyGNV = LazyGNV
+        #
+        class BusyGNV(self.enum_type):
+            @staticmethod
+            def _generate_next_value_(name, start, last, values):
+                pass
+        self.BusyGNV = BusyGNV
+        #
         self.is_flag = False
         self.names = ['first', 'second', 'third']
         if issubclass(MainEnum, StrEnum):
@@ -467,6 +477,12 @@ class _EnumTests:
         Main = self.MainEnum
         self.assertIs(Main(Main.first), Main.first)
 
+    def test_gnv_is_static(self):
+        lazy = self.LazyGNV
+        busy = self.BusyGNV
+        self.assertTrue(type(lazy.__dict__['_generate_next_value_']) is staticmethod)
+        self.assertTrue(type(busy.__dict__['_generate_next_value_']) is staticmethod)
+
     def test_hash(self):
         MainEnum = self.MainEnum
         mapping = {}
@@ -644,6 +660,13 @@ class _EnumTests:
             that = auto()
             theother = auto()
         self.assertEqual(repr(MySubEnum.that), "My name is that.")
+
+    def test_multiple_superclasses_repr(self):
+        class _EnumSuperClass(metaclass=EnumMeta):
+            pass
+        class E(_EnumSuperClass, Enum):
+            A = 1
+        self.assertEqual(repr(E.A), "<E.A: 1>")
 
     def test_reversed_iteration_order(self):
         self.assertEqual(
@@ -1187,7 +1210,6 @@ class TestSpecial(unittest.TestCase):
         #
         class SillyInt(HexInt):
             __qualname__ = 'SillyInt'
-            pass
         class MyOtherEnum(SillyInt, enum.Enum):
             __qualname__ = 'MyOtherEnum'
             D = 4
@@ -1363,7 +1385,6 @@ class TestSpecial(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'too many data types'):
             class Huh(MyStr, MyInt, Enum):
                 One = 1
-
 
     def test_pickle_enum(self):
         if isinstance(Stooges, Exception):
@@ -2854,6 +2875,66 @@ class TestSpecial(unittest.TestCase):
                 [x.value for x in NTEnum],
                 [TTuple(id=0, a=0, blist=[]), TTuple(id=1, a=2, blist=[4]), TTuple(id=2, a=4, blist=[0, 1, 2])],
                 )
+
+    def test_flag_with_custom_new(self):
+        class FlagFromChar(IntFlag):
+            def __new__(cls, c):
+                value = 1 << c
+                self = int.__new__(cls, value)
+                self._value_ = value
+                return self
+            #
+            a = ord('a')
+        #
+        self.assertEqual(FlagFromChar.a, 158456325028528675187087900672)
+        self.assertEqual(FlagFromChar.a|1, 158456325028528675187087900673)
+        #
+        #
+        class FlagFromChar(Flag):
+            def __new__(cls, c):
+                value = 1 << c
+                self = object.__new__(cls)
+                self._value_ = value
+                return self
+            #
+            a = ord('a')
+            z = 1
+        #
+        self.assertEqual(FlagFromChar.a.value, 158456325028528675187087900672)
+        self.assertEqual((FlagFromChar.a|FlagFromChar.z).value, 158456325028528675187087900674)
+        #
+        #
+        class FlagFromChar(int, Flag, boundary=KEEP):
+            def __new__(cls, c):
+                value = 1 << c
+                self = int.__new__(cls, value)
+                self._value_ = value
+                return self
+            #
+            a = ord('a')
+        #
+        self.assertEqual(FlagFromChar.a, 158456325028528675187087900672)
+        self.assertEqual(FlagFromChar.a|1, 158456325028528675187087900673)
+
+    def test_init_exception(self):
+        class Base:
+            def __init__(self, x):
+                raise ValueError("I don't like", x)
+        with self.assertRaises(TypeError):
+            class MyEnum(Base, enum.Enum):
+                A = 'a'
+                def __init__(self, y):
+                    self.y = y
+        with self.assertRaises(ValueError):
+            class MyEnum(Base, enum.Enum):
+                A = 'a'
+                def __init__(self, y):
+                    self.y = y
+                def __new__(cls, value):
+                    member = Base.__new__(cls)
+                    member._value_ = Base(value)
+                    return member
+
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
@@ -4541,15 +4622,14 @@ class MiscTestCase(unittest.TestCase):
             TWO = 2
         self.assertEqual(Double.__doc__, None)
 
-
-    def test_doc_1(self):
+    def test_doc_3(self):
         class Triple(Enum):
             ONE = 1
             TWO = 2
             THREE = 3
         self.assertEqual(Triple.__doc__, None)
 
-    def test_doc_1(self):
+    def test_doc_4(self):
         class Quadruple(Enum):
             ONE = 1
             TWO = 2

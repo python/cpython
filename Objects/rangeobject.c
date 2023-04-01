@@ -33,7 +33,7 @@ validate_step(PyObject *step)
         return PyLong_FromLong(1);
 
     step = PyNumber_Index(step);
-    if (step && _PyLong_Sign(step) == 0) {
+    if (step && _PyLong_IsZero((PyLongObject *)step)) {
         PyErr_SetString(PyExc_ValueError,
                         "range() arg 3 must not be zero");
         Py_CLEAR(step);

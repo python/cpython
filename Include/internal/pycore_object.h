@@ -25,11 +25,25 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 #define _Py_FatalRefcountError(message) \
     _Py_FatalRefcountErrorFunc(__func__, (message))
 
+
+#ifdef Py_REF_DEBUG
+/* The symbol is only exposed in the API for the sake of extensions
+   built against the pre-3.12 stable ABI. */
+PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
+
+extern void _Py_AddRefTotal(PyInterpreterState *, Py_ssize_t);
+extern void _Py_IncRefTotal(PyInterpreterState *);
+extern void _Py_DecRefTotal(PyInterpreterState *);
+
+#  define _Py_DEC_REFTOTAL(interp) \
+    interp->object_state.reftotal--
+#endif
+
 // Increment reference count by n
 static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 {
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal += n;
+    _Py_AddRefTotal(_PyInterpreterState_GET(), n);
 #endif
     op->ob_refcnt += n;
 }
@@ -43,7 +57,7 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
     }
     _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
+    _Py_DEC_REFTOTAL(_PyInterpreterState_GET());
 #endif
     if (--op->ob_refcnt != 0) {
         assert(op->ob_refcnt > 0);
@@ -64,7 +78,7 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
     }
     _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
+    _Py_DEC_REFTOTAL(_PyInterpreterState_GET());
 #endif
     op->ob_refcnt--;
 #ifdef Py_DEBUG
@@ -73,6 +87,11 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
     }
 #endif
 }
+
+#ifdef Py_REF_DEBUG
+#  undef _Py_DEC_REFTOTAL
+#endif
+
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
@@ -112,8 +131,9 @@ static inline void
 _PyObject_InitVar(PyVarObject *op, PyTypeObject *typeobj, Py_ssize_t size)
 {
     assert(op != NULL);
-    Py_SET_SIZE(op, size);
+    assert(typeobj != &PyLong_Type);
     _PyObject_Init((PyObject *)op, typeobj);
+    Py_SET_SIZE(op, size);
 }
 
 
@@ -202,6 +222,8 @@ static inline void _PyObject_GC_UNTRACK(
 #endif
 
 #ifdef Py_REF_DEBUG
+extern void _PyInterpreterState_FinalizeRefTotal(PyInterpreterState *);
+extern void _Py_FinalizeRefTotal(_PyRuntimeState *);
 extern void _PyDebug_PrintTotalRefs(void);
 #endif
 
@@ -347,6 +369,7 @@ extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 extern int _PyType_HasSubclasses(PyTypeObject *);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
+extern PyObject* _PyObject_GenericTryGetAttr(PyObject *, PyObject *);
 
 // Access macro to the members which are floating "behind" the object
 static inline PyMemberDef* _PyHeapType_GET_MEMBERS(PyHeapTypeObject *etype) {
