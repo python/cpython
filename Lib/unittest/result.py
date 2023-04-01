@@ -196,6 +196,7 @@ class TestResult(object):
         ret = None
         first = True
         excs = [(exctype, value, tb)]
+        seen = {id(value)}  # Detect loops in chained exceptions.
         while excs:
             (exctype, value, tb) = excs.pop()
             # Skip test runner traceback levels
@@ -214,8 +215,9 @@ class TestResult(object):
 
             if value is not None:
                 for c in (value.__cause__, value.__context__):
-                    if c is not None:
+                    if c is not None and id(c) not in seen:
                         excs.append((type(c), c, c.__traceback__))
+                        seen.add(id(c))
         return ret
 
     def _is_relevant_tb_level(self, tb):

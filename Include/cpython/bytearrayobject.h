@@ -25,14 +25,10 @@ static inline char* PyByteArray_AS_STRING(PyObject *op)
     }
     return _PyByteArray_empty_string;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyByteArray_AS_STRING(self) PyByteArray_AS_STRING(_PyObject_CAST(self))
-#endif
+#define PyByteArray_AS_STRING(self) PyByteArray_AS_STRING(_PyObject_CAST(self))
 
 static inline Py_ssize_t PyByteArray_GET_SIZE(PyObject *op) {
     PyByteArrayObject *self = _PyByteArray_CAST(op);
     return Py_SIZE(self);
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define PyByteArray_GET_SIZE(self) PyByteArray_GET_SIZE(_PyObject_CAST(self))
-#endif
+#define PyByteArray_GET_SIZE(self) PyByteArray_GET_SIZE(_PyObject_CAST(self))

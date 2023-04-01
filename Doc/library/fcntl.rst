@@ -18,6 +18,8 @@ interface to the :c:func:`fcntl` and :c:func:`ioctl` Unix routines.  For a
 complete description of these calls, see :manpage:`fcntl(2)` and
 :manpage:`ioctl(2)` Unix manual pages.
 
+.. include:: ../includes/wasm-notavail.rst
+
 All functions in this module take a file descriptor *fd* as their first
 argument.  This can be an integer file descriptor, such as returned by
 ``sys.stdin.fileno()``, or an :class:`io.IOBase` object, such as ``sys.stdin``
@@ -49,6 +51,12 @@ descriptor.
    On FreeBSD, the fcntl module exposes the ``F_DUP2FD`` and ``F_DUP2FD_CLOEXEC``
    constants, which allow to duplicate a file descriptor, the latter setting
    ``FD_CLOEXEC`` flag in addition.
+
+.. versionchanged:: 3.12
+   On Linux >= 4.5, the :mod:`fcntl` module exposes the ``FICLONE`` and
+   ``FICLONERANGE`` constants, which allow to share some data of one file with
+   another file by reflinking on some filesystems (e.g., btrfs, OCFS2, and
+   XFS). This behavior is commonly referred to as "copy-on-write".
 
 The module defines the following functions:
 

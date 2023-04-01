@@ -111,7 +111,7 @@ class SymbolTable:
         return bool(self._table.children)
 
     def get_identifiers(self):
-        """Return a list of names of symbols in the table.
+        """Return a view object containing the names of symbols in the table.
         """
         return self._table.symbols.keys()
 

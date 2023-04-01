@@ -185,7 +185,7 @@ PyDoc_STRVAR(atexit_run_exitfuncs__doc__,
 \n\
 Run all registered exit functions.\n\
 \n\
-If a callaback raises an exception, it is logged with sys.unraisablehook.");
+If a callback raises an exception, it is logged with sys.unraisablehook.");
 
 static PyObject *
 atexit_run_exitfuncs(PyObject *module, PyObject *unused)
