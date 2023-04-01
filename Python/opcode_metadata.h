@@ -3,7 +3,7 @@
 //   Python/bytecodes.c
 // Do not edit!
 
-#ifndef NEED_OPCODE_TABLES
+#ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #else
 int
@@ -349,7 +349,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
 }
 #endif
 
-#ifndef NEED_OPCODE_TABLES
+#ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_pushed(int opcode, int oparg, bool jump);
 #else
 int
@@ -701,7 +701,7 @@ struct opcode_metadata {
     enum InstructionFormat instr_format;
 };
 
-#ifndef NEED_OPCODE_TABLES
+#ifndef NEED_OPCODE_METADATA
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];
 #else
 const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
@@ -731,13 +731,13 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [BINARY_OP_INPLACE_ADD_UNICODE] = { true, INSTR_FMT_IX },
     [BINARY_OP_ADD_FLOAT] = { true, INSTR_FMT_IXC },
     [BINARY_OP_ADD_INT] = { true, INSTR_FMT_IXC },
-    [BINARY_SUBSCR] = { true, INSTR_FMT_IXC000 },
+    [BINARY_SUBSCR] = { true, INSTR_FMT_IXC },
     [BINARY_SLICE] = { true, INSTR_FMT_IX },
     [STORE_SLICE] = { true, INSTR_FMT_IX },
-    [BINARY_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC000 },
-    [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC000 },
-    [BINARY_SUBSCR_DICT] = { true, INSTR_FMT_IXC000 },
-    [BINARY_SUBSCR_GETITEM] = { true, INSTR_FMT_IXC000 },
+    [BINARY_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC },
+    [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC },
+    [BINARY_SUBSCR_DICT] = { true, INSTR_FMT_IXC },
+    [BINARY_SUBSCR_GETITEM] = { true, INSTR_FMT_IXC },
     [LIST_APPEND] = { true, INSTR_FMT_IB },
     [SET_ADD] = { true, INSTR_FMT_IB },
     [STORE_SUBSCR] = { true, INSTR_FMT_IXC },
