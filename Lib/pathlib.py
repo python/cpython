@@ -245,6 +245,8 @@ def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
                 result = path, dirnames, filenames, fd
                 scandir_it = os.scandir(fd)
             except OSError as exc:
+                if not hasattr(exc, 'func'):
+                    exc.func = os.scandir
                 exc.filename = str(path)
                 raise exc
         else:
@@ -1312,6 +1314,80 @@ class Path(PurePath):
                             os.close(value)
                         except OSError:
                             pass
+
+        def _rmtree(self, dir_fd, on_error):
+            walker = self.fwalk(
+                top_down=False,
+                follow_symlinks=False,
+                on_error=on_error,
+                dir_fd=dir_fd)
+            for toppath, dirnames, filenames, topfd in walker:
+                for dirname in dirnames:
+                    try:
+                        os.rmdir(dirname, dir_fd=topfd)
+                    except OSError as exc:
+                        if on_error:
+                            exc.filename = str(toppath._make_child_relpath(dirname))
+                            exc.func = os.rmdir
+                            on_error(exc)
+                for filename in filenames:
+                    try:
+                        os.unlink(filename, dir_fd=topfd)
+                    except OSError as exc:
+                        if on_error:
+                            exc.filename = str(toppath._make_child_relpath(filename))
+                            exc.func = os.unlink
+                            on_error(exc)
+                if toppath == self:
+                    try:
+                        os.rmdir(self, dir_fd=dir_fd)
+                    except OSError as exc:
+                        if on_error:
+                            exc.filename = str(self)
+                            exc.func = os.rmdir
+                            on_error(exc)
+        _rmtree.avoids_symlink_attacks = True
+
+    else:
+        def _rmtree(self, dir_fd, on_error):
+            if dir_fd is not None:
+                raise NotImplementedError("dir_fd unavailable on this platform")
+            try:
+                if self.is_symlink() or self.is_junction():
+                    raise OSError("Cannot call rmtree on a symbolic link")
+            except OSError as err:
+                if on_error:
+                    on_error(err)
+                return
+
+            walker = self.walk(
+                top_down=False,
+                follow_symlinks=False,
+                follow_junctions=False,
+                on_error=on_error)
+            for toppath, dirnames, filenames in walker:
+                for dirname in dirnames:
+                    try:
+                        toppath._make_child_relpath(dirname).rmdir()
+                    except OSError as exc:
+                        if on_error:
+                            exc.func = os.rmdir
+                            on_error(exc)
+                for filename in filenames:
+                    try:
+                        toppath._make_child_relpath(filename).unlink()
+                    except OSError as exc:
+                        if on_error:
+                            exc.func = os.unlink
+                            on_error(exc)
+                if toppath == self:
+                    try:
+                        self.rmdir()
+                    except OSError as exc:
+                        if on_error:
+                            exc.func = os.rmdir
+                            on_error(exc)
+        _rmtree.avoids_symlink_attacks = False
 
 
 class PosixPath(Path, PurePosixPath):

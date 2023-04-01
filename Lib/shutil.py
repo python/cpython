@@ -563,76 +563,6 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
                      ignore_dangling_symlinks=ignore_dangling_symlinks,
                      dirs_exist_ok=dirs_exist_ok)
 
-if hasattr(os.stat_result, 'st_file_attributes'):
-    def _rmtree_islink(path):
-        try:
-            st = os.lstat(path)
-            return (stat.S_ISLNK(st.st_mode) or
-                (st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
-                 and st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT))
-        except OSError:
-            return False
-else:
-    def _rmtree_islink(path):
-        return os.path.islink(path)
-
-# version vulnerable to race conditions
-def _rmtree_unsafe(path, onexc):
-    def on_walk_error(exc):
-        onexc(getattr(exc, 'func', os.scandir), exc.filename, exc)
-    walker = path.walk(
-        top_down=False,
-        follow_symlinks=False,
-        follow_junctions=False,
-        on_error=on_walk_error)
-    for toppath, dirnames, filenames in walker:
-        for dirname in dirnames:
-            try:
-                toppath._make_child_relpath(dirname).rmdir()
-            except OSError as exc:
-                onexc(os.rmdir, exc.filename, exc)
-        for filename in filenames:
-            try:
-                toppath._make_child_relpath(filename).unlink()
-            except OSError as exc:
-                onexc(os.unlink, exc.filename, exc)
-        if toppath == path:
-            try:
-                path.rmdir()
-            except OSError as exc:
-                onexc(os.rmdir, exc.filename, exc)
-
-
-# Version using fd-based APIs to protect against races
-def _rmtree_safe_fd(path, onexc, dir_fd):
-    def on_walk_error(exc):
-        onexc(getattr(exc, 'func', os.scandir), exc.filename, exc)
-    walker = path.fwalk(
-        top_down=False,
-        follow_symlinks=False,
-        on_error=on_walk_error,
-        dir_fd=dir_fd)
-    for toppath, dirnames, filenames, topfd in walker:
-        for dirname in dirnames:
-            try:
-                os.rmdir(dirname, dir_fd=topfd)
-            except OSError as exc:
-                exc.filename = str(toppath._make_child_relpath(dirname))
-                onexc(os.rmdir, exc.filename, exc)
-        for filename in filenames:
-            try:
-                os.unlink(filename, dir_fd=topfd)
-            except OSError as exc:
-                exc.filename = str(toppath._make_child_relpath(filename))
-                onexc(os.unlink, exc.filename, exc)
-        if toppath == path:
-            try:
-                os.rmdir(path, dir_fd=dir_fd)
-            except OSError as exc:
-                exc.filename = str(path)
-                onexc(os.rmdir, exc.filename, exc)
-
-
 def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     """Recursively delete a directory tree.
 
@@ -660,46 +590,24 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
 
     sys.audit("shutil.rmtree", path, dir_fd)
     if ignore_errors:
-        def onexc(*args):
-            pass
-    elif onerror is None and onexc is None:
-        def onexc(*args):
+        handle_error = None
+    elif onexc is not None:
+        def handle_error(error):
+            return onexc(error.func, error.filename, error)
+    elif onerror is not None:
+        def handle_error(error):
+            exc_info = type(error), error, error.__traceback__
+            return onerror(error.func, error.filename, exc_info)
+    else:
+        def handle_error(error):
             raise
-    elif onexc is None:
-        if onerror is None:
-            def onexc(*args):
-                raise
-        else:
-            # delegate to onerror
-            def onexc(*args):
-                func, path, exc = args
-                if exc is None:
-                    exc_info = None, None, None
-                else:
-                    exc_info = type(exc), exc, exc.__traceback__
-                return onerror(func, path, exc_info)
-
     if isinstance(path, bytes):
         path = os.fsdecode(path)
-    path = pathlib.Path(path)
-    if hasattr(path, "fwalk"):
-        _rmtree_safe_fd(path, onexc, dir_fd)
-    else:
-        if dir_fd is not None:
-            raise NotImplementedError("dir_fd unavailable on this platform")
-        try:
-            if _rmtree_islink(path):
-                # symlinks to directories are forbidden, see bug #1669
-                raise OSError("Cannot call rmtree on a symbolic link")
-        except OSError as err:
-            onexc(os.path.islink, path, err)
-            # can't continue even if onexc hook returns
-            return
-        return _rmtree_unsafe(path, onexc)
+    pathlib.Path(path)._rmtree(dir_fd, handle_error)
 
 # Allow introspection of whether or not the hardening against symlink
 # attacks is supported on the current platform
-rmtree.avoids_symlink_attacks = hasattr(pathlib.Path, "fwalk")
+rmtree.avoids_symlink_attacks = pathlib.Path._rmtree.avoids_symlink_attacks
 
 def _basename(path):
     """A basename() variant which first strips the trailing slash, if present.
