@@ -1980,7 +1980,7 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
 
 int
 _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
-                       int code_flags, int nlocals, int nparams)
+                       int code_flags, int nlocals, int nparams, int firstlineno)
 {
     assert(cfg_builder_check(g));
     /** Preprocessing **/
@@ -1997,6 +1997,7 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
             g->g_entryblock, nlocals, nparams));
 
     RETURN_IF_ERROR(push_cold_blocks_to_end(g, code_flags));
+    RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
     return SUCCESS;
 }
 
@@ -2149,8 +2150,8 @@ guarantee_lineno_for_exits(basicblock *entryblock, int firstlineno) {
     }
 }
 
-int
-_PyCfg_ResolveLineNumbers(cfg_builder *g, int firstlineno)
+static int
+resolve_line_numbers(cfg_builder *g, int firstlineno)
 {
     RETURN_IF_ERROR(duplicate_exits_without_lineno(g));
     propagate_line_numbers(g->g_entryblock);

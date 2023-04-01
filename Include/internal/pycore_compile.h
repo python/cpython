@@ -33,6 +33,24 @@ extern int _PyAST_Optimize(
     struct _arena *arena,
     _PyASTOptimizeState *state);
 
+
+typedef struct {
+    int i_opcode;
+    int i_oparg;
+    _PyCompilerSrcLocation i_loc;
+} _PyCompilerInstruction;
+
+typedef struct {
+    _PyCompilerInstruction *s_instrs;
+    int s_allocated;
+    int s_used;
+
+    int *s_labelmap;       /* label id --> instr offset */
+    int s_labelmap_size;
+    int s_next_free_label; /* next free label id */
+} _PyCompile_InstructionSequence;
+
+
 /* Utility for a number of growing arrays used in the compiler */
 int _PyCompile_EnsureArrayLargeEnough(
         int idx,

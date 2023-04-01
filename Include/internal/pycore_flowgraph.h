@@ -91,10 +91,9 @@ void _PyCfgBuilder_Fini(_PyCfgBuilder *g);
 
 _PyCfgInstruction* _PyCfg_BasicblockLastInstr(const _PyCfgBasicblock *b);
 int _PyCfg_OptimizeCodeUnit(_PyCfgBuilder *g, PyObject *consts, PyObject *const_cache,
-                            int code_flags, int nlocals, int nparams);
+                            int code_flags, int nlocals, int nparamsi, int firstlineno);
 int _PyCfg_Stackdepth(_PyCfgBasicblock *entryblock, int code_flags);
 void _PyCfg_ConvertExceptionHandlersToNops(_PyCfgBasicblock *entryblock);
-int _PyCfg_ResolveLineNumbers(_PyCfgBuilder *g, int firstlineno);
 int _PyCfg_ResolveJumps(_PyCfgBuilder *g);
 int _PyCfg_InstrSize(_PyCfgInstruction *instruction);
 

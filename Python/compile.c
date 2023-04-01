@@ -198,21 +198,8 @@ enum {
     COMPILER_SCOPE_COMPREHENSION,
 };
 
-typedef struct {
-    int i_opcode;
-    int i_oparg;
-    location i_loc;
-} instruction;
-
-typedef struct instr_sequence_ {
-    instruction *s_instrs;
-    int s_allocated;
-    int s_used;
-
-    int *s_labelmap;       /* label id --> instr offset */
-    int s_labelmap_size;
-    int s_next_free_label; /* next free label id */
-} instr_sequence;
+typedef _PyCompilerInstruction instruction;
+typedef _PyCompile_InstructionSequence instr_sequence;
 
 #define INITIAL_INSTR_SEQUENCE_SIZE 100
 #define INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE 10
@@ -7389,11 +7376,15 @@ add_return_at_end(struct compiler *c, int addNone)
     return SUCCESS;
 }
 
+static int cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq);
 
 static PyCodeObject *
 assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
                    int code_flags, PyObject *filename)
 {
+    instr_sequence optimized_instrs;
+    memset(&optimized_instrs, 0, sizeof(instr_sequence));
+
     PyCodeObject *co = NULL;
     PyObject *consts = consts_dict_keys_inorder(u->u_consts);
     if (consts == NULL) {
@@ -7405,24 +7396,17 @@ assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     }
     int nparams = (int)PyList_GET_SIZE(u->u_ste->ste_varnames);
     int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
-    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, code_flags, nlocals, nparams) < 0) {
+    assert(u->u_firstlineno);
+    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, code_flags, nlocals,
+                                nparams, u->u_firstlineno) < 0) {
+        goto error;
+    }
+
+    if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
         goto error;
     }
 
     /** Assembly **/
-    /* Set firstlineno if it wasn't explicitly set. */
-    if (!u->u_firstlineno) {
-        if (g.g_entryblock->b_instr && g.g_entryblock->b_instr->i_loc.lineno) {
-            u->u_firstlineno = g.g_entryblock->b_instr->i_loc.lineno;
-        }
-        else {
-            u->u_firstlineno = 1;
-        }
-    }
-    if (_PyCfg_ResolveLineNumbers(&g, u->u_firstlineno) < 0) {
-        goto error;
-    }
-
     int nlocalsplus = prepare_localsplus(u, &g, code_flags);
     if (nlocalsplus < 0) {
         goto error;
@@ -7441,6 +7425,10 @@ assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     if (_PyCfg_ResolveJumps(&g) < 0) {
         goto error;
     }
+    if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
+        goto error;
+    }
+
 
     /* Can't modify the bytecode after computing jump offsets. */
 
@@ -7454,6 +7442,7 @@ assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
 
  error:
     Py_XDECREF(consts);
+    instr_sequence_fini(&optimized_instrs);
     _PyCfgBuilder_Fini(&g);
     return co;
 }
@@ -7477,6 +7466,29 @@ assemble(struct compiler *c, int addNone)
     return assemble_code_unit(u, const_cache, code_flags, filename);
 }
 
+static int
+cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq)
+{
+    int lbl = 0;
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        b->b_label = (jump_target_label){lbl};
+        lbl += b->b_iused;
+    }
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        RETURN_IF_ERROR(instr_sequence_use_label(seq, b->b_label.id));
+        for (int i = 0; i < b->b_iused; i++) {
+            cfg_instr *instr = &b->b_instr[i];
+            int arg = HAS_TARGET(instr->i_opcode) ?
+                      instr->i_target->b_label.id :
+                      instr->i_oparg;
+            RETURN_IF_ERROR(
+                instr_sequence_addop(seq, instr->i_opcode, arg, instr->i_loc));
+        }
+    }
+    return SUCCESS;
+}
+
+
 /* Access to compiler optimizations for unit tests.
  *
  * _PyCompile_CodeGen takes and AST, applies code-gen and
@@ -7492,7 +7504,7 @@ assemble(struct compiler *c, int addNone)
  */
 
 static int
-instructions_to_cfg(PyObject *instructions, cfg_builder *g)
+instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
 {
     assert(PyList_Check(instructions));
 
@@ -7526,8 +7538,7 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
 
     for (int i = 0; i < num_insts; i++) {
         if (is_target[i]) {
-            jump_target_label lbl = {i};
-            RETURN_IF_ERROR(_PyCfgBuilder_UseLabel(g, lbl));
+            RETURN_IF_ERROR(instr_sequence_use_label(seq, i));
         }
         PyObject *item = PyList_GET_ITEM(instructions, i);
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 6) {
@@ -7565,11 +7576,10 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
         if (PyErr_Occurred()) {
             goto error;
         }
-        RETURN_IF_ERROR(_PyCfgBuilder_Addop(g, opcode, oparg, loc));
+        RETURN_IF_ERROR(instr_sequence_addop(seq, opcode, oparg, loc));
     }
-    cfg_instr *last = _PyCfg_BasicblockLastInstr(g->g_curblock);
-    if (last && !IS_TERMINATOR_OPCODE(last->i_opcode)) {
-        RETURN_IF_ERROR(_PyCfgBuilder_Addop(g, RETURN_VALUE, 0, NO_LOCATION));
+    if (seq->s_used && !IS_TERMINATOR_OPCODE(seq->s_instrs[seq->s_used-1].i_opcode)) {
+        RETURN_IF_ERROR(instr_sequence_addop(seq, RETURN_VALUE, 0, NO_LOCATION));
     }
     PyMem_Free(is_target);
     return SUCCESS;
@@ -7578,8 +7588,23 @@ error:
     return ERROR;
 }
 
+static int
+instructions_to_cfg(PyObject *instructions, cfg_builder *g)
+{
+    instr_sequence seq;
+    memset(&seq, 0, sizeof(instr_sequence));
+
+    RETURN_IF_ERROR(
+        instructions_to_instr_sequence(instructions, &seq));
+
+    RETURN_IF_ERROR(instr_sequence_to_cfg(&seq, g));
+    instr_sequence_fini(&seq);
+    return SUCCESS;
+}
+
 static PyObject *
-instr_sequence_to_instructions(instr_sequence *seq) {
+instr_sequence_to_instructions(instr_sequence *seq)
+{
     PyObject *instructions = PyList_New(0);
     if (instructions == NULL) {
         return NULL;
@@ -7709,8 +7734,9 @@ _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts)
     if (instructions_to_cfg(instructions, &g) < 0) {
         goto error;
     }
-    int code_flags = 0, nlocals = 0, nparams = 0;
-    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, code_flags, nlocals, nparams) < 0) {
+    int code_flags = 0, nlocals = 0, nparams = 0, firstlineno = 1;
+    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, code_flags, nlocals,
+                                nparams, firstlineno) < 0) {
         goto error;
     }
     res = cfg_to_instructions(&g);
