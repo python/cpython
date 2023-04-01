@@ -1295,7 +1295,7 @@ class Path(PurePath):
                 continue
 
     if _supports_fwalk:
-        def fwalk(self, top_down=True, on_error=None, follow_symlinks=False, dir_fd=None):
+        def _fwalk(self, top_down=True, on_error=None, follow_symlinks=False, dir_fd=None):
             """Walk the directory tree from this directory, similar to os.fwalk()."""
             sys.audit("pathlib.Path.fwalk", self, on_error, follow_symlinks, dir_fd)
             actions = [(_WalkAction.WALK, (self, dir_fd, None))]
@@ -1316,7 +1316,7 @@ class Path(PurePath):
                             pass
 
         def _rmtree(self, dir_fd, on_error):
-            walker = self.fwalk(
+            walker = self._fwalk(
                 top_down=False,
                 follow_symlinks=False,
                 on_error=on_error,
@@ -1325,27 +1325,27 @@ class Path(PurePath):
                 for dirname in dirnames:
                     try:
                         os.rmdir(dirname, dir_fd=topfd)
-                    except OSError as exc:
+                    except OSError as error:
                         if on_error:
-                            exc.filename = str(toppath._make_child_relpath(dirname))
-                            exc.func = os.rmdir
-                            on_error(exc)
+                            error.filename = str(toppath._make_child_relpath(dirname))
+                            error.func = os.rmdir
+                            on_error(error)
                 for filename in filenames:
                     try:
                         os.unlink(filename, dir_fd=topfd)
-                    except OSError as exc:
+                    except OSError as error:
                         if on_error:
-                            exc.filename = str(toppath._make_child_relpath(filename))
-                            exc.func = os.unlink
-                            on_error(exc)
+                            error.filename = str(toppath._make_child_relpath(filename))
+                            error.func = os.unlink
+                            on_error(error)
                 if toppath == self:
                     try:
                         os.rmdir(self, dir_fd=dir_fd)
-                    except OSError as exc:
+                    except OSError as error:
                         if on_error:
-                            exc.filename = str(self)
-                            exc.func = os.rmdir
-                            on_error(exc)
+                            error.filename = str(self)
+                            error.func = os.rmdir
+                            on_error(error)
         _rmtree.avoids_symlink_attacks = True
 
     else:
@@ -1355,9 +1355,10 @@ class Path(PurePath):
             try:
                 if self.is_symlink() or self.is_junction():
                     raise OSError("Cannot call rmtree on a symbolic link")
-            except OSError as err:
+            except OSError as error:
                 if on_error:
-                    on_error(err)
+                    error.func = os.path.islink
+                    on_error(error)
                 return
 
             walker = self.walk(
@@ -1369,24 +1370,24 @@ class Path(PurePath):
                 for dirname in dirnames:
                     try:
                         toppath._make_child_relpath(dirname).rmdir()
-                    except OSError as exc:
+                    except OSError as error:
                         if on_error:
-                            exc.func = os.rmdir
-                            on_error(exc)
+                            error.func = os.rmdir
+                            on_error(error)
                 for filename in filenames:
                     try:
                         toppath._make_child_relpath(filename).unlink()
-                    except OSError as exc:
+                    except OSError as error:
                         if on_error:
-                            exc.func = os.unlink
-                            on_error(exc)
+                            error.func = os.unlink
+                            on_error(error)
                 if toppath == self:
                     try:
                         self.rmdir()
-                    except OSError as exc:
+                    except OSError as error:
                         if on_error:
-                            exc.func = os.rmdir
-                            on_error(exc)
+                            error.func = os.rmdir
+                            on_error(error)
         _rmtree.avoids_symlink_attacks = False
 
 
