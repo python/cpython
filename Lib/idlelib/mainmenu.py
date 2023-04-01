@@ -25,7 +25,7 @@ menudefs = [
    ('_New File', '<<open-new-window>>'),
    ('_Open...', '<<open-window-from-file>>'),
    ('Open _Module...', '<<open-module>>'),
-   ('Class _Browser', '<<open-class-browser>>'),
+   ('Module _Browser', '<<open-class-browser>>'),
    ('_Path Browser', '<<open-path-browser>>'),
    None,
    ('_Save', '<<save-window>>'),
@@ -34,26 +34,34 @@ menudefs = [
    None,
    ('Prin_t Window', '<<print-window>>'),
    None,
-   ('_Close', '<<close-window>>'),
-   ('E_xit', '<<close-all-windows>>'),
-  ]),
+   ('_Close Window', '<<close-window>>'),
+   ('E_xit IDLE', '<<close-all-windows>>'),
+   ]),
+
  ('edit', [
    ('_Undo', '<<undo>>'),
    ('_Redo', '<<redo>>'),
    None,
+   ('Select _All', '<<select-all>>'),
    ('Cu_t', '<<cut>>'),
    ('_Copy', '<<copy>>'),
    ('_Paste', '<<paste>>'),
-   ('Select _All', '<<select-all>>'),
    None,
    ('_Find...', '<<find>>'),
    ('Find A_gain', '<<find-again>>'),
    ('Find _Selection', '<<find-selection>>'),
    ('Find in Files...', '<<find-in-files>>'),
    ('R_eplace...', '<<replace>>'),
+   None,
    ('Go to _Line', '<<goto-line>>'),
-  ]),
-('format', [
+   ('S_how Completions', '<<force-open-completions>>'),
+   ('E_xpand Word', '<<expand-word>>'),
+   ('Show C_all Tip', '<<force-open-calltip>>'),
+   ('Show Surrounding P_arens', '<<flash-paren>>'),
+   ]),
+
+ ('format', [
+   ('F_ormat Paragraph', '<<format-paragraph>>'),
    ('_Indent Region', '<<indent-region>>'),
    ('_Dedent Region', '<<dedent-region>>'),
    ('Comment _Out Region', '<<comment-region>>'),
@@ -62,30 +70,48 @@ menudefs = [
    ('Untabify Region', '<<untabify-region>>'),
    ('Toggle Tabs', '<<toggle-tabs>>'),
    ('New Indent Width', '<<change-indentwidth>>'),
+   ('S_trip Trailing Whitespace', '<<do-rstrip>>'),
    ]),
+
  ('run', [
+   ('R_un Module', '<<run-module>>'),
+   ('Run... _Customized', '<<run-custom>>'),
+   ('C_heck Module', '<<check-module>>'),
    ('Python Shell', '<<open-python-shell>>'),
    ]),
+
  ('shell', [
    ('_View Last Restart', '<<view-restart>>'),
    ('_Restart Shell', '<<restart-shell>>'),
    None,
+   ('_Previous History', '<<history-previous>>'),
+   ('_Next History', '<<history-next>>'),
+   None,
    ('_Interrupt Execution', '<<interrupt-execution>>'),
    ]),
+
  ('debug', [
    ('_Go to File/Line', '<<goto-file-line>>'),
    ('!_Debugger', '<<toggle-debugger>>'),
    ('_Stack Viewer', '<<open-stack-viewer>>'),
    ('!_Auto-open Stack Viewer', '<<toggle-jit-stack-viewer>>'),
    ]),
+
  ('options', [
    ('Configure _IDLE', '<<open-config-dialog>>'),
    None,
+   ('Show _Code Context', '<<toggle-code-context>>'),
+   ('Show _Line Numbers', '<<toggle-line-numbers>>'),
+   ('_Zoom Height', '<<zoom-height>>'),
    ]),
+
+ ('window', [
+   ]),
+
  ('help', [
    ('_About IDLE', '<<about-idle>>'),
    None,
-   ('_IDLE Help', '<<help>>'),
+   ('_IDLE Doc', '<<help>>'),
    ('Python _Docs', '<<python-docs>>'),
    ]),
 ]
@@ -94,3 +120,7 @@ if find_spec('turtledemo'):
     menudefs[-1][1].append(('Turtle Demo', '<<open-turtle-demo>>'))
 
 default_keydefs = idleConf.GetCurrentKeySet()
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_mainmenu', verbosity=2)

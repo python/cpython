@@ -1,0 +1,3 @@
+Attribute name of the extracted :mod:`tarfile` file object now holds
+filename of itself rather than of the archive it is contained in.
+Patch by Oleg Iarygin.

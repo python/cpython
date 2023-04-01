@@ -2,6 +2,14 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
+#if defined(HAVE_GETRUSAGE)
+
 PyDoc_STRVAR(resource_getrusage__doc__,
 "getrusage($module, who, /)\n"
 "--\n"
@@ -19,7 +27,8 @@ resource_getrusage(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int who;
 
-    if (!PyArg_Parse(arg, "i:getrusage", &who)) {
+    who = _PyLong_AsInt(arg);
+    if (who == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = resource_getrusage_impl(module, who);
@@ -27,6 +36,8 @@ resource_getrusage(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_GETRUSAGE) */
 
 PyDoc_STRVAR(resource_getrlimit__doc__,
 "getrlimit($module, resource, /)\n"
@@ -45,7 +56,8 @@ resource_getrlimit(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int resource;
 
-    if (!PyArg_Parse(arg, "i:getrlimit", &resource)) {
+    resource = _PyLong_AsInt(arg);
+    if (resource == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = resource_getrlimit_impl(module, resource);
@@ -60,26 +72,26 @@ PyDoc_STRVAR(resource_setrlimit__doc__,
 "\n");
 
 #define RESOURCE_SETRLIMIT_METHODDEF    \
-    {"setrlimit", (PyCFunction)resource_setrlimit, METH_FASTCALL, resource_setrlimit__doc__},
+    {"setrlimit", _PyCFunction_CAST(resource_setrlimit), METH_FASTCALL, resource_setrlimit__doc__},
 
 static PyObject *
 resource_setrlimit_impl(PyObject *module, int resource, PyObject *limits);
 
 static PyObject *
-resource_setrlimit(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+resource_setrlimit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int resource;
     PyObject *limits;
 
-    if (!_PyArg_NoStackKeywords("setrlimit", kwnames)) {
+    if (!_PyArg_CheckPositional("setrlimit", nargs, 2, 2)) {
         goto exit;
     }
-
-    if (!_PyArg_ParseStack(args, nargs, "iO:setrlimit",
-        &resource, &limits)) {
+    resource = _PyLong_AsInt(args[0]);
+    if (resource == -1 && PyErr_Occurred()) {
         goto exit;
     }
+    limits = args[1];
     return_value = resource_setrlimit_impl(module, resource, limits);
 
 exit:
@@ -89,41 +101,42 @@ exit:
 #if defined(HAVE_PRLIMIT)
 
 PyDoc_STRVAR(resource_prlimit__doc__,
-"prlimit(pid, resource, [limits])");
+"prlimit($module, pid, resource, limits=None, /)\n"
+"--\n"
+"\n");
 
 #define RESOURCE_PRLIMIT_METHODDEF    \
-    {"prlimit", (PyCFunction)resource_prlimit, METH_VARARGS, resource_prlimit__doc__},
+    {"prlimit", _PyCFunction_CAST(resource_prlimit), METH_FASTCALL, resource_prlimit__doc__},
 
 static PyObject *
 resource_prlimit_impl(PyObject *module, pid_t pid, int resource,
-                      int group_right_1, PyObject *limits);
+                      PyObject *limits);
 
 static PyObject *
-resource_prlimit(PyObject *module, PyObject *args)
+resource_prlimit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     pid_t pid;
     int resource;
-    int group_right_1 = 0;
-    PyObject *limits = NULL;
+    PyObject *limits = Py_None;
 
-    switch (PyTuple_GET_SIZE(args)) {
-        case 2:
-            if (!PyArg_ParseTuple(args, "" _Py_PARSE_PID "i:prlimit", &pid, &resource)) {
-                goto exit;
-            }
-            break;
-        case 3:
-            if (!PyArg_ParseTuple(args, "" _Py_PARSE_PID "iO:prlimit", &pid, &resource, &limits)) {
-                goto exit;
-            }
-            group_right_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "resource.prlimit requires 2 to 3 arguments");
-            goto exit;
+    if (!_PyArg_CheckPositional("prlimit", nargs, 2, 3)) {
+        goto exit;
     }
-    return_value = resource_prlimit_impl(module, pid, resource, group_right_1, limits);
+    pid = PyLong_AsPid(args[0]);
+    if (pid == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    resource = _PyLong_AsInt(args[1]);
+    if (resource == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    limits = args[2];
+skip_optional:
+    return_value = resource_prlimit_impl(module, pid, resource, limits);
 
 exit:
     return return_value;
@@ -158,7 +171,11 @@ exit:
     return return_value;
 }
 
+#ifndef RESOURCE_GETRUSAGE_METHODDEF
+    #define RESOURCE_GETRUSAGE_METHODDEF
+#endif /* !defined(RESOURCE_GETRUSAGE_METHODDEF) */
+
 #ifndef RESOURCE_PRLIMIT_METHODDEF
     #define RESOURCE_PRLIMIT_METHODDEF
 #endif /* !defined(RESOURCE_PRLIMIT_METHODDEF) */
-/*[clinic end generated code: output=158aace6e532949e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2fbec74335a57230 input=a9049054013a1b77]*/
