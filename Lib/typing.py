@@ -1997,15 +1997,13 @@ _PROTO_ALLOWLIST = {
 class _ProtocolMeta(ABCMeta):
     # This metaclass is really unfortunate and exists only because of
     # the lack of __instancehook__.
-    def __new__(metacls, name, bases, namespace, **kwargs):
-        cls = super().__new__(metacls, name, bases, namespace, **kwargs)
+    def __init__(cls, *args, **kwargs):
         cls.__protocol_attrs__ = _get_protocol_attrs(cls)
         # PEP 544 prohibits using issubclass()
         # with protocols that have non-method members.
         cls.__callable_proto_members_only__ = all(
             callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
         )
-        return cls
 
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
