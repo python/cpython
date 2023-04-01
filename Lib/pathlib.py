@@ -1074,6 +1074,15 @@ class Path(PurePath):
         """
         os.rmdir(self)
 
+    def _rmtree(self, *, on_error=None, ignore_errors=False, dir_fd=None):
+        """
+        Recursively delete this directory tree.
+        """
+        if on_error is None and not ignore_errors:
+            def on_error(error):
+                raise
+        self._rmtree_impl(on_error, dir_fd)
+
     def lstat(self):
         """
         Like stat(), except if the path points to a symlink, the symlink's
@@ -1284,7 +1293,7 @@ class Path(PurePath):
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False, follow_junctions=True):
         """Walk the directory tree from this directory, similar to os.walk()."""
-        sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks, follow_junctions)
+        sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
         actions = [(_WalkAction.WALK, (self, None, None))]
         while actions:
             try:
@@ -1295,9 +1304,8 @@ class Path(PurePath):
                 continue
 
     if _supports_fwalk:
-        def _fwalk(self, top_down=True, on_error=None, follow_symlinks=False, dir_fd=None):
-            """Walk the directory tree from this directory, similar to os.fwalk()."""
-            sys.audit("pathlib.Path.fwalk", self, on_error, follow_symlinks, dir_fd)
+        def _fwalk(self, top_down=True, *, on_error=None, follow_symlinks=False, dir_fd=None):
+            sys.audit("pathlib.Path._fwalk", self, on_error, follow_symlinks, dir_fd)
             actions = [(_WalkAction.WALK, (self, dir_fd, None))]
             try:
                 while actions:
@@ -1315,7 +1323,9 @@ class Path(PurePath):
                         except OSError:
                             pass
 
-        def _rmtree(self, dir_fd, on_error):
+        # Version using fd-based APIs to protect against races
+        _rmtree.avoids_symlink_attacks = True
+        def _rmtree_impl(self, on_error, dir_fd):
             walker = self._fwalk(
                 top_down=False,
                 follow_symlinks=False,
@@ -1326,7 +1336,7 @@ class Path(PurePath):
                     try:
                         os.rmdir(dirname, dir_fd=topfd)
                     except OSError as error:
-                        if on_error:
+                        if on_error is not None:
                             error.filename = str(toppath._make_child_relpath(dirname))
                             error.func = os.rmdir
                             on_error(error)
@@ -1334,7 +1344,7 @@ class Path(PurePath):
                     try:
                         os.unlink(filename, dir_fd=topfd)
                     except OSError as error:
-                        if on_error:
+                        if on_error is not None:
                             error.filename = str(toppath._make_child_relpath(filename))
                             error.func = os.unlink
                             on_error(error)
@@ -1342,14 +1352,15 @@ class Path(PurePath):
                     try:
                         os.rmdir(self, dir_fd=dir_fd)
                     except OSError as error:
-                        if on_error:
+                        if on_error is not None:
                             error.filename = str(self)
                             error.func = os.rmdir
                             on_error(error)
-        _rmtree.avoids_symlink_attacks = True
 
     else:
-        def _rmtree(self, dir_fd, on_error):
+        # version vulnerable to race conditions
+        _rmtree.avoids_symlink_attacks = False
+        def _rmtree_impl(self, on_error, dir_fd):
             if dir_fd is not None:
                 raise NotImplementedError("dir_fd unavailable on this platform")
             try:
@@ -1358,7 +1369,7 @@ class Path(PurePath):
                     error.filename = str(self)
                     raise error
             except OSError as error:
-                if on_error:
+                if on_error is not None:
                     error.func = os.path.islink
                     on_error(error)
                 return
@@ -1373,24 +1384,23 @@ class Path(PurePath):
                     try:
                         toppath._make_child_relpath(dirname).rmdir()
                     except OSError as error:
-                        if on_error:
+                        if on_error is not None:
                             error.func = os.rmdir
                             on_error(error)
                 for filename in filenames:
                     try:
                         toppath._make_child_relpath(filename).unlink()
                     except OSError as error:
-                        if on_error:
+                        if on_error is not None:
                             error.func = os.unlink
                             on_error(error)
                 if toppath == self:
                     try:
                         self.rmdir()
                     except OSError as error:
-                        if on_error:
+                        if on_error is not None:
                             error.func = os.rmdir
                             on_error(error)
-        _rmtree.avoids_symlink_attacks = False
 
 
 class PosixPath(Path, PurePosixPath):

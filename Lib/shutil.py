@@ -589,21 +589,17 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
                       DeprecationWarning)
 
     sys.audit("shutil.rmtree", path, dir_fd)
-    if ignore_errors:
-        handle_error = None
-    elif onexc is not None:
+    handle_error = None
+    if onexc is not None:
         def handle_error(error):
             return onexc(error.func, error.filename, error)
     elif onerror is not None:
         def handle_error(error):
             exc_info = type(error), error, error.__traceback__
             return onerror(error.func, error.filename, exc_info)
-    else:
-        def handle_error(error):
-            raise
     if isinstance(path, bytes):
         path = os.fsdecode(path)
-    pathlib.Path(path)._rmtree(dir_fd, handle_error)
+    pathlib.Path(path)._rmtree(ignore_errors=ignore_errors, on_error=handle_error, dir_fd=dir_fd)
 
 # Allow introspection of whether or not the hardening against symlink
 # attacks is supported on the current platform
