@@ -2984,17 +2984,16 @@ class ExtractDoublyAddedReadonlyFile(unittest.TestCase):
         "Issue 30438: tarring a readonly file twice, then extracting, should succeed"
 
         file_name = os.path.join(TEMPDIR, 'read_only_file.txt')
-        tarfile_name = os.path.join(TEMPDIR, 'tarred_read_only_file.tar')
 
         with open(file_name, 'w') as outfile:
             outfile.write('')
         os.chmod(file_name, 0o444)
 
-        with tarfile.open(tarfile_name, "w") as tarfl:
+        with tarfile.open(tmpname, 'w') as tarfl:
             tarfl.add(file_name)
             tarfl.add(file_name)
 
-        with tarfile.open(tarfile_name) as tarfl:
+        with tarfile.open(tmpname) as tarfl:
             tarfl.extractall()
 
 
