@@ -40,6 +40,8 @@ deactivate nondestructive
 
 VIRTUAL_ENV="__VENV_DIR__"
 export VIRTUAL_ENV
+VIRTUAL_ENV_PROMPT="__VENV_PROMPT__"
+export VIRTUAL_ENV_PROMPT
 
 _OLD_VIRTUAL_PATH="$PATH"
 PATH="$VIRTUAL_ENV/__VENV_BIN_NAME__:$PATH"
@@ -57,8 +59,6 @@ if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
     _OLD_VIRTUAL_PS1="${PS1:-}"
     PS1="__VENV_PROMPT__${PS1:-}"
     export PS1
-    VIRTUAL_ENV_PROMPT="__VENV_PROMPT__"
-    export VIRTUAL_ENV_PROMPT
 fi
 
 # This should detect bash and zsh, which have a hash command that must

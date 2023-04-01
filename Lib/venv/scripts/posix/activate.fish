@@ -34,6 +34,7 @@ end
 deactivate nondestructive
 
 set -gx VIRTUAL_ENV "__VENV_DIR__"
+set -gx VIRTUAL_ENV_PROMPT "__VENV_PROMPT__"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/__VENV_BIN_NAME__" $PATH
@@ -65,5 +66,4 @@ if test -z "$VIRTUAL_ENV_DISABLE_PROMPT"
     end
 
     set -gx _OLD_FISH_PROMPT_OVERRIDE "$VIRTUAL_ENV"
-    set -gx VIRTUAL_ENV_PROMPT "__VENV_PROMPT__"
 end
