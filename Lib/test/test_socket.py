@@ -2562,8 +2562,7 @@ class BasicHyperVTest(unittest.TestCase):
         socket.HV_GUID_LOOPBACK
 
     def testCreateHyperVSocketWithUnknownProtoFailure(self):
-        expected = "A protocol was specified in the socket function call " \
-            "that does not support the semantics of the socket type requested"
+        expected = r"\[WinError 10041\]"
         with self.assertRaisesRegex(OSError, expected):
             socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM)
 
@@ -5492,10 +5491,10 @@ class TCPTimeoutTest(SocketTCPTest):
                 self.fail("caught timeout instead of Alarm")
             except Alarm:
                 pass
-            except:
+            except BaseException as e:
                 self.fail("caught other exception instead of Alarm:"
                           " %s(%s):\n%s" %
-                          (sys.exc_info()[:2] + (traceback.format_exc(),)))
+                          (type(e), e, traceback.format_exc()))
             else:
                 self.fail("nothing caught")
             finally:

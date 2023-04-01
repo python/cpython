@@ -556,6 +556,15 @@ class StatAttributeTests(unittest.TestCase):
             nanosecondy = getattr(result, name + "_ns") // 10000
             self.assertAlmostEqual(floaty, nanosecondy, delta=2)
 
+        # Ensure both birthtime and birthtime_ns roughly agree, if present
+        try:
+            floaty = int(result.st_birthtime * 100000)
+            nanosecondy = result.st_birthtime_ns // 10000
+        except AttributeError:
+            pass
+        else:
+            self.assertAlmostEqual(floaty, nanosecondy, delta=2)
+
         try:
             result[200]
             self.fail("No exception raised")
@@ -4234,7 +4243,8 @@ class TestScandir(unittest.TestCase):
             for attr in dir(stat1):
                 if not attr.startswith("st_"):
                     continue
-                if attr in ("st_dev", "st_ino", "st_nlink"):
+                if attr in ("st_dev", "st_ino", "st_nlink", "st_ctime",
+                            "st_ctime_ns"):
                     continue
                 self.assertEqual(getattr(stat1, attr),
                                  getattr(stat2, attr),

@@ -153,9 +153,13 @@ def _iter_top_include_lines(lines, topfile, cwd,
                 # XXX How can a file return to line 1?
                 #assert lno > 1, (line, lno)
             else:
-                # It's the next line from the file.
-                assert included == files[-1], (line, files)
-                assert lno > 1, (line, lno)
+                if included == files[-1]:
+                    # It's the next line from the file.
+                    assert lno > 1, (line, lno)
+                else:
+                    # We ran into a user-added #LINE directive,
+                    # which we promptly ignore.
+                    pass
         elif not files:
             raise NotImplementedError((line,))
         elif filter_reqfile(files[-1]):
