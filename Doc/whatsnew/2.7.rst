@@ -1331,6 +1331,7 @@ changes, or look through the Subversion logs for all the details.
     >>> from inspect import getcallargs
     >>> def f(a, b=1, *pos, **named):
     ...     pass
+    ...
     >>> getcallargs(f, 1, 2, 3)
     {'a': 1, 'b': 2, 'pos': (3,), 'named': {}}
     >>> getcallargs(f, a=2, x=4)

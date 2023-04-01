@@ -570,9 +570,10 @@ class Bdb:
             rv = frame.f_locals['__return__']
             s += '->'
             s += reprlib.repr(rv)
-        line = linecache.getline(filename, lineno, frame.f_globals)
-        if line:
-            s += lprefix + line.strip()
+        if lineno is not None:
+            line = linecache.getline(filename, lineno, frame.f_globals)
+            if line:
+                s += lprefix + line.strip()
         return s
 
     # The following methods can be called by clients to use

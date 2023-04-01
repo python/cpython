@@ -12,7 +12,9 @@
  */
 
 #ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
 #  include <windows.h>
 #  include <winsock2.h>
 #  include <process.h>               /* getpid() */

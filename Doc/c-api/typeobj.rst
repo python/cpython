@@ -147,6 +147,8 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_vectorcall`        | :c:type:`vectorcallfunc`          |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | [:c:member:`~PyTypeObject.tp_watched`]         | char                              |                   |   |   |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
 
 .. [#slots]
 
@@ -450,6 +452,7 @@ slot typedefs
 |                             |                             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
 |                             |    :c:type:`Py_ssize_t`     |                      |
+|                             |    :c:type:`PyObject` *     |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`objobjproc`        | .. line-block::             | int                  |
 |                             |                             |                      |
@@ -1310,6 +1313,16 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       .. versionadded:: 3.10
 
 
+   .. data:: Py_TPFLAGS_VALID_VERSION_TAG
+
+      Internal. Do not set or unset this flag.
+      To indicate that a class has changed call :c:func:`PyType_Modified`
+
+      .. warning::
+         This flag is present in header files, but is an internal feature and should
+         not be used. It will be removed in a future version of CPython
+
+
 .. c:member:: const char* PyTypeObject.tp_doc
 
    An optional pointer to a NUL-terminated C string giving the docstring for this
@@ -2090,6 +2103,13 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    .. versionadded:: 3.9 (the field exists since 3.8 but it's only used since 3.9)
 
 
+.. c:member:: char PyTypeObject.tp_watched
+
+   Internal. Do not use.
+
+   .. versionadded:: 3.12
+
+
 .. _static-types:
 
 Static Types
@@ -2624,7 +2644,7 @@ Slot Type typedefs
 
 .. c:type:: PyObject *(*ssizeargfunc)(PyObject *, Py_ssize_t)
 
-.. c:type:: int (*ssizeobjargproc)(PyObject *, Py_ssize_t)
+.. c:type:: int (*ssizeobjargproc)(PyObject *, Py_ssize_t, PyObject *)
 
 .. c:type:: int (*objobjproc)(PyObject *, PyObject *)
 

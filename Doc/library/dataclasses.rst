@@ -389,7 +389,7 @@ Module contents
    :func:`astuple` raises :exc:`TypeError` if ``obj`` is not a dataclass
    instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None)
 
    Creates a new dataclass with name ``cls_name``, fields as defined
    in ``fields``, base classes as given in ``bases``, and initialized
@@ -400,6 +400,10 @@ Module contents
    ``repr``, ``eq``, ``order``, ``unsafe_hash``, ``frozen``,
    ``match_args``, ``kw_only``, ``slots``, and ``weakref_slot`` have
    the same meaning as they do in :func:`dataclass`.
+
+   If ``module`` is defined, the ``__module__`` attribute
+   of the dataclass is set to that value.
+   By default, it is set to the module name of the caller.
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with ``__annotations__`` can
@@ -552,7 +556,7 @@ parameters to :meth:`__post_init__`.  Also see the warning about how
 Class variables
 ---------------
 
-One of two places where :func:`dataclass` actually inspects the type
+One of the few places where :func:`dataclass` actually inspects the type
 of a field is to determine if a field is a class variable as defined
 in :pep:`526`.  It does this by checking if the type of the field is
 ``typing.ClassVar``.  If a field is a ``ClassVar``, it is excluded
@@ -563,7 +567,7 @@ module-level :func:`fields` function.
 Init-only variables
 -------------------
 
-The other place where :func:`dataclass` inspects a type annotation is to
+Another place where :func:`dataclass` inspects a type annotation is to
 determine if a field is an init-only variable.  It does this by seeing
 if the type of a field is of type ``dataclasses.InitVar``.  If a field
 is an ``InitVar``, it is considered a pseudo-field called an init-only

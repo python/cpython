@@ -428,7 +428,15 @@ Constants
    .. versionchanged:: 3.12
       Added ``SO_RTABLE`` and ``SO_USER_COOKIE``. On OpenBSD
       and FreeBSD respectively those constants can be used in the same way that
-      ``SO_MARK`` is used on Linux.
+      ``SO_MARK`` is used on Linux. Also added missing TCP socket options from
+      Linux: ``TCP_MD5SIG``, ``TCP_THIN_LINEAR_TIMEOUTS``, ``TCP_THIN_DUPACK``,
+      ``TCP_REPAIR``, ``TCP_REPAIR_QUEUE``, ``TCP_QUEUE_SEQ``,
+      ``TCP_REPAIR_OPTIONS``, ``TCP_TIMESTAMP``, ``TCP_CC_INFO``,
+      ``TCP_SAVE_SYN``, ``TCP_SAVED_SYN``, ``TCP_REPAIR_WINDOW``,
+      ``TCP_FASTOPEN_CONNECT``, ``TCP_ULP``, ``TCP_MD5SIG_EXT``,
+      ``TCP_FASTOPEN_KEY``, ``TCP_FASTOPEN_NO_COOKIE``,
+      ``TCP_ZEROCOPY_RECEIVE``, ``TCP_INQ``, ``TCP_TX_DELAY``.
+      Added ``IP_PKTINFO``.
 
 .. data:: AF_CAN
           PF_CAN
@@ -796,8 +804,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    ``(host, port)``) and returns the socket object.
 
    *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
-   *backlog* is the queue size passed to :meth:`socket.listen`; when ``0``
-   a default reasonable value is chosen.
+   *backlog* is the queue size passed to :meth:`socket.listen`; if not specified
+   , a default reasonable value is chosen.
    *reuse_port* dictates whether to set the :data:`SO_REUSEPORT` socket option.
 
    If *dualstack_ipv6* is true and the platform supports it the socket will

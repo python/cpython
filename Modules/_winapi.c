@@ -39,8 +39,11 @@
 #include "structmember.h"         // PyMemberDef
 
 
+#ifndef WINDOWS_LEAN_AND_MEAN
 #define WINDOWS_LEAN_AND_MEAN
+#endif
 #include "windows.h"
+#include <winioctl.h>
 #include <crtdbg.h>
 #include "winreparse.h"
 
@@ -63,22 +66,13 @@
 
 #define T_HANDLE T_POINTER
 
-/* Grab CancelIoEx dynamically from kernel32 */
-static int has_CancelIoEx = -1;
-static BOOL (CALLBACK *Py_CancelIoEx)(HANDLE, LPOVERLAPPED);
-
-static int
-check_CancelIoEx()
-{
-    if (has_CancelIoEx == -1)
-    {
-        HINSTANCE hKernel32 = GetModuleHandle("KERNEL32");
-        * (FARPROC *) &Py_CancelIoEx = GetProcAddress(hKernel32,
-                                                      "CancelIoEx");
-        has_CancelIoEx = (Py_CancelIoEx != NULL);
-    }
-    return has_CancelIoEx;
-}
+// winbase.h limits the STARTF_* flags to the desktop API as of 10.0.19041.
+#ifndef STARTF_USESHOWWINDOW
+#define STARTF_USESHOWWINDOW 0x00000001
+#endif
+#ifndef STARTF_USESTDHANDLES
+#define STARTF_USESTDHANDLES 0x00000100
+#endif
 
 typedef struct {
     PyTypeObject *overlapped_type;
@@ -134,8 +128,7 @@ overlapped_dealloc(OverlappedObject *self)
 
     PyObject_GC_UnTrack(self);
     if (self->pending) {
-        if (check_CancelIoEx() &&
-            Py_CancelIoEx(self->handle, &self->overlapped) &&
+        if (CancelIoEx(self->handle, &self->overlapped) &&
             GetOverlappedResult(self->handle, &self->overlapped, &bytes, TRUE))
         {
             /* The operation is no longer pending -- nothing to do. */
@@ -306,10 +299,7 @@ _winapi_Overlapped_cancel_impl(OverlappedObject *self)
 
     if (self->pending) {
         Py_BEGIN_ALLOW_THREADS
-        if (check_CancelIoEx())
-            res = Py_CancelIoEx(self->handle, &self->overlapped);
-        else
-            res = CancelIo(self->handle);
+        res = CancelIoEx(self->handle, &self->overlapped);
         Py_END_ALLOW_THREADS
     }
 
@@ -655,8 +645,10 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 cleanup:
     ret = GetLastError();
 
-    CloseHandle(token);
-    CloseHandle(junction);
+    if (token != NULL)
+        CloseHandle(token);
+    if (junction != NULL)
+        CloseHandle(junction);
     PyMem_RawFree(rdb);
 
     if (ret != 0)
@@ -1220,8 +1212,10 @@ _winapi_ExitProcess_impl(PyObject *module, UINT ExitCode)
 /*[clinic end generated code: output=a387deb651175301 input=4f05466a9406c558]*/
 {
     #if defined(Py_DEBUG)
+#ifdef MS_WINDOWS_DESKTOP
         SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOALIGNMENTFAULTEXCEPT|
                      SEM_NOGPFAULTERRORBOX|SEM_NOOPENFILEERRORBOX);
+#endif
         _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_DEBUG);
     #endif
 

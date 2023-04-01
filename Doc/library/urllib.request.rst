@@ -1630,7 +1630,7 @@ The typical response object is a :class:`urllib.response.addinfourl` instance:
       .. deprecated:: 3.9
          Deprecated in favor of :attr:`~addinfourl.status`.
 
-   .. method:: getstatus()
+   .. method:: getcode()
 
       .. deprecated:: 3.9
          Deprecated in favor of :attr:`~addinfourl.status`.
