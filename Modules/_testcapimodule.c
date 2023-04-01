@@ -1538,15 +1538,19 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         .allow_daemon_threads = allow_daemon_threads,
         .check_multi_interp_extensions = check_multi_interp_extensions,
     };
-    substate = _Py_NewInterpreterFromConfig(&config);
-    if (substate == NULL) {
+    PyStatus status = _Py_NewInterpreterFromConfig(&substate, &config);
+    if (PyStatus_Exception(status)) {
         /* Since no new thread state was created, there is no exception to
            propagate; raise a fresh one after swapping in the old thread
            state. */
         PyThreadState_Swap(mainstate);
+        _PyErr_SetFromPyStatus(status);
+        PyObject *exc = PyErr_GetRaisedException();
         PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
+        _PyErr_ChainExceptions1(exc);
         return NULL;
     }
+    assert(substate != NULL);
     r = PyRun_SimpleStringFlags(code, &cflags);
     Py_EndInterpreter(substate);
 
@@ -1611,19 +1615,18 @@ static void
 slot_tp_del(PyObject *self)
 {
     PyObject *del, *res;
-    PyObject *error_type, *error_value, *error_traceback;
 
     /* Temporarily resurrect the object. */
     assert(Py_REFCNT(self) == 0);
     Py_SET_REFCNT(self, 1);
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     PyObject *tp_del = PyUnicode_InternFromString("__tp_del__");
     if (tp_del == NULL) {
         PyErr_WriteUnraisable(NULL);
-        PyErr_Restore(error_type, error_value, error_traceback);
+        PyErr_SetRaisedException(exc);
         return;
     }
     /* Execute __del__ method, if any. */
@@ -1638,7 +1641,7 @@ slot_tp_del(PyObject *self)
     }
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 
     /* Undo the temporary resurrection; can't use DECREF here, it would
      * cause a recursive call.
@@ -1655,15 +1658,10 @@ slot_tp_del(PyObject *self)
      */
     {
         Py_ssize_t refcnt = Py_REFCNT(self);
-        _Py_NewReference(self);
+        _Py_NewReferenceNoTotal(self);
         Py_SET_REFCNT(self, refcnt);
     }
     assert(!PyType_IS_GC(Py_TYPE(self)) || PyObject_GC_IsTracked(self));
-    /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
-       _Py_RefTotal, so we need to undo that. */
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
 }
 
 static PyObject *
@@ -3316,6 +3314,73 @@ function_set_kw_defaults(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+struct gc_visit_state_basic {
+    PyObject *target;
+    int found;
+};
+
+static int
+gc_visit_callback_basic(PyObject *obj, void *arg)
+{
+    struct gc_visit_state_basic *state = (struct gc_visit_state_basic *)arg;
+    if (obj == state->target) {
+        state->found = 1;
+        return 0;
+    }
+    return 1;
+}
+
+static PyObject *
+test_gc_visit_objects_basic(PyObject *Py_UNUSED(self),
+                            PyObject *Py_UNUSED(ignored))
+{
+    PyObject *obj;
+    struct gc_visit_state_basic state;
+
+    obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+    state.target = obj;
+    state.found = 0;
+    
+    PyUnstable_GC_VisitObjects(gc_visit_callback_basic, &state);
+    Py_DECREF(obj);
+    if (!state.found) {
+        PyErr_SetString(
+             PyExc_AssertionError,
+             "test_gc_visit_objects_basic: Didn't find live list");
+         return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static int
+gc_visit_callback_exit_early(PyObject *obj, void *arg)
+ {
+    int *visited_i = (int *)arg;
+    (*visited_i)++;
+    if (*visited_i == 2) {
+        return 0;
+    }
+    return 1;
+}
+
+static PyObject *
+test_gc_visit_objects_exit_early(PyObject *Py_UNUSED(self),
+                                 PyObject *Py_UNUSED(ignored))
+{
+    int visited_i = 0;
+    PyUnstable_GC_VisitObjects(gc_visit_callback_exit_early, &visited_i);
+    if (visited_i != 2) {
+        PyErr_SetString(
+            PyExc_AssertionError,
+            "test_gc_visit_objects_exit_early: did not exit when expected");
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 
 static PyMethodDef TestMethods[] = {
@@ -3458,6 +3523,8 @@ static PyMethodDef TestMethods[] = {
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
+    {"test_gc_visit_objects_basic", test_gc_visit_objects_basic, METH_NOARGS, NULL},
+    {"test_gc_visit_objects_exit_early", test_gc_visit_objects_exit_early, METH_NOARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
@@ -4082,6 +4149,12 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Exceptions(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Code(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_PyOS(m) < 0) {
         return NULL;
     }
 
