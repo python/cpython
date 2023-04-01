@@ -575,15 +575,17 @@ def _rmtree_unsafe(path, onexc):
         on_error=on_walk_error)
     for toppath, dirnames, filenames in walker:
         for dirname in dirnames:
+            dirpath = toppath._make_child_relpath(dirname)
             try:
-                toppath._make_child_relpath(dirname).rmdir()
+                dirpath.rmdir()
             except OSError as exc:
-                onexc(os.rmdir, str(toppath / dirname), exc)
+                onexc(os.rmdir, str(dirpath), exc)
         for filename in filenames:
+            filepath = toppath._make_child_relpath(filename)
             try:
-                toppath._make_child_relpath(filename).unlink()
+                filepath.unlink()
             except OSError as exc:
-                onexc(os.unlink, str(toppath / filename), exc)
+                onexc(os.unlink, str(filepath), exc)
     try:
         path.rmdir()
     except OSError as exc:
@@ -603,21 +605,19 @@ def _rmtree_safe_fd(path, onexc, dir_fd):
             try:
                 os.rmdir(dirname, dir_fd=topfd)
             except OSError as exc:
-                onexc(os.rmdir, str(toppath / dirname), exc)
+                exc.filename = str(toppath._make_child_relpath(dirname))
+                onexc(os.rmdir, exc.filename, exc)
         for filename in filenames:
             try:
                 os.unlink(filename, dir_fd=topfd)
             except OSError as exc:
-                onexc(os.unlink, str(toppath / filename), exc)
+                exc.filename = str(toppath._make_child_relpath(filename))
+                onexc(os.unlink, exc.filename, exc)
     try:
         os.rmdir(path, dir_fd=dir_fd)
     except OSError as exc:
-        onexc(os.rmdir, str(path), exc)
-
-_use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
-                     os.supports_dir_fd and
-                     os.scandir in os.supports_fd and
-                     os.stat in os.supports_follow_symlinks)
+        exc.filename = str(path)
+        onexc(os.rmdir, exc.filename, exc)
 
 def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     """Recursively delete a directory tree.
@@ -668,7 +668,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     if isinstance(path, bytes):
         path = os.fsdecode(path)
     path = pathlib.Path(path)
-    if _use_fd_functions:
+    if hasattr(path, "fwalk"):
         _rmtree_safe_fd(path, onexc, dir_fd)
     else:
         if dir_fd is not None:
@@ -677,7 +677,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
 
 # Allow introspection of whether or not the hardening against symlink
 # attacks is supported on the current platform
-rmtree.avoids_symlink_attacks = _use_fd_functions
+rmtree.avoids_symlink_attacks = hasattr(pathlib.Path, "fwalk")
 
 def _basename(path):
     """A basename() variant which first strips the trailing slash, if present.

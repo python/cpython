@@ -223,24 +223,25 @@ def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
     action, value = actions.pop()
 
     if action is _WalkAction.WALK:
-        path, dir_fd, orig_st = value
-        dirstats = None
+        path, dir_fd, entry = value
+        entries = [] if use_fd and not top_down and not follow_symlinks else None
         dirnames = []
         filenames = []
         if use_fd:
             name = path if dir_fd is None else path.name
-            if not follow_symlinks:
-                if top_down:
-                    orig_st = os.stat(name, follow_symlinks=False, dir_fd=dir_fd)
-                else:
-                    dirstats = []
-            fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
-            actions.append((_WalkAction.CLOSE, fd))
-            if orig_st and not os.path.samestat(orig_st, os.stat(fd)):
-                # This can only happen if a directory is replaced with a symlink during the walk.
-                return
-            result = path, dirnames, filenames, fd
+            orig_st = None
             try:
+                if not follow_symlinks:
+                    if entry:
+                        orig_st = entry.stat(follow_symlinks=False)
+                    else:
+                        orig_st = os.stat(name, follow_symlinks=False, dir_fd=dir_fd)
+                fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
+                actions.append((_WalkAction.CLOSE, fd))
+                if orig_st and not os.path.samestat(orig_st, os.stat(fd)):
+                    # This can only happen if a directory is replaced with a symlink during the walk.
+                    return
+                result = path, dirnames, filenames, fd
                 scandir_it = os.scandir(fd)
             except OSError as exc:
                 exc.filename = str(path)
@@ -256,8 +257,8 @@ def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
                     is_dir = entry.is_dir(follow_symlinks=follow_symlinks) and (
                         follow_junctions or not entry.is_junction())
                     if is_dir:
-                        if dirstats is not None:
-                            dirstats.append(entry.stat(follow_symlinks=False))
+                        if entries is not None:
+                            entries.append(entry)
                         dirnames.append(entry.name)
                     else:
                         filenames.append(entry.name)
@@ -270,10 +271,10 @@ def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
         else:
             actions.append((_WalkAction.YIELD, result))
 
-        if dirstats:
+        if entries:
             actions += [
-                (_WalkAction.WALK, (path._make_child_relpath(dirname), fd, dirstat))
-                for dirname, dirstat in zip(reversed(dirnames), reversed(dirstats))]
+                (_WalkAction.WALK, (path._make_child_relpath(dirname), fd, entry))
+                for dirname, entry in zip(reversed(dirnames), reversed(entries))]
         else:
             actions += [
                 (_WalkAction.WALK, (path._make_child_relpath(dirname), fd, None))

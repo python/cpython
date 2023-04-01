@@ -564,7 +564,6 @@ class TestRmTree(BaseTest, unittest.TestCase):
                              os.listdir in os.supports_fd and
                              os.stat in os.supports_follow_symlinks)
         if _use_fd_functions:
-            self.assertTrue(shutil._use_fd_functions)
             self.assertTrue(shutil.rmtree.avoids_symlink_attacks)
             tmp_dir = self.mkdtemp()
             d = os.path.join(tmp_dir, 'a')
@@ -579,10 +578,9 @@ class TestRmTree(BaseTest, unittest.TestCase):
             finally:
                 shutil._rmtree_safe_fd = real_rmtree
         else:
-            self.assertFalse(shutil._use_fd_functions)
             self.assertFalse(shutil.rmtree.avoids_symlink_attacks)
 
-    @unittest.skipUnless(shutil._use_fd_functions, "dir_fd is not supported")
+    @unittest.skipUnless(shutil.rmtree.avoids_symlink_attacks, "dir_fd is not supported")
     def test_rmtree_with_dir_fd(self):
         tmp_dir = self.mkdtemp()
         victim = 'killme'
@@ -596,7 +594,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         shutil.rmtree(victim, dir_fd=dir_fd)
         self.assertFalse(os.path.exists(fullname))
 
-    @unittest.skipIf(shutil._use_fd_functions, "dir_fd is supported")
+    @unittest.skipIf(shutil.rmtree.avoids_symlink_attacks, "dir_fd is supported")
     def test_rmtree_with_dir_fd_unsupported(self):
         tmp_dir = self.mkdtemp()
         with self.assertRaises(NotImplementedError):
