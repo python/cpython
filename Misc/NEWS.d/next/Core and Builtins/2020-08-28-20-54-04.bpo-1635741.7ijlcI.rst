@@ -1,1 +1,0 @@
-Port the :mod:`zlib` extension module to multi-phase initialization (:pep:`489`).

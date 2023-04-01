@@ -1,1 +1,0 @@
-Fix the signature of :class:`typing.Coroutine`.

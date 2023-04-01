@@ -55,7 +55,7 @@ To accommodate reproducible processing of SMIME-signed messages
    defaults to the value of the :attr:`~email.policy.Policy.mangle_from_`
    setting of the *policy* (which is ``True`` for the
    :data:`~email.policy.compat32` policy and ``False`` for all others).
-   *mangle_from_* is intended for use when messages are stored in unix mbox
+   *mangle_from_* is intended for use when messages are stored in Unix mbox
    format (see :mod:`mailbox` and `WHY THE CONTENT-LENGTH FORMAT IS BAD
    <https://www.jwz.org/doc/content-length.html>`_).
 
@@ -156,7 +156,7 @@ to be using :class:`BytesGenerator`, and not :class:`Generator`.
    defaults to the value of the :attr:`~email.policy.Policy.mangle_from_`
    setting of the *policy* (which is ``True`` for the
    :data:`~email.policy.compat32` policy and ``False`` for all others).
-   *mangle_from_* is intended for use when messages are stored in unix mbox
+   *mangle_from_* is intended for use when messages are stored in Unix mbox
    format (see :mod:`mailbox` and `WHY THE CONTENT-LENGTH FORMAT IS BAD
    <https://www.jwz.org/doc/content-length.html>`_).
 

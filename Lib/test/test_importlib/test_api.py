@@ -1,4 +1,4 @@
-from . import util as test_util
+from test.test_importlib import util as test_util
 
 init = test_util.import_importlib('importlib')
 util = test_util.import_importlib('importlib.util')
@@ -6,7 +6,6 @@ machinery = test_util.import_importlib('importlib.machinery')
 
 import os.path
 import sys
-from test import support
 from test.support import import_helper
 from test.support import os_helper
 import types
@@ -20,7 +19,7 @@ class ImportModuleTests:
 
     def test_module_import(self):
         # Test importing a top-level module.
-        with test_util.mock_modules('top_level') as mock:
+        with test_util.mock_spec('top_level') as mock:
             with test_util.import_state(meta_path=[mock]):
                 module = self.init.import_module('top_level')
                 self.assertEqual(module.__name__, 'top_level')
@@ -30,7 +29,7 @@ class ImportModuleTests:
         pkg_name = 'pkg'
         pkg_long_name = '{0}.__init__'.format(pkg_name)
         name = '{0}.mod'.format(pkg_name)
-        with test_util.mock_modules(pkg_long_name, name) as mock:
+        with test_util.mock_spec(pkg_long_name, name) as mock:
             with test_util.import_state(meta_path=[mock]):
                 module = self.init.import_module(name)
                 self.assertEqual(module.__name__, name)
@@ -42,7 +41,7 @@ class ImportModuleTests:
         module_name = 'mod'
         absolute_name = '{0}.{1}'.format(pkg_name, module_name)
         relative_name = '.{0}'.format(module_name)
-        with test_util.mock_modules(pkg_long_name, absolute_name) as mock:
+        with test_util.mock_spec(pkg_long_name, absolute_name) as mock:
             with test_util.import_state(meta_path=[mock]):
                 self.init.import_module(pkg_name)
                 module = self.init.import_module(relative_name, pkg_name)
@@ -50,7 +49,7 @@ class ImportModuleTests:
 
     def test_deep_relative_package_import(self):
         modules = ['a.__init__', 'a.b.__init__', 'a.c']
-        with test_util.mock_modules(*modules) as mock:
+        with test_util.mock_spec(*modules) as mock:
             with test_util.import_state(meta_path=[mock]):
                 self.init.import_module('a')
                 self.init.import_module('a.b')
@@ -63,7 +62,7 @@ class ImportModuleTests:
         pkg_name = 'pkg'
         pkg_long_name = '{0}.__init__'.format(pkg_name)
         name = '{0}.mod'.format(pkg_name)
-        with test_util.mock_modules(pkg_long_name, name) as mock:
+        with test_util.mock_spec(pkg_long_name, name) as mock:
             with test_util.import_state(meta_path=[mock]):
                 self.init.import_module(pkg_name)
                 module = self.init.import_module(name, pkg_name)
@@ -88,7 +87,7 @@ class ImportModuleTests:
             b_load_count += 1
         code = {'a': load_a, 'a.b': load_b}
         modules = ['a.__init__', 'a.b']
-        with test_util.mock_modules(*modules, module_code=code) as mock:
+        with test_util.mock_spec(*modules, module_code=code) as mock:
             with test_util.import_state(meta_path=[mock]):
                 self.init.import_module('a.b')
         self.assertEqual(b_load_count, 1)
@@ -151,6 +150,7 @@ class FindLoaderTests:
             with test_util.import_state(meta_path=[self.FakeMetaFinder]):
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', DeprecationWarning)
+                    warnings.simplefilter('ignore', ImportWarning)
                     self.assertEqual((name, None), self.init.find_loader(name))
 
     def test_success_path(self):
@@ -161,6 +161,7 @@ class FindLoaderTests:
             with test_util.import_state(meta_path=[self.FakeMetaFinder]):
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', DeprecationWarning)
+                    warnings.simplefilter('ignore', ImportWarning)
                     self.assertEqual((name, path),
                                      self.init.find_loader(name, path))
 
@@ -212,8 +213,8 @@ class ReloadTests:
             module = type(sys)('top_level')
             module.spam = 3
             sys.modules['top_level'] = module
-        mock = test_util.mock_modules('top_level',
-                                      module_code={'top_level': code})
+        mock = test_util.mock_spec('top_level',
+                                   module_code={'top_level': code})
         with mock:
             with test_util.import_state(meta_path=[mock]):
                 module = self.init.import_module('top_level')
@@ -299,7 +300,8 @@ class ReloadTests:
         name = 'spam'
         with os_helper.temp_cwd(None) as cwd:
             with test_util.uncache('spam'):
-                with import_helper.DirsOnSysPath(cwd):
+                with test_util.import_state(path=[cwd]):
+                    self.init._bootstrap_external._install(self.init._bootstrap)
                     # Start as a namespace package.
                     self.init.invalidate_caches()
                     bad_path = os.path.join(cwd, name, '__init.py')
@@ -310,7 +312,7 @@ class ReloadTests:
                                 '__file__': None,
                                 }
                     os.mkdir(name)
-                    with open(bad_path, 'w') as init_file:
+                    with open(bad_path, 'w', encoding='utf-8') as init_file:
                         init_file.write('eggs = None')
                     module = self.init.import_module(name)
                     ns = vars(module).copy()
@@ -393,7 +395,7 @@ class InvalidateCacheTests:
             def invalidate_caches(self):
                 self.called = True
 
-        key = 'gobledeegook'
+        key = os.path.abspath('gobledeegook')
         meta_ins = InvalidatingNullFinder()
         path_ins = InvalidatingNullFinder()
         sys.meta_path.insert(0, meta_ins)
@@ -438,9 +440,9 @@ class StartupTests:
                 with self.subTest(name=name):
                     self.assertTrue(hasattr(module, '__loader__'),
                                     '{!r} lacks a __loader__ attribute'.format(name))
-                    if self.machinery.BuiltinImporter.find_module(name):
+                    if self.machinery.BuiltinImporter.find_spec(name):
                         self.assertIsNot(module.__loader__, None)
-                    elif self.machinery.FrozenImporter.find_module(name):
+                    elif self.machinery.FrozenImporter.find_spec(name):
                         self.assertIsNot(module.__loader__, None)
 
     def test_everyone_has___spec__(self):
@@ -448,9 +450,9 @@ class StartupTests:
             if isinstance(module, types.ModuleType):
                 with self.subTest(name=name):
                     self.assertTrue(hasattr(module, '__spec__'))
-                    if self.machinery.BuiltinImporter.find_module(name):
+                    if self.machinery.BuiltinImporter.find_spec(name):
                         self.assertIsNot(module.__spec__, None)
-                    elif self.machinery.FrozenImporter.find_module(name):
+                    elif self.machinery.FrozenImporter.find_spec(name):
                         self.assertIsNot(module.__spec__, None)
 
 

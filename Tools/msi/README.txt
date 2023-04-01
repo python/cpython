@@ -4,17 +4,16 @@ Quick Build Info
 For testing, the installer should be built with the Tools/msi/build.bat
 script:
 
-    build.bat [-x86] [-x64] [--doc]
+    build.bat [-x86] [-x64] [-ARM64] [--doc]
 
 For an official release, the installer should be built with the
 Tools/msi/buildrelease.bat script and environment variables:
 
-    set PYTHON=<path to Python 2.7 or 3.4>
+    set PYTHON=<path to Python 3.8 or later>
     set SPHINXBUILD=<path to sphinx-build.exe>
-    set PATH=<path to Git (git.exe)>;
-             <path to HTML Help Compiler (hhc.exe)>;%PATH%
+    set PATH=<path to Git (git.exe)>;%PATH%
 
-    buildrelease.bat [-x86] [-x64] [-D] [-B]
+    buildrelease.bat [-x86] [-x64] [-ARM64] [-D] [-B]
         [-o <output directory>] [-c <certificate name>]
 
 See the Building the Installer section for more information.
@@ -77,20 +76,17 @@ and Features | Turn Windows Features on or off) and ensure that the entry
 For testing, the installer should be built with the Tools/msi/build.bat
 script:
 
-    build.bat [-x86] [-x64] [--doc] [--test-marker] [--pack]
+    build.bat [-x86] [-x64] [-ARM64] [--doc] [--test-marker] [--pack]
 
 This script will build the required configurations of Python and
 generate an installer layout in PCbuild/(win32|amd64)/en-us.
 
-Specify -x86 and/or -x64 to build for each platform. If neither is
-specified, both platforms will be built. Currently, both the debug and
+Specify -x86, -x64 and/or -ARM64 to build for each platform. If none are
+specified, both x64 and x86 will be built. Currently, both the debug and
 release versions of Python are required for the installer.
 
-Specify --doc to build the documentation (.chm) file. If the file is not
-available, it will simply be excluded from the installer. Ensure
-%PYTHON% and %SPHINXBUILD% are set when passing this option. You may
-also set %HTMLHELP% to the Html Help Compiler (hhc.exe), or put HHC on
-your PATH or in externals/.
+Specify --doc to include the documentation files. Ensure %PYTHON% and
+%SPHINXBUILD% are set when passing this option.
 
 Specify --test-marker to build an installer that works side-by-side with
 an official Python release. All registry keys and install locations will
@@ -106,18 +102,18 @@ Tools/msi/buildrelease.bat script:
 
     set PYTHON=<path to Python 2.7 or 3.4>
     set SPHINXBUILD=<path to sphinx-build.exe>
-    set PATH=<path to Git (git.exe)>;
-             <path to HTML Help Compiler (hhc.exe)>;%PATH%
+    set PATH=<path to Git (git.exe)>;%PATH%
 
-    buildrelease.bat [-x86] [-x64] [-D] [-B]
+    buildrelease.bat [-x86] [-x64] [-ARM64] [-D] [-B]
         [-o <output directory>] [-c <certificate name>]
 
-Specify -x86 and/or -x64 to build for each platform. If neither is
-specified, both platforms will be built. Currently, both the debug and
+Specify -x86, -x64 and/or -ARM64 to build for each platform. If none are
+specified, both x64 and x86 will be built. Currently, both the debug and
 release versions of Python are required for the installer.
 
 Specify -D to skip rebuilding the documentation. The documentation is
 required for a release and the build will fail if it is not available.
+Ensure %PYTHON% and %SPHINXBUILD% are set if you omit this option.
 
 Specify -B to skip rebuilding Python. This is useful to only rebuild the
 installer layout after a previous call to buildrelease.bat.
@@ -129,10 +125,6 @@ Specify -c to choose a code-signing certificate to be used for all the
 signable binaries in Python as well as each file making up the
 installer. Official releases of Python must be signed.
 
-Ensure %PYTHON% and %SPHINXBUILD% are set when passing this option. You
-may also set %HTMLHELP% to the Html Help Compiler (hhc.exe), or put HHC
-on your PATH or in externals/. You will also need Git (git.exe) on
-your PATH.
 
 If WiX is not found on your system, it will be automatically downloaded
 and extracted to the externals/ directory.
@@ -167,7 +159,7 @@ The following properties may be passed when building these projects.
     by providing a unique URI for this property. It does not need to be an
     active internet address. Defaults to $(ComputerName).
 
-    Official releases use http://www.python.org/(architecture name)
+    Official releases use https://www.python.org/(architecture name)
 
   /p:DownloadUrlBase=(any URI)
     Specifies the base of a URL where missing parts of the installer layout
@@ -363,8 +355,10 @@ of Python's files.
 Within this install directory is the following approximate layout:
 
 .\python[w].exe The core executable files
+.\python3x.dll  The core interpreter
+.\python3.dll   The stable ABI reference
 .\DLLs          Stdlib extensions (*.pyd) and dependencies
-.\Doc           Documentation (*.chm)
+.\Doc           Documentation (*.html)
 .\include       Development headers (*.h)
 .\Lib           Standard library
 .\Lib\test      Test suite
@@ -374,19 +368,12 @@ Within this install directory is the following approximate layout:
 .\Tools         Tool scripts (*.py)
 
 When installed for all users, the following files are installed to
-either "%SystemRoot%\System32" or "%SystemRoot%\SysWOW64" as
-appropriate. For the current user, they are installed in the Python
-install directory.
-
-.\python3x.dll      The core interpreter
-.\python3.dll       The stable ABI reference
-
-When installed for all users, the following files are installed to
 "%SystemRoot%" (typically "C:\Windows") to ensure they are always
 available on PATH. (See Launching Python below.) For the current user,
 they are installed in "%LocalAppData%\Programs\Python\PyLauncher".
 
 .\py[w].exe         PEP 397 launcher
+
 
 System Settings
 ===============
@@ -426,7 +413,7 @@ a semicolon.
 
 When the documentation is installed, a key "Help" is created within the
 root key, with a subkey "Main Python Documentation" with its default
-value set to the full path to the installed CHM file.
+value set to the full path to the main index.html file.
 
 
 The py.exe launcher is installed as part of a regular Python install,

@@ -1,2 +1,0 @@
-Set the environment variable ``VIRTUAL_ENV_PROMPT`` at :mod:`venv`
-activation.

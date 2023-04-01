@@ -1,2 +1,0 @@
-The installer will now fail to install on Windows 7 and Windows 8. Further,
-the UCRT dependency is now always downloaded on demand.

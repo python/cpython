@@ -10,9 +10,12 @@
 */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_pystate.h"   // _PyThreadState_GET()
 #ifdef MS_WINDOWS
+#  ifndef WIN32_LEAN_AND_MEAN
 #  define WIN32_LEAN_AND_MEAN
+#  endif
 #  include "windows.h"
 #endif /* MS_WINDOWS */
 
@@ -107,7 +110,7 @@ my_fgets(PyThreadState* tstate, char *buf, int len, FILE *fp)
     /* NOTREACHED */
 }
 
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
 /* Readline implementation using ReadConsoleW */
 
 extern char _get_console_type(HANDLE handle);
@@ -232,7 +235,7 @@ exit:
     return buf;
 }
 
-#endif
+#endif /* HAVE_WINDOWS_CONSOLE_IO */
 
 
 /* Readline implementation using fgets() */
@@ -245,14 +248,13 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     PyThreadState *tstate = _PyOS_ReadlineTState;
     assert(tstate != NULL);
 
-#ifdef MS_WINDOWS
-    if (!Py_LegacyWindowsStdioFlag && sys_stdin == stdin) {
+#ifdef HAVE_WINDOWS_CONSOLE_IO
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (!config->legacy_windows_stdio && sys_stdin == stdin) {
         HANDLE hStdIn, hStdErr;
 
-        _Py_BEGIN_SUPPRESS_IPH
-        hStdIn = (HANDLE)_get_osfhandle(fileno(sys_stdin));
-        hStdErr = (HANDLE)_get_osfhandle(fileno(stderr));
-        _Py_END_SUPPRESS_IPH
+        hStdIn = _Py_get_osfhandle_noraise(fileno(sys_stdin));
+        hStdErr = _Py_get_osfhandle_noraise(fileno(stderr));
 
         if (_get_console_type(hStdIn) == 'r') {
             fflush(sys_stdout);

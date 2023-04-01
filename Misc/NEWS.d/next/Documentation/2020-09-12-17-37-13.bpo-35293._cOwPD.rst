@@ -1,1 +1,0 @@
-Fix RemovedInSphinx40Warning when building the documentation. Patch by Dong-hee Na.

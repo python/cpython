@@ -5,8 +5,13 @@ import os
 import unittest
 import subprocess
 from textwrap import dedent
-from test.support import cpython_only, SuppressCrashReport
+from test.support import cpython_only, has_subprocess_support, SuppressCrashReport
 from test.support.script_helper import kill_python
+
+
+if not has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
+
 
 def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     """Run the Python REPL with the given arguments.
@@ -35,6 +40,21 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
                             stdin=subprocess.PIPE,
                             stdout=stdout, stderr=stderr,
                             **kw)
+
+def run_on_interactive_mode(source):
+    """Spawn a new Python interpreter, pass the given
+    input source code from the stdin and return the
+    result back. If the interpreter exits non-zero, it
+    raises a ValueError."""
+
+    process = spawn_repl()
+    process.stdin.write(source)
+    output = kill_python(process)
+
+    if process.returncode != 0:
+        raise ValueError("Process didn't exit properly.")
+    return output
+
 
 class TestInteractiveInterpreter(unittest.TestCase):
 
@@ -106,6 +126,24 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = process.communicate(user_input)[0]
         self.assertEqual(process.returncode, 0)
         self.assertIn('before close', output)
+
+
+class TestInteractiveModeSyntaxErrors(unittest.TestCase):
+
+    def test_interactive_syntax_error_correct_line(self):
+        output = run_on_interactive_mode(dedent("""\
+        def f():
+            print(0)
+            return yield 42
+        """))
+
+        traceback_lines = output.splitlines()[-4:-1]
+        expected_lines = [
+            '    return yield 42',
+            '           ^^^^^',
+            'SyntaxError: invalid syntax'
+        ]
+        self.assertEqual(traceback_lines, expected_lines)
 
 
 if __name__ == "__main__":

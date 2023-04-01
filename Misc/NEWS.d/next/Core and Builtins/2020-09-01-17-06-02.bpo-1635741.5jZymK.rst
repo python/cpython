@@ -1,2 +1,0 @@
-Port the :mod:`_opcode` extension module to multi-phase initialization
-(:pep:`489`).
