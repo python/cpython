@@ -120,7 +120,7 @@ extern PyTypeObject _PyExc_MemoryError;
                     .h_root = (PyHamtNode*)&_Py_SINGLETON(hamt_bitmap_node_empty), \
                 }, \
                 .last_resort_memory_error = { \
-                    _PyObject_IMMORTAL_INIT(&_PyExc_MemoryError), \
+                    PyObject_HEAD_IMMORTAL_INIT(&_PyExc_MemoryError) \
                 }, \
             }, \
         }, \

@@ -3278,7 +3278,7 @@ long_dealloc(PyObject *self)
      * since small Ints are immortal, re-set the reference count.
      */
     PyLongObject *pylong = (PyLongObject*)self;
-    if (pylong && IS_MEDIUM_VALUE(pylong)) {
+    if (pylong && _PyLong_IsCompact(pylong)) {
         stwodigits ival = medium_value(pylong);
         if (IS_SMALL_INT(ival)) {
             _Py_SetImmortal(self);
