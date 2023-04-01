@@ -11,9 +11,24 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
 
+static PyObject* code_repr(PyCodeObject *co);
+
+static const char *
+code_event_name(PyCodeEvent event) {
+    switch (event) {
+        #define CASE(op)                \
+        case PY_CODE_EVENT_##op:         \
+            return "PY_CODE_EVENT_" #op;
+        PY_FOREACH_CODE_EVENT(CASE)
+        #undef CASE
+    }
+    Py_UNREACHABLE();
+}
+
 static void
 notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
 {
+    assert(Py_REFCNT(co) > 0);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp->_initialized);
     uint8_t bits = interp->active_code_watchers;
@@ -25,7 +40,21 @@ notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, co) < 0) {
-                PyErr_WriteUnraisable((PyObject *) co);
+                // Don't risk resurrecting the object if an unraisablehook keeps
+                // a reference; pass a string as context.
+                PyObject *context = NULL;
+                PyObject *repr = code_repr(co);
+                if (repr) {
+                    context = PyUnicode_FromFormat(
+                        "%s watcher callback for %U",
+                        code_event_name(event), repr);
+                    Py_DECREF(repr);
+                }
+                if (context == NULL) {
+                    context = Py_NewRef(Py_None);
+                }
+                PyErr_WriteUnraisable(context);
+                Py_DECREF(context);
             }
         }
         i++;
@@ -247,11 +276,10 @@ _Py_set_localsplus_info(int offset, PyObject *name, _PyLocals_Kind kind,
 
 static void
 get_localsplus_counts(PyObject *names, PyObject *kinds,
-                      int *pnlocals, int *pnplaincellvars, int *pncellvars,
+                      int *pnlocals, int *pncellvars,
                       int *pnfreevars)
 {
     int nlocals = 0;
-    int nplaincellvars = 0;
     int ncellvars = 0;
     int nfreevars = 0;
     Py_ssize_t nlocalsplus = PyTuple_GET_SIZE(names);
@@ -265,7 +293,6 @@ get_localsplus_counts(PyObject *names, PyObject *kinds,
         }
         else if (kind & CO_FAST_CELL) {
             ncellvars += 1;
-            nplaincellvars += 1;
         }
         else if (kind & CO_FAST_FREE) {
             nfreevars += 1;
@@ -273,9 +300,6 @@ get_localsplus_counts(PyObject *names, PyObject *kinds,
     }
     if (pnlocals != NULL) {
         *pnlocals = nlocals;
-    }
-    if (pnplaincellvars != NULL) {
-        *pnplaincellvars = nplaincellvars;
     }
     if (pncellvars != NULL) {
         *pncellvars = ncellvars;
@@ -351,7 +375,7 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
      * here to avoid the possibility of overflow (however remote). */
     int nlocals;
     get_localsplus_counts(con->localsplusnames, con->localspluskinds,
-                          &nlocals, NULL, NULL, NULL);
+                          &nlocals, NULL, NULL);
     int nplainlocals = nlocals -
                        con->argcount -
                        con->kwonlyargcount -
@@ -371,9 +395,9 @@ static void
 init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 {
     int nlocalsplus = (int)PyTuple_GET_SIZE(con->localsplusnames);
-    int nlocals, nplaincellvars, ncellvars, nfreevars;
+    int nlocals, ncellvars, nfreevars;
     get_localsplus_counts(con->localsplusnames, con->localspluskinds,
-                          &nlocals, &nplaincellvars, &ncellvars, &nfreevars);
+                          &nlocals, &ncellvars, &nfreevars);
 
     co->co_filename = Py_NewRef(con->filename);
     co->co_name = Py_NewRef(con->name);
@@ -401,7 +425,6 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_nlocalsplus = nlocalsplus;
     co->co_nlocals = nlocals;
     co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
-    co->co_nplaincellvars = nplaincellvars;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
     co->co_version = _Py_next_func_version;
@@ -419,7 +442,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
            PyBytes_GET_SIZE(con->code));
     int entry_point = 0;
     while (entry_point < Py_SIZE(co) &&
-        _Py_OPCODE(_PyCode_CODE(co)[entry_point]) != RESUME) {
+        _PyCode_CODE(co)[entry_point].op.code != RESUME) {
         entry_point++;
     }
     co->_co_firsttraceable = entry_point;
@@ -573,7 +596,8 @@ _PyCode_New(struct _PyCodeConstructor *con)
  ******************/
 
 PyCodeObject *
-PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
+PyUnstable_Code_NewWithPosOnlyArgs(
+                          int argcount, int posonlyargcount, int kwonlyargcount,
                           int nlocals, int stacksize, int flags,
                           PyObject *code, PyObject *consts, PyObject *names,
                           PyObject *varnames, PyObject *freevars, PyObject *cellvars,
@@ -697,7 +721,7 @@ error:
 }
 
 PyCodeObject *
-PyCode_New(int argcount, int kwonlyargcount,
+PyUnstable_Code_New(int argcount, int kwonlyargcount,
            int nlocals, int stacksize, int flags,
            PyObject *code, PyObject *consts, PyObject *names,
            PyObject *varnames, PyObject *freevars, PyObject *cellvars,
@@ -1190,37 +1214,31 @@ lineiter_dealloc(lineiterator *li)
 }
 
 static PyObject *
+_source_offset_converter(int *value) {
+    if (*value == -1) {
+        Py_RETURN_NONE;
+    }
+    return PyLong_FromLong(*value);
+}
+
+static PyObject *
 lineiter_next(lineiterator *li)
 {
     PyCodeAddressRange *bounds = &li->li_line;
     if (!_PyLineTable_NextAddressRange(bounds)) {
         return NULL;
     }
-    PyObject *start = NULL;
-    PyObject *end = NULL;
-    PyObject *line = NULL;
-    PyObject *result = PyTuple_New(3);
-    start = PyLong_FromLong(bounds->ar_start);
-    end = PyLong_FromLong(bounds->ar_end);
-    if (bounds->ar_line < 0) {
-        line = Py_NewRef(Py_None);
+    int start = bounds->ar_start;
+    int line = bounds->ar_line;
+    // Merge overlapping entries:
+    while (_PyLineTable_NextAddressRange(bounds)) {
+        if (bounds->ar_line != line) {
+            _PyLineTable_PreviousAddressRange(bounds);
+            break;
+        }
     }
-    else {
-        line = PyLong_FromLong(bounds->ar_line);
-    }
-    if (result == NULL || start == NULL || end == NULL || line == NULL) {
-        goto error;
-    }
-    PyTuple_SET_ITEM(result, 0, start);
-    PyTuple_SET_ITEM(result, 1, end);
-    PyTuple_SET_ITEM(result, 2, line);
-    return result;
-error:
-    Py_XDECREF(start);
-    Py_XDECREF(end);
-    Py_XDECREF(line);
-    Py_XDECREF(result);
-    return result;
+    return Py_BuildValue("iiO&", start, bounds->ar_end,
+                         _source_offset_converter, &line);
 }
 
 PyTypeObject _PyLineIterator = {
@@ -1294,14 +1312,6 @@ positionsiter_dealloc(positionsiterator* pi)
 {
     Py_DECREF(pi->pi_code);
     Py_TYPE(pi)->tp_free(pi);
-}
-
-static PyObject*
-_source_offset_converter(int* value) {
-    if (*value == -1) {
-        Py_RETURN_NONE;
-    }
-    return PyLong_FromLong(*value);
 }
 
 static PyObject*
@@ -1391,7 +1401,7 @@ typedef struct {
 
 
 int
-_PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
+PyUnstable_Code_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 {
     if (!PyCode_Check(code)) {
         PyErr_BadInternalCall();
@@ -1412,7 +1422,7 @@ _PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
 
 
 int
-_PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
+PyUnstable_Code_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
@@ -1525,12 +1535,12 @@ deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
 {
     for (int i = 0; i < len; i++) {
         _Py_CODEUNIT instruction = instructions[i];
-        int opcode = _PyOpcode_Deopt[_Py_OPCODE(instruction)];
+        int opcode = _PyOpcode_Deopt[instruction.op.code];
         int caches = _PyOpcode_Caches[opcode];
-        instructions[i].opcode = opcode;
+        instructions[i].op.code = opcode;
         while (caches--) {
-            instructions[++i].opcode = CACHE;
-            instructions[i].oparg = 0;
+            instructions[++i].op.code = CACHE;
+            instructions[i].op.arg = 0;
         }
     }
 }
@@ -1686,7 +1696,14 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
 static void
 code_dealloc(PyCodeObject *co)
 {
+    assert(Py_REFCNT(co) == 0);
+    Py_SET_REFCNT(co, 1);
     notify_code_watchers(PY_CODE_EVENT_DESTROY, co);
+    if (Py_REFCNT(co) > 1) {
+        Py_SET_REFCNT(co, Py_REFCNT(co) - 1);
+        return;
+    }
+    Py_SET_REFCNT(co, 0);
 
     if (co->co_extra != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -1783,13 +1800,13 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     for (int i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
         _Py_CODEUNIT cp_instr = _PyCode_CODE(cp)[i];
-        co_instr.opcode = _PyOpcode_Deopt[_Py_OPCODE(co_instr)];
-        cp_instr.opcode =_PyOpcode_Deopt[_Py_OPCODE(cp_instr)];
+        co_instr.op.code = _PyOpcode_Deopt[co_instr.op.code];
+        cp_instr.op.code = _PyOpcode_Deopt[cp_instr.op.code];
         eq = co_instr.cache == cp_instr.cache;
         if (!eq) {
             goto unequal;
         }
-        i += _PyOpcode_Caches[_Py_OPCODE(co_instr)];
+        i += _PyOpcode_Caches[co_instr.op.code];
     }
 
     /* compare constants */
@@ -1842,28 +1859,41 @@ code_richcompare(PyObject *self, PyObject *other, int op)
 static Py_hash_t
 code_hash(PyCodeObject *co)
 {
-    Py_hash_t h, h0, h1, h2, h3;
-    h0 = PyObject_Hash(co->co_name);
-    if (h0 == -1) return -1;
-    h1 = PyObject_Hash(co->co_consts);
-    if (h1 == -1) return -1;
-    h2 = PyObject_Hash(co->co_names);
-    if (h2 == -1) return -1;
-    h3 = PyObject_Hash(co->co_localsplusnames);
-    if (h3 == -1) return -1;
-    Py_hash_t h4 = PyObject_Hash(co->co_linetable);
-    if (h4 == -1) {
-        return -1;
+    Py_uhash_t uhash = 20221211;
+    #define SCRAMBLE_IN(H) do {       \
+        uhash ^= (Py_uhash_t)(H);     \
+        uhash *= _PyHASH_MULTIPLIER;  \
+    } while (0)
+    #define SCRAMBLE_IN_HASH(EXPR) do {     \
+        Py_hash_t h = PyObject_Hash(EXPR);  \
+        if (h == -1) {                      \
+            return -1;                      \
+        }                                   \
+        SCRAMBLE_IN(h);                     \
+    } while (0)
+
+    SCRAMBLE_IN_HASH(co->co_name);
+    SCRAMBLE_IN_HASH(co->co_consts);
+    SCRAMBLE_IN_HASH(co->co_names);
+    SCRAMBLE_IN_HASH(co->co_localsplusnames);
+    SCRAMBLE_IN_HASH(co->co_linetable);
+    SCRAMBLE_IN_HASH(co->co_exceptiontable);
+    SCRAMBLE_IN(co->co_argcount);
+    SCRAMBLE_IN(co->co_posonlyargcount);
+    SCRAMBLE_IN(co->co_kwonlyargcount);
+    SCRAMBLE_IN(co->co_flags);
+    SCRAMBLE_IN(co->co_firstlineno);
+    SCRAMBLE_IN(Py_SIZE(co));
+    for (int i = 0; i < Py_SIZE(co); i++) {
+        int deop = _PyOpcode_Deopt[_PyCode_CODE(co)[i].op.code];
+        SCRAMBLE_IN(deop);
+        SCRAMBLE_IN(_PyCode_CODE(co)[i].op.arg);
+        i += _PyOpcode_Caches[deop];
     }
-    Py_hash_t h5 = PyObject_Hash(co->co_exceptiontable);
-    if (h5 == -1) {
-        return -1;
+    if ((Py_hash_t)uhash == -1) {
+        return -2;
     }
-    h = h0 ^ h1 ^ h2 ^ h3 ^ h4 ^ h5 ^
-        co->co_argcount ^ co->co_posonlyargcount ^ co->co_kwonlyargcount ^
-        co->co_flags;
-    if (h == -1) h = -2;
-    return h;
+    return (Py_hash_t)uhash;
 }
 
 

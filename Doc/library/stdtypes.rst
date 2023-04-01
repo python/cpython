@@ -84,8 +84,8 @@ These are the Boolean operations, ordered by ascending priority:
 +-------------+---------------------------------+-------+
 | Operation   | Result                          | Notes |
 +=============+=================================+=======+
-| ``x or y``  | if *x* is false, then *y*, else | \(1)  |
-|             | *x*                             |       |
+| ``x or y``  | if *x* is true, then *x*, else  | \(1)  |
+|             | *y*                             |       |
 +-------------+---------------------------------+-------+
 | ``x and y`` | if *x* is false, then *x*, else | \(2)  |
 |             | *y*                             |       |
@@ -335,11 +335,10 @@ Notes:
       single: ceil() (in module math)
       single: trunc() (in module math)
       pair: numeric; conversions
-      pair: C; language
 
-   Conversion from floating point to integer may round or truncate
-   as in C; see functions :func:`math.floor` and :func:`math.ceil` for
-   well-defined conversions.
+   Conversion from :class:`float` to :class:`int` truncates, discarding the
+   fractional part. See functions :func:`math.floor` and :func:`math.ceil` for
+   alternative conversions.
 
 (4)
    float also accepts the strings "nan" and "inf" with an optional prefix "+"
@@ -530,11 +529,13 @@ class`. In addition, it provides a few more methods:
     is ``False``.
 
     The default values can be used to conveniently turn an integer into a
-    single byte object.  However, when using the default arguments, don't try
-    to convert a value greater than 255 or you'll get an :exc:`OverflowError`::
+    single byte object::
 
         >>> (65).to_bytes()
         b'A'
+
+    However, when using the default arguments, don't try
+    to convert a value greater than 255 or you'll get an :exc:`OverflowError`.
 
     Equivalent to::
 
@@ -602,12 +603,18 @@ class`. In addition, it provides a few more methods:
 
 .. method:: int.as_integer_ratio()
 
-   Return a pair of integers whose ratio is exactly equal to the original
-   integer and with a positive denominator. The integer ratio of integers
+   Return a pair of integers whose ratio is equal to the original
+   integer and has a positive denominator.  The integer ratio of integers
    (whole numbers) is always the integer as the numerator and ``1`` as the
    denominator.
 
    .. versionadded:: 3.8
+
+.. method:: int.is_integer()
+
+   Returns ``True``. Exists for duck type compatibility with :meth:`float.is_integer`.
+
+   .. versionadded:: 3.12
 
 Additional Methods on Float
 ---------------------------
@@ -618,7 +625,7 @@ class`. float also has the following additional methods.
 .. method:: float.as_integer_ratio()
 
    Return a pair of integers whose ratio is exactly equal to the
-   original float and with a positive denominator.  Raises
+   original float. The ratio is in lowest terms and has a positive denominator.  Raises
    :exc:`OverflowError` on infinities and a :exc:`ValueError` on
    NaNs.
 
@@ -3769,7 +3776,7 @@ copying.
       >>> data
       bytearray(b'z1spam')
 
-   One-dimensional memoryviews of hashable (read-only) types with formats
+   One-dimensional memoryviews of :term:`hashable` (read-only) types with formats
    'B', 'b' or 'c' are also hashable. The hash is defined as
    ``hash(m) == hash(m.tobytes())``::
 
@@ -3783,7 +3790,7 @@ copying.
 
    .. versionchanged:: 3.3
       One-dimensional memoryviews can now be sliced.
-      One-dimensional memoryviews with formats 'B', 'b' or 'c' are now hashable.
+      One-dimensional memoryviews with formats 'B', 'b' or 'c' are now :term:`hashable`.
 
    .. versionchanged:: 3.4
       memoryview is now registered automatically with
@@ -4704,7 +4711,7 @@ support membership tests:
 
    .. versionadded:: 3.10
 
-Keys views are set-like since their entries are unique and hashable.  If all
+Keys views are set-like since their entries are unique and :term:`hashable`.  If all
 values are hashable, so that ``(key, value)`` pairs are unique and hashable,
 then the items view is also set-like.  (Values views are not treated as set-like
 since the entries are generally not unique.)  For set-like views, all of the

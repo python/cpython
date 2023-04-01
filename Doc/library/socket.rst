@@ -436,6 +436,7 @@ Constants
       ``TCP_FASTOPEN_CONNECT``, ``TCP_ULP``, ``TCP_MD5SIG_EXT``,
       ``TCP_FASTOPEN_KEY``, ``TCP_FASTOPEN_NO_COOKIE``,
       ``TCP_ZEROCOPY_RECEIVE``, ``TCP_INQ``, ``TCP_TX_DELAY``.
+      Added ``IP_PKTINFO``.
 
 .. data:: AF_CAN
           PF_CAN
@@ -803,8 +804,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    ``(host, port)``) and returns the socket object.
 
    *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
-   *backlog* is the queue size passed to :meth:`socket.listen`; when ``0``
-   a default reasonable value is chosen.
+   *backlog* is the queue size passed to :meth:`socket.listen`; if not specified
+   , a default reasonable value is chosen.
    *reuse_port* dictates whether to set the :data:`SO_REUSEPORT` socket option.
 
    If *dualstack_ipv6* is true and the platform supports it the socket will

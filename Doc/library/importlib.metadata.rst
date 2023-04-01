@@ -73,7 +73,7 @@ something into it:
 
 .. code-block:: shell-session
 
-    $ python3 -m venv example
+    $ python -m venv example
     $ source example/bin/activate
     (example) $ python -m pip install wheel
 

@@ -452,6 +452,7 @@ slot typedefs
 |                             |                             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
 |                             |    :c:type:`Py_ssize_t`     |                      |
+|                             |    :c:type:`PyObject` *     |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`objobjproc`        | .. line-block::             | int                  |
 |                             |                             |                      |
@@ -1310,6 +1311,16 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       .. seealso:: :pep:`634` -- Structural Pattern Matching: Specification
 
       .. versionadded:: 3.10
+
+
+   .. data:: Py_TPFLAGS_VALID_VERSION_TAG
+
+      Internal. Do not set or unset this flag.
+      To indicate that a class has changed call :c:func:`PyType_Modified`
+
+      .. warning::
+         This flag is present in header files, but is an internal feature and should
+         not be used. It will be removed in a future version of CPython
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
@@ -2633,7 +2644,7 @@ Slot Type typedefs
 
 .. c:type:: PyObject *(*ssizeargfunc)(PyObject *, Py_ssize_t)
 
-.. c:type:: int (*ssizeobjargproc)(PyObject *, Py_ssize_t)
+.. c:type:: int (*ssizeobjargproc)(PyObject *, Py_ssize_t, PyObject *)
 
 .. c:type:: int (*objobjproc)(PyObject *, PyObject *)
 

@@ -347,6 +347,7 @@ class ExceptionTests(unittest.TestCase):
                 _testcapi.raise_exception(BadException, 0)
             except RuntimeError as err:
                 exc, err, tb = sys.exc_info()
+                tb = tb.tb_next
                 co = tb.tb_frame.f_code
                 self.assertEqual(co.co_name, "__init__")
                 self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
@@ -360,10 +361,9 @@ class ExceptionTests(unittest.TestCase):
             self.assertRaises(SystemError, _testcapi.raise_exception,
                               InvalidException, 1)
 
-        if not sys.platform.startswith('java'):
-            test_capi1()
-            test_capi2()
-            test_capi3()
+        test_capi1()
+        test_capi2()
+        test_capi3()
 
     def test_WindowsError(self):
         try:
@@ -599,8 +599,8 @@ class ExceptionTests(unittest.TestCase):
     def testWithTraceback(self):
         try:
             raise IndexError(4)
-        except:
-            tb = sys.exc_info()[2]
+        except Exception as e:
+            tb = e.__traceback__
 
         e = BaseException().with_traceback(tb)
         self.assertIsInstance(e, BaseException)
@@ -653,8 +653,8 @@ class ExceptionTests(unittest.TestCase):
     def testNoneClearsTracebackAttr(self):
         try:
             raise IndexError(4)
-        except:
-            tb = sys.exc_info()[2]
+        except Exception as e:
+            tb = e.__traceback__
 
         e = Exception()
         e.__traceback__ = tb
@@ -1337,11 +1337,11 @@ class ExceptionTests(unittest.TestCase):
         def g():
             try:
                 return g()
-            except RecursionError:
-                return sys.exc_info()
-        e, v, tb = g()
-        self.assertIsInstance(v, RecursionError, type(v))
-        self.assertIn("maximum recursion depth exceeded", str(v))
+            except RecursionError as e:
+                return e
+        exc = g()
+        self.assertIsInstance(exc, RecursionError, type(exc))
+        self.assertIn("maximum recursion depth exceeded", str(exc))
 
 
     @cpython_only
@@ -1416,8 +1416,8 @@ class ExceptionTests(unittest.TestCase):
     @cpython_only
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
-        # PyErr_NormalizeException() maximum recursion depth has been
-        # exceeded.
+        # maximum recursion depth has been exceeded when creating
+        # an exception
         code = """if 1:
             import _testcapi
             try:
@@ -1427,8 +1427,7 @@ class ExceptionTests(unittest.TestCase):
         """
         rc, out, err = script_helper.assert_python_failure("-c", code)
         self.assertEqual(rc, 1)
-        self.assertIn(b'RecursionError: maximum recursion depth exceeded '
-                      b'while normalizing an exception', err)
+        self.assertIn(b'RecursionError: maximum recursion depth exceeded', err)
         self.assertIn(b'Done.', out)
 
 

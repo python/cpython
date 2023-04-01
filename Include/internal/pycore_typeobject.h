@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#include "pycore_moduleobject.h"
+
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
 #endif
@@ -62,6 +64,20 @@ _PyStaticType_GET_WEAKREFS_LISTPTR(static_builtin_state *state)
     return &state->tp_weaklist;
 }
 
+/* Like PyType_GetModuleState, but skips verification
+ * that type is a heap type with an associated module */
+static inline void *
+_PyType_GetModuleState(PyTypeObject *type)
+{
+    assert(PyType_Check(type));
+    assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+    PyHeapTypeObject *et = (PyHeapTypeObject *)type;
+    assert(et->ht_module);
+    PyModuleObject *mod = (PyModuleObject *)(et->ht_module);
+    assert(mod != NULL);
+    return mod->md_state;
+}
+
 struct types_state {
     struct type_cache type_cache;
     size_t num_builtins_initialized;
@@ -74,6 +90,10 @@ extern static_builtin_state * _PyStaticType_GetState(PyTypeObject *);
 extern void _PyStaticType_ClearWeakRefs(PyTypeObject *type);
 extern void _PyStaticType_Dealloc(PyTypeObject *type);
 
+PyObject *
+_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress_missing_attribute);
+PyObject *
+_Py_type_getattro(PyTypeObject *type, PyObject *name);
 
 PyObject *_Py_slot_tp_getattro(PyObject *self, PyObject *name);
 PyObject *_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);

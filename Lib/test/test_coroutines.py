@@ -2214,6 +2214,7 @@ class CoroutineTest(unittest.TestCase):
         gen = f()
         with self.assertWarns(RuntimeWarning):
             gen.cr_frame.clear()
+        gen.close()
 
     def test_stack_in_coroutine_throw(self):
         # Regression test for https://github.com/python/cpython/issues/93592

@@ -84,8 +84,8 @@ Three exceptions are defined as attributes of the :class:`IMAP4` class:
 There's also a subclass for secure connections:
 
 
-.. class:: IMAP4_SSL(host='', port=IMAP4_SSL_PORT, keyfile=None, \
-                     certfile=None, ssl_context=None, timeout=None)
+.. class:: IMAP4_SSL(host='', port=IMAP4_SSL_PORT, *, ssl_context=None, \
+                     timeout=None)
 
    This is a subclass derived from :class:`IMAP4` that connects over an SSL
    encrypted socket (to use this class you need a socket module that was compiled
@@ -95,12 +95,6 @@ There's also a subclass for secure connections:
    SSL configuration options, certificates and private keys into a single
    (potentially long-lived) structure.  Please read :ref:`ssl-security` for
    best practices.
-
-   *keyfile* and *certfile* are a legacy alternative to *ssl_context* - they
-   can point to PEM-formatted private key and certificate chain files for
-   the SSL connection.  Note that the *keyfile*/*certfile* parameters are
-   mutually exclusive with *ssl_context*, a :class:`ValueError` is raised
-   if *keyfile*/*certfile* is provided along with *ssl_context*.
 
    The optional *timeout* parameter specifies a timeout in seconds for the
    connection attempt. If timeout is not given or is None, the global default
@@ -123,6 +117,9 @@ There's also a subclass for secure connections:
 
    .. versionchanged:: 3.9
       The optional *timeout* parameter was added.
+
+   .. versionchanged:: 3.12
+       The deprecated *keyfile* and *certfile* parameters have been removed.
 
 The second subclass allows for connections created by a child process:
 
@@ -564,7 +561,7 @@ An :class:`IMAP4` instance has the following methods:
    ``search``, the searching *charset* argument is mandatory.  There is also a
    ``uid thread`` command which corresponds to ``thread`` the way that ``uid
    search`` corresponds to ``search``.  The ``thread`` command first searches the
-   mailbox for messages that match the given searching criteria using the charset
+   mailbox for messages that match the given searching criteria using the *charset*
    argument for the interpretation of strings in the searching criteria. It then
    returns the matching messages threaded according to the specified threading
    algorithm.

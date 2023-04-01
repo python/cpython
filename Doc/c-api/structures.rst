@@ -615,7 +615,7 @@ Defining Getters and Setters
 
    .. c:member:: getter PyGetSetDef.get
 
-      C funtion to get the attribute.
+      C function to get the attribute.
 
    .. c:member:: setter PyGetSetDef.set
 

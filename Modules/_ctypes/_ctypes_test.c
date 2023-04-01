@@ -1047,6 +1047,12 @@ EXPORT(long) _test_i38748_runCallback(_test_i38748_funcType callback, int a, int
 
 #endif
 
+EXPORT(int)
+_testfunc_pylist_append(PyObject *list, PyObject *item)
+{
+    return PyList_Append(list, item);
+}
+
 static struct PyModuleDef_Slot _ctypes_test_slots[] = {
     {0, NULL}
 };
