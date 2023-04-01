@@ -239,20 +239,20 @@ def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
                 fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
                 actions.append((_WalkAction.CLOSE, fd))
                 if orig_st and not os.path.samestat(orig_st, os.stat(fd)):
-                    exc = NotADirectoryError("Will not walk into symbolic link")
-                    exc.func = os.path.islink
-                    raise exc
+                    error = NotADirectoryError("Will not walk into symbolic link")
+                    error.func = os.path.islink
+                    raise error
                 result = path, dirnames, filenames, fd
                 scandir_it = os.scandir(fd)
             else:
                 fd = None
                 result = path, dirnames, filenames
                 scandir_it = path._scandir()
-        except OSError as exc:
-            if not hasattr(exc, 'func'):
-                exc.func = os.scandir
-            exc.filename = str(path)
-            raise exc
+        except OSError as error:
+            if not hasattr(error, 'func'):
+                error.func = os.scandir
+            error.filename = str(path)
+            raise error
 
         with scandir_it:
             for entry in scandir_it:
@@ -1354,7 +1354,9 @@ class Path(PurePath):
                 raise NotImplementedError("dir_fd unavailable on this platform")
             try:
                 if self.is_symlink() or self.is_junction():
-                    raise OSError("Cannot call rmtree on a symbolic link")
+                    error = OSError("Cannot call rmtree on a symbolic link")
+                    error.filename = str(self)
+                    raise error
             except OSError as error:
                 if on_error:
                     error.func = os.path.islink
