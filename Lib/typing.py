@@ -1905,7 +1905,8 @@ class _TypingEllipsis:
 
 _TYPING_INTERNALS = frozenset({
     '__parameters__', '__orig_bases__',  '__orig_class__',
-    '_is_protocol', '_is_runtime_protocol'
+    '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
+    '__callable_proto_members_only__',
 })
 
 _SPECIAL_NAMES = frozenset({
@@ -1996,14 +1997,15 @@ _PROTO_ALLOWLIST = {
 class _ProtocolMeta(ABCMeta):
     # This metaclass is really unfortunate and exists only because of
     # the lack of __instancehook__.
-    def __lazy_protocol_init_subclass__(cls):
-        if not hasattr(cls, "__protocol_attrs__"):
-            cls.__protocol_attrs__ = _get_protocol_attrs(cls)
-            # PEP 544 prohibits using issubclass()
-            # with protocols that have non-method members.
-            cls.__callable_proto_members_only__ = all(
-                callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
-            )
+    def __new__(metacls, name, bases, namespace, **kwargs):
+        cls = super().__new__(metacls, name, bases, namespace, **kwargs)
+        cls.__protocol_attrs__ = _get_protocol_attrs(cls)
+        # PEP 544 prohibits using issubclass()
+        # with protocols that have non-method members.
+        cls.__callable_proto_members_only__ = all(
+            callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
+        )
+        return cls
 
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
@@ -2019,8 +2021,6 @@ class _ProtocolMeta(ABCMeta):
 
         if not is_protocol_cls and issubclass(instance.__class__, cls):
             return True
-
-        cls.__lazy_protocol_init_subclass__()
 
         if cls.__callable_proto_members_only__ and issubclass(instance.__class__, cls):
             return True
@@ -2087,8 +2087,6 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                     return NotImplemented
                 raise TypeError("Instance and class checks can only be used with"
                                 " @runtime_checkable protocols")
-
-            cls.__lazy_protocol_init_subclass__()
 
             if not cls.__callable_proto_members_only__ :
                 if _allow_reckless_class_checks():
