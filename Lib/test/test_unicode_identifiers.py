@@ -20,9 +20,11 @@ class PEP3131Test(unittest.TestCase):
     def test_invalid(self):
         try:
             from test import badsyntax_3131
-        except SyntaxError as s:
-            self.assertEqual(str(s),
-              "invalid character in identifier (badsyntax_3131.py, line 2)")
+        except SyntaxError as err:
+            self.assertEqual(str(err),
+              "invalid character '€' (U+20AC) (badsyntax_3131.py, line 2)")
+            self.assertEqual(err.lineno, 2)
+            self.assertEqual(err.offset, 1)
         else:
             self.fail("expected exception didn't occur")
 

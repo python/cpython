@@ -6,6 +6,9 @@ import os
 import re
 import string
 import sys
+import warnings
+
+warnings._deprecated(__name__, remove=(3, 13))
 
 AMD64 = "AMD64" in sys.version
 # Keep msilib.Win64 around to preserve backwards compatibility.
@@ -116,7 +119,7 @@ def add_data(db, table, values):
                 raise TypeError("Unsupported type %s" % field.__class__.__name__)
         try:
             v.Modify(MSIMODIFY_INSERT, r)
-        except Exception as e:
+        except Exception:
             raise MSIError("Could not insert "+repr(values)+" into "+table)
 
         r.ClearData()

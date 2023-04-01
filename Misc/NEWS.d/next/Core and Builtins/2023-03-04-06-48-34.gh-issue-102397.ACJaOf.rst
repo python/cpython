@@ -1,0 +1,2 @@
+Fix segfault from race condition in signal handling during garbage collection.
+Patch by Kumar Aditya.

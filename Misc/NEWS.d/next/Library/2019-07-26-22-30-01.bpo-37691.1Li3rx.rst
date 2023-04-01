@@ -1,2 +1,0 @@
-Let math.dist() accept coordinates as sequences (or iterables) rather than
-just tuples.

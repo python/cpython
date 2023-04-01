@@ -13,7 +13,6 @@
 #define STRINGLIB_CHAR           char
 #define STRINGLIB_TYPE_NAME      "string"
 #define STRINGLIB_PARSE_CODE     "S"
-#define STRINGLIB_EMPTY          nullstring
 #define STRINGLIB_ISSPACE        Py_ISSPACE
 #define STRINGLIB_ISLINEBREAK(x) ((x == '\n') || (x == '\r'))
 #define STRINGLIB_ISDECIMAL(x)   ((x >= '0') && (x <= '9'))
@@ -25,4 +24,5 @@
 #define STRINGLIB_CHECK_EXACT    PyBytes_CheckExact
 #define STRINGLIB_TOSTR          PyObject_Str
 #define STRINGLIB_TOASCII        PyObject_Repr
+#define STRINGLIB_FAST_MEMCHR    memchr
 #endif /* !STRINGLIB_STRINGDEFS_H */

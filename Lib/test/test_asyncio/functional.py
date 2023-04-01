@@ -7,6 +7,7 @@ import select
 import socket
 import tempfile
 import threading
+from test import support
 
 
 class FunctionalTestCaseMixin:
@@ -28,10 +29,6 @@ class FunctionalTestCaseMixin:
         self.loop.set_exception_handler(self.loop_exception_handler)
         self.__unhandled_exceptions = []
 
-        # Disable `_get_running_loop`.
-        self._old_get_running_loop = asyncio.events._get_running_loop
-        asyncio.events._get_running_loop = lambda: None
-
     def tearDown(self):
         try:
             self.loop.close()
@@ -42,14 +39,13 @@ class FunctionalTestCaseMixin:
                 self.fail('unexpected calls to loop.call_exception_handler()')
 
         finally:
-            asyncio.events._get_running_loop = self._old_get_running_loop
             asyncio.set_event_loop(None)
             self.loop = None
 
     def tcp_server(self, server_prog, *,
                    family=socket.AF_INET,
                    addr=None,
-                   timeout=5,
+                   timeout=support.LOOPBACK_TIMEOUT,
                    backlog=1,
                    max_clients=10):
 
@@ -72,7 +68,7 @@ class FunctionalTestCaseMixin:
 
     def tcp_client(self, client_prog,
                    family=socket.AF_INET,
-                   timeout=10):
+                   timeout=support.LOOPBACK_TIMEOUT):
 
         sock = socket.socket(family, socket.SOCK_STREAM)
 
@@ -225,7 +221,7 @@ class TestThreadedServer(SocketThread):
     def run(self):
         try:
             with self._sock:
-                self._sock.setblocking(0)
+                self._sock.setblocking(False)
                 self._run()
         finally:
             self._s1.close()
@@ -247,7 +243,7 @@ class TestThreadedServer(SocketThread):
                     conn, addr = self._sock.accept()
                 except BlockingIOError:
                     continue
-                except socket.timeout:
+                except TimeoutError:
                     if not self._active:
                         return
                     else:

@@ -11,10 +11,10 @@ STRINGLIB_CHAR
 
     the type used to hold a character (char or Py_UNICODE)
 
-STRINGLIB_EMPTY
+STRINGLIB_GET_EMPTY()
 
-    a PyObject representing the empty string, only to be used if
-    STRINGLIB_MUTABLE is 0
+    returns a PyObject representing the empty string, only to be used if
+    STRINGLIB_MUTABLE is 0. It must not be NULL.
 
 Py_ssize_t STRINGLIB_LEN(PyObject*)
 
