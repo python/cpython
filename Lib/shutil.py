@@ -587,21 +587,19 @@ def _rmtree_unsafe(path, onexc):
         on_error=on_walk_error)
     for toppath, dirnames, filenames in walker:
         for dirname in dirnames:
-            dirpath = toppath._make_child_relpath(dirname)
             try:
-                dirpath.rmdir()
+                toppath._make_child_relpath(dirname).rmdir()
             except OSError as exc:
-                onexc(os.rmdir, str(dirpath), exc)
+                onexc(os.rmdir, exc.filename, exc)
         for filename in filenames:
-            filepath = toppath._make_child_relpath(filename)
             try:
-                filepath.unlink()
+                toppath._make_child_relpath(filename).unlink()
             except OSError as exc:
-                onexc(os.unlink, str(filepath), exc)
+                onexc(os.unlink, exc.filename, exc)
     try:
         path.rmdir()
     except OSError as exc:
-        onexc(os.rmdir, str(path), exc)
+        onexc(os.rmdir, exc.filename, exc)
 
 # Version using fd-based APIs to protect against races
 def _rmtree_safe_fd(path, onexc, dir_fd):
