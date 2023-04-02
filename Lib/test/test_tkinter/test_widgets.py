@@ -9,8 +9,7 @@ from test.test_tkinter.support import (requires_tcl,
                                   AbstractDefaultRootTest)
 from test.test_tkinter.widget_tests import (
     add_standard_options,
-    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
-    setUpModule)
+    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
 
 requires('gui')
 

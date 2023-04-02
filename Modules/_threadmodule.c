@@ -135,7 +135,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
 
     *timeout = unset_timeout ;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iO:acquire", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|pO:acquire", kwlist,
                                      &blocking, &timeout_obj))
         return -1;
 
@@ -849,18 +849,23 @@ local_clear(localobject *self)
     /* Remove all strong references to dummies from the thread states */
     if (self->key) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyRuntimeState *runtime = &_PyRuntime;
+        HEAD_LOCK(runtime);
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-        for(; tstate; tstate = PyThreadState_Next(tstate)) {
-            if (tstate->dict == NULL) {
-                continue;
+        HEAD_UNLOCK(runtime);
+        while (tstate) {
+            if (tstate->dict) {
+                PyObject *v = _PyDict_Pop(tstate->dict, self->key, Py_None);
+                if (v != NULL) {
+                    Py_DECREF(v);
+                }
+                else {
+                    PyErr_Clear();
+                }
             }
-            PyObject *v = _PyDict_Pop(tstate->dict, self->key, Py_None);
-            if (v != NULL) {
-                Py_DECREF(v);
-            }
-            else {
-                PyErr_Clear();
-            }
+            HEAD_LOCK(runtime);
+            tstate = PyThreadState_Next(tstate);
+            HEAD_UNLOCK(runtime);
         }
     }
     return 0;
@@ -1069,13 +1074,7 @@ thread_run(void *boot_raw)
     PyThreadState *tstate;
 
     tstate = boot->tstate;
-    tstate->thread_id = PyThread_get_thread_ident();
-#ifdef PY_HAVE_THREAD_NATIVE_ID
-    tstate->native_thread_id = PyThread_get_thread_native_id();
-#else
-    tstate->native_thread_id = 0;
-#endif
-    _PyThreadState_SetCurrent(tstate);
+    _PyThreadState_Bind(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->threads.count++;
 
@@ -1162,7 +1161,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return PyErr_NoMemory();
     }
     boot->interp = _PyInterpreterState_GET();
-    boot->tstate = _PyThreadState_Prealloc(boot->interp);
+    boot->tstate = _PyThreadState_New(boot->interp);
     if (boot->tstate == NULL) {
         PyMem_Free(boot);
         if (!PyErr_Occurred()) {

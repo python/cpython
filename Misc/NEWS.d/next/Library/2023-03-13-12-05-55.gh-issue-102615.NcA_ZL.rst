@@ -1,0 +1,3 @@
+Typing: Improve the ``repr`` of generic aliases for classes generic over a
+:class:`~typing.ParamSpec`. (Use square brackets to represent a parameter
+list.)

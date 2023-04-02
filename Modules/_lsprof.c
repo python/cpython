@@ -348,8 +348,7 @@ ptrace_enter_call(PyObject *self, void *key, PyObject *userObj)
      * exception, and some of the code under here assumes that
      * PyErr_* is its own to mess around with, so we have to
      * save and restore any current exception. */
-    PyObject *last_type, *last_value, *last_tb;
-    PyErr_Fetch(&last_type, &last_value, &last_tb);
+    PyObject *exc = PyErr_GetRaisedException();
 
     profEntry = getEntry(pObj, key);
     if (profEntry == NULL) {
@@ -374,7 +373,7 @@ ptrace_enter_call(PyObject *self, void *key, PyObject *userObj)
     initContext(pObj, pContext, profEntry);
 
 restorePyerr:
-    PyErr_Restore(last_type, last_value, last_tb);
+    PyErr_SetRaisedException(exc);
 }
 
 static void
@@ -607,7 +606,7 @@ _lsprof_Profiler_getstats_impl(ProfilerObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=1806ef720019ee03 input=445e193ef4522902]*/
 {
     statscollector_t collect;
-    collect.state = PyType_GetModuleState(cls);
+    collect.state = _PyType_GetModuleState(cls);
     if (pending_exception(self)) {
         return NULL;
     }
@@ -667,7 +666,7 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
     int subcalls = -1;
     int builtins = -1;
     static char *kwlist[] = {"subcalls", "builtins", 0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii:enable",
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|pp:enable",
                                      kwlist, &subcalls, &builtins))
         return NULL;
     if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0) {
@@ -770,7 +769,7 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
     static char *kwlist[] = {"timer", "timeunit",
                                    "subcalls", "builtins", 0};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Odii:Profiler", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Odpp:Profiler", kwlist,
                                      &timer, &timeunit,
                                      &subcalls, &builtins))
         return -1;

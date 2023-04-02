@@ -116,10 +116,10 @@ test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(
     PyObject *bases = NULL;
     PyObject *new = NULL;
     PyObject *meta_error_string = NULL;
-    PyObject *exc_type = NULL;
-    PyObject *exc_value = NULL;
-    PyObject *exc_traceback = NULL;
+    PyObject *exc = NULL;
     PyObject *result = NULL;
+    PyObject *message = NULL;
+    PyObject *args = NULL;
 
     metaclass_a = PyType_FromSpecWithBases(&MinimalMetaclass_spec, (PyObject*)&PyType_Type);
     if (metaclass_a == NULL) {
@@ -156,19 +156,25 @@ test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(
 
     // Assert that the correct exception was raised
     if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-        PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
-
+        exc = PyErr_GetRaisedException();
+        args = PyException_GetArgs(exc);
+        if (!PyTuple_Check(args) || PyTuple_Size(args) != 1) {
+            PyErr_SetString(PyExc_AssertionError,
+                    "TypeError args are not a one-tuple");
+            goto finally;
+        }
+        message = Py_NewRef(PyTuple_GET_ITEM(args, 0));
         meta_error_string = PyUnicode_FromString("metaclass conflict:");
         if (meta_error_string == NULL) {
             goto finally;
         }
-        int res = PyUnicode_Contains(exc_value, meta_error_string);
+        int res = PyUnicode_Contains(message, meta_error_string);
         if (res < 0) {
             goto finally;
         }
         if (res == 0) {
             PyErr_SetString(PyExc_AssertionError,
-                    "TypeError did not inlclude expected message.");
+                    "TypeError did not include expected message.");
             goto finally;
         }
         result = Py_NewRef(Py_None);
@@ -179,11 +185,11 @@ finally:
     Py_XDECREF(bases);
     Py_XDECREF(new);
     Py_XDECREF(meta_error_string);
-    Py_XDECREF(exc_type);
-    Py_XDECREF(exc_value);
-    Py_XDECREF(exc_traceback);
+    Py_XDECREF(exc);
+    Py_XDECREF(message);
     Py_XDECREF(class_a);
     Py_XDECREF(class_b);
+    Py_XDECREF(args);
     return result;
 }
 
@@ -259,7 +265,7 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     /* deallocate the spec (and all contents) */
 
-    // (Explicitly ovewrite memory before freeing,
+    // (Explicitly overwrite memory before freeing,
     // so bugs show themselves even without the debug allocator's help.)
     memset(spec, 0xdd, sizeof(PyType_Spec));
     PyMem_Del(spec);
@@ -617,16 +623,15 @@ heapctypesubclasswithfinalizer_init(PyObject *self, PyObject *args, PyObject *kw
 static void
 heapctypesubclasswithfinalizer_finalize(PyObject *self)
 {
-    PyObject *error_type, *error_value, *error_traceback, *m;
     PyObject *oldtype = NULL, *newtype = NULL, *refcnt = NULL;
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     if (_testcapimodule == NULL) {
         goto cleanup_finalize;
     }
-    m = PyState_FindModule(_testcapimodule);
+    PyObject *m = PyState_FindModule(_testcapimodule);
     if (m == NULL) {
         goto cleanup_finalize;
     }
@@ -661,7 +666,7 @@ cleanup_finalize:
     Py_XDECREF(refcnt);
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 static PyType_Slot HeapCTypeSubclassWithFinalizer_slots[] = {

@@ -338,8 +338,8 @@ if create_dynamic:
 
         # Issue #24748: Skip the sys.modules check in _load_module_shim;
         # always load new extension
-        spec = importlib.machinery.ModuleSpec(
-            name=name, loader=loader, origin=path)
+        spec = importlib.util.spec_from_file_location(
+            name, path, loader=loader)
         return _load(spec)
 
 else:

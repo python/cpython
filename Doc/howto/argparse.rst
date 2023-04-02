@@ -79,16 +79,16 @@ Following is a result of running the code:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py
-   $ python3 prog.py --help
+   $ python prog.py
+   $ python prog.py --help
    usage: prog.py [-h]
 
    options:
      -h, --help  show this help message and exit
-   $ python3 prog.py --verbose
+   $ python prog.py --verbose
    usage: prog.py [-h]
    prog.py: error: unrecognized arguments: --verbose
-   $ python3 prog.py foo
+   $ python prog.py foo
    usage: prog.py [-h]
    prog.py: error: unrecognized arguments: foo
 
@@ -121,10 +121,10 @@ And running the code:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py
+   $ python prog.py
    usage: prog.py [-h] echo
    prog.py: error: the following arguments are required: echo
-   $ python3 prog.py --help
+   $ python prog.py --help
    usage: prog.py [-h] echo
 
    positional arguments:
@@ -132,7 +132,7 @@ And running the code:
 
    options:
      -h, --help  show this help message and exit
-   $ python3 prog.py foo
+   $ python prog.py foo
    foo
 
 Here is what's happening:
@@ -166,7 +166,7 @@ And we get:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py -h
+   $ python prog.py -h
    usage: prog.py [-h] echo
 
    positional arguments:
@@ -187,7 +187,7 @@ Following is a result of running the code:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    Traceback (most recent call last):
      File "prog.py", line 5, in <module>
        print(args.square**2)
@@ -208,9 +208,9 @@ Following is a result of running the code:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
-   $ python3 prog.py four
+   $ python prog.py four
    usage: prog.py [-h] square
    prog.py: error: argument square: invalid int value: 'four'
 
@@ -235,17 +235,17 @@ And the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py --verbosity 1
+   $ python prog.py --verbosity 1
    verbosity turned on
-   $ python3 prog.py
-   $ python3 prog.py --help
+   $ python prog.py
+   $ python prog.py --help
    usage: prog.py [-h] [--verbosity VERBOSITY]
 
    options:
      -h, --help            show this help message and exit
      --verbosity VERBOSITY
                            increase output verbosity
-   $ python3 prog.py --verbosity
+   $ python prog.py --verbosity
    usage: prog.py [-h] [--verbosity VERBOSITY]
    prog.py: error: argument --verbosity: expected one argument
 
@@ -281,12 +281,12 @@ And the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py --verbose
+   $ python prog.py --verbose
    verbosity turned on
-   $ python3 prog.py --verbose 1
+   $ python prog.py --verbose 1
    usage: prog.py [-h] [--verbose]
    prog.py: error: unrecognized arguments: 1
-   $ python3 prog.py --help
+   $ python prog.py --help
    usage: prog.py [-h] [--verbose]
 
    options:
@@ -327,9 +327,9 @@ And here goes:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py -v
+   $ python prog.py -v
    verbosity turned on
-   $ python3 prog.py --help
+   $ python prog.py --help
    usage: prog.py [-h] [-v]
 
    options:
@@ -361,14 +361,14 @@ And now the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py
+   $ python prog.py
    usage: prog.py [-h] [-v] square
    prog.py: error: the following arguments are required: square
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
-   $ python3 prog.py 4 --verbose
+   $ python prog.py 4 --verbose
    the square of 4 equals 16
-   $ python3 prog.py --verbose 4
+   $ python prog.py --verbose 4
    the square of 4 equals 16
 
 * We've brought back a positional argument, hence the complaint.
@@ -397,16 +397,16 @@ And the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
-   $ python3 prog.py 4 -v
+   $ python prog.py 4 -v
    usage: prog.py [-h] [-v VERBOSITY] square
    prog.py: error: argument -v/--verbosity: expected one argument
-   $ python3 prog.py 4 -v 1
+   $ python prog.py 4 -v 1
    4^2 == 16
-   $ python3 prog.py 4 -v 2
+   $ python prog.py 4 -v 2
    the square of 4 equals 16
-   $ python3 prog.py 4 -v 3
+   $ python prog.py 4 -v 3
    16
 
 These all look good except the last one, which exposes a bug in our program.
@@ -431,10 +431,10 @@ And the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4 -v 3
+   $ python prog.py 4 -v 3
    usage: prog.py [-h] [-v {0,1,2}] square
    prog.py: error: argument -v/--verbosity: invalid choice: 3 (choose from 0, 1, 2)
-   $ python3 prog.py 4 -h
+   $ python prog.py 4 -h
    usage: prog.py [-h] [-v {0,1,2}] square
 
    positional arguments:
@@ -473,18 +473,18 @@ to count the number of occurrences of specific options.
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
-   $ python3 prog.py 4 -v
+   $ python prog.py 4 -v
    4^2 == 16
-   $ python3 prog.py 4 -vv
+   $ python prog.py 4 -vv
    the square of 4 equals 16
-   $ python3 prog.py 4 --verbosity --verbosity
+   $ python prog.py 4 --verbosity --verbosity
    the square of 4 equals 16
-   $ python3 prog.py 4 -v 1
+   $ python prog.py 4 -v 1
    usage: prog.py [-h] [-v] square
    prog.py: error: unrecognized arguments: 1
-   $ python3 prog.py 4 -h
+   $ python prog.py 4 -h
    usage: prog.py [-h] [-v] square
 
    positional arguments:
@@ -493,7 +493,7 @@ to count the number of occurrences of specific options.
    options:
      -h, --help       show this help message and exit
      -v, --verbosity  increase output verbosity
-   $ python3 prog.py 4 -vvv
+   $ python prog.py 4 -vvv
    16
 
 * Yes, it's now more of a flag (similar to ``action="store_true"``) in the
@@ -540,11 +540,11 @@ And this is what it gives:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4 -vvv
+   $ python prog.py 4 -vvv
    the square of 4 equals 16
-   $ python3 prog.py 4 -vvvv
+   $ python prog.py 4 -vvvv
    the square of 4 equals 16
-   $ python3 prog.py 4
+   $ python prog.py 4
    Traceback (most recent call last):
      File "prog.py", line 11, in <module>
        if args.verbosity >= 2:
@@ -584,7 +584,7 @@ And:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
 
 You can go quite far just with what we've learned so far,
@@ -617,10 +617,10 @@ Output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py
+   $ python prog.py
    usage: prog.py [-h] [-v] x y
    prog.py: error: the following arguments are required: x, y
-   $ python3 prog.py -h
+   $ python prog.py -h
    usage: prog.py [-h] [-v] x y
 
    positional arguments:
@@ -630,7 +630,7 @@ Output:
    options:
      -h, --help       show this help message and exit
      -v, --verbosity
-   $ python3 prog.py 4 2 -v
+   $ python prog.py 4 2 -v
    4^2 == 16
 
 
@@ -655,11 +655,11 @@ Output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4 2
+   $ python prog.py 4 2
    16
-   $ python3 prog.py 4 2 -v
+   $ python prog.py 4 2 -v
    4^2 == 16
-   $ python3 prog.py 4 2 -vv
+   $ python prog.py 4 2 -vv
    Running 'prog.py'
    4^2 == 16
 
@@ -727,16 +727,16 @@ demonstration. Anyways, here's the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4 2
+   $ python prog.py 4 2
    4^2 == 16
-   $ python3 prog.py 4 2 -q
+   $ python prog.py 4 2 -q
    16
-   $ python3 prog.py 4 2 -v
+   $ python prog.py 4 2 -v
    4 to the power 2 equals 16
-   $ python3 prog.py 4 2 -vq
+   $ python prog.py 4 2 -vq
    usage: prog.py [-h] [-v | -q] x y
    prog.py: error: argument -q/--quiet: not allowed with argument -v/--verbose
-   $ python3 prog.py 4 2 -v --quiet
+   $ python prog.py 4 2 -v --quiet
    usage: prog.py [-h] [-v | -q] x y
    prog.py: error: argument -q/--quiet: not allowed with argument -v/--verbose
 
@@ -771,7 +771,7 @@ but not both at the same time:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py --help
+   $ python prog.py --help
    usage: prog.py [-h] [-v | -q] x y
 
    calculate X to the power of Y

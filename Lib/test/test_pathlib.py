@@ -13,6 +13,7 @@ import unittest
 from unittest import mock
 
 from test.support import import_helper
+from test.support import set_recursion_limit
 from test.support import is_emscripten, is_wasi
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
@@ -26,7 +27,7 @@ except ImportError:
 class _BaseFlavourTest(object):
 
     def _check_parse_parts(self, arg, expected):
-        f = self.flavour.parse_parts
+        f = self.cls._parse_parts
         sep = self.flavour.sep
         altsep = self.flavour.altsep
         actual = f([x.replace('/', sep) for x in arg])
@@ -65,7 +66,8 @@ class _BaseFlavourTest(object):
 
 
 class PosixFlavourTest(_BaseFlavourTest, unittest.TestCase):
-    flavour = pathlib._posix_flavour
+    cls = pathlib.PurePosixPath
+    flavour = pathlib.PurePosixPath._flavour
 
     def test_parse_parts(self):
         check = self._check_parse_parts
@@ -79,29 +81,10 @@ class PosixFlavourTest(_BaseFlavourTest, unittest.TestCase):
         check(['c:\\a'],                ('', '', ['c:\\a']))
         check(['\\a'],                  ('', '', ['\\a']))
 
-    def test_splitroot(self):
-        f = self.flavour.splitroot
-        self.assertEqual(f(''), ('', '', ''))
-        self.assertEqual(f('a'), ('', '', 'a'))
-        self.assertEqual(f('a/b'), ('', '', 'a/b'))
-        self.assertEqual(f('a/b/'), ('', '', 'a/b/'))
-        self.assertEqual(f('/a'), ('', '/', 'a'))
-        self.assertEqual(f('/a/b'), ('', '/', 'a/b'))
-        self.assertEqual(f('/a/b/'), ('', '/', 'a/b/'))
-        # The root is collapsed when there are redundant slashes
-        # except when there are exactly two leading slashes, which
-        # is a special case in POSIX.
-        self.assertEqual(f('//a'), ('', '//', 'a'))
-        self.assertEqual(f('///a'), ('', '/', 'a'))
-        self.assertEqual(f('///a/b'), ('', '/', 'a/b'))
-        # Paths which look like NT paths aren't treated specially.
-        self.assertEqual(f('c:/a/b'), ('', '', 'c:/a/b'))
-        self.assertEqual(f('\\/a/b'), ('', '', '\\/a/b'))
-        self.assertEqual(f('\\a\\b'), ('', '', '\\a\\b'))
-
 
 class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
-    flavour = pathlib._windows_flavour
+    cls = pathlib.PureWindowsPath
+    flavour = pathlib.PureWindowsPath._flavour
 
     def test_parse_parts(self):
         check = self._check_parse_parts
@@ -140,30 +123,13 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
         # the second path is relative.
         check(['c:/a/b', 'c:x/y'], ('c:', '\\', ['c:\\', 'a', 'b', 'x', 'y']))
         check(['c:/a/b', 'c:/x/y'], ('c:', '\\', ['c:\\', 'x', 'y']))
-
-    def test_splitroot(self):
-        f = self.flavour.splitroot
-        self.assertEqual(f(''), ('', '', ''))
-        self.assertEqual(f('a'), ('', '', 'a'))
-        self.assertEqual(f('a\\b'), ('', '', 'a\\b'))
-        self.assertEqual(f('\\a'), ('', '\\', 'a'))
-        self.assertEqual(f('\\a\\b'), ('', '\\', 'a\\b'))
-        self.assertEqual(f('c:a\\b'), ('c:', '', 'a\\b'))
-        self.assertEqual(f('c:\\a\\b'), ('c:', '\\', 'a\\b'))
-        # Redundant slashes in the root are collapsed.
-        self.assertEqual(f('\\\\a'), ('', '\\', 'a'))
-        self.assertEqual(f('\\\\\\a/b'), ('', '\\', 'a/b'))
-        self.assertEqual(f('c:\\\\a'), ('c:', '\\', 'a'))
-        self.assertEqual(f('c:\\\\\\a/b'), ('c:', '\\', 'a/b'))
-        # Valid UNC paths.
-        self.assertEqual(f('\\\\a\\b'), ('\\\\a\\b', '\\', ''))
-        self.assertEqual(f('\\\\a\\b\\'), ('\\\\a\\b', '\\', ''))
-        self.assertEqual(f('\\\\a\\b\\c\\d'), ('\\\\a\\b', '\\', 'c\\d'))
-        # These are non-UNC paths (according to ntpath.py and test_ntpath).
-        # However, command.com says such paths are invalid, so it's
-        # difficult to know what the right semantics are.
-        self.assertEqual(f('\\\\\\a\\b'), ('', '\\', 'a\\b'))
-        self.assertEqual(f('\\\\a'), ('', '\\', 'a'))
+        # Paths to files with NTFS alternate data streams
+        check(['./c:s'],                ('', '', ['c:s']))
+        check(['cc:s'],                 ('', '', ['cc:s']))
+        check(['C:c:s'],                ('C:', '', ['C:', 'c:s']))
+        check(['C:/c:s'],               ('C:', '\\', ['C:\\', 'c:s']))
+        check(['D:a', './c:b'],         ('D:', '', ['D:', 'a', 'c:b']))
+        check(['D:/a', './c:b'],        ('D:', '\\', ['D:\\', 'a', 'c:b']))
 
 
 #
@@ -182,8 +148,7 @@ class _BasePurePathTest(object):
             ('', 'a', 'b'), ('a', '', 'b'), ('a', 'b', ''),
             ],
         '/b/c/d': [
-            ('a', '/b/c', 'd'), ('a', '///b//c', 'd/'),
-            ('/a', '/b/c', 'd'),
+            ('a', '/b/c', 'd'), ('/a', '/b/c', 'd'),
             # Empty components get removed.
             ('/', 'b', '', 'c/d'), ('/', '', 'b/c/d'), ('', '/b/c/d'),
             ],
@@ -208,6 +173,34 @@ class _BasePurePathTest(object):
         self.assertEqual(P(P('a'), 'b'), P('a/b'))
         self.assertEqual(P(P('a'), P('b')), P('a/b'))
         self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
+        self.assertEqual(P(P('./a:b')), P('./a:b'))
+
+    def test_bytes(self):
+        P = self.cls
+        message = (r"argument should be a str or an os\.PathLike object "
+                   r"where __fspath__ returns a str, not 'bytes'")
+        with self.assertRaisesRegex(TypeError, message):
+            P(b'a')
+        with self.assertRaises(TypeError):
+            P(b'a', 'b')
+        with self.assertRaises(TypeError):
+            P('a', b'b')
+        with self.assertRaises(TypeError):
+            P('a').joinpath(b'b')
+        with self.assertRaises(TypeError):
+            P('a') / b'b'
+        with self.assertRaises(TypeError):
+            b'a' / P('b')
+        with self.assertRaises(TypeError):
+            P('a').match(b'b')
+        with self.assertRaises(TypeError):
+            P('a').relative_to(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_name(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_stem(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_suffix(b'b')
 
     def _check_str_subclass(self, *args):
         # Issue #21127: it should be possible to construct a PurePath object
@@ -291,19 +284,26 @@ class _BasePurePathTest(object):
 
     def test_repr_common(self):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
-            p = self.cls(pathstr)
-            clsname = p.__class__.__name__
-            r = repr(p)
-            # The repr() is in the form ClassName("forward-slashes path").
-            self.assertTrue(r.startswith(clsname + '('), r)
-            self.assertTrue(r.endswith(')'), r)
-            inner = r[len(clsname) + 1 : -1]
-            self.assertEqual(eval(inner), p.as_posix())
-            # The repr() roundtrips.
-            q = eval(r, pathlib.__dict__)
-            self.assertIs(q.__class__, p.__class__)
-            self.assertEqual(q, p)
-            self.assertEqual(repr(q), r)
+            with self.subTest(pathstr=pathstr):
+                p = self.cls(pathstr)
+                clsname = p.__class__.__name__
+                r = repr(p)
+                # The repr() is in the form ClassName("forward-slashes path").
+                self.assertTrue(r.startswith(clsname + '('), r)
+                self.assertTrue(r.endswith(')'), r)
+                inner = r[len(clsname) + 1 : -1]
+                self.assertEqual(eval(inner), p.as_posix())
+
+    def test_repr_roundtrips(self):
+        for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
+            with self.subTest(pathstr=pathstr):
+                p = self.cls(pathstr)
+                r = repr(p)
+                # The repr() roundtrips.
+                q = eval(r, pathlib.__dict__)
+                self.assertIs(q.__class__, p.__class__)
+                self.assertEqual(q, p)
+                self.assertEqual(repr(q), r)
 
     def test_eq_common(self):
         P = self.cls
@@ -654,8 +654,9 @@ class _BasePurePathTest(object):
         self.assertEqual(p.relative_to(P('c'), walk_up=True), P('../a/b'))
         self.assertEqual(p.relative_to('c', walk_up=True), P('../a/b'))
         # With several args.
-        self.assertEqual(p.relative_to('a', 'b'), P())
-        self.assertEqual(p.relative_to('a', 'b', walk_up=True), P())
+        with self.assertWarns(DeprecationWarning):
+            p.relative_to('a', 'b')
+            p.relative_to('a', 'b', walk_up=True)
         # Unrelated paths.
         self.assertRaises(ValueError, p.relative_to, P('c'))
         self.assertRaises(ValueError, p.relative_to, P('a/b/c'))
@@ -706,7 +707,8 @@ class _BasePurePathTest(object):
         self.assertTrue(p.is_relative_to(P('a/b')))
         self.assertTrue(p.is_relative_to('a/b'))
         # With several args.
-        self.assertTrue(p.is_relative_to('a', 'b'))
+        with self.assertWarns(DeprecationWarning):
+            p.is_relative_to('a', 'b')
         # Unrelated paths.
         self.assertFalse(p.is_relative_to(P('c')))
         self.assertFalse(p.is_relative_to(P('a/b/c')))
@@ -821,7 +823,8 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
 
     equivalences = _BasePurePathTest.equivalences.copy()
     equivalences.update({
-        'c:a': [ ('c:', 'a'), ('c:', 'a/'), ('/', 'c:', 'a') ],
+        './a:b': [ ('./a:b',) ],
+        'c:a': [ ('c:', 'a'), ('c:', 'a/'), ('.', 'c:', 'a') ],
         'c:/a': [
             ('c:/', 'a'), ('c:', '/', 'a'), ('c:', '/a'),
             ('/z', 'c:/', 'a'), ('//x/y', 'c:/', 'a'),
@@ -845,6 +848,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(str(p), '\\\\a\\b\\c\\d')
 
     def test_str_subclass(self):
+        self._check_str_subclass('.\\a:b')
         self._check_str_subclass('c:')
         self._check_str_subclass('c:a')
         self._check_str_subclass('c:a\\b.txt')
@@ -886,8 +890,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
     def test_match_common(self):
         P = self.cls
         # Absolute patterns.
-        self.assertTrue(P('c:/b.py').match('/*.py'))
-        self.assertTrue(P('c:/b.py').match('c:*.py'))
+        self.assertTrue(P('c:/b.py').match('*:/*.py'))
         self.assertTrue(P('c:/b.py').match('c:/*.py'))
         self.assertFalse(P('d:/b.py').match('c:/*.py'))  # wrong drive
         self.assertFalse(P('b.py').match('/*.py'))
@@ -898,7 +901,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertFalse(P('/b.py').match('c:*.py'))
         self.assertFalse(P('/b.py').match('c:/*.py'))
         # UNC patterns.
-        self.assertTrue(P('//some/share/a.py').match('/*.py'))
+        self.assertTrue(P('//some/share/a.py').match('//*/*/*.py'))
         self.assertTrue(P('//some/share/a.py').match('//some/share/*.py'))
         self.assertFalse(P('//other/share/a.py').match('//some/share/*.py'))
         self.assertFalse(P('//some/share/a/b.py').match('//some/share/*.py'))
@@ -906,6 +909,10 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertTrue(P('B.py').match('b.PY'))
         self.assertTrue(P('c:/a/B.Py').match('C:/A/*.pY'))
         self.assertTrue(P('//Some/Share/B.Py').match('//somE/sharE/*.pY'))
+        # Path anchor doesn't match pattern anchor
+        self.assertFalse(P('c:/b.py').match('/*.py'))  # 'c:/' vs '/'
+        self.assertFalse(P('c:/b.py').match('c:*.py'))  # 'c:/' vs 'c:'
+        self.assertFalse(P('//some/share/a.py').match('/*.py'))  # '//some/share/' vs '/'
 
     def test_ordering_common(self):
         # Case-insensitivity.
@@ -1009,6 +1016,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(P('//a/b').drive, '\\\\a\\b')
         self.assertEqual(P('//a/b/').drive, '\\\\a\\b')
         self.assertEqual(P('//a/b/c/d').drive, '\\\\a\\b')
+        self.assertEqual(P('./c:a').drive, '')
 
     def test_root(self):
         P = self.cls
@@ -1345,6 +1353,14 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(pp, P('C:/a/b/x/y'))
         pp = p.joinpath('c:/x/y')
         self.assertEqual(pp, P('C:/x/y'))
+        # Joining with files with NTFS data streams => the filename should
+        # not be parsed as a drive letter
+        pp = p.joinpath(P('./d:s'))
+        self.assertEqual(pp, P('C:/a/b/d:s'))
+        pp = p.joinpath(P('./dd:s'))
+        self.assertEqual(pp, P('C:/a/b/dd:s'))
+        pp = p.joinpath(P('E:d:s'))
+        self.assertEqual(pp, P('E:d:s'))
 
     def test_div(self):
         # Basically the same as joinpath().
@@ -1365,6 +1381,11 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         # the second path is relative.
         self.assertEqual(p / 'c:x/y', P('C:/a/b/x/y'))
         self.assertEqual(p / 'c:/x/y', P('C:/x/y'))
+        # Joining with files with NTFS data streams => the filename should
+        # not be parsed as a drive letter
+        self.assertEqual(p / P('./d:s'), P('C:/a/b/d:s'))
+        self.assertEqual(p / P('./dd:s'), P('C:/a/b/dd:s'))
+        self.assertEqual(p / P('E:d:s'), P('E:d:s'))
 
     def test_is_reserved(self):
         P = self.cls
@@ -1630,6 +1651,8 @@ class _BasePathTest(object):
         self.assertEqual(p.expanduser(), p)
         p = P(P('').absolute().anchor) / '~'
         self.assertEqual(p.expanduser(), p)
+        p = P('~/a:b')
+        self.assertEqual(p.expanduser(), P(os.path.expanduser('~'), './a:b'))
 
     def test_exists(self):
         P = self.cls
@@ -1942,7 +1965,7 @@ class _BasePathTest(object):
 
     @os_helper.skip_unless_symlink
     def test_resolve_dot(self):
-        # See https://bitbucket.org/pitrou/pathlib/issue/9/pathresolve-fails-on-complex-symlinks
+        # See http://web.archive.org/web/20200623062557/https://bitbucket.org/pitrou/pathlib/issues/9/
         p = self.cls(BASE)
         self.dirlink('.', join('0'))
         self.dirlink(os.path.join('0', '0'), join('1'))
@@ -2410,9 +2433,9 @@ class _BasePathTest(object):
     def test_is_junction(self):
         P = self.cls(BASE)
 
-        with mock.patch.object(P._flavour, 'pathmod'):
-            self.assertEqual(P.is_junction(), P._flavour.pathmod.isjunction.return_value)
-            P._flavour.pathmod.isjunction.assert_called_once_with(P)
+        with mock.patch.object(P._flavour, 'isjunction'):
+            self.assertEqual(P.is_junction(), P._flavour.isjunction.return_value)
+            P._flavour.isjunction.assert_called_once_with(P)
 
     def test_is_fifo_false(self):
         P = self.cls(BASE)
@@ -2567,6 +2590,11 @@ class _BasePathTest(object):
     @os_helper.skip_unless_symlink
     def test_complex_symlinks_relative_dot_dot(self):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
+
+    def test_passing_kwargs_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            self.cls(foo="bar")
+
 
 class WalkTests(unittest.TestCase):
 
@@ -2765,6 +2793,18 @@ class WalkTests(unittest.TestCase):
             for it in iters:
                 self.assertEqual(next(it), expected)
             path = path / 'd'
+
+    def test_walk_above_recursion_limit(self):
+        recursion_limit = 40
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = pathlib.Path(os_helper.TESTFN, 'deep')
+        path = pathlib.Path(base, *(['d'] * directory_depth))
+        path.mkdir(parents=True)
+
+        with set_recursion_limit(recursion_limit):
+            list(base.walk())
+            list(base.walk(top_down=False))
 
 
 class PathTest(_BasePathTest, unittest.TestCase):
@@ -2999,6 +3039,26 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             self.assertEqual(str(P('a', 'b', 'c').absolute()),
                              os.path.join(share, 'a', 'b', 'c'))
 
+        drive = os.path.splitdrive(BASE)[0]
+        with os_helper.change_cwd(BASE):
+            # Relative path with root
+            self.assertEqual(str(P('\\').absolute()), drive + '\\')
+            self.assertEqual(str(P('\\foo').absolute()), drive + '\\foo')
+
+            # Relative path on current drive
+            self.assertEqual(str(P(drive).absolute()), BASE)
+            self.assertEqual(str(P(drive + 'foo').absolute()), os.path.join(BASE, 'foo'))
+
+        with os_helper.subst_drive(BASE) as other_drive:
+            # Set the working directory on the substitute drive
+            saved_cwd = os.getcwd()
+            other_cwd = f'{other_drive}\\dirA'
+            os.chdir(other_cwd)
+            os.chdir(saved_cwd)
+
+            # Relative path on another drive
+            self.assertEqual(str(P(other_drive).absolute()), other_cwd)
+            self.assertEqual(str(P(other_drive + 'foo').absolute()), other_cwd + '\\foo')
 
     def test_glob(self):
         P = self.cls
@@ -3068,6 +3128,22 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             # bpo-38883: ignore `HOME` when set on windows
             env['HOME'] = 'C:\\Users\\eve'
             check()
+
+
+class PurePathSubclassTest(_BasePurePathTest, unittest.TestCase):
+    class cls(pathlib.PurePath):
+        pass
+
+    # repr() roundtripping is not supported in custom subclass.
+    test_repr_roundtrips = None
+
+
+class PathSubclassTest(_BasePathTest, unittest.TestCase):
+    class cls(pathlib.Path):
+        pass
+
+    # repr() roundtripping is not supported in custom subclass.
+    test_repr_roundtrips = None
 
 
 class CompatiblePathTest(unittest.TestCase):

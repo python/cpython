@@ -1,3 +1,0 @@
-Optional big memory tests in ``test_sqlite3`` now catch the correct
-:exc:`sqlite.DataError` exception type in case of too large strings and/or
-blobs passed.
