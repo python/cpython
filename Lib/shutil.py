@@ -563,6 +563,8 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
                      ignore_dangling_symlinks=ignore_dangling_symlinks,
                      dirs_exist_ok=dirs_exist_ok)
 
+_use_fd_functions = pathlib.Path._rmtree.avoids_symlink_attacks
+
 def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     """Recursively delete a directory tree.
 
@@ -603,7 +605,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
 
 # Allow introspection of whether or not the hardening against symlink
 # attacks is supported on the current platform
-rmtree.avoids_symlink_attacks = pathlib.Path._rmtree.avoids_symlink_attacks
+rmtree.avoids_symlink_attacks = _use_fd_functions
 
 def _basename(path):
     """A basename() variant which first strips the trailing slash, if present.

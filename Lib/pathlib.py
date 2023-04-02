@@ -209,12 +209,7 @@ class _WalkAction:
     CLOSE = object()
 
 
-_supports_fwalk = (
-    {os.stat, os.open} <= os.supports_dir_fd and
-    {os.stat, os.scandir} <= os.supports_fd)
-
-
-def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
+def _walk_step(top_down, follow_symlinks, follow_junctions, use_fd, actions):
     action, value = actions.pop()
     if action is _WalkAction.WALK:
         path, dir_fd, entry = value
@@ -223,7 +218,7 @@ def _walk(top_down, follow_symlinks, follow_junctions, use_fd, actions):
         filenames = []
         try:
             if use_fd:
-                scandir_it, fd = path._fscandir(follow_symlinks, actions, dir_fd, entry)
+                scandir_it, fd = path._scandir_fwalk(follow_symlinks, actions, dir_fd, entry)
                 result = path, dirnames, filenames, fd
             else:
                 scandir_it, fd = path._scandir(), None
@@ -1049,15 +1044,6 @@ class Path(PurePath):
         """
         os.rmdir(self)
 
-    def _rmtree(self, *, on_error=None, ignore_errors=False, dir_fd=None):
-        """
-        Recursively delete this directory tree.
-        """
-        if on_error is None and not ignore_errors:
-            def on_error(error):
-                raise
-        self._rmtree_impl(on_error, dir_fd)
-
     def lstat(self):
         """
         Like stat(), except if the path points to a symlink, the symlink's
@@ -1272,12 +1258,12 @@ class Path(PurePath):
         actions = [(_WalkAction.WALK, (self, None, None))]
         while actions:
             try:
-                yield from _walk(top_down, follow_symlinks, follow_junctions, False, actions)
+                yield from _walk_step(top_down, follow_symlinks, follow_junctions, False, actions)
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
 
-    if _supports_fwalk:
+    if {os.stat, os.open} <= os.supports_dir_fd and {os.stat, os.scandir} <= os.supports_fd:
         def _fwalk(self, top_down=True, *, on_error=None, follow_symlinks=False, dir_fd=None):
             """Walk the directory tree from this directory, similar to os.fwalk()."""
             sys.audit("pathlib.Path._fwalk", self, on_error, follow_symlinks, dir_fd)
@@ -1285,7 +1271,7 @@ class Path(PurePath):
             try:
                 while actions:
                     try:
-                        yield from _walk(top_down, follow_symlinks, True, True, actions)
+                        yield from _walk_step(top_down, follow_symlinks, True, True, actions)
                     except OSError as error:
                         if on_error is not None:
                             on_error(error)
@@ -1297,7 +1283,7 @@ class Path(PurePath):
                         except OSError:
                             pass
 
-        def _fscandir(self, follow_symlinks, actions, dir_fd, entry):
+        def _scandir_fwalk(self, follow_symlinks, actions, dir_fd, entry):
             name = self if dir_fd is None else self.name
             if not follow_symlinks:
                 # Note: To guard against symlink races, we use the standard
@@ -1317,8 +1303,12 @@ class Path(PurePath):
             return os.scandir(fd), fd
 
         # Version using fd-based APIs to protect against races
-        _rmtree.avoids_symlink_attacks = True
-        def _rmtree_impl(self, on_error, dir_fd):
+        def _rmtree(self, *, on_error=None, ignore_errors=False, dir_fd=None):
+            """Recursively delete this directory tree."""
+            if on_error is None and not ignore_errors:
+                def on_error(error):
+                    raise
+
             walker = self._fwalk(
                 top_down=False,
                 follow_symlinks=False,
@@ -1349,13 +1339,17 @@ class Path(PurePath):
                             error.filename = str(self)
                             error.func = os.rmdir
                             on_error(error)
+        _rmtree.avoids_symlink_attacks = True
 
     else:
         # version vulnerable to race conditions
-        _rmtree.avoids_symlink_attacks = False
-        def _rmtree_impl(self, on_error, dir_fd):
+        def _rmtree(self, *, on_error=None, ignore_errors=False, dir_fd=None):
+            """Recursively delete this directory tree."""
             if dir_fd is not None:
                 raise NotImplementedError("dir_fd unavailable on this platform")
+            if on_error is None and not ignore_errors:
+                def on_error(error):
+                    raise
             try:
                 if self.is_symlink() or self.is_junction():
                     error = OSError("Cannot call rmtree on a symbolic link")
@@ -1395,6 +1389,7 @@ class Path(PurePath):
                         if on_error is not None:
                             error.func = os.rmdir
                             on_error(error)
+        _rmtree.avoids_symlink_attacks = False
 
 
 class PosixPath(Path, PurePosixPath):
