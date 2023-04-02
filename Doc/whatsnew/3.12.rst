@@ -343,6 +343,10 @@ shutil
   will be removed in Python 3.14.
   (Contributed by Irit Katriel in :gh:`102828`.)
 
+* :func:`shutil.which` now consults the *PATHEXT* environment variable to
+  find matches within *PATH* on Windows.
+  (Contributed by Charles Machalow in :gh:`103179`.)
+
 
 sqlite3
 -------
