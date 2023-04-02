@@ -209,11 +209,10 @@ class _WalkAction:
     CLOSE = object()
 
 
-def _walk_step(top_down, follow_symlinks, follow_junctions, use_fd, actions):
+def _walk_step(top_down, follow_symlinks, follow_junctions, use_fd, entries, actions):
     action, value = actions.pop()
     if action is _WalkAction.WALK:
         path, dir_fd, entry = value
-        entries = [] if use_fd and not top_down and not follow_symlinks else None
         dirnames = []
         filenames = []
         try:
@@ -231,9 +230,8 @@ def _walk_step(top_down, follow_symlinks, follow_junctions, use_fd, actions):
         with scandir_it:
             for entry in scandir_it:
                 try:
-                    is_dir = entry.is_dir(follow_symlinks=follow_symlinks) and (
-                        follow_junctions or not entry.is_junction())
-                    if is_dir:
+                    if entry.is_dir(follow_symlinks=follow_symlinks) and (
+                            follow_junctions or not entry.is_junction()):
                         if entries is not None:
                             entries.append(entry)
                         dirnames.append(entry.name)
@@ -245,14 +243,13 @@ def _walk_step(top_down, follow_symlinks, follow_junctions, use_fd, actions):
             yield result
         else:
             actions.append((_WalkAction.YIELD, result))
-        if entries:
-            actions += [
-                (_WalkAction.WALK, (path._make_child_relpath(dirname), fd, entry))
-                for dirname, entry in zip(reversed(dirnames), reversed(entries))]
+        if entries is not None:
+            for entry in reversed(entries):
+                actions.append((_WalkAction.WALK, (path._make_child_relpath(entry.name), fd, entry)))
+            entries.clear()
         else:
-            actions += [
-                (_WalkAction.WALK, (path._make_child_relpath(dirname), fd, None))
-                for dirname in reversed(dirnames)]
+            for dirname in reversed(dirnames):
+                actions.append((_WalkAction.WALK, (path._make_child_relpath(dirname), fd, None)))
     elif action is _WalkAction.YIELD:
         yield value
     elif action is _WalkAction.CLOSE:
@@ -1258,7 +1255,7 @@ class Path(PurePath):
         actions = [(_WalkAction.WALK, (self, None, None))]
         while actions:
             try:
-                yield from _walk_step(top_down, follow_symlinks, follow_junctions, False, actions)
+                yield from _walk_step(top_down, follow_symlinks, follow_junctions, False, None, actions)
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
@@ -1267,11 +1264,12 @@ class Path(PurePath):
         def _fwalk(self, top_down=True, *, on_error=None, follow_symlinks=False, dir_fd=None):
             """Walk the directory tree from this directory, similar to os.fwalk()."""
             sys.audit("pathlib.Path._fwalk", self, on_error, follow_symlinks, dir_fd)
+            entries = [] if not top_down and not follow_symlinks else None
             actions = [(_WalkAction.WALK, (self, dir_fd, None))]
             try:
                 while actions:
                     try:
-                        yield from _walk_step(top_down, follow_symlinks, True, True, actions)
+                        yield from _walk_step(top_down, follow_symlinks, True, True, entries, actions)
                     except OSError as error:
                         if on_error is not None:
                             on_error(error)
@@ -1285,21 +1283,22 @@ class Path(PurePath):
 
         def _scandir_fwalk(self, follow_symlinks, actions, dir_fd, entry):
             name = self if dir_fd is None else self.name
-            if not follow_symlinks:
+            if follow_symlinks:
+                fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
+                actions.append((_WalkAction.CLOSE, fd))
+            else:
                 # Note: To guard against symlink races, we use the standard
                 # lstat()/open()/fstat() trick.
-                if entry:
-                    orig_st = entry.stat(follow_symlinks=False)
-                else:
+                if entry is None:
                     orig_st = os.stat(name, follow_symlinks=False, dir_fd=dir_fd)
-            fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
-            actions.append((_WalkAction.CLOSE, fd))
-            if not follow_symlinks and not os.path.samestat(orig_st, os.stat(fd)):
-                # This can only happen if someone replaces a directory
-                # with a symbolic link after the call to stat() above.
-                error = NotADirectoryError("Cannot walk into a symbolic link")
-                error.func = os.path.islink
-                raise error
+                else:
+                    orig_st = entry.stat(follow_symlinks=False)
+                fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
+                actions.append((_WalkAction.CLOSE, fd))
+                if not os.path.samestat(orig_st, os.stat(fd)):
+                    error = NotADirectoryError("Cannot walk into a symbolic link")
+                    error.func = os.path.islink
+                    raise error
             return os.scandir(fd), fd
 
         # Version using fd-based APIs to protect against races
