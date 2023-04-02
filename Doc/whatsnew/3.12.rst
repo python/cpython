@@ -391,6 +391,17 @@ typing
   same name on a base class, as per :pep:`698`. (Contributed by Steven Troxler in
   :gh:`101564`.)
 
+* :func:`isinstance` checks against
+  :func:`runtime-checkable protocols <typing.runtime_checkable>` now use
+  :func:`inspect.getattr_static` rather than :func:`hasattr` to lookup whether
+  attributes exist. This means that descriptors and :meth:`~object.__getattr__`
+  methods are no longer unexpectedly evaluated during ``isinstance()`` checks
+  against runtime-checkable protocols. However, it may also mean that some
+  objects which used to be considered instances of a runtime-checkable protocol
+  may no longer be considered instances of that protocol on Python 3.12+, and
+  vice versa. Most users are unlikely to be affected by this change.
+  (Contributed by Alex Waygood in :gh:`102433`.)
+
 sys
 ---
 
@@ -975,6 +986,10 @@ New Features
   This is less error prone and a bit more efficient.
   (Contributed by Mark Shannon in :gh:`101578`.)
 
+* Add ``_PyErr_ChainExceptions1``, which takes an exception instance,
+  to replace the legacy-API ``_PyErr_ChainExceptions``, which is now
+  deprecated. (Contributed by Mark Shannon in :gh:`101578`.)
+
 * Add :c:func:`PyException_GetArgs` and :c:func:`PyException_SetArgs`
   as convenience functions for retrieving and modifying
   the :attr:`~BaseException.args` passed to the exception's constructor.
@@ -1125,6 +1140,8 @@ Deprecated
 * :c:func:`!PyErr_Display` is deprecated. Use :c:func:`PyErr_DisplayException`
   instead. (Contributed by Irit Katriel in :gh:`102755`).
 
+* ``_PyErr_ChainExceptions`` is deprecated. Use ``_PyErr_ChainExceptions1``
+  instead. (Contributed by Irit Katriel in :gh:`102192`.)
 
 Removed
 -------

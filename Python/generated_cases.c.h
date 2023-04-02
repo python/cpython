@@ -2591,7 +2591,7 @@
             if (match == NULL) goto pop_2_error;
 
             if (!Py_IsNone(match)) {
-                PyErr_SetExcInfo(NULL, Py_NewRef(match), NULL);
+                PyErr_SetHandledException(match);
             }
             #line 2597 "Python/generated_cases.c.h"
             stack_pointer[-1] = match;
