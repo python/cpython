@@ -3953,7 +3953,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
     size = PyTuple_Size(args);
     if (size < 2 || size > 6) {
         PyErr_SetString(st->PicklingError, "tuple returned by "
-                        "__reduce__ must contain 2 through 6 elements");
+                        "__reduce__ must contain 2 to 6 elements");
         return -1;
     }
 
@@ -4383,6 +4383,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             Py_INCREF(reduce_func);
         }
     } else {
+        // check private dispatch table
         reduce_func = PyObject_GetItem(self->dispatch_table,
                                        (PyObject *)type);
         if (reduce_func == NULL) {
@@ -4413,8 +4414,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             goto error;
         }
         if (reduce_func != NULL) {
-            PyObject *proto;
-            proto = PyLong_FromLong(self->proto);
+            PyObject *proto = PyLong_FromLong(self->proto);
             if (proto != NULL) {
                 reduce_value = _Pickle_FastCall(reduce_func, proto);
             }
