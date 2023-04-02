@@ -1462,10 +1462,10 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     # If we're given a path with a directory part, look it up directly rather
     # than referring to PATH directories. This includes checking relative to the
     # current directory, e.g. ./script
+    # If not, later logic will further verify.
     if os.path.dirname(cmd):
         if _access_check(cmd, mode):
             return cmd
-        return None
 
     use_bytes = isinstance(cmd, bytes)
 
@@ -1524,7 +1524,11 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
         if not normdir in seen:
             seen.add(normdir)
             for thefile in files:
-                name = os.path.join(dir, thefile)
-                if _access_check(name, mode):
-                    return name
+                # Only allow thefile to have a directory component if the directory is the current directory.
+                # This prevents allowing a directory component (to be part of cmd), being applied after a PATH component.
+                # Unless it with reference to the current directory, e.g. ./script (or full path: C:\scriptdir\script)
+                if not os.path.dirname(thefile) or dir == (os.fsencode(os.curdir) if use_bytes else os.curdir):
+                    name = os.path.join(dir, thefile)
+                    if _access_check(name, mode):
+                        return name
     return None

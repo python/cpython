@@ -2179,6 +2179,18 @@ class TestWhich(BaseTest, unittest.TestCase):
             rv = shutil.which(program, path=self.temp_dir)
             self.assertEqual(rv, temp_filexyz.name)
 
+    # See GH-75586
+    @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
+    def test_pathext_applied_on_files_in_path(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env["PATH"] = self.temp_dir
+            env["PATHEXT"] = ".test"
+
+            test_path = pathlib.Path(self.temp_dir) / "test_program.test"
+            test_path.touch(mode=0o755)
+
+            self.assertEqual(shutil.which("test_program"), str(test_path))
+
 
 class TestWhichBytes(TestWhich):
     def setUp(self):
