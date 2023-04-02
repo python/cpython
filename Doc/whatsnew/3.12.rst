@@ -371,6 +371,27 @@ unicodedata
 * The Unicode database has been updated to version 15.0.0. (Contributed by
   Benjamin Peterson in :gh:`96734`).
 
+unittest
+--------
+
+Added ``--durations`` command line option, showing the N slowest test cases::
+
+  python3 -m unittest --durations=3 lib.tests.test_threading
+  .....
+  Slowest test durations
+  ----------------------------------------------------------------------
+  1.210s     test_timeout (Lib.test.test_threading.BarrierTests)
+  1.003s     test_default_timeout (Lib.test.test_threading.BarrierTests)
+  0.518s     test_timeout (Lib.test.test_threading.EventTests)
+
+  (0.000 durations hidden.  Use -v to show these durations.)
+  ----------------------------------------------------------------------
+  Ran 158 tests in 9.869s
+
+  OK (skipped=3)
+
+(Contributed by Giampaolo Rodola in :issue:`4080`)
+
 uuid
 ----
 
