@@ -975,6 +975,10 @@ New Features
   This is less error prone and a bit more efficient.
   (Contributed by Mark Shannon in :gh:`101578`.)
 
+* Add ``_PyErr_ChainExceptions1``, which takes an exception instance,
+  to replace the legacy-API ``_PyErr_ChainExceptions``, which is now
+  deprecated. (Contributed by Mark Shannon in :gh:`101578`.)
+
 * Add :c:func:`PyException_GetArgs` and :c:func:`PyException_SetArgs`
   as convenience functions for retrieving and modifying
   the :attr:`~BaseException.args` passed to the exception's constructor.
@@ -1125,6 +1129,8 @@ Deprecated
 * :c:func:`!PyErr_Display` is deprecated. Use :c:func:`PyErr_DisplayException`
   instead. (Contributed by Irit Katriel in :gh:`102755`).
 
+* ``_PyErr_ChainExceptions`` is deprecated. Use ``_PyErr_ChainExceptions1``
+  instead. (Contributed by Irit Katriel in :gh:`102192`.)
 
 Removed
 -------
