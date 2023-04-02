@@ -209,7 +209,7 @@ class _WalkAction:
     CLOSE = object()
 
 
-def _walk_step(top_down, follow_symlinks, follow_junctions, use_fd, entries, actions):
+def _walk_step(top_down, follow_symlinks, follow_junctions, use_fd, actions):
     action, value = actions.pop()
     if action is _WalkAction.WALK:
         path, dir_fd, entry = value
@@ -227,13 +227,16 @@ def _walk_step(top_down, follow_symlinks, follow_junctions, use_fd, entries, act
                 error.func = os.scandir
             error.filename = str(path)
             raise error
+        if not top_down:
+            actions.append((_WalkAction.YIELD, result))
         with scandir_it:
             for entry in scandir_it:
                 try:
                     if entry.is_dir(follow_symlinks=follow_symlinks) and (
                             follow_junctions or not entry.is_junction()):
-                        if entries is not None:
-                            entries.append(entry)
+                        if not top_down:
+                            actions.append((_WalkAction.WALK, (
+                                path._make_child_relpath(entry.name), fd, entry)))
                         dirnames.append(entry.name)
                     else:
                         filenames.append(entry.name)
@@ -241,13 +244,6 @@ def _walk_step(top_down, follow_symlinks, follow_junctions, use_fd, entries, act
                     filenames.append(entry.name)
         if top_down:
             yield result
-        else:
-            actions.append((_WalkAction.YIELD, result))
-        if entries is not None:
-            for entry in reversed(entries):
-                actions.append((_WalkAction.WALK, (path._make_child_relpath(entry.name), fd, entry)))
-            entries.clear()
-        else:
             for dirname in reversed(dirnames):
                 actions.append((_WalkAction.WALK, (path._make_child_relpath(dirname), fd, None)))
     elif action is _WalkAction.YIELD:
@@ -1255,7 +1251,7 @@ class Path(PurePath):
         actions = [(_WalkAction.WALK, (self, None, None))]
         while actions:
             try:
-                yield from _walk_step(top_down, follow_symlinks, follow_junctions, False, None, actions)
+                yield from _walk_step(top_down, follow_symlinks, follow_junctions, False, actions)
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
@@ -1264,12 +1260,11 @@ class Path(PurePath):
         def _fwalk(self, top_down=True, *, on_error=None, follow_symlinks=False, dir_fd=None):
             """Walk the directory tree from this directory, similar to os.fwalk()."""
             sys.audit("pathlib.Path._fwalk", self, on_error, follow_symlinks, dir_fd)
-            entries = [] if not top_down and not follow_symlinks else None
             actions = [(_WalkAction.WALK, (self, dir_fd, None))]
             try:
                 while actions:
                     try:
-                        yield from _walk_step(top_down, follow_symlinks, True, True, entries, actions)
+                        yield from _walk_step(top_down, follow_symlinks, True, True, actions)
                     except OSError as error:
                         if on_error is not None:
                             on_error(error)
