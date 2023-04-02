@@ -41,11 +41,7 @@ elif _WINDOWS:
     import nt
 
 if sys.platform == 'win32':
-    try:
-        import ctypes
-        _CTYPES_SUPPORTED = True
-    except ImportError:
-        _CTYPES_SUPPORTED = False
+    import _winapi
 
 COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
 # This should never be removed, see rationale in:
@@ -1456,16 +1452,13 @@ def _access_check(fn, mode):
             and not os.path.isdir(fn))
 
 
-def _win32_need_current_directory_for_exe_path(cmd):
+def _win_path_needs_curdir(cmd, mode):
     """
-    On Windows, we can use NeedCurrentDirectoryForExePathW to figure out
-    if we should add the cwd to PATH when searching for executables.
-
-    If we don't have ctypes, we'll fallback to old behavior which is to always add cwd.
+    On Windows, we can use NeedCurrentDirectoryForExePath to figure out
+    if we should add the cwd to PATH when searching for executables if
+    the mode is executable.
     """
-    if _CTYPES_SUPPORTED:
-        return bool(ctypes.windll.kernel32.NeedCurrentDirectoryForExePathW(cmd))
-    return True
+    return mode & os.X_OK and _winapi.NeedCurrentDirectoryForExePath(cmd if isinstance(cmd, str) else os.fsdecode(cmd))
 
 
 def which(cmd, mode=os.F_OK | os.X_OK, path=None):
@@ -1510,7 +1503,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
             path = os.fsdecode(path)
             path = path.split(os.pathsep)
 
-        if sys.platform == "win32" and _win32_need_current_directory_for_exe_path(cmd):
+        if sys.platform == "win32" and _win_path_needs_curdir(cmd, mode):
             curdir = os.curdir
             if use_bytes:
                 curdir = os.fsencode(curdir)
@@ -1519,7 +1512,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
 
     if sys.platform == "win32":
         # PATHEXT is necessary to check on Windows.
-        pathext_source = os.getenv("PATHEXT", _WIN_DEFAULT_PATHEXT)
+        pathext_source = os.getenv("PATHEXT") or _WIN_DEFAULT_PATHEXT
         pathext = [ext for ext in pathext_source.split(os.pathsep) if ext]
 
         if use_bytes:
