@@ -565,124 +565,6 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 #endif
 
 
-//---------------
-// global objects
-//---------------
-
-/* The global objects thread state is meant to be used in a very limited
-   way and should not be used to actually run any Python code. */
-
-static PyThreadState *
-bind_global_objects_state(_PyRuntimeState *runtime)
-{
-    PyThreadState *main_tstate = &runtime->cached_objects.main_tstate;
-
-    bind_tstate(main_tstate);
-    /* Unlike _PyThreadState_Bind(), we do not modify gilstate TSS. */
-
-    return main_tstate;
-}
-
-static void
-unbind_global_objects_state(_PyRuntimeState *runtime)
-{
-    PyThreadState *main_tstate = &runtime->cached_objects.main_tstate;
-    assert(tstate_is_alive(main_tstate));
-    assert(!main_tstate->_status.active);
-    assert(gilstate_tss_get(runtime) != main_tstate);
-
-    unbind_tstate(main_tstate);
-
-    /* This thread state may be bound/unbound repeatedly,
-       so we must erase evidence that it was ever bound (or unbound). */
-    main_tstate->_status.bound = 0;
-    main_tstate->_status.unbound = 0;
-
-    /* We must fully unlink the thread state from any OS thread,
-       to allow it to be bound more than once. */
-    main_tstate->thread_id = 0;
-#ifdef PY_HAVE_THREAD_NATIVE_ID
-    main_tstate->native_thread_id = 0;
-#endif
-}
-
-static inline void
-acquire_global_objects_lock(_PyRuntimeState *runtime)
-{
-    /* For now we can rely on the GIL, so we don't actually
-       acquire a global lock here. */
-    assert(current_fast_get(runtime) != NULL);
-}
-
-static inline void
-release_global_objects_lock(_PyRuntimeState *runtime)
-{
-    /* For now we can rely on the GIL, so we don't actually
-       release a global lock here. */
-    assert(current_fast_get(runtime) != NULL);
-}
-
-PyObject *
-_Py_AddToGlobalDict(PyObject *dict, PyObject *key, PyObject *value)
-{
-    assert(dict != NULL);
-    assert(PyDict_CheckExact(dict));
-
-    /* All global objects are stored in _PyRuntime
-       and owned by the main interpreter. */
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *curts = current_fast_get(runtime);
-    PyInterpreterState *interp = curts->interp;
-    assert(interp != NULL);  // The GIL must be held.
-
-    /* Due to interpreter isolation we must hold a global lock,
-       starting at this point and ending before we return.
-       Note that the operations in this function are very fucused
-       and we should not expect any reentrancy. */
-    acquire_global_objects_lock(runtime);
-
-    /* Swap to the main interpreter, if necessary. */
-    PyThreadState *oldts = NULL;
-    if (!_Py_IsMainInterpreter(interp)) {
-        PyThreadState *main_tstate = bind_global_objects_state(runtime);
-
-        oldts = _PyThreadState_Swap(runtime, main_tstate);
-        assert(oldts != NULL);
-        assert(!_Py_IsMainInterpreter(oldts->interp));
-
-        /* The limitations of the global objects thread state apply
-           from this point to the point we swap back to oldts. */
-    }
-
-    /* This might trigger a resize, which is why we must "acquire"
-       the global object state.  Also note that PyDict_SetDefault()
-       must be compatible with our reentrancy and global objects state
-       constraints. */
-    PyObject *actual = PyDict_SetDefault(dict, key, value);
-    if (actual == NULL) {
-        /* Raising an exception from one interpreter in another
-           is problematic, so we clear it and let the caller deal
-           with the returned NULL. */
-        assert(PyErr_ExceptionMatches(PyExc_MemoryError));
-        PyErr_Clear();
-    }
-
-    /* Swap back, it it wasn't in the main interpreter already. */
-    if (oldts != NULL) {
-        // The returned tstate should be _PyRuntime.cached_objects.main_tstate.
-        _PyThreadState_Swap(runtime, oldts);
-
-        unbind_global_objects_state(runtime);
-    }
-
-    release_global_objects_lock(runtime);
-
-    // XXX Immortalize the key and value.
-
-    return actual;
-}
-
-
 /*************************************/
 /* the per-interpreter runtime state */
 /*************************************/
@@ -1475,20 +1357,6 @@ _PyThreadState_Init(PyThreadState *tstate)
     Py_FatalError("_PyThreadState_Init() is for internal use only");
 }
 
-void
-_PyThreadState_InitDetached(PyThreadState *tstate, PyInterpreterState *interp)
-{
-    _PyRuntimeState *runtime = interp->runtime;
-
-    HEAD_LOCK(runtime);
-    interp->threads.next_unique_id += 1;
-    uint64_t id = interp->threads.next_unique_id;
-    HEAD_UNLOCK(runtime);
-
-    init_threadstate(tstate, interp, id);
-    // We do not call add_threadstate().
-}
-
 
 static void
 clear_datastack(PyThreadState *tstate)
@@ -1613,21 +1481,6 @@ tstate_delete_common(PyThreadState *tstate)
     tstate->_status.finalized = 1;
 }
 
-void
-_PyThreadState_ClearDetached(PyThreadState *tstate)
-{
-    assert(!tstate->_status.bound);
-    assert(!tstate->_status.bound_gilstate);
-    assert(tstate->datastack_chunk == NULL);
-    assert(tstate->thread_id == 0);
-    assert(tstate->native_thread_id == 0);
-    assert(tstate->next == NULL);
-    assert(tstate->prev == NULL);
-
-    PyThreadState_Clear(tstate);
-    clear_datastack(tstate);
-}
-
 static void
 zapthreads(PyInterpreterState *interp)
 {
@@ -1711,6 +1564,75 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
         PyThreadState_Clear(p);
         free_threadstate(p);
     }
+}
+
+
+//-------------------------
+// "detached" thread states
+//-------------------------
+
+void
+_PyThreadState_InitDetached(PyThreadState *tstate, PyInterpreterState *interp)
+{
+    _PyRuntimeState *runtime = interp->runtime;
+
+    HEAD_LOCK(runtime);
+    interp->threads.next_unique_id += 1;
+    uint64_t id = interp->threads.next_unique_id;
+    HEAD_UNLOCK(runtime);
+
+    init_threadstate(tstate, interp, id);
+    // We do not call add_threadstate().
+}
+
+void
+_PyThreadState_ClearDetached(PyThreadState *tstate)
+{
+    assert(!tstate->_status.bound);
+    assert(!tstate->_status.bound_gilstate);
+    assert(tstate->datastack_chunk == NULL);
+    assert(tstate->thread_id == 0);
+    assert(tstate->native_thread_id == 0);
+    assert(tstate->next == NULL);
+    assert(tstate->prev == NULL);
+
+    PyThreadState_Clear(tstate);
+    clear_datastack(tstate);
+}
+
+void
+_PyThreadState_BindDetached(PyThreadState *tstate)
+{
+    assert(!_Py_IsMainInterpreter(
+        current_fast_get(tstate->interp->runtime)->interp));
+    assert(_Py_IsMainInterpreter(tstate->interp));
+    bind_tstate(tstate);
+    /* Unlike _PyThreadState_Bind(), we do not modify gilstate TSS. */
+}
+
+void
+_PyThreadState_UnbindDetached(PyThreadState *tstate)
+{
+    assert(!_Py_IsMainInterpreter(
+        current_fast_get(tstate->interp->runtime)->interp));
+    assert(_Py_IsMainInterpreter(tstate->interp));
+    assert(tstate_is_alive(tstate));
+    assert(!tstate->_status.active);
+    assert(gilstate_tss_get(tstate->interp->runtime) != tstate);
+
+    unbind_tstate(tstate);
+
+    /* This thread state may be bound/unbound repeatedly,
+       so we must erase evidence that it was ever bound (or unbound). */
+    tstate->_status.bound = 0;
+    tstate->_status.unbound = 0;
+
+    /* We must fully unlink the thread state from any OS thread,
+       to allow it to be bound more than once. */
+    tstate->thread_id = 0;
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+    tstate->native_thread_id = 0;
+#endif
 }
 
 
