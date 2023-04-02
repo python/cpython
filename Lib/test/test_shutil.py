@@ -2210,8 +2210,12 @@ class TestWhich(BaseTest, unittest.TestCase):
             self.assertTrue(shutil._win_path_needs_curdir('dontcare', os.X_OK))
             need_curdir_mock.assert_called_once_with('dontcare')
             need_curdir_mock.reset_mock()
-            self.assertFalse(shutil._win_path_needs_curdir('dontcare', 0))
+            self.assertTrue(shutil._win_path_needs_curdir('dontcare', 0))
             need_curdir_mock.assert_not_called()
+
+        with unittest.mock.patch('shutil._winapi.NeedCurrentDirectoryForExePath', return_value=False) as need_curdir_mock:
+            self.assertFalse(shutil._win_path_needs_curdir('dontcare', os.X_OK))
+            need_curdir_mock.assert_called_once_with('dontcare')
 
 
 class TestWhichBytes(TestWhich):

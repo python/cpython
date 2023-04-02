@@ -1458,7 +1458,7 @@ def _win_path_needs_curdir(cmd, mode):
     if we should add the cwd to PATH when searching for executables if
     the mode is executable.
     """
-    return (not (mode & os.X_OK) or
+    return (not (mode & os.X_OK)) or \
             _winapi.NeedCurrentDirectoryForExePath(
                 cmd if isinstance(cmd, str) else os.fsdecode(cmd))
 
