@@ -2206,7 +2206,7 @@ class TestWhich(BaseTest, unittest.TestCase):
     # See GH-75586
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_win_path_needs_curdir(self):
-        with unittest.mock.patch('shutil._winapi.NeedCurrentDirectoryForExePath', return_value=True) as need_curdir_mock:
+        with unittest.mock.patch('_winapi.NeedCurrentDirectoryForExePath', return_value=True) as need_curdir_mock:
             self.assertTrue(shutil._win_path_needs_curdir('dontcare', os.X_OK))
             need_curdir_mock.assert_called_once_with('dontcare')
             need_curdir_mock.reset_mock()
