@@ -73,13 +73,13 @@ class CAPITest(unittest.TestCase):
             '-c', 'import _testcapi;' '_testcapi.crash_no_current_thread()',
         )
         _rc, out, err = run_result
-        self.assertEqual(out, '')
+        self.assertEqual(out, b'')
         # This used to cause an infinite loop.
         msg = ("Fatal Python error: PyThreadState_Get: "
                "the function must be called with the GIL held, "
                "after Python initialization and before Python finalization, "
                "but the GIL is released "
-               "(the current Python thread state is NULL)")
+               "(the current Python thread state is NULL)").encode()
         self.assertTrue(err.rstrip().startswith(msg),
                         err)
 
