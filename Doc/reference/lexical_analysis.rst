@@ -612,9 +612,13 @@ Notes:
    As in Standard C, up to three octal digits are accepted.
 
    .. versionchanged:: 3.11
-      Octal escapes with value larger than ``0o377`` produce a :exc:`DeprecationWarning`.
-      In a future Python version they will be a :exc:`SyntaxWarning` and
-      eventually a :exc:`SyntaxError`.
+      Octal escapes with value larger than ``0o377`` produce a
+      :exc:`DeprecationWarning`.
+
+   .. versionchanged:: 3.12
+      Octal escapes with value larger than ``0o377`` produce a
+      :exc:`SyntaxWarning`. In a future Python version they will be eventually
+      a :exc:`SyntaxError`.
 
 (3)
    Unlike in Standard C, exactly two hex digits are required.
@@ -646,9 +650,11 @@ escape sequences only recognized in string literals fall into the category of
 unrecognized escapes for bytes literals.
 
    .. versionchanged:: 3.6
-      Unrecognized escape sequences produce a :exc:`DeprecationWarning`.  In
-      a future Python version they will be a :exc:`SyntaxWarning` and
-      eventually a :exc:`SyntaxError`.
+      Unrecognized escape sequences produce a :exc:`DeprecationWarning`.
+
+   .. versionchanged:: 3.12
+      Unrecognized escape sequences produce a :exc:`SyntaxWarning`. In a future
+      Python version they will be eventually a :exc:`SyntaxError`.
 
 Even in a raw literal, quotes can be escaped with a backslash, but the
 backslash remains in the result; for example, ``r"\""`` is a valid string

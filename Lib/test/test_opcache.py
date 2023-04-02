@@ -177,6 +177,73 @@ class TestLoadAttrCache(unittest.TestCase):
         for _ in range(1025):
             self.assertFalse(f())
 
+    def test_load_shadowing_slot_should_raise_type_error(self):
+        class Class:
+            __slots__ = ("slot",)
+
+        class Sneaky:
+            __slots__ = ("shadowed",)
+            shadowing = Class.slot
+
+        def f(o):
+            o.shadowing
+
+        o = Sneaky()
+        o.shadowed = 42
+
+        for _ in range(1025):
+            with self.assertRaises(TypeError):
+                f(o)
+
+    def test_store_shadowing_slot_should_raise_type_error(self):
+        class Class:
+            __slots__ = ("slot",)
+
+        class Sneaky:
+            __slots__ = ("shadowed",)
+            shadowing = Class.slot
+
+        def f(o):
+            o.shadowing = 42
+
+        o = Sneaky()
+
+        for _ in range(1025):
+            with self.assertRaises(TypeError):
+                f(o)
+
+    def test_load_borrowed_slot_should_not_crash(self):
+        class Class:
+            __slots__ = ("slot",)
+
+        class Sneaky:
+            borrowed = Class.slot
+
+        def f(o):
+            o.borrowed
+
+        o = Sneaky()
+
+        for _ in range(1025):
+            with self.assertRaises(TypeError):
+                f(o)
+
+    def test_store_borrowed_slot_should_not_crash(self):
+        class Class:
+            __slots__ = ("slot",)
+
+        class Sneaky:
+            borrowed = Class.slot
+
+        def f(o):
+            o.borrowed = 42
+
+        o = Sneaky()
+
+        for _ in range(1025):
+            with self.assertRaises(TypeError):
+                f(o)
+
 
 class TestLoadMethodCache(unittest.TestCase):
     def test_descriptor_added_after_optimization(self):

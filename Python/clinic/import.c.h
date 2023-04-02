@@ -442,6 +442,37 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_imp__override_multi_interp_extensions_check__doc__,
+"_override_multi_interp_extensions_check($module, override, /)\n"
+"--\n"
+"\n"
+"(internal-only) Override PyInterpreterConfig.check_multi_interp_extensions.\n"
+"\n"
+"(-1: \"never\", 1: \"always\", 0: no override)");
+
+#define _IMP__OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK_METHODDEF    \
+    {"_override_multi_interp_extensions_check", (PyCFunction)_imp__override_multi_interp_extensions_check, METH_O, _imp__override_multi_interp_extensions_check__doc__},
+
+static PyObject *
+_imp__override_multi_interp_extensions_check_impl(PyObject *module,
+                                                  int override);
+
+static PyObject *
+_imp__override_multi_interp_extensions_check(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int override;
+
+    override = _PyLong_AsInt(arg);
+    if (override == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _imp__override_multi_interp_extensions_check_impl(module, override);
+
+exit:
+    return return_value;
+}
+
 #if defined(HAVE_DYNAMIC_LOADING)
 
 PyDoc_STRVAR(_imp_create_dynamic__doc__,
@@ -617,4 +648,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=806352838c3f7008 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b18d46e0036eff49 input=a9049054013a1b77]*/

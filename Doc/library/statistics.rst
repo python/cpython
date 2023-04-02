@@ -839,7 +839,7 @@ of applications in statistics.
        The relative likelihood is computed as the probability of a sample
        occurring in a narrow range divided by the width of the range (hence
        the word "density").  Since the likelihood is relative to other points,
-       its value can be greater than `1.0`.
+       its value can be greater than ``1.0``.
 
     .. method:: NormalDist.cdf(x)
 
@@ -996,6 +996,7 @@ probability that the Python room will stay within its capacity limits?
     >>> seed(8675309)
     >>> def trial():
     ...     return choices(('Python', 'Ruby'), (p, q), k=n).count('Python')
+    ...
     >>> mean(trial() <= k for i in range(10_000))
     0.8398
 

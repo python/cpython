@@ -536,6 +536,13 @@ The :mod:`test.support` module defines the following functions:
    :func:`doctest.testmod`.
 
 
+.. function:: get_pagesize()
+
+   Get size of a page in bytes.
+
+   .. versionadded:: 3.12
+
+
 .. function:: setswitchinterval(interval)
 
    Set the :func:`sys.setswitchinterval` to the given *interval*.  Defines
@@ -1128,7 +1135,7 @@ The :mod:`test.support.socket_helper` module provides support for socket tests.
 
 .. function:: bind_unix_socket(sock, addr)
 
-   Bind a unix socket, raising :exc:`unittest.SkipTest` if
+   Bind a Unix socket, raising :exc:`unittest.SkipTest` if
    :exc:`PermissionError` is raised.
 
 

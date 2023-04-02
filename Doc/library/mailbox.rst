@@ -426,7 +426,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. seealso::
 
-   `maildir man page from Courier <http://www.courier-mta.org/maildir.html>`_
+   `maildir man page from Courier <https://www.courier-mta.org/maildir.html>`_
       A specification of the format. Describes a common extension for
       supporting folders.
 

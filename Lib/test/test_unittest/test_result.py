@@ -275,6 +275,62 @@ class Test_TestResult(unittest.TestCase):
         self.assertEqual(len(dropped), 1)
         self.assertIn("raise self.failureException(msg)", dropped[0])
 
+    def test_addFailure_filter_traceback_frames_chained_exception_self_loop(self):
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                pass
+
+        def get_exc_info():
+            try:
+                loop = Exception("Loop")
+                loop.__cause__ = loop
+                loop.__context__ = loop
+                raise loop
+            except:
+                return sys.exc_info()
+
+        exc_info_tuple = get_exc_info()
+
+        test = Foo('test_1')
+        result = unittest.TestResult()
+        result.startTest(test)
+        result.addFailure(test, exc_info_tuple)
+        result.stopTest(test)
+
+        formatted_exc = result.failures[0][1]
+        self.assertEqual(formatted_exc.count("Exception: Loop\n"), 1)
+
+    def test_addFailure_filter_traceback_frames_chained_exception_cycle(self):
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                pass
+
+        def get_exc_info():
+            try:
+                # Create two directionally opposed cycles
+                # __cause__ in one direction, __context__ in the other
+                A, B, C = Exception("A"), Exception("B"), Exception("C")
+                edges = [(C, B), (B, A), (A, C)]
+                for ex1, ex2 in edges:
+                    ex1.__cause__ = ex2
+                    ex2.__context__ = ex1
+                raise C
+            except:
+                return sys.exc_info()
+
+        exc_info_tuple = get_exc_info()
+
+        test = Foo('test_1')
+        result = unittest.TestResult()
+        result.startTest(test)
+        result.addFailure(test, exc_info_tuple)
+        result.stopTest(test)
+
+        formatted_exc = result.failures[0][1]
+        self.assertEqual(formatted_exc.count("Exception: A\n"), 1)
+        self.assertEqual(formatted_exc.count("Exception: B\n"), 1)
+        self.assertEqual(formatted_exc.count("Exception: C\n"), 1)
+
     # "addError(test, err)"
     # ...
     # "Called when the test case test raises an unexpected exception err

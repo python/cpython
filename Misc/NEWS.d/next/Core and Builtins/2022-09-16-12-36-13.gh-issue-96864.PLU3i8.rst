@@ -1,2 +1,0 @@
-Fix a possible assertion failure, fatal error, or :exc:`SystemError` if a
-line tracing event raises an exception while opcode tracing is enabled.

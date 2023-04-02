@@ -32,6 +32,8 @@ Copyright (C) 1994 Steen Lumholt.
 #  include "pycore_fileutils.h"   // _Py_stat()
 #endif
 
+#include "pycore_long.h"
+
 #ifdef MS_WINDOWS
 #include <windows.h>
 #endif
@@ -321,8 +323,6 @@ static PyObject *Tkinter_TclError;
 static int quitMainLoop = 0;
 static int errorInCmd = 0;
 static PyObject *excInCmd;
-static PyObject *valInCmd;
-static PyObject *trbInCmd;
 
 #ifdef TKINTER_PROTECT_LOADTK
 static int tk_load_failed = 0;
@@ -784,16 +784,14 @@ PyTclObject_string(PyTclObject *self, void *ignored)
         if (!self->string)
             return NULL;
     }
-    Py_INCREF(self->string);
-    return self->string;
+    return Py_NewRef(self->string);
 }
 
 static PyObject *
 PyTclObject_str(PyTclObject *self)
 {
     if (self->string) {
-        Py_INCREF(self->string);
-        return self->string;
+        return Py_NewRef(self->string);
     }
     /* XXX Could cache result if it is non-ASCII. */
     return unicodeFromTclObj(self->value);
@@ -890,7 +888,8 @@ asBignumObj(PyObject *value)
     const char *hexchars;
     mp_int bigValue;
 
-    neg = Py_SIZE(value) < 0;
+    assert(PyLong_Check(value));
+    neg = _PyLong_IsNegative((PyLongObject *)value);
     hexstr = _PyLong_Format(value, 16);
     if (hexstr == NULL)
         return NULL;
@@ -1107,8 +1106,7 @@ fromBignumObj(TkappObject *tkapp, Tcl_Obj *value)
     PyMem_Free(bytes);
     if (res != NULL && bigValue.sign == MP_NEG) {
         PyObject *res2 = PyNumber_Negative(res);
-        Py_DECREF(res);
-        res = res2;
+        Py_SETREF(res, res2);
     }
     mp_clear(&bigValue);
     return res;
@@ -1225,7 +1223,7 @@ typedef struct Tkapp_CallEvent {
     PyObject *args;
     int flags;
     PyObject **res;
-    PyObject **exc_type, **exc_value, **exc_tb;
+    PyObject **exc;
     Tcl_Condition *done;
 } Tkapp_CallEvent;
 
@@ -1342,7 +1340,7 @@ Tkapp_CallProc(Tkapp_CallEvent *e, int flags)
     ENTER_PYTHON
     objv = Tkapp_CallArgs(e->args, objStore, &objc);
     if (!objv) {
-        PyErr_Fetch(e->exc_type, e->exc_value, e->exc_tb);
+        *(e->exc) = PyErr_GetRaisedException();
         *(e->res) = NULL;
     }
     LEAVE_PYTHON
@@ -1357,7 +1355,7 @@ Tkapp_CallProc(Tkapp_CallEvent *e, int flags)
         *(e->res) = Tkapp_ObjectResult(e->self);
     }
     if (*(e->res) == NULL) {
-        PyErr_Fetch(e->exc_type, e->exc_value, e->exc_tb);
+        *(e->exc) = PyErr_GetRaisedException();
     }
     LEAVE_PYTHON
 
@@ -1404,7 +1402,7 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
            marshal the parameters to the interpreter thread. */
         Tkapp_CallEvent *ev;
         Tcl_Condition cond = NULL;
-        PyObject *exc_type, *exc_value, *exc_tb;
+        PyObject *exc;
         if (!WaitForMainloop(self))
             return NULL;
         ev = (Tkapp_CallEvent*)attemptckalloc(sizeof(Tkapp_CallEvent));
@@ -1416,18 +1414,18 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
         ev->self = self;
         ev->args = args;
         ev->res = &res;
-        ev->exc_type = &exc_type;
-        ev->exc_value = &exc_value;
-        ev->exc_tb = &exc_tb;
+        ev->exc = &exc;
         ev->done = &cond;
 
         Tkapp_ThreadSend(self, (Tcl_Event*)ev, &cond, &call_mutex);
 
         if (res == NULL) {
-            if (exc_type)
-                PyErr_Restore(exc_type, exc_value, exc_tb);
-            else
-                PyErr_SetObject(Tkinter_TclError, exc_value);
+            if (exc) {
+                PyErr_SetRaisedException(exc);
+            }
+            else {
+                PyErr_SetObject(Tkinter_TclError, exc);
+            }
         }
         Tcl_ConditionFinalize(&cond);
     }
@@ -1581,8 +1579,7 @@ typedef struct VarEvent {
     int flags;
     EventFunc func;
     PyObject **res;
-    PyObject **exc_type;
-    PyObject **exc_val;
+    PyObject **exc;
     Tcl_Condition *cond;
 } VarEvent;
 
@@ -1646,12 +1643,7 @@ var_perform(VarEvent *ev)
 {
     *(ev->res) = ev->func(ev->self, ev->args, ev->flags);
     if (!*(ev->res)) {
-        PyObject *exc, *val, *tb;
-        PyErr_Fetch(&exc, &val, &tb);
-        PyErr_NormalizeException(&exc, &val, &tb);
-        *(ev->exc_type) = exc;
-        *(ev->exc_val) = val;
-        Py_XDECREF(tb);
+        *(ev->exc) = PyErr_GetRaisedException();;
     }
 
 }
@@ -1675,7 +1667,7 @@ var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
     TkappObject *self = (TkappObject*)selfptr;
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
         VarEvent *ev;
-        PyObject *res, *exc_type, *exc_val;
+        PyObject *res, *exc;
         Tcl_Condition cond = NULL;
 
         /* The current thread is not the interpreter thread.  Marshal
@@ -1694,16 +1686,14 @@ var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
         ev->flags = flags;
         ev->func = func;
         ev->res = &res;
-        ev->exc_type = &exc_type;
-        ev->exc_val = &exc_val;
+        ev->exc = &exc;
         ev->cond = &cond;
         ev->ev.proc = (Tcl_EventProc*)var_proc;
         Tkapp_ThreadSend(self, (Tcl_Event*)ev, &cond, &var_mutex);
         Tcl_ConditionFinalize(&cond);
         if (!res) {
-            PyErr_SetObject(exc_type, exc_val);
-            Py_DECREF(exc_type);
-            Py_DECREF(exc_val);
+            PyErr_SetObject((PyObject*)Py_TYPE(exc), exc);
+            Py_DECREF(exc);
             return NULL;
         }
         return res;
@@ -1736,8 +1726,7 @@ SetVar(TkappObject *self, PyObject *args, int flags)
         if (!ok)
             Tkinter_Error(self);
         else {
-            res = Py_None;
-            Py_INCREF(res);
+            res = Py_NewRef(Py_None);
         }
         LEAVE_OVERLAP_TCL
         break;
@@ -1755,8 +1744,7 @@ SetVar(TkappObject *self, PyObject *args, int flags)
         if (!ok)
             Tkinter_Error(self);
         else {
-            res = Py_None;
-            Py_INCREF(res);
+            res = Py_NewRef(Py_None);
         }
         LEAVE_OVERLAP_TCL
         break;
@@ -1842,8 +1830,7 @@ UnsetVar(TkappObject *self, PyObject *args, int flags)
     if (code == TCL_ERROR)
         res = Tkinter_Error(self);
     else {
-        Py_INCREF(Py_None);
-        res = Py_None;
+        res = Py_NewRef(Py_None);
     }
     LEAVE_OVERLAP_TCL
     return res;
@@ -1883,8 +1870,7 @@ _tkinter_tkapp_getint(TkappObject *self, PyObject *arg)
     PyObject *result;
 
     if (PyLong_Check(arg)) {
-        Py_INCREF(arg);
-        return arg;
+        return Py_NewRef(arg);
     }
 
     if (PyTclObject_Check(arg)) {
@@ -1928,8 +1914,7 @@ _tkinter_tkapp_getdouble(TkappObject *self, PyObject *arg)
     double v;
 
     if (PyFloat_Check(arg)) {
-        Py_INCREF(arg);
-        return arg;
+        return Py_NewRef(arg);
     }
 
     if (PyNumber_Check(arg)) {
@@ -1968,7 +1953,7 @@ _tkinter_tkapp_getboolean(TkappObject *self, PyObject *arg)
     int v;
 
     if (PyLong_Check(arg)) { /* int or bool */
-        return PyBool_FromLong(Py_SIZE(arg) != 0);
+        return PyBool_FromLong(!_PyLong_IsZero((PyLongObject *)arg));
     }
 
     if (PyTclObject_Check(arg)) {
@@ -2145,8 +2130,7 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
         return v;
     }
     if (PyTuple_Check(arg)) {
-        Py_INCREF(arg);
-        return arg;
+        return Py_NewRef(arg);
     }
     if (PyList_Check(arg)) {
         return PySequence_Tuple(arg);
@@ -2172,8 +2156,7 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
     for (i = 0; i < argc; i++) {
         PyObject *s = unicodeFromTclString(argv[i]);
         if (!s) {
-            Py_DECREF(v);
-            v = NULL;
+            Py_SETREF(v, NULL);
             goto finally;
         }
         PyTuple_SET_ITEM(v, i, s);
@@ -2198,7 +2181,7 @@ static int
 PythonCmd_Error(Tcl_Interp *interp)
 {
     errorInCmd = 1;
-    PyErr_Fetch(&excInCmd, &valInCmd, &trbInCmd);
+    excInCmd = PyErr_GetRaisedException();
     LEAVE_PYTHON
     return TCL_ERROR;
 }
@@ -2322,10 +2305,8 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
     data = PyMem_NEW(PythonCmd_ClientData, 1);
     if (!data)
         return PyErr_NoMemory();
-    Py_INCREF(self);
-    Py_INCREF(func);
-    data->self = (PyObject *) self;
-    data->func = func;
+    data->self = Py_NewRef(self);
+    data->func = Py_NewRef(func);
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
         Tcl_Condition cond = NULL;
         CommandEvent *ev = (CommandEvent*)attemptckalloc(sizeof(CommandEvent));
@@ -2430,10 +2411,8 @@ NewFHCD(PyObject *func, PyObject *file, int id)
     FileHandler_ClientData *p;
     p = PyMem_NEW(FileHandler_ClientData, 1);
     if (p != NULL) {
-        Py_XINCREF(func);
-        Py_XINCREF(file);
-        p->func = func;
-        p->file = file;
+        p->func = Py_XNewRef(func);
+        p->file = Py_XNewRef(file);
         p->id = id;
         p->next = HeadFHCD;
         HeadFHCD = p;
@@ -2472,7 +2451,7 @@ FileHandler(ClientData clientData, int mask)
     res = PyObject_CallFunction(func, "Oi", file, mask);
     if (res == NULL) {
         errorInCmd = 1;
-        PyErr_Fetch(&excInCmd, &valInCmd, &trbInCmd);
+        excInCmd = PyErr_GetRaisedException();
     }
     Py_XDECREF(res);
     LEAVE_PYTHON
@@ -2591,13 +2570,11 @@ Tktt_New(PyObject *func)
     if (v == NULL)
         return NULL;
 
-    Py_INCREF(func);
     v->token = NULL;
-    v->func = func;
+    v->func = Py_NewRef(func);
 
     /* Extra reference, deleted when called or when handler is deleted */
-    Py_INCREF(v);
-    return v;
+    return (TkttObject*)Py_NewRef(v);
 }
 
 static void
@@ -2644,7 +2621,7 @@ TimerHandler(ClientData clientData)
 
     if (res == NULL) {
         errorInCmd = 1;
-        PyErr_Fetch(&excInCmd, &valInCmd, &trbInCmd);
+        excInCmd = PyErr_GetRaisedException();
     }
     else
         Py_DECREF(res);
@@ -2741,8 +2718,8 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
 
     if (errorInCmd) {
         errorInCmd = 0;
-        PyErr_Restore(excInCmd, valInCmd, trbInCmd);
-        excInCmd = valInCmd = trbInCmd = NULL;
+        PyErr_SetRaisedException(excInCmd);
+        excInCmd = NULL;
         return NULL;
     }
     Py_RETURN_NONE;
@@ -2848,7 +2825,7 @@ Tkapp_WantObjects(PyObject *self, PyObject *args)
 {
 
     int wantobjects = -1;
-    if (!PyArg_ParseTuple(args, "|i:wantobjects", &wantobjects))
+    if (!PyArg_ParseTuple(args, "|p:wantobjects", &wantobjects))
         return NULL;
     if (wantobjects == -1)
         return PyBool_FromLong(((TkappObject*)self)->wantobjects);
@@ -2940,9 +2917,8 @@ _flatten1(FlattenContext* context, PyObject* item, int depth)
                 if (context->size + 1 > context->maxsize &&
                     !_bump(context, 1))
                     return 0;
-                Py_INCREF(o);
                 PyTuple_SET_ITEM(context->tuple,
-                                 context->size++, o);
+                                 context->size++, Py_NewRef(o));
             }
         }
     } else {
@@ -2995,11 +2971,11 @@ _tkinter.create
     screenName: str(accept={str, NoneType}) = None
     baseName: str = ""
     className: str = "Tk"
-    interactive: bool(accept={int}) = False
-    wantobjects: bool(accept={int}) = False
-    wantTk: bool(accept={int}) = True
+    interactive: bool = False
+    wantobjects: bool = False
+    wantTk: bool = True
         if false, then Tk_Init() doesn't get called
-    sync: bool(accept={int}) = False
+    sync: bool = False
         if true, then pass -sync to wish
     use: str(accept={str, NoneType}) = None
         if not None, then pass -use to wish
@@ -3012,7 +2988,7 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
                      const char *baseName, const char *className,
                      int interactive, int wantobjects, int wantTk, int sync,
                      const char *use)
-/*[clinic end generated code: output=e3315607648e6bb4 input=da9b17ee7358d862]*/
+/*[clinic end generated code: output=e3315607648e6bb4 input=09afef9adea70a19]*/
 {
     /* XXX baseName is not used anymore;
      * try getting rid of it. */
@@ -3204,8 +3180,8 @@ EventHook(void)
 #endif
     if (errorInCmd) {
         errorInCmd = 0;
-        PyErr_Restore(excInCmd, valInCmd, trbInCmd);
-        excInCmd = valInCmd = trbInCmd = NULL;
+        PyErr_SetRaisedException(excInCmd);
+        excInCmd = NULL;
         PyErr_Print();
     }
     PyEval_SaveThread();
@@ -3266,8 +3242,7 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    Py_INCREF(o);
-    if (PyModule_AddObject(m, "TclError", o)) {
+    if (PyModule_AddObject(m, "TclError", Py_NewRef(o))) {
         Py_DECREF(o);
         Py_DECREF(m);
         return NULL;

@@ -107,15 +107,6 @@ def find_function(funcname, filename):
                 return funcname, filename, lineno
     return None
 
-def getsourcelines(obj):
-    lines, lineno = inspect.findsource(obj)
-    if inspect.isframe(obj) and obj.f_globals is obj.f_locals:
-        # must be a module frame: do not try to cut a block out of it
-        return lines, 1
-    elif inspect.ismodule(obj):
-        return lines, 1
-    return inspect.getblock(lines[lineno:]), lineno+1
-
 def lasti2lineno(code, lasti):
     linestarts = list(dis.findlinestarts(code))
     linestarts.reverse()
@@ -386,8 +377,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # stop when the debuggee is returning from such generators.
         prefix = 'Internal ' if (not exc_traceback
                                     and exc_type is StopIteration) else ''
-        self.message('%s%s' % (prefix,
-            traceback.format_exception_only(exc_type, exc_value)[-1].strip()))
+        self.message('%s%s' % (prefix, self._format_exc(exc_value)))
         self.interaction(frame, exc_traceback)
 
     # General interaction function
@@ -711,6 +701,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if comma > 0:
             # parse stuff after comma: "condition"
             cond = arg[comma+1:].lstrip()
+            if err := self._compile_error_message(cond):
+                self.error('Invalid condition %s: %r' % (cond, err))
+                return
             arg = arg[:comma].rstrip()
         # parse stuff before comma: [filename:]lineno | function
         colon = arg.rfind(':')
@@ -896,6 +889,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         args = arg.split(' ', 1)
         try:
             cond = args[1]
+            if err := self._compile_error_message(cond):
+                self.error('Invalid condition %s: %r' % (cond, err))
+                return
         except IndexError:
             cond = None
         try:
@@ -1259,14 +1255,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return eval(arg, self.curframe.f_globals, self.curframe_locals)
             else:
                 return eval(arg, frame.f_globals, frame.f_locals)
-        except:
-            exc_info = sys.exc_info()[:2]
-            err = traceback.format_exception_only(*exc_info)[-1].strip()
-            return _rstr('** raised %s **' % err)
+        except BaseException as exc:
+            return _rstr('** raised %s **' % self._format_exc(exc))
 
     def _error_exc(self):
-        exc_info = sys.exc_info()[:2]
-        self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+        exc = sys.exc_info()[1]
+        self.error(self._format_exc(exc))
 
     def _msg_val_func(self, arg, func):
         try:
@@ -1333,6 +1327,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if last is None:
             last = first + 10
         filename = self.curframe.f_code.co_filename
+        # gh-93696: stdlib frozen modules provide a useful __file__
+        # this workaround can be removed with the closure of gh-89815
+        if filename.startswith("<frozen"):
+            tmp = self.curframe.f_globals.get("__file__")
+            if isinstance(tmp, str):
+                filename = tmp
         breaklist = self.get_file_breaks(filename)
         try:
             lines = linecache.getlines(filename, self.curframe.f_globals)
@@ -1352,7 +1352,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
         try:
-            lines, lineno = getsourcelines(self.curframe)
+            lines, lineno = inspect.getsourcelines(self.curframe)
         except OSError as err:
             self.error(err)
             return
@@ -1368,7 +1368,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except:
             return
         try:
-            lines, lineno = getsourcelines(obj)
+            lines, lineno = inspect.getsourcelines(obj)
         except (OSError, TypeError) as err:
             self.error(err)
             return
@@ -1441,13 +1441,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Without expression, list all display expressions for the current frame.
         """
         if not arg:
-            self.message('Currently displaying:')
-            for item in self.displaying.get(self.curframe, {}).items():
-                self.message('%s: %r' % item)
+            if self.displaying:
+                self.message('Currently displaying:')
+                for item in self.displaying.get(self.curframe, {}).items():
+                    self.message('%s: %r' % item)
+            else:
+                self.message('No expression is being displayed')
         else:
-            val = self._getval_except(arg)
-            self.displaying.setdefault(self.curframe, {})[arg] = val
-            self.message('display %s: %r' % (arg, val))
+            if err := self._compile_error_message(arg):
+                self.error('Unable to display %s: %r' % (arg, err))
+            else:
+                val = self._getval_except(arg)
+                self.displaying.setdefault(self.curframe, {})[arg] = val
+                self.message('display %s: %r' % (arg, val))
 
     complete_display = _complete_expression
 
@@ -1646,6 +1652,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         self.run(target.code)
 
+    def _format_exc(self, exc: BaseException):
+        return traceback.format_exception_only(exc)[-1].strip()
+
+    def _compile_error_message(self, expr):
+        """Return the error message as string if compiling `expr` fails."""
+        try:
+            compile(expr, "<stdin>", "eval")
+        except SyntaxError as exc:
+            return _rstr(self._format_exc(exc))
+        return ""
 
 # Collect all command help into docstring, if not run with -OO
 
@@ -1743,7 +1759,11 @@ def post_mortem(t=None):
 
 def pm():
     """Enter post-mortem debugging of the traceback found in sys.last_traceback."""
-    post_mortem(sys.last_traceback)
+    if hasattr(sys, 'last_exc'):
+        tb = sys.last_exc.__traceback__
+    else:
+        tb = sys.last_traceback
+    post_mortem(tb)
 
 
 # Main program for testing

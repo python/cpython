@@ -356,8 +356,9 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
         return f'<{res[1:-1]} [{extra}]>'
 
     def locked(self):
-        """Returns True if semaphore counter is zero."""
-        return self._value == 0
+        """Returns True if semaphore cannot be acquired immediately."""
+        return self._value == 0 or (
+            any(not w.cancelled() for w in (self._waiters or ())))
 
     async def acquire(self):
         """Acquire a semaphore.
@@ -368,8 +369,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
         called release() to make it larger than 0, and then return
         True.
         """
-        if (not self.locked() and (self._waiters is None or
-                all(w.cancelled() for w in self._waiters))):
+        if not self.locked():
             self._value -= 1
             return True
 
@@ -387,13 +387,13 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
             finally:
                 self._waiters.remove(fut)
         except exceptions.CancelledError:
-            if not self.locked():
-                self._wake_up_first()
+            if not fut.cancelled():
+                self._value += 1
+                self._wake_up_next()
             raise
 
-        self._value -= 1
-        if not self.locked():
-            self._wake_up_first()
+        if self._value > 0:
+            self._wake_up_next()
         return True
 
     def release(self):
@@ -403,22 +403,18 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
         become larger than zero again, wake up that coroutine.
         """
         self._value += 1
-        self._wake_up_first()
+        self._wake_up_next()
 
-    def _wake_up_first(self):
-        """Wake up the first waiter if it isn't done."""
+    def _wake_up_next(self):
+        """Wake up the first waiter that isn't done."""
         if not self._waiters:
             return
-        try:
-            fut = next(iter(self._waiters))
-        except StopIteration:
-            return
 
-        # .done() necessarily means that a waiter will wake up later on and
-        # either take the lock, or, if it was cancelled and lock wasn't
-        # taken already, will hit this again and wake up a new waiter.
-        if not fut.done():
-            fut.set_result(True)
+        for fut in self._waiters:
+            if not fut.done():
+                self._value -= 1
+                fut.set_result(True)
+                return
 
 
 class BoundedSemaphore(Semaphore):

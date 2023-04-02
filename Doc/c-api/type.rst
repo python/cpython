@@ -40,7 +40,7 @@ Type Objects
 .. c:function:: unsigned long PyType_GetFlags(PyTypeObject* type)
 
    Return the :c:member:`~PyTypeObject.tp_flags` member of *type*. This function is primarily
-   meant for use with `Py_LIMITED_API`; the individual flag bits are
+   meant for use with ``Py_LIMITED_API``; the individual flag bits are
    guaranteed to be stable across Python releases, but access to
    :c:member:`~PyTypeObject.tp_flags` itself is not part of the limited API.
 
@@ -55,6 +55,55 @@ Type Objects
    Invalidate the internal lookup cache for the type and all of its
    subtypes.  This function must be called after any manual
    modification of the attributes or base classes of the type.
+
+
+.. c:function:: int PyType_AddWatcher(PyType_WatchCallback callback)
+
+   Register *callback* as a type watcher. Return a non-negative integer ID
+   which must be passed to future calls to :c:func:`PyType_Watch`. In case of
+   error (e.g. no more watcher IDs available), return ``-1`` and set an
+   exception.
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: int PyType_ClearWatcher(int watcher_id)
+
+   Clear watcher identified by *watcher_id* (previously returned from
+   :c:func:`PyType_AddWatcher`). Return ``0`` on success, ``-1`` on error (e.g.
+   if *watcher_id* was never registered.)
+
+   An extension should never call ``PyType_ClearWatcher`` with a *watcher_id*
+   that was not returned to it by a previous call to
+   :c:func:`PyType_AddWatcher`.
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: int PyType_Watch(int watcher_id, PyObject *type)
+
+   Mark *type* as watched. The callback granted *watcher_id* by
+   :c:func:`PyType_AddWatcher` will be called whenever
+   :c:func:`PyType_Modified` reports a change to *type*. (The callback may be
+   called only once for a series of consecutive modifications to *type*, if
+   :c:func:`PyType_Lookup` is not called on *type* between the modifications;
+   this is an implementation detail and subject to change.)
+
+   An extension should never call ``PyType_Watch`` with a *watcher_id* that was
+   not returned to it by a previous call to :c:func:`PyType_AddWatcher`.
+
+   .. versionadded:: 3.12
+
+
+.. c:type:: int (*PyType_WatchCallback)(PyObject *type)
+
+   Type of a type-watcher callback function.
+
+   The callback must not modify *type* or cause :c:func:`PyType_Modified` to be
+   called on *type* or any type in its MRO; violating this rule could cause
+   infinite recursion.
+
+   .. versionadded:: 3.12
 
 
 .. c:function:: int PyType_HasFeature(PyTypeObject *o, int feature)

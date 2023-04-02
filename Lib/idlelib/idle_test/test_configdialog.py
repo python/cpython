@@ -954,8 +954,8 @@ class KeysPageTest(unittest.TestCase):
     def test_get_new_keys(self):
         eq = self.assertEqual
         d = self.page
-        orig_getkeysdialog = configdialog.GetKeysDialog
-        gkd = configdialog.GetKeysDialog = Func(return_self=True)
+        orig_getkeysdialog = configdialog.GetKeysWindow
+        gkd = configdialog.GetKeysWindow = Func(return_self=True)
         gnkn = d.get_new_keys_name = Func()
 
         d.button_new_keys.state(('!disabled',))
@@ -997,7 +997,7 @@ class KeysPageTest(unittest.TestCase):
         eq(d.keybinding.get(), '<Key-p>')
 
         del d.get_new_keys_name
-        configdialog.GetKeysDialog = orig_getkeysdialog
+        configdialog.GetKeysWindow = orig_getkeysdialog
 
     def test_get_new_keys_name(self):
         orig_sectionname = configdialog.SectionName

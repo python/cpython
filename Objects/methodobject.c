@@ -88,8 +88,7 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
         if (om == NULL) {
             return NULL;
         }
-        Py_INCREF(cls);
-        om->mm_class = cls;
+        om->mm_class = (PyTypeObject*)Py_NewRef(cls);
         op = (PyCFunctionObject *)om;
     } else {
         if (cls) {
@@ -106,10 +105,8 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
 
     op->m_weakreflist = NULL;
     op->m_ml = ml;
-    Py_XINCREF(self);
-    op->m_self = self;
-    Py_XINCREF(module);
-    op->m_module = module;
+    op->m_self = Py_XNewRef(self);
+    op->m_module = Py_XNewRef(module);
     op->vectorcall = vectorcall;
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
@@ -260,8 +257,7 @@ meth_get__self__(PyCFunctionObject *m, void *closure)
     self = PyCFunction_GET_SELF(m);
     if (self == NULL)
         self = Py_None;
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyGetSetDef meth_getsets [] = {
@@ -314,8 +310,7 @@ meth_richcompare(PyObject *self, PyObject *other, int op)
         res = eq ? Py_True : Py_False;
     else
         res = eq ? Py_False : Py_True;
-    Py_INCREF(res);
-    return res;
+    return Py_NewRef(res);
 }
 
 static Py_hash_t
