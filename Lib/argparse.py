@@ -2018,9 +2018,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                             action = optionals_map[option_string]
                             explicit_arg = new_explicit_arg
                         else:
-                            msg = _('ignored explicit argument %r')
-                            raise ArgumentError(action, msg % explicit_arg)
-
+                            extras.append(option_string)
+                            explicit_arg = new_explicit_arg
                     # if the action expect exactly one argument, we've
                     # successfully matched the option; exit the loop
                     elif arg_count == 1:

@@ -2136,6 +2136,13 @@ class TestAddSubparsers(TestCase):
             (NS(foo=False, bar=0.5, w=7, x='b'), ['-W', '-X', 'Y', 'Z']),
         )
 
+    def test_parse_known_args_with_single_dash_option(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-k', '--known', action='store_true')
+        self.assertEqual(parser.parse_known_args(['-k', '-u']), (NS(known=True), ['-u']))
+        self.assertEqual(parser.parse_known_args(['-ku']), (NS(known=True), ['-u']))
+        self.assertEqual(parser.parse_known_args(['-uk']), (NS(known=False), ['-uk']))
+
     def test_dest(self):
         parser = ErrorRaisingArgumentParser()
         parser.add_argument('--foo', action='store_true')
