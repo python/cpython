@@ -2034,16 +2034,28 @@ class TestWhich(BaseTest, unittest.TestCase):
             rv = shutil.which(relpath, path=base_dir)
             self.assertIsNone(rv)
 
-    def test_cwd(self):
+    @unittest.skipUnless(sys.platform != "win32",
+                         "test is for non win32")
+    def test_cwd_non_win32(self):
         # Issue #16957
         base_dir = os.path.dirname(self.dir)
         with os_helper.change_cwd(path=self.dir):
             rv = shutil.which(self.file, path=base_dir)
-            if sys.platform == "win32":
-                # Windows: current directory implicitly on PATH
+            # non-win32: shouldn't match in the current directory.
+            self.assertIsNone(rv)
+
+    @unittest.skipUnless(sys.platform == "win32",
+                         "test is for win32")
+    def test_cwd_win32(self):
+        base_dir = os.path.dirname(self.dir)
+        with os_helper.change_cwd(path=self.dir):
+            with unittest.mock.patch('shutil._win32_need_current_directory_for_exe_path', return_value=True):
+                rv = shutil.which(self.file, path=base_dir)
+                # Current directory implicitly on PATH
                 self.assertEqual(rv, os.path.join(self.curdir, self.file))
-            else:
-                # Other platforms: shouldn't match in the current directory.
+            with unittest.mock.patch('shutil._win32_need_current_directory_for_exe_path', return_value=False):
+                rv = shutil.which(self.file, path=base_dir)
+                # Current directory not on PATH
                 self.assertIsNone(rv)
 
     @os_helper.skip_if_dac_override
