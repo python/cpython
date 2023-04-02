@@ -40,6 +40,13 @@ if os.name == 'posix':
 elif _WINDOWS:
     import nt
 
+if sys.platform == 'win32':
+    try:
+        import ctypes
+        _CTYPES_SUPPORTED = True
+    except ImportError:
+        _CTYPES_SUPPORTED = False
+
 COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
 # This should never be removed, see rationale in:
 # https://bugs.python.org/issue43743#msg393429
@@ -1449,6 +1456,18 @@ def _access_check(fn, mode):
             and not os.path.isdir(fn))
 
 
+def _win32_need_current_directory_for_exe_path(cmd):
+    """
+    On Windows, we can use NeedCurrentDirectoryForExePathW to figure out
+    if we should add the cwd to PATH when searching for executables.
+
+    If we don't have ctypes, we'll fallback to old behavior which is to always add cwd.
+    """
+    if _CTYPES_SUPPORTED:
+        return bool(ctypes.windll.kernel32.NeedCurrentDirectoryForExePathW(cmd))
+    return True
+
+
 def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     """Given a command, mode, and a PATH string, return the path which
     conforms to the given mode on the PATH, or None if there is no such
@@ -1459,60 +1478,55 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     path.
 
     """
-    # If we're given a path with a directory part, look it up directly rather
-    # than referring to PATH directories. This includes checking relative to the
-    # current directory, e.g. ./script
-    # If not, later logic will further verify.
-    if os.path.dirname(cmd):
-        if _access_check(cmd, mode):
-            return cmd
-
     use_bytes = isinstance(cmd, bytes)
 
-    if path is None:
-        path = os.environ.get("PATH", None)
-        if path is None:
-            try:
-                path = os.confstr("CS_PATH")
-            except (AttributeError, ValueError):
-                # os.confstr() or CS_PATH is not available
-                path = os.defpath
-        # bpo-35755: Don't use os.defpath if the PATH environment variable is
-        # set to an empty string
-
-    # PATH='' doesn't match, whereas PATH=':' looks in the current directory
-    if not path:
-        return None
-
-    if use_bytes:
-        path = os.fsencode(path)
-        path = path.split(os.fsencode(os.pathsep))
+    # If we're given a path with a directory part, look it up directly rather
+    # than referring to PATH directories. This includes checking relative to
+    # the current directory, e.g. ./script
+    dirname, cmd = os.path.split(cmd)
+    if dirname:
+        path = [dirname]
     else:
-        path = os.fsdecode(path)
-        path = path.split(os.pathsep)
+        if path is None:
+            path = os.environ.get("PATH", None)
+            if path is None:
+                try:
+                    path = os.confstr("CS_PATH")
+                except (AttributeError, ValueError):
+                    # os.confstr() or CS_PATH is not available
+                    path = os.defpath
+            # bpo-35755: Don't use os.defpath if the PATH environment variable
+            # is set to an empty string
+
+        # PATH='' doesn't match, whereas PATH=':' looks in the current
+        # directory
+        if not path:
+            return None
+
+        if use_bytes:
+            path = os.fsencode(path)
+            path = path.split(os.fsencode(os.pathsep))
+        else:
+            path = os.fsdecode(path)
+            path = path.split(os.pathsep)
+
+        if sys.platform == "win32" and _win32_need_current_directory_for_exe_path(cmd):
+            curdir = os.curdir
+            if use_bytes:
+                curdir = os.fsencode(curdir)
+            if curdir not in path:
+                path.insert(0, curdir)
 
     if sys.platform == "win32":
-        # The current directory takes precedence on Windows.
-        curdir = os.curdir
-        if use_bytes:
-            curdir = os.fsencode(curdir)
-        if curdir not in path:
-            path.insert(0, curdir)
-
         # PATHEXT is necessary to check on Windows.
-        pathext_source = os.getenv("PATHEXT") or _WIN_DEFAULT_PATHEXT
+        pathext_source = os.getenv("PATHEXT", _WIN_DEFAULT_PATHEXT)
         pathext = [ext for ext in pathext_source.split(os.pathsep) if ext]
 
         if use_bytes:
             pathext = [os.fsencode(ext) for ext in pathext]
-        # See if the given file matches any of the expected path extensions.
-        # This will allow us to short circuit when given "python.exe".
-        # If it does match, only test that one, otherwise we have to try
-        # others.
-        if any(cmd.lower().endswith(ext.lower()) for ext in pathext):
-            files = [cmd]
-        else:
-            files = [cmd + ext for ext in pathext]
+
+        # Always try checking the originally given cmd, if it doesn't match, try pathext
+        files = [cmd] + [cmd + ext for ext in pathext]
     else:
         # On other platforms you don't have things like PATHEXT to tell you
         # what file suffixes are executable, so just pass on cmd as-is.
@@ -1524,11 +1538,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
         if not normdir in seen:
             seen.add(normdir)
             for thefile in files:
-                # Only allow thefile to have a directory component if the directory is the current directory.
-                # This prevents allowing a directory component (to be part of cmd), being applied after a PATH component.
-                # Unless it with reference to the current directory, e.g. ./script (or full path: C:\scriptdir\script)
-                if not os.path.dirname(thefile) or dir == (os.fsencode(os.curdir) if use_bytes else os.curdir):
-                    name = os.path.join(dir, thefile)
-                    if _access_check(name, mode):
-                        return name
+                name = os.path.join(dir, thefile)
+                if _access_check(name, mode):
+                    return name
     return None

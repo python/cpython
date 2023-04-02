@@ -2191,6 +2191,21 @@ class TestWhich(BaseTest, unittest.TestCase):
 
             self.assertEqual(shutil.which("test_program"), str(test_path))
 
+    # See GH-75586
+    @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
+    def test_win32_need_current_directory_for_exe_path_true_without_ctypes(self):
+        with unittest.mock.patch('shutil._CTYPES_SUPPORTED', False):
+            self.assertTrue(shutil._win32_need_current_directory_for_exe_path('anything'))
+
+    # See GH-75586
+    @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
+    def test_win32_need_current_directory_for_exe_path_with_ctypes(self):
+        with unittest.mock.patch('shutil._CTYPES_SUPPORTED', True):
+            with unittest.mock.patch('shutil.ctypes') as ctypes_mock:
+                ctypes_mock.windll.kernel32.NeedCurrentDirectoryForExePathW.return_value = 0
+                self.assertFalse(shutil._win32_need_current_directory_for_exe_path('test.exe'))
+                ctypes_mock.windll.kernel32.NeedCurrentDirectoryForExePathW.assert_called_once_with('test.exe')
+
 
 class TestWhichBytes(TestWhich):
     def setUp(self):
