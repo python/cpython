@@ -419,7 +419,7 @@ Optimizations
 
 * Added experimental support for using the BOLT binary optimizer in the build
   process, which improves performance by 1-5%.
-  (Contributed by Kevin Modzelewski in :gh:`90536`.)
+  (Contributed by Kevin Modzelewski in :gh:`90536` and tuned by Dong-hee Na in :gh:`101525`)
 
 * Speed up the regular expression substitution (functions :func:`re.sub` and
   :func:`re.subn` and corresponding :class:`!re.Pattern` methods) for
