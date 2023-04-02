@@ -1598,6 +1598,15 @@ These are not used in annotations. They are building blocks for creating generic
       import threading
       assert isinstance(threading.Thread(name='Bob'), Named)
 
+   .. versionchanged:: 3.12
+      The internal implementation of :func:`isinstance` checks against
+      runtime-checkable protocols now uses :func:`inspect.getattr_static`
+      to look up attributes (previously, :func:`hasattr` was used).
+      As a result, some objects which used to be considered instances
+      of a runtime-checkable protocol may no longer be considered instances
+      of that protocol on Python 3.12+, and vice versa.
+      Most users are unlikely to be affected by this change.
+
    .. note::
 
         :func:`!runtime_checkable` will check only the presence of the required

@@ -74,10 +74,56 @@ dummy_func(
     PyObject **stack_pointer,
     PyObject *kwnames,
     int throwflag,
-    binaryfunc binary_ops[]
+    binaryfunc binary_ops[],
+    PyObject *args[]
 )
 {
+    // Dummy labels.
+    pop_1_error:
+    // Dummy locals.
+    PyObject *annotations;
+    PyObject *attrs;
+    PyObject *bottom;
+    PyObject *callable;
+    PyObject *callargs;
+    PyObject *closure;
+    PyObject *codeobj;
+    PyObject *cond;
+    PyObject *defaults;
+    PyObject *descr;
     _PyInterpreterFrame  entry_frame;
+    PyObject *exc;
+    PyObject *exit;
+    PyObject *fget;
+    PyObject *fmt_spec;
+    PyObject *func;
+    uint32_t func_version;
+    PyObject *getattribute;
+    PyObject *kwargs;
+    PyObject *kwdefaults;
+    PyObject *len_o;
+    PyObject *match;
+    PyObject *match_type;
+    PyObject *method;
+    PyObject *mgr;
+    Py_ssize_t min_args;
+    PyObject *names;
+    PyObject *new_exc;
+    PyObject *next;
+    PyObject *none;
+    PyObject *null;
+    PyObject *prev_exc;
+    PyObject *receiver;
+    PyObject *rest;
+    int result;
+    PyObject *self;
+    PyObject *seq;
+    PyObject *slice;
+    PyObject *step;
+    PyObject *subject;
+    PyObject *top;
+    PyObject *type;
+    int values_or_none;
 
     switch (opcode) {
 
@@ -1796,7 +1842,7 @@ dummy_func(
             ERROR_IF(match == NULL, error);
 
             if (!Py_IsNone(match)) {
-                PyErr_SetExcInfo(NULL, Py_NewRef(match), NULL);
+                PyErr_SetHandledException(match);
             }
         }
 
