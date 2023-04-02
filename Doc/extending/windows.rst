@@ -96,7 +96,7 @@ gives you access to spam's names, but does not create a separate copy.  On Unix,
 linking with a library is more like ``from spam import *``; it does create a
 separate copy.
 
-.. c:macro:: PY_NO_LINK_LIB
+.. c:macro:: Py_NO_LINK_LIB
 
    Turn off the implicit, ``#pragma``-based linkage with the Python
    library, performed inside CPython header files.
@@ -138,14 +138,14 @@ When creating DLLs in Windows, you can use the CPython library in two ways::
    :file:`.lib`), which knows how to find the necessary functions from spam,
    and also from the Python executable.
 
-2. Manually by defining :c:macro:`PY_NO_LINK_LIB` macro before including
+2. Manually by defining :c:macro:`Py_NO_LINK_LIB` macro before including
    :file:`Python.h`. You must pass :file:`pythonXY.lib` to the linker.
 
    To build two DLLs, spam and ni (which uses C functions found in spam), you
    could use these commands::
 
-      cl /LD /DPY_NO_LINK_LIB /I/python/include spam.c ../libs/pythonXY.lib
-      cl /LD /DPY_NO_LINK_LIB /I/python/include ni.c spam.lib ../libs/pythonXY.lib
+      cl /LD /DPy_NO_LINK_LIB /I/python/include spam.c ../libs/pythonXY.lib
+      cl /LD /DPy_NO_LINK_LIB /I/python/include ni.c spam.lib ../libs/pythonXY.lib
 
    The first command created three files: :file:`spam.obj`, :file:`spam.dll`
    and :file:`spam.lib`.  :file:`Spam.dll` does not contain any Python
