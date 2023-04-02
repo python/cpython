@@ -115,7 +115,7 @@ Using DLLs in Practice
 Windows Python is built in Microsoft Visual C++; using other compilers may or
 may not work.  The rest of this section is MSVC++ specific.
 
-When creating DLLs in Windows, you can use the CPython library in two ways::
+When creating DLLs in Windows, you can use the CPython library in two ways:
 
 1. By default, inclusion of :file:`PC/pyconfig.h` directly or via
    :file:`Python.h` triggers an implicit, configure-aware link with the
