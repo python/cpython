@@ -654,6 +654,17 @@ class TestRetrievingSourceCode(GetSourceBase):
         finally:
             del linecache.cache[co.co_filename]
 
+    def test_getsourcelines(self):
+        # Check source lines and starting line number for a module
+        mod_lines, mod_lineno = inspect.getsourcelines(mod)
+        self.assertEqual(len(mod_lines), 115)
+        self.assertEqual(mod_lineno, 1)
+
+        # Check source lines and starting line number for a function
+        spam_lines, spam_lineno = inspect.getsourcelines(mod.spam)
+        self.assertEqual(len(spam_lines), 2)
+        self.assertEqual(spam_lineno, 8)
+
     def test_getfile(self):
         self.assertEqual(inspect.getfile(mod.StupidGit), mod.__file__)
 

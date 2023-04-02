@@ -1260,7 +1260,7 @@ def getsourcelines(object):
     # for module or frame that corresponds to module, return all source lines
     if (ismodule(object) or
         (isframe(object) and object.f_code.co_name == "<module>")):
-        return lines, 0
+        return lines, 1
     else:
         return getblock(lines[lnum:]), lnum + 1
 
