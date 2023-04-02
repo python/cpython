@@ -2036,11 +2036,11 @@ class _ProtocolMeta(ABCMeta):
             return True
 
         if is_protocol_cls:
-            sentinel = object()
             getattr_static = _lazy_load_getattr_static()
             for attr in protocol_attrs:
-                val = getattr_static(instance, attr, sentinel)
-                if val is sentinel:
+                try:
+                    val = getattr_static(instance, attr)
+                except AttributeError:
                     break
                 if callable(getattr(cls, attr, None)) and val is None:
                     break
