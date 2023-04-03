@@ -845,7 +845,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return lineno
 
     def do_enable(self, arg):
-        """enable [bpnumber ...]
+        """enable bpnumber [bpnumber ...]
 
         Enables the breakpoints given as a space separated list of
         breakpoint numbers.
@@ -863,7 +863,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     complete_enable = _complete_bpnumber
 
     def do_disable(self, arg):
-        """disable [bpnumber ...]
+        """disable bpnumber [bpnumber ...]
 
         Disables the breakpoints given as a space separated list of
         breakpoint numbers.  Disabling a breakpoint means it cannot
