@@ -462,13 +462,13 @@ Directory and files operations
       :class:`bytes`, the result type is also :class:`bytes`.
 
    .. versionchanged:: 3.12
-      On Windows, queries allowing executables (``os.X_OK``) will now
-      consult ``NeedCurrentDirectoryForExePathW`` to determine if the
-      current working directory should be searched first. Additionally,
-      the ``PATHEXT`` environment variable is now consulted even when
-      *cmd* includes a directory component. Finally, a *cmd* found with a
-      ``PATHEXT`` extension in an earlier directory from *path* will
-      now be returned ahead of any match found later in *path*.
+   .. versionchanged:: 3.12
+      On Windows, the current directory is no longer prepended to the search
+      path if *mode* includes ``os.X_OK`` and WinAPI
+      ``NeedCurrentDirectoryForExePathW(cmd)`` is false; ``PATHEXT`` is used
+      now even when *cmd* includes a directory component or ends with an
+      extension that is in ``PATHEXT``; and filenames that have no extension
+      can be found now.
 
 .. exception:: Error
 
