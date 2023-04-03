@@ -13,7 +13,6 @@
 #include "pycore_bytesobject.h"   // _PyBytes_Repeat
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
-#include <stddef.h>
 
 /*[clinic input]
 module array

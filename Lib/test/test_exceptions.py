@@ -599,8 +599,8 @@ class ExceptionTests(unittest.TestCase):
     def testWithTraceback(self):
         try:
             raise IndexError(4)
-        except:
-            tb = sys.exc_info()[2]
+        except Exception as e:
+            tb = e.__traceback__
 
         e = BaseException().with_traceback(tb)
         self.assertIsInstance(e, BaseException)
@@ -653,8 +653,8 @@ class ExceptionTests(unittest.TestCase):
     def testNoneClearsTracebackAttr(self):
         try:
             raise IndexError(4)
-        except:
-            tb = sys.exc_info()[2]
+        except Exception as e:
+            tb = e.__traceback__
 
         e = Exception()
         e.__traceback__ = tb
@@ -1337,11 +1337,11 @@ class ExceptionTests(unittest.TestCase):
         def g():
             try:
                 return g()
-            except RecursionError:
-                return sys.exc_info()
-        e, v, tb = g()
-        self.assertIsInstance(v, RecursionError, type(v))
-        self.assertIn("maximum recursion depth exceeded", str(v))
+            except RecursionError as e:
+                return e
+        exc = g()
+        self.assertIsInstance(exc, RecursionError, type(exc))
+        self.assertIn("maximum recursion depth exceeded", str(exc))
 
 
     @cpython_only
