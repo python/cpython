@@ -416,8 +416,6 @@ class _BasePurePathTest(object):
         p = P('a/b')
         parts = p.parts
         self.assertEqual(parts, ('a', 'b'))
-        # The object gets reused.
-        self.assertIs(parts, p.parts)
         # When the path is absolute, the anchor is a separate part.
         p = P('/a/b')
         parts = p.parts

@@ -248,7 +248,7 @@ class PurePath(object):
     """
     __slots__ = (
         '_raw_path', '_drv', '_root', '_tail_cached',
-        '_str', '_hash', '_parts_tuple', '_parts_normcase_cached',
+        '_str', '_hash', '_parts_normcase_cached',
     )
     _flavour = os.path
 
@@ -544,7 +544,7 @@ class PurePath(object):
             raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
         if step and not walk_up:
             raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
-        parts = ('..',) * step + self.parts[len(path.parts):]
+        parts = ['..'] * step + self._tail[len(path._tail):]
         return path_cls(*parts)
 
     def is_relative_to(self, other, /, *_deprecated):
@@ -563,16 +563,10 @@ class PurePath(object):
     def parts(self):
         """An object providing sequence-like access to the
         components in the filesystem path."""
-        # We cache the tuple to avoid building a new one each time .parts
-        # is accessed.  XXX is this necessary?
-        try:
-            return self._parts_tuple
-        except AttributeError:
-            if self.drive or self.root:
-                self._parts_tuple = (self.drive + self.root,) + tuple(self._tail)
-            else:
-                self._parts_tuple = tuple(self._tail)
-            return self._parts_tuple
+        if self.drive or self.root:
+            return (self.drive + self.root,) + tuple(self._tail)
+        else:
+            return tuple(self._tail)
 
     def joinpath(self, *args):
         """Combine this path with one or several arguments, and return a
