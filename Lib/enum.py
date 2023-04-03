@@ -987,8 +987,6 @@ class EnumType(type):
                         data_types.add(base._member_type_)
                         break
                 elif '__new__' in base.__dict__ or '__init__' in base.__dict__:
-                    if isinstance(base, EnumType):
-                        continue
                     data_types.add(candidate or base)
                     break
                 else:
