@@ -461,13 +461,13 @@ Directory and files operations
       :class:`bytes`, the result type is also :class:`bytes`.
 
    .. versionchanged:: 3.12
-      On Windows: ``NeedCurrentDirectoryForExePathW`` will be consulted
-      for non- ``os.X_OK`` modes to determine if the current working directory
-      should be prepended to *path*. Additionally, the ``PATHEXT`` environment
-      variable is now consulted when a full path to a cmd, minus the extension,
-      is given. Also, now a *cmd* with a matching ``PATHEXT`` extension will
-      be returned prior to one fully matching, if the fully matching one is
-      found later in *path*.
+      On Windows, queries allowing executables (``os.X_OK``) will now
+      consult ``NeedCurrentDirectoryForExePathW`` to determine if the
+      current working directory should be searched first. Additionally,
+      the ``PATHEXT`` environment variable is now consulted even when
+      *cmd* includes an extension. Finally, a *cmd* found with a
+      ``PATHEXT`` extension in an earlier directory from *path* will
+      now be returned ahead of any match found later in *path*.
 
 .. exception:: Error
 
