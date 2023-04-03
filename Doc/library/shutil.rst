@@ -437,7 +437,9 @@ Directory and files operations
    the *mode* does not include ``os.X_OK``. When the *mode* does include
    ``os.X_OK``, the Windows API ``NeedCurrentDirectoryForExePathW`` will be
    consulted to determine if the current directory should be prepended to
-   *path*.
+   *path*. To avoid consulting the current working directory for executables,
+   and thereby, match the behavior of non-Windows shells: set the environment
+   variable ``NoDefaultCurrentDirectoryInExePath``.
 
    Also on Windows, the ``PATHEXT`` variable is used to resolve commands
    that may not already include an extension. For example, if you call
