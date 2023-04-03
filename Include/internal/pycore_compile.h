@@ -50,6 +50,26 @@ typedef struct {
     int s_next_free_label; /* next free label id */
 } _PyCompile_InstructionSequence;
 
+typedef struct {
+    PyObject *u_name;
+    PyObject *u_qualname;  /* dot-separated qualified name (lazy) */
+
+    /* The following fields are dicts that map objects to
+       the index of them in co_XXX.      The index is used as
+       the argument for opcodes that refer to those collections.
+    */
+    PyObject *u_consts;    /* all constants */
+    PyObject *u_names;     /* all names */
+    PyObject *u_varnames;  /* local variables */
+    PyObject *u_cellvars;  /* cell variables */
+    PyObject *u_freevars;  /* free variables */
+
+    Py_ssize_t u_argcount;        /* number of arguments for block */
+    Py_ssize_t u_posonlyargcount;        /* number of positional only arguments for block */
+    Py_ssize_t u_kwonlyargcount; /* number of keyword only arguments for block */
+
+    int u_firstlineno; /* the first lineno of the block */
+} _PyCompile_CodeUnitMetadata;
 
 /* Utility for a number of growing arrays used in the compiler */
 int _PyCompile_EnsureArrayLargeEnough(

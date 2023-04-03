@@ -1978,29 +1978,6 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
     return SUCCESS;
 }
 
-int
-_PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
-                       int code_flags, int nlocals, int nparams, int firstlineno)
-{
-    assert(cfg_builder_check(g));
-    /** Preprocessing **/
-    /* Map labels to targets and mark exception handlers */
-    RETURN_IF_ERROR(translate_jump_labels_to_targets(g->g_entryblock));
-    RETURN_IF_ERROR(mark_except_handlers(g->g_entryblock));
-    RETURN_IF_ERROR(label_exception_targets(g->g_entryblock));
-
-    /** Optimization **/
-    RETURN_IF_ERROR(optimize_cfg(g, consts, const_cache));
-    RETURN_IF_ERROR(remove_unused_consts(g->g_entryblock, consts));
-    RETURN_IF_ERROR(
-        add_checks_for_loads_of_uninitialized_variables(
-            g->g_entryblock, nlocals, nparams));
-
-    RETURN_IF_ERROR(push_cold_blocks_to_end(g, code_flags));
-    RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
-    return SUCCESS;
-}
-
 void
 _PyCfg_ConvertExceptionHandlersToNops(basicblock *entryblock)
 {
@@ -2159,3 +2136,25 @@ resolve_line_numbers(cfg_builder *g, int firstlineno)
     return SUCCESS;
 }
 
+int
+_PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
+                       int code_flags, int nlocals, int nparams, int firstlineno)
+{
+    assert(cfg_builder_check(g));
+    /** Preprocessing **/
+    /* Map labels to targets and mark exception handlers */
+    RETURN_IF_ERROR(translate_jump_labels_to_targets(g->g_entryblock));
+    RETURN_IF_ERROR(mark_except_handlers(g->g_entryblock));
+    RETURN_IF_ERROR(label_exception_targets(g->g_entryblock));
+
+    /** Optimization **/
+    RETURN_IF_ERROR(optimize_cfg(g, consts, const_cache));
+    RETURN_IF_ERROR(remove_unused_consts(g->g_entryblock, consts));
+    RETURN_IF_ERROR(
+        add_checks_for_loads_of_uninitialized_variables(
+            g->g_entryblock, nlocals, nparams));
+
+    RETURN_IF_ERROR(push_cold_blocks_to_end(g, code_flags));
+    RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
+    return SUCCESS;
+}

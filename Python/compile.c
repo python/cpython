@@ -301,7 +301,6 @@ static int
 instr_sequence_addop(instr_sequence *seq, int opcode, int oparg, location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
-    assert(!IS_ASSEMBLER_OPCODE(opcode));
     assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
 
@@ -419,32 +418,17 @@ error:
 struct compiler_unit {
     PySTEntryObject *u_ste;
 
-    PyObject *u_name;
-    PyObject *u_qualname;  /* dot-separated qualified name (lazy) */
     int u_scope_type;
 
-    /* The following fields are dicts that map objects to
-       the index of them in co_XXX.      The index is used as
-       the argument for opcodes that refer to those collections.
-    */
-    PyObject *u_consts;    /* all constants */
-    PyObject *u_names;     /* all names */
-    PyObject *u_varnames;  /* local variables */
-    PyObject *u_cellvars;  /* cell variables */
-    PyObject *u_freevars;  /* free variables */
 
     PyObject *u_private;        /* for private name mangling */
-
-    Py_ssize_t u_argcount;        /* number of arguments for block */
-    Py_ssize_t u_posonlyargcount;        /* number of positional only arguments for block */
-    Py_ssize_t u_kwonlyargcount; /* number of keyword only arguments for block */
 
     instr_sequence u_instr_sequence; /* codegen output */
 
     int u_nfblocks;
     struct fblockinfo u_fblock[CO_MAXBLOCKS];
 
-    int u_firstlineno; /* the first lineno of the block */
+    _PyCompile_CodeUnitMetadata u_metadata;
 };
 
 /* This struct captures the global state of a compilation.
@@ -737,13 +721,13 @@ compiler_unit_free(struct compiler_unit *u)
 {
     instr_sequence_fini(&u->u_instr_sequence);
     Py_CLEAR(u->u_ste);
-    Py_CLEAR(u->u_name);
-    Py_CLEAR(u->u_qualname);
-    Py_CLEAR(u->u_consts);
-    Py_CLEAR(u->u_names);
-    Py_CLEAR(u->u_varnames);
-    Py_CLEAR(u->u_freevars);
-    Py_CLEAR(u->u_cellvars);
+    Py_CLEAR(u->u_metadata.u_name);
+    Py_CLEAR(u->u_metadata.u_qualname);
+    Py_CLEAR(u->u_metadata.u_consts);
+    Py_CLEAR(u->u_metadata.u_names);
+    Py_CLEAR(u->u_metadata.u_varnames);
+    Py_CLEAR(u->u_metadata.u_freevars);
+    Py_CLEAR(u->u_metadata.u_cellvars);
     Py_CLEAR(u->u_private);
     PyObject_Free(u);
 }
@@ -770,8 +754,8 @@ compiler_set_qualname(struct compiler *c)
         if (u->u_scope_type == COMPILER_SCOPE_FUNCTION
             || u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION
             || u->u_scope_type == COMPILER_SCOPE_CLASS) {
-            assert(u->u_name);
-            mangled = _Py_Mangle(parent->u_private, u->u_name);
+            assert(u->u_metadata.u_name);
+            mangled = _Py_Mangle(parent->u_private, u->u_metadata.u_name);
             if (!mangled) {
                 return ERROR;
             }
@@ -789,14 +773,14 @@ compiler_set_qualname(struct compiler *c)
                 || parent->u_scope_type == COMPILER_SCOPE_LAMBDA)
             {
                 _Py_DECLARE_STR(dot_locals, ".<locals>");
-                base = PyUnicode_Concat(parent->u_qualname,
+                base = PyUnicode_Concat(parent->u_metadata.u_qualname,
                                         &_Py_STR(dot_locals));
                 if (base == NULL) {
                     return ERROR;
                 }
             }
             else {
-                base = Py_NewRef(parent->u_qualname);
+                base = Py_NewRef(parent->u_metadata.u_qualname);
             }
         }
     }
@@ -808,15 +792,15 @@ compiler_set_qualname(struct compiler *c)
         if (name == NULL) {
             return ERROR;
         }
-        PyUnicode_Append(&name, u->u_name);
+        PyUnicode_Append(&name, u->u_metadata.u_name);
         if (name == NULL) {
             return ERROR;
         }
     }
     else {
-        name = Py_NewRef(u->u_name);
+        name = Py_NewRef(u->u_metadata.u_name);
     }
-    u->u_qualname = name;
+    u->u_metadata.u_qualname = name;
 
     return SUCCESS;
 }
@@ -917,6 +901,7 @@ static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
     assert(!HAS_ARG(opcode));
+    assert(!IS_ASSEMBLER_OPCODE(opcode));
     return instr_sequence_addop(seq, opcode, 0, loc);
 }
 
@@ -1064,7 +1049,7 @@ compiler_add_const(PyObject *const_cache, struct compiler_unit *u, PyObject *o)
         return ERROR;
     }
 
-    Py_ssize_t arg = dict_add_o(u->u_consts, key);
+    Py_ssize_t arg = dict_add_o(u->u_metadata.u_consts, key);
     Py_DECREF(key);
     return arg;
 }
@@ -1127,6 +1112,7 @@ codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
+    assert(!IS_ASSEMBLER_OPCODE(opcode));
     return instr_sequence_addop(seq, opcode, oparg_, loc);
 }
 
@@ -1136,6 +1122,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
+    assert(!IS_ASSEMBLER_OPCODE(opcode));
     return instr_sequence_addop(seq, opcode, target.id, loc);
 }
 
@@ -1167,7 +1154,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 
 #define ADDOP_N(C, LOC, OP, O, TYPE) { \
     assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
-    if (compiler_addop_o((C)->u, (LOC), (OP), (C)->u->u_ ## TYPE, (O)) < 0) { \
+    if (compiler_addop_o((C)->u, (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)) < 0) { \
         Py_DECREF((O)); \
         return ERROR; \
     } \
@@ -1175,7 +1162,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 }
 
 #define ADDOP_NAME(C, LOC, OP, O, TYPE) \
-    RETURN_IF_ERROR(compiler_addop_name((C)->u, (LOC), (OP), (C)->u->u_ ## TYPE, (O)))
+    RETURN_IF_ERROR(compiler_addop_name((C)->u, (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)))
 
 #define ADDOP_I(C, LOC, OP, O) \
     RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
@@ -1252,18 +1239,18 @@ compiler_enter_scope(struct compiler *c, identifier name,
         return ERROR;
     }
     u->u_scope_type = scope_type;
-    u->u_argcount = 0;
-    u->u_posonlyargcount = 0;
-    u->u_kwonlyargcount = 0;
+    u->u_metadata.u_argcount = 0;
+    u->u_metadata.u_posonlyargcount = 0;
+    u->u_metadata.u_kwonlyargcount = 0;
     u->u_ste = PySymtable_Lookup(c->c_st, key);
     if (!u->u_ste) {
         compiler_unit_free(u);
         return ERROR;
     }
-    u->u_name = Py_NewRef(name);
-    u->u_varnames = list2dict(u->u_ste->ste_varnames);
-    u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
-    if (!u->u_varnames || !u->u_cellvars) {
+    u->u_metadata.u_name = Py_NewRef(name);
+    u->u_metadata.u_varnames = list2dict(u->u_ste->ste_varnames);
+    u->u_metadata.u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
+    if (!u->u_metadata.u_varnames || !u->u_metadata.u_cellvars) {
         compiler_unit_free(u);
         return ERROR;
     }
@@ -1271,8 +1258,8 @@ compiler_enter_scope(struct compiler *c, identifier name,
         /* Cook up an implicit __class__ cell. */
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
-        assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
-        res = PyDict_SetItem(u->u_cellvars, &_Py_ID(__class__),
+        assert(PyDict_GET_SIZE(u->u_metadata.u_cellvars) == 0);
+        res = PyDict_SetItem(u->u_metadata.u_cellvars, &_Py_ID(__class__),
                              _PyLong_GetZero());
         if (res < 0) {
             compiler_unit_free(u);
@@ -1280,22 +1267,22 @@ compiler_enter_scope(struct compiler *c, identifier name,
         }
     }
 
-    u->u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
-                               PyDict_GET_SIZE(u->u_cellvars));
-    if (!u->u_freevars) {
+    u->u_metadata.u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
+                               PyDict_GET_SIZE(u->u_metadata.u_cellvars));
+    if (!u->u_metadata.u_freevars) {
         compiler_unit_free(u);
         return ERROR;
     }
 
     u->u_nfblocks = 0;
-    u->u_firstlineno = lineno;
-    u->u_consts = PyDict_New();
-    if (!u->u_consts) {
+    u->u_metadata.u_firstlineno = lineno;
+    u->u_metadata.u_consts = PyDict_New();
+    if (!u->u_metadata.u_consts) {
         compiler_unit_free(u);
         return ERROR;
     }
-    u->u_names = PyDict_New();
-    if (!u->u_names) {
+    u->u_metadata.u_names = PyDict_New();
+    if (!u->u_metadata.u_names) {
         compiler_unit_free(u);
         return ERROR;
     }
@@ -1749,8 +1736,8 @@ get_ref_type(struct compiler *c, PyObject *name)
                      "unknown scope in unit %S (%R); "
                      "symbols: %R; locals: %R; globals: %R",
                      name,
-                     c->u->u_name, c->u->u_ste->ste_id,
-                     c->u->u_ste->ste_symbols, c->u->u_varnames, c->u->u_names);
+                     c->u->u_metadata.u_name, c->u->u_ste->ste_id,
+                     c->u->u_ste->ste_symbols, c->u->u_metadata.u_varnames, c->u->u_metadata.u_names);
         return ERROR;
     }
     return scope;
@@ -1790,10 +1777,10 @@ compiler_make_closure(struct compiler *c, location loc,
             }
             int arg;
             if (reftype == CELL) {
-                arg = compiler_lookup_arg(c->u->u_cellvars, name);
+                arg = compiler_lookup_arg(c->u->u_metadata.u_cellvars, name);
             }
             else {
-                arg = compiler_lookup_arg(c->u->u_freevars, name);
+                arg = compiler_lookup_arg(c->u->u_metadata.u_freevars, name);
             }
             if (arg == -1) {
                 PyObject *freevars = _PyCode_GetFreevars(co);
@@ -1805,7 +1792,7 @@ compiler_make_closure(struct compiler *c, location loc,
                     "freevars of code %S: %R",
                     name,
                     reftype,
-                    c->u->u_name,
+                    c->u->u_metadata.u_name,
                     co->co_name,
                     freevars);
                 Py_DECREF(freevars);
@@ -2174,9 +2161,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return ERROR;
     }
 
-    c->u->u_argcount = asdl_seq_LEN(args->args);
-    c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
-    c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
+    c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
+    c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
+    c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     for (i = docstring ? 1 : 0; i < asdl_seq_LEN(body); i++) {
         VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
     }
@@ -2246,8 +2233,8 @@ compiler_class(struct compiler *c, stmt_ty s)
             compiler_exit_scope(c);
             return ERROR;
         }
-        assert(c->u->u_qualname);
-        ADDOP_LOAD_CONST(c, loc, c->u->u_qualname);
+        assert(c->u->u_metadata.u_qualname);
+        ADDOP_LOAD_CONST(c, loc, c->u->u_metadata.u_qualname);
         if (compiler_nameop(c, loc, &_Py_ID(__qualname__), Store) < 0) {
             compiler_exit_scope(c);
             return ERROR;
@@ -2261,7 +2248,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         /* Return __classcell__ if it is referenced, otherwise return None */
         if (c->u->u_ste->ste_needs_class_closure) {
             /* Store __classcell__ into class namespace & return it */
-            i = compiler_lookup_arg(c->u->u_cellvars, &_Py_ID(__class__));
+            i = compiler_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__class__));
             if (i < 0) {
                 compiler_exit_scope(c);
                 return ERROR;
@@ -2276,7 +2263,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         else {
             /* No methods referenced __class__, so just return None */
-            assert(PyDict_GET_SIZE(c->u->u_cellvars) == 0);
+            assert(PyDict_GET_SIZE(c->u->u_metadata.u_cellvars) == 0);
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
         }
         ADDOP_IN_SCOPE(c, NO_LOCATION, RETURN_VALUE);
@@ -2548,9 +2535,9 @@ compiler_lambda(struct compiler *c, expr_ty e)
        docstring. */
     RETURN_IF_ERROR(compiler_add_const(c->c_const_cache, c->u, Py_None));
 
-    c->u->u_argcount = asdl_seq_LEN(args->args);
-    c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
-    c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
+    c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
+    c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
+    c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
     if (c->u->u_ste->ste_generator) {
         co = assemble(c, 0);
@@ -3704,7 +3691,7 @@ compiler_nameop(struct compiler *c, location loc,
     Py_ssize_t arg;
     enum { OP_FAST, OP_GLOBAL, OP_DEREF, OP_NAME } optype;
 
-    PyObject *dict = c->u->u_names;
+    PyObject *dict = c->u->u_metadata.u_names;
     PyObject *mangled;
 
     assert(!_PyUnicode_EqualToASCIIString(name, "None") &&
@@ -3725,11 +3712,11 @@ compiler_nameop(struct compiler *c, location loc,
     scope = _PyST_GetScope(c->u->u_ste, mangled);
     switch (scope) {
     case FREE:
-        dict = c->u->u_freevars;
+        dict = c->u->u_metadata.u_freevars;
         optype = OP_DEREF;
         break;
     case CELL:
-        dict = c->u->u_cellvars;
+        dict = c->u->u_metadata.u_cellvars;
         optype = OP_DEREF;
         break;
     case LOCAL:
@@ -4695,7 +4682,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
 
     if (gen_index == 0) {
         /* Receive outermost iter as an implicit argument */
-        c->u->u_argcount = 1;
+        c->u->u_metadata.u_argcount = 1;
         ADDOP_I(c, loc, LOAD_FAST, 0);
     }
     else {
@@ -4808,7 +4795,7 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
 
     if (gen_index == 0) {
         /* Receive outermost iter as an implicit argument */
-        c->u->u_argcount = 1;
+        c->u->u_metadata.u_argcount = 1;
         ADDOP_I(c, loc, LOAD_FAST, 0);
     }
     else {
@@ -7048,24 +7035,24 @@ compute_localsplus_info(struct compiler_unit *u, int nlocalsplus,
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(u->u_varnames, &pos, &k, &v)) {
+    while (PyDict_Next(u->u_metadata.u_varnames, &pos, &k, &v)) {
         int offset = (int)PyLong_AS_LONG(v);
         assert(offset >= 0);
         assert(offset < nlocalsplus);
         // For now we do not distinguish arg kinds.
         _PyLocals_Kind kind = CO_FAST_LOCAL;
-        if (PyDict_GetItem(u->u_cellvars, k) != NULL) {
+        if (PyDict_GetItem(u->u_metadata.u_cellvars, k) != NULL) {
             kind |= CO_FAST_CELL;
         }
         _Py_set_localsplus_info(offset, k, kind, names, kinds);
     }
-    int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
+    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
 
     // This counter mirrors the fix done in fix_cell_offsets().
     int numdropped = 0;
     pos = 0;
-    while (PyDict_Next(u->u_cellvars, &pos, &k, &v)) {
-        if (PyDict_GetItem(u->u_varnames, k) != NULL) {
+    while (PyDict_Next(u->u_metadata.u_cellvars, &pos, &k, &v)) {
+        if (PyDict_GetItem(u->u_metadata.u_varnames, k) != NULL) {
             // Skip cells that are already covered by locals.
             numdropped += 1;
             continue;
@@ -7078,7 +7065,7 @@ compute_localsplus_info(struct compiler_unit *u, int nlocalsplus,
     }
 
     pos = 0;
-    while (PyDict_Next(u->u_freevars, &pos, &k, &v)) {
+    while (PyDict_Next(u->u_metadata.u_freevars, &pos, &k, &v)) {
         int offset = (int)PyLong_AS_LONG(v);
         assert(offset >= 0);
         offset += nlocals - numdropped;
@@ -7097,7 +7084,7 @@ makecode(struct compiler_unit *u, struct assembler *a, PyObject *const_cache,
     PyObject *consts = NULL;
     PyObject *localsplusnames = NULL;
     PyObject *localspluskinds = NULL;
-    names = dict_keys_inorder(u->u_names, 0);
+    names = dict_keys_inorder(u->u_metadata.u_names, 0);
     if (!names) {
         goto error;
     }
@@ -7113,13 +7100,13 @@ makecode(struct compiler_unit *u, struct assembler *a, PyObject *const_cache,
         goto error;
     }
 
-    assert(u->u_posonlyargcount < INT_MAX);
-    assert(u->u_argcount < INT_MAX);
-    assert(u->u_kwonlyargcount < INT_MAX);
-    int posonlyargcount = (int)u->u_posonlyargcount;
-    int posorkwargcount = (int)u->u_argcount;
+    assert(u->u_metadata.u_posonlyargcount < INT_MAX);
+    assert(u->u_metadata.u_argcount < INT_MAX);
+    assert(u->u_metadata.u_kwonlyargcount < INT_MAX);
+    int posonlyargcount = (int)u->u_metadata.u_posonlyargcount;
+    int posorkwargcount = (int)u->u_metadata.u_argcount;
     assert(INT_MAX - posonlyargcount - posorkwargcount > 0);
-    int kwonlyargcount = (int)u->u_kwonlyargcount;
+    int kwonlyargcount = (int)u->u_metadata.u_kwonlyargcount;
 
     localsplusnames = PyTuple_New(nlocalsplus);
     if (localsplusnames == NULL) {
@@ -7133,12 +7120,12 @@ makecode(struct compiler_unit *u, struct assembler *a, PyObject *const_cache,
 
     struct _PyCodeConstructor con = {
         .filename = filename,
-        .name = u->u_name,
-        .qualname = u->u_qualname ? u->u_qualname : u->u_name,
+        .name = u->u_metadata.u_name,
+        .qualname = u->u_metadata.u_qualname ? u->u_metadata.u_qualname : u->u_metadata.u_name,
         .flags = code_flags,
 
         .code = a->a_bytecode,
-        .firstlineno = u->u_firstlineno,
+        .firstlineno = u->u_metadata.u_firstlineno,
         .linetable = a->a_linetable,
 
         .consts = consts,
@@ -7182,9 +7169,9 @@ makecode(struct compiler_unit *u, struct assembler *a, PyObject *const_cache,
 static int *
 build_cellfixedoffsets(struct compiler_unit *u)
 {
-    int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(u->u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(u->u_freevars);
+    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(u->u_metadata.u_freevars);
 
     int noffsets = ncellvars + nfreevars;
     int *fixed = PyMem_New(int, noffsets);
@@ -7198,8 +7185,8 @@ build_cellfixedoffsets(struct compiler_unit *u)
 
     PyObject *varname, *cellindex;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(u->u_cellvars, &pos, &varname, &cellindex)) {
-        PyObject *varindex = PyDict_GetItem(u->u_varnames, varname);
+    while (PyDict_Next(u->u_metadata.u_cellvars, &pos, &varname, &cellindex)) {
+        PyObject *varindex = PyDict_GetItem(u->u_metadata.u_varnames, varname);
         if (varindex != NULL) {
             assert(PyLong_AS_LONG(cellindex) < INT_MAX);
             assert(PyLong_AS_LONG(varindex) < INT_MAX);
@@ -7216,14 +7203,14 @@ static int
 insert_prefix_instructions(struct compiler_unit *u, basicblock *entryblock,
                            int *fixed, int nfreevars, int code_flags)
 {
-    assert(u->u_firstlineno > 0);
+    assert(u->u_metadata.u_firstlineno > 0);
 
     /* Add the generator prefix instructions. */
     if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
         cfg_instr make_gen = {
             .i_opcode = RETURN_GENERATOR,
             .i_oparg = 0,
-            .i_loc = LOCATION(u->u_firstlineno, u->u_firstlineno, -1, -1),
+            .i_loc = LOCATION(u->u_metadata.u_firstlineno, u->u_metadata.u_firstlineno, -1, -1),
             .i_target = NULL,
         };
         RETURN_IF_ERROR(_PyBasicblock_InsertInstruction(entryblock, 0, &make_gen));
@@ -7237,12 +7224,12 @@ insert_prefix_instructions(struct compiler_unit *u, basicblock *entryblock,
     }
 
     /* Set up cells for any variable that escapes, to be put in a closure. */
-    const int ncellvars = (int)PyDict_GET_SIZE(u->u_cellvars);
+    const int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
     if (ncellvars) {
-        // u->u_cellvars has the cells out of order so we sort them
+        // u->u_metadata.u_cellvars has the cells out of order so we sort them
         // before adding the MAKE_CELL instructions.  Note that we
         // adjust for arg cells, which come first.
-        const int nvars = ncellvars + (int)PyDict_GET_SIZE(u->u_varnames);
+        const int nvars = ncellvars + (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
         int *sorted = PyMem_RawCalloc(nvars, sizeof(int));
         if (sorted == NULL) {
             PyErr_NoMemory();
@@ -7285,9 +7272,9 @@ insert_prefix_instructions(struct compiler_unit *u, basicblock *entryblock,
 static int
 fix_cell_offsets(struct compiler_unit *u, basicblock *entryblock, int *fixedmap)
 {
-    int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(u->u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(u->u_freevars);
+    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(u->u_metadata.u_freevars);
     int noffsets = ncellvars + nfreevars;
 
     // First deal with duplicates (arg cells).
@@ -7331,12 +7318,12 @@ fix_cell_offsets(struct compiler_unit *u, basicblock *entryblock, int *fixedmap)
 static int
 prepare_localsplus(struct compiler_unit* u, cfg_builder *g, int code_flags)
 {
-    assert(PyDict_GET_SIZE(u->u_varnames) < INT_MAX);
-    assert(PyDict_GET_SIZE(u->u_cellvars) < INT_MAX);
-    assert(PyDict_GET_SIZE(u->u_freevars) < INT_MAX);
-    int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(u->u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(u->u_freevars);
+    assert(PyDict_GET_SIZE(u->u_metadata.u_varnames) < INT_MAX);
+    assert(PyDict_GET_SIZE(u->u_metadata.u_cellvars) < INT_MAX);
+    assert(PyDict_GET_SIZE(u->u_metadata.u_freevars) < INT_MAX);
+    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(u->u_metadata.u_freevars);
     assert(INT_MAX - nlocals - ncellvars > 0);
     assert(INT_MAX - nlocals - ncellvars - nfreevars > 0);
     int nlocalsplus = nlocals + ncellvars + nfreevars;
@@ -7386,7 +7373,7 @@ assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     memset(&optimized_instrs, 0, sizeof(instr_sequence));
 
     PyCodeObject *co = NULL;
-    PyObject *consts = consts_dict_keys_inorder(u->u_consts);
+    PyObject *consts = consts_dict_keys_inorder(u->u_metadata.u_consts);
     if (consts == NULL) {
         goto error;
     }
@@ -7395,10 +7382,10 @@ assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
         goto error;
     }
     int nparams = (int)PyList_GET_SIZE(u->u_ste->ste_varnames);
-    int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
-    assert(u->u_firstlineno);
+    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
+    assert(u->u_metadata.u_firstlineno);
     if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, code_flags, nlocals,
-                                nparams, u->u_firstlineno) < 0) {
+                                nparams, u->u_metadata.u_firstlineno) < 0) {
         goto error;
     }
 
@@ -7432,7 +7419,7 @@ assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     /* Can't modify the bytecode after computing jump offsets. */
 
     struct assembler a;
-    int res = assemble_emit(&a, g.g_entryblock, u->u_firstlineno, const_cache);
+    int res = assemble_emit(&a, g.g_entryblock, u->u_metadata.u_firstlineno, const_cache);
     if (res == SUCCESS) {
         co = makecode(u, &a, const_cache, consts, maxdepth, nlocalsplus,
                       code_flags, filename);
