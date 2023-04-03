@@ -1,2 +1,2 @@
-Fixes `http.server` accepting HTTP requests with HTTP version numbers
+Fixes http.server accepting HTTP requests with HTTP version numbers
 preceded by '+', or '-', and/or with digit-separating '_'.
