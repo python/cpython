@@ -1459,7 +1459,7 @@ def _win_path_needs_curdir(cmd, mode):
     the mode is executable.
     """
     return (not (mode & os.X_OK)) or _winapi.NeedCurrentDirectoryForExePath(
-                cmd if isinstance(cmd, str) else os.fsdecode(cmd))
+                os.fsdecode(cmd))
 
 
 def which(cmd, mode=os.F_OK | os.X_OK, path=None):
