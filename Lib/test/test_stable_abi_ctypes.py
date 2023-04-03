@@ -166,6 +166,7 @@ SYMBOL_NAMES = (
     "PyErr_CheckSignals",
     "PyErr_Clear",
     "PyErr_Display",
+    "PyErr_DisplayException",
     "PyErr_ExceptionMatches",
     "PyErr_Fetch",
     "PyErr_Format",

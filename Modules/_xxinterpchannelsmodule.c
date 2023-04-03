@@ -1806,7 +1806,7 @@ static PyType_Slot ChannelIDType_slots[] = {
 };
 
 static PyType_Spec ChannelIDType_spec = {
-    .name = "_xxsubinterpreters.ChannelID",
+    .name = MODULE_NAME ".ChannelID",
     .basicsize = sizeof(channelid),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),

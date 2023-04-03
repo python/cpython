@@ -13,6 +13,7 @@ import unittest
 from unittest import mock
 
 from test.support import import_helper
+from test.support import set_recursion_limit
 from test.support import is_emscripten, is_wasi
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
@@ -26,7 +27,9 @@ except ImportError:
 class _BaseFlavourTest(object):
 
     def _check_parse_parts(self, arg, expected):
-        f = self.cls._parse_parts
+        def f(parts):
+            path = self.cls(*parts)._raw_path
+            return self.cls._parse_path(path)
         sep = self.flavour.sep
         altsep = self.flavour.altsep
         actual = f([x.replace('/', sep) for x in arg])
@@ -152,6 +155,14 @@ class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
 # Tests for the pure classes.
 #
 
+class _BasePurePathSubclass(object):
+    init_called = False
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.init_called = True
+
+
 class _BasePurePathTest(object):
 
     # Keys are canonical paths, values are list of tuples of arguments
@@ -236,6 +247,21 @@ class _BasePurePathTest(object):
         self._check_str_subclass('a')
         self._check_str_subclass('a/b.txt')
         self._check_str_subclass('/a/b.txt')
+
+    def test_init_called_common(self):
+        class P(_BasePurePathSubclass, self.cls):
+            pass
+        p = P('foo', 'bar')
+        self.assertTrue((p / 'foo').init_called)
+        self.assertTrue(('foo' / p).init_called)
+        self.assertTrue(p.joinpath('foo').init_called)
+        self.assertTrue(p.with_name('foo').init_called)
+        self.assertTrue(p.with_stem('foo').init_called)
+        self.assertTrue(p.with_suffix('.foo').init_called)
+        self.assertTrue(p.relative_to('foo').init_called)
+        self.assertTrue(p.parent.init_called)
+        for parent in p.parents:
+            self.assertTrue(parent.init_called)
 
     def test_join_common(self):
         P = self.cls
@@ -2816,6 +2842,18 @@ class WalkTests(unittest.TestCase):
             for it in iters:
                 self.assertEqual(next(it), expected)
             path = path / 'd'
+
+    def test_walk_above_recursion_limit(self):
+        recursion_limit = 40
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = pathlib.Path(os_helper.TESTFN, 'deep')
+        path = pathlib.Path(base, *(['d'] * directory_depth))
+        path.mkdir(parents=True)
+
+        with set_recursion_limit(recursion_limit):
+            list(base.walk())
+            list(base.walk(top_down=False))
 
 
 class PathTest(_BasePathTest, unittest.TestCase):

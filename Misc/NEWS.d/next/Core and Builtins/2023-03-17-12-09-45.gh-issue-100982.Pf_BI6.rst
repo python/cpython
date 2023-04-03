@@ -1,0 +1,1 @@
+Replace all occurrences of ``COMPARE_AND_BRANCH`` with :opcode:`COMPARE_OP`.

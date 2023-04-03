@@ -11,6 +11,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_code.h"          // _PyCode_New()
+#include "pycore_long.h"          // _PyLong_DigitCount
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "marshal.h"              // Py_MARSHAL_VERSION
 
@@ -232,13 +233,13 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
     digit d;
 
     W_TYPE(TYPE_LONG, p);
-    if (Py_SIZE(ob) == 0) {
+    if (_PyLong_IsZero(ob)) {
         w_long((long)0, p);
         return;
     }
 
     /* set l to number of base PyLong_MARSHAL_BASE digits */
-    n = Py_ABS(Py_SIZE(ob));
+    n = _PyLong_DigitCount(ob);
     l = (n-1) * PyLong_MARSHAL_RATIO;
     d = ob->long_value.ob_digit[n-1];
     assert(d != 0); /* a PyLong is always normalized */
@@ -251,7 +252,7 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
         p->error = WFERR_UNMARSHALLABLE;
         return;
     }
-    w_long((long)(Py_SIZE(ob) > 0 ? l : -l), p);
+    w_long((long)(_PyLong_IsNegative(ob) ? -l : l), p);
 
     for (i=0; i < n-1; i++) {
         d = ob->long_value.ob_digit[i];
@@ -839,7 +840,7 @@ r_PyLong(RFILE *p)
     if (ob == NULL)
         return NULL;
 
-    Py_SET_SIZE(ob, n > 0 ? size : -size);
+    _PyLong_SetSignAndDigitCount(ob, n < 0 ? -1 : 1, size);
 
     for (i = 0; i < size-1; i++) {
         d = 0;
