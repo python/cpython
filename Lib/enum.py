@@ -1301,10 +1301,10 @@ def _reduce_ex_by_global_name(self, proto):
 class FlagBoundary(StrEnum):
     """
     control how out of range values are handled
-    "strict" -> error is raised  [default for Flag]
-    "conform" -> extra bits are discarded
-    "eject" -> lose flag status [default for IntFlag]
-    "keep" -> keep flag status and all bits
+    "strict" -> error is raised
+    "conform" -> extra bits are discarded   [default for Flag]
+    "eject" -> lose flag status
+    "keep" -> keep flag status and all bits [default for IntFlag]
     """
     STRICT = auto()
     CONFORM = auto()
