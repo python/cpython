@@ -465,7 +465,7 @@ Directory and files operations
       consult ``NeedCurrentDirectoryForExePathW`` to determine if the
       current working directory should be searched first. Additionally,
       the ``PATHEXT`` environment variable is now consulted even when
-      *cmd* includes an extension. Finally, a *cmd* found with a
+      *cmd* includes a directory component. Finally, a *cmd* found with a
       ``PATHEXT`` extension in an earlier directory from *path* will
       now be returned ahead of any match found later in *path*.
 
