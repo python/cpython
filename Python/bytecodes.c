@@ -877,7 +877,7 @@ dummy_func(
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
                     frame, next_instr-1, retval);
-            ERROR_IF(err, error);
+            if (err) goto error;
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
