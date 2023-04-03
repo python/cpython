@@ -209,49 +209,56 @@ class _WalkAction:
     CLOSE = object()
 
 
-def _walk_step(top_down, follow_symlinks, follow_junctions, use_fd, actions):
-    action, value = actions.pop()
-    if action is _WalkAction.WALK:
-        path, dir_fd, entry = value
-        dirnames = []
-        filenames = []
+def _walk(top_down, on_error, follow_symlinks, follow_junctions, use_fd, actions):
+    while actions:
+        action, value = actions.pop()
         try:
-            if use_fd:
-                scandir_it, fd = path._scandir_fwalk(follow_symlinks, actions, dir_fd, entry)
-                result = path, dirnames, filenames, fd
-            else:
-                scandir_it, fd = path._scandir(), None
-                result = path, dirnames, filenames
-        except OSError as error:
-            if not hasattr(error, '_func'):
-                error._func = os.scandir
-            error.filename = str(path)
-            raise error
-        if not top_down:
-            actions.append((_WalkAction.YIELD, result))
-        with scandir_it:
-            for entry in scandir_it:
+            if action is _WalkAction.WALK:
+                path, dir_fd, entry = value
+                dirnames = []
+                filenames = []
                 try:
-                    if entry.is_dir(follow_symlinks=follow_symlinks) and (
-                            follow_junctions or not entry.is_junction()):
-                        if not top_down:
-                            actions.append((_WalkAction.WALK, (
-                                path._make_child_relpath(entry.name), fd, entry)))
-                        dirnames.append(entry.name)
+                    if use_fd:
+                        scandir_it, fd = path._scandir_fwalk(
+                            follow_symlinks, actions, dir_fd, entry)
+                        result = path, dirnames, filenames, fd
                     else:
-                        filenames.append(entry.name)
-                except OSError:
-                    filenames.append(entry.name)
-        if top_down:
-            yield result
-            for dirname in reversed(dirnames):
-                actions.append((_WalkAction.WALK, (path._make_child_relpath(dirname), fd, None)))
-    elif action is _WalkAction.YIELD:
-        yield value
-    elif action is _WalkAction.CLOSE:
-        os.close(value)
-    else:
-        raise AssertionError(f"unknown walk action: {action}")
+                        scandir_it, fd = path._scandir(), None
+                        result = path, dirnames, filenames
+                except OSError as error:
+                    if not hasattr(error, '_func'):
+                        error._func = os.scandir
+                    error.filename = str(path)
+                    raise error
+                if not top_down:
+                    actions.append((_WalkAction.YIELD, result))
+                with scandir_it:
+                    for entry in scandir_it:
+                        try:
+                            if entry.is_dir(follow_symlinks=follow_symlinks) and (
+                                    follow_junctions or not entry.is_junction()):
+                                if not top_down:
+                                    actions.append((_WalkAction.WALK, (
+                                        path._make_child_relpath(entry.name), fd, entry)))
+                                dirnames.append(entry.name)
+                            else:
+                                filenames.append(entry.name)
+                        except OSError:
+                            filenames.append(entry.name)
+                if top_down:
+                    yield result
+                    for dirname in reversed(dirnames):
+                        actions.append((_WalkAction.WALK, (
+                            path._make_child_relpath(dirname), fd, None)))
+            elif action is _WalkAction.YIELD:
+                yield value
+            elif action is _WalkAction.CLOSE:
+                os.close(value)
+            else:
+                raise AssertionError(f"unknown walk action: {action}")
+        except OSError as error:
+            if on_error is not None:
+                on_error(error)
 
 #
 # Public API
@@ -1249,12 +1256,7 @@ class Path(PurePath):
         """Walk the directory tree from this directory, similar to os.walk()."""
         sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
         actions = [(_WalkAction.WALK, (self, None, None))]
-        while actions:
-            try:
-                yield from _walk_step(top_down, follow_symlinks, follow_junctions, False, actions)
-            except OSError as error:
-                if on_error is not None:
-                    on_error(error)
+        return _walk(top_down, on_error, follow_symlinks, follow_junctions, False, actions)
 
     if {os.stat, os.open} <= os.supports_dir_fd and {os.stat, os.scandir} <= os.supports_fd:
         def _fwalk(self, top_down=True, *, on_error=None, follow_symlinks=False, dir_fd=None):
@@ -1262,12 +1264,7 @@ class Path(PurePath):
             sys.audit("pathlib.Path._fwalk", self, on_error, follow_symlinks, dir_fd)
             actions = [(_WalkAction.WALK, (self, dir_fd, None))]
             try:
-                while actions:
-                    try:
-                        yield from _walk_step(top_down, follow_symlinks, True, True, actions)
-                    except OSError as error:
-                        if on_error is not None:
-                            on_error(error)
+                return _walk(top_down, on_error, follow_symlinks, True, True, actions)
             finally:
                 for action, value in reversed(actions):
                     if action is _WalkAction.CLOSE:
@@ -1308,7 +1305,7 @@ class Path(PurePath):
                 follow_symlinks=False,
                 on_error=on_error,
                 dir_fd=dir_fd)
-            for path, dirnames, filenames, fd in walker:
+            for path, _, filenames, fd in walker:
                 for filename in filenames:
                     try:
                         os.unlink(filename, dir_fd=fd)
@@ -1352,7 +1349,7 @@ class Path(PurePath):
                 follow_symlinks=False,
                 follow_junctions=False,
                 on_error=on_error)
-            for path, dirnames, filenames in walker:
+            for path, _, filenames in walker:
                 for filename in filenames:
                     try:
                         path._make_child_relpath(filename).unlink()
