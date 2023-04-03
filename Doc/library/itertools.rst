@@ -195,7 +195,7 @@ loops that truncate the stream.
           if n < 1:
               raise ValueError('n must be at least one')
           it = iter(iterable)
-          while (batch := tuple(islice(it, n))):
+          while batch := tuple(islice(it, n)):
               yield batch
 
    .. versionadded:: 3.12
@@ -866,6 +866,17 @@ which incur interpreter overhead.
            window.append(x)
            yield math.sumprod(kernel, window)
 
+   def polynomial_from_roots(roots):
+       """Compute a polynomial's coefficients from its roots.
+
+          (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
+       """
+       # polynomial_from_roots([5, -4, 3]) --> [1, -4, -17, 60]
+       expansion = [1]
+       for r in roots:
+           expansion = convolve(expansion, (1, -r))
+       return list(expansion)
+
    def polynomial_eval(coefficients, x):
        """Evaluate a polynomial at a specific value.
 
@@ -876,20 +887,8 @@ which incur interpreter overhead.
        n = len(coefficients)
        if n == 0:
            return x * 0  # coerce zero to the type of x
-       powers = map(pow, repeat(x), range(n))
-       return math.sumprod(reversed(coefficients), powers)
-
-   def polynomial_from_roots(roots):
-       """Compute a polynomial's coefficients from its roots.
-
-          (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
-       """
-       # polynomial_from_roots([5, -4, 3]) --> [1, -4, -17, 60]
-       roots = list(map(operator.neg, roots))
-       return [
-           sum(map(math.prod, combinations(roots, k)))
-           for k in range(len(roots) + 1)
-       ]
+       powers = map(pow, repeat(x), reversed(range(n)))
+       return math.sumprod(coefficients, powers)
 
    def iter_index(iterable, value, start=0):
        "Return indices where a value occurs in a sequence or iterable."
@@ -937,7 +936,7 @@ which incur interpreter overhead.
                n = quotient
                if n == 1:
                    return
-       if n >= 2:
+       if n > 1:
            yield n
 
    def flatten(list_of_lists):
