@@ -318,25 +318,9 @@ _PyType_InitCache(PyInterpreterState *interp)
         entry->version = 0;
         // Set to None so _PyType_Lookup() can use Py_SETREF(),
         // rather than using slower Py_XSETREF().
-        // (See _PyType_FixCacheRefcounts() about the refcount.)
         entry->name = Py_None;
         entry->value = NULL;
     }
-}
-
-// This is the temporary fix used by pycore_create_interpreter(),
-// in pylifecycle.c.  _PyType_InitCache() is called before the GIL
-// has been created (for the main interpreter) and without the
-// "current" thread state set.  This causes crashes when the
-// reftotal is updated, so we don't modify the refcount in
-// _PyType_InitCache(), and instead do it later by calling
-// _PyType_FixCacheRefcounts().
-// XXX This workaround should be removed once we have immortal
-// objects (PEP 683).
-void
-_PyType_FixCacheRefcounts(void)
-{
-    _Py_RefcntAdd(Py_None, (1 << MCACHE_SIZE_EXP));
 }
 
 
