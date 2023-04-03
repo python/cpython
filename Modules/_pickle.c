@@ -4925,6 +4925,7 @@ static PyType_Slot memoproxy_slots[] = {
     {Py_tp_traverse, PicklerMemoProxy_traverse},
     {Py_tp_clear, PicklerMemoProxy_clear},
     {Py_tp_methods, picklerproxy_methods},
+    {Py_tp_hash, PyObject_HashNotImplemented},
     {0, NULL},
 };
 
@@ -7362,6 +7363,7 @@ static PyType_Slot unpickler_memoproxy_slots[] = {
     {Py_tp_traverse, UnpicklerMemoProxy_traverse},
     {Py_tp_clear, UnpicklerMemoProxy_clear},
     {Py_tp_methods, unpicklerproxy_methods},
+    {Py_tp_hash, PyObject_HashNotImplemented},
     {0, NULL},
 };
 
