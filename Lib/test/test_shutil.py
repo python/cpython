@@ -2058,6 +2058,26 @@ class TestWhich(BaseTest, unittest.TestCase):
                 # Current directory not on PATH
                 self.assertIsNone(rv)
 
+    @unittest.skipUnless(sys.platform == "win32",
+                         "test is for win32")
+    def test_pathext_match_before_path_full_match(self):
+        base_dir = pathlib.Path(os.fsdecode(self.dir))
+        dir1 = base_dir / 'dir1'
+        dir2 = base_dir / 'dir2'
+        dir1.mkdir()
+        dir2.mkdir()
+
+        pathext_match = dir1 / 'hello.com.exe'
+        path_match = dir2 / 'hello.com'
+        pathext_match.touch()
+        path_match.touch()
+
+        test_path = os.pathsep.join([str(dir1), str(dir2)])
+        assert os.path.basename(shutil.which(
+            'hello.com', path=test_path, mode = os.F_OK
+        )).lower() == 'hello.com.exe'
+
+
     @os_helper.skip_if_dac_override
     def test_non_matching_mode(self):
         # Set the file read-only and ask for writeable files.
