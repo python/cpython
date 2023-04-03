@@ -473,12 +473,6 @@ Modules/_cursesmodule.c	-	initialised	-
 Modules/_cursesmodule.c	-	initialised_setupterm	-
 Modules/_cursesmodule.c	-	initialisedcolors	-
 Modules/_cursesmodule.c	-	screen_encoding	-
-Modules/_decimal/_decimal.c	-	_py_long_multiply	-
-Modules/_decimal/_decimal.c	-	_py_long_floor_divide	-
-Modules/_decimal/_decimal.c	-	_py_long_power	-
-Modules/_decimal/_decimal.c	-	_py_float_abs	-
-Modules/_decimal/_decimal.c	-	_py_long_bit_length	-
-Modules/_decimal/_decimal.c	-	_py_float_as_integer_ratio	-
 Modules/_elementtree.c	-	expat_capi	-
 Modules/cjkcodecs/_codecs_hk.c	-	big5_encmap	-
 Modules/cjkcodecs/_codecs_hk.c	-	big5_decmap	-

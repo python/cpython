@@ -78,6 +78,14 @@ typedef struct {
     PyObject *Rational;
 
     PyObject *SignalTuple;
+
+    /* External C-API functions */
+    binaryfunc _py_long_multiply;
+    binaryfunc _py_long_floor_divide;
+    ternaryfunc _py_long_power;
+    unaryfunc _py_float_abs;
+    PyCFunction _py_long_bit_length;
+    PyCFunction _py_float_as_integer_ratio;
 } decimal_state;
 
 static decimal_state global_state;
@@ -2313,14 +2321,6 @@ PyDecType_FromLongExact(PyTypeObject *type, PyObject *v,
     return dec;
 }
 
-/* External C-API functions */
-static binaryfunc _py_long_multiply;
-static binaryfunc _py_long_floor_divide;
-static ternaryfunc _py_long_power;
-static unaryfunc _py_float_abs;
-static PyCFunction _py_long_bit_length;
-static PyCFunction _py_float_as_integer_ratio;
-
 /* Return a PyDecObject or a subtype from a PyFloatObject.
    Conversion is exact. */
 static PyObject *
@@ -2374,13 +2374,13 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     }
 
     /* absolute value of the float */
-    tmp = _py_float_abs(v);
+    tmp = state->_py_float_abs(v);
     if (tmp == NULL) {
         return NULL;
     }
 
     /* float as integer ratio: numerator/denominator */
-    n_d = _py_float_as_integer_ratio(tmp, NULL);
+    n_d = state->_py_float_as_integer_ratio(tmp, NULL);
     Py_DECREF(tmp);
     if (n_d == NULL) {
         return NULL;
@@ -2388,7 +2388,7 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     n = PyTuple_GET_ITEM(n_d, 0);
     d = PyTuple_GET_ITEM(n_d, 1);
 
-    tmp = _py_long_bit_length(d, NULL);
+    tmp = state->_py_long_bit_length(d, NULL);
     if (tmp == NULL) {
         Py_DECREF(n_d);
         return NULL;
@@ -3694,14 +3694,14 @@ dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
         goto error;
     }
 
-    Py_SETREF(exponent, _py_long_power(tmp, exponent, Py_None));
+    Py_SETREF(exponent, state->_py_long_power(tmp, exponent, Py_None));
     Py_DECREF(tmp);
     if (exponent == NULL) {
         goto error;
     }
 
     if (exp >= 0) {
-        Py_SETREF(numerator, _py_long_multiply(numerator, exponent));
+        Py_SETREF(numerator, state->_py_long_multiply(numerator, exponent));
         if (numerator == NULL) {
             goto error;
         }
@@ -3717,8 +3717,8 @@ dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
         if (tmp == NULL) {
             goto error;
         }
-        Py_SETREF(numerator, _py_long_floor_divide(numerator, tmp));
-        Py_SETREF(denominator, _py_long_floor_divide(denominator, tmp));
+        Py_SETREF(numerator, state->_py_long_floor_divide(numerator, tmp));
+        Py_SETREF(denominator, state->_py_long_floor_divide(denominator, tmp));
         Py_DECREF(tmp);
         if (numerator == NULL || denominator == NULL) {
             goto error;
@@ -5865,13 +5865,13 @@ PyInit__decimal(void)
     decimal_state *state = GLOBAL_STATE();
 
     /* Init external C-API functions */
-    _py_long_multiply = PyLong_Type.tp_as_number->nb_multiply;
-    _py_long_floor_divide = PyLong_Type.tp_as_number->nb_floor_divide;
-    _py_long_power = PyLong_Type.tp_as_number->nb_power;
-    _py_float_abs = PyFloat_Type.tp_as_number->nb_absolute;
-    ASSIGN_PTR(_py_float_as_integer_ratio, cfunc_noargs(&PyFloat_Type,
-                                                        "as_integer_ratio"));
-    ASSIGN_PTR(_py_long_bit_length, cfunc_noargs(&PyLong_Type, "bit_length"));
+    state->_py_long_multiply = PyLong_Type.tp_as_number->nb_multiply;
+    state->_py_long_floor_divide = PyLong_Type.tp_as_number->nb_floor_divide;
+    state->_py_long_power = PyLong_Type.tp_as_number->nb_power;
+    state->_py_float_abs = PyFloat_Type.tp_as_number->nb_absolute;
+    ASSIGN_PTR(state->_py_float_as_integer_ratio, cfunc_noargs(&PyFloat_Type,
+                                                               "as_integer_ratio"));
+    ASSIGN_PTR(state->_py_long_bit_length, cfunc_noargs(&PyLong_Type, "bit_length"));
 
 
     /* Init types */
