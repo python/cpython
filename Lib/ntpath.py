@@ -142,7 +142,7 @@ def join(path, *paths):
             result_path = result_path + p_path
         ## add separator between UNC and non-absolute path
         if (result_path and not result_root and
-            result_drive and result_drive[-1:] != colon):
+            result_drive and result_drive[-1:] not in colon + seps):
             return result_drive + sep + result_path
         return result_drive + result_root + result_path
     except (TypeError, AttributeError, BytesWarning):
