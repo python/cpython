@@ -127,14 +127,18 @@ class HelperFunctionTest(unittest.TestCase):
             (["", "audio/*", "foo.txt"], ""),
             (["echo foo", "audio/*", "foo.txt"], "echo foo"),
             (["echo %s", "audio/*", "foo.txt"], "echo foo.txt"),
-            (["echo %t", "audio/*", "foo.txt"], None),
+            (["echo %t", "audio/*", "foo.txt"], None, {"warn_type": mailcap.UnsafeMailcapInput}),
             (["echo %t", "audio/wav", "foo.txt"], "echo audio/wav"),
             (["echo \\%t", "audio/*", "foo.txt"], "echo %t"),
             (["echo foo", "audio/*", "foo.txt", plist], "echo foo"),
             (["echo %{total}", "audio/*", "foo.txt", plist], "echo 3")
         ]
         for tc in test_cases:
-            self.assertEqual(mailcap.subst(*tc[0]), tc[1])
+            if len(tc) == 3:
+                with warnings_helper.check_warnings(('', tc[2]["warn_type"]), quiet=True):
+                    self.assertEqual(mailcap.subst(*tc[0]), tc[1])
+            else:
+                self.assertEqual(mailcap.subst(*tc[0]), tc[1])
 
 
 class GetcapsTest(unittest.TestCase):
@@ -212,7 +216,8 @@ class FindmatchTest(unittest.TestCase):
              ('"An audio fragment"', audio_basic_entry)),
             ([c, "audio/*"],
              {"filename": fname},
-             (None, None)),
+             (None, None),
+             {"warn_type": mailcap.UnsafeMailcapInput}),
             ([c, "audio/wav"],
              {"filename": fname},
              ("/usr/local/bin/showaudio audio/wav", audio_entry)),
@@ -247,7 +252,11 @@ class FindmatchTest(unittest.TestCase):
 
     def _run_cases(self, cases):
         for c in cases:
-            self.assertEqual(mailcap.findmatch(*c[0], **c[1]), c[2])
+            if len(c) == 4:
+                with warnings_helper.check_warnings(('', c[3]["warn_type"]), quiet=True):
+                    self.assertEqual(mailcap.findmatch(*c[0], **c[1]), c[2])
+            else: 
+                self.assertEqual(mailcap.findmatch(*c[0], **c[1]), c[2])
 
 
 if __name__ == '__main__':
