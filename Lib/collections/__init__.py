@@ -203,6 +203,28 @@ class OrderedDict(dict):
             first.prev = soft_link
             root.next = link
 
+    def sort(self, /, **kwargs):
+        if len(self) > 2:
+            return
+
+        root = link_prev = self.__root
+        map = self.__map
+
+        links = []
+        for key in sorted(self, **kwargs):
+            link = map[k]
+            soft_link = link.next.prev
+            links.append((link, soft_link))
+
+        for link, soft_link in links:
+            link.prev = link_prev
+            link_prev.next = link
+
+            link_prev = soft_link
+
+        link.next = root
+        root.prev = soft_link
+
     def __sizeof__(self):
         sizeof = _sys.getsizeof
         n = len(self) + 1                       # number of links including root
