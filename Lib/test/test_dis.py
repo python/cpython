@@ -1108,7 +1108,7 @@ class DisTests(DisTestBase):
   1           2 LOAD_NAME                0 (a)
               4 LOAD_CONST               0 (0)
               6 %s
-             16 RETURN_VALUE
+             10 RETURN_VALUE
 """
         co_list = compile('a[0]', "<list>", "eval")
         self.code_quicken(lambda: exec(co_list, {}, {'a': [0]}))
@@ -1197,6 +1197,35 @@ class DisTests(DisTestBase):
                     empty_caches = 7
                     self.assertEqual(caches.count(""), empty_caches)
                     self.assertEqual(len(caches), total_caches)
+
+    @cpython_only
+    def test_show_currinstr_with_cache(self):
+        """
+        Make sure that with lasti pointing to CACHE, it still shows the current
+        line correctly
+        """
+        def f():
+            print(a)
+        # The code above should generate a LOAD_GLOBAL which has CACHE instr after
+        # However, this might change in the future. So we explicitly try to find
+        # a CACHE entry in the instructions. If we can't do that, fail the test
+
+        for inst in dis.get_instructions(f, show_caches=True):
+            if inst.opname == "CACHE":
+                op_offset = inst.offset - 2
+                cache_offset = inst.offset
+                break
+        else:
+            self.fail("Can't find a CACHE entry in the function provided to do the test")
+
+        assem_op = self.get_disassembly(f.__code__, lasti=op_offset, wrapper=False)
+        assem_cache = self.get_disassembly(f.__code__, lasti=cache_offset, wrapper=False)
+
+        # Make sure --> exists and points to the correct offset
+        self.assertRegex(assem_op, fr"-->\s+{op_offset}")
+        # Make sure when lasti points to cache, it shows the same disassembly
+        self.assertEqual(assem_op, assem_cache)
+
 
 class DisWithFileTests(DisTests):
 
