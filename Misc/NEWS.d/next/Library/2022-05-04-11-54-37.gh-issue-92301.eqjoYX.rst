@@ -1,2 +1,0 @@
-Prefer ``close_range()`` to iterating over procfs for file descriptor
-closing in :mod:`subprocess` for better performance.

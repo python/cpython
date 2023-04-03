@@ -70,7 +70,6 @@ import sys
 import sysconfig
 import time
 import tokenize
-import types
 import urllib.parse
 import warnings
 from collections import deque
@@ -92,16 +91,13 @@ def pathdirs():
             normdirs.append(normdir)
     return dirs
 
-def _isclass(object):
-    return inspect.isclass(object) and not isinstance(object, types.GenericAlias)
-
 def _findclass(func):
     cls = sys.modules.get(func.__module__)
     if cls is None:
         return None
     for name in func.__qualname__.split('.')[:-1]:
         cls = getattr(cls, name)
-    if not _isclass(cls):
+    if not inspect.isclass(cls):
         return None
     return cls
 
@@ -109,7 +105,7 @@ def _finddoc(obj):
     if inspect.ismethod(obj):
         name = obj.__func__.__name__
         self = obj.__self__
-        if (_isclass(self) and
+        if (inspect.isclass(self) and
             getattr(getattr(self, name, None), '__func__') is obj.__func__):
             # classmethod
             cls = self
@@ -123,7 +119,7 @@ def _finddoc(obj):
     elif inspect.isbuiltin(obj):
         name = obj.__name__
         self = obj.__self__
-        if (_isclass(self) and
+        if (inspect.isclass(self) and
             self.__qualname__ + '.' + name == obj.__qualname__):
             # classmethod
             cls = self
@@ -210,7 +206,7 @@ def classname(object, modname):
 
 def isdata(object):
     """Check if an object is of a type that probably means it's data."""
-    return not (inspect.ismodule(object) or _isclass(object) or
+    return not (inspect.ismodule(object) or inspect.isclass(object) or
                 inspect.isroutine(object) or inspect.isframe(object) or
                 inspect.istraceback(object) or inspect.iscode(object))
 
@@ -393,8 +389,17 @@ def synopsis(filename, cache={}):
 class ErrorDuringImport(Exception):
     """Errors that occurred while trying to import something to document it."""
     def __init__(self, filename, exc_info):
+        if not isinstance(exc_info, tuple):
+            assert isinstance(exc_info, BaseException)
+            self.exc = type(exc_info)
+            self.value = exc_info
+            self.tb = exc_info.__traceback__
+        else:
+            warnings.warn("A tuple value for exc_info is deprecated, use an exception instance",
+                          DeprecationWarning)
+
+            self.exc, self.value, self.tb = exc_info
         self.filename = filename
-        self.exc, self.value, self.tb = exc_info
 
     def __str__(self):
         exc = self.exc.__name__
@@ -415,8 +420,8 @@ def importfile(path):
     spec = importlib.util.spec_from_file_location(name, path, loader=loader)
     try:
         return importlib._bootstrap._load(spec)
-    except:
-        raise ErrorDuringImport(path, sys.exc_info())
+    except BaseException as err:
+        raise ErrorDuringImport(path, err)
 
 def safeimport(path, forceload=0, cache={}):
     """Import a module; handle errors; return None if the module isn't found.
@@ -444,21 +449,20 @@ def safeimport(path, forceload=0, cache={}):
                     cache[key] = sys.modules[key]
                     del sys.modules[key]
         module = __import__(path)
-    except:
+    except BaseException as err:
         # Did the error occur before or after the module was found?
-        (exc, value, tb) = info = sys.exc_info()
         if path in sys.modules:
             # An error occurred while executing the imported module.
-            raise ErrorDuringImport(sys.modules[path].__file__, info)
-        elif exc is SyntaxError:
+            raise ErrorDuringImport(sys.modules[path].__file__, err)
+        elif type(err) is SyntaxError:
             # A SyntaxError occurred before we could execute the module.
-            raise ErrorDuringImport(value.filename, info)
-        elif issubclass(exc, ImportError) and value.name == path:
+            raise ErrorDuringImport(err.filename, err)
+        elif isinstance(err, ImportError) and err.name == path:
             # No such module in the path.
             return None
         else:
             # Some other error occurred during the importing process.
-            raise ErrorDuringImport(path, sys.exc_info())
+            raise ErrorDuringImport(path, err)
     for part in path.split('.')[1:]:
         try: module = getattr(module, part)
         except AttributeError: return None
@@ -481,7 +485,7 @@ class Doc:
         # by lacking a __name__ attribute) and an instance.
         try:
             if inspect.ismodule(object): return self.docmodule(*args)
-            if _isclass(object): return self.docclass(*args)
+            if inspect.isclass(object): return self.docclass(*args)
             if inspect.isroutine(object): return self.docroutine(*args)
         except AttributeError:
             pass
@@ -690,9 +694,7 @@ class HTMLDoc(Doc):
                                 r'RFC[- ]?(\d+)|'
                                 r'PEP[- ]?(\d+)|'
                                 r'(self\.)?(\w+))')
-        while True:
-            match = pattern.search(text, here)
-            if not match: break
+        while match := pattern.search(text, here):
             start, end = match.span()
             results.append(escape(text[here:start]))
 
@@ -727,7 +729,7 @@ class HTMLDoc(Doc):
         """Produce HTML for a class tree as given by inspect.getclasstree()."""
         result = ''
         for entry in tree:
-            if type(entry) is type(()):
+            if isinstance(entry, tuple):
                 c, bases = entry
                 result = result + '<dt class="heading-text">'
                 result = result + self.classlink(c, modname)
@@ -737,7 +739,7 @@ class HTMLDoc(Doc):
                         parents.append(self.classlink(base, modname))
                     result = result + '(' + ', '.join(parents) + ')'
                 result = result + '\n</dt>'
-            elif type(entry) is type([]):
+            elif isinstance(entry, list):
                 result = result + '<dd>\n%s</dd>\n' % self.formattree(
                     entry, modname, c)
         return '<dl>\n%s</dl>\n' % result
@@ -783,7 +785,7 @@ class HTMLDoc(Doc):
         modules = inspect.getmembers(object, inspect.ismodule)
 
         classes, cdict = [], {}
-        for key, value in inspect.getmembers(object, _isclass):
+        for key, value in inspect.getmembers(object, inspect.isclass):
             # if __all__ exists, believe it.  Otherwise use old heuristic.
             if (all is not None or
                 (inspect.getmodule(value) or object) is object):
@@ -1175,8 +1177,7 @@ class TextDoc(Doc):
     def indent(self, text, prefix='    '):
         """Indent text by prepending a given prefix to each line."""
         if not text: return ''
-        lines = [prefix + line for line in text.split('\n')]
-        if lines: lines[-1] = lines[-1].rstrip()
+        lines = [(prefix + line).rstrip() for line in text.split('\n')]
         return '\n'.join(lines)
 
     def section(self, title, contents):
@@ -1190,14 +1191,14 @@ class TextDoc(Doc):
         """Render in text a class tree as returned by inspect.getclasstree()."""
         result = ''
         for entry in tree:
-            if type(entry) is type(()):
+            if isinstance(entry, tuple):
                 c, bases = entry
                 result = result + prefix + classname(c, modname)
                 if bases and bases != (parent,):
                     parents = (classname(c, modname) for c in bases)
                     result = result + '(%s)' % ', '.join(parents)
                 result = result + '\n'
-            elif type(entry) is type([]):
+            elif isinstance(entry, list):
                 result = result + self.formattree(
                     entry, modname, c, prefix + '    ')
         return result
@@ -1223,7 +1224,7 @@ location listed above.
             result = result + self.section('DESCRIPTION', desc)
 
         classes = []
-        for key, value in inspect.getmembers(object, _isclass):
+        for key, value in inspect.getmembers(object, inspect.isclass):
             # if __all__ exists, believe it.  Otherwise use old heuristic.
             if (all is not None
                 or (inspect.getmodule(value) or object) is object):
@@ -1707,7 +1708,7 @@ def describe(thing):
         return 'member descriptor %s.%s.%s' % (
             thing.__objclass__.__module__, thing.__objclass__.__name__,
             thing.__name__)
-    if _isclass(thing):
+    if inspect.isclass(thing):
         return 'class ' + thing.__name__
     if inspect.isfunction(thing):
         return 'function ' + thing.__name__
@@ -1768,7 +1769,7 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
         desc += ' in module ' + module.__name__
 
     if not (inspect.ismodule(object) or
-              _isclass(object) or
+              inspect.isclass(object) or
               inspect.isroutine(object) or
               inspect.isdatadescriptor(object) or
               _getdoc(object)):
@@ -2002,7 +2003,10 @@ class Helper:
     _GoInteractive = object()
     def __call__(self, request=_GoInteractive):
         if request is not self._GoInteractive:
-            self.help(request)
+            try:
+                self.help(request)
+            except ImportError as err:
+                self.output.write(f'{err}\n')
         else:
             self.intro()
             self.interact()
@@ -2044,7 +2048,7 @@ has the same effect as typing a particular string at the help> prompt.
             return self.input.readline()
 
     def help(self, request):
-        if type(request) is type(''):
+        if isinstance(request, str):
             request = request.strip()
             if request == 'keywords': self.listkeywords()
             elif request == 'symbols': self.listsymbols()
@@ -2129,7 +2133,7 @@ module "pydoc_data.topics" could not be found.
         if not target:
             self.output.write('no documentation found for %s\n' % repr(topic))
             return
-        if type(target) is type(''):
+        if isinstance(target, str):
             return self.showtopic(target, more_xrefs)
 
         label, xrefs = target
@@ -2409,8 +2413,8 @@ def _start_server(urlhandler, hostname, port):
                 docsvr = DocServer(self.host, self.port, self.ready)
                 self.docserver = docsvr
                 docsvr.serve_until_quit()
-            except Exception as e:
-                self.error = e
+            except Exception as err:
+                self.error = err
 
         def ready(self, server):
             self.serving = True

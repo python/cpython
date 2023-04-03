@@ -1,3 +1,0 @@
-In the :mod:`tkinter` module add method ``info_patchlevel()`` which returns
-the exact version of the Tcl library as a named tuple similar to
-:data:`sys.version_info`.

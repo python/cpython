@@ -25,6 +25,9 @@ import time
 import collections.abc
 
 from _sqlite3 import *
+from _sqlite3 import _deprecated_version
+
+_deprecated_names = frozenset({"version", "version_info"})
 
 paramstyle = "qmark"
 
@@ -45,23 +48,32 @@ def TimeFromTicks(ticks):
 def TimestampFromTicks(ticks):
     return Timestamp(*time.localtime(ticks)[:6])
 
-version_info = tuple([int(x) for x in version.split(".")])
+_deprecated_version_info = tuple(map(int, _deprecated_version.split(".")))
 sqlite_version_info = tuple([int(x) for x in sqlite_version.split(".")])
 
 Binary = memoryview
 collections.abc.Sequence.register(Row)
 
 def register_adapters_and_converters():
+    from warnings import warn
+
+    msg = ("The default {what} is deprecated as of Python 3.12; "
+           "see the sqlite3 documentation for suggested replacement recipes")
+
     def adapt_date(val):
+        warn(msg.format(what="date adapter"), DeprecationWarning, stacklevel=2)
         return val.isoformat()
 
     def adapt_datetime(val):
+        warn(msg.format(what="datetime adapter"), DeprecationWarning, stacklevel=2)
         return val.isoformat(" ")
 
     def convert_date(val):
+        warn(msg.format(what="date converter"), DeprecationWarning, stacklevel=2)
         return datetime.date(*map(int, val.split(b"-")))
 
     def convert_timestamp(val):
+        warn(msg.format(what="timestamp converter"), DeprecationWarning, stacklevel=2)
         datepart, timepart = val.split(b" ")
         year, month, day = map(int, datepart.split(b"-"))
         timepart_full = timepart.split(b".")
@@ -82,20 +94,15 @@ def register_adapters_and_converters():
 
 register_adapters_and_converters()
 
-# bpo-24464: enable_shared_cache was deprecated in Python 3.10.  It's
-# scheduled for removal in Python 3.12.
-def enable_shared_cache(enable):
-    from _sqlite3 import enable_shared_cache as _old_enable_shared_cache
-    import warnings
-    msg = (
-        "enable_shared_cache is deprecated and will be removed in Python 3.12. "
-        "Shared cache is strongly discouraged by the SQLite 3 documentation. "
-        "If shared cache must be used, open the database in URI mode using"
-        "the cache=shared query parameter."
-    )
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    return _old_enable_shared_cache(enable)
-
 # Clean up namespace
 
 del(register_adapters_and_converters)
+
+def __getattr__(name):
+    if name in _deprecated_names:
+        from warnings import warn
+
+        warn(f"{name} is deprecated and will be removed in Python 3.14",
+             DeprecationWarning, stacklevel=2)
+        return globals()[f"_deprecated_{name}"]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

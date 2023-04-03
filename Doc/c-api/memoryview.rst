@@ -55,7 +55,7 @@ any other object.
    *mview* **must** be a memoryview instance; this macro doesn't check its type,
    you must do it yourself or you will risk crashes.
 
-.. c:function:: Py_buffer *PyMemoryView_GET_BASE(PyObject *mview)
+.. c:function:: PyObject *PyMemoryView_GET_BASE(PyObject *mview)
 
    Return either a pointer to the exporting object that the memoryview is based
    on or ``NULL`` if the memoryview has been created by one of the functions

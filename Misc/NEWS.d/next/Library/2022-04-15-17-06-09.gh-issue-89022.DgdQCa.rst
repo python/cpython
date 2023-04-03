@@ -1,4 +1,0 @@
-In :mod:`sqlite3`, ``SQLITE_MISUSE`` result codes are now mapped to
-:exc:`~sqlite3.InterfaceError` instead of :exc:`~sqlite3.ProgrammingError`.
-Also, more accurate exceptions are raised when binding parameters fail.
-Patch by Erlend E. Aasland.
