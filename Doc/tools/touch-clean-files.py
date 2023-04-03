@@ -6,6 +6,9 @@ so they are rebuilt and we can catch regressions.
 
 from pathlib import Path
 
+wrong_directory_msg = "Must run this script from the repo root"
+assert Path("Doc").exists() and Path("Doc").is_dir(), wrong_directory_msg
+
 # Exclude these whether they're dirty or clean,
 # because they trigger a rebuild of dirty files.
 EXCLUDE_FILES = {
