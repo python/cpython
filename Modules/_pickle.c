@@ -7378,9 +7378,8 @@ static PyType_Spec unpickler_memoproxy_spec = {
 static PyObject *
 UnpicklerMemoProxy_New(UnpicklerObject *unpickler)
 {
+    PickleState *state = _Pickle_FindStateByType(Py_TYPE(unpickler));
     UnpicklerMemoProxyObject *self;
-
-    PickleState *state = _Pickle_FindStateByType(Py_TYPE(self));
     self = PyObject_GC_New(UnpicklerMemoProxyObject,
                            state->UnpicklerMemoProxyType);
     if (self == NULL)
