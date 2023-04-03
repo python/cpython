@@ -88,6 +88,7 @@ typedef struct {
     PyCFunction _py_float_as_integer_ratio;
 } decimal_state;
 
+// FIXME: convert to module state.
 static decimal_state global_state;
 
 #define GLOBAL_STATE() (&global_state)
@@ -2335,10 +2336,9 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     mpd_t *d1, *d2;
     uint32_t status = 0;
     mpd_context_t maxctx;
-
+    decimal_state *state = GLOBAL_STATE();
 
 #ifdef NDEBUG
-    decimal_state *state = GLOBAL_STATE();
     assert(PyType_IsSubtype(type, state->PyDec_Type));
 #endif
 
@@ -5752,17 +5752,6 @@ static PyMethodDef _decimal_methods [] =
   { NULL, NULL, 1, NULL }
 };
 
-static struct PyModuleDef _decimal_module = {
-    PyModuleDef_HEAD_INIT,
-    "decimal",
-    doc__decimal,
-    -1,
-    _decimal_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
 
 struct ssize_constmap { const char *name; mpd_ssize_t val; };
 static struct ssize_constmap ssize_constants [] = {
@@ -5838,10 +5827,9 @@ error:
 }
 
 
-PyMODINIT_FUNC
-PyInit__decimal(void)
+static int
+_decimal_exec(PyObject *m)
 {
-    PyObject *m = NULL;
     PyObject *numbers = NULL;
     PyObject *Number = NULL;
     PyObject *collections = NULL;
@@ -5932,10 +5920,6 @@ PyInit__decimal(void)
     Py_CLEAR(collections);
     Py_CLEAR(collections_abc);
     Py_CLEAR(MutableMapping);
-
-
-    /* Create the module */
-    ASSIGN_PTR(m, PyModule_Create(&_decimal_module));
 
     /* Add types to the module */
     CHECK_INT(PyModule_AddType(m, state->PyDec_Type));
@@ -6073,7 +6057,7 @@ PyInit__decimal(void)
     CHECK_INT(PyModule_AddStringConstant(m, "__libmpdec_version__", mpd_version()));
 
 
-    return m;
+    return 0;
 
 
 error:
@@ -6096,5 +6080,103 @@ error:
     Py_CLEAR(state->extended_context_template); /* GCOV_NOT_REACHED */
     Py_CLEAR(m); /* GCOV_NOT_REACHED */
 
-    return NULL; /* GCOV_NOT_REACHED */
+    return -1; /* GCOV_NOT_REACHED */
+}
+
+static int
+decimal_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    decimal_state *state = GLOBAL_STATE();
+    Py_VISIT(state->PyDecContextManager_Type);
+    Py_VISIT(state->PyDecContext_Type);
+    Py_VISIT(state->PyDecSignalDictMixin_Type);
+    Py_VISIT(state->PyDec_Type);
+    Py_VISIT(state->PyDecSignalDict_Type);
+    Py_VISIT(state->DecimalTuple);
+    Py_VISIT(state->DecimalException);
+
+#ifndef WITH_DECIMAL_CONTEXTVAR
+    Py_VISIT(state->tls_context_key);
+    Py_VISIT(state->cached_context);
+#else
+    Py_VISIT(state->current_context_var);
+#endif
+
+    Py_VISIT(state->default_context_template);
+    Py_VISIT(state->basic_context_template);
+    Py_VISIT(state->extended_context_template);
+    Py_VISIT(state->round_map);
+    Py_VISIT(state->Rational);
+    Py_VISIT(state->SignalTuple);
+
+    Py_VISIT(state->_py_long_multiply);
+    Py_VISIT(state->_py_long_floor_divide);
+    Py_VISIT(state->_py_long_power);
+    Py_VISIT(state->_py_float_abs);
+    Py_VISIT(state->_py_long_bit_length);
+    Py_VISIT(state->_py_float_as_integer_ratio);
+}
+
+static int
+decimal_clear(PyObject *module)
+{
+    decimal_state *state = GLOBAL_STATE();
+    Py_CLEAR(state->PyDecContextManager_Type);
+    Py_CLEAR(state->PyDecContext_Type);
+    Py_CLEAR(state->PyDecSignalDictMixin_Type);
+    Py_CLEAR(state->PyDec_Type);
+    Py_CLEAR(state->PyDecSignalDict_Type);
+    Py_CLEAR(state->DecimalTuple);
+    Py_CLEAR(state->DecimalException);
+
+#ifndef WITH_DECIMAL_CONTEXTVAR
+    Py_CLEAR(state->tls_context_key);
+    Py_CLEAR(state->cached_context);
+#else
+    Py_CLEAR(state->current_context_var);
+#endif
+
+    Py_CLEAR(state->default_context_template);
+    Py_CLEAR(state->basic_context_template);
+    Py_CLEAR(state->extended_context_template);
+    Py_CLEAR(state->round_map);
+    Py_CLEAR(state->Rational);
+    Py_CLEAR(state->SignalTuple);
+
+    Py_CLEAR(state->_py_long_multiply);
+    Py_CLEAR(state->_py_long_floor_divide);
+    Py_CLEAR(state->_py_long_power);
+    Py_CLEAR(state->_py_float_abs);
+    Py_CLEAR(state->_py_long_bit_length);
+    Py_CLEAR(state->_py_float_as_integer_ratio);
+}
+
+static void
+decimal_free(void *module)
+{
+    (void)module_clear((PyObject *)module);
+}
+
+static struct PyModuleDef_Slot _decimal_slots[] = {
+    {Py_mod_exec, _decimal_exec},
+    {0, NULL},
+};
+
+static struct PyModuleDef _decimal_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "decimal",
+    .m_doc = doc__decimal,
+    .m_size = sizeof(decimal_state),
+    .m_methods = _decimal_methods,
+    .m_slots = _decimal_slots,
+
+    .m_traverse = decimal_traverse,
+    .m_clear = decimal_clear,
+    .m_free = decimal_free,
+};
+
+PyMODINIT_FUNC
+PyInit__decimal(void)
+{
+    return PyModuleDef_Init(&_decimal_module);
 }
