@@ -51,8 +51,6 @@ typedef uint32_t _PyMonitoringEventSet;
 #define PY_INSTRUMENT_SYS_TRACE 7
 
 
-/* API functions */
-
 PyObject *_PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj);
 
 void _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events);
