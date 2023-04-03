@@ -1632,6 +1632,11 @@ _Unpickler_New(void)
 static int
 _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
 {
+    _Py_IDENTIFIER(peek);
+    _Py_IDENTIFIER(read);
+    _Py_IDENTIFIER(readinto);
+    _Py_IDENTIFIER(readline);
+    
     /* Optional file methods */
     if (_PyObject_LookupAttr(file, &_Py_ID(peek), &self->peek) < 0) {
         return -1;
