@@ -223,8 +223,8 @@ def _walk_step(top_down, follow_symlinks, follow_junctions, use_fd, actions):
                 scandir_it, fd = path._scandir(), None
                 result = path, dirnames, filenames
         except OSError as error:
-            if not hasattr(error, 'func'):
-                error.func = os.scandir
+            if not hasattr(error, '_func'):
+                error._func = os.scandir
             error.filename = str(path)
             raise error
         if not top_down:
@@ -1292,7 +1292,7 @@ class Path(PurePath):
                 actions.append((_WalkAction.CLOSE, fd))
                 if not os.path.samestat(orig_st, os.stat(fd)):
                     error = NotADirectoryError("Cannot walk into a symbolic link")
-                    error.func = os.path.islink
+                    error._func = os.path.islink
                     raise error
             return os.scandir(fd), fd
 
@@ -1315,14 +1315,14 @@ class Path(PurePath):
                     except OSError as error:
                         if on_error is not None:
                             error.filename = str(path._make_child_relpath(filename))
-                            error.func = os.unlink
+                            error._func = os.unlink
                             on_error(error)
                 try:
                     os.rmdir(path, dir_fd=dir_fd)
                 except OSError as error:
                     if on_error is not None:
                         error.filename = str(path)
-                        error.func = os.rmdir
+                        error._func = os.rmdir
                         on_error(error)
         _rmtree.avoids_symlink_attacks = True
 
@@ -1342,7 +1342,7 @@ class Path(PurePath):
                     raise error
             except OSError as error:
                 if on_error is not None:
-                    error.func = os.path.islink
+                    error._func = os.path.islink
                     on_error(error)
                 # can't continue even if on_error hook returns
                 return
@@ -1358,13 +1358,13 @@ class Path(PurePath):
                         path._make_child_relpath(filename).unlink()
                     except OSError as error:
                         if on_error is not None:
-                            error.func = os.unlink
+                            error._func = os.unlink
                             on_error(error)
                 try:
                     path.rmdir()
                 except OSError as error:
                     if on_error is not None:
-                        error.func = os.rmdir
+                        error._func = os.rmdir
                         on_error(error)
         _rmtree.avoids_symlink_attacks = False
 
