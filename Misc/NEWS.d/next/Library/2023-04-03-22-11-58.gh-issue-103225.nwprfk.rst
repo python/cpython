@@ -1,0 +1,1 @@
+Fix :func:`inspect.getsourcelines` function to return 1-based line numbers for modules and frames that correspond to modules.
