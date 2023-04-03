@@ -433,12 +433,11 @@ Directory and files operations
    When no *path* is specified, the results of :func:`os.environ` are used,
    returning either the "PATH" value or a fallback of :attr:`os.defpath`.
 
-   On Windows, the current directory is prepended to the *path* if
-   the *mode* does not include ``os.X_OK``. When the *mode* does include
-   ``os.X_OK``, the Windows API ``NeedCurrentDirectoryForExePathW`` will be
-   consulted to determine if the current directory should be prepended to
-   *path*. To avoid consulting the current working directory for executables,
-   and thereby, match the behavior of non-Windows shells: set the environment
+   On Windows, the current directory is prepended to the *path* if *mode* does
+   not include ``os.X_OK``. When the *mode* does include ``os.X_OK``, the
+   Windows API ``NeedCurrentDirectoryForExePathW`` will be consulted to
+   determine if the current directory should be prepended to *path*. To avoid
+   consulting the current working directory for executables: set the environment
    variable ``NoDefaultCurrentDirectoryInExePath``.
 
    Also on Windows, the ``PATHEXT`` variable is used to resolve commands
@@ -450,8 +449,8 @@ Directory and files operations
       >>> shutil.which("python")
       'C:\\Python33\\python.EXE'
 
-   Similar ``PATHEXT`` logic is also applied when a full path to a *cmd* is
-   given, containing a directory component::
+   This is also applied when *cmd* is a path that contains a directory
+   component::
 
       >> shutil.which("C:\\Python33\\python")
       'C:\\Python33\\python.EXE'
