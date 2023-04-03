@@ -202,14 +202,14 @@ PyTypeObject PyBool_Type = {
 /* The objects representing bool values False and True */
 
 struct _longobject _Py_FalseStruct = {
-    PyObject_HEAD_IMMORTAL_INIT(&PyBool_Type)
+    _PyObject_HEAD_IMMORTAL_INIT(&PyBool_Type)
     { .lv_tag = _PyLong_FALSE_TAG,
         { 0 }
     }
 };
 
 struct _longobject _Py_TrueStruct = {
-    PyObject_HEAD_IMMORTAL_INIT(&PyBool_Type)
+    _PyObject_HEAD_IMMORTAL_INIT(&PyBool_Type)
     { .lv_tag = _PyLong_TRUE_TAG,
         { 1 }
     }

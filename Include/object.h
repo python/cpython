@@ -136,11 +136,20 @@ check by comparing the reference count field to the immortality reference count.
     { _PyObject_EXTRA_INIT              \
     1, (type) },
 
-#define PyObject_HEAD_IMMORTAL_INIT(type)        \
+#define _PyObject_HEAD_IMMORTAL_INIT(type)      \
     { _PyObject_EXTRA_INIT _Py_IMMORTAL_REFCNT, type },
 
+// TODO(eduardo-elizondo): The change to `PyVarObject_HEAD_INIT` is
+// temporary to ease up code review. There are currently ~600
+// references to `PyVarObject_HEAD_INIT` that have to be replaced
+// with PyVarObject_HEAD_IMMORTAL_INIT as all the use cases here
+// are in relation to static objects, which are safe to mark as
+// immortal. This will be done after the inital rounds of reviews.
 #define PyVarObject_HEAD_INIT(type, size)       \
-    { PyObject_HEAD_IMMORTAL_INIT(type) size },
+    { _PyObject_HEAD_IMMORTAL_INIT(type) size },
+
+#define PyVarObject_HEAD_IMMORTAL_INIT(type, size) \
+    { _PyObject_HEAD_IMMORTAL_INIT(type) size },
 
 /* PyObject_VAR_HEAD defines the initial segment of all variable-size
  * container objects.  These end with a declaration of an array with 1

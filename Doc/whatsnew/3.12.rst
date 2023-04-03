@@ -1026,12 +1026,12 @@ New Features
   - ``_Py_IMMORTAL_REFCNT``  The reference count that defines an object as immortal
   - ``_Py_IsImmortal`` Checks if an object has the immortal reference count
   - ``_Py_SetImmortal`` Sets the immortal reference count to a PyObject
-  - ``PyObject_HEAD_IMMORTAL_INIT`` A PyObject header initializer to immortal refcount
+  - ``_PyObject_HEAD_IMMORTAL_INIT`` A PyObject header initializer to immortal refcount
   - ``Py_MEMCPY`` A portable version of memcpy
   - ``SSTATE_INTERNED_IMMORTAL`` An identifier for interned unicode objects that are immortal
   - ``SSTATE_INTERNED_IMMORTAL_STATIC`` An identifier for interned unicode objects that are immortal and static
 
-  (Contributed by Eddie Elizondo in :gh:`19474`.)
+  (Contributed by Eddie Elizondo in :gh:`84436`.)
 
 Porting to Python 3.12
 ----------------------
