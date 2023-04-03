@@ -3171,10 +3171,14 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
        usage for no cost at all. */
     SSL_CTX_set_mode(self->ctx, SSL_MODE_RELEASE_BUFFERS);
 
+    /* Setting the session id context is a server-side only operation.
+     * It can cause unexpected behaviour on client-side connections. */
+    if (proto_version == PY_SSL_VERSION_TLS_SERVER) {
 #define SID_CTX "Python"
-    SSL_CTX_set_session_id_context(self->ctx, (const unsigned char *) SID_CTX,
-                                   sizeof(SID_CTX));
+        SSL_CTX_set_session_id_context(self->ctx, (const unsigned char *) SID_CTX,
+                                       sizeof(SID_CTX));
 #undef SID_CTX
+    }
 
     params = SSL_CTX_get0_param(self->ctx);
     /* Improve trust chain building when cross-signed intermediate

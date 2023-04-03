@@ -2003,6 +2003,12 @@ to speed up repeated connections from the same clients.
 
    Setting ``callback`` to :const:`None` removes any existing callback.
 
+   .. note::
+      When using TLS 1.3:
+
+      - the ``hint`` parameter is always :const:`None`.
+      - client-identity must be a non-empty string.
+
    Example usage::
 
       context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -2040,6 +2046,9 @@ to speed up repeated connections from the same clients.
    Setting ``callback`` to :const:`None` removes any existing callback.
 
    The parameter ``identity_hint`` is an optional identity hint sent to the client.
+
+   .. note::
+      When using TLS 1.3 the ``identity_hint`` parameter is not sent to the client.
 
    Example usage::
 

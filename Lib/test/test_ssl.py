@@ -4259,6 +4259,38 @@ class ThreadedTests(unittest.TestCase):
         with self.assertRaisesRegex(ssl.SSLError, 'Cannot add PSK client callback'):
             server_context.set_psk_client_callback(client_callback)
 
+    @requires_tls_version('TLSv1_3')
+    def test_psk_tls1_3(self):
+        psk = bytes.fromhex('deadbeef')
+        identity_hint = 'identity-hint'
+        client_identity = 'client-identity'
+
+        def client_callback(hint):
+            # identity_hint is not sent to the client in TLS 1.3
+            self.assertIsNone(hint)
+            return client_identity, psk
+
+        def server_callback(identity):
+            self.assertEqual(identity, client_identity)
+            return psk
+
+        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        client_context.check_hostname = False
+        client_context.verify_mode = ssl.CERT_NONE
+        client_context.minimum_version = ssl.TLSVersion.TLSv1_3
+        client_context.set_ciphers('PSK')
+        client_context.set_psk_client_callback(client_callback)
+
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_3
+        server_context.set_ciphers('PSK')
+        server_context.set_psk_server_callback(server_callback, identity_hint)
+
+        server = ThreadedEchoServer(context=server_context)
+        with server:
+            with client_context.wrap_socket(socket.socket()) as s:
+                s.connect((HOST, server.port))
+
 
 @unittest.skipUnless(has_tls_version('TLSv1_3'), "Test needs TLS 1.3")
 class TestPostHandshakeAuth(unittest.TestCase):
