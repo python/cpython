@@ -1,0 +1,7 @@
+When built against OpenSSL 3.0, the :mod:`ssl` module had a bug where it
+reported unauthenticated EOFs (i.e. without close_notify) as a clean TLS-level
+EOF. It now raises :exc:`~ssl.SSLEOFError`, matching the behavior in previous
+versions of OpenSSL. The :attr:`~ssl.SSLContext.options` attribute on
+:class:`~ssl.SSLContext` also no longer includes
+:data:`~ssl.OP_IGNORE_UNEXPECTED_EOF` by default. This option may be set to
+specify the previous OpenSSL 3.0 behavior.

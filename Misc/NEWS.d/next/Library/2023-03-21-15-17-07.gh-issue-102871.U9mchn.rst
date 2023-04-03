@@ -1,0 +1,3 @@
+Remove support for obsolete browsers from :mod:`webbrowser`.
+Removed browsers include Grail, Mosaic, Netscape, Galeon, Skipstone,
+Iceape, Firebird, and Firefox versions 35 and below.
