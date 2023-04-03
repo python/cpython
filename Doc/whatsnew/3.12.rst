@@ -622,6 +622,12 @@ Pending Removal in Python 3.14
   functions that have been deprecated since Python 2 but only gained a
   proper :exc:`DeprecationWarning` in 3.12. Remove them in 3.14.
 
+* Accessing ``co_lnotab`` was deprecated in :pep:`626` since 3.10
+  and was planned to be removed in 3.12
+  but it only got a proper :exc:`DeprecationWarning` in 3.12.
+  May be removed in 3.14.
+  (Contributed by Nikita Sobolev in :gh:`101866`.)
+
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
   and will be removed in 3.14.
 
