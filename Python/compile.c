@@ -7416,7 +7416,6 @@ assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     if (maxdepth < 0) {
         goto error;
     }
-    /* TO DO -- For 3.12, make sure that `maxdepth <= MAX_ALLOWED_STACK_USE` */
 
     _PyCfg_ConvertExceptionHandlersToNops(g.g_entryblock);
 
