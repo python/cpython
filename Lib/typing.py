@@ -2027,20 +2027,9 @@ class _ProtocolMeta(ABCMeta):
         if super().__instancecheck__(instance):
             return True
 
-        if not is_protocol_cls and issubclass(instance.__class__, cls):
-            return True
-
-        protocol_attrs = _get_protocol_attrs(cls)
-
-        if (
-            _is_callable_members_only(cls, protocol_attrs)
-            and issubclass(instance.__class__, cls)
-        ):
-            return True
-
         if is_protocol_cls:
             getattr_static = _lazy_load_getattr_static()
-            for attr in protocol_attrs:
+            for attr in _get_protocol_attrs(cls):
                 try:
                     val = getattr_static(instance, attr)
                 except AttributeError:
