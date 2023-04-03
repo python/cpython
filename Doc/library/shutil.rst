@@ -433,15 +433,25 @@ Directory and files operations
    When no *path* is specified, the results of :func:`os.environ` are used,
    returning either the "PATH" value or a fallback of :attr:`os.defpath`.
 
-   On Windows, the current directory is always prepended to the *path* whether
-   or not you use the default or provide your own, which is the behavior the
-   command shell uses when finding executables.  Additionally, when finding the
-   *cmd* in the *path*, the ``PATHEXT`` environment variable is checked.  For
-   example, if you call ``shutil.which("python")``, :func:`which` will search
-   ``PATHEXT`` to know that it should look for ``python.exe`` within the *path*
-   directories.  For example, on Windows::
+   On Windows, the current directory is prepended to the *path* if
+   the *mode* does not include ``os.X_OK``. When the *mode* does include
+   ``os.X_OK``, the Windows API ``NeedCurrentDirectoryForExePathW`` will be
+   consulted to determine if the current directory should be prepended to
+   *path*.
+
+   Additionally, when finding the *cmd* in the *path*, the ``PATHEXT``
+   environment variable is checked.  For example, if you call
+   ``shutil.which("python")``, :func:`which` will search ``PATHEXT``
+   to know that it should look for ``python.exe`` within the *path*
+   directories. For example, on Windows::
 
       >>> shutil.which("python")
+      'C:\\Python33\\python.EXE'
+
+   Similar ``PATHEXT`` logic is also applied when a full path to a *cmd* is
+   given, though without an extension::
+
+      >> shutil.which("C:\\Python33\\python")
       'C:\\Python33\\python.EXE'
 
    .. versionadded:: 3.3
@@ -449,6 +459,15 @@ Directory and files operations
    .. versionchanged:: 3.8
       The :class:`bytes` type is now accepted.  If *cmd* type is
       :class:`bytes`, the result type is also :class:`bytes`.
+
+   .. versionchanged:: 3.12
+      On Windows: ``NeedCurrentDirectoryForExePathW`` will be consulted
+      for non- ``os.X_OK`` modes to determine if the current working directory
+      should be prepended to *path*. Additionally, the ``PATHEXT`` environment
+      variable is now consulted when a full path to a cmd, minus the extension,
+      is given. Also, now a *cmd* with a matching ``PATHEXT`` extension will
+      be returned prior to one fully matching, if the fully matching one is
+      found later in *path*.
 
 .. exception:: Error
 
