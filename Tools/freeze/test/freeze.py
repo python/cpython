@@ -95,6 +95,8 @@ def copy_source_tree(newroot, oldroot):
     shutil.copytree(oldroot, newroot, ignore=ignore_non_src)
     if os.path.exists(os.path.join(newroot, 'Makefile')):
         _run_quiet([MAKE, 'clean'], newroot)
+    else:
+        raise Exception("new frozen build Makefile missing!")
 
 
 def get_makefile_var(builddir, name):
@@ -153,7 +155,7 @@ def prepare(script=None, outdir=None):
     print(f'configuring python in {builddir}...')
     cmd = [
         os.path.join(srcdir, 'configure'),
-        *shlex.split(get_config_var(srcdir, 'CONFIG_ARGS') or ''),
+        *shlex.split(get_config_var(SRCDIR, 'CONFIG_ARGS') or ''),
     ]
     ensure_opt(cmd, 'cache-file', os.path.join(outdir, 'python-config.cache'))
     prefix = os.path.join(outdir, 'python-installation')
