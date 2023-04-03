@@ -270,7 +270,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 
 #  include <fcntl.h>
 
-#else
+#else /* MS_WINDOWS */
 
 /* MS_WINDOWS includes */
 # ifdef HAVE_FCNTL_H
@@ -281,7 +281,6 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 # include <Rpc.h>
 
 /* Macros based on the IPPROTO enum, see: https://bugs.python.org/issue29515 */
-#ifdef MS_WINDOWS
 #define IPPROTO_ICMP IPPROTO_ICMP
 #define IPPROTO_IGMP IPPROTO_IGMP
 #define IPPROTO_GGP IPPROTO_GGP
@@ -312,7 +311,6 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #define IPPROTO_PGM IPPROTO_PGM  // WinSock2 only
 #define IPPROTO_L2TP IPPROTO_L2TP  // WinSock2 only
 #define IPPROTO_SCTP IPPROTO_SCTP  // WinSock2 only
-#endif /* MS_WINDOWS */
 
 /* Provides the IsWindows7SP1OrGreater() function */
 #include <versionhelpers.h>
@@ -348,13 +346,18 @@ remove_unusable_flags(PyObject *m)
 {
     PyObject *dict;
     OSVERSIONINFOEX info;
-    DWORDLONG dwlConditionMask;
 
     dict = PyModule_GetDict(m);
     if (dict == NULL) {
         return -1;
     }
-
+#ifndef MS_WINDOWS_DESKTOP
+    info.dwOSVersionInfoSize = sizeof(info);
+    if (!GetVersionEx((OSVERSIONINFO*) &info)) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+#else
     /* set to Windows 10, except BuildNumber. */
     memset(&info, 0, sizeof(info));
     info.dwOSVersionInfoSize = sizeof(info);
@@ -362,19 +365,30 @@ remove_unusable_flags(PyObject *m)
     info.dwMinorVersion = 0;
 
     /* set Condition Mask */
-    dwlConditionMask = 0;
+    DWORDLONG dwlConditionMask = 0;
     VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, VER_GREATER_EQUAL);
     VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
     VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+#endif
 
     for (int i=0; i<sizeof(win_runtime_flags)/sizeof(FlagRuntimeInfo); i++) {
+#ifdef MS_WINDOWS_DESKTOP
         info.dwBuildNumber = win_runtime_flags[i].build_number;
         /* greater than or equal to the specified version?
            Compatibility Mode will not cheat VerifyVersionInfo(...) */
-        if (VerifyVersionInfo(
-                &info,
-                VER_MAJORVERSION|VER_MINORVERSION|VER_BUILDNUMBER,
-                dwlConditionMask)) {
+        BOOL isSupported = VerifyVersionInfo(
+            &info,
+            VER_MAJORVERSION|VER_MINORVERSION|VER_BUILDNUMBER,
+            dwlConditionMask);
+#else
+        /* note in this case 'info' is the actual OS version, whereas above
+           it is the version to compare against. */
+        BOOL isSupported = info.dwMajorVersion > 10 ||
+            (info.dwMajorVersion == 10 && info.dwMinorVersion > 0) ||
+            (info.dwMajorVersion == 10 && info.dwMinorVersion == 0 &&
+            info.dwBuildNumber >= win_runtime_flags[i].build_number);
+#endif
+        if (isSupported) {
             break;
         }
         else {
@@ -497,14 +511,14 @@ remove_unusable_flags(PyObject *m)
 #endif
 #endif
 
-#ifdef MS_WINDOWS
+#ifdef MS_WINDOWS_DESKTOP
 #define sockaddr_rc SOCKADDR_BTH_REDEF
 
 #define USE_BLUETOOTH 1
 #define AF_BLUETOOTH AF_BTH
 #define BTPROTO_RFCOMM BTHPROTO_RFCOMM
 #define _BT_RC_MEMB(sa, memb) ((sa)->memb)
-#endif
+#endif /* MS_WINDOWS_DESKTOP */
 
 /* Convert "sock_addr_t *" to "struct sockaddr *". */
 #define SAS2SA(x)       (&((x)->sa))
@@ -604,11 +618,6 @@ select_error(void)
 #  define SUPPRESS_DEPRECATED_CALL __pragma(warning(suppress: 4996))
 #else
 #  define SUPPRESS_DEPRECATED_CALL
-#endif
-
-#ifdef MS_WINDOWS
-/* Does WSASocket() support the WSA_FLAG_NO_HANDLE_INHERIT flag? */
-static int support_wsa_no_inherit = -1;
 #endif
 
 /* Convenience function to raise an error according to errno
@@ -1085,6 +1094,7 @@ setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int
            subsequent call to getaddrinfo() does not destroy the
            outcome of the first call. */
         if (error) {
+            res = NULL;  // no-op, remind us that it is invalid; gh-100795
             set_gaierror(error);
             return -1;
         }
@@ -1195,6 +1205,7 @@ setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int
 #endif
     Py_END_ALLOW_THREADS
     if (error) {
+        res = NULL;  // no-op, remind us that it is invalid; gh-100795
         set_gaierror(error);
         return -1;
     }
@@ -2872,11 +2883,16 @@ sock_accept(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
     newfd = ctx.result;
 
 #ifdef MS_WINDOWS
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
+#ifndef HANDLE_FLAG_INHERIT
+#define HANDLE_FLAG_INHERIT 0x00000001
+#endif
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
         PyErr_SetFromWindowsErr(0);
         SOCKETCLOSE(newfd);
         goto finally;
     }
+#endif
 #else
 
 #if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
@@ -3522,7 +3538,8 @@ PyDoc_STRVAR(getsockname_doc,
 \n\
 Return the address of the local endpoint. The format depends on the\n\
 address family. For IPv4 sockets, the address info is a pair\n\
-(hostaddr, port).");
+(hostaddr, port). For IPv6 sockets, the address info is a 4-tuple\n\
+(hostaddr, port, flowinfo, scope_id).");
 #endif
 
 
@@ -5173,10 +5190,9 @@ static void
 sock_finalize(PySocketSockObject *s)
 {
     SOCKET_T fd;
-    PyObject *error_type, *error_value, *error_traceback;
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     if (s->sock_fd != INVALID_SOCKET) {
         if (PyErr_ResourceWarning((PyObject *)s, 1, "unclosed %R", s)) {
@@ -5200,7 +5216,7 @@ sock_finalize(PySocketSockObject *s)
     }
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 static void
@@ -5341,6 +5357,13 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
                 set_error();
                 return -1;
             }
+
+            if (!SetHandleInformation((HANDLE)fd, HANDLE_FLAG_INHERIT, 0)) {
+                closesocket(fd);
+                PyErr_SetFromWindowsErr(0);
+                return -1;
+            }
+
             family = info.iAddressFamily;
             type = info.iSocketType;
             proto = info.iProtocol;
@@ -5431,38 +5454,15 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
             proto = 0;
         }
 #ifdef MS_WINDOWS
-        /* Windows implementation */
-#ifndef WSA_FLAG_NO_HANDLE_INHERIT
-#define WSA_FLAG_NO_HANDLE_INHERIT 0x80
-#endif
-
         Py_BEGIN_ALLOW_THREADS
-        if (support_wsa_no_inherit) {
-            fd = WSASocketW(family, type, proto,
-                           NULL, 0,
-                           WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
-            if (fd == INVALID_SOCKET) {
-                /* Windows 7 or Windows 2008 R2 without SP1 or the hotfix */
-                support_wsa_no_inherit = 0;
-                fd = socket(family, type, proto);
-            }
-        }
-        else {
-            fd = socket(family, type, proto);
-        }
+        fd = WSASocketW(family, type, proto,
+                        NULL, 0,
+                        WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
         Py_END_ALLOW_THREADS
 
         if (fd == INVALID_SOCKET) {
             set_error();
             return -1;
-        }
-
-        if (!support_wsa_no_inherit) {
-            if (!SetHandleInformation((HANDLE)fd, HANDLE_FLAG_INHERIT, 0)) {
-                closesocket(fd);
-                PyErr_SetFromWindowsErr(0);
-                return -1;
-            }
         }
 #else
         /* UNIX */
@@ -6165,8 +6165,9 @@ socket_dup(PyObject *self, PyObject *fdobj)
 #endif
 
     fd = PyLong_AsSocket_t(fdobj);
-    if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
+    if (fd == (SOCKET_T)(-1) && PyErr_Occurred()) {
         return NULL;
+    }
 
 #ifdef MS_WINDOWS
     if (WSADuplicateSocketW(fd, GetCurrentProcessId(), &info))
@@ -6175,8 +6176,9 @@ socket_dup(PyObject *self, PyObject *fdobj)
     newfd = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
                       FROM_PROTOCOL_INFO,
                       &info, 0, WSA_FLAG_OVERLAPPED);
-    if (newfd == INVALID_SOCKET)
+    if (newfd == INVALID_SOCKET) {
         return set_error();
+    }
 
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
         closesocket(newfd);
@@ -6186,13 +6188,15 @@ socket_dup(PyObject *self, PyObject *fdobj)
 #else
     /* On UNIX, dup can be used to duplicate the file descriptor of a socket */
     newfd = _Py_dup(fd);
-    if (newfd == INVALID_SOCKET)
+    if (newfd == INVALID_SOCKET) {
         return NULL;
+    }
 #endif
 
     newfdobj = PyLong_FromSocket_t(newfd);
-    if (newfdobj == NULL)
+    if (newfdobj == NULL) {
         SOCKETCLOSE(newfd);
+    }
     return newfdobj;
 }
 
@@ -6648,7 +6652,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     struct addrinfo *res0 = NULL;
     PyObject *hobj = NULL;
     PyObject *pobj = (PyObject *)NULL;
-    char pbuf[30];
+    PyObject *pstr = NULL;
     const char *hptr, *pptr;
     int family, socktype, protocol, flags;
     int error;
@@ -6678,11 +6682,13 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         return NULL;
     }
     if (PyLong_CheckExact(pobj)) {
-        long value = PyLong_AsLong(pobj);
-        if (value == -1 && PyErr_Occurred())
+        pstr = PyObject_Str(pobj);
+        if (pstr == NULL)
             goto err;
-        PyOS_snprintf(pbuf, sizeof(pbuf), "%ld", value);
-        pptr = pbuf;
+        assert(PyUnicode_Check(pstr));
+        pptr = PyUnicode_AsUTF8(pstr);
+        if (pptr == NULL)
+            goto err;
     } else if (PyUnicode_Check(pobj)) {
         pptr = PyUnicode_AsUTF8(pobj);
         if (pptr == NULL)
@@ -6719,6 +6725,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     error = getaddrinfo(hptr, pptr, &hints, &res0);
     Py_END_ALLOW_THREADS
     if (error) {
+        res0 = NULL;  // gh-100795
         set_gaierror(error);
         goto err;
     }
@@ -6747,12 +6754,14 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         Py_DECREF(single);
     }
     Py_XDECREF(idna);
+    Py_XDECREF(pstr);
     if (res0)
         freeaddrinfo(res0);
     return all;
  err:
     Py_XDECREF(all);
     Py_XDECREF(idna);
+    Py_XDECREF(pstr);
     if (res0)
         freeaddrinfo(res0);
     return (PyObject *)NULL;
@@ -6815,6 +6824,7 @@ socket_getnameinfo(PyObject *self, PyObject *args)
     error = getaddrinfo(hostp, pbuf, &hints, &res);
     Py_END_ALLOW_THREADS
     if (error) {
+        res = NULL;  // gh-100795
         set_gaierror(error);
         goto fail;
     }
@@ -7332,12 +7342,6 @@ PyInit__socket(void)
 
     if (!os_init())
         return NULL;
-
-#ifdef MS_WINDOWS
-    if (support_wsa_no_inherit == -1) {
-        support_wsa_no_inherit = IsWindows7SP1OrGreater();
-    }
-#endif
 
     Py_SET_TYPE(&sock_type, &PyType_Type);
     m = PyModule_Create(&socketmodule);
@@ -8350,6 +8354,9 @@ PyInit__socket(void)
 #endif
 #ifdef  IP_TRANSPARENT
     PyModule_AddIntMacro(m, IP_TRANSPARENT);
+#endif
+#ifdef  IP_PKTINFO
+    PyModule_AddIntMacro(m, IP_PKTINFO);
 #endif
 #ifdef IP_BIND_ADDRESS_NO_PORT
     PyModule_AddIntMacro(m, IP_BIND_ADDRESS_NO_PORT);

@@ -1126,7 +1126,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_input__doc__,
-"input($module, prompt=None, /)\n"
+"input($module, prompt=\'\', /)\n"
 "--\n"
 "\n"
 "Read a string from standard input.  The trailing newline is stripped.\n"
@@ -1409,4 +1409,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0a6a8efe82cf8b81 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=84a04e7446debf58 input=a9049054013a1b77]*/

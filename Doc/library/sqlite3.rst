@@ -72,7 +72,7 @@ including `cursors`_ and `transactions`_.
 
 First, we need to create a new database and open
 a database connection to allow :mod:`!sqlite3` to work with it.
-Call :func:`sqlite3.connect` to to create a connection to
+Call :func:`sqlite3.connect` to create a connection to
 the database :file:`tutorial.db` in the current working directory,
 implicitly creating it if it does not exist:
 
@@ -259,7 +259,7 @@ Module functions
 .. function:: connect(database, timeout=5.0, detect_types=0, \
                       isolation_level="DEFERRED", check_same_thread=True, \
                       factory=sqlite3.Connection, cached_statements=128, \
-                      uri=False, \*, \
+                      uri=False, *, \
                       autocommit=sqlite3.LEGACY_TRANSACTION_CONTROL)
 
    Open a connection to an SQLite database.
@@ -272,9 +272,9 @@ Module functions
 
    :param float timeout:
        How many seconds the connection should wait before raising
-       an exception, if the database is locked by another connection.
-       If another connection opens a transaction to modify the database,
-       it will be locked until that transaction is committed.
+       an :exc:`OperationalError` when a table is locked.
+       If another connection opens a transaction to modify a table,
+       that table will be locked until the transaction is committed.
        Default five seconds.
 
    :param int detect_types:
@@ -302,10 +302,13 @@ Module functions
    :type isolation_level: str | None
 
    :param bool check_same_thread:
-       If ``True`` (default), only the creating thread may use the connection.
-       If ``False``, the connection may be shared across multiple threads;
-       if so, write operations should be serialized by the user to avoid data
-       corruption.
+       If ``True`` (default), :exc:`ProgrammingError` will be raised
+       if the database connection is used by a thread
+       other than the one that created it.
+       If ``False``, the connection may be accessed in multiple threads;
+       write operations may need to be serialized by the user
+       to avoid data corruption.
+       See :attr:`threadsafety` for more information.
 
    :param Connection factory:
        A custom subclass of :class:`Connection` to create the connection with,
@@ -908,7 +911,7 @@ Connection objects
 
       Call this method from a different thread to abort any queries that might
       be executing on the connection.
-      Aborted queries will raise an exception.
+      Aborted queries will raise an :exc:`OperationalError`.
 
 
    .. method:: set_authorizer(authorizer_callback)
@@ -1415,15 +1418,22 @@ Cursor objects
 
    .. method:: execute(sql, parameters=(), /)
 
-      Execute SQL statement *sql*.
-      Bind values to the statement using :ref:`placeholders
-      <sqlite3-placeholders>` that map to the :term:`sequence` or :class:`dict`
-      *parameters*.
+      Execute SQL a single SQL statement,
+      optionally binding Python values using
+      :ref:`placeholders <sqlite3-placeholders>`.
 
-      :meth:`execute` will only execute a single SQL statement. If you try to execute
-      more than one statement with it, it will raise a :exc:`ProgrammingError`. Use
-      :meth:`executescript` if you want to execute multiple SQL statements with one
-      call.
+      :param str sql:
+         A single SQL statement.
+
+      :param parameters:
+         Python values to bind to placeholders in *sql*.
+         A :class:`!dict` if named placeholders are used.
+         A :term:`!sequence` if unnamed placeholders are used.
+         See :ref:`sqlite3-placeholders`.
+      :type parameters: :class:`dict` | :term:`sequence`
+
+      :raises ProgrammingError:
+         If *sql* contains more than one SQL statement.
 
       If :attr:`~Connection.autocommit` is
       :data:`LEGACY_TRANSACTION_CONTROL`,
@@ -1432,14 +1442,36 @@ Cursor objects
       and there is no open transaction,
       a transaction is implicitly opened before executing *sql*.
 
+      .. deprecated-removed:: 3.12 3.14
+
+         :exc:`DeprecationWarning` is emitted if
+         :ref:`named placeholders <sqlite3-placeholders>` are used
+         and *parameters* is a sequence instead of a :class:`dict`.
+         Starting with Python 3.14, :exc:`ProgrammingError` will
+         be raised instead.
+
+      Use :meth:`executescript` to execute multiple SQL statements.
 
    .. method:: executemany(sql, parameters, /)
 
-      Execute :ref:`parameterized <sqlite3-placeholders>` SQL statement *sql*
-      against all parameter sequences or mappings found in the sequence
-      *parameters*.  It is also possible to use an
-      :term:`iterator` yielding parameters instead of a sequence.
+      For every item in *parameters*,
+      repeatedly execute the :ref:`parameterized <sqlite3-placeholders>`
+      SQL statement *sql*.
+
       Uses the same implicit transaction handling as :meth:`~Cursor.execute`.
+
+      :param str sql:
+         A single SQL :abbr:`DML (Data Manipulation Language)` statement.
+
+      :param parameters:
+         An :term:`!iterable` of parameters to bind with
+         the placeholders in *sql*.
+         See :ref:`sqlite3-placeholders`.
+      :type parameters: :term:`iterable`
+
+      :raises ProgrammingError:
+         If *sql* contains more than one SQL statement,
+         or is not a DML statment.
 
       Example:
 
@@ -1451,6 +1483,15 @@ Cursor objects
          ]
          # cur is an sqlite3.Cursor object
          cur.executemany("INSERT INTO data VALUES(?)", rows)
+
+      .. deprecated-removed:: 3.12 3.14
+
+         :exc:`DeprecationWarning` is emitted if
+         :ref:`named placeholders <sqlite3-placeholders>` are used
+         and the items in *parameters* are sequences
+         instead of :class:`dict`\s.
+         Starting with Python 3.14, :exc:`ProgrammingError` will
+         be raised instead.
 
    .. method:: executescript(sql_script, /)
 
@@ -1940,40 +1981,47 @@ close the single quote and inject ``OR TRUE`` to select all rows::
 Instead, use the DB-API's parameter substitution. To insert a variable into a
 query string, use a placeholder in the string, and substitute the actual values
 into the query by providing them as a :class:`tuple` of values to the second
-argument of the cursor's :meth:`~Cursor.execute` method. An SQL statement may
-use one of two kinds of placeholders: question marks (qmark style) or named
-placeholders (named style). For the qmark style, ``parameters`` must be a
-:term:`sequence <sequence>`. For the named style, it can be either a
-:term:`sequence <sequence>` or :class:`dict` instance. The length of the
-:term:`sequence <sequence>` must match the number of placeholders, or a
-:exc:`ProgrammingError` is raised. If a :class:`dict` is given, it must contain
-keys for all named parameters. Any extra items are ignored. Here's an example of
-both styles:
+argument of the cursor's :meth:`~Cursor.execute` method.
+
+An SQL statement may use one of two kinds of placeholders:
+question marks (qmark style) or named placeholders (named style).
+For the qmark style, *parameters* must be a
+:term:`sequence` whose length must match the number of placeholders,
+or a :exc:`ProgrammingError` is raised.
+For the named style, *parameters* must be
+an instance of a :class:`dict` (or a subclass),
+which must contain keys for all named parameters;
+any extra items are ignored.
+Here's an example of both styles:
 
 .. testcode::
 
    con = sqlite3.connect(":memory:")
    cur = con.execute("CREATE TABLE lang(name, first_appeared)")
 
-   # This is the qmark style:
-   cur.execute("INSERT INTO lang VALUES(?, ?)", ("C", 1972))
+   # This is the named style used with executemany():
+   data = (
+       {"name": "C", "year": 1972},
+       {"name": "Fortran", "year": 1957},
+       {"name": "Python", "year": 1991},
+       {"name": "Go", "year": 2009},
+   )
+   cur.executemany("INSERT INTO lang VALUES(:name, :year)", data)
 
-   # The qmark style used with executemany():
-   lang_list = [
-       ("Fortran", 1957),
-       ("Python", 1991),
-       ("Go", 2009),
-   ]
-   cur.executemany("INSERT INTO lang VALUES(?, ?)", lang_list)
-
-   # And this is the named style:
-   cur.execute("SELECT * FROM lang WHERE first_appeared = :year", {"year": 1972})
+   # This is the qmark style used in a SELECT query:
+   params = (1972,)
+   cur.execute("SELECT * FROM lang WHERE first_appeared = ?", params)
    print(cur.fetchall())
 
 .. testoutput::
    :hide:
 
    [('C', 1972)]
+
+.. note::
+
+   :pep:`249` numeric placeholders are *not* supported.
+   If used, they will be interpreted as named placeholders.
 
 
 .. _sqlite3-adapters:
@@ -2200,7 +2248,7 @@ This section shows recipes for common adapters and converters.
    assert convert_datetime(b"2019-05-18T15:17:08.123456") == dt
 
    # Using current time as fromtimestamp() returns local date/time.
-   # Droping microseconds as adapt_datetime_epoch truncates fractional second part.
+   # Dropping microseconds as adapt_datetime_epoch truncates fractional second part.
    now = datetime.datetime.now().replace(microsecond=0)
    current_timestamp = int(now.timestamp())
 
@@ -2463,7 +2511,7 @@ Transaction control via the ``autocommit`` attribute
 
 The recommended way of controlling transaction behaviour is through
 the :attr:`Connection.autocommit` attribute,
-which should preferrably be set using the *autocommit* parameter
+which should preferably be set using the *autocommit* parameter
 of :func:`connect`.
 
 It is suggested to set *autocommit* to ``False``,

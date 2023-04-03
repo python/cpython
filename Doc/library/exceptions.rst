@@ -123,7 +123,7 @@ The following exceptions are used mostly as base classes for other exceptions.
          try:
              ...
          except SomeException:
-             tb = sys.exc_info()[2]
+             tb = sys.exception().__traceback__
              raise OtherException(...).with_traceback(tb)
 
    .. method:: add_note(note)
@@ -948,8 +948,8 @@ their subgroups based on the types of the contained exceptions.
       these fields do not need to be updated by :meth:`derive`. ::
 
          >>> class MyGroup(ExceptionGroup):
-         ...     def derive(self, exc):
-         ...         return MyGroup(self.message, exc)
+         ...     def derive(self, excs):
+         ...         return MyGroup(self.message, excs)
          ...
          >>> e = MyGroup("eg", [ValueError(1), TypeError(2)])
          >>> e.add_note("a note")

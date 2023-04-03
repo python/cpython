@@ -266,23 +266,20 @@ class _proto_member:
             args = (args, )     # wrap it one more time
         if not enum_class._use_args_:
             enum_member = enum_class._new_member_(enum_class)
-            if not hasattr(enum_member, '_value_'):
+        else:
+            enum_member = enum_class._new_member_(enum_class, *args)
+        if not hasattr(enum_member, '_value_'):
+            if enum_class._member_type_ is object:
+                enum_member._value_ = value
+            else:
                 try:
                     enum_member._value_ = enum_class._member_type_(*args)
                 except Exception as exc:
-                    enum_member._value_ = value
-        else:
-            enum_member = enum_class._new_member_(enum_class, *args)
-            if not hasattr(enum_member, '_value_'):
-                if enum_class._member_type_ is object:
-                    enum_member._value_ = value
-                else:
-                    try:
-                        enum_member._value_ = enum_class._member_type_(*args)
-                    except Exception as exc:
-                        raise TypeError(
-                                '_value_ not set in __new__, unable to create it'
-                                ) from None
+                    new_exc = TypeError(
+                            '_value_ not set in __new__, unable to create it'
+                            )
+                    new_exc.__cause__ = exc
+                    raise new_exc
         value = enum_member._value_
         enum_member._name_ = member_name
         enum_member.__objclass__ = enum_class
@@ -518,8 +515,13 @@ class EnumType(type):
         #
         # adjust the sunders
         _order_ = classdict.pop('_order_', None)
+        _gnv = classdict.get('_generate_next_value_')
+        if _gnv is not None and type(_gnv) is not staticmethod:
+            _gnv = staticmethod(_gnv)
         # convert to normal dict
         classdict = dict(classdict.items())
+        if _gnv is not None:
+            classdict['_generate_next_value_'] = _gnv
         #
         # data type of member and the controlling Enum class
         member_type, first_enum = metacls._get_mixins_(cls, bases)
@@ -862,13 +864,15 @@ class EnumType(type):
                 member_name, member_value = item
             classdict[member_name] = member_value
 
-        # TODO: replace the frame hack if a blessed way to know the calling
-        # module is ever developed
         if module is None:
             try:
-                module = sys._getframe(2).f_globals['__name__']
-            except (AttributeError, ValueError, KeyError):
-                pass
+                module = sys._getframemodulename(2)
+            except AttributeError:
+                # Fall back on _getframe if _getframemodulename is missing
+                try:
+                    module = sys._getframe(2).f_globals['__name__']
+                except (AttributeError, ValueError, KeyError):
+                    pass
         if module is None:
             _make_class_unpicklable(classdict)
         else:
@@ -921,7 +925,7 @@ class EnumType(type):
     def _check_for_existing_members_(mcls, class_name, bases):
         for chain in bases:
             for base in chain.__mro__:
-                if issubclass(base, Enum) and base._member_names_:
+                if isinstance(base, EnumType) and base._member_names_:
                     raise TypeError(
                             "<enum %r> cannot extend %r"
                             % (class_name, base)
@@ -940,7 +944,7 @@ class EnumType(type):
         # ensure final parent class is an Enum derivative, find any concrete
         # data type, and check that Enum has no members
         first_enum = bases[-1]
-        if not issubclass(first_enum, Enum):
+        if not isinstance(first_enum, EnumType):
             raise TypeError("new enumerations should be created as "
                     "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
         member_type = mcls._find_data_type_(class_name, bases) or object
@@ -952,7 +956,7 @@ class EnumType(type):
             for base in chain.__mro__:
                 if base is object:
                     continue
-                elif issubclass(base, Enum):
+                elif isinstance(base, EnumType):
                     # if we hit an Enum, use it's _value_repr_
                     return base._value_repr_
                 elif '__repr__' in base.__dict__:
@@ -978,12 +982,12 @@ class EnumType(type):
                 base_chain.add(base)
                 if base is object:
                     continue
-                elif issubclass(base, Enum):
+                elif isinstance(base, EnumType):
                     if base._member_type_ is not object:
                         data_types.add(base._member_type_)
                         break
                 elif '__new__' in base.__dict__ or '__init__' in base.__dict__:
-                    if issubclass(base, Enum):
+                    if isinstance(base, EnumType):
                         continue
                     data_types.add(candidate or base)
                     break
@@ -1427,12 +1431,11 @@ class Flag(Enum, boundary=CONFORM):
                     % (cls.__name__, value, unknown, bin(unknown))
                     )
         # normal Flag?
-        __new__ = getattr(cls, '__new_member__', None)
-        if cls._member_type_ is object and not __new__:
+        if cls._member_type_ is object:
             # construct a singleton enum pseudo-member
             pseudo_member = object.__new__(cls)
         else:
-            pseudo_member = (__new__ or cls._member_type_.__new__)(cls, value)
+            pseudo_member = cls._member_type_.__new__(cls, value)
         if not hasattr(pseudo_member, '_value_'):
             pseudo_member._value_ = value
         if member_value:
@@ -1562,11 +1565,6 @@ def unique(enumeration):
         raise ValueError('duplicate values found in %r: %s' %
                 (enumeration, alias_details))
     return enumeration
-
-def _power_of_two(value):
-    if value < 1:
-        return False
-    return value == 2 ** _high_bit(value)
 
 def _dataclass_repr(self):
     dcf = self.__dataclass_fields__

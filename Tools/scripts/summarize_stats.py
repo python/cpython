@@ -404,6 +404,9 @@ def emit_specialization_overview(opcode_stats, total):
             total = 0
             counts = []
             for i, opcode_stat in enumerate(opcode_stats):
+                # Avoid double counting misses
+                if title == "Misses" and "specializable" in opcode_stat:
+                    continue
                 value = opcode_stat.get(field, 0)
                 counts.append((value, opname[i]))
                 total += value

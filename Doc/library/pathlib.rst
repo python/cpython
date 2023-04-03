@@ -105,8 +105,9 @@ we also call *flavours*:
       PurePosixPath('setup.py')
 
    Each element of *pathsegments* can be either a string representing a
-   path segment, an object implementing the :class:`os.PathLike` interface
-   which returns a string, or another path object::
+   path segment, or an object implementing the :class:`os.PathLike` interface
+   where the :meth:`~os.PathLike.__fspath__` method returns a string,
+   such as another path object::
 
       >>> PurePath('foo', 'some/path', 'bar')
       PurePosixPath('foo/some/path/bar')
@@ -118,16 +119,16 @@ we also call *flavours*:
       >>> PurePath()
       PurePosixPath('.')
 
-   When several absolute paths are given, the last is taken as an anchor
-   (mimicking :func:`os.path.join`'s behaviour)::
+   If a segment is an absolute path, all previous segments are ignored
+   (like :func:`os.path.join`)::
 
       >>> PurePath('/etc', '/usr', 'lib64')
       PurePosixPath('/usr/lib64')
       >>> PureWindowsPath('c:/Windows', 'd:bar')
       PureWindowsPath('d:bar')
 
-   However, in a Windows path, changing the local root doesn't discard the
-   previous drive setting::
+   On Windows, the drive is not reset when a rooted relative path
+   segment (e.g., ``r'\foo'``) is encountered::
 
       >>> PureWindowsPath('c:/Windows', '/Program Files')
       PureWindowsPath('c:/Program Files')
@@ -186,7 +187,7 @@ these classes, since they don't provide any operation that does system calls.
 General properties
 ^^^^^^^^^^^^^^^^^^
 
-Paths are immutable and hashable.  Paths of a same flavour are comparable
+Paths are immutable and :term:`hashable`.  Paths of a same flavour are comparable
 and orderable.  These properties respect the flavour's case-folding
 semantics::
 
@@ -212,7 +213,10 @@ Paths of a different flavour compare unequal and cannot be ordered::
 Operators
 ^^^^^^^^^
 
-The slash operator helps create child paths, similarly to :func:`os.path.join`::
+The slash operator helps create child paths, like :func:`os.path.join`.
+If the argument is an absolute path, the previous path is ignored.
+On Windows, the drive is not reset when the argument is a rooted
+relative path (e.g., ``r'\foo'``)::
 
    >>> p = PurePath('/etc')
    >>> p
@@ -222,6 +226,10 @@ The slash operator helps create child paths, similarly to :func:`os.path.join`::
    >>> q = PurePath('bin')
    >>> '/usr' / q
    PurePosixPath('/usr/bin')
+   >>> p / '/an_absolute_path'
+   PurePosixPath('/an_absolute_path')
+   >>> PureWindowsPath('c:/Windows', '/Program Files')
+   PureWindowsPath('c:/Program Files')
 
 A path object can be used anywhere an object implementing :class:`os.PathLike`
 is accepted::
@@ -259,7 +267,7 @@ Accessing individual parts
 To access the individual "parts" (components) of a path, use the following
 property:
 
-.. data:: PurePath.parts
+.. attribute:: PurePath.parts
 
    A tuple giving access to the path's various components::
 
@@ -283,7 +291,7 @@ Methods and properties
 
 Pure paths provide the following methods and properties:
 
-.. data:: PurePath.drive
+.. attribute:: PurePath.drive
 
    A string representing the drive letter or name, if any::
 
@@ -299,7 +307,7 @@ Pure paths provide the following methods and properties:
       >>> PureWindowsPath('//host/share/foo.txt').drive
       '\\\\host\\share'
 
-.. data:: PurePath.root
+.. attribute:: PurePath.root
 
    A string representing the (local or global) root, if any::
 
@@ -335,7 +343,7 @@ Pure paths provide the following methods and properties:
       an implementation-defined manner, although more than two leading slashes
       shall be treated as a single slash."*
 
-.. data:: PurePath.anchor
+.. attribute:: PurePath.anchor
 
    The concatenation of the drive and root::
 
@@ -349,7 +357,7 @@ Pure paths provide the following methods and properties:
       '\\\\host\\share\\'
 
 
-.. data:: PurePath.parents
+.. attribute:: PurePath.parents
 
    A tuple providing access to the logical ancestors of the path::
 
@@ -367,7 +375,7 @@ Pure paths provide the following methods and properties:
    .. versionchanged:: 3.12
       Type changed from a tuple-like immutable sequence to a true tuple.
 
-.. data:: PurePath.parent
+.. attribute:: PurePath.parent
 
    The logical parent of the path::
 
@@ -396,7 +404,7 @@ Pure paths provide the following methods and properties:
       symlinks and eliminate ``".."`` components.
 
 
-.. data:: PurePath.name
+.. attribute:: PurePath.name
 
    A string representing the final path component, excluding the drive and
    root, if any::
@@ -412,7 +420,7 @@ Pure paths provide the following methods and properties:
       ''
 
 
-.. data:: PurePath.suffix
+.. attribute:: PurePath.suffix
 
    The file extension of the final component, if any::
 
@@ -424,7 +432,7 @@ Pure paths provide the following methods and properties:
       ''
 
 
-.. data:: PurePath.suffixes
+.. attribute:: PurePath.suffixes
 
    A list of the path's file extensions::
 
@@ -436,7 +444,7 @@ Pure paths provide the following methods and properties:
       []
 
 
-.. data:: PurePath.stem
+.. attribute:: PurePath.stem
 
    The final path component, without its suffix::
 
@@ -543,7 +551,7 @@ Pure paths provide the following methods and properties:
 
    Create a new path object of the same type by combining the *other*
    arguments. This method is called whenever a derivative path is created,
-   such as from :data:`parent` and :meth:`relative_to`. Subclasses may
+   such as from :attr:`parent` and :meth:`relative_to`. Subclasses may
    override this method to pass information to derivative paths, for example::
 
       from pathlib import PurePosixPath
@@ -1289,7 +1297,8 @@ call fails (for example because the path doesn't exist).
 .. method:: Path.rglob(pattern)
 
    Glob the given relative *pattern* recursively.  This is like calling
-   :func:`Path.glob` with "``**/``" added in front of the *pattern*::
+   :func:`Path.glob` with "``**/``" added in front of the *pattern*, where
+   *patterns* are the same as for :mod:`fnmatch`::
 
       >>> sorted(Path().rglob("*.py"))
       [PosixPath('build/lib/pathlib.py'),
@@ -1464,11 +1473,11 @@ Below is a table mapping various :mod:`os` functions to their corresponding
                                        :meth:`Path.group`
 :func:`os.path.isabs`                  :meth:`PurePath.is_absolute`
 :func:`os.path.join`                   :func:`PurePath.joinpath`
-:func:`os.path.basename`               :data:`PurePath.name`
-:func:`os.path.dirname`                :data:`PurePath.parent`
+:func:`os.path.basename`               :attr:`PurePath.name`
+:func:`os.path.dirname`                :attr:`PurePath.parent`
 :func:`os.path.samefile`               :meth:`Path.samefile`
-:func:`os.path.splitext`               :data:`PurePath.stem` and
-                                       :data:`PurePath.suffix`
+:func:`os.path.splitext`               :attr:`PurePath.stem` and
+                                       :attr:`PurePath.suffix`
 ====================================   ==============================
 
 .. rubric:: Footnotes

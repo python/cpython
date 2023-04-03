@@ -926,6 +926,16 @@ class BuiltinTest(unittest.TestCase):
             f2 = filter(filter_char, "abcdeabcde")
             self.check_iter_pickle(f1, list(f2), proto)
 
+    def test_filter_dealloc(self):
+        # Tests recursive deallocation of nested filter objects using the
+        # thrashcan mechanism. See gh-102356 for more details.
+        max_iters = 1000000
+        i = filter(bool, range(max_iters))
+        for _ in range(max_iters):
+            i = filter(bool, i)
+        del i
+        gc.collect()
+
     def test_getattr(self):
         self.assertTrue(getattr(sys, 'stdout') is sys.stdout)
         self.assertRaises(TypeError, getattr)
@@ -1155,7 +1165,11 @@ class BuiltinTest(unittest.TestCase):
             max()
 
         self.assertRaises(TypeError, max, 42)
-        self.assertRaises(ValueError, max, ())
+        with self.assertRaisesRegex(
+            ValueError,
+            r'max\(\) iterable argument is empty'
+        ):
+            max(())
         class BadSeq:
             def __getitem__(self, index):
                 raise ValueError
@@ -1214,7 +1228,11 @@ class BuiltinTest(unittest.TestCase):
             min()
 
         self.assertRaises(TypeError, min, 42)
-        self.assertRaises(ValueError, min, ())
+        with self.assertRaisesRegex(
+            ValueError,
+            r'min\(\) iterable argument is empty'
+        ):
+            min(())
         class BadSeq:
             def __getitem__(self, index):
                 raise ValueError

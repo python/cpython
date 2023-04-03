@@ -2,7 +2,6 @@
 
 from test import support
 import unittest
-from unittest.mock import MagicMock
 import sys
 import difflib
 import gc

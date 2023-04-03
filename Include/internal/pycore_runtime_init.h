@@ -8,10 +8,14 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_long.h"
 #include "pycore_object.h"
 #include "pycore_parser.h"
 #include "pycore_pymem_init.h"
 #include "pycore_obmalloc_init.h"
+
+
+extern PyTypeObject _PyExc_MemoryError;
 
 
 /* The static initializers defined here should only be used
@@ -33,15 +37,13 @@ extern "C" {
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
         }, \
+        /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
+           in accordance with the specification. */ \
+        .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
         .imports = { \
-            .lock = { \
-                .mutex = NULL, \
-                .thread = PYTHREAD_INVALID_THREAD_ID, \
-                .level = 0, \
-            }, \
-            .find_and_load = { \
-                .header = 1, \
+            .extensions = { \
+                .main_tstate = _PyThreadState_INIT, \
             }, \
         }, \
         .ceval = { \
@@ -49,11 +51,7 @@ extern "C" {
         }, \
         .gilstate = { \
             .check_enabled = 1, \
-            /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
-               in accordance with the specification. */ \
-            .autoTSSkey = Py_tss_NEEDS_INIT, \
         }, \
-        .dtoa = _dtoa_runtime_state_INIT(runtime), \
         .fileutils = { \
             .force_ascii = -1, \
         }, \
@@ -62,12 +60,6 @@ extern "C" {
         .float_state = { \
             .float_format = _py_float_format_unknown, \
             .double_format = _py_float_format_unknown, \
-        }, \
-        .dict_state = { \
-            .next_keys_version = 2, \
-        }, \
-        .func_state = { \
-            .next_version = 1, \
         }, \
         .types = { \
             .next_version_tag = 1, \
@@ -94,26 +86,13 @@ extern "C" {
                 }, \
             }, \
         }, \
-        ._main_interpreter = _PyInterpreterState_INIT, \
+        ._main_interpreter = _PyInterpreterState_INIT(runtime._main_interpreter), \
     }
 
-#ifdef HAVE_DLOPEN
-#  include <dlfcn.h>
-#  if HAVE_DECL_RTLD_NOW
-#    define _Py_DLOPEN_FLAGS RTLD_NOW
-#  else
-#    define _Py_DLOPEN_FLAGS RTLD_LAZY
-#  endif
-#  define DLOPENFLAGS_INIT .dlopenflags = _Py_DLOPEN_FLAGS,
-#else
-#  define _Py_DLOPEN_FLAGS 0
-#  define DLOPENFLAGS_INIT
-#endif
-
-#define _PyInterpreterState_INIT \
+#define _PyInterpreterState_INIT(INTERP) \
     { \
         .id_refcount = -1, \
-        DLOPENFLAGS_INIT \
+        .imports = IMPORTS_INIT, \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         }, \
@@ -126,12 +105,22 @@ extern "C" {
                 { .threshold = 10, }, \
             }, \
         }, \
+        .dtoa = _dtoa_state_INIT(&(INTERP)), \
+        .dict_state = { \
+            .next_keys_version = 2, \
+        }, \
+        .func_state = { \
+            .next_version = 1, \
+        }, \
         .static_objects = { \
             .singletons = { \
                 ._not_used = 1, \
                 .hamt_empty = { \
                     .ob_base = _PyObject_IMMORTAL_INIT(&_PyHamt_Type), \
                     .h_root = (PyHamtNode*)&_Py_SINGLETON(hamt_bitmap_node_empty), \
+                }, \
+                .last_resort_memory_error = { \
+                    _PyObject_IMMORTAL_INIT(&_PyExc_MemoryError), \
                 }, \
             }, \
         }, \
@@ -146,13 +135,6 @@ extern "C" {
 
 
 // global objects
-
-#define _PyLong_DIGIT_INIT(val) \
-    { \
-        _PyVarObject_IMMORTAL_INIT(&PyLong_Type, \
-                                   ((val) == 0 ? 0 : ((val) > 0 ? 1 : -1))), \
-        .ob_digit = { ((val) >= 0 ? (val) : -(val)) }, \
-    }
 
 #define _PyBytes_SIMPLE_INIT(CH, LEN) \
     { \
