@@ -1,2 +1,0 @@
-This introduces Immortal Instances which allows objects to bypass reference
-counting and remain alive throughout the execution of the runtime.

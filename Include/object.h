@@ -607,7 +607,6 @@ static inline void Py_INCREF(PyObject *op)
     // Stable ABI for Python 3.10 built in debug mode.
     _Py_IncRef(op);
 #else
-    _Py_INCREF_STAT_INC();
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
 #if SIZEOF_VOID_P > 4

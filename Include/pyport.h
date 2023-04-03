@@ -184,10 +184,10 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #  define Py_LOCAL_INLINE(type) static inline type
 #endif
 
-// Preprocessor check for a builtin preprocessor function. Always return 0
-// if __has_builtin() macro is not defined.
+// Preprocessor check for a builtin preprocessor function.
+// Return 0 if the __has_builtin() macro is not defined.
 //
-// __has_builtin() is available on clang and GCC 10.
+// __has_builtin() is available in Clang and in GCC 10+.
 #ifdef __has_builtin
 #  define _Py__has_builtin(x) __has_builtin(x)
 #else
