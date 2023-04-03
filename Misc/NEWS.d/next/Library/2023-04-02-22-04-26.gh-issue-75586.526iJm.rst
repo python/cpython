@@ -1,1 +1,1 @@
-Fix an issue with ``shutil.which`` on Windows where PATHEXT was not consulted when checking for a match in PATH.
+Fix various Windows-specific issues with ``shutil.which``.
