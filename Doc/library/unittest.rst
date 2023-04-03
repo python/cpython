@@ -244,6 +244,10 @@ Command-line options
 
    Show local variables in tracebacks.
 
+.. cmdoption:: --durations N
+
+   Show the N slowest test cases (N=0 for all).
+
 .. versionadded:: 3.2
    The command-line options ``-b``, ``-c`` and ``-f`` were added.
 
@@ -253,9 +257,11 @@ Command-line options
 .. versionadded:: 3.7
    The command-line option ``-k``.
 
+.. versionadded:: 3.12
+   The command-line option ``--durations``.
+
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
-
 
 .. _unittest-test-discovery:
 
@@ -2009,6 +2015,13 @@ Loading and running tests
       A list containing :class:`TestCase` instances that were marked as expected
       failures, but succeeded.
 
+   .. attribute:: collectedDurations
+
+      A list containing 2-tuples of :class:`TestCase` instances and floats
+      representing the elapsed time of each test which was run.
+
+      .. versionadded:: 3.12
+
    .. attribute:: shouldStop
 
       Set to ``True`` when the execution of tests should stop by :meth:`stop`.
@@ -2160,14 +2173,27 @@ Loading and running tests
 
       .. versionadded:: 3.4
 
+   .. method:: addDuration(test, elapsed)
 
-.. class:: TextTestResult(stream, descriptions, verbosity)
+      Called when the test case finishes.  *elapsed* is the time represented in
+      seconds, and it includes the execution of cleanup functions.
+
+      .. versionadded:: 3.12
+
+.. class:: TextTestResult(stream, descriptions, verbosity, *, durations=None)
 
    A concrete implementation of :class:`TestResult` used by the
-   :class:`TextTestRunner`.
+   :class:`TextTestRunner`. Subclasses should accept ``**kwargs`` to ensure
+   compatibility as the interface changes.
 
    .. versionadded:: 3.2
 
+   .. versionadded:: 3.12
+      Added *durations* keyword argument.
+
+   .. versionchanged:: 3.12
+      Subclasses should accept ``**kwargs`` to ensure compatibility as the
+      interface changes.
 
 .. data:: defaultTestLoader
 
@@ -2177,7 +2203,8 @@ Loading and running tests
 
 
 .. class:: TextTestRunner(stream=None, descriptions=True, verbosity=1, failfast=False, \
-                          buffer=False, resultclass=None, warnings=None, *, tb_locals=False)
+                          buffer=False, resultclass=None, warnings=None, *, \
+                          tb_locals=False, durations=None)
 
    A basic test runner implementation that outputs results to a stream. If *stream*
    is ``None``, the default, :data:`sys.stderr` is used as the output stream. This class
@@ -2195,14 +2222,17 @@ Loading and running tests
    *warnings* to ``None``.
 
    .. versionchanged:: 3.2
-      Added the ``warnings`` argument.
+      Added the *warnings* parameter.
 
    .. versionchanged:: 3.2
       The default stream is set to :data:`sys.stderr` at instantiation time rather
       than import time.
 
    .. versionchanged:: 3.5
-      Added the tb_locals parameter.
+      Added the *tb_locals* parameter.
+
+   .. versionchanged:: 3.12
+      Added the *durations* parameter.
 
    .. method:: _makeResult()
 
