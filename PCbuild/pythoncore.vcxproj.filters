@@ -621,6 +621,9 @@
     <ClInclude Include="..\Include\internal\pycore_object.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_object_state.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_obmalloc.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1101,6 +1104,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ceval.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\flowgraph.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\codecs.c">

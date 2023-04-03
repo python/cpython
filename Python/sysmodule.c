@@ -1854,7 +1854,9 @@ static Py_ssize_t
 sys_gettotalrefcount_impl(PyObject *module)
 /*[clinic end generated code: output=4103886cf17c25bc input=53b744faa5d2e4f6]*/
 {
-    return _Py_GetRefTotal();
+    /* It may make sense to return the total for the current interpreter
+       or have a second function that does so. */
+    return _Py_GetGlobalRefTotal();
 }
 
 #endif /* Py_REF_DEBUG */

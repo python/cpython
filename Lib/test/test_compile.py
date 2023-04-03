@@ -1283,7 +1283,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_FALSE',
             line=2, end_line=2, column=15, end_column=16, occurrence=2)
         # compare d and 0
-        self.assertOpcodeSourcePositionIs(compiled_code, 'COMPARE_AND_BRANCH',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'COMPARE_OP',
             line=4, end_line=4, column=8, end_column=13, occurrence=1)
         # jump if comparison it True
         self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_TRUE',

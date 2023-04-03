@@ -25,6 +25,7 @@ PyAPI_FUNC(PyStatus) PyStatus_Exit(int exitcode);
 PyAPI_FUNC(int) PyStatus_IsError(PyStatus err);
 PyAPI_FUNC(int) PyStatus_IsExit(PyStatus err);
 PyAPI_FUNC(int) PyStatus_Exception(PyStatus err);
+PyAPI_FUNC(PyObject *) _PyErr_SetFromPyStatus(PyStatus status);
 
 /* --- PyWideStringList ------------------------------------------------ */
 

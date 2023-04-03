@@ -52,10 +52,6 @@ class TestTranforms(BytecodeTestCase):
                 tgt.opname == 'RETURN_VALUE'):
                 self.fail(f'{instr.opname} at {instr.offset} '
                           f'jumps to {tgt.opname} at {tgt.offset}')
-            # JUMP_IF_*_OR_POP jump to conditional jump
-            if '_OR_POP' in instr.opname and 'JUMP_IF_' in tgt.opname:
-                self.fail(f'{instr.opname} at {instr.offset} '
-                          f'jumps to {tgt.opname} at {tgt.offset}')
 
     def check_lnotab(self, code):
         "Check that the lnotab byte offsets are sensible."
@@ -384,38 +380,36 @@ class TestTranforms(BytecodeTestCase):
 
     def test_elim_jump_to_uncond_jump3(self):
         # Intentionally use two-line expressions to test issue37213.
-        # JUMP_IF_FALSE_OR_POP to JUMP_IF_FALSE_OR_POP --> JUMP_IF_FALSE_OR_POP to non-jump
+        # POP_JUMP_IF_FALSE to POP_JUMP_IF_FALSE --> POP_JUMP_IF_FALSE to non-jump
         def f(a, b, c):
             return ((a and b)
                     and c)
         self.check_jump_targets(f)
         self.check_lnotab(f)
-        self.assertEqual(count_instr_recursively(f, 'JUMP_IF_FALSE_OR_POP'), 2)
-        # JUMP_IF_TRUE_OR_POP to JUMP_IF_TRUE_OR_POP --> JUMP_IF_TRUE_OR_POP to non-jump
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_FALSE'), 2)
+        # POP_JUMP_IF_TRUE to POP_JUMP_IF_TRUE --> POP_JUMP_IF_TRUE to non-jump
         def f(a, b, c):
             return ((a or b)
                     or c)
         self.check_jump_targets(f)
         self.check_lnotab(f)
-        self.assertEqual(count_instr_recursively(f, 'JUMP_IF_TRUE_OR_POP'), 2)
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_TRUE'), 2)
         # JUMP_IF_FALSE_OR_POP to JUMP_IF_TRUE_OR_POP --> POP_JUMP_IF_FALSE to non-jump
         def f(a, b, c):
             return ((a and b)
                     or c)
         self.check_jump_targets(f)
         self.check_lnotab(f)
-        self.assertNotInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
-        self.assertInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
-        self.assertInBytecode(f, 'POP_JUMP_IF_FALSE')
-        # JUMP_IF_TRUE_OR_POP to JUMP_IF_FALSE_OR_POP --> POP_JUMP_IF_TRUE to non-jump
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_FALSE'), 1)
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_TRUE'), 1)
+        # POP_JUMP_IF_TRUE to POP_JUMP_IF_FALSE --> POP_JUMP_IF_TRUE to non-jump
         def f(a, b, c):
             return ((a or b)
                     and c)
         self.check_jump_targets(f)
         self.check_lnotab(f)
-        self.assertNotInBytecode(f, 'JUMP_IF_TRUE_OR_POP')
-        self.assertInBytecode(f, 'JUMP_IF_FALSE_OR_POP')
-        self.assertInBytecode(f, 'POP_JUMP_IF_TRUE')
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_FALSE'), 1)
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_TRUE'), 1)
 
     def test_elim_jump_to_uncond_jump4(self):
         def f():

@@ -1042,15 +1042,6 @@ iterations of the loop.
    ``cmp_op[opname]``.
 
 
-.. opcode:: COMPARE_AND_BRANCH (opname)
-
-   Compares the top two values on the stack, popping them, then branches.
-   The direction and offset of the jump is embedded as a ``POP_JUMP_IF_TRUE``
-   or ``POP_JUMP_IF_FALSE`` instruction immediately following the cache.
-
-   .. versionadded:: 3.12
-
-
 .. opcode:: IS_OP (invert)
 
    Performs ``is`` comparison, or ``is not`` if ``invert`` is 1.
@@ -1151,30 +1142,6 @@ iterations of the loop.
 
    .. versionchanged:: 3.12
       This is no longer a pseudo-instruction.
-
-
-.. opcode:: JUMP_IF_TRUE_OR_POP (delta)
-
-   If ``STACK[-1]`` is true, increments the bytecode counter by *delta* and leaves
-   ``STACK[-1]`` on the stack.  Otherwise (``STACK[-1]`` is false), ``STACK[-1]``
-   is popped.
-
-   .. versionadded:: 3.1
-
-   .. versionchanged:: 3.11
-      The oparg is now a relative delta rather than an absolute target.
-
-.. opcode:: JUMP_IF_FALSE_OR_POP (delta)
-
-   If ``STACK[-1]`` is false, increments the bytecode counter by *delta* and leaves
-   ``STACK[-1]`` on the stack. Otherwise (``STACK[-1]`` is true), ``STACK[-1]`` is
-   popped.
-
-   .. versionadded:: 3.1
-
-   .. versionchanged:: 3.11
-      The oparg is now a relative delta rather than an absolute target.
-
 
 .. opcode:: FOR_ITER (delta)
 
