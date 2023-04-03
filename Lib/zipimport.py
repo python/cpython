@@ -88,11 +88,8 @@ class zipimporter(_bootstrap_external._LoaderBasics):
                     raise ZipImportError('not a Zip file', path=path)
                 break
 
-        try:
-            files = _zip_directory_cache[path]
-        except KeyError:
-            files = _read_directory(path)
-            _zip_directory_cache[path] = files
+        if path not in _zip_directory_cache:
+            _zip_directory_cache[path] = _read_directory(path)
         self._cache_is_valid = True
         self.archive = path
         # a prefix directory following the ZIP file path.
