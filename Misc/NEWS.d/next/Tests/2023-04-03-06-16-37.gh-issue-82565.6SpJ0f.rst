@@ -1,0 +1,2 @@
+Fix a crash in the C implementation of :mod:`pickle` if an error occurred
+while looking up the ``read``  and ``readline`` attribute of the file.
