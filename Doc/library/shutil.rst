@@ -449,7 +449,7 @@ Directory and files operations
       'C:\\Python33\\python.EXE'
 
    Similar ``PATHEXT`` logic is also applied when a full path to a *cmd* is
-   given, though without an extension::
+   given, containing a directory component::
 
       >> shutil.which("C:\\Python33\\python")
       'C:\\Python33\\python.EXE'
