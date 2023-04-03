@@ -1714,7 +1714,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         usage = "\n".join([f"{' ' * len(self.prompt)}Usage: {lines[0].strip()}"] + \
                 [f"{' ' * len(self.prompt + 'Usage: ')}"
                  f"{line.strip()}" for line in lines[1:usage_end]])
-        
+
         description = "\n".join(f"      {line.strip()}" for line in lines[usage_end:])
 
         return f"{usage}\n{description}"
