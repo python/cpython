@@ -1626,7 +1626,8 @@ monitoring_use_tool_impl(PyObject *module, int tool_id, PyObject *name)
         return NULL;
     }
     if (!PyUnicode_Check(name)) {
-         PyErr_SetString(PyExc_ValueError, "tool name must be a str");
+        PyErr_SetString(PyExc_ValueError, "tool name must be a str");
+        return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_Get();
     if (interp->monitoring_tool_names[tool_id] != NULL) {
