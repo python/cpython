@@ -204,7 +204,7 @@ class OrderedDict(dict):
             root.next = link
 
     def sort(self, /, **kwargs):
-        if len(self) > 2:
+        if len(self) < 2:
             return
 
         root = link_prev = self.__root
