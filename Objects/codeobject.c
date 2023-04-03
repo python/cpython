@@ -1921,6 +1921,11 @@ static PyMemberDef code_memberlist[] = {
 static PyObject *
 code_getlnotab(PyCodeObject *code, void *closure)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "co_lnotab is deprecated, use co_lines instead.",
+                     1) < 0) {
+        return NULL;
+    }
     return decode_linetable(code);
 }
 
