@@ -86,6 +86,14 @@ The :mod:`functools` module defines the following functions:
    The cached value can be cleared by deleting the attribute.  This
    allows the *cached_property* method to run again.
 
+   The *cached_property* does not prevent a possible race condition in
+   multi-threaded usage. The getter function could run more than once on the
+   same instance, with the latest run setting the cached value. If the cached
+   property is idempotent or otherwise not harmful to run more than once on an
+   instance, this is fine. If synchronization is needed, implement the necessary
+   locking inside the decorated getter function or around the cached property
+   access.
+
    Note, this decorator interferes with the operation of :pep:`412`
    key-sharing dictionaries.  This means that instance dictionaries
    can take more space than usual.
@@ -109,6 +117,14 @@ The :mod:`functools` module defines the following functions:
            @cache
            def stdev(self):
                return statistics.stdev(self._data)
+
+
+   .. versionchanged:: 3.12
+      Prior to Python 3.12, ``cached_property`` included an undocumented lock to
+      ensure that in multi-threaded usage the getter function was guaranteed to
+      run only once per instance. However, the lock was per-property, not
+      per-instance, which could result in unacceptably high lock contention. In
+      Python 3.12+ this locking is removed.
 
    .. versionadded:: 3.8
 

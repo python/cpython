@@ -1622,7 +1622,7 @@ that.
 It is safe to set these to false on any Python version. They will have no
 effect on older versions when unsupported. Do not assume the attributes are
 available to read. Despite their names, a true value does not indicate that the
-corresponding function will be used, only that that it may be.
+corresponding function will be used, only that it may be.
 
 Please file issues any time you have to use these private knobs with a way to
 reproduce the issue you were seeing. Link to that issue from a comment in your

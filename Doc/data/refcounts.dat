@@ -839,6 +839,8 @@ PyEval_EvalFrameEx:int:throwflag::
 PyEval_MergeCompilerFlags:int:::
 PyEval_MergeCompilerFlags:PyCompilerFlags*:cf::
 
+PyException_GetArgs:PyObject*::+1:
+
 PyException_GetCause:PyObject*::+1:
 PyException_GetCause:PyObject*:ex:0:
 
