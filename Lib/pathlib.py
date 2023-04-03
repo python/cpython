@@ -274,10 +274,7 @@ class PurePath(object):
             path = os.fspath(args[0])
         else:
             path = self._flavour.join(*args)
-        if isinstance(path, str):
-            # Force-cast str subclasses to str (issue #21127)
-            path = str(path)
-        else:
+        if not isinstance(path, str):
             raise TypeError(
                 "argument should be a str or an os.PathLike "
                 "object where __fspath__ returns a str, "
@@ -296,7 +293,7 @@ class PurePath(object):
         if drv.startswith(sep):
             # pathlib assumes that UNC paths always have a root.
             root = sep
-        parsed = [sys.intern(x) for x in rel.split(sep) if x and x != '.']
+        parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
         return drv, root, parsed
 
     def _load_parts(self):
