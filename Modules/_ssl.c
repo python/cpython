@@ -2006,7 +2006,7 @@ _ssl__SSLSocket_shared_ciphers_impl(PySSLSocket *self)
 
     /* Rather than use SSL_get_shared_ciphers, we use an equivalent algorithm because:
 
-       1) It returns a colon seperated list of strings, in an undefined
+       1) It returns a colon separated list of strings, in an undefined
           order, that we would have to post process back into tuples.
        2) It will return a truncated string with no indication that it has
           done so, if the buffer is too small.
