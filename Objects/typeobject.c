@@ -8,6 +8,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"        // _PyType_HasFeature()
+#include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_typeobject.h"    // struct type_cache
@@ -317,9 +318,25 @@ _PyType_InitCache(PyInterpreterState *interp)
         entry->version = 0;
         // Set to None so _PyType_Lookup() can use Py_SETREF(),
         // rather than using slower Py_XSETREF().
-        entry->name = Py_NewRef(Py_None);
+        // (See _PyType_FixCacheRefcounts() about the refcount.)
+        entry->name = Py_None;
         entry->value = NULL;
     }
+}
+
+// This is the temporary fix used by pycore_create_interpreter(),
+// in pylifecycle.c.  _PyType_InitCache() is called before the GIL
+// has been created (for the main interpreter) and without the
+// "current" thread state set.  This causes crashes when the
+// reftotal is updated, so we don't modify the refcount in
+// _PyType_InitCache(), and instead do it later by calling
+// _PyType_FixCacheRefcounts().
+// XXX This workaround should be removed once we have immortal
+// objects (PEP 683).
+void
+_PyType_FixCacheRefcounts(void)
+{
+    _Py_RefcntAdd(Py_None, (1 << MCACHE_SIZE_EXP));
 }
 
 
@@ -493,6 +510,11 @@ PyType_Modified(PyTypeObject *type)
 
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
+    if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // This field *must* be invalidated if the type is modified (see the
+        // comment on struct _specialization_cache):
+        ((PyHeapTypeObject *)type)->_spec_cache.getitem = NULL;
+    }
 }
 
 static void
@@ -546,6 +568,11 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
  clear:
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0; /* 0 is not a valid version tag */
+    if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // This field *must* be invalidated if the type is modified (see the
+        // comment on struct _specialization_cache):
+        ((PyHeapTypeObject *)type)->_spec_cache.getitem = NULL;
+    }
 }
 
 static int
@@ -7849,7 +7876,7 @@ slot_sq_length(PyObject *self)
         return -1;
 
     assert(PyLong_Check(res));
-    if (Py_SIZE(res) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)res)) {
         Py_DECREF(res);
         PyErr_SetString(PyExc_ValueError,
                         "__len__() should return >= 0");
@@ -8247,14 +8274,17 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
         (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
          (void *)PyObject_GenericGetAttr))
-        res = PyObject_GenericGetAttr(self, name);
+        /* finding nothing is reasonable when __getattr__ is defined */
+        res = _PyObject_GenericTryGetAttr(self, name);
     else {
         Py_INCREF(getattribute);
         res = call_attribute(self, getattribute, name);
         Py_DECREF(getattribute);
     }
-    if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
+    if (res == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+        }
         res = call_attribute(self, getattr, name);
     }
     Py_DECREF(getattr);

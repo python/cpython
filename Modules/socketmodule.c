@@ -353,7 +353,7 @@ remove_unusable_flags(PyObject *m)
     }
 #ifndef MS_WINDOWS_DESKTOP
     info.dwOSVersionInfoSize = sizeof(info);
-    if (!GetVersionExW((OSVERSIONINFOW*) &info)) {
+    if (!GetVersionEx((OSVERSIONINFO*) &info)) {
         PyErr_SetFromWindowsErr(0);
         return -1;
     }
@@ -3538,7 +3538,8 @@ PyDoc_STRVAR(getsockname_doc,
 \n\
 Return the address of the local endpoint. The format depends on the\n\
 address family. For IPv4 sockets, the address info is a pair\n\
-(hostaddr, port).");
+(hostaddr, port). For IPv6 sockets, the address info is a 4-tuple\n\
+(hostaddr, port, flowinfo, scope_id).");
 #endif
 
 

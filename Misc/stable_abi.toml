@@ -609,6 +609,8 @@
     added = '3.2'
 [function.PyErr_Display]
     added = '3.2'
+[function.PyErr_DisplayException]
+    added = '3.12'
 [function.PyErr_ExceptionMatches]
     added = '3.2'
 [function.PyErr_Fetch]

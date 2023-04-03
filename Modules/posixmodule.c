@@ -41,6 +41,7 @@
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
 #else
+#  include "pycore_fileutils_windows.h"
 #  include "winreparse.h"
 #endif
 
@@ -668,8 +669,11 @@ PyOS_AfterFork(void)
 #ifdef MS_WINDOWS
 /* defined in fileutils.c */
 void _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
-void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *,
-                                            ULONG, struct _Py_stat_struct *);
+void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *, ULONG,
+                                FILE_BASIC_INFO *, FILE_ID_INFO *,
+                                struct _Py_stat_struct *);
+void _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *,
+                                 struct _Py_stat_struct *);
 #endif
 
 
@@ -1819,12 +1823,39 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
     return TRUE;
 }
 
+
+static void
+update_st_mode_from_path(const wchar_t *path, DWORD attr,
+                         struct _Py_stat_struct *result)
+{
+    if (!(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+        /* Fix the file execute permissions. This hack sets S_IEXEC if
+           the filename has an extension that is commonly used by files
+           that CreateProcessW can execute. A real implementation calls
+           GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
+           AccessCheck to check for generic read, write, and execute
+           access. */
+        const wchar_t *fileExtension = wcsrchr(path, '.');
+        if (fileExtension) {
+            if (_wcsicmp(fileExtension, L".exe") == 0 ||
+                _wcsicmp(fileExtension, L".bat") == 0 ||
+                _wcsicmp(fileExtension, L".cmd") == 0 ||
+                _wcsicmp(fileExtension, L".com") == 0) {
+                result->st_mode |= 0111;
+            }
+        }
+    }
+}
+
+
 static int
-win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
-                 BOOL traverse)
+win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
+                      BOOL traverse)
 {
     HANDLE hFile;
     BY_HANDLE_FILE_INFORMATION fileInfo;
+    FILE_BASIC_INFO basicInfo;
+    FILE_ID_INFO idInfo;
     FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
     DWORD fileType, error;
     BOOL isUnhandledTag = FALSE;
@@ -1954,12 +1985,16 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                    for an unhandled tag. */
                 } else if (!isUnhandledTag) {
                     CloseHandle(hFile);
-                    return win32_xstat_impl(path, result, TRUE);
+                    return win32_xstat_slow_impl(path, result, TRUE);
                 }
             }
         }
 
-        if (!GetFileInformationByHandle(hFile, &fileInfo)) {
+        if (!GetFileInformationByHandle(hFile, &fileInfo) ||
+            !GetFileInformationByHandleEx(hFile, FileBasicInfo,
+                                          &basicInfo, sizeof(basicInfo)) ||
+            !GetFileInformationByHandleEx(hFile, FileIdInfo,
+                                          &idInfo, sizeof(idInfo))) {
             switch (GetLastError()) {
             case ERROR_INVALID_PARAMETER:
             case ERROR_INVALID_FUNCTION:
@@ -1975,25 +2010,8 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
         }
     }
 
-    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, result);
-
-    if (!(fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-        /* Fix the file execute permissions. This hack sets S_IEXEC if
-           the filename has an extension that is commonly used by files
-           that CreateProcessW can execute. A real implementation calls
-           GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
-           AccessCheck to check for generic read, write, and execute
-           access. */
-        const wchar_t *fileExtension = wcsrchr(path, '.');
-        if (fileExtension) {
-            if (_wcsicmp(fileExtension, L".exe") == 0 ||
-                _wcsicmp(fileExtension, L".bat") == 0 ||
-                _wcsicmp(fileExtension, L".cmd") == 0 ||
-                _wcsicmp(fileExtension, L".com") == 0) {
-                result->st_mode |= 0111;
-            }
-        }
-    }
+    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, &basicInfo, &idInfo, result);
+    update_st_mode_from_path(path, fileInfo.dwFileAttributes, result);
 
 cleanup:
     if (hFile != INVALID_HANDLE_VALUE) {
@@ -2011,12 +2029,49 @@ cleanup:
 }
 
 static int
+win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
+                 BOOL traverse)
+{
+    FILE_STAT_BASIC_INFORMATION statInfo;
+    if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo,
+                                     &statInfo, sizeof(statInfo))) {
+        if (// Cannot use fast path for reparse points ...
+            !(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+            // ... unless it's a name surrogate (symlink) and we're not following
+            || (!traverse && IsReparseTagNameSurrogate(statInfo.ReparseTag))
+        ) {
+            _Py_stat_basic_info_to_stat(&statInfo, result);
+            update_st_mode_from_path(path, statInfo.FileAttributes, result);
+            return 0;
+        }
+    } else {
+        switch(GetLastError()) {
+        case ERROR_FILE_NOT_FOUND:
+        case ERROR_PATH_NOT_FOUND:
+        case ERROR_NOT_READY:
+        case ERROR_BAD_NET_NAME:
+            /* These errors aren't worth retrying with the slow path */
+            return -1;
+        case ERROR_NOT_SUPPORTED:
+            /* indicates the API couldn't be loaded */
+            break;
+        }
+    }
+
+    return win32_xstat_slow_impl(path, result, traverse);
+}
+
+static int
 win32_xstat(const wchar_t *path, struct _Py_stat_struct *result, BOOL traverse)
 {
     /* Protocol violation: we explicitly clear errno, instead of
        setting it to a POSIX error. Callers should use GetLastError. */
     int code = win32_xstat_impl(path, result, traverse);
     errno = 0;
+
+    /* ctime is only deprecated from 3.12, so we copy birthtime across */
+    result->st_ctime = result->st_birthtime;
+    result->st_ctime_nsec = result->st_birthtime_nsec;
     return code;
 }
 /* About the following functions: win32_lstat_w, win32_stat, win32_stat_w
@@ -2087,8 +2142,11 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STRUCT_STAT_ST_GEN
     {"st_gen",    "generation number"},
 #endif
-#ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
+#if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME) || defined(MS_WINDOWS)
     {"st_birthtime",   "time of creation"},
+#endif
+#ifdef MS_WINDOWS
+    {"st_birthtime_ns", "time of creation in nanoseconds"},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
     {"st_file_attributes", "Windows file attribute bits"},
@@ -2132,16 +2190,22 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_GEN_IDX ST_FLAGS_IDX
 #endif
 
-#ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
+#if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME) || defined(MS_WINDOWS)
 #define ST_BIRTHTIME_IDX (ST_GEN_IDX+1)
 #else
 #define ST_BIRTHTIME_IDX ST_GEN_IDX
 #endif
 
-#ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
-#define ST_FILE_ATTRIBUTES_IDX (ST_BIRTHTIME_IDX+1)
+#ifdef MS_WINDOWS
+#define ST_BIRTHTIME_NS_IDX (ST_BIRTHTIME_IDX+1)
 #else
-#define ST_FILE_ATTRIBUTES_IDX ST_BIRTHTIME_IDX
+#define ST_BIRTHTIME_NS_IDX ST_BIRTHTIME_IDX
+#endif
+
+#if defined(HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES) || defined(MS_WINDOWS)
+#define ST_FILE_ATTRIBUTES_IDX (ST_BIRTHTIME_NS_IDX+1)
+#else
+#define ST_FILE_ATTRIBUTES_IDX ST_BIRTHTIME_NS_IDX
 #endif
 
 #ifdef HAVE_STRUCT_STAT_ST_FSTYPE
@@ -2310,7 +2374,7 @@ _posix_free(void *module)
 }
 
 static void
-fill_time(PyObject *module, PyObject *v, int index, time_t sec, unsigned long nsec)
+fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index, time_t sec, unsigned long nsec)
 {
     PyObject *s = _PyLong_FromTime_t(sec);
     PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
@@ -2334,12 +2398,18 @@ fill_time(PyObject *module, PyObject *v, int index, time_t sec, unsigned long ns
         goto exit;
     }
 
-    PyStructSequence_SET_ITEM(v, index, s);
-    PyStructSequence_SET_ITEM(v, index+3, float_s);
-    PyStructSequence_SET_ITEM(v, index+6, ns_total);
-    s = NULL;
-    float_s = NULL;
-    ns_total = NULL;
+    if (s_index >= 0) {
+        PyStructSequence_SET_ITEM(v, s_index, s);
+        s = NULL;
+    }
+    if (f_index >= 0) {
+        PyStructSequence_SET_ITEM(v, f_index, float_s);
+        float_s = NULL;
+    }
+    if (ns_index >= 0) {
+        PyStructSequence_SET_ITEM(v, ns_index, ns_total);
+        ns_total = NULL;
+    }
 exit:
     Py_XDECREF(s);
     Py_XDECREF(ns_fractional);
@@ -2347,6 +2417,33 @@ exit:
     Py_XDECREF(ns_total);
     Py_XDECREF(float_s);
 }
+
+#ifdef MS_WINDOWS
+static PyObject*
+_pystat_l128_from_l64_l64(uint64_t low, uint64_t high)
+{
+    PyObject *o_low = PyLong_FromUnsignedLongLong(low);
+    if (!o_low || !high) {
+        return o_low;
+    }
+    PyObject *o_high = PyLong_FromUnsignedLongLong(high);
+    PyObject *l64 = o_high ? PyLong_FromLong(64) : NULL;
+    if (!l64) {
+        Py_XDECREF(o_high);
+        Py_DECREF(o_low);
+        return NULL;
+    }
+    Py_SETREF(o_high, PyNumber_Lshift(o_high, l64));
+    Py_DECREF(l64);
+    if (!o_high) {
+        Py_DECREF(o_low);
+        return NULL;
+    }
+    Py_SETREF(o_low, PyNumber_Add(o_low, o_high));
+    Py_DECREF(o_high);
+    return o_low;
+}
+#endif
 
 /* pack a system stat C structure into the Python stat tuple
    (used by posix_stat() and posix_fstat()) */
@@ -2360,12 +2457,13 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
         return NULL;
 
     PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
+#ifdef MS_WINDOWS
+    PyStructSequence_SET_ITEM(v, 1, _pystat_l128_from_l64_l64(st->st_ino, st->st_ino_high));
+    PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLongLong(st->st_dev));
+#else
     static_assert(sizeof(unsigned long long) >= sizeof(st->st_ino),
                   "stat.st_ino is larger than unsigned long long");
     PyStructSequence_SET_ITEM(v, 1, PyLong_FromUnsignedLongLong(st->st_ino));
-#ifdef MS_WINDOWS
-    PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLong(st->st_dev));
-#else
     PyStructSequence_SET_ITEM(v, 2, _PyLong_FromDev(st->st_dev));
 #endif
     PyStructSequence_SET_ITEM(v, 3, PyLong_FromLong((long)st->st_nlink));
@@ -2395,9 +2493,9 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #else
     ansec = mnsec = cnsec = 0;
 #endif
-    fill_time(module, v, 7, st->st_atime, ansec);
-    fill_time(module, v, 8, st->st_mtime, mnsec);
-    fill_time(module, v, 9, st->st_ctime, cnsec);
+    fill_time(module, v, 7, 10, 13, st->st_atime, ansec);
+    fill_time(module, v, 8, 11, 14, st->st_mtime, mnsec);
+    fill_time(module, v, 9, 12, 15, st->st_ctime, cnsec);
 
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
@@ -2415,7 +2513,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
     PyStructSequence_SET_ITEM(v, ST_GEN_IDX,
                               PyLong_FromLong((long)st->st_gen));
 #endif
-#ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
+#if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME)
     {
       PyObject *val;
       unsigned long bsec,bnsec;
@@ -2429,6 +2527,9 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
       PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
                                 val);
     }
+#elif defined(MS_WINDOWS)
+    fill_time(module, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
+              st->st_birthtime, st->st_birthtime_nsec);
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
     PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX,
@@ -14639,7 +14740,7 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
     }
 
     find_data_to_file_info(dataW, &file_info, &reparse_tag);
-    _Py_attribute_data_to_stat(&file_info, reparse_tag, &entry->win32_lstat);
+    _Py_attribute_data_to_stat(&file_info, reparse_tag, NULL, NULL, &entry->win32_lstat);
 
     return (PyObject *)entry;
 

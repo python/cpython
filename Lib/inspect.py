@@ -34,6 +34,10 @@ __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
 __all__ = [
+    "AGEN_CLOSED",
+    "AGEN_CREATED",
+    "AGEN_RUNNING",
+    "AGEN_SUSPENDED",
     "ArgInfo",
     "Arguments",
     "Attribute",
@@ -77,6 +81,8 @@ __all__ = [
     "getabsfile",
     "getargs",
     "getargvalues",
+    "getasyncgenlocals",
+    "getasyncgenstate",
     "getattr_static",
     "getblock",
     "getcallargs",
@@ -1931,6 +1937,50 @@ def getcoroutinelocals(coroutine):
     frame = getattr(coroutine, "cr_frame", None)
     if frame is not None:
         return frame.f_locals
+    else:
+        return {}
+
+
+# ----------------------------------- asynchronous generator introspection
+
+AGEN_CREATED = 'AGEN_CREATED'
+AGEN_RUNNING = 'AGEN_RUNNING'
+AGEN_SUSPENDED = 'AGEN_SUSPENDED'
+AGEN_CLOSED = 'AGEN_CLOSED'
+
+
+def getasyncgenstate(agen):
+    """Get current state of an asynchronous generator object.
+
+    Possible states are:
+      AGEN_CREATED: Waiting to start execution.
+      AGEN_RUNNING: Currently being executed by the interpreter.
+      AGEN_SUSPENDED: Currently suspended at a yield expression.
+      AGEN_CLOSED: Execution has completed.
+    """
+    if agen.ag_running:
+        return AGEN_RUNNING
+    if agen.ag_suspended:
+        return AGEN_SUSPENDED
+    if agen.ag_frame is None:
+        return AGEN_CLOSED
+    return AGEN_CREATED
+
+
+def getasyncgenlocals(agen):
+    """
+    Get the mapping of asynchronous generator local variables to their current
+    values.
+
+    A dict is returned, with the keys the local variable names and values the
+    bound values."""
+
+    if not isasyncgen(agen):
+        raise TypeError(f"{agen!r} is not a Python async generator")
+
+    frame = getattr(agen, "ag_frame", None)
+    if frame is not None:
+        return agen.ag_frame.f_locals
     else:
         return {}
 
