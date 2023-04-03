@@ -4803,7 +4803,7 @@ os__path_isdir_impl(PyObject *module, PyObject *path)
 
     Py_BEGIN_ALLOW_THREADS
     if (_path.wide) {    
-        if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo,
+        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
@@ -4910,7 +4910,7 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
 
     Py_BEGIN_ALLOW_THREADS
     if (_path.wide) {    
-        if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo,
+        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
@@ -5016,7 +5016,7 @@ os__path_exists_impl(PyObject *module, PyObject *path)
 
     Py_BEGIN_ALLOW_THREADS
     if (_path.wide) {    
-        if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo,
+        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 slow_path = FALSE;
@@ -5113,7 +5113,7 @@ os__path_islink_impl(PyObject *module, PyObject *path)
 
     Py_BEGIN_ALLOW_THREADS
     if (_path.wide) {    
-        if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo,
+        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             if (// Cannot use fast path for reparse points ...
                 !(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
