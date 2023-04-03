@@ -439,8 +439,8 @@ Directory and files operations
    consulted to determine if the current directory should be prepended to
    *path*.
 
-   Additionally, when finding the *cmd* in the *path*, the ``PATHEXT``
-   environment variable is checked.  For example, if you call
+   Also on Windows, the ``PATHEXT`` variable is used to resolve commands
+   that may not already include an extension. For example, if you call
    ``shutil.which("python")``, :func:`which` will search ``PATHEXT``
    to know that it should look for ``python.exe`` within the *path*
    directories. For example, on Windows::
