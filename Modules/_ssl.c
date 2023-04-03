@@ -2006,7 +2006,7 @@ _ssl__SSLSocket_shared_ciphers_impl(PySSLSocket *self)
 
     /* Rather than use SSL_get_shared_ciphers, we use an equivalent algorithm because:
 
-       1) It returns a colon seperated list of strings, in an undefined
+       1) It returns a colon separated list of strings, in an undefined
           order, that we would have to post process back into tuples.
        2) It will return a truncated string with no indication that it has
           done so, if the buffer is too small.
@@ -3930,7 +3930,7 @@ _add_ca_certs(PySSLContext *self, const void *data, Py_ssize_t len,
 {
     BIO *biobuf = NULL;
     X509_STORE *store;
-    int retval = -1, err, loaded = 0;
+    int retval = -1, err, loaded = 0, was_bio_eof = 0;
 
     assert(filetype == SSL_FILETYPE_ASN1 || filetype == SSL_FILETYPE_PEM);
 
@@ -3958,6 +3958,10 @@ _add_ca_certs(PySSLContext *self, const void *data, Py_ssize_t len,
         int r;
 
         if (filetype == SSL_FILETYPE_ASN1) {
+            if (BIO_eof(biobuf)) {
+                was_bio_eof = 1;
+                break;
+            }
             cert = d2i_X509_bio(biobuf, NULL);
         } else {
             cert = PEM_read_bio_X509(biobuf, NULL,
@@ -3993,9 +3997,7 @@ _add_ca_certs(PySSLContext *self, const void *data, Py_ssize_t len,
         }
         _setSSLError(get_state_ctx(self), msg, 0, __FILE__, __LINE__);
         retval = -1;
-    } else if ((filetype == SSL_FILETYPE_ASN1) &&
-                    (ERR_GET_LIB(err) == ERR_LIB_ASN1) &&
-                    (ERR_GET_REASON(err) == ASN1_R_HEADER_TOO_LONG)) {
+    } else if ((filetype == SSL_FILETYPE_ASN1) && was_bio_eof) {
         /* EOF ASN1 file, not an error */
         ERR_clear_error();
         retval = 0;
