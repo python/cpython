@@ -120,7 +120,7 @@ class _PreciseSelector(_Selector):
 
     def _select_from(self, parent_path, is_dir, exists, scandir, normcase):
         try:
-            path = parent_path._make_child_relpath(self.name)
+            path = parent_path._make_child(self.name)
             if (is_dir if self.dironly else exists)(path):
                 for p in self.successor._select_from(path, is_dir, exists, scandir, normcase):
                     yield p
@@ -154,7 +154,7 @@ class _WildcardSelector(_Selector):
                         continue
                 name = entry.name
                 if self.match(normcase(name)):
-                    path = parent_path._make_child_relpath(name)
+                    path = parent_path._make_child(name)
                     for p in self.successor._select_from(path, is_dir, exists, scandir, normcase):
                         yield p
         except PermissionError:
@@ -181,7 +181,7 @@ class _RecursiveWildcardSelector(_Selector):
                     if not _ignore_error(e):
                         raise
                 if entry_is_dir and not entry.is_symlink():
-                    path = parent_path._make_child_relpath(entry.name)
+                    path = parent_path._make_child(entry.name)
                     for p in self._iterate_directories(path, is_dir, scandir):
                         yield p
         except PermissionError:
@@ -703,11 +703,21 @@ class Path(PurePath):
             cls = WindowsPath if os.name == 'nt' else PosixPath
         return object.__new__(cls)
 
-    def _make_child_relpath(self, part):
-        # This is an optimization used for dir walking.  `part` must be
-        # a single part relative to this path.
-        tail = self._tail + [part]
-        return self._from_parsed_parts(self.drive, self.root, tail)
+    def _make_child(self, name):
+        path_str = str(self)
+        tail = self._tail
+        if tail:
+            path_str = f'{path_str}{self._flavour.sep}{name}'
+        elif path_str != '.':
+            path_str = f'{path_str}{name}'
+        else:
+            path_str = name
+        path = type(self)(path_str)
+        path._str = path_str
+        path._drv = self.drive
+        path._root = self.root
+        path._tail_cached = tail + [name]
+        return path
 
     def __enter__(self):
         # In previous versions of pathlib, __exit__() marked this path as
@@ -762,7 +772,7 @@ class Path(PurePath):
         special entries '.' and '..' are not included.
         """
         for name in os.listdir(self):
-            yield self._make_child_relpath(name)
+            yield self._make_child(name)
 
     def _scandir(self):
         # bpo-24132: a future version of pathlib will support subclassing of
@@ -1244,7 +1254,7 @@ class Path(PurePath):
             else:
                 paths.append((path, dirnames, filenames))
 
-            paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
+            paths += [path._make_child(d) for d in reversed(dirnames)]
 
 
 class PosixPath(Path, PurePosixPath):
