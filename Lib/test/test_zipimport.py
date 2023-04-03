@@ -520,10 +520,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 z.writestr(zinfo, data)
 
         zi = zipimport.zipimporter(TEMP_ZIP)
-        self.assertEqual(zi._files.keys(), files.keys())
+        self.assertEqual(zi._get_files().keys(), files.keys())
         # Check that the file information remains accurate after reloading
         zi.invalidate_caches()
-        self.assertEqual(zi._files.keys(), files.keys())
+        self.assertEqual(zi._get_files().keys(), files.keys())
         # Add a new file to the ZIP archive
         newfile = {"spam2" + pyc_ext: (NOW, test_pyc)}
         files.update(newfile)
@@ -535,14 +535,14 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 z.writestr(zinfo, data)
         # Check that we can detect the new file after invalidating the cache
         zi.invalidate_caches()
-        self.assertEqual(zi._files.keys(), files.keys())
+        self.assertEqual(zi._get_files().keys(), files.keys())
         spec = zi.find_spec('spam2')
         self.assertIsNotNone(spec)
         self.assertIsInstance(spec.loader, zipimport.zipimporter)
         # Check that the cached data is removed if the file is deleted
         os.remove(TEMP_ZIP)
         zi.invalidate_caches()
-        self.assertFalse(zi._files)
+        self.assertFalse(zi._get_files())
         self.assertIsNone(zipimport._zip_directory_cache.get(zi.archive))
         self.assertIsNone(zi.find_spec("name_does_not_matter"))
 
