@@ -228,8 +228,6 @@ def kind_to_text(kind, defines, opname):
         return pretty(defines[kind][0])
     if opname.endswith("ATTR"):
         opname = "ATTR"
-    if opname in ("COMPARE_OP", "COMPARE_AND_BRANCH"):
-        opname = "COMPARE"
     if opname.endswith("SUBSCR"):
         opname = "SUBSCR"
     for name in defines[kind]:
