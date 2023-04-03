@@ -443,9 +443,6 @@ _cache_format = {
     "SEND": {
         "counter": 1,
     },
-    "RESERVED": {
-        "force_failure": 1_000_000
-    },
 }
 
 _inline_cache_entries = [

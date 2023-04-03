@@ -45,7 +45,6 @@ const uint32_t _PyOpcode_Jump[9] = {
 };
 
 const uint8_t _PyOpcode_Caches[256] = {
-    [RESERVED] = 1000000,
     [BINARY_SUBSCR] = 1,
     [STORE_SUBSCR] = 1,
     [UNPACK_SEQUENCE] = 1,
