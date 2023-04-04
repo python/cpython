@@ -37,6 +37,10 @@ static char errNotAHandle[] = "Object is not a handle";
 
 /* Forward declares */
 
+typedef struct {
+    PyTypeObject* PyHKEY_Type;
+} winreg_state;
+
 /* Doc strings */
 PyDoc_STRVAR(module_doc,
 "This module provides access to the Windows registry API.\n"
@@ -148,6 +152,13 @@ PyHKEY_deallocFunc(PyObject *ob)
     if (obkey->hkey)
         RegCloseKey((HKEY)obkey->hkey);
     PyObject_Free(ob);
+}
+
+static int
+PyHKEY_traverseFunc(PyHKEYObject* self, visitproc visit, void* arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
 }
 
 static int
@@ -354,10 +365,10 @@ static PyMemberDef PyHKEY_memberlist[] = {
 PyTypeObject PyHKEY_Type =
 {
     PyVarObject_HEAD_INIT(0, 0) /* fill in type at module init */
-    "PyHKEY",
-    sizeof(PyHKEYObject),
+    "PyHKEY", //-
+    sizeof(PyHKEYObject), //-
     0,
-    PyHKEY_deallocFunc,                 /* tp_dealloc */
+    PyHKEY_deallocFunc,                 /* tp_dealloc */ //-
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -366,22 +377,59 @@ PyTypeObject PyHKEY_Type =
     &PyHKEY_NumberMethods,              /* tp_as_number */
     0,                                  /* tp_as_sequence */
     0,                                  /* tp_as_mapping */
-    PyHKEY_hashFunc,                    /* tp_hash */
+    PyHKEY_hashFunc,                    /* tp_hash */ //-
     0,                                  /* tp_call */
-    PyHKEY_strFunc,                     /* tp_str */
+    PyHKEY_strFunc,                     /* tp_str */ //-
     0,                                  /* tp_getattro */
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
-    0,                                  /* tp_flags */
-    PyHKEY_doc,                         /* tp_doc */
-    0,                                  /*tp_traverse*/
+    0,                                  /* tp_flags */  //-
+    PyHKEY_doc,                         /* tp_doc */ //-
+    0,                                  /*tp_traverse*/ //-
     0,                                  /*tp_clear*/
     0,                                  /*tp_richcompare*/
     0,                                  /*tp_weaklistoffset*/
     0,                                  /*tp_iter*/
     0,                                  /*tp_iternext*/
-    PyHKEY_methods,                     /*tp_methods*/
-    PyHKEY_memberlist,                  /*tp_members*/
+    PyHKEY_methods,                     /*tp_methods*/ //-
+    PyHKEY_memberlist,                  /*tp_members*/ //-
+};
+
+static PyType_Slot pyhkey_type_slots[] = {
+    {Py_tp_dealloc, PyHKEY_deallocFunc},
+    {Py_tp_members, PyHKEY_memberlist},
+    {Py_tp_methods, PyHKEY_methods},
+    {Py_tp_doc, PyHKEY_doc},
+    {Py_tp_traverse, PyHKEY_traverseFunc},
+    {Py_tp_hash, PyHKEY_hashFunc},
+    {Py_tp_str, PyHKEY_strFunc},
+    {Py_nb_add, PyHKEY_binaryFailureFunc},
+    {Py_nb_subtract, PyHKEY_binaryFailureFunc},
+    {Py_nb_multiply, PyHKEY_binaryFailureFunc},
+    {Py_nb_remainder, PyHKEY_binaryFailureFunc},
+    {Py_nb_divmod, PyHKEY_binaryFailureFunc},
+    {Py_nb_power, PyHKEY_ternaryFailureFunc},
+    {Py_nb_negative, PyHKEY_unaryFailureFunc},
+    {Py_nb_positive, PyHKEY_unaryFailureFunc},
+    {Py_nb_absolute, PyHKEY_unaryFailureFunc},
+    {Py_nb_bool, PyHKEY_boolFunc},
+    {Py_nb_invert, PyHKEY_unaryFailureFunc},
+    {Py_nb_lshift, PyHKEY_binaryFailureFunc},
+    {Py_nb_rshift, PyHKEY_binaryFailureFunc},
+    {Py_nb_and, PyHKEY_binaryFailureFunc},
+    {Py_nb_xor, PyHKEY_binaryFailureFunc},
+    {Py_nb_or, PyHKEY_binaryFailureFunc},
+    {Py_nb_int, PyHKEY_intFunc},
+    {Py_nb_float, PyHKEY_unaryFailureFunc},
+    {0, NULL},
+};
+
+static PyType_Spec pyhkey_type_spec = {
+    .name = "winreg.PYHkey",
+    .basicsize = sizeof(PyHKEYObject),
+    .flags = Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
+             | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .slots = pyhkey_type_slots,
 };
 
 /************************************************************************
@@ -2081,35 +2129,21 @@ inskey(PyObject * d, char * name, HKEY key)
 
 #define ADD_KEY(val) inskey(d, #val, val)
 
-
-static struct PyModuleDef winregmodule = {
-    PyModuleDef_HEAD_INIT,
-    "winreg",
-    module_doc,
-    -1,
-    winreg_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC PyInit_winreg(void)
+static int
+exec_module(PyObject* m)
 {
-    PyObject *m, *d;
-    m = PyModule_Create(&winregmodule);
-    if (m == NULL)
-        return NULL;
+    winreg_state *st = (winreg_state *)PyModule_GetState(m);
+
+    PyObject *d;
     d = PyModule_GetDict(m);
-    PyHKEY_Type.tp_doc = PyHKEY_doc;
-    if (PyType_Ready(&PyHKEY_Type) < 0)
-        return NULL;
+    st->PyHKEY_Type = (PyTypeObject *)
+                       PyType_FromModuleAndSpec(m, &pyhkey_type_spec, NULL);
     if (PyDict_SetItemString(d, "HKEYType",
-                             (PyObject *)&PyHKEY_Type) != 0)
-        return NULL;
+                             (PyObject *)st->PyHKEY_Type) != 0)
+        return -1;
     if (PyDict_SetItemString(d, "error",
                              PyExc_OSError) != 0)
-        return NULL;
+        return -1;
 
     /* Add the relevant constants */
     ADD_KEY(HKEY_CLASSES_ROOT);
@@ -2170,7 +2204,30 @@ PyMODINIT_FUNC PyInit_winreg(void)
     ADD_INT(REG_RESOURCE_LIST);
     ADD_INT(REG_FULL_RESOURCE_DESCRIPTOR);
     ADD_INT(REG_RESOURCE_REQUIREMENTS_LIST);
-    return m;
+
+    return 0;
+}
+
+static PyModuleDef_Slot winreg_slots[] = {
+    {Py_mod_exec, exec_module},
+    {0, NULL}
+};
+
+static struct PyModuleDef winregmodule = {
+    PyModuleDef_HEAD_INIT,
+    "winreg",
+    module_doc,
+    sizeof(winreg_state),
+    winreg_methods,
+    winreg_slots,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyMODINIT_FUNC PyInit_winreg(void)
+{
+    return PyModuleDef_Init(&winregmodule);
 }
 
 #endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM || MS_WINDOWS_GAMES */
