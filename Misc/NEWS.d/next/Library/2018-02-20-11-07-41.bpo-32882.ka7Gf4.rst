@@ -1,0 +1,1 @@
+Added support for selecting X25519 in SSLContext.set_ecdh_curve().

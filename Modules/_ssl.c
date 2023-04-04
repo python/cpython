@@ -4335,27 +4335,21 @@ _ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
 /*[clinic end generated code: output=23022c196e40d7d2 input=c2bafb6f6e34726b]*/
 {
     PyObject *name_bytes;
-    int nid;
-    EC_KEY *key;
 
     if (!PyUnicode_FSConverter(name, &name_bytes))
         return NULL;
     assert(PyBytes_Check(name_bytes));
-    nid = OBJ_sn2nid(PyBytes_AS_STRING(name_bytes));
+
+    if(SSL_CTX_set1_curves_list(self->ctx, PyBytes_AS_STRING(name_bytes)))
+    {
+        Py_DECREF(name_bytes);
+        Py_RETURN_NONE;
+    }
+
     Py_DECREF(name_bytes);
-    if (nid == 0) {
-        PyErr_Format(PyExc_ValueError,
-                     "unknown elliptic curve name %R", name);
-        return NULL;
-    }
-    key = EC_KEY_new_by_curve_name(nid);
-    if (key == NULL) {
-        _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
-        return NULL;
-    }
-    SSL_CTX_set_tmp_ecdh(self->ctx, key);
-    EC_KEY_free(key);
-    Py_RETURN_NONE;
+    PyErr_Format(PyExc_ValueError,
+                 "invalid elliptic curves list %R", name);
+    return NULL;
 }
 
 static int
