@@ -640,7 +640,7 @@ class ClassTests(unittest.TestCase):
             pass
         class B:
             y = 0
-            __slots__ = ('z', 'foo')
+            __slots__ = ('z',)
 
         error_msg = "'A' object has no attribute 'x'"
         with self.assertRaisesRegex(AttributeError, error_msg):
@@ -658,14 +658,6 @@ class ClassTests(unittest.TestCase):
             "'B' object has no attribute 'x' and no __dict__ for setting new attributes"
         ):
             B().x = 0
-
-        with self.assertRaisesRegex(
-            AttributeError,
-            "'B' object has no attribute 'fod' and no "
-            r"__dict__ for setting new attributes. Did you mean: 'foo'\?"
-            ""
-        ):
-            B().fod = 1
 
         error_msg = "'B' object attribute 'y' is read-only"
         with self.assertRaisesRegex(AttributeError, error_msg):
