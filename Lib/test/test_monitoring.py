@@ -1,12 +1,12 @@
 """Test suite for the sys.monitoring."""
 
-import sys
-import unittest
-import enum
-import operator
-import functools
-import types
 import collections
+import functools
+import operator
+import sys
+import types
+import unittest
+
 
 PAIR = (0,1)
 
