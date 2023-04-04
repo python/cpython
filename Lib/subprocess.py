@@ -1431,7 +1431,7 @@ class Popen:
                 args = list2cmdline([args])
             else:
                 args = list2cmdline(args)
-            
+
             if not shell and executable is None and len(args) == 0:
                 raise ValueError("need at least an executable or non-empty args")
 
