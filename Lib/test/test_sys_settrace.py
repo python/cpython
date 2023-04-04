@@ -8,7 +8,6 @@ import gc
 from functools import wraps
 import asyncio
 from test.support import import_helper
-import warnings
 
 support.requires_working_socket(module=True)
 
