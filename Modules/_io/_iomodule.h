@@ -5,6 +5,7 @@
 #include "exports.h"
 
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "structmember.h"
 
 /* Type specs */
@@ -161,7 +162,7 @@ get_io_state(PyObject *module)
 static inline _PyIO_State *
 get_io_state_by_cls(PyTypeObject *cls)
 {
-    void *state = PyType_GetModuleState(cls);
+    void *state = _PyType_GetModuleState(cls);
     assert(state != NULL);
     return (_PyIO_State *)state;
 }
