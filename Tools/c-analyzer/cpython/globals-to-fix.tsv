@@ -390,11 +390,6 @@ Modules/_decimal/_decimal.c	-	PyDecContextManager_Type	-
 Modules/_decimal/_decimal.c	-	PyDecContext_Type	-
 Modules/_decimal/_decimal.c	-	PyDecSignalDictMixin_Type	-
 Modules/_decimal/_decimal.c	-	PyDec_Type	-
-Modules/_pickle.c	-	Pdata_Type	-
-Modules/_pickle.c	-	PicklerMemoProxyType	-
-Modules/_pickle.c	-	Pickler_Type	-
-Modules/_pickle.c	-	UnpicklerMemoProxyType	-
-Modules/_pickle.c	-	Unpickler_Type	-
 Modules/ossaudiodev.c	-	OSSAudioType	-
 Modules/ossaudiodev.c	-	OSSMixerType	-
 Modules/xxmodule.c	-	Null_Type	-
@@ -454,7 +449,6 @@ Modules/_decimal/_decimal.c	-	extended_context_template	-
 Modules/_decimal/_decimal.c	-	round_map	-
 Modules/_decimal/_decimal.c	-	Rational	-
 Modules/_decimal/_decimal.c	-	SignalTuple	-
-Modules/arraymodule.c	array_array___reduce_ex___impl	array_reconstructor	-
 
 ## state
 Modules/_asynciomodule.c	-	fi_freelist	-
@@ -534,7 +528,6 @@ Modules/_tkinter.c	-	command_mutex	-
 Modules/_tkinter.c	-	HeadFHCD	-
 Modules/_tkinter.c	-	stdin_ready	-
 Modules/_tkinter.c	-	event_tstate	-
-Modules/_xxinterpchannelsmodule.c	-	_globals	-
 Modules/readline.c	-	completer_word_break_characters	-
 Modules/readline.c	-	_history_length	-
 Modules/readline.c	-	should_auto_add_history	-
