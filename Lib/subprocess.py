@@ -855,6 +855,9 @@ class Popen:
                 raise ValueError("creationflags is only supported on Windows "
                                  "platforms")
 
+        if not shell and executable is None and len(args) == 0:
+            raise ValueError("need at least an executable or non-empty args")
+
         self.args = args
         self.stdin = None
         self.stdout = None
