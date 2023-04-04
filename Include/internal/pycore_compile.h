@@ -71,6 +71,7 @@ typedef struct {
     int u_firstlineno; /* the first lineno of the block */
 } _PyCompile_CodeUnitMetadata;
 
+
 /* Utility for a number of growing arrays used in the compiler */
 int _PyCompile_EnsureArrayLargeEnough(
         int idx,

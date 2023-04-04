@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_opcode_utils.h"
+#include "pycore_compile.h"
 
 static const _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
 
@@ -109,6 +110,10 @@ basicblock_nofallthrough(const _PyCfgBasicblock *b) {
 #define BB_NO_FALLTHROUGH(B) (basicblock_nofallthrough(B))
 #define BB_HAS_FALLTHROUGH(B) (!basicblock_nofallthrough(B))
 
+PyCodeObject *
+_PyAssemble_MakeCodeObject(_PyCompile_CodeUnitMetadata *u, PyObject *const_cache,
+                           PyObject *consts, int maxdepth, _PyCfgBasicblock *entryblock,
+                           int nlocalsplus, int code_flags, PyObject *filename);
 
 #ifdef __cplusplus
 }
