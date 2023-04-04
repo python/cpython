@@ -298,7 +298,7 @@ can be overridden by the local file.
 
 .. pdbcommand:: w(here)
 
-   Print a stack trace, with the most recent frame at the bottom.  An arrow
+   Print a stack trace, with the most recent frame at the bottom.  An arrow (`>`)
    indicates the current frame, which determines the context of most commands.
 
 .. pdbcommand:: d(own) [count]
@@ -465,7 +465,7 @@ can be overridden by the local file.
 
 .. pdbcommand:: a(rgs)
 
-   Print the argument list of the current function.
+   Print the arguments of the current function and their current values.
 
 .. pdbcommand:: p expression
 
@@ -498,6 +498,29 @@ can be overridden by the local file.
    in the current frame.
 
    Without *expression*, list all display expressions for the current frame.
+
+   .. note::
+
+      Display evaluates *expression* and compares to the result of the previous
+      evaluation of *expression*, so when the result is mutable, display may not
+      be able to pick up the changes.
+
+   Example::
+
+      lst = []
+      breakpoint()
+      lst.append(1)
+      print(lst)
+
+   Display won't realize `lst` has been changed::
+
+      > /home/gaogaotiantian/programs/mycpython/example.py(3)<module>()
+      -> lst.append(1)
+      (Pdb) display lst
+      display lst: []
+      (Pdb) n
+      > /home/gaogaotiantian/programs/mycpython/example.py(4)<module>()
+      -> print(lst)
 
    .. versionadded:: 3.2
 
@@ -575,7 +598,7 @@ can be overridden by the local file.
 
 .. pdbcommand:: retval
 
-   Print the return value for the last return of a function.
+   Print the return value for the last return of the current function.
 
 .. rubric:: Footnotes
 
