@@ -1508,8 +1508,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
             curdir = os.curdir
             if use_bytes:
                 curdir = os.fsencode(curdir)
-            if curdir not in path:
-                path.insert(0, curdir)
+            path.insert(0, curdir)
 
     if sys.platform == "win32":
         # PATHEXT is necessary to check on Windows.
