@@ -321,31 +321,30 @@ class _proto_member:
                 ):
                 # no other instances found, record this member in _member_names_
                 enum_class._member_names_.append(member_name)
-        # get redirect in place before adding to _member_map_
-        # but check for other instances in parent classes first
-        need_override = False
-        descriptor = None
+        # if necessary, get redirect in place and then add it to _member_map_
+        found_descriptor = None
         for base in enum_class.__mro__[1:]:
             descriptor = base.__dict__.get(member_name)
             if descriptor is not None:
                 if isinstance(descriptor, (property, DynamicClassAttribute)):
+                    found_descriptor = descriptor
                     break
-                else:
-                    need_override = True
-                    # keep looking for an enum.property
-        if descriptor and need_override:
+                elif (
+                        hasattr(descriptor, 'fget') and
+                        hasattr(descriptor, 'fset') and
+                        hasattr(descriptor, 'fdel')
+                    ):
+                    found_descriptor = descriptor
+                    continue
+        if found_descriptor:
             redirect = property()
             redirect.member = enum_member
             redirect.__set_name__(enum_class, member_name)
-            # Previous enum.property found, but some other inherited attribute
-            # is in the way; copy fget, fset, fdel to this one.
-            redirect.fget = descriptor.fget
-            redirect.fset = descriptor.fset
-            redirect.fdel = descriptor.fdel
+            # earlier descriptor found; copy fget, fset, fdel to this one.
+            redirect.fget = found_descriptor.fget
+            redirect.fset = found_descriptor.fset
+            redirect.fdel = found_descriptor.fdel
             setattr(enum_class, member_name, redirect)
-        elif descriptor:
-            # previous enum.property found, update the member attribute
-            descriptor.member = enum_member
         else:
             setattr(enum_class, member_name, enum_member)
         # now add to _member_map_ (even aliases)
