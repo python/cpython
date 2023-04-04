@@ -640,7 +640,7 @@ class ClassTests(unittest.TestCase):
             pass
         class B:
             y = 0
-            __slots__ = ('z', "foo")
+            __slots__ = ('z', 'foo')
 
         error_msg = "'A' object has no attribute 'x'"
         with self.assertRaisesRegex(AttributeError, error_msg):
@@ -648,7 +648,7 @@ class ClassTests(unittest.TestCase):
         with self.assertRaisesRegex(AttributeError, error_msg):
             del A().x
 
-        error_msg = ("'B' object has no attribute 'x'")
+        error_msg = "'B' object has no attribute 'x'"
         with self.assertRaisesRegex(AttributeError, error_msg):
             B().x
         with self.assertRaisesRegex(AttributeError, error_msg):
