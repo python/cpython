@@ -1,0 +1,1 @@
+Adapt :mod:`!_pickle` to :pep:`687`. Patch by Mohamed Koubaa and Erlend Aasland.
