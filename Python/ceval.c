@@ -1967,7 +1967,6 @@ PyThreadState_LeaveTracing(PyThreadState *tstate)
 {
     assert(tstate->tracing > 0);
     tstate->tracing--;
-    _PyThreadState_UpdateTracingState(tstate);
 }
 
 

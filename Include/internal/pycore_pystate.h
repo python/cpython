@@ -133,12 +133,6 @@ extern void _PyThreadState_BindDetached(PyThreadState *);
 extern void _PyThreadState_UnbindDetached(PyThreadState *);
 
 
-static inline void
-_PyThreadState_UpdateTracingState(PyThreadState *tstate)
-{
-}
-
-
 /* Other */
 
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
