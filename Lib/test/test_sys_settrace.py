@@ -1798,6 +1798,8 @@ def no_jump_without_trace_function():
 
 
 class JumpTestCase(unittest.TestCase):
+    unbound_locals = r"assigning None to [0-9]+ unbound local"
+
     def setUp(self):
         self.addCleanup(sys.settrace, sys.gettrace())
         sys.settrace(None)
@@ -1809,33 +1811,43 @@ class JumpTestCase(unittest.TestCase):
                        "Received: " + repr(received))
 
     def run_test(self, func, jumpFrom, jumpTo, expected, error=None,
-                 event='line', decorated=False):
+                 event='line', decorated=False, warning=None):
         tracer = JumpTracer(func, jumpFrom, jumpTo, event, decorated)
         sys.settrace(tracer.trace)
         output = []
-        if error is None:
+        
+        if warning is None and error is None:
             func(output)
-        else:
+        elif warning is not None and error is None:
+            with self.assertWarnsRegex(*warning):
+                func(output)
+        elif warning is None and error is not None:
             with self.assertRaisesRegex(*error):
                 func(output)
+        
         sys.settrace(None)
         self.compare_jump_output(expected, output)
 
     def run_async_test(self, func, jumpFrom, jumpTo, expected, error=None,
-                 event='line', decorated=False):
+                 event='line', decorated=False, warning=None):
         tracer = JumpTracer(func, jumpFrom, jumpTo, event, decorated)
         sys.settrace(tracer.trace)
         output = []
-        if error is None:
+        
+        if warning is None and error is None:
             asyncio.run(func(output))
-        else:
+        elif warning is not None and error is None:
+            with self.assertWarnsRegex(*warning):
+               asyncio.run(func(output))
+        elif warning is None and error is not None:
             with self.assertRaisesRegex(*error):
                 asyncio.run(func(output))
+        
         sys.settrace(None)
         asyncio.set_event_loop_policy(None)
         self.compare_jump_output(expected, output)
 
-    def jump_test(jumpFrom, jumpTo, expected, error=None, event='line'):
+    def jump_test(jumpFrom, jumpTo, expected, error=None, event='line', warning=None):
         """Decorator that creates a test that makes a jump
         from one place to another in the following code.
         """
@@ -1843,11 +1855,11 @@ class JumpTestCase(unittest.TestCase):
             @wraps(func)
             def test(self):
                 self.run_test(func, jumpFrom, jumpTo, expected,
-                              error=error, event=event, decorated=True)
+                              error=error, event=event, decorated=True, warning=warning)
             return test
         return decorator
 
-    def async_jump_test(jumpFrom, jumpTo, expected, error=None, event='line'):
+    def async_jump_test(jumpFrom, jumpTo, expected, error=None, event='line', warning=None):
         """Decorator that creates a test that makes a jump
         from one place to another in the following asynchronous code.
         """
@@ -1855,7 +1867,7 @@ class JumpTestCase(unittest.TestCase):
             @wraps(func)
             def test(self):
                 self.run_async_test(func, jumpFrom, jumpTo, expected,
-                              error=error, event=event, decorated=True)
+                              error=error, event=event, decorated=True, warning=warning)
             return test
         return decorator
 
@@ -1872,7 +1884,7 @@ class JumpTestCase(unittest.TestCase):
         output.append(1)
         output.append(2)
 
-    @jump_test(3, 5, [2, 5])
+    @jump_test(3, 5, [2, 5], warning=(RuntimeWarning, unbound_locals))
     def test_jump_out_of_block_forwards(output):
         for i in 1, 2:
             output.append(2)
@@ -2086,7 +2098,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(6)
         output.append(7)
 
-    @jump_test(6, 1, [1, 5, 1, 5])
+    @jump_test(6, 1, [1, 5, 1, 5], warning=(RuntimeWarning, unbound_locals))
     def test_jump_over_try_except(output):
         output.append(1)
         try:
@@ -2182,7 +2194,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(11)
         output.append(12)
 
-    @jump_test(3, 5, [1, 2, 5])
+    @jump_test(3, 5, [1, 2, 5], warning=(RuntimeWarning, unbound_locals))
     def test_jump_out_of_with_assignment(output):
         output.append(1)
         with tracecontext(output, 2) \
@@ -2190,7 +2202,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(4)
         output.append(5)
 
-    @async_jump_test(3, 5, [1, 2, 5])
+    @async_jump_test(3, 5, [1, 2, 5], warning=(RuntimeWarning, unbound_locals))
     async def test_jump_out_of_async_with_assignment(output):
         output.append(1)
         async with asynctracecontext(output, 2) \
@@ -2226,7 +2238,7 @@ class JumpTestCase(unittest.TestCase):
             break
         output.append(13)
 
-    @jump_test(1, 7, [7, 8])
+    @jump_test(1, 7, [7, 8], warning=(RuntimeWarning, unbound_locals))
     def test_jump_over_for_block_before_else(output):
         output.append(1)
         if not output:  # always false
@@ -2237,7 +2249,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(7)
         output.append(8)
 
-    @async_jump_test(1, 7, [7, 8])
+    @async_jump_test(1, 7, [7, 8], warning=(RuntimeWarning, unbound_locals))
     async def test_jump_over_async_for_block_before_else(output):
         output.append(1)
         if not output:  # always false
@@ -2377,7 +2389,7 @@ class JumpTestCase(unittest.TestCase):
         output.append(6)
 
     # 'except' with a variable creates an implicit finally block
-    @jump_test(5, 7, [4, 7, 8])
+    @jump_test(5, 7, [4, 7, 8], warning=(RuntimeWarning, unbound_locals))
     def test_jump_between_except_blocks_2(output):
         try:
             1/0
@@ -2540,7 +2552,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(x)          # line 1007
             return""" % ('\n' * 1000,), d)
         f = d['f']
-        self.run_test(f, 2, 1007, [0])
+        self.run_test(f, 2, 1007, [0], warning=(RuntimeWarning, self.unbound_locals))
 
     def test_jump_to_firstlineno(self):
         # This tests that PDB can jump back to the first line in a
@@ -2560,6 +2572,7 @@ output.append(4)
         exec(code, namespace)
         sys.settrace(None)
         self.compare_jump_output([2, 3, 2, 3, 4], namespace["output"])
+
 
     @jump_test(2, 3, [1], event='call', error=(ValueError, "can't jump from"
                " the 'call' trace event of a new frame"))
@@ -2590,7 +2603,7 @@ output.append(4)
         next(gen())
         output.append(5)
 
-    @jump_test(2, 3, [1, 3])
+    @jump_test(2, 3, [1, 3], warning=(RuntimeWarning, unbound_locals))
     def test_jump_forward_over_listcomp(output):
         output.append(1)
         x = [i for i in range(10)]
@@ -2598,7 +2611,7 @@ output.append(4)
 
     # checking for segfaults.
     # See https://github.com/python/cpython/issues/92311
-    @jump_test(3, 1, [])
+    @jump_test(3, 1, [], warning=(RuntimeWarning, unbound_locals))
     def test_jump_backward_over_listcomp(output):
         a = 1
         x = [i for i in range(10)]
@@ -2615,13 +2628,13 @@ output.append(4)
         output.append(7)
         output.append(8)
 
-    @async_jump_test(2, 3, [1, 3])
+    @async_jump_test(2, 3, [1, 3], warning=(RuntimeWarning, unbound_locals))
     async def test_jump_forward_over_async_listcomp(output):
         output.append(1)
         x = [i async for i in asynciter(range(10))]
         output.append(3)
 
-    @async_jump_test(3, 1, [])
+    @async_jump_test(3, 1, [], warning=(RuntimeWarning, unbound_locals))
     async def test_jump_backward_over_async_listcomp(output):
         a = 1
         x = [i async for i in asynciter(range(10))]
@@ -2696,13 +2709,13 @@ output.append(4)
         )
         output.append(15)
 
-    @jump_test(2, 3, [1, 3])
+    @jump_test(2, 3, [1, 3], warning=(RuntimeWarning, unbound_locals))
     def test_jump_extended_args_unpack_ex_simple(output):
         output.append(1)
         _, *_, _ = output.append(2) or "Spam"
         output.append(3)
 
-    @jump_test(3, 4, [1, 4, 4, 5])
+    @jump_test(3, 4, [1, 4, 4, 5], warning=(RuntimeWarning, unbound_locals))
     def test_jump_extended_args_unpack_ex_tricky(output):
         output.append(1)
         (
@@ -2723,9 +2736,9 @@ output.append(4)
         namespace = {}
         exec("\n".join(source), namespace)
         f = namespace["f"]
-        self.run_test(f,  2, 100_000, [1, 100_000])
+        self.run_test(f,  2, 100_000, [1, 100_000], warning=(RuntimeWarning, self.unbound_locals))
 
-    @jump_test(2, 3, [1, 3])
+    @jump_test(2, 3, [1, 3], warning=(RuntimeWarning, unbound_locals))
     def test_jump_or_pop(output):
         output.append(1)
         _ = output.append(2) and "Spam"
