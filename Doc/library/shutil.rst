@@ -464,11 +464,11 @@ Directory and files operations
    .. versionchanged:: 3.12
       On Windows, the current directory is no longer prepended to the search
       path if *mode* includes ``os.X_OK`` and WinAPI
-      ``NeedCurrentDirectoryForExePathW(cmd)`` is false. When the current
-      directory is a prepended, it is prepended before the *path*.  ``PATHEXT``
-      is used now even when *cmd* includes a directory component or ends with
-      an extension that is in ``PATHEXT``; and filenames that have no extension
-      can be found now.
+      ``NeedCurrentDirectoryForExePathW(cmd)`` is false, else the current
+      directory is prepended even if it is already in the search path;
+      ``PATHEXT`` is used now even when *cmd* includes a directory component
+      or ends with an extension that is in ``PATHEXT``; and filenames that
+      have no extension can now be found.
 
 .. exception:: Error
 
