@@ -77,23 +77,23 @@ The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug
    arguments of the ``p`` command.
 
 
-:file:`pdb.py` can also be invoked as a script to debug other scripts.  For
+You can also invoke :mod:`pdb` from the command line to debug other scripts.  For
 example::
 
    python -m pdb myscript.py
 
-When invoked as a script, pdb will automatically enter post-mortem debugging if
+When invoked as a module, pdb will automatically enter post-mortem debugging if
 the program being debugged exits abnormally.  After post-mortem debugging (or
 after normal exit of the program), pdb will restart the program.  Automatic
 restarting preserves pdb's state (such as breakpoints) and in most cases is more
 useful than quitting the debugger upon program's exit.
 
 .. versionadded:: 3.2
-   :file:`pdb.py` now accepts a ``-c`` option that executes commands as if given
+   ``-c`` option is introduced to execute commands as if given
    in a :file:`.pdbrc` file, see :ref:`debugger-commands`.
 
 .. versionadded:: 3.7
-   :file:`pdb.py` now accepts a ``-m`` option that execute modules similar to the way
+   ``-m`` option is introduced to execute modules similar to the way
    ``python -m`` does. As with a script, the debugger will pause execution just
    before the first line of the module.
 
