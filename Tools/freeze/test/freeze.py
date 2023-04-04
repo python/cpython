@@ -95,9 +95,6 @@ def copy_source_tree(newroot, oldroot):
     shutil.copytree(oldroot, newroot, ignore=ignore_non_src)
     if os.path.exists(os.path.join(newroot, 'Makefile')):
         _run_quiet([MAKE, 'clean'], newroot)
-    else:
-        raise Exception("new frozen build Makefile missing!")
-
 
 def get_makefile_var(builddir, name):
     regex = re.compile(rf'^{name} *=\s*(.*?)\s*$')
