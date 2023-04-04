@@ -507,18 +507,39 @@ can be overridden by the local file.
 
       lst = []
       breakpoint()
+      pass
       lst.append(1)
       print(lst)
 
-   Display won't realize ``lst`` has been changed::
+   Display won't realize ``lst`` has been changed because the result of evaluation
+   is modified in place by ``lst.append(1)`` before being compared::
 
-      > /home/gaogaotiantian/programs/mycpython/example.py(3)<module>()
-      -> lst.append(1)
+      > example.py(3)<module>()
+      -> pass
       (Pdb) display lst
       display lst: []
       (Pdb) n
       > example.py(4)<module>()
+      -> lst.append(1)
+      (Pdb) n
+      > example.py(5)<module>()
       -> print(lst)
+      (Pdb)
+
+   You can do some tricks with copy mechanism to make it work::
+
+      > example.py(3)<module>()
+      -> pass
+      (Pdb) display lst[:]
+      display lst[:]: []
+      (Pdb) n
+      > example.py(4)<module>()
+      -> lst.append(1)
+      (Pdb) n
+      > example.py(5)<module>()
+      -> print(lst)
+      display lst[:]: [1]  [old: []]
+      (Pdb)
 
    .. versionadded:: 3.2
 
