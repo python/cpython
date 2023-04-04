@@ -216,27 +216,14 @@ add_define(PyObject *dict, const char *key, long value)
 
 #define ADD_DEFINE(tok) add_define(dict,#tok,tok)
 
-
-static struct PyModuleDef winsoundmodule = {
-    PyModuleDef_HEAD_INIT,
-    "winsound",
-    sound_module_doc,
-    -1,
-    sound_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit_winsound(void)
+static int
+exec_module(PyObject *module)
 {
     PyObject *dict;
-    PyObject *module = PyModule_Create(&winsoundmodule);
-    if (module == NULL)
-        return NULL;
     dict = PyModule_GetDict(module);
+    if (dict == NULL) {
+        return -1;
+    }
 
     ADD_DEFINE(SND_ASYNC);
     ADD_DEFINE(SND_NODEFAULT);
@@ -254,5 +241,29 @@ PyInit_winsound(void)
     ADD_DEFINE(MB_ICONEXCLAMATION);
     ADD_DEFINE(MB_ICONHAND);
     ADD_DEFINE(MB_ICONQUESTION);
-    return module;
+
+    return 0;
+}
+
+static PyModuleDef_Slot sound_slots[] = {
+    {Py_mod_exec, exec_module},
+    {0, NULL}
+};
+
+static struct PyModuleDef winsoundmodule = {
+    PyModuleDef_HEAD_INIT,
+    "winsound",
+    sound_module_doc,
+    0,
+    sound_methods,
+    sound_slots,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyMODINIT_FUNC
+PyInit_winsound(void)
+{
+    return PyModuleDef_Init(&winsoundmodule);
 }
