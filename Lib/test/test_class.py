@@ -648,13 +648,15 @@ class ClassTests(unittest.TestCase):
         with self.assertRaisesRegex(AttributeError, error_msg):
             del A().x
 
-        error_msg = ("'B' object has no attribute 'x' and no "
-                     "__dict__ for setting new attributes")
+        error_msg = ("'B' object has no attribute 'x'")
         with self.assertRaisesRegex(AttributeError, error_msg):
             B().x
         with self.assertRaisesRegex(AttributeError, error_msg):
             del B().x
-        with self.assertRaisesRegex(AttributeError, error_msg):
+        with self.assertRaisesRegex(
+            AttributeError,
+            "'B' object has no attribute 'x' and no __dict__ for setting new attributes"
+        ):
             B().x = 0
 
         with self.assertRaisesRegex(
