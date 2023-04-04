@@ -18,6 +18,8 @@ extern PyFunctionObject* _PyFunction_FromConstructor(PyFrameConstructor *constr)
 
 extern uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
 
+extern int _PyFunction_IsSimple(PyFunctionObject *func);
+
 #ifdef __cplusplus
 }
 #endif

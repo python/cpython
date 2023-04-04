@@ -236,6 +236,22 @@ uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
     return v;
 }
 
+int
+_PyFunction_IsSimple(PyFunctionObject *function)
+{
+    assert(PyFunction_Check(function));
+    if (function->vectorcall != _PyFunction_Vectorcall) {
+        return 0;
+    }
+    PyCodeObject *code = (PyCodeObject *)function->func_code;
+    assert(PyCode_Check(code));
+    if (code->co_kwonlyargcount) {
+        return 0;
+    }
+    int interesting_flags = CO_OPTIMIZED | CO_VARARGS | CO_VARKEYWORDS;
+    return (code->co_flags & interesting_flags) == CO_OPTIMIZED;
+}
+
 PyObject *
 PyFunction_New(PyObject *code, PyObject *globals)
 {
