@@ -1,1 +1,0 @@
-Skip a ``stat`` in :mod:`site` if we have already found a ``pyvenv.cfg``
