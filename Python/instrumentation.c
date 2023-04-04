@@ -1714,23 +1714,23 @@ monitoring_register_callback_impl(PyObject *module, int tool_id, int event,
 }
 
 /*[clinic input]
-monitoring.get_events
+monitoring.get_events -> int
 
     tool_id: int
     /
 
 [clinic start generated code]*/
 
-static PyObject *
+static int
 monitoring_get_events_impl(PyObject *module, int tool_id)
-/*[clinic end generated code: output=d8b92576efaa12f9 input=49b77c12cc517025]*/
+/*[clinic end generated code: output=4450cc13f826c8c0 input=a64b238f76c4b2f7]*/
 {
     if (check_valid_tool(tool_id))  {
-        return NULL;
+        return -1;
     }
     _Py_Monitors *m = &_PyInterpreterState_Get()->monitors;
     _PyMonitoringEventSet event_set = get_events(m, tool_id);
-    return PyLong_FromUnsignedLong(event_set);
+    return event_set;
 }
 
 /*[clinic input]
@@ -1765,7 +1765,7 @@ monitoring_set_events_impl(PyObject *module, int tool_id, int event_set)
 }
 
 /*[clinic input]
-monitoring.get_local_events
+monitoring.get_local_events -> int
 
     code: object
     tool_id: int
@@ -1773,20 +1773,20 @@ monitoring.get_local_events
 
 [clinic start generated code]*/
 
-static PyObject *
+static int
 monitoring_get_local_events_impl(PyObject *module, PyObject *code,
                                  int tool_id)
-/*[clinic end generated code: output=22fad50d2e6404a7 input=c14650d27de48264]*/
+/*[clinic end generated code: output=d37536a48b3b2332 input=e33227382525a36d]*/
 {
     if (!PyCode_Check(code)) {
         PyErr_Format(
             PyExc_TypeError,
             "code must be a code object"
         );
-        return NULL;
+        return -1;
     }
     if (check_valid_tool(tool_id))  {
-        return NULL;
+        return -1;
     }
     _PyMonitoringEventSet event_set = 0;
     for (int e = 0; e < PY_MONITORING_UNGROUPED_EVENTS; e++) {
@@ -1795,7 +1795,7 @@ monitoring_get_local_events_impl(PyObject *module, PyObject *code,
             event_set |= (1 << e);
         }
     }
-    return PyLong_FromUnsignedLong(event_set);
+    return event_set;
 }
 
 /*[clinic input]

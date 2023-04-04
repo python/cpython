@@ -140,7 +140,7 @@ PyDoc_STRVAR(monitoring_get_events__doc__,
 #define MONITORING_GET_EVENTS_METHODDEF    \
     {"get_events", (PyCFunction)monitoring_get_events, METH_O, monitoring_get_events__doc__},
 
-static PyObject *
+static int
 monitoring_get_events_impl(PyObject *module, int tool_id);
 
 static PyObject *
@@ -148,12 +148,17 @@ monitoring_get_events(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int tool_id;
+    int _return_value;
 
     tool_id = _PyLong_AsInt(arg);
     if (tool_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = monitoring_get_events_impl(module, tool_id);
+    _return_value = monitoring_get_events_impl(module, tool_id);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -202,7 +207,7 @@ PyDoc_STRVAR(monitoring_get_local_events__doc__,
 #define MONITORING_GET_LOCAL_EVENTS_METHODDEF    \
     {"get_local_events", _PyCFunction_CAST(monitoring_get_local_events), METH_FASTCALL, monitoring_get_local_events__doc__},
 
-static PyObject *
+static int
 monitoring_get_local_events_impl(PyObject *module, PyObject *code,
                                  int tool_id);
 
@@ -212,6 +217,7 @@ monitoring_get_local_events(PyObject *module, PyObject *const *args, Py_ssize_t 
     PyObject *return_value = NULL;
     PyObject *code;
     int tool_id;
+    int _return_value;
 
     if (!_PyArg_CheckPositional("get_local_events", nargs, 2, 2)) {
         goto exit;
@@ -221,7 +227,11 @@ monitoring_get_local_events(PyObject *module, PyObject *const *args, Py_ssize_t 
     if (tool_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = monitoring_get_local_events_impl(module, code, tool_id);
+    _return_value = monitoring_get_local_events_impl(module, code, tool_id);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -298,4 +308,4 @@ monitoring__all_events(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return monitoring__all_events_impl(module);
 }
-/*[clinic end generated code: output=f5d03f9aab1fa692 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aa896325abcb6ca9 input=a9049054013a1b77]*/
