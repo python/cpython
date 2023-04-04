@@ -200,7 +200,7 @@ exit:
 }
 
 PyDoc_STRVAR(monitoring_get_local_events__doc__,
-"get_local_events($module, code, tool_id, /)\n"
+"get_local_events($module, tool_id, code, /)\n"
 "--\n"
 "\n");
 
@@ -208,26 +208,26 @@ PyDoc_STRVAR(monitoring_get_local_events__doc__,
     {"get_local_events", _PyCFunction_CAST(monitoring_get_local_events), METH_FASTCALL, monitoring_get_local_events__doc__},
 
 static int
-monitoring_get_local_events_impl(PyObject *module, PyObject *code,
-                                 int tool_id);
+monitoring_get_local_events_impl(PyObject *module, int tool_id,
+                                 PyObject *code);
 
 static PyObject *
 monitoring_get_local_events(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *code;
     int tool_id;
+    PyObject *code;
     int _return_value;
 
     if (!_PyArg_CheckPositional("get_local_events", nargs, 2, 2)) {
         goto exit;
     }
-    code = args[0];
-    tool_id = _PyLong_AsInt(args[1]);
+    tool_id = _PyLong_AsInt(args[0]);
     if (tool_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    _return_value = monitoring_get_local_events_impl(module, code, tool_id);
+    code = args[1];
+    _return_value = monitoring_get_local_events_impl(module, tool_id, code);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -238,7 +238,7 @@ exit:
 }
 
 PyDoc_STRVAR(monitoring_set_local_events__doc__,
-"set_local_events($module, code, tool_id, event_set, /)\n"
+"set_local_events($module, tool_id, code, event_set, /)\n"
 "--\n"
 "\n");
 
@@ -246,30 +246,30 @@ PyDoc_STRVAR(monitoring_set_local_events__doc__,
     {"set_local_events", _PyCFunction_CAST(monitoring_set_local_events), METH_FASTCALL, monitoring_set_local_events__doc__},
 
 static PyObject *
-monitoring_set_local_events_impl(PyObject *module, PyObject *code,
-                                 int tool_id, int event_set);
+monitoring_set_local_events_impl(PyObject *module, int tool_id,
+                                 PyObject *code, int event_set);
 
 static PyObject *
 monitoring_set_local_events(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *code;
     int tool_id;
+    PyObject *code;
     int event_set;
 
     if (!_PyArg_CheckPositional("set_local_events", nargs, 3, 3)) {
         goto exit;
     }
-    code = args[0];
-    tool_id = _PyLong_AsInt(args[1]);
+    tool_id = _PyLong_AsInt(args[0]);
     if (tool_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
+    code = args[1];
     event_set = _PyLong_AsInt(args[2]);
     if (event_set == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = monitoring_set_local_events_impl(module, code, tool_id, event_set);
+    return_value = monitoring_set_local_events_impl(module, tool_id, code, event_set);
 
 exit:
     return return_value;
@@ -308,4 +308,4 @@ monitoring__all_events(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return monitoring__all_events_impl(module);
 }
-/*[clinic end generated code: output=aa896325abcb6ca9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=11cc0803875b3ffa input=a9049054013a1b77]*/

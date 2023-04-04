@@ -145,7 +145,7 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
 static inline PyObject**
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
-    PyObject **sp = frame->localsplus+frame->stacktop;
+    PyObject **sp = frame->localsplus + frame->stacktop;
     frame->stacktop = -1;
     return sp;
 }

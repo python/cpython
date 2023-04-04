@@ -1767,16 +1767,16 @@ monitoring_set_events_impl(PyObject *module, int tool_id, int event_set)
 /*[clinic input]
 monitoring.get_local_events -> int
 
-    code: object
     tool_id: int
+    code: object
     /
 
 [clinic start generated code]*/
 
 static int
-monitoring_get_local_events_impl(PyObject *module, PyObject *code,
-                                 int tool_id)
-/*[clinic end generated code: output=d37536a48b3b2332 input=e33227382525a36d]*/
+monitoring_get_local_events_impl(PyObject *module, int tool_id,
+                                 PyObject *code)
+/*[clinic end generated code: output=d3e92c1c9c1de8f9 input=bb0f927530386a94]*/
 {
     if (!PyCode_Check(code)) {
         PyErr_Format(
@@ -1801,17 +1801,17 @@ monitoring_get_local_events_impl(PyObject *module, PyObject *code,
 /*[clinic input]
 monitoring.set_local_events
 
-    code: object
     tool_id: int
+    code: object
     event_set: int
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-monitoring_set_local_events_impl(PyObject *module, PyObject *code,
-                                 int tool_id, int event_set)
-/*[clinic end generated code: output=65d616f95cbb76d8 input=2706fbfe062404bf]*/
+monitoring_set_local_events_impl(PyObject *module, int tool_id,
+                                 PyObject *code, int event_set)
+/*[clinic end generated code: output=68cc755a65dfea99 input=5655ecd78d937a29]*/
 {
     if (!PyCode_Check(code)) {
         PyErr_Format(

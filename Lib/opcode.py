@@ -92,6 +92,8 @@ def_op('UNARY_NOT', 12)
 
 def_op('UNARY_INVERT', 15)
 
+# We reserve 17 as it is the initial value for the specializing counter
+# This helps us catch cases where we attempt to execute a cache.
 def_op('RESERVED', 17)
 
 def_op('BINARY_SUBSCR', 25)

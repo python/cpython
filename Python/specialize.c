@@ -274,7 +274,7 @@ _PyCode_Quicken(PyCodeObject *code)
     for (int i = 0; i < Py_SIZE(code); i++) {
         int previous_opcode = opcode;
         opcode = _Py_GetBaseOpcode(code, i);
-        assert(opcode < 230);
+        assert(opcode < MIN_INSTRUMENTED_OPCODE);
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
             instructions[i + 1].cache = adaptive_counter_warmup();

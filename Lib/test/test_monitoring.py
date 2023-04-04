@@ -940,14 +940,14 @@ class TestLocalEvents(unittest.TestCase):
                 ev = recorder.event_type
                 sys.monitoring.register_callback(tool, ev, recorder(event_list))
                 all_events |= ev
-            sys.monitoring.set_local_events(func.__code__, tool, all_events)
+            sys.monitoring.set_local_events(tool, func.__code__, all_events)
             func()
-            sys.monitoring.set_local_events(func.__code__, tool, 0)
+            sys.monitoring.set_local_events(tool, func.__code__, 0)
             for recorder in recorders:
                 sys.monitoring.register_callback(tool, recorder.event_type, None)
             self.assertEqual(event_list, expected)
         finally:
-            sys.monitoring.set_local_events(func.__code__, tool, 0)
+            sys.monitoring.set_local_events(tool, func.__code__, 0)
             for recorder in recorders:
                 sys.monitoring.register_callback(tool, recorder.event_type, None)
 
@@ -996,3 +996,27 @@ class TestLocalEvents(unittest.TestCase):
             ('line', 'func3', 4),
             ('line', 'func3', 5),
             ('line', 'func3', 6)])
+
+
+class TestSetGetEvents(unittest.TestCase, MonitoringTestBase):
+
+    def test_global(self):
+        sys.monitoring.set_events(TEST_TOOL, E.PY_START)
+        self.assertEqual(sys.monitoring.get_events(TEST_TOOL), E.PY_START)
+        sys.monitoring.set_events(TEST_TOOL2, E.PY_START)
+        self.assertEqual(sys.monitoring.get_events(TEST_TOOL2), E.PY_START)
+        sys.monitoring.set_events(TEST_TOOL, 0)
+        self.assertEqual(sys.monitoring.get_events(TEST_TOOL), 0)
+        sys.monitoring.set_events(TEST_TOOL2,0)
+        self.assertEqual(sys.monitoring.get_events(TEST_TOOL2), 0)
+
+    def test_local(self):
+        code = f1.__code__
+        sys.monitoring.set_local_events(TEST_TOOL, code, E.PY_START)
+        self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, code), E.PY_START)
+        sys.monitoring.set_local_events(TEST_TOOL2, code, E.PY_START)
+        self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL2, code), E.PY_START)
+        sys.monitoring.set_local_events(TEST_TOOL, code, 0)
+        self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, code), 0)
+        sys.monitoring.set_local_events(TEST_TOOL2, code, 0)
+        self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL2, code), 0)

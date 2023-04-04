@@ -8,8 +8,11 @@
 extern "C" {
 #endif
 
-#define PY_MONITORING_EVENTS 16
+
+/* Count of all "real" monitoring events (not derived from other events) */
 #define PY_MONITORING_UNGROUPED_EVENTS 14
+/* Count of all  monitoring events */
+#define PY_MONITORING_EVENTS 16
 
 /* Table of which tools are active for each monitored event. */
 typedef struct _Py_Monitors {
