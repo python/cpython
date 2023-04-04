@@ -201,23 +201,30 @@ class property(DynamicClassAttribute):
                         )
         else:
             if self.fget is None:
-                if self.member is None:   # not sure this can happen, but just in case
+                # look for a member by this name.
+                try:
+                    return ownerclass._member_map_[self.name]
+                except KeyError:
                     raise AttributeError(
                             '%r has no attribute %r' % (ownerclass, self.name)
                             )
-                # issue warning deprecating this behavior
-                import warnings
-                warnings.warn(
-                        "`member.member` access (e.g. `Color.RED.BLUE`) is "
-                        "deprecated and will be removed in 3.14.",
-                        DeprecationWarning,
-                        stacklevel=2,
-                        )
-                return self.member
-                # XXX: uncomment in 3.14 and remove warning above
-                # raise AttributeError(
-                #         '%r member has no attribute %r' % (ownerclass, self.name)
+                # if self.member is None:   # not sure this can happen, but just in case
+                #     raise AttributeError(
+                #             '%r has no attribute %r' % (ownerclass, self.name)
+                #             )
+                # # issue warning deprecating this behavior
+                # import warnings
+                # warnings.warn(
+                #         "`member.member` access (e.g. `Color.RED.BLUE`) is "
+                #         "deprecated and will be removed in 3.14.",
+                #         DeprecationWarning,
+                #         stacklevel=2,
                 #         )
+                # return self.member
+                # # XXX: uncomment in 3.14 and remove warning above
+                # # raise AttributeError(
+                # #         '%r member has no attribute %r' % (ownerclass, self.name)
+                # #         )
             else:
                 return self.fget(instance)
 
@@ -316,20 +323,31 @@ class _proto_member:
                 enum_class._member_names_.append(member_name)
         # get redirect in place before adding to _member_map_
         # but check for other instances in parent classes first
+        need_override = False
         descriptor = None
         for base in enum_class.__mro__[1:]:
             descriptor = base.__dict__.get(member_name)
             if descriptor is not None:
                 if isinstance(descriptor, (property, DynamicClassAttribute)):
                     break
-        redirect = property()
-        redirect.member = enum_member
-        redirect.__set_name__(enum_class, member_name)
-        if descriptor:
-            redirect.fget = getattr(descriptor, 'fget', None)
-            redirect.fset = getattr(descriptor, 'fset', None)
-            redirect.fdel = getattr(descriptor, 'fdel', None)
-        setattr(enum_class, member_name, redirect)
+                else:
+                    need_override = True
+                    # keep looking for an enum.property
+        if descriptor and need_override:
+            redirect = property()
+            redirect.member = enum_member
+            redirect.__set_name__(enum_class, member_name)
+            # Previous enum.property found, but some other inherited attribute
+            # is in the way; copy fget, fset, fdel to this one.
+            redirect.fget = descriptor.fget
+            redirect.fset = descriptor.fset
+            redirect.fdel = descriptor.fdel
+            setattr(enum_class, member_name, redirect)
+        elif descriptor:
+            # previous enum.property found, update the member attribute
+            descriptor.member = enum_member
+        else:
+            setattr(enum_class, member_name, enum_member)
         # now add to _member_map_ (even aliases)
         enum_class._member_map_[member_name] = enum_member
         try:
