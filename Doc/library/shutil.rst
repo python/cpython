@@ -462,7 +462,6 @@ Directory and files operations
       :class:`bytes`, the result type is also :class:`bytes`.
 
    .. versionchanged:: 3.12
-   .. versionchanged:: 3.12
       On Windows, the current directory is no longer prepended to the search
       path if *mode* includes ``os.X_OK`` and WinAPI
       ``NeedCurrentDirectoryForExePathW(cmd)`` is false; ``PATHEXT`` is used
