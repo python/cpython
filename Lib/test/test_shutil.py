@@ -2060,6 +2060,25 @@ class TestWhich(BaseTest, unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == "win32",
                          "test is for win32")
+    def test_cwd_win32_added_before_all_other_path(self):
+        base_dir = pathlib.Path(os.fsdecode(self.dir))
+
+        elsewhere_in_path_dir = base_dir / 'dir1'
+        elsewhere_in_path_dir.mkdir()
+        match_elsewhere_in_path = elsewhere_in_path_dir / 'hello.exe'
+        match_elsewhere_in_path.touch()
+
+        exe_in_cwd = base_dir / 'hello.exe'
+        exe_in_cwd.touch()
+
+        with os_helper.change_cwd(path=base_dir):
+            with unittest.mock.patch('shutil._win_path_needs_curdir', return_value=True):
+                rv = shutil.which('hello.exe', path=elsewhere_in_path_dir)
+
+            self.assertEqual(os.path.abspath(rv), os.path.abspath(exe_in_cwd))
+
+    @unittest.skipUnless(sys.platform == "win32",
+                         "test is for win32")
     def test_pathext_match_before_path_full_match(self):
         base_dir = pathlib.Path(os.fsdecode(self.dir))
         dir1 = base_dir / 'dir1'
@@ -2076,7 +2095,6 @@ class TestWhich(BaseTest, unittest.TestCase):
         assert os.path.basename(shutil.which(
             'hello.com', path=test_path, mode = os.F_OK
         )).lower() == 'hello.com.exe'
-
 
     @os_helper.skip_if_dac_override
     def test_non_matching_mode(self):
