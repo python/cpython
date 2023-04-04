@@ -16,7 +16,7 @@ from test.support import os_helper
 MS_WINDOWS = (sys.platform == 'win32')
 
 
-PKG_CPPEXTDATA = os.path.abspath(os.path.dirname(
+PKG_CPPEXTDATA = os.path.dirname(os.path.abspath(
     support.findfile('setup.py', subdir="cppextdata")
 ))
 
