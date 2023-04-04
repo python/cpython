@@ -1865,15 +1865,13 @@ Error:
 }
 
 static int
-do_monitor_exc(
-    PyThreadState *tstate, _PyInterpreterFrame *frame,
-    _Py_CODEUNIT *instr, int event
-) {
+do_monitor_exc(PyThreadState *tstate, _PyInterpreterFrame *frame,
+               _Py_CODEUNIT *instr, int event)
+{
     assert(event < PY_MONITORING_UNGROUPED_EVENTS);
     PyObject *exc = PyErr_GetRaisedException();
     assert(exc != NULL);
-    int err;
-    err = _Py_call_instrumentation_arg(tstate, event, frame, instr, exc);
+    int err = _Py_call_instrumentation_arg(tstate, event, frame, instr, exc);
     if (err == 0) {
         PyErr_SetRaisedException(exc);
     }
@@ -1901,8 +1899,8 @@ no_tools_for_event(PyThreadState *tstate, _PyInterpreterFrame *frame, int event)
 }
 
 static void
-monitor_raise(
-    PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr)
+monitor_raise(PyThreadState *tstate, _PyInterpreterFrame *frame,
+              _Py_CODEUNIT *instr)
 {
     if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_RAISE)) {
         return;
@@ -1911,8 +1909,8 @@ monitor_raise(
 }
 
 static int
-monitor_stop_iteration(
-    PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr)
+monitor_stop_iteration(PyThreadState *tstate, _PyInterpreterFrame *frame,
+                       _Py_CODEUNIT *instr)
 {
     if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_STOP_ITERATION)) {
         return 0;
@@ -1922,10 +1920,9 @@ monitor_stop_iteration(
 
 static void
 monitor_unwind(PyThreadState *tstate,
-                 _PyInterpreterFrame *frame,
-                 _Py_CODEUNIT *instr)
+               _PyInterpreterFrame *frame,
+               _Py_CODEUNIT *instr)
 {
-
     if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_PY_UNWIND)) {
         return;
     }
@@ -1935,8 +1932,8 @@ monitor_unwind(PyThreadState *tstate,
 
 static void
 monitor_handled(PyThreadState *tstate,
-                 _PyInterpreterFrame *frame,
-                 _Py_CODEUNIT *instr, PyObject *exc)
+                _PyInterpreterFrame *frame,
+                _Py_CODEUNIT *instr, PyObject *exc)
 {
     if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_EXCEPTION_HANDLED)) {
         return;
@@ -1946,8 +1943,8 @@ monitor_handled(PyThreadState *tstate,
 
 static void
 monitor_throw(PyThreadState *tstate,
-                 _PyInterpreterFrame *frame,
-                 _Py_CODEUNIT *instr)
+              _PyInterpreterFrame *frame,
+              _Py_CODEUNIT *instr)
 {
     if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_PY_THROW)) {
         return;

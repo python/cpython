@@ -61,7 +61,7 @@ typedef uint32_t _PyMonitoringEventSet;
 
 PyObject *_PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj);
 
-void _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events);
+int _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events);
 
 extern int
 _Py_call_instrumentation(PyThreadState *tstate, int event,

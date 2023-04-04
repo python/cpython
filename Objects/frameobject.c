@@ -668,13 +668,13 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
                     "f_lineno can only be set in a trace function");
         return -1;
     }
-    switch(what_event) {
+    switch (what_event) {
         case PY_MONITORING_EVENT_PY_RESUME:
         case PY_MONITORING_EVENT_JUMP:
         case PY_MONITORING_EVENT_BRANCH:
         case PY_MONITORING_EVENT_LINE:
         case PY_MONITORING_EVENT_PY_YIELD:
-            /* OK */
+            /* Setting f_lineno is allowed for the above events */
             break;
         case PY_MONITORING_EVENT_PY_START:
             PyErr_Format(PyExc_ValueError,
