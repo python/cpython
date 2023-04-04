@@ -517,7 +517,7 @@ can be overridden by the local file.
       (Pdb) display lst
       display lst: []
       (Pdb) n
-      > /home/gaogaotiantian/programs/mycpython/example.py(4)<module>()
+      > example.py(4)<module>()
       -> print(lst)
 
    .. versionadded:: 3.2
