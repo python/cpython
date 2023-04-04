@@ -61,7 +61,7 @@ The command, if run with ``-h``, will show the available options::
                             environment (pip is bootstrapped by default)
       --prompt PROMPT       Provides an alternative prompt prefix for this
                             environment.
-      --upgrade-deps        Upgrade core dependencies: pip to the
+      --upgrade-deps        Upgrade core dependencies (pip) to the
                             latest version in PyPI
 
     Once an environment has been created, you may wish to activate it, e.g. by
