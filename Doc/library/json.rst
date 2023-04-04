@@ -125,7 +125,7 @@ See :ref:`json-commandline` for detailed documentation.
 
 .. note::
 
-   JSON is a subset of `YAML <http://yaml.org/>`_ 1.2.  The JSON produced by
+   JSON is a subset of `YAML <https://yaml.org/>`_ 1.2.  The JSON produced by
    this module's default settings (in particular, the default *separators*
    value) is also a subset of YAML 1.0 and 1.1.  This module can thus also be
    used as a YAML serializer.

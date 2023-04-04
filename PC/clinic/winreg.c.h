@@ -8,6 +8,8 @@ preserve
 #endif
 
 
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
+
 PyDoc_STRVAR(winreg_HKEYType_Close__doc__,
 "Close($self, /)\n"
 "--\n"
@@ -27,6 +29,10 @@ winreg_HKEYType_Close(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
 {
     return winreg_HKEYType_Close_impl(self);
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_HKEYType_Detach__doc__,
 "Detach($self, /)\n"
@@ -54,6 +60,10 @@ winreg_HKEYType_Detach(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
     return winreg_HKEYType_Detach_impl(self);
 }
 
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
+
 PyDoc_STRVAR(winreg_HKEYType___enter____doc__,
 "__enter__($self, /)\n"
 "--\n"
@@ -76,6 +86,10 @@ winreg_HKEYType___enter__(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_HKEYType___exit____doc__,
 "__exit__($self, /, exc_type, exc_value, traceback)\n"
@@ -136,6 +150,10 @@ exit:
     return return_value;
 }
 
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
+
 PyDoc_STRVAR(winreg_CloseKey__doc__,
 "CloseKey($module, hkey, /)\n"
 "--\n"
@@ -150,6 +168,10 @@ PyDoc_STRVAR(winreg_CloseKey__doc__,
 
 #define WINREG_CLOSEKEY_METHODDEF    \
     {"CloseKey", (PyCFunction)winreg_CloseKey, METH_O, winreg_CloseKey__doc__},
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(winreg_ConnectRegistry__doc__,
 "ConnectRegistry($module, computer_name, key, /)\n"
@@ -177,7 +199,7 @@ static PyObject *
 winreg_ConnectRegistry(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    const Py_UNICODE *computer_name;
+    const Py_UNICODE *computer_name = NULL;
     HKEY key;
     HKEY _return_value;
 
@@ -213,6 +235,10 @@ exit:
     return return_value;
 }
 
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
+
 PyDoc_STRVAR(winreg_CreateKey__doc__,
 "CreateKey($module, key, sub_key, /)\n"
 "--\n"
@@ -243,7 +269,7 @@ winreg_CreateKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
     HKEY _return_value;
 
     if (!_PyArg_CheckPositional("CreateKey", nargs, 2, 2)) {
@@ -277,6 +303,10 @@ exit:
 
     return return_value;
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_CreateKeyEx__doc__,
 "CreateKeyEx($module, /, key, sub_key, reserved=0,\n"
@@ -343,7 +373,7 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
     int reserved = 0;
     REGSAM access = KEY_WRITE;
     HKEY _return_value;
@@ -398,6 +428,10 @@ exit:
     return return_value;
 }
 
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
+
 PyDoc_STRVAR(winreg_DeleteKey__doc__,
 "DeleteKey($module, key, sub_key, /)\n"
 "--\n"
@@ -427,7 +461,7 @@ winreg_DeleteKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
 
     if (!_PyArg_CheckPositional("DeleteKey", nargs, 2, 2)) {
         goto exit;
@@ -451,6 +485,10 @@ exit:
 
     return return_value;
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_DeleteKeyEx__doc__,
 "DeleteKeyEx($module, /, key, sub_key, access=winreg.KEY_WOW64_64KEY,\n"
@@ -520,7 +558,7 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
     REGSAM access = KEY_WOW64_64KEY;
     int reserved = 0;
 
@@ -565,6 +603,10 @@ exit:
     return return_value;
 }
 
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
+
 PyDoc_STRVAR(winreg_DeleteValue__doc__,
 "DeleteValue($module, key, value, /)\n"
 "--\n"
@@ -587,7 +629,7 @@ winreg_DeleteValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *value;
+    const Py_UNICODE *value = NULL;
 
     if (!_PyArg_CheckPositional("DeleteValue", nargs, 2, 2)) {
         goto exit;
@@ -616,6 +658,10 @@ exit:
 
     return return_value;
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_EnumKey__doc__,
 "EnumKey($module, key, index, /)\n"
@@ -660,6 +706,10 @@ winreg_EnumKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_EnumValue__doc__,
 "EnumValue($module, key, index, /)\n"
@@ -714,6 +764,10 @@ exit:
     return return_value;
 }
 
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
+
 PyDoc_STRVAR(winreg_ExpandEnvironmentStrings__doc__,
 "ExpandEnvironmentStrings($module, string, /)\n"
 "--\n"
@@ -731,7 +785,7 @@ static PyObject *
 winreg_ExpandEnvironmentStrings(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    const Py_UNICODE *string;
+    const Py_UNICODE *string = NULL;
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("ExpandEnvironmentStrings", "argument", "str", arg);
@@ -749,6 +803,10 @@ exit:
 
     return return_value;
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(winreg_FlushKey__doc__,
 "FlushKey($module, key, /)\n"
@@ -790,6 +848,10 @@ exit:
     return return_value;
 }
 
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
+
 PyDoc_STRVAR(winreg_LoadKey__doc__,
 "LoadKey($module, key, sub_key, file_name, /)\n"
 "--\n"
@@ -830,8 +892,8 @@ winreg_LoadKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *sub_key;
-    const Py_UNICODE *file_name;
+    const Py_UNICODE *sub_key = NULL;
+    const Py_UNICODE *file_name = NULL;
 
     if (!_PyArg_CheckPositional("LoadKey", nargs, 3, 3)) {
         goto exit;
@@ -865,6 +927,10 @@ exit:
 
     return return_value;
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_OpenKey__doc__,
 "OpenKey($module, /, key, sub_key, reserved=0, access=winreg.KEY_READ)\n"
@@ -924,7 +990,7 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
     int reserved = 0;
     REGSAM access = KEY_READ;
     HKEY _return_value;
@@ -978,6 +1044,10 @@ exit:
 
     return return_value;
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_OpenKeyEx__doc__,
 "OpenKeyEx($module, /, key, sub_key, reserved=0, access=winreg.KEY_READ)\n"
@@ -1037,7 +1107,7 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
     int reserved = 0;
     REGSAM access = KEY_READ;
     HKEY _return_value;
@@ -1092,6 +1162,10 @@ exit:
     return return_value;
 }
 
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
+
 PyDoc_STRVAR(winreg_QueryInfoKey__doc__,
 "QueryInfoKey($module, key, /)\n"
 "--\n"
@@ -1128,6 +1202,10 @@ exit:
     return return_value;
 }
 
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
+
 PyDoc_STRVAR(winreg_QueryValue__doc__,
 "QueryValue($module, key, sub_key, /)\n"
 "--\n"
@@ -1159,7 +1237,7 @@ winreg_QueryValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
 
     if (!_PyArg_CheckPositional("QueryValue", nargs, 2, 2)) {
         goto exit;
@@ -1189,6 +1267,10 @@ exit:
     return return_value;
 }
 
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
+
 PyDoc_STRVAR(winreg_QueryValueEx__doc__,
 "QueryValueEx($module, key, name, /)\n"
 "--\n"
@@ -1216,7 +1298,7 @@ winreg_QueryValueEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *name;
+    const Py_UNICODE *name = NULL;
 
     if (!_PyArg_CheckPositional("QueryValueEx", nargs, 2, 2)) {
         goto exit;
@@ -1245,6 +1327,10 @@ exit:
 
     return return_value;
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(winreg_SaveKey__doc__,
 "SaveKey($module, key, file_name, /)\n"
@@ -1278,7 +1364,7 @@ winreg_SaveKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *file_name;
+    const Py_UNICODE *file_name = NULL;
 
     if (!_PyArg_CheckPositional("SaveKey", nargs, 2, 2)) {
         goto exit;
@@ -1302,6 +1388,10 @@ exit:
 
     return return_value;
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_SetValue__doc__,
 "SetValue($module, key, sub_key, type, value, /)\n"
@@ -1341,7 +1431,7 @@ winreg_SetValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key = NULL;
     DWORD type;
     PyObject *value_obj;
 
@@ -1383,6 +1473,10 @@ exit:
 
     return return_value;
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_SetValueEx__doc__,
 "SetValueEx($module, key, value_name, reserved, type, value, /)\n"
@@ -1440,7 +1534,7 @@ winreg_SetValueEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    const Py_UNICODE *value_name;
+    const Py_UNICODE *value_name = NULL;
     PyObject *reserved;
     DWORD type;
     PyObject *value;
@@ -1478,6 +1572,10 @@ exit:
     return return_value;
 }
 
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
+
 PyDoc_STRVAR(winreg_DisableReflectionKey__doc__,
 "DisableReflectionKey($module, key, /)\n"
 "--\n"
@@ -1514,6 +1612,10 @@ exit:
     return return_value;
 }
 
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
+
 PyDoc_STRVAR(winreg_EnableReflectionKey__doc__,
 "EnableReflectionKey($module, key, /)\n"
 "--\n"
@@ -1548,6 +1650,10 @@ exit:
     return return_value;
 }
 
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
+
 PyDoc_STRVAR(winreg_QueryReflectionKey__doc__,
 "QueryReflectionKey($module, key, /)\n"
 "--\n"
@@ -1579,4 +1685,114 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5dfd7dbce8ccb392 input=a9049054013a1b77]*/
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
+
+#ifndef WINREG_HKEYTYPE_CLOSE_METHODDEF
+    #define WINREG_HKEYTYPE_CLOSE_METHODDEF
+#endif /* !defined(WINREG_HKEYTYPE_CLOSE_METHODDEF) */
+
+#ifndef WINREG_HKEYTYPE_DETACH_METHODDEF
+    #define WINREG_HKEYTYPE_DETACH_METHODDEF
+#endif /* !defined(WINREG_HKEYTYPE_DETACH_METHODDEF) */
+
+#ifndef WINREG_HKEYTYPE___ENTER___METHODDEF
+    #define WINREG_HKEYTYPE___ENTER___METHODDEF
+#endif /* !defined(WINREG_HKEYTYPE___ENTER___METHODDEF) */
+
+#ifndef WINREG_HKEYTYPE___EXIT___METHODDEF
+    #define WINREG_HKEYTYPE___EXIT___METHODDEF
+#endif /* !defined(WINREG_HKEYTYPE___EXIT___METHODDEF) */
+
+#ifndef WINREG_CLOSEKEY_METHODDEF
+    #define WINREG_CLOSEKEY_METHODDEF
+#endif /* !defined(WINREG_CLOSEKEY_METHODDEF) */
+
+#ifndef WINREG_CONNECTREGISTRY_METHODDEF
+    #define WINREG_CONNECTREGISTRY_METHODDEF
+#endif /* !defined(WINREG_CONNECTREGISTRY_METHODDEF) */
+
+#ifndef WINREG_CREATEKEY_METHODDEF
+    #define WINREG_CREATEKEY_METHODDEF
+#endif /* !defined(WINREG_CREATEKEY_METHODDEF) */
+
+#ifndef WINREG_CREATEKEYEX_METHODDEF
+    #define WINREG_CREATEKEYEX_METHODDEF
+#endif /* !defined(WINREG_CREATEKEYEX_METHODDEF) */
+
+#ifndef WINREG_DELETEKEY_METHODDEF
+    #define WINREG_DELETEKEY_METHODDEF
+#endif /* !defined(WINREG_DELETEKEY_METHODDEF) */
+
+#ifndef WINREG_DELETEKEYEX_METHODDEF
+    #define WINREG_DELETEKEYEX_METHODDEF
+#endif /* !defined(WINREG_DELETEKEYEX_METHODDEF) */
+
+#ifndef WINREG_DELETEVALUE_METHODDEF
+    #define WINREG_DELETEVALUE_METHODDEF
+#endif /* !defined(WINREG_DELETEVALUE_METHODDEF) */
+
+#ifndef WINREG_ENUMKEY_METHODDEF
+    #define WINREG_ENUMKEY_METHODDEF
+#endif /* !defined(WINREG_ENUMKEY_METHODDEF) */
+
+#ifndef WINREG_ENUMVALUE_METHODDEF
+    #define WINREG_ENUMVALUE_METHODDEF
+#endif /* !defined(WINREG_ENUMVALUE_METHODDEF) */
+
+#ifndef WINREG_EXPANDENVIRONMENTSTRINGS_METHODDEF
+    #define WINREG_EXPANDENVIRONMENTSTRINGS_METHODDEF
+#endif /* !defined(WINREG_EXPANDENVIRONMENTSTRINGS_METHODDEF) */
+
+#ifndef WINREG_FLUSHKEY_METHODDEF
+    #define WINREG_FLUSHKEY_METHODDEF
+#endif /* !defined(WINREG_FLUSHKEY_METHODDEF) */
+
+#ifndef WINREG_LOADKEY_METHODDEF
+    #define WINREG_LOADKEY_METHODDEF
+#endif /* !defined(WINREG_LOADKEY_METHODDEF) */
+
+#ifndef WINREG_OPENKEY_METHODDEF
+    #define WINREG_OPENKEY_METHODDEF
+#endif /* !defined(WINREG_OPENKEY_METHODDEF) */
+
+#ifndef WINREG_OPENKEYEX_METHODDEF
+    #define WINREG_OPENKEYEX_METHODDEF
+#endif /* !defined(WINREG_OPENKEYEX_METHODDEF) */
+
+#ifndef WINREG_QUERYINFOKEY_METHODDEF
+    #define WINREG_QUERYINFOKEY_METHODDEF
+#endif /* !defined(WINREG_QUERYINFOKEY_METHODDEF) */
+
+#ifndef WINREG_QUERYVALUE_METHODDEF
+    #define WINREG_QUERYVALUE_METHODDEF
+#endif /* !defined(WINREG_QUERYVALUE_METHODDEF) */
+
+#ifndef WINREG_QUERYVALUEEX_METHODDEF
+    #define WINREG_QUERYVALUEEX_METHODDEF
+#endif /* !defined(WINREG_QUERYVALUEEX_METHODDEF) */
+
+#ifndef WINREG_SAVEKEY_METHODDEF
+    #define WINREG_SAVEKEY_METHODDEF
+#endif /* !defined(WINREG_SAVEKEY_METHODDEF) */
+
+#ifndef WINREG_SETVALUE_METHODDEF
+    #define WINREG_SETVALUE_METHODDEF
+#endif /* !defined(WINREG_SETVALUE_METHODDEF) */
+
+#ifndef WINREG_SETVALUEEX_METHODDEF
+    #define WINREG_SETVALUEEX_METHODDEF
+#endif /* !defined(WINREG_SETVALUEEX_METHODDEF) */
+
+#ifndef WINREG_DISABLEREFLECTIONKEY_METHODDEF
+    #define WINREG_DISABLEREFLECTIONKEY_METHODDEF
+#endif /* !defined(WINREG_DISABLEREFLECTIONKEY_METHODDEF) */
+
+#ifndef WINREG_ENABLEREFLECTIONKEY_METHODDEF
+    #define WINREG_ENABLEREFLECTIONKEY_METHODDEF
+#endif /* !defined(WINREG_ENABLEREFLECTIONKEY_METHODDEF) */
+
+#ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
+    #define WINREG_QUERYREFLECTIONKEY_METHODDEF
+#endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
+/*[clinic end generated code: output=715db416dc1321ee input=a9049054013a1b77]*/

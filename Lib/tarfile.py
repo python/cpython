@@ -57,13 +57,9 @@ except ImportError:
     grp = None
 
 # os.symlink on Windows prior to 6.0 raises NotImplementedError
-symlink_exception = (AttributeError, NotImplementedError)
-try:
-    # OSError (winerror=1314) will be raised if the caller does not hold the
-    # SeCreateSymbolicLinkPrivilege privilege
-    symlink_exception += (OSError,)
-except NameError:
-    pass
+# OSError (winerror=1314) will be raised if the caller does not hold the
+# SeCreateSymbolicLinkPrivilege privilege
+symlink_exception = (AttributeError, NotImplementedError, OSError)
 
 # from tarfile import *
 __all__ = ["TarFile", "TarInfo", "is_tarfile", "TarError", "ReadError",
@@ -605,12 +601,12 @@ class _FileInFile(object):
        object.
     """
 
-    def __init__(self, fileobj, offset, size, blockinfo=None):
+    def __init__(self, fileobj, offset, size, name, blockinfo=None):
         self.fileobj = fileobj
         self.offset = offset
         self.size = size
         self.position = 0
-        self.name = getattr(fileobj, "name", None)
+        self.name = name
         self.closed = False
 
         if blockinfo is None:
@@ -707,7 +703,7 @@ class ExFileObject(io.BufferedReader):
 
     def __init__(self, tarfile, tarinfo):
         fileobj = _FileInFile(tarfile.fileobj, tarinfo.offset_data,
-                tarinfo.size, tarinfo.sparse)
+                tarinfo.size, tarinfo.name, tarinfo.sparse)
         super().__init__(fileobj)
 #class ExFileObject
 
@@ -1266,11 +1262,7 @@ class TarInfo(object):
         # the newline. keyword and value are both UTF-8 encoded strings.
         regex = re.compile(br"(\d+) ([^=]+)=")
         pos = 0
-        while True:
-            match = regex.match(buf, pos)
-            if not match:
-                break
-
+        while match := regex.match(buf, pos):
             length, keyword = match.groups()
             length = int(length)
             if length == 0:
@@ -2343,6 +2335,8 @@ class TarFile(object):
 
         # Advance the file pointer.
         if self.offset != self.fileobj.tell():
+            if self.offset == 0:
+                return None
             self.fileobj.seek(self.offset - 1)
             if not self.fileobj.read(1):
                 raise ReadError("unexpected end of data")
@@ -2420,10 +2414,8 @@ class TarFile(object):
         """Read through the entire archive file and look for readable
            members.
         """
-        while True:
-            tarinfo = self.next()
-            if tarinfo is None:
-                break
+        while self.next() is not None:
+            pass
         self._loaded = True
 
     def _check(self, mode=None):

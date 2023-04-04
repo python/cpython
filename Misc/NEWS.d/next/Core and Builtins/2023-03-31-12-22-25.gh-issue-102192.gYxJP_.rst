@@ -1,0 +1,2 @@
+Deprecated ``_PyErr_ChainExceptions`` in favour of
+``_PyErr_ChainExceptions1``.

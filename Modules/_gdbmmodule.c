@@ -256,8 +256,7 @@ _gdbm_gdbm_get_impl(gdbmobject *self, PyObject *key, PyObject *default_value)
     res = gdbm_subscript(self, key);
     if (res == NULL && PyErr_ExceptionMatches(PyExc_KeyError)) {
         PyErr_Clear();
-        Py_INCREF(default_value);
-        return default_value;
+        return Py_NewRef(default_value);
     }
     return res;
 }
@@ -566,8 +565,7 @@ _gdbm_gdbm_sync_impl(gdbmobject *self, PyTypeObject *cls)
 static PyObject *
 gdbm__enter__(PyObject *self, PyObject *args)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -677,7 +675,6 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
         return NULL;
     }
     for (flags++; *flags != '\0'; flags++) {
-        char buf[40];
         switch (*flags) {
 #ifdef GDBM_FAST
             case 'f':
@@ -695,9 +692,8 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
                 break;
 #endif
             default:
-                PyOS_snprintf(buf, sizeof(buf), "Flag '%c' is not supported.",
-                              *flags);
-                PyErr_SetString(state->gdbm_error, buf);
+                PyErr_Format(state->gdbm_error,
+                             "Flag '%c' is not supported.", (unsigned char)*flags);
                 return NULL;
         }
     }

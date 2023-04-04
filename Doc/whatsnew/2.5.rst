@@ -872,18 +872,18 @@ PEP 353: Using ssize_t as the index type
 ========================================
 
 A wide-ranging change to Python's C API, using a new  :c:type:`Py_ssize_t` type
-definition instead of :c:type:`int`,  will permit the interpreter to handle more
+definition instead of :c:expr:`int`,  will permit the interpreter to handle more
 data on 64-bit platforms. This change doesn't affect Python's capacity on 32-bit
 platforms.
 
-Various pieces of the Python interpreter used C's :c:type:`int` type to store
+Various pieces of the Python interpreter used C's :c:expr:`int` type to store
 sizes or counts; for example, the number of items in a list or tuple were stored
-in an :c:type:`int`.  The C compilers for most 64-bit platforms still define
-:c:type:`int` as a 32-bit type, so that meant that lists could only hold up to
+in an :c:expr:`int`.  The C compilers for most 64-bit platforms still define
+:c:expr:`int` as a 32-bit type, so that meant that lists could only hold up to
 ``2**31 - 1`` = 2147483647 items. (There are actually a few different
 programming models that 64-bit C compilers can use -- see
 https://unix.org/version2/whatsnew/lp64_wp.html for a discussion -- but the
-most commonly available model leaves :c:type:`int` as 32 bits.)
+most commonly available model leaves :c:expr:`int` as 32 bits.)
 
 A limit of 2147483647 items doesn't really matter on a 32-bit platform because
 you'll run out of memory before hitting the length limit. Each list item
@@ -895,7 +895,7 @@ It's possible to address that much memory on a 64-bit platform, however.  The
 pointers for a list that size would only require 16 GiB of space, so it's not
 unreasonable that Python programmers might construct lists that large.
 Therefore, the Python interpreter had to be changed to use some type other than
-:c:type:`int`, and this will be a 64-bit type on 64-bit platforms.  The change
+:c:expr:`int`, and this will be a 64-bit type on 64-bit platforms.  The change
 will cause incompatibilities on 64-bit machines, so it was deemed worth making
 the transition now, while the number of 64-bit users is still relatively small.
 (In 5 or 10 years, we may *all* be on 64-bit machines, and the transition would
@@ -909,7 +909,7 @@ may therefore need to have some variables changed to :c:type:`Py_ssize_t`.
 
 The :c:func:`PyArg_ParseTuple` and :c:func:`Py_BuildValue` functions have a new
 conversion code, ``n``, for :c:type:`Py_ssize_t`.   :c:func:`PyArg_ParseTuple`'s
-``s#`` and ``t#`` still output :c:type:`int` by default, but you can define the
+``s#`` and ``t#`` still output :c:expr:`int` by default, but you can define the
 macro  :c:macro:`PY_SSIZE_T_CLEAN` before including :file:`Python.h`  to make
 them return :c:type:`Py_ssize_t`.
 
@@ -1695,7 +1695,7 @@ attributes of the :class:`CDLL` object.   ::
    result = libc.printf("Line of output\n")
 
 Type constructors for the various C types are provided: :func:`c_int`,
-:func:`c_float`, :func:`c_double`, :func:`c_char_p` (equivalent to :c:type:`char
+:func:`c_float`, :func:`c_double`, :func:`c_char_p` (equivalent to :c:expr:`char
 \*`), and so forth.  Unlike Python's types, the C versions are all mutable; you
 can assign to their :attr:`value` attribute to change the wrapped value.  Python
 integers and strings will be automatically converted to the corresponding C
@@ -1725,7 +1725,7 @@ attribute of the function object to  change this::
 ``ctypes.pythonapi`` object.  This object does *not*  release the global
 interpreter lock before calling a function, because the lock must be held when
 calling into the interpreter's code.   There's a :class:`py_object()` type
-constructor that will create a  :c:type:`PyObject \*` pointer.  A simple usage::
+constructor that will create a  :c:expr:`PyObject *` pointer.  A simple usage::
 
    import ctypes
 
@@ -2093,7 +2093,7 @@ Changes to Python's build process and to the C API include:
 
 * The largest change to the C API came from :pep:`353`, which modifies the
   interpreter to use a :c:type:`Py_ssize_t` type definition instead of
-  :c:type:`int`.  See the earlier section :ref:`pep-353` for a discussion of this
+  :c:expr:`int`.  See the earlier section :ref:`pep-353` for a discussion of this
   change.
 
 * The design of the bytecode compiler has changed a great deal,  no longer
@@ -2264,15 +2264,15 @@ code:
   Setting  :attr:`rpc_paths` to ``None`` or an empty tuple disables  this path
   checking.
 
-* C API: Many functions now use :c:type:`Py_ssize_t`  instead of :c:type:`int` to
+* C API: Many functions now use :c:type:`Py_ssize_t`  instead of :c:expr:`int` to
   allow processing more data on 64-bit machines.  Extension code may need to make
   the same change to avoid warnings and to support 64-bit machines.  See the
   earlier section :ref:`pep-353` for a discussion of this change.
 
 * C API:  The obmalloc changes mean that  you must be careful to not mix usage
-  of the :c:func:`PyMem_\*` and :c:func:`PyObject_\*` families of functions. Memory
-  allocated with  one family's :c:func:`\*_Malloc` must be  freed with the
-  corresponding family's :c:func:`\*_Free` function.
+  of the ``PyMem_*`` and ``PyObject_*`` families of functions. Memory
+  allocated with  one family's ``*_Malloc`` must be  freed with the
+  corresponding family's ``*_Free`` function.
 
 .. ======================================================================
 

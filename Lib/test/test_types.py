@@ -2072,7 +2072,7 @@ class CoroutineTests(unittest.TestCase):
         wrapper = foo()
         wrapper.send(None)
         with self.assertRaisesRegex(Exception, 'ham'):
-            wrapper.throw(Exception, Exception('ham'))
+            wrapper.throw(Exception('ham'))
 
         # decorate foo second time
         foo = types.coroutine(foo)

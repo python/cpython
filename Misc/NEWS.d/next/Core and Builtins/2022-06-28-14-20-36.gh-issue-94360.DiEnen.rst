@@ -1,2 +1,0 @@
-Fixed a tokenizer crash when reading encoded files with syntax errors from
-``stdin`` with non utf-8 encoded text. Patch by Pablo Galindo
