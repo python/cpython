@@ -1,9 +1,9 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2639
+{\rtf1\ansi\ansicpg1252\cocoartf2708
 \cocoascreenfonts1\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fswiss\fcharset0 Helvetica-Bold;\f2\fmodern\fcharset0 CourierNewPSMT;
-}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww12200\viewh10880\viewkind0
+\f3\fnil\fcharset0 HelveticaNeue;\f4\fnil\fcharset0 HelveticaNeue-Bold;}
+{\colortbl;\red255\green255\blue255;\red24\green26\blue30;\red255\green255\blue255;}
+{\*\expandedcolortbl;;\cssrgb\c12157\c13725\c15686;\cssrgb\c100000\c100000\c100000;}
+\margl1440\margr1440\vieww12820\viewh10620\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\partightenfactor0
 
 \f0\fs24 \cf0 This package will install 
@@ -23,6 +23,35 @@
 At the end of this install, click on 
 \f2 Install Certificates
 \f0  to install a set of current SSL root certificates.\
+\
+
+\f1\b macOS 13 Ventura users
+\f0\b0 : due to an issue with macOS 
+\f1\b Installer
+\f0\b0  app, installation of some 
+\f3 \cf2 \cb3 \expnd0\expndtw0\kerning0
+third-party 
+\f0 \cf0 \cb1 \kerning1\expnd0\expndtw0 packages including this Python package may fail with a vague 
+\f4\b \cf2 \cb3 \expnd0\expndtw0\kerning0
+\'93The installer encountered an error\'94
+\f3\b0  message if the 
+\f4\b Installer
+\f3\b0  app does not have permission to access the folder containing the downloaded installer file, typically in the 
+\f4\b Downloads
+\f3\b0  folder.  Go to 
+\f4\b System Settings
+\f3\b0  -> 
+\f4\b Privacy & Security
+\f3\b0  -> 
+\f4\b Files and Folders
+\f3\b0 , then click the mark in front of 
+\f4\b Installer
+\f3\b0  to expand, and enable 
+\f4\b Downloads Folder
+\f0\b0 \cf0 \cb1 \kerning1\expnd0\expndtw0  by moving the toggle to the right
+\f3 \cf2 \cb3 \expnd0\expndtw0\kerning0
+.  See {\field{\*\fldinst{HYPERLINK "https://github.com/python/cpython/issues/103207"}}{\fldrslt https://github.com/python/cpython/issues/103207}} for up-to-date information on this issue.
+\f0 \cf0 \cb1 \kerning1\expnd0\expndtw0 \
 \
 
 \f1\b NOTE: 
