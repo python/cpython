@@ -1602,7 +1602,7 @@ check_valid_tool(int tool_id)
 }
 
 /*[clinic input]
-monitoring.use_tool
+monitoring.use_tool_id
 
     tool_id: int
     name: object
@@ -1611,10 +1611,8 @@ monitoring.use_tool
 [clinic start generated code]*/
 
 static PyObject *
-monitoring_use_tool_impl(PyObject *module, int tool_id, PyObject *name)
-/*[clinic end generated code: output=d00b74d147bab1e3 input=506e604e1ea75567]*/
-
-/*[clinic end generated code]*/
+monitoring_use_tool_id_impl(PyObject *module, int tool_id, PyObject *name)
+/*[clinic end generated code: output=30d76dc92b7cd653 input=ebc453761c621be1]*/
 {
     if (check_valid_tool(tool_id))  {
         return NULL;
@@ -1633,7 +1631,7 @@ monitoring_use_tool_impl(PyObject *module, int tool_id, PyObject *name)
 }
 
 /*[clinic input]
-monitoring.free_tool
+monitoring.free_tool_id
 
     tool_id: int
     /
@@ -1641,10 +1639,8 @@ monitoring.free_tool
 [clinic start generated code]*/
 
 static PyObject *
-monitoring_free_tool_impl(PyObject *module, int tool_id)
-/*[clinic end generated code: output=7893bfdad26f51fa input=919fecb6f63130ed]*/
-
-/*[clinic end generated code]*/
+monitoring_free_tool_id_impl(PyObject *module, int tool_id)
+/*[clinic end generated code: output=86c2d2a1219a8591 input=a23fb6be3a8618e9]*/
 {
     if (check_valid_tool(tool_id))  {
         return NULL;
@@ -1926,8 +1922,8 @@ monitoring__all_events_impl(PyObject *module)
 }
 
 static PyMethodDef methods[] = {
-    MONITORING_USE_TOOL_METHODDEF
-    MONITORING_FREE_TOOL_METHODDEF
+    MONITORING_USE_TOOL_ID_METHODDEF
+    MONITORING_FREE_TOOL_ID_METHODDEF
     MONITORING_GET_TOOL_METHODDEF
     MONITORING_REGISTER_CALLBACK_METHODDEF
     MONITORING_GET_EVENTS_METHODDEF

@@ -8,25 +8,25 @@ preserve
 #endif
 
 
-PyDoc_STRVAR(monitoring_use_tool__doc__,
-"use_tool($module, tool_id, name, /)\n"
+PyDoc_STRVAR(monitoring_use_tool_id__doc__,
+"use_tool_id($module, tool_id, name, /)\n"
 "--\n"
 "\n");
 
-#define MONITORING_USE_TOOL_METHODDEF    \
-    {"use_tool", _PyCFunction_CAST(monitoring_use_tool), METH_FASTCALL, monitoring_use_tool__doc__},
+#define MONITORING_USE_TOOL_ID_METHODDEF    \
+    {"use_tool_id", _PyCFunction_CAST(monitoring_use_tool_id), METH_FASTCALL, monitoring_use_tool_id__doc__},
 
 static PyObject *
-monitoring_use_tool_impl(PyObject *module, int tool_id, PyObject *name);
+monitoring_use_tool_id_impl(PyObject *module, int tool_id, PyObject *name);
 
 static PyObject *
-monitoring_use_tool(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+monitoring_use_tool_id(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int tool_id;
     PyObject *name;
 
-    if (!_PyArg_CheckPositional("use_tool", nargs, 2, 2)) {
+    if (!_PyArg_CheckPositional("use_tool_id", nargs, 2, 2)) {
         goto exit;
     }
     tool_id = _PyLong_AsInt(args[0]);
@@ -34,25 +34,25 @@ monitoring_use_tool(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     name = args[1];
-    return_value = monitoring_use_tool_impl(module, tool_id, name);
+    return_value = monitoring_use_tool_id_impl(module, tool_id, name);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(monitoring_free_tool__doc__,
-"free_tool($module, tool_id, /)\n"
+PyDoc_STRVAR(monitoring_free_tool_id__doc__,
+"free_tool_id($module, tool_id, /)\n"
 "--\n"
 "\n");
 
-#define MONITORING_FREE_TOOL_METHODDEF    \
-    {"free_tool", (PyCFunction)monitoring_free_tool, METH_O, monitoring_free_tool__doc__},
+#define MONITORING_FREE_TOOL_ID_METHODDEF    \
+    {"free_tool_id", (PyCFunction)monitoring_free_tool_id, METH_O, monitoring_free_tool_id__doc__},
 
 static PyObject *
-monitoring_free_tool_impl(PyObject *module, int tool_id);
+monitoring_free_tool_id_impl(PyObject *module, int tool_id);
 
 static PyObject *
-monitoring_free_tool(PyObject *module, PyObject *arg)
+monitoring_free_tool_id(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int tool_id;
@@ -61,7 +61,7 @@ monitoring_free_tool(PyObject *module, PyObject *arg)
     if (tool_id == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = monitoring_free_tool_impl(module, tool_id);
+    return_value = monitoring_free_tool_id_impl(module, tool_id);
 
 exit:
     return return_value;
@@ -298,4 +298,4 @@ monitoring__all_events(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return monitoring__all_events_impl(module);
 }
-/*[clinic end generated code: output=9e5f270f3ce1e945 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f5d03f9aab1fa692 input=a9049054013a1b77]*/

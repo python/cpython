@@ -38,8 +38,8 @@ class MonitoringBaseTest(unittest.TestCase):
     def test_has_objects(self):
         m = sys.monitoring
         m.events
-        m.use_tool
-        m.free_tool
+        m.use_tool_id
+        m.free_tool_id
         m.get_tool
         m.get_events
         m.set_events
@@ -51,9 +51,9 @@ class MonitoringBaseTest(unittest.TestCase):
         m.MISSING
 
     def test_tool(self):
-        sys.monitoring.use_tool(TEST_TOOL, "MonitoringTest.Tool")
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
         self.assertEqual(sys.monitoring.get_tool(TEST_TOOL), "MonitoringTest.Tool")
-        sys.monitoring.free_tool(TEST_TOOL)
+        sys.monitoring.free_tool_id(TEST_TOOL)
         self.assertEqual(sys.monitoring.get_tool(TEST_TOOL), None)
         sys.monitoring.set_events(TEST_TOOL, 15)
         self.assertEqual(sys.monitoring.get_events(TEST_TOOL), 15)
