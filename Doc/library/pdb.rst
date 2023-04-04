@@ -36,24 +36,46 @@ extension interface uses the modules :mod:`bdb` and :mod:`cmd`.
    Module :mod:`traceback`
       Standard interface to extract, format and print stack traces of Python programs.
 
-The debugger's prompt is ``(Pdb)``. Typical usage to run a program under control
-of the debugger is::
+The typical usage to break into the debugger is to insert::
 
-   >>> import pdb
-   >>> import mymodule
-   >>> pdb.run('mymodule.test()')
-   > <string>(0)?()
+   import pdb; pdb.set_trace()
+
+Or::
+
+   breakpoint()
+
+at the location you want to break into the debugger, and then run the program.
+You can then step through the code following this statement, and continue
+running without the debugger using the :pdbcmd:`continue` command.
+
+.. versionadded:: 3.7
+   The built-in :func:`breakpoint()`, when called with defaults, can be used
+   instead of ``import pdb; pdb.set_trace()``.
+
+::
+
+   def double(x):
+      breakpoint()
+      return x * 2
+   val = 3
+   print(f"{val} * 2 is {double(val)}")
+
+The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug mode
+
+::
+
+   > ...(3)double()
+   -> return x * 2
+   (Pdb) p x
+   3
    (Pdb) continue
-   > <string>(1)?()
-   (Pdb) continue
-   NameError: 'spam'
-   > <string>(1)?()
-   (Pdb)
+   3 * 2 is 6
 
 .. versionchanged:: 3.3
    Tab-completion via the :mod:`readline` module is available for commands and
    command arguments, e.g. the current global and local names are offered as
    arguments of the ``p`` command.
+
 
 :file:`pdb.py` can also be invoked as a script to debug other scripts.  For
 example::
@@ -75,34 +97,35 @@ useful than quitting the debugger upon program's exit.
    ``python -m`` does. As with a script, the debugger will pause execution just
    before the first line of the module.
 
+Typical usage to run a program under control of the debugger is::
 
-The typical usage to break into the debugger is to insert::
-
-   import pdb; pdb.set_trace()
-
-at the location you want to break into the debugger, and then run the program.
-You can then step through the code following this statement, and continue
-running without the debugger using the :pdbcmd:`continue` command.
-
-.. versionadded:: 3.7
-   The built-in :func:`breakpoint()`, when called with defaults, can be used
-   instead of ``import pdb; pdb.set_trace()``.
+   >>> import pdb
+   >>> def f(x):
+   ...     print(1 / x)
+   >>> pdb.run("f(2)")
+   > <string>(1)<module>()
+   (Pdb) continue
+   0.5
+   >>>
 
 The typical usage to inspect a crashed program is::
 
    >>> import pdb
-   >>> import mymodule
-   >>> mymodule.test()
+   >>> def f(x):
+   ...     print(1 / x)
+   >>> pdb.run("f(0)")
+   > <string>(1)<module>()
+   (Pdb) continue
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-     File "./mymodule.py", line 4, in test
-       test2()
-     File "./mymodule.py", line 3, in test2
-       print(spam)
-   NameError: spam
+     ...
+     File "<string>", line 1, in <module>
+     File "<stdin>", line 2, in f
+   ZeroDivisionError: division by zero
    >>> pdb.pm()
-   > ./mymodule.py(3)test2()
-   -> print(spam)
+   > <stdin>(2)f()
+   (Pdb) p x
+   0
    (Pdb)
 
 
