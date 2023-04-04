@@ -1,2 +1,0 @@
-Fix a bug where parentheses in the ``metavar`` argument to :meth:`argparse.ArgumentParser.add_argument` were
-dropped. Patch by Yeojin Kim.

@@ -1,0 +1,466 @@
+.. date: 2023-02-08-22-03-04
+.. gh-issue: 101727
+.. nonce: 9P5eZz
+.. release date: 2023-04-04
+.. section: Security
+
+Updated the OpenSSL version used in Windows and macOS binary release builds
+to 1.1.1t to address CVE-2023-0286, CVE-2022-4303, and CVE-2022-4303 per
+`the OpenSSL 2023-02-07 security advisory
+<https://www.openssl.org/news/secadv/20230207.txt>`_.
+
+..
+
+.. date: 2023-01-24-16-12-00
+.. gh-issue: 101283
+.. nonce: 9tqu39
+.. section: Security
+
+:class:`subprocess.Popen` now uses a safer approach to find ``cmd.exe`` when
+launching with ``shell=True``. Patch by Eryk Sun, based on a patch by Oleg
+Iarygin.
+
+..
+
+.. date: 2023-03-18-02-36-39
+.. gh-issue: 101975
+.. nonce: HwMR1d
+.. section: Core and Builtins
+
+Fixed ``stacktop`` value on tracing entries to avoid corruption on garbage
+collection.
+
+..
+
+.. date: 2023-03-16-17-24-44
+.. gh-issue: 102701
+.. nonce: iNGVaS
+.. section: Core and Builtins
+
+Fix overflow when creating very large dict.
+
+..
+
+.. date: 2023-03-06-13-05-33
+.. gh-issue: 102416
+.. nonce: dz6K5f
+.. section: Core and Builtins
+
+Do not memoize incorrectly automatically generated loop rules in the parser.
+Patch by Pablo Galindo.
+
+..
+
+.. date: 2023-03-04-20-56-12
+.. gh-issue: 102356
+.. nonce: 07KvUd
+.. section: Core and Builtins
+
+Fix a bug that caused a crash when deallocating deeply nested filter
+objects. Patch by Marta Gómez Macías.
+
+..
+
+.. date: 2023-03-04-06-48-34
+.. gh-issue: 102397
+.. nonce: ACJaOf
+.. section: Core and Builtins
+
+Fix segfault from race condition in signal handling during garbage
+collection. Patch by Kumar Aditya.
+
+..
+
+.. date: 2023-03-02-13-49-21
+.. gh-issue: 102281
+.. nonce: QCuu2N
+.. section: Core and Builtins
+
+Fix potential nullptr dereference and use of uninitialized memory in
+fileutils. Patch by Max Bachmann.
+
+..
+
+.. date: 2023-02-24-17-59-39
+.. gh-issue: 102126
+.. nonce: HTT8Vc
+.. section: Core and Builtins
+
+Fix deadlock at shutdown when clearing thread states if any finalizer tries
+to acquire the runtime head lock. Patch by Kumar Aditya.
+
+..
+
+.. date: 2023-02-21-23-42-39
+.. gh-issue: 102027
+.. nonce: fQARG0
+.. section: Core and Builtins
+
+Fix SSE2 and SSE3 detection in ``_blake2`` internal module. Patch by Max
+Bachmann.
+
+..
+
+.. date: 2023-02-16-23-19-01
+.. gh-issue: 101967
+.. nonce: Kqr1dz
+.. section: Core and Builtins
+
+Fix possible segfault in ``positional_only_passed_as_keyword`` function,
+when new list created.
+
+..
+
+.. date: 2023-02-10-07-21-47
+.. gh-issue: 101765
+.. nonce: MO5LlC
+.. section: Core and Builtins
+
+Fix SystemError / segmentation fault in iter ``__reduce__`` when internal
+access of ``builtins.__dict__`` keys mutates the iter object.
+
+..
+
+.. date: 2023-02-08-17-13-31
+.. gh-issue: 101696
+.. nonce: seJhTt
+.. section: Core and Builtins
+
+Invalidate type version tag in ``_PyStaticType_Dealloc`` for static types,
+avoiding bug where a false cache hit could crash the interpreter. Patch by
+Kumar Aditya.
+
+..
+
+.. date: 2023-03-27-19-21-51
+.. gh-issue: 102549
+.. nonce: NQ6Nlv
+.. section: Library
+
+Don't ignore exceptions in member type creation.
+
+..
+
+.. date: 2023-03-23-13-34-33
+.. gh-issue: 102947
+.. nonce: cTwcpU
+.. section: Library
+
+Improve traceback when :func:`dataclasses.fields` is called on a
+non-dataclass. Patch by Alex Waygood
+
+..
+
+.. date: 2023-03-22-16-15-18
+.. gh-issue: 102780
+.. nonce: NEcljy
+.. section: Library
+
+The :class:`asyncio.Timeout` context manager now works reliably even when
+performing cleanup due to task cancellation.  Previously it could raise a
+:exc:`~asyncio.CancelledError` instead of an :exc:`~asyncio.TimeoutError` in
+such cases.
+
+..
+
+.. date: 2023-03-18-14-59-21
+.. gh-issue: 88965
+.. nonce: kA70Km
+.. section: Library
+
+typing: Fix a bug relating to substitution in custom classes generic over a
+:class:`~typing.ParamSpec`. Previously, if the ``ParamSpec`` was substituted
+with a parameters list that itself contained a :class:`~typing.TypeVar`, the
+``TypeVar`` in the parameters list could not be subsequently substituted.
+This is now fixed.
+
+Patch by Nikita Sobolev.
+
+..
+
+.. date: 2023-02-28-09-52-25
+.. gh-issue: 101979
+.. nonce: or3hXV
+.. section: Library
+
+Fix a bug where parentheses in the ``metavar`` argument to
+:meth:`argparse.ArgumentParser.add_argument` were dropped. Patch by Yeojin
+Kim.
+
+..
+
+.. date: 2023-02-23-15-06-01
+.. gh-issue: 102179
+.. nonce: P6KQ4c
+.. section: Library
+
+Fix :func:`os.dup2` error message for negative fds.
+
+..
+
+.. date: 2023-02-21-10-05-33
+.. gh-issue: 101961
+.. nonce: 7e56jh
+.. section: Library
+
+For the binary mode, :func:`fileinput.hookcompressed` doesn't set the
+``encoding`` value even if the value is ``None``. Patch by Gihwan Kim.
+
+..
+
+.. date: 2023-02-21-07-15-41
+.. gh-issue: 101936
+.. nonce: QVOxHH
+.. section: Library
+
+The default value of ``fp`` becomes :class:`io.BytesIO` if
+:exc:`~urllib.error.HTTPError` is initialized without a designated ``fp``
+parameter. Patch by Long Vo.
+
+..
+
+.. date: 2023-02-20-16-47-56
+.. gh-issue: 102069
+.. nonce: FS7f1j
+.. section: Library
+
+Fix ``__weakref__`` descriptor generation for custom dataclasses.
+
+..
+
+.. date: 2023-02-17-20-24-15
+.. gh-issue: 101566
+.. nonce: FjgWBt
+.. section: Library
+
+In zipfile, apply fix for extractall on the underlying zipfile after being
+wrapped in ``Path``.
+
+..
+
+.. date: 2023-02-14-09-08-48
+.. gh-issue: 101892
+.. nonce: FMos8l
+.. section: Library
+
+Callable iterators no longer raise :class:`SystemError` when the callable
+object exhausts the iterator but forgets to either return a sentinel value
+or raise :class:`StopIteration`.
+
+..
+
+.. date: 2023-02-11-13-23-29
+.. gh-issue: 97786
+.. nonce: QjvQ1B
+.. section: Library
+
+Fix potential undefined behaviour in corner cases of floating-point-to-time
+conversions.
+
+..
+
+.. date: 2023-02-10-16-02-29
+.. gh-issue: 101517
+.. nonce: r7S2u8
+.. section: Library
+
+Fixed bug where :mod:`bdb` looks up the source line with :mod:`linecache`
+with a ``lineno=None``, which causes it to fail with an unhandled exception.
+
+..
+
+.. date: 2023-02-09-19-40-41
+.. gh-issue: 101673
+.. nonce: mX-Ppq
+.. section: Library
+
+Fix a :mod:`pdb` bug where ``ll`` clears the changes to local variables.
+
+..
+
+.. date: 2022-09-19-08-12-58
+.. gh-issue: 96931
+.. nonce: x0WQhh
+.. section: Library
+
+Fix incorrect results from :meth:`ssl.SSLSocket.shared_ciphers`
+
+..
+
+.. date: 2022-09-05-12-17-34
+.. gh-issue: 88233
+.. nonce: gff9qJ
+.. section: Library
+
+Correctly preserve "extra" fields in ``zipfile`` regardless of their
+ordering relative to a zip64 "extra."
+
+..
+
+.. date: 2022-08-27-10-35-50
+.. gh-issue: 96127
+.. nonce: 8RdLre
+.. section: Library
+
+``inspect.signature`` was raising ``TypeError`` on call with mock objects.
+Now it correctly returns ``(*args, **kwargs)`` as infered signature.
+
+..
+
+.. date: 2022-07-30-23-01-43
+.. gh-issue: 95495
+.. nonce: RA-q1d
+.. section: Library
+
+When built against OpenSSL 3.0, the :mod:`ssl` module had a bug where it
+reported unauthenticated EOFs (i.e. without close_notify) as a clean
+TLS-level EOF. It now raises :exc:`~ssl.SSLEOFError`, matching the behavior
+in previous versions of OpenSSL. The :attr:`~ssl.SSLContext.options`
+attribute on :class:`~ssl.SSLContext` also no longer includes
+:data:`~ssl.OP_IGNORE_UNEXPECTED_EOF` by default. This option may be set to
+specify the previous OpenSSL 3.0 behavior.
+
+..
+
+.. date: 2022-06-30-21-28-41
+.. gh-issue: 94440
+.. nonce: LtgX0d
+.. section: Library
+
+Fix a :mod:`concurrent.futures.process` bug where ``ProcessPoolExecutor``
+shutdown could hang after a future has been quickly submitted and canceled.
+
+..
+
+.. date: 2023-03-29-14-51-39
+.. gh-issue: 103112
+.. nonce: XgGSEO
+.. section: Documentation
+
+Add docstring to :meth:`http.client.HTTPResponse.read` to fix ``pydoc``
+output.
+
+..
+
+.. date: 2023-02-19-10-33-01
+.. gh-issue: 85417
+.. nonce: kYO8u3
+.. section: Documentation
+
+Update :mod:`cmath` documentation to clarify behaviour on branch cuts.
+
+..
+
+.. date: 2023-02-07-21-43-24
+.. gh-issue: 97725
+.. nonce: cuY7Cd
+.. section: Documentation
+
+Fix :meth:`asyncio.Task.print_stack` description for ``file=None``. Patch by
+Oleg Iarygin.
+
+..
+
+.. date: 2023-03-23-23-25-18
+.. gh-issue: 102980
+.. nonce: Zps4QF
+.. section: Tests
+
+Improve test coverage on :mod:`pdb`.
+
+..
+
+.. date: 2023-03-08-13-54-20
+.. gh-issue: 102537
+.. nonce: Vfplpb
+.. section: Tests
+
+Adjust the error handling strategy in
+``test_zoneinfo.TzPathTest.python_tzpath_context``. Patch by Paul Ganssle.
+
+..
+
+.. date: 2023-02-11-20-28-08
+.. gh-issue: 89792
+.. nonce: S-Y5BZ
+.. section: Tests
+
+``test_tools`` now copies up to 10x less source data to a temporary
+directory during the ``freeze`` test by ignoring git metadata and other
+artifacts.  It also limits its python build parallelism based on
+os.cpu_count instead of hard coding it as 8 cores.
+
+..
+
+.. date: 2023-01-27-18-10-40
+.. gh-issue: 101377
+.. nonce: IJGpqh
+.. section: Tests
+
+Improved test_locale_calendar_formatweekday of calendar.
+
+..
+
+.. date: 2023-03-15-02-03-39
+.. gh-issue: 102711
+.. nonce: zTkjts
+.. section: Build
+
+Fix ``-Wstrict-prototypes`` compiler warnings.
+
+..
+
+.. date: 2023-02-13-16-32-50
+.. gh-issue: 101849
+.. nonce: 7lm_53
+.. section: Windows
+
+Ensures installer will correctly upgrade existing ``py.exe`` launcher
+installs.
+
+..
+
+.. date: 2023-02-10-14-26-05
+.. gh-issue: 101763
+.. nonce: RPaj7r
+.. section: Windows
+
+Updates copy of libffi bundled with Windows installs to 3.4.4.
+
+..
+
+.. date: 2023-02-09-22-09-27
+.. gh-issue: 101759
+.. nonce: zFlqSH
+.. section: Windows
+
+Update Windows installer to SQLite 3.40.1.
+
+..
+
+.. date: 2023-02-07-18-22-54
+.. gh-issue: 101614
+.. nonce: NjVP0n
+.. section: Windows
+
+Correctly handle extensions built against debug binaries that reference
+``python3_d.dll``.
+
+..
+
+.. date: 2023-04-04-13-37-28
+.. gh-issue: 103207
+.. nonce: x0vvQp
+.. section: macOS
+
+Add instructions to the macOS installer welcome display on how to workaround
+the macOS 13 Ventura “The installer encountered an error” failure.
+
+..
+
+.. date: 2023-02-09-22-07-17
+.. gh-issue: 101759
+.. nonce: B0JP2H
+.. section: macOS
+
+Update macOS installer to SQLite 3.40.1.
