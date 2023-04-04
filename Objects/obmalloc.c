@@ -812,7 +812,7 @@ void
 _Py_FinalizeAllocatedBlocks(_PyRuntimeState *runtime)
 {
     last_final_leaks = get_num_global_allocated_blocks(runtime);
-    runtime->object_state.interpreter_leaks = 0;
+    runtime->obmalloc.interpreter_leaks = 0;
 }
 
 static Py_ssize_t
