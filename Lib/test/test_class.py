@@ -661,8 +661,8 @@ class ClassTests(unittest.TestCase):
 
         with self.assertRaisesRegex(
             AttributeError,
-            "'B' object has no attribute 'x' and no "
-            "__dict__ for setting new attributes. Did you mean: 'foo'"
+            "'B' object has no attribute 'fod' and no "
+            r"__dict__ for setting new attributes. Did you mean: 'foo'\?"
             ""
         ):
             B().fod = 1
