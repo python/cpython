@@ -8,6 +8,7 @@ import gc
 from functools import wraps
 import asyncio
 from test.support import import_helper
+import warnings
 
 support.requires_working_socket(module=True)
 
@@ -1824,7 +1825,10 @@ class JumpTestCase(unittest.TestCase):
         elif warning is None and error is not None:
             with self.assertRaisesRegex(*error):
                 func(output)
-        
+        else:
+            raise Exception("Not currently possible to assert both a warning and an error in tandem, the former is seemingly ignored by the unittest framework")
+            assertTrue(False)
+
         sys.settrace(None)
         self.compare_jump_output(expected, output)
 
@@ -1842,6 +1846,9 @@ class JumpTestCase(unittest.TestCase):
         elif warning is None and error is not None:
             with self.assertRaisesRegex(*error):
                 asyncio.run(func(output))
+        else:
+            raise Exception("Not currently possible to assert both a warning and an exception in tandem, the former is seemingly ignored by the unittest framework")
+            assertTrue(False)
         
         sys.settrace(None)
         asyncio.set_event_loop_policy(None)
@@ -2324,6 +2331,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(2)
         output.append(3)
 
+
     @async_jump_test(3, 2, [2, 2], (ValueError, "can't jump into the body of a for loop"))
     async def test_no_jump_backwards_into_async_for_block(output):
         async for i in asynciter([1, 2]):
@@ -2572,7 +2580,6 @@ output.append(4)
         exec(code, namespace)
         sys.settrace(None)
         self.compare_jump_output([2, 3, 2, 3, 4], namespace["output"])
-
 
     @jump_test(2, 3, [1], event='call', error=(ValueError, "can't jump from"
                " the 'call' trace event of a new frame"))
