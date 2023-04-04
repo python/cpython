@@ -1579,8 +1579,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         }
         else {
             PyErr_Format(PyExc_AttributeError,
-                         "'%.100s' object has no attribute '%U' and no "
-                         "__dict__ for setting new attributes",
+                         "'%.100s' object has no attribute '%U'",
                          tp->tp_name, name);
         }
         set_attribute_error_context(obj, name);
