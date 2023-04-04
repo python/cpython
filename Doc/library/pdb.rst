@@ -298,7 +298,7 @@ can be overridden by the local file.
 
 .. pdbcommand:: w(here)
 
-   Print a stack trace, with the most recent frame at the bottom.  An arrow (`>`)
+   Print a stack trace, with the most recent frame at the bottom.  An arrow (``>``)
    indicates the current frame, which determines the context of most commands.
 
 .. pdbcommand:: d(own) [count]
@@ -512,7 +512,7 @@ can be overridden by the local file.
       lst.append(1)
       print(lst)
 
-   Display won't realize `lst` has been changed::
+   Display won't realize ``lst`` has been changed::
 
       > /home/gaogaotiantian/programs/mycpython/example.py(3)<module>()
       -> lst.append(1)
