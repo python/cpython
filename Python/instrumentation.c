@@ -1600,7 +1600,7 @@ module monitoring
 static int
 check_valid_tool(int tool_id)
 {
-    if (tool_id < 0 || tool_id >= PY_INSTRUMENT_SYS_PROFILE) {
+    if (tool_id < 0 || tool_id >= PY_MONITORING_SYS_PROFILE_ID) {
         PyErr_Format(PyExc_ValueError, "invalid tool %d (must be between 0 and 5)", tool_id);
         return -1;
     }

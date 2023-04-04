@@ -145,7 +145,7 @@ dummy_func(
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = _Py_call_instrumentation(
                         tstate, oparg > 0, frame, next_instr-1);
-                stack_pointer = _PyFrame_FetchStackPointer(frame);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 ERROR_IF(err, error);
                 if (frame->prev_instr != next_instr-1) {
                     /* Instrumentation has jumped */
@@ -3187,7 +3187,7 @@ dummy_func(
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int original_opcode = _Py_call_instrumentation_line(
                     tstate, frame, here);
-            stack_pointer = _PyFrame_FetchStackPointer(frame);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (original_opcode < 0) {
                 next_instr = here+1;
                 goto error;

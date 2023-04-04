@@ -14,7 +14,8 @@ extern "C" {
 
 #define PY_MONITORING_TOOL_IDS 8
 
-/* Require bytecode instrumentation */
+/* Local events.
+ * These require bytecode instrumentation */
 
 #define PY_MONITORING_EVENT_PY_START 0
 #define PY_MONITORING_EVENT_PY_RESUME 1
@@ -29,7 +30,7 @@ extern "C" {
 
 #define PY_MONITORING_INSTRUMENTED_EVENTS 10
 
-/* Exceptional events */
+/* Other events, mainly exceptions */
 
 #define PY_MONITORING_EVENT_RAISE 10
 #define PY_MONITORING_EVENT_EXCEPTION_HANDLED 11
@@ -37,7 +38,7 @@ extern "C" {
 #define PY_MONITORING_EVENT_PY_THROW 13
 
 
-/* Grouped events */
+/* Ancilliary events */
 
 #define PY_MONITORING_EVENT_C_RETURN 14
 #define PY_MONITORING_EVENT_C_RAISE 15
@@ -45,10 +46,9 @@ extern "C" {
 
 typedef uint32_t _PyMonitoringEventSet;
 
-/* Reserved IDs */
-
-#define PY_INSTRUMENT_SYS_PROFILE 6
-#define PY_INSTRUMENT_SYS_TRACE 7
+/* Tool IDs */
+#define PY_MONITORING_SYS_PROFILE_ID 6
+#define PY_MONITORING_SYS_TRACE_ID 7
 
 
 PyObject *_PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj);

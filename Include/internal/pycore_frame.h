@@ -143,7 +143,7 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
     values are not visible to the cycle GC.
     We choose -1 rather than 0 to assist debugging. */
 static inline PyObject**
-_PyFrame_FetchStackPointer(_PyInterpreterFrame *frame)
+_PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
     PyObject **sp = frame->localsplus+frame->stacktop;
     frame->stacktop = -1;

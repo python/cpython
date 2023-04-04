@@ -617,7 +617,7 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 do { \
     _PyFrame_SetStackPointer(frame, stack_pointer); \
     int err = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
-    stack_pointer = _PyFrame_FetchStackPointer(frame); \
+    stack_pointer = _PyFrame_GetStackPointer(frame); \
     if (err) { \
         next_instr = (dest)+1; \
         goto error; \
@@ -723,7 +723,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     assert(_PyInterpreterFrame_LASTI(frame) >= -1); \
     /* Jump back to the last instruction executed... */ \
     next_instr = frame->prev_instr + 1; \
-    stack_pointer = _PyFrame_FetchStackPointer(frame);
+    stack_pointer = _PyFrame_GetStackPointer(frame);
 
 start_frame:
     if (_Py_EnterRecursivePy(tstate)) {

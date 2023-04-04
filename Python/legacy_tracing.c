@@ -388,32 +388,32 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     /* Setup PEP 669 monitoring callbacks and events. */
     if (!tstate->interp->sys_profile_initialized) {
         tstate->interp->sys_profile_initialized = true;
-        if (set_callbacks(PY_INSTRUMENT_SYS_PROFILE,
+        if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
             (vectorcallfunc)sys_profile_func2, PyTrace_CALL,
                         PY_MONITORING_EVENT_PY_START, PY_MONITORING_EVENT_PY_RESUME)) {
             return -1;
         }
-        if (set_callbacks(PY_INSTRUMENT_SYS_PROFILE,
+        if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
             (vectorcallfunc)sys_profile_func3, PyTrace_RETURN,
                         PY_MONITORING_EVENT_PY_RETURN, PY_MONITORING_EVENT_PY_YIELD)) {
             return -1;
         }
-        if (set_callbacks(PY_INSTRUMENT_SYS_PROFILE,
+        if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
             (vectorcallfunc)sys_profile_func2, PyTrace_RETURN,
                         PY_MONITORING_EVENT_PY_UNWIND, -1)) {
             return -1;
         }
-        if (set_callbacks(PY_INSTRUMENT_SYS_PROFILE,
+        if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
             (vectorcallfunc)sys_profile_call_or_return, PyTrace_C_CALL,
                         PY_MONITORING_EVENT_CALL, -1)) {
             return -1;
         }
-        if (set_callbacks(PY_INSTRUMENT_SYS_PROFILE,
+        if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
             (vectorcallfunc)sys_profile_call_or_return, PyTrace_C_RETURN,
                         PY_MONITORING_EVENT_C_RETURN, -1)) {
             return -1;
         }
-        if (set_callbacks(PY_INSTRUMENT_SYS_PROFILE,
+        if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
             (vectorcallfunc)sys_profile_call_or_return, PyTrace_C_EXCEPTION,
                         PY_MONITORING_EVENT_C_RAISE, -1)) {
             return -1;
@@ -433,10 +433,10 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             (1 << PY_MONITORING_EVENT_PY_START) | (1 << PY_MONITORING_EVENT_PY_RESUME) |
             (1 << PY_MONITORING_EVENT_PY_RETURN) | (1 << PY_MONITORING_EVENT_PY_YIELD) |
             (1 << PY_MONITORING_EVENT_CALL) | (1 << PY_MONITORING_EVENT_PY_UNWIND);
-        _PyMonitoring_SetEvents(PY_INSTRUMENT_SYS_PROFILE, events);
+        _PyMonitoring_SetEvents(PY_MONITORING_SYS_PROFILE_ID, events);
     }
     else {
-        _PyMonitoring_SetEvents(PY_INSTRUMENT_SYS_PROFILE, 0);
+        _PyMonitoring_SetEvents(PY_MONITORING_SYS_PROFILE_ID, 0);
     }
     return 0;
 }
@@ -459,52 +459,52 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     /* Setup PEP 669 monitoring callbacks and events. */
     if (!tstate->interp->sys_trace_initialized) {
         tstate->interp->sys_trace_initialized = true;
-        if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
+        if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
             (vectorcallfunc)sys_trace_func2, PyTrace_CALL,
                         PY_MONITORING_EVENT_PY_START, PY_MONITORING_EVENT_PY_RESUME)) {
             return -1;
         }
-        if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
+        if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
             (vectorcallfunc)sys_trace_func2, PyTrace_CALL,
                         PY_MONITORING_EVENT_PY_THROW, -1)) {
             return -1;
         }
-        if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
+        if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
             (vectorcallfunc)sys_trace_return, PyTrace_RETURN,
                         PY_MONITORING_EVENT_PY_RETURN, -1)) {
             return -1;
         }
-        if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
+        if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
             (vectorcallfunc)sys_trace_yield, PyTrace_RETURN,
                         PY_MONITORING_EVENT_PY_YIELD, -1)) {
             return -1;
         }
-        if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
+        if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
             (vectorcallfunc)sys_trace_exception_func, PyTrace_EXCEPTION,
                         PY_MONITORING_EVENT_RAISE, PY_MONITORING_EVENT_STOP_ITERATION)) {
             return -1;
         }
-        if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
+        if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
             (vectorcallfunc)sys_trace_line_func, PyTrace_LINE,
                         PY_MONITORING_EVENT_LINE, -1)) {
             return -1;
         }
-        if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
+        if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
             (vectorcallfunc)sys_trace_func2, PyTrace_RETURN,
                         PY_MONITORING_EVENT_PY_UNWIND, -1)) {
             return -1;
         }
-        if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
+        if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
             (vectorcallfunc)sys_trace_jump_func, PyTrace_LINE,
                         PY_MONITORING_EVENT_JUMP, PY_MONITORING_EVENT_BRANCH)) {
             return -1;
         }
-        if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
+        if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
             (vectorcallfunc)sys_trace_instruction_func, PyTrace_OPCODE,
                         PY_MONITORING_EVENT_INSTRUCTION, -1)) {
             return -1;
         }
-        if (set_callbacks(PY_INSTRUMENT_SYS_TRACE,
+        if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
             (vectorcallfunc)sys_trace_exception_handled, PyTrace_LINE,
                         PY_MONITORING_EVENT_EXCEPTION_HANDLED, -1)) {
             return -1;
@@ -531,10 +531,10 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
         if (tstate->interp->f_opcode_trace_set) {
             events |= (1 << PY_MONITORING_EVENT_INSTRUCTION);
         }
-        _PyMonitoring_SetEvents(PY_INSTRUMENT_SYS_TRACE, events);
+        _PyMonitoring_SetEvents(PY_MONITORING_SYS_TRACE_ID, events);
     }
     else {
-        _PyMonitoring_SetEvents(PY_INSTRUMENT_SYS_TRACE, 0);
+        _PyMonitoring_SetEvents(PY_MONITORING_SYS_TRACE_ID, 0);
     }
 
     return 0;
