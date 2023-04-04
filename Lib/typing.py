@@ -1998,6 +1998,17 @@ _PROTO_ALLOWLIST = {
 }
 
 
+@functools.cache
+def _lazy_load_getattr_static():
+    # Import getattr_static lazily so as not to slow down the import of typing.py
+    # Cache the result so we don't slow down _ProtocolMeta.__instancecheck__ unnecessarily
+    from inspect import getattr_static
+    return getattr_static
+
+
+_cleanups.append(_lazy_load_getattr_static.cache_clear)
+
+
 class _ProtocolMeta(ABCMeta):
     # This metaclass is really unfortunate and exists only because of
     # the lack of __instancehook__.
@@ -2025,12 +2036,17 @@ class _ProtocolMeta(ABCMeta):
             return True
 
         if is_protocol_cls:
-            if all(hasattr(instance, attr) and
-                    # All *methods* can be blocked by setting them to None.
-                    (not callable(getattr(cls, attr, None)) or
-                     getattr(instance, attr) is not None)
-                    for attr in protocol_attrs):
+            getattr_static = _lazy_load_getattr_static()
+            for attr in protocol_attrs:
+                try:
+                    val = getattr_static(instance, attr)
+                except AttributeError:
+                    break
+                if callable(getattr(cls, attr, None)) and val is None:
+                    break
+            else:
                 return True
+
         return super().__instancecheck__(instance)
 
 
