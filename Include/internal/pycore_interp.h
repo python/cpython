@@ -25,6 +25,7 @@ extern "C" {
 #include "pycore_import.h"        // struct _import_state
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_global_objects.h"  // struct _Py_interp_static_objects
+#include "pycore_object_state.h"   // struct _py_object_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -138,6 +139,7 @@ struct _is {
     // One bit is set for each non-NULL entry in code_watchers
     uint8_t active_code_watchers;
 
+    struct _py_object_state object_state;
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
     struct _Py_long_state long_state;

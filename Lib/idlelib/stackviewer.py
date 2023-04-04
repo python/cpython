@@ -27,10 +27,7 @@ class StackTreeItem(TreeItem):
 
     def get_stack(self, tb):
         if tb is None:
-            if hasattr(sys, 'last_exc'):
-                tb = sys.last_exc.__traceback__
-            else:
-                tb = sys.last_traceback
+            tb = sys.last_traceback
         stack = []
         if tb and tb.tb_frame is None:
             tb = tb.tb_next
@@ -40,15 +37,11 @@ class StackTreeItem(TreeItem):
         return stack
 
     def get_exception(self):
-        if hasattr(sys, 'last_exc'):
-            typ = type(sys.last_exc)
-            value = sys.last_exc
-        else:
-            typ = sys.last_type
-            value = sys.last_value
-        if hasattr(typ, "__name__"):
-            typ = typ.__name__
-        s = str(typ)
+        type = sys.last_type
+        value = sys.last_value
+        if hasattr(type, "__name__"):
+            type = type.__name__
+        s = str(type)
         if value is not None:
             s = s + ": " + str(value)
         return s
@@ -143,7 +136,6 @@ def _stack_viewer(parent):  # htest #
     except NameError:
         exc_type, exc_value, exc_tb = sys.exc_info()
     # inject stack trace to sys
-    sys.last_exc = exc_value
     sys.last_type = exc_type
     sys.last_value = exc_value
     sys.last_traceback = exc_tb
@@ -151,7 +143,6 @@ def _stack_viewer(parent):  # htest #
     StackBrowser(top, flist=flist, top=top, tb=exc_tb)
 
     # restore sys to original state
-    del sys.last_exc
     del sys.last_type
     del sys.last_value
     del sys.last_traceback
