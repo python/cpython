@@ -671,7 +671,7 @@ init_interpreter(PyInterpreterState *interp,
         }
     }
     interp->sys_profile_initialized = false;
-    interp->sys_profile_initialized = false;
+    interp->sys_trace_initialized = false;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
@@ -818,7 +818,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         }
     }
     interp->sys_profile_initialized = false;
-    interp->sys_profile_initialized = false;
+    interp->sys_trace_initialized = false;
     for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
         Py_CLEAR(interp->monitoring_tool_names[t]);
     }
@@ -880,6 +880,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         interp->code_watchers[i] = NULL;
     }
     interp->active_code_watchers = 0;
+    interp->f_opcode_trace_set = false;
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.

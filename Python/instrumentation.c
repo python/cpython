@@ -1937,14 +1937,9 @@ static PyMethodDef methods[] = {
 
 static struct PyModuleDef monitoring_module = {
     PyModuleDef_HEAD_INIT,
-    "sys.monitoring",
-    NULL,
-    -1, /* multiple "initialization" just copies the module dict. */
-    methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "sys.monitoring",
+    .m_size = -1, /* multiple "initialization" just copies the module dict. */
+    .m_methods = methods,
 };
 
 PyObject *_Py_CreateMonitoringObject(void)
