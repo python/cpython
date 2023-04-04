@@ -60,9 +60,7 @@ running without the debugger using the :pdbcmd:`continue` command.
    val = 3
    print(f"{val} * 2 is {double(val)}")
 
-The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug mode
-
-::
+The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug mode::
 
    > ...(3)double()
    -> return x * 2
