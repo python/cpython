@@ -1,0 +1,1 @@
+Adapt :mod:`!msvcrt` to :pep:`687`.

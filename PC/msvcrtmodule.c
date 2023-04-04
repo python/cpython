@@ -564,19 +564,6 @@ static struct PyMethodDef msvcrt_functions[] = {
     {NULL,                      NULL}
 };
 
-
-static struct PyModuleDef msvcrtmodule = {
-    PyModuleDef_HEAD_INIT,
-    "msvcrt",
-    NULL,
-    -1,
-    msvcrt_functions,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
 static void
 insertint(PyObject *d, char *name, int value)
 {
@@ -605,14 +592,11 @@ insertptr(PyObject *d, char *name, void *value)
     }
 }
 
-PyMODINIT_FUNC
-PyInit_msvcrt(void)
+static int
+exec_module(PyObject* m)
 {
     int st;
     PyObject *d, *version;
-    PyObject *m = PyModule_Create(&msvcrtmodule);
-    if (m == NULL)
-        return NULL;
     d = PyModule_GetDict(m);
 
     /* constants for the locking() function's mode argument */
@@ -664,10 +648,34 @@ PyInit_msvcrt(void)
                                                   _VC_CRT_BUILD_VERSION,
                                                   _VC_CRT_RBUILD_VERSION);
     st = PyModule_AddObject(m, "CRT_ASSEMBLY_VERSION", version);
-    if (st < 0) return NULL;
+    if (st < 0) return -1;
 #endif
     /* make compiler warning quiet if st is unused */
     (void)st;
 
-    return m;
+    return 0;
+
+}
+
+static PyModuleDef_Slot msvcrt_slots[] = {
+    {Py_mod_exec, exec_module},
+    {0, NULL}
+};
+
+static struct PyModuleDef msvcrtmodule = {
+    PyModuleDef_HEAD_INIT,
+    "msvcrt",
+    NULL,
+    0,
+    msvcrt_functions,
+    msvcrt_slots,
+    NULL,
+    NULL,
+    NULL
+};
+
+PyMODINIT_FUNC
+PyInit_msvcrt(void)
+{
+    return PyModuleDef_Init(&msvcrtmodule);
 }
