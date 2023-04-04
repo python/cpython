@@ -14,17 +14,11 @@ typedef struct _PyLegacyEventHandler {
     int event;
 } _PyLegacyEventHandler;
 
-static void
-dealloc(_PyLegacyEventHandler *self)
-{
-    PyObject_Free(self);
-}
-
-
 /* The Py_tracefunc function expects the following arguments:
- *   frame: FrameObject
- *   kind: c-int
- *   arg: The arg
+ *   obj: the trace object (PyObject *)
+ *   frame: the current frame (PyFrameObject *)
+ *   kind: the kind of event, see PyTrace_XXX #defines (int)
+ *   arg: The arg (a PyObject *)
  */
 
 static PyObject *
@@ -34,7 +28,7 @@ call_profile_func(_PyLegacyEventHandler *self, PyObject *arg)
     if (tstate->c_profilefunc == NULL) {
         Py_RETURN_NONE;
     }
-    PyFrameObject* frame = PyEval_GetFrame();
+    PyFrameObject *frame = PyEval_GetFrame();
     if (frame == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Missing frame when calling profile function.");
@@ -101,8 +95,6 @@ sys_profile_call_or_return(
     Py_RETURN_NONE;
 }
 
-
-
 static PyObject *
 call_trace_func(_PyLegacyEventHandler *self, PyObject *arg)
 {
@@ -110,7 +102,7 @@ call_trace_func(_PyLegacyEventHandler *self, PyObject *arg)
     if (tstate->c_tracefunc == NULL) {
         Py_RETURN_NONE;
     }
-    PyFrameObject* frame = PyEval_GetFrame();
+    PyFrameObject *frame = PyEval_GetFrame();
     if (frame == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Missing frame when calling trace function.");
@@ -139,7 +131,7 @@ sys_trace_exception_func(
     if (tb == NULL) {
         tb = Py_NewRef(Py_None);
     }
-    PyObject * tuple = PyTuple_Pack(3, type, exc, tb);
+    PyObject *tuple = PyTuple_Pack(3, type, exc, tb);
     Py_DECREF(tb);
     if (tuple == NULL) {
         return NULL;
@@ -190,7 +182,7 @@ sys_trace_instruction_func(
 ) {
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 2);
-    PyFrameObject* frame = PyEval_GetFrame();
+    PyFrameObject *frame = PyEval_GetFrame();
     if (frame == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Missing frame when calling trace function.");
@@ -213,7 +205,7 @@ sys_trace_instruction_func(
 static PyObject *
 trace_line(
     PyThreadState *tstate, _PyLegacyEventHandler *self,
-    PyFrameObject* frame, int line
+    PyFrameObject *frame, int line
 ) {
     if (!frame->f_trace_lines) {
         Py_RETURN_NONE;
@@ -246,7 +238,7 @@ sys_trace_line_func(
     assert(PyVectorcall_NARGS(nargsf) == 2);
     int line = _PyLong_AsInt(args[1]);
     assert(line >= 0);
-    PyFrameObject* frame = PyEval_GetFrame();
+    PyFrameObject *frame = PyEval_GetFrame();
     if (frame == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Missing frame when calling trace function.");
@@ -276,7 +268,7 @@ sys_trace_jump_func(
     assert(from >= 0);
     int to = _PyLong_AsInt(args[2]);
     assert(to >= 0);
-    PyFrameObject* frame = PyEval_GetFrame();
+    PyFrameObject *frame = PyEval_GetFrame();
     if (frame == NULL) {
         PyErr_SetString(PyExc_SystemError,
                         "Missing frame when calling trace function.");
@@ -314,10 +306,11 @@ sys_trace_exception_handled(
         Py_RETURN_NONE;
     }
     assert(PyVectorcall_NARGS(nargsf) == 3);
-    PyFrameObject* frame = PyEval_GetFrame();
+    PyFrameObject *frame = PyEval_GetFrame();
     PyCodeObject *code = (PyCodeObject *)args[0];
     assert(PyCode_Check(code));
     assert(code == frame->f_frame->f_code);
+    assert(PyLong_Check(args[1]));
     int offset = _PyLong_AsInt(args[1]);
     /* We can call _Py_Instrumentation_GetLine because we always set
     * line events for tracing */
@@ -334,9 +327,10 @@ PyTypeObject _PyLegacyEventHandler_Type = {
     _PyVarObject_IMMORTAL_INIT(&PyType_Type, 0),
     "sys.legacy_event_handler",
     sizeof(_PyLegacyEventHandler),
-    .tp_dealloc = (destructor)dealloc,
+    .tp_dealloc = (destructor)PyObject_Free,
     .tp_vectorcall_offset = offsetof(_PyLegacyEventHandler, vectorcall),
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_VECTORCALL,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+        Py_TPFLAGS_HAVE_VECTORCALL | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_call = PyVectorcall_Call,
 };
 
