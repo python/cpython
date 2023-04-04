@@ -1979,6 +1979,22 @@ PyObject *_Py_CreateMonitoringObject(void)
             goto error;
         }
     }
+    PyObject *val = PyLong_FromLong(PY_MONITORING_DEBUGGER_ID);
+    err = PyObject_SetAttrString(mod, "DEBUGGER_ID", val);
+    Py_DECREF(val);
+    if (err) goto error;
+    val = PyLong_FromLong(PY_MONITORING_COVERAGE_ID);
+    err = PyObject_SetAttrString(mod, "COVERAGE_ID", val);
+    Py_DECREF(val);
+    if (err) goto error;
+    val = PyLong_FromLong(PY_MONITORING_PROFILER_ID);
+    err = PyObject_SetAttrString(mod, "PROFILER_ID", val);
+    Py_DECREF(val);
+    if (err) goto error;
+    val = PyLong_FromLong(PY_MONITORING_OPTIMIZER_ID);
+    err = PyObject_SetAttrString(mod, "OPTIMIZER_ID", val);
+    Py_DECREF(val);
+    if (err) goto error;
     return mod;
 error:
     Py_DECREF(mod);

@@ -47,6 +47,14 @@ extern "C" {
 typedef uint32_t _PyMonitoringEventSet;
 
 /* Tool IDs */
+
+/* These are defined in PEP 669 for convenience to avoid clashes */
+#define PY_MONITORING_DEBUGGER_ID 0
+#define PY_MONITORING_COVERAGE_ID 1
+#define PY_MONITORING_PROFILER_ID 2
+#define PY_MONITORING_OPTIMIZER_ID 5
+
+/* Internal IDs used to suuport sys.setprofile() and sys.settrace() */
 #define PY_MONITORING_SYS_PROFILE_ID 6
 #define PY_MONITORING_SYS_TRACE_ID 7
 
