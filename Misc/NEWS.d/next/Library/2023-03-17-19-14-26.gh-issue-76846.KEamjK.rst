@@ -1,3 +1,0 @@
-Fix issue where ``__new__()`` and ``__init__()`` methods of
-:class:`pathlib.PurePath` and :class:`~pathlib.Path` subclasses were not
-called in some circumstances.
