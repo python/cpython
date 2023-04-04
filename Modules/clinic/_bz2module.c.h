@@ -71,6 +71,48 @@ _bz2_BZ2Compressor_flush(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
     return _bz2_BZ2Compressor_flush_impl(self);
 }
 
+PyDoc_STRVAR(_bz2_BZ2Compressor__doc__,
+"BZ2Compressor(compresslevel=9, /)\n"
+"--\n"
+"\n"
+"Create a compressor object for compressing data incrementally.\n"
+"\n"
+"  compresslevel\n"
+"    Compression level, as a number between 1 and 9.\n"
+"\n"
+"For one-shot compression, use the compress() function instead.");
+
+static PyObject *
+_bz2_BZ2Compressor_impl(PyTypeObject *type, int compresslevel);
+
+static PyObject *
+_bz2_BZ2Compressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = clinic_state()->bz2_compressor_type;
+    int compresslevel = 9;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("BZ2Compressor", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("BZ2Compressor", PyTuple_GET_SIZE(args), 0, 1)) {
+        goto exit;
+    }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
+    }
+    compresslevel = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
+    if (compresslevel == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _bz2_BZ2Compressor_impl(type, compresslevel);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
 "decompress($self, /, data, max_length=-1)\n"
 "--\n"
@@ -168,4 +210,35 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=829bed4097cf2e63 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_bz2_BZ2Decompressor__doc__,
+"BZ2Decompressor()\n"
+"--\n"
+"\n"
+"Create a decompressor object for decompressing data incrementally.\n"
+"\n"
+"For one-shot decompression, use the decompress() function instead.");
+
+static PyObject *
+_bz2_BZ2Decompressor_impl(PyTypeObject *type);
+
+static PyObject *
+_bz2_BZ2Decompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = clinic_state()->bz2_decompressor_type;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoPositional("BZ2Decompressor", args)) {
+        goto exit;
+    }
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("BZ2Decompressor", kwargs)) {
+        goto exit;
+    }
+    return_value = _bz2_BZ2Decompressor_impl(type);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=805400e4805098ec input=a9049054013a1b77]*/

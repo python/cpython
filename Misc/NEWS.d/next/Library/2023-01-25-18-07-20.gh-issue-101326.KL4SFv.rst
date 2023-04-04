@@ -1,1 +1,0 @@
-Fix regression when passing ``None`` as second or third argument to ``FutureIter.throw``.

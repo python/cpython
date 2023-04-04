@@ -177,15 +177,16 @@ def test_overlap():
     """
     run_cases_test(input, output)
 
-def test_predictions():
+def test_predictions_and_eval_breaker():
     input = """
         inst(OP1, (--)) {
         }
         inst(OP2, (--)) {
         }
-        inst(OP3, (--)) {
+        inst(OP3, (arg -- res)) {
             DEOPT_IF(xxx, OP1);
             PREDICT(OP2);
+            CHECK_EVAL_BREAKER();
         }
     """
     output = """
@@ -200,8 +201,12 @@ def test_predictions():
         }
 
         TARGET(OP3) {
+            PyObject *arg = PEEK(1);
+            PyObject *res;
             DEOPT_IF(xxx, OP1);
+            POKE(1, res);
             PREDICT(OP2);
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
     """
@@ -383,6 +388,7 @@ def test_macro_instruction():
                 _tmp_3 = res;
             }
             JUMPBY(5);
+            static_assert(INLINE_CACHE_ENTRIES_OP == 5, "incorrect cache size");
             STACK_SHRINK(2);
             POKE(1, _tmp_3);
             DISPATCH();
@@ -423,20 +429,18 @@ def test_array_input():
 
 def test_array_output():
     input = """
-        inst(OP, (-- below, values[oparg*3], above)) {
-            spam();
+        inst(OP, (unused, unused -- below, values[oparg*3], above)) {
+            spam(values, oparg);
         }
     """
     output = """
         TARGET(OP) {
             PyObject *below;
-            PyObject **values;
+            PyObject **values = stack_pointer - (2) + 1;
             PyObject *above;
-            spam();
-            STACK_GROW(2);
+            spam(values, oparg);
             STACK_GROW(oparg*3);
             POKE(1, above);
-            MOVE_ITEMS(&PEEK(1 + oparg*3), values, oparg*3);
             POKE(2 + oparg*3, below);
             DISPATCH();
         }
@@ -445,18 +449,17 @@ def test_array_output():
 
 def test_array_input_output():
     input = """
-        inst(OP, (below, values[oparg] -- values[oparg], above)) {
-            spam();
+        inst(OP, (values[oparg] -- values[oparg], above)) {
+            spam(values, oparg);
         }
     """
     output = """
         TARGET(OP) {
             PyObject **values = &PEEK(oparg);
-            PyObject *below = PEEK(1 + oparg);
             PyObject *above;
-            spam();
+            spam(values, oparg);
+            STACK_GROW(1);
             POKE(1, above);
-            MOVE_ITEMS(&PEEK(1 + oparg), values, oparg);
             DISPATCH();
         }
     """
@@ -502,20 +505,20 @@ def test_register():
 
 def test_cond_effect():
     input = """
-        inst(OP, (aa, input if (oparg & 1), cc -- xx, output if (oparg & 2), zz)) {
+        inst(OP, (aa, input if ((oparg & 1) == 1), cc -- xx, output if (oparg & 2), zz)) {
             output = spam(oparg, input);
         }
     """
     output = """
         TARGET(OP) {
             PyObject *cc = PEEK(1);
-            PyObject *input = (oparg & 1) ? PEEK(1 + ((oparg & 1) ? 1 : 0)) : NULL;
-            PyObject *aa = PEEK(2 + ((oparg & 1) ? 1 : 0));
+            PyObject *input = ((oparg & 1) == 1) ? PEEK(1 + (((oparg & 1) == 1) ? 1 : 0)) : NULL;
+            PyObject *aa = PEEK(2 + (((oparg & 1) == 1) ? 1 : 0));
             PyObject *xx;
             PyObject *output = NULL;
             PyObject *zz;
             output = spam(oparg, input);
-            STACK_SHRINK(((oparg & 1) ? 1 : 0));
+            STACK_SHRINK((((oparg & 1) == 1) ? 1 : 0));
             STACK_GROW(((oparg & 2) ? 1 : 0));
             POKE(1, zz);
             if (oparg & 2) { POKE(1 + ((oparg & 2) ? 1 : 0), output); }

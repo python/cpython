@@ -1,2 +1,0 @@
-``_posixsubprocess`` now initializes all UID and GID variables using a
-reserved ``-1`` value instead of a separate flag. Patch by Oleg Iarygin.
