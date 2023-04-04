@@ -8,7 +8,6 @@ import array
 import re
 import socket
 import threading
-import warnings
 
 import unittest
 from unittest import mock
@@ -17,7 +16,6 @@ TestCase = unittest.TestCase
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
-from test.support import warnings_helper
 
 support.requires_working_socket(module=True)
 

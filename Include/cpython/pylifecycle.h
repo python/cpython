@@ -62,5 +62,6 @@ PyAPI_FUNC(int) _Py_CoerceLegacyLocale(int warn);
 PyAPI_FUNC(int) _Py_LegacyLocaleDetected(int warn);
 PyAPI_FUNC(char *) _Py_SetLocaleFromEnv(int category);
 
-PyAPI_FUNC(PyThreadState *) _Py_NewInterpreterFromConfig(
-    const _PyInterpreterConfig *);
+PyAPI_FUNC(PyStatus) _Py_NewInterpreterFromConfig(
+    PyThreadState **tstate_p,
+    const _PyInterpreterConfig *config);

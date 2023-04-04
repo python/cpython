@@ -28,6 +28,10 @@
 /* Include symbols from _socket module */
 #include "socketmodule.h"
 
+#ifdef MS_WINDOWS
+#  include <wincrypt.h>
+#endif
+
 #include "_ssl.h"
 
 /* Redefined below for Windows debug builds after important #includes */
@@ -314,9 +318,7 @@ typedef struct {
      * store exception information on the socket. The handshake, read, write,
      * and shutdown methods check for chained exceptions.
      */
-    PyObject *exc_type;
-    PyObject *exc_value;
-    PyObject *exc_tb;
+    PyObject *exc;
 } PySSLSocket;
 
 typedef struct {
@@ -560,13 +562,11 @@ fail:
 
 static int
 PySSL_ChainExceptions(PySSLSocket *sslsock) {
-    if (sslsock->exc_type == NULL)
+    if (sslsock->exc == NULL)
         return 0;
 
-    _PyErr_ChainExceptions(sslsock->exc_type, sslsock->exc_value, sslsock->exc_tb);
-    sslsock->exc_type = NULL;
-    sslsock->exc_value = NULL;
-    sslsock->exc_tb = NULL;
+    _PyErr_ChainExceptions1(sslsock->exc);
+    sslsock->exc = NULL;
     return -1;
 }
 
@@ -660,6 +660,16 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
                     ERR_GET_REASON(e) == SSL_R_CERTIFICATE_VERIFY_FAILED) {
                 type = state->PySSLCertVerificationErrorObject;
             }
+#if defined(SSL_R_UNEXPECTED_EOF_WHILE_READING)
+            /* OpenSSL 3.0 changed transport EOF from SSL_ERROR_SYSCALL with
+             * zero return value to SSL_ERROR_SSL with a special error code. */
+            if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
+                    ERR_GET_REASON(e) == SSL_R_UNEXPECTED_EOF_WHILE_READING) {
+                p = PY_SSL_ERROR_EOF;
+                type = state->PySSLEOFErrorObject;
+                errstr = "EOF occurred in violation of protocol";
+            }
+#endif
             break;
         }
         default:
@@ -803,9 +813,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->owner = NULL;
     self->server_hostname = NULL;
     self->err = err;
-    self->exc_type = NULL;
-    self->exc_value = NULL;
-    self->exc_tb = NULL;
+    self->exc = NULL;
 
     /* Make sure the SSL error state is initialized */
     ERR_clear_error();
@@ -1990,24 +1998,44 @@ static PyObject *
 _ssl__SSLSocket_shared_ciphers_impl(PySSLSocket *self)
 /*[clinic end generated code: output=3d174ead2e42c4fd input=0bfe149da8fe6306]*/
 {
-    STACK_OF(SSL_CIPHER) *ciphers;
-    int i;
+    STACK_OF(SSL_CIPHER) *server_ciphers;
+    STACK_OF(SSL_CIPHER) *client_ciphers;
+    int i, len;
     PyObject *res;
+    const SSL_CIPHER* cipher;
 
-    ciphers = SSL_get_ciphers(self->ssl);
-    if (!ciphers)
+    /* Rather than use SSL_get_shared_ciphers, we use an equivalent algorithm because:
+
+       1) It returns a colon separated list of strings, in an undefined
+          order, that we would have to post process back into tuples.
+       2) It will return a truncated string with no indication that it has
+          done so, if the buffer is too small.
+     */
+
+    server_ciphers = SSL_get_ciphers(self->ssl);
+    if (!server_ciphers)
         Py_RETURN_NONE;
-    res = PyList_New(sk_SSL_CIPHER_num(ciphers));
+    client_ciphers = SSL_get_client_ciphers(self->ssl);
+    if (!client_ciphers)
+        Py_RETURN_NONE;
+
+    res = PyList_New(sk_SSL_CIPHER_num(server_ciphers));
     if (!res)
         return NULL;
-    for (i = 0; i < sk_SSL_CIPHER_num(ciphers); i++) {
-        PyObject *tup = cipher_to_tuple(sk_SSL_CIPHER_value(ciphers, i));
+    len = 0;
+    for (i = 0; i < sk_SSL_CIPHER_num(server_ciphers); i++) {
+        cipher = sk_SSL_CIPHER_value(server_ciphers, i);
+        if (sk_SSL_CIPHER_find(client_ciphers, cipher) < 0)
+            continue;
+
+        PyObject *tup = cipher_to_tuple(cipher);
         if (!tup) {
             Py_DECREF(res);
             return NULL;
         }
-        PyList_SET_ITEM(res, i, tup);
+        PyList_SET_ITEM(res, len++, tup);
     }
+    Py_SET_SIZE(res, len);
     return res;
 }
 
@@ -2175,9 +2203,7 @@ Passed as \"self\" in servername callback.");
 static int
 PySSL_traverse(PySSLSocket *self, visitproc visit, void *arg)
 {
-    Py_VISIT(self->exc_type);
-    Py_VISIT(self->exc_value);
-    Py_VISIT(self->exc_tb);
+    Py_VISIT(self->exc);
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
@@ -2185,9 +2211,7 @@ PySSL_traverse(PySSLSocket *self, visitproc visit, void *arg)
 static int
 PySSL_clear(PySSLSocket *self)
 {
-    Py_CLEAR(self->exc_type);
-    Py_CLEAR(self->exc_value);
-    Py_CLEAR(self->exc_tb);
+    Py_CLEAR(self->exc);
     return 0;
 }
 
@@ -2532,7 +2556,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
         PySSL_SetError(self, retval, __FILE__, __LINE__);
         goto error;
     }
-    if (self->exc_type != NULL)
+    if (self->exc != NULL)
         goto error;
 
 done:
@@ -2658,7 +2682,7 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
         PySSL_SetError(self, ret, __FILE__, __LINE__);
         return NULL;
     }
-    if (self->exc_type != NULL)
+    if (self->exc != NULL)
         goto error;
     if (sock)
         /* It's already INCREF'ed */
@@ -3098,10 +3122,6 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 #endif
 #ifdef SSL_OP_SINGLE_ECDH_USE
     options |= SSL_OP_SINGLE_ECDH_USE;
-#endif
-#ifdef SSL_OP_IGNORE_UNEXPECTED_EOF
-    /* Make OpenSSL 3.0.0 behave like 1.1.1 */
-    options |= SSL_OP_IGNORE_UNEXPECTED_EOF;
 #endif
     SSL_CTX_set_options(self->ctx, options);
 
@@ -3910,7 +3930,7 @@ _add_ca_certs(PySSLContext *self, const void *data, Py_ssize_t len,
 {
     BIO *biobuf = NULL;
     X509_STORE *store;
-    int retval = -1, err, loaded = 0;
+    int retval = -1, err, loaded = 0, was_bio_eof = 0;
 
     assert(filetype == SSL_FILETYPE_ASN1 || filetype == SSL_FILETYPE_PEM);
 
@@ -3938,6 +3958,10 @@ _add_ca_certs(PySSLContext *self, const void *data, Py_ssize_t len,
         int r;
 
         if (filetype == SSL_FILETYPE_ASN1) {
+            if (BIO_eof(biobuf)) {
+                was_bio_eof = 1;
+                break;
+            }
             cert = d2i_X509_bio(biobuf, NULL);
         } else {
             cert = PEM_read_bio_X509(biobuf, NULL,
@@ -3973,9 +3997,7 @@ _add_ca_certs(PySSLContext *self, const void *data, Py_ssize_t len,
         }
         _setSSLError(get_state_ctx(self), msg, 0, __FILE__, __LINE__);
         retval = -1;
-    } else if ((filetype == SSL_FILETYPE_ASN1) &&
-                    (ERR_GET_LIB(err) == ERR_LIB_ASN1) &&
-                    (ERR_GET_REASON(err) == ASN1_R_HEADER_TOO_LONG)) {
+    } else if ((filetype == SSL_FILETYPE_ASN1) && was_bio_eof) {
         /* EOF ASN1 file, not an error */
         ERR_clear_error();
         retval = 0;
@@ -5969,9 +5991,6 @@ sslmodule_init_errorcodes(PyObject *module)
     state->err_codes_to_names = PyDict_New();
     if (state->err_codes_to_names == NULL)
         return -1;
-    state->err_names_to_codes = PyDict_New();
-    if (state->err_names_to_codes == NULL)
-        return -1;
     state->lib_codes_to_names = PyDict_New();
     if (state->lib_codes_to_names == NULL)
         return -1;
@@ -5984,8 +6003,6 @@ sslmodule_init_errorcodes(PyObject *module)
         if (mnemo == NULL || key == NULL)
             return -1;
         if (PyDict_SetItem(state->err_codes_to_names, key, mnemo))
-            return -1;
-        if (PyDict_SetItem(state->err_names_to_codes, mnemo, key))
             return -1;
         Py_DECREF(key);
         Py_DECREF(mnemo);
@@ -6005,13 +6022,6 @@ sslmodule_init_errorcodes(PyObject *module)
         Py_DECREF(mnemo);
         libcode++;
     }
-
-    if (PyModule_AddObjectRef(module, "err_codes_to_names", state->err_codes_to_names))
-        return -1;
-    if (PyModule_AddObjectRef(module, "err_names_to_codes", state->err_names_to_codes))
-        return -1;
-    if (PyModule_AddObjectRef(module, "lib_codes_to_names", state->lib_codes_to_names))
-        return -1;
 
     return 0;
 }
@@ -6167,7 +6177,6 @@ sslmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->PySSLSyscallErrorObject);
     Py_VISIT(state->PySSLEOFErrorObject);
     Py_VISIT(state->err_codes_to_names);
-    Py_VISIT(state->err_names_to_codes);
     Py_VISIT(state->lib_codes_to_names);
     Py_VISIT(state->Sock_Type);
 
@@ -6192,7 +6201,6 @@ sslmodule_clear(PyObject *m)
     Py_CLEAR(state->PySSLSyscallErrorObject);
     Py_CLEAR(state->PySSLEOFErrorObject);
     Py_CLEAR(state->err_codes_to_names);
-    Py_CLEAR(state->err_names_to_codes);
     Py_CLEAR(state->lib_codes_to_names);
     Py_CLEAR(state->Sock_Type);
     Py_CLEAR(state->str_library);
