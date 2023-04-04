@@ -371,6 +371,27 @@ unicodedata
 * The Unicode database has been updated to version 15.0.0. (Contributed by
   Benjamin Peterson in :gh:`96734`).
 
+unittest
+--------
+
+Added ``--durations`` command line option, showing the N slowest test cases::
+
+  python3 -m unittest --durations=3 lib.tests.test_threading
+  .....
+  Slowest test durations
+  ----------------------------------------------------------------------
+  1.210s     test_timeout (Lib.test.test_threading.BarrierTests)
+  1.003s     test_default_timeout (Lib.test.test_threading.BarrierTests)
+  0.518s     test_timeout (Lib.test.test_threading.EventTests)
+
+  (0.000 durations hidden.  Use -v to show these durations.)
+  ----------------------------------------------------------------------
+  Ran 158 tests in 9.869s
+
+  OK (skipped=3)
+
+(Contributed by Giampaolo Rodola in :issue:`4080`)
+
 uuid
 ----
 
@@ -600,6 +621,12 @@ Pending Removal in Python 3.14
 * :mod:`pty` has two undocumented ``master_open()`` and ``slave_open()``
   functions that have been deprecated since Python 2 but only gained a
   proper :exc:`DeprecationWarning` in 3.12. Remove them in 3.14.
+
+* Accessing ``co_lnotab`` was deprecated in :pep:`626` since 3.10
+  and was planned to be removed in 3.12
+  but it only got a proper :exc:`DeprecationWarning` in 3.12.
+  May be removed in 3.14.
+  (Contributed by Nikita Sobolev in :gh:`101866`.)
 
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
   and will be removed in 3.14.
