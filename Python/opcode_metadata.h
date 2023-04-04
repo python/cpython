@@ -3,7 +3,7 @@
 //   Python/bytecodes.c
 // Do not edit!
 
-#ifndef NEED_OPCODE_TABLES
+#ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #else
 int
@@ -349,7 +349,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
 }
 #endif
 
-#ifndef NEED_OPCODE_TABLES
+#ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_pushed(int opcode, int oparg, bool jump);
 #else
 int
@@ -701,7 +701,7 @@ struct opcode_metadata {
     enum InstructionFormat instr_format;
 };
 
-#ifndef NEED_OPCODE_TABLES
+#ifndef NEED_OPCODE_METADATA
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];
 #else
 const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
