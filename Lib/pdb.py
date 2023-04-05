@@ -1352,6 +1352,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         breaklist = self.get_file_breaks(filename)
         try:
             lines, lineno = inspect.getsourcelines(self.curframe)
+            # inspect.getsourcelines() returns lineno = 0 for
+            # module-level frame which breaks our code print line number
+            lineno = max(1, lineno)
         except OSError as err:
             self.error(err)
             return
@@ -1368,6 +1371,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         try:
             lines, lineno = inspect.getsourcelines(obj)
+            # inspect.getsourcelines() returns lineno = 0 for
+            # module-level frame which breaks our code print line number
+            lineno = max(1, lineno)
         except (OSError, TypeError) as err:
             self.error(err)
             return
