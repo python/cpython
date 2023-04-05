@@ -343,6 +343,20 @@ shutil
   will be removed in Python 3.14.
   (Contributed by Irit Katriel in :gh:`102828`.)
 
+* :func:`shutil.which` now consults the *PATHEXT* environment variable to
+  find matches within *PATH* on Windows even when the given *cmd* includes
+  a directory component.
+  (Contributed by Charles Machalow in :gh:`103179`.)
+
+  :func:`shutil.which` will call ``NeedCurrentDirectoryForExePathW`` when
+  querying for executables on Windows to determine if the current working
+  directory should be prepended to the search path.
+  (Contributed by Charles Machalow in :gh:`103179`.)
+
+  :func:`shutil.which` will return a path matching the *cmd* with a component
+  from ``PATHEXT`` prior to a direct match elsewhere in the search path on
+  Windows.
+  (Contributed by Charles Machalow in :gh:`103179`.)
 
 sqlite3
 -------
@@ -451,7 +465,7 @@ Optimizations
 
 * Added experimental support for using the BOLT binary optimizer in the build
   process, which improves performance by 1-5%.
-  (Contributed by Kevin Modzelewski in :gh:`90536`.)
+  (Contributed by Kevin Modzelewski in :gh:`90536` and tuned by Dong-hee Na in :gh:`101525`)
 
 * Speed up the regular expression substitution (functions :func:`re.sub` and
   :func:`re.subn` and corresponding :class:`!re.Pattern` methods) for
