@@ -1101,7 +1101,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_stepi(self, arg):
         """s(tep)
-        Execute the current line, stop at the first possible occasion
+        Execute the current instruction, stop at the first possible occasion
         (either in a function that is called or in the current
         function).
         """
