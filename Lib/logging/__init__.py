@@ -173,8 +173,8 @@ else: #pragma: no cover
         """Return the frame object for the caller's stack frame."""
         try:
             raise Exception
-        except Exception:
-            return sys.exc_info()[2].tb_frame.f_back
+        except Exception as exc:
+            return exc.__traceback__.tb_frame.f_back
 
 #
 # _srcfile is used when walking the stack to check when we've got the first

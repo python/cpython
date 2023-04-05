@@ -207,6 +207,7 @@ ENSUREPIP=      @ENSUREPIP@
 # Internal static libraries
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
+LIBHACL_SHA2_A= Modules/_hacl/libHacl_Streaming_SHA2.a
 
 # Module state, compiler flags and linker flags
 # Empty CFLAGS and LDFLAGS are omitted.
@@ -373,6 +374,7 @@ PYTHON_OBJS=	\
 		Python/ast_unparse.o \
 		Python/bltinmodule.o \
 		Python/ceval.o \
+		Python/flowgraph.o \
 		Python/codecs.o \
 		Python/compile.o \
 		Python/context.o \
@@ -571,6 +573,27 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/xmltok.h \
 		Modules/expat/xmltok_impl.h
 
+##########################################################################
+# hashlib's HACL* library
+
+LIBHACL_SHA2_OBJS= \
+                Modules/_hacl/Hacl_Streaming_SHA2.o
+
+LIBHACL_HEADERS= \
+                Modules/_hacl/include/krml/FStar_UInt128_Verified.h \
+                Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h \
+                Modules/_hacl/include/krml/fstar_uint128_struct_endianness.h \
+                Modules/_hacl/include/krml/internal/target.h \
+                Modules/_hacl/include/krml/lowstar_endianness.h \
+                Modules/_hacl/include/krml/types.h \
+		Modules/_hacl/Hacl_Streaming_Types.h \
+                Modules/_hacl/python_hacl_namespaces.h
+
+LIBHACL_SHA2_HEADERS= \
+                Modules/_hacl/Hacl_Streaming_SHA2.h \
+                Modules/_hacl/internal/Hacl_SHA2_Generic.h \
+		$(LIBHACL_HEADERS)
+
 #########################################################################
 # Rules
 
@@ -647,7 +670,7 @@ bolt-opt: @PREBOLT_RULE@
 	@LLVM_BOLT@ ./$(BUILDPYTHON) -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $(BUILDPYTHON).bolt) -o $(BUILDPYTHON).bolt_inst
 	./$(BUILDPYTHON).bolt_inst $(PROFILE_TASK) || true
 	@MERGE_FDATA@ $(BUILDPYTHON).*.fdata > $(BUILDPYTHON).fdata
-	@LLVM_BOLT@ ./$(BUILDPYTHON) -o $(BUILDPYTHON).bolt -data=$(BUILDPYTHON).fdata -update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=all -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot
+	@LLVM_BOLT@ ./$(BUILDPYTHON) -o $(BUILDPYTHON).bolt -data=$(BUILDPYTHON).fdata -update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot
 	rm -f *.fdata
 	rm -f $(BUILDPYTHON).bolt_inst
 	mv $(BUILDPYTHON).bolt $(BUILDPYTHON)
@@ -889,6 +912,17 @@ Modules/expat/xmltok.o: $(srcdir)/Modules/expat/xmltok.c $(LIBEXPAT_HEADERS) $(P
 $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 	-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LIBEXPAT_OBJS)
+
+##########################################################################
+# Build HACL* static libraries for hashlib: libHacl_Streaming_SHA2.a
+LIBHACL_CFLAGS=-I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)
+
+Modules/_hacl/Hacl_Streaming_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Streaming_SHA2.c $(LIBHACL_SHA2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Streaming_SHA2.c
+
+$(LIBHACL_SHA2_A): $(LIBHACL_SHA2_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA2_OBJS)
 
 # create relative links from build/lib.platform/egg.so to Modules/egg.so
 # pybuilddir.txt is created too late. We cannot use it in Makefile
@@ -1452,9 +1486,10 @@ regen-cases:
 	PYTHONPATH=$(srcdir)/Tools/cases_generator \
 	$(PYTHON_FOR_REGEN) \
 	    $(srcdir)/Tools/cases_generator/generate_cases.py \
-		-i $(srcdir)/Python/bytecodes.c \
+		--emit-line-directives \
 		-o $(srcdir)/Python/generated_cases.c.h.new \
-		-m $(srcdir)/Python/opcode_metadata.h.new
+		-m $(srcdir)/Python/opcode_metadata.h.new \
+		$(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_metadata.h $(srcdir)/Python/opcode_metadata.h.new
 
@@ -1665,8 +1700,11 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_moduleobject.h \
 		$(srcdir)/Include/internal/pycore_namespace.h \
 		$(srcdir)/Include/internal/pycore_object.h \
+		$(srcdir)/Include/internal/pycore_object_state.h \
 		$(srcdir)/Include/internal/pycore_obmalloc.h \
 		$(srcdir)/Include/internal/pycore_obmalloc_init.h \
+		$(srcdir)/Include/internal/pycore_opcode.h \
+		$(srcdir)/Include/internal/pycore_opcode_utils.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyarena.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \
@@ -2046,6 +2084,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/resources/data01/subdirectory \
 		test/test_importlib/resources/data02 \
 		test/test_importlib/resources/data02/one \
+		test/test_importlib/resources/data02/subdirectory \
+		test/test_importlib/resources/data02/subdirectory/subsubdir \
 		test/test_importlib/resources/data02/two \
 		test/test_importlib/resources/data03 \
 		test/test_importlib/resources/data03/namespace \
@@ -2525,6 +2565,12 @@ distclean: clobber docclean
 smelly: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/smelly.py
 
+# Check if any unsupported C global variables have been added.
+check-c-globals:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/c-analyzer/check-c-globals.py \
+		--format summary \
+		--traceback
+
 # Find files with funny names
 funny:
 	find $(SUBDIRS) $(SUBDIRSTOO) \
@@ -2604,11 +2650,10 @@ MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
-MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h
-MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h
-MODULE__SHA256_DEPS=$(srcdir)/Modules/hashlib.h $(srcdir)/Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h $(srcdir)/Modules/_hacl/include/krml/lowstar_endianness.h $(srcdir)/Modules/_hacl/include/krml/internal/target.h $(srcdir)/Modules/_hacl/Hacl_Streaming_SHA2.h
+MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_MD5.h Modules/_hacl/Hacl_Hash_MD5.c
+MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA1.h Modules/_hacl/Hacl_Hash_SHA1.c
+MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(LIBHACL_SHA2_A)
 MODULE__SHA3_DEPS=$(srcdir)/Modules/_sha3/sha3.c $(srcdir)/Modules/_sha3/sha3.h $(srcdir)/Modules/hashlib.h
-MODULE__SHA512_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data.h $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/testcapi_long.h $(srcdir)/Modules/_testcapi/parts.h

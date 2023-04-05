@@ -323,6 +323,15 @@ extern "C" {
 #define Py_DEPRECATED(VERSION_UNUSED)
 #endif
 
+// _Py_DEPRECATED_EXTERNALLY(version)
+// Deprecated outside CPython core.
+#ifdef Py_BUILD_CORE
+#define _Py_DEPRECATED_EXTERNALLY(VERSION_UNUSED)
+#else
+#define _Py_DEPRECATED_EXTERNALLY(version) Py_DEPRECATED(version)
+#endif
+
+
 #if defined(__clang__)
 #define _Py_COMP_DIAG_PUSH _Pragma("clang diagnostic push")
 #define _Py_COMP_DIAG_IGNORE_DEPR_DECLS \

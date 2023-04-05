@@ -1,6 +1,5 @@
 from collections import namedtuple
 import contextlib
-import os
 import sys
 from textwrap import dedent
 import threading

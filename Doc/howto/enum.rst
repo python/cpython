@@ -284,6 +284,7 @@ The values are chosen by :func:`_generate_next_value_`, which can be
 overridden::
 
     >>> class AutoName(Enum):
+    ...     @staticmethod
     ...     def _generate_next_value_(name, start, count, last_values):
     ...         return name
     ...
@@ -372,6 +373,11 @@ below)::
     >>> Color.BLUE == 2
     False
 
+.. warning::
+
+   It is possible to reload modules -- if a reloaded module contains
+   enums, they will be recreated, and the new members may not
+   compare identical/equal to the original members.
 
 Allowed members and attributes of enumerations
 ----------------------------------------------

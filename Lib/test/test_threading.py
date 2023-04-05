@@ -1347,6 +1347,7 @@ class SubinterpThreadingTests(BaseTestCase):
                 allow_exec=True,
                 allow_threads={allowed},
                 allow_daemon_threads={daemon_allowed},
+                check_multi_interp_extensions=False,
             )
             """)
         with test.support.SuppressCrashReport():
@@ -1521,6 +1522,37 @@ class ThreadingExceptionTests(BaseTestCase):
         rc, out, err = assert_python_ok("-c", script)
         self.assertEqual(out, b'')
         self.assertNotIn("Unhandled exception", err.decode())
+
+    def test_print_exception_gh_102056(self):
+        # This used to crash. See gh-102056.
+        script = r"""if True:
+            import time
+            import threading
+            import _thread
+
+            def f():
+                try:
+                    f()
+                except RecursionError:
+                    f()
+
+            def g():
+                try:
+                    raise ValueError()
+                except* ValueError:
+                    f()
+
+            def h():
+                time.sleep(1)
+                _thread.interrupt_main()
+
+            t = threading.Thread(target=h)
+            t.start()
+            g()
+            t.join()
+            """
+
+        assert_python_failure("-c", script)
 
     def test_bare_raise_in_brand_new_thread(self):
         def bare_raise():
