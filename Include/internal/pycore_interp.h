@@ -37,10 +37,10 @@ typedef struct {
     PyObject *func;
     PyObject *args;
     PyObject *kwargs;
-} atexit_callback;
+} atexit_py_callback;
 
 struct atexit_state {
-    atexit_callback **callbacks;
+    atexit_py_callback **callbacks;
     int ncallbacks;
     int callback_len;
 };

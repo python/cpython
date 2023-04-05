@@ -25,7 +25,7 @@ get_atexit_state(void)
 static void
 atexit_delete_cb(struct atexit_state *state, int i)
 {
-    atexit_callback *cb = state->callbacks[i];
+    atexit_py_callback *cb = state->callbacks[i];
     state->callbacks[i] = NULL;
 
     Py_DECREF(cb->func);
@@ -39,7 +39,7 @@ atexit_delete_cb(struct atexit_state *state, int i)
 static void
 atexit_cleanup(struct atexit_state *state)
 {
-    atexit_callback *cb;
+    atexit_py_callback *cb;
     for (int i = 0; i < state->ncallbacks; i++) {
         cb = state->callbacks[i];
         if (cb == NULL)
@@ -60,7 +60,7 @@ _PyAtExit_Init(PyInterpreterState *interp)
 
     state->callback_len = 32;
     state->ncallbacks = 0;
-    state->callbacks = PyMem_New(atexit_callback*, state->callback_len);
+    state->callbacks = PyMem_New(atexit_py_callback*, state->callback_len);
     if (state->callbacks == NULL) {
         return _PyStatus_NO_MEMORY();
     }
@@ -88,7 +88,7 @@ atexit_callfuncs(struct atexit_state *state)
     }
 
     for (int i = state->ncallbacks - 1; i >= 0; i--) {
-        atexit_callback *cb = state->callbacks[i];
+        atexit_py_callback *cb = state->callbacks[i];
         if (cb == NULL) {
             continue;
         }
@@ -152,17 +152,17 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
 
     struct atexit_state *state = get_atexit_state();
     if (state->ncallbacks >= state->callback_len) {
-        atexit_callback **r;
+        atexit_py_callback **r;
         state->callback_len += 16;
-        size_t size = sizeof(atexit_callback*) * (size_t)state->callback_len;
-        r = (atexit_callback**)PyMem_Realloc(state->callbacks, size);
+        size_t size = sizeof(atexit_py_callback*) * (size_t)state->callback_len;
+        r = (atexit_py_callback**)PyMem_Realloc(state->callbacks, size);
         if (r == NULL) {
             return PyErr_NoMemory();
         }
         state->callbacks = r;
     }
 
-    atexit_callback *callback = PyMem_Malloc(sizeof(atexit_callback));
+    atexit_py_callback *callback = PyMem_Malloc(sizeof(atexit_py_callback));
     if (callback == NULL) {
         return PyErr_NoMemory();
     }
@@ -233,7 +233,7 @@ atexit_unregister(PyObject *module, PyObject *func)
     struct atexit_state *state = get_atexit_state();
     for (int i = 0; i < state->ncallbacks; i++)
     {
-        atexit_callback *cb = state->callbacks[i];
+        atexit_py_callback *cb = state->callbacks[i];
         if (cb == NULL) {
             continue;
         }
