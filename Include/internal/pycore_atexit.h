@@ -24,8 +24,6 @@ struct _atexit_runtime_state {
 //###################
 // interpreter atexit
 
-typedef void (*atexit_datacallbackfunc)(void *);
-
 struct atexit_callback;
 typedef struct atexit_callback {
     atexit_datacallbackfunc func;
@@ -50,9 +48,6 @@ struct atexit_state {
     int ncallbacks;
     int callback_len;
 };
-
-PyAPI_FUNC(int) _Py_AtExit(
-        PyInterpreterState *, atexit_datacallbackfunc, void *);
 
 
 #ifdef __cplusplus
