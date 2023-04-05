@@ -1217,8 +1217,7 @@ free_threadstate(PyThreadState *tstate)
 
 static void
 init_threadstate(PyThreadState *tstate,
-                 PyInterpreterState *interp, uint64_t id,
-                 PyThreadState *next)
+                 PyInterpreterState *interp, uint64_t id)
 {
     if (tstate->_status.initialized) {
         Py_FatalError("thread state already initialized");
@@ -1227,17 +1226,12 @@ init_threadstate(PyThreadState *tstate,
     assert(interp != NULL);
     tstate->interp = interp;
 
+    // next/prev are set in add_threadstate().
+    assert(tstate->next == NULL);
+    assert(tstate->prev == NULL);
+
     assert(id > 0);
     tstate->id = id;
-
-    assert(interp->threads.head == tstate);
-    assert((next != NULL && id != 1) || (next == NULL && id == 1));
-    if (next != NULL) {
-        assert(next->prev == NULL || next->prev == tstate);
-        next->prev = tstate;
-    }
-    tstate->next = next;
-    assert(tstate->prev == NULL);
 
     // thread_id and native_thread_id are set in bind_tstate().
 
@@ -1257,6 +1251,22 @@ init_threadstate(PyThreadState *tstate,
     tstate->datastack_limit = NULL;
 
     tstate->_status.initialized = 1;
+}
+
+static void
+add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
+                PyThreadState *next)
+{
+    assert(interp->threads.head != tstate);
+    assert((next != NULL && tstate->id != 1) ||
+           (next == NULL && tstate->id == 1));
+    if (next != NULL) {
+        assert(next->prev == NULL || next->prev == tstate);
+        next->prev = tstate;
+    }
+    tstate->next = next;
+    assert(tstate->prev == NULL);
+    interp->threads.head = tstate;
 }
 
 static PyThreadState *
@@ -1298,9 +1308,9 @@ new_threadstate(PyInterpreterState *interp)
                &initial._main_interpreter._initial_thread,
                sizeof(*tstate));
     }
-    interp->threads.head = tstate;
 
-    init_threadstate(tstate, interp, id, old_head);
+    init_threadstate(tstate, interp, id);
+    add_threadstate(interp, tstate, old_head);
 
     HEAD_UNLOCK(runtime);
     if (!used_newtstate) {
@@ -1345,6 +1355,19 @@ void
 _PyThreadState_Init(PyThreadState *tstate)
 {
     Py_FatalError("_PyThreadState_Init() is for internal use only");
+}
+
+
+static void
+clear_datastack(PyThreadState *tstate)
+{
+    _PyStackChunk *chunk = tstate->datastack_chunk;
+    tstate->datastack_chunk = NULL;
+    while (chunk != NULL) {
+        _PyStackChunk *prev = chunk->previous;
+        _PyObject_VirtualFree(chunk, chunk->size);
+        chunk = prev;
+    }
 }
 
 void
@@ -1421,7 +1444,6 @@ PyThreadState_Clear(PyThreadState *tstate)
     // XXX Do it as early in the function as possible.
 }
 
-
 /* Common code for PyThreadState_Delete() and PyThreadState_DeleteCurrent() */
 static void
 tstate_delete_common(PyThreadState *tstate)
@@ -1454,17 +1476,10 @@ tstate_delete_common(PyThreadState *tstate)
     unbind_tstate(tstate);
 
     // XXX Move to PyThreadState_Clear()?
-    _PyStackChunk *chunk = tstate->datastack_chunk;
-    tstate->datastack_chunk = NULL;
-    while (chunk != NULL) {
-        _PyStackChunk *prev = chunk->previous;
-        _PyObject_VirtualFree(chunk, chunk->size);
-        chunk = prev;
-    }
+    clear_datastack(tstate);
 
     tstate->_status.finalized = 1;
 }
-
 
 static void
 zapthreads(PyInterpreterState *interp)
@@ -1549,6 +1564,75 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
         PyThreadState_Clear(p);
         free_threadstate(p);
     }
+}
+
+
+//-------------------------
+// "detached" thread states
+//-------------------------
+
+void
+_PyThreadState_InitDetached(PyThreadState *tstate, PyInterpreterState *interp)
+{
+    _PyRuntimeState *runtime = interp->runtime;
+
+    HEAD_LOCK(runtime);
+    interp->threads.next_unique_id += 1;
+    uint64_t id = interp->threads.next_unique_id;
+    HEAD_UNLOCK(runtime);
+
+    init_threadstate(tstate, interp, id);
+    // We do not call add_threadstate().
+}
+
+void
+_PyThreadState_ClearDetached(PyThreadState *tstate)
+{
+    assert(!tstate->_status.bound);
+    assert(!tstate->_status.bound_gilstate);
+    assert(tstate->datastack_chunk == NULL);
+    assert(tstate->thread_id == 0);
+    assert(tstate->native_thread_id == 0);
+    assert(tstate->next == NULL);
+    assert(tstate->prev == NULL);
+
+    PyThreadState_Clear(tstate);
+    clear_datastack(tstate);
+}
+
+void
+_PyThreadState_BindDetached(PyThreadState *tstate)
+{
+    assert(!_Py_IsMainInterpreter(
+        current_fast_get(tstate->interp->runtime)->interp));
+    assert(_Py_IsMainInterpreter(tstate->interp));
+    bind_tstate(tstate);
+    /* Unlike _PyThreadState_Bind(), we do not modify gilstate TSS. */
+}
+
+void
+_PyThreadState_UnbindDetached(PyThreadState *tstate)
+{
+    assert(!_Py_IsMainInterpreter(
+        current_fast_get(tstate->interp->runtime)->interp));
+    assert(_Py_IsMainInterpreter(tstate->interp));
+    assert(tstate_is_alive(tstate));
+    assert(!tstate->_status.active);
+    assert(gilstate_tss_get(tstate->interp->runtime) != tstate);
+
+    unbind_tstate(tstate);
+
+    /* This thread state may be bound/unbound repeatedly,
+       so we must erase evidence that it was ever bound (or unbound). */
+    tstate->_status.bound = 0;
+    tstate->_status.unbound = 0;
+
+    /* We must fully unlink the thread state from any OS thread,
+       to allow it to be bound more than once. */
+    tstate->thread_id = 0;
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+    tstate->native_thread_id = 0;
+#endif
 }
 
 

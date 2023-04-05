@@ -377,8 +377,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # stop when the debuggee is returning from such generators.
         prefix = 'Internal ' if (not exc_traceback
                                     and exc_type is StopIteration) else ''
-        self.message('%s%s' % (prefix,
-            traceback.format_exception_only(exc_type, exc_value)[-1].strip()))
+        self.message('%s%s' % (prefix, self._format_exc(exc_value)))
         self.interaction(frame, exc_traceback)
 
     # General interaction function
@@ -399,7 +398,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         displaying = self.displaying.get(self.curframe)
         if displaying:
             for expr, oldvalue in displaying.items():
-                newvalue, _ = self._getval_except(expr)
+                newvalue = self._getval_except(expr)
                 # check for identity first; this prevents custom __eq__ to
                 # be called at every loop, and also prevents instances whose
                 # fields are changed to be displayed
@@ -702,6 +701,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if comma > 0:
             # parse stuff after comma: "condition"
             cond = arg[comma+1:].lstrip()
+            if err := self._compile_error_message(cond):
+                self.error('Invalid condition %s: %r' % (cond, err))
+                return
             arg = arg[:comma].rstrip()
         # parse stuff before comma: [filename:]lineno | function
         colon = arg.rfind(':')
@@ -887,6 +889,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         args = arg.split(' ', 1)
         try:
             cond = args[1]
+            if err := self._compile_error_message(cond):
+                self.error('Invalid condition %s: %r' % (cond, err))
+                return
         except IndexError:
             cond = None
         try:
@@ -1246,16 +1251,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def _getval_except(self, arg, frame=None):
         try:
             if frame is None:
-                return eval(arg, self.curframe.f_globals, self.curframe_locals), None
+                return eval(arg, self.curframe.f_globals, self.curframe_locals)
             else:
-                return eval(arg, frame.f_globals, frame.f_locals), None
+                return eval(arg, frame.f_globals, frame.f_locals)
         except BaseException as exc:
-            err = traceback.format_exception_only(exc)[-1].strip()
-            return _rstr('** raised %s **' % err), exc
+            return _rstr('** raised %s **' % self._format_exc(exc))
 
     def _error_exc(self):
-        exc_info = sys.exc_info()[:2]
-        self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+        exc = sys.exc_info()[1]
+        self.error(self._format_exc(exc))
 
     def _msg_val_func(self, arg, func):
         try:
@@ -1443,10 +1447,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 self.message('No expression is being displayed')
         else:
-            val, exc = self._getval_except(arg)
-            if isinstance(exc, SyntaxError):
-                self.message('Unable to display %s: %r' % (arg, val))
+            if err := self._compile_error_message(arg):
+                self.error('Unable to display %s: %r' % (arg, err))
             else:
+                val = self._getval_except(arg)
                 self.displaying.setdefault(self.curframe, {})[arg] = val
                 self.message('display %s: %r' % (arg, val))
 
@@ -1647,6 +1651,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         self.run(target.code)
 
+    def _format_exc(self, exc: BaseException):
+        return traceback.format_exception_only(exc)[-1].strip()
+
+    def _compile_error_message(self, expr):
+        """Return the error message as string if compiling `expr` fails."""
+        try:
+            compile(expr, "<stdin>", "eval")
+        except SyntaxError as exc:
+            return _rstr(self._format_exc(exc))
+        return ""
 
 # Collect all command help into docstring, if not run with -OO
 
