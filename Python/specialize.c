@@ -301,6 +301,8 @@ _PyCode_Quicken(PyCodeObject *code)
     #endif /* ENABLE_SPECIALIZATION */
 }
 
+#define SIMPLE_FUNCTION 0
+
 /* Common */
 
 #define SPEC_FAIL_OTHER 0
@@ -310,7 +312,8 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_OUT_OF_RANGE 4
 #define SPEC_FAIL_EXPECTED_ERROR 5
 #define SPEC_FAIL_WRONG_NUMBER_ARGUMENTS 6
-#define SPEC_FAIL_FUNCTION_NOT_SIMPLE 7
+#define SPEC_FAIL_CODE_COMPLEX_PARAMETERS 7
+#define SPEC_FAIL_CODE_NOT_OPTIMIZED 8
 
 
 #define SPEC_FAIL_LOAD_GLOBAL_NON_DICT 17
@@ -450,6 +453,7 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR 9
 #define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 10
 
+static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
 static uint32_t function_get_version(PyObject *o, int opcode);
 
@@ -1224,17 +1228,30 @@ binary_subscr_fail_kind(PyTypeObject *container_type, PyObject *sub)
 }
 #endif
 
+static int
+function_kind(PyCodeObject *code) {
+    int flags = code->co_flags;
+    if ((flags & (CO_VARKEYWORDS | CO_VARARGS)) || code->co_kwonlyargcount) {
+        return SPEC_FAIL_CODE_COMPLEX_PARAMETERS;
+    }
+    if ((flags & CO_OPTIMIZED) == 0) {
+        return SPEC_FAIL_CODE_NOT_OPTIMIZED;
+    }
+    return SIMPLE_FUNCTION;
+}
+
 /* Returning false indicates a failure. */
 static bool
 function_check_args(PyObject *o, int expected_argcount, int opcode)
 {
     assert(Py_IS_TYPE(o, &PyFunction_Type));
     PyFunctionObject *func = (PyFunctionObject *)o;
-    if (!_PyFunction_IsSimple(func)) {
-        SPECIALIZATION_FAIL(opcode, SPEC_FAIL_FUNCTION_NOT_SIMPLE);
+    PyCodeObject *fcode = (PyCodeObject *)func->func_code;
+    int kind = function_kind(fcode);
+    if (kind != SIMPLE_FUNCTION) {
+        SPECIALIZATION_FAIL(opcode, kind);
         return false;
     }
-    PyCodeObject *fcode = (PyCodeObject *)func->func_code;
     if (fcode->co_argcount != expected_argcount) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
         return false;
@@ -1303,7 +1320,14 @@ _Py_Specialize_BinarySubscr(
             goto fail;
         }
         PyFunctionObject *func = (PyFunctionObject *)descriptor;
-        if (!function_check_args(descriptor, 2, BINARY_SUBSCR)) {
+        PyCodeObject *fcode = (PyCodeObject *)func->func_code;
+        int kind = function_kind(fcode);
+        if (kind != SIMPLE_FUNCTION) {
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, kind);
+            goto fail;
+        }
+        if (fcode->co_argcount != 2) {
+            SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
             goto fail;
         }
         uint32_t version = _PyFunction_GetVersionForCurrentState(func);
@@ -1414,7 +1438,9 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
     PyObject *descriptor = _PyType_Lookup(container_type, &_Py_ID(__setitem__));
     if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
         PyFunctionObject *func = (PyFunctionObject *)descriptor;
-        if (_PyFunction_IsSimple(func)) {
+        PyCodeObject *code = (PyCodeObject *)func->func_code;
+        int kind = function_kind(code);
+        if (kind == SIMPLE_FUNCTION) {
             SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_SUBSCR_PY_SIMPLE);
         }
         else {
@@ -1574,7 +1600,9 @@ static int
 specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
                    PyObject *kwnames, bool bound_method)
 {
+    _PyCallCache *cache = (_PyCallCache *)(instr + 1);
     PyCodeObject *code = (PyCodeObject *)func->func_code;
+    int kind = function_kind(code);
     /* Don't specialize if PEP 523 is active */
     if (_PyInterpreterState_GET()->eval_frame) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PEP_523);
@@ -1584,8 +1612,8 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_KWNAMES);
         return -1;
     }
-    if (!_PyFunction_IsSimple(func)) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_FUNCTION_NOT_SIMPLE);
+    if (kind != SIMPLE_FUNCTION) {
+        SPECIALIZATION_FAIL(CALL, kind);
         return -1;
     }
     int argcount = code->co_argcount;
@@ -1599,6 +1627,12 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     assert(nargs <= argcount && nargs >= min_args);
     assert(min_args >= 0 && defcount >= 0);
     assert(defcount == 0 || func->func_defaults != NULL);
+    int version = _PyFunction_GetVersionForCurrentState(func);
+    if (version == 0) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OUT_OF_VERSIONS);
+        return -1;
+    }
+    write_u32(cache->func_version, version);
     if (argcount == nargs) {
         instr->op.code = bound_method ? CALL_BOUND_METHOD_EXACT_ARGS : CALL_PY_EXACT_ARGS;
     }
