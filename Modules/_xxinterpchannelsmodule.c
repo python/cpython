@@ -489,6 +489,30 @@ _channelqueue_get(_channelqueue *queue)
     return _channelitem_popped(item);
 }
 
+static void
+_channelqueue_drop_interpreter(_channelqueue *queue, int64_t interp)
+{
+    _channelitem *prev = NULL;
+    _channelitem *next = queue->first;
+    while (next != NULL) {
+        _channelitem *item = next;
+        next = item->next;
+        if (item->data->interp == interp) {
+            if (prev == NULL) {
+                queue->first = item->next;
+            }
+            else {
+                prev->next = item->next;
+            }
+            _channelitem_free(item);
+            queue->count -= 1;
+        }
+        else {
+            prev = item;
+        }
+    }
+}
+
 /* channel-interpreter associations */
 
 struct _channelend;
@@ -694,6 +718,20 @@ _channelends_close_interpreter(_channelends *ends, int64_t interp, int which)
 }
 
 static void
+_channelends_drop_interpreter(_channelends *ends, int64_t interp)
+{
+    _channelend *end;
+    end = _channelend_find(ends->send, interp, NULL);
+    if (end != NULL) {
+        _channelends_close_end(ends, end, 1);
+    }
+    end = _channelend_find(ends->recv, interp, NULL);
+    if (end != NULL) {
+        _channelends_close_end(ends, end, 0);
+    }
+}
+
+static void
 _channelends_close_all(_channelends *ends, int which, int force)
 {
     // XXX Handle the ends.
@@ -839,6 +877,18 @@ _channel_close_interpreter(_PyChannelState *chan, int64_t interp, int end)
 done:
     PyThread_release_lock(chan->mutex);
     return res;
+}
+
+static void
+_channel_drop_interpreter(_PyChannelState *chan, int64_t interp)
+{
+    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
+
+    _channelqueue_drop_interpreter(chan->queue, interp);
+    _channelends_drop_interpreter(chan->ends, interp);
+    chan->open = _channelends_is_open(chan->ends);
+
+    PyThread_release_lock(chan->mutex);
 }
 
 static int
@@ -1211,6 +1261,21 @@ _channels_list_all(_channels *channels, int64_t *count)
 done:
     PyThread_release_lock(channels->mutex);
     return cids;
+}
+
+static void
+_channels_drop_interpreter(_channels *channels, int64_t interp)
+{
+    PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
+
+    _channelref *ref = channels->head;
+    for (; ref != NULL; ref = ref->next) {
+        if (ref->chan != NULL) {
+            _channel_drop_interpreter(ref->chan, interp);
+        }
+    }
+
+    PyThread_release_lock(channels->mutex);
 }
 
 /* support for closing non-empty channels */
@@ -1935,6 +2000,13 @@ _global_channels(void) {
 static void
 clear_interpreter(void *data)
 {
+    if (_globals.module_count == 0) {
+        return;
+    }
+    PyInterpreterState *interp = (PyInterpreterState *)data;
+    assert(interp == _get_current_interp());
+    int64_t id = PyInterpreterState_GetID(interp);
+    _channels_drop_interpreter(&_globals.channels, id);
 }
 
 
