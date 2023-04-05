@@ -2447,7 +2447,7 @@ def get_args(tp):
     return ()
 
 
-def get_orig_class(tp: "Any", /) -> GenericAlias | None:
+def get_orig_class(obj: "Any", /) -> GenericAlias | None:
     """Get the __orig_class__ for an instance of a Generic subclass.
 
     Examples::
@@ -2464,7 +2464,7 @@ def get_orig_class(tp: "Any", /) -> GenericAlias | None:
     process.
     """
     try:
-        return tp.__orig_class__
+        return obj.__orig_class__
     except AttributeError:
         return None
 

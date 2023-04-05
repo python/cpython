@@ -2804,7 +2804,7 @@ Introspection helpers
 
    .. versionadded:: 3.8
 
-.. function:: get_orig_class(tp, /)
+.. function:: get_orig_class(obj, /)
 
     Returns the ``GenericAlias`` object that was instantiated to create ``tp``.
 
@@ -2821,7 +2821,8 @@ Introspection helpers
     .. warning::
 
         This function will always return ``None`` inside of the class's
-        instantiation process.
+        instantiation methods (e.g. ``__new__``, ``__init__`` and any
+        methods called from either of these)
 
     .. versionadded:: 3.12
 
