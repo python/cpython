@@ -208,23 +208,6 @@ class property(DynamicClassAttribute):
                     raise AttributeError(
                             '%r has no attribute %r' % (ownerclass, self.name)
                             )
-                # if self.member is None:   # not sure this can happen, but just in case
-                #     raise AttributeError(
-                #             '%r has no attribute %r' % (ownerclass, self.name)
-                #             )
-                # # issue warning deprecating this behavior
-                # import warnings
-                # warnings.warn(
-                #         "`member.member` access (e.g. `Color.RED.BLUE`) is "
-                #         "deprecated and will be removed in 3.14.",
-                #         DeprecationWarning,
-                #         stacklevel=2,
-                #         )
-                # return self.member
-                # # XXX: uncomment in 3.14 and remove warning above
-                # # raise AttributeError(
-                # #         '%r member has no attribute %r' % (ownerclass, self.name)
-                # #         )
             else:
                 return self.fget(instance)
 
