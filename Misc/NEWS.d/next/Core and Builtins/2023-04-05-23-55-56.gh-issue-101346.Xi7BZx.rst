@@ -1,0 +1,1 @@
+Code objects are now compared by identity rather than by value.
