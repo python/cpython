@@ -8587,7 +8587,7 @@ static PyBufferProcs bufferwrapper_as_buffer = {
 };
 
 
-PyTypeObject _PyBufferWrapper_Type = {
+static PyTypeObject _PyBufferWrapper_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "_buffer_wrapper",
     .tp_basicsize = sizeof(PyBufferWrapper),
