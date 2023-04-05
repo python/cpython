@@ -27,6 +27,7 @@ int
 _Py_AtExit(PyInterpreterState *interp,
            atexit_datacallbackfunc func, void *data)
 {
+    assert(interp == _PyInterpreterState_GET());
     atexit_callback *callback = PyMem_Malloc(sizeof(atexit_callback));
     if (callback == NULL) {
         PyErr_NoMemory();
