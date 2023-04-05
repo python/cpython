@@ -2028,6 +2028,7 @@ class _ProtocolMeta(ABCMeta):
         ):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
+
         if super().__instancecheck__(instance):
             return True
 
