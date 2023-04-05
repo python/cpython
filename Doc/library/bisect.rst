@@ -213,7 +213,7 @@ records in a table::
     ...     Movie('Jaws', 1975, 'Spielberg'),
     ...     Movie('Titanic', 1997, 'Cameron'),
     ...     Movie('The Birds', 1963, 'Hitchcock'),
-    ...     Movie('Aliens', 1986, 'Scott')
+    ...     Movie('Aliens', 1986, 'Cameron')
     ... ]
 
     >>> # Find the first movie released after 1960
