@@ -1932,6 +1932,12 @@ _global_channels(void) {
 }
 
 
+static void
+clear_interpreter(void *data)
+{
+}
+
+
 static PyObject *
 channel_create(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -2338,6 +2344,10 @@ module_exec(PyObject *mod)
     if (state->ChannelIDType == NULL) {
         goto error;
     }
+
+    // Make sure chnnels drop objects owned by this interpreter
+    PyInterpreterState *interp = _get_current_interp();
+    _Py_AtExit(interp, clear_interpreter, (void *)interp);
 
     return 0;
 
