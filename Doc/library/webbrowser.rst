@@ -62,10 +62,10 @@ The following functions are defined:
    (note that under many window managers this will occur regardless of the
    setting of this variable).
 
-   On Windows, the default browser is found via the :func:`os.startfile` function.
-   If no default browser is set, webbrowser searches the user's :envvar:`PATH`
-   for supported browsers. If no browser is found, webbrowser will fall back to
-   Microsoft Edge.
+   On Windows, webbrowser displays *url* in the default browser via :func:`os.startfile`.
+   If no default is set, webbrowser searches for any available supported browsers
+   in the user's PATH environment variable. If one is found, it displays *url*.
+   Otherwise, webbrowser falls back to display *url* in Microsoft Edge.
 
    Note that on some platforms, trying to open a filename using this function,
    may work and start the operating system's associated program.  However, this
@@ -109,7 +109,7 @@ The following functions are defined:
    .. versionchanged:: 3.7
       *preferred* keyword-only parameter was added.
 
-A number of browser types are predefined. This table gives the type names that
+A number of browser types are predefined.  This table gives the type names that
 may be passed to the :func:`get` function and the corresponding instantiations
 for the controller classes, all defined in this module.
 
