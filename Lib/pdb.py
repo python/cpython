@@ -1351,7 +1351,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         breaklist = self.get_file_breaks(filename)
         try:
             lines = linecache.getlines(filename, self.curframe.f_globals)
-            instructions = dis.get_instructions(self.curframe.f_code) \
+            instructions = dis.get_instructions(self.curframe.f_code, adaptive=True) \
                             if show_instructions else None
             self._print_lines(lines[first-1:last], first, breaklist,
                               self.curframe,
@@ -1409,7 +1409,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except OSError as err:
             self.error(err)
             return
-        instructions = dis.get_instructions(self.curframe.f_code) \
+        instructions = dis.get_instructions(self.curframe.f_code, adaptive=True) \
                         if show_instructions else None
         self._print_lines(lines, lineno, breaklist, self.curframe,
                 instructions)

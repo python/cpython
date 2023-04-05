@@ -303,7 +303,7 @@ class Bdb:
         pass
 
     def user_opcode(self, frame):
-        """Called when we stop or break at a opcode."""
+        """Called when we stop or break at an opcode."""
         pass
 
     def _set_trace_opcodes(self, trace_opcodes):
