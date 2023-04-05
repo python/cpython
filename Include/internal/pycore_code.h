@@ -20,7 +20,7 @@ extern "C" {
 typedef struct {
     uint16_t counter;
     uint16_t index;
-    uint16_t module_keys_version[2];
+    uint16_t module_keys_version;
     uint16_t builtin_keys_version;
 } _PyLoadGlobalCache;
 
@@ -47,8 +47,6 @@ typedef struct {
 
 typedef struct {
     uint16_t counter;
-    uint16_t type_version[2];
-    uint16_t func_version;
 } _PyBinarySubscrCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_SUBSCR CACHE_ENTRIES(_PyBinarySubscrCache)
@@ -91,6 +89,12 @@ typedef struct {
 } _PyForIterCache;
 
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
+
+typedef struct {
+    uint16_t counter;
+} _PySendCache;
+
+#define INLINE_CACHE_ENTRIES_SEND CACHE_ENTRIES(_PySendCache)
 
 // Borrowed references to common callables:
 struct callable_cache {
@@ -228,11 +232,12 @@ extern void _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
                                 int nargs, PyObject *kwnames);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                                     int oparg, PyObject **locals);
-extern void _Py_Specialize_CompareAndBranch(PyObject *lhs, PyObject *rhs,
+extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
                                      _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
 extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
+extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
 
 /* Finalizer function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Fini(PyCodeObject *co);

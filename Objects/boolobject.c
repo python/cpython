@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"      // _Py_FatalRefcountError()
+#include "pycore_long.h"        // FALSE_TAG TRUE_TAG
 #include "pycore_runtime.h"       // _Py_ID()
 
 #include <stddef.h>
@@ -198,10 +199,14 @@ PyTypeObject PyBool_Type = {
 
 struct _longobject _Py_FalseStruct = {
     PyObject_HEAD_INIT(&PyBool_Type)
-    { 0, { 0 } }
+    { .lv_tag = _PyLong_FALSE_TAG,
+        { 0 }
+    }
 };
 
 struct _longobject _Py_TrueStruct = {
     PyObject_HEAD_INIT(&PyBool_Type)
-    { 1, { 1 } }
+    { .lv_tag = _PyLong_TRUE_TAG,
+        { 1 }
+    }
 };

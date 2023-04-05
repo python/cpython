@@ -1,0 +1,1 @@
+Ensure final ``_generate_next_value_`` is a ``staticmethod``.
