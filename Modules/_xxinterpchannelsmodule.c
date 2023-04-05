@@ -10,6 +10,68 @@
 #include "pycore_interpreteridobject.h"
 
 
+/*
+This module has the following process-global state:
+
+_globals (static struct globals):
+    module_count (int)
+    channels (struct _channels):
+        numopen (int64_t)
+        next_id; (int64_t)
+        mutex (PyThread_type_lock)
+        head (linked list of struct _channelref *):
+            id (int64_t)
+            objcount (Py_ssize_t)
+            next (struct _channelref *):
+                ...
+            chan (struct _channel *):
+                open (int)
+                mutex (PyThread_type_lock)
+                closing (struct _channel_closing *):
+                    ref (struct _channelref *):
+                        ...
+                ends (struct _channelends *):
+                    numsendopen (int64_t)
+                    numrecvopen (int64_t)
+                    send (struct _channelend *):
+                        interp (int64_t)
+                        open (int)
+                        next (struct _channelend *)
+                    recv (struct _channelend *):
+                        ...
+                queue (struct _channelqueue *):
+                    count (int64_t)
+                    first (struct _channelitem *):
+                        next (struct _channelitem *):
+                            ...
+                        data (_PyCrossInterpreterData *):
+                            data (void *)
+                            obj (PyObject *)
+                            interp (int64_t)
+                            new_object (xid_newobjectfunc)
+                            free (xid_freefunc)
+                    last (struct _channelitem *):
+                        ...
+
+The above state includes the following allocations by the module:
+
+* 1 top-level mutex (to protect the rest of the state)
+* for each channel:
+   * 1 struct _channelref
+   * 1 struct _channel
+   * 0-1 struct _channel_closing
+   * 1 struct _channelends
+   * 2 struct _channelend
+   * 1 struct _channelqueue
+* for each item in each channel:
+   * 1 struct _channelitem
+   * 1 _PyCrossInterpreterData
+
+The only objects in that global state are the references held by each
+channel's queue, which are safely managed via the _PyCrossInterpreterData_*()
+API..  The module does not create any objects that are shared globally.
+*/
+
 #define MODULE_NAME "_xxinterpchannels"
 
 
