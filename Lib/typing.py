@@ -2039,7 +2039,7 @@ class _ProtocolMeta(ABCMeta):
                     val = getattr_static(instance, attr)
                 except AttributeError:
                     break
-                if callable(getattr(cls, attr, None)) and val is None:
+                if val is None and callable(getattr(cls, attr, None)):
                     break
             else:
                 return True
