@@ -1,3 +1,0 @@
-Python now gets the absolute path of the script filename specified on the
-command line (ex: "python3 script.py"): the __file__ attribute of the __main__
-module and sys.path[0] become an absolute path, rather than a relative path.

@@ -1,2 +1,0 @@
-Raise a RuntimeError when itertools.tee() iterator is consumed from different
-threads. Patch by hongweipeng.

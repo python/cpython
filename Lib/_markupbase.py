@@ -29,10 +29,6 @@ class ParserBase:
             raise RuntimeError(
                 "_markupbase.ParserBase must be subclassed")
 
-    def error(self, message):
-        raise NotImplementedError(
-            "subclasses of ParserBase must override error()")
-
     def reset(self):
         self.lineno = 1
         self.offset = 0
@@ -131,12 +127,11 @@ class ParserBase:
                     # also in data attribute specifications of attlist declaration
                     # also link type declaration subsets in linktype declarations
                     # also link attribute specification lists in link declarations
-                    self.error("unsupported '[' char in %s declaration" % decltype)
+                    raise AssertionError("unsupported '[' char in %s declaration" % decltype)
                 else:
-                    self.error("unexpected '[' char in declaration")
+                    raise AssertionError("unexpected '[' char in declaration")
             else:
-                self.error(
-                    "unexpected %r char in declaration" % rawdata[j])
+                raise AssertionError("unexpected %r char in declaration" % rawdata[j])
             if j < 0:
                 return j
         return -1 # incomplete
@@ -156,7 +151,9 @@ class ParserBase:
             # look for MS Office ]> ending
             match= _msmarkedsectionclose.search(rawdata, i+3)
         else:
-            self.error('unknown status keyword %r in marked section' % rawdata[i+3:j])
+            raise AssertionError(
+                'unknown status keyword %r in marked section' % rawdata[i+3:j]
+            )
         if not match:
             return -1
         if report:
@@ -168,7 +165,7 @@ class ParserBase:
     def parse_comment(self, i, report=1):
         rawdata = self.rawdata
         if rawdata[i:i+4] != '<!--':
-            self.error('unexpected call to parse_comment()')
+            raise AssertionError('unexpected call to parse_comment()')
         match = _commentclose.search(rawdata, i+4)
         if not match:
             return -1
@@ -192,7 +189,9 @@ class ParserBase:
                     return -1
                 if s != "<!":
                     self.updatepos(declstartpos, j + 1)
-                    self.error("unexpected char in internal subset (in %r)" % s)
+                    raise AssertionError(
+                        "unexpected char in internal subset (in %r)" % s
+                    )
                 if (j + 2) == n:
                     # end of buffer; incomplete
                     return -1
@@ -209,8 +208,9 @@ class ParserBase:
                     return -1
                 if name not in {"attlist", "element", "entity", "notation"}:
                     self.updatepos(declstartpos, j + 2)
-                    self.error(
-                        "unknown declaration %r in internal subset" % name)
+                    raise AssertionError(
+                        "unknown declaration %r in internal subset" % name
+                    )
                 # handle the individual names
                 meth = getattr(self, "_parse_doctype_" + name)
                 j = meth(j, declstartpos)
@@ -234,14 +234,14 @@ class ParserBase:
                     if rawdata[j] == ">":
                         return j
                     self.updatepos(declstartpos, j)
-                    self.error("unexpected char after internal subset")
+                    raise AssertionError("unexpected char after internal subset")
                 else:
                     return -1
             elif c.isspace():
                 j = j + 1
             else:
                 self.updatepos(declstartpos, j)
-                self.error("unexpected char %r in internal subset" % c)
+                raise AssertionError("unexpected char %r in internal subset" % c)
         # end of buffer reached
         return -1
 
@@ -387,8 +387,9 @@ class ParserBase:
             return name.lower(), m.end()
         else:
             self.updatepos(declstartpos, i)
-            self.error("expected name token at %r"
-                       % rawdata[declstartpos:declstartpos+20])
+            raise AssertionError(
+                "expected name token at %r" % rawdata[declstartpos:declstartpos+20]
+            )
 
     # To be overridden -- handlers for unknown objects
     def unknown_decl(self, data):
