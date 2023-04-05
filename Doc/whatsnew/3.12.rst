@@ -343,6 +343,20 @@ shutil
   will be removed in Python 3.14.
   (Contributed by Irit Katriel in :gh:`102828`.)
 
+* :func:`shutil.which` now consults the *PATHEXT* environment variable to
+  find matches within *PATH* on Windows even when the given *cmd* includes
+  a directory component.
+  (Contributed by Charles Machalow in :gh:`103179`.)
+
+  :func:`shutil.which` will call ``NeedCurrentDirectoryForExePathW`` when
+  querying for executables on Windows to determine if the current working
+  directory should be prepended to the search path.
+  (Contributed by Charles Machalow in :gh:`103179`.)
+
+  :func:`shutil.which` will return a path matching the *cmd* with a component
+  from ``PATHEXT`` prior to a direct match elsewhere in the search path on
+  Windows.
+  (Contributed by Charles Machalow in :gh:`103179`.)
 
 sqlite3
 -------
@@ -371,6 +385,27 @@ unicodedata
 * The Unicode database has been updated to version 15.0.0. (Contributed by
   Benjamin Peterson in :gh:`96734`).
 
+unittest
+--------
+
+Added ``--durations`` command line option, showing the N slowest test cases::
+
+  python3 -m unittest --durations=3 lib.tests.test_threading
+  .....
+  Slowest test durations
+  ----------------------------------------------------------------------
+  1.210s     test_timeout (Lib.test.test_threading.BarrierTests)
+  1.003s     test_default_timeout (Lib.test.test_threading.BarrierTests)
+  0.518s     test_timeout (Lib.test.test_threading.EventTests)
+
+  (0.000 durations hidden.  Use -v to show these durations.)
+  ----------------------------------------------------------------------
+  Ran 158 tests in 9.869s
+
+  OK (skipped=3)
+
+(Contributed by Giampaolo Rodola in :issue:`4080`)
+
 uuid
 ----
 
@@ -390,6 +425,17 @@ typing
   checkers to verify that a method overrides some method or attribute of the
   same name on a base class, as per :pep:`698`. (Contributed by Steven Troxler in
   :gh:`101564`.)
+
+* :func:`isinstance` checks against
+  :func:`runtime-checkable protocols <typing.runtime_checkable>` now use
+  :func:`inspect.getattr_static` rather than :func:`hasattr` to lookup whether
+  attributes exist. This means that descriptors and :meth:`~object.__getattr__`
+  methods are no longer unexpectedly evaluated during ``isinstance()`` checks
+  against runtime-checkable protocols. However, it may also mean that some
+  objects which used to be considered instances of a runtime-checkable protocol
+  may no longer be considered instances of that protocol on Python 3.12+, and
+  vice versa. Most users are unlikely to be affected by this change.
+  (Contributed by Alex Waygood in :gh:`102433`.)
 
 sys
 ---
@@ -419,7 +465,7 @@ Optimizations
 
 * Added experimental support for using the BOLT binary optimizer in the build
   process, which improves performance by 1-5%.
-  (Contributed by Kevin Modzelewski in :gh:`90536`.)
+  (Contributed by Kevin Modzelewski in :gh:`90536` and tuned by Dong-hee Na in :gh:`101525`)
 
 * Speed up the regular expression substitution (functions :func:`re.sub` and
   :func:`re.subn` and corresponding :class:`!re.Pattern` methods) for
@@ -589,6 +635,12 @@ Pending Removal in Python 3.14
 * :mod:`pty` has two undocumented ``master_open()`` and ``slave_open()``
   functions that have been deprecated since Python 2 but only gained a
   proper :exc:`DeprecationWarning` in 3.12. Remove them in 3.14.
+
+* Accessing ``co_lnotab`` was deprecated in :pep:`626` since 3.10
+  and was planned to be removed in 3.12
+  but it only got a proper :exc:`DeprecationWarning` in 3.12.
+  May be removed in 3.14.
+  (Contributed by Nikita Sobolev in :gh:`101866`.)
 
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
   and will be removed in 3.14.
@@ -975,6 +1027,10 @@ New Features
   This is less error prone and a bit more efficient.
   (Contributed by Mark Shannon in :gh:`101578`.)
 
+* Add ``_PyErr_ChainExceptions1``, which takes an exception instance,
+  to replace the legacy-API ``_PyErr_ChainExceptions``, which is now
+  deprecated. (Contributed by Mark Shannon in :gh:`101578`.)
+
 * Add :c:func:`PyException_GetArgs` and :c:func:`PyException_SetArgs`
   as convenience functions for retrieving and modifying
   the :attr:`~BaseException.args` passed to the exception's constructor.
@@ -1125,6 +1181,8 @@ Deprecated
 * :c:func:`!PyErr_Display` is deprecated. Use :c:func:`PyErr_DisplayException`
   instead. (Contributed by Irit Katriel in :gh:`102755`).
 
+* ``_PyErr_ChainExceptions`` is deprecated. Use ``_PyErr_ChainExceptions1``
+  instead. (Contributed by Irit Katriel in :gh:`102192`.)
 
 Removed
 -------
