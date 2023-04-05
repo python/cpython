@@ -18,6 +18,8 @@
 #include "structmember.h"         // PyMemberDef
 #include <windows.h>
 
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
+
 static BOOL PyHKEY_AsHKEY(PyObject *ob, HKEY *pRes, BOOL bNoneOK);
 static BOOL clinic_HKEY_converter(PyObject *ob, void *p);
 static PyObject *PyHKEY_FromHKEY(HKEY h);
@@ -829,6 +831,8 @@ winreg_CloseKey(PyObject *module, PyObject *hkey)
     Py_RETURN_NONE;
 }
 
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
+
 /*[clinic input]
 winreg.ConnectRegistry -> HKEY
 
@@ -865,6 +869,8 @@ winreg_ConnectRegistry_impl(PyObject *module,
     }
     return retKey;
 }
+
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 /*[clinic input]
 winreg.CreateKey -> HKEY
@@ -1272,6 +1278,8 @@ winreg_ExpandEnvironmentStrings_impl(PyObject *module,
     return o;
 }
 
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
+
 /*[clinic input]
 winreg.FlushKey
 
@@ -1305,6 +1313,9 @@ winreg_FlushKey_impl(PyObject *module, HKEY key)
     Py_RETURN_NONE;
 }
 
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
+
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 winreg.LoadKey
@@ -1353,6 +1364,8 @@ winreg_LoadKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegLoadKey");
     Py_RETURN_NONE;
 }
+
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 /*[clinic input]
 winreg.OpenKey -> HKEY
@@ -1462,6 +1475,7 @@ winreg_QueryInfoKey_impl(PyObject *module, HKEY key)
     Py_DECREF(l);
     return ret;
 }
+
 
 /*[clinic input]
 winreg.QueryValue
@@ -1634,6 +1648,8 @@ winreg_QueryValueEx_impl(PyObject *module, HKEY key, const Py_UNICODE *name)
     return result;
 }
 
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
+
 /*[clinic input]
 winreg.SaveKey
 
@@ -1678,6 +1694,8 @@ winreg_SaveKey_impl(PyObject *module, HKEY key, const Py_UNICODE *file_name)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegSaveKey");
     Py_RETURN_NONE;
 }
+
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 /*[clinic input]
 winreg.SetValue
@@ -1776,6 +1794,7 @@ exit:
     return result;
 }
 
+
 /*[clinic input]
 winreg.SetValueEx
 
@@ -1860,6 +1879,8 @@ exit:
     PyMem_Free(data);
     return result;
 }
+
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 winreg.DisableReflectionKey
@@ -2009,6 +2030,8 @@ winreg_QueryReflectionKey_impl(PyObject *module, HKEY key)
     return PyBool_FromLong(result);
 }
 
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
+
 static struct PyMethodDef winreg_methods[] = {
     WINREG_CLOSEKEY_METHODDEF
     WINREG_CONNECTREGISTRY_METHODDEF
@@ -2149,3 +2172,5 @@ PyMODINIT_FUNC PyInit_winreg(void)
     ADD_INT(REG_RESOURCE_REQUIREMENTS_LIST);
     return m;
 }
+
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM || MS_WINDOWS_GAMES */

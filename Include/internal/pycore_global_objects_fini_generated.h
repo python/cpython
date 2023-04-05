@@ -998,6 +998,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(kw2));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(lambda));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(last));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(last_exc));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(last_node));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(last_traceback));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(last_type));
@@ -1219,6 +1220,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(value));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(values));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(version));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(volume));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(warnings));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(warnoptions));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(wbits));

@@ -1556,7 +1556,7 @@ class SizeofTest(unittest.TestCase):
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
                   '6P'
-                  '1P'                  # Specializer cache
+                  '1PI'                 # Specializer cache
                   )
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
@@ -1649,8 +1649,8 @@ class SizeofTest(unittest.TestCase):
         check(_ast.AST(), size('P'))
         try:
             raise TypeError
-        except TypeError:
-            tb = sys.exc_info()[2]
+        except TypeError as e:
+            tb = e.__traceback__
             # traceback
             if tb is not None:
                 check(tb, size('2P2i'))

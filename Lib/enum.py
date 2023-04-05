@@ -266,23 +266,20 @@ class _proto_member:
             args = (args, )     # wrap it one more time
         if not enum_class._use_args_:
             enum_member = enum_class._new_member_(enum_class)
-            if not hasattr(enum_member, '_value_'):
+        else:
+            enum_member = enum_class._new_member_(enum_class, *args)
+        if not hasattr(enum_member, '_value_'):
+            if enum_class._member_type_ is object:
+                enum_member._value_ = value
+            else:
                 try:
                     enum_member._value_ = enum_class._member_type_(*args)
                 except Exception as exc:
-                    enum_member._value_ = value
-        else:
-            enum_member = enum_class._new_member_(enum_class, *args)
-            if not hasattr(enum_member, '_value_'):
-                if enum_class._member_type_ is object:
-                    enum_member._value_ = value
-                else:
-                    try:
-                        enum_member._value_ = enum_class._member_type_(*args)
-                    except Exception as exc:
-                        raise TypeError(
-                                '_value_ not set in __new__, unable to create it'
-                                ) from None
+                    new_exc = TypeError(
+                            '_value_ not set in __new__, unable to create it'
+                            )
+                    new_exc.__cause__ = exc
+                    raise new_exc
         value = enum_member._value_
         enum_member._name_ = member_name
         enum_member.__objclass__ = enum_class
@@ -518,8 +515,13 @@ class EnumType(type):
         #
         # adjust the sunders
         _order_ = classdict.pop('_order_', None)
+        _gnv = classdict.get('_generate_next_value_')
+        if _gnv is not None and type(_gnv) is not staticmethod:
+            _gnv = staticmethod(_gnv)
         # convert to normal dict
         classdict = dict(classdict.items())
+        if _gnv is not None:
+            classdict['_generate_next_value_'] = _gnv
         #
         # data type of member and the controlling Enum class
         member_type, first_enum = metacls._get_mixins_(cls, bases)
@@ -923,7 +925,7 @@ class EnumType(type):
     def _check_for_existing_members_(mcls, class_name, bases):
         for chain in bases:
             for base in chain.__mro__:
-                if issubclass(base, Enum) and base._member_names_:
+                if isinstance(base, EnumType) and base._member_names_:
                     raise TypeError(
                             "<enum %r> cannot extend %r"
                             % (class_name, base)
@@ -942,7 +944,7 @@ class EnumType(type):
         # ensure final parent class is an Enum derivative, find any concrete
         # data type, and check that Enum has no members
         first_enum = bases[-1]
-        if not issubclass(first_enum, Enum):
+        if not isinstance(first_enum, EnumType):
             raise TypeError("new enumerations should be created as "
                     "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
         member_type = mcls._find_data_type_(class_name, bases) or object
@@ -954,7 +956,7 @@ class EnumType(type):
             for base in chain.__mro__:
                 if base is object:
                     continue
-                elif issubclass(base, Enum):
+                elif isinstance(base, EnumType):
                     # if we hit an Enum, use it's _value_repr_
                     return base._value_repr_
                 elif '__repr__' in base.__dict__:
@@ -980,13 +982,11 @@ class EnumType(type):
                 base_chain.add(base)
                 if base is object:
                     continue
-                elif issubclass(base, Enum):
+                elif isinstance(base, EnumType):
                     if base._member_type_ is not object:
                         data_types.add(base._member_type_)
                         break
                 elif '__new__' in base.__dict__ or '__init__' in base.__dict__:
-                    if issubclass(base, Enum):
-                        continue
                     data_types.add(candidate or base)
                     break
                 else:
@@ -1146,6 +1146,7 @@ class Enum(metaclass=EnumType):
     def __init__(self, *args, **kwds):
         pass
 
+    @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         """
         Generate the next value when not given.
@@ -1288,6 +1289,7 @@ class StrEnum(str, ReprEnum):
         member._value_ = value
         return member
 
+    @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         """
         Return the lower-cased version of the member name.
@@ -1301,10 +1303,10 @@ def _reduce_ex_by_global_name(self, proto):
 class FlagBoundary(StrEnum):
     """
     control how out of range values are handled
-    "strict" -> error is raised  [default for Flag]
-    "conform" -> extra bits are discarded
-    "eject" -> lose flag status [default for IntFlag]
-    "keep" -> keep flag status and all bits
+    "strict" -> error is raised
+    "conform" -> extra bits are discarded   [default for Flag]
+    "eject" -> lose flag status
+    "keep" -> keep flag status and all bits [default for IntFlag]
     """
     STRICT = auto()
     CONFORM = auto()
@@ -1337,6 +1339,7 @@ class Flag(Enum, boundary=CONFORM):
 
     _numeric_repr_ = repr
 
+    @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         """
         Generate the next value when not given.

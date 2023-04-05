@@ -110,6 +110,7 @@
     <ClCompile Include="..\Modules\_testcapi\exceptions.c" />
     <ClCompile Include="..\Modules\_testcapi\code.c" />
     <ClCompile Include="..\Modules\_testcapi\buffer.c" />
+    <ClCompile Include="..\Modules\_testcapi\pyos.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

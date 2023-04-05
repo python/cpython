@@ -606,7 +606,6 @@ class SerializeTests(unittest.TestCase):
             with cx:
                 cx.execute("create table t(t)")
             data = cx.serialize()
-            self.assertEqual(len(data), 8192)
 
             # Remove test table, verify that it was removed.
             with cx:

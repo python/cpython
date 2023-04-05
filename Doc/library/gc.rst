@@ -251,7 +251,7 @@ values but should not rebind them):
       are printed.
 
    .. versionchanged:: 3.4
-      Following :pep:`442`, objects with a :meth:`__del__` method don't end
+      Following :pep:`442`, objects with a :meth:`~object.__del__` method don't end
       up in :attr:`gc.garbage` anymore.
 
 .. data:: callbacks

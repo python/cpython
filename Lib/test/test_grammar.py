@@ -3,7 +3,6 @@
 
 from test.support import check_syntax_error
 from test.support import import_helper
-from test.support.warnings_helper import check_syntax_warning
 import inspect
 import unittest
 import sys
@@ -15,7 +14,6 @@ from sys import *
 # with import machinery
 import test.ann_module as ann_module
 import typing
-from collections import ChainMap
 from test import ann_module2
 import test
 
