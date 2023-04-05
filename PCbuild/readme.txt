@@ -169,7 +169,7 @@ _lzma
     Homepage:
         https://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.1.1q of the OpenSSL secure sockets
+    Python wrapper for version 1.1.1t of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
@@ -188,7 +188,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.39.4, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.40.1, which is itself built by sqlite3.vcxproj
     Homepage:
         https://www.sqlite.org/
 _tkinter

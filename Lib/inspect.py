@@ -34,6 +34,10 @@ __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
 __all__ = [
+    "AGEN_CLOSED",
+    "AGEN_CREATED",
+    "AGEN_RUNNING",
+    "AGEN_SUSPENDED",
     "ArgInfo",
     "Arguments",
     "Attribute",
@@ -77,6 +81,8 @@ __all__ = [
     "getabsfile",
     "getargs",
     "getargvalues",
+    "getasyncgenlocals",
+    "getasyncgenstate",
     "getattr_static",
     "getblock",
     "getcallargs",
@@ -1766,9 +1772,9 @@ def trace(context=1):
 # ------------------------------------------------ static version of getattr
 
 _sentinel = object()
+_static_getmro = type.__dict__['__mro__'].__get__
+_get_dunder_dict_of_class = type.__dict__["__dict__"].__get__
 
-def _static_getmro(klass):
-    return type.__dict__['__mro__'].__get__(klass)
 
 def _check_instance(obj, attr):
     instance_dict = {}
@@ -1796,10 +1802,9 @@ def _is_type(obj):
     return True
 
 def _shadowed_dict(klass):
-    dict_attr = type.__dict__["__dict__"]
     for entry in _static_getmro(klass):
         try:
-            class_dict = dict_attr.__get__(entry)["__dict__"]
+            class_dict = _get_dunder_dict_of_class(entry)["__dict__"]
         except KeyError:
             pass
         else:
@@ -1931,6 +1936,50 @@ def getcoroutinelocals(coroutine):
     frame = getattr(coroutine, "cr_frame", None)
     if frame is not None:
         return frame.f_locals
+    else:
+        return {}
+
+
+# ----------------------------------- asynchronous generator introspection
+
+AGEN_CREATED = 'AGEN_CREATED'
+AGEN_RUNNING = 'AGEN_RUNNING'
+AGEN_SUSPENDED = 'AGEN_SUSPENDED'
+AGEN_CLOSED = 'AGEN_CLOSED'
+
+
+def getasyncgenstate(agen):
+    """Get current state of an asynchronous generator object.
+
+    Possible states are:
+      AGEN_CREATED: Waiting to start execution.
+      AGEN_RUNNING: Currently being executed by the interpreter.
+      AGEN_SUSPENDED: Currently suspended at a yield expression.
+      AGEN_CLOSED: Execution has completed.
+    """
+    if agen.ag_running:
+        return AGEN_RUNNING
+    if agen.ag_suspended:
+        return AGEN_SUSPENDED
+    if agen.ag_frame is None:
+        return AGEN_CLOSED
+    return AGEN_CREATED
+
+
+def getasyncgenlocals(agen):
+    """
+    Get the mapping of asynchronous generator local variables to their current
+    values.
+
+    A dict is returned, with the keys the local variable names and values the
+    bound values."""
+
+    if not isasyncgen(agen):
+        raise TypeError(f"{agen!r} is not a Python async generator")
+
+    frame = getattr(agen, "ag_frame", None)
+    if frame is not None:
+        return agen.ag_frame.f_locals
     else:
         return {}
 
@@ -2106,26 +2155,21 @@ def _signature_strip_non_python_syntax(signature):
     Private helper function. Takes a signature in Argument Clinic's
     extended signature format.
 
-    Returns a tuple of three things:
-      * that signature re-rendered in standard Python syntax,
+    Returns a tuple of two things:
+      * that signature re-rendered in standard Python syntax, and
       * the index of the "self" parameter (generally 0), or None if
-        the function does not have a "self" parameter, and
-      * the index of the last "positional only" parameter,
-        or None if the signature has no positional-only parameters.
+        the function does not have a "self" parameter.
     """
 
     if not signature:
-        return signature, None, None
+        return signature, None
 
     self_parameter = None
-    last_positional_only = None
 
     lines = [l.encode('ascii') for l in signature.split('\n') if l]
     generator = iter(lines).__next__
     token_stream = tokenize.tokenize(generator)
 
-    delayed_comma = False
-    skip_next_comma = False
     text = []
     add = text.append
 
@@ -2142,35 +2186,18 @@ def _signature_strip_non_python_syntax(signature):
 
         if type == OP:
             if string == ',':
-                if skip_next_comma:
-                    skip_next_comma = False
-                else:
-                    assert not delayed_comma
-                    delayed_comma = True
-                    current_parameter += 1
-                continue
-
-            if string == '/':
-                assert not skip_next_comma
-                assert last_positional_only is None
-                skip_next_comma = True
-                last_positional_only = current_parameter - 1
-                continue
+                current_parameter += 1
 
         if (type == ERRORTOKEN) and (string == '$'):
             assert self_parameter is None
             self_parameter = current_parameter
             continue
 
-        if delayed_comma:
-            delayed_comma = False
-            if not ((type == OP) and (string == ')')):
-                add(', ')
         add(string)
         if (string == ','):
             add(' ')
     clean_signature = ''.join(text)
-    return clean_signature, self_parameter, last_positional_only
+    return clean_signature, self_parameter
 
 
 def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
@@ -2179,8 +2206,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     """
     Parameter = cls._parameter_cls
 
-    clean_signature, self_parameter, last_positional_only = \
-        _signature_strip_non_python_syntax(s)
+    clean_signature, self_parameter = _signature_strip_non_python_syntax(s)
 
     program = "def foo" + clean_signature + ": pass"
 
@@ -2269,17 +2295,17 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
         parameters.append(Parameter(name, kind, default=default, annotation=empty))
 
     # non-keyword-only parameters
-    args = reversed(f.args.args)
-    defaults = reversed(f.args.defaults)
-    iter = itertools.zip_longest(args, defaults, fillvalue=None)
-    if last_positional_only is not None:
-        kind = Parameter.POSITIONAL_ONLY
-    else:
-        kind = Parameter.POSITIONAL_OR_KEYWORD
-    for i, (name, default) in enumerate(reversed(list(iter))):
+    total_non_kw_args = len(f.args.posonlyargs) + len(f.args.args)
+    required_non_kw_args = total_non_kw_args - len(f.args.defaults)
+    defaults = itertools.chain(itertools.repeat(None, required_non_kw_args), f.args.defaults)
+
+    kind = Parameter.POSITIONAL_ONLY
+    for (name, default) in zip(f.args.posonlyargs, defaults):
         p(name, default)
-        if i == last_positional_only:
-            kind = Parameter.POSITIONAL_OR_KEYWORD
+
+    kind = Parameter.POSITIONAL_OR_KEYWORD
+    for (name, default) in zip(f.args.args, defaults):
+        p(name, default)
 
     # *args
     if f.args.vararg:
@@ -2805,7 +2831,7 @@ class Parameter:
         return '<{} "{}">'.format(self.__class__.__name__, self)
 
     def __hash__(self):
-        return hash((self.name, self.kind, self.annotation, self.default))
+        return hash((self._name, self._kind, self._annotation, self._default))
 
     def __eq__(self, other):
         if self is other:

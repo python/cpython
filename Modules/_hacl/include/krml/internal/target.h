@@ -31,6 +31,10 @@
 #  define KRML_HOST_FREE free
 #endif
 
+#ifndef KRML_HOST_IGNORE
+#  define KRML_HOST_IGNORE(x) (void)(x)
+#endif
+
 /* Macros for prettier unrolling of loops */
 #define KRML_LOOP1(i, n, x) { \
   x \

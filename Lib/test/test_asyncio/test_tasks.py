@@ -8,6 +8,7 @@ import random
 import re
 import sys
 import traceback
+import types
 import unittest
 from unittest import mock
 from types import GenericAlias
@@ -273,6 +274,20 @@ class BaseTaskTests:
         fut = asyncio.ensure_future(Aw(coro()), loop=loop)
         loop.run_until_complete(fut)
         self.assertEqual(fut.result(), 'ok')
+
+    def test_ensure_future_task_awaitable(self):
+        class Aw:
+            def __await__(self):
+                return asyncio.sleep(0, result='ok').__await__()
+
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+        task = asyncio.ensure_future(Aw(), loop=loop)
+        loop.run_until_complete(task)
+        self.assertTrue(task.done())
+        self.assertEqual(task.result(), 'ok')
+        self.assertIsInstance(task.get_coro(), types.CoroutineType)
+        loop.close()
 
     def test_ensure_future_neither(self):
         with self.assertRaises(TypeError):
@@ -1357,6 +1372,22 @@ class BaseTaskTests:
         res = loop.run_until_complete(self.new_task(loop, foo()))
         self.assertEqual(res, 42)
         self.assertAlmostEqual(0.15, loop.time())
+
+
+    def test_wait_generator(self):
+        async def func(a):
+            return a
+
+        loop = self.new_test_loop()
+
+        async def main():
+            tasks = (self.new_task(loop, func(i)) for i in range(10))
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
+            self.assertEqual(len(done), 10)
+            self.assertEqual(len(pending), 0)
+
+        loop.run_until_complete(main())
+
 
     def test_as_completed(self):
 

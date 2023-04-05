@@ -34,9 +34,9 @@ around an instance of :class:`argparse.ArgumentParser`.  It is a container for
 argument specifications and has options that apply to the parser as whole::
 
    parser = argparse.ArgumentParser(
-                       prog = 'ProgramName',
-                       description = 'What the program does',
-                       epilog = 'Text at the bottom of help')
+                       prog='ProgramName',
+                       description='What the program does',
+                       epilog='Text at the bottom of help')
 
 The :meth:`ArgumentParser.add_argument` method attaches individual argument
 specifications to the parser.  It supports positional arguments, options that
@@ -1867,7 +1867,7 @@ Sub-commands
      ...
      >>> # create the top-level parser
      >>> parser = argparse.ArgumentParser()
-     >>> subparsers = parser.add_subparsers()
+     >>> subparsers = parser.add_subparsers(required=True)
      >>>
      >>> # create the parser for the "foo" command
      >>> parser_foo = subparsers.add_parser('foo')
