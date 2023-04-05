@@ -327,3 +327,18 @@ do { \
         _Py_DECREF_NO_DEALLOC(right); \
     } \
 } while (0)
+
+// If a trace function sets a new f_lineno and
+// *then* raises, we use the destination when searching
+// for an exception handler, displaying the traceback, and so on
+#define INSTRUMENTED_JUMP(src, dest, event) \
+do { \
+    _PyFrame_SetStackPointer(frame, stack_pointer); \
+    int err = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+    stack_pointer = _PyFrame_GetStackPointer(frame); \
+    if (err) { \
+        next_instr = (dest)+1; \
+        goto error; \
+    } \
+    next_instr = frame->prev_instr; \
+} while (0);

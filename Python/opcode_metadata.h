@@ -11,9 +11,9 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
     switch(opcode) {
         case NOP:
             return 0;
-        case INSTRUMENTED_RESUME:
-            return 0;
         case RESUME:
+            return 0;
+        case INSTRUMENTED_RESUME:
             return 0;
         case LOAD_CLOSURE:
             return 0;
@@ -278,7 +278,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case FOR_ITER:
             return 1;
         case INSTRUMENTED_FOR_ITER:
-            return -1;
+            return 0;
         case FOR_ITER_LIST:
             return 1;
         case FOR_ITER_TUPLE:
@@ -342,7 +342,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
             return oparg + 2;
         case INSTRUMENTED_CALL_FUNCTION_EX:
-            return -1;
+            return 0;
         case CALL_FUNCTION_EX:
             return ((oparg & 1) ? 1 : 0) + 3;
         case MAKE_FUNCTION:
@@ -395,9 +395,9 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
     switch(opcode) {
         case NOP:
             return 0;
-        case INSTRUMENTED_RESUME:
-            return 0;
         case RESUME:
+            return 0;
+        case INSTRUMENTED_RESUME:
             return 0;
         case LOAD_CLOSURE:
             return 1;
@@ -662,7 +662,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case FOR_ITER:
             return 2;
         case INSTRUMENTED_FOR_ITER:
-            return -1;
+            return 0;
         case FOR_ITER_LIST:
             return 2;
         case FOR_ITER_TUPLE:
@@ -726,7 +726,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
             return 1;
         case INSTRUMENTED_CALL_FUNCTION_EX:
-            return -1;
+            return 0;
         case CALL_FUNCTION_EX:
             return 1;
         case MAKE_FUNCTION:
@@ -782,8 +782,8 @@ extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];
 #else
 const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [NOP] = { true, INSTR_FMT_IX },
-    [INSTRUMENTED_RESUME] = { true, INSTR_FMT_IB },
     [RESUME] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_RESUME] = { true, INSTR_FMT_IB },
     [LOAD_CLOSURE] = { true, INSTR_FMT_IB },
     [LOAD_FAST_CHECK] = { true, INSTR_FMT_IB },
     [LOAD_FAST] = { true, INSTR_FMT_IB },

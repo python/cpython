@@ -132,9 +132,25 @@ dummy_func(
         inst(NOP, (--)) {
         }
 
-        inst(INSTRUMENTED_RESUME, (--)) {
-            /* Check monitoring *before* calling instrument */
+        inst(RESUME, (--)) {
+            assert(tstate->cframe == &cframe);
+            assert(frame == cframe.current_frame);
             /* Possibly combine this with eval breaker */
+            if (frame->f_code->_co_instrumentation_version != tstate->interp->monitoring_version) {
+                int err = _Py_Instrument(frame->f_code, tstate->interp);
+                ERROR_IF(err, error);
+                next_instr--;
+            }
+            else if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
+                goto handle_eval_breaker;
+            }
+        }
+
+        inst(INSTRUMENTED_RESUME, (--)) {
+            /* Possible performance enhancement:
+             *   We need to check the eval breaker anyway, can we
+             * combine the instrument verison check and the eval breaker test?
+             */
             if (frame->f_code->_co_instrumentation_version != tstate->interp->monitoring_version) {
                 if (_Py_Instrument(frame->f_code, tstate->interp)) {
                     goto error;
@@ -155,20 +171,6 @@ dummy_func(
                 if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
                     goto handle_eval_breaker;
                 }
-            }
-        }
-
-        inst(RESUME, (--)) {
-            assert(tstate->cframe == &cframe);
-            assert(frame == cframe.current_frame);
-            /* Possibly combine this with eval breaker */
-            if (frame->f_code->_co_instrumentation_version != tstate->interp->monitoring_version) {
-                int err = _Py_Instrument(frame->f_code, tstate->interp);
-                ERROR_IF(err, error);
-                next_instr--;
-            }
-            else if (_Py_atomic_load_relaxed_int32(eval_breaker) && oparg < 2) {
-                goto handle_eval_breaker;
             }
         }
 
@@ -2159,7 +2161,7 @@ dummy_func(
             // Common case: no jump, leave it to the code generator
         }
 
-        inst(INSTRUMENTED_FOR_ITER) {
+        inst(INSTRUMENTED_FOR_ITER, ( -- )) {
             _Py_CODEUNIT *here = next_instr-1;
             _Py_CODEUNIT *target;
             PyObject *iter = TOP();
@@ -2999,7 +3001,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(INSTRUMENTED_CALL_FUNCTION_EX) {
+        inst(INSTRUMENTED_CALL_FUNCTION_EX, ( -- )) {
             GO_TO_INSTRUCTION(CALL_FUNCTION_EX);
         }
 
@@ -3218,12 +3220,10 @@ dummy_func(
             DISPATCH_GOTO();
         }
 
-        // stack effect: ( -- )
         inst(INSTRUMENTED_JUMP_FORWARD, ( -- )) {
             INSTRUMENTED_JUMP(next_instr-1, next_instr+oparg, PY_MONITORING_EVENT_JUMP);
         }
 
-        // stack effect: ( -- )
         inst(INSTRUMENTED_JUMP_BACKWARD, ( -- )) {
             INSTRUMENTED_JUMP(next_instr-1, next_instr-oparg, PY_MONITORING_EVENT_JUMP);
             CHECK_EVAL_BREAKER();
