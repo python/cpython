@@ -12,6 +12,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_atexit.h"       // _Py_AtExit()
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
 #include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg
@@ -685,6 +686,37 @@ clear_extension(PyObject *self, PyObject *args)
 }
 
 
+struct atexit_data {
+    int called;
+};
+
+static void
+callback(void *data)
+{
+    ((struct atexit_data *)data)->called += 1;
+}
+
+static PyObject *
+test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *oldts = PyThreadState_Swap(NULL);
+    PyThreadState *tstate = Py_NewInterpreter();
+
+    struct atexit_data data = {0};
+    int res = _Py_AtExit(tstate->interp, callback, (void *)&data);
+    Py_EndInterpreter(tstate);
+    PyThreadState_Swap(oldts);
+    if (res < 0) {
+        return NULL;
+    }
+    if (data.called == 0) {
+        PyErr_SetString(PyExc_RuntimeError, "atexit callback not called");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -707,6 +739,7 @@ static PyMethodDef module_functions[] = {
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
     {"get_interp_settings", get_interp_settings, METH_VARARGS, NULL},
     {"clear_extension", clear_extension, METH_VARARGS, NULL},
+    {"test_atexit", test_atexit, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

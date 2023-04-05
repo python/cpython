@@ -23,6 +23,31 @@ get_atexit_state(void)
 }
 
 
+int
+_Py_AtExit(PyInterpreterState *interp,
+           atexit_datacallbackfunc func, void *data)
+{
+    atexit_callback *callback = PyMem_Malloc(sizeof(atexit_callback));
+    if (callback == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    callback->func = func;
+    callback->data = data;
+    callback->next = NULL;
+
+    struct atexit_state *state = &interp->atexit;
+    if (state->ll_callbacks == NULL) {
+        state->ll_callbacks = callback;
+        state->last_ll_callback = callback;
+    }
+    else {
+        state->last_ll_callback->next = callback;
+    }
+    return 0;
+}
+
+
 static void
 atexit_delete_cb(struct atexit_state *state, int i)
 {
@@ -76,6 +101,18 @@ _PyAtExit_Fini(PyInterpreterState *interp)
     atexit_cleanup(state);
     PyMem_Free(state->callbacks);
     state->callbacks = NULL;
+
+    atexit_callback *next = state->ll_callbacks;
+    state->ll_callbacks = NULL;
+    while (next != NULL) {
+        atexit_callback *callback = next;
+        next = callback->next;
+        atexit_datacallbackfunc exitfunc = callback->func;
+        void *data = callback->data;
+        // It was allocated in _PyAtExit_AddCallback().
+        PyMem_Free(callback);
+        exitfunc(data);
+    }
 }
 
 
