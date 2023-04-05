@@ -229,7 +229,7 @@ records in a table::
     [Movie(name='The Birds', released=1963, director='Hitchcock'),
      Movie(name='Love Story', released=1970, director='Hiller'),
      Movie(name='Jaws', released=1975, director='Spielberg'),
-     Movie(name='Aliens', released=1986, director='Scott'),
+     Movie(name='Aliens', released=1986, director='Cameron'),
      Movie(name='Titanic', released=1997, director='Cameron')]
 
 If the key function is expensive, it is possible to avoid repeated function
