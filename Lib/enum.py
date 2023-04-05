@@ -987,8 +987,6 @@ class EnumType(type):
                         data_types.add(base._member_type_)
                         break
                 elif '__new__' in base.__dict__ or '__init__' in base.__dict__:
-                    if isinstance(base, EnumType):
-                        continue
                     data_types.add(candidate or base)
                     break
                 else:
@@ -1148,6 +1146,7 @@ class Enum(metaclass=EnumType):
     def __init__(self, *args, **kwds):
         pass
 
+    @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         """
         Generate the next value when not given.
@@ -1290,6 +1289,7 @@ class StrEnum(str, ReprEnum):
         member._value_ = value
         return member
 
+    @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         """
         Return the lower-cased version of the member name.
@@ -1303,10 +1303,10 @@ def _reduce_ex_by_global_name(self, proto):
 class FlagBoundary(StrEnum):
     """
     control how out of range values are handled
-    "strict" -> error is raised  [default for Flag]
-    "conform" -> extra bits are discarded
-    "eject" -> lose flag status [default for IntFlag]
-    "keep" -> keep flag status and all bits
+    "strict" -> error is raised
+    "conform" -> extra bits are discarded   [default for Flag]
+    "eject" -> lose flag status
+    "keep" -> keep flag status and all bits [default for IntFlag]
     """
     STRICT = auto()
     CONFORM = auto()
@@ -1339,6 +1339,7 @@ class Flag(Enum, boundary=CONFORM):
 
     _numeric_repr_ = repr
 
+    @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         """
         Generate the next value when not given.

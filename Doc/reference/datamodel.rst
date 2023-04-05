@@ -991,7 +991,8 @@ Internal types
       the filename from which the code was compiled; :attr:`co_firstlineno` is
       the first line number of the function; :attr:`co_lnotab` is a string
       encoding the mapping from bytecode offsets to line numbers (for details
-      see the source code of the interpreter); :attr:`co_stacksize` is the
+      see the source code of the interpreter, is deprecated since 3.12
+      and may be removed in 3.14); :attr:`co_stacksize` is the
       required stack size; :attr:`co_flags` is an integer encoding a number
       of flags for the interpreter.
 

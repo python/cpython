@@ -390,11 +390,6 @@ Modules/_decimal/_decimal.c	-	PyDecContextManager_Type	-
 Modules/_decimal/_decimal.c	-	PyDecContext_Type	-
 Modules/_decimal/_decimal.c	-	PyDecSignalDictMixin_Type	-
 Modules/_decimal/_decimal.c	-	PyDec_Type	-
-Modules/_pickle.c	-	Pdata_Type	-
-Modules/_pickle.c	-	PicklerMemoProxyType	-
-Modules/_pickle.c	-	Pickler_Type	-
-Modules/_pickle.c	-	UnpicklerMemoProxyType	-
-Modules/_pickle.c	-	Unpickler_Type	-
 Modules/ossaudiodev.c	-	OSSAudioType	-
 Modules/ossaudiodev.c	-	OSSMixerType	-
 Modules/socketmodule.c	-	sock_type	-
