@@ -2158,7 +2158,7 @@ class TarFile(object):
         if upperdirs and not os.path.exists(upperdirs):
             # Create directories that are not part of the archive with
             # default permissions.
-            os.makedirs(upperdirs, exists_ok=True)
+            os.makedirs(upperdirs, exist_ok=True)
 
         if tarinfo.islnk() or tarinfo.issym():
             self._dbg(1, "%s -> %s" % (tarinfo.name, tarinfo.linkname))
