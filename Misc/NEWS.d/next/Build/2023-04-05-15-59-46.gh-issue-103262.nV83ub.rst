@@ -1,0 +1,1 @@
+Fixes Windows installer build to work with latest compilers.
