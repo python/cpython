@@ -136,6 +136,7 @@ Objects/unicodeobject.c	-	EncodingMapType	-
 #Objects/unicodeobject.c	-	PyFieldNameIter_Type	-
 #Objects/unicodeobject.c	-	PyFormatterIter_Type	-
 Python/legacy_tracing.c	-	_PyLegacyEventHandler_Type	-
+Objects/object.c	-	_PyLegacyEventHandler_Type	-
 
 
 ##-----------------------
