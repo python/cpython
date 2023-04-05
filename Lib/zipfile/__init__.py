@@ -94,7 +94,7 @@ _ECD_LOCATION = 9
 
 # The "central directory" structure, magic number, size, and indices
 # of entries in the structure (section V.F in the format document)
-structCentralDir = "<4s4B4HL2L5H2L"
+structCentralDir = "<4s4B4HL4L2HL"
 stringCentralDir = b"PK\001\002"
 sizeCentralDir = struct.calcsize(structCentralDir)
 
@@ -376,7 +376,6 @@ class ZipInfo (object):
         'external_attr',
         'header_offset',
         'CRC',
-        'orig_filename_crc',
         'compress_size',
         'file_size',
         '_raw_time',
@@ -492,7 +491,7 @@ class ZipInfo (object):
         except UnicodeEncodeError:
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
-    def _decodeExtra(self):
+    def _decodeExtra(self, filename_crc):
         # Try to decode the extra field.
         extra = self.extra
         unpack = struct.unpack
@@ -523,7 +522,7 @@ class ZipInfo (object):
                 # Unicode Path Extra Field
                 try:
                     up_version, up_name_crc = unpack('<BL', data[:5])
-                    if up_version == 1 and up_name_crc == self.orig_filename_crc:
+                    if up_version == 1 and up_name_crc == filename_crc:
                         up_unicode_name = data[5:].decode('utf-8')
                         if up_unicode_name:
                             self.filename = _sanitize_filename(up_unicode_name)
@@ -1458,9 +1457,7 @@ class ZipFile:
             x._raw_time = t
             x.date_time = ( (d>>9)+1980, (d>>5)&0xF, d&0x1F,
                             t>>11, (t>>5)&0x3F, (t&0x1F) * 2 )
-
-            x.orig_filename_crc = orig_filename_crc
-            x._decodeExtra()
+            x._decodeExtra(orig_filename_crc)
             x.header_offset = x.header_offset + concat
             self.filelist.append(x)
             self.NameToInfo[x.filename] = x
