@@ -952,6 +952,8 @@ The canonical way to create an :class:`Option` instance is with the
    you may also supply :attr:`~Option.type` and :attr:`~Option.dest` option
    attributes; see :ref:`optparse-standard-option-actions`.)
 
+.. class:: Values
+
 As you can see, most actions involve storing or updating a value somewhere.
 :mod:`optparse` always creates a special object for this, conventionally called
 ``options`` (it happens to be an instance of :class:`optparse.Values`).  Option
@@ -990,6 +992,8 @@ one that makes sense for *all* options.
 
 Option attributes
 ^^^^^^^^^^^^^^^^^
+
+.. class:: Option
 
 The following option attributes may be passed as keyword arguments to
 :meth:`OptionParser.add_option`.  If you pass an option attribute that is not
@@ -2035,3 +2039,27 @@ Features of note:
   about setting a default value for the option destinations in question; they
   can just leave the default as ``None`` and :meth:`ensure_value` will take care of
   getting it right when it's needed.
+
+Exceptions
+----------
+
+.. exception:: OptionError
+
+   Raised if an :class:`Option` instance is created with invalid or
+   inconsistent arguments.
+
+.. exception:: OptionConflictError
+
+   Raised if conflicting options are added to an :class:`OptionParser`.
+
+.. exception:: OptionValueError
+
+   Raised if an invalid option value is encountered on the command line.
+
+.. exception:: BadOptionError
+
+    Raised if an invalid option is seen on the command line.
+
+.. exception:: AmbiguousOptionError
+
+    Raised if an ambiguous option is seen on the command line.
