@@ -373,6 +373,16 @@ class TestVectorsTestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, r'required.*digestmod'):
             hmac.HMAC(key, msg=data, digestmod='')
 
+    def test_with_fallback(self):
+        cache = getattr(hashlib, '__builtin_constructor_cache')
+        try:
+            cache['foo'] = hashlib.md5
+            digest = hmac.digest(b'key', b'message', 'foo')
+            expected = binascii.unhexlify('4e4748e62b463521f6775fbf921234b5')
+            self.assertEqual(digest, expected)
+        finally:
+            cache.pop('foo')
+
 
 class ConstructorTestCase(unittest.TestCase):
 
