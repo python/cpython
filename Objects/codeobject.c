@@ -1764,139 +1764,6 @@ code_repr(PyCodeObject *co)
     }
 }
 
-static PyObject *
-code_richcompare(PyObject *self, PyObject *other, int op)
-{
-    PyCodeObject *co, *cp;
-    int eq;
-    PyObject *consts1, *consts2;
-    PyObject *res;
-
-    if ((op != Py_EQ && op != Py_NE) ||
-        !PyCode_Check(self) ||
-        !PyCode_Check(other)) {
-        Py_RETURN_NOTIMPLEMENTED;
-    }
-
-    co = (PyCodeObject *)self;
-    cp = (PyCodeObject *)other;
-
-    eq = PyObject_RichCompareBool(co->co_name, cp->co_name, Py_EQ);
-    if (!eq) goto unequal;
-    eq = co->co_argcount == cp->co_argcount;
-    if (!eq) goto unequal;
-    eq = co->co_posonlyargcount == cp->co_posonlyargcount;
-    if (!eq) goto unequal;
-    eq = co->co_kwonlyargcount == cp->co_kwonlyargcount;
-    if (!eq) goto unequal;
-    eq = co->co_flags == cp->co_flags;
-    if (!eq) goto unequal;
-    eq = co->co_firstlineno == cp->co_firstlineno;
-    if (!eq) goto unequal;
-    eq = Py_SIZE(co) == Py_SIZE(cp);
-    if (!eq) {
-        goto unequal;
-    }
-    for (int i = 0; i < Py_SIZE(co); i++) {
-        _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
-        _Py_CODEUNIT cp_instr = _PyCode_CODE(cp)[i];
-        co_instr.op.code = _PyOpcode_Deopt[co_instr.op.code];
-        cp_instr.op.code = _PyOpcode_Deopt[cp_instr.op.code];
-        eq = co_instr.cache == cp_instr.cache;
-        if (!eq) {
-            goto unequal;
-        }
-        i += _PyOpcode_Caches[co_instr.op.code];
-    }
-
-    /* compare constants */
-    consts1 = _PyCode_ConstantKey(co->co_consts);
-    if (!consts1)
-        return NULL;
-    consts2 = _PyCode_ConstantKey(cp->co_consts);
-    if (!consts2) {
-        Py_DECREF(consts1);
-        return NULL;
-    }
-    eq = PyObject_RichCompareBool(consts1, consts2, Py_EQ);
-    Py_DECREF(consts1);
-    Py_DECREF(consts2);
-    if (eq <= 0) goto unequal;
-
-    eq = PyObject_RichCompareBool(co->co_names, cp->co_names, Py_EQ);
-    if (eq <= 0) goto unequal;
-    eq = PyObject_RichCompareBool(co->co_localsplusnames,
-                                  cp->co_localsplusnames, Py_EQ);
-    if (eq <= 0) goto unequal;
-    eq = PyObject_RichCompareBool(co->co_linetable, cp->co_linetable, Py_EQ);
-    if (eq <= 0) {
-        goto unequal;
-    }
-    eq = PyObject_RichCompareBool(co->co_exceptiontable,
-                                  cp->co_exceptiontable, Py_EQ);
-    if (eq <= 0) {
-        goto unequal;
-    }
-
-    if (op == Py_EQ)
-        res = Py_True;
-    else
-        res = Py_False;
-    goto done;
-
-  unequal:
-    if (eq < 0)
-        return NULL;
-    if (op == Py_NE)
-        res = Py_True;
-    else
-        res = Py_False;
-
-  done:
-    return Py_NewRef(res);
-}
-
-static Py_hash_t
-code_hash(PyCodeObject *co)
-{
-    Py_uhash_t uhash = 20221211;
-    #define SCRAMBLE_IN(H) do {       \
-        uhash ^= (Py_uhash_t)(H);     \
-        uhash *= _PyHASH_MULTIPLIER;  \
-    } while (0)
-    #define SCRAMBLE_IN_HASH(EXPR) do {     \
-        Py_hash_t h = PyObject_Hash(EXPR);  \
-        if (h == -1) {                      \
-            return -1;                      \
-        }                                   \
-        SCRAMBLE_IN(h);                     \
-    } while (0)
-
-    SCRAMBLE_IN_HASH(co->co_name);
-    SCRAMBLE_IN_HASH(co->co_consts);
-    SCRAMBLE_IN_HASH(co->co_names);
-    SCRAMBLE_IN_HASH(co->co_localsplusnames);
-    SCRAMBLE_IN_HASH(co->co_linetable);
-    SCRAMBLE_IN_HASH(co->co_exceptiontable);
-    SCRAMBLE_IN(co->co_argcount);
-    SCRAMBLE_IN(co->co_posonlyargcount);
-    SCRAMBLE_IN(co->co_kwonlyargcount);
-    SCRAMBLE_IN(co->co_flags);
-    SCRAMBLE_IN(co->co_firstlineno);
-    SCRAMBLE_IN(Py_SIZE(co));
-    for (int i = 0; i < Py_SIZE(co); i++) {
-        int deop = _PyOpcode_Deopt[_PyCode_CODE(co)[i].op.code];
-        SCRAMBLE_IN(deop);
-        SCRAMBLE_IN(_PyCode_CODE(co)[i].op.arg);
-        i += _PyOpcode_Caches[deop];
-    }
-    if ((Py_hash_t)uhash == -1) {
-        return -2;
-    }
-    return (Py_hash_t)uhash;
-}
-
-
 #define OFF(x) offsetof(PyCodeObject, x)
 
 static PyMemberDef code_memberlist[] = {
@@ -2150,7 +2017,7 @@ PyTypeObject PyCode_Type = {
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
     0,                                  /* tp_as_mapping */
-    (hashfunc)code_hash,                /* tp_hash */
+    0,                                  /* tp_hash */
     0,                                  /* tp_call */
     0,                                  /* tp_str */
     PyObject_GenericGetAttr,            /* tp_getattro */
@@ -2160,7 +2027,7 @@ PyTypeObject PyCode_Type = {
     code_new__doc__,                    /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
-    code_richcompare,                   /* tp_richcompare */
+    0,                                  /* tp_richcompare */
     offsetof(PyCodeObject, co_weakreflist),     /* tp_weaklistoffset */
     0,                                  /* tp_iter */
     0,                                  /* tp_iternext */
