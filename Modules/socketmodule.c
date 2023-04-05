@@ -8811,6 +8811,7 @@ PyInit__socket(void)
 
 #undef ADD_INT_MACRO
 #undef ADD_INT_CONST
+#undef ADD_STR_CONST
 
     return m;
 
