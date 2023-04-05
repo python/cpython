@@ -1135,7 +1135,6 @@ class ExceptionTests(unittest.TestCase):
         self.assertIsInstance(exc.__context__, ValueError)
         self.assertIs(exc.__context__.__context__, exc.__context__)
 
-    @unittest.skip("See issue 44895")
     def test_no_hang_on_context_chain_cycle2(self):
         # See issue 25782. Cycle at head of context chain.
 
