@@ -332,6 +332,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.interaction(frame, None)
 
     def user_opcode(self, frame):
+        """This function is called when we are about to execute an opcode."""
         if self._wait_for_mainpyfile:
             if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
                 or frame.f_lineno <= 0):
@@ -1098,15 +1099,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return 1
     do_s = do_step
 
-    def do_stepinst(self, arg):
+    def do_stepi(self, arg):
         """s(tep)
         Execute the current line, stop at the first possible occasion
         (either in a function that is called or in the current
         function).
         """
-        self.set_stepinst(self.curframe)
+        self.set_stepi(self.curframe)
         return 1
-    do_si = do_stepinst
+    do_si = do_stepi
 
     def do_next(self, arg):
         """n(ext)
@@ -1117,14 +1118,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return 1
     do_n = do_next
 
-    def do_nextinst(self, arg):
+    def do_nexti(self, arg):
         """n(ext)
         Continue execution until the next line in the current function
         is reached or it returns.
         """
-        self.set_nextinst(self.curframe)
+        self.set_nexti(self.curframe)
         return 1
-    do_ni = do_nextinst
+    do_ni = do_nexti
 
     def do_run(self, arg):
         """run [args...]
@@ -1380,17 +1381,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._do_list(arg, False)
     do_l = do_list
 
-    def do_listinst(self, arg):
-        """listinst | li [first[, last] | .]
+    def do_listi(self, arg):
+        """listi | li [first[, last] | .]
 
         List source code for the current file with instructions.
 
-        Without arguments, list 11 lines around the current line or
-        continue the previous listing.  With . as argument, list 11
-        lines around the current line.  With one argument, list 11
-        lines starting at that line. With two arguments, list the
-        given range; if the second argument is less than the first,
-        it is a count.
+        Without arguments, list 11 lines with their corresponding
+        instructions around the current line or continue the
+        previous listing.  With . as argument, list 11 lines with
+        their corresponding instructions around the current line.
+        With one argument, list 11 lines with their corresponding
+        instructions starting at that line. With two arguments,
+        list the given range; if the second argument is less than
+        the first, it is a count.
 
         The current line in the current frame is indicated by "->".
         The current instruction is indicated by "-->"
@@ -1399,7 +1402,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         ">>", if it differs from the current line.
         """
         self._do_list(arg, True)
-    do_li = do_listinst
+    do_li = do_listi
 
     def _do_longlist(self, arg, show_instructions=False):
         filename = self.curframe.f_code.co_filename
@@ -1421,14 +1424,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._do_longlist(arg, False)
     do_ll = do_longlist
 
-    def do_longlistinst(self, arg):
-        """longlistinst | lli
+    def do_longlisti(self, arg):
+        """longlisti | lli
 
         List the whole source code with instructions for the current
         function or frame.
         """
         self._do_longlist(arg, True)
-    do_lli = do_longlistinst
+    do_lli = do_longlisti
 
     def do_source(self, arg):
         """source expression
@@ -1763,10 +1766,11 @@ if __doc__ is not None:
     # unfortunately we can't guess this order from the class definition
     _help_order = [
         'help', 'where', 'down', 'up', 'break', 'tbreak', 'clear', 'disable',
-        'enable', 'ignore', 'condition', 'commands', 'step', 'stepinst',
-        'next', 'nextinst', 'until', 'jump', 'return', 'retval', 'run',
-        'continue', 'list', 'longlist', 'args', 'p', 'pp', 'whatis', 'source',
-        'display', 'undisplay', 'interact', 'alias', 'unalias', 'debug', 'quit',
+        'enable', 'ignore', 'condition', 'commands', 'step', 'stepi',
+        'next', 'nexti', 'until', 'jump', 'return', 'retval', 'run',
+        'continue', 'list', 'listi', 'longlist', 'longlisti', 'args', 'p',
+        'pp', 'whatis', 'source', 'display', 'undisplay', 'interact', 'alias',
+        'unalias', 'debug', 'quit',
     ]
 
     for _command in _help_order:

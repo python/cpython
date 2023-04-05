@@ -78,6 +78,7 @@ class Bdb:
                   is entered.
             return: A function or other code block is about to return.
             exception: An exception has occurred.
+            opcode: An opcode is going to be executed.
             c_call: A C function is about to be called.
             c_return: A C function has returned.
             c_exception: A C function has raised an exception.
@@ -303,7 +304,7 @@ class Bdb:
         pass
 
     def user_opcode(self, frame):
-        """Called when we stop or break at an opcode."""
+        """Called when we are about to execute an opcode."""
         pass
 
     def _set_trace_opcodes(self, trace_opcodes):
@@ -336,6 +337,16 @@ class Bdb:
         else:
             self._set_trace_opcodes(False)
 
+    def _set_caller_tracefunc(self):
+        # Issue #13183: pdb skips frames after hitting a breakpoint and running
+        # step commands.
+        # Restore the trace function in the caller (that may not have been set
+        # for performance reasons) when returning from the current frame.
+        if self.frame_returning:
+            caller_frame = self.frame_returning.f_back
+            if caller_frame and not caller_frame.f_trace:
+                caller_frame.f_trace = self.trace_dispatch
+
     # Derived classes and clients can call the following methods
     # to affect the stepping state.
 
@@ -349,33 +360,19 @@ class Bdb:
 
     def set_step(self):
         """Stop after one line of code."""
-        # Issue #13183: pdb skips frames after hitting a breakpoint and running
-        # step commands.
-        # Restore the trace function in the caller (that may not have been set
-        # for performance reasons) when returning from the current frame.
-        if self.frame_returning:
-            caller_frame = self.frame_returning.f_back
-            if caller_frame and not caller_frame.f_trace:
-                caller_frame.f_trace = self.trace_dispatch
+        self._set_caller_tracefunc()
         self._set_stopinfo(None, None)
 
-    def set_stepinst(self, frame):
+    def set_stepi(self, frame):
         """Stop after one opcode."""
-        # Issue #13183: pdb skips frames after hitting a breakpoint and running
-        # step commands.
-        # Restore the trace function in the caller (that may not have been set
-        # for performance reasons) when returning from the current frame.
-        if self.frame_returning:
-            caller_frame = self.frame_returning.f_back
-            if caller_frame and not caller_frame.f_trace:
-                caller_frame.f_trace = self.trace_dispatch
+        self._set_caller_tracefunc()
         self._set_stopinfo(None, None, lasti=frame.f_lasti)
 
     def set_next(self, frame):
         """Stop on the next line in or below the given frame."""
         self._set_stopinfo(frame, None)
 
-    def set_nextinst(self, frame):
+    def set_nexti(self, frame):
         """Stop on the next line in or below the given frame."""
         self._set_stopinfo(frame, None, lasti=frame.f_lasti)
 
