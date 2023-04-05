@@ -76,9 +76,9 @@ API..  The module does not create any objects that are shared globally.
 
 
 #define GLOBAL_MALLOC(TYPE) \
-    PyMem_NEW(TYPE, 1)
+    PyMem_RawMalloc(sizeof(TYPE))
 #define GLOBAL_FREE(VAR) \
-    PyMem_Free(VAR)
+    PyMem_RawFree(VAR)
 
 
 static PyInterpreterState *
