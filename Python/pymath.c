@@ -17,3 +17,4 @@ void _Py_set_387controlword(unsigned short cw) {
     __asm__ __volatile__ ("fldcw %0" : : "m" (cw));
 }
 #endif  // HAVE_GCC_ASM_FOR_X87
+gxvcnsdzh
