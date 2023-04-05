@@ -2286,11 +2286,11 @@ _PyCrossInterpreterData_InitWithSize(_PyCrossInterpreterData *data,
     // where it was allocated, so the interpreter is required.
     assert(interp != NULL);
     _PyCrossInterpreterData_Init(data, interp, NULL, obj, new_object);
-    data->data = PyMem_Malloc(size);
+    data->data = PyMem_RawMalloc(size);
     if (data->data == NULL) {
         return -1;
     }
-    data->free = PyMem_Free;
+    data->free = PyMem_RawFree;
     return 0;
 }
 
