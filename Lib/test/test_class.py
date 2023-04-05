@@ -2,6 +2,7 @@
 
 import unittest
 
+
 testmeths = [
 
 # Binary operations
@@ -669,7 +670,7 @@ class ClassTests(unittest.TestCase):
             AttributeError,
             "'C' object has no attribute 'x'"
         ):
-            B().x = 0
+            C().x = 0
 
         error_msg = "'B' object attribute 'y' is read-only"
         with self.assertRaisesRegex(AttributeError, error_msg):
