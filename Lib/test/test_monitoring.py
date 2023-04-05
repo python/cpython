@@ -794,16 +794,16 @@ class TestLineAndInstructionEvents(CheckEvents):
 
         self.check_events(func1, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
             ('line', 'check_events', 10),
-            ('instruction', 'func1', 1),
-            ('line', 'func1', 1),
             ('instruction', 'func1', 2),
-            ('instruction', 'func1', 3),
-            ('line', 'func1', 2),
+            ('line', 'func1', 1),
             ('instruction', 'func1', 4),
-            ('instruction', 'func1', 5),
-            ('line', 'func1', 3),
             ('instruction', 'func1', 6),
-            ('instruction', 'func1', 7),
+            ('line', 'func1', 2),
+            ('instruction', 'func1', 8),
+            ('instruction', 'func1', 10),
+            ('line', 'func1', 3),
+            ('instruction', 'func1', 12),
+            ('instruction', 'func1', 14),
             ('line', 'check_events', 11)])
 
     def test_c_call(self):
@@ -815,19 +815,19 @@ class TestLineAndInstructionEvents(CheckEvents):
 
         self.check_events(func2, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
             ('line', 'check_events', 10),
-            ('instruction', 'func2', 1),
-            ('line', 'func2', 1),
             ('instruction', 'func2', 2),
-            ('instruction', 'func2', 3),
-            ('line', 'func2', 2),
+            ('line', 'func2', 1),
             ('instruction', 'func2', 4),
-            ('instruction', 'func2', 14),
-            ('instruction', 'func2', 15),
-            ('instruction', 'func2', 20),
-            ('instruction', 'func2', 21),
+            ('instruction', 'func2', 6),
+            ('line', 'func2', 2),
+            ('instruction', 'func2', 8),
+            ('instruction', 'func2', 28),
+            ('instruction', 'func2', 30),
+            ('instruction', 'func2', 40),
+            ('instruction', 'func2', 42),
             ('line', 'func2', 3),
-            ('instruction', 'func2', 22),
-            ('instruction', 'func2', 23),
+            ('instruction', 'func2', 44),
+            ('instruction', 'func2', 46),
             ('line', 'check_events', 11)])
 
     def test_try_except(self):
@@ -842,25 +842,25 @@ class TestLineAndInstructionEvents(CheckEvents):
 
         self.check_events(func3, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
             ('line', 'check_events', 10),
-            ('instruction', 'func3', 1),
-            ('line', 'func3', 1),
             ('instruction', 'func3', 2),
-            ('line', 'func3', 2),
-            ('instruction', 'func3', 3),
+            ('line', 'func3', 1),
             ('instruction', 'func3', 4),
+            ('line', 'func3', 2),
+            ('instruction', 'func3', 6),
+            ('instruction', 'func3', 8),
             ('line', 'func3', 3),
-            ('instruction', 'func3', 9),
-            ('instruction', 'func3', 10),
-            ('instruction', 'func3', 11),
+            ('instruction', 'func3', 18),
+            ('instruction', 'func3', 20),
+            ('instruction', 'func3', 22),
             ('line', 'func3', 4),
-            ('instruction', 'func3', 12),
+            ('instruction', 'func3', 24),
             ('line', 'func3', 5),
-            ('instruction', 'func3', 13),
-            ('instruction', 'func3', 14),
-            ('instruction', 'func3', 15),
+            ('instruction', 'func3', 26),
+            ('instruction', 'func3', 28),
+            ('instruction', 'func3', 30),
             ('line', 'func3', 6),
-            ('instruction', 'func3', 16),
-            ('instruction', 'func3', 17),
+            ('instruction', 'func3', 32),
+            ('instruction', 'func3', 34),
             ('line', 'check_events', 11)])
 
 class TestInstallIncrementallly(unittest.TestCase):
@@ -891,10 +891,10 @@ class TestInstallIncrementallly(unittest.TestCase):
         line1 = 1
 
     MUST_INCLUDE_LI = [
-            ('instruction', 'func1', 1),
-            ('line', 'func1', 1),
             ('instruction', 'func1', 2),
-            ('instruction', 'func1', 3)]
+            ('line', 'func1', 1),
+            ('instruction', 'func1', 4),
+            ('instruction', 'func1', 6)]
 
     def test_line_then_instruction(self):
         recorders = [ LineRecorder, InstructionRecorder ]
@@ -911,11 +911,11 @@ class TestInstallIncrementallly(unittest.TestCase):
         len(())
 
     MUST_INCLUDE_CI = [
-            ('instruction', 'func2', 1),
+            ('instruction', 'func2', 2),
             ('call', 'func2', sys.monitoring.MISSING),
             ('call', 'len', ()),
-            ('instruction', 'func2', 6),
-            ('instruction', 'func2', 7)]
+            ('instruction', 'func2', 12),
+            ('instruction', 'func2', 14)]
 
 
 

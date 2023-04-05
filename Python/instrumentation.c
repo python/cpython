@@ -924,8 +924,11 @@ call_instrumentation_vector(
     assert(instrumentation_cross_checks(tstate->interp, code));
     assert(args[1] == NULL);
     args[1] = (PyObject *)code;
-    int offset = instr - _PyCode_CODE(code);
-    PyObject *offset_obj = PyLong_FromSsize_t(offset);
+    int offset = (int)(instr - _PyCode_CODE(code));
+    /* Offset visible to user should be the offset in bytes, as that is the
+     * convention for APIs involving code offsets. */
+    int bytes_offset = offset * (int)sizeof(_Py_CODEUNIT);
+    PyObject *offset_obj = PyLong_FromSsize_t(bytes_offset);
     if (offset_obj == NULL) {
         return -1;
     }
@@ -996,8 +999,8 @@ _Py_call_instrumentation_jump(
     assert(frame->prev_instr == instr);
     frame->prev_instr = target;
     PyCodeObject *code = frame->f_code;
-    int to = target - _PyCode_CODE(code);
-    PyObject *to_obj = PyLong_FromLong(to);
+    int to = (int)(target - _PyCode_CODE(code));
+    PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
     if (to_obj == NULL) {
         return -1;
     }
@@ -1066,7 +1069,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     PyCodeObject *code = frame->f_code;
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
-    int i = instr - _PyCode_CODE(code);
+    int i = (int)(instr - _PyCode_CODE(code));
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
     _PyCoLineInstrumentationData *line_data = &monitoring->lines[i];
     uint8_t original_opcode = line_data->original_opcode;
@@ -1121,7 +1124,7 @@ _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame*
     PyCodeObject *code = frame->f_code;
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
-    int offset = instr - _PyCode_CODE(code);
+    int offset = (int)(instr - _PyCode_CODE(code));
     _PyCoMonitoringData *instrumentation_data = code->_co_monitoring;
     assert(instrumentation_data->per_instruction_opcodes);
     int next_opcode = instrumentation_data->per_instruction_opcodes[offset];
@@ -1134,7 +1137,8 @@ _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame*
         (interp->monitors.tools[PY_MONITORING_EVENT_INSTRUCTION] |
          code->_co_monitoring->local_monitors.tools[PY_MONITORING_EVENT_INSTRUCTION]
         );
-    PyObject *offset_obj = PyLong_FromSsize_t(offset);
+    int bytes_offset = offset * (int)sizeof(_Py_CODEUNIT);
+    PyObject *offset_obj = PyLong_FromSsize_t(bytes_offset);
     if (offset_obj == NULL) {
         return -1;
     }

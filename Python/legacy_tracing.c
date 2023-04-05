@@ -264,9 +264,9 @@ sys_trace_jump_func(
         Py_RETURN_NONE;
     }
     assert(PyVectorcall_NARGS(nargsf) == 3);
-    int from = _PyLong_AsInt(args[1]);
+    int from = _PyLong_AsInt(args[1])/sizeof(_Py_CODEUNIT);
     assert(from >= 0);
-    int to = _PyLong_AsInt(args[2]);
+    int to = _PyLong_AsInt(args[2])/sizeof(_Py_CODEUNIT);
     assert(to >= 0);
     PyFrameObject *frame = PyEval_GetFrame();
     if (frame == NULL) {
@@ -311,7 +311,7 @@ sys_trace_exception_handled(
     assert(PyCode_Check(code));
     assert(code == frame->f_frame->f_code);
     assert(PyLong_Check(args[1]));
-    int offset = _PyLong_AsInt(args[1]);
+    int offset = _PyLong_AsInt(args[1])/sizeof(_Py_CODEUNIT);
     /* We can call _Py_Instrumentation_GetLine because we always set
     * line events for tracing */
     int line = _Py_Instrumentation_GetLine(code, offset);
