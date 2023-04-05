@@ -437,7 +437,6 @@ _cache_format = {
     "CALL": {
         "counter": 1,
         "func_version": 2,
-        "min_args": 1,
     },
     "STORE_SUBSCR": {
         "counter": 1,

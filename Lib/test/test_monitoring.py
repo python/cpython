@@ -823,11 +823,11 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func2', 8),
             ('instruction', 'func2', 28),
             ('instruction', 'func2', 30),
+            ('instruction', 'func2', 38),
             ('instruction', 'func2', 40),
-            ('instruction', 'func2', 42),
             ('line', 'func2', 3),
+            ('instruction', 'func2', 42),
             ('instruction', 'func2', 44),
-            ('instruction', 'func2', 46),
             ('line', 'check_events', 11)])
 
     def test_try_except(self):
