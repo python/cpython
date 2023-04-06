@@ -1367,7 +1367,6 @@ class ClassCreationTests(unittest.TestCase):
         class C(B[int]): pass
         class D(B[str], float): pass
         self.assertIsNone(types.get_orig_bases(A))
-        self.assertIsNone(types.get_orig_bases(B))
         self.assertEqual(types.get_orig_bases(B), (typing.Generic[T],))
         self.assertEqual(types.get_orig_bases(C), (B[int],))
         self.assertIsNone(types.get_orig_bases(int))
