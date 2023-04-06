@@ -253,8 +253,8 @@ class FindmatchTest(unittest.TestCase):
 
         with self.assertWarnsRegex(mailcap.UnsafeMailcapInput,
                                    'Refusing to use mailcap with filename.*Use a safe temporary filename.'):
-            self.assertEqual(mailcap.findmatch(MAILCAPDICT,
-                                               "audio/wav", filename="foo*.txt"), (None, None))
+            unsafe_filename = mailcap.findmatch(MAILCAPDICT,"audio/wav", filename="foo*.txt")
+            self.assertEqual(unsafe_filename, (None, None))
 
     def _run_cases(self, cases):
         for c in cases:
