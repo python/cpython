@@ -8,8 +8,11 @@ from test import support
 import unittest
 from unittest.case import _Outcome
 
-from test.test_unittest.support import (LoggingResult,
-                                   ResultWithNoStartTestRunStopTestRun)
+from test.test_unittest.support import (
+    BufferedWriter,
+    LoggingResult,
+    ResultWithNoStartTestRunStopTestRun,
+)
 
 
 def resultFactory(*_):
@@ -1176,6 +1179,7 @@ class Test_TextTestRunner(unittest.TestCase):
         self.assertTrue(runner.descriptions)
         self.assertEqual(runner.resultclass, unittest.TextTestResult)
         self.assertFalse(runner.tb_locals)
+        self.assertIsNone(runner.durations)
 
     def test_multiple_inheritance(self):
         class AResult(unittest.TestResult):
@@ -1361,6 +1365,65 @@ class Test_TextTestRunner(unittest.TestCase):
         f = io.StringIO()
         runner = unittest.TextTestRunner(f)
         self.assertTrue(runner.stream.stream is f)
+
+    def test_durations(self):
+        def run(test, expect_durations):
+            stream = BufferedWriter()
+            runner = unittest.TextTestRunner(stream=stream, durations=5, verbosity=2)
+            result = runner.run(test)
+            self.assertEqual(result.durations, 5)
+            stream.flush()
+            text = stream.getvalue()
+            regex = r"\n\d+.\d\d\ds"
+            if expect_durations:
+                self.assertEqual(len(result.collectedDurations), 1)
+                self.assertIn('Slowest test durations', text)
+                self.assertRegex(text, regex)
+            else:
+                self.assertEqual(len(result.collectedDurations), 0)
+                self.assertNotIn('Slowest test durations', text)
+                self.assertNotRegex(text, regex)
+
+        # success
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                pass
+
+        run(Foo('test_1'), True)
+
+        # failure
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                self.assertEqual(0, 1)
+
+        run(Foo('test_1'), True)
+
+        # error
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                1 / 0
+
+        run(Foo('test_1'), True)
+
+
+        # error in setUp and tearDown
+        class Foo(unittest.TestCase):
+            def setUp(self):
+                1 / 0
+            tearDown = setUp
+            def test_1(self):
+                pass
+
+        run(Foo('test_1'), True)
+
+        # skip (expect no durations)
+        class Foo(unittest.TestCase):
+            @unittest.skip("reason")
+            def test_1(self):
+                pass
+
+        run(Foo('test_1'), False)
+
 
 
 if __name__ == "__main__":
