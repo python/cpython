@@ -1365,6 +1365,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
     int opcode = 0;
     int oparg = 0;
     int nextop = 0;
+    int nextnextop = 0;
     for (int i = 0; i < bb->b_iused; i++) {
         cfg_instr *inst = &bb->b_instr[i];
         bool is_copy_of_load_const = (opcode == LOAD_CONST &&
@@ -1383,8 +1384,19 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
             }
         }
         nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
+        nextnextop = i+2 < bb->b_iused ? bb->b_instr[i+2].i_opcode : 0;
         assert(!IS_ASSEMBLER_OPCODE(opcode));
         switch (opcode) {
+            case LOAD_FAST:
+            {
+                if (nextop == LOAD_FAST && nextnextop == SWAP && bb->b_instr[i+2].i_oparg == 2) {
+                    cfg_instr tmp = *inst;
+                    bb->b_instr[i] = bb->b_instr[i+1];
+                    bb->b_instr[i+1] = tmp;
+                    INSTR_SET_OP0(&bb->b_instr[i+2], NOP);
+                }
+                break;
+            }
             /* Remove LOAD_CONST const; conditional jump */
             case LOAD_CONST:
             {
