@@ -249,6 +249,7 @@ class PurePath(object):
     __slots__ = (
         '_raw_path', '_drv', '_root', '_tail_cached',
         '_str', '_hash', '_parts_normcase_cached',
+        '_str_normcase_cached',
     )
     _flavour = os.path
 
@@ -368,24 +369,33 @@ class PurePath(object):
         return prefix + urlquote_from_bytes(os.fsencode(path))
 
     @property
+    def _str_normcase(self):
+        # String with normalized case, for hashing and equality checks
+        try:
+            return self._str_normcase_cached
+        except AttributeError:
+            self._str_normcase_cached = self._flavour.normcase(str(self))
+            return self._str_normcase_cached
+
+    @property
     def _parts_normcase(self):
-        # Cached parts with normalized case, for hashing and comparison.
+        # Cached parts with normalized case, for comparisons.
         try:
             return self._parts_normcase_cached
         except AttributeError:
-            self._parts_normcase_cached = [self._flavour.normcase(p) for p in self.parts]
+            self._parts_normcase_cached = self._str_normcase.split(self._flavour.sep)
             return self._parts_normcase_cached
 
     def __eq__(self, other):
         if not isinstance(other, PurePath):
             return NotImplemented
-        return self._parts_normcase == other._parts_normcase and self._flavour is other._flavour
+        return self._str_normcase == other._str_normcase and self._flavour is other._flavour
 
     def __hash__(self):
         try:
             return self._hash
         except AttributeError:
-            self._hash = hash(tuple(self._parts_normcase))
+            self._hash = hash(self._str_normcase)
             return self._hash
 
     def __lt__(self, other):
@@ -632,9 +642,9 @@ class PurePath(object):
         Return True if this path matches the given pattern.
         """
         pat = type(self)(path_pattern)
-        pat_parts = pat._parts_normcase
-        if not pat_parts:
+        if not pat.parts:
             raise ValueError("empty pattern")
+        pat_parts = pat._parts_normcase
         parts = self._parts_normcase
         if pat.drive or pat.root:
             if len(pat_parts) != len(parts):
