@@ -938,6 +938,7 @@ extern "C" {
     INIT_ID(fix_imports), \
     INIT_ID(flags), \
     INIT_ID(flush), \
+    INIT_ID(fname), \
     INIT_ID(follow_symlinks), \
     INIT_ID(format), \
     INIT_ID(frequency), \
@@ -1057,6 +1058,7 @@ extern "C" {
     INIT_ID(modules), \
     INIT_ID(mro), \
     INIT_ID(msg), \
+    INIT_ID(mtime), \
     INIT_ID(mycmp), \
     INIT_ID(n), \
     INIT_ID(n_arg), \

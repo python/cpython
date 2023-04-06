@@ -9,7 +9,8 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 
 PyDoc_STRVAR(zlib_compress__doc__,
-"compress($module, data, /, level=Z_DEFAULT_COMPRESSION, wbits=MAX_WBITS)\n"
+"compress($module, data, /, level=Z_DEFAULT_COMPRESSION,\n"
+"         wbits=MAX_WBITS, mtime=0)\n"
 "--\n"
 "\n"
 "Returns a bytes object containing compressed data.\n"
@@ -19,13 +20,16 @@ PyDoc_STRVAR(zlib_compress__doc__,
 "  level\n"
 "    Compression level, in 0-9 or -1.\n"
 "  wbits\n"
-"    The window buffer size and container format.");
+"    The window buffer size and container format.\n"
+"  mtime\n"
+"    Last modification time. Valid only for gzip archives (wbits >= 16).");
 
 #define ZLIB_COMPRESS_METHODDEF    \
     {"compress", _PyCFunction_CAST(zlib_compress), METH_FASTCALL|METH_KEYWORDS, zlib_compress__doc__},
 
 static PyObject *
-zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits);
+zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits,
+                   long mtime);
 
 static PyObject *
 zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -33,14 +37,14 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(level), &_Py_ID(wbits), },
+        .ob_item = { &_Py_ID(level), &_Py_ID(wbits), &_Py_ID(mtime), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -49,20 +53,21 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "level", "wbits", NULL};
+    static const char * const _keywords[] = {"", "level", "wbits", "mtime", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "compress",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     int level = Z_DEFAULT_COMPRESSION;
     int wbits = MAX_WBITS;
+    long mtime = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 4, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -85,12 +90,21 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             goto skip_optional_pos;
         }
     }
-    wbits = PyLong_AsInt(args[2]);
-    if (wbits == -1 && PyErr_Occurred()) {
+    if (args[2]) {
+        wbits = PyLong_AsInt(args[2]);
+        if (wbits == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    mtime = PyLong_AsLong(args[3]);
+    if (mtime == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_pos:
-    return_value = zlib_compress_impl(module, &data, level, wbits);
+    return_value = zlib_compress_impl(module, &data, level, wbits, mtime);
 
 exit:
     /* Cleanup for data */
@@ -206,7 +220,8 @@ exit:
 PyDoc_STRVAR(zlib_compressobj__doc__,
 "compressobj($module, /, level=Z_DEFAULT_COMPRESSION, method=DEFLATED,\n"
 "            wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL,\n"
-"            strategy=Z_DEFAULT_STRATEGY, zdict=None)\n"
+"            strategy=Z_DEFAULT_STRATEGY, zdict=None, mtime=0,\n"
+"            fname=None)\n"
 "--\n"
 "\n"
 "Return a compressor object.\n"
@@ -231,14 +246,19 @@ PyDoc_STRVAR(zlib_compressobj__doc__,
 "    Z_DEFAULT_STRATEGY, Z_FILTERED, and Z_HUFFMAN_ONLY.\n"
 "  zdict\n"
 "    The predefined compression dictionary - a sequence of bytes\n"
-"    containing subsequences that are likely to occur in the input data.");
+"    containing subsequences that are likely to occur in the input data.\n"
+"  mtime\n"
+"    Last modification time. Valid only for gzip archives.\n"
+"  fname\n"
+"    File name. Valid only for gzip archives.");
 
 #define ZLIB_COMPRESSOBJ_METHODDEF    \
     {"compressobj", _PyCFunction_CAST(zlib_compressobj), METH_FASTCALL|METH_KEYWORDS, zlib_compressobj__doc__},
 
 static PyObject *
 zlib_compressobj_impl(PyObject *module, int level, int method, int wbits,
-                      int memLevel, int strategy, Py_buffer *zdict);
+                      int memLevel, int strategy, Py_buffer *zdict,
+                      long mtime, Py_buffer *fname);
 
 static PyObject *
 zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -246,14 +266,14 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 6
+    #define NUM_KEYWORDS 8
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(level), &_Py_ID(method), &_Py_ID(wbits), &_Py_ID(memLevel), &_Py_ID(strategy), &_Py_ID(zdict), },
+        .ob_item = { &_Py_ID(level), &_Py_ID(method), &_Py_ID(wbits), &_Py_ID(memLevel), &_Py_ID(strategy), &_Py_ID(zdict), &_Py_ID(mtime), &_Py_ID(fname), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -262,14 +282,14 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"level", "method", "wbits", "memLevel", "strategy", "zdict", NULL};
+    static const char * const _keywords[] = {"level", "method", "wbits", "memLevel", "strategy", "zdict", "mtime", "fname", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "compressobj",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[6];
+    PyObject *argsbuf[8];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int level = Z_DEFAULT_COMPRESSION;
     int method = DEFLATED;
@@ -277,8 +297,10 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     int memLevel = DEF_MEM_LEVEL;
     int strategy = Z_DEFAULT_STRATEGY;
     Py_buffer zdict = {NULL, NULL};
+    long mtime = 0;
+    Py_buffer fname = {NULL, NULL};
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 6, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 8, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -330,20 +352,45 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    if (PyObject_GetBuffer(args[5], &zdict, PyBUF_SIMPLE) != 0) {
+    if (args[5]) {
+        if (PyObject_GetBuffer(args[5], &zdict, PyBUF_SIMPLE) != 0) {
+            goto exit;
+        }
+        if (!PyBuffer_IsContiguous(&zdict, 'C')) {
+            _PyArg_BadArgument("compressobj", "argument 'zdict'", "contiguous buffer", args[5]);
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[6]) {
+        mtime = PyLong_AsLong(args[6]);
+        if (mtime == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (PyObject_GetBuffer(args[7], &fname, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&zdict, 'C')) {
-        _PyArg_BadArgument("compressobj", "argument 'zdict'", "contiguous buffer", args[5]);
+    if (!PyBuffer_IsContiguous(&fname, 'C')) {
+        _PyArg_BadArgument("compressobj", "argument 'fname'", "contiguous buffer", args[7]);
         goto exit;
     }
 skip_optional_pos:
-    return_value = zlib_compressobj_impl(module, level, method, wbits, memLevel, strategy, &zdict);
+    return_value = zlib_compressobj_impl(module, level, method, wbits, memLevel, strategy, &zdict, mtime, &fname);
 
 exit:
     /* Cleanup for zdict */
     if (zdict.obj) {
        PyBuffer_Release(&zdict);
+    }
+    /* Cleanup for fname */
+    if (fname.obj) {
+       PyBuffer_Release(&fname);
     }
 
     return return_value;
@@ -1129,4 +1176,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=6d90c72ba2dd04c5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6124e51888f71a3c input=a9049054013a1b77]*/

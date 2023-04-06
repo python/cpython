@@ -19,6 +19,7 @@
 
 // Blocks output buffer wrappers
 #include "pycore_blocks_output_buffer.h"
+#include "pycore_pymem.h"
 
 #if OUTPUT_BUFFER_MAX_BLOCK_SIZE > UINT32_MAX
     #error "The maximum block size accepted by zlib is UINT32_MAX."
@@ -219,6 +220,7 @@ typedef struct
     bool is_initialised;
     PyObject *zdict;
     PyThread_type_lock lock;
+    gz_header gz;
 } compobject;
 
 static void
@@ -248,6 +250,13 @@ zlib_error(zlibstate *state, z_stream zst, int err, const char *msg)
         PyErr_Format(state->ZlibError, "Error %d %s", err, msg);
     else
         PyErr_Format(state->ZlibError, "Error %d %s: %.200s", err, msg, zmsg);
+}
+
+static void
+init_gz_header(gz_header *gz)
+{
+    memset(gz, 0, sizeof(*gz));
+    gz->os = 0xff;  // unknown OS
 }
 
 /*[clinic input]
@@ -283,6 +292,7 @@ newcompobject(PyTypeObject *type)
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
         return NULL;
     }
+    init_gz_header(&self->gz);
     return self;
 }
 
@@ -319,18 +329,22 @@ zlib.compress
         Compression level, in 0-9 or -1.
     wbits: int(c_default="MAX_WBITS") = MAX_WBITS
         The window buffer size and container format.
+    mtime: long(c_default="0") = 0
+        Last modification time. Valid only for gzip archives (wbits >= 16).
 
 Returns a bytes object containing compressed data.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
-/*[clinic end generated code: output=46bd152fadd66df2 input=c4d06ee5782a7e3f]*/
+zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits,
+                   long mtime)
+/*[clinic end generated code: output=11cd0e9d320110f0 input=f566658037d72992]*/
 {
     PyObject *return_value;
     int flush;
     z_stream zst;
     _BlocksOutputBuffer buffer = {.list = NULL};
+    gz_header gz;
 
     zlibstate *state = get_zlib_state(module);
 
@@ -362,6 +376,17 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
         deflateEnd(&zst);
         zlib_error(state, zst, err, "while compressing data");
         goto error;
+    }
+
+    if (wbits >= 16) {
+        init_gz_header(&gz);
+        gz.time = mtime;
+        err = deflateSetHeader(&zst, &gz);
+        if (err != Z_OK) {
+            zlib_error(state, zst, err, "while setting mtime");
+            deflateEnd(&zst);
+            goto error;
+        }
     }
 
     do {
@@ -555,14 +580,19 @@ zlib.compressobj
     zdict: Py_buffer = None
         The predefined compression dictionary - a sequence of bytes
         containing subsequences that are likely to occur in the input data.
+    mtime: long(c_default="0") = 0
+        Last modification time. Valid only for gzip archives.
+    fname: Py_buffer = None
+        File name. Valid only for gzip archives.
 
 Return a compressor object.
 [clinic start generated code]*/
 
 static PyObject *
 zlib_compressobj_impl(PyObject *module, int level, int method, int wbits,
-                      int memLevel, int strategy, Py_buffer *zdict)
-/*[clinic end generated code: output=8b5bed9c8fc3814d input=2fa3d026f90ab8d5]*/
+                      int memLevel, int strategy, Py_buffer *zdict,
+                      long mtime, Py_buffer *fname)
+/*[clinic end generated code: output=36c8d93984d14271 input=e996fed90b0ca45d]*/
 {
     zlibstate *state = get_zlib_state(module);
     if (zdict->buf != NULL && (size_t)zdict->len > UINT_MAX) {
@@ -583,6 +613,23 @@ zlib_compressobj_impl(PyObject *module, int level, int method, int wbits,
     switch (err) {
     case Z_OK:
         self->is_initialised = 1;
+        if (wbits >= 16) {
+            self->gz.time = mtime;
+            if (fname->buf != NULL) {
+                self->gz.name = PyMem_Malloc(fname->len + 1);
+                if (self->gz.name == NULL) {
+                    PyErr_SetNone(PyExc_MemoryError);
+                    goto error;
+                }
+                memcpy(self->gz.name, fname->buf, fname->len);
+                self->gz.name[fname->len] = 0;
+            }
+            err = deflateSetHeader(&self->zst, &self->gz);
+            if (err != Z_OK) {
+                PyErr_SetString(PyExc_ValueError, "Invalid header");
+                goto error;
+            }
+        }
         if (zdict->buf == NULL) {
             goto success;
         } else {
@@ -718,8 +765,10 @@ Dealloc(compobject *self)
 static void
 Comp_dealloc(compobject *self)
 {
-    if (self->is_initialised)
+    if (self->is_initialised) {
         deflateEnd(&self->zst);
+        PyMem_Free(self->gz.name);
+    }
     Dealloc(self);
 }
 
@@ -1095,6 +1144,13 @@ zlib_Compress_copy_impl(compobject *self, PyTypeObject *cls)
     Py_XSETREF(return_value->unconsumed_tail, Py_NewRef(self->unconsumed_tail));
     Py_XSETREF(return_value->zdict, Py_XNewRef(self->zdict));
     return_value->eof = self->eof;
+    if (self->gz.name != NULL) {
+        return_value->gz.name = (Bytef *)_PyMem_Strdup((char *)self->gz.name);
+        if (return_value->gz.name == NULL) {
+            PyErr_SetNone(PyExc_MemoryError);
+            goto error;
+        }
+    }
 
     /* Mark it as being initialized */
     return_value->is_initialised = 1;
@@ -1351,6 +1407,7 @@ typedef struct {
     bool is_initialised;
     char eof;           /* Py_T_BOOL expects a char */
     char needs_input;
+    gz_header gz;
 } ZlibDecompressor;
 
 /*[clinic input]
@@ -1740,6 +1797,7 @@ ZlibDecompressor__new__(PyTypeObject *cls,
     self->zst.next_in = NULL;
     self->zst.avail_in = 0;
     self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
+    init_gz_header(&self->gz);
     if (self->unused_data == NULL) {
         Py_CLEAR(self);
         return NULL;
@@ -1759,6 +1817,10 @@ ZlibDecompressor__new__(PyTypeObject *cls,
                 Py_DECREF(self);
                 return NULL;
             }
+        }
+        if (wbits >= 16 && inflateGetHeader(&self->zst, &self->gz) < 0) {
+            Py_DECREF(self);
+            return NULL;
         }
         return (PyObject *)self;
     case Z_STREAM_ERROR:
@@ -1821,6 +1883,13 @@ PyDoc_STRVAR(ZlibDecompressor_unused_data__doc__,
 PyDoc_STRVAR(ZlibDecompressor_needs_input_doc,
 "True if more input is needed before more decompressed data can be produced.");
 
+PyDoc_STRVAR(ZlibDecompressor_gz_header_mtime_doc,
+"Modification time if decompressing a gzip archive, otherwise 0.");
+
+PyDoc_STRVAR(ZlibDecompressor_gz_header_done_doc,
+"1 if decompressing a gzip archive and the header is fully read, "
+"-1 if the header is partially read, otherwise 0.");
+
 static PyMemberDef ZlibDecompressor_members[] = {
     {"eof", Py_T_BOOL, offsetof(ZlibDecompressor, eof),
      Py_READONLY, ZlibDecompressor_eof__doc__},
@@ -1828,6 +1897,10 @@ static PyMemberDef ZlibDecompressor_members[] = {
      Py_READONLY, ZlibDecompressor_unused_data__doc__},
     {"needs_input", Py_T_BOOL, offsetof(ZlibDecompressor, needs_input), Py_READONLY,
      ZlibDecompressor_needs_input_doc},
+    {"gz_header_mtime", Py_T_ULONG, offsetof(ZlibDecompressor, gz.time), Py_READONLY,
+     ZlibDecompressor_gz_header_mtime_doc},
+    {"gz_header_done", Py_T_INT, offsetof(ZlibDecompressor, gz.done), Py_READONLY,
+     ZlibDecompressor_gz_header_done_doc},
     {NULL},
 };
 
