@@ -2034,17 +2034,67 @@ class TestWhich(BaseTest, unittest.TestCase):
             rv = shutil.which(relpath, path=base_dir)
             self.assertIsNone(rv)
 
-    def test_cwd(self):
+    @unittest.skipUnless(sys.platform != "win32",
+                         "test is for non win32")
+    def test_cwd_non_win32(self):
         # Issue #16957
         base_dir = os.path.dirname(self.dir)
         with os_helper.change_cwd(path=self.dir):
             rv = shutil.which(self.file, path=base_dir)
-            if sys.platform == "win32":
-                # Windows: current directory implicitly on PATH
+            # non-win32: shouldn't match in the current directory.
+            self.assertIsNone(rv)
+
+    @unittest.skipUnless(sys.platform == "win32",
+                         "test is for win32")
+    def test_cwd_win32(self):
+        base_dir = os.path.dirname(self.dir)
+        with os_helper.change_cwd(path=self.dir):
+            with unittest.mock.patch('shutil._win_path_needs_curdir', return_value=True):
+                rv = shutil.which(self.file, path=base_dir)
+                # Current directory implicitly on PATH
                 self.assertEqual(rv, os.path.join(self.curdir, self.file))
-            else:
-                # Other platforms: shouldn't match in the current directory.
+            with unittest.mock.patch('shutil._win_path_needs_curdir', return_value=False):
+                rv = shutil.which(self.file, path=base_dir)
+                # Current directory not on PATH
                 self.assertIsNone(rv)
+
+    @unittest.skipUnless(sys.platform == "win32",
+                         "test is for win32")
+    def test_cwd_win32_added_before_all_other_path(self):
+        base_dir = pathlib.Path(os.fsdecode(self.dir))
+
+        elsewhere_in_path_dir = base_dir / 'dir1'
+        elsewhere_in_path_dir.mkdir()
+        match_elsewhere_in_path = elsewhere_in_path_dir / 'hello.exe'
+        match_elsewhere_in_path.touch()
+
+        exe_in_cwd = base_dir / 'hello.exe'
+        exe_in_cwd.touch()
+
+        with os_helper.change_cwd(path=base_dir):
+            with unittest.mock.patch('shutil._win_path_needs_curdir', return_value=True):
+                rv = shutil.which('hello.exe', path=elsewhere_in_path_dir)
+
+            self.assertEqual(os.path.abspath(rv), os.path.abspath(exe_in_cwd))
+
+    @unittest.skipUnless(sys.platform == "win32",
+                         "test is for win32")
+    def test_pathext_match_before_path_full_match(self):
+        base_dir = pathlib.Path(os.fsdecode(self.dir))
+        dir1 = base_dir / 'dir1'
+        dir2 = base_dir / 'dir2'
+        dir1.mkdir()
+        dir2.mkdir()
+
+        pathext_match = dir1 / 'hello.com.exe'
+        path_match = dir2 / 'hello.com'
+        pathext_match.touch()
+        path_match.touch()
+
+        test_path = os.pathsep.join([str(dir1), str(dir2)])
+        assert os.path.basename(shutil.which(
+            'hello.com', path=test_path, mode = os.F_OK
+        )).lower() == 'hello.com.exe'
 
     @os_helper.skip_if_dac_override
     def test_non_matching_mode(self):
@@ -2178,6 +2228,32 @@ class TestWhich(BaseTest, unittest.TestCase):
             env['PATHEXT'] = f"{ext};"  # note the ;
             rv = shutil.which(program, path=self.temp_dir)
             self.assertEqual(rv, temp_filexyz.name)
+
+    # See GH-75586
+    @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
+    def test_pathext_applied_on_files_in_path(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env["PATH"] = self.temp_dir
+            env["PATHEXT"] = ".test"
+
+            test_path = pathlib.Path(self.temp_dir) / "test_program.test"
+            test_path.touch(mode=0o755)
+
+            self.assertEqual(shutil.which("test_program"), str(test_path))
+
+    # See GH-75586
+    @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
+    def test_win_path_needs_curdir(self):
+        with unittest.mock.patch('_winapi.NeedCurrentDirectoryForExePath', return_value=True) as need_curdir_mock:
+            self.assertTrue(shutil._win_path_needs_curdir('dontcare', os.X_OK))
+            need_curdir_mock.assert_called_once_with('dontcare')
+            need_curdir_mock.reset_mock()
+            self.assertTrue(shutil._win_path_needs_curdir('dontcare', 0))
+            need_curdir_mock.assert_not_called()
+
+        with unittest.mock.patch('_winapi.NeedCurrentDirectoryForExePath', return_value=False) as need_curdir_mock:
+            self.assertFalse(shutil._win_path_needs_curdir('dontcare', os.X_OK))
+            need_curdir_mock.assert_called_once_with('dontcare')
 
 
 class TestWhichBytes(TestWhich):
