@@ -2527,18 +2527,17 @@ static struct PyMethodDef collections_methods[] = {
     {NULL,       NULL}          /* sentinel */
 };
 
-#define ADD_TYPE(mod, spec, type, base)                                     \
-    do {                                                                    \
-        type = (PyTypeObject *)PyType_FromModuleAndSpec(mod, spec,          \
-                                                        (PyObject *)base);  \
-        if (type == NULL) {                                                 \
-            return -1;                                                      \
-        }                                                                   \
-        if (PyModule_AddType(mod, type) < 0) {                              \
-            return -1;                                                      \
-        }                                                                   \
-        return 0;                                                           \
-    } while (0)
+#define ADD_TYPE(MOD, SPEC, TYPE, BASE) do {                        \
+    TYPE = (PyTypeObject *)PyType_FromMetaclass(NULL, MOD, SPEC,    \
+                                                (PyObject *)BASE);  \
+    if (TYPE == NULL) {                                             \
+        return -1;                                                  \
+    }                                                               \
+    if (PyModule_AddType(MOD, TYPE) < 0) {                          \
+        return -1;                                                  \
+    }                                                               \
+    return 0;                                                       \
+} while (0)
 
 static int
 collections_exec(PyObject *module) {
@@ -2555,6 +2554,8 @@ collections_exec(PyObject *module) {
 
     return 0;
 }
+
+#undef ADD_TYPE
 
 static struct PyModuleDef_Slot collections_slots[] = {
     {Py_mod_exec, collections_exec},
