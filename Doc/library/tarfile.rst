@@ -785,7 +785,7 @@ A ``TarInfo`` object has the following public data attributes:
 
    Return a *new* copy of the :class:`!TarInfo` object with the given attributes
    changed. For example, to return a ``TarInfo`` with the group name set to
-   `'staff'`, use::
+   ``'staff'``, use::
 
        new_tarinfo = old_tarinfo.replace(gname='staff')
 
