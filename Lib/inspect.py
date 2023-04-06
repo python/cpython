@@ -1787,11 +1787,8 @@ def _check_instance(obj, attr):
 
 def _check_class(klass, attr):
     for entry in _static_getmro(klass):
-        if _shadowed_dict(type(entry)) is _sentinel:
-            try:
-                return entry.__dict__[attr]
-            except KeyError:
-                pass
+        if _shadowed_dict(type(entry)) is _sentinel and attr in entry.__dict__:
+            return entry.__dict__[attr]
     return _sentinel
 
 def _is_type(obj):
@@ -1803,11 +1800,9 @@ def _is_type(obj):
 
 def _shadowed_dict(klass):
     for entry in _static_getmro(klass):
-        try:
-            class_dict = _get_dunder_dict_of_class(entry)["__dict__"]
-        except KeyError:
-            pass
-        else:
+        dunder_dict = _get_dunder_dict_of_class(entry)
+        if '__dict__' in dunder_dict:
+            class_dict = dunder_dict['__dict__']
             if not (type(class_dict) is types.GetSetDescriptorType and
                     class_dict.__name__ == "__dict__" and
                     class_dict.__objclass__ is entry):
@@ -1850,11 +1845,11 @@ def getattr_static(obj, attr, default=_sentinel):
     if obj is klass:
         # for types we check the metaclass too
         for entry in _static_getmro(type(klass)):
-            if _shadowed_dict(type(entry)) is _sentinel:
-                try:
-                    return entry.__dict__[attr]
-                except KeyError:
-                    pass
+            if (
+                _shadowed_dict(type(entry)) is _sentinel
+                and attr in entry.__dict__
+            ):
+                return entry.__dict__[attr]
     if default is not _sentinel:
         return default
     raise AttributeError(attr)
