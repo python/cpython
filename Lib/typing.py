@@ -127,7 +127,6 @@ __all__ = [
     'final',
     'get_args',
     'get_origin',
-    'get_orig_class',
     'get_overloads',
     'get_type_hints',
     'is_typeddict',
@@ -2500,28 +2499,6 @@ def get_args(tp):
     if isinstance(tp, types.UnionType):
         return tp.__args__
     return ()
-
-
-def get_orig_class(obj: "Any", /) -> GenericAlias | None:
-    """Get the __orig_class__ for an instance of a Generic subclass.
-
-    Examples::
-
-        class Foo(Generic[T]): ...
-
-        get_orig_class(Foo[int]()) == Foo[int]
-        get_orig_class(list[int]()) == None
-        get_orig_class(int) == None
-
-    Warning
-    -------
-    This will always return None in the inside of the class initalisation
-    process.
-    """
-    try:
-        return obj.__orig_class__
-    except AttributeError:
-        return None
 
 
 def is_typeddict(tp):

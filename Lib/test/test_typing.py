@@ -24,7 +24,7 @@ from typing import assert_type, cast, runtime_checkable
 from typing import get_type_hints
 from typing import get_origin, get_args
 from typing import override
-from typing import get_origin, get_args, get_orig_class
+from typing import get_origin, get_args
 from typing import is_typeddict
 from typing import reveal_type
 from typing import dataclass_transform
@@ -5767,18 +5767,6 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(tuple[Unpack[Ts]]), (Unpack[Ts],))
         self.assertEqual(get_args((*tuple[*Ts],)[0]), (*Ts,))
         self.assertEqual(get_args(Unpack[tuple[Unpack[Ts]]]), (tuple[Unpack[Ts]],))
-
-    def test_get_orig_class(self):
-        T = TypeVar('T')
-        class C(Generic[T]): pass
-        class D(C[int]): ...
-        class E(C[str], float): pass
-        self.assertEqual(get_orig_class(C[int]()), C[int])
-        self.assertIsNone(get_orig_class(C()))
-        self.assertIsNone(get_orig_class(D()))
-        self.assertIsNone(get_orig_class(E()))
-        self.assertIsNone(get_orig_class(list[int]()))
-        self.assertIsNone(get_orig_class(int))
 
 
 class CollectionsAbcTests(BaseTestCase):

@@ -2874,28 +2874,6 @@ Introspection helpers
 
    .. versionadded:: 3.8
 
-.. function:: get_orig_class(obj, /)
-
-    Returns the ``GenericAlias`` object that was instantiated to create ``tp``.
-
-    Examples::
-
-        T = TypeVar("T")
-
-        class Foo(Generic[T]): ...
-
-        get_orig_class(Foo[int]()) == Foo[int]
-        get_orig_class(list[int]()) == None
-        get_orig_class(int) == None
-
-    .. warning::
-
-        This function will always return ``None`` inside of the class's
-        instantiation methods (e.g. ``__new__``, ``__init__`` and any
-        methods called from either of these)
-
-    .. versionadded:: 3.12
-
 .. function:: is_typeddict(tp)
 
    Check if a type is a :class:`TypedDict`.

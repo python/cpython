@@ -1363,16 +1363,21 @@ class ClassCreationTests(unittest.TestCase):
     def test_get_orig_bases(self):
         T = typing.TypeVar('T')
         class A: pass
-        class B(object): pass
-        class C(typing.Generic[T]): pass
-        class D(C[int]): pass
-        class E(C[str], float): pass
+        class B(typing.Generic[T]): pass
+        class C(B[int]): pass
+        class D(B[str], float): pass
         self.assertIsNone(types.get_orig_bases(A))
         self.assertIsNone(types.get_orig_bases(B))
-        self.assertEqual(types.get_orig_bases(C), (typing.Generic[T],))
-        self.assertEqual(types.get_orig_bases(D), (C[int],))
+        self.assertEqual(types.get_orig_bases(B), (typing.Generic[T],))
+        self.assertEqual(types.get_orig_bases(C), (B[int],))
         self.assertIsNone(types.get_orig_bases(int))
-        self.assertEqual(types.get_orig_bases(E), (C[str], float))
+        self.assertEqual(types.get_orig_bases(D), (B[str], float))
+
+        class E(list[T]): pass
+        class F(list[int]): pass
+
+        self.assertEqual(types.get_orig_bases(E), (list[T],))
+        self.assertEqual(types.get_orig_bases(F), (list[int],))
 
     # Many of the following tests are derived from test_descr.py
     def test_prepare_class(self):

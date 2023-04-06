@@ -145,16 +145,23 @@ def _calculate_meta(meta, bases):
 
 
 def get_orig_bases(tp, /) -> tuple[type, ...] | None:
-    """Get the __orig_bases__ (see PEP 560) of a class.
+    r"""
+    Returns the objects in the bases list in the class's definition before
+    they could have been modified by ``__mro_entries__``. This is useful for
+    introspecting ``Generic``\s.
 
     Examples::
 
+        from typing import TypeVar, Generic
+
+        T = TypeVar("T")
+
         class Foo(Generic[T]): ...
 
-        class Bar(Foo[int]): ...
+        class Bar(Foo[int], float): ...
 
-        get_orig_bases(Foo) == Generic[T]
-        get_orig_bases(Bar) == Foo[int]
+        get_orig_bases(Foo) == (Generic[T],)
+        get_orig_bases(Bar) == (Foo[int], float)
         get_orig_bases(int) == None
     """
     if isinstance(tp, type):
