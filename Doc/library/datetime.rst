@@ -160,7 +160,7 @@ The :class:`date`, :class:`.datetime`, :class:`.time`, and :class:`timezone` typ
 share these common features:
 
 - Objects of these types are immutable.
-- Objects of these types are hashable, meaning that they can be used as
+- Objects of these types are :term:`hashable`, meaning that they can be used as
   dictionary keys.
 - Objects of these types support efficient pickling via the :mod:`pickle` module.
 

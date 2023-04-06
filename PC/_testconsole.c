@@ -10,7 +10,7 @@
 #ifdef MS_WINDOWS
 
 #include "pycore_fileutils.h"     // _Py_get_osfhandle()
-#include "..\modules\_io\_iomodule.h"
+#include "pycore_runtime.h"       // _Py_ID()
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -51,7 +51,14 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
 {
     INPUT_RECORD *rec = NULL;
 
-    if (!PyWindowsConsoleIO_Check(file)) {
+    PyTypeObject *winconsoleio_type = (PyTypeObject *)_PyImport_GetModuleAttr(
+            &_Py_ID(_io), &_Py_ID(_WindowsConsoleIO));
+    if (winconsoleio_type == NULL) {
+        return NULL;
+    }
+    int is_subclass = PyObject_TypeCheck(file, winconsoleio_type);
+    Py_DECREF(winconsoleio_type);
+    if (!is_subclass) {
         PyErr_SetString(PyExc_TypeError, "expected raw console object");
         return NULL;
     }

@@ -72,7 +72,7 @@ including `cursors`_ and `transactions`_.
 
 First, we need to create a new database and open
 a database connection to allow :mod:`!sqlite3` to work with it.
-Call :func:`sqlite3.connect` to to create a connection to
+Call :func:`sqlite3.connect` to create a connection to
 the database :file:`tutorial.db` in the current working directory,
 implicitly creating it if it does not exist:
 
@@ -259,7 +259,7 @@ Module functions
 .. function:: connect(database, timeout=5.0, detect_types=0, \
                       isolation_level="DEFERRED", check_same_thread=True, \
                       factory=sqlite3.Connection, cached_statements=128, \
-                      uri=False, \*, \
+                      uri=False, *, \
                       autocommit=sqlite3.LEGACY_TRANSACTION_CONTROL)
 
    Open a connection to an SQLite database.
@@ -272,9 +272,9 @@ Module functions
 
    :param float timeout:
        How many seconds the connection should wait before raising
-       an exception, if the database is locked by another connection.
-       If another connection opens a transaction to modify the database,
-       it will be locked until that transaction is committed.
+       an :exc:`OperationalError` when a table is locked.
+       If another connection opens a transaction to modify a table,
+       that table will be locked until the transaction is committed.
        Default five seconds.
 
    :param int detect_types:
@@ -911,7 +911,7 @@ Connection objects
 
       Call this method from a different thread to abort any queries that might
       be executing on the connection.
-      Aborted queries will raise an exception.
+      Aborted queries will raise an :exc:`OperationalError`.
 
 
    .. method:: set_authorizer(authorizer_callback)
@@ -1442,6 +1442,14 @@ Cursor objects
       and there is no open transaction,
       a transaction is implicitly opened before executing *sql*.
 
+      .. deprecated-removed:: 3.12 3.14
+
+         :exc:`DeprecationWarning` is emitted if
+         :ref:`named placeholders <sqlite3-placeholders>` are used
+         and *parameters* is a sequence instead of a :class:`dict`.
+         Starting with Python 3.14, :exc:`ProgrammingError` will
+         be raised instead.
+
       Use :meth:`executescript` to execute multiple SQL statements.
 
    .. method:: executemany(sql, parameters, /)
@@ -1475,6 +1483,15 @@ Cursor objects
          ]
          # cur is an sqlite3.Cursor object
          cur.executemany("INSERT INTO data VALUES(?)", rows)
+
+      .. deprecated-removed:: 3.12 3.14
+
+         :exc:`DeprecationWarning` is emitted if
+         :ref:`named placeholders <sqlite3-placeholders>` are used
+         and the items in *parameters* are sequences
+         instead of :class:`dict`\s.
+         Starting with Python 3.14, :exc:`ProgrammingError` will
+         be raised instead.
 
    .. method:: executescript(sql_script, /)
 
@@ -1971,7 +1988,7 @@ question marks (qmark style) or named placeholders (named style).
 For the qmark style, *parameters* must be a
 :term:`sequence` whose length must match the number of placeholders,
 or a :exc:`ProgrammingError` is raised.
-For the named style, *parameters* should be
+For the named style, *parameters* must be
 an instance of a :class:`dict` (or a subclass),
 which must contain keys for all named parameters;
 any extra items are ignored.
