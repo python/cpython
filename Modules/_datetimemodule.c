@@ -2792,7 +2792,7 @@ static PyNumberMethods delta_as_number = {
 };
 
 static PyTypeObject PyDateTime_DeltaType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "datetime.timedelta",                               /* tp_name */
     sizeof(PyDateTime_Delta),                           /* tp_basicsize */
     0,                                                  /* tp_itemsize */
@@ -3369,7 +3369,7 @@ static PyMethodDef iso_calendar_date_methods[] = {
 };
 
 static PyTypeObject PyDateTime_IsoCalendarDateType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     .tp_name = "datetime.IsoCalendarDate",
     .tp_basicsize = sizeof(PyDateTime_IsoCalendarDate),
     .tp_repr = (reprfunc) iso_calendar_date_repr,
@@ -3616,7 +3616,7 @@ static PyNumberMethods date_as_number = {
 };
 
 static PyTypeObject PyDateTime_DateType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "datetime.date",                                    /* tp_name */
     sizeof(PyDateTime_Date),                            /* tp_basicsize */
     0,                                                  /* tp_itemsize */
@@ -3842,7 +3842,7 @@ static const char tzinfo_doc[] =
 PyDoc_STR("Abstract base class for time zone info objects.");
 
 static PyTypeObject PyDateTime_TZInfoType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "datetime.tzinfo",                          /* tp_name */
     sizeof(PyDateTime_TZInfo),                  /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -4075,7 +4075,7 @@ static const char timezone_doc[] =
 PyDoc_STR("Fixed offset from UTC implementation of tzinfo.");
 
 static PyTypeObject PyDateTime_TimeZoneType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "datetime.timezone",              /* tp_name */
     sizeof(PyDateTime_TimeZone),      /* tp_basicsize */
     0,                                /* tp_itemsize */
@@ -4744,7 +4744,7 @@ All arguments are optional. tzinfo may be None, or an instance of\n\
 a tzinfo subclass. The remaining arguments may be ints.\n");
 
 static PyTypeObject PyDateTime_TimeType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "datetime.time",                            /* tp_name */
     sizeof(PyDateTime_Time),                    /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -6592,7 +6592,7 @@ static PyNumberMethods datetime_as_number = {
 };
 
 static PyTypeObject PyDateTime_DateTimeType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "datetime.datetime",                        /* tp_name */
     sizeof(PyDateTime_DateTime),                /* tp_basicsize */
     0,                                          /* tp_itemsize */

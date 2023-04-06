@@ -964,7 +964,7 @@ static PyMethodDef frame_methods[] = {
 };
 
 PyTypeObject PyFrame_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "frame",
     offsetof(PyFrameObject, _f_frame_data) +
     offsetof(_PyInterpreterFrame, localsplus),

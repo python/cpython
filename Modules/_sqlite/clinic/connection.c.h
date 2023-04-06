@@ -28,7 +28,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(database), &_Py_ID(timeout), &_Py_ID(detect_types), &_Py_ID(isolation_level), &_Py_ID(check_same_thread), &_Py_ID(factory), &_Py_ID(cached_statements), &_Py_ID(uri), &_Py_ID(autocommit), },
     };
     #undef NUM_KEYWORDS
@@ -170,7 +170,7 @@ pysqlite_connection_cursor(pysqlite_Connection *self, PyObject *const *args, Py_
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(factory), },
     };
     #undef NUM_KEYWORDS
@@ -242,7 +242,7 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(readonly), &_Py_ID(name), },
     };
     #undef NUM_KEYWORDS
@@ -420,7 +420,7 @@ pysqlite_connection_create_function(pysqlite_Connection *self, PyTypeObject *cls
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(name), &_Py_ID(narg), &_Py_ID(func), &_Py_ID(deterministic), },
     };
     #undef NUM_KEYWORDS
@@ -584,7 +584,7 @@ pysqlite_connection_create_aggregate(pysqlite_Connection *self, PyTypeObject *cl
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(name), &_Py_ID(n_arg), &_Py_ID(aggregate_class), },
     };
     #undef NUM_KEYWORDS
@@ -660,7 +660,7 @@ pysqlite_connection_set_authorizer(pysqlite_Connection *self, PyTypeObject *cls,
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(authorizer_callback), },
     };
     #undef NUM_KEYWORDS
@@ -717,7 +717,7 @@ pysqlite_connection_set_progress_handler(pysqlite_Connection *self, PyTypeObject
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(progress_handler), &_Py_ID(n), },
     };
     #undef NUM_KEYWORDS
@@ -779,7 +779,7 @@ pysqlite_connection_set_trace_callback(pysqlite_Connection *self, PyTypeObject *
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(trace_callback), },
     };
     #undef NUM_KEYWORDS
@@ -1038,7 +1038,7 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *const *args, Py_
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(target), &_Py_ID(pages), &_Py_ID(progress), &_Py_ID(name), &_Py_ID(sleep), },
     };
     #undef NUM_KEYWORDS
@@ -1219,7 +1219,7 @@ serialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, Py
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(name), },
     };
     #undef NUM_KEYWORDS
@@ -1308,7 +1308,7 @@ deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, 
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(name), },
     };
     #undef NUM_KEYWORDS

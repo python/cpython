@@ -38,7 +38,7 @@ enum_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(iterable), &_Py_ID(start), },
     };
     #undef NUM_KEYWORDS

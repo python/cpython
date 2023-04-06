@@ -447,7 +447,7 @@ static struct PyMemberDef BaseException_members[] = {
 
 
 static PyTypeObject _PyExc_BaseException = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "BaseException", /*tp_name*/
     sizeof(PyBaseExceptionObject), /*tp_basicsize*/
     0,                          /*tp_itemsize*/
@@ -497,7 +497,7 @@ PyObject *PyExc_BaseException = (PyObject *)&_PyExc_BaseException;
  */
 #define SimpleExtendsException(EXCBASE, EXCNAME, EXCDOC) \
 static PyTypeObject _PyExc_ ## EXCNAME = { \
-    PyVarObject_HEAD_INIT(NULL, 0) \
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0) \
     # EXCNAME, \
     sizeof(PyBaseExceptionObject), \
     0, (destructor)BaseException_dealloc, 0, 0, 0, 0, 0, 0, 0, \
@@ -512,7 +512,7 @@ PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 
 #define MiddlingExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCDOC) \
 static PyTypeObject _PyExc_ ## EXCNAME = { \
-    PyVarObject_HEAD_INIT(NULL, 0) \
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0) \
     # EXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), \
     0, (destructor)EXCSTORE ## _dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
@@ -529,7 +529,7 @@ PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
                                 EXCMETHODS, EXCMEMBERS, EXCGETSET, \
                                 EXCSTR, EXCDOC) \
 static PyTypeObject _PyExc_ ## EXCNAME = { \
-    PyVarObject_HEAD_INIT(NULL, 0) \
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0) \
     # EXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), 0, \
     (destructor)EXCSTORE ## _dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
@@ -2923,7 +2923,7 @@ done:
 }
 
 static PyTypeObject _PyExc_UnicodeEncodeError = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "UnicodeEncodeError",
     sizeof(PyUnicodeErrorObject), 0,
     (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -3030,7 +3030,7 @@ done:
 }
 
 static PyTypeObject _PyExc_UnicodeDecodeError = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "UnicodeDecodeError",
     sizeof(PyUnicodeErrorObject), 0,
     (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -3127,7 +3127,7 @@ done:
 }
 
 static PyTypeObject _PyExc_UnicodeTranslateError = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "UnicodeTranslateError",
     sizeof(PyUnicodeErrorObject), 0,
     (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -3324,7 +3324,7 @@ free_preallocated_memerrors(struct _Py_exc_state *state)
 
 
 PyTypeObject _PyExc_MemoryError = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "MemoryError",
     sizeof(PyBaseExceptionObject),
     0, (destructor)MemoryError_dealloc, 0, 0, 0, 0, 0, 0, 0,

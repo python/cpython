@@ -292,7 +292,7 @@ Python import mechanism to link to one another.\n\
 ");
 
 PyTypeObject PyCapsule_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "PyCapsule",                /*tp_name*/
     sizeof(PyCapsule),          /*tp_basicsize*/
     0,                          /*tp_itemsize*/

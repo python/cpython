@@ -136,7 +136,7 @@ static struct PyMethodDef PyCStgDict_methods[] = {
 };
 
 PyTypeObject PyCStgDict_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "StgDict",
     sizeof(StgDictObject),
     0,

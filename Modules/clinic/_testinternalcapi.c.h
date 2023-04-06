@@ -33,7 +33,7 @@ _testinternalcapi_compiler_codegen(PyObject *module, PyObject *const *args, Py_s
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(ast), &_Py_ID(filename), &_Py_ID(optimize), },
     };
     #undef NUM_KEYWORDS
@@ -96,7 +96,7 @@ _testinternalcapi_optimize_cfg(PyObject *module, PyObject *const *args, Py_ssize
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(instructions), &_Py_ID(consts), },
     };
     #undef NUM_KEYWORDS

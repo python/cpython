@@ -36,7 +36,7 @@ py_blake2b_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(digest_size), &_Py_ID(key), &_Py_ID(salt), &_Py_ID(person), &_Py_ID(fanout), &_Py_ID(depth), &_Py_ID(leaf_size), &_Py_ID(node_offset), &_Py_ID(node_depth), &_Py_ID(inner_size), &_Py_ID(last_node), &_Py_ID(usedforsecurity), },
     };
     #undef NUM_KEYWORDS

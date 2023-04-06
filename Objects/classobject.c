@@ -317,7 +317,7 @@ method_traverse(PyMethodObject *im, visitproc visit, void *arg)
 }
 
 PyTypeObject PyMethod_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     .tp_name = "method",
     .tp_basicsize = sizeof(PyMethodObject),
     .tp_dealloc = (destructor)method_dealloc,
@@ -516,7 +516,7 @@ instancemethod_new_impl(PyTypeObject *type, PyObject *function)
 }
 
 PyTypeObject PyInstanceMethod_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     .tp_name = "instancemethod",
     .tp_basicsize = sizeof(PyInstanceMethodObject),
     .tp_dealloc = instancemethod_dealloc,

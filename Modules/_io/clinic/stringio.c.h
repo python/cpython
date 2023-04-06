@@ -269,7 +269,7 @@ _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(initial_value), &_Py_ID(newline), },
     };
     #undef NUM_KEYWORDS

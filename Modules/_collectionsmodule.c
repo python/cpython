@@ -1603,7 +1603,7 @@ PyDoc_STRVAR(deque_doc,
 A list-like sequence optimized for data accesses near its endpoints.");
 
 static PyTypeObject deque_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "collections.deque",                /* tp_name */
     sizeof(dequeobject),                /* tp_basicsize */
     0,                                  /* tp_itemsize */
@@ -1770,7 +1770,7 @@ static PyMethodDef dequeiter_methods[] = {
 };
 
 static PyTypeObject dequeiter_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_collections._deque_iterator",             /* tp_name */
     sizeof(dequeiterobject),                    /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -1890,7 +1890,7 @@ dequereviter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static PyTypeObject dequereviter_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_collections._deque_reverse_iterator",     /* tp_name */
     sizeof(dequeiterobject),                    /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -2204,7 +2204,7 @@ passed to the dict constructor, including keyword arguments.\n\
 #define DEFERRED_ADDRESS(ADDR) 0
 
 static PyTypeObject defdict_type = {
-    PyVarObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
     "collections.defaultdict",          /* tp_name */
     sizeof(defdictobject),              /* tp_basicsize */
     0,                                  /* tp_itemsize */
@@ -2488,7 +2488,7 @@ static PyMethodDef tuplegetter_methods[] = {
 };
 
 static PyTypeObject tuplegetter_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_collections._tuplegetter",                /* tp_name */
     sizeof(_tuplegetterobject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */

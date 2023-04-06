@@ -2917,7 +2917,7 @@ Construct an immutable array of bytes from:\n\
 static PyObject *bytes_iter(PyObject *seq);
 
 PyTypeObject PyBytes_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "bytes",
     PyBytesObject_SIZE,
     sizeof(char),
@@ -3212,7 +3212,7 @@ static PyMethodDef striter_methods[] = {
 };
 
 PyTypeObject PyBytesIter_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "bytes_iterator",                           /* tp_name */
     sizeof(striterobject),                      /* tp_basicsize */
     0,                                          /* tp_itemsize */

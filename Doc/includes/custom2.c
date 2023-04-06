@@ -90,7 +90,7 @@ static PyMethodDef Custom_methods[] = {
 };
 
 static PyTypeObject CustomType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     .tp_name = "custom2.Custom",
     .tp_doc = PyDoc_STR("Custom objects"),
     .tp_basicsize = sizeof(CustomObject),

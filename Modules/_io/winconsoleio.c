@@ -1128,7 +1128,7 @@ static PyMemberDef winconsoleio_members[] = {
 };
 
 PyTypeObject PyWindowsConsoleIO_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_io._WindowsConsoleIO",
     sizeof(winconsoleio),
     0,

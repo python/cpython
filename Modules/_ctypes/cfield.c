@@ -297,7 +297,7 @@ PyCField_repr(CFieldObject *self)
 }
 
 PyTypeObject PyCField_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes.CField",                                   /* tp_name */
     sizeof(CFieldObject),                       /* tp_basicsize */
     0,                                          /* tp_itemsize */

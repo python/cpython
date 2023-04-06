@@ -140,7 +140,7 @@ static PyMethodDef seqiter_methods[] = {
 };
 
 PyTypeObject PySeqIter_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "iterator",                                 /* tp_name */
     sizeof(seqiterobject),                      /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -262,7 +262,7 @@ static PyMethodDef calliter_methods[] = {
 };
 
 PyTypeObject PyCallIter_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "callable_iterator",                        /* tp_name */
     sizeof(calliterobject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -464,7 +464,7 @@ static PyAsyncMethods anextawaitable_as_async = {
 };
 
 PyTypeObject _PyAnextAwaitable_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "anext_awaitable",                          /* tp_name */
     sizeof(anextawaitableobject),               /* tp_basicsize */
     0,                                          /* tp_itemsize */

@@ -174,7 +174,7 @@ _DictRemover_call(PyObject *myself, PyObject *args, PyObject *kw)
 }
 
 static PyTypeObject DictRemover_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes.DictRemover",                      /* tp_name */
     sizeof(DictRemoverObject),                  /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -427,7 +427,7 @@ StructParam_dealloc(PyObject *myself)
 
 
 static PyTypeObject StructParam_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     .tp_name = "_ctypes.StructParam_Type",
     .tp_basicsize = sizeof(StructParamObject),
     .tp_dealloc = StructParam_dealloc,
@@ -919,7 +919,7 @@ UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
 
 
 PyTypeObject PyCStructType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes.PyCStructType",                            /* tp_name */
     0,                                          /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -961,7 +961,7 @@ PyTypeObject PyCStructType_Type = {
 };
 
 static PyTypeObject UnionType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes.UnionType",                        /* tp_name */
     0,                                          /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -1216,7 +1216,7 @@ static PyMethodDef PyCPointerType_methods[] = {
 };
 
 PyTypeObject PyCPointerType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes.PyCPointerType",                                   /* tp_name */
     0,                                          /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -1588,7 +1588,7 @@ error:
 }
 
 PyTypeObject PyCArrayType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes.PyCArrayType",                     /* tp_name */
     0,                                          /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -2271,7 +2271,7 @@ static PyMethodDef PyCSimpleType_methods[] = {
 };
 
 PyTypeObject PyCSimpleType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes.PyCSimpleType",                                    /* tp_name */
     0,                                          /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -2551,7 +2551,7 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 PyTypeObject PyCFuncPtrType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes.PyCFuncPtrType",                           /* tp_name */
     0,                                          /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -2870,7 +2870,7 @@ static PyMethodDef PyCData_methods[] = {
 };
 
 PyTypeObject PyCData_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes._CData",
     sizeof(CDataObject),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -4251,7 +4251,7 @@ static PyNumberMethods PyCFuncPtr_as_number = {
 };
 
 PyTypeObject PyCFuncPtr_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes.CFuncPtr",
     sizeof(PyCFuncPtrObject),                           /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -4402,7 +4402,7 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyTypeObject Struct_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes.Structure",
     sizeof(CDataObject),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -4444,7 +4444,7 @@ static PyTypeObject Struct_Type = {
 };
 
 static PyTypeObject Union_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes.Union",
     sizeof(CDataObject),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -4764,7 +4764,7 @@ static PyMappingMethods Array_as_mapping = {
 };
 
 PyTypeObject PyCArray_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes.Array",
     sizeof(CDataObject),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -4982,7 +4982,7 @@ Simple_repr(CDataObject *self)
 }
 
 static PyTypeObject Simple_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes._SimpleCData",
     sizeof(CDataObject),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -5364,7 +5364,7 @@ static PyNumberMethods Pointer_as_number = {
 };
 
 PyTypeObject PyCPointer_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes._Pointer",
     sizeof(CDataObject),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -5455,7 +5455,7 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyTypeObject PyComError_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_ctypes.COMError",         /* tp_name */
     sizeof(PyBaseExceptionObject), /* tp_basicsize */
     0,                          /* tp_itemsize */

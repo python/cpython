@@ -5512,7 +5512,7 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 /* Type object for socket objects. */
 
 static PyTypeObject sock_type = {
-    PyVarObject_HEAD_INIT(0, 0)         /* Must fill in type value later */
+    _PyVarObject_HEAD_IMMORTAL_INIT(0, 0)         /* Must fill in type value later */
     "_socket.socket",                           /* tp_name */
     sizeof(PySocketSockObject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */

@@ -35,7 +35,7 @@ _testconsole_write_input(PyObject *module, PyObject *const *args, Py_ssize_t nar
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(file), &_Py_ID(s), },
     };
     #undef NUM_KEYWORDS
@@ -100,7 +100,7 @@ _testconsole_read_output(PyObject *module, PyObject *const *args, Py_ssize_t nar
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_item = { &_Py_ID(file), },
     };
     #undef NUM_KEYWORDS

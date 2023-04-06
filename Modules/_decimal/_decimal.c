@@ -678,7 +678,7 @@ static PyMethodDef signaldict_methods[] = {
 
 static PyTypeObject PyDecSignalDictMixin_Type =
 {
-    PyVarObject_HEAD_INIT(0, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(0, 0)
     "decimal.SignalDictMixin",                /* tp_name */
     sizeof(PyDecSignalDictObject),            /* tp_basicsize */
     0,                                        /* tp_itemsize */
@@ -1834,7 +1834,7 @@ static PyMethodDef ctxmanager_methods[] = {
 
 static PyTypeObject PyDecContextManager_Type =
 {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "decimal.ContextManager",               /* tp_name */
     sizeof(PyDecContextManagerObject),      /* tp_basicsize */
     0,                                      /* tp_itemsize */
@@ -4946,7 +4946,7 @@ static PyMethodDef dec_methods [] =
 
 static PyTypeObject PyDec_Type =
 {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "decimal.Decimal",                      /* tp_name */
     sizeof(PyDecObject),                    /* tp_basicsize */
     0,                                      /* tp_itemsize */
@@ -5631,7 +5631,7 @@ static PyMethodDef context_methods [] =
 
 static PyTypeObject PyDecContext_Type =
 {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "decimal.Context",                         /* tp_name */
     sizeof(PyDecContextObject),                /* tp_basicsize */
     0,                                         /* tp_itemsize */

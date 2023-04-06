@@ -1064,7 +1064,7 @@ static PyMethodDef formatteriter_methods[] = {
 };
 
 static PyTypeObject PyFormatterIter_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "formatteriterator",                /* tp_name */
     sizeof(formatteriterobject),        /* tp_basicsize */
     0,                                  /* tp_itemsize */
@@ -1199,7 +1199,7 @@ static PyMethodDef fieldnameiter_methods[] = {
 };
 
 static PyTypeObject PyFieldNameIter_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "fieldnameiterator",                /* tp_name */
     sizeof(fieldnameiterobject),        /* tp_basicsize */
     0,                                  /* tp_itemsize */

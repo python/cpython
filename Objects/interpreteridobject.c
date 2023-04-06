@@ -225,7 +225,7 @@ PyDoc_STRVAR(interpid_doc,
 "A interpreter ID identifies a interpreter and may be used as an int.");
 
 PyTypeObject _PyInterpreterID_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "InterpreterID",   /* tp_name */
     sizeof(interpid),               /* tp_basicsize */
     0,                              /* tp_itemsize */

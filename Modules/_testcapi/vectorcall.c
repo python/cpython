@@ -315,7 +315,7 @@ call_return_args(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static PyTypeObject MethodDescriptorBase_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "MethodDescriptorBase",
     sizeof(MethodDescriptorObject),
     .tp_new = MethodDescriptor_new,
@@ -327,13 +327,13 @@ static PyTypeObject MethodDescriptorBase_Type = {
 };
 
 static PyTypeObject MethodDescriptorDerived_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "MethodDescriptorDerived",
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
 };
 
 static PyTypeObject MethodDescriptorNopGet_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "MethodDescriptorNopGet",
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_call = call_return_args,
@@ -355,7 +355,7 @@ MethodDescriptor2_new(PyTypeObject* type, PyObject* args, PyObject *kw)
 }
 
 static PyTypeObject MethodDescriptor2_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "MethodDescriptor2",
     sizeof(MethodDescriptor2Object),
     .tp_new = MethodDescriptor2_new,

@@ -1108,7 +1108,7 @@ static PyBufferProcs bytesiobuf_as_buffer = {
 };
 
 Py_EXPORTED_SYMBOL PyTypeObject _PyBytesIOBuffer_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_io._BytesIOBuffer",                      /*tp_name*/
     sizeof(bytesiobuf),                        /*tp_basicsize*/
     0,                                         /*tp_itemsize*/

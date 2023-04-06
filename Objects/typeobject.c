@@ -4837,7 +4837,7 @@ static PyNumberMethods type_as_number = {
 };
 
 PyTypeObject PyType_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "type",                                     /* tp_name */
     sizeof(PyHeapTypeObject),                   /* tp_basicsize */
     sizeof(PyMemberDef),                        /* tp_itemsize */
@@ -6048,7 +6048,7 @@ PyDoc_STRVAR(object_doc,
 "instance that has no instance attributes and cannot be given any.\n");
 
 PyTypeObject PyBaseObject_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "object",                                   /* tp_name */
     sizeof(PyObject),                           /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -9709,7 +9709,7 @@ fail:
 }
 
 PyTypeObject PySuper_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "super",                                    /* tp_name */
     sizeof(superobject),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */

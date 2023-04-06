@@ -568,7 +568,7 @@ static PyMemberDef PyCArgType_members[] = {
 };
 
 PyTypeObject PyCArg_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "CArgObject",
     sizeof(PyCArgObject),
     0,

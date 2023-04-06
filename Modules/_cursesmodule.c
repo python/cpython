@@ -2572,7 +2572,7 @@ static PyGetSetDef PyCursesWindow_getsets[] = {
 /* -------------------------------------------------------*/
 
 PyTypeObject PyCursesWindow_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_curses.window",           /*tp_name*/
     sizeof(PyCursesWindowObject),       /*tp_basicsize*/
     0,                          /*tp_itemsize*/

@@ -576,7 +576,7 @@ def declare_parser(f, *, hasformat=False):
                 PyObject_VAR_HEAD
                 PyObject *ob_item[NUM_KEYWORDS];
             }} _kwtuple = {{
-                .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+                .ob_base = _PyVarObject_HEAD_IMMORTAL_INIT(&PyTuple_Type, NUM_KEYWORDS)
                 .ob_item = {{ {keywords_py} }},
             }};
             #undef NUM_KEYWORDS

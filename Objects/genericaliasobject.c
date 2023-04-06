@@ -898,7 +898,7 @@ static PyMethodDef ga_iter_methods[] = {
 // gh-91632: _Py_GenericAliasIterType is exported  to be cleared
 // in _PyTypes_FiniTypes.
 PyTypeObject _Py_GenericAliasIterType = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     .tp_name = "generic_alias_iterator",
     .tp_basicsize = sizeof(gaiterobject),
     .tp_iter = PyObject_SelfIter,
@@ -925,7 +925,7 @@ ga_iter(PyObject *self) {
 // - argument clinic?
 // - cache?
 PyTypeObject Py_GenericAliasType = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     .tp_name = "types.GenericAlias",
     .tp_doc = genericalias__doc__,
     .tp_basicsize = sizeof(gaobject),

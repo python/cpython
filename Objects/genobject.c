@@ -812,7 +812,7 @@ static PyAsyncMethods gen_as_async = {
 
 
 PyTypeObject PyGen_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "generator",                                /* tp_name */
     offsetof(PyGenObject, gi_iframe) +
     offsetof(_PyInterpreterFrame, localsplus),       /* tp_basicsize */
@@ -1163,7 +1163,7 @@ static PyAsyncMethods coro_as_async = {
 };
 
 PyTypeObject PyCoro_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "coroutine",                                /* tp_name */
     offsetof(PyCoroObject, cr_iframe) +
     offsetof(_PyInterpreterFrame, localsplus),       /* tp_basicsize */
@@ -1263,7 +1263,7 @@ static PyMethodDef coro_wrapper_methods[] = {
 };
 
 PyTypeObject _PyCoroWrapper_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "coroutine_wrapper",
     sizeof(PyCoroWrapper),                      /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -1582,7 +1582,7 @@ static PyAsyncMethods async_gen_as_async = {
 
 
 PyTypeObject PyAsyncGen_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "async_generator",                          /* tp_name */
     offsetof(PyAsyncGenObject, ag_iframe) +
     offsetof(_PyInterpreterFrame, localsplus),       /* tp_basicsize */
@@ -1854,7 +1854,7 @@ static PyAsyncMethods async_gen_asend_as_async = {
 
 
 PyTypeObject _PyAsyncGenASend_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "async_generator_asend",                    /* tp_name */
     sizeof(PyAsyncGenASend),                    /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -1968,7 +1968,7 @@ async_gen_wrapped_val_traverse(_PyAsyncGenWrappedValue *o,
 
 
 PyTypeObject _PyAsyncGenWrappedValue_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "async_generator_wrapped_value",            /* tp_name */
     sizeof(_PyAsyncGenWrappedValue),            /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -2271,7 +2271,7 @@ static PyAsyncMethods async_gen_athrow_as_async = {
 
 
 PyTypeObject _PyAsyncGenAThrow_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "async_generator_athrow",                   /* tp_name */
     sizeof(PyAsyncGenAThrow),                   /* tp_basicsize */
     0,                                          /* tp_itemsize */

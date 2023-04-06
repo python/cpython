@@ -145,7 +145,7 @@ test_structmembers_free(PyObject *ob)
 
 /* Designated initializers would work too, but this does test the *old* API */
 static PyTypeObject test_structmembersType_OldAPI= {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "test_structmembersType_OldAPI",
     sizeof(test_structmembers),         /* tp_basicsize */
     0,                                  /* tp_itemsize */

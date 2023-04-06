@@ -828,7 +828,7 @@ fail:
 }
 
 PyTypeObject PySetIter_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "set_iterator",                             /* tp_name */
     sizeof(setiterobject),                      /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -2112,7 +2112,7 @@ set(iterable) -> new set object\n\
 Build an unordered collection of unique elements.");
 
 PyTypeObject PySet_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "set",                              /* tp_name */
     sizeof(PySetObject),                /* tp_basicsize */
     0,                                  /* tp_itemsize */
@@ -2213,7 +2213,7 @@ frozenset(iterable) -> frozenset object\n\
 Build an immutable unordered collection of unique elements.");
 
 PyTypeObject PyFrozenSet_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "frozenset",                        /* tp_name */
     sizeof(PySetObject),                /* tp_basicsize */
     0,                                  /* tp_itemsize */
@@ -2520,7 +2520,7 @@ dummy_dealloc(PyObject* ignore)
 }
 
 static PyTypeObject _PySetDummy_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "<dummy key> type",
     0,
     0,

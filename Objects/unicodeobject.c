@@ -7768,7 +7768,7 @@ static PyMethodDef encoding_map_methods[] = {
 };
 
 static PyTypeObject EncodingMapType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     .tp_name = "EncodingMap",
     .tp_basicsize = sizeof(struct encoding_map),
     /* methods */
@@ -14465,7 +14465,7 @@ errors defaults to 'strict'.");
 static PyObject *unicode_iter(PyObject *seq);
 
 PyTypeObject PyUnicode_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "str",                        /* tp_name */
     sizeof(PyUnicodeObject),      /* tp_basicsize */
     0,                            /* tp_itemsize */
@@ -14847,7 +14847,7 @@ static PyMethodDef unicodeiter_methods[] = {
 };
 
 PyTypeObject PyUnicodeIter_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "str_iterator",         /* tp_name */
     sizeof(unicodeiterobject),      /* tp_basicsize */
     0,                  /* tp_itemsize */
@@ -14880,7 +14880,7 @@ PyTypeObject PyUnicodeIter_Type = {
 };
 
 PyTypeObject _PyUnicodeASCIIIter_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     .tp_name = "str_ascii_iterator",
     .tp_basicsize = sizeof(unicodeiterobject),
     .tp_dealloc = (destructor)unicodeiter_dealloc,

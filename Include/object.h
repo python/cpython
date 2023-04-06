@@ -82,8 +82,12 @@ whose size is determined when the object is allocated.
     { _PyObject_EXTRA_INIT              \
     1, (type) },
 
-#define PyVarObject_HEAD_INIT(type, size)       \
-    { PyObject_HEAD_INIT(type) (size) },
+#define _PyObject_HEAD_IMMORTAL_INIT(type)  \
+    { _PyObject_EXTRA_INIT                  \
+    999999999, (type) },
+
+#define _PyVarObject_HEAD_IMMORTAL_INIT(type, size)       \
+    { _PyObject_HEAD_IMMORTAL_INIT(type) (size) },
 
 /* PyObject_VAR_HEAD defines the initial segment of all variable-size
  * container objects.  These end with a declaration of an array with 1

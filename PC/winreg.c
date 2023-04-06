@@ -353,7 +353,7 @@ static PyMemberDef PyHKEY_memberlist[] = {
 /* The type itself */
 PyTypeObject PyHKEY_Type =
 {
-    PyVarObject_HEAD_INIT(0, 0) /* fill in type at module init */
+    _PyVarObject_HEAD_IMMORTAL_INIT(0, 0) /* fill in type at module init */
     "PyHKEY",
     sizeof(PyHKEYObject),
     0,

@@ -187,7 +187,7 @@ tb_clear(PyTracebackObject *tb)
 }
 
 PyTypeObject PyTraceBack_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     "traceback",
     sizeof(PyTracebackObject),
     0,

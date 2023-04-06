@@ -364,7 +364,7 @@ _Py_union_args(PyObject *self)
 }
 
 PyTypeObject _PyUnion_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(&PyType_Type, 0)
     .tp_name = "types.UnionType",
     .tp_doc = PyDoc_STR("Represent a PEP 604 union type\n"
               "\n"

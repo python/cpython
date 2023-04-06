@@ -348,7 +348,7 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
  *   PyType_Ready if it hasn't already been called
  */
 static PyTypeObject _HashInheritanceTester_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "hashinheritancetester",            /* Name of this type */
     sizeof(PyObject),           /* Basic object size */
     0,                          /* Item size for varobject */
@@ -3623,7 +3623,7 @@ static PyNumberMethods matmulType_as_number = {
 };
 
 static PyTypeObject matmulType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "matmulType",
     sizeof(matmulObject),               /* tp_basicsize */
     0,                                  /* tp_itemsize */
@@ -3679,7 +3679,7 @@ static PyNumberMethods ipowType_as_number = {
 };
 
 static PyTypeObject ipowType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     .tp_name = "ipowType",
     .tp_basicsize = sizeof(ipowObject),
     .tp_as_number = &ipowType_as_number,
@@ -3735,7 +3735,7 @@ static PyAsyncMethods awaitType_as_async = {
 
 
 static PyTypeObject awaitType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "awaitType",
     sizeof(awaitObject),                /* tp_basicsize */
     0,                                  /* tp_itemsize */
@@ -3806,7 +3806,7 @@ MyList_dealloc(MyListObject* op)
 }
 
 static PyTypeObject MyList_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "MyList",
     sizeof(MyListObject),
     0,
@@ -3873,7 +3873,7 @@ static PyMethodDef generic_alias_methods[] = {
 };
 
 static PyTypeObject GenericAlias_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "GenericAlias",
     sizeof(PyGenericAliasObject),
     0,
@@ -3909,7 +3909,7 @@ static PyMethodDef generic_methods[] = {
 };
 
 static PyTypeObject Generic_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "Generic",
     sizeof(PyGenericObject),
     0,
@@ -3929,7 +3929,7 @@ static PyMethodDef meth_instance_methods[] = {
 
 
 static PyTypeObject MethInstance_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "MethInstance",
     sizeof(PyObject),
     .tp_new = PyType_GenericNew,
@@ -3951,7 +3951,7 @@ static PyMethodDef meth_class_methods[] = {
 
 
 static PyTypeObject MethClass_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "MethClass",
     sizeof(PyObject),
     .tp_new = PyType_GenericNew,
@@ -3973,7 +3973,7 @@ static PyMethodDef meth_static_methods[] = {
 
 
 static PyTypeObject MethStatic_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "MethStatic",
     sizeof(PyObject),
     .tp_new = PyType_GenericNew,
@@ -4021,7 +4021,7 @@ static PyMemberDef ContainerNoGC_members[] = {
 };
 
 static PyTypeObject ContainerNoGC_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_testcapi.ContainerNoGC",
     sizeof(ContainerNoGCobject),
     .tp_dealloc = (destructor)ContainerNoGC_dealloc,

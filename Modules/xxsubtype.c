@@ -97,7 +97,7 @@ static PyGetSetDef spamlist_getsets[] = {
 };
 
 static PyTypeObject spamlist_type = {
-    PyVarObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
     "xxsubtype.spamlist",
     sizeof(spamlistobject),
     0,
@@ -187,7 +187,7 @@ static PyMemberDef spamdict_members[] = {
 };
 
 static PyTypeObject spamdict_type = {
-    PyVarObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
     "xxsubtype.spamdict",
     sizeof(spamdictobject),
     0,

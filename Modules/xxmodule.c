@@ -98,7 +98,7 @@ Xxo_setattr(XxoObject *self, const char *name, PyObject *v)
 static PyTypeObject Xxo_Type = {
     /* The ob_type field must be initialized in the module init function
      * to be portable to Windows without using C++. */
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "xxmodule.Xxo",             /*tp_name*/
     sizeof(XxoObject),          /*tp_basicsize*/
     0,                          /*tp_itemsize*/
@@ -214,7 +214,7 @@ xx_roj(PyObject *self, PyObject *args)
 static PyTypeObject Str_Type = {
     /* The ob_type field must be initialized in the module init function
      * to be portable to Windows without using C++. */
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "xxmodule.Str",             /*tp_name*/
     0,                          /*tp_basicsize*/
     0,                          /*tp_itemsize*/
@@ -268,7 +268,7 @@ null_richcompare(PyObject *self, PyObject *other, int op)
 static PyTypeObject Null_Type = {
     /* The ob_type field must be initialized in the module init function
      * to be portable to Windows without using C++. */
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "xxmodule.Null",            /*tp_name*/
     0,                          /*tp_basicsize*/
     0,                          /*tp_itemsize*/

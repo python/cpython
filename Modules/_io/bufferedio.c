@@ -2333,7 +2333,7 @@ static PyMethodDef bufferediobase_methods[] = {
 };
 
 PyTypeObject PyBufferedIOBase_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    _PyVarObject_HEAD_IMMORTAL_INIT(NULL, 0)
     "_io._BufferedIOBase",      /*tp_name*/
     0,                          /*tp_basicsize*/
     0,                          /*tp_itemsize*/
