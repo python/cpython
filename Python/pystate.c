@@ -60,23 +60,26 @@ extern "C" {
    For each of these functions, the GIL must be held by the current thread.
  */
 
+
+thread_local PyThreadState *_Py_tss_tstate;
+
 static inline PyThreadState *
-current_fast_get(_PyRuntimeState *runtime)
+current_fast_get(_PyRuntimeState *Py_UNUSED(runtime))
 {
-    return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->tstate_current);
+    return _Py_tss_tstate;
 }
 
 static inline void
-current_fast_set(_PyRuntimeState *runtime, PyThreadState *tstate)
+current_fast_set(_PyRuntimeState *Py_UNUSED(runtime), PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    _Py_atomic_store_relaxed(&runtime->tstate_current, (uintptr_t)tstate);
+    _Py_tss_tstate = tstate;
 }
 
 static inline void
-current_fast_clear(_PyRuntimeState *runtime)
+current_fast_clear(_PyRuntimeState *Py_UNUSED(runtime))
 {
-    _Py_atomic_store_relaxed(&runtime->tstate_current, (uintptr_t)NULL);
+    _Py_tss_tstate = NULL;
 }
 
 #define tstate_verify_not_active(tstate) \
