@@ -12,6 +12,13 @@ skip_if_missing('freeze')
 with imports_under_tool('freeze', 'test'):
     import freeze as helper
 
+# See gh-103053:
+skip_on_s390x_pgo = unittest.skipIf(
+    support.PGO and hasattr(os, 'uname') and os.uname().machine == 's390x',
+    's390x with PGO takes too long',
+)
+
+@skip_on_s390x_pgo
 @support.requires_zlib()
 @unittest.skipIf(sys.platform.startswith('win'), 'not supported on Windows')
 @support.skip_if_buildbot('not all buildbots have enough space')
