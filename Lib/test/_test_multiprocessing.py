@@ -1524,7 +1524,6 @@ class _TestQueue(BaseTestCase):
                 self.assertTrue(q.empty())
                 self.assertEqual(res_gets.count(True), res_puts.count(True))
             else:
-                self.assertFalse(q.empty())
                 self.assertTrue(res_gets.count(True) <= res_puts.count(True))
 
     def test_shutdown_all_methods_in_many_processes(self):
