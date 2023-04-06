@@ -175,7 +175,7 @@ their completion.
 
    * the :meth:`~asyncio.subprocess.Process.communicate` and
      :meth:`~asyncio.subprocess.Process.wait` methods don't have a
-     *timeout* parameter: use the :func:`wait_for` function;
+     *timeout* parameter: use the :func:`~asyncio.wait_for` function;
 
    * the :meth:`Process.wait() <asyncio.subprocess.Process.wait>` method
      is asynchronous, whereas :meth:`subprocess.Popen.wait` method

@@ -73,7 +73,6 @@ def dash_R(ns, test_name, test_func):
     fd_deltas = [0] * repcount
     getallocatedblocks = sys.getallocatedblocks
     gettotalrefcount = sys.gettotalrefcount
-    _getquickenedcount = sys._getquickenedcount
     fd_count = os_helper.fd_count
     # initialize variables to make pyflakes quiet
     rc_before = alloc_before = fd_before = 0
@@ -93,7 +92,7 @@ def dash_R(ns, test_name, test_func):
         support.gc_collect()
 
         # Read memory statistics immediately after the garbage collection
-        alloc_after = getallocatedblocks() - _getquickenedcount()
+        alloc_after = getallocatedblocks()
         rc_after = gettotalrefcount()
         fd_after = fd_count()
 
