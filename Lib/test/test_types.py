@@ -1,18 +1,18 @@
 # Python test set -- part 6, built-in types
 
+from test.support import run_with_locale, cpython_only
 import collections.abc
+from collections import namedtuple
 import copy
 import gc
 import inspect
-import locale
 import pickle
+import locale
 import sys
 import types
-import typing
 import unittest.mock
 import weakref
-from collections import namedtuple
-from test.support import cpython_only, run_with_locale
+import typing
 
 T = typing.TypeVar("T")
 

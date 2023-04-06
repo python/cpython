@@ -303,7 +303,6 @@ def coroutine(func):
 
     # Delay functools and _collections_abc import for speeding up types import.
     import functools
-
     import _collections_abc
     @functools.wraps(func)
     def wrapped(*args, **kwargs):

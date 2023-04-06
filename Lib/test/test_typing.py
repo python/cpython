@@ -24,7 +24,6 @@ from typing import assert_type, cast, runtime_checkable
 from typing import get_type_hints
 from typing import get_origin, get_args
 from typing import override
-from typing import get_origin, get_args
 from typing import is_typeddict
 from typing import reveal_type
 from typing import dataclass_transform
