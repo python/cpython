@@ -111,13 +111,10 @@ The typical usage to inspect a crashed program is::
    >>> import pdb
    >>> def f(x):
    ...     print(1 / x)
-   >>> pdb.run("f(0)")
-   > <string>(1)<module>()
-   (Pdb) continue
+   ...
+   >>> f(0)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-     ...
-     File "<string>", line 1, in <module>
      File "<stdin>", line 2, in f
    ZeroDivisionError: division by zero
    >>> pdb.pm()
