@@ -1,1 +1,1 @@
-Fixed the line number display bug on modules for :mod:`pdb`
+Fix a bug in :mod:`pdb` when displaying line numbers of module-level source code.
