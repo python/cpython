@@ -86,7 +86,7 @@ Dynamic Type Creation
 
    :pep:`560` - Core support for typing module and generic types
 
-.. function:: get_original_bases(tp, /)
+.. function:: get_original_bases(cls, /)
 
     Return the objects in the bases list in the class's definition before
     they could have been modified by ``__mro_entries__``. This is useful for

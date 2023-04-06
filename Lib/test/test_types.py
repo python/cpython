@@ -14,6 +14,7 @@ import unittest.mock
 import weakref
 import typing
 
+
 T = typing.TypeVar("T")
 
 class Example:

@@ -144,9 +144,9 @@ def _calculate_meta(meta, bases):
     return winner
 
 
-def get_original_bases(tp, /) -> tuple[type, ...] | None:
+def get_original_bases(cls, /) -> tuple[type, ...] | None:
     r"""
-    Returns the objects in the bases list in the class's definition before
+    Return the objects in the bases list in the class's definition before
     they could have been modified by ``__mro_entries__``. This is useful for
     introspecting ``Generic``\s.
 
@@ -164,9 +164,9 @@ def get_original_bases(tp, /) -> tuple[type, ...] | None:
         get_original_bases(Bar) == (Foo[int], float)
         get_original_bases(int) == None
     """
-    if isinstance(tp, type):
+    if isinstance(cls, type):
         try:
-            return tp.__orig_bases__
+            return cls.__orig_bases__
         except AttributeError:
             pass
     return None
