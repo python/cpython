@@ -95,7 +95,7 @@ useful than quitting the debugger upon program's exit.
    ``python -m`` does. As with a script, the debugger will pause execution just
    before the first line of the module.
 
-Typical usage to run a program under control of the debugger is::
+Typical usage to execute a statement under control of the debugger is::
 
    >>> import pdb
    >>> def f(x):
