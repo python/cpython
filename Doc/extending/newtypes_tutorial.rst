@@ -88,7 +88,7 @@ standard Python floats::
 The second bit is the definition of the type object. ::
 
    static PyTypeObject CustomType = {
-       PyVarObject_HEAD_INIT(NULL, 0)
+       .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
        .tp_name = "custom.Custom",
        .tp_doc = PyDoc_STR("Custom objects"),
        .tp_basicsize = sizeof(CustomObject),
@@ -109,7 +109,7 @@ common practice to not specify them explicitly unless you need them.
 
 We're going to pick it apart, one field at a time::
 
-   PyVarObject_HEAD_INIT(NULL, 0)
+   .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
 
 This line is mandatory boilerplate to initialize the ``ob_base``
 field mentioned above. ::
