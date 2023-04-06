@@ -606,7 +606,7 @@ class BaseTaskTests:
                     if (
                         timed_out
                         and task.uncancel() == 0
-                        and isinstance(sys.exception(), asyncio.CancelledError)
+                        and type(sys.exception()) is asyncio.CancelledError
                     ):
                         # Note the five rules that are needed here to satisfy proper
                         # uncancellation:
