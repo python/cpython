@@ -1,0 +1,3 @@
+Replace all internal uses of PyVarObject_HEAD_INIT fo
+_PyVarObject_HEAD_IMMORTAL_INIT to be able to initialize them as immortal
+objects since they live thorughout the entire execution
