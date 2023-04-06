@@ -86,7 +86,7 @@ Dynamic Type Creation
 
    :pep:`560` - Core support for typing module and generic types
 
-.. function:: get_orig_bases(tp, /)
+.. function:: get_original_bases(tp, /)
 
     Return the objects in the bases list in the class's definition before
     they could have been modified by ``__mro_entries__``. This is useful for
@@ -102,9 +102,9 @@ Dynamic Type Creation
 
         class Bar(Foo[int], float): ...
 
-        get_orig_bases(Foo) == (Generic[T],)
-        get_orig_bases(Bar) == (Foo[int], float)
-        get_orig_bases(int) == None
+        get_original_bases(Foo) == (Generic[T],)
+        get_original_bases(Bar) == (Foo[int], float)
+        get_original_bases(int) == None
 
     .. versionadded:: 3.12
 

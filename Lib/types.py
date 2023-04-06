@@ -144,7 +144,7 @@ def _calculate_meta(meta, bases):
     return winner
 
 
-def get_orig_bases(tp, /) -> tuple[type, ...] | None:
+def get_original_bases(tp, /) -> tuple[type, ...] | None:
     r"""
     Returns the objects in the bases list in the class's definition before
     they could have been modified by ``__mro_entries__``. This is useful for
@@ -160,9 +160,9 @@ def get_orig_bases(tp, /) -> tuple[type, ...] | None:
 
         class Bar(Foo[int], float): ...
 
-        get_orig_bases(Foo) == (Generic[T],)
-        get_orig_bases(Bar) == (Foo[int], float)
-        get_orig_bases(int) == None
+        get_original_bases(Foo) == (Generic[T],)
+        get_original_bases(Bar) == (Foo[int], float)
+        get_original_bases(int) == None
     """
     if isinstance(tp, type):
         try:
@@ -303,6 +303,7 @@ def coroutine(func):
 
     # Delay functools and _collections_abc import for speeding up types import.
     import functools
+
     import _collections_abc
     @functools.wraps(func)
     def wrapped(*args, **kwargs):

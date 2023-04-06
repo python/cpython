@@ -1,19 +1,18 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_with_locale, cpython_only
 import collections.abc
-from collections import namedtuple
 import copy
 import gc
 import inspect
-import pickle
 import locale
+import pickle
 import sys
 import types
+import typing
 import unittest.mock
 import weakref
-import typing
-
+from collections import namedtuple
+from test.support import cpython_only, run_with_locale
 
 T = typing.TypeVar("T")
 
@@ -1360,23 +1359,23 @@ class ClassCreationTests(unittest.TestCase):
         D = types.new_class('D', (A(), C, B()), {})
         self.assertEqual(D.__bases__, (A1, A2, A3, C, B1, B2))
 
-    def test_get_orig_bases(self):
+    def test_get_original_bases(self):
         T = typing.TypeVar('T')
         class A: pass
         class B(typing.Generic[T]): pass
         class C(B[int]): pass
         class D(B[str], float): pass
-        self.assertIsNone(types.get_orig_bases(A))
-        self.assertEqual(types.get_orig_bases(B), (typing.Generic[T],))
-        self.assertEqual(types.get_orig_bases(C), (B[int],))
-        self.assertIsNone(types.get_orig_bases(int))
-        self.assertEqual(types.get_orig_bases(D), (B[str], float))
+        self.assertIsNone(types.get_original_bases(A))
+        self.assertEqual(types.get_original_bases(B), (typing.Generic[T],))
+        self.assertEqual(types.get_original_bases(C), (B[int],))
+        self.assertIsNone(types.get_original_bases(int))
+        self.assertEqual(types.get_original_bases(D), (B[str], float))
 
         class E(list[T]): pass
         class F(list[int]): pass
 
-        self.assertEqual(types.get_orig_bases(E), (list[T],))
-        self.assertEqual(types.get_orig_bases(F), (list[int],))
+        self.assertEqual(types.get_original_bases(E), (list[T],))
+        self.assertEqual(types.get_original_bases(F), (list[int],))
 
     # Many of the following tests are derived from test_descr.py
     def test_prepare_class(self):
