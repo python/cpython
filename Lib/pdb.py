@@ -1351,10 +1351,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
         try:
-            lines, lineno = inspect.getsourcelines(self.curframe)
-            # inspect.getsourcelines() returns lineno = 0 for
-            # module-level frame which breaks our code print line number
-            lineno = max(1, lineno)
+            lines, lineno = self._getsourcelines(self.curframe)
         except OSError as err:
             self.error(err)
             return
@@ -1370,10 +1367,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except:
             return
         try:
-            lines, lineno = inspect.getsourcelines(obj)
-            # inspect.getsourcelines() returns lineno = 0 for
-            # module-level frame which breaks our code print line number
-            lineno = max(1, lineno)
+            lines, lineno = self._getsourcelines(obj)
         except (OSError, TypeError) as err:
             self.error(err)
             return
@@ -1667,6 +1661,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except SyntaxError as exc:
             return _rstr(self._format_exc(exc))
         return ""
+
+    def _getsourcelines(self, obj):
+        # GH-103319
+        # inspect.getsourcelines() returns lineno = 0 for
+        # module-level frame which breaks our code print line number
+        # This method should be replaced by inspect.getsourcelines(obj)
+        # once this bug is fixed in inspect
+        lines, lineno = inspect.getsourcelines(obj)
+        lineno = max(1, lineno)
+        return lines, lineno
 
 # Collect all command help into docstring, if not run with -OO
 
