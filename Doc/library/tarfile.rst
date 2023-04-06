@@ -38,7 +38,7 @@ Some facts and figures:
 
 .. versionchanged:: 3.12
    Archives are extracted using a :ref:`filter <tarfile-extraction-filter>`,
-   which makes it easy to either limit surprising/dangerous features,
+   which makes it possible to either limit surprising/dangerous features,
    or to acknowledge that they are expected and the archive is fully trusted.
    By default, archives are fully trusted, but this default is deprecated
    and slated to change in Python 3.14.
@@ -517,8 +517,8 @@ be finalized; only the internally used file object will be closed. See the
 
    If *errorlevel* is ``0``, all errors are ignored when using :meth:`TarFile.extract`
    and :meth:`TarFile.extractall`.
-   Nevertheless, they appear as error messages in the debug output, when debugging
-   is enabled.
+   Nevertheless, they appear as error messages in the debug output when
+   *debug* is greater than 0.
    If ``1`` (the default), all *fatal* errors are raised as :exc:`OSError`
    exceptions. If ``2``, all *non-fatal* errors are raised as :exc:`TarError`
    exceptions as well.
@@ -530,12 +530,22 @@ be finalized; only the internally used file object will be closed. See the
 
    .. versionadded:: 3.12
 
-   The default :ref:`extraction filter <tarfile-extraction-filter>` used
+   The :ref:`extraction filter <tarfile-extraction-filter>` used
    as a default for the *filter* argument of :meth:`~TarFile.extract`
    and :meth:`~TarFile.extractall`.
 
-   The attribute may be ``None`` (default) or a callable.
-   String names are not allowed.
+   The attribute may be ``None`` or a callable.
+   String names are not allowed for this attribute, unlike the *filter*
+   argument to :meth:`~TarFile.extract`.
+
+   If ``extraction_filter`` is ``None`` (the default),
+   calling an extraction method without a *filter* argument will raise a
+   ``DeprecationWarning``,
+   and fall back to the :func:`fully_trusted <fully_trusted_filter>` filter,
+   whose dangerous behavior matches previous versions of Python.
+
+   In Python 3.14+, leaving ``extraction_filter=None`` will cause
+   extraction methods to use the :func:`data <data_filter>` filter by default.
 
    The attribute may be set on instances or overridden in subclasses.
    It also is possible to set it on the ``TarFile`` class itself to set a
@@ -680,24 +690,27 @@ A ``TarInfo`` object has the following public data attributes:
 
 
 .. attribute:: TarInfo.mtime
-   :type: int
+   :type: int | float
 
-   Time of last modification.
+   Time of last modification in seconds since the :ref:`epoch <epoch>`,
+   as in :attr:`os.stat_result.st_mtime`.
 
    .. versionchanged:: 3.12
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
-      :meth:`~TarFile.extractall`.
+      :meth:`~TarFile.extractall`, causing extraction to skip applying this
+      attribute.
 
 .. attribute:: TarInfo.mode
    :type: int
 
-   Permission bits.
+   Permission bits, as for :func:`os.chmod`.
 
    .. versionchanged:: 3.12
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
-      :meth:`~TarFile.extractall`.
+      :meth:`~TarFile.extractall`, causing extraction to skip applying this
+      attribute.
 
 .. attribute:: TarInfo.type
 
@@ -723,7 +736,8 @@ A ``TarInfo`` object has the following public data attributes:
    .. versionchanged:: 3.12
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
-      :meth:`~TarFile.extractall`.
+      :meth:`~TarFile.extractall`, causing extraction to skip applying this
+      attribute.
 
 .. attribute:: TarInfo.gid
    :type: int
@@ -733,7 +747,8 @@ A ``TarInfo`` object has the following public data attributes:
    .. versionchanged:: 3.12
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
-      :meth:`~TarFile.extractall`.
+      :meth:`~TarFile.extractall`, causing extraction to skip applying this
+      attribute.
 
 .. attribute:: TarInfo.uname
    :type: str
@@ -743,7 +758,8 @@ A ``TarInfo`` object has the following public data attributes:
    .. versionchanged:: 3.12
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
-      :meth:`~TarFile.extractall`.
+      :meth:`~TarFile.extractall`, causing extraction to skip applying this
+      attribute.
 
 .. attribute:: TarInfo.gname
    :type: str
@@ -753,7 +769,8 @@ A ``TarInfo`` object has the following public data attributes:
    .. versionchanged:: 3.12
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
-      :meth:`~TarFile.extractall`.
+      :meth:`~TarFile.extractall`, causing extraction to skip applying this
+      attribute.
 
 .. attribute:: TarInfo.pax_headers
    :type: dict
@@ -767,10 +784,10 @@ A ``TarInfo`` object has the following public data attributes:
    .. versionadded:: 3.12
 
    Return a *new* copy of the :class:`!TarInfo` object with the given attributes
-   changed. For example, to return a ``TarInfo`` with the modification
-   set to the current time, use::
+   changed. For example, to return a ``TarInfo`` with the group name set to
+   `'staff'`, use::
 
-       new_tarinfo = old_tarinfo.replace(mtime=time.time())
+       new_tarinfo = old_tarinfo.replace(gname='staff')
 
    By default, a deep copy is made.
    If *deep* is false, the copy is shallow, i.e. ``pax_headers``
@@ -831,7 +848,7 @@ Extraction filters
 
 .. versionadded:: 3.12
 
-The *tar* format is designed to capture all details of a UNIX-like ecosystem,
+The *tar* format is designed to capture all details of a UNIX-like filesystem,
 which makes it very powerful.
 Unfortunately, the features make it easy to create tar files that have
 unintended -- and possibly malicious -- effects when extracted.
@@ -902,6 +919,8 @@ reused in custom filters:
 
    Return *member* unchanged.
 
+   This implements the ``'fully_trusted'`` filter.
+
 .. function:: tar_filter(/, member, path)
 
   Implements the ``'tar'`` filter.
@@ -944,12 +963,11 @@ reused in custom filters:
     - Remove the group & other executable permission
       (:attr:`~stat.S_IXGRP`|:attr:`~stat.S_IXOTH`)
       if the owner doesn’t have it (:attr:`~stat.S_IXUSR`).
-    - Remove the group & other read permission
-      (:attr:`~stat.S_IRGRP`|:attr:`~stat.S_IROTH`) if the owner
-      doesn’t have it (:attr:`~stat.S_IRUSR`).
 
-  - For other files (directories), ignore permission bits entirely.
-  - Ignore user and group info (``uid``, ``gid``, ``uname``, ``gname``).
+  - For other files (directories), set ``mode`` to ``None``, so
+    that extraction methods skip applying permission bits.
+  - Set user and group info (``uid``, ``gid``, ``uname``, ``gname``)
+    to ``None``, so that extraction methods skip setting it.
 
   Return the modified ``TarInfo`` member.
 
@@ -962,7 +980,7 @@ Filter errors
 When a filter refuses to extract a file, it will raise an appropriate exception,
 a subclass of :class:`~tarfile.FilterError`.
 This will abort the extraction if :attr:`TarFile.errorlevel` is 1 or more.
-With ``errorlevel=0`` the error will be logged and the member will be ignored,
+With ``errorlevel=0`` the error will be logged and the member will be skipped,
 but extraction will continue.
 
 
@@ -976,22 +994,23 @@ attacks. Users should do additional checks.
 
 Here is an incomplete list of things to consider:
 
-* Extract to a new empty directory, to prevent e.g. exploiting pre-existing
-  links, and to make it easier to clean up after a failed extraction.
+* Extract to a :func:`new temporary directory <tempfile.mkdtemp>`
+  to prevent e.g. exploiting pre-existing links, and to make it easier to
+  clean up after a failed extraction.
 * When working with untrusted data, use external (e.g. OS-level) limits on
   ·disk, memory and CPU usage.
 * Check filenames against an allow-list of characters
   (to filter out control characters, confusables, foreign path separators,
   etc.).
 * Check that filenames have expected extensions (discouraging files that
-  execute when you “click on them”, or extension-less files like Windows special device names),
+  execute when you “click on them”, or extension-less files like Windows special device names).
 * Limit the number of extracted files, total size of extracted data,
   filename length (including symlink length), and size of individual files.
 * Check for files that would be shadowed on case-insensitive filesystems.
 
 Also note that:
 
-* Tar files often contain multiple versions of the same file.
+* Tar files may contain multiple versions of the same file.
   Later ones are expected to overwrite any earlier ones.
   This feature is crucial to allow updating tape archives, but can be abused
   maliciously.
@@ -1047,7 +1066,7 @@ Stateful extraction filter example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 While *tarfile*'s extraction methods take a simple *filter* callable,
-custom filters may be more complex objects with internal state.
+custom filters may be more complex objects with an internal state.
 It may be useful to write these as context managers, to be used like this::
 
     with StatefulFilter() as filter_func:
