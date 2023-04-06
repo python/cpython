@@ -1815,7 +1815,7 @@ class JumpTestCase(unittest.TestCase):
         tracer = JumpTracer(func, jumpFrom, jumpTo, event, decorated)
         sys.settrace(tracer.trace)
         output = []
-        
+
         if warning is None and error is None:
             func(output)
         elif warning is not None and error is None:
@@ -1836,19 +1836,19 @@ class JumpTestCase(unittest.TestCase):
         tracer = JumpTracer(func, jumpFrom, jumpTo, event, decorated)
         sys.settrace(tracer.trace)
         output = []
-        
+
         if warning is None and error is None:
             asyncio.run(func(output))
         elif warning is not None and error is None:
             with self.assertWarnsRegex(*warning):
-               asyncio.run(func(output))
+                asyncio.run(func(output))
         elif warning is None and error is not None:
             with self.assertRaisesRegex(*error):
                 asyncio.run(func(output))
         else:
             raise Exception("Not currently possible to assert both a warning and an exception in tandem, the former is seemingly ignored by the unittest framework")
             assertTrue(False)
-        
+
         sys.settrace(None)
         asyncio.set_event_loop_policy(None)
         self.compare_jump_output(expected, output)
