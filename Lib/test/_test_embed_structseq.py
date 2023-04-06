@@ -8,19 +8,19 @@ class TestStructSeq:
     # test PyTypeObject members
     def _check_structseq(self, obj_type):
         # ob_refcnt
-        assert(sys.getrefcount(obj_type) > 1)
+        assert sys.getrefcount(obj_type) > 1
         # tp_base
-        assert(issubclass(obj_type, tuple))
+        assert issubclass(obj_type, tuple)
         # tp_bases
-        assert(obj_type.__bases__ == (tuple,))
+        assert obj_type.__bases__ == (tuple,)
         # tp_dict
-        assert(isinstance(obj_type.__dict__, types.MappingProxyType))
+        assert isinstance(obj_type.__dict__, types.MappingProxyType)
         # tp_mro
-        assert(obj_type.__mro__ == (obj_type, tuple, object))
+        assert obj_type.__mro__ == (obj_type, tuple, object)
         # tp_name
-        assert(isinstance(type.__name__, str))
+        assert isinstance(type.__name__, str)
         # tp_subclasses
-        assert(obj_type.__subclasses__() == [])
+        assert obj_type.__subclasses__() == []
 
     def sys_attrs(self):
         for attr_name in (

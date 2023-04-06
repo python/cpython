@@ -1918,7 +1918,6 @@ static int test_unicode_id_init(void)
 
         assert(PyUnicode_Compare(str1, str2) == 0);
 
-        // str1 is a borrowed reference
         Py_DECREF(str2);
 
         Py_Finalize();

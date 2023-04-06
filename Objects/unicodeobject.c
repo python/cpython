@@ -1544,8 +1544,8 @@ unicode_dealloc(PyObject *unicode)
     }
 #endif
     /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref the string out of existence. Instead,
-     * since the string is an immortal object, re-set the reference count.
+     * we accidentally decref an immortal string out of existence. Since
+     * the string is an immortal object, just re-set the reference count.
      */
     if (PyUnicode_CHECK_INTERNED(unicode)) {
         _Py_SetImmortal(unicode);

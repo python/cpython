@@ -150,7 +150,7 @@ bool_dealloc(PyObject *boolean)
 {
     /* This should never get called, but we also don't want to SEGV if
      * we accidentally decref Booleans out of existence. Instead,
-     * since Bools are immortal, re-set the reference count.
+     * since bools are immortal, re-set the reference count.
      */
     _Py_SetImmortal(boolean);
 }

@@ -14,10 +14,6 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 
-/* This value provides *effective* immortality, meaning the object should never
-    be deallocated (until runtime finalization).  See PEP 683 for more details about
-    immortality, as well as a proposed mechanism for proper immortality. */
-
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     const char *func,
     const char *message);
