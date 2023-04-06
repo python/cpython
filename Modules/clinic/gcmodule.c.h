@@ -424,4 +424,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=66432ac0e17fd04f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=585a2dd71d6540fb input=a9049054013a1b77]*/

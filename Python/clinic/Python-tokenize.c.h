@@ -67,4 +67,4 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8c2c09f651961986 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1b0d1505c46eb1d7 input=a9049054013a1b77]*/

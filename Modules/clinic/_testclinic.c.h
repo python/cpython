@@ -2817,4 +2817,4 @@ gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e8211606b03d733a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b39c3b873e883049 input=a9049054013a1b77]*/

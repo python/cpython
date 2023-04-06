@@ -103,4 +103,4 @@ _opcode_get_specialization_stats(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _opcode_get_specialization_stats_impl(module);
 }
-/*[clinic end generated code: output=21e3d53a659c651a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8ce722f02bc62778 input=a9049054013a1b77]*/

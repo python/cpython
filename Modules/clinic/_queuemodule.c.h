@@ -331,4 +331,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9a72a8d1b5767f6a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0f6d67002fc31279 input=a9049054013a1b77]*/

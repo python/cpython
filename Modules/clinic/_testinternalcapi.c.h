@@ -128,4 +128,4 @@ _testinternalcapi_optimize_cfg(PyObject *module, PyObject *const *args, Py_ssize
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=efe95836482fd542 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=54c1d8f850767b40 input=a9049054013a1b77]*/

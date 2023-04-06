@@ -1460,4 +1460,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const 
     }
     return _sre_SRE_Scanner_search_impl(self, cls);
 }
-/*[clinic end generated code: output=e3ba72156dd71572 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=93c2c6d8357b71ba input=a9049054013a1b77]*/

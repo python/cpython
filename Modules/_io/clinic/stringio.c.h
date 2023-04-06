@@ -367,4 +367,4 @@ _io_StringIO_seekable(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_StringIO_seekable_impl(self);
 }
-/*[clinic end generated code: output=533f20ae9b773126 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1f026f3ed0c015b1 input=a9049054013a1b77]*/

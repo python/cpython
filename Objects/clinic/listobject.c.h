@@ -383,4 +383,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=2ca109d8acc775bc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c6598659fa1e57f4 input=a9049054013a1b77]*/

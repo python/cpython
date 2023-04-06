@@ -276,4 +276,4 @@ _blake2_blake2s_hexdigest(BLAKE2sObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2s_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=bd0fb7639e450618 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=93569bda990ee77a input=a9049054013a1b77]*/

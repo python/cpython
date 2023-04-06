@@ -484,4 +484,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=cfdf35d916158d4f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b52d9040db6d060a input=a9049054013a1b77]*/

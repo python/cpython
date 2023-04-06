@@ -254,4 +254,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3b1bdb16565b8fda input=a9049054013a1b77]*/
+/*[clinic end generated code: output=41ee4523551d3c85 input=a9049054013a1b77]*/

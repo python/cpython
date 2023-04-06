@@ -140,4 +140,4 @@ exit:
 #ifndef _TESTCONSOLE_READ_OUTPUT_METHODDEF
     #define _TESTCONSOLE_READ_OUTPUT_METHODDEF
 #endif /* !defined(_TESTCONSOLE_READ_OUTPUT_METHODDEF) */
-/*[clinic end generated code: output=208c72e2c873555b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7f7a7ced894ef139 input=a9049054013a1b77]*/

@@ -319,4 +319,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=1f82e3c9791bb9a5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a65bc830e2f2532a input=a9049054013a1b77]*/

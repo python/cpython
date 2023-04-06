@@ -2869,4 +2869,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=603da07cf8dfeb4b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5702d2568cf281c8 input=a9049054013a1b77]*/

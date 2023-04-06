@@ -648,4 +648,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=b18d46e0036eff49 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=df66b512263fdd7d input=a9049054013a1b77]*/

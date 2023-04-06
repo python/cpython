@@ -1851,4 +1851,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=b339e255db698147 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8ef8677298c6e558 input=a9049054013a1b77]*/

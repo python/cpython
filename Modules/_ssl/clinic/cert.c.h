@@ -86,4 +86,4 @@ _ssl_Certificate_get_info(PySSLCertificate *self, PyObject *Py_UNUSED(ignored))
 {
     return _ssl_Certificate_get_info_impl(self);
 }
-/*[clinic end generated code: output=82efada014f9b7fe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cb3a5901a5eaae25 input=a9049054013a1b77]*/

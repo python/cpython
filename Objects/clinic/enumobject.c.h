@@ -107,4 +107,4 @@ reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=aba0ddbeab1601e3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d26b8c4f8d78cd22 input=a9049054013a1b77]*/

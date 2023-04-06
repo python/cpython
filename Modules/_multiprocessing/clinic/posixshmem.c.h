@@ -172,4 +172,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=3f6fee283d5fd0e9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=35916e2b87c96247 input=a9049054013a1b77]*/

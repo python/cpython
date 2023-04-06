@@ -1532,4 +1532,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=f10306e10427488b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1ad2bd5ed213e62c input=a9049054013a1b77]*/

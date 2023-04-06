@@ -488,4 +488,4 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f1fab6e71c785182 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=25dd144547496ac7 input=a9049054013a1b77]*/

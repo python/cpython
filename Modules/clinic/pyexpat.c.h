@@ -498,4 +498,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=63efc62e24a7b5a7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=41d35208bf256b84 input=a9049054013a1b77]*/

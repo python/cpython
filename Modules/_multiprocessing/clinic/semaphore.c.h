@@ -542,4 +542,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=dae57a702cc01512 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a5a9f7e97c218ccd input=a9049054013a1b77]*/

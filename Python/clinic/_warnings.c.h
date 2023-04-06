@@ -246,4 +246,4 @@ warnings_filters_mutated(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return warnings_filters_mutated_impl(module);
 }
-/*[clinic end generated code: output=20429719d7223bdc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b24d67f1541ded66 input=a9049054013a1b77]*/

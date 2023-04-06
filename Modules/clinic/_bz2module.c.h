@@ -241,4 +241,4 @@ _bz2_BZ2Decompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=805400e4805098ec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dae3b6dafce2b88b input=a9049054013a1b77]*/

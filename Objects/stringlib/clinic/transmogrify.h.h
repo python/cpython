@@ -278,4 +278,4 @@ stringlib_zfill(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d44a269805f6739e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=95246ee96b5be347 input=a9049054013a1b77]*/

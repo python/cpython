@@ -148,4 +148,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4d1293ca3472acdb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=89dbd0abec290f61 input=a9049054013a1b77]*/

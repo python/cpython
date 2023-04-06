@@ -466,4 +466,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=27f883807a6c29ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=70908f4244515be7 input=a9049054013a1b77]*/

@@ -1218,4 +1218,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=40767b1a98e54b60 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6dd4c38c3c5d416b input=a9049054013a1b77]*/

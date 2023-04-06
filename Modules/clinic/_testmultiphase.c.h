@@ -162,4 +162,4 @@ _testmultiphase_StateAccessType_get_count(StateAccessTypeObject *self, PyTypeObj
     }
     return _testmultiphase_StateAccessType_get_count_impl(self, cls);
 }
-/*[clinic end generated code: output=52ea97ab2f03bb6d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=993f8dc09dc06ba0 input=a9049054013a1b77]*/

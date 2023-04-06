@@ -149,4 +149,4 @@ grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=0916fdbcdeaf5d7d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=01d840a17741c197 input=a9049054013a1b77]*/

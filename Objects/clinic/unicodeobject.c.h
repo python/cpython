@@ -1497,4 +1497,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=05d942840635dadf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=88c7e2d8abcd79b3 input=a9049054013a1b77]*/

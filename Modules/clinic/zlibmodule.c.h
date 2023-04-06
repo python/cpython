@@ -1129,4 +1129,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=57ff7b511ab23132 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bc8f0bee448aaf8c input=a9049054013a1b77]*/

@@ -1309,4 +1309,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=64516114287e894d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fbf8be212c4528db input=a9049054013a1b77]*/

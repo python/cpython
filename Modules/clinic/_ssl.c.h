@@ -1542,4 +1542,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=4d9b81fa81f520f0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d40a934463d0c87 input=a9049054013a1b77]*/

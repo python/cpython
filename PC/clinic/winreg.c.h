@@ -1795,4 +1795,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=715db416dc1321ee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6bafe51fb03dff68 input=a9049054013a1b77]*/

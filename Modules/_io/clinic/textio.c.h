@@ -769,4 +769,4 @@ _io_TextIOWrapper_close(textio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_TextIOWrapper_close_impl(self);
 }
-/*[clinic end generated code: output=73f84b13c343b34b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fca52be090e22207 input=a9049054013a1b77]*/

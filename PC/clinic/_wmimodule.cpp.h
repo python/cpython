@@ -72,4 +72,4 @@ _wmi_exec_query(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7fdf0c0579ddb566 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae9f91740050349c input=a9049054013a1b77]*/

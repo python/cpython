@@ -101,4 +101,4 @@ _functools__lru_cache_wrapper_cache_clear(PyObject *self, PyObject *Py_UNUSED(ig
 {
     return _functools__lru_cache_wrapper_cache_clear_impl(self);
 }
-/*[clinic end generated code: output=7e7f3bcf9ed61f23 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=abd8cb61b4a28ded input=a9049054013a1b77]*/
