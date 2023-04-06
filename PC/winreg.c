@@ -2214,15 +2214,12 @@ static PyModuleDef_Slot winreg_slots[] = {
 };
 
 static struct PyModuleDef winregmodule = {
-    PyModuleDef_HEAD_INIT,
-    "winreg",
-    module_doc,
-    sizeof(winreg_state),
-    winreg_methods,
-    winreg_slots,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "winreg",
+    .m_doc = module_doc,
+    .m_size = sizeof(winreg_state),
+    .m_methods = winreg_methods,
+    .m_slots = winreg_slots,
 };
 
 PyMODINIT_FUNC PyInit_winreg(void)
