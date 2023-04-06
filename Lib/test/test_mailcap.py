@@ -255,7 +255,7 @@ class FindmatchTest(unittest.TestCase):
             if len(c) == 4:
                 with warnings_helper.check_warnings(('', c[3]["warn_type"]), quiet=True):
                     self.assertEqual(mailcap.findmatch(*c[0], **c[1]), c[2])
-            else: 
+            else:
                 self.assertEqual(mailcap.findmatch(*c[0], **c[1]), c[2])
 
 
