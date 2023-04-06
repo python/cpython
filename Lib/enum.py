@@ -205,7 +205,7 @@ class property(DynamicClassAttribute):
                 except KeyError:
                     raise AttributeError(
                             '%r has no attribute %r' % (ownerclass, self.name)
-                            )
+                            ) from None
             else:
                 return self.fget(instance)
 
