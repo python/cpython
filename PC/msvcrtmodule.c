@@ -663,15 +663,10 @@ static PyModuleDef_Slot msvcrt_slots[] = {
 };
 
 static struct PyModuleDef msvcrtmodule = {
-    PyModuleDef_HEAD_INIT,
-    "msvcrt",
-    NULL,
-    0,
-    msvcrt_functions,
-    msvcrt_slots,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "msvcrt",
+    .m_methods = msvcrt_functions,
+    .m_slots = msvcrt_slots
 };
 
 PyMODINIT_FUNC
