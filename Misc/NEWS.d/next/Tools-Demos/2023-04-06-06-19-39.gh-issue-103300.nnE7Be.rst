@@ -1,0 +1,3 @@
+:source:`Tools/patchcheck/patchcheck.py` no longer deadlocks trying to
+process a branch with a large diff relative to ``main``. Patch by Oleg
+Iarygin.
