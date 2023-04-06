@@ -145,10 +145,10 @@ def _calculate_meta(meta, bases):
 
 
 def get_original_bases(cls, /) -> tuple[type, ...] | None:
-    r"""
+    """
     Return the objects in the bases list in the class's definition before
     they could have been modified by ``__mro_entries__``. This is useful for
-    introspecting ``Generic``\s.
+    introspecting Generics.
 
     Examples::
 
