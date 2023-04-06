@@ -1314,24 +1314,25 @@ class _TestQueue(BaseTestCase):
 
     def test_shutdown_allowed_transitions(self):
         # allowed transitions would be from `alive`` via `shutdown` to `shutdown_immediate``
+        mod_q = multiprocessing.queues
         for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
-            self.assertEqual(0, q._shutdown_state.value)
+            self.assertEqual(mod_q._queue_alive, q._shutdown_state.value)
 
             # default -> immediate=False
             q.shutdown()
-            self.assertEqual(1, q._shutdown_state.value)
+            self.assertEqual(mod_q._queue_shutdown, q._shutdown_state.value)
 
             q.shutdown(immediate=True)
-            self.assertEqual(2, q._shutdown_state.value)
+            self.assertEqual(mod_q._queue_shutdown_immediate, q._shutdown_state.value)
 
             q.shutdown(immediate=False)
-            self.assertNotEqual(1, q._shutdown_state.value)
+            self.assertNotEqual(mod_q._queue_shutdown, q._shutdown_state.value)
 
     def _shutdown_all_methods_in_one_process(self, immediate):
         # part 1: Queue
         q = multiprocessing.Queue(2)
         q.put("L")
-        _wait() # Give time to simulate delay of starting internal thread
+        _wait() # Give time to simulate many processes
         q.put_nowait("O")
         q.shutdown(immediate)
         _wait() # simulate time of synchro primitive
@@ -1520,11 +1521,11 @@ class _TestQueue(BaseTestCase):
                     p.join()
 
             if not immediate:
-                assert(len(res_gets) == len(res_puts))
-                assert(res_gets.count(True) == res_puts.count(True))
+                self.assertTrue(q.empty())
+                self.assertEqual(res_gets.count(True), res_puts.count(True))
             else:
-                assert(len(res_gets) <= len(res_puts))
-                assert(res_gets.count(True) <= res_puts.count(True))
+                self.assertFalse(q.empty())
+                self.assertTrue(res_gets.count(True) <= res_puts.count(True))
 
     def test_shutdown_all_methods_in_many_processes(self):
         return self._shutdown_all_methods_in_many_processes(False)
