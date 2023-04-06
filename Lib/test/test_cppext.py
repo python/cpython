@@ -1,10 +1,6 @@
 # gh-91321: Build a basic C++ test extension to check that the Python C API is
 # compatible with C++ and does not emit C++ compiler warnings.
 import os.path
-try:
-    import ssl
-except ImportError:
-    ssl = None
 import sys
 import unittest
 import subprocess
@@ -15,7 +11,8 @@ from test.support import os_helper
 
 MS_WINDOWS = (sys.platform == 'win32')
 
-PKG_CPPEXTDATA = os.path.join(os.path.dirname(__file__), "cppextdata")
+
+SETUP_TESTCPPEXT = support.findfile('setup_testcppext.py')
 
 
 @support.requires_subprocess()
@@ -34,8 +31,6 @@ class TestCPPExt(unittest.TestCase):
     @unittest.skipIf(
         '-fsanitize' in (sysconfig.get_config_var('PY_CFLAGS') or ''),
         'test does not work with analyzing builds')
-    # the test uses pip which needs a TLS connection to PyPI
-    @unittest.skipIf(ssl is None, 'No ssl module')
     # the test uses venv+pip: skip if it's not available
     @support.requires_venv_with_pip()
     def check_build(self, std_cpp03, extension_name):
@@ -64,15 +59,11 @@ class TestCPPExt(unittest.TestCase):
             python = os.path.join(venv_dir, 'bin', python_exe)
 
         def run_cmd(operation, cmd):
-            env = os.environ.copy()
-            env['CPYTHON_TEST_CPP_STD'] = 'c++03' if std_cpp03 else 'c++11'
-            env['CPYTHON_TEST_EXT_NAME'] = extension_name
             if verbose:
                 print('Run:', ' '.join(cmd))
-                subprocess.run(cmd, check=True, env=env)
+                subprocess.run(cmd, check=True)
             else:
                 proc = subprocess.run(cmd,
-                                      env=env,
                                       stdout=subprocess.PIPE,
                                       stderr=subprocess.STDOUT,
                                       text=True)
@@ -81,9 +72,16 @@ class TestCPPExt(unittest.TestCase):
                     self.fail(
                         f"{operation} failed with exit code {proc.returncode}")
 
-        # Build and install the C++ extension
+        # Build the C++ extension
         cmd = [python, '-X', 'dev',
-               '-m', 'pip', 'install', PKG_CPPEXTDATA]
+               SETUP_TESTCPPEXT, 'build_ext', '--verbose']
+        if std_cpp03:
+            cmd.append('-std=c++03')
+        run_cmd('Build', cmd)
+
+        # Install the C++ extension
+        cmd = [python, '-X', 'dev',
+               SETUP_TESTCPPEXT, 'install']
         run_cmd('Install', cmd)
 
         # Do a reference run. Until we test that running python
