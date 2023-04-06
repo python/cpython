@@ -16,7 +16,8 @@ class StackBrowserTest(unittest.TestCase):
         svs = stackviewer.sys
         try:
             abc
-        except NameError:
+        except NameError as exc:
+            svs.last_exc = exc
             svs.last_type, svs.last_value, svs.last_traceback = (
                 sys.exc_info())
 
@@ -27,6 +28,7 @@ class StackBrowserTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         svs = stackviewer.sys
+        del svs.last_exc
         del svs.last_traceback, svs.last_type, svs.last_value
 
         cls.root.update_idletasks()

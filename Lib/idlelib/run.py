@@ -239,6 +239,7 @@ def print_exception():
     efile = sys.stderr
     typ, val, tb = excinfo = sys.exc_info()
     sys.last_type, sys.last_value, sys.last_traceback = excinfo
+    sys.last_exc = val
     seen = set()
 
     def print_exc(typ, exc, tb):
@@ -631,6 +632,7 @@ class Executive:
             tb = tb.tb_next
         sys.last_type = typ
         sys.last_value = val
+        sys.last_exc = val
         item = stackviewer.StackTreeItem(flist, tb)
         return debugobj_r.remote_object_tree_item(item)
 
