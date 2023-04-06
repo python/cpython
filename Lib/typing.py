@@ -2032,7 +2032,11 @@ class _ProtocolMeta(ABCMeta):
         if super().__instancecheck__(instance):
             return True
 
-        if is_protocol_cls:
+        # Skip the below loop for protocols where `cls.__callable_proto_members_only__ == True`.
+        # For these protocols, this just duplicates checks that have already been done
+        # in the `_proto_hook` function,
+        # which is called as part of the super().__instancecheck__ method above.
+        if is_protocol_cls and not cls.__callable_proto_members_only__:
             getattr_static = _lazy_load_getattr_static()
             for attr in cls.__protocol_attrs__:
                 try:

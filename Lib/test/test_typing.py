@@ -2577,6 +2577,18 @@ class ProtocolTests(BaseTestCase):
         class PG(Protocol[T]):
             def meth(x): ...
 
+        @runtime_checkable
+        class WeirdProto(Protocol):
+            meth = str.maketrans
+
+        class CustomCallable:
+            def __call__(self, *args, **kwargs):
+                pass
+
+        @runtime_checkable
+        class WeirderProto(Protocol):
+            meth = CustomCallable()
+
         class BadP(Protocol):
             def meth(x): ...
 
@@ -2588,6 +2600,8 @@ class ProtocolTests(BaseTestCase):
 
         self.assertIsInstance(C(), P)
         self.assertIsInstance(C(), PG)
+        self.assertIsInstance(C(), WeirdProto)
+        self.assertIsInstance(C(), WeirderProto)
         with self.assertRaises(TypeError):
             isinstance(C(), PG[T])
         with self.assertRaises(TypeError):
