@@ -88,7 +88,7 @@ Dynamic Type Creation
 
 .. function:: get_orig_bases(tp, /)
 
-    Returns the objects in the bases list in the class's definition before
+    Return the objects in the bases list in the class's definition before
     they were modified by ``__mro_entries__``. This is useful for
     introspecting ``Generic``\s.
 

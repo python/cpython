@@ -1,1 +1,2 @@
-Implement :func:`types.get_orig_bases` and :func:`typing.get_orig_class` to provide further introspection for types.
+Implement :func:`types.get_orig_bases` and :func:`typing.get_orig_class` to
+provide further introspection for types.
