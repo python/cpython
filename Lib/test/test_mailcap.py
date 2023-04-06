@@ -243,17 +243,26 @@ class FindmatchTest(unittest.TestCase):
 
     def test_unsafe_mailcap_input(self):
         with self.assertWarnsRegex(mailcap.UnsafeMailcapInput,
-                                   'Refusing to substitute parameter.*into a shell command'):
-            unsafe_param = mailcap.subst("echo %{total}", "audio/wav", "foo.txt", ["total=*"])
+                                   'Refusing to substitute parameter.*'
+                                   'into a shell command'):
+            unsafe_param = mailcap.subst("echo %{total}",
+                                         "audio/wav",
+                                         "foo.txt",
+                                         ["total=*"])
             self.assertEqual(unsafe_param, None)
 
         with self.assertWarnsRegex(mailcap.UnsafeMailcapInput,
-                                   'Refusing to substitute MIME type.*into a shell'):
-            self.assertEqual(mailcap.subst("echo %t", "audio/*", "foo.txt"), None)
+                                   'Refusing to substitute MIME type'
+                                   '.*into a shell'):
+            unsafe_mimetype = mailcap.subst("echo %t", "audio/*", "foo.txt")
+            self.assertEqual(unsafe_mimetype, None)
 
         with self.assertWarnsRegex(mailcap.UnsafeMailcapInput,
-                                   'Refusing to use mailcap with filename.*Use a safe temporary filename.'):
-            unsafe_filename = mailcap.findmatch(MAILCAPDICT,"audio/wav", filename="foo*.txt")
+                                   'Refusing to use mailcap with filename.*'
+                                   'Use a safe temporary filename.'):
+            unsafe_filename = mailcap.findmatch(MAILCAPDICT,
+                                                "audio/wav",
+                                                filename="foo*.txt")
             self.assertEqual(unsafe_filename, (None, None))
 
     def _run_cases(self, cases):
