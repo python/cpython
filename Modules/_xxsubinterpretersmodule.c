@@ -67,16 +67,7 @@ _release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
     }
     int res = _PyCrossInterpreterData_Release(data);
     if (res < 0) {
-        // XXX Fix this!
-        /* The owning interpreter is already destroyed.
-         * Ideally, this shouldn't ever happen.  (It's highly unlikely.)
-         * For now we hack around that to resolve refleaks, by decref'ing
-         * the released object here, even if its the wrong interpreter.
-         * The owning interpreter has already been destroyed
-         * so we should be okay, especially since the currently
-         * shareable types are all very basic, with no GC.
-         * That said, it becomes much messier once interpreters
-         * no longer share a GIL, so this needs to be fixed before then. */
+        /* The owning interpreter is already destroyed. */
         _PyCrossInterpreterData_Clear(NULL, data);
         if (ignoreexc) {
             // XXX Emit a warning?
