@@ -1242,7 +1242,7 @@ def _unpack_zipfile(filename, extract_dir):
     finally:
         zip.close()
 
-def _unpack_tarfile(filename, extract_dir, filter=None):
+def _unpack_tarfile(filename, extract_dir, *, filter=None):
     """Unpack tar/tar.gz/tar.bz2/tar.xz `filename` to `extract_dir`
     """
     import tarfile  # late import for breaking circular dependency
@@ -1285,7 +1285,7 @@ def _find_unpack_format(filename):
                 return name
     return None
 
-def unpack_archive(filename, extract_dir=None, format=None, filter=None):
+def unpack_archive(filename, extract_dir=None, format=None, *, filter=None):
     """Unpack an archive.
 
     `filename` is the name of the archive.
