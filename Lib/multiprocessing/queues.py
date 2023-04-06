@@ -111,6 +111,8 @@ class Queue(object):
         if not self._is_alive():
             raise ShutDown
         if not self._sem.acquire(block, timeout):
+            if not self._is_alive():
+                raise ShutDown
             raise Full
 
         with self._notempty:
@@ -122,33 +124,43 @@ class Queue(object):
     def get(self, block=True, timeout=None):
         if self._closed:
             raise ValueError(f"Queue {self!r} is closed")
-        if (
-            self._is_shutdown_immediate()
-            or (self._is_shutdown() and self.empty())
-        ):
-            raise ShutDown
         if block and timeout is None:
             with self._rlock:
+                # checks shutdown state
+                if (self._is_shutdown_immediate()
+                    or (self._is_shutdown() and self.empty())):
+                    raise ShutDown
                 res = self._recv_bytes()
             self._sem.release()
         else:
             if block:
                 deadline = time.monotonic() + timeout
             if not self._rlock.acquire(block, timeout):
+                if (self._is_shutdown_immediate()
+                    or (self._is_shutdown() and self.empty())):
+                        raise ShutDown
                 raise Empty
             try:
                 if block:
                     timeout = deadline - time.monotonic()
                     if not self._poll(timeout):
+                        if not self._is_alive():
+                            raise ShutDown
                         raise Empty
                 elif not self._poll():
+                    if not self._is_alive():
+                        raise ShutDown
                     raise Empty
+
+                # here queue is not empty
+                if self._is_shutdown_immediate():
+                    raise ShutDown
+                # here shutdown state queue is alive or shutdown
                 res = self._recv_bytes()
                 self._sem.release()
             finally:
                 self._rlock.release()
-        if self._is_shutdown_immediate():
-            raise ShutDown
+
         # unserialize the data after having released the lock
         return _ForkingPickler.loads(res)
 
@@ -357,6 +369,8 @@ class JoinableQueue(Queue):
         if not self._is_alive():
             raise ShutDown
         if not self._sem.acquire(block, timeout):
+            if not self._is_alive():
+                raise ShutDown
             raise Full
 
         with self._notempty, self._cond:
@@ -389,7 +403,7 @@ class JoinableQueue(Queue):
             is_alive = self._is_alive()
             super().shutdown(immediate)
             if is_alive:
-                self._cond.notify_all() # here to check YD
+                self._cond.notify_all()
 
 #
 # Simplified Queue type -- really just a locked pipe
