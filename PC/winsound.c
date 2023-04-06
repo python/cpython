@@ -251,15 +251,11 @@ static PyModuleDef_Slot sound_slots[] = {
 };
 
 static struct PyModuleDef winsoundmodule = {
-    PyModuleDef_HEAD_INIT,
-    "winsound",
-    sound_module_doc,
-    0,
-    sound_methods,
-    sound_slots,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "winsound",
+    .m_doc = sound_module_doc,
+    .m_methods = sound_methods,
+    .m_slots = sound_slots
 };
 
 PyMODINIT_FUNC
