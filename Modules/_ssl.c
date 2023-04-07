@@ -5991,9 +5991,6 @@ sslmodule_init_errorcodes(PyObject *module)
     state->err_codes_to_names = PyDict_New();
     if (state->err_codes_to_names == NULL)
         return -1;
-    state->err_names_to_codes = PyDict_New();
-    if (state->err_names_to_codes == NULL)
-        return -1;
     state->lib_codes_to_names = PyDict_New();
     if (state->lib_codes_to_names == NULL)
         return -1;
@@ -6006,8 +6003,6 @@ sslmodule_init_errorcodes(PyObject *module)
         if (mnemo == NULL || key == NULL)
             return -1;
         if (PyDict_SetItem(state->err_codes_to_names, key, mnemo))
-            return -1;
-        if (PyDict_SetItem(state->err_names_to_codes, mnemo, key))
             return -1;
         Py_DECREF(key);
         Py_DECREF(mnemo);
@@ -6027,13 +6022,6 @@ sslmodule_init_errorcodes(PyObject *module)
         Py_DECREF(mnemo);
         libcode++;
     }
-
-    if (PyModule_AddObjectRef(module, "err_codes_to_names", state->err_codes_to_names))
-        return -1;
-    if (PyModule_AddObjectRef(module, "err_names_to_codes", state->err_names_to_codes))
-        return -1;
-    if (PyModule_AddObjectRef(module, "lib_codes_to_names", state->lib_codes_to_names))
-        return -1;
 
     return 0;
 }
@@ -6189,7 +6177,6 @@ sslmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->PySSLSyscallErrorObject);
     Py_VISIT(state->PySSLEOFErrorObject);
     Py_VISIT(state->err_codes_to_names);
-    Py_VISIT(state->err_names_to_codes);
     Py_VISIT(state->lib_codes_to_names);
     Py_VISIT(state->Sock_Type);
 
@@ -6214,7 +6201,6 @@ sslmodule_clear(PyObject *m)
     Py_CLEAR(state->PySSLSyscallErrorObject);
     Py_CLEAR(state->PySSLEOFErrorObject);
     Py_CLEAR(state->err_codes_to_names);
-    Py_CLEAR(state->err_names_to_codes);
     Py_CLEAR(state->lib_codes_to_names);
     Py_CLEAR(state->Sock_Type);
     Py_CLEAR(state->str_library);
