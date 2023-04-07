@@ -1343,6 +1343,7 @@ class SubinterpThreadingTests(BaseTestCase):
             import test.support
             test.support.run_in_subinterp_with_config(
                 {subinterp_code!r},
+                use_main_obmalloc=True,
                 allow_fork=True,
                 allow_exec=True,
                 allow_threads={allowed},

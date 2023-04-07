@@ -1482,6 +1482,7 @@ static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     const char *code;
+    int use_main_obmalloc = -1;
     int allow_fork = -1;
     int allow_exec = -1;
     int allow_threads = -1;
@@ -1494,6 +1495,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     PyCompilerFlags cflags = {0};
 
     static char *kwlist[] = {"code",
+                             "use_main_obmalloc",
                              "allow_fork",
                              "allow_exec",
                              "allow_threads",
@@ -1502,11 +1504,16 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
                              "own_gil",
                              NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$pppppp:run_in_subinterp_with_config", kwlist,
-                    &code, &allow_fork, &allow_exec,
+                    "s$ppppppp:run_in_subinterp_with_config", kwlist,
+                    &code, &use_main_obmalloc,
+                    &allow_fork, &allow_exec,
                     &allow_threads, &allow_daemon_threads,
                     &check_multi_interp_extensions,
                     &own_gil)) {
+        return NULL;
+    }
+    if (use_main_obmalloc < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing use_main_obmalloc");
         return NULL;
     }
     if (allow_fork < 0) {
@@ -1539,6 +1546,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     PyThreadState_Swap(NULL);
 
     const _PyInterpreterConfig config = {
+        .use_main_obmalloc = use_main_obmalloc,
         .allow_fork = allow_fork,
         .allow_exec = allow_exec,
         .allow_threads = allow_threads,

@@ -145,7 +145,7 @@ _PyDebug_PrintTotalRefs(void) {
     _PyRuntimeState *runtime = &_PyRuntime;
     fprintf(stderr,
             "[%zd refs, %zd blocks]\n",
-            get_global_reftotal(runtime), _Py_GetAllocatedBlocks());
+            get_global_reftotal(runtime), _Py_GetGlobalAllocatedBlocks());
     /* It may be helpful to also print the "legacy" reftotal separately.
        Likewise for the total for each interpreter. */
 }

@@ -1215,23 +1215,25 @@ class SubinterpreterTest(unittest.TestCase):
         """
         import json
 
+        OBMALLOC = 1<<5
         EXTENSIONS = 1<<8
         THREADS = 1<<10
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
 
-        features = ['fork', 'exec', 'threads', 'daemon_threads',
+        features = ['obmalloc', 'fork', 'exec', 'threads', 'daemon_threads',
                     'extensions', 'own_gil']
         kwlist = [f'allow_{n}' for n in features]
+        kwlist[0] = 'use_main_obmalloc'
         kwlist[-2] = 'check_multi_interp_extensions'
         kwlist[-1] = 'own_gil'
         for config, expected in {
-            (True, True, True, True, True, True):
-                (FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS, True),
-            (False, False, False, False, False, False):
-                (0, False),
-            (False, False, True, False, True, False):
+            (True, True, True, True, True, True, True):
+                (OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS, True),
+            (True, False, False, False, False, False, False):
+                (OBMALLOC, False),
+            (False, False, False, True, False, True, False):
                 (THREADS | EXTENSIONS, False),
         }.items():
             kwargs = dict(zip(kwlist, config))
@@ -1256,6 +1258,20 @@ class SubinterpreterTest(unittest.TestCase):
 
                 self.assertEqual(settings, expected)
 
+        # expected to fail
+        for config in [
+            (False, False, False, False, False, False, False),
+        ]:
+            kwargs = dict(zip(kwlist, config))
+            with self.subTest(config):
+                script = textwrap.dedent(f'''
+                    import _testinternalcapi
+                    _testinternalcapi.get_interp_settings()
+                    raise NotImplementedError('unreachable')
+                    ''')
+                with self.assertRaises(RuntimeError):
+                    support.run_in_subinterp_with_config(script, **kwargs)
+
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_overridden_setting_extensions_subinterp_check(self):
@@ -1267,13 +1283,15 @@ class SubinterpreterTest(unittest.TestCase):
         """
         import json
 
+        OBMALLOC = 1<<5
         EXTENSIONS = 1<<8
         THREADS = 1<<10
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
-        BASE_FLAGS = FORK | EXEC | THREADS | DAEMON_THREADS
+        BASE_FLAGS = OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS
         base_kwargs = {
+            'use_main_obmalloc': True,
             'allow_fork': True,
             'allow_exec': True,
             'allow_threads': True,
