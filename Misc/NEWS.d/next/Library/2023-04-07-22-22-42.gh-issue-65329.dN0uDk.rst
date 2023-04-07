@@ -1,0 +1,1 @@
+Make comparable the equivalent instances of functools.partial objects. Patched by Shakur Shams Mullick and Furkan Onder.
