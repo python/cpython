@@ -5007,13 +5007,13 @@ order (MRO) for bases """
         # add test case for gh-103272
         class A:
             def __getattr__(self, name):
-                raise ValueError
+                raise ValueError("FOO")
 
             @property
             def foo(self):
                 return self.__getattr__("asdf")
 
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "FOO"):
             A().foo
 
 
