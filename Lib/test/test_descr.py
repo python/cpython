@@ -27,7 +27,6 @@ except ImportError:
     xxsubtype = None
 
 
-
 class OperatorsTest(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
