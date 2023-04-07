@@ -255,6 +255,10 @@ inspect
   for determining the current state of asynchronous generators.
   (Contributed by Thomas Krennwallner in :issue:`35759`.)
 
+* The performance of :func:`inspect.getattr_static` has been considerably
+  improved. Most calls to the function should be around 2x faster than they
+  were in Python 3.11. (Contributed by Alex Waygood in :gh:`103193`.)
+
 pathlib
 -------
 
@@ -418,6 +422,8 @@ tempfile
 The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
 *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
 
+.. _whatsnew-typing-py312:
+
 typing
 ------
 
@@ -436,6 +442,39 @@ typing
   may no longer be considered instances of that protocol on Python 3.12+, and
   vice versa. Most users are unlikely to be affected by this change.
   (Contributed by Alex Waygood in :gh:`102433`.)
+
+* The members of a runtime-checkable protocol are now considered "frozen" at
+  runtime as soon as the class has been created. Monkey-patching attributes
+  onto a runtime-checkable protocol will still work, but will have no impact on
+  :func:`isinstance` checks comparing objects to the protocol. For example::
+
+      >>> from typing import Protocol, runtime_checkable
+      >>> @runtime_checkable
+      ... class HasX(Protocol):
+      ...     x = 1
+      ...
+      >>> class Foo: ...
+      ...
+      >>> f = Foo()
+      >>> isinstance(f, HasX)
+      False
+      >>> f.x = 1
+      >>> isinstance(f, HasX)
+      True
+      >>> HasX.y = 2
+      >>> isinstance(f, HasX)  # unchanged, even though HasX now also has a "y" attribute
+      True
+
+  This change was made in order to speed up ``isinstance()`` checks against
+  runtime-checkable protocols.
+
+* The performance profile of :func:`isinstance` checks against
+  :func:`runtime-checkable protocols <typing.runtime_checkable>` has changed
+  significantly. Most ``isinstance()`` checks against protocols with only a few
+  members should be at least 2x faster than in 3.11, and some may be 20x
+  faster or more. However, ``isinstance()`` checks against protocols with seven
+  or more members may be slower than in Python 3.11. (Contributed by Alex
+  Waygood in :gh:`74690` and :gh:`103193`.)
 
 sys
 ---
