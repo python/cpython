@@ -666,7 +666,7 @@ extern char * _getpty(int *, int, mode_t, int);
 #ifdef WITH_THREAD
 #  ifdef Py_BUILD_CORE
 #    ifdef HAVE_THREAD_LOCAL
-#      error "unexpectedly, HAVE_THREAD_LOCAL is already defined"
+#      error "HAVE_THREAD_LOCAL is already defined"
 #    endif
 #    define HAVE_THREAD_LOCAL 1
 #    ifdef thread_local
