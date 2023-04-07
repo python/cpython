@@ -960,9 +960,9 @@ As you can see, most actions involve storing or updating a value somewhere.
 
    An object holding parsed argument names and values as attributes.
    Normally created by calling when calling :meth:`OptionParser.parse_args`,
-   and can be overridden by a custom subclass passed to the *values* argument of 
+   and can be overridden by a custom subclass passed to the *values* argument of
    :meth:`OptionParser.parse_args` (as described in :ref:`optparse-parsing-arguments`).
-   
+
 Option
 arguments (and various other values) are stored as attributes of this object,
 according to the :attr:`~Option.dest` (destination) option attribute.
