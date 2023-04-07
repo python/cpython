@@ -1649,7 +1649,7 @@ These are not used in annotations. They are building blocks for creating generic
           >>> isinstance(f, HasX)
           True
           >>> HasX.y = 2
-          >>> isinstance(f, HasX)  # unchanged, even though HasX now also has a `y` attribute
+          >>> isinstance(f, HasX)  # unchanged, even though HasX now also has a "y" attribute
           True
 
 
