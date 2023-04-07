@@ -61,7 +61,7 @@ running from a virtual environment.
 A virtual environment may be "activated" using a script in its binary directory
 (``bin`` on POSIX; ``Scripts`` on Windows).
 This will prepend that directory to your :envvar:`!PATH`, so that running
-:program:`!python` will invoke the environment's Python interpreter
+:program:`python` will invoke the environment's Python interpreter
 and you can run installed scripts without having to use their full path.
 The invocation of the activation script is platform-specific
 (:samp:`{<venv>}` must be replaced by the path to the directory
@@ -84,7 +84,7 @@ containing the virtual environment):
 +-------------+------------+--------------------------------------------------+
 
 .. versionadded:: 3.4
-   :program:`!fish` and :program:`!csh` activation scripts.
+   :program:`fish` and :program:`csh` activation scripts.
 
 .. versionadded:: 3.8
    PowerShell activation scripts installed under POSIX for PowerShell Core
@@ -478,7 +478,7 @@ subclass which installs setuptools and pip into a created virtual environment::
             :param context: The information for the virtual environment
                             creation request being processed.
             """
-            url = 'https://bitbucket.org/pypa/setuptools/downloads/ez_setup.py'
+            url = "https://bootstrap.pypa.io/ez_setup.py"
             self.install_script(context, 'setuptools', url)
             # clear up the setuptools archive which gets downloaded
             pred = lambda o: o.startswith('setuptools-') and o.endswith('.tar.gz')
@@ -497,76 +497,68 @@ subclass which installs setuptools and pip into a created virtual environment::
             url = 'https://bootstrap.pypa.io/get-pip.py'
             self.install_script(context, 'pip', url)
 
-    def main(args=None):
-        compatible = True
-        if sys.version_info < (3, 3):
-            compatible = False
-        elif not hasattr(sys, 'base_prefix'):
-            compatible = False
-        if not compatible:
-            raise ValueError('This script is only for use with '
-                             'Python 3.3 or later')
-        else:
-            import argparse
 
-            parser = argparse.ArgumentParser(prog=__name__,
-                                             description='Creates virtual Python '
-                                                         'environments in one or '
-                                                         'more target '
-                                                         'directories.')
-            parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
-                                help='A directory in which to create the '
-                                     'virtual environment.')
-            parser.add_argument('--no-setuptools', default=False,
-                                action='store_true', dest='nodist',
-                                help="Don't install setuptools or pip in the "
-                                     "virtual environment.")
-            parser.add_argument('--no-pip', default=False,
-                                action='store_true', dest='nopip',
-                                help="Don't install pip in the virtual "
-                                     "environment.")
-            parser.add_argument('--system-site-packages', default=False,
-                                action='store_true', dest='system_site',
-                                help='Give the virtual environment access to the '
-                                     'system site-packages dir.')
-            if os.name == 'nt':
-                use_symlinks = False
-            else:
-                use_symlinks = True
-            parser.add_argument('--symlinks', default=use_symlinks,
-                                action='store_true', dest='symlinks',
-                                help='Try to use symlinks rather than copies, '
-                                     'when symlinks are not the default for '
-                                     'the platform.')
-            parser.add_argument('--clear', default=False, action='store_true',
-                                dest='clear', help='Delete the contents of the '
-                                                   'virtual environment '
-                                                   'directory if it already '
-                                                   'exists, before virtual '
-                                                   'environment creation.')
-            parser.add_argument('--upgrade', default=False, action='store_true',
-                                dest='upgrade', help='Upgrade the virtual '
-                                                     'environment directory to '
-                                                     'use this version of '
-                                                     'Python, assuming Python '
-                                                     'has been upgraded '
-                                                     'in-place.')
-            parser.add_argument('--verbose', default=False, action='store_true',
-                                dest='verbose', help='Display the output '
-                                                   'from the scripts which '
-                                                   'install setuptools and pip.')
-            options = parser.parse_args(args)
-            if options.upgrade and options.clear:
-                raise ValueError('you cannot supply --upgrade and --clear together.')
-            builder = ExtendedEnvBuilder(system_site_packages=options.system_site,
-                                           clear=options.clear,
-                                           symlinks=options.symlinks,
-                                           upgrade=options.upgrade,
-                                           nodist=options.nodist,
-                                           nopip=options.nopip,
-                                           verbose=options.verbose)
-            for d in options.dirs:
-                builder.create(d)
+    def main(args=None):
+        import argparse
+
+        parser = argparse.ArgumentParser(prog=__name__,
+                                         description='Creates virtual Python '
+                                                     'environments in one or '
+                                                     'more target '
+                                                     'directories.')
+        parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
+                            help='A directory in which to create the '
+                                 'virtual environment.')
+        parser.add_argument('--no-setuptools', default=False,
+                            action='store_true', dest='nodist',
+                            help="Don't install setuptools or pip in the "
+                                 "virtual environment.")
+        parser.add_argument('--no-pip', default=False,
+                            action='store_true', dest='nopip',
+                            help="Don't install pip in the virtual "
+                                 "environment.")
+        parser.add_argument('--system-site-packages', default=False,
+                            action='store_true', dest='system_site',
+                            help='Give the virtual environment access to the '
+                                 'system site-packages dir.')
+        if os.name == 'nt':
+            use_symlinks = False
+        else:
+            use_symlinks = True
+        parser.add_argument('--symlinks', default=use_symlinks,
+                            action='store_true', dest='symlinks',
+                            help='Try to use symlinks rather than copies, '
+                                 'when symlinks are not the default for '
+                                 'the platform.')
+        parser.add_argument('--clear', default=False, action='store_true',
+                            dest='clear', help='Delete the contents of the '
+                                               'virtual environment '
+                                               'directory if it already '
+                                               'exists, before virtual '
+                                               'environment creation.')
+        parser.add_argument('--upgrade', default=False, action='store_true',
+                            dest='upgrade', help='Upgrade the virtual '
+                                                 'environment directory to '
+                                                 'use this version of '
+                                                 'Python, assuming Python '
+                                                 'has been upgraded '
+                                                 'in-place.')
+        parser.add_argument('--verbose', default=False, action='store_true',
+                            dest='verbose', help='Display the output '
+                                                 'from the scripts which '
+                                                 'install setuptools and pip.')
+        options = parser.parse_args(args)
+        if options.upgrade and options.clear:
+            raise ValueError('you cannot supply --upgrade and --clear together.')
+        builder = ExtendedEnvBuilder(system_site_packages=options.system_site,
+                                       clear=options.clear,
+                                       symlinks=options.symlinks,
+                                       upgrade=options.upgrade,
+                                       nodist=options.nodist,
+                                       nopip=options.nopip,
+                                       verbose=options.verbose)
+        for d in options.dirs:
+            builder.create(d)
 
     if __name__ == '__main__':
         rc = 1

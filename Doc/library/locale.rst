@@ -496,6 +496,9 @@ The :mod:`locale` module defines the following exception and functions:
    system, like those returned by :func:`os.strerror` might be affected by this
    category.
 
+   This value may not be available on operating systems not conforming to the
+   POSIX standard, most notably Windows.
+
 
 .. data:: LC_NUMERIC
 

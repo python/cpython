@@ -11,7 +11,7 @@ support.requires_working_socket(module=True)
 from asyncio import run, iscoroutinefunction
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock, Mock,
-                           create_autospec, sentinel, _CallList)
+                           create_autospec, sentinel, _CallList, seal)
 
 
 def tearDownModule():
@@ -218,10 +218,6 @@ class AsyncAutospecTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             create_autospec(async_func, instance=True)
 
-    @unittest.skip('Broken test from https://bugs.python.org/issue37251')
-    def test_create_autospec_awaitable_class(self):
-        self.assertIsInstance(create_autospec(AwaitableClass), AsyncMock)
-
     def test_create_autospec(self):
         spec = create_autospec(async_func_args)
         awaitable = spec(1, 2, c=3)
@@ -299,6 +295,27 @@ class AsyncSpecTest(unittest.TestCase):
         mock = Mock(AsyncClass)
         self.assertIsInstance(mock.async_method, AsyncMock)
         self.assertIsInstance(mock.normal_method, Mock)
+
+    def test_spec_normal_methods_on_class_with_mock_seal(self):
+        mock = Mock(AsyncClass)
+        seal(mock)
+        with self.assertRaises(AttributeError):
+            mock.normal_method
+        with self.assertRaises(AttributeError):
+            mock.async_method
+
+    def test_spec_async_attributes_instance(self):
+        async_instance = AsyncClass()
+        async_instance.async_func_attr = async_func
+        async_instance.later_async_func_attr = normal_func
+
+        mock_async_instance = Mock(spec_set=async_instance)
+
+        async_instance.later_async_func_attr = async_func
+
+        self.assertIsInstance(mock_async_instance.async_func_attr, AsyncMock)
+        # only the shape of the spec at the time of mock construction matters
+        self.assertNotIsInstance(mock_async_instance.later_async_func_attr, AsyncMock)
 
     def test_spec_mock_type_kw(self):
         def inner_test(mock_type):
@@ -1076,3 +1093,7 @@ class AsyncMockAssert(unittest.TestCase):
                         'Actual: [call(1)]'))) as cm:
             self.mock.assert_has_awaits([call(), call(1, 2)])
         self.assertIsInstance(cm.exception.__cause__, TypeError)
+
+
+if __name__ == '__main__':
+    unittest.main()

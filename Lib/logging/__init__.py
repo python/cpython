@@ -173,8 +173,8 @@ else: #pragma: no cover
         """Return the frame object for the caller's stack frame."""
         try:
             raise Exception
-        except Exception:
-            return sys.exc_info()[2].tb_frame.f_back
+        except Exception as exc:
+            return exc.__traceback__.tb_frame.f_back
 
 #
 # _srcfile is used when walking the stack to check when we've got the first
@@ -511,7 +511,7 @@ class StringTemplateStyle(PercentStyle):
 
     def usesTime(self):
         fmt = self._fmt
-        return fmt.find('$asctime') >= 0 or fmt.find(self.asctime_format) >= 0
+        return fmt.find('$asctime') >= 0 or fmt.find(self.asctime_search) >= 0
 
     def validate(self):
         pattern = Template.pattern

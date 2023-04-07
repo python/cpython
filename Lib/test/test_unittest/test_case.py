@@ -304,7 +304,8 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             def test(self):
                 pass
 
-        Foo('test').run()
+        with self.assertWarns(RuntimeWarning):
+            Foo('test').run()
 
     def test_deprecation_of_return_val_from_test(self):
         # Issue 41322 - deprecate return of value that is not None from a test

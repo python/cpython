@@ -25,7 +25,7 @@ def escape(s, quote=True):
     return s
 
 
-# see http://www.w3.org/TR/html5/syntax.html#tokenizing-character-references
+# see https://html.spec.whatwg.org/multipage/parsing.html#numeric-character-reference-end-state
 
 _invalid_charrefs = {
     0x00: '\ufffd',  # REPLACEMENT CHARACTER

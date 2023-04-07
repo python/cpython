@@ -25,6 +25,7 @@ PyAPI_FUNC(PyStatus) PyStatus_Exit(int exitcode);
 PyAPI_FUNC(int) PyStatus_IsError(PyStatus err);
 PyAPI_FUNC(int) PyStatus_IsExit(PyStatus err);
 PyAPI_FUNC(int) PyStatus_Exception(PyStatus err);
+PyAPI_FUNC(PyObject *) _PyErr_SetFromPyStatus(PyStatus status);
 
 /* --- PyWideStringList ------------------------------------------------ */
 
@@ -248,6 +249,7 @@ typedef struct {
     int allow_exec;
     int allow_threads;
     int allow_daemon_threads;
+    int check_multi_interp_extensions;
 } _PyInterpreterConfig;
 
 #define _PyInterpreterConfig_INIT \
@@ -256,6 +258,7 @@ typedef struct {
         .allow_exec = 0, \
         .allow_threads = 1, \
         .allow_daemon_threads = 0, \
+        .check_multi_interp_extensions = 1, \
     }
 
 #define _PyInterpreterConfig_LEGACY_INIT \
@@ -264,6 +267,7 @@ typedef struct {
         .allow_exec = 1, \
         .allow_threads = 1, \
         .allow_daemon_threads = 1, \
+        .check_multi_interp_extensions = 0, \
     }
 
 /* --- Helper functions --------------------------------------- */

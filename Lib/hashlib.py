@@ -92,13 +92,13 @@ def __get_builtin_constructor(name):
             import _md5
             cache['MD5'] = cache['md5'] = _md5.md5
         elif name in {'SHA256', 'sha256', 'SHA224', 'sha224'}:
-            import _sha256
-            cache['SHA224'] = cache['sha224'] = _sha256.sha224
-            cache['SHA256'] = cache['sha256'] = _sha256.sha256
+            import _sha2
+            cache['SHA224'] = cache['sha224'] = _sha2.sha224
+            cache['SHA256'] = cache['sha256'] = _sha2.sha256
         elif name in {'SHA512', 'sha512', 'SHA384', 'sha384'}:
-            import _sha512
-            cache['SHA384'] = cache['sha384'] = _sha512.sha384
-            cache['SHA512'] = cache['sha512'] = _sha512.sha512
+            import _sha2
+            cache['SHA384'] = cache['sha384'] = _sha2.sha384
+            cache['SHA512'] = cache['sha512'] = _sha2.sha512
         elif name in {'blake2b', 'blake2s'}:
             import _blake2
             cache['blake2b'] = _blake2.blake2b
