@@ -5004,22 +5004,15 @@ order (MRO) for bases """
         gc.collect()
         self.assertEqual(Parent.__subclasses__(), [])
 
-    def test_getattribute(self):
+    def test_attr_raise_through_property(self):
         # add test case for gh-103272
         class A:
-            def __init__(self) -> None:
-                self.bar = 0
-
-            def __getattribute__(self, name):
-                return super().__getattribute__(name)
-
             def __getattr__(self, name):
-                if self.bar == 0:
-                    raise ValueError
+                raise ValueError
 
             @property
             def foo(self):
-                return self.__getattr__("foo")
+                return self.__getattr__("asdf")
 
         with self.assertRaises(ValueError):
             A().foo
