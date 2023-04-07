@@ -1055,6 +1055,48 @@ class Path(PurePath):
         """
         os.rmdir(self)
 
+    # version vulnerable to race conditions
+    def _rmtree(self, *, on_error=None, ignore_errors=False, dir_fd=None):
+        """Recursively delete this directory tree."""
+        if dir_fd is not None:
+            raise NotImplementedError("dir_fd unavailable on this platform")
+        if on_error is None and not ignore_errors:
+            def on_error(error):
+                raise
+        try:
+            if self.is_symlink() or self.is_junction():
+                error = OSError("Cannot call rmtree on a symbolic link")
+                error.filename = str(self)
+                raise error
+        except OSError as error:
+            if on_error is not None:
+                error._func = os.path.islink
+                on_error(error)
+            # can't continue even if on_error hook returns
+            return
+
+        walker = self.walk(
+            top_down=False,
+            follow_symlinks=False,
+            follow_junctions=False,
+            on_error=on_error)
+        for path, _, filenames in walker:
+            for filename in filenames:
+                try:
+                    path._make_child_relpath(filename).unlink()
+                except OSError as error:
+                    if on_error is not None:
+                        error._func = os.unlink
+                        on_error(error)
+            try:
+                path.rmdir()
+            except OSError as error:
+                if on_error is not None:
+                    error._func = os.rmdir
+                    on_error(error)
+
+    _rmtree.avoids_symlink_attacks = False
+
     def lstat(self):
         """
         Like stat(), except if the path points to a symlink, the symlink's
@@ -1304,86 +1346,45 @@ class Path(PurePath):
                     raise error
             return os.scandir(fd), fd
 
-        # Version using fd-based APIs to protect against races
-        def _rmtree(self, *, on_error=None, ignore_errors=False, dir_fd=None):
-            """Recursively delete this directory tree."""
-            if on_error is None and not ignore_errors:
-                def on_error(error):
-                    raise
+        if {os.unlink, os.rmdir} <= os.supports_dir_fd:
+            # Version using fd-based APIs to protect against races
+            def _rmtree(self, *, on_error=None, ignore_errors=False, dir_fd=None):
+                """Recursively delete this directory tree."""
+                if on_error is None and not ignore_errors:
+                    def on_error(error):
+                        raise
 
-            walker = self._fwalk(
-                top_down=False,
-                follow_symlinks=False,
-                on_error=on_error,
-                dir_fd=dir_fd)
-            for path, dirnames, filenames, fd in walker:
-                for filename in filenames:
-                    try:
-                        os.unlink(filename, dir_fd=fd)
-                    except OSError as error:
-                        if on_error is not None:
-                            error.filename = str(path._make_child_relpath(filename))
-                            error._func = os.unlink
-                            on_error(error)
-                for dirname in dirnames:
-                    try:
-                        os.rmdir(dirname, dir_fd=fd)
-                    except OSError as error:
-                        if on_error is not None:
-                            error.filename = str(path._make_child_relpath(dirname))
-                            error._func = os.rmdir
-                            on_error(error)
-                if path == self:
-                    try:
-                        os.rmdir(self, dir_fd=dir_fd)
-                    except OSError as error:
-                        if on_error is not None:
-                            error.filename = str(self)
-                            error._func = os.rmdir
-                            on_error(error)
-        _rmtree.avoids_symlink_attacks = True
-
-    else:
-        # version vulnerable to race conditions
-        def _rmtree(self, *, on_error=None, ignore_errors=False, dir_fd=None):
-            """Recursively delete this directory tree."""
-            if dir_fd is not None:
-                raise NotImplementedError("dir_fd unavailable on this platform")
-            if on_error is None and not ignore_errors:
-                def on_error(error):
-                    raise
-            try:
-                if self.is_symlink() or self.is_junction():
-                    error = OSError("Cannot call rmtree on a symbolic link")
-                    error.filename = str(self)
-                    raise error
-            except OSError as error:
-                if on_error is not None:
-                    error._func = os.path.islink
-                    on_error(error)
-                # can't continue even if on_error hook returns
-                return
-
-            walker = self.walk(
-                top_down=False,
-                follow_symlinks=False,
-                follow_junctions=False,
-                on_error=on_error)
-            for path, _, filenames in walker:
-                for filename in filenames:
-                    try:
-                        path._make_child_relpath(filename).unlink()
-                    except OSError as error:
-                        if on_error is not None:
-                            error._func = os.unlink
-                            on_error(error)
-                try:
-                    path.rmdir()
-                except OSError as error:
-                    if on_error is not None:
-                        error._func = os.rmdir
-                        on_error(error)
-        _rmtree.avoids_symlink_attacks = False
+                walker = self._fwalk(
+                    top_down=False,
+                    follow_symlinks=False,
+                    on_error=on_error,
+                    dir_fd=dir_fd)
+                for path, dirnames, filenames, fd in walker:
+                    for filename in filenames:
+                        try:
+                            os.unlink(filename, dir_fd=fd)
+                        except OSError as error:
+                            if on_error is not None:
+                                error.filename = str(path._make_child_relpath(filename))
+                                error._func = os.unlink
+                                on_error(error)
+                    for dirname in dirnames:
+                        try:
+                            os.rmdir(dirname, dir_fd=fd)
+                        except OSError as error:
+                            if on_error is not None:
+                                error.filename = str(path._make_child_relpath(dirname))
+                                error._func = os.rmdir
+                                on_error(error)
+                    if path == self:
+                        try:
+                            os.rmdir(self, dir_fd=dir_fd)
+                        except OSError as error:
+                            if on_error is not None:
+                                error.filename = str(self)
+                                error._func = os.rmdir
+                                on_error(error)
+            _rmtree.avoids_symlink_attacks = True
 
 
 class PosixPath(Path, PurePosixPath):
