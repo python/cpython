@@ -1,1 +1,1 @@
-Make ``code.interact()`` only exit the interpreter when getting ``exit()`` or ``quit()``
+Added a parameter ``block_exit`` for :func:`code.interact` to prevent ``exit()`` from terminating the whole python process.
