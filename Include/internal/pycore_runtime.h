@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_atexit.h"          // struct atexit_runtime_state
 #include "pycore_atomic.h"          /* _Py_atomic_address */
 #include "pycore_ceval_state.h"     // struct _ceval_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
@@ -131,9 +132,7 @@ typedef struct pyruntimestate {
 
     struct _parser_runtime_state parser;
 
-#define NEXITFUNCS 32
-    void (*exitfuncs[NEXITFUNCS])(void);
-    int nexitfuncs;
+    struct _atexit_runtime_state atexit;
 
     struct _import_runtime_state imports;
     struct _ceval_runtime_state ceval;
@@ -163,7 +162,6 @@ typedef struct pyruntimestate {
     } types;
 
     /* All the objects that are shared by the runtime's interpreters. */
-    struct _Py_cached_objects cached_objects;
     struct _Py_static_objects static_objects;
 
     /* The following fields are here to avoid allocation during init.
