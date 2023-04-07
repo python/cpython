@@ -120,7 +120,7 @@ class _PreciseSelector(_Selector):
 
     def _select_from(self, parent_path, is_dir, exists, scandir, normcase):
         try:
-            path = parent_path._make_child(self.name)
+            path = parent_path._make_child_relpath(self.name)
             if (is_dir if self.dironly else exists)(path):
                 for p in self.successor._select_from(path, is_dir, exists, scandir, normcase):
                     yield p
@@ -154,7 +154,7 @@ class _WildcardSelector(_Selector):
                         continue
                 name = entry.name
                 if self.match(normcase(name)):
-                    path = parent_path._make_child(name)
+                    path = parent_path._make_child_relpath(name)
                     for p in self.successor._select_from(path, is_dir, exists, scandir, normcase):
                         yield p
         except PermissionError:
@@ -181,7 +181,7 @@ class _RecursiveWildcardSelector(_Selector):
                     if not _ignore_error(e):
                         raise
                 if entry_is_dir and not entry.is_symlink():
-                    path = parent_path._make_child(entry.name)
+                    path = parent_path._make_child_relpath(entry.name)
                     for p in self._iterate_directories(path, is_dir, scandir):
                         yield p
         except PermissionError:
@@ -707,7 +707,7 @@ class Path(PurePath):
             cls = WindowsPath if os.name == 'nt' else PosixPath
         return object.__new__(cls)
 
-    def _make_child(self, name):
+    def _make_child_relpath(self, name):
         path_str = str(self)
         tail = self._tail
         if tail:
@@ -776,7 +776,7 @@ class Path(PurePath):
         special entries '.' and '..' are not included.
         """
         for name in os.listdir(self):
-            yield self._make_child(name)
+            yield self._make_child_relpath(name)
 
     def _scandir(self):
         # bpo-24132: a future version of pathlib will support subclassing of
@@ -1258,7 +1258,7 @@ class Path(PurePath):
             else:
                 paths.append((path, dirnames, filenames))
 
-            paths += [path._make_child(d) for d in reversed(dirnames)]
+            paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
 
 
 class PosixPath(Path, PurePosixPath):
