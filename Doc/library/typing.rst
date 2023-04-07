@@ -1633,7 +1633,7 @@ These are not used in annotations. They are building blocks for creating generic
       at runtime as soon as the class has been created. Monkey-patching
       attributes onto a runtime-checkable protocol will still work, but will
       have no impact on :func:`isinstance` checks comparing objects to the
-      protocol. For example::
+      protocol. For example:
 
           >>> from typing import Protocol, runtime_checkable
           >>> @runtime_checkable
