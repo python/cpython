@@ -1316,7 +1316,7 @@ class Path(PurePath):
                 follow_symlinks=False,
                 on_error=on_error,
                 dir_fd=dir_fd)
-            for path, _, filenames, fd in walker:
+            for path, dirnames, filenames, fd in walker:
                 for filename in filenames:
                     try:
                         os.unlink(filename, dir_fd=fd)
@@ -1325,13 +1325,22 @@ class Path(PurePath):
                             error.filename = str(path._make_child_relpath(filename))
                             error._func = os.unlink
                             on_error(error)
-                try:
-                    os.rmdir(path, dir_fd=dir_fd)
-                except OSError as error:
-                    if on_error is not None:
-                        error.filename = str(path)
-                        error._func = os.rmdir
-                        on_error(error)
+                for dirname in dirnames:
+                    try:
+                        os.rmdir(dirname, dir_fd=fd)
+                    except OSError as error:
+                        if on_error is not None:
+                            error.filename = str(path._make_child_relpath(dirname))
+                            error._func = os.rmdir
+                            on_error(error)
+                if path == self:
+                    try:
+                        os.rmdir(self, dir_fd=dir_fd)
+                    except OSError as error:
+                        if on_error is not None:
+                            error.filename = str(self)
+                            error._func = os.rmdir
+                            on_error(error)
         _rmtree.avoids_symlink_attacks = True
 
     else:
