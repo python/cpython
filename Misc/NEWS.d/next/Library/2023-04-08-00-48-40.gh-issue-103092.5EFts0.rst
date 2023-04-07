@@ -1,0 +1,1 @@
+Adapt :mod:`!winreg` to :pep:`687`.
