@@ -253,7 +253,7 @@ def requires_tls_version(version):
 
 
 def handle_error(prefix):
-    exc_format = ' '.join(traceback.format_exception(*sys.exc_info()))
+    exc_format = ' '.join(traceback.format_exception(sys.exception()))
     if support.verbose:
         sys.stdout.write(prefix + exc_format)
 

@@ -392,8 +392,6 @@ _cache_format = {
     },
     "BINARY_SUBSCR": {
         "counter": 1,
-        "type_version": 2,
-        "func_version": 1,
     },
     "FOR_ITER": {
         "counter": 1,
@@ -412,7 +410,6 @@ _cache_format = {
     "CALL": {
         "counter": 1,
         "func_version": 2,
-        "min_args": 1,
     },
     "STORE_SUBSCR": {
         "counter": 1,

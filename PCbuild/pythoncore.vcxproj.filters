@@ -498,6 +498,9 @@
     <ClInclude Include="..\Include\internal\pycore_ast_state.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_atexit.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_atomic.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1104,6 +1107,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ceval.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\flowgraph.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\codecs.c">
