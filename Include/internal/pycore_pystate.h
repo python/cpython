@@ -69,17 +69,6 @@ extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 #endif
 PyAPI_DATA(PyThreadState *) _PyThreadState_GetCurrent(void);
 
-static inline PyThreadState*
-_PyRuntimeState_GetThreadState(_PyRuntimeState *runtime)
-{
-#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
-    return _Py_tss_tstate;
-#else
-    return _PyThreadState_GetCurrent();
-#endif
-}
-
-
 /* Get the current Python thread state.
 
    This function is unsafe: it does not check for error and it can return NULL.
@@ -90,8 +79,19 @@ _PyRuntimeState_GetThreadState(_PyRuntimeState *runtime)
 static inline PyThreadState*
 _PyThreadState_GET(void)
 {
-    return _PyRuntimeState_GetThreadState(&_PyRuntime);
+#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+    return _Py_tss_tstate;
+#else
+    return _PyThreadState_GetCurrent();
+#endif
 }
+
+static inline PyThreadState*
+_PyRuntimeState_GetThreadState(_PyRuntimeState *Py_UNUSED(runtime))
+{
+    return _PyThreadState_GET();
+}
+
 
 static inline void
 _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
