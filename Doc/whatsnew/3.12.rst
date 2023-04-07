@@ -255,6 +255,10 @@ inspect
   for determining the current state of asynchronous generators.
   (Contributed by Thomas Krennwallner in :issue:`35759`.)
 
+* The performance of :func:`inspect.getattr_static` has been considerably
+  improved. Most calls to the function should be around 2x faster than they
+  were in Python 3.11. (Contributed by Alex Waygood in :gh:`103193`.)
+
 pathlib
 -------
 
