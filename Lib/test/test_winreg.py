@@ -1,8 +1,10 @@
 # Test the windows specific win32reg module.
 # Only win32reg functions not hit here: FlushKey, LoadKey and SaveKey
 
+import gc
 import os, sys, errno
 import unittest
+from test.support import cpython_only
 from test.support import import_helper
 import threading
 from platform import machine, win32_edition
@@ -48,6 +50,16 @@ test_data = [
     # Two and three kanjis, meaning: "Japan" and "Japanese".
     ("Japanese 日本", "日本語", REG_SZ),
 ]
+
+
+@cpython_only
+class HeapTypeTests(unittest.TestCase):
+    def test_have_gc(self):
+        self.assertTrue(gc.is_tracked(HKEYType))
+
+    def test_immutable(self):
+        with self.assertRaisesRegex(TypeError, "immutable"):
+            HKEYType.foo = "bar"
 
 class BaseWinregTests(unittest.TestCase):
 
