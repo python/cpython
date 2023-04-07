@@ -38,7 +38,7 @@ build applications which provide an interactive interpreter prompt.
 
    Convenience function to run a read-eval-print loop.  This creates a new
    instance of :class:`InteractiveConsole` and sets *readfunc* to be used as
-   the :meth:`InteractiveConsole.raw_input` method, if provided.  If *local* 
+   the :meth:`InteractiveConsole.raw_input` method, if provided.  If *local*
    or *block_exit* is provided, it is passed to the :class:`InteractiveConsole`
    constructor for use as the default namespace for the interpreter loop.
    The :meth:`interact` method of the instance is then run with *banner* and
