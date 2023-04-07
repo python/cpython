@@ -138,7 +138,7 @@ class Queue(object):
             if not self._rlock.acquire(block, timeout):
                 if (self._is_shutdown_immediate()
                     or (self._is_shutdown() and self.empty())):
-                        raise ShutDown
+                    raise ShutDown
                 raise Empty
             try:
                 if block:

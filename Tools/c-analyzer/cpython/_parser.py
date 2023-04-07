@@ -101,25 +101,25 @@ Modules/expat/xmlparse.c
 INCL_DIRS = clean_lines('''
 # @begin=tsv@
 
-glob	dirname
-*	.
-*	./Include
-*	./Include/internal
+glob    dirname
+*       .
+*       ./Include
+*       ./Include/internal
 
-Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
-Modules/_elementtree.c	Modules/expat
-Modules/_hacl/*.c	Modules/_hacl/include
-Modules/_hacl/*.h	Modules/_hacl/include
-Modules/md5module.c	Modules/_hacl/include
-Modules/sha1module.c	Modules/_hacl/include
-Modules/sha2module.c	Modules/_hacl/include
-Objects/stringlib/*.h	Objects
+Modules/_decimal/**/*.c Modules/_decimal/libmpdec
+Modules/_elementtree.c  Modules/expat
+Modules/_hacl/*.c       Modules/_hacl/include
+Modules/_hacl/*.h       Modules/_hacl/include
+Modules/md5module.c     Modules/_hacl/include
+Modules/sha1module.c    Modules/_hacl/include
+Modules/sha2module.c    Modules/_hacl/include
+Objects/stringlib/*.h   Objects
 
 # possible system-installed headers, just in case
-Modules/_tkinter.c	/usr/include/tcl8.6
-Modules/_uuidmodule.c	/usr/include/uuid
-Modules/nismodule.c	/usr/include/tirpc
-Modules/tkappinit.c	/usr/include/tcl
+Modules/_tkinter.c      /usr/include/tcl8.6
+Modules/_uuidmodule.c   /usr/include/uuid
+Modules/nismodule.c     /usr/include/tirpc
+Modules/tkappinit.c     /usr/include/tcl
 
 # @end=tsv@
 ''')[1:]
@@ -127,36 +127,36 @@ Modules/tkappinit.c	/usr/include/tcl
 INCLUDES = clean_lines('''
 # @begin=tsv@
 
-glob	include
+glob    include
 
-**/*.h	Python.h
-Include/**/*.h	object.h
+**/*.h  Python.h
+Include/**/*.h  object.h
 
 # for Py_HAVE_CONDVAR
-Include/internal/pycore_gil.h	pycore_condvar.h
-Python/thread_pthread.h	pycore_condvar.h
+Include/internal/pycore_gil.h   pycore_condvar.h
+Python/thread_pthread.h pycore_condvar.h
 
 # other
 
-Objects/stringlib/join.h	stringlib/stringdefs.h
-Objects/stringlib/ctype.h	stringlib/stringdefs.h
-Objects/stringlib/transmogrify.h	stringlib/stringdefs.h
-#Objects/stringlib/fastsearch.h	stringlib/stringdefs.h
-#Objects/stringlib/count.h	stringlib/stringdefs.h
-#Objects/stringlib/find.h	stringlib/stringdefs.h
-#Objects/stringlib/partition.h	stringlib/stringdefs.h
-#Objects/stringlib/split.h	stringlib/stringdefs.h
-Objects/stringlib/fastsearch.h	stringlib/ucs1lib.h
-Objects/stringlib/count.h	stringlib/ucs1lib.h
-Objects/stringlib/find.h	stringlib/ucs1lib.h
-Objects/stringlib/partition.h	stringlib/ucs1lib.h
-Objects/stringlib/split.h	stringlib/ucs1lib.h
-Objects/stringlib/find_max_char.h	Objects/stringlib/ucs1lib.h
-Objects/stringlib/count.h	Objects/stringlib/fastsearch.h
-Objects/stringlib/find.h	Objects/stringlib/fastsearch.h
-Objects/stringlib/partition.h	Objects/stringlib/fastsearch.h
-Objects/stringlib/replace.h	Objects/stringlib/fastsearch.h
-Objects/stringlib/split.h	Objects/stringlib/fastsearch.h
+Objects/stringlib/join.h        stringlib/stringdefs.h
+Objects/stringlib/ctype.h       stringlib/stringdefs.h
+Objects/stringlib/transmogrify.h        stringlib/stringdefs.h
+#Objects/stringlib/fastsearch.h stringlib/stringdefs.h
+#Objects/stringlib/count.h      stringlib/stringdefs.h
+#Objects/stringlib/find.h       stringlib/stringdefs.h
+#Objects/stringlib/partition.h  stringlib/stringdefs.h
+#Objects/stringlib/split.h      stringlib/stringdefs.h
+Objects/stringlib/fastsearch.h  stringlib/ucs1lib.h
+Objects/stringlib/count.h       stringlib/ucs1lib.h
+Objects/stringlib/find.h        stringlib/ucs1lib.h
+Objects/stringlib/partition.h   stringlib/ucs1lib.h
+Objects/stringlib/split.h       stringlib/ucs1lib.h
+Objects/stringlib/find_max_char.h       Objects/stringlib/ucs1lib.h
+Objects/stringlib/count.h       Objects/stringlib/fastsearch.h
+Objects/stringlib/find.h        Objects/stringlib/fastsearch.h
+Objects/stringlib/partition.h   Objects/stringlib/fastsearch.h
+Objects/stringlib/replace.h     Objects/stringlib/fastsearch.h
+Objects/stringlib/split.h       Objects/stringlib/fastsearch.h
 
 # @end=tsv@
 ''')[1:]
@@ -164,123 +164,123 @@ Objects/stringlib/split.h	Objects/stringlib/fastsearch.h
 MACROS = clean_lines('''
 # @begin=tsv@
 
-glob	name	value
+glob    name    value
 
-Include/internal/*.h	Py_BUILD_CORE	1
-Python/**/*.c	Py_BUILD_CORE	1
-Python/**/*.h	Py_BUILD_CORE	1
-Parser/**/*.c	Py_BUILD_CORE	1
-Parser/**/*.h	Py_BUILD_CORE	1
-Objects/**/*.c	Py_BUILD_CORE	1
-Objects/**/*.h	Py_BUILD_CORE	1
+Include/internal/*.h    Py_BUILD_CORE   1
+Python/**/*.c   Py_BUILD_CORE   1
+Python/**/*.h   Py_BUILD_CORE   1
+Parser/**/*.c   Py_BUILD_CORE   1
+Parser/**/*.h   Py_BUILD_CORE   1
+Objects/**/*.c  Py_BUILD_CORE   1
+Objects/**/*.h  Py_BUILD_CORE   1
 
-Modules/_asynciomodule.c	Py_BUILD_CORE	1
-Modules/_codecsmodule.c	Py_BUILD_CORE	1
-Modules/_collectionsmodule.c	Py_BUILD_CORE	1
-Modules/_ctypes/_ctypes.c	Py_BUILD_CORE	1
-Modules/_ctypes/cfield.c	Py_BUILD_CORE	1
-Modules/_cursesmodule.c	Py_BUILD_CORE	1
-Modules/_datetimemodule.c	Py_BUILD_CORE	1
-Modules/_functoolsmodule.c	Py_BUILD_CORE	1
-Modules/_heapqmodule.c	Py_BUILD_CORE	1
-Modules/_io/*.c	Py_BUILD_CORE	1
-Modules/_io/*.h	Py_BUILD_CORE	1
-Modules/_localemodule.c	Py_BUILD_CORE	1
-Modules/_operator.c	Py_BUILD_CORE	1
-Modules/_posixsubprocess.c	Py_BUILD_CORE	1
-Modules/_sre/sre.c	Py_BUILD_CORE	1
-Modules/_threadmodule.c	Py_BUILD_CORE	1
-Modules/_tracemalloc.c	Py_BUILD_CORE	1
-Modules/_weakref.c	Py_BUILD_CORE	1
-Modules/_zoneinfo.c	Py_BUILD_CORE	1
-Modules/atexitmodule.c	Py_BUILD_CORE	1
-Modules/cmathmodule.c	Py_BUILD_CORE	1
-Modules/faulthandler.c	Py_BUILD_CORE	1
-Modules/gcmodule.c	Py_BUILD_CORE	1
-Modules/getpath.c	Py_BUILD_CORE	1
-Modules/getpath_noop.c	Py_BUILD_CORE	1
-Modules/itertoolsmodule.c	Py_BUILD_CORE	1
-Modules/main.c	Py_BUILD_CORE	1
-Modules/mathmodule.c	Py_BUILD_CORE	1
-Modules/posixmodule.c	Py_BUILD_CORE	1
-Modules/sha256module.c	Py_BUILD_CORE	1
-Modules/sha512module.c	Py_BUILD_CORE	1
-Modules/signalmodule.c	Py_BUILD_CORE	1
-Modules/symtablemodule.c	Py_BUILD_CORE	1
-Modules/timemodule.c	Py_BUILD_CORE	1
-Modules/unicodedata.c	Py_BUILD_CORE	1
+Modules/_asynciomodule.c        Py_BUILD_CORE   1
+Modules/_codecsmodule.c Py_BUILD_CORE   1
+Modules/_collectionsmodule.c    Py_BUILD_CORE   1
+Modules/_ctypes/_ctypes.c       Py_BUILD_CORE   1
+Modules/_ctypes/cfield.c        Py_BUILD_CORE   1
+Modules/_cursesmodule.c Py_BUILD_CORE   1
+Modules/_datetimemodule.c       Py_BUILD_CORE   1
+Modules/_functoolsmodule.c      Py_BUILD_CORE   1
+Modules/_heapqmodule.c  Py_BUILD_CORE   1
+Modules/_io/*.c Py_BUILD_CORE   1
+Modules/_io/*.h Py_BUILD_CORE   1
+Modules/_localemodule.c Py_BUILD_CORE   1
+Modules/_operator.c     Py_BUILD_CORE   1
+Modules/_posixsubprocess.c      Py_BUILD_CORE   1
+Modules/_sre/sre.c      Py_BUILD_CORE   1
+Modules/_threadmodule.c Py_BUILD_CORE   1
+Modules/_tracemalloc.c  Py_BUILD_CORE   1
+Modules/_weakref.c      Py_BUILD_CORE   1
+Modules/_zoneinfo.c     Py_BUILD_CORE   1
+Modules/atexitmodule.c  Py_BUILD_CORE   1
+Modules/cmathmodule.c   Py_BUILD_CORE   1
+Modules/faulthandler.c  Py_BUILD_CORE   1
+Modules/gcmodule.c      Py_BUILD_CORE   1
+Modules/getpath.c       Py_BUILD_CORE   1
+Modules/getpath_noop.c  Py_BUILD_CORE   1
+Modules/itertoolsmodule.c       Py_BUILD_CORE   1
+Modules/main.c  Py_BUILD_CORE   1
+Modules/mathmodule.c    Py_BUILD_CORE   1
+Modules/posixmodule.c   Py_BUILD_CORE   1
+Modules/sha256module.c  Py_BUILD_CORE   1
+Modules/sha512module.c  Py_BUILD_CORE   1
+Modules/signalmodule.c  Py_BUILD_CORE   1
+Modules/symtablemodule.c        Py_BUILD_CORE   1
+Modules/timemodule.c    Py_BUILD_CORE   1
+Modules/unicodedata.c   Py_BUILD_CORE   1
 
-Modules/_json.c	Py_BUILD_CORE_BUILTIN	1
-Modules/_pickle.c	Py_BUILD_CORE_BUILTIN	1
-Modules/_testinternalcapi.c	Py_BUILD_CORE_BUILTIN	1
+Modules/_json.c Py_BUILD_CORE_BUILTIN   1
+Modules/_pickle.c       Py_BUILD_CORE_BUILTIN   1
+Modules/_testinternalcapi.c     Py_BUILD_CORE_BUILTIN   1
 
-Include/cpython/abstract.h	Py_CPYTHON_ABSTRACTOBJECT_H	1
-Include/cpython/bytearrayobject.h	Py_CPYTHON_BYTEARRAYOBJECT_H	1
-Include/cpython/bytesobject.h	Py_CPYTHON_BYTESOBJECT_H	1
-Include/cpython/ceval.h	Py_CPYTHON_CEVAL_H	1
-Include/cpython/code.h	Py_CPYTHON_CODE_H	1
-Include/cpython/dictobject.h	Py_CPYTHON_DICTOBJECT_H	1
-Include/cpython/fileobject.h	Py_CPYTHON_FILEOBJECT_H	1
-Include/cpython/fileutils.h	Py_CPYTHON_FILEUTILS_H	1
-Include/cpython/frameobject.h	Py_CPYTHON_FRAMEOBJECT_H	1
-Include/cpython/import.h	Py_CPYTHON_IMPORT_H	1
-Include/cpython/listobject.h	Py_CPYTHON_LISTOBJECT_H	1
-Include/cpython/methodobject.h	Py_CPYTHON_METHODOBJECT_H	1
-Include/cpython/object.h	Py_CPYTHON_OBJECT_H	1
-Include/cpython/objimpl.h	Py_CPYTHON_OBJIMPL_H	1
-Include/cpython/pyerrors.h	Py_CPYTHON_ERRORS_H	1
-Include/cpython/pylifecycle.h	Py_CPYTHON_PYLIFECYCLE_H	1
-Include/cpython/pymem.h	Py_CPYTHON_PYMEM_H	1
-Include/cpython/pystate.h	Py_CPYTHON_PYSTATE_H	1
-Include/cpython/sysmodule.h	Py_CPYTHON_SYSMODULE_H	1
-Include/cpython/traceback.h	Py_CPYTHON_TRACEBACK_H	1
-Include/cpython/tupleobject.h	Py_CPYTHON_TUPLEOBJECT_H	1
-Include/cpython/unicodeobject.h	Py_CPYTHON_UNICODEOBJECT_H	1
+Include/cpython/abstract.h      Py_CPYTHON_ABSTRACTOBJECT_H     1
+Include/cpython/bytearrayobject.h       Py_CPYTHON_BYTEARRAYOBJECT_H    1
+Include/cpython/bytesobject.h   Py_CPYTHON_BYTESOBJECT_H        1
+Include/cpython/ceval.h Py_CPYTHON_CEVAL_H      1
+Include/cpython/code.h  Py_CPYTHON_CODE_H       1
+Include/cpython/dictobject.h    Py_CPYTHON_DICTOBJECT_H 1
+Include/cpython/fileobject.h    Py_CPYTHON_FILEOBJECT_H 1
+Include/cpython/fileutils.h     Py_CPYTHON_FILEUTILS_H  1
+Include/cpython/frameobject.h   Py_CPYTHON_FRAMEOBJECT_H        1
+Include/cpython/import.h        Py_CPYTHON_IMPORT_H     1
+Include/cpython/listobject.h    Py_CPYTHON_LISTOBJECT_H 1
+Include/cpython/methodobject.h  Py_CPYTHON_METHODOBJECT_H       1
+Include/cpython/object.h        Py_CPYTHON_OBJECT_H     1
+Include/cpython/objimpl.h       Py_CPYTHON_OBJIMPL_H    1
+Include/cpython/pyerrors.h      Py_CPYTHON_ERRORS_H     1
+Include/cpython/pylifecycle.h   Py_CPYTHON_PYLIFECYCLE_H        1
+Include/cpython/pymem.h Py_CPYTHON_PYMEM_H      1
+Include/cpython/pystate.h       Py_CPYTHON_PYSTATE_H    1
+Include/cpython/sysmodule.h     Py_CPYTHON_SYSMODULE_H  1
+Include/cpython/traceback.h     Py_CPYTHON_TRACEBACK_H  1
+Include/cpython/tupleobject.h   Py_CPYTHON_TUPLEOBJECT_H        1
+Include/cpython/unicodeobject.h Py_CPYTHON_UNICODEOBJECT_H      1
 
 # implied include of <unistd.h>
-Include/**/*.h	_POSIX_THREADS	1
-Include/**/*.h	HAVE_PTHREAD_H	1
+Include/**/*.h  _POSIX_THREADS  1
+Include/**/*.h  HAVE_PTHREAD_H  1
 
 # from pyconfig.h
-Include/cpython/pthread_stubs.h	HAVE_PTHREAD_STUBS	1
-Python/thread_pthread_stubs.h	HAVE_PTHREAD_STUBS	1
+Include/cpython/pthread_stubs.h HAVE_PTHREAD_STUBS      1
+Python/thread_pthread_stubs.h   HAVE_PTHREAD_STUBS      1
 
 # from Objects/bytesobject.c
-Objects/stringlib/partition.h	STRINGLIB_GET_EMPTY()	bytes_get_empty()
-Objects/stringlib/join.h	STRINGLIB_MUTABLE	0
-Objects/stringlib/partition.h	STRINGLIB_MUTABLE	0
-Objects/stringlib/split.h	STRINGLIB_MUTABLE	0
-Objects/stringlib/transmogrify.h	STRINGLIB_MUTABLE	0
+Objects/stringlib/partition.h   STRINGLIB_GET_EMPTY()   bytes_get_empty()
+Objects/stringlib/join.h        STRINGLIB_MUTABLE       0
+Objects/stringlib/partition.h   STRINGLIB_MUTABLE       0
+Objects/stringlib/split.h       STRINGLIB_MUTABLE       0
+Objects/stringlib/transmogrify.h        STRINGLIB_MUTABLE       0
 
 # from Makefile
-Modules/getpath.c	PYTHONPATH	1
-Modules/getpath.c	PREFIX	...
-Modules/getpath.c	EXEC_PREFIX	...
-Modules/getpath.c	VERSION	...
-Modules/getpath.c	VPATH	...
-Modules/getpath.c	PLATLIBDIR	...
-#Modules/_dbmmodule.c	USE_GDBM_COMPAT	1
-Modules/_dbmmodule.c	USE_NDBM	1
-#Modules/_dbmmodule.c	USE_BERKDB	1
+Modules/getpath.c       PYTHONPATH      1
+Modules/getpath.c       PREFIX  ...
+Modules/getpath.c       EXEC_PREFIX     ...
+Modules/getpath.c       VERSION ...
+Modules/getpath.c       VPATH   ...
+Modules/getpath.c       PLATLIBDIR      ...
+#Modules/_dbmmodule.c   USE_GDBM_COMPAT 1
+Modules/_dbmmodule.c    USE_NDBM        1
+#Modules/_dbmmodule.c   USE_BERKDB      1
 
 # See: setup.py
-Modules/_decimal/**/*.c	CONFIG_64	1
-Modules/_decimal/**/*.c	ASM	1
-Modules/expat/xmlparse.c	HAVE_EXPAT_CONFIG_H	1
-Modules/expat/xmlparse.c	XML_POOR_ENTROPY	1
-Modules/_dbmmodule.c	HAVE_GDBM_DASH_NDBM_H	1
+Modules/_decimal/**/*.c CONFIG_64       1
+Modules/_decimal/**/*.c ASM     1
+Modules/expat/xmlparse.c        HAVE_EXPAT_CONFIG_H     1
+Modules/expat/xmlparse.c        XML_POOR_ENTROPY        1
+Modules/_dbmmodule.c    HAVE_GDBM_DASH_NDBM_H   1
 
 # from Modules/_sha3/sha3module.c
-Modules/_sha3/kcp/KeccakP-1600-inplace32BI.c	PLATFORM_BYTE_ORDER	4321  # force big-endian
-Modules/_sha3/kcp/*.c	KeccakOpt	64
-Modules/_sha3/kcp/*.c	KeccakP200_excluded	1
-Modules/_sha3/kcp/*.c	KeccakP400_excluded	1
-Modules/_sha3/kcp/*.c	KeccakP800_excluded	1
+Modules/_sha3/kcp/KeccakP-1600-inplace32BI.c    PLATFORM_BYTE_ORDER     4321  # force big-endian
+Modules/_sha3/kcp/*.c   KeccakOpt       64
+Modules/_sha3/kcp/*.c   KeccakP200_excluded     1
+Modules/_sha3/kcp/*.c   KeccakP400_excluded     1
+Modules/_sha3/kcp/*.c   KeccakP800_excluded     1
 
 # others
-Modules/_sre/sre_lib.h	LOCAL(type)	static inline type
-Modules/_sre/sre_lib.h	SRE(F)	sre_ucs2_##F
-Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
+Modules/_sre/sre_lib.h  LOCAL(type)     static inline type
+Modules/_sre/sre_lib.h  SRE(F)  sre_ucs2_##F
+Objects/stringlib/codecs.h      STRINGLIB_IS_UNICODE    1
 
 # @end=tsv@
 ''')[1:]
