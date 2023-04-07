@@ -632,7 +632,6 @@ class Executive:
             tb = tb.tb_next
         sys.last_type = typ
         sys.last_value = val
-        sys.last_exc = val
         item = stackviewer.StackTreeItem(flist, tb)
         return debugobj_r.remote_object_tree_item(item)
 
