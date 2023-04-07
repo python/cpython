@@ -64,13 +64,21 @@ _Py_ThreadCanHandlePendingCalls(void)
 /* Variable and macro for in-line access to current thread
    and interpreter state */
 
+#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+extern thread_local PyThreadState *_Py_tss_tstate;
+#endif
 PyAPI_DATA(PyThreadState *) _PyThreadState_GetCurrent(void);
 
 static inline PyThreadState*
 _PyRuntimeState_GetThreadState(_PyRuntimeState *runtime)
 {
+#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+    return _Py_tss_tstate;
+#else
     return _PyThreadState_GetCurrent();
+#endif
 }
+
 
 /* Get the current Python thread state.
 
@@ -82,7 +90,7 @@ _PyRuntimeState_GetThreadState(_PyRuntimeState *runtime)
 static inline PyThreadState*
 _PyThreadState_GET(void)
 {
-    return _PyThreadState_GetCurrent();
+    return _PyRuntimeState_GetThreadState(&_PyRuntime);
 }
 
 static inline void
