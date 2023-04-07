@@ -20,9 +20,8 @@ def StackBrowser(root, flist=None, exc=None, top=None):
 class StackTreeItem(TreeItem):
 
     def __init__(self, flist=None, exc=None):
-        assert isinstance(exc, BaseException)
         self.flist = flist
-        self.stack = self.get_stack(exc.__traceback__)
+        self.stack = self.get_stack(None if exc is None else exc.__traceback__)
         self.text = self.get_exception(exc)
 
     def get_stack(self, tb):
@@ -35,8 +34,7 @@ class StackTreeItem(TreeItem):
         return stack
 
     def get_exception(self, exc):
-        assert isinstance(exc, BaseException)
-        typ = type(exc)
+        typ = None if exc is None else type(exc)
         if hasattr(typ, "__name__"):
             typ = typ.__name__
         s = str(typ) + ": " + str(exc)
@@ -132,7 +130,7 @@ def _stack_viewer(parent):  # htest #
     except NameError as e:
         exc = e
 
-    StackBrowser(top, flist=flist, top=top, tb=exc)
+    StackBrowser(top, flist=flist, top=top, exc=exc)
 
 
 if __name__ == '__main__':
