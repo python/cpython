@@ -133,6 +133,8 @@ class DictReader:
 class DictWriter:
     def __init__(self, f, fieldnames, restval="", extrasaction="raise",
                  dialect="excel", *args, **kwds):
+        if fieldnames is not None and iter(fieldnames) is fieldnames:
+            fieldnames = list(fieldnames)
         self.fieldnames = fieldnames    # list of keys for the dict
         self.restval = restval          # for writing short dicts
         if extrasaction.lower() not in ("raise", "ignore"):
@@ -158,7 +160,7 @@ class DictWriter:
 
     def writerows(self, rowdicts):
         return self.writer.writerows(map(self._dict_to_list, rowdicts))
-
+    __class_getitem__ = classmethod(types.GenericAlias)
 # Guard Sniffer's type checking against builds that exclude complex()
 try:
     complex
