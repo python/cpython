@@ -29,10 +29,10 @@ from test.support import threading_helper
 # Must be smaller than buildbot "1200 seconds without output" limit.
 EXIT_TIMEOUT = 120.0
 
-# bpo-46523: When rerunning tests, we might need to rerun the whole
+# gh-90681: When rerunning tests, we might need to rerun the whole
 # class or module suite if some its life-cycle hooks fail.
+# Test level hooks are not affected.
 _TEST_LIFECYCLE_HOOKS = frozenset((
-    'setUp', 'tearDown',
     'setUpClass', 'tearDownClass',
     'setUpModule', 'tearDownModule',
 ))
@@ -376,11 +376,16 @@ class Regrtest:
 
         self.display_result()
 
-    def normalize_test_name(self, test_full_name, is_error=False):
+    def normalize_test_name(self, test_full_name, *, is_error=False):
         short_name = test_full_name.split(" ")[0]
         if is_error and short_name in _TEST_LIFECYCLE_HOOKS:
             # This means that we have a failure in a life-cycle hook,
             # we need to rerun the whole module or class suite.
+            # Basically the error looks like this:
+            #    ERROR: setUpClass (test.test_reg_ex.RegTest)
+            # or
+            #    ERROR: setUpModule (test.test_reg_ex)
+            # So, we need to parse the class / module name.
             lpar = test_full_name.index('(')
             rpar = test_full_name.index(')')
             return test_full_name[lpar + 1: rpar].split('.')[-1]
