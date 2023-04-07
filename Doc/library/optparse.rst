@@ -952,11 +952,18 @@ The canonical way to create an :class:`Option` instance is with the
    you may also supply :attr:`~Option.type` and :attr:`~Option.dest` option
    attributes; see :ref:`optparse-standard-option-actions`.)
 
-.. class:: Values
-
 As you can see, most actions involve storing or updating a value somewhere.
 :mod:`optparse` always creates a special object for this, conventionally called
-``options`` (it happens to be an instance of :class:`optparse.Values`).  Option
+``options``, which is an instance of :class:`optparse.Values`.
+
+.. class:: Values
+
+   An object holding parsed argument names and values as attributes.
+   Normally created by calling when calling :meth:`OptionParser.parse_args`,
+   and can be overridden by a custom subclass passed to the *values* argument of 
+   :meth:`OptionParser.parse_args` (as described in :ref:`optparse-parsing-arguments`).
+   
+Option
 arguments (and various other values) are stored as attributes of this object,
 according to the :attr:`~Option.dest` (destination) option attribute.
 
@@ -994,6 +1001,12 @@ Option attributes
 ^^^^^^^^^^^^^^^^^
 
 .. class:: Option
+
+   A single command line argument,
+   with various attributes passed by keyword to the constructor.
+   Normally created with :meth:`OptionParser.add_option` rather than directly,
+   and can be overridden by a custom class via the *option_class* argument
+   to :class:`OptionParser`.
 
 The following option attributes may be passed as keyword arguments to
 :meth:`OptionParser.add_option`.  If you pass an option attribute that is not
@@ -2058,8 +2071,8 @@ Exceptions
 
 .. exception:: BadOptionError
 
-    Raised if an invalid option is seen on the command line.
+   Raised if an invalid option is passed on the command line.
 
 .. exception:: AmbiguousOptionError
 
-    Raised if an ambiguous option is seen on the command line.
+   Raised if an ambiguous option is passed on the command line.

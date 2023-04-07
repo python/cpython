@@ -585,7 +585,7 @@ arguments will never be treated as file references.
 
 .. versionchanged:: 3.12
    :class:`ArgumentParser` changed encoding and errors to read arguments files
-   from default (e.g. :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding()>` and
+   from default (e.g. :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
    ``"strict"``) to :term:`filesystem encoding and error handler`.
    Arguments file should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
@@ -2308,4 +2308,4 @@ Exceptions
 
 .. exception:: ArgumentTypeError
 
-   An error from trying to convert a command line string to a type.
+   Raised when something goes wrong converting a command line string to a type.
