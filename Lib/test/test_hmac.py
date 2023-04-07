@@ -376,10 +376,10 @@ class TestVectorsTestCase(unittest.TestCase):
     def test_with_fallback(self):
         cache = getattr(hashlib, '__builtin_constructor_cache')
         try:
-            cache['foo'] = hashlib.md5
-            digest = hmac.digest(b'key', b'message', 'foo')
-            expected = binascii.unhexlify('4e4748e62b463521f6775fbf921234b5')
-            self.assertEqual(digest, expected)
+            cache['foo'] = hashlib.sha256
+            hexdigest = hmac.digest(b'key', b'message', 'foo').hex()
+            expected = '6e9ef29b75fffc5b7abae527d58fdadb2fe42e7219011976917343065f58ed4a'
+            self.assertEqual(hexdigest, expected)
         finally:
             cache.pop('foo')
 
