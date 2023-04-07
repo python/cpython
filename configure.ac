@@ -8,7 +8,7 @@ dnl
 # Set VERSION so we only need to edit in one place (i.e., here)
 m4_define(PYTHON_VERSION, 3.12)
 
-AC_PREREQ([2.69])
+AC_PREREQ([2.71])
 
 AC_INIT([python],[PYTHON_VERSION],[https://github.com/python/cpython/issues/])
 
@@ -839,6 +839,7 @@ AC_PROG_CPP
 AC_PROG_GREP
 AC_PROG_SED
 AC_PROG_EGREP
+AC_CHECK_TOOL([NM], [nm], [])
 
 dnl detect compiler name
 dnl check for xlc before clang, newer xlc's can use clang as frontend.
@@ -1253,13 +1254,20 @@ AC_ARG_ENABLE([wasm-pthreads],
 ])
 AC_MSG_RESULT([$enable_wasm_pthreads])
 
+
+AS_CASE([$ac_sys_system],
+  [Windows*], [DEFAULTEXEEXT=".exe"],
+  [CYGWIN*], [DEFAULTEXEEXT=".exe"],
+  [DEFAULTEXEEXT=""]
+)
+
 AC_MSG_CHECKING([for --with-suffix])
 AC_ARG_WITH([suffix],
-            [AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is empty, yes is mapped to '.exe')])],
+            [AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is empty, yes is mapped to '.exe' if on Windows)])],
 [
 	AS_CASE([$with_suffix],
     [no], [EXEEXT=],
-    [yes], [EXEEXT=.exe],
+    [yes], [EXEEXT=$DEFAULTEXEEXT],
     [EXEEXT=$with_suffix]
   )
 ], [
@@ -1501,8 +1509,8 @@ if test $enable_shared = "yes"; then
 	  ;;
     Darwin*)
     	LDLIBRARY='libpython$(LDVERSION).dylib'
-	BLDLIBRARY='-L. -lpython$(LDVERSION)'
-	RUNSHARED=DYLD_LIBRARY_PATH=`pwd`${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}
+	    BLDLIBRARY='-L. -Wl,-export_dynamic -lpython$(LDVERSION)'
+	    RUNSHARED=DYLD_LIBRARY_PATH=`pwd`${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}
 	;;
     AIX*)
 	LDLIBRARY='libpython$(LDVERSION).so'
@@ -3185,9 +3193,6 @@ then
 			LDCXXSHARED="$LDCXXSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
 		fi ;;
 	Darwin/*)
-		# Use -undefined dynamic_lookup whenever possible (10.3 and later).
-		# This allows an extension to be used in any Python
-
 		dep_target_major=`echo ${MACOSX_DEPLOYMENT_TARGET} | \
 				sed 's/\([[0-9]]*\)\.\([[0-9]]*\).*/\1/'`
 		dep_target_minor=`echo ${MACOSX_DEPLOYMENT_TARGET} | \
@@ -3199,8 +3204,8 @@ then
 			AC_MSG_ERROR([MACOSX_DEPLOYMENT_TARGET too old ($MACOSX_DEPLOYMENT_TARGET), only 10.3 or later is supported])
 		else
 			# building for OS X 10.3 and later
-			LDSHARED='$(CC) -bundle -undefined dynamic_lookup'
-			LDCXXSHARED='$(CXX) -bundle -undefined dynamic_lookup'
+			LDSHARED='$(CC) -bundle -flat_namespace -bundle_loader python$(VERSION).pyabi'
+			LDCXXSHARED='$(CXX)  -bundle -flat_namespace -bundle_loader python$(VERSION).pyabi'
 			BLDSHARED="$LDSHARED"
 		fi
 		;;

@@ -38,6 +38,7 @@ CC=		@CC@
 CXX=		@CXX@
 LINKCC=		@LINKCC@
 AR=		@AR@
+NM=         @NM@
 SOABI=		@SOABI@
 LDVERSION=	@LDVERSION@
 LIBPYTHON=	@LIBPYTHON@
@@ -729,7 +730,7 @@ clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
-	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -Wl,-force_flat_namespace -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
@@ -772,11 +773,27 @@ libpython3.so:	libpython$(LDVERSION).so
 	$(BLDSHARED) $(NO_AS_NEEDED) -o $@ -Wl,-h$@ $^
 
 libpython$(LDVERSION).dylib: $(LIBRARY_OBJS)
-	 $(CC) -dynamiclib -Wl,-single_module $(PY_CORE_LDFLAGS) -undefined dynamic_lookup -Wl,-install_name,$(prefix)/lib/libpython$(LDVERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(DTRACE_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
+	 $(CC) -dynamiclib -Wl,-single_module $(PY_CORE_LDFLAGS) -Wl,-install_name,$(prefix)/lib/libpython$(LDVERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(DTRACE_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
 
 
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
 	$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM)
+
+python$(VERSION).symbols: libpython$(LDVERSION).dylib
+	$(NM) -U --extern-only -j $? > $@
+
+python$(VERSION).symbols.bundle_alias: python$(VERSION).symbols
+	sed -e 's/\(.*\)/__py___bundle_stub_symbol \1/' < $? > $@
+
+python$(VERSION).symbols.undefined: python$(VERSION).symbols
+	sed -e 's/\(.*\)/-u \1/' < $? > $@
+
+Programs/python_bundle_stub.o: Programs/python_bundle_stub.c
+	$(CC) -c -o $@ $?
+
+python$(VERSION).pyabi: Programs/python_bundle_stub.o python$(VERSION).symbols.bundle_alias
+	$(CC) -o $@ -bundle Programs/python_bundle_stub.o -Wl,-exported_symbols_list,python$(VERSION).symbols -Wl,-alias_list,python$(VERSION).symbols.bundle_alias
+
 
 # List of exported symbols for AIX
 Modules/python.exp: $(LIBRARY)
@@ -1290,7 +1307,7 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h M
 		-DPYTHONFRAMEWORK='"$(PYTHONFRAMEWORK)"' \
 		-o $@ $(srcdir)/Modules/getpath.c
 
-Programs/python.o: $(srcdir)/Programs/python.c
+Programs/python.o: $(srcdir)/Programs/python.c python$(VERSION).symbols
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/python.c
 
 Programs/_testembed.o: $(srcdir)/Programs/_testembed.c Programs/test_frozenmain.h
