@@ -667,11 +667,15 @@ extern char * _getpty(int *, int, mode_t, int);
 #  ifndef thread_local
 #    if __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
 #      define thread_local _Thread_local
+#      define HAVE_THREAD_LOCAL 1
 #    elif defined(_MSC_VER)  /* AKA NT_THREADS */
 #      define thread_local __declspec(thread)
+#      define HAVE_THREAD_LOCAL 1
 #    elif defined(__GNUC__)  /* includes clang */
 #      define thread_local __thread
+#      define HAVE_THREAD_LOCAL 1
 #    else
+       // XXX Fall back to the PyThread_tss_*() API.
 #      error "no supported thread-local variable storage classifier"
 #    endif
 #  endif
