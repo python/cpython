@@ -805,8 +805,7 @@ event loop only if called from the main thread.
 .. section: Documentation
 
 Add an entry for ``__module__`` in the "function" & "method" sections of the
-`inspect docs types and members table
-<https://docs.python.org/3/library/inspect.html#types-and-members>`_
+:mod:`inspect` docs' :ref:`inspect-types` table.
 
 ..
 

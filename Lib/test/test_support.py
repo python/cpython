@@ -9,7 +9,6 @@ import subprocess
 import sys
 import tempfile
 import textwrap
-import time
 import unittest
 import warnings
 
@@ -461,18 +460,12 @@ class TestSupport(unittest.TestCase):
             # child process: do nothing, just exit
             os._exit(0)
 
-        t0 = time.monotonic()
-        deadline = time.monotonic() + support.SHORT_TIMEOUT
-
         was_altered = support.environment_altered
         try:
             support.environment_altered = False
             stderr = io.StringIO()
 
-            while True:
-                if time.monotonic() > deadline:
-                    self.fail("timeout")
-
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
                 with support.swap_attr(support.print_warning, 'orig_stderr', stderr):
                     support.reap_children()
 
@@ -480,9 +473,6 @@ class TestSupport(unittest.TestCase):
                 # the child process
                 if support.environment_altered:
                     break
-
-                # loop until the child process completed
-                time.sleep(0.100)
 
             msg = "Warning -- reap_children() reaped child process %s" % pid
             self.assertIn(msg, stderr.getvalue())
@@ -664,6 +654,7 @@ class TestSupport(unittest.TestCase):
             self.assertTrue(support.match_test(test_chdir))
 
     @unittest.skipIf(support.is_emscripten, "Unstable in Emscripten")
+    @unittest.skipIf(support.is_wasi, "Unavailable on WASI")
     def test_fd_count(self):
         # We cannot test the absolute value of fd_count(): on old Linux
         # kernel or glibc versions, os.urandom() keeps a FD open on

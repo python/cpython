@@ -267,7 +267,7 @@ class OrderedDict(dict):
         'od.__repr__() <==> repr(od)'
         if not self:
             return '%s()' % (self.__class__.__name__,)
-        return '%s(%r)' % (self.__class__.__name__, list(self.items()))
+        return '%s(%r)' % (self.__class__.__name__, dict(self.items()))
 
     def __reduce__(self):
         'Return state information for pickling'
@@ -507,9 +507,12 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     # specified a particular module.
     if module is None:
         try:
-            module = _sys._getframe(1).f_globals.get('__name__', '__main__')
-        except (AttributeError, ValueError):
-            pass
+            module = _sys._getframemodulename(1) or '__main__'
+        except AttributeError:
+            try:
+                module = _sys._getframe(1).f_globals.get('__name__', '__main__')
+            except (AttributeError, ValueError):
+                pass
     if module is not None:
         result.__module__ = module
 
@@ -1011,8 +1014,8 @@ class ChainMap(_collections_abc.MutableMapping):
 
     def __iter__(self):
         d = {}
-        for mapping in reversed(self.maps):
-            d.update(dict.fromkeys(mapping))    # reuses stored hash values if possible
+        for mapping in map(dict.fromkeys, reversed(self.maps)):
+            d |= mapping                        # reuses stored hash values if possible
         return iter(d)
 
     def __contains__(self, key):

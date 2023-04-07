@@ -239,6 +239,57 @@ class ProactorTests(test_utils.TestCase):
         self.close_loop(self.loop)
         self.assertFalse(self.loop.call_exception_handler.called)
 
+    def test_address_argument_type_error(self):
+        # Regression test for https://github.com/python/cpython/issues/98793
+        proactor = self.loop._proactor
+        sock = socket.socket(type=socket.SOCK_DGRAM)
+        bad_address = None
+        with self.assertRaises(TypeError):
+            proactor.connect(sock, bad_address)
+        with self.assertRaises(TypeError):
+            proactor.sendto(sock, b'abc', addr=bad_address)
+        sock.close()
+
+    def test_client_pipe_stat(self):
+        res = self.loop.run_until_complete(self._test_client_pipe_stat())
+        self.assertEqual(res, 'done')
+
+    async def _test_client_pipe_stat(self):
+        # Regression test for https://github.com/python/cpython/issues/100573
+        ADDRESS = r'\\.\pipe\test_client_pipe_stat-%s' % os.getpid()
+
+        async def probe():
+            # See https://github.com/python/cpython/pull/100959#discussion_r1068533658
+            h = _overlapped.ConnectPipe(ADDRESS)
+            try:
+                _winapi.CloseHandle(_overlapped.ConnectPipe(ADDRESS))
+            except OSError as e:
+                if e.winerror != _overlapped.ERROR_PIPE_BUSY:
+                    raise
+            finally:
+                _winapi.CloseHandle(h)
+
+        with self.assertRaises(FileNotFoundError):
+            await probe()
+
+        [server] = await self.loop.start_serving_pipe(asyncio.Protocol, ADDRESS)
+        self.assertIsInstance(server, windows_events.PipeServer)
+
+        errors = []
+        self.loop.set_exception_handler(lambda _, data: errors.append(data))
+
+        for i in range(5):
+            await self.loop.create_task(probe())
+
+        self.assertEqual(len(errors), 0, errors)
+
+        server.close()
+
+        with self.assertRaises(FileNotFoundError):
+            await probe()
+
+        return "done"
+
 
 class WinPolicyTests(test_utils.TestCase):
 
