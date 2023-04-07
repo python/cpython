@@ -418,7 +418,7 @@ tempfile
 The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
 *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
 
-.. _whatsnew-typing-py312
+.. _whatsnew-typing-py312:
 
 typing
 ------
