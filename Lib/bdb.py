@@ -5,9 +5,75 @@ import sys
 import os
 from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
 
-__all__ = ["BdbQuit", "Bdb", "Breakpoint"]
+__all__ = ["BdbQuit", "Bdb", "Breakpoint", "FrameProxy", "TracebackProxy"]
 
 GENERATOR_AND_COROUTINE_FLAGS = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR
+
+
+class FrameProxy:
+    """
+    Every time we read f_locals from the FrameObject, it will be refreshed
+    by the current FAST variables. To avoid missing our changes to the
+    local variables, we use proxy to only read f_locals once
+    """
+    _frames = {}
+
+    def __new__(cls, frame):
+        if frame is None:
+            return None
+        if isinstance(frame, FrameProxy):
+            # If it's already proxied, return directly
+            return frame
+        if frame in cls._frames:
+            return cls._frames[frame]
+        return super().__new__(cls)
+
+    def __init__(self, frame):
+        if not isinstance(frame, FrameProxy):
+            self.__frame = frame
+            self.__f_locals = frame.f_locals
+            self._frames[frame] = self
+
+    def __getattr__(self, name):
+        if name.startswith("_"):
+            raise AttributeError(name)
+        if name == "f_locals":
+            return self.__f_locals
+        if name == "frame":
+            return self.__frame
+        if name == "f_back":
+            return FrameProxy(self.__frame.f_back)
+        return getattr(self.__frame, name)
+
+    def __setattr__(self, name, value):
+        if name.startswith("_"):
+            super().__setattr__(name, value)
+        else:
+            setattr(self.__frame, name, value)
+
+
+class TracebackProxy:
+    def __new__(cls, tb):
+        if tb is None:
+            return None
+        if isinstance(tb, TracebackProxy):
+            # If it's already proxied, return directly
+            return tb
+        return super().__new__(cls)
+
+    def __init__(self, tb):
+        if not isinstance(tb, TracebackProxy):
+            self.__traceback = tb
+
+    def __getattr__(self, name):
+        if name.startswith("_"):
+            raise AttributeError(name)
+        if name == "tb_frame":
+            return FrameProxy(self.__traceback.tb_frame)
+        if name == "tb_next":
+            tb = self.__traceback.tb_next
+            return TracebackProxy(tb)
+        return getattr(self.__traceback, name)
 
 
 class BdbQuit(Exception):
@@ -57,6 +123,7 @@ class Bdb:
         """Set values of attributes as ready to start debugging."""
         import linecache
         linecache.checkcache()
+        FrameProxy._frames = {}
         self.botframe = None
         self._set_stopinfo(None, None)
 
@@ -84,6 +151,8 @@ class Bdb:
 
         The arg parameter depends on the previous event.
         """
+
+        frame = FrameProxy(frame)
         if self.quitting:
             return # None
         if event == 'line':
@@ -328,6 +397,7 @@ class Bdb:
         if frame is None:
             frame = sys._getframe().f_back
         self.reset()
+        frame = FrameProxy(frame)
         while frame:
             frame.f_trace = self.trace_dispatch
             self.botframe = frame
