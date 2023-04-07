@@ -456,7 +456,7 @@ typing
       >>> isinstance(f, HasX)
       True
       >>> HasX.y = 2
-      >>> isinstance(f, HasX)  # unchanged, even though HasX now also has a `y` attribute
+      >>> isinstance(f, HasX)  # unchanged, even though HasX now also has a "y" attribute
       True
 
   This change was made in order to speed up ``isinstance()`` checks against
