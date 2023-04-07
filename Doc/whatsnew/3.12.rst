@@ -459,7 +459,7 @@ typing
       >>> isinstance(f, HasX)  # unchanged, even though HasX now also has a `y` attribute
       True
 
-  This change was made in order to speed up ``isinstance()` checks against
+  This change was made in order to speed up ``isinstance()`` checks against
   runtime-checkable protocols.
 
 * The performance profile of :func:`isinstance` checks against
