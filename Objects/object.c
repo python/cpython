@@ -1971,9 +1971,6 @@ PyObject _Py_NotImplementedStruct = {
     1, &_PyNotImplemented_Type
 };
 
-#ifdef MS_WINDOWS
-extern PyTypeObject PyHKEY_Type;
-#endif
 extern PyTypeObject _Py_GenericAliasIterType;
 extern PyTypeObject _PyMemoryIter_Type;
 extern PyTypeObject _PyLineIterator;
@@ -2023,9 +2020,6 @@ static PyTypeObject* static_types[] = {
     &PyFunction_Type,
     &PyGen_Type,
     &PyGetSetDescr_Type,
-#ifdef MS_WINDOWS
-    &PyHKEY_Type,
-#endif
     &PyInstanceMethod_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,

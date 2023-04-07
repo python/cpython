@@ -19,15 +19,19 @@ PyDoc_STRVAR(winreg_HKEYType_Close__doc__,
 "If the handle is already closed, no error is raised.");
 
 #define WINREG_HKEYTYPE_CLOSE_METHODDEF    \
-    {"Close", (PyCFunction)winreg_HKEYType_Close, METH_NOARGS, winreg_HKEYType_Close__doc__},
+    {"Close", _PyCFunction_CAST(winreg_HKEYType_Close), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, winreg_HKEYType_Close__doc__},
 
 static PyObject *
-winreg_HKEYType_Close_impl(PyHKEYObject *self);
+winreg_HKEYType_Close_impl(PyHKEYObject *self, PyTypeObject *cls);
 
 static PyObject *
-winreg_HKEYType_Close(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
+winreg_HKEYType_Close(PyHKEYObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return winreg_HKEYType_Close_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "Close() takes no arguments");
+        return NULL;
+    }
+    return winreg_HKEYType_Close_impl(self, cls);
 }
 
 #endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
@@ -97,19 +101,20 @@ PyDoc_STRVAR(winreg_HKEYType___exit____doc__,
 "\n");
 
 #define WINREG_HKEYTYPE___EXIT___METHODDEF    \
-    {"__exit__", _PyCFunction_CAST(winreg_HKEYType___exit__), METH_FASTCALL|METH_KEYWORDS, winreg_HKEYType___exit____doc__},
+    {"__exit__", _PyCFunction_CAST(winreg_HKEYType___exit__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, winreg_HKEYType___exit____doc__},
 
 static PyObject *
-winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
-                              PyObject *exc_value, PyObject *traceback);
+winreg_HKEYType___exit___impl(PyHKEYObject *self, PyTypeObject *cls,
+                              PyObject *exc_type, PyObject *exc_value,
+                              PyObject *traceback);
 
 static PyObject *
-winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+winreg_HKEYType___exit__(PyHKEYObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 4
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -144,7 +149,7 @@ winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *const *args, Py_ssize_t n
     exc_type = args[0];
     exc_value = args[1];
     traceback = args[2];
-    return_value = winreg_HKEYType___exit___impl(self, exc_type, exc_value, traceback);
+    return_value = winreg_HKEYType___exit___impl(self, cls, exc_type, exc_value, traceback);
 
 exit:
     return return_value;
@@ -219,14 +224,14 @@ winreg_ConnectRegistry(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         _PyArg_BadArgument("ConnectRegistry", "argument 1", "str or None", args[0]);
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[1], &key)) {
+    if (!clinic_HKEY_converter(module, args[1], &key)) {
         goto exit;
     }
     _return_value = winreg_ConnectRegistry_impl(module, computer_name, key);
     if (_return_value == NULL) {
         goto exit;
     }
-    return_value = PyHKEY_FromHKEY(_return_value);
+    return_value = PyHKEY_FromHKEY(module, _return_value);
 
 exit:
     /* Cleanup for computer_name */
@@ -275,7 +280,7 @@ winreg_CreateKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("CreateKey", nargs, 2, 2)) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     if (args[1] == Py_None) {
@@ -295,7 +300,7 @@ winreg_CreateKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (_return_value == NULL) {
         goto exit;
     }
-    return_value = PyHKEY_FromHKEY(_return_value);
+    return_value = PyHKEY_FromHKEY(module, _return_value);
 
 exit:
     /* Cleanup for sub_key */
@@ -382,7 +387,7 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     if (!args) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     if (args[1] == Py_None) {
@@ -419,7 +424,7 @@ skip_optional_pos:
     if (_return_value == NULL) {
         goto exit;
     }
-    return_value = PyHKEY_FromHKEY(_return_value);
+    return_value = PyHKEY_FromHKEY(module, _return_value);
 
 exit:
     /* Cleanup for sub_key */
@@ -466,7 +471,7 @@ winreg_DeleteKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("DeleteKey", nargs, 2, 2)) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
@@ -566,7 +571,7 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     if (!args) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
@@ -634,7 +639,7 @@ winreg_DeleteValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("DeleteValue", nargs, 2, 2)) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     if (args[1] == Py_None) {
@@ -694,7 +699,7 @@ winreg_EnumKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("EnumKey", nargs, 2, 2)) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     index = _PyLong_AsInt(args[1]);
@@ -751,7 +756,7 @@ winreg_EnumValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("EnumValue", nargs, 2, 2)) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     index = _PyLong_AsInt(args[1]);
@@ -839,7 +844,7 @@ winreg_FlushKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!clinic_HKEY_converter(arg, &key)) {
+    if (!clinic_HKEY_converter(module, arg, &key)) {
         goto exit;
     }
     return_value = winreg_FlushKey_impl(module, key);
@@ -898,7 +903,7 @@ winreg_LoadKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("LoadKey", nargs, 3, 3)) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
@@ -999,7 +1004,7 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     if (!args) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     if (args[1] == Py_None) {
@@ -1036,7 +1041,7 @@ skip_optional_pos:
     if (_return_value == NULL) {
         goto exit;
     }
-    return_value = PyHKEY_FromHKEY(_return_value);
+    return_value = PyHKEY_FromHKEY(module, _return_value);
 
 exit:
     /* Cleanup for sub_key */
@@ -1116,7 +1121,7 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!args) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     if (args[1] == Py_None) {
@@ -1153,7 +1158,7 @@ skip_optional_pos:
     if (_return_value == NULL) {
         goto exit;
     }
-    return_value = PyHKEY_FromHKEY(_return_value);
+    return_value = PyHKEY_FromHKEY(module, _return_value);
 
 exit:
     /* Cleanup for sub_key */
@@ -1193,7 +1198,7 @@ winreg_QueryInfoKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!clinic_HKEY_converter(arg, &key)) {
+    if (!clinic_HKEY_converter(module, arg, &key)) {
         goto exit;
     }
     return_value = winreg_QueryInfoKey_impl(module, key);
@@ -1242,7 +1247,7 @@ winreg_QueryValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("QueryValue", nargs, 2, 2)) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     if (args[1] == Py_None) {
@@ -1303,7 +1308,7 @@ winreg_QueryValueEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("QueryValueEx", nargs, 2, 2)) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     if (args[1] == Py_None) {
@@ -1369,7 +1374,7 @@ winreg_SaveKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("SaveKey", nargs, 2, 2)) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
@@ -1438,7 +1443,7 @@ winreg_SetValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("SetValue", nargs, 4, 4)) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     if (args[1] == Py_None) {
@@ -1542,7 +1547,7 @@ winreg_SetValueEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("SetValueEx", nargs, 5, 5)) {
         goto exit;
     }
-    if (!clinic_HKEY_converter(args[0], &key)) {
+    if (!clinic_HKEY_converter(module, args[0], &key)) {
         goto exit;
     }
     if (args[1] == Py_None) {
@@ -1603,7 +1608,7 @@ winreg_DisableReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!clinic_HKEY_converter(arg, &key)) {
+    if (!clinic_HKEY_converter(module, arg, &key)) {
         goto exit;
     }
     return_value = winreg_DisableReflectionKey_impl(module, key);
@@ -1641,7 +1646,7 @@ winreg_EnableReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!clinic_HKEY_converter(arg, &key)) {
+    if (!clinic_HKEY_converter(module, arg, &key)) {
         goto exit;
     }
     return_value = winreg_EnableReflectionKey_impl(module, key);
@@ -1677,7 +1682,7 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!clinic_HKEY_converter(arg, &key)) {
+    if (!clinic_HKEY_converter(module, arg, &key)) {
         goto exit;
     }
     return_value = winreg_QueryReflectionKey_impl(module, key);
@@ -1795,4 +1800,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=715db416dc1321ee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e280486839dc13a8 input=a9049054013a1b77]*/
