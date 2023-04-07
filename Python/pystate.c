@@ -61,7 +61,13 @@ extern "C" {
  */
 
 
-thread_local PyThreadState *_Py_tss_tstate;
+thread_local PyThreadState *_Py_tss_tstate = NULL;
+
+PyThreadState *
+_PyThreadState_GetCurrent(void)
+{
+    return _Py_tss_tstate;
+}
 
 static inline PyThreadState *
 current_fast_get(_PyRuntimeState *Py_UNUSED(runtime))
