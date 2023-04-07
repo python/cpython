@@ -674,9 +674,7 @@ extern char * _getpty(int *, int, mode_t, int);
 #    elif defined(__GNUC__)  /* includes clang */
 #      define thread_local __thread
 #      define HAVE_THREAD_LOCAL 1
-#    else
-       // XXX Fall back to the PyThread_tss_*() API.
-#      error "no supported thread-local variable storage classifier"
+     // else: fall back to the PyThread_tss_*() API, or ignore.
 #    endif
 #  endif
 #endif
