@@ -243,6 +243,11 @@ static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
 
 
 static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
+    // This immortal check acts as a  mechanism for code that it's
+    // written without the assumption of Immortal Objects. The runtime
+    // is in charge of tracking these objects and should avoid as much
+    // as possible having extensions inadvertently changing the refcnt
+    // of an immortalized object.
     if (_Py_IsImmortal(ob)) {
         return;
     }

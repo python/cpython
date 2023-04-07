@@ -14678,10 +14678,10 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
      *   ./python -X showrefcount -c 'import itertools'
      *   [237 refs, 237 blocks]
      *
-     * Therefore, this should remain disabled for production builds until there
-     * is a strict guarantee that no memory will be left after `Py_Finalize`.
+     * Therefore, this should remain disabled for until there is a strict guarantee
+     * that no memory will be left after `Py_Finalize`.
      */
-#ifdef Py_DEBUG
+#if 0
     /* For all non-singleton interned strings, restore the two valid references
        to that instance from within the intern string dictionary and let the
        normal reference counting process clean up these instances. */

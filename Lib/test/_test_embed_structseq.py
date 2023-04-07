@@ -1,6 +1,11 @@
 import sys
 import types
 
+# Note: This test file can't import `unittest` since the runtime can't
+# currently guarantee that it will not leak memory. Doing so will mark
+# the test as passing but with reference leaks. This can safely import
+# the `unittest` library once there's a strict guarantee of no leaks
+# during runtime shutdown.
 
 # bpo-46417: Test that structseq types used by the sys module are still
 # valid when Py_Finalize()/Py_Initialize() are called multiple times.
@@ -22,7 +27,7 @@ class TestStructSeq:
         # tp_subclasses
         assert obj_type.__subclasses__() == []
 
-    def sys_attrs(self):
+    def test_sys_attrs(self):
         for attr_name in (
             'flags',          # FlagsType
             'float_info',     # FloatInfoType
@@ -34,7 +39,7 @@ class TestStructSeq:
             attr = getattr(sys, attr_name)
             self._check_structseq(type(attr))
 
-    def sys_funcs(self):
+    def test_sys_funcs(self):
         func_names = ['get_asyncgen_hooks']  # AsyncGenHooksType
         if hasattr(sys, 'getwindowsversion'):
             func_names.append('getwindowsversion')  # WindowsVersionType
@@ -46,8 +51,8 @@ class TestStructSeq:
 
 try:
     tests = TestStructSeq()
-    tests.sys_attrs()
-    tests.sys_funcs()
+    tests.test_sys_attrs()
+    tests.test_sys_funcs()
 except SystemExit as exc:
     if exc.args[0] != 0:
         raise

@@ -98,8 +98,16 @@ typedef struct {
     Py_ssize_t length;          /* Number of code points in the string */
     Py_hash_t hash;             /* Hash value; -1 if not set */
     struct {
-        /* If interned is set, the two references from the
-           dictionary to this object are *not* counted in ob_refcnt. */
+        /* If interned is non-zero, the two references from the
+           dictionary to this object are *not* counted in ob_refcnt.
+           Furthermore, Having this value set means that it is in one of 3
+           different states of interned forms indicated by value, which are:
+               0: Not Interned
+               1: Interned
+               2: Interned and Immortalized
+               3: Internede, Immortalized, and Static
+           These categorizations allows the runtime to determine the right
+           cleanup mechanism at runtime shutdown. */
         unsigned int interned:2;
         /* Character size:
 
