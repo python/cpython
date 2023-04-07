@@ -7350,20 +7350,20 @@ PyInit__socket(void)
         goto error;
     }
 
-#define ADD_EXC(MOD, NAME, VAR) do {                                \
-    VAR = PyErr_NewException("socket." NAME, PyExc_OSError, NULL);  \
-    if (VAR == NULL) {                                              \
-        goto error;                                                 \
-    }                                                               \
-    int rc = PyModule_AddObjectRef(MOD, NAME, VAR);                 \
-    Py_DECREF(VAR);                                                 \
-    if (rc < 0) {                                                   \
-        goto error;                                                 \
-    }                                                               \
+#define ADD_EXC(MOD, NAME, VAR, BASE) do {                  \
+    VAR = PyErr_NewException("socket." NAME, BASE, NULL);   \
+    if (VAR == NULL) {                                      \
+        goto error;                                         \
+    }                                                       \
+    int rc = PyModule_AddObjectRef(MOD, NAME, VAR);         \
+    Py_DECREF(VAR);                                         \
+    if (rc < 0) {                                           \
+        goto error;                                         \
+    }                                                       \
 } while (0)
 
-    ADD_EXC(m, "herror", socket_herror);
-    ADD_EXC(m, "gaierror", socket_gaierror);
+    ADD_EXC(m, "herror", socket_herror, PyExc_OSError);
+    ADD_EXC(m, "gaierror", socket_gaierror, PyExc_OSError);
 
 #undef ADD_EXC
 
