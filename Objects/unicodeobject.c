@@ -14681,7 +14681,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
      * Therefore, this should remain disabled for until there is a strict guarantee
      * that no memory will be left after `Py_Finalize`.
      */
-#if 0
+#if Py_DEBUG
     /* For all non-singleton interned strings, restore the two valid references
        to that instance from within the intern string dictionary and let the
        normal reference counting process clean up these instances. */
@@ -14731,7 +14731,7 @@ struct _Py_unicode_state *state = &interp->unicode;
     for (Py_ssize_t i=0; i < ids->size; i++) {
         Py_XINCREF(ids->array[i]);
     }
-#endif
+#endif /* Py_DEBUG */
     clear_interned_dict(interp);
 }
 
