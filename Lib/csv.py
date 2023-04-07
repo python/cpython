@@ -4,6 +4,7 @@ csv.py - read/write/investigate CSV files
 """
 
 import re
+import types
 from _csv import Error, __version__, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
                  field_size_limit, \
@@ -126,7 +127,7 @@ class DictReader:
                 d[key] = self.restval
         return d
 
-
+    __class_getitem__ = classmethod(types.GenericAlias)
 class DictWriter:
     def __init__(self, f, fieldnames, restval="", extrasaction="raise",
                  dialect="excel", *args, **kwds):
