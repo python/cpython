@@ -39,6 +39,11 @@ static inline int IS_SCOPE_EXIT_OPCODE(int opcode);
 
 ////////// TYPE CONTEXT FUNCTIONS
 
+/**
+ * @brief Allocates and initializes the type context for a code object.
+ * @param co The code object the type context belongs to.
+ * @return The newly-created type context.
+*/
 static _PyTier2TypeContext *
 initialize_type_context(const PyCodeObject *co)
 {
@@ -82,6 +87,11 @@ initialize_type_context(const PyCodeObject *co)
     return type_context;
 }
 
+/**
+ * @brief Does a deepcopy of a type context and all its nodes.
+ * @param type_context The type context to copy.
+ * @return Newly copied type context.
+*/
 static _PyTier2TypeContext *
 _PyTier2TypeContext_Copy(const _PyTier2TypeContext *type_context)
 {
@@ -184,6 +194,10 @@ _PyTier2TypeContext_Copy(const _PyTier2TypeContext *type_context)
     return new_type_context;
 }
 
+/**
+ * @brief Destructor for a type context.
+ * @param type_context The type context to destroy/free.
+*/
 void
 _PyTier2TypeContext_Free(_PyTier2TypeContext *type_context)
 {
@@ -210,6 +224,11 @@ __typenode_get_rootptr(_Py_TYPENODE_t ref)
     return ref_ptr;
 }
 
+/**
+ * @brief Gets the actual PyTypeObject* that a type node points to.
+ * @param node The type propagator node to look up.
+ * @return The referenced PyTypeObject*.
+*/
 static PyTypeObject*
 typenode_get_type(_Py_TYPENODE_t node)
 {
@@ -229,6 +248,13 @@ typenode_get_type(_Py_TYPENODE_t node)
     }
 }
 
+// @TODO @JULES
+/**
+ * @brief 
+ * @param src 
+ * @param dst 
+ * @param src_is_new 
+*/
 static void
 __type_propagate_TYPE_SET(
     _Py_TYPENODE_t *src, _Py_TYPENODE_t *dst, bool src_is_new)
@@ -272,6 +298,14 @@ __type_propagate_TYPE_SET(
     }
 }
 
+// @TODO @JULES
+/**
+ * @brief 
+ * @param type_context 
+ * @param src 
+ * @param dst 
+ * @param src_is_new 
+*/
 static void
 __type_propagate_TYPE_OVERWRITE(
     _PyTier2TypeContext *type_context,
@@ -387,7 +421,16 @@ __type_propagate_TYPE_OVERWRITE(
     }
 }
 
-// src and dst are assumed to already be within the type context
+
+// @TODO @JULES
+/**
+ * @brief 
+ * @param type_context 
+ * @param src 
+ * @param dst
+ *
+ * src and dst are assumed to already be within the type context
+*/
 static void
 __type_propagate_TYPE_SWAP(
     _PyTier2TypeContext *type_context,
@@ -455,6 +498,11 @@ __type_propagate_TYPE_SWAP(
     *src ^= *dst;
 }
 
+/**
+ * @brief Shrink a type stack by `idx` entries.
+ * @param type_stackptr The pointer to one after the top of type stack.
+ * @param idx The number of entries to shrink the stack by.
+*/
 static void
 __type_stack_shrink(_Py_TYPENODE_t **type_stackptr, int idx)
 {
@@ -476,6 +524,10 @@ __type_stack_shrink(_Py_TYPENODE_t **type_stackptr, int idx)
 
 #if TYPEPROP_DEBUG
 
+/**
+ * @brief Print the entries in a type context (along with locals).
+ * @param type_context The type context to display.
+*/
 static void
 print_typestack(const _PyTier2TypeContext *type_context)
 {
@@ -546,7 +598,14 @@ print_typestack(const _PyTier2TypeContext *type_context)
 }
 #endif
 
-// Type propagates across a single function. 
+
+/**
+ * @brief Type propagate across a single instruction
+ * @param opcode The instruction opcode.
+ * @param oparg The instruction oparg.
+ * @param type_context The current type context in the basic block.
+ * @param consts The co_consts array of the code object that holds the constants.
+*/
 static void
 type_propagate(
     int opcode, int oparg,
@@ -611,38 +670,14 @@ type_propagate(
 #undef TYPECONST_GET
 }
 
-////////// Utility functions
-
-// Gets end of the bytecode for a code object.
-_Py_CODEUNIT *
-_PyCode_GetEnd(PyCodeObject *co)
-{
-    _Py_CODEUNIT *end = (_Py_CODEUNIT *)(co->co_code_adaptive + _PyCode_NBYTES(co));
-    return end;
-}
-
-// Gets end of actual bytecode executed. _PyCode_GetEnd might return a CACHE instruction.
-_Py_CODEUNIT *
-_PyCode_GetLogicalEnd(PyCodeObject *co)
-{
-    _Py_CODEUNIT *end = _PyCode_GetEnd(co);
-    while (_Py_OPCODE(*end) == CACHE) {
-        end--;
-    }
-#if BB_DEBUG
-    if (!IS_SCOPE_EXIT_OPCODE(_Py_OPCODE(*end))) {
-        fprintf(stderr, "WRONG EXIT OPCODE: %d\n", _Py_OPCODE(*end));
-        assert(0);
-    }
-#endif
-    assert(IS_SCOPE_EXIT_OPCODE(_Py_OPCODE(*end)));
-    return end;
-}
-
 
 ////////// BB SPACE FUNCTIONS
 
-// Creates the overallocated array for the BBs.
+/**
+ * @brief Creates the overallocated array for the BBs.
+ * @param space_to_alloc How much space to allocate.
+ * @return A new space that we can write basic block instructions to.
+*/
 static _PyTier2BBSpace *
 _PyTier2_CreateBBSpace(Py_ssize_t space_to_alloc)
 {
@@ -655,9 +690,12 @@ _PyTier2_CreateBBSpace(Py_ssize_t space_to_alloc)
     return bb_space;
 }
 
-// Checks if there's enough space in the BBSpace for space_requested.
-// Reallocates if neccessary.
-// DOES NOT ADJUST THE WATER LEVEL AS THIS IS JUST A CHECK. ONLY ADJUSTS THE MAX SPACE.
+/**
+ * @brief Checks if there's enough space in the basic block space for space_requested.
+ * @param co The code object's tier2 basic block space to check
+ * @param space_requested The amount of extra space you need.
+ * @return The space of the code object after checks.
+*/
 static _PyTier2BBSpace *
 _PyTier2_BBSpaceCheckAndReallocIfNeeded(PyCodeObject *co, Py_ssize_t space_requested)
 {
@@ -673,20 +711,24 @@ _PyTier2_BBSpaceCheckAndReallocIfNeeded(PyCodeObject *co, Py_ssize_t space_reque
 #endif
         // @TODO We can't Realloc, we actually need to do the linked list method.
         Py_UNREACHABLE();
-        //_PyTier2BBSpace *new_space = PyMem_Realloc(curr, new_size);
-        //if (new_space == NULL) {
-        //    return NULL;
-        //}
-        //co->_tier2_info->_bb_space = new_space;
-        //new_space->max_capacity = new_size;
-        //return new_space;
     }
     // We have enouogh space. Don't do anything, j
     return curr;
 }
 
-// BB METADATA FUNCTIONS
+//// BB METADATA FUNCTIONS
 
+/**
+ * @brief Allocate the metadata associate with a basic block.
+ * The metadata contains things like the type context at the end of the basic block.*
+ * 
+ * @param co The code object this basic block belongs to.
+ * @param tier2_start The start of the tier 2 code (start of the basic block). 
+ * @param tier1_end The end of the tie 1 code this basic block points to.
+ * @param type_context The type context associated with this basic block.
+ * @return Newly allocated metadata for this basic block.
+ *
+*/
 static _PyTier2BBMetadata *
 allocate_bb_metadata(PyCodeObject *co, _Py_CODEUNIT *tier2_start,
     _Py_CODEUNIT *tier1_end,
@@ -705,8 +747,12 @@ allocate_bb_metadata(PyCodeObject *co, _Py_CODEUNIT *tier2_start,
 }
 
 
-// Writes BB metadata to code object's tier2info bb_data field.
-// 0 on success, 1 on error.
+/**
+ * @brief Writes BB metadata to code object's tier2info bb_data field.
+ * @param co The code object whose metadata we should write to.
+ * @param metadata The metadata to write.
+ * @return 0 on success, 1 on error.
+*/
 static int
 write_bb_metadata(PyCodeObject *co, _PyTier2BBMetadata *metadata)
 {
@@ -737,6 +783,17 @@ write_bb_metadata(PyCodeObject *co, _PyTier2BBMetadata *metadata)
     return 0;
 }
 
+/**
+ * @brief Allocate BB metadata, then write it.
+ * Consume this instead of `allocate_bb_metadata`.
+ * 
+ * @param co The code object the metadat belongs to.
+ * @param tier2_start The start of the tier 2 code (start of the basic block).
+ * @param tier1_end The end of the tie 1 code this basic block points to.
+ * @param type_context The type context associated with this basic block.
+ * @return Newly allocated metadata for this basic block.
+ *
+*/
 static _PyTier2BBMetadata *
 _PyTier2_AllocateBBMetaData(PyCodeObject *co, _Py_CODEUNIT *tier2_start,
     _Py_CODEUNIT *tier1_end,
@@ -758,14 +815,22 @@ _PyTier2_AllocateBBMetaData(PyCodeObject *co, _Py_CODEUNIT *tier2_start,
 
 /* Opcode detection functions. Keep in sync with compile.c and dis! */
 
-// dis.hasjabs
+/**
+ * @brief C equivalent of dis.hasjabs
+ * @param opcode Opcode of the instruction.
+ * @return Whether this is an absolute jump.
+*/
 static inline int
 IS_JABS_OPCODE(int opcode)
 {
     return 0;
 }
 
-// dis.hasjrel
+/**
+ * @brief C equivalent of dis.hasjrel
+ * @param opcode Opcode of the instruction.
+ * @return Whether this is a relative jump.
+*/
 static inline int
 IS_JREL_OPCODE(int opcode)
 {
@@ -788,6 +853,11 @@ IS_JREL_OPCODE(int opcode)
     }
 }
 
+/**
+ * @brief Checks if this is a backwards jump instruction.
+ * @param opcode Opcode of the instruction.
+ * @return Whether this is a backwards jump.
+*/
 static inline int
 IS_JUMP_BACKWARDS_OPCODE(int opcode)
 {
@@ -797,20 +867,23 @@ IS_JUMP_BACKWARDS_OPCODE(int opcode)
 }
 
 
-// dis.hasjrel || dis.hasjabs
+/**
+ * @brief C equivalent of dis.hasjrel || dis.hasjabs
+ * @param opcode Opcode of the instruction.
+ * @return Whether this is a jump instruction.
+*/
 static inline int
 IS_JUMP_OPCODE(int opcode)
 {
     return IS_JREL_OPCODE(opcode) || IS_JABS_OPCODE(opcode);
 }
 
-// dis.hascompare
-static inline int
-IS_COMPARE_OPCODE(int opcode)
-{
-    return opcode == COMPARE_OP;
-}
 
+/**
+ * @brief Checks whether the opcode is a scope exit.
+ * @param opcode Opcode of the instruction.
+ * @return Whether this is a scope exit.
+*/
 static inline int
 IS_SCOPE_EXIT_OPCODE(int opcode)
 {
@@ -827,14 +900,23 @@ IS_SCOPE_EXIT_OPCODE(int opcode)
 }
 
 // KEEP IN SYNC WITH COMPILE.c!!!!
+/**
+ * @brief Checks whether the opcode terminates a basic block.
+ * @param opcode Opcode of the instruction.
+ * @return Whether this is the end of a basic block.
+*/
 static int
 IS_TERMINATOR_OPCODE(int opcode)
 {
     return IS_JUMP_OPCODE(opcode) || IS_SCOPE_EXIT_OPCODE(opcode);
 }
 
-// Opcodes that we can't handle at the moment. If we see them,
-// ditch tier 2 attempts.
+/**
+ * @brief Opcodes that we can't handle at the moment. If we see them, ditch tier 2 attempts.
+ * @param opcode Opcode of the instruction.
+ * @param nextop The opcode of the following instruction.
+ * @return Whether this opcode is forbidden.
+*/
 static inline int
 IS_FORBIDDEN_OPCODE(int opcode, int nextop)
 {
@@ -884,8 +966,17 @@ IS_FORBIDDEN_OPCODE(int opcode, int nextop)
     }
 }
 
-// Decides what values we need to rebox.
-// num_elements is how many stack entries and thus how far from the TOS we want to rebox.
+/**
+ * @brief Decides what values we need to rebox.
+ *
+ * This function automatically emits rebox instructions if needed.
+ * 
+ * @param write_curr Instruction write buffer.
+ * @param type_context The type context to base our decisions on.
+ * @param num_elements How many stack entries and thus how far from the TOS we want to rebox.
+ * @return Pointer to new instruction write buffer end.
+ *
+*/
 static inline _Py_CODEUNIT *
 rebox_stack(_Py_CODEUNIT *write_curr,
     _PyTier2TypeContext *type_context, int num_elements)
@@ -902,6 +993,16 @@ rebox_stack(_Py_CODEUNIT *write_curr,
     return write_curr;
 }
 
+/**
+ * @brief Emit CACHE entries for an instruction.
+ * NOTE: THIS DOES NOT PRESERVE PREVIOUS CACHE INFORMATION.
+ * THUS THIS INITIALIZES A CLEAN SLATE.
+ * 
+ * @param write_curr Tier 2 instruction write buffer.
+ * @param cache_entries Number of cache entries to emit.
+ * @return Pointer to end of tier 2 instruction write buffer.
+ *
+*/
 static inline _Py_CODEUNIT *
 emit_cache_entries(_Py_CODEUNIT *write_curr, int cache_entries)
 {
@@ -916,6 +1017,13 @@ emit_cache_entries(_Py_CODEUNIT *write_curr, int cache_entries)
 #define BB_IS_TYPE_BRANCH(bb_id_raw) (bb_id_raw & 1)
 #define MAKE_TAGGED_BB_ID(bb_id, type_branch) (bb_id << 1 | type_branch)
 
+/**
+ * @brief Write a BB's ID to a CACHE entry.
+ * @param cache The CACHE entry to write to.
+ * @param bb_id The BB's ID.
+ * @param is_type_guard Whether the BB ends with a type guard.
+ *
+*/
 static inline void
 write_bb_id(_PyBBBranchCache *cache, int bb_id, bool is_type_guard) {
     assert((uint16_t)(bb_id) == bb_id);
@@ -924,8 +1032,11 @@ write_bb_id(_PyBBBranchCache *cache, int bb_id, bool is_type_guard) {
     cache->bb_id_tagged = MAKE_TAGGED_BB_ID((uint16_t)bb_id, is_type_guard);
 }
 
-// The order/hierarchy to emit type guards
-// NEED TO ADD TO THIS EVERY TIME WE ADD A NEW ONE.
+/**
+ * @brief The order/hierarchy to emit type guards.
+ *
+ * NEED TO ADD TO THIS EVERY TIME WE ADD A NEW ONE.
+*/
 static int type_guard_ladder[256] = {
     -1,
     BINARY_CHECK_FLOAT,
@@ -935,8 +1046,11 @@ static int type_guard_ladder[256] = {
     -1,
 };
 
-// Type guard to index in the ladder.
-// KEEP IN SYNC WITH INDEX IN type_guard_ladder
+/**
+ * @brief Type guard to index in the ladder.
+ *
+ * KEEP IN SYNC WITH INDEX IN type_guard_ladder
+*/
 static int type_guard_to_index[256] = {
     [BINARY_CHECK_FLOAT] = 1,
     [BINARY_CHECK_INT] = 2,
@@ -944,6 +1058,14 @@ static int type_guard_to_index[256] = {
 };
 
 
+/**
+ * @brief Emit a type guard.
+ * @param write_curr The tier 2 instruction write buffer.
+ * @param guard_opcode The opcode of the type guard.
+ * @param guard_oparg The oparg of the type guard.
+ * @param bb_id The BB ID of the current BB we're writing to.
+ * @return Pointer to new end of the tier 2 instruction write buffer.
+*/
 static inline _Py_CODEUNIT *
 emit_type_guard(_Py_CODEUNIT *write_curr, int guard_opcode, int guard_oparg, int bb_id)
 {
@@ -963,13 +1085,24 @@ emit_type_guard(_Py_CODEUNIT *write_curr, int guard_opcode, int guard_oparg, int
     return write_curr;
 }
 
-// Converts the tier 1 branch bytecode to tier 2 branch bytecode.
-// This converts sequence of instructions like
-// POP_JUMP_IF_FALSE
-// to
-// BB_TEST_POP_IF_FALSE
-// BB_BRANCH
-// CACHE (bb_id of the current BB << 1 | is_type_branch)
+/**
+ * @brief Converts the tier 1 branch bytecode to tier 2 branch bytecode.
+ *
+ * This converts sequence of instructions like
+ * POP_JUMP_IF_FALSE
+ * to
+ * BB_TEST_POP_IF_FALSE
+ * BB_BRANCH
+ * CACHE (bb_id of the current BB << 1 | is_type_branch)*
+ * 
+ * @param type_context The type_context of the current BB.
+ * @param write_curr The tier 2 instruction write buffer.
+ * @param branch The tier 1 branch instruction to convert.
+ * @param bb_id The BB_ID of the current BB.
+ * @param oparg Oparg of the branch instruction (respects EXTENDED_ARGS).
+ * @return The updated tier 2 instruction write buffer end.
+ *
+*/
 static inline _Py_CODEUNIT *
 emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr,
     _Py_CODEUNIT branch, int bb_id, int oparg)
@@ -1096,6 +1229,13 @@ emit_logical_branch(_PyTier2TypeContext *type_context, _Py_CODEUNIT *write_curr,
     }
 }
 
+/**
+ * @brief Emits the exit of a scope.
+ * @param write_curr The tier 2 instruction write buffer.
+ * @param exit The tier 1 exit instruction.
+ * @param type_context The BB's type context.
+ * @return The updated tier 2 instruction write buffer end.
+*/
 static inline _Py_CODEUNIT *
 emit_scope_exit(_Py_CODEUNIT *write_curr, _Py_CODEUNIT exit,
     _PyTier2TypeContext *type_context)
@@ -1126,6 +1266,13 @@ emit_scope_exit(_Py_CODEUNIT *write_curr, _Py_CODEUNIT exit,
     }
 }
 
+/**
+ * @brief Emit a single instruction. (Respects EXTENDED_ARG).
+ * @param write_curr The tier 2 instruction write buffer.
+ * @param opcode The instruction's opcode.
+ * @param oparg The instruction's oparg.
+ * @return The updated tier 2 instruction write buffer end.
+*/
 static inline _Py_CODEUNIT *
 emit_i(_Py_CODEUNIT *write_curr, int opcode, int oparg)
 {
@@ -1140,9 +1287,18 @@ emit_i(_Py_CODEUNIT *write_curr, int opcode, int oparg)
     return write_curr;
 }
 
-// Note: we're copying over the actual caches to preserve information!
-// This way instructions that we can't type propagate over still stay
-// optimized.
+
+/**
+ * @brief Copy over cache entries, preserving their information.
+ * Note: we're copying over the actual caches to preserve information!
+ * This way instructions that we can't type propagate over still stay
+ * optimized.
+ * 
+ * @param write_curr The tier 2 instruction write buffer
+ * @param cache The tier 1 CACHE to copy.
+ * @param n_entries How many CACHE entries to copy.
+ * @return The updated tier 2 instruction write buffer end.
+*/
 static inline _Py_CODEUNIT *
 copy_cache_entries(_Py_CODEUNIT *write_curr, _Py_CODEUNIT *cache, int n_entries)
 {
@@ -1155,7 +1311,12 @@ copy_cache_entries(_Py_CODEUNIT *write_curr, _Py_CODEUNIT *cache, int n_entries)
 }
 
 
-
+/**
+ * @brief Checks if the current instruction is a backwards jump target.
+ * @param co The code object the instruction belongs to.
+ * @param curr The current instruction to check.
+ * @return Yes/No.
+*/
 static int
 IS_BACKWARDS_JUMP_TARGET(PyCodeObject *co, _Py_CODEUNIT *curr)
 {
@@ -1172,7 +1333,19 @@ IS_BACKWARDS_JUMP_TARGET(PyCodeObject *co, _Py_CODEUNIT *curr)
     return 0;
 }
 
-// 1 for error, 0 for success.
+/**
+ * @brief Adds BB metadata to the jump 2D array that a tier 2 code object contains.
+ * This happens when a BB is a backwards jump target.
+ * 
+ * @param t2_info Tier 2 info of that code object.
+ * @param meta The BB metadata to add.
+ * @param backwards_jump_target Offset (in number of codeunits) from start of code object where
+ * the backwards jump target is located.
+ * 
+ * @param starting_context The type context at the start of the jump target BB.
+ * @param tier1_start The tier 1 starting instruction of the jump target BB.
+ * @return 1 for error, 0 for success. 
+*/
 static inline int
 add_metadata_to_jump_2d_array(_PyTier2Info *t2_info, _PyTier2BBMetadata *meta,
     int backwards_jump_target, _PyTier2TypeContext *starting_context,
@@ -1211,13 +1384,30 @@ add_metadata_to_jump_2d_array(_PyTier2Info *t2_info, _PyTier2BBMetadata *meta,
     return 0;
 }
 
-// This converts sequence of instructions like
-// BINARY_OP (ADD)
-// to
-// BINARY_CHECK_INT
-// BB_BRANCH
-// CACHE (bb_id of the current BB << 1 | is_type_branch)
-// // The BINARY_ADD then goes to the next BB
+/**
+ * @brief Infers the correct BINARY_OP to use. This is where we choose to emit
+ * more efficient arithmetic instructions.
+ *
+ * This converts sequence of instructions like
+ * BINARY_OP (ADD)
+ * to
+ * BINARY_CHECK_INT
+ * BB_BRANCH
+ * CACHE (bb_id of the current BB << 1 | is_type_branch)
+ * // The BINARY_ADD then goes to the next BB
+ * 
+ * @param t2_start Start of the current basic block.
+ * @param oparg Oparg of the BINARY_OP.
+ * @param needs_guard Signals to the caller whether they should emit a type guard.
+ * @param prev_type_guard The previous basic block's ending type guard (this is
+ * required for the ladder of types).
+ * 
+ * @param raw_op The tier 0/1 BINARY_OP.
+ * @param write_curr Tier 2 instruction write buffer.
+ * @param type_context Current type context to base our decisions on.
+ * @param bb_id The current BB's ID.
+ * @return Updated tier 2 instruction write buffer end.
+*/
 static inline _Py_CODEUNIT *
 infer_BINARY_OP(
     _Py_CODEUNIT *t2_start,
@@ -1296,6 +1486,24 @@ infer_BINARY_OP(
     return NULL;
 }
 
+/**
+ * @brief Infers the correct BINARY_SUBSCR to use. This is where we choose to emit
+ * more efficient container instructions.
+ * 
+ * @param t2_start Start of the current basic block.
+ * @param oparg Oparg of the BINARY_OP.
+ * @param needs_guard Signals to the caller whether they should emit a type guard.
+ * @param prev_type_guard The previous basic block's ending type guard (this is
+ * required for the ladder of types).
+ *
+ * @param raw_op The tier 0/1 BINARY_OP.
+ * @param write_curr Tier 2 instruction write buffer.
+ * @param type_context Current type context to base our decisions on.
+ * @param bb_id The current BB's ID.
+ * @param store Whether it's a store instruction (STORE_SUBSCR) or not (BINARY_SUBSCR).
+ * @return Updated tier 2 instruction write buffer end.
+ * @return 
+*/
 static inline _Py_CODEUNIT *
 infer_BINARY_SUBSCR(
     _Py_CODEUNIT *t2_start,
@@ -1344,23 +1552,36 @@ infer_BINARY_SUBSCR(
     return NULL;
 }
 
+/**
+ * @brief Whether this is an unboxed type.
+ * @param t The type to check.
+ * @return Yes/No.
+*/
 static inline bool
 is_unboxed_type(PyTypeObject *t)
 {
     return t == &PyRawFloat_Type;
 }
 
-// Detects a BB from the current instruction start to the end of the first basic block it sees.
-// Then emits the instructions into the bb space.
-//
-// Instructions emitted depend on the type_context.
-// For example, if it sees a BINARY_ADD instruction, but it knows the two operands are already of
-// type PyLongObject, a BINARY_ADD_INT_REST will be emitted without an type checks.
-// 
-// However, if one of the operands are unknown, a logical chain of CHECK instructions will be emitted,
-// and the basic block will end at the first of the chain.
-// 
-// Note: a BB end also includes a type guard.
+
+/**
+ * @brief Detects a BB from the current instruction start to the end of the first basic block it sees. Then emits the instructions into the bb space.
+ *
+ * Instructions emitted depend on the type_context.
+ * For example, if it sees a BINARY_ADD instruction, but it knows the two operands are already of
+ * type PyLongObject, a BINARY_ADD_INT_REST will be emitted without an type checks.
+ *
+ * However, if one of the operands are unknown, a logical chain of CHECK instructions will be
+ * emitted, and the basic block will end at the first of the chain.
+ * Note: a BB end also includes a type guard.
+ * 
+ * @param co The code object we're optimizing.
+ * @param bb_space The BB space of the code object to write to.
+ * @param prev_type_guard The type guard that ended the previous basic block (if present).
+ * @param tier1_start The tier 1 instructions to start referring from.
+ * @param starting_type_context The starting type context for this new basic block.
+ * @return A new tier 2 basic block.
+*/
 _PyTier2BBMetadata *
 _PyTier2_Code_DetectAndEmitBB(
     PyCodeObject *co,
@@ -1829,6 +2050,12 @@ compare_ints(const void *a, const void *b)
     return *(int *)a - *(int *)b;
 }
 
+/**
+ * @brief Allocates the 2D array required to store information about backwards jump targets.
+ * @param backwards_jump_count How many backwards jump targets there are.
+ * @param backward_jump_target_bb_pairs Triplet information required about the backward jump target. 
+ * @return 0 on success 1 on error.
+*/
 static int
 allocate_jump_offset_2d_array(int backwards_jump_count,
     _PyTier2BBStartTypeContextTriplet **backward_jump_target_bb_pairs)
@@ -1854,8 +2081,12 @@ error:
     return 1;
 }
 
-// Returns 1 on error, 0 on success. Populates the backwards jump target offset
-// array for a code object..
+
+/**
+ * @brief Populates the backwards jump target offset array for a code object.
+ * @param co The code object to populate.
+ * @return Returns 1 on error, 0 on success.
+*/
 static int
 _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
 {
@@ -1955,7 +2186,11 @@ _PyCode_Tier2FillJumpTargets(PyCodeObject *co)
 }
 
 
-
+/**
+ * @brief Initializes the tier 2 info of a code object.
+ * @param co The code object.
+ * @return The newly allocated tier 2 info.
+*/
 static _PyTier2Info *
 _PyTier2Info_Initialize(PyCodeObject *co)
 {
@@ -1989,12 +2224,19 @@ _PyTier2Info_Initialize(PyCodeObject *co)
 ////////// OVERALL TIER2 FUNCTIONS
 
 
-// We use simple heuristics to determine if there are operations
-// we can optimize in this.
-// Specifically, we are looking for the presence of PEP 659
-// specialized forms of bytecode, because this indicates
-// that it's a known form.
-// ADD MORE HERE AS WE GO ALONG.
+/**
+ * @brief Whether the opcode is optimizable.
+ *
+ * We use simple heuristics to determine if there are operations we can optimize.
+ * Specifically, we are looking for the presence of PEP 659 (tier 1)
+ * specialized forms of bytecode, because this indicates that it's a known form.
+ *
+ * ADD MORE HERE AS WE GO ALONG.
+ * 
+ * @param opcode The opcode of the instruction.
+ * @param oparg The oparg of the instruction.
+ * @return Yes/No.
+*/
 static inline int
 IS_OPTIMIZABLE_OPCODE(int opcode, int oparg)
 {
@@ -2014,6 +2256,11 @@ IS_OPTIMIZABLE_OPCODE(int opcode, int oparg)
     }
 }
 
+/**
+ * @brief Single scan to replace RESUME and JUMP_BACKWARD instructions to faster
+ * variants so they stop warming up the tier 2.
+ * @param co The code object to optimize.
+*/
 static inline void
 replace_resume_and_jump_backwards(PyCodeObject *co)
 {
@@ -2034,9 +2281,17 @@ replace_resume_and_jump_backwards(PyCodeObject *co)
     }
 }
 
-// 1. Initialize whatever we need.
-// 2. Create the entry BB.
-// 3. Jump into that BB.
+/**
+ * @brief Initializes the tier 2 of a code object. Called upon first transition from tier 1
+ * to tier 2, when a code object is deemed hot.
+ * 
+ * 1. Initialize whatever we need.
+ * 2. Create the entry BB.
+ * 3. Jump into that BB.
+ * @param frame The current executing frame.
+ * @param next_instr The next instruction of said frame.
+ * @return The next instruction (tier 2) to execute.
+*/
 static _Py_CODEUNIT *
 _PyCode_Tier2Initialize(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
 {
@@ -2132,7 +2387,13 @@ cleanup:
 
 ////////// CEVAL FUNCTIONS
 
-// Tier 2 warmup counter
+/**
+ * @brief Tier 2 warmup counter.
+ * @param frame Currente executing frame.
+ * @param next_instr The next instruction that frame is executing.
+ * @return The next instruction that should be executed (no change if the code object
+ * is not hot enough).
+*/
 _Py_CODEUNIT *
 _PyCode_Tier2Warmup(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
 {
@@ -2152,6 +2413,19 @@ _PyCode_Tier2Warmup(_PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr)
     return next_instr;
 }
 
+/**
+ * @brief Generates the next BB with a type context given.
+ * 
+ * @param frame The current executing frame.
+ * @param bb_id_tagged The tagged version of the BB_ID (see macros above to understand).
+ * @param curr_executing_instr The current executing instruction in that frame.
+ * @param jumpby How many instructions to jump by before we start scanning what to generate.
+ * @param tier1_fallback Signals the tier 1 instruction to fall back to should generation fail.
+ * @param bb_flag Whether to genreate consequent or alternative BB.
+ * @param type_context_copy A given type context to start with.
+ * @param custom_tier1_end Custom tier 1 instruction to fall back to should we fail.
+ * @return The new BB's metadata.
+*/
 _PyTier2BBMetadata *
 _PyTier2_GenerateNextBBMetaWithTypeContext(
     _PyInterpreterFrame *frame,
@@ -2210,9 +2484,16 @@ _PyTier2_GenerateNextBBMetaWithTypeContext(
     return metadata;
 }
 
-// Lazily generates successive BBs when required.
-// The first basic block created will always be directly after the current tier 2 code.
-// The second basic block created will always require a jump.
+/**
+ * @brief Generates the next BB, with an automatically inferred type context.
+ * @param frame The current executing frame.
+ * @param bb_id_tagged The tagged version of the BB_ID (see macros above to understand).
+ * @param curr_executing_instr The current executing instruction in that frame.
+ * @param jumpby How many instructions to jump by before we start scanning what to generate.
+ * @param tier1_fallback Signals the tier 1 instruction to fall back to should generation fail.
+ * @param bb_flag Whether to genreate consequent or alternative BB.
+ * @return The new BB's metadata.
+*/
 _PyTier2BBMetadata *
 _PyTier2_GenerateNextBBMeta(
     _PyInterpreterFrame *frame,
@@ -2250,6 +2531,19 @@ _PyTier2_GenerateNextBBMeta(
     return next;
 }
 
+/**
+ * @brief Lazily generates successive BBs when required.
+ * The first basic block created will always be directly after the current tier 2 code.
+ * The second basic block created will always require a jump.
+ * 
+ * @param frame The current executing frame.
+ * @param bb_id_tagged The tagged version of the BB_ID (see macros above to understand).
+ * @param curr_executing_instr The current executing instruction in that frame.
+ * @param jumpby How many instructions to jump by before we start scanning what to generate.
+ * @param tier1_fallback Signals the tier 1 instruction to fall back to should generation fail.
+ * @param bb_flag Whether to genreate consequent or alternative BB.
+ * @return The next tier 2 instruction to execute.
+*/
 _Py_CODEUNIT *
 _PyTier2_GenerateNextBB(
     _PyInterpreterFrame *frame,
@@ -2272,9 +2566,13 @@ _PyTier2_GenerateNextBB(
     return metadata->tier2_start;
 }
 
-// Calculates the difference between two type contexts.
-// A positive number indicating the distance is returned.
-// Incompatible type contexts return INT_MAX.
+/**
+ * @brief Calculates the difference between two type contexts.
+ * @param ctx1 The base type context.
+ * @param ctx2 The type context to compare with.
+ * @return A positive number indicating the distance is returned.
+ *   Incompatible type contexts return INT_MAX.
+*/
 static int
 diff_typecontext(_PyTier2TypeContext *ctx1, _PyTier2TypeContext *ctx2)
 {
@@ -2347,6 +2645,19 @@ diff_typecontext(_PyTier2TypeContext *ctx1, _PyTier2TypeContext *ctx2)
     return diff;
 }
 
+/**
+ * @brief Locate the BB corresponding to a backwards jump target. Matches also the type context.
+ * If it fails to find a matching type context, a new backwards jump BB is generated with
+ * more specific type context.
+ * 
+ * @param frame The current executing frame.
+ * @param bb_id_tagged The tagged version of the BB_ID (see macros above to understand).
+ * @param jumpby How many instructions away is the backwards jump target.
+ * @param tier1_fallback Signals the tier 1 instruction to fall back to should generation fail.
+ * @param curr Current executing instruction
+ * @param stacklevel The stack level of the operand stack.
+ * @return The next tier 2 instruction to execute.
+*/
 _Py_CODEUNIT *
 _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id_tagged, int jumpby,
     _Py_CODEUNIT **tier1_fallback,
@@ -2470,22 +2781,25 @@ _PyTier2_LocateJumpBackwardsBB(_PyInterpreterFrame *frame, uint16_t bb_id_tagged
     return target_metadata->tier2_start;
 }
 
-/*
-At generation of the second outgoing edge (basic block), the instructions look like this:
 
-BB_TEST_POP_IF_TRUE
-BB_BRANCH_IF_FLAG_SET
-CACHE
-
-Since both edges are now generated, we want to rewrite it to:
-
-BB_TEST_POP_IF_TRUE
-BB_JUMP_IF_FLAG_SET
-CACHE (will be converted to EXTENDED_ARGS if we need a bigger jump)
-
-Backwards jumps are handled by another function.
+/**
+ * @brief Rewrites the BB_BRANCH_IF* instructions to a forward jump.
+ * At generation of the second outgoing edge (basic block), the instructions look like this:
+ * BB_TEST_POP_IF_TRUE
+ * BB_BRANCH_IF_FLAG_SET
+ * CACHE
+ * 
+ * Since both edges are now generated, we want to rewrite it to:
+ * 
+ * BB_TEST_POP_IF_TRUE
+ * BB_JUMP_IF_FLAG_SET
+ * CACHE (will be converted to EXTENDED_ARGS if we need a bigger jump)
+ * 
+ * Backwards jumps are handled by another function.
+ * 
+ * @param bb_branch Whether the next BB to execute is the consequent/alternative BB.
+ * @param target The jump target.
 */
-
 void
 _PyTier2_RewriteForwardJump(_Py_CODEUNIT *bb_branch, _Py_CODEUNIT *target)
 {
@@ -2514,21 +2828,24 @@ _PyTier2_RewriteForwardJump(_Py_CODEUNIT *bb_branch, _Py_CODEUNIT *target)
 }
 
 
-/*
-Before:
-
-EXTENDED_ARG/NOP
-BB_JUMP_BACKWARD_LAZY
-CACHE
-
-
-After:
-
-EXTENDED_ARG (if needed, else NOP)
-JUMP_BACKWARD_QUICK
-END_FOR
+/**
+ * @brief Rewrites a BB_JUMP_BACKWARD_LAZY to a more efficient standard BACKWARD_JUMP.
+ *
+ * Before:
+ * 
+ * EXTENDED_ARG/NOP
+ * BB_JUMP_BACKWARD_LAZY
+ * CACHE
+ * 
+ * After:
+ * 
+ * EXTENDED_ARG (if needed, else NOP)
+ * JUMP_BACKWARD_QUICK
+ * END_FOR
+ * 
+ * @param jump_backward_lazy The backwards jump instruction.
+ * @param target The target we're jumping to.
 */
-
 void
 _PyTier2_RewriteBackwardJump(_Py_CODEUNIT *jump_backward_lazy, _Py_CODEUNIT *target)
 {
