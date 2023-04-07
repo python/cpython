@@ -5090,8 +5090,7 @@ object_richcompare(PyObject *self, PyObject *other, int op)
         /* By default, __ne__() delegates to __eq__() and inverts the result,
            unless the latter returns NotImplemented. */
         if (Py_TYPE(self)->tp_richcompare == NULL) {
-            res = Py_NewRef(Py_NotImplemented);
-            break;
+            Py_RETURN_NOTIMPLEMENTED;
         }
         res = (*Py_TYPE(self)->tp_richcompare)(self, other, Py_EQ);
         if (res != NULL && res != Py_NotImplemented) {
@@ -5109,8 +5108,7 @@ object_richcompare(PyObject *self, PyObject *other, int op)
         break;
 
     default:
-        res = Py_NewRef(Py_NotImplemented);
-        break;
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     return res;

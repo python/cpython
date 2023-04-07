@@ -262,7 +262,7 @@ static PyTypeObject Str_Type = {
 static PyObject *
 null_richcompare(PyObject *self, PyObject *other, int op)
 {
-    return Py_NewRef(Py_NotImplemented);
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 static PyTypeObject Null_Type = {

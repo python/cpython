@@ -1599,8 +1599,7 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
     }
 
     if (!PyObject_TypeCheck(self, state->ChannelIDType)) {
-        res = Py_NewRef(Py_NotImplemented);
-        goto done;
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     channelid *cid = (channelid *)self;
@@ -1628,8 +1627,7 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
         goto done;
     }
     else {
-        res = Py_NewRef(Py_NotImplemented);
-        goto done;
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     if ((op == Py_EQ && equal) || (op == Py_NE && !equal)) {
