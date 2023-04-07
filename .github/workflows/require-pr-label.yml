@@ -1,0 +1,16 @@
+name: Require PR label
+
+on:
+  pull_request:
+    types: [opened, reopened, labeled, unlabeled, synchronize]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: mheap/github-action-required-labels@v3
+        with:
+          mode: exactly
+          count: 0
+          labels: "DO-NOT-MERGE"
