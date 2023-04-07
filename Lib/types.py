@@ -144,7 +144,7 @@ def _calculate_meta(meta, bases):
     return winner
 
 
-def get_original_bases(cls, /) -> tuple[type, ...] | None:
+def get_original_bases(cls, /):
     """
     Return the objects in the bases list in the class's definition before
     they could have been modified by ``__mro_entries__``. This is useful for

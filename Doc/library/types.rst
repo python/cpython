@@ -88,22 +88,24 @@ Dynamic Type Creation
 
 .. function:: get_original_bases(cls, /)
 
-    Return the objects in the bases list in the class's definition before
-    they could have been modified by ``__mro_entries__``. This is useful for
-    introspecting ``Generic``\s.
+    Return the objects in the bases list of the class's definition as they
+    existed prior to any modification by :meth:`~object.__mro_entries__`. This
+    is useful for introspecting :ref:`Generics <user-defined-generics>`.
 
     Examples::
 
         from typing import TypeVar, Generic
 
         T = TypeVar("T")
-
         class Foo(Generic[T]): ...
-
         class Bar(Foo[int], float): ...
 
+        Foo.__bases__ == (Generic,)
         get_original_bases(Foo) == (Generic[T],)
+
+        Bar.__bases__ == (Foo, float)
         get_original_bases(Bar) == (Foo[int], float)
+
         get_original_bases(int) == None
 
     .. versionadded:: 3.12
