@@ -1,2 +1,4 @@
-Fix error handling in compound Make rules that lead to the install targets
-succeeding when the respective files were not installed.
+Changed the default value of the ``SHELL`` Makefile variable from ``/bin/sh``
+to ``/bin/sh -e`` to ensure that complex recipes correctly fail after an error.
+Previously, ``make install`` could fail to install some files and yet return
+a successful result.
