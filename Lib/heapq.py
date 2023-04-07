@@ -314,7 +314,7 @@ def _siftup_max(heap, pos):
     _siftdown_max(heap, startpos, pos)
 
 def merge(*iterables, key=None, reverse=False):
-    '''Merge multiple sorted inputs into a single sorted output.
+    """Merge multiple sorted inputs into a single sorted output.
 
     Similar to sorted(itertools.chain(*iterables)) but returns a generator,
     does not pull the data into memory all at once, and assumes that each of
@@ -328,8 +328,7 @@ def merge(*iterables, key=None, reverse=False):
 
     >>> list(merge(['dog', 'horse'], ['cat', 'fish', 'kangaroo'], key=len))
     ['dog', 'cat', 'fish', 'horse', 'kangaroo']
-
-    '''
+    """
 
     h = []
     h_append = h.append
