@@ -324,8 +324,12 @@ class TestNtpath(NtpathTestCase):
 
         # gh-88013: call ntpath.realpath with binary drive name may raise a
         # TypeError. The drive should not exist to reproduce the bug.
-        drives = {f"{c}:\\" for c in string.ascii_uppercase} - set(os.listdrives())
-        d = drives.pop().encode()
+        for c in string.ascii_uppercase:
+            d = f"{c}:\\"
+            if not ntpath.exists(d):
+                break
+        else:
+            raise OSError("No free drive letters available")
         self.assertEqual(ntpath.realpath(d), d)
 
     @os_helper.skip_unless_symlink
