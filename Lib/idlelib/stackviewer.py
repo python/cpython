@@ -1,33 +1,31 @@
 import linecache
 import os
-import sys
 
 import tkinter as tk
 
 from idlelib.debugobj import ObjectTreeItem, make_objecttreeitem
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
 
-def StackBrowser(root, flist=None, tb=None, top=None):
+def StackBrowser(root, flist=None, exc=None, top=None):
     global sc, item, node  # For testing.
     if top is None:
         top = tk.Toplevel(root)
     sc = ScrolledCanvas(top, bg="white", highlightthickness=0)
     sc.frame.pack(expand=1, fill="both")
-    item = StackTreeItem(flist, tb)
+    item = StackTreeItem(flist, exc)
     node = TreeNode(sc.canvas, None, item)
     node.expand()
 
 
 class StackTreeItem(TreeItem):
 
-    def __init__(self, flist=None, tb=None):
+    def __init__(self, flist=None, exc=None):
+        assert isinstance(exc, BaseException)
         self.flist = flist
-        self.stack = self.get_stack(tb)
-        self.text = self.get_exception()
+        self.stack = self.get_stack(exc.__traceback__)
+        self.text = self.get_exception(exc)
 
     def get_stack(self, tb):
-        if tb is None:
-            tb = sys.last_traceback
         stack = []
         if tb and tb.tb_frame is None:
             tb = tb.tb_next
@@ -36,14 +34,12 @@ class StackTreeItem(TreeItem):
             tb = tb.tb_next
         return stack
 
-    def get_exception(self):
-        type = sys.last_type
-        value = sys.last_value
-        if hasattr(type, "__name__"):
-            type = type.__name__
-        s = str(type)
-        if value is not None:
-            s = s + ": " + str(value)
+    def get_exception(self, exc):
+        assert isinstance(exc, BaseException)
+        typ = type(exc)
+        if hasattr(typ, "__name__"):
+            typ = typ.__name__
+        s = str(typ) + ": " + str(exc)
         return s
 
     def GetText(self):
@@ -133,19 +129,11 @@ def _stack_viewer(parent):  # htest #
     flist = PyShellFileList(top)
     try: # to obtain a traceback object
         intentional_name_error
-    except NameError:
-        exc_type, exc_value, exc_tb = sys.exc_info()
-    # inject stack trace to sys
-    sys.last_type = exc_type
-    sys.last_value = exc_value
-    sys.last_traceback = exc_tb
+    except NameError as e:
+        exc = e
 
-    StackBrowser(top, flist=flist, top=top, tb=exc_tb)
+    StackBrowser(top, flist=flist, top=top, tb=exc)
 
-    # restore sys to original state
-    del sys.last_type
-    del sys.last_value
-    del sys.last_traceback
 
 if __name__ == '__main__':
     from unittest import main
