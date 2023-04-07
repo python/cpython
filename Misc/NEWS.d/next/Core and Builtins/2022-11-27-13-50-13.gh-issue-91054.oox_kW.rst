@@ -1,3 +1,0 @@
-Add :c:func:`PyCode_AddWatcher` and :c:func:`PyCode_ClearWatcher` APIs to
-register callbacks to receive notification on creation and destruction of
-code objects.

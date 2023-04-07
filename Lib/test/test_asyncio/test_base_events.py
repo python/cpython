@@ -746,7 +746,7 @@ class BaseEventLoopTests(test_utils.TestCase):
     def test_env_var_debug(self):
         code = '\n'.join((
             'import asyncio',
-            'loop = asyncio.get_event_loop()',
+            'loop = asyncio.new_event_loop()',
             'print(loop.get_debug())'))
 
         # Test with -E to not fail if the unit test was run with
@@ -861,20 +861,15 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         self.loop._process_events = mock.Mock()
 
-        try:
+        with self.assertRaises(KeyboardInterrupt):
             self.loop.run_until_complete(raise_keyboard_interrupt())
-        except KeyboardInterrupt:
-            pass
 
         def func():
             self.loop.stop()
             func.called = True
         func.called = False
-        try:
-            self.loop.call_soon(func)
-            self.loop.run_forever()
-        except KeyboardInterrupt:
-            pass
+        self.loop.call_soon(self.loop.call_soon, func)
+        self.loop.run_forever()
         self.assertTrue(func.called)
 
     def test_single_selecter_event_callback_after_stopping(self):
