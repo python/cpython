@@ -1633,24 +1633,8 @@ These are not used in annotations. They are building blocks for creating generic
       at runtime as soon as the class has been created. Monkey-patching
       attributes onto a runtime-checkable protocol will still work, but will
       have no impact on :func:`isinstance` checks comparing objects to the
-      protocol. For example:
-
-          >>> from typing import Protocol, runtime_checkable
-          >>> @runtime_checkable
-          ... class HasX(Protocol):
-          ...     x = 1
-          ...
-          >>> class Foo: ...
-          ...
-          >>> f = Foo()
-          >>> isinstance(f, HasX)
-          False
-          >>> f.x = 1
-          >>> isinstance(f, HasX)
-          True
-          >>> HasX.y = 2
-          >>> isinstance(f, HasX)  # unchanged, even though HasX now also has a "y" attribute
-          True
+      protocol. See :ref:`"What's new in Python 3.12" <whatsnew-typing-py312>`
+      for more details.
 
 
 Other special directives
