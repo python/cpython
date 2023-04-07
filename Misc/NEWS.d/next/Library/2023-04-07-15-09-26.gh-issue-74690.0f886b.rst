@@ -1,0 +1,3 @@
+The members of a runtime-checkable protocol are now considered "frozen" at
+runtime as soon as the class has been created. See the documentation for
+:func:`typing.runtime_checkable` for more details. Patch by Alex Waygood.

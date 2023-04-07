@@ -1598,15 +1598,6 @@ These are not used in annotations. They are building blocks for creating generic
       import threading
       assert isinstance(threading.Thread(name='Bob'), Named)
 
-   .. versionchanged:: 3.12
-      The internal implementation of :func:`isinstance` checks against
-      runtime-checkable protocols now uses :func:`inspect.getattr_static`
-      to look up attributes (previously, :func:`hasattr` was used).
-      As a result, some objects which used to be considered instances
-      of a runtime-checkable protocol may no longer be considered instances
-      of that protocol on Python 3.12+, and vice versa.
-      Most users are unlikely to be affected by this change.
-
    .. note::
 
         :func:`!runtime_checkable` will check only the presence of the required
@@ -1627,6 +1618,40 @@ These are not used in annotations. They are building blocks for creating generic
         code.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.12
+      The internal implementation of :func:`isinstance` checks against
+      runtime-checkable protocols now uses :func:`inspect.getattr_static`
+      to look up attributes (previously, :func:`hasattr` was used).
+      As a result, some objects which used to be considered instances
+      of a runtime-checkable protocol may no longer be considered instances
+      of that protocol on Python 3.12+, and vice versa.
+      Most users are unlikely to be affected by this change.
+
+   .. versionchanged:: 3.12
+      The members of a runtime-checkable protocol are now considered "frozen"
+      at runtime as soon as the class has been created. Monkey-patching
+      attributes onto a runtime-checkable protocol will still work, but will
+      have no impact on :func:`isinstance` checks comparing objects to the
+      protocol. For example::
+
+          >>> from typing import Protocol, runtime_checkable
+          >>> @runtime_checkable
+          ... class HasX(Protocol):
+          ...     x = 1
+          ...
+          >>> class Foo: ...
+          ...
+          >>> f = Foo()
+          >>> isinstance(f, HasX)
+          False
+          >>> f.x = 1
+          >>> isinstance(f, HasX)
+          True
+          >>> HasX.y = 2
+          >>> isinstance(f, HasX)  # unchanged, even though HasX now also has a `y` attribute
+          True
+
 
 Other special directives
 """"""""""""""""""""""""
