@@ -65,7 +65,7 @@ _Py_ThreadCanHandlePendingCalls(void)
    and interpreter state */
 
 #if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
-extern thread_local PyThreadState *_Py_tss_tstate;
+extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 #endif
 PyAPI_DATA(PyThreadState *) _PyThreadState_GetCurrent(void);
 
