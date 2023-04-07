@@ -1,10 +1,10 @@
+.. _argparse-tutorial:
+
 *****************
 Argparse Tutorial
 *****************
 
 :author: Tshepang Mbambo
-
-.. _argparse-tutorial:
 
 .. currentmodule:: argparse
 
