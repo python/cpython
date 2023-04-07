@@ -990,24 +990,16 @@ math_1(PyObject *arg, double (*func) (double), int can_overflow)
         return NULL;
     errno = 0;
     r = (*func)(x);
-    if (Py_IS_NAN(r) && !Py_IS_NAN(x)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "math domain error"); /* invalid arg */
-        return NULL;
-    }
+    if (Py_IS_NAN(r) && !Py_IS_NAN(x))
+        errno = EDOM;
     if (Py_IS_INFINITY(r) && Py_IS_FINITE(x)) {
         if (can_overflow)
-            PyErr_SetString(PyExc_OverflowError,
-                            "math range error"); /* overflow */
+            errno = ERANGE;
         else
-            PyErr_SetString(PyExc_ValueError,
-                            "math domain error"); /* singularity */
-        return NULL;
+            errno = EDOM;
     }
-    if (Py_IS_FINITE(r) && errno && is_error(r))
-        /* this branch unnecessary on most platforms */
+    if (errno && is_error(r))
         return NULL;
-
     return PyFloat_FromDouble(r);
 }
 
