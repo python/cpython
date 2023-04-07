@@ -484,10 +484,11 @@ partial_richcompare(PyObject *self, PyObject *other, int op)
     PyObject *res;
     int eq;
 
-    if (op != Py_EQ && op != Py_NE) {
+    if ((op != Py_EQ && op != Py_NE) ||
+        !Py_IS_TYPE(self, Py_TYPE(other)))
+    {
         Py_RETURN_NOTIMPLEMENTED;
     }
-
     a = (partialobject *) self;
     b = (partialobject *) other;
 
