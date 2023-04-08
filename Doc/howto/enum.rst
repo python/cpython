@@ -988,12 +988,11 @@ but remain normal attributes.
 """"""""""""""""""""
 
 Enum members are instances of their enum class, and are normally accessed as
-``EnumClass.member``.  In Python versions starting with ``3.5`` you could access
-members from other members -- this practice is discouraged, is deprecated
-in ``3.12``, and will be removed in ``3.14``.
+``EnumClass.member``.  In certain situations, such as writing custom enum
+behavior, being able to access one member directly from another is useful,
+and is supported.
 
 .. versionchanged:: 3.5
-.. versionchanged:: 3.12
 
 
 Creating members that are mixed with other data types
