@@ -1,4 +1,4 @@
-name: Require PR label
+name: Check labels
 
 on:
   pull_request:
@@ -6,10 +6,11 @@ on:
 
 jobs:
   label:
+    name: DO-NOT-MERGE
     runs-on: ubuntu-latest
 
     steps:
-      - uses: mheap/github-action-required-labels@v3
+      - uses: mheap/github-action-required-labels@v4
         with:
           mode: exactly
           count: 0
