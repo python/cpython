@@ -609,7 +609,7 @@ PyMODINIT_FUNC
 PyInit_msvcrt(void)
 {
     int st;
-    PyObject *d, *version;
+    PyObject *d;
     PyObject *m = PyModule_Create(&msvcrtmodule);
     if (m == NULL)
         return NULL;
@@ -659,11 +659,16 @@ PyInit_msvcrt(void)
 
     /* constants for the 2010 crt versions */
 #if defined(_VC_CRT_MAJOR_VERSION) && defined (_VC_CRT_MINOR_VERSION) && defined(_VC_CRT_BUILD_VERSION) && defined(_VC_CRT_RBUILD_VERSION)
-    version = PyUnicode_FromFormat("%d.%d.%d.%d", _VC_CRT_MAJOR_VERSION,
-                                                  _VC_CRT_MINOR_VERSION,
-                                                  _VC_CRT_BUILD_VERSION,
-                                                  _VC_CRT_RBUILD_VERSION);
-    st = PyModule_AddObject(m, "CRT_ASSEMBLY_VERSION", version);
+    PyObject *version = PyUnicode_FromFormat("%d.%d.%d.%d",
+                                             _VC_CRT_MAJOR_VERSION,
+                                             _VC_CRT_MINOR_VERSION,
+                                             _VC_CRT_BUILD_VERSION,
+                                             _VC_CRT_RBUILD_VERSION);
+    if (version == NULL) {
+        return NULL;
+    }
+    st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
+    Py_DECREF(version);
     if (st < 0) return NULL;
 #endif
     /* make compiler warning quiet if st is unused */
