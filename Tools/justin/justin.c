@@ -65,13 +65,12 @@ copy_and_patch(void *memory, const Stencil *stencil, uintptr_t patches[])
 // The world's smallest compiler?
 // Make sure to call _PyJustin_Free on the memory when you're done with it!
 void *
-_PyJustin_CompileTrace(PyCodeObject *code, int size, int *trace)
+_PyJustin_CompileTrace(int size, _Py_CODEUNIT **trace)
 {
-    _Py_CODEUNIT *first_instruction = _PyCode_CODE(code);
     // First, loop over everything once to find the total compiled size:
     size_t nbytes = trampoline_stencil.nbytes;
     for (int i = 0; i < size; i++) {
-        _Py_CODEUNIT *instruction = first_instruction + trace[i];
+        _Py_CODEUNIT *instruction = trace[i];
         const Stencil *stencil = &stencils[instruction->op.code];
         if (stencil->nbytes == 0) {
             // This opcode isn't supported:
@@ -93,14 +92,14 @@ _PyJustin_CompileTrace(PyCodeObject *code, int size, int *trace)
     head = copy_and_patch(head, stencil, patches);
     // Then, all of the stencils:
     for (int i = 0; i < size; i++) {
-        _Py_CODEUNIT *instruction = first_instruction + trace[i];
+        _Py_CODEUNIT *instruction = trace[i];
         const Stencil *stencil = &stencils[instruction->op.code];
         patches[HOLE_base] = (uintptr_t)head;
         patches[HOLE_continue] = (i != size - 1) 
                                ? (uintptr_t)head + stencil->nbytes
                                : (uintptr_t)memory + trampoline_stencil.nbytes;
-        patches[HOLE_next_instr] = (uintptr_t)(first_instruction + trace[i]);
-        patches[HOLE_next_trace] = (uintptr_t)(first_instruction + trace[(i + 1) % size]);
+        patches[HOLE_next_instr] = (uintptr_t)trace[i];
+        patches[HOLE_next_trace] = (uintptr_t)trace[(i + 1) % size];
         patches[HOLE_oparg] = instruction->op.arg;
         head = copy_and_patch(head, stencil, patches);
     };
