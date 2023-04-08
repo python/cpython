@@ -149,5 +149,5 @@ advance = engine.trace(advance)
 report_energy = engine.trace(report_energy)
 nbody_jit_time = bench_nbody(loops, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)
 
-print(f"nbody_jit is {nbody_time / nbody_jit_time - 1:.0%} faster than nbody!")
+# print(f"nbody_jit is {nbody_time / nbody_jit_time - 1:.0%} faster than nbody!")
 print(round(nbody_time, 3), round(nbody_jit_time, 3), round(engine._tracing_time, 3), round(engine._compiling_time, 3), round(engine._compiled_time, 3), round(nbody_jit_time - engine._tracing_time - engine._compiling_time - engine._compiled_time, 3))

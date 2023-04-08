@@ -609,9 +609,6 @@
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_justin.h">
-      <Filter>Include\cpython</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_list.h">
       <Filter>Include\internal</Filter>
     </ClInclude>

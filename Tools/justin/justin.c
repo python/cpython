@@ -4,9 +4,7 @@
 #include "pycore_long.h"
 #include "pycore_opcode.h"
 #include "pycore_sliceobject.h"
-#include "pycore_justin.h"
 
-// #include "justin.h"
 #include "generated.h"
 
 #ifdef MS_WINDOWS
@@ -23,13 +21,11 @@ alloc(size_t nbytes)
 #ifdef MS_WINDOWS
     void *memory = VirtualAlloc(NULL, nbytes, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
     if (memory == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
 #else
     void *memory = mmap(NULL, nbytes, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (memory == MAP_FAILED) {
-        PyErr_NoMemory();
         return NULL;
     }
 #endif
@@ -78,12 +74,14 @@ _PyJustin_CompileTrace(PyCodeObject *code, int size, int *trace)
         _Py_CODEUNIT *instruction = first_instruction + trace[i];
         const Stencil *stencil = &stencils[instruction->op.code];
         if (stencil->nbytes == 0) {
+            // This opcode isn't supported:
             return NULL;
         }
         nbytes += stencil->nbytes;
     };
     void *memory = alloc(nbytes);
     if (memory == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
     void *head = memory;
