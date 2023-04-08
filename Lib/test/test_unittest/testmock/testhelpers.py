@@ -1077,7 +1077,7 @@ class TestCallList(unittest.TestCase):
             p.stop()
 
 
-    def test_propertymock_returnvalue(self):
+    def test_propertymock_bare(self):
         m = MagicMock()
         p = PropertyMock()
         type(m).foo = p
@@ -1086,6 +1086,27 @@ class TestCallList(unittest.TestCase):
         p.assert_called_once_with()
         self.assertIsInstance(returned, MagicMock)
         self.assertNotIsInstance(returned, PropertyMock)
+
+
+    def test_propertymock_returnvalue(self):
+        m = MagicMock()
+        p = PropertyMock(return_value=42)
+        type(m).foo = p
+
+        returned = m.foo
+        p.assert_called_once_with()
+        self.assertEqual(returned, 42)
+        self.assertNotIsInstance(returned, PropertyMock)
+
+
+    def test_propertymock_side_effect(self):
+        m = MagicMock()
+        p = PropertyMock(side_effect=ValueError)
+        type(m).foo = p
+
+        with self.assertRaises(ValueError):
+            m.foo
+        p.assert_called_once_with()
 
 
 class TestCallablePredicate(unittest.TestCase):
