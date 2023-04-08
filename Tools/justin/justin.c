@@ -9,8 +9,18 @@
 
 #ifdef MS_WINDOWS
     #include <windows.h>
+    #define MAP_FAILED NULL
+    #define MMAP(SIZE) \
+        VirtualAlloc(NULL, (SIZE), MEM_COMMIT, PAGE_EXECUTE_READWRITE)
+    #define MUNMAP(MEMORY, SIZE) \
+        VirtualFree((MEMORY), 0, MEM_RELEASE)
 #else
     #include <sys/mman.h>
+    #define MMAP(SIZE)                                         \
+        mmap(NULL, (SIZE), PROT_READ | PROT_WRITE | PROT_EXEC, \
+             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)
+    #define MUNMAP(MEMORY, SIZE) \
+        munmap((MEMORY), (SIZE))
 #endif
 
 
@@ -18,17 +28,10 @@ static unsigned char *
 alloc(size_t nbytes)
 {
     nbytes += sizeof(size_t);
-#ifdef MS_WINDOWS
-    unsigned char *memory = VirtualAlloc(NULL, nbytes, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-    if (memory == NULL) {
-        return NULL;
-    }
-#else
-    unsigned char *memory = mmap(NULL, nbytes, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    unsigned char *memory = MMAP(nbytes);
     if (memory == MAP_FAILED) {
         return NULL;
     }
-#endif
     assert(memory);
     *(size_t *)memory = nbytes;
     return memory + sizeof(size_t);
@@ -39,12 +42,8 @@ void
 _PyJustin_Free(unsigned char *memory)
 {
     memory -= sizeof(size_t);
-#ifdef MS_WINDOWS
-    VirtualFree(memory, 0, MEM_RELEASE);
-#else
     size_t nbytes = *(size_t *)memory;
-    munmap(memory, nbytes);
-#endif
+    MUNMAP(memory, nbytes);
 }
 
 
