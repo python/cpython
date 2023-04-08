@@ -41,9 +41,16 @@ For a summary of deprecated features and a deprecation timeline, please see
 
 .. seealso::
 
+   For a quick overview of type hints, refer to
+   `this cheat sheet <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_.
+
+   The "Type System Reference" section of https://mypy.readthedocs.io/ -- since
+   the Python typing system is standardised via PEPs, this reference should
+   broadly apply to most Python type checkers, although some parts may still be
+   specific to mypy.
+
    The documentation at https://typing.readthedocs.io/ serves as useful reference
    for type system features, useful typing related tools and typing best practices.
-
 
 .. _relevant-peps:
 
@@ -1611,6 +1618,24 @@ These are not used in annotations. They are building blocks for creating generic
         code.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.12
+      The internal implementation of :func:`isinstance` checks against
+      runtime-checkable protocols now uses :func:`inspect.getattr_static`
+      to look up attributes (previously, :func:`hasattr` was used).
+      As a result, some objects which used to be considered instances
+      of a runtime-checkable protocol may no longer be considered instances
+      of that protocol on Python 3.12+, and vice versa.
+      Most users are unlikely to be affected by this change.
+
+   .. versionchanged:: 3.12
+      The members of a runtime-checkable protocol are now considered "frozen"
+      at runtime as soon as the class has been created. Monkey-patching
+      attributes onto a runtime-checkable protocol will still work, but will
+      have no impact on :func:`isinstance` checks comparing objects to the
+      protocol. See :ref:`"What's new in Python 3.12" <whatsnew-typing-py312>`
+      for more details.
+
 
 Other special directives
 """"""""""""""""""""""""

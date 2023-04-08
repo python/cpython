@@ -1775,7 +1775,7 @@ to sockets.
    much data, if any, was successfully sent.
 
    .. versionchanged:: 3.5
-      The socket timeout is no more reset each time data is sent successfully.
+      The socket timeout is no longer reset each time data is sent successfully.
       The socket timeout is now the maximum total duration to send all data.
 
    .. versionchanged:: 3.5
@@ -1998,8 +1998,8 @@ can be changed by calling :func:`setdefaulttimeout`.
 
 * In *non-blocking mode*, operations fail (with an error that is unfortunately
   system-dependent) if they cannot be completed immediately: functions from the
-  :mod:`select` can be used to know when and whether a socket is available for
-  reading or writing.
+  :mod:`select` module can be used to know when and whether a socket is available
+  for reading or writing.
 
 * In *timeout mode*, operations fail if they cannot be completed within the
   timeout specified for the socket (they raise a :exc:`timeout` exception)
@@ -2188,7 +2188,7 @@ manager protocol instead, open a socket with::
     socket.socket(socket.AF_CAN, socket.SOCK_DGRAM, socket.CAN_BCM)
 
 After binding (:const:`CAN_RAW`) or connecting (:const:`CAN_BCM`) the socket, you
-can use the :meth:`socket.send`, and the :meth:`socket.recv` operations (and
+can use the :meth:`socket.send` and :meth:`socket.recv` operations (and
 their counterparts) on the socket object as usual.
 
 This last example might require special privileges::
