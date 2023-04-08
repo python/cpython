@@ -59,7 +59,7 @@ DSYMUTIL_PATH=  @DSYMUTIL_PATH@
 GNULD=		@GNULD@
 
 # Shell used by make (some versions default to the login shell, which is bad)
-SHELL=		/bin/sh
+SHELL=		/bin/sh -e
 
 # Use this to make a link between python$(VERSION) and python in $(BINDIR)
 LN=		@LN@

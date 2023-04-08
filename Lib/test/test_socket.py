@@ -8,6 +8,7 @@ import _thread as thread
 import array
 import contextlib
 import errno
+import gc
 import io
 import itertools
 import math
@@ -835,6 +836,12 @@ def requireSocket(*args):
 ## Begin Tests
 
 class GeneralModuleTests(unittest.TestCase):
+
+    @unittest.skipUnless(_socket is not None, 'need _socket module')
+    def test_socket_type(self):
+        self.assertTrue(gc.is_tracked(_socket.socket))
+        with self.assertRaisesRegex(TypeError, "immutable"):
+            _socket.socket.foo = 1
 
     def test_SocketType_is_socketobject(self):
         import _socket
