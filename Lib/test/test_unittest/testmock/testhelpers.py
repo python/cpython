@@ -1099,7 +1099,7 @@ class TestCallList(unittest.TestCase):
         self.assertNotIsInstance(returned, PropertyMock)
 
 
-    def test_propertymock_sideffect(self):
+    def test_propertymock_side_effect(self):
         m = MagicMock()
         p = PropertyMock(side_effect=ValueError)
         type(m).foo = p
