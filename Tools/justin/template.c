@@ -25,6 +25,8 @@
             goto _return_deopt;  \
         }                        \
     } while (0)
+#undef TARGET
+#define TARGET(OP) INSTRUCTION_START((OP));
 
 // Stuff that will be patched at "JIT time":
 extern int _justin_continue(PyThreadState *tstate, _PyInterpreterFrame *frame,

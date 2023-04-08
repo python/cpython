@@ -14,17 +14,17 @@
 #endif
 
 
-static void *
+static unsigned char *
 alloc(size_t nbytes)
 {
     nbytes += sizeof(size_t);
 #ifdef MS_WINDOWS
-    void *memory = VirtualAlloc(NULL, nbytes, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    unsigned char *memory = VirtualAlloc(NULL, nbytes, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
     if (memory == NULL) {
         return NULL;
     }
 #else
-    void *memory = mmap(NULL, nbytes, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    unsigned char *memory = mmap(NULL, nbytes, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (memory == MAP_FAILED) {
         return NULL;
     }
@@ -36,7 +36,7 @@ alloc(size_t nbytes)
 
 
 void
-_PyJustin_Free(void *memory)
+_PyJustin_Free(unsigned char *memory)
 {
     memory -= sizeof(size_t);
 #ifdef MS_WINDOWS
@@ -48,8 +48,8 @@ _PyJustin_Free(void *memory)
 }
 
 
-static void *
-copy_and_patch(void *memory, const Stencil *stencil, uintptr_t patches[])
+static unsigned char *
+copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[])
 {
     memcpy(memory, stencil->bytes, stencil->nbytes);
     for (size_t i = 0; i < stencil->nholes; i++) {
@@ -64,26 +64,26 @@ copy_and_patch(void *memory, const Stencil *stencil, uintptr_t patches[])
 
 // The world's smallest compiler?
 // Make sure to call _PyJustin_Free on the memory when you're done with it!
-void *
+unsigned char *
 _PyJustin_CompileTrace(int size, _Py_CODEUNIT **trace)
 {
     // First, loop over everything once to find the total compiled size:
     size_t nbytes = trampoline_stencil.nbytes;
     for (int i = 0; i < size; i++) {
         _Py_CODEUNIT *instruction = trace[i];
-        const Stencil *stencil = &stencils[instruction->op.code];
+        const Stencil *stencil = stencils[instruction->op.code];
         if (stencil->nbytes == 0) {
             // This opcode isn't supported:
             return NULL;
         }
         nbytes += stencil->nbytes;
     };
-    void *memory = alloc(nbytes);
+    unsigned char *memory = alloc(nbytes);
     if (memory == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    void *head = memory;
+    unsigned char *head = memory;
     uintptr_t patches[] = GET_PATCHES();
     // First, the trampoline:
     const Stencil *stencil = &trampoline_stencil;
@@ -93,7 +93,7 @@ _PyJustin_CompileTrace(int size, _Py_CODEUNIT **trace)
     // Then, all of the stencils:
     for (int i = 0; i < size; i++) {
         _Py_CODEUNIT *instruction = trace[i];
-        const Stencil *stencil = &stencils[instruction->op.code];
+        const Stencil *stencil = stencils[instruction->op.code];
         patches[HOLE_base] = (uintptr_t)head;
         patches[HOLE_continue] = (i != size - 1) 
                                ? (uintptr_t)head + stencil->nbytes
