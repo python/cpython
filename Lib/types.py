@@ -145,19 +145,16 @@ def _calculate_meta(meta, bases):
 
 
 def get_original_bases(cls, /):
-    """
-    Return the objects in the bases list in the class's definition before
-    they could have been modified by ``__mro_entries__``. This is useful for
-    introspecting Generics.
+    """Return the class's "original" bases prior to modification by `__mro_entries__`.
+    
+    This is useful for introspecting Generics.
 
     Examples::
 
         from typing import TypeVar, Generic
 
         T = TypeVar("T")
-
         class Foo(Generic[T]): ...
-
         class Bar(Foo[int], float): ...
 
         get_original_bases(Foo) == (Generic[T],)
