@@ -156,9 +156,11 @@ def get_original_bases(cls, /):
         T = TypeVar("T")
         class Foo(Generic[T]): ...
         class Bar(Foo[int], float): ...
+        class Baz(list[str]): ...
 
         get_original_bases(Foo) == (Generic[T],)
         get_original_bases(Bar) == (Foo[int], float)
+        get_original_bases(Baz) == (list[str],)
         get_original_bases(int) == None
     """
     if isinstance(cls, type):
