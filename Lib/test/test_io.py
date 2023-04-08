@@ -888,6 +888,14 @@ class IOTest(unittest.TestCase):
             open('non-existent', 'r', opener=badopener)
         self.assertEqual(str(cm.exception), 'opener returned -2')
 
+    def test_opener_invalid_fd(self):
+        # Check that OSError is raised with error code EBADF if the
+        # opener returns an invalid file descriptor (see gh-82212).
+        fd = os_helper.make_bad_fd()
+        with self.assertRaises(OSError) as cm:
+            self.open('foo', opener=lambda name, flags: fd)
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+
     def test_fileio_closefd(self):
         # Issue #4841
         with self.open(__file__, 'rb') as f1, \
@@ -1033,6 +1041,95 @@ class CIOTest(IOTest):
         del obj
         support.gc_collect()
         self.assertIsNone(wr(), wr)
+
+@support.cpython_only
+class TestIOCTypes(unittest.TestCase):
+    def setUp(self):
+        _io = import_helper.import_module("_io")
+        self.types = [
+            _io.BufferedRWPair,
+            _io.BufferedRandom,
+            _io.BufferedReader,
+            _io.BufferedWriter,
+            _io.BytesIO,
+            _io.FileIO,
+            _io.IncrementalNewlineDecoder,
+            _io.StringIO,
+            _io.TextIOWrapper,
+            _io._BufferedIOBase,
+            _io._BytesIOBuffer,
+            _io._IOBase,
+            _io._RawIOBase,
+            _io._TextIOBase,
+        ]
+        if sys.platform == "win32":
+            self.types.append(_io._WindowsConsoleIO)
+        self._io = _io
+
+    def test_immutable_types(self):
+        for tp in self.types:
+            with self.subTest(tp=tp):
+                with self.assertRaisesRegex(TypeError, "immutable"):
+                    tp.foo = "bar"
+
+    def test_class_hierarchy(self):
+        def check_subs(types, base):
+            for tp in types:
+                with self.subTest(tp=tp, base=base):
+                    self.assertTrue(issubclass(tp, base))
+
+        def recursive_check(d):
+            for k, v in d.items():
+                if isinstance(v, dict):
+                    recursive_check(v)
+                elif isinstance(v, set):
+                    check_subs(v, k)
+                else:
+                    self.fail("corrupt test dataset")
+
+        _io = self._io
+        hierarchy = {
+            _io._IOBase: {
+                _io._BufferedIOBase: {
+                    _io.BufferedRWPair,
+                    _io.BufferedRandom,
+                    _io.BufferedReader,
+                    _io.BufferedWriter,
+                    _io.BytesIO,
+                },
+                _io._RawIOBase: {
+                    _io.FileIO,
+                },
+                _io._TextIOBase: {
+                    _io.StringIO,
+                    _io.TextIOWrapper,
+                },
+            },
+        }
+        if sys.platform == "win32":
+            hierarchy[_io._IOBase][_io._RawIOBase].add(_io._WindowsConsoleIO)
+
+        recursive_check(hierarchy)
+
+    def test_subclassing(self):
+        _io = self._io
+        dataset = {k: True for k in self.types}
+        dataset[_io._BytesIOBuffer] = False
+
+        for tp, is_basetype in dataset.items():
+            with self.subTest(tp=tp, is_basetype=is_basetype):
+                name = f"{tp.__name__}_subclass"
+                bases = (tp,)
+                if is_basetype:
+                    _ = type(name, bases, {})
+                else:
+                    msg = "not an acceptable base type"
+                    with self.assertRaisesRegex(TypeError, msg):
+                        _ = type(name, bases, {})
+
+    def test_disallow_instantiation(self):
+        _io = self._io
+        support.check_disallow_instantiation(self, _io._BytesIOBuffer)
 
 class PyIOTest(IOTest):
     pass
@@ -3937,7 +4034,15 @@ class IncrementalNewlineDecoderTest(unittest.TestCase):
         self.assertEqual(decoder.decode(b"\r\r\n"), "\r\r\n")
 
 class CIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest):
-    pass
+    @support.cpython_only
+    def test_uninitialized(self):
+        uninitialized = self.IncrementalNewlineDecoder.__new__(
+            self.IncrementalNewlineDecoder)
+        self.assertRaises(ValueError, uninitialized.decode, b'bar')
+        self.assertRaises(ValueError, uninitialized.getstate)
+        self.assertRaises(ValueError, uninitialized.setstate, (b'foo', 0))
+        self.assertRaises(ValueError, uninitialized.reset)
+
 
 class PyIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest):
     pass
@@ -4655,7 +4760,7 @@ def load_tests(loader, tests, pattern):
              CIncrementalNewlineDecoderTest, PyIncrementalNewlineDecoderTest,
              CTextIOWrapperTest, PyTextIOWrapperTest,
              CMiscIOTest, PyMiscIOTest,
-             CSignalsTest, PySignalsTest,
+             CSignalsTest, PySignalsTest, TestIOCTypes,
              )
 
     # Put the namespaces of the IO module we are testing and some useful mock

@@ -8,6 +8,7 @@ import time
 from test import support
 from test.support import import_helper
 _interpreters = import_helper.import_module('_xxsubinterpreters')
+_channels = import_helper.import_module('_xxinterpchannels')
 from test.support import interpreters
 
 
@@ -533,7 +534,7 @@ class TestRecvChannelAttrs(TestBase):
 
     def test_id_type(self):
         rch, _ = interpreters.create_channel()
-        self.assertIsInstance(rch.id, _interpreters.ChannelID)
+        self.assertIsInstance(rch.id, _channels.ChannelID)
 
     def test_custom_id(self):
         rch = interpreters.RecvChannel(1)
@@ -558,7 +559,7 @@ class TestSendChannelAttrs(TestBase):
 
     def test_id_type(self):
         _, sch = interpreters.create_channel()
-        self.assertIsInstance(sch.id, _interpreters.ChannelID)
+        self.assertIsInstance(sch.id, _channels.ChannelID)
 
     def test_custom_id(self):
         sch = interpreters.SendChannel(1)
