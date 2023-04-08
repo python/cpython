@@ -1378,10 +1378,10 @@ class ClassCreationTests(unittest.TestCase):
         self.assertEqual(types.get_original_bases(E), (list[T],))
         self.assertEqual(types.get_original_bases(F), (list[int],))
 
-class G(typing.NamedTuple):
-    x: int
+        class G(typing.NamedTuple):
+            x: int
 
-self.assertIs(types.get_original_bases(G)[0], typing.NamedTuple)
+        self.assertIs(types.get_original_bases(G)[0], typing.NamedTuple)
 
     # Many of the following tests are derived from test_descr.py
     def test_prepare_class(self):
