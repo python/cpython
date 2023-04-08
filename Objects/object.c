@@ -2160,8 +2160,7 @@ new_reference(PyObject *op)
     if (_PyRuntime.tracemalloc.config.tracing) {
         _PyTraceMalloc_NewReference(op);
     }
-    /* Do not use Py_SET_REFCNT to skip the Immortal Object check. This
-     * This API guarantees that the refcnt will always be set to 1. */
+    // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
     op->ob_refcnt = 1;
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op, 1);

@@ -100,13 +100,12 @@ typedef struct {
     struct {
         /* If interned is non-zero, the two references from the
            dictionary to this object are *not* counted in ob_refcnt.
-           Furthermore, Having this value set means that it is in one of 3
-           different states of interned forms indicated by value, which are:
+           The possible values here are:
                0: Not Interned
                1: Interned
-               2: Interned and Immortalized
-               3: Internede, Immortalized, and Static
-           These categorizations allows the runtime to determine the right
+               2: Interned and Immortal
+               3: Interned, Immortal, and Static
+           This categorization allows the runtime to determine the right
            cleanup mechanism at runtime shutdown. */
         unsigned int interned:2;
         /* Character size:

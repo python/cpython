@@ -88,7 +88,7 @@ might change depending on the specializations for the underlying system.
 
 Proper deallocation of immortal instances requires distinguishing between
 statically allocated immortal instances vs those promoted by the runtime to be
-immortal. The latter which should be the only instances that require proper
+immortal. The latter should be the only instances that require
 cleanup during runtime finalization.
 */
 
@@ -239,10 +239,9 @@ static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
 
 
 static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
-    // This immortal check acts as a  mechanism for code that it's
-    // written without the assumption of Immortal Objects. The runtime
-    // is in charge of tracking these objects and should avoid as much
-    // as possible having extensions inadvertently changing the refcnt
+    // This immortal check is for code that is unaware of immortal objects.
+    // The runtime tracks these objects and we should avoid as much
+    // as possible having extensions inadvertently change the refcnt
     // of an immortalized object.
     if (_Py_IsImmortal(ob)) {
         return;
