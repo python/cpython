@@ -1,7 +1,9 @@
 #include "Python.h"
 #include "pycore_abstract.h"
 #include "pycore_floatobject.h"
+#include "pycore_long.h"
 #include "pycore_opcode.h"
+#include "pycore_sliceobject.h"
 #include "pycore_justin.h"
 
 // #include "justin.h"
@@ -75,6 +77,9 @@ _PyJustin_CompileTrace(PyCodeObject *code, int size, int *trace)
     for (int i = 0; i < size; i++) {
         _Py_CODEUNIT *instruction = first_instruction + trace[i];
         const Stencil *stencil = &stencils[instruction->op.code];
+        if (stencil->nbytes == 0) {
+            return NULL;
+        }
         nbytes += stencil->nbytes;
     };
     void *memory = alloc(nbytes);
@@ -92,7 +97,6 @@ _PyJustin_CompileTrace(PyCodeObject *code, int size, int *trace)
     for (int i = 0; i < size; i++) {
         _Py_CODEUNIT *instruction = first_instruction + trace[i];
         const Stencil *stencil = &stencils[instruction->op.code];
-        assert(stencil->nbytes && stencil->bytes);
         patches[HOLE_base] = (uintptr_t)head;
         patches[HOLE_continue] = (i != size - 1) 
                                ? (uintptr_t)head + stencil->nbytes

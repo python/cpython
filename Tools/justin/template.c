@@ -6,6 +6,7 @@
 #include "pycore_long.h"
 #include "pycore_object.h"
 #include "pycore_opcode.h"
+#include "pycore_sliceobject.h"
 
 #include "Python/ceval_macros.h"
 
@@ -62,6 +63,10 @@ _continue:;
     __attribute__((musttail))
     return _justin_continue(tstate, frame, stack_pointer);
     // Labels that the instruction implementations expect to exist:
+pop_4_error:
+    STACK_SHRINK(1);
+pop_3_error:
+    STACK_SHRINK(1);
 pop_2_error:
     STACK_SHRINK(1);
 pop_1_error:

@@ -6,7 +6,6 @@ import dataclasses
 import dis
 import functools
 import itertools
-import mmap
 import pathlib
 import re
 import subprocess
@@ -21,11 +20,7 @@ TOOLS_JUSTIN_TEMPLATE = TOOLS_JUSTIN / "template.c"
 TOOLS_JUSTIN_TRAMPOLINE = TOOLS_JUSTIN / "trampoline.c"
 PYTHON_GENERATED_CASES_C_H = TOOLS_JUSTIN.parent.parent / "Python" / "generated_cases.c.h"
 
-WRAPPER_TYPE = ctypes.PYFUNCTYPE(ctypes.c_double)
-
-COMPILED_TIME = 0.0
-COMPILING_TIME = 0.0
-TRACING_TIME = 0.0
+WRAPPER_TYPE = ctypes.PYFUNCTYPE(ctypes.c_int)
 
 # XXX: Do --reloc, then --headers, then --full-contents (per-section)
 # Maybe need --syms to check that justin_entry is indeed first/only?
@@ -201,15 +196,6 @@ def _get_object_parser(path: str) -> ObjectParser:
             return p
     raise NotImplementedError(sys.platform)
 
-
-
-def read_uint64(body: bytes, offset: int) -> int:
-    return int.from_bytes(body[offset : offset + 8], sys.byteorder, signed=False)
-
-def write_uint64(body: bytearray, offset: int, value: int) -> None:
-    value &= (1 << 64) - 1
-    body[offset : offset + 8] = value.to_bytes(8, sys.byteorder, signed=False)
-
 @dataclasses.dataclass(frozen=True)
 class Hole:
     symbol: str
@@ -217,67 +203,10 @@ class Hole:
     offset: int
     addend: int
 
-    def patch(self, body: bytearray, value: int) -> None:
-        write_uint64(body, self.offset, value + self.addend)
-
 @dataclasses.dataclass(frozen=True)
 class Stencil:
     body: bytes
     holes: tuple[Hole, ...]
-
-    def load(self) -> typing.Self:
-        # XXX: Load the addend too.
-        new_body = bytearray(self.body)
-        new_holes = []
-        for hole in self.holes:
-            value = self._get_address(hole.symbol)
-            if value is not None:
-                # print(hole.symbol)
-                hole.patch(new_body, value)
-            else:
-                # if not hole.symbol.startswith("_justin") and hole.symbol != "_cstring":
-                #     print(hole.symbol)
-                new_holes.append(hole)
-        return self.__class__(bytes(new_body), tuple(new_holes))
-    
-    def copy_and_patch(self, **symbols: int) -> bytes:
-        body = bytearray(self.body)
-        for hole in self.holes:
-            value = symbols[hole.symbol]
-            hole.patch(body, value)
-        return bytes(body)
-
-    @staticmethod
-    def _get_address(name: str) -> int | None:
-        wrapper = getattr(ctypes.pythonapi, name, None)
-        pointer = ctypes.cast(wrapper, ctypes.c_void_p)
-        address = pointer.value
-        return address
-
-    def __len__(self) -> int:
-        return len(self.body)
-    
-def mmap_posix(size):
-    flags = mmap.MAP_ANONYMOUS | mmap.MAP_PRIVATE
-    prot = mmap.PROT_EXEC | mmap.PROT_WRITE
-    memory = mmap.mmap(-1, size, flags=flags, prot=prot)
-    return (ctypes.c_char * size).from_buffer(memory)
-    
-def mmap_windows(size):
-    kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
-    MEM_COMMIT = 0x00001000
-    MEM_RESERVE = 0x00002000
-    PAGE_EXECUTE_READWRITE = 0x40
-    VirtualAlloc = kernel32.VirtualAlloc
-    VirtualAlloc.argtypes = [
-        ctypes.c_void_p,
-        ctypes.c_size_t,
-        ctypes.c_uint32,
-        ctypes.c_uint32,
-    ]
-    VirtualAlloc.restype = ctypes.c_void_p
-    memory = VirtualAlloc(None, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE)
-    return ctypes.cast(ctypes.c_char_p(memory), ctypes.POINTER(ctypes.c_char * size))[0]
 
 
 class Engine:
@@ -306,19 +235,30 @@ class Engine:
     _OPS = [
         "BINARY_OP",
         "BINARY_OP_ADD_FLOAT",
+        "BINARY_OP_ADD_INT",
         "BINARY_OP_MULTIPLY_FLOAT",
         "BINARY_OP_SUBTRACT_FLOAT",
+        "BINARY_OP_SUBTRACT_INT",
+        "BINARY_SUBSCR",
         "BINARY_SUBSCR_LIST_INT",
+        "BUILD_SLICE",
+        "CALL_NO_KW_BUILTIN_FAST",
+        "COMPARE_OP_INT",
         "COPY",
         "FOR_ITER_LIST",
         "JUMP_BACKWARD",
+        "JUMP_FORWARD",
         "LOAD_CONST",
         "LOAD_FAST",
         "LOAD_FAST__LOAD_CONST",
         "LOAD_FAST__LOAD_FAST",
+        "POP_JUMP_IF_FALSE",
+        "POP_TOP",
+        "PUSH_NULL",
         "STORE_FAST",
         "STORE_FAST__LOAD_FAST",
         "STORE_FAST__STORE_FAST",
+        "STORE_SLICE",
         "STORE_SUBSCR_LIST_INT",
         "SWAP",
         "UNPACK_SEQUENCE_LIST",
@@ -332,6 +272,9 @@ class Engine:
         self._trampoline_built = None
         self._trampoline_loaded = None
         self._verbose = verbose
+        self._compiled_time = 0.0
+        self._compiling_time = 0.0
+        self._tracing_time = 0.0
 
     def _stderr(self, *args, **kwargs) -> None:
         if self._verbose:
@@ -445,18 +388,10 @@ class Engine:
         lines.append("")
         return "\n".join(lines)
 
-
-    def load(self) -> None:
-        for opname, stencil in self._stencils_built.items():
-            self._stderr(f"Loading stencil for {opname}.")
-            self._stencils_loaded[opname] = stencil.load()
-        self._trampoline_loaded = self._trampoline_built.load()
-
     def trace(self, f, *, warmup: int = 2):
         recorded = {}
         compiled = {}
         def tracer(frame: types.FrameType, event: str, arg: object):
-            global TRACING_TIME, COMPILED_TIME
             start = time.perf_counter()
             # This needs to be *fast*.
             assert frame.f_code is f.__code__
@@ -466,26 +401,40 @@ class Engine:
                     ix = recorded[i]
                     traced = list(recorded)[ix:]
                     self._stderr(f"Compiling trace for {frame.f_code.co_filename}:{frame.f_lineno}.")
-                    TRACING_TIME += time.perf_counter() - start
+                    self._tracing_time += time.perf_counter() - start
+                    start = time.perf_counter()
                     traced = self._clean_trace(frame.f_code, traced)
-                    c_traced_type = (ctypes.c_int * len(traced))
-                    c_traced = c_traced_type() 
-                    c_traced[:] = traced
-                    compile_trace = ctypes.pythonapi._PyJustin_CompileTrace
-                    compile_trace.argtypes = (ctypes.py_object, ctypes.c_int, c_traced_type)
-                    compile_trace.restype = ctypes.c_void_p
-                    wrapper = WRAPPER_TYPE(compile_trace(frame.f_code, len(traced), c_traced))
-                    # wrapper = self._compile_trace(frame.f_code, traced)
+                    if traced is None:
+                        compiled[i] = None
+                        print("Failed (ends with super)!")
+                    else:
+                        j = traced[0] * 2
+                        if j != i and compiled.get(i, None) is None:
+                            compiled[i] = None
+                        c_traced_type = (ctypes.c_int * len(traced))
+                        c_traced = c_traced_type() 
+                        c_traced[:] = traced
+                        compile_trace = ctypes.pythonapi._PyJustin_CompileTrace
+                        compile_trace.argtypes = (ctypes.py_object, ctypes.c_int, c_traced_type)
+                        compile_trace.restype = ctypes.c_void_p
+                        buffer = compile_trace(frame.f_code, len(traced), c_traced)
+                        if buffer is not None:
+                            compiled[j] = WRAPPER_TYPE(buffer)
+                        else:
+                            compiled[j] = None
+                            print("Failed (missing opcode)!")
+                    self._compiling_time += time.perf_counter() - start
                     start = time.perf_counter()
-                    compiled[i] = wrapper
                 if i in compiled:
-                    # self._stderr(f"Entering trace for {frame.f_code.co_filename}:{frame.f_lineno}.")
-                    TRACING_TIME += time.perf_counter() - start
-                    start = time.perf_counter()
-                    status = compiled[i]()
-                    COMPILED_TIME += time.perf_counter() - start
-                    start = time.perf_counter()
-                    # self._stderr(f"Exiting trace for {frame.f_code.co_filename}:{frame.f_lineno} with status {status}.")
+                    wrapper = compiled[i]
+                    if wrapper is not None:
+                        # self._stderr(f"Entering trace for {frame.f_code.co_filename}:{frame.f_lineno}.")
+                        self._tracing_time += time.perf_counter() - start
+                        start = time.perf_counter()
+                        status = wrapper()
+                        self._compiled_time += time.perf_counter() - start
+                        start = time.perf_counter()
+                        # self._stderr(f"Exiting trace for {frame.f_code.co_filename}:{frame.f_lineno} with status {status}.")
                     recorded.clear()
                 else:
                     recorded[i] = len(recorded)
@@ -493,7 +442,7 @@ class Engine:
                 frame.f_trace_lines = False
                 frame.f_trace_opcodes = True
                 recorded.clear()
-            TRACING_TIME += time.perf_counter() - start
+            self._tracing_time += time.perf_counter() - start
             return tracer
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
@@ -513,6 +462,7 @@ class Engine:
     def _clean_trace(code: types.CodeType, trace: typing.Iterable[int]):
         skip = 0
         out = []
+        opnames = []
         for x, i in enumerate(trace):
             if skip:
                 skip -= 1
@@ -521,65 +471,14 @@ class Engine:
             opname = dis._all_opname[opcode]
             if "__" in opname: # XXX
                 skip = 1
-            # if opname == "END_FOR":
-            #     continue
+            opnames.append(opname)
             out.append(i // 2)
+        # print(list(zip(opnames, out, strict=True)))
+        if skip:
+            if "__" not in opnames[0]:
+                out[0] = out[-1]
+                opnames[0] = opnames[-1]
+                del out[-1], opnames[-1]
+                return out
+            return None
         return out
-
-    def _compile_trace(self, code: types.CodeType, trace: typing.Sequence[int]):
-        # This needs to be *fast*.
-        start = time.perf_counter()
-        bundles = []
-        skip = 0
-        size = len(self._trampoline_loaded)
-        for x, i in enumerate(trace):
-            if skip:
-                skip -= 1
-                continue
-            opcode, oparg = code._co_code_adaptive[i : i + 2]
-            opname = dis._all_opname[opcode]
-            if "__" in opname: # XXX
-                skip = 1
-            j = trace[(x + skip + 1) % len(trace)]
-            stencil = self._stencils_loaded[opname]
-            bundles.append((stencil, i, j, oparg))
-            size += len(stencil)
-        lengths = [
-            len(self._trampoline_loaded),  *(len(stencil) for stencil, _, _, _ in bundles)
-        ]
-        first_instr = id(code) + self._OFFSETOF_CO_CODE_ADAPTIVE
-        if sys.platform == "win32":
-            memory = mmap_windows(size)
-        else:
-            memory = mmap_posix(size)
-        base = ctypes.addressof(memory)
-        continuations = list(itertools.accumulate(lengths, initial=base))[1:]
-        continuations[-1] = continuations[0]
-        buffer = bytearray()
-        buffer += (
-            self._trampoline_loaded.copy_and_patch(
-                _justin_base=base + len(buffer),
-                _justin_continue=continuations[0],
-            )
-        )
-        for (stencil, i, j, oparg), continuation in zip(
-            bundles, continuations[1:], strict=True,
-        ):
-            buffer += (
-                stencil.copy_and_patch(
-                    _justin_base=base + len(buffer),
-                    _justin_continue=continuation,
-                    _justin_next_instr=first_instr + i,
-                    _justin_next_trace=first_instr + j,
-                    _justin_oparg=oparg,
-                    _justin_target=len(buffer),
-                )
-            )
-        assert len(buffer) == size
-        memory[:] = buffer
-        wrapper = ctypes.cast(memory, WRAPPER_TYPE)
-        global COMPILING_TIME
-        diff = time.perf_counter() - start
-        COMPILING_TIME += diff
-        self._stderr(f"Compiled {size:,} bytes in {diff * 1_000:0.3} ms")
-        return wrapper
