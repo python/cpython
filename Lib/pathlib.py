@@ -246,10 +246,41 @@ class PurePath(object):
     PureWindowsPath object.  You can also instantiate either of these classes
     directly, regardless of your system.
     """
+
     __slots__ = (
-        '_raw_path', '_drv', '_root', '_tail_cached',
-        '_str', '_hash', '_parts_normcase_cached',
+        # The `_raw_path` slot stores an unnormalized string path. This is set
+        # in the `__init__()` method.
+        '_raw_path',
+
+        # The `_drv`, `_root` and `_tail_cached` slots store parsed and
+        # normalized parts of the path. They are set when any of the `drive`,
+        # `root` or `_tail` properties are accessed for the first time. The
+        # three-part division corresponds to the result of
+        # `os.path.splitroot()`, except that the tail is further split on path
+        # separators (i.e. it is a list of strings), and that the root and
+        # tail are normalized.
+        '_drv', '_root', '_tail_cached',
+
+        # The `_str` slot stores the string representation of the path,
+        # computed from the drive, root and tail when `__str__()` is called
+        # for the first time. It's used to implement `_str_normcase`
+        '_str',
+
+        # The `_str_normcase_cached` slot stores the string path with
+        # normalized case. It is set when the `_str_normcase` property is
+        # accessed for the first time. It's used to implement `__eq__()`
+        # `__hash__()`, and `_parts_normcase`
         '_str_normcase_cached',
+
+        # The `_parts_normcase_cached` slot stores the case-normalized
+        # string path after splitting on path separators. It's set when the
+        # `_parts_normcase` property is accessed for the first time. It's used
+        # to implement comparison methods like `__lt__()`.
+        '_parts_normcase_cached',
+
+        # The `_hash` slot stores the hash of the case-normalized string
+        # path. It's set when `__hash__()` is called for the first time.
+        '_hash',
     )
     _flavour = os.path
 
