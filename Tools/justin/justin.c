@@ -42,10 +42,10 @@ void
 _PyJustin_Free(unsigned char *memory)
 {
     memory -= sizeof(size_t);
-    size_t size = *(size_t *)memory;
 #ifdef MS_WINDOWS
     VirtualFree(memory, 0, MEM_RELEASE);
 #else
+    size_t size = *(size_t *)memory;
     munmap(memory, size);
 #endif
 }
@@ -74,12 +74,15 @@ unsigned char *
 _PyJustin_CompileTrace(PyCodeObject *code, int trace_size, int *trace)
 {
     _Py_CODEUNIT *first_instruction = _PyCode_CODE(code);
+    int i;
+    _Py_CODEUNIT *instruction;
+    const _PyJustin_Stencil *stencil;
     // First, loop over everything once to find the total compiled size:
     size_t size = _PyJustin_Trampoline.size;
-    for (int i = 0; i < trace_size; i++) {
-        _Py_CODEUNIT instruction = first_instruction[trace[i]];
-        _PyJustin_Stencil stencil = _PyJustin_Stencils[instruction.op.code];
-        size += stencil.size;
+    for (i = 0; i < trace_size; i++) {
+        instruction = first_instruction + trace[i];
+        stencil = &_PyJustin_Stencils[instruction->op.code];
+        size += stencil->size;
     };
     unsigned char *memory = alloc(size);
     if (memory == NULL) {
@@ -100,19 +103,18 @@ _PyJustin_CompileTrace(PyCodeObject *code, int trace_size, int *trace)
     #undef LOAD
     };
     unsigned char *current = memory;
-    // First the trampoline:
-    const _PyJustin_Stencil *stencil = &_PyJustin_Trampoline;
+    // First, the trampoline:
+    stencil = &_PyJustin_Trampoline;
     patches[_PyJustin_HOLE_base] = (uintptr_t)current;
     patches[_PyJustin_HOLE_continue] = (uintptr_t)current + stencil->size;
     patches[_PyJustin_HOLE_next_instr] = BAD;
     patches[_PyJustin_HOLE_next_trace_0] = BAD;
     patches[_PyJustin_HOLE_oparg_0] = BAD;
     current = copy_and_patch(current, stencil, patches);
-    int i;
     // Then, all of the stencils:
     for (i = 0; i < trace_size - 1; i++) {
-        _Py_CODEUNIT *instruction = first_instruction + trace[i];
-        const _PyJustin_Stencil *stencil = &_PyJustin_Stencils[instruction->op.code];
+        instruction = first_instruction + trace[i];
+        stencil = &_PyJustin_Stencils[instruction->op.code];
         patches[_PyJustin_HOLE_base] = (uintptr_t)current;
         patches[_PyJustin_HOLE_continue] = (uintptr_t)current + stencil->size;
         patches[_PyJustin_HOLE_next_instr] = (uintptr_t)(first_instruction + trace[i] + 1);
@@ -121,8 +123,8 @@ _PyJustin_CompileTrace(PyCodeObject *code, int trace_size, int *trace)
         current = copy_and_patch(current, stencil, patches);
     };
     // The last one is a little different (since the trace wraps around):
-    _Py_CODEUNIT *instruction = first_instruction + trace[i];
-    const _PyJustin_Stencil *stencil = &_PyJustin_Stencils[instruction->op.code];
+    instruction = first_instruction + trace[i];
+    stencil = &_PyJustin_Stencils[instruction->op.code];
     patches[_PyJustin_HOLE_base] = (uintptr_t)current;
     patches[_PyJustin_HOLE_continue] = (uintptr_t)memory + _PyJustin_Trampoline.size;  // Different!
     patches[_PyJustin_HOLE_next_instr] = (uintptr_t)(first_instruction + trace[i] + 1);
