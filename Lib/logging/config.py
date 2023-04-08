@@ -120,7 +120,7 @@ def _create_formatters(cp):
         class_name = cp[sectname].get("class")
         if class_name:
             c = _resolve(class_name)
-        
+
         if defaults is not None:
             defaults = eval(defaults, vars(logging))
             f = c(fs, dfs, stl, defaults=defaults)

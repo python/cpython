@@ -1524,7 +1524,7 @@ class ConfigFileTest(BaseTest):
     kwargs={{"encoding": "utf-8"}}
     """
 
-        
+
     config9 = """
     [loggers]
     keys=root
@@ -3435,22 +3435,22 @@ class ConfigDictTest(BaseTest):
 
         handler = logging.root.handlers[0]
         self.addCleanup(closeFileHandler, handler, fn)
-    
+
     def test_config16_ok(self):
         self.apply_config(self.config16)
         h = logging._handlers['hand1']
-        
+
         # Custom value
         result = h.formatter.format(logging.makeLogRecord(
             {'msg': 'Hello', 'customfield': 'customvalue'}))
         self.assertEqual(result, 'Hello ++ customvalue')
-        
+
         # Default value
         result = h.formatter.format(logging.makeLogRecord(
             {'msg': 'Hello'}))
         self.assertEqual(result, 'Hello ++ defaultvalue')
 
-            
+
 
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
@@ -3618,7 +3618,7 @@ class ConfigDictTest(BaseTest):
 
     def test_custom_formatter_function_with_validate(self):
         self.assertRaises(ValueError, self.apply_config, self.custom_formatter_with_function)
-    
+
     def test_custom_formatter_function_with_defaults(self):
         self.assertRaises(ValueError, self.apply_config, self.custom_formatter_with_defaults)
 
