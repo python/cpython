@@ -116,6 +116,10 @@ class ObjectParser:
         return relocs
 
     def _parse_full_contents(self, section) -> bytes:
+        lines = self._dump("--disassemble", "--reloc", "--section", section)
+        print("\n".join(lines))
+        lines = self._dump("--full-contents", "--section", section)
+        print("\n".join(lines))
         lines = self._dump("--full-contents", "--section", section)
         line = next(lines, None)
         if line is None:
@@ -192,8 +196,6 @@ def _get_object_parser(path: str) -> ObjectParser:
         except NotImplementedError:
             pass
         else:
-            lines = p._dump("--disassemble", "--reloc")
-            print("\n".join(lines))
             return p
     raise NotImplementedError(sys.platform)
 
