@@ -2092,8 +2092,8 @@ Resolving MRO entries
    :class:`type`, then an ``__mro_entries__`` method is searched on the base.
    If an ``__mro_entries__`` method is found, the base is substituted with the
    result of a call to ``__mro_entries__`` when creating the class.
-   ``__mro_entries__`` is called with the original bases tuple, and must return
-   a tuple of classes that will be used instead of the base. The tuple may be
+   The method is called with the original bases tuple, and must return a tuple
+   of classes that will be used instead of the base. The returned tuple may be
    empty: in these cases, the original base is ignored.
 
 .. seealso::
