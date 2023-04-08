@@ -248,12 +248,21 @@ typenode_get_type(_Py_TYPENODE_t node)
     }
 }
 
-// @TODO @JULES
 /**
- * @brief 
- * @param src 
- * @param dst 
- * @param src_is_new 
+ * @brief Performs TYPE_SET operation. dst tree becomes part of src tree
+ * 
+ * If src_is_new is set, src is interpreted as a TYPE_ROOT 
+ * not part of the type_context. Otherwise, it is interpreted as a pointer
+ * to a _Py_TYPENODE_t.
+ * 
+ * If src_is_new:
+ *   Overwrites the root of the dst tree with the src node
+ * else:
+ *   Makes the root of the dst tree a TYPE_REF to src
+ * 
+ * @param src Source node
+ * @param dst Destination node
+ * @param src_is_new true if src is not part of the type_context
 */
 static void
 __type_propagate_TYPE_SET(
@@ -298,13 +307,24 @@ __type_propagate_TYPE_SET(
     }
 }
 
-// @TODO @JULES
 /**
- * @brief 
- * @param type_context 
- * @param src 
- * @param dst 
- * @param src_is_new 
+ * @brief Performs TYPE_OVERWRITE operation. dst node gets overwritten by src node
+ * 
+ * If src_is_new is set, src is interpreted as a TYPE_ROOT 
+ * not part of the type_context. Otherwise, it is interpreted as a pointer
+ * to a _Py_TYPENODE_t.
+ * 
+ * If src_is_new:
+ *   Removes dst node from its tree (+fixes all the references to dst)
+ *   Overwrite the dst node with the src node
+ * else:
+ *   Removes dst node from its tree (+fixes all the references to dst)
+ *   Makes the root of the dst tree a TYPE_REF to src
+ * 
+ * @param type_context Type context to modify
+ * @param src Source node
+ * @param dst Destination node
+ * @param src_is_new true if src is not part of the type_context
 */
 static void
 __type_propagate_TYPE_OVERWRITE(
@@ -421,15 +441,20 @@ __type_propagate_TYPE_OVERWRITE(
     }
 }
 
-
-// @TODO @JULES
 /**
- * @brief 
- * @param type_context 
- * @param src 
- * @param dst
- *
+ * @brief Performs TYPE_SWAP operation. dst node and src node swap positions
+ * 
  * src and dst are assumed to already be within the type context
+ * 
+ * If src and dst are the same tree
+ *   Do nothing
+ * else:
+ *   Fix all references of dst to point to src and vice versa
+ * 
+ * @param type_context Type context to modify
+ * @param src Source node
+ * @param dst Destination node
+ *
 */
 static void
 __type_propagate_TYPE_SWAP(
