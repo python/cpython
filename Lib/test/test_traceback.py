@@ -1211,8 +1211,7 @@ class TracebackFormatTests(unittest.TestCase):
     def test_recursive_traceback_cpython_internal(self):
         from _testcapi import exception_print
         def render_exc():
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            exception_print(exc_value)
+            exception_print(sys.exception())
         self._check_recursive_traceback_display(render_exc)
 
     def test_format_stack(self):
@@ -2470,8 +2469,8 @@ class TestTracebackException(unittest.TestCase):
             try:
                 1/0
             finally:
-                exc_info_context = sys.exc_info()
-                exc_context = traceback.TracebackException(*exc_info_context)
+                exc = sys.exception()
+                exc_context = traceback.TracebackException.from_exception(exc)
                 cause = Exception("cause")
                 raise Exception("uh oh") from cause
         except Exception as e:
@@ -2492,8 +2491,8 @@ class TestTracebackException(unittest.TestCase):
             try:
                 1/0
             finally:
-                exc_info_context = sys.exc_info()
-                exc_context = traceback.TracebackException(*exc_info_context)
+                exc = sys.exception()
+                exc_context = traceback.TracebackException.from_exception(exc)
                 raise Exception("uh oh")
         except Exception as e:
             exc_obj = e
@@ -2557,8 +2556,8 @@ class TestTracebackException(unittest.TestCase):
             try:
                 1/0
             finally:
-                exc_info_context = sys.exc_info()
-                exc_context = traceback.TracebackException(*exc_info_context)
+                exc = sys.exception()
+                exc_context = traceback.TracebackException.from_exception(exc)
                 raise Exception("uh oh")
         except Exception as e:
             exc_obj = e
