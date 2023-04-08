@@ -608,6 +608,7 @@ insertptr(PyObject *d, char *name, void *value)
 PyMODINIT_FUNC
 PyInit_msvcrt(void)
 {
+    int st;
     PyObject *m = PyModule_Create(&msvcrtmodule);
     if (m == NULL) {
         return NULL;
@@ -641,8 +642,8 @@ PyInit_msvcrt(void)
 
     /* constants for the crt versions */
 #ifdef _VC_ASSEMBLY_PUBLICKEYTOKEN
-    int st = PyModule_AddStringConstant(m, "VC_ASSEMBLY_PUBLICKEYTOKEN",
-                                        _VC_ASSEMBLY_PUBLICKEYTOKEN);
+    st = PyModule_AddStringConstant(m, "VC_ASSEMBLY_PUBLICKEYTOKEN",
+                                    _VC_ASSEMBLY_PUBLICKEYTOKEN);
     if (st < 0) {
         goto error;
     }
