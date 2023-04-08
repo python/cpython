@@ -204,7 +204,7 @@ static struct PyMethodDef sound_methods[] =
 
 #define ADD_DEFINE(CONST) do {                                  \
     if (PyModule_AddIntConstant(module, #CONST, CONST) < 0) {   \
-        return NULL;                                            \
+        goto error;                                             \
     }                                                           \
 } while (0)
 
@@ -225,8 +225,9 @@ PyMODINIT_FUNC
 PyInit_winsound(void)
 {
     PyObject *module = PyModule_Create(&winsoundmodule);
-    if (module == NULL)
+    if (module == NULL) {
         return NULL;
+    }
 
     ADD_DEFINE(SND_ASYNC);
     ADD_DEFINE(SND_NODEFAULT);
@@ -244,5 +245,10 @@ PyInit_winsound(void)
     ADD_DEFINE(MB_ICONEXCLAMATION);
     ADD_DEFINE(MB_ICONHAND);
     ADD_DEFINE(MB_ICONQUESTION);
+
     return module;
+
+error:
+    Py_DECREF(module);
+    return NULL;
 }
