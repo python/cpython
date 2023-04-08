@@ -1023,13 +1023,17 @@ New Features
 * :pep:`683`: Introduced Immortal Objects to Python which allows objects
   to bypass reference counts and introduced changes to the C-API:
 
-  - ``_Py_IMMORTAL_REFCNT``  The reference count that defines an object as immortal
-  - ``_Py_IsImmortal`` Checks if an object has the immortal reference count
-  - ``_Py_SetImmortal`` Sets the immortal reference count to a PyObject
-  - ``_PyObject_HEAD_IMMORTAL_INIT`` A PyObject header initializer to immortal refcount
-  - ``Py_MEMCPY`` A portable version of memcpy
-  - ``SSTATE_INTERNED_IMMORTAL`` An identifier for interned unicode objects that are immortal
-  - ``SSTATE_INTERNED_IMMORTAL_STATIC`` An identifier for interned unicode objects that are immortal and static
+  - ``_Py_IMMORTAL_REFCNT``: The reference count that defines an object
+    as immortal.
+  - ``_Py_IsImmortal`` Checks if an object has the immortal reference count.
+  - ``_Py_SetImmortal`` Sets the immortal reference count to a PyObject.
+  - ``PyObject_HEAD_INIT`` This will now initialize reference count to
+    ``_Py_IMMORTAL_REFCNT`` when used with ``Py_BUILD_CORE``.
+  - ``Py_MEMCPY`` A portable version of memcpy.
+  - ``SSTATE_INTERNED_IMMORTAL`` An identifier for interned unicode objects
+     that are immortal.
+  - ``SSTATE_INTERNED_IMMORTAL_STATIC`` An identifier for interned unicode
+     objects that are immortal and static
 
   (Contributed by Eddie Elizondo in :gh:`84436`.)
 
