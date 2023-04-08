@@ -4,7 +4,7 @@
 #define HOLE(SYMBOL) 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 
 // STORE_FAST
-static const unsigned char STORE_FAST_body[] = {
+static const unsigned char STORE_FAST_stencil_bytes[] = {
 // .text:
     // <_justin_entry>:
     0x50,                                              // pushq   %rax
@@ -49,29 +49,26 @@ static const unsigned char STORE_FAST_body[] = {
     0x6f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x2e, 0x68, // object.h
     0x00,                                           // .
 };
-static const _PyJustin_Hole STORE_FAST_holes[] = {
-    {.offset =   3, .addend =   0, .kind = _PyJustin_HOLE_next_instr                     },
-    {.offset =  26, .addend =   0, .kind = _PyJustin_HOLE_oparg_0                        },
-    {.offset =  54, .addend =   0, .kind = _PyJustin_LOAD__Py_DecRefTotal_DO_NOT_USE_THIS},
-    {.offset =  86, .addend =   0, .kind = _PyJustin_HOLE_continue                       },
-    {.offset =  99, .addend =   0, .kind = _PyJustin_LOAD__Py_Dealloc                    },
-    {.offset = 114, .addend =   0, .kind = _PyJustin_HOLE_continue                       },
-    {.offset = 127, .addend = 168, .kind = _PyJustin_HOLE_base                           },
-    {.offset = 137, .addend =   0, .kind = _PyJustin_LOAD__Py_NegativeRefcount           },
-    {.offset = 155, .addend =   0, .kind = _PyJustin_HOLE_continue                       },
+static const Hole STORE_FAST_stencil_holes[] = {
+    {.offset =   3, .addend =   0, .kind = HOLE_next_instr                     },
+    {.offset =  26, .addend =   0, .kind = HOLE_oparg                          },
+    {.offset =  54, .addend =   0, .kind = LOAD__Py_DecRefTotal_DO_NOT_USE_THIS},
+    {.offset =  86, .addend =   0, .kind = HOLE_continue                       },
+    {.offset =  99, .addend =   0, .kind = LOAD__Py_Dealloc                    },
+    {.offset = 114, .addend =   0, .kind = HOLE_continue                       },
+    {.offset = 127, .addend = 168, .kind = HOLE_base                           },
+    {.offset = 137, .addend =   0, .kind = LOAD__Py_NegativeRefcount           },
+    {.offset = 155, .addend =   0, .kind = HOLE_continue                       },
 };
-
-const _PyJustin_Stencil _PyJustin_Stencils[] = {
-    [STORE_FAST] = {
-        .size = Py_ARRAY_LENGTH(STORE_FAST_body),
-        .body = STORE_FAST_body,
-        .nholes = Py_ARRAY_LENGTH(STORE_FAST_holes),
-        .holes = STORE_FAST_holes,
-    },
+static const Stencil STORE_FAST_stencil = {
+    .nbytes = Py_ARRAY_LENGTH(STORE_FAST_stencil_bytes),
+    .bytes = STORE_FAST_stencil_bytes,
+    .nholes = Py_ARRAY_LENGTH(STORE_FAST_stencil_holes),
+    .holes = STORE_FAST_stencil_holes,
 };
 
 // <trampoline>
-static const unsigned char trampoline_body[] = {
+static const unsigned char trampoline_stencil_bytes[] = {
 // .text:
     // <_justin_trampoline>:
     0x55,                                           // pushq   %rbp
@@ -125,14 +122,17 @@ static const unsigned char trampoline_body[] = {
     0x5d,                                           // popq    %rbp
     0xc3,                                           // retq
 };
-static const _PyJustin_Hole trampoline_holes[] = {
-    {.offset =  13, .addend = 0, .kind = _PyJustin_LOAD_PyThreadState_Get},
-    {.offset = 142, .addend = 0, .kind = _PyJustin_HOLE_continue         },
+static const Hole trampoline_stencil_holes[] = {
+    {.offset =  13, .addend = 0, .kind = LOAD_PyThreadState_Get},
+    {.offset = 142, .addend = 0, .kind = HOLE_continue         },
+};
+static const Stencil trampoline_stencil = {
+    .nbytes = Py_ARRAY_LENGTH(trampoline_stencil_bytes),
+    .bytes = trampoline_stencil_bytes,
+    .nholes = Py_ARRAY_LENGTH(trampoline_stencil_holes),
+    .holes = trampoline_stencil_holes,
 };
 
-const _PyJustin_Stencil _PyJustin_Trampoline = {
-    .size = Py_ARRAY_LENGTH(trampoline_body),
-    .body = trampoline_body,
-    .nholes = Py_ARRAY_LENGTH(trampoline_holes),
-    .holes = trampoline_holes,
+static const Stencil stencils[] = {
+    [STORE_FAST] = STORE_FAST_stencil,
 };

@@ -1,24 +1,24 @@
 typedef enum {
-    _PyJustin_HOLE_base,
-    _PyJustin_HOLE_continue,
-    _PyJustin_HOLE_next_instr,
-    _PyJustin_HOLE_next_trace_0,
-    _PyJustin_HOLE_oparg_0,
-    _PyJustin_LOAD__Py_Dealloc,
-    _PyJustin_LOAD__Py_DecRefTotal_DO_NOT_USE_THIS,
-    _PyJustin_LOAD__Py_NegativeRefcount,
-    _PyJustin_LOAD_PyThreadState_Get,
-} _PyJustin_HoleKind;
+    HOLE_base,
+    HOLE_continue,
+    HOLE_next_instr,
+    HOLE_next_trace,
+    HOLE_oparg,
+    LOAD__Py_Dealloc,
+    LOAD__Py_DecRefTotal_DO_NOT_USE_THIS,
+    LOAD__Py_NegativeRefcount,
+    LOAD_PyThreadState_Get,
+} HoleKind;
 
 typedef struct {
     const uintptr_t offset;
     const uintptr_t addend;
-    const _PyJustin_HoleKind kind;
-} _PyJustin_Hole;
+    const HoleKind kind;
+} Hole;
 
 typedef struct {
-    const size_t size;
-    const unsigned char * const body;
+    const size_t nbytes;
+    const unsigned char * const bytes;
     const size_t nholes;
-    const _PyJustin_Hole * const holes;
-} _PyJustin_Stencil;
+    const Hole * const holes;
+} Stencil;
