@@ -99,12 +99,16 @@ Dynamic Type Creation
         T = TypeVar("T")
         class Foo(Generic[T]): ...
         class Bar(Foo[int], float): ...
+        class Baz(list[str]): ...
 
         Foo.__bases__ == (Generic,)
         get_original_bases(Foo) == (Generic[T],)
 
         Bar.__bases__ == (Foo, float)
         get_original_bases(Bar) == (Foo[int], float)
+        
+        Baz.__bases__ == (list,)
+        get_original_bases(Baz) == (list[str],)
 
         get_original_bases(int) == None
 
