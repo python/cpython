@@ -107,12 +107,12 @@ _PyJustin_CompileTrace(PyCodeObject *code, int size, int *trace)
         _Py_CODEUNIT *instruction = first_instruction + trace[i];
         const Stencil *stencil = &stencils[instruction->op.code];
         patches[HOLE_base] = (uintptr_t)head;
-        patches[HOLE_next_instr] = (uintptr_t)(first_instruction + trace[i] + 1);
-        patches[HOLE_next_trace] = (uintptr_t)(first_instruction + trace[(i + 1) % size]);
-        patches[HOLE_oparg] = instruction->op.arg;
         patches[HOLE_continue] = (i != size - 1) 
                                ? (uintptr_t)head + stencil->nbytes
                                : (uintptr_t)memory + trampoline_stencil.nbytes;
+        patches[HOLE_next_instr] = (uintptr_t)(first_instruction + trace[i] + 1);
+        patches[HOLE_next_trace] = (uintptr_t)(first_instruction + trace[(i + 1) % size]);
+        patches[HOLE_oparg] = instruction->op.arg;
         head = copy_and_patch(head, stencil, patches);
     };
     // Wow, done already?
