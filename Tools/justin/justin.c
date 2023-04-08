@@ -63,8 +63,6 @@ copy_and_patch(void *memory, const Stencil *stencil, uintptr_t patches[])
 }
 
 
-#define BAD 0xBAD0BAD0BAD0BAD0
-
 // The world's smallest compiler?
 // Make sure to call _PyJustin_Free on the memory when you're done with it!
 void *
@@ -84,11 +82,13 @@ _PyJustin_CompileTrace(PyCodeObject *code, int size, int *trace)
     }
     // Set up our patches:
     uintptr_t patches[] = {
+    #define BAD 0xBAD0BAD0BAD0BAD0
         [HOLE_base] = BAD,
         [HOLE_continue] = BAD,
         [HOLE_next_instr] = BAD,
         [HOLE_next_trace] = BAD,
         [HOLE_oparg] = BAD,
+    #undef BAD
     #define LOAD(SYMBOL) [LOAD_##SYMBOL] = (uintptr_t)&(SYMBOL)
         LOAD(_Py_Dealloc),
         LOAD(_Py_DecRefTotal_DO_NOT_USE_THIS),
