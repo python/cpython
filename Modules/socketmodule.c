@@ -7375,8 +7375,7 @@ socket_exec(PyObject *m)
     if (VAR == NULL) {                                      \
         goto error;                                         \
     }                                                       \
-    int rc = PyModule_AddObjectRef(MOD, NAME, VAR);         \
-    if (rc < 0) {                                           \
+    if (PyModule_AddObjectRef(MOD, NAME, VAR) < 0) {        \
         goto error;                                         \
     }                                                       \
 } while (0)
