@@ -1,2 +1,0 @@
-Fix findtext in the xml module to only give an empty string when the text
-attribute is set to None.

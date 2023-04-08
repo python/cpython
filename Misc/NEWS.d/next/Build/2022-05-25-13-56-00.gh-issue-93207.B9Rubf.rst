@@ -1,3 +1,0 @@
-``va_start()`` with two parameters, like ``va_start(args, format),``
-is now required to build Python. ``va_start()`` is no longer called with a single parameter.
-Patch by Kumar Aditya.

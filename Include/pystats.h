@@ -8,7 +8,7 @@ extern "C" {
 
 #ifdef Py_STATS
 
-#define SPECIALIZATION_FAILURE_KINDS 32
+#define SPECIALIZATION_FAILURE_KINDS 36
 
 /* Stats for determining who is calling PyEval_EvalFrame */
 #define EVAL_CALL_TOTAL 0
@@ -65,7 +65,14 @@ typedef struct _object_stats {
     uint64_t dict_materialized_new_key;
     uint64_t dict_materialized_too_big;
     uint64_t dict_materialized_str_subclass;
+    uint64_t type_cache_hits;
+    uint64_t type_cache_misses;
+    uint64_t type_cache_dunder_hits;
+    uint64_t type_cache_dunder_misses;
+    uint64_t type_cache_collisions;
 } ObjectStats;
+
+#
 
 typedef struct _stats {
     OpcodeStats opcode_stats[256];

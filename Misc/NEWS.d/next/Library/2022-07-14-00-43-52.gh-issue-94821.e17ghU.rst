@@ -1,2 +1,0 @@
-Fix binding of unix socket to empty address on Linux to use an available
-address from the abstract namespace, instead of "\0".

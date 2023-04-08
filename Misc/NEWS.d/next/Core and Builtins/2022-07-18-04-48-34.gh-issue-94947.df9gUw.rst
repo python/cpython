@@ -1,1 +1,0 @@
-:func:`ast.parse` will no longer parse assignment expressions when passed ``feature_version`` less than ``(3, 8)``. Patch by Shantanu Jain.
