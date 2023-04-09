@@ -2066,8 +2066,8 @@ defdict_dealloc(defdictobject *dd)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyTypeObject *tp = Py_TYPE(dd);
     PyObject_GC_UnTrack(dd);
-    tp->tp_clear((PyObject *)dd);
-    tp->tp_free((PyObject *)dd);
+    Py_CLEAR(dd->default_factory);
+    tp->tp_free(dd);
     Py_DECREF(tp);
 }
 
