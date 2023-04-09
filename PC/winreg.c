@@ -2122,7 +2122,7 @@ inskey(PyObject * d, char * name, HKEY key)
 #define ADD_KEY(val) inskey(d, #val, val)
 
 static int
-exec_module(PyObject* m)
+exec_module(PyObject *m)
 {
     winreg_state *st = (winreg_state *)PyModule_GetState(m);
 
