@@ -806,6 +806,23 @@ which incur interpreter overhead.
        "Return function(0), function(1), ..."
        return map(function, count(start))
 
+   def repeatfunc(func, times=None, *args):
+       """Repeat calls to func with specified arguments.
+
+       Example:  repeatfunc(random.random)
+       """
+       if times is None:
+           return starmap(func, repeat(args))
+       return starmap(func, repeat(args, times))
+
+   def flatten(list_of_lists):
+       "Flatten one level of nesting"
+       return chain.from_iterable(list_of_lists)
+
+   def ncycles(iterable, n):
+       "Returns the sequence elements n times"
+       return chain.from_iterable(repeat(tuple(iterable), n))
+
    def tail(n, iterable):
        "Return an iterator over the last n items"
        # tail(3, 'ABCDEFG') --> E F G
@@ -825,18 +842,73 @@ which incur interpreter overhead.
        "Returns the nth item or a default value"
        return next(islice(iterable, n, None), default)
 
+   def quantify(iterable, pred=bool):
+       "Count how many times the predicate is True"
+       return sum(map(pred, iterable))
+
    def all_equal(iterable):
        "Returns True if all the elements are equal to each other"
        g = groupby(iterable)
        return next(g, True) and not next(g, False)
 
-   def quantify(iterable, pred=bool):
-       "Count how many times the predicate is True"
-       return sum(map(pred, iterable))
+   def first_true(iterable, default=False, pred=None):
+       """Returns the first true value in the iterable.
 
-   def ncycles(iterable, n):
-       "Returns the sequence elements n times"
-       return chain.from_iterable(repeat(tuple(iterable), n))
+       If no true value is found, returns *default*
+
+       If *pred* is not None, returns the first item
+       for which pred(item) is true.
+
+       """
+       # first_true([a,b,c], x) --> a or b or c or x
+       # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
+       return next(filter(pred, iterable), default)
+
+   def iter_index(iterable, value, start=0):
+       "Return indices where a value occurs in a sequence or iterable."
+       # iter_index('AABCADEAF', 'A') --> 0 1 4 7
+       try:
+           seq_index = iterable.index
+       except AttributeError:
+           # Slow path for general iterables
+           it = islice(iterable, start, None)
+           i = start - 1
+           try:
+               while True:
+                   yield (i := i + operator.indexOf(it, value) + 1)
+           except ValueError:
+               pass
+       else:
+           # Fast path for sequences
+           i = start - 1
+           try:
+               while True:
+                   yield (i := seq_index(value, i+1))
+           except ValueError:
+               pass
+
+   def iter_except(func, exception, first=None):
+       """ Call a function repeatedly until an exception is raised.
+
+       Converts a call-until-exception interface to an iterator interface.
+       Like builtins.iter(func, sentinel) but uses an exception instead
+       of a sentinel to end the loop.
+
+       Examples:
+           iter_except(functools.partial(heappop, h), IndexError)   # priority queue iterator
+           iter_except(d.popitem, KeyError)                         # non-blocking dict iterator
+           iter_except(d.popleft, IndexError)                       # non-blocking deque iterator
+           iter_except(q.get_nowait, Queue.Empty)                   # loop over a producer Queue
+           iter_except(s.pop, KeyError)                             # non-blocking set iterator
+
+       """
+       try:
+           if first is not None:
+               yield first()            # For database APIs needing an initial cast to db.first()
+           while True:
+               yield func()
+       except exception:
+           pass
 
    def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
        "Collect data into non-overlapping fixed-length chunks or blocks"
@@ -863,42 +935,6 @@ which incur interpreter overhead.
            window.append(x)
            yield tuple(window)
 
-   def iter_index(iterable, value, start=0):
-       "Return indices where a value occurs in a sequence or iterable."
-       # iter_index('AABCADEAF', 'A') --> 0 1 4 7
-       try:
-           seq_index = iterable.index
-       except AttributeError:
-           # Slow path for general iterables
-           it = islice(iterable, start, None)
-           i = start - 1
-           try:
-               while True:
-                   yield (i := i + operator.indexOf(it, value) + 1)
-           except ValueError:
-               pass
-       else:
-           # Fast path for sequences
-           i = start - 1
-           try:
-               while True:
-                   yield (i := seq_index(value, i+1))
-           except ValueError:
-               pass
-
-   def flatten(list_of_lists):
-       "Flatten one level of nesting"
-       return chain.from_iterable(list_of_lists)
-
-   def repeatfunc(func, times=None, *args):
-       """Repeat calls to func with specified arguments.
-
-       Example:  repeatfunc(random.random)
-       """
-       if times is None:
-           return starmap(func, repeat(args))
-       return starmap(func, repeat(args, times))
-
    def roundrobin(*iterables):
        "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
        # Recipe credited to George Sakkis
@@ -918,6 +954,12 @@ which incur interpreter overhead.
        # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
        t1, t2 = tee(iterable)
        return filterfalse(pred, t1), filter(pred, t2)
+
+   def subslices(seq):
+       "Return all contiguous non-empty subslices of a sequence"
+       # subslices('ABCD') --> A AB ABC ABCD B BC BCD C CD D
+       slices = starmap(slice, combinations(range(len(seq) + 1), 2))
+       return map(operator.getitem, repeat(seq), slices)
 
    def before_and_after(predicate, it):
        """ Variant of takewhile() that allows complete
@@ -948,12 +990,6 @@ which incur interpreter overhead.
            yield from it
        return true_iterator(), remainder_iterator()
 
-   def subslices(seq):
-       "Return all contiguous non-empty subslices of a sequence"
-       # subslices('ABCD') --> A AB ABC ABCD B BC BCD C CD D
-       slices = starmap(slice, combinations(range(len(seq) + 1), 2))
-       return map(operator.getitem, repeat(seq), slices)
-
    def unique_everseen(iterable, key=None):
        "List unique elements, preserving order. Remember all elements ever seen."
        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
@@ -982,42 +1018,6 @@ which incur interpreter overhead.
        # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
        # unique_justseen('ABBcCAD', str.lower) --> A B c A D
        return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
-
-   def iter_except(func, exception, first=None):
-       """ Call a function repeatedly until an exception is raised.
-
-       Converts a call-until-exception interface to an iterator interface.
-       Like builtins.iter(func, sentinel) but uses an exception instead
-       of a sentinel to end the loop.
-
-       Examples:
-           iter_except(functools.partial(heappop, h), IndexError)   # priority queue iterator
-           iter_except(d.popitem, KeyError)                         # non-blocking dict iterator
-           iter_except(d.popleft, IndexError)                       # non-blocking deque iterator
-           iter_except(q.get_nowait, Queue.Empty)                   # loop over a producer Queue
-           iter_except(s.pop, KeyError)                             # non-blocking set iterator
-
-       """
-       try:
-           if first is not None:
-               yield first()            # For database APIs needing an initial cast to db.first()
-           while True:
-               yield func()
-       except exception:
-           pass
-
-   def first_true(iterable, default=False, pred=None):
-       """Returns the first true value in the iterable.
-
-       If no true value is found, returns *default*
-
-       If *pred* is not None, returns the first item
-       for which pred(item) is true.
-
-       """
-       # first_true([a,b,c], x) --> a or b or c or x
-       # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
-       return next(filter(pred, iterable), default)
 
 
 The following recipes have a more mathematical flavor:
