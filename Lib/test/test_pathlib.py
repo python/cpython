@@ -136,16 +136,17 @@ class _BasePurePathTest(object):
         for parent in p.parents:
             self.assertTrue(parent.init_called)
 
+    def _get_drive_root_parts(self, parts):
+        path = self.cls(*parts)
+        return path.drive, path.root, path.parts
+
     def _check_drive_root_parts(self, arg, *expected):
-        def f(parts):
-            path = self.cls(*parts)
-            return path.drive, path.root, path.parts
         sep = self.flavour.sep
         altsep = self.flavour.altsep
-        actual = f([x.replace('/', sep) for x in arg])
+        actual = _get_drive_root_parts([x.replace('/', sep) for x in arg])
         self.assertEqual(actual, expected)
         if altsep:
-            actual = f([x.replace('/', altsep) for x in arg])
+            actual = _get_drive_root_parts([x.replace('/', altsep) for x in arg])
             self.assertEqual(actual, expected)
 
     def test_drive_root_parts_common(self):
