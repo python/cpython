@@ -2536,7 +2536,6 @@ static struct PyMethodDef collections_methods[] = {
     if (PyModule_AddType(MOD, TYPE) < 0) {                          \
         return -1;                                                  \
     }                                                               \
-    return 0;                                                       \
 } while (0)
 
 static int
