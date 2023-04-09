@@ -9137,13 +9137,28 @@ type_new_set_names(PyTypeObject *type)
         Py_DECREF(set_name);
 
         if (res == NULL) {
-            _PyErr_FormatFromCause(PyExc_RuntimeError,
+            /* Add note to the exception */
+            PyObject *exc = PyErr_GetRaisedException();
+            assert(exc != NULL);
+            PyObject *note = PyUnicode_FromFormat(
                 "Error calling __set_name__ on '%.100s' instance %R "
                 "in '%.100s'",
                 Py_TYPE(value)->tp_name, key, type->tp_name);
+
+            if (note) {
+                int res = _PyException_AddNote(exc, note);
+                Py_DECREF(note);
+                if (res == 0) {
+                    PyErr_SetRaisedException(exc);
+                    goto error;
+                }
+            }
+            _PyErr_ChainExceptions1(exc);
             goto error;
         }
-        Py_DECREF(res);
+        else {
+            Py_DECREF(res);
+        }
     }
 
     Py_DECREF(names_to_set);
