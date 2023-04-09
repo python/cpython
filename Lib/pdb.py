@@ -1101,9 +1101,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_stepi(self, arg):
         """s(tep)
-        Execute the current instruction, stop at the first possible occasion
-        (either in a function that is called or in the current
-        function).
+        Execute the current bytecode instruction, stop at the first
+        possible occasion (either in a function that is called or in
+        the current function).
         """
         self.set_stepi(self.curframe)
         return 1
@@ -1112,7 +1112,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_next(self, arg):
         """n(ext)
         Continue execution until the next line in the current function
-        is reached or it returns.
+        is reached or the current function returns.
         """
         self.set_next(self.curframe)
         return 1
@@ -1120,8 +1120,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_nexti(self, arg):
         """n(ext)
-        Continue execution until the next line in the current function
-        is reached or it returns.
+        Continue execution until the next bytecode instruction in the
+        current function is reached or the current function returns.
         """
         self.set_nexti(self.curframe)
         return 1
@@ -1384,7 +1384,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_listi(self, arg):
         """listi | li [first[, last] | .]
 
-        List source code for the current file with instructions.
+        List source code for the current file with bytecode
+        instructions.
 
         Without arguments, list 11 lines with their corresponding
         instructions around the current line or continue the
@@ -1427,8 +1428,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_longlisti(self, arg):
         """longlisti | lli
 
-        List the whole source code with instructions for the current
-        function or frame.
+        List the whole source code with bytecode instructions for
+        the current function or frame.
         """
         self._do_longlist(arg, True)
     do_lli = do_longlisti
@@ -1473,6 +1474,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 s += '>>'
             self.message(s + '\t' + line.rstrip())
             if instructions:
+                # For the current line of the source code, get all the
+                # instructions belong to it. We keep a single iterator
+                # `instructions` for all the instructions compiled from
+                # the source and try to only go through the iterator once
                 while True:
                     if inst.positions.lineno == lineno:
                         current_inst = frame and frame.f_lasti == inst.offset

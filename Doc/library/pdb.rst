@@ -381,8 +381,9 @@ can be overridden by the local file.
 
 .. pdbcommand:: si | stepi
 
-   Execute the current instruction, stop at the first possible occasion (either in a
-   function that is called or on the next instruction in the current function).
+   Execute the current bytecode instruction, stop at the first possible occasion
+   (either in a function that is called or on the next instruction in the
+   current function).
 
    .. versionadded:: 3.12
 
@@ -396,8 +397,8 @@ can be overridden by the local file.
 
 .. pdbcommand:: ni | nexti
 
-   Continue execution until the next instruction in the current function is reached or
-   it returns.
+   Continue execution until the next bytecode instruction in the current function
+   is reached or it returns.
 
    .. versionadded:: 3.12
 
@@ -449,7 +450,8 @@ can be overridden by the local file.
 
 .. pdbcommand:: li | listi [first[, last]]
 
-   Similar to :pdbcmd:`list`, but also display instructions with source code
+   Similar to :pdbcmd:`list`, but also display bytecode instructions with
+   the source code
 
    .. versionadded:: 3.12
 
@@ -462,7 +464,8 @@ can be overridden by the local file.
 
 .. pdbcommand:: lli | longlisti
 
-   Similar to :pdbcmd:`ll`, but also display instructions with source code
+   Similar to :pdbcmd:`ll`, but also display bytecode instructions with
+   the source code
 
    .. versionadded:: 3.12
 
