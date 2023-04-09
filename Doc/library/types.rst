@@ -106,7 +106,7 @@ Dynamic Type Creation
 
         Bar.__bases__ == (Foo, float)
         get_original_bases(Bar) == (Foo[int], float)
-        
+
         Baz.__bases__ == (list,)
         get_original_bases(Baz) == (list[str],)
 
