@@ -746,6 +746,9 @@ validate_stmt(struct validator *state, stmt_ty stmt)
                 validate_expr(state, stmt->v.AnnAssign.value, Load)) &&
                validate_expr(state, stmt->v.AnnAssign.annotation, Load);
         break;
+    case TypeAlias_kind:
+        ret = validate_expr(state, stmt->v.TypeAlias.value, Load);
+        break;
     case For_kind:
         ret = validate_expr(state, stmt->v.For.target, Store) &&
             validate_expr(state, stmt->v.For.iter, Load) &&

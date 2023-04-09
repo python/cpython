@@ -483,6 +483,9 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     string = &_Py_ID(__trunc__);
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);
+    string = &_Py_ID(__type_variables__);
+    assert(_PyUnicode_CheckConsistency(string, 1));
+    _PyUnicode_InternInPlace(interp, &string);
     string = &_Py_ID(__typing_is_unpacked_typevartuple__);
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);

@@ -149,6 +149,7 @@ __all__ = [
     'TYPE_CHECKING',
     'TypeAlias',
     'TypeGuard',
+    'TypeAliasType',
     'Unpack',
 ]
 
@@ -935,14 +936,17 @@ class _BoundVarianceMixin:
     specified type) and type 'variance' (determining subtype relations between
     generic types).
     """
-    def __init__(self, bound, covariant, contravariant):
-        """Used to setup TypeVars and ParamSpec's bound, covariant and
-        contravariant attributes.
+    def __init__(self, bound, covariant, contravariant, autovariance):
+        """Used to setup TypeVars and ParamSpec's bound, covariant,
+        contravariant, and autovariance attributes.
         """
         if covariant and contravariant:
             raise ValueError("Bivariant types are not supported.")
+        if autovariance and (covariant or contravariant):
+            raise ValueError("Variance cannot be specified with autovariance.")
         self.__covariant__ = bool(covariant)
         self.__contravariant__ = bool(contravariant)
+        self.__autovariance__ = bool(autovariance)
         if bound:
             self.__bound__ = _type_check(bound, "Bound must be a type.")
         else:
@@ -959,12 +963,44 @@ class _BoundVarianceMixin:
             prefix = '+'
         elif self.__contravariant__:
             prefix = '-'
+        elif self.__autovariance__:
+            prefix = ''
         else:
             prefix = '~'
         return prefix + self.__name__
 
     def __mro_entries__(self, bases):
         raise TypeError(f"Cannot subclass an instance of {type(self).__name__}")
+
+
+class TypeAliasType(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
+    """Type alias allocated through the use of a "type" statement.
+    """
+    def __init__(self, name, parameters):
+        self.__value__ = None
+        self.__name__ = name
+        self.__parameters__ = parameters
+        self.__arguments__ = None
+
+    @_tp_cache
+    def __getitem__(self, args):
+        if len(self.__parameters__) == 0:
+            raise TypeError(f"Type alias is not generic")
+        if self.__arguments__:
+            raise TypeError(f"Cannot subscript already-subscripted type alias")
+        copy = TypeAliasType(self.__name__, self.__parameters__)
+        copy.__value__ = self.__value__
+        copy.__arguments__ = args
+        return copy
+
+    def __repr__(self):
+        return self.__name__
+
+    def __or__(self, right):
+        return Union[self, right]
+
+    def __ror__(self, left):
+        return Union[left, self]
 
 
 class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
@@ -1013,9 +1049,9 @@ class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
     """
 
     def __init__(self, name, *constraints, bound=None,
-                 covariant=False, contravariant=False):
+                 covariant=False, contravariant=False, autovariance=False):
         self.__name__ = name
-        super().__init__(bound, covariant, contravariant)
+        super().__init__(bound, covariant, contravariant, autovariance)
         if constraints and bound is not None:
             raise TypeError("Constraints cannot be combined with bound=...")
         if constraints and len(constraints) == 1:
@@ -1226,9 +1262,10 @@ class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
     def kwargs(self):
         return ParamSpecKwargs(self)
 
-    def __init__(self, name, *, bound=None, covariant=False, contravariant=False):
+    def __init__(self, name, *, bound=None,
+                 covariant=False, contravariant=False, autovariance=False):
         self.__name__ = name
-        super().__init__(bound, covariant, contravariant)
+        super().__init__(bound, covariant, contravariant, autovariance)
         def_mod = _caller()
         if def_mod != 'typing':
             self.__module__ = def_mod

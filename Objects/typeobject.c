@@ -1137,6 +1137,21 @@ type_get_annotations(PyTypeObject *type, void *context)
     return annotations;
 }
 
+static PyObject *
+type_get_type_variables(PyTypeObject *type, void *context)
+{
+    PyObject *params;
+
+    params = PyDict_GetItem(type->tp_dict, &_Py_ID(__type_variables__));
+    
+    if (params) {
+        Py_INCREF(params);
+        return params;
+    }
+
+    return PyTuple_New(0);
+}
+
 static int
 type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
 {
@@ -1211,6 +1226,7 @@ static PyGetSetDef type_getsets[] = {
     {"__doc__", (getter)type_get_doc, (setter)type_set_doc, NULL},
     {"__text_signature__", (getter)type_get_text_signature, NULL, NULL},
     {"__annotations__", (getter)type_get_annotations, (setter)type_set_annotations, NULL},
+    {"__type_variables__", (getter)type_get_type_variables, NULL, NULL},
     {0}
 };
 

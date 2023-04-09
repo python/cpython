@@ -1011,6 +1011,7 @@ class _Unparser(NodeVisitor):
             self.fill("@")
             self.traverse(deco)
         self.fill("class " + node.name)
+        self._typeparams_helper(node.typeparams)
         with self.delimit_if("(", ")", condition = node.bases or node.keywords):
             comma = False
             for e in node.bases:
@@ -1042,6 +1043,7 @@ class _Unparser(NodeVisitor):
             self.traverse(deco)
         def_str = fill_suffix + " " + node.name
         self.fill(def_str)
+        self._typeparams_helper(node.typeparams)
         with self.delimit("(", ")"):
             self.traverse(node.args)
         if node.returns:
@@ -1049,6 +1051,29 @@ class _Unparser(NodeVisitor):
             self.traverse(node.returns)
         with self.block(extra=self.get_type_comment(node)):
             self._write_docstring_and_traverse_body(node)
+
+    def _typeparams_helper(self, typeparams):
+        if typeparams is not None and len(typeparams) > 0:
+            with self.delimit("[", "]"):
+                self.interleave(lambda: self.write(", "), self.traverse, typeparams)
+
+    def visit_TypeVar(self, node):
+        self.write(node.name)
+        if node.bound:
+            self.write(": ")
+            self.traverse(node.bound)
+
+    def visit_TypeVarTuple(self, node):
+        self.write("*" + node.name)
+
+    def visit_ParamSpec(self, node):
+        self.write("**" + node.name)
+
+    def visit_TypeAlias(self, node):
+        self.fill("type " + node.name)
+        self._typeparams_helper(node.typeparams)
+        self.write(" = ")
+        self.traverse(node.value)
 
     def visit_For(self, node):
         self._for_helper("for ", node)

@@ -127,6 +127,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
         PyErr_Clear();
     }
     op->func_annotations = NULL;
+    op->func_typevars = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
     _PyObject_GC_TRACK(op);
@@ -202,6 +203,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_weakreflist = NULL;
     op->func_module = module;
     op->func_annotations = NULL;
+    op->func_typevars = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
     _PyObject_GC_TRACK(op);
@@ -652,6 +654,18 @@ func_set_annotations(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(igno
     return 0;
 }
 
+static PyObject *
+func_get_type_variables(PyFunctionObject *op, void *Py_UNUSED(ignored))
+{
+    if (op->func_typevars == NULL) {
+        return PyTuple_New(0);
+    }
+
+    assert(PyTuple_Check(op->func_typevars));
+    Py_XINCREF(op->func_typevars);
+    return op->func_typevars;
+}
+
 static PyGetSetDef func_getsetlist[] = {
     {"__code__", (getter)func_get_code, (setter)func_set_code},
     {"__defaults__", (getter)func_get_defaults,
@@ -663,6 +677,7 @@ static PyGetSetDef func_getsetlist[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"__name__", (getter)func_get_name, (setter)func_set_name},
     {"__qualname__", (getter)func_get_qualname, (setter)func_set_qualname},
+    {"__type_variables__", (getter)func_get_type_variables, NULL},
     {NULL} /* Sentinel */
 };
 
@@ -783,6 +798,7 @@ func_clear(PyFunctionObject *op)
     Py_CLEAR(op->func_dict);
     Py_CLEAR(op->func_closure);
     Py_CLEAR(op->func_annotations);
+    Py_CLEAR(op->func_typevars);
     // Don't Py_CLEAR(op->func_code), since code is always required
     // to be non-NULL. Similarly, name and qualname shouldn't be NULL.
     // However, name and qualname could be str subclasses, so they
@@ -837,6 +853,7 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
     Py_VISIT(f->func_dict);
     Py_VISIT(f->func_closure);
     Py_VISIT(f->func_annotations);
+    Py_VISIT(f->func_typevars);
     Py_VISIT(f->func_qualname);
     return 0;
 }
