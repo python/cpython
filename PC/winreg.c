@@ -428,7 +428,7 @@ PyObject *
 PyHKEY_New(PyObject *m, HKEY hInit)
 {
     winreg_state *st = PyModule_GetState(m);
-    PyHKEYObject *key = PyObject_New(PyHKEYObject, st->PyHKEY_Type);
+    PyHKEYObject *key = PyObject_GC_New(PyHKEYObject, st->PyHKEY_Type);
     if (key)
         key->hkey = hInit;
     return (PyObject *)key;
