@@ -1728,7 +1728,7 @@ dequeiter_dealloc(dequeiterobject *dio)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyTypeObject *tp = Py_TYPE(dio);
     PyObject_GC_UnTrack(dio);
-    tp->tp_clear((PyObject *)dio);
+    (void)dequeiter_clear(dio);
     PyObject_GC_Del(dio);
     Py_DECREF(tp);
 }
