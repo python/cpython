@@ -2295,10 +2295,13 @@ AttributeError_getstate(PyAttributeErrorObject *self, PyObject *Py_UNUSED(ignore
             Py_DECREF(dict);
             return NULL;
         }
+        /* We specifically are not pickling the obj attribute since there are many
+        cases where it is unlikely to be picklable. See GH-103352.
         if (self->obj && PyDict_SetItemString(dict, "obj", self->obj) < 0) {
             Py_DECREF(dict);
             return NULL;
         }
+        */
         if (self->args && PyDict_SetItemString(dict, "args", self->args) < 0) {
             Py_DECREF(dict);
             return NULL;
