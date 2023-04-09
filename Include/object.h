@@ -68,7 +68,7 @@ whose size is determined when the object is allocated.
     PyObject *_ob_next;           \
     PyObject *_ob_prev;
 
-#define _PyObject_EXTRA_INIT _Py_NULL, _Py_NULL,
+#define _PyObject_EXTRA_INIT ._ob_next = _Py_NULL, ._ob_prev = _Py_NULL,
 
 #else
 #  define _PyObject_HEAD_EXTRA
@@ -135,11 +135,11 @@ check by comparing the reference count field to the immortality reference count.
 #ifdef Py_BUILD_CORE
 #define PyObject_HEAD_INIT(type)        \
     { _PyObject_EXTRA_INIT              \
-    .ob_refcnt = _Py_IMMORTAL_REFCNT, (type) },
+    .ob_refcnt = _Py_IMMORTAL_REFCNT, .ob_type = (type) },
 #else
 #define PyObject_HEAD_INIT(type)        \
     { _PyObject_EXTRA_INIT              \
-    .ob_refcnt = 1, (type) },
+    .ob_refcnt = 1, .ob_type = (type) },
 #endif /* Py_BUILD_CORE */
 
 #define PyVarObject_HEAD_INIT(type, size)       \
