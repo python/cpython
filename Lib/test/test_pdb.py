@@ -2433,7 +2433,7 @@ def bœr():
         curr_instr_lines = [line.strip() for line in stdout.splitlines() if "-->" in line]
         self.assertEqual(len(curr_instr_lines), 3)
         for line in curr_instr_lines:
-            # Make sure ni is moving forward, not stopping at the same instrunction
+            # Make sure ni is moving forward, not stopping at the same instruction
             self.assertEqual(curr_instr_lines.count(line), 1)
 
         # this test is under the assumption that within 10 instructions the function
