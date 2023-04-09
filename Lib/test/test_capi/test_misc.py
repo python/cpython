@@ -70,7 +70,7 @@ class CAPITest(unittest.TestCase):
     @support.requires_subprocess()
     def test_no_FatalError_infinite_loop(self):
         run_result, _cmd_line = run_python_until_end(
-            '-c', 'import _testcapi;' '_testcapi.crash_no_current_thread()',
+            '-c', 'import _testcapi; _testcapi.crash_no_current_thread()',
         )
         _rc, out, err = run_result
         self.assertEqual(out, b'')
