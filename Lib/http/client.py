@@ -870,9 +870,9 @@ class HTTPConnection:
     def set_tunnel(self, host, port=None, headers=None):
         """Set up host and port for HTTP CONNECT tunnelling.
 
-        In a connection that uses HTTP CONNECT tunneling, the host passed to the
-        constructor is used as a proxy server that relays all communication to
-        the endpoint passed to `set_tunnel`. This done by sending an HTTP
+        In a connection that uses HTTP CONNECT tunnelling, the host passed to
+        the constructor is used as a proxy server that relays all communication
+        to the endpoint passed to `set_tunnel`. This done by sending an HTTP
         CONNECT request to the proxy server when the connection is established.
 
         This method must be called before the HTTP connection has been
@@ -880,6 +880,13 @@ class HTTPConnection:
 
         The headers argument should be a mapping of extra HTTP headers to send
         with the CONNECT request.
+
+        As HTTP/1.1 is used for HTTP CONNECT tunnelling request, as per the RFC
+        (https://tools.ietf.org/html/rfc7231#section-4.3.6), a HTTP Host:
+        header must be provided, matching the authority-form of the request
+        target provided as the destination for the CONNECT request. If a
+        HTTP Host: header is not provided via the headers argument, one
+        is generated and transmitted automatically.
         """
 
         if self.sock:
@@ -887,9 +894,14 @@ class HTTPConnection:
 
         self._tunnel_host, self._tunnel_port = self._get_hostport(host, port)
         if headers:
-            self._tunnel_headers = headers
+            self._tunnel_headers = headers.copy()
         else:
             self._tunnel_headers.clear()
+
+        if not any(header.lower() == "host" for header in self._tunnel_headers):
+            encoded_host = self._tunnel_host.encode("idna").decode("ascii")
+            self._tunnel_headers["Host"] = "%s:%d" % (
+                encoded_host, self._tunnel_port)
 
     def _get_hostport(self, host, port):
         if port is None:
@@ -915,8 +927,9 @@ class HTTPConnection:
         self.debuglevel = level
 
     def _tunnel(self):
-        connect = b"CONNECT %s:%d HTTP/1.0\r\n" % (
-            self._tunnel_host.encode("ascii"), self._tunnel_port)
+        connect = b"CONNECT %s:%d %s\r\n" % (
+            self._tunnel_host.encode("idna"), self._tunnel_port,
+            self._http_vsn_str.encode("ascii"))
         headers = [connect]
         for header, value in self._tunnel_headers.items():
             headers.append(f"{header}: {value}\r\n".encode("latin-1"))

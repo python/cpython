@@ -1905,7 +1905,8 @@ class _TypingEllipsis:
 
 _TYPING_INTERNALS = frozenset({
     '__parameters__', '__orig_bases__',  '__orig_class__',
-    '_is_protocol', '_is_runtime_protocol'
+    '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
+    '__callable_proto_members_only__',
 })
 
 _SPECIAL_NAMES = frozenset({
@@ -1933,11 +1934,6 @@ def _get_protocol_attrs(cls):
             if not attr.startswith('_abc_') and attr not in EXCLUDED_ATTRIBUTES:
                 attrs.add(attr)
     return attrs
-
-
-def _is_callable_members_only(cls, protocol_attrs):
-    # PEP 544 prohibits using issubclass() with protocols that have non-method members.
-    return all(callable(getattr(cls, attr, None)) for attr in protocol_attrs)
 
 
 def _no_init_or_replace_init(self, *args, **kwargs):
@@ -2012,6 +2008,15 @@ _cleanups.append(_lazy_load_getattr_static.cache_clear)
 class _ProtocolMeta(ABCMeta):
     # This metaclass is really unfortunate and exists only because of
     # the lack of __instancehook__.
+    def __init__(cls, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        cls.__protocol_attrs__ = _get_protocol_attrs(cls)
+        # PEP 544 prohibits using issubclass()
+        # with protocols that have non-method members.
+        cls.__callable_proto_members_only__ = all(
+            callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
+        )
+
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
         # assigned in __init__.
@@ -2024,30 +2029,22 @@ class _ProtocolMeta(ABCMeta):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
 
-        if not is_protocol_cls and issubclass(instance.__class__, cls):
-            return True
-
-        protocol_attrs = _get_protocol_attrs(cls)
-
-        if (
-            _is_callable_members_only(cls, protocol_attrs)
-            and issubclass(instance.__class__, cls)
-        ):
+        if super().__instancecheck__(instance):
             return True
 
         if is_protocol_cls:
             getattr_static = _lazy_load_getattr_static()
-            for attr in protocol_attrs:
+            for attr in cls.__protocol_attrs__:
                 try:
                     val = getattr_static(instance, attr)
                 except AttributeError:
                     break
-                if callable(getattr(cls, attr, None)) and val is None:
+                if val is None and callable(getattr(cls, attr, None)):
                     break
             else:
                 return True
 
-        return super().__instancecheck__(instance)
+        return False
 
 
 class Protocol(Generic, metaclass=_ProtocolMeta):
@@ -2103,9 +2100,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                 raise TypeError("Instance and class checks can only be used with"
                                 " @runtime_checkable protocols")
 
-            protocol_attrs = _get_protocol_attrs(cls)
-
-            if not _is_callable_members_only(cls, protocol_attrs):
+            if not cls.__callable_proto_members_only__ :
                 if _allow_reckless_class_checks():
                     return NotImplemented
                 raise TypeError("Protocols with non-method members"
@@ -2115,7 +2110,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                 raise TypeError('issubclass() arg 1 must be a class')
 
             # Second, perform the actual structural compatibility check.
-            for attr in protocol_attrs:
+            for attr in cls.__protocol_attrs__:
                 for base in other.__mro__:
                     # Check if the members appears in the class dictionary...
                     if attr in base.__dict__:
