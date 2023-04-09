@@ -1963,7 +1963,7 @@ Other Improvements
   <https://devguide.python.org/coverage/#measuring-coverage-of-c-code-with-gcov-and-lcov>`_
   will build python, run the test suite, and generate an HTML coverage report
   for the C codebase using ``gcov`` and `lcov
-  <http://ltp.sourceforge.net/coverage/lcov.php>`_.
+  <https://ltp.sourceforge.net/coverage/lcov.php>`_.
 
 * The ``-R`` option to the :ref:`python regression test suite <regrtest>` now
   also checks for memory allocation leaks, using

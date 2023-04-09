@@ -23,8 +23,6 @@ __version__ = "6"
 import os
 import sys
 import tokenize
-if not hasattr(tokenize, 'NL'):
-    raise ValueError("tokenize.NL doesn't exist -- tokenize module too old")
 
 __all__ = ["check", "NannyNag", "process_tokens"]
 
@@ -37,6 +35,7 @@ def errprint(*args):
         sys.stderr.write(sep + str(arg))
         sep = " "
     sys.stderr.write("\n")
+    sys.exit(1)
 
 def main():
     import getopt
@@ -46,7 +45,6 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:], "qv")
     except getopt.error as msg:
         errprint(msg)
-        return
     for o, a in opts:
         if o == '-q':
             filename_only = filename_only + 1
@@ -54,7 +52,6 @@ def main():
             verbose = verbose + 1
     if not args:
         errprint("Usage:", sys.argv[0], "[-v] file_or_directory ...")
-        return
     for arg in args:
         check(arg)
 

@@ -6,6 +6,9 @@ on:
       - opened
       - labeled
 
+permissions:
+  contents: read
+
 jobs:
   add-to-project:
     name: Add issues to projects
@@ -18,6 +21,7 @@ jobs:
           - { project:  2, label: "release-blocker, deferred-blocker" }
           - { project:  3, label: expert-subinterpreters }
           - { project: 29, label: expert-asyncio }
+          - { project: 32, label: sprint }
     
     steps:
       - uses: actions/add-to-project@v0.1.0

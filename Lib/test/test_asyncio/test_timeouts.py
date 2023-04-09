@@ -247,6 +247,36 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                         async with asyncio.timeout(0.01):
                             await asyncio.sleep(10)
 
+    async def test_timeout_after_cancellation(self):
+        try:
+            asyncio.current_task().cancel()
+            await asyncio.sleep(1)  # work which will be cancelled
+        except asyncio.CancelledError:
+            pass
+        finally:
+            with self.assertRaises(TimeoutError):
+                async with asyncio.timeout(0.0):
+                    await asyncio.sleep(1)  # some cleanup
+
+    async def test_cancel_in_timeout_after_cancellation(self):
+        try:
+            asyncio.current_task().cancel()
+            await asyncio.sleep(1)  # work which will be cancelled
+        except asyncio.CancelledError:
+            pass
+        finally:
+            with self.assertRaises(asyncio.CancelledError):
+                async with asyncio.timeout(1.0):
+                    asyncio.current_task().cancel()
+                    await asyncio.sleep(2)  # some cleanup
+
+    async def test_timeout_exception_cause (self):
+        with self.assertRaises(asyncio.TimeoutError) as exc:
+            async with asyncio.timeout(0):
+                await asyncio.sleep(1)
+        cause = exc.exception.__cause__
+        assert isinstance(cause, asyncio.CancelledError)
+
 
 if __name__ == '__main__':
     unittest.main()

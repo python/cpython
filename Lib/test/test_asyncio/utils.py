@@ -14,7 +14,7 @@ import sys
 import threading
 import unittest
 import weakref
-
+import warnings
 from unittest import mock
 
 from http.server import HTTPServer
@@ -544,7 +544,9 @@ class TestCase(unittest.TestCase):
         policy = support.maybe_get_event_loop_policy()
         if policy is not None:
             try:
-                watcher = policy.get_child_watcher()
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', DeprecationWarning)
+                    watcher = policy.get_child_watcher()
             except NotImplementedError:
                 # watcher is not implemented by EventLoopPolicy, e.g. Windows
                 pass
@@ -575,7 +577,7 @@ class TestCase(unittest.TestCase):
 
         # Detect CPython bug #23353: ensure that yield/yield-from is not used
         # in an except block of a generator
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
         self.doCleanups()
         threading_helper.threading_cleanup(*self._thread_cleanup)
