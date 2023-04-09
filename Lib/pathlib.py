@@ -326,6 +326,9 @@ class PurePath(object):
             # pathlib assumes that UNC paths always have a root.
             root = sep
         parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
+        if parsed and not rel.endswith(parsed[-1]):
+            # Preserve trailing slash
+            parsed.append('')
         return drv, root, parsed
 
     def _load_parts(self):
@@ -578,6 +581,9 @@ class PurePath(object):
                                  remove=(3, 14))
         path_cls = type(self)
         other = path_cls(other, *_deprecated)
+        if not other.name:
+            # Ignore trailing slash.
+            other = other.parent
         for step, path in enumerate([other] + list(other.parents)):
             if self.is_relative_to(path):
                 break
@@ -598,6 +604,9 @@ class PurePath(object):
             warnings._deprecated("pathlib.PurePath.is_relative_to(*args)",
                                  msg, remove=(3, 14))
         other = type(self)(other, *_deprecated)
+        if not other.name:
+            # Ignore trailing slash.
+            other = other.parent
         return other == self or other in self.parents
 
     @property
@@ -825,8 +834,6 @@ class Path(PurePath):
         drv, root, pattern_parts = self._parse_path(pattern)
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
-            pattern_parts.append('')
         selector = _make_selector(tuple(pattern_parts), self._flavour)
         for p in selector.select_from(self):
             yield p
@@ -840,8 +847,6 @@ class Path(PurePath):
         drv, root, pattern_parts = self._parse_path(pattern)
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        if pattern and pattern[-1] in (self._flavour.sep, self._flavour.altsep):
-            pattern_parts.append('')
         selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour)
         for p in selector.select_from(self):
             yield p

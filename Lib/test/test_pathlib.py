@@ -42,11 +42,14 @@ class _BasePurePathTest(object):
     # supposed to produce equal paths.
     equivalences = {
         'a/b': [
-            ('a', 'b'), ('a/', 'b'), ('a', 'b/'), ('a/', 'b/'),
-            ('a/b/',), ('a//b',), ('a//b//',),
+            ('a', 'b'), ('a/', 'b'), ('a//b',),
             # Empty components get removed.
-            ('', 'a', 'b'), ('a', '', 'b'), ('a', 'b', ''),
+            ('', 'a', 'b'), ('a', '', 'b'),
             ],
+        'a/b/': [
+            ('a', 'b/'), ('a/', 'b/'), ('a/b/',),
+            ('a//b//',), ('a', 'b', ''),
+        ],
         '/b/c/d': [
             ('a', '/b/c', 'd'), ('/a', '/b/c', 'd'),
             # Empty components get removed.
@@ -154,11 +157,11 @@ class _BasePurePathTest(object):
         # Unanchored parts.
         check((),                   '', '', ())
         check(('a',),               '', '', ('a',))
-        check(('a/',),              '', '', ('a',))
+        check(('a/',),              '', '', ('a', ''))
         check(('a', 'b'),           '', '', ('a', 'b'))
         # Expansion.
         check(('a/b',),             '', '', ('a', 'b'))
-        check(('a/b/',),            '', '', ('a', 'b'))
+        check(('a/b/',),            '', '', ('a', 'b', ''))
         check(('a', 'b/c', 'd'),    '', '', ('a', 'b', 'c', 'd'))
         # Collapsing and stripping excess slashes.
         check(('a', 'b//c', 'd'),   '', '', ('a', 'b', 'c', 'd'))
@@ -167,7 +170,7 @@ class _BasePurePathTest(object):
         check(('.',),               '', '', ())
         check(('.', '.', 'b'),      '', '', ('b',))
         check(('a', '.', 'b'),      '', '', ('a', 'b'))
-        check(('a', '.', '.'),      '', '', ('a',))
+        check(('a', '.', '.'),      '', '', ('a', ''))
         # The first part is anchored.
         check(('/a/b',),            '', sep, (sep, 'a', 'b'))
         check(('/a', 'b'),          '', sep, (sep, 'a', 'b'))
@@ -188,6 +191,24 @@ class _BasePurePathTest(object):
         self.assertEqual(pp, P('a/b/c'))
         pp = p.joinpath('/c')
         self.assertEqual(pp, P('/c'))
+        pp = p.joinpath('.')
+        self.assertEqual(pp, P('a/b/'))
+        pp = p.joinpath('')
+        self.assertEqual(pp, P('a/b/'))
+        p = P('a/b/')
+        pp = p.joinpath('c')
+        self.assertEqual(pp, P('a/b/c'))
+        self.assertIs(type(pp), type(p))
+        pp = p.joinpath('c', 'd')
+        self.assertEqual(pp, P('a/b/c/d'))
+        pp = p.joinpath(P('c'))
+        self.assertEqual(pp, P('a/b/c'))
+        pp = p.joinpath('/c')
+        self.assertEqual(pp, P('/c'))
+        pp = p.joinpath('.')
+        self.assertEqual(pp, P('a/b/'))
+        pp = p.joinpath('')
+        self.assertEqual(pp, P('a/b/'))
 
     def test_div_common(self):
         # Basically the same as joinpath().
@@ -389,6 +410,12 @@ class _BasePurePathTest(object):
         self.assertEqual(p.parent.parent, P('/a'))
         self.assertEqual(p.parent.parent.parent, P('/'))
         self.assertEqual(p.parent.parent.parent.parent, P('/'))
+        # Trailing slash
+        p = P('/a/b/')
+        self.assertEqual(p.parent, P('/a/b'))
+        self.assertEqual(p.parent.parent, P('/a'))
+        self.assertEqual(p.parent.parent.parent, P('/'))
+        self.assertEqual(p.parent.parent.parent.parent, P('/'))
 
     def test_parents_common(self):
         # Relative
@@ -436,6 +463,9 @@ class _BasePurePathTest(object):
             par[-4]
         with self.assertRaises(IndexError):
             par[3]
+        # Trailing slash
+        self.assertEqual(P('a/b/').parents[:], (P('a/b'), P('a'), P()))
+        self.assertEqual(P('/a/b/').parents[:], (P('/a/b'), P('/a'), P('/')))
 
     def test_drive_common(self):
         P = self.cls
@@ -466,7 +496,7 @@ class _BasePurePathTest(object):
         self.assertEqual(P('/').name, '')
         self.assertEqual(P('a/b').name, 'b')
         self.assertEqual(P('/a/b').name, 'b')
-        self.assertEqual(P('/a/b/.').name, 'b')
+        self.assertEqual(P('/a/b/.').name, '')
         self.assertEqual(P('a/b.py').name, 'b.py')
         self.assertEqual(P('/a/b.py').name, 'b.py')
 
@@ -534,6 +564,7 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, P('').with_name, 'd.xml')
         self.assertRaises(ValueError, P('.').with_name, 'd.xml')
         self.assertRaises(ValueError, P('/').with_name, 'd.xml')
+        self.assertRaises(ValueError, P('a/').with_name, 'd.xml')
         self.assertRaises(ValueError, P('a/b').with_name, '')
         self.assertRaises(ValueError, P('a/b').with_name, '/c')
         self.assertRaises(ValueError, P('a/b').with_name, 'c/')
@@ -551,6 +582,7 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, P('').with_stem, 'd')
         self.assertRaises(ValueError, P('.').with_stem, 'd')
         self.assertRaises(ValueError, P('/').with_stem, 'd')
+        self.assertRaises(ValueError, P('a/').with_stem, 'd')
         self.assertRaises(ValueError, P('a/b').with_stem, '')
         self.assertRaises(ValueError, P('a/b').with_stem, '/c')
         self.assertRaises(ValueError, P('a/b').with_stem, 'c/')
@@ -569,6 +601,7 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, P('').with_suffix, '.gz')
         self.assertRaises(ValueError, P('.').with_suffix, '.gz')
         self.assertRaises(ValueError, P('/').with_suffix, '.gz')
+        self.assertRaises(ValueError, P('a/').with_suffix, '.gz')
         # Invalid suffix.
         self.assertRaises(ValueError, P('a/b').with_suffix, 'gz')
         self.assertRaises(ValueError, P('a/b').with_suffix, '/')
@@ -789,7 +822,8 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
     equivalences = _BasePurePathTest.equivalences.copy()
     equivalences.update({
         './a:b': [ ('./a:b',) ],
-        'c:a': [ ('c:', 'a'), ('c:', 'a/'), ('.', 'c:', 'a') ],
+        'c:a': [ ('c:', 'a'), ('.', 'c:', 'a') ],
+        'c:a/': [ ('c:', 'a/') ],
         'c:/a': [
             ('c:/', 'a'), ('c:', '/', 'a'), ('c:', '/a'),
             ('/z', 'c:/', 'a'), ('//x/y', 'c:/', 'a'),
@@ -819,7 +853,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         # UNC paths.
         check(('a', '//b/c', 'd'),      '\\\\b\\c', '\\', ('\\\\b\\c\\', 'd'))
         # Collapsing and stripping excess slashes.
-        check(('a', 'Z://b//c/', 'd/'), 'Z:', '\\', ('Z:\\', 'b', 'c', 'd'))
+        check(('a', 'Z://b//c/', 'd/'), 'Z:', '\\', ('Z:\\', 'b', 'c', 'd', ''))
         # UNC paths.
         check(('a', '//b/c//', 'd'),    '\\\\b\\c', '\\', ('\\\\b\\c\\', 'd'))
         # Extended paths.
@@ -970,11 +1004,15 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(p.parent, P('//a/b/c'))
         self.assertEqual(p.parent.parent, P('//a/b'))
         self.assertEqual(p.parent.parent.parent, P('//a/b'))
+        # Trailing slash
+        self.assertEqual(P('z:a/b/').parent, P('z:a/b'))
+        self.assertEqual(P('z:/a/b/').parent, P('z:/a/b'))
+        self.assertEqual(P('//a/b/c/d/').parent, P('//a/b/c/d'))
 
     def test_parents(self):
         # Anchored
         P = self.cls
-        p = P('z:a/b/')
+        p = P('z:a/b')
         par = p.parents
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('z:a'))
@@ -988,7 +1026,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(list(par), [P('z:a'), P('z:')])
         with self.assertRaises(IndexError):
             par[2]
-        p = P('z:/a/b/')
+        p = P('z:/a/b')
         par = p.parents
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('z:/a'))
@@ -1016,6 +1054,10 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(list(par), [P('//a/b/c'), P('//a/b')])
         with self.assertRaises(IndexError):
             par[2]
+        # Trailing slash
+        self.assertEqual(P('z:a/b/').parents[:], (P('z:a/b'), P('z:a'), P('z:')))
+        self.assertEqual(P('z:/a/b/').parents[:], (P('z:/a/b'), P('z:/a'), P('z:/')))
+        self.assertEqual(P('//a/b/c/d/').parents[:], (P('//a/b/c/d'), P('//a/b/c'), P('//a/b/')))
 
     def test_drive(self):
         P = self.cls
@@ -1790,7 +1832,7 @@ class _BasePathTest(object):
 
     def test_rglob_common(self):
         def _check(glob, expected):
-            self.assertEqual(set(glob), { P(BASE, q) for q in expected })
+            self.assertEqual(set(glob), { P(BASE, q) if q else P(BASE) for q in expected })
         P = self.cls
         p = P(BASE)
         it = p.rglob("fileA")
