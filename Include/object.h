@@ -95,9 +95,7 @@ cleanup during runtime finalization.
 #if SIZEOF_VOID_P > 4
 /*
 In 64+ bit systems, an object will be marked as immortal by setting all of the
-lower 32 bits of the reference count field.
-
-i.e in a 64 bit system the reference count will be set to: 0xFFFFFFFF
+lower 32 bits of the reference count field, which is equal to: 0xFFFFFFFF
 
 Using the lower 32 bits makes the value backwards compatible by allowing
 C-Extensions without the updated checks in Py_INCREF and Py_DECREF to safely
@@ -114,10 +112,7 @@ be done by checking the bit sign flag in the lower 32 bits.
 #else
 /*
 In 32 bit systems, an object will be marked as immortal by setting all of the
-lower 30 bits of the reference count field.
-
-i.e The reference count will be set to:
-    00111111 11111111 11111111 11111111
+lower 30 bits of the reference count field, which is equal to: 0x3FFFFFFF
 
 Using the lower 30 bits makes the value backwards compatible by allowing
 C-Extensions without the updated checks in Py_INCREF and Py_DECREF to safely
@@ -623,13 +618,12 @@ static inline void Py_INCREF(PyObject *op)
     // directly PyObject.ob_refcnt.
 #if SIZEOF_VOID_P > 4
     // Portable saturated add, branching on the carry flag and set low bits
-    PY_UINT32_T cur_refcnt = op->ob_refcnt_split[0];
+    PY_UINT32_T cur_refcnt = op->ob_refcnt_split[PY_BIG_ENDIAN];
     PY_UINT32_T new_refcnt = cur_refcnt + 1;
     if (new_refcnt == 0) {
         return;
     }
-    op->ob_refcnt_split[0] = new_refcnt;
-    
+    op->ob_refcnt_split[PY_BIG_ENDIAN] = new_refcnt;
 #else
     // Explicitly check immortality against the immortal value
     if (_Py_IsImmortal(op)) {
