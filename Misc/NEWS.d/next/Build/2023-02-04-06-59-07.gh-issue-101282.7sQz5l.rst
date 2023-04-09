@@ -1,2 +1,0 @@
-Update BOLT configration not to use depreacted usage of ``--split
-functions``. Patch by Dong-hee Na.

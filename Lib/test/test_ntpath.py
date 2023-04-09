@@ -1,9 +1,11 @@
+import inspect
 import ntpath
 import os
+import string
 import sys
 import unittest
 import warnings
-from test.support import os_helper
+from test.support import cpython_only, os_helper
 from test.support import TestFailed, is_emscripten
 from test.support.os_helper import FakePath
 from test import test_genericpath
@@ -199,6 +201,10 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitroot("//x")', ("//x", "", ""))  # non-empty server & missing share
         tester('ntpath.splitroot("//x/")', ("//x/", "", ""))  # non-empty server & empty share
 
+        # gh-101363: match GetFullPathNameW() drive letter parsing behaviour
+        tester('ntpath.splitroot(" :/foo")', (" :", "/", "foo"))
+        tester('ntpath.splitroot("/:/foo")', ("", "/", ":/foo"))
+
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
         tester('ntpath.split("\\\\conky\\mountpoint\\foo\\bar")',
@@ -368,6 +374,12 @@ class TestNtpath(NtpathTestCase):
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1"), ABSTFN)
         self.assertPathEqual(ntpath.realpath(os.fsencode(ABSTFN + "1")),
                          os.fsencode(ABSTFN))
+
+        # gh-88013: call ntpath.realpath with binary drive name may raise a
+        # TypeError. The drive should not exist to reproduce the bug.
+        drives = {f"{c}:\\" for c in string.ascii_uppercase} - set(os.listdrives())
+        d = drives.pop().encode()
+        self.assertEqual(ntpath.realpath(d), d)
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
@@ -937,6 +949,35 @@ class TestNtpath(NtpathTestCase):
                 self.assertTrue(ntpath.isjunction('testjunc'))
                 self.assertFalse(ntpath.isjunction('tmpdir'))
                 self.assertPathEqual(ntpath.realpath('testjunc'), ntpath.realpath('tmpdir'))
+
+    @unittest.skipIf(sys.platform != 'win32', "drive letters are a windows concept")
+    def test_isfile_driveletter(self):
+        drive = os.environ.get('SystemDrive')
+        if drive is None or len(drive) != 2 or drive[1] != ':':
+            raise unittest.SkipTest('SystemDrive is not defined or malformed')
+        self.assertFalse(os.path.isfile('\\\\.\\' + drive))
+
+    @unittest.skipIf(sys.platform != 'win32', "windows only")
+    def test_con_device(self):
+        self.assertFalse(os.path.isfile(r"\\.\CON"))
+        self.assertFalse(os.path.isdir(r"\\.\CON"))
+        self.assertFalse(os.path.islink(r"\\.\CON"))
+        self.assertTrue(os.path.exists(r"\\.\CON"))
+
+    @unittest.skipIf(sys.platform != 'win32', "Fast paths are only for win32")
+    @cpython_only
+    def test_fast_paths_in_use(self):
+        # There are fast paths of these functions implemented in posixmodule.c.
+        # Confirm that they are being used, and not the Python fallbacks in
+        # genericpath.py.
+        self.assertTrue(os.path.isdir is nt._path_isdir)
+        self.assertFalse(inspect.isfunction(os.path.isdir))
+        self.assertTrue(os.path.isfile is nt._path_isfile)
+        self.assertFalse(inspect.isfunction(os.path.isfile))
+        self.assertTrue(os.path.islink is nt._path_islink)
+        self.assertFalse(inspect.isfunction(os.path.islink))
+        self.assertTrue(os.path.exists is nt._path_exists)
+        self.assertFalse(inspect.isfunction(os.path.exists))
 
 
 class NtCommonTest(test_genericpath.CommonTest, unittest.TestCase):

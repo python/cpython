@@ -991,7 +991,8 @@ Internal types
       the filename from which the code was compiled; :attr:`co_firstlineno` is
       the first line number of the function; :attr:`co_lnotab` is a string
       encoding the mapping from bytecode offsets to line numbers (for details
-      see the source code of the interpreter); :attr:`co_stacksize` is the
+      see the source code of the interpreter, is deprecated since 3.12
+      and may be removed in 3.14); :attr:`co_stacksize` is the
       required stack size; :attr:`co_flags` is an integer encoding a number
       of flags for the interpreter.
 
@@ -1122,6 +1123,7 @@ Internal types
          single: exc_info (in module sys)
          single: last_traceback (in module sys)
          single: sys.exc_info
+         single: sys.exception
          single: sys.last_traceback
 
       Traceback objects represent a stack trace of an exception.  A traceback object
@@ -1525,7 +1527,7 @@ Basic customization
    :meth:`__hash__`, its instances will not be usable as items in hashable
    collections.  If a class defines mutable objects and implements an
    :meth:`__eq__` method, it should not implement :meth:`__hash__`, since the
-   implementation of hashable collections requires that a key's hash value is
+   implementation of :term:`hashable` collections requires that a key's hash value is
    immutable (if the object's hash value changes, it will be in the wrong hash
    bucket).
 
@@ -1943,8 +1945,10 @@ Notes on using *__slots__*
   descriptor directly from the base class). This renders the meaning of the
   program undefined.  In the future, a check may be added to prevent this.
 
-* Nonempty *__slots__* does not work for classes derived from "variable-length"
-  built-in types such as :class:`int`, :class:`bytes` and :class:`tuple`.
+* :exc:`TypeError` will be raised if nonempty *__slots__* are defined for a
+  class derived from a
+  :c:member:`"variable-length" built-in type <PyTypeObject.tp_itemsize>` such as
+  :class:`int`, :class:`bytes`, and :class:`tuple`.
 
 * Any non-string :term:`iterable` may be assigned to *__slots__*.
 
@@ -2082,11 +2086,15 @@ When a class definition is executed, the following steps occur:
 Resolving MRO entries
 ^^^^^^^^^^^^^^^^^^^^^
 
-If a base that appears in class definition is not an instance of :class:`type`,
-then an ``__mro_entries__`` method is searched on it. If found, it is called
-with the original bases tuple. This method must return a tuple of classes that
-will be used instead of this base. The tuple may be empty, in such case
-the original base is ignored.
+.. method:: object.__mro_entries__(self, bases)
+
+   If a base that appears in a class definition is not an instance of
+   :class:`type`, then an ``__mro_entries__`` method is searched on the base.
+   If an ``__mro_entries__`` method is found, the base is substituted with the
+   result of a call to ``__mro_entries__`` when creating the class.
+   The method is called with the original bases tuple, and must return a tuple
+   of classes that will be used instead of the base. The returned tuple may be
+   empty: in these cases, the original base is ignored.
 
 .. seealso::
 
