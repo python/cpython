@@ -1481,6 +1481,32 @@ def test_pdb_next_command_subiterator():
     (Pdb) continue
     """
 
+def test_pdb_multiline_statement():
+    """Test for multiline statement
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'def f(x):',
+    ...     '  return x * 2',
+    ...     '',
+    ...     'f(2)',
+    ...     'c'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_multiline_statement[0]>(3)test_function()
+    -> pass
+    (Pdb) def f(x):
+    ...     return x * 2
+    ...
+    (Pdb) f(2)
+    4
+    (Pdb) c
+    """
+
+
 def test_pdb_issue_20766():
     """Test for reference leaks when the SIGINT handler is set.
 
@@ -2185,7 +2211,7 @@ def bœr():
 
     def test_errors_in_command(self):
         commands = "\n".join([
-            'print(',
+            'print(]',
             'debug print(',
             'debug doesnotexist',
             'c',
@@ -2194,7 +2220,8 @@ def bœr():
 
         self.assertEqual(stdout.splitlines()[1:], [
             '-> pass',
-            '(Pdb) *** SyntaxError: \'(\' was never closed',
+            "(Pdb) *** SyntaxError: closing parenthesis ']' does not match opening "
+            "parenthesis '('",
 
             '(Pdb) ENTERING RECURSIVE DEBUGGER',
             '*** SyntaxError: \'(\' was never closed',
