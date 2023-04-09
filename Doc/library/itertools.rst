@@ -769,8 +769,8 @@ well as with the built-in itertools such as ``map()``, ``filter()``,
 
 A secondary purpose of the recipes is to serve as an incubator.  The
 ``accumulate()``, ``compress()``, and ``pairwise()`` itertools started out as
-recipes.  Currently, the ``iter_index()`` recipe is being tested to see
-whether it proves its worth.
+recipes.  Currently, the ``sliding_window()`` and ``iter_index()`` recipes
+are being tested to see whether they prove their worth.
 
 Substantially all of these recipes and many, many others can be installed from
 the `more-itertools project <https://pypi.org/project/more-itertools/>`_ found
@@ -979,12 +979,6 @@ which incur interpreter overhead.
        if times is None:
            return starmap(func, repeat(args))
        return starmap(func, repeat(args, times))
-
-   def triplewise(iterable):
-       "Return overlapping triplets from an iterable"
-       # triplewise('ABCDEFG') --> ABC BCD CDE DEF EFG
-       for (a, _), (b, c) in pairwise(pairwise(iterable)):
-           yield a, b, c
 
    def roundrobin(*iterables):
        "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
@@ -1403,9 +1397,6 @@ which incur interpreter overhead.
 
     >>> list(grouper('abcdefg', n=3, incomplete='ignore'))
     [('a', 'b', 'c'), ('d', 'e', 'f')]
-
-    >>> list(triplewise('ABCDEFG'))
-    [('A', 'B', 'C'), ('B', 'C', 'D'), ('C', 'D', 'E'), ('D', 'E', 'F'), ('E', 'F', 'G')]
 
     >>> list(sliding_window('ABCDEFG', 4))
     [('A', 'B', 'C', 'D'), ('B', 'C', 'D', 'E'), ('C', 'D', 'E', 'F'), ('D', 'E', 'F', 'G')]
