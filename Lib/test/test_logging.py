@@ -3521,13 +3521,13 @@ class ConfigDictTest(BaseTest):
             'atuple': (1, 2, 3),
             'alist': ['a', 'b', 'c'],
             'adict': {
-                'd': 'e', 'f': 3 , 
-                'alpha numeric 1 with spaces' : 5, 
+                'd': 'e', 'f': 3 ,
+                'alpha numeric 1 with spaces' : 5,
                 'aplha numeric 1 %( - © ©ß¯' : 9,
                 '' : 10,
                 'nest4' : {
-                    'd': 'e', 'f': 3 , 
-                    'alpha numeric 1 with spaces' : 5, 
+                    'd': 'e', 'f': 3 ,
+                    'alpha numeric 1 with spaces' : 5,
                     'aplha numeric 1 %( - © ©ß¯' : 9,
                     '' : 10,
                     'somelist' :  ('g', ('h', 'i'), 'j'),
