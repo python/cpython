@@ -838,6 +838,31 @@ which incur interpreter overhead.
        "Returns the sequence elements n times"
        return chain.from_iterable(repeat(tuple(iterable), n))
 
+   def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
+       "Collect data into non-overlapping fixed-length chunks or blocks"
+       # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
+       # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
+       # grouper('ABCDEFG', 3, incomplete='ignore') --> ABC DEF
+       args = [iter(iterable)] * n
+       if incomplete == 'fill':
+           return zip_longest(*args, fillvalue=fillvalue)
+       if incomplete == 'strict':
+           return zip(*args, strict=True)
+       if incomplete == 'ignore':
+           return zip(*args)
+       else:
+           raise ValueError('Expected fill, strict, or ignore')
+
+   def sliding_window(iterable, n):
+       # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
+       it = iter(iterable)
+       window = collections.deque(islice(it, n), maxlen=n)
+       if len(window) == n:
+           yield tuple(window)
+       for x in it:
+           window.append(x)
+           yield tuple(window)
+
    def sum_of_squares(it):
        "Add up the squares of the input values."
        # sum_of_squares([10, 20, 30]) -> 1400
@@ -855,15 +880,18 @@ which incur interpreter overhead.
        return batched(starmap(math.sumprod, product(m1, transpose(m2))), n)
 
    def convolve(signal, kernel):
-       # See:  https://betterexplained.com/articles/intuitive-convolution/
+       """Linear convolution of two iterables.
+
+       Article:  https://betterexplained.com/articles/intuitive-convolution/
+       Video:    https://www.youtube.com/watch?v=KuXjwB4LzSA
+       """
        # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
        # convolve(data, [1, -1]) --> 1st finite difference (1st derivative)
        # convolve(data, [1, -2, 1]) --> 2nd finite difference (2nd derivative)
        kernel = tuple(kernel)[::-1]
        n = len(kernel)
-       window = collections.deque([0], maxlen=n) * n
-       for x in chain(signal, repeat(0, n-1)):
-           window.append(x)
+       padded_signal = chain(repeat(0, n-1), signal, [0] * (n-1))
+       for window in sliding_window(padded_signal, n):
            yield math.sumprod(kernel, window)
 
    def polynomial_from_roots(roots):
@@ -952,36 +980,11 @@ which incur interpreter overhead.
            return starmap(func, repeat(args))
        return starmap(func, repeat(args, times))
 
-   def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
-       "Collect data into non-overlapping fixed-length chunks or blocks"
-       # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
-       # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
-       # grouper('ABCDEFG', 3, incomplete='ignore') --> ABC DEF
-       args = [iter(iterable)] * n
-       if incomplete == 'fill':
-           return zip_longest(*args, fillvalue=fillvalue)
-       if incomplete == 'strict':
-           return zip(*args, strict=True)
-       if incomplete == 'ignore':
-           return zip(*args)
-       else:
-           raise ValueError('Expected fill, strict, or ignore')
-
    def triplewise(iterable):
        "Return overlapping triplets from an iterable"
        # triplewise('ABCDEFG') --> ABC BCD CDE DEF EFG
        for (a, _), (b, c) in pairwise(pairwise(iterable)):
            yield a, b, c
-
-   def sliding_window(iterable, n):
-       # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
-       it = iter(iterable)
-       window = collections.deque(islice(it, n), maxlen=n)
-       if len(window) == n:
-           yield tuple(window)
-       for x in it:
-           window.append(x)
-           yield tuple(window)
 
    def roundrobin(*iterables):
        "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
