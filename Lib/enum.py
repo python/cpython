@@ -201,23 +201,13 @@ class property(DynamicClassAttribute):
                         )
         else:
             if self.fget is None:
-                if self.member is None:   # not sure this can happen, but just in case
+                # look for a member by this name.
+                try:
+                    return ownerclass._member_map_[self.name]
+                except KeyError:
                     raise AttributeError(
                             '%r has no attribute %r' % (ownerclass, self.name)
-                            )
-                # issue warning deprecating this behavior
-                import warnings
-                warnings.warn(
-                        "`member.member` access (e.g. `Color.RED.BLUE`) is "
-                        "deprecated and will be removed in 3.14.",
-                        DeprecationWarning,
-                        stacklevel=2,
-                        )
-                return self.member
-                # XXX: uncomment in 3.14 and remove warning above
-                # raise AttributeError(
-                #         '%r member has no attribute %r' % (ownerclass, self.name)
-                #         )
+                            ) from None
             else:
                 return self.fget(instance)
 
@@ -314,22 +304,32 @@ class _proto_member:
                 ):
                 # no other instances found, record this member in _member_names_
                 enum_class._member_names_.append(member_name)
-        # get redirect in place before adding to _member_map_
-        # but check for other instances in parent classes first
-        descriptor = None
+        # if necessary, get redirect in place and then add it to _member_map_
+        found_descriptor = None
         for base in enum_class.__mro__[1:]:
             descriptor = base.__dict__.get(member_name)
             if descriptor is not None:
                 if isinstance(descriptor, (property, DynamicClassAttribute)):
+                    found_descriptor = descriptor
                     break
-        redirect = property()
-        redirect.member = enum_member
-        redirect.__set_name__(enum_class, member_name)
-        if descriptor:
-            redirect.fget = getattr(descriptor, 'fget', None)
-            redirect.fset = getattr(descriptor, 'fset', None)
-            redirect.fdel = getattr(descriptor, 'fdel', None)
-        setattr(enum_class, member_name, redirect)
+                elif (
+                        hasattr(descriptor, 'fget') and
+                        hasattr(descriptor, 'fset') and
+                        hasattr(descriptor, 'fdel')
+                    ):
+                    found_descriptor = descriptor
+                    continue
+        if found_descriptor:
+            redirect = property()
+            redirect.member = enum_member
+            redirect.__set_name__(enum_class, member_name)
+            # earlier descriptor found; copy fget, fset, fdel to this one.
+            redirect.fget = found_descriptor.fget
+            redirect.fset = found_descriptor.fset
+            redirect.fdel = found_descriptor.fdel
+            setattr(enum_class, member_name, redirect)
+        else:
+            setattr(enum_class, member_name, enum_member)
         # now add to _member_map_ (even aliases)
         enum_class._member_map_[member_name] = enum_member
         try:

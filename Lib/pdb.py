@@ -1258,7 +1258,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return _rstr('** raised %s **' % self._format_exc(exc))
 
     def _error_exc(self):
-        exc = sys.exc_info()[1]
+        exc = sys.exception()
         self.error(self._format_exc(exc))
 
     def _msg_val_func(self, arg, func):
@@ -1351,7 +1351,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
         try:
-            lines, lineno = inspect.getsourcelines(self.curframe)
+            lines, lineno = self._getsourcelines(self.curframe)
         except OSError as err:
             self.error(err)
             return
@@ -1367,7 +1367,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except:
             return
         try:
-            lines, lineno = inspect.getsourcelines(obj)
+            lines, lineno = self._getsourcelines(obj)
         except (OSError, TypeError) as err:
             self.error(err)
             return
@@ -1662,6 +1662,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return _rstr(self._format_exc(exc))
         return ""
 
+    def _getsourcelines(self, obj):
+        # GH-103319
+        # inspect.getsourcelines() returns lineno = 0 for
+        # module-level frame which breaks our code print line number
+        # This method should be replaced by inspect.getsourcelines(obj)
+        # once this bug is fixed in inspect
+        lines, lineno = inspect.getsourcelines(obj)
+        lineno = max(1, lineno)
+        return lines, lineno
+
 # Collect all command help into docstring, if not run with -OO
 
 if __doc__ is not None:
@@ -1745,9 +1755,10 @@ def post_mortem(t=None):
     """
     # handling the default
     if t is None:
-        # sys.exc_info() returns (type, value, traceback) if an exception is
-        # being handled, otherwise it returns None
-        t = sys.exc_info()[2]
+        exc = sys.exception()
+        if exc is not None:
+            t = exc.__traceback__
+
     if t is None:
         raise ValueError("A valid traceback must be passed if no "
                          "exception is being handled")
@@ -1831,18 +1842,18 @@ def main():
         except Restart:
             print("Restarting", target, "with arguments:")
             print("\t" + " ".join(sys.argv[1:]))
-        except SystemExit:
+        except SystemExit as e:
             # In most cases SystemExit does not warrant a post-mortem session.
             print("The program exited via sys.exit(). Exit status:", end=' ')
-            print(sys.exc_info()[1])
+            print(e)
         except SyntaxError:
             traceback.print_exc()
             sys.exit(1)
-        except:
+        except BaseException as e:
             traceback.print_exc()
             print("Uncaught exception. Entering post mortem debugging")
             print("Running 'cont' or 'step' will restart the program")
-            t = sys.exc_info()[2]
+            t = e.__traceback__
             pdb.interaction(None, t)
             print("Post mortem debugger finished. The " + target +
                   " will be restarted")

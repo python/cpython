@@ -202,29 +202,15 @@ static struct PyMethodDef sound_methods[] =
     {NULL,  NULL}
 };
 
-static void
-add_define(PyObject *dict, const char *key, long value)
-{
-    PyObject *k = PyUnicode_FromString(key);
-    PyObject *v = PyLong_FromLong(value);
-    if (v && k) {
-        PyDict_SetItem(dict, k, v);
-    }
-    Py_XDECREF(k);
-    Py_XDECREF(v);
-}
-
-#define ADD_DEFINE(tok) add_define(dict,#tok,tok)
+#define ADD_DEFINE(CONST) do {                                  \
+    if (PyModule_AddIntConstant(module, #CONST, CONST) < 0) {   \
+        return -1;                                              \
+    }                                                           \
+} while (0)
 
 static int
 exec_module(PyObject *module)
 {
-    PyObject *dict;
-    dict = PyModule_GetDict(module);
-    if (dict == NULL) {
-        return -1;
-    }
-
     ADD_DEFINE(SND_ASYNC);
     ADD_DEFINE(SND_NODEFAULT);
     ADD_DEFINE(SND_NOSTOP);
@@ -241,6 +227,8 @@ exec_module(PyObject *module)
     ADD_DEFINE(MB_ICONEXCLAMATION);
     ADD_DEFINE(MB_ICONHAND);
     ADD_DEFINE(MB_ICONQUESTION);
+
+#undef ADD_DEFINE
 
     return 0;
 }
