@@ -10,7 +10,75 @@
 #include "pycore_interpreteridobject.h"
 
 
+/*
+This module has the following process-global state:
+
+_globals (static struct globals):
+    module_count (int)
+    channels (struct _channels):
+        numopen (int64_t)
+        next_id; (int64_t)
+        mutex (PyThread_type_lock)
+        head (linked list of struct _channelref *):
+            id (int64_t)
+            objcount (Py_ssize_t)
+            next (struct _channelref *):
+                ...
+            chan (struct _channel *):
+                open (int)
+                mutex (PyThread_type_lock)
+                closing (struct _channel_closing *):
+                    ref (struct _channelref *):
+                        ...
+                ends (struct _channelends *):
+                    numsendopen (int64_t)
+                    numrecvopen (int64_t)
+                    send (struct _channelend *):
+                        interp (int64_t)
+                        open (int)
+                        next (struct _channelend *)
+                    recv (struct _channelend *):
+                        ...
+                queue (struct _channelqueue *):
+                    count (int64_t)
+                    first (struct _channelitem *):
+                        next (struct _channelitem *):
+                            ...
+                        data (_PyCrossInterpreterData *):
+                            data (void *)
+                            obj (PyObject *)
+                            interp (int64_t)
+                            new_object (xid_newobjectfunc)
+                            free (xid_freefunc)
+                    last (struct _channelitem *):
+                        ...
+
+The above state includes the following allocations by the module:
+
+* 1 top-level mutex (to protect the rest of the state)
+* for each channel:
+   * 1 struct _channelref
+   * 1 struct _channel
+   * 0-1 struct _channel_closing
+   * 1 struct _channelends
+   * 2 struct _channelend
+   * 1 struct _channelqueue
+* for each item in each channel:
+   * 1 struct _channelitem
+   * 1 _PyCrossInterpreterData
+
+The only objects in that global state are the references held by each
+channel's queue, which are safely managed via the _PyCrossInterpreterData_*()
+API..  The module does not create any objects that are shared globally.
+*/
+
 #define MODULE_NAME "_xxinterpchannels"
+
+
+#define GLOBAL_MALLOC(TYPE) \
+    PyMem_RawMalloc(sizeof(TYPE))
+#define GLOBAL_FREE(VAR) \
+    PyMem_RawFree(VAR)
 
 
 static PyInterpreterState *
@@ -106,19 +174,7 @@ _release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
     }
     int res = _PyCrossInterpreterData_Release(data);
     if (res < 0) {
-        // XXX Fix this!
-        /* The owning interpreter is already destroyed.
-         * Ideally, this shouldn't ever happen.  When an interpreter is
-         * about to be destroyed, we should clear out all of its objects
-         * from every channel associated with that interpreter.
-         * For now we hack around that to resolve refleaks, by decref'ing
-         * the released object here, even if its the wrong interpreter.
-         * The owning interpreter has already been destroyed
-         * so we should be okay, especially since the currently
-         * shareable types are all very basic, with no GC.
-         * That said, it becomes much messier once interpreters
-         * no longer share a GIL, so this needs to be fixed before then. */
-        _PyCrossInterpreterData_Clear(NULL, data);
+        /* The owning interpreter is already destroyed. */
         if (ignoreexc) {
             // XXX Emit a warning?
             PyErr_Clear();
@@ -301,7 +357,7 @@ typedef struct _channelitem {
 static _channelitem *
 _channelitem_new(void)
 {
-    _channelitem *item = PyMem_NEW(_channelitem, 1);
+    _channelitem *item = GLOBAL_MALLOC(_channelitem);
     if (item == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -316,7 +372,8 @@ _channelitem_clear(_channelitem *item)
 {
     if (item->data != NULL) {
         (void)_release_xid_data(item->data, 1);
-        PyMem_Free(item->data);
+        // It was allocated in _channel_send().
+        GLOBAL_FREE(item->data);
         item->data = NULL;
     }
     item->next = NULL;
@@ -326,7 +383,7 @@ static void
 _channelitem_free(_channelitem *item)
 {
     _channelitem_clear(item);
-    PyMem_Free(item);
+    GLOBAL_FREE(item);
 }
 
 static void
@@ -357,7 +414,7 @@ typedef struct _channelqueue {
 static _channelqueue *
 _channelqueue_new(void)
 {
-    _channelqueue *queue = PyMem_NEW(_channelqueue, 1);
+    _channelqueue *queue = GLOBAL_MALLOC(_channelqueue);
     if (queue == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -381,7 +438,7 @@ static void
 _channelqueue_free(_channelqueue *queue)
 {
     _channelqueue_clear(queue);
-    PyMem_Free(queue);
+    GLOBAL_FREE(queue);
 }
 
 static int
@@ -420,6 +477,30 @@ _channelqueue_get(_channelqueue *queue)
     return _channelitem_popped(item);
 }
 
+static void
+_channelqueue_drop_interpreter(_channelqueue *queue, int64_t interp)
+{
+    _channelitem *prev = NULL;
+    _channelitem *next = queue->first;
+    while (next != NULL) {
+        _channelitem *item = next;
+        next = item->next;
+        if (item->data->interp == interp) {
+            if (prev == NULL) {
+                queue->first = item->next;
+            }
+            else {
+                prev->next = item->next;
+            }
+            _channelitem_free(item);
+            queue->count -= 1;
+        }
+        else {
+            prev = item;
+        }
+    }
+}
+
 /* channel-interpreter associations */
 
 struct _channelend;
@@ -433,7 +514,7 @@ typedef struct _channelend {
 static _channelend *
 _channelend_new(int64_t interp)
 {
-    _channelend *end = PyMem_NEW(_channelend, 1);
+    _channelend *end = GLOBAL_MALLOC(_channelend);
     if (end == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -447,7 +528,7 @@ _channelend_new(int64_t interp)
 static void
 _channelend_free(_channelend *end)
 {
-    PyMem_Free(end);
+    GLOBAL_FREE(end);
 }
 
 static void
@@ -492,7 +573,7 @@ typedef struct _channelassociations {
 static _channelends *
 _channelends_new(void)
 {
-    _channelends *ends = PyMem_NEW(_channelends, 1);
+    _channelends *ends = GLOBAL_MALLOC(_channelends);
     if (ends== NULL) {
         return NULL;
     }
@@ -519,7 +600,7 @@ static void
 _channelends_free(_channelends *ends)
 {
     _channelends_clear(ends);
-    PyMem_Free(ends);
+    GLOBAL_FREE(ends);
 }
 
 static _channelend *
@@ -625,6 +706,20 @@ _channelends_close_interpreter(_channelends *ends, int64_t interp, int which)
 }
 
 static void
+_channelends_drop_interpreter(_channelends *ends, int64_t interp)
+{
+    _channelend *end;
+    end = _channelend_find(ends->send, interp, NULL);
+    if (end != NULL) {
+        _channelends_close_end(ends, end, 1);
+    }
+    end = _channelend_find(ends->recv, interp, NULL);
+    if (end != NULL) {
+        _channelends_close_end(ends, end, 0);
+    }
+}
+
+static void
 _channelends_close_all(_channelends *ends, int which, int force)
 {
     // XXX Handle the ends.
@@ -660,20 +755,20 @@ typedef struct _channel {
 static _PyChannelState *
 _channel_new(PyThread_type_lock mutex)
 {
-    _PyChannelState *chan = PyMem_NEW(_PyChannelState, 1);
+    _PyChannelState *chan = GLOBAL_MALLOC(_PyChannelState);
     if (chan == NULL) {
         return NULL;
     }
     chan->mutex = mutex;
     chan->queue = _channelqueue_new();
     if (chan->queue == NULL) {
-        PyMem_Free(chan);
+        GLOBAL_FREE(chan);
         return NULL;
     }
     chan->ends = _channelends_new();
     if (chan->ends == NULL) {
         _channelqueue_free(chan->queue);
-        PyMem_Free(chan);
+        GLOBAL_FREE(chan);
         return NULL;
     }
     chan->open = 1;
@@ -691,7 +786,7 @@ _channel_free(_PyChannelState *chan)
     PyThread_release_lock(chan->mutex);
 
     PyThread_free_lock(chan->mutex);
-    PyMem_Free(chan);
+    GLOBAL_FREE(chan);
 }
 
 static int
@@ -772,6 +867,18 @@ done:
     return res;
 }
 
+static void
+_channel_drop_interpreter(_PyChannelState *chan, int64_t interp)
+{
+    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
+
+    _channelqueue_drop_interpreter(chan->queue, interp);
+    _channelends_drop_interpreter(chan->ends, interp);
+    chan->open = _channelends_is_open(chan->ends);
+
+    PyThread_release_lock(chan->mutex);
+}
+
 static int
 _channel_close_all(_PyChannelState *chan, int end, int force)
 {
@@ -814,7 +921,7 @@ typedef struct _channelref {
 static _channelref *
 _channelref_new(int64_t id, _PyChannelState *chan)
 {
-    _channelref *ref = PyMem_NEW(_channelref, 1);
+    _channelref *ref = GLOBAL_MALLOC(_channelref);
     if (ref == NULL) {
         return NULL;
     }
@@ -841,7 +948,7 @@ _channelref_free(_channelref *ref)
         _channel_clear_closing(ref->chan);
     }
     //_channelref_clear(ref);
-    PyMem_Free(ref);
+    GLOBAL_FREE(ref);
 }
 
 static _channelref *
@@ -1144,6 +1251,21 @@ done:
     return cids;
 }
 
+static void
+_channels_drop_interpreter(_channels *channels, int64_t interp)
+{
+    PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
+
+    _channelref *ref = channels->head;
+    for (; ref != NULL; ref = ref->next) {
+        if (ref->chan != NULL) {
+            _channel_drop_interpreter(ref->chan, interp);
+        }
+    }
+
+    PyThread_release_lock(channels->mutex);
+}
+
 /* support for closing non-empty channels */
 
 struct _channel_closing {
@@ -1163,7 +1285,7 @@ _channel_set_closing(struct _channelref *ref, PyThread_type_lock mutex) {
         res = ERR_CHANNEL_CLOSED;
         goto done;
     }
-    chan->closing = PyMem_NEW(struct _channel_closing, 1);
+    chan->closing = GLOBAL_MALLOC(struct _channel_closing);
     if (chan->closing == NULL) {
         goto done;
     }
@@ -1179,7 +1301,7 @@ static void
 _channel_clear_closing(struct _channel *chan) {
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
     if (chan->closing != NULL) {
-        PyMem_Free(chan->closing);
+        GLOBAL_FREE(chan->closing);
         chan->closing = NULL;
     }
     PyThread_release_lock(chan->mutex);
@@ -1257,14 +1379,14 @@ _channel_send(_channels *channels, int64_t id, PyObject *obj)
     }
 
     // Convert the object to cross-interpreter data.
-    _PyCrossInterpreterData *data = PyMem_NEW(_PyCrossInterpreterData, 1);
+    _PyCrossInterpreterData *data = GLOBAL_MALLOC(_PyCrossInterpreterData);
     if (data == NULL) {
         PyThread_release_lock(mutex);
         return -1;
     }
     if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
         PyThread_release_lock(mutex);
-        PyMem_Free(data);
+        GLOBAL_FREE(data);
         return -1;
     }
 
@@ -1274,7 +1396,7 @@ _channel_send(_channels *channels, int64_t id, PyObject *obj)
     if (res != 0) {
         // We may chain an exception here:
         (void)_release_xid_data(data, 0);
-        PyMem_Free(data);
+        GLOBAL_FREE(data);
         return res;
     }
 
@@ -1323,11 +1445,13 @@ _channel_recv(_channels *channels, int64_t id, PyObject **res)
     if (obj == NULL) {
         assert(PyErr_Occurred());
         (void)_release_xid_data(data, 1);
-        PyMem_Free(data);
+        // It was allocated in _channel_send().
+        GLOBAL_FREE(data);
         return -1;
     }
     int release_res = _release_xid_data(data, 0);
-    PyMem_Free(data);
+    // It was allocated in _channel_send().
+    GLOBAL_FREE(data);
     if (release_res < 0) {
         // The source interpreter has been destroyed already.
         assert(PyErr_Occurred());
@@ -1861,6 +1985,19 @@ _global_channels(void) {
 }
 
 
+static void
+clear_interpreter(void *data)
+{
+    if (_globals.module_count == 0) {
+        return;
+    }
+    PyInterpreterState *interp = (PyInterpreterState *)data;
+    assert(interp == _get_current_interp());
+    int64_t id = PyInterpreterState_GetID(interp);
+    _channels_drop_interpreter(&_globals.channels, id);
+}
+
+
 static PyObject *
 channel_create(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -2267,6 +2404,10 @@ module_exec(PyObject *mod)
     if (state->ChannelIDType == NULL) {
         goto error;
     }
+
+    // Make sure chnnels drop objects owned by this interpreter
+    PyInterpreterState *interp = _get_current_interp();
+    _Py_AtExit(interp, clear_interpreter, (void *)interp);
 
     return 0;
 
