@@ -1128,6 +1128,7 @@ The following recipes have a more mathematical flavor:
            result.append(pool[-1-n])
        return tuple(result)
 
+
 .. doctest::
     :hide:
 
