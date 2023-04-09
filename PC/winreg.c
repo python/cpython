@@ -154,7 +154,11 @@ PyHKEY_deallocFunc(PyObject *ob)
     PyHKEYObject *obkey = (PyHKEYObject *)ob;
     if (obkey->hkey)
         RegCloseKey((HKEY)obkey->hkey);
-    PyObject_Free(ob);
+
+    PyTypeObject *tp = Py_TYPE(ob);
+    PyObject_GC_UnTrack(ob);
+    PyObject_GC_Del(ob);
+    Py_DECREF(tp);
 }
 
 static int
@@ -431,6 +435,7 @@ PyHKEY_New(PyObject *m, HKEY hInit)
     PyHKEYObject *key = PyObject_GC_New(PyHKEYObject, st->PyHKEY_Type);
     if (key)
         key->hkey = hInit;
+    PyObject_GC_Track(key);
     return (PyObject *)key;
 }
 
@@ -497,13 +502,9 @@ PyHKEY_FromHKEY(PyObject *m, HKEY h)
 {
     winreg_state *st = PyModule_GetState(m);
 
-    /* Inline PyObject_New */
-    PyHKEYObject *op = (PyHKEYObject *) PyObject_Malloc(sizeof(PyHKEYObject));
-    if (op == NULL) {
-        return PyErr_NoMemory();
-    }
-    _PyObject_Init((PyObject*)op, st->PyHKEY_Type);
+    PyHKEYObject *op = (PyHKEYObject *) PyObject_GC_New(PyHKEYObject, st->PyHKEY_Type);
     op->hkey = h;
+    PyObject_GC_Track(op);
     return (PyObject *)op;
 }
 
