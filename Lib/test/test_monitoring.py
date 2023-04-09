@@ -49,6 +49,7 @@ class MonitoringBaseTest(unittest.TestCase):
         m.restart_events
         m.DISABLE
         m.MISSING
+        m.events.NO_EVENTS
 
     def test_tool(self):
         sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")

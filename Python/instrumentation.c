@@ -4,6 +4,7 @@
 #include "pycore_call.h"
 #include "pycore_frame.h"
 #include "pycore_interp.h"
+#include "pycore_long.h"
 #include "pycore_namespace.h"
 #include "pycore_object.h"
 #include "pycore_opcode.h"
@@ -1974,6 +1975,8 @@ PyObject *_Py_CreateMonitoringObject(void)
             goto error;
         }
     }
+    err = PyObject_SetAttrString(events, "NO_EVENTS", _PyLong_GetZero());
+    if (err) goto error;
     PyObject *val = PyLong_FromLong(PY_MONITORING_DEBUGGER_ID);
     err = PyObject_SetAttrString(mod, "DEBUGGER_ID", val);
     Py_DECREF(val);
