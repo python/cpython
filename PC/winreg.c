@@ -2203,6 +2203,20 @@ static PyModuleDef_Slot winreg_slots[] = {
     {0, NULL}
 };
 
+static winreg_traverse(PyObject* module, visitproc visit, void* arg)
+{
+    winreg_state *state = PyModule_GetState(module);
+    Py_VISIT(state->PyHKEY_Type);
+    return 0;
+}
+
+static winreg_clear(PyObject *module)
+{
+    winreg_state *state = PyModule_GetState(module);
+    Py_CLEAR(state->PyHKEY_Type);
+    return 0;
+}
+
 static struct PyModuleDef winregmodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "winreg",
@@ -2210,6 +2224,8 @@ static struct PyModuleDef winregmodule = {
     .m_size = sizeof(winreg_state),
     .m_methods = winreg_methods,
     .m_slots = winreg_slots,
+    .m_traverse = winreg_traverse,
+    .m_clear = winreg_clear,
 };
 
 PyMODINIT_FUNC PyInit_winreg(void)
