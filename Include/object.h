@@ -163,7 +163,9 @@ struct _object {
     _PyObject_HEAD_EXTRA
     union {
        Py_ssize_t ob_refcnt;
+#if SIZEOF_VOID_P > 4
        PY_UINT32_T ob_refcnt_split[2];
+#endif
     };
     PyTypeObject *ob_type;
 };
