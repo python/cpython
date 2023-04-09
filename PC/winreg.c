@@ -15,6 +15,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_object.h"        // _PyObject_Init()
+#include "pycore_moduleobject.h"
 #include "structmember.h"         // PyMemberDef
 #include <windows.h>
 
@@ -287,18 +288,16 @@ class self_return_converter(CReturnConverter):
 /*[clinic input]
 winreg.HKEYType.Close
 
-    cls: defining_class
-
 Closes the underlying Windows handle.
 
 If the handle is already closed, no error is raised.
 [clinic start generated code]*/
 
 static PyObject *
-winreg_HKEYType_Close_impl(PyHKEYObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=4a1fc85168cf5102 input=b30c5bb22161fbf0]*/
+winreg_HKEYType_Close_impl(PyHKEYObject *self)
+/*[clinic end generated code: output=fced3a624fb0c344 input=6786ac75f6b89de6]*/
 {
-    PyObject *m = PyType_GetModule(cls);
+    PyObject *m = PyType_GetModule(Py_TYPE(self));
     if (m == NULL) {
         return NULL;
     }
@@ -349,19 +348,17 @@ winreg_HKEYType___enter___impl(PyHKEYObject *self)
 /*[clinic input]
 winreg.HKEYType.__exit__
 
-    cls: defining_class
     exc_type: object
     exc_value: object
     traceback: object
 [clinic start generated code]*/
 
 static PyObject *
-winreg_HKEYType___exit___impl(PyHKEYObject *self, PyTypeObject *cls,
-                              PyObject *exc_type, PyObject *exc_value,
-                              PyObject *traceback)
-/*[clinic end generated code: output=47d05b29b8f34b89 input=95a8d2759df9dd54]*/
+winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
+                              PyObject *exc_value, PyObject *traceback)
+/*[clinic end generated code: output=923ebe7389e6a263 input=fb32489ee92403c7]*/
 {
-    PyObject *m = PyType_GetModule(cls);
+    PyObject *m = PyType_GetModule(Py_TYPE(self));
     if (m == NULL) {
         return NULL;
     }
@@ -431,7 +428,7 @@ static PyType_Spec pyhkey_type_spec = {
 PyObject *
 PyHKEY_New(PyObject *m, HKEY hInit)
 {
-    winreg_state *st = PyModule_GetState(m);
+    winreg_state *st = _PyModule_GetState(m);
     PyHKEYObject *key = PyObject_GC_New(PyHKEYObject, st->PyHKEY_Type);
     if (key)
         key->hkey = hInit;
@@ -500,7 +497,7 @@ clinic_HKEY_converter(PyObject *m, PyObject *ob, void *p)
 PyObject *
 PyHKEY_FromHKEY(PyObject *m, HKEY h)
 {
-    winreg_state *st = PyModule_GetState(m);
+    winreg_state *st = _PyModule_GetState(m);
 
     PyHKEYObject *op = (PyHKEYObject *) PyObject_GC_New(PyHKEYObject, st->PyHKEY_Type);
     op->hkey = h;
@@ -2125,7 +2122,7 @@ inskey(PyObject * d, char * name, HKEY key)
 static int
 exec_module(PyObject *m)
 {
-    winreg_state *st = (winreg_state *)PyModule_GetState(m);
+    winreg_state *st = (winreg_state *)_PyModule_GetState(m);
 
     PyObject *d;
     d = PyModule_GetDict(m);

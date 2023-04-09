@@ -19,19 +19,15 @@ PyDoc_STRVAR(winreg_HKEYType_Close__doc__,
 "If the handle is already closed, no error is raised.");
 
 #define WINREG_HKEYTYPE_CLOSE_METHODDEF    \
-    {"Close", _PyCFunction_CAST(winreg_HKEYType_Close), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, winreg_HKEYType_Close__doc__},
+    {"Close", (PyCFunction)winreg_HKEYType_Close, METH_NOARGS, winreg_HKEYType_Close__doc__},
 
 static PyObject *
-winreg_HKEYType_Close_impl(PyHKEYObject *self, PyTypeObject *cls);
+winreg_HKEYType_Close_impl(PyHKEYObject *self);
 
 static PyObject *
-winreg_HKEYType_Close(PyHKEYObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+winreg_HKEYType_Close(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
 {
-    if (nargs) {
-        PyErr_SetString(PyExc_TypeError, "Close() takes no arguments");
-        return NULL;
-    }
-    return winreg_HKEYType_Close_impl(self, cls);
+    return winreg_HKEYType_Close_impl(self);
 }
 
 #endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
@@ -101,20 +97,19 @@ PyDoc_STRVAR(winreg_HKEYType___exit____doc__,
 "\n");
 
 #define WINREG_HKEYTYPE___EXIT___METHODDEF    \
-    {"__exit__", _PyCFunction_CAST(winreg_HKEYType___exit__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, winreg_HKEYType___exit____doc__},
+    {"__exit__", _PyCFunction_CAST(winreg_HKEYType___exit__), METH_FASTCALL|METH_KEYWORDS, winreg_HKEYType___exit____doc__},
 
 static PyObject *
-winreg_HKEYType___exit___impl(PyHKEYObject *self, PyTypeObject *cls,
-                              PyObject *exc_type, PyObject *exc_value,
-                              PyObject *traceback);
+winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
+                              PyObject *exc_value, PyObject *traceback);
 
 static PyObject *
-winreg_HKEYType___exit__(PyHKEYObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -149,7 +144,7 @@ winreg_HKEYType___exit__(PyHKEYObject *self, PyTypeObject *cls, PyObject *const 
     exc_type = args[0];
     exc_value = args[1];
     traceback = args[2];
-    return_value = winreg_HKEYType___exit___impl(self, cls, exc_type, exc_value, traceback);
+    return_value = winreg_HKEYType___exit___impl(self, exc_type, exc_value, traceback);
 
 exit:
     return return_value;
@@ -1800,4 +1795,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=e280486839dc13a8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ad8592b2d01094e7 input=a9049054013a1b77]*/
