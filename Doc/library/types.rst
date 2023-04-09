@@ -110,7 +110,7 @@ Dynamic Type Creation
         Baz.__bases__ == (list,)
         get_original_bases(Baz) == (list[str],)
 
-        get_original_bases(int) == None
+        get_original_bases(int) == (object,)
 
     .. versionadded:: 3.12
 
