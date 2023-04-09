@@ -73,12 +73,9 @@ _SWAP_SEP_AND_NEWLINE = {
 
 
 @functools.lru_cache()
-def _make_matcher(path_cls, pattern):
-    pattern = path_cls(pattern)
-    if not pattern.parts:
-        raise ValueError("empty pattern")
-    parts = [r'\A' if pattern.drive or pattern.root else '^']
-    for part in pattern._lines_normcase.splitlines(keepends=True):
+def  _make_matcher(lines):
+    parts = ['^']
+    for part in lines.splitlines(keepends=True):
         if part == '**\n':
             part = r'[\s\S]*^'
         elif part == '**':
@@ -717,8 +714,15 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
-        matcher = _make_matcher(type(self), path_pattern)
-        return matcher.search(self._lines_normcase) is not None
+        pat = type(self)(path_pattern)
+        if not pat.parts:
+            raise ValueError("empty pattern")
+        matcher = _make_matcher(pat._lines_normcase)
+        if pat.drive or pat.root:
+            match = matcher.match(self._lines_normcase)
+        else:
+            match = matcher.search(self._lines_normcase)
+        return match is not None
 
 
 # Can't subclass os.PathLike from PurePath and keep the constructor
