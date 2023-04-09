@@ -1,0 +1,1 @@
+Fix regex pattern for BaseConfigurator.INDEX_PATTERN
