@@ -2,6 +2,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>
 
@@ -24,7 +25,7 @@ get_module_state(PyObject *mod)
 static inline collections_state *
 get_module_state_by_cls(PyTypeObject *cls)
 {
-    void *state = PyType_GetModuleState(cls);
+    void *state = _PyType_GetModuleState(cls);
     assert(state != NULL);
     return (collections_state *)state;
 }
