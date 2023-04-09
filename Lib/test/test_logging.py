@@ -3533,7 +3533,7 @@ class ConfigDictTest(BaseTest):
         self.assertEqual(bc.convert('cfg://adict.d'), 'e')
         self.assertEqual(bc.convert('cfg://adict[f]'), 3)
         self.assertEqual(bc.convert('cfg://adict[alpha nmmeric 1 with spaces]'), 5)
-        self.assertEqual(bc.convert('cfg://adict[alpha nmmeric 1 with spaces]'), 9)
+        self.assertEqual(bc.convert('cfg://adict[aplha numeric 1 %( - © ©ß¯]'), 9)
         v = bc.convert('cfg://nest3')
         self.assertEqual(v.pop(1), ['a', 'b', 'c'])
         self.assertRaises(KeyError, bc.convert, 'cfg://nosuch')
