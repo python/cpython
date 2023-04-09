@@ -666,7 +666,7 @@ static struct PyModuleDef msvcrtmodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "msvcrt",
     .m_methods = msvcrt_functions,
-    .m_slots = msvcrt_slots
+    .m_slots = msvcrt_slots,
 };
 
 PyMODINIT_FUNC
