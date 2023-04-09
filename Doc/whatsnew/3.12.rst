@@ -210,6 +210,11 @@ array
 asyncio
 -------
 
+* The performance of writing to sockets in :mod:`asyncio` has been
+  significantly improved. ``asyncio`` now avoids unnecessary copying when
+  writing to sockets and uses :meth:`~socket.socket.sendmsg` if the platform
+  supports it. (Contributed by Kumar Aditya in :gh:`91166`.)
+
 * On Linux, :mod:`asyncio` uses :class:`~asyncio.PidfdChildWatcher` by default
   if :func:`os.pidfd_open` is available and functional instead of
   :class:`~asyncio.ThreadedChildWatcher`.
