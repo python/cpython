@@ -1490,7 +1490,7 @@ The following recipes have a more mathematical flavor:
 .. testcode::
     :hide:
 
-    Old recipes and their tests which are guaranteed to continue to work.
+    # Old recipes and their tests which are guaranteed to continue to work.
 
     def sumprod(vec1, vec2):
         "Compute a sum of products."
