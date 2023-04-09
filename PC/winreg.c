@@ -158,7 +158,7 @@ PyHKEY_deallocFunc(PyObject *ob)
 }
 
 static int
-PyHKEY_traverseFunc(PyHKEYObject* self, visitproc visit, void* arg)
+PyHKEY_traverseFunc(PyHKEYObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
