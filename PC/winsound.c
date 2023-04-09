@@ -246,6 +246,8 @@ PyInit_winsound(void)
     ADD_DEFINE(MB_ICONHAND);
     ADD_DEFINE(MB_ICONQUESTION);
 
+#undef ADD_DEFINE
+
     return module;
 
 error:
