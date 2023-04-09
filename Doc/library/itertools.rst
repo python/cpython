@@ -863,61 +863,6 @@ which incur interpreter overhead.
            window.append(x)
            yield tuple(window)
 
-   def sum_of_squares(it):
-       "Add up the squares of the input values."
-       # sum_of_squares([10, 20, 30]) -> 1400
-       return math.sumprod(*tee(it))
-
-   def transpose(it):
-       "Swap the rows and columns of the input."
-       # transpose([(1, 2, 3), (11, 22, 33)]) --> (1, 11) (2, 22) (3, 33)
-       return zip(*it, strict=True)
-
-   def matmul(m1, m2):
-       "Multiply two matrices."
-       # matmul([(7, 5), (3, 5)], [[2, 5], [7, 9]]) --> (49, 80), (41, 60)
-       n = len(m2[0])
-       return batched(starmap(math.sumprod, product(m1, transpose(m2))), n)
-
-   def convolve(signal, kernel):
-       """Linear convolution of two iterables.
-
-       Article:  https://betterexplained.com/articles/intuitive-convolution/
-       Video:    https://www.youtube.com/watch?v=KuXjwB4LzSA
-       """
-       # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
-       # convolve(data, [1, -1]) --> 1st finite difference (1st derivative)
-       # convolve(data, [1, -2, 1]) --> 2nd finite difference (2nd derivative)
-       kernel = tuple(kernel)[::-1]
-       n = len(kernel)
-       padded_signal = chain(repeat(0, n-1), signal, [0] * (n-1))
-       for window in sliding_window(padded_signal, n):
-           yield math.sumprod(kernel, window)
-
-   def polynomial_from_roots(roots):
-       """Compute a polynomial's coefficients from its roots.
-
-          (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
-       """
-       # polynomial_from_roots([5, -4, 3]) --> [1, -4, -17, 60]
-       expansion = [1]
-       for r in roots:
-           expansion = convolve(expansion, (1, -r))
-       return list(expansion)
-
-   def polynomial_eval(coefficients, x):
-       """Evaluate a polynomial at a specific value.
-
-       Computes with better numeric stability than Horner's method.
-       """
-       # Evaluate x³ -4x² -17x + 60 at x = 2.5
-       # polynomial_eval([1, -4, -17, 60], x=2.5) --> 8.125
-       n = len(coefficients)
-       if n == 0:
-           return x * 0  # coerce zero to the type of x
-       powers = map(pow, repeat(x), reversed(range(n)))
-       return math.sumprod(coefficients, powers)
-
    def iter_index(iterable, value, start=0):
        "Return indices where a value occurs in a sequence or iterable."
        # iter_index('AABCADEAF', 'A') --> 0 1 4 7
@@ -940,32 +885,6 @@ which incur interpreter overhead.
                    yield (i := seq_index(value, i+1))
            except ValueError:
                pass
-
-   def sieve(n):
-       "Primes less than n"
-       # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
-       data = bytearray((0, 1)) * (n // 2)
-       data[:3] = 0, 0, 0
-       limit = math.isqrt(n) + 1
-       for p in compress(range(limit), data):
-           data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
-       data[2] = 1
-       return iter_index(data, 1) if n > 2 else iter([])
-
-   def factor(n):
-       "Prime factors of n."
-       # factor(99) --> 3 3 11
-       for prime in sieve(math.isqrt(n) + 1):
-           while True:
-               quotient, remainder = divmod(n, prime)
-               if remainder:
-                   break
-               yield prime
-               n = quotient
-               if n == 1:
-                   return
-       if n > 1:
-           yield n
 
    def flatten(list_of_lists):
        "Flatten one level of nesting"
@@ -1035,11 +954,6 @@ which incur interpreter overhead.
        slices = starmap(slice, combinations(range(len(seq) + 1), 2))
        return map(operator.getitem, repeat(seq), slices)
 
-   def powerset(iterable):
-       "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
-       s = list(iterable)
-       return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
-
    def unique_everseen(iterable, key=None):
        "List unique elements, preserving order. Remember all elements ever seen."
        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
@@ -1104,6 +1018,97 @@ which incur interpreter overhead.
        # first_true([a,b,c], x) --> a or b or c or x
        # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
        return next(filter(pred, iterable), default)
+
+
+The following recipes have a more mathematical flavor:
+
+.. testcode::
+
+   def powerset(iterable):
+       "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+       s = list(iterable)
+       return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+
+   def sieve(n):
+       "Primes less than n"
+       # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
+       data = bytearray((0, 1)) * (n // 2)
+       data[:3] = 0, 0, 0
+       limit = math.isqrt(n) + 1
+       for p in compress(range(limit), data):
+           data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
+       data[2] = 1
+       return iter_index(data, 1) if n > 2 else iter([])
+
+   def factor(n):
+       "Prime factors of n."
+       # factor(99) --> 3 3 11
+       for prime in sieve(math.isqrt(n) + 1):
+           while True:
+               quotient, remainder = divmod(n, prime)
+               if remainder:
+                   break
+               yield prime
+               n = quotient
+               if n == 1:
+                   return
+       if n > 1:
+           yield n
+
+   def sum_of_squares(it):
+       "Add up the squares of the input values."
+       # sum_of_squares([10, 20, 30]) -> 1400
+       return math.sumprod(*tee(it))
+
+   def transpose(it):
+       "Swap the rows and columns of the input."
+       # transpose([(1, 2, 3), (11, 22, 33)]) --> (1, 11) (2, 22) (3, 33)
+       return zip(*it, strict=True)
+
+   def matmul(m1, m2):
+       "Multiply two matrices."
+       # matmul([(7, 5), (3, 5)], [[2, 5], [7, 9]]) --> (49, 80), (41, 60)
+       n = len(m2[0])
+       return batched(starmap(math.sumprod, product(m1, transpose(m2))), n)
+
+   def convolve(signal, kernel):
+       """Linear convolution of two iterables.
+
+       Article:  https://betterexplained.com/articles/intuitive-convolution/
+       Video:    https://www.youtube.com/watch?v=KuXjwB4LzSA
+       """
+       # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
+       # convolve(data, [1, -1]) --> 1st finite difference (1st derivative)
+       # convolve(data, [1, -2, 1]) --> 2nd finite difference (2nd derivative)
+       kernel = tuple(kernel)[::-1]
+       n = len(kernel)
+       padded_signal = chain(repeat(0, n-1), signal, [0] * (n-1))
+       for window in sliding_window(padded_signal, n):
+           yield math.sumprod(kernel, window)
+
+   def polynomial_from_roots(roots):
+       """Compute a polynomial's coefficients from its roots.
+
+          (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
+       """
+       # polynomial_from_roots([5, -4, 3]) --> [1, -4, -17, 60]
+       expansion = [1]
+       for r in roots:
+           expansion = convolve(expansion, (1, -r))
+       return list(expansion)
+
+   def polynomial_eval(coefficients, x):
+       """Evaluate a polynomial at a specific value.
+
+       Computes with better numeric stability than Horner's method.
+       """
+       # Evaluate x³ -4x² -17x + 60 at x = 2.5
+       # polynomial_eval([1, -4, -17, 60], x=2.5) --> 8.125
+       n = len(coefficients)
+       if n == 0:
+           return x * 0  # coerce zero to the type of x
+       powers = map(pow, repeat(x), reversed(range(n)))
+       return math.sumprod(coefficients, powers)
 
    def nth_combination(iterable, r, index):
        "Equivalent to list(combinations(iterable, r))[index]"
