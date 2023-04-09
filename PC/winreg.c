@@ -121,7 +121,7 @@ typedef struct {
 } PyHKEYObject;
 
 #define PyHKEY_Check(m, op)\
-    Py_IS_TYPE(op, ((winreg_state *)PyModule_GetState(m))->PyHKEY_Type)
+    Py_IS_TYPE(op, ((winreg_state *)_PyModule_GetState(m))->PyHKEY_Type)
 
 static char *failMsg = "bad operand type";
 
