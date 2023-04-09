@@ -1,1 +1,1 @@
-Adapt :mod:`!winreg` to :pep:`687`.
+Adapt the :mod:`winreg` extension module to :pep:`687`.
