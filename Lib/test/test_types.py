@@ -1366,10 +1366,10 @@ class ClassCreationTests(unittest.TestCase):
         class B(typing.Generic[T]): pass
         class C(B[int]): pass
         class D(B[str], float): pass
-        self.assertIsNone(types.get_original_bases(A))
+        self.assertEqual(types.get_original_bases(A), (object,))
         self.assertEqual(types.get_original_bases(B), (typing.Generic[T],))
         self.assertEqual(types.get_original_bases(C), (B[int],))
-        self.assertIsNone(types.get_original_bases(int))
+        self.assertEqual(types.get_original_bases(int), (object,))
         self.assertEqual(types.get_original_bases(D), (B[str], float))
 
         class E(list[T]): pass
@@ -1382,6 +1382,9 @@ class ClassCreationTests(unittest.TestCase):
             x: int
 
         self.assertIs(types.get_original_bases(G)[0], typing.NamedTuple)
+
+        with self.assertRaises(TypeError):
+            types.get_original_bases(object())
 
     # Many of the following tests are derived from test_descr.py
     def test_prepare_class(self):
