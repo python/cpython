@@ -33,6 +33,16 @@ extern int _PyAST_Optimize(
     struct _arena *arena,
     _PyASTOptimizeState *state);
 
+/* Utility for a number of growing arrays used in the compiler */
+int _PyCompile_EnsureArrayLargeEnough(
+        int idx,
+        void **array,
+        int *alloc,
+        int default_alloc,
+        size_t item_size);
+
+int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
+
 /* Access compiler internals for unit testing */
 
 PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(

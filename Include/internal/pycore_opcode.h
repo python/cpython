@@ -12,27 +12,31 @@ extern "C" {
 
 #include "opcode.h"
 
+extern const uint32_t _PyOpcode_RelativeJump[9];
+
+extern const uint32_t _PyOpcode_Jump[9];
+
 extern const uint8_t _PyOpcode_Caches[256];
 
 extern const uint8_t _PyOpcode_Deopt[256];
 
 #ifdef NEED_OPCODE_TABLES
-static const uint32_t _PyOpcode_RelativeJump[9] = {
+const uint32_t _PyOpcode_RelativeJump[9] = {
     0U,
     0U,
     536870912U,
-    135118848U,
+    135020544U,
     4163U,
     0U,
     0U,
     0U,
     48U,
 };
-static const uint32_t _PyOpcode_Jump[9] = {
+const uint32_t _PyOpcode_Jump[9] = {
     0U,
     0U,
     536870912U,
-    135118848U,
+    135020544U,
     4163U,
     0U,
     0U,
@@ -41,18 +45,17 @@ static const uint32_t _PyOpcode_Jump[9] = {
 };
 
 const uint8_t _PyOpcode_Caches[256] = {
-    [BINARY_SUBSCR] = 4,
+    [BINARY_SUBSCR] = 1,
     [STORE_SUBSCR] = 1,
     [UNPACK_SEQUENCE] = 1,
     [FOR_ITER] = 1,
     [STORE_ATTR] = 4,
     [LOAD_ATTR] = 9,
     [COMPARE_OP] = 1,
-    [LOAD_GLOBAL] = 5,
+    [LOAD_GLOBAL] = 4,
     [BINARY_OP] = 1,
     [SEND] = 1,
-    [COMPARE_AND_BRANCH] = 1,
-    [CALL] = 4,
+    [CALL] = 3,
 };
 
 const uint8_t _PyOpcode_Deopt[256] = {
@@ -105,11 +108,10 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [CHECK_EG_MATCH] = CHECK_EG_MATCH,
     [CHECK_EXC_MATCH] = CHECK_EXC_MATCH,
     [CLEANUP_THROW] = CLEANUP_THROW,
-    [COMPARE_AND_BRANCH] = COMPARE_AND_BRANCH,
-    [COMPARE_AND_BRANCH_FLOAT] = COMPARE_AND_BRANCH,
-    [COMPARE_AND_BRANCH_INT] = COMPARE_AND_BRANCH,
-    [COMPARE_AND_BRANCH_STR] = COMPARE_AND_BRANCH,
     [COMPARE_OP] = COMPARE_OP,
+    [COMPARE_OP_FLOAT] = COMPARE_OP,
+    [COMPARE_OP_INT] = COMPARE_OP,
+    [COMPARE_OP_STR] = COMPARE_OP,
     [CONTAINS_OP] = CONTAINS_OP,
     [COPY] = COPY,
     [COPY_FREE_VARS] = COPY_FREE_VARS,
@@ -143,8 +145,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [JUMP_BACKWARD] = JUMP_BACKWARD,
     [JUMP_BACKWARD_NO_INTERRUPT] = JUMP_BACKWARD_NO_INTERRUPT,
     [JUMP_FORWARD] = JUMP_FORWARD,
-    [JUMP_IF_FALSE_OR_POP] = JUMP_IF_FALSE_OR_POP,
-    [JUMP_IF_TRUE_OR_POP] = JUMP_IF_TRUE_OR_POP,
     [KW_NAMES] = KW_NAMES,
     [LIST_APPEND] = LIST_APPEND,
     [LIST_EXTEND] = LIST_EXTEND,
@@ -279,7 +279,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [CALL_NO_KW_STR_1] = "CALL_NO_KW_STR_1",
     [CALL_NO_KW_TUPLE_1] = "CALL_NO_KW_TUPLE_1",
     [CALL_NO_KW_TYPE_1] = "CALL_NO_KW_TYPE_1",
-    [COMPARE_AND_BRANCH_FLOAT] = "COMPARE_AND_BRANCH_FLOAT",
+    [COMPARE_OP_FLOAT] = "COMPARE_OP_FLOAT",
     [WITH_EXCEPT_START] = "WITH_EXCEPT_START",
     [GET_AITER] = "GET_AITER",
     [GET_ANEXT] = "GET_ANEXT",
@@ -287,8 +287,8 @@ static const char *const _PyOpcode_OpName[263] = {
     [BEFORE_WITH] = "BEFORE_WITH",
     [END_ASYNC_FOR] = "END_ASYNC_FOR",
     [CLEANUP_THROW] = "CLEANUP_THROW",
-    [COMPARE_AND_BRANCH_INT] = "COMPARE_AND_BRANCH_INT",
-    [COMPARE_AND_BRANCH_STR] = "COMPARE_AND_BRANCH_STR",
+    [COMPARE_OP_INT] = "COMPARE_OP_INT",
+    [COMPARE_OP_STR] = "COMPARE_OP_STR",
     [FOR_ITER_LIST] = "FOR_ITER_LIST",
     [FOR_ITER_TUPLE] = "FOR_ITER_TUPLE",
     [STORE_SUBSCR] = "STORE_SUBSCR",
@@ -342,9 +342,9 @@ static const char *const _PyOpcode_OpName[263] = {
     [IMPORT_NAME] = "IMPORT_NAME",
     [IMPORT_FROM] = "IMPORT_FROM",
     [JUMP_FORWARD] = "JUMP_FORWARD",
-    [JUMP_IF_FALSE_OR_POP] = "JUMP_IF_FALSE_OR_POP",
-    [JUMP_IF_TRUE_OR_POP] = "JUMP_IF_TRUE_OR_POP",
     [STORE_FAST__LOAD_FAST] = "STORE_FAST__LOAD_FAST",
+    [STORE_FAST__STORE_FAST] = "STORE_FAST__STORE_FAST",
+    [STORE_SUBSCR_DICT] = "STORE_SUBSCR_DICT",
     [POP_JUMP_IF_FALSE] = "POP_JUMP_IF_FALSE",
     [POP_JUMP_IF_TRUE] = "POP_JUMP_IF_TRUE",
     [LOAD_GLOBAL] = "LOAD_GLOBAL",
@@ -372,9 +372,9 @@ static const char *const _PyOpcode_OpName[263] = {
     [STORE_DEREF] = "STORE_DEREF",
     [DELETE_DEREF] = "DELETE_DEREF",
     [JUMP_BACKWARD] = "JUMP_BACKWARD",
-    [COMPARE_AND_BRANCH] = "COMPARE_AND_BRANCH",
+    [STORE_SUBSCR_LIST_INT] = "STORE_SUBSCR_LIST_INT",
     [CALL_FUNCTION_EX] = "CALL_FUNCTION_EX",
-    [STORE_FAST__STORE_FAST] = "STORE_FAST__STORE_FAST",
+    [UNPACK_SEQUENCE_LIST] = "UNPACK_SEQUENCE_LIST",
     [EXTENDED_ARG] = "EXTENDED_ARG",
     [LIST_APPEND] = "LIST_APPEND",
     [SET_ADD] = "SET_ADD",
@@ -384,15 +384,15 @@ static const char *const _PyOpcode_OpName[263] = {
     [YIELD_VALUE] = "YIELD_VALUE",
     [RESUME] = "RESUME",
     [MATCH_CLASS] = "MATCH_CLASS",
-    [STORE_SUBSCR_DICT] = "STORE_SUBSCR_DICT",
-    [STORE_SUBSCR_LIST_INT] = "STORE_SUBSCR_LIST_INT",
+    [UNPACK_SEQUENCE_TUPLE] = "UNPACK_SEQUENCE_TUPLE",
+    [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
     [FORMAT_VALUE] = "FORMAT_VALUE",
     [BUILD_CONST_KEY_MAP] = "BUILD_CONST_KEY_MAP",
     [BUILD_STRING] = "BUILD_STRING",
-    [UNPACK_SEQUENCE_LIST] = "UNPACK_SEQUENCE_LIST",
-    [UNPACK_SEQUENCE_TUPLE] = "UNPACK_SEQUENCE_TUPLE",
-    [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
     [SEND_GEN] = "SEND_GEN",
+    [159] = "<159>",
+    [160] = "<160>",
+    [161] = "<161>",
     [LIST_EXTEND] = "LIST_EXTEND",
     [SET_UPDATE] = "SET_UPDATE",
     [DICT_MERGE] = "DICT_MERGE",
@@ -498,6 +498,9 @@ static const char *const _PyOpcode_OpName[263] = {
 #endif
 
 #define EXTRA_CASES \
+    case 159: \
+    case 160: \
+    case 161: \
     case 166: \
     case 167: \
     case 168: \

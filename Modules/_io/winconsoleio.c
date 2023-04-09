@@ -11,7 +11,7 @@
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
 
 #include "structmember.h"         // PyMemberDef
 #ifdef HAVE_SYS_TYPES_H
@@ -22,7 +22,9 @@
 #endif
 #include <stddef.h> /* For offsetof */
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #include <fcntl.h>
 
@@ -1177,4 +1179,4 @@ PyTypeObject PyWindowsConsoleIO_Type = {
     0,                                          /* tp_finalize */
 };
 
-#endif /* MS_WINDOWS */
+#endif /* HAVE_WINDOWS_CONSOLE_IO */

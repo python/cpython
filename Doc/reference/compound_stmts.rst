@@ -816,7 +816,7 @@ keyword against a subject.  Syntax:
 
 If the OR pattern fails, the AS pattern fails.  Otherwise, the AS pattern binds
 the subject to the name on the right of the as keyword and succeeds.
-``capture_pattern`` cannot be a a ``_``.
+``capture_pattern`` cannot be a ``_``.
 
 In simple terms ``P as NAME`` will match with ``P``, and on success it will
 set ``NAME = <subject>``.

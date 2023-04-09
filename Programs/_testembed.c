@@ -9,7 +9,6 @@
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
-#include <Python.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>               // putenv()

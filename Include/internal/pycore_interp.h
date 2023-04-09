@@ -10,8 +10,9 @@ extern "C" {
 
 #include <stdbool.h>
 
-#include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ast_state.h"     // struct ast_state
+#include "pycore_atexit.h"        // struct atexit_state
+#include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ceval_state.h"   // struct _ceval_state
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_context.h"       // struct _Py_context_state
@@ -25,24 +26,11 @@ extern "C" {
 #include "pycore_import.h"        // struct _import_state
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_global_objects.h"  // struct _Py_interp_static_objects
+#include "pycore_object_state.h"   // struct _py_object_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
-
-
-// atexit state
-typedef struct {
-    PyObject *func;
-    PyObject *args;
-    PyObject *kwargs;
-} atexit_callback;
-
-struct atexit_state {
-    atexit_callback **callbacks;
-    int ncallbacks;
-    int callback_len;
-};
 
 
 struct _Py_long_state {
@@ -111,6 +99,7 @@ struct _is {
 
     PyObject *dict;  /* Stores per-interpreter state */
 
+    PyObject *sysdict_copy;
     PyObject *builtins_copy;
     // Initialized to _PyEval_EvalFrameDefault().
     _PyFrameEvalFunction eval_frame;
@@ -137,6 +126,7 @@ struct _is {
     // One bit is set for each non-NULL entry in code_watchers
     uint8_t active_code_watchers;
 
+    struct _py_object_state object_state;
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
     struct _Py_long_state long_state;

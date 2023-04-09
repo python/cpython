@@ -29,6 +29,10 @@
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
+// to support MS_WINDOWS_SYSTEM OpenFileMappingA / CreateFileMappingA
+// need to be replaced with OpenFileMappingW / CreateFileMappingW
+#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_GAMES)
+
 #ifndef MS_WINDOWS
 #define UNIX
 # ifdef HAVE_FCNTL_H
@@ -647,7 +651,7 @@ mmap_flush_method(mmap_object *self, PyObject *args)
     if (self->access == ACCESS_READ || self->access == ACCESS_COPY)
         Py_RETURN_NONE;
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     if (!FlushViewOfFile(self->data+offset, size)) {
         PyErr_SetFromWindowsErr(GetLastError());
         return NULL;
@@ -1724,3 +1728,5 @@ PyInit_mmap(void)
 {
     return PyModuleDef_Init(&mmapmodule);
 }
+
+#endif /* !MS_WINDOWS || MS_WINDOWS_DESKTOP || MS_WINDOWS_GAMES */

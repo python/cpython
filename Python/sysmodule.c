@@ -742,7 +742,7 @@ sys_excepthook_impl(PyObject *module, PyObject *exctype, PyObject *value,
                     PyObject *traceback)
 /*[clinic end generated code: output=18d99fdda21b6b5e input=ecf606fa826f19d9]*/
 {
-    PyErr_Display(exctype, value, traceback);
+    PyErr_Display(NULL, value, traceback);
     Py_RETURN_NONE;
 }
 
@@ -1488,8 +1488,11 @@ static PyStructSequence_Desc windows_version_desc = {
 };
 
 static PyObject *
-_sys_getwindowsversion_from_kernel32()
+_sys_getwindowsversion_from_kernel32(void)
 {
+#ifndef MS_WINDOWS_DESKTOP
+    return NULL;
+#else
     HANDLE hKernel32;
     wchar_t kernel32_path[MAX_PATH];
     LPVOID verblock;
@@ -1523,6 +1526,7 @@ _sys_getwindowsversion_from_kernel32()
     realBuild = HIWORD(ffi->dwProductVersionLS);
     PyMem_RawFree(verblock);
     return Py_BuildValue("(kkk)", realMajor, realMinor, realBuild);
+#endif /* !MS_WINDOWS_DESKTOP */
 }
 
 /* Disable deprecation warnings about GetVersionEx as the result is
@@ -1850,7 +1854,9 @@ static Py_ssize_t
 sys_gettotalrefcount_impl(PyObject *module)
 /*[clinic end generated code: output=4103886cf17c25bc input=53b744faa5d2e4f6]*/
 {
-    return _Py_GetRefTotal();
+    /* It may make sense to return the total for the current interpreter
+       or have a second function that does so. */
+    return _Py_GetGlobalRefTotal();
 }
 
 #endif /* Py_REF_DEBUG */
@@ -2666,11 +2672,13 @@ stderr -- standard error object; used for error messages\n\
   By assigning other file objects (or objects that behave like files)\n\
   to these, it is possible to redirect all of the interpreter's I/O.\n\
 \n\
+last_exc - the last uncaught exception\n\
+  Only available in an interactive session after a\n\
+  traceback has been printed.\n\
 last_type -- type of last uncaught exception\n\
 last_value -- value of last uncaught exception\n\
 last_traceback -- traceback of last uncaught exception\n\
-  These three are only available in an interactive session after a\n\
-  traceback has been printed.\n\
+  These three are the (deprecated) legacy representation of last_exc.\n\
 "
 )
 /* concatenating string here */
@@ -3426,6 +3434,11 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         goto error;
     }
     interp->sysdict = Py_NewRef(sysdict);
+
+    interp->sysdict_copy = PyDict_Copy(sysdict);
+    if (interp->sysdict_copy == NULL) {
+        goto error;
+    }
 
     if (PyDict_SetItemString(sysdict, "modules", modules) < 0) {
         goto error;
