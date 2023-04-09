@@ -61,6 +61,7 @@ class HeapTypeTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "immutable"):
             HKEYType.foo = "bar"
 
+
 class BaseWinregTests(unittest.TestCase):
 
     def setUp(self):
