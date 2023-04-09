@@ -467,7 +467,7 @@ void _PyEval_SetSwitchInterval(unsigned long microseconds)
     gil->interval = microseconds;
 }
 
-unsigned long _PyEval_GetSwitchInterval()
+unsigned long _PyEval_GetSwitchInterval(void)
 {
     struct _gil_runtime_state *gil = &_PyRuntime.ceval.gil;
     return gil->interval;
