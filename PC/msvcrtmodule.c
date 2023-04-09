@@ -628,17 +628,23 @@ exec_module(PyObject* m)
 #ifdef _VC_ASSEMBLY_PUBLICKEYTOKEN
     st = PyModule_AddStringConstant(m, "VC_ASSEMBLY_PUBLICKEYTOKEN",
                                     _VC_ASSEMBLY_PUBLICKEYTOKEN);
-    if (st < 0) return NULL;
+    if (st < 0) {
+        return -1;
+}
 #endif
 #ifdef _CRT_ASSEMBLY_VERSION
     st = PyModule_AddStringConstant(m, "CRT_ASSEMBLY_VERSION",
                                     _CRT_ASSEMBLY_VERSION);
-    if (st < 0) return NULL;
+    if (st < 0) {
+        return -1;
+    }
 #endif
 #ifdef __LIBRARIES_ASSEMBLY_NAME_PREFIX
     st = PyModule_AddStringConstant(m, "LIBRARIES_ASSEMBLY_NAME_PREFIX",
                                     __LIBRARIES_ASSEMBLY_NAME_PREFIX);
-    if (st < 0) return NULL;
+    if (st < 0) {
+        return -1;
+    }
 #endif
 
     /* constants for the 2010 crt versions */
