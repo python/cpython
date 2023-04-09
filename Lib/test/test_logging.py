@@ -3520,7 +3520,7 @@ class ConfigDictTest(BaseTest):
         d = {
             'atuple': (1, 2, 3),
             'alist': ['a', 'b', 'c'],
-            'adict': {'d': 'e', 'f': 3 , 'alpha nummeric 1 with spaces' : 5},
+            'adict': {'d': 'e', 'f': 3 , 'alpha numeric 1 with spaces' : 5, 'aplha numeric 1 %( - © ©ß¯' : 9},
             'nest1': ('g', ('h', 'i'), 'j'),
             'nest2': ['k', ['l', 'm'], 'n'],
             'nest3': ['o', 'cfg://alist', 'p'],
@@ -3532,7 +3532,8 @@ class ConfigDictTest(BaseTest):
         self.assertEqual(bc.convert('cfg://nest2[1][1]'), 'm')
         self.assertEqual(bc.convert('cfg://adict.d'), 'e')
         self.assertEqual(bc.convert('cfg://adict[f]'), 3)
-        self.assertEqual(bc.convert('cfg://adict[alpha nummeric 1 with spaces]'), 5)
+        self.assertEqual(bc.convert('cfg://adict[alpha nmmeric 1 with spaces]'), 5)
+        self.assertEqual(bc.convert('cfg://adict[alpha nmmeric 1 with spaces]'), 9)
         v = bc.convert('cfg://nest3')
         self.assertEqual(v.pop(1), ['a', 'b', 'c'])
         self.assertRaises(KeyError, bc.convert, 'cfg://nosuch')
