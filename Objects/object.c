@@ -1870,9 +1870,9 @@ PyTypeObject _PyNone_Type = {
 };
 
 PyObject _Py_NoneStruct = {
-  _PyObject_EXTRA_INIT
-  _Py_IMMORTAL_REFCNT,
-  &_PyNone_Type
+    _PyObject_EXTRA_INIT
+    .ob_refcnt = _Py_IMMORTAL_REFCNT,
+    &_PyNone_Type
 };
 
 /* NotImplemented is an object that can be used to signal that an
@@ -1974,7 +1974,7 @@ PyTypeObject _PyNotImplemented_Type = {
 
 PyObject _Py_NotImplementedStruct = {
     _PyObject_EXTRA_INIT
-    _Py_IMMORTAL_REFCNT,
+    .ob_refcnt = _Py_IMMORTAL_REFCNT,
     &_PyNotImplemented_Type
 };
 
