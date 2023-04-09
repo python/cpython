@@ -1484,3 +1484,45 @@ The following recipes have a more mathematical flavor:
     >>> combos = list(combinations(iterable, r))
     >>> all(nth_combination(iterable, r, i) == comb for i, comb in enumerate(combos))
     True
+
+
+.. testcode::
+    :hide:
+
+    Old recipes and their tests which are guaranteed to continue to work.
+
+    def sumprod(vec1, vec2):
+        "Compute a sum of products."
+        return sum(starmap(operator.mul, zip(vec1, vec2, strict=True)))
+
+    def dotproduct(vec1, vec2):
+        return sum(map(operator.mul, vec1, vec2))
+
+    def pad_none(iterable):
+        """Returns the sequence elements and then returns None indefinitely.
+
+        Useful for emulating the behavior of the built-in map() function.
+        """
+        return chain(iterable, repeat(None))
+
+    def triplewise(iterable):
+        "Return overlapping triplets from an iterable"
+        # triplewise('ABCDEFG') --> ABC BCD CDE DEF EFG
+        for (a, _), (b, c) in pairwise(pairwise(iterable)):
+            yield a, b, c
+
+
+.. doctest::
+    :hide:
+
+    >>> dotproduct([1,2,3], [4,5,6])
+    32
+
+    >>> sumprod([1,2,3], [4,5,6])
+    32
+
+    >>> list(islice(pad_none('abc'), 0, 6))
+    ['a', 'b', 'c', None, None, None]
+
+    >>> list(triplewise('ABCDEFG'))
+    [('A', 'B', 'C'), ('B', 'C', 'D'), ('C', 'D', 'E'), ('D', 'E', 'F'), ('E', 'F', 'G')]
