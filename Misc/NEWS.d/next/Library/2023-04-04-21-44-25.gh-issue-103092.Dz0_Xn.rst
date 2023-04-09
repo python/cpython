@@ -1,1 +1,1 @@
-Adapt :mod:`!msvcrt` to :pep:`687`.
+Adapt the :mod:`msvcrt` extension module to :pep:`687`.
