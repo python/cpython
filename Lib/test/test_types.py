@@ -1383,7 +1383,7 @@ class ClassCreationTests(unittest.TestCase):
 
         self.assertIs(types.get_original_bases(G)[0], typing.NamedTuple)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "Expected an instance of type"):
             types.get_original_bases(object())
 
     # Many of the following tests are derived from test_descr.py
