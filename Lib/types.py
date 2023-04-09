@@ -146,7 +146,7 @@ def _calculate_meta(meta, bases):
 
 def get_original_bases(cls, /):
     """Return the class's "original" bases prior to modification by `__mro_entries__`.
-    
+
     This is useful for introspecting Generics.
 
     Examples::
