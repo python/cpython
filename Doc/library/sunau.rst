@@ -3,10 +3,15 @@
 
 .. module:: sunau
    :synopsis: Provide an interface to the Sun AU sound format.
+   :deprecated:
 
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 **Source code:** :source:`Lib/sunau.py`
+
+.. deprecated-removed:: 3.11 3.13
+   The :mod:`sunau` module is deprecated
+   (see :pep:`PEP 594 <594#sunau>` for details).
 
 --------------
 
@@ -57,11 +62,6 @@ The :mod:`sunau` module defines the following functions:
 
    A *mode* of ``'r'`` returns an :class:`AU_read` object, while a *mode* of ``'w'``
    or ``'wb'`` returns an :class:`AU_write` object.
-
-
-.. function:: openfp(file, mode)
-
-   A synonym for :func:`.open`, maintained for backwards compatibility.
 
 
 The :mod:`sunau` module defines the following exception:
@@ -118,7 +118,7 @@ AU_read objects, as returned by :func:`.open` above, have the following methods:
 
 .. method:: AU_read.getnchannels()
 
-   Returns number of audio channels (1 for mone, 2 for stereo).
+   Returns number of audio channels (1 for mono, 2 for stereo).
 
 
 .. method:: AU_read.getsampwidth()

@@ -12,12 +12,6 @@ from xml.sax.handler import feature_external_ges, feature_external_pes
 from xml.sax.handler import feature_string_interning
 from xml.sax.handler import property_xml_string, property_interning_dict
 
-# xml.parsers.expat does not raise ImportError in Jython
-import sys
-if sys.platform[:4] == "java":
-    raise SAXReaderNotAvailable("expat not available in Java", None)
-del sys
-
 try:
     from xml.parsers import expat
 except ImportError:
@@ -93,9 +87,9 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._parser = None
         self._namespaces = namespaceHandling
         self._lex_handler_prop = None
-        self._parsing = 0
+        self._parsing = False
         self._entity_stack = []
-        self._external_ges = 1
+        self._external_ges = 0
         self._interning = None
 
     # XMLReader methods
@@ -105,9 +99,16 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         source = saxutils.prepare_input_source(source)
 
         self._source = source
-        self.reset()
-        self._cont_handler.setDocumentLocator(ExpatLocator(self))
-        xmlreader.IncrementalParser.parse(self, source)
+        try:
+            self.reset()
+            self._cont_handler.setDocumentLocator(ExpatLocator(self))
+            xmlreader.IncrementalParser.parse(self, source)
+        except:
+            # bpo-30264: Close the source on error to not leak resources:
+            # xml.sax.parse() doesn't give access to the underlying parser
+            # to the caller
+            self._close_source()
+            raise
 
     def prepareParser(self, source):
         if source.getSystemId() is not None:
@@ -196,10 +197,10 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 
     # IncrementalParser methods
 
-    def feed(self, data, isFinal = 0):
+    def feed(self, data, isFinal=False):
         if not self._parsing:
             self.reset()
-            self._parsing = 1
+            self._parsing = True
             self._cont_handler.startDocument()
 
         try:
@@ -213,33 +214,37 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             # FIXME: when to invoke error()?
             self._err_handler.fatalError(exc)
 
+    def _close_source(self):
+        source = self._source
+        try:
+            file = source.getCharacterStream()
+            if file is not None:
+                file.close()
+        finally:
+            file = source.getByteStream()
+            if file is not None:
+                file.close()
+
     def close(self):
         if (self._entity_stack or self._parser is None or
             isinstance(self._parser, _ClosedParser)):
             # If we are completing an external entity, do nothing here
             return
         try:
-            self.feed("", isFinal = 1)
+            self.feed(b"", isFinal=True)
             self._cont_handler.endDocument()
-            self._parsing = 0
+            self._parsing = False
             # break cycle created by expat handlers pointing to our methods
             self._parser = None
         finally:
-            self._parsing = 0
+            self._parsing = False
             if self._parser is not None:
                 # Keep ErrorColumnNumber and ErrorLineNumber after closing.
                 parser = _ClosedParser()
                 parser.ErrorColumnNumber = self._parser.ErrorColumnNumber
                 parser.ErrorLineNumber = self._parser.ErrorLineNumber
                 self._parser = parser
-            try:
-                file = self._source.getCharacterStream()
-                if file is not None:
-                    file.close()
-            finally:
-                file = self._source.getByteStream()
-                if file is not None:
-                    file.close()
+            self._close_source()
 
     def _reset_cont_handler(self):
         self._parser.ProcessingInstructionHandler = \
@@ -296,7 +301,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._parser.SetParamEntityParsing(
             expat.XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE)
 
-        self._parsing = 0
+        self._parsing = False
         self._entity_stack = []
 
     # Locator methods

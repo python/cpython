@@ -52,7 +52,7 @@ message objects.
 
 .. class:: EmailMessage(policy=default)
 
-   If *policy* is specified use the rules it specifies to udpate and serialize
+   If *policy* is specified use the rules it specifies to update and serialize
    the representation of the message.  If *policy* is not set, use the
    :class:`~email.policy.default` policy, which follows the rules of the email
    RFCs except for line endings (instead of the RFC mandated ``\r\n``, it uses
@@ -63,7 +63,7 @@ message objects.
 
       Return the entire message flattened as a string.  When optional
       *unixfrom* is true, the envelope header is included in the returned
-      string.  *unixfrom* defaults to ``False``.  For backward compabitility
+      string.  *unixfrom* defaults to ``False``.  For backward compatibility
       with the base :class:`~email.message.Message` class *maxheaderlen* is
       accepted, but defaults to ``None``, which means that by default the line
       length is controlled by the
@@ -92,7 +92,7 @@ message objects.
 
    .. method:: __str__()
 
-      Equivalent to `as_string(policy=self.policy.clone(utf8=True)`.  Allows
+      Equivalent to ``as_string(policy=self.policy.clone(utf8=True))``.  Allows
       ``str(msg)`` to produce a string containing the serialized message in a
       readable format.
 
@@ -130,8 +130,8 @@ message objects.
 
    .. method:: is_multipart()
 
-      Return ``True`` if the message's payload is a list of sub-\
-      :class:`EmailMessage` objects, otherwise return ``False``.  When
+      Return ``True`` if the message's payload is a list of
+      sub-\ :class:`EmailMessage` objects, otherwise return ``False``.  When
       :meth:`is_multipart` returns ``False``, the payload should be a string
       object (which might be a CTE encoded binary payload).  Note that
       :meth:`is_multipart` returning ``True`` does not necessarily mean that
@@ -178,7 +178,7 @@ message objects.
 
    .. method:: __contains__(name)
 
-      Return true if the message object has a field named *name*. Matching is
+      Return ``True`` if the message object has a field named *name*. Matching is
       done without regard to case and *name* does not include the trailing
       colon.  Used for the ``in`` operator.  For example::
 
@@ -213,7 +213,7 @@ message objects.
          del msg['subject']
          msg['subject'] = 'Python roolz!'
 
-      If the :mod:`policy` defines certain haders to be unique (as the standard
+      If the :mod:`policy` defines certain headers to be unique (as the standard
       policies do), this method may raise a :exc:`ValueError` when an attempt
       is made to assign a value to such a header when one already exists.  This
       behavior is intentional for consistency's sake, but do not depend on it
@@ -379,7 +379,7 @@ message objects.
 
       Note that existing parameter values of headers may be accessed through
       the :attr:`~email.headerregistry.BaseHeader.params` attribute of the
-      header value (for example, ``msg['Content-Type'].params['charset']``.
+      header value (for example, ``msg['Content-Type'].params['charset']``).
 
       .. versionchanged:: 3.4 ``replace`` keyword was added.
 
@@ -487,7 +487,6 @@ message objects.
          from email import message_from_binary_file
          with open('../Lib/test/test_email/data/msg_16.txt', 'rb') as f:
              msg = message_from_binary_file(f)
-         from email.iterators import _structure
 
       .. doctest::
 
@@ -509,6 +508,7 @@ message objects.
 
       .. doctest::
 
+         >>> from email.iterators import _structure
          >>> for part in msg.walk():
          ...     print(part.get_content_maintype() == 'multipart',
          ...           part.is_multipart())
@@ -558,7 +558,7 @@ message objects.
       the part a candidate match if the value of the header is ``inline``.
 
       If none of the candidates matches any of the preferences in
-      *preferneclist*, return ``None``.
+      *preferencelist*, return ``None``.
 
       Notes: (1) For most applications the only *preferencelist* combinations
       that really make sense are ``('plain',)``, ``('html', 'plain')``, and the
@@ -679,7 +679,7 @@ message objects.
       specified by the current :mod:`~email.policy`.  If the added part
       has no :mailheader:`Content-Disposition` header, add one with the value
       ``attachment``.  This method can be used both for explicit attachments
-      (:mailheader:`Content-Disposition: attachment` and ``inline`` attachments
+      (:mailheader:`Content-Disposition: attachment`) and ``inline`` attachments
       (:mailheader:`Content-Disposition: inline`), by passing appropriate
       options to the ``content_manager``.
 
@@ -746,6 +746,6 @@ message objects.
 
 .. rubric:: Footnotes
 
-.. [1] Oringally added in 3.4 as a :term:`provisional module <provisional
+.. [1] Originally added in 3.4 as a :term:`provisional module <provisional
        package>`.  Docs for legacy message class moved to
        :ref:`compat32_message`.

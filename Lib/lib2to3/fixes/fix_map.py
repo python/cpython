@@ -22,8 +22,10 @@ soon as the shortest argument is exhausted.
 # Local imports
 from ..pgen2 import token
 from .. import fixer_base
-from ..fixer_util import Name, Call, ListComp, in_special_context
+from ..fixer_util import Name, ArgList, Call, ListComp, in_special_context
 from ..pygram import python_symbols as syms
+from ..pytree import Node
+
 
 class FixMap(fixer_base.ConditionalFix):
     BM_compatible = True
@@ -32,6 +34,7 @@ class FixMap(fixer_base.ConditionalFix):
     map_none=power<
         'map'
         trailer< '(' arglist< 'None' ',' arg=any [','] > ')' >
+        [extra_trailers=trailer*]
     >
     |
     map_lambda=power<
@@ -47,10 +50,12 @@ class FixMap(fixer_base.ConditionalFix):
             >
             ')'
         >
+        [extra_trailers=trailer*]
     >
     |
     power<
-        'map' trailer< '(' [arglist=any] ')' >
+        'map' args=trailer< '(' [any] ')' >
+        [extra_trailers=trailer*]
     >
     """
 
@@ -59,6 +64,11 @@ class FixMap(fixer_base.ConditionalFix):
     def transform(self, node, results):
         if self.should_skip(node):
             return
+
+        trailers = []
+        if 'extra_trailers' in results:
+            for t in results['extra_trailers']:
+                trailers.append(t.clone())
 
         if node.parent.type == syms.simple_stmt:
             self.warning(node, "You should use a for loop here")
@@ -69,23 +79,32 @@ class FixMap(fixer_base.ConditionalFix):
             new = ListComp(results["xp"].clone(),
                            results["fp"].clone(),
                            results["it"].clone())
+            new = Node(syms.power, [new] + trailers, prefix="")
+
         else:
             if "map_none" in results:
                 new = results["arg"].clone()
+                new.prefix = ""
             else:
-                if "arglist" in results:
-                    args = results["arglist"]
-                    if args.type == syms.arglist and \
-                       args.children[0].type == token.NAME and \
-                       args.children[0].value == "None":
+                if "args" in results:
+                    args = results["args"]
+                    if args.type == syms.trailer and \
+                       args.children[1].type == syms.arglist and \
+                       args.children[1].children[0].type == token.NAME and \
+                       args.children[1].children[0].value == "None":
                         self.warning(node, "cannot convert map(None, ...) "
                                      "with multiple arguments because map() "
                                      "now truncates to the shortest sequence")
                         return
+
+                    new = Node(syms.power, [Name("map"), args.clone()])
+                    new.prefix = ""
+
                 if in_special_context(node):
                     return None
-                new = node.clone()
+
+            new = Node(syms.power, [Name("list"), ArgList([new])] + trailers)
             new.prefix = ""
-            new = Call(Name("list"), [new])
+
         new.prefix = node.prefix
         return new

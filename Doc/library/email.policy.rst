@@ -97,6 +97,7 @@ file on disk and pass it to the system ``sendmail`` program on a Unix system:
    >>> from subprocess import Popen, PIPE
    >>> with open('mymsg.txt', 'rb') as f:
    ...     msg = message_from_binary_file(f, policy=policy.default)
+   ...
    >>> p = Popen(['sendmail', msg['To'].addresses[0]], stdin=PIPE)
    >>> g = BytesGenerator(p.stdin, policy=msg.policy.clone(linesep='\r\n'))
    >>> g.flatten(msg)
@@ -210,7 +211,7 @@ added matters.  To illustrate::
       :meth:`register_defect` method.
 
 
-   .. attribute:: mangle_from\_
+   .. attribute:: mangle_from_
 
       If :const:`True`, lines starting with *"From "* in the body are
       escaped by putting a ``>`` in front of them. This parameter is used when
@@ -276,7 +277,7 @@ added matters.  To illustrate::
       Called when a header is added to an :class:`~email.message.EmailMessage`
       or :class:`~email.message.Message` object.  If the returned value is not
       ``0`` or ``None``, and there are already a number of headers with the
-      name *name* greather than or equal to the value returned, a
+      name *name* greater than or equal to the value returned, a
       :exc:`ValueError` is raised.
 
       Because the default behavior of ``Message.__setitem__`` is to append the
@@ -533,7 +534,7 @@ more closely to the RFCs relevant to their domains.
 
    The same as ``SMTP`` except that :attr:`~EmailPolicy.utf8` is ``True``.
    Useful for serializing messages to a message store without using encoded
-   words in the headers.  Should only be used for SMTP trasmission if the
+   words in the headers.  Should only be used for SMTP transmission if the
    sender or recipient addresses have non-ASCII characters (the
    :meth:`smtplib.SMTP.send_message` method handles this automatically).
 
@@ -647,5 +648,5 @@ The header objects and their attributes are described in
 
 .. rubric:: Footnotes
 
-.. [1] Oringally added in 3.3 as a :term:`provisional feature <provisional
+.. [1] Originally added in 3.3 as a :term:`provisional feature <provisional
        package>`.

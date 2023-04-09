@@ -147,6 +147,14 @@ The :mod:`locale` module defines the following exception and functions:
    | ``CHAR_MAX`` | Nothing is specified in this locale.    |
    +--------------+-----------------------------------------+
 
+   The function temporarily sets the ``LC_CTYPE`` locale to the ``LC_NUMERIC``
+   locale or the ``LC_MONETARY`` locale if locales are different and numeric or
+   monetary strings are non-ASCII. This temporary change affects other threads.
+
+   .. versionchanged:: 3.7
+      The function now temporarily sets the ``LC_CTYPE`` locale to the
+      ``LC_NUMERIC`` locale in some cases.
+
 
 .. function:: nl_langinfo(option)
 
@@ -219,15 +227,17 @@ The :mod:`locale` module defines the following exception and functions:
       Get a regular expression that can be used with the regex function to
       recognize a positive response to a yes/no question.
 
-      .. note::
-
-         The expression is in the syntax suitable for the :c:func:`regex` function
-         from the C library, which might differ from the syntax used in :mod:`re`.
-
    .. data:: NOEXPR
 
       Get a regular expression that can be used with the regex(3) function to
       recognize a negative response to a yes/no question.
+
+      .. note::
+
+         The regular expressions for :const:`YESEXPR` and
+         :const:`NOEXPR` use syntax suitable for the
+         :c:func:`regex` function from the C library, which might
+         differ from the syntax used in :mod:`re`.
 
    .. data:: CRNCYSTR
 
@@ -293,6 +303,8 @@ The :mod:`locale` module defines the following exception and functions:
    *language code* and *encoding* may be ``None`` if their values cannot be
    determined.
 
+   .. deprecated-removed:: 3.11 3.13
+
 
 .. function:: getlocale(category=LC_CTYPE)
 
@@ -307,14 +319,45 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: getpreferredencoding(do_setlocale=True)
 
-   Return the encoding used for text data, according to user preferences.  User
-   preferences are expressed differently on different systems, and might not be
-   available programmatically on some systems, so this function only returns a
-   guess.
+   Return the :term:`locale encoding` used for text data, according to user
+   preferences.  User preferences are expressed differently on different
+   systems, and might not be available programmatically on some systems, so
+   this function only returns a guess.
 
-   On some systems, it is necessary to invoke :func:`setlocale` to obtain the user
-   preferences, so this function is not thread-safe. If invoking setlocale is not
-   necessary or desired, *do_setlocale* should be set to ``False``.
+   On some systems, it is necessary to invoke :func:`setlocale` to obtain the
+   user preferences, so this function is not thread-safe. If invoking setlocale
+   is not necessary or desired, *do_setlocale* should be set to ``False``.
+
+   On Android or if the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, always
+   return ``'utf-8'``, the :term:`locale encoding` and the *do_setlocale*
+   argument are ignored.
+
+   The :ref:`Python preinitialization <c-preinit>` configures the LC_CTYPE
+   locale. See also the :term:`filesystem encoding and error handler`.
+
+   .. versionchanged:: 3.7
+      The function now always returns ``"utf-8"`` on Android or if the
+      :ref:`Python UTF-8 Mode <utf8-mode>` is enabled.
+
+
+.. function:: getencoding()
+
+   Get the current :term:`locale encoding`:
+
+   * On Android and VxWorks, return ``"utf-8"``.
+   * On Unix, return the encoding of the current :data:`LC_CTYPE` locale.
+     Return ``"utf-8"`` if ``nl_langinfo(CODESET)`` returns an empty string:
+     for example, if the current LC_CTYPE locale is not supported.
+   * On Windows, return the ANSI code page.
+
+   The :ref:`Python preinitialization <c-preinit>` configures the LC_CTYPE
+   locale. See also the :term:`filesystem encoding and error handler`.
+
+   This function is similar to
+   :func:`getpreferredencoding(False) <getpreferredencoding>` except this
+   function ignores the :ref:`Python UTF-8 Mode <utf8-mode>`.
+
+   .. versionadded:: 3.11
 
 
 .. function:: normalize(localename)
@@ -334,6 +377,8 @@ The :mod:`locale` module defines the following exception and functions:
    The default setting is determined by calling :func:`getdefaultlocale`.
    *category* defaults to :const:`LC_ALL`.
 
+   .. deprecated-removed:: 3.11 3.13
+
 
 .. function:: strcoll(string1, string2)
 
@@ -352,24 +397,21 @@ The :mod:`locale` module defines the following exception and functions:
    sequence of strings.
 
 
-.. function:: format(format, val, grouping=False, monetary=False)
+.. function:: format_string(format, val, grouping=False, monetary=False)
 
    Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
    The format follows the conventions of the ``%`` operator.  For floating point
-   values, the decimal point is modified if appropriate.  If *grouping* is true,
+   values, the decimal point is modified if appropriate.  If *grouping* is ``True``,
    also takes the grouping into account.
 
    If *monetary* is true, the conversion uses monetary thousands separator and
    grouping strings.
 
-   Please note that this function will only work for exactly one %char specifier.
-   For whole format strings, use :func:`format_string`.
-
-
-.. function:: format_string(format, val, grouping=False)
-
    Processes formatting specifiers as in ``format % val``, but takes the current
    locale settings into account.
+
+   .. versionchanged:: 3.7
+      The *monetary* keyword parameter was added.
 
 
 .. function:: currency(val, symbol=True, grouping=False, international=False)
@@ -377,12 +419,14 @@ The :mod:`locale` module defines the following exception and functions:
    Formats a number *val* according to the current :const:`LC_MONETARY` settings.
 
    The returned string includes the currency symbol if *symbol* is true, which is
-   the default. If *grouping* is true (which is not the default), grouping is done
-   with the value. If *international* is true (which is not the default), the
+   the default. If *grouping* is ``True`` (which is not the default), grouping is done
+   with the value. If *international* is ``True`` (which is not the default), the
    international currency symbol is used.
 
-   Note that this function will not work with the 'C' locale, so you have to set a
-   locale via :func:`setlocale` first.
+   .. note::
+
+     This function will not work with the 'C' locale, so you have to set a
+     locale via :func:`setlocale` first.
 
 
 .. function:: str(float)
@@ -399,10 +443,18 @@ The :mod:`locale` module defines the following exception and functions:
     .. versionadded:: 3.5
 
 
-.. function:: atof(string)
+.. function:: localize(string, grouping=False, monetary=False)
 
-   Converts a string to a floating point number, following the :const:`LC_NUMERIC`
-   settings.
+    Converts a normalized number string into a formatted string following the
+    :const:`LC_NUMERIC` settings.
+
+    .. versionadded:: 3.10
+
+
+.. function:: atof(string, func=float)
+
+   Converts a string to a number, following the :const:`LC_NUMERIC` settings,
+   by calling *func* on the result of calling :func:`delocalize` on *string*.
 
 
 .. function:: atoi(string)
@@ -444,10 +496,13 @@ The :mod:`locale` module defines the following exception and functions:
    system, like those returned by :func:`os.strerror` might be affected by this
    category.
 
+   This value may not be available on operating systems not conforming to the
+   POSIX standard, most notably Windows.
+
 
 .. data:: LC_NUMERIC
 
-   Locale category for formatting numbers.  The functions :func:`.format`,
+   Locale category for formatting numbers.  The functions :func:`format_string`,
    :func:`atoi`, :func:`atof` and :func:`.str` of the :mod:`locale` module are
    affected by that category.  All other numeric formatting operations are not
    affected.
@@ -484,7 +539,7 @@ Background, details, hints, tips and caveats
 --------------------------------------------
 
 The C standard defines the locale as a program-wide property that may be
-relatively expensive to change.  On top of that, some implementation are broken
+relatively expensive to change.  On top of that, some implementations are broken
 in such a way that frequent locale changes may cause core dumps.  This makes the
 locale somewhat painful to use correctly.
 
@@ -509,7 +564,7 @@ document that your module is not compatible with non-\ ``C`` locale settings.
 
 The only way to perform numeric operations according to the locale is to use the
 special functions defined by this module: :func:`atof`, :func:`atoi`,
-:func:`.format`, :func:`.str`.
+:func:`format_string`, :func:`.str`.
 
 There is no way to perform case conversions and character classifications
 according to the locale.  For (Unicode) text strings these are done according
@@ -542,17 +597,22 @@ library.
 Access to message catalogs
 --------------------------
 
+.. function:: gettext(msg)
+.. function:: dgettext(domain, msg)
+.. function:: dcgettext(domain, msg, category)
+.. function:: textdomain(domain)
+.. function:: bindtextdomain(domain, dir)
+
 The locale module exposes the C library's gettext interface on systems that
-provide this interface.  It consists of the functions :func:`gettext`,
-:func:`dgettext`, :func:`dcgettext`, :func:`textdomain`, :func:`bindtextdomain`,
-and :func:`bind_textdomain_codeset`.  These are similar to the same functions in
+provide this interface.  It consists of the functions :func:`!gettext`,
+:func:`!dgettext`, :func:`!dcgettext`, :func:`!textdomain`, :func:`!bindtextdomain`,
+and :func:`!bind_textdomain_codeset`.  These are similar to the same functions in
 the :mod:`gettext` module, but use the C library's binary format for message
 catalogs, and the C library's search algorithms for locating message catalogs.
 
 Python applications should normally find no need to invoke these functions, and
 should use :mod:`gettext` instead.  A known exception to this rule are
 applications that link with additional C libraries which internally invoke
-:c:func:`gettext` or :func:`dcgettext`.  For these applications, it may be
+:c:func:`gettext` or :c:func:`dcgettext`.  For these applications, it may be
 necessary to bind the text domain, so that the libraries can properly locate
 their message catalogs.
-

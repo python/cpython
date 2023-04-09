@@ -2,6 +2,7 @@
 
 import argparse
 import ensurepip
+import sys
 
 
 def _main(argv=None):
@@ -23,8 +24,8 @@ def _main(argv=None):
 
     args = parser.parse_args(argv)
 
-    ensurepip._uninstall_helper(verbosity=args.verbosity)
+    return ensurepip._uninstall_helper(verbosity=args.verbosity)
 
 
 if __name__ == "__main__":
-    _main()
+    sys.exit(_main())

@@ -287,9 +287,6 @@ Extension Modules
 Library
 -------
 
-- bpo-22319: mailbox.MH now supports folders that don't contain a
-  ".mh_sequences" file (e.g. Claws Mail IMAP-cache folders).
-
 - bpo-29861: Release references to tasks, their arguments and their results
   as soon as they are finished in multiprocessing.Pool.
 

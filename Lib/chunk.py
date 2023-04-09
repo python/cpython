@@ -48,6 +48,10 @@ specifies whether or not chunks are aligned on 2-byte boundaries.  The
 default is 1, i.e. aligned.
 """
 
+import warnings
+
+warnings._deprecated(__name__, remove=(3, 13))
+
 class Chunk:
     def __init__(self, file, align=True, bigendian=True, inclheader=False):
         import struct
@@ -64,7 +68,7 @@ class Chunk:
         try:
             self.chunksize = struct.unpack_from(strflag+'L', file.read(4))[0]
         except struct.error:
-            raise EOFError
+            raise EOFError from None
         if inclheader:
             self.chunksize = self.chunksize - 8 # subtract header
         self.size_read = 0

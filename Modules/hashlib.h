@@ -8,7 +8,7 @@
 #define GET_BUFFER_VIEW_OR_ERROR(obj, viewp, erraction) do { \
         if (PyUnicode_Check((obj))) { \
             PyErr_SetString(PyExc_TypeError, \
-                            "Unicode-objects must be encoded before hashing");\
+                            "Strings must be encoded before hashing");\
             erraction; \
         } \
         if (!PyObject_CheckBuffer((obj))) { \
@@ -39,24 +39,19 @@
  * an operation.
  */
 
-#ifdef WITH_THREAD
 #include "pythread.h"
-    #define ENTER_HASHLIB(obj) \
-        if ((obj)->lock) { \
-            if (!PyThread_acquire_lock((obj)->lock, 0)) { \
-                Py_BEGIN_ALLOW_THREADS \
-                PyThread_acquire_lock((obj)->lock, 1); \
-                Py_END_ALLOW_THREADS \
-            } \
-        }
-    #define LEAVE_HASHLIB(obj) \
-        if ((obj)->lock) { \
-            PyThread_release_lock((obj)->lock); \
-        }
-#else
-    #define ENTER_HASHLIB(obj)
-    #define LEAVE_HASHLIB(obj)
-#endif
+#define ENTER_HASHLIB(obj) \
+    if ((obj)->lock) { \
+        if (!PyThread_acquire_lock((obj)->lock, 0)) { \
+            Py_BEGIN_ALLOW_THREADS \
+            PyThread_acquire_lock((obj)->lock, 1); \
+            Py_END_ALLOW_THREADS \
+        } \
+    }
+#define LEAVE_HASHLIB(obj) \
+    if ((obj)->lock) { \
+        PyThread_release_lock((obj)->lock); \
+    }
 
 /* TODO(gps): We should probably make this a module or EVPobject attribute
  * to allow the user to optimize based on the platform they're using. */

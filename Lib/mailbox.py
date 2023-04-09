@@ -18,6 +18,7 @@ import email.message
 import email.generator
 import io
 import contextlib
+from types import GenericAlias
 try:
     import fcntl
 except ImportError:
@@ -259,6 +260,8 @@ class Mailbox:
                 target.write(linesep)
         else:
             raise TypeError('Invalid message type: %s' % type(message))
+
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class Maildir(Mailbox):
@@ -555,7 +558,7 @@ class Maildir(Mailbox):
         try:
             return self._toc[key]
         except KeyError:
-            raise KeyError('No message with key: %s' % key)
+            raise KeyError('No message with key: %s' % key) from None
 
     # This method is for backward compatibility only.
     def next(self):
@@ -741,7 +744,7 @@ class _singlefileMailbox(Mailbox):
             try:
                 return self._toc[key]
             except KeyError:
-                raise KeyError('No message with key: %s' % key)
+                raise KeyError('No message with key: %s' % key) from None
 
     def _append_message(self, message):
         """Append message to mailbox and return (start, stop) offsets."""
@@ -784,7 +787,7 @@ class _mboxMMDF(_singlefileMailbox):
     def get_string(self, key, from_=False):
         """Return a string representation or raise a KeyError."""
         return email.message_from_bytes(
-            self.get_bytes(key)).as_string(unixfrom=from_)
+            self.get_bytes(key, from_)).as_string(unixfrom=from_)
 
     def get_bytes(self, key, from_=False):
         """Return a string representation or raise a KeyError."""
@@ -1575,7 +1578,7 @@ class MaildirMessage(Message):
         try:
             self._date = float(date)
         except ValueError:
-            raise TypeError("can't convert to float: %s" % date)
+            raise TypeError("can't convert to float: %s" % date) from None
 
     def get_info(self):
         """Get the message's "info" as a string."""
@@ -1956,10 +1959,7 @@ class _ProxyFile:
 
     def __iter__(self):
         """Iterate over lines."""
-        while True:
-            line = self.readline()
-            if not line:
-                return
+        while line := self.readline():
             yield line
 
     def tell(self):
@@ -2017,6 +2017,8 @@ class _ProxyFile:
         if not hasattr(self._file, 'closed'):
             return False
         return self._file.closed
+
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class _PartialFile(_ProxyFile):

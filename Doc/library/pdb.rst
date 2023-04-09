@@ -27,6 +27,15 @@ The debugger is extensible -- it is actually defined as the class :class:`Pdb`.
 This is currently undocumented but easily understood by reading the source.  The
 extension interface uses the modules :mod:`bdb` and :mod:`cmd`.
 
+.. seealso::
+
+   Module :mod:`faulthandler`
+      Used to dump Python tracebacks explicitly, on a fault, after a timeout,
+      or on a user signal.
+
+   Module :mod:`traceback`
+      Standard interface to extract, format and print stack traces of Python programs.
+
 The debugger's prompt is ``(Pdb)``. Typical usage to run a program under control
 of the debugger is::
 
@@ -49,7 +58,7 @@ of the debugger is::
 :file:`pdb.py` can also be invoked as a script to debug other scripts.  For
 example::
 
-   python3 -m pdb myscript.py
+   python -m pdb myscript.py
 
 When invoked as a script, pdb will automatically enter post-mortem debugging if
 the program being debugged exits abnormally.  After post-mortem debugging (or
@@ -61,14 +70,23 @@ useful than quitting the debugger upon program's exit.
    :file:`pdb.py` now accepts a ``-c`` option that executes commands as if given
    in a :file:`.pdbrc` file, see :ref:`debugger-commands`.
 
-The typical usage to break into the debugger from a running program is to
-insert ::
+.. versionadded:: 3.7
+   :file:`pdb.py` now accepts a ``-m`` option that execute modules similar to the way
+   ``python -m`` does. As with a script, the debugger will pause execution just
+   before the first line of the module.
+
+
+The typical usage to break into the debugger is to insert::
 
    import pdb; pdb.set_trace()
 
-at the location you want to break into the debugger.  You can then step through
-the code following this statement, and continue running without the debugger
-using the :pdbcmd:`continue` command.
+at the location you want to break into the debugger, and then run the program.
+You can then step through the code following this statement, and continue
+running without the debugger using the :pdbcmd:`continue` command.
+
+.. versionadded:: 3.7
+   The built-in :func:`breakpoint()`, when called with defaults, can be used
+   instead of ``import pdb; pdb.set_trace()``.
 
 The typical usage to inspect a crashed program is::
 
@@ -76,7 +94,7 @@ The typical usage to inspect a crashed program is::
    >>> import mymodule
    >>> mymodule.test()
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
      File "./mymodule.py", line 4, in test
        test2()
      File "./mymodule.py", line 3, in test2
@@ -107,7 +125,7 @@ slightly different way:
 
    Evaluate the *expression* (given as a string or a code object) under debugger
    control.  When :func:`runeval` returns, it returns the value of the
-   expression.  Otherwise this function is similar to :func:`run`.
+   *expression*.  Otherwise this function is similar to :func:`run`.
 
 
 .. function:: runcall(function, *args, **kwds)
@@ -118,11 +136,15 @@ slightly different way:
    is entered.
 
 
-.. function:: set_trace()
+.. function:: set_trace(*, header=None)
 
-   Enter the debugger at the calling stack frame.  This is useful to hard-code a
-   breakpoint at a given point in a program, even if the code is not otherwise
-   being debugged (e.g. when an assertion fails).
+   Enter the debugger at the calling stack frame.  This is useful to hard-code
+   a breakpoint at a given point in a program, even if the code is not
+   otherwise being debugged (e.g. when an assertion fails).  If given,
+   *header* is printed to the console just before debugging begins.
+
+   .. versionchanged:: 3.7
+      The keyword-only argument *header*.
 
 
 .. function:: post_mortem(traceback=None)
@@ -156,7 +178,7 @@ access further features, you have to do this yourself:
    that matches one of these patterns. [1]_
 
    By default, Pdb sets a handler for the SIGINT signal (which is sent when the
-   user presses :kbd:`Ctrl-C` on the console) when you give a ``continue`` command.
+   user presses :kbd:`Ctrl-C` on the console) when you give a :pdbcmd:`continue` command.
    This allows you to break into the debugger again by pressing :kbd:`Ctrl-C`.  If you
    want Pdb not to touch the SIGINT handler, set *nosigint* to true.
 
@@ -166,6 +188,8 @@ access further features, you have to do this yourself:
    Example call to enable tracing with *skip*::
 
       import pdb; pdb.Pdb(skip=['django.*']).set_trace()
+
+   .. audit-event:: pdb.Pdb "" pdb.Pdb
 
    .. versionadded:: 3.1
       The *skip* argument.
@@ -218,17 +242,22 @@ Multiple commands may be entered on a single line, separated by ``;;``.  (A
 single ``;`` is not used as it is the separator for multiple commands in a line
 that is passed to the Python parser.)  No intelligence is applied to separating
 the commands; the input is split at the first ``;;`` pair, even if it is in the
-middle of a quoted string.
+middle of a quoted string. A workaround for strings with double semicolons
+is to use implicit string concatenation ``';'';'`` or ``";"";"``.
 
 .. index::
    pair: .pdbrc; file
    triple: debugger; configuration; file
 
 If a file :file:`.pdbrc` exists in the user's home directory or in the current
-directory, it is read in and executed as if it had been typed at the debugger
-prompt.  This is particularly useful for aliases.  If both files exist, the one
-in the home directory is read first and aliases defined there can be overridden
-by the local file.
+directory, it is read with ``'utf-8'`` encoding and executed as if it had been
+typed at the debugger prompt.  This is particularly useful for aliases.  If both
+files exist, the one in the home directory is read first and aliases defined there
+can be overridden by the local file.
+
+.. versionchanged:: 3.11
+   :file:`.pdbrc` is now read with ``'utf-8'`` encoding. Previously, it was read
+   with the system locale encoding.
 
 .. versionchanged:: 3.2
    :file:`.pdbrc` can now contain commands that continue debugging, such as
@@ -280,28 +309,28 @@ by the local file.
    Temporary breakpoint, which is removed automatically when it is first hit.
    The arguments are the same as for :pdbcmd:`break`.
 
-.. pdbcommand:: cl(ear) [filename:lineno | bpnumber [bpnumber ...]]
+.. pdbcommand:: cl(ear) [filename:lineno | bpnumber ...]
 
    With a *filename:lineno* argument, clear all the breakpoints at this line.
    With a space separated list of breakpoint numbers, clear those breakpoints.
    Without argument, clear all breaks (but first ask confirmation).
 
-.. pdbcommand:: disable [bpnumber [bpnumber ...]]
+.. pdbcommand:: disable [bpnumber ...]
 
    Disable the breakpoints given as a space separated list of breakpoint
    numbers.  Disabling a breakpoint means it cannot cause the program to stop
    execution, but unlike clearing a breakpoint, it remains in the list of
    breakpoints and can be (re-)enabled.
 
-.. pdbcommand:: enable [bpnumber [bpnumber ...]]
+.. pdbcommand:: enable [bpnumber ...]
 
    Enable the breakpoints specified.
 
 .. pdbcommand:: ignore bpnumber [count]
 
-   Set the ignore count for the given breakpoint number.  If count is omitted,
+   Set the ignore count for the given breakpoint number.  If *count* is omitted,
    the ignore count is set to 0.  A breakpoint becomes active when the ignore
-   count is zero.  When non-zero, the count is decremented each time the
+   count is zero.  When non-zero, the *count* is decremented each time the
    breakpoint is reached and the breakpoint is not disabled and any associated
    condition evaluates to true.
 
@@ -322,22 +351,25 @@ by the local file.
       (com) end
       (Pdb)
 
-   To remove all commands from a breakpoint, type commands and follow it
+   To remove all commands from a breakpoint, type ``commands`` and follow it
    immediately with ``end``; that is, give no commands.
 
-   With no *bpnumber* argument, commands refers to the last breakpoint set.
+   With no *bpnumber* argument, ``commands`` refers to the last breakpoint set.
 
    You can use breakpoint commands to start your program up again.  Simply use
-   the continue command, or step, or any other command that resumes execution.
+   the :pdbcmd:`continue` command, or :pdbcmd:`step`,
+   or any other command that resumes execution.
 
-   Specifying any command resuming execution (currently continue, step, next,
-   return, jump, quit and their abbreviations) terminates the command list (as if
+   Specifying any command resuming execution
+   (currently :pdbcmd:`continue`, :pdbcmd:`step`, :pdbcmd:`next`,
+   :pdbcmd:`return`, :pdbcmd:`jump`, :pdbcmd:`quit` and their abbreviations)
+   terminates the command list (as if
    that command was immediately followed by end). This is because any time you
    resume execution (even with a simple next or step), you may encounter another
    breakpoint—which could have its own command list, leading to ambiguities about
    which list to execute.
 
-   If you use the 'silent' command in the command list, the usual message about
+   If you use the ``silent`` command in the command list, the usual message about
    stopping at a breakpoint is not printed.  This may be desirable for breakpoints
    that are to print a specific message and then continue.  If none of the other
    commands print anything, you see no sign that the breakpoint was reached.
@@ -360,8 +392,8 @@ by the local file.
    Without argument, continue execution until the line with a number greater
    than the current one is reached.
 
-   With a line number, continue execution until a line with a number greater or
-   equal to that is reached.  In both cases, also stop when the current frame
+   With *lineno*, continue execution until a line with a number greater or
+   equal to *lineno* is reached.  In both cases, also stop when the current frame
    returns.
 
    .. versionchanged:: 3.2
@@ -414,7 +446,7 @@ by the local file.
 
 .. pdbcommand:: p expression
 
-   Evaluate the *expression* in the current context and print its value.
+   Evaluate *expression* in the current context and print its value.
 
    .. note::
 
@@ -424,32 +456,32 @@ by the local file.
 
 .. pdbcommand:: pp expression
 
-   Like the :pdbcmd:`p` command, except the value of the expression is
+   Like the :pdbcmd:`p` command, except the value of *expression* is
    pretty-printed using the :mod:`pprint` module.
 
 .. pdbcommand:: whatis expression
 
-   Print the type of the *expression*.
+   Print the type of *expression*.
 
 .. pdbcommand:: source expression
 
-   Try to get source code for the given object and display it.
+   Try to get source code of *expression* and display it.
 
    .. versionadded:: 3.2
 
 .. pdbcommand:: display [expression]
 
-   Display the value of the expression if it changed, each time execution stops
+   Display the value of *expression* if it changed, each time execution stops
    in the current frame.
 
-   Without expression, list all display expressions for the current frame.
+   Without *expression*, list all display expressions for the current frame.
 
    .. versionadded:: 3.2
 
 .. pdbcommand:: undisplay [expression]
 
-   Do not display the expression any more in the current frame.  Without
-   expression, clear all display expressions for the current frame.
+   Do not display *expression* anymore in the current frame.  Without
+   *expression*, clear all display expressions for the current frame.
 
    .. versionadded:: 3.2
 
@@ -465,10 +497,10 @@ by the local file.
 
 .. pdbcommand:: alias [name [command]]
 
-   Create an alias called *name* that executes *command*.  The command must
+   Create an alias called *name* that executes *command*.  The *command* must
    *not* be enclosed in quotes.  Replaceable parameters can be indicated by
    ``%1``, ``%2``, and so on, while ``%*`` is replaced by all the parameters.
-   If no command is given, the current alias for *name* is shown. If no
+   If *command* is omitted, the current alias for *name* is shown. If no
    arguments are given, all aliases are listed.
 
    Aliases may be nested and can contain anything that can be legally typed at
@@ -481,13 +513,13 @@ by the local file.
    :file:`.pdbrc` file)::
 
       # Print instance variables (usage "pi classInst")
-      alias pi for k in %1.__dict__.keys(): print("%1.",k,"=",%1.__dict__[k])
+      alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
       # Print instance variables in self
       alias ps pi self
 
 .. pdbcommand:: unalias name
 
-   Delete the specified alias.
+   Delete the specified alias *name*.
 
 .. pdbcommand:: ! statement
 
@@ -503,7 +535,7 @@ by the local file.
 .. pdbcommand:: run [args ...]
                 restart [args ...]
 
-   Restart the debugged Python program.  If an argument is supplied, it is split
+   Restart the debugged Python program.  If *args* is supplied, it is split
    with :mod:`shlex` and the result is used as the new :data:`sys.argv`.
    History, breakpoints, actions and debugger options are preserved.
    :pdbcmd:`restart` is an alias for :pdbcmd:`run`.
@@ -512,6 +544,15 @@ by the local file.
 
    Quit from the debugger.  The program being executed is aborted.
 
+.. pdbcommand:: debug code
+
+   Enter a recursive debugger that steps through *code*
+   (which is an arbitrary expression or statement to be
+   executed in the current environment).
+
+.. pdbcommand:: retval
+
+   Print the return value for the last return of a function.
 
 .. rubric:: Footnotes
 
