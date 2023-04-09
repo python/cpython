@@ -1020,3 +1020,12 @@ class TestSetGetEvents(unittest.TestCase, MonitoringTestBase):
         self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, code), 0)
         sys.monitoring.set_local_events(TEST_TOOL2, code, 0)
         self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL2, code), 0)
+
+class TestUninitialized(unittest.TestCase, MonitoringTestBase):
+
+    @staticmethod
+    def f():
+        pass
+
+    def test_get_local_events_uninitialized(self):
+        self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, self.f.__code__), 0)

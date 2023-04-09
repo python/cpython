@@ -1793,10 +1793,12 @@ monitoring_get_local_events_impl(PyObject *module, int tool_id,
         return -1;
     }
     _PyMonitoringEventSet event_set = 0;
-    for (int e = 0; e < PY_MONITORING_UNGROUPED_EVENTS; e++) {
-        _Py_Monitors *m = &((PyCodeObject *)code)->_co_monitoring->local_monitors;
-        if ((m->tools[e] >> tool_id) & 1) {
-            event_set |= (1 << e);
+    _PyCoMonitoringData *data = ((PyCodeObject *)code)->_co_monitoring;
+    if (data != NULL) {
+        for (int e = 0; e < PY_MONITORING_UNGROUPED_EVENTS; e++) {
+            if ((data->local_monitors.tools[e] >> tool_id) & 1) {
+                event_set |= (1 << e);
+            }
         }
     }
     return event_set;
