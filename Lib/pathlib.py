@@ -73,23 +73,6 @@ _SWAP_SEP_AND_NEWLINE = {
 
 
 @functools.lru_cache()
-def  _make_matcher(lines):
-    parts = ['^']
-    for part in lines.splitlines(keepends=True):
-        if part == '**\n':
-            part = r'[\s\S]*^'
-        elif part == '**':
-            part = r'[\s\S]*'
-        elif '**' in part:
-            raise ValueError("Invalid pattern: '**' can only be an entire path component")
-        else:
-            part = fnmatch.translate(part)[_FNMATCH_SLICE]
-        parts.append(part)
-    parts.append(r'\Z')
-    return re.compile(''.join(parts), flags=re.MULTILINE)
-
-
-@functools.lru_cache()
 def _make_selector(pattern_parts, flavour):
     pat = pattern_parts[0]
     child_parts = pattern_parts[1:]
@@ -298,16 +281,18 @@ class PurePath(object):
         # `__hash__()`, and `_parts_normcase`
         '_str_normcase_cached',
 
-        # The `_lines_normcase_cached` slot stores the string path with
-        # normalized case, and with path separators and newlines swapped. This
-        # is used to implement `match()`.
-        '_lines_normcase_cached',
-
         # The `_parts_normcase_cached` slot stores the case-normalized
         # string path after splitting on path separators. It's set when the
         # `_parts_normcase` property is accessed for the first time. It's used
         # to implement comparison methods like `__lt__()`.
         '_parts_normcase_cached',
+
+        # The `_lines_normcase_cached` and `_matcher_cached` slots store the
+        # string path with path separators and newlines swapped, and an
+        # `re.Pattern` object derived thereof. These are used to implement
+        # `match()`.
+        '_lines_normcase_cached',
+        '_matcher_cached',
 
         # The `_hash` slot stores the hash of the case-normalized string
         # path. It's set when `__hash__()` is called for the first time.
@@ -440,6 +425,15 @@ class PurePath(object):
             return self._str_normcase_cached
 
     @property
+    def _parts_normcase(self):
+        # Cached parts with normalized case, for comparisons.
+        try:
+            return self._parts_normcase_cached
+        except AttributeError:
+            self._parts_normcase_cached = self._str_normcase.split(self._flavour.sep)
+            return self._parts_normcase_cached
+
+    @property
     def _lines_normcase(self):
         # Case-normalized path with separators and newlines swapped, for
         # pattern matching.
@@ -451,13 +445,26 @@ class PurePath(object):
             return self._lines_normcase_cached
 
     @property
-    def _parts_normcase(self):
-        # Cached parts with normalized case, for comparisons.
+    def _matcher(self):
         try:
-            return self._parts_normcase_cached
+            return self._matcher_cached
         except AttributeError:
-            self._parts_normcase_cached = self._str_normcase.split(self._flavour.sep)
-            return self._parts_normcase_cached
+            if not self.parts:
+                raise ValueError("empty pattern")
+            parts = [r'\A' if self.drive or self.root else '^']
+            for part in self._lines_normcase.splitlines(keepends=True):
+                if part == '**\n':
+                    part = r'[\s\S]*^'
+                elif part == '**':
+                    part = r'[\s\S]*'
+                elif '**' in part:
+                    raise ValueError("Invalid pattern: '**' can only be an entire path component")
+                else:
+                    part = fnmatch.translate(part)[_FNMATCH_SLICE]
+                parts.append(part)
+            parts.append(r'\Z')
+            self._matcher_cached = re.compile(''.join(parts), flags=re.MULTILINE)
+            return self._matcher_cached
 
     def __eq__(self, other):
         if not isinstance(other, PurePath):
@@ -714,14 +721,9 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
-        pat = type(self)(path_pattern)
-        if not pat.parts:
-            raise ValueError("empty pattern")
-        matcher = _make_matcher(pat._lines_normcase)
-        if pat.drive or pat.root:
-            match = matcher.match(self._lines_normcase)
-        else:
-            match = matcher.search(self._lines_normcase)
+        if not isinstance(path_pattern, type(self)):
+            path_pattern = type(self)(path_pattern)
+        match = path_pattern._matcher.search(self._lines_normcase)
         return match is not None
 
 
