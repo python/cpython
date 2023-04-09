@@ -422,17 +422,14 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->interp->sys_profiling_threads += delta;
     assert(tstate->interp->sys_profiling_threads >= 0);
 
+    uint32_t events = 0;
     if (tstate->interp->sys_profiling_threads) {
-        uint32_t events =
+        events =
             (1 << PY_MONITORING_EVENT_PY_START) | (1 << PY_MONITORING_EVENT_PY_RESUME) |
             (1 << PY_MONITORING_EVENT_PY_RETURN) | (1 << PY_MONITORING_EVENT_PY_YIELD) |
             (1 << PY_MONITORING_EVENT_CALL) | (1 << PY_MONITORING_EVENT_PY_UNWIND);
-        _PyMonitoring_SetEvents(PY_MONITORING_SYS_PROFILE_ID, events);
     }
-    else {
-        _PyMonitoring_SetEvents(PY_MONITORING_SYS_PROFILE_ID, 0);
-    }
-    return 0;
+    return _PyMonitoring_SetEvents(PY_MONITORING_SYS_PROFILE_ID, events);
 }
 
 int
@@ -513,8 +510,9 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->interp->sys_tracing_threads += delta;
     assert(tstate->interp->sys_tracing_threads >= 0);
 
+    uint32_t events = 0;
     if (tstate->interp->sys_tracing_threads) {
-        uint32_t events =
+        events =
             (1 << PY_MONITORING_EVENT_PY_START) | (1 << PY_MONITORING_EVENT_PY_RESUME) |
             (1 << PY_MONITORING_EVENT_PY_RETURN) | (1 << PY_MONITORING_EVENT_PY_YIELD) |
             (1 << PY_MONITORING_EVENT_RAISE) | (1 << PY_MONITORING_EVENT_LINE) |
@@ -525,11 +523,6 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
         if (tstate->interp->f_opcode_trace_set) {
             events |= (1 << PY_MONITORING_EVENT_INSTRUCTION);
         }
-        _PyMonitoring_SetEvents(PY_MONITORING_SYS_TRACE_ID, events);
     }
-    else {
-        _PyMonitoring_SetEvents(PY_MONITORING_SYS_TRACE_ID, 0);
-    }
-
-    return 0;
+    return _PyMonitoring_SetEvents(PY_MONITORING_SYS_TRACE_ID, events);
 }

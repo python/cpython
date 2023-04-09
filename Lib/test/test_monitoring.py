@@ -33,7 +33,7 @@ TEST_TOOL = 2
 TEST_TOOL2 = 3
 TEST_TOOL3 = 4
 
-class MonitoringBaseTest(unittest.TestCase):
+class MonitoringBasicTest(unittest.TestCase):
 
     def test_has_objects(self):
         m = sys.monitoring
@@ -54,8 +54,6 @@ class MonitoringBaseTest(unittest.TestCase):
     def test_tool(self):
         sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
         self.assertEqual(sys.monitoring.get_tool(TEST_TOOL), "MonitoringTest.Tool")
-        sys.monitoring.free_tool_id(TEST_TOOL)
-        self.assertEqual(sys.monitoring.get_tool(TEST_TOOL), None)
         sys.monitoring.set_events(TEST_TOOL, 15)
         self.assertEqual(sys.monitoring.get_events(TEST_TOOL), 15)
         sys.monitoring.set_events(TEST_TOOL, 0)
@@ -63,9 +61,33 @@ class MonitoringBaseTest(unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL, sys.monitoring.events.C_RETURN)
         with self.assertRaises(ValueError):
             sys.monitoring.set_events(TEST_TOOL, sys.monitoring.events.C_RAISE)
+        sys.monitoring.free_tool_id(TEST_TOOL)
+        self.assertEqual(sys.monitoring.get_tool(TEST_TOOL), None)
 
 
-class MonitoringCountTest(unittest.TestCase):
+class MonitoringTestBase:
+
+    def setUp(self):
+        # Check that a previous test hasn't left monitoring on.
+        for tool in range(6):
+            self.assertEqual(sys.monitoring.get_events(tool), 0)
+        self.assertIs(sys.monitoring.get_tool(TEST_TOOL), None)
+        self.assertIs(sys.monitoring.get_tool(TEST_TOOL2), None)
+        self.assertIs(sys.monitoring.get_tool(TEST_TOOL3), None)
+        sys.monitoring.use_tool_id(TEST_TOOL, "test " + self.__class__.__name__)
+        sys.monitoring.use_tool_id(TEST_TOOL2, "test2 " + self.__class__.__name__)
+        sys.monitoring.use_tool_id(TEST_TOOL3, "test3 " + self.__class__.__name__)
+
+    def tearDown(self):
+        # Check that test hasn't left monitoring on.
+        for tool in range(6):
+            self.assertEqual(sys.monitoring.get_events(tool), 0)
+        sys.monitoring.free_tool_id(TEST_TOOL)
+        sys.monitoring.free_tool_id(TEST_TOOL2)
+        sys.monitoring.free_tool_id(TEST_TOOL3)
+
+
+class MonitoringCountTest(MonitoringTestBase, unittest.TestCase):
 
     def check_event_count(self, func, event, expected):
 
@@ -186,18 +208,6 @@ nested_call.events = [
 
 PY_CALLABLES = (types.FunctionType, types.MethodType)
 
-class MonitoringTestBase:
-
-    def setUp(self):
-        # Check that a previous test hasn't left monitoring on.
-        for tool in range(6):
-            self.assertEqual(sys.monitoring.get_events(tool), 0)
-
-    def tearDown(self):
-        # Check that test hasn't left monitoring on.
-        for tool in range(6):
-            self.assertEqual(sys.monitoring.get_events(tool), 0)
-
 class MonitoringEventsBase(MonitoringTestBase):
 
     def gather_events(self, func):
@@ -230,7 +240,7 @@ class MonitoringEventsBase(MonitoringTestBase):
         self.assertEqual(events, expected)
 
 
-class MonitoringEventsTest(unittest.TestCase, MonitoringEventsBase):
+class MonitoringEventsTest(MonitoringEventsBase, unittest.TestCase):
 
     def test_just_pass(self):
         self.check_events(just_pass)
@@ -256,7 +266,7 @@ DOWN_EVENTS = (E.PY_START, E.PY_RESUME)
 
 from test.profilee import testfunc
 
-class SimulateProfileTest(unittest.TestCase, MonitoringEventsBase):
+class SimulateProfileTest(MonitoringEventsBase, unittest.TestCase):
 
     def test_balanced(self):
         events = self.gather_events(testfunc)
@@ -322,7 +332,7 @@ class RecorderWithDisable:
             return sys.monitoring.DISABLE
 
 
-class MontoringDisableAndRestartTest(unittest.TestCase, MonitoringTestBase):
+class MontoringDisableAndRestartTest(MonitoringTestBase, unittest.TestCase):
 
     def test_disable(self):
         try:
@@ -363,7 +373,7 @@ class MontoringDisableAndRestartTest(unittest.TestCase, MonitoringTestBase):
             sys.monitoring.restart_events()
 
 
-class MultipleMonitorsTest(unittest.TestCase, MonitoringTestBase):
+class MultipleMonitorsTest(MonitoringTestBase, unittest.TestCase):
 
     def test_two_same(self):
         try:
@@ -481,7 +491,7 @@ class MultipleMonitorsTest(unittest.TestCase, MonitoringTestBase):
             self.assertEqual(sys.monitoring._all_events(), {})
             sys.monitoring.restart_events()
 
-class LineMonitoringTest(unittest.TestCase):
+class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
 
     def test_lines_single(self):
         try:
@@ -616,7 +626,7 @@ class ExceptionRecorder:
     def __call__(self, code, offset, exc):
         self.events.append(("raise", type(exc)))
 
-class CheckEvents(unittest.TestCase):
+class CheckEvents(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, expected, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
         try:
@@ -795,14 +805,14 @@ class TestLineAndInstructionEvents(CheckEvents):
 
         self.check_events(func1, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
             ('line', 'check_events', 10),
-            ('instruction', 'func1', 2),
             ('line', 'func1', 1),
+            ('instruction', 'func1', 2),
             ('instruction', 'func1', 4),
-            ('instruction', 'func1', 6),
             ('line', 'func1', 2),
+            ('instruction', 'func1', 6),
             ('instruction', 'func1', 8),
-            ('instruction', 'func1', 10),
             ('line', 'func1', 3),
+            ('instruction', 'func1', 10),
             ('instruction', 'func1', 12),
             ('instruction', 'func1', 14),
             ('line', 'check_events', 11)])
@@ -816,17 +826,17 @@ class TestLineAndInstructionEvents(CheckEvents):
 
         self.check_events(func2, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
             ('line', 'check_events', 10),
-            ('instruction', 'func2', 2),
             ('line', 'func2', 1),
+            ('instruction', 'func2', 2),
             ('instruction', 'func2', 4),
-            ('instruction', 'func2', 6),
             ('line', 'func2', 2),
+            ('instruction', 'func2', 6),
             ('instruction', 'func2', 8),
             ('instruction', 'func2', 28),
             ('instruction', 'func2', 30),
             ('instruction', 'func2', 38),
-            ('instruction', 'func2', 40),
             ('line', 'func2', 3),
+            ('instruction', 'func2', 40),
             ('instruction', 'func2', 42),
             ('instruction', 'func2', 44),
             ('line', 'check_events', 11)])
@@ -843,28 +853,28 @@ class TestLineAndInstructionEvents(CheckEvents):
 
         self.check_events(func3, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
             ('line', 'check_events', 10),
-            ('instruction', 'func3', 2),
             ('line', 'func3', 1),
-            ('instruction', 'func3', 4),
+            ('instruction', 'func3', 2),
             ('line', 'func3', 2),
+            ('instruction', 'func3', 4),
             ('instruction', 'func3', 6),
-            ('instruction', 'func3', 8),
             ('line', 'func3', 3),
+            ('instruction', 'func3', 8),
             ('instruction', 'func3', 18),
             ('instruction', 'func3', 20),
-            ('instruction', 'func3', 22),
             ('line', 'func3', 4),
-            ('instruction', 'func3', 24),
+            ('instruction', 'func3', 22),
             ('line', 'func3', 5),
+            ('instruction', 'func3', 24),
             ('instruction', 'func3', 26),
             ('instruction', 'func3', 28),
-            ('instruction', 'func3', 30),
             ('line', 'func3', 6),
+            ('instruction', 'func3', 30),
             ('instruction', 'func3', 32),
             ('instruction', 'func3', 34),
             ('line', 'check_events', 11)])
 
-class TestInstallIncrementallly(unittest.TestCase):
+class TestInstallIncrementallly(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, must_include, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
         try:
@@ -930,7 +940,7 @@ class TestInstallIncrementallly(unittest.TestCase):
         self.check_events(self.func2,
                           recorders = recorders, must_include = self.MUST_INCLUDE_CI)
 
-class TestLocalEvents(unittest.TestCase):
+class TestLocalEvents(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, expected, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
         try:
@@ -999,7 +1009,7 @@ class TestLocalEvents(unittest.TestCase):
             ('line', 'func3', 6)])
 
 
-class TestSetGetEvents(unittest.TestCase, MonitoringTestBase):
+class TestSetGetEvents(MonitoringTestBase, unittest.TestCase):
 
     def test_global(self):
         sys.monitoring.set_events(TEST_TOOL, E.PY_START)
