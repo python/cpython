@@ -255,7 +255,7 @@ static struct PyModuleDef winsoundmodule = {
     .m_name = "winsound",
     .m_doc = sound_module_doc,
     .m_methods = sound_methods,
-    .m_slots = sound_slots
+    .m_slots = sound_slots,
 };
 
 PyMODINIT_FUNC
