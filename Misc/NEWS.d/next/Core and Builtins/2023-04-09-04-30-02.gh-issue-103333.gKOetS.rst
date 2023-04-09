@@ -1,0 +1,1 @@
+AttributeError now brings the name attribute when pickled/unpickled.
