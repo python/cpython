@@ -63,6 +63,8 @@ class MonitoringBasicTest(unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL, sys.monitoring.events.C_RAISE)
         sys.monitoring.free_tool_id(TEST_TOOL)
         self.assertEqual(sys.monitoring.get_tool(TEST_TOOL), None)
+        with self.assertRaises(ValueError):
+            sys.monitoring.set_events(TEST_TOOL, sys.monitoring.events.CALL)
 
 
 class MonitoringTestBase:

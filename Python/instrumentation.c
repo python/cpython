@@ -1551,12 +1551,27 @@ set_events(_Py_Monitors *m, int tool_id, _PyMonitoringEventSet events)
     }
 }
 
+static int
+check_tool(PyInterpreterState *interp, int tool_id)
+{
+    if (tool_id < PY_MONITORING_SYS_PROFILE_ID &&
+        interp->monitoring_tool_names[tool_id] == NULL
+    ) {
+        PyErr_Format(PyExc_ValueError, "tool %d is not in use", tool_id);
+        return -1;
+    }
+    return 0;
+}
+
 int
 _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
 {
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
     PyInterpreterState *interp = _PyInterpreterState_Get();
     assert(events < (1 << PY_MONITORING_UNGROUPED_EVENTS));
+    if (check_tool(interp, tool_id)) {
+        return -1;
+    }
     uint32_t existing_events = get_events(&interp->monitors, tool_id);
     if (existing_events == events) {
         return 0;
@@ -1572,6 +1587,9 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
     PyInterpreterState *interp = _PyInterpreterState_Get();
     assert(events < (1 << PY_MONITORING_UNGROUPED_EVENTS));
+    if (check_tool(interp, tool_id)) {
+        return -1;
+    }
     if (allocate_instrumentation_data(code)) {
         return -1;
     }
