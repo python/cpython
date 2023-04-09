@@ -2086,11 +2086,15 @@ When a class definition is executed, the following steps occur:
 Resolving MRO entries
 ^^^^^^^^^^^^^^^^^^^^^
 
-If a base that appears in class definition is not an instance of :class:`type`,
-then an ``__mro_entries__`` method is searched on it. If found, it is called
-with the original bases tuple. This method must return a tuple of classes that
-will be used instead of this base. The tuple may be empty, in such case
-the original base is ignored.
+.. method:: object.__mro_entries__(self, bases)
+
+   If a base that appears in a class definition is not an instance of
+   :class:`type`, then an ``__mro_entries__`` method is searched on the base.
+   If an ``__mro_entries__`` method is found, the base is substituted with the
+   result of a call to ``__mro_entries__`` when creating the class.
+   The method is called with the original bases tuple, and must return a tuple
+   of classes that will be used instead of the base. The returned tuple may be
+   empty: in these cases, the original base is ignored.
 
 .. seealso::
 
