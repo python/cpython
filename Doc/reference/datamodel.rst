@@ -316,7 +316,7 @@ Sequences
 
          A string is a sequence of values that represent Unicode code points.
          All the code points in the range ``U+0000 - U+10FFFF`` can be
-         represented in a string.  Python doesn't have a :c:type:`char` type;
+         represented in a string.  Python doesn't have a :c:expr:`char` type;
          instead, every code point in the string is represented as a string
          object with length ``1``.  The built-in function :func:`ord`
          converts a code point from its string form to an integer in the
@@ -991,7 +991,8 @@ Internal types
       the filename from which the code was compiled; :attr:`co_firstlineno` is
       the first line number of the function; :attr:`co_lnotab` is a string
       encoding the mapping from bytecode offsets to line numbers (for details
-      see the source code of the interpreter); :attr:`co_stacksize` is the
+      see the source code of the interpreter, is deprecated since 3.12
+      and may be removed in 3.14); :attr:`co_stacksize` is the
       required stack size; :attr:`co_flags` is an integer encoding a number
       of flags for the interpreter.
 
@@ -1122,6 +1123,7 @@ Internal types
          single: exc_info (in module sys)
          single: last_traceback (in module sys)
          single: sys.exc_info
+         single: sys.exception
          single: sys.last_traceback
 
       Traceback objects represent a stack trace of an exception.  A traceback object
@@ -1525,7 +1527,7 @@ Basic customization
    :meth:`__hash__`, its instances will not be usable as items in hashable
    collections.  If a class defines mutable objects and implements an
    :meth:`__eq__` method, it should not implement :meth:`__hash__`, since the
-   implementation of hashable collections requires that a key's hash value is
+   implementation of :term:`hashable` collections requires that a key's hash value is
    immutable (if the object's hash value changes, it will be in the wrong hash
    bucket).
 
@@ -1904,6 +1906,8 @@ Attribute lookup speed can be significantly improved as well.
    and *__weakref__* for each instance.
 
 
+.. _datamodel-note-slots:
+
 Notes on using *__slots__*
 """"""""""""""""""""""""""
 
@@ -1941,8 +1945,10 @@ Notes on using *__slots__*
   descriptor directly from the base class). This renders the meaning of the
   program undefined.  In the future, a check may be added to prevent this.
 
-* Nonempty *__slots__* does not work for classes derived from "variable-length"
-  built-in types such as :class:`int`, :class:`bytes` and :class:`tuple`.
+* :exc:`TypeError` will be raised if nonempty *__slots__* are defined for a
+  class derived from a
+  :c:member:`"variable-length" built-in type <PyTypeObject.tp_itemsize>` such as
+  :class:`int`, :class:`bytes`, and :class:`tuple`.
 
 * Any non-string :term:`iterable` may be assigned to *__slots__*.
 
@@ -2080,11 +2086,15 @@ When a class definition is executed, the following steps occur:
 Resolving MRO entries
 ^^^^^^^^^^^^^^^^^^^^^
 
-If a base that appears in class definition is not an instance of :class:`type`,
-then an ``__mro_entries__`` method is searched on it. If found, it is called
-with the original bases tuple. This method must return a tuple of classes that
-will be used instead of this base. The tuple may be empty, in such case
-the original base is ignored.
+.. method:: object.__mro_entries__(self, bases)
+
+   If a base that appears in a class definition is not an instance of
+   :class:`type`, then an ``__mro_entries__`` method is searched on the base.
+   If an ``__mro_entries__`` method is found, the base is substituted with the
+   result of a call to ``__mro_entries__`` when creating the class.
+   The method is called with the original bases tuple, and must return a tuple
+   of classes that will be used instead of the base. The returned tuple may be
+   empty: in these cases, the original base is ignored.
 
 .. seealso::
 
@@ -2821,7 +2831,7 @@ Customizing positional arguments in class pattern matching
 
 When using a class name in a pattern, positional arguments in the pattern are not
 allowed by default, i.e. ``case MyClass(x, y)`` is typically invalid without special
-support in ``MyClass``. To be able to use that kind of patterns, the class needs to
+support in ``MyClass``. To be able to use that kind of pattern, the class needs to
 define a *__match_args__* attribute.
 
 .. data:: object.__match_args__
@@ -2948,6 +2958,14 @@ are awaitable.
    :term:`awaitable` objects.  For instance, :class:`asyncio.Future` implements
    this method to be compatible with the :keyword:`await` expression.
 
+   .. note::
+
+      The language doesn't place any restriction on the type or value of the
+      objects yielded by the iterator returned by ``__await__``, as this is
+      specific to the implementation of the asynchronous execution framework
+      (e.g. :mod:`asyncio`) that will be managing the :term:`awaitable` object.
+
+
 .. versionadded:: 3.5
 
 .. seealso:: :pep:`492` for additional information about awaitable objects.
@@ -2995,6 +3013,11 @@ generators, coroutines do not directly support iteration.
    when iterating over the :meth:`~object.__await__` return value, described
    above.  If the exception is not caught in the coroutine, it propagates
    back to the caller.
+
+   .. versionchanged:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
 
 .. method:: coroutine.close()
 

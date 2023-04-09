@@ -88,7 +88,7 @@ class IsolatedAsyncioTestCase(TestCase):
 
     def _callTestMethod(self, method):
         if self._callMaybeAsync(method) is not None:
-            warnings.warn(f'It is deprecated to return a value!=None from a '
+            warnings.warn(f'It is deprecated to return a value that is not None from a '
                           f'test case ({method})', DeprecationWarning, stacklevel=4)
 
     def _callTearDown(self):

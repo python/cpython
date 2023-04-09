@@ -1,2 +1,0 @@
-Implement Enum __contains__ that returns True or False to replace the
-deprecated behaviour that would sometimes raise a TypeError.

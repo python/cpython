@@ -358,7 +358,6 @@ of what happens during the loading portion of import::
         sys.modules[spec.name] = module
     elif not hasattr(spec.loader, 'exec_module'):
         module = spec.loader.load_module(spec.name)
-        # Set __loader__ and __package__ if missing.
     else:
         sys.modules[spec.name] = module
         try:
@@ -539,6 +538,10 @@ The import machinery fills in these attributes on each module object
 during loading, based on the module's spec, before the loader executes
 the module.
 
+It is **strongly** recommended that you rely on :attr:`__spec__` and
+its attributes instead of any of the other individual attributes
+listed below.
+
 .. attribute:: __name__
 
    The ``__name__`` attribute must be set to the fully qualified name of
@@ -552,9 +555,17 @@ the module.
    for introspection, but can be used for additional loader-specific
    functionality, for example getting data associated with a loader.
 
+   It is **strongly** recommended that you rely on :attr:`__spec__`
+   instead instead of this attribute.
+
+   .. versionchanged:: 3.12
+      The value of ``__loader__`` is expected to be the same as
+      ``__spec__.loader``.  The use of ``__loader__`` is deprecated and slated
+      for removal in Python 3.14.
+
 .. attribute:: __package__
 
-   The module's ``__package__`` attribute must be set.  Its value must
+   The module's ``__package__`` attribute may be set.  Its value must
    be a string, but it can be the same value as its ``__name__``.  When
    the module is a package, its ``__package__`` value should be set to
    its ``__name__``.  When the module is not a package, ``__package__``
@@ -563,12 +574,24 @@ the module.
    details.
 
    This attribute is used instead of ``__name__`` to calculate explicit
-   relative imports for main modules, as defined in :pep:`366`. It is
-   expected to have the same value as ``__spec__.parent``.
+   relative imports for main modules, as defined in :pep:`366`.
+
+   It is **strongly** recommended that you rely on :attr:`__spec__`
+   instead instead of this attribute.
 
    .. versionchanged:: 3.6
       The value of ``__package__`` is expected to be the same as
       ``__spec__.parent``.
+
+   .. versionchanged:: 3.10
+      :exc:`ImportWarning` is raised if import falls back to
+      ``__package__`` instead of
+      :attr:`~importlib.machinery.ModuleSpec.parent`.
+
+   .. versionchanged:: 3.12
+      Raise :exc:`DeprecationWarning` instead of :exc:`ImportWarning`
+      when falling back to ``__package__``.
+
 
 .. attribute:: __spec__
 
@@ -578,7 +601,7 @@ the module.
    interpreter startup <programs>`.  The one exception is ``__main__``,
    where ``__spec__`` is :ref:`set to None in some cases <main_spec>`.
 
-   When ``__package__`` is not defined, ``__spec__.parent`` is used as
+   When ``__spec__.parent`` is not set, ``__package__`` is used as
    a fallback.
 
    .. versionadded:: 3.4
@@ -622,6 +645,9 @@ the module.
    (from which ``__file__`` and ``__cached__`` are derived).  So
    if a loader can load from a cached module but otherwise does not load
    from a file, that atypical scenario may be appropriate.
+
+   It is **strongly** recommended that you rely on :attr:`__spec__`
+   instead instead of ``__cached__``.
 
 .. _package-path-rules:
 
@@ -804,7 +830,7 @@ The path based finder iterates over every entry in the search path, and
 for each of these, looks for an appropriate :term:`path entry finder`
 (:class:`~importlib.abc.PathEntryFinder`) for the
 path entry.  Because this can be an expensive operation (e.g. there may be
-`stat()` call overheads for this search), the path based finder maintains
+``stat()`` call overheads for this search), the path based finder maintains
 a cache mapping path entries to path entry finders.  This cache is maintained
 in :data:`sys.path_importer_cache` (despite the name, this cache actually
 stores finder objects rather than being limited to :term:`importer` objects).
@@ -1005,25 +1031,6 @@ and ``__main__.__spec__`` is set accordingly, they're still considered
 *distinct* modules. This is due to the fact that blocks guarded by
 ``if __name__ == "__main__":`` checks only execute when the module is used
 to populate the ``__main__`` namespace, and not during normal import.
-
-
-Open issues
-===========
-
-XXX It would be really nice to have a diagram.
-
-XXX * (import_machinery.rst) how about a section devoted just to the
-attributes of modules and packages, perhaps expanding upon or supplanting the
-related entries in the data model reference page?
-
-XXX runpy, pkgutil, et al in the library manual should all get "See Also"
-links at the top pointing to the new import system section.
-
-XXX Add more explanation regarding the different ways in which
-``__main__`` is initialized?
-
-XXX Add more info on ``__main__`` quirks/pitfalls (i.e. copy from
-:pep:`395`).
 
 
 References

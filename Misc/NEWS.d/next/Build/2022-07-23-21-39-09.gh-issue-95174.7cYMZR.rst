@@ -1,1 +1,0 @@
-Python now skips missing :mod:`socket` functions and methods on WASI. WASI can only create sockets from existing fd / accept and has no netdb.

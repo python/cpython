@@ -1,1 +1,0 @@
-Fix :class:`asyncio.TaskGroup` to propagate exception when :exc:`asyncio.CancelledError` was replaced with another exception by a context manger. Patch by Kumar Aditya and Guido van Rossum.

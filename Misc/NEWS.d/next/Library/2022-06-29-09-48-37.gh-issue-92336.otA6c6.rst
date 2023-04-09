@@ -1,1 +1,0 @@
-Fix bug where :meth:`linecache.getline` fails on bad files with :exc:`UnicodeDecodeError` or :exc:`SyntaxError`. It now returns an empty string as per the documentation.
