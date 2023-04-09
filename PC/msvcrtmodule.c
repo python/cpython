@@ -648,7 +648,9 @@ exec_module(PyObject* m)
                                                   _VC_CRT_BUILD_VERSION,
                                                   _VC_CRT_RBUILD_VERSION);
     st = PyModule_AddObject(m, "CRT_ASSEMBLY_VERSION", version);
-    if (st < 0) return -1;
+    if (st < 0) {
+        return -1;
+    }
 #endif
     /* make compiler warning quiet if st is unused */
     (void)st;
