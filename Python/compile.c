@@ -6,10 +6,10 @@
  * object:
  *   1. Checks for future statements.  See future.c
  *   2. Builds a symbol table.  See symtable.c.
- *   3. Generate code for basic blocks.  See compiler_mod() in this file.
- *   4. Assemble the basic blocks into final code.  See assemble() in
- *      this file.
- *   5. Optimize the byte code (peephole optimizations).
+ *   3. Generate an instruction sequence. See compiler_mod() in this file.
+ *   4. Generate a control flow graph and run optimizations on it.  See flowgraph.c.
+ *   5. Assemble the basic blocks into final code.  See optimize_and_assemble() in
+ *      this file, and assembler.c.
  *
  * Note that compiler_mod() suggests module, but the module ast type
  * (mod_ty) has cases for expressions and interactive statements.
@@ -488,7 +488,7 @@ static int compiler_match(struct compiler *, stmt_ty);
 static int compiler_pattern_subpattern(struct compiler *,
                                        pattern_ty, pattern_context *);
 
-static PyCodeObject *assemble(struct compiler *, int addNone);
+static PyCodeObject *optimize_and_assemble(struct compiler *, int addNone);
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
@@ -1592,7 +1592,7 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
        coincide with the line number of first "real" statement in module.
-       If body is empty, then lineno will be set later in assemble. */
+       If body is empty, then lineno will be set later in optimize_and_assemble. */
     if (c->u->u_scope_type == COMPILER_SCOPE_MODULE && asdl_seq_LEN(stmts)) {
         st = (stmt_ty)asdl_seq_GET(stmts, 0);
         loc = LOC(st);
@@ -1663,7 +1663,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
     if (compiler_codegen(c, mod) < 0) {
         return NULL;
     }
-    PyCodeObject *co = assemble(c, addNone);
+    PyCodeObject *co = optimize_and_assemble(c, addNone);
     compiler_exit_scope(c);
     return co;
 }
@@ -2124,7 +2124,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             return ERROR;
         }
     }
-    co = assemble(c, 1);
+    co = optimize_and_assemble(c, 1);
     compiler_exit_scope(c);
     if (co == NULL) {
         Py_XDECREF(co);
@@ -2219,7 +2219,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         ADDOP_IN_SCOPE(c, NO_LOCATION, RETURN_VALUE);
         /* create the code object */
-        co = assemble(c, 1);
+        co = optimize_and_assemble(c, 1);
     }
     /* leave the new scope */
     compiler_exit_scope(c);
@@ -2491,12 +2491,12 @@ compiler_lambda(struct compiler *c, expr_ty e)
     c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
     if (c->u->u_ste->ste_generator) {
-        co = assemble(c, 0);
+        co = optimize_and_assemble(c, 0);
     }
     else {
         location loc = LOCATION(e->lineno, e->lineno, 0, 0);
         ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
-        co = assemble(c, 1);
+        co = optimize_and_assemble(c, 1);
     }
     compiler_exit_scope(c);
     if (co == NULL) {
@@ -4894,7 +4894,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         }
     }
 
-    co = assemble(c, 1);
+    co = optimize_and_assemble(c, 1);
     compiler_exit_scope(c);
     if (is_top_level_await && is_async_generator){
         c->u->u_ste->ste_coroutine = 1;
@@ -6805,7 +6805,7 @@ add_return_at_end(struct compiler *c, int addNone)
 static int cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq);
 
 static PyCodeObject *
-assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
+optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
                    int code_flags, PyObject *filename)
 {
     instr_sequence optimized_instrs;
@@ -6869,7 +6869,7 @@ assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
 }
 
 static PyCodeObject *
-assemble(struct compiler *c, int addNone)
+optimize_and_assemble(struct compiler *c, int addNone)
 {
     struct compiler_unit *u = c->u;
     PyObject *const_cache = c->c_const_cache;
@@ -6884,7 +6884,7 @@ assemble(struct compiler *c, int addNone)
         return NULL;
     }
 
-    return assemble_code_unit(u, const_cache, code_flags, filename);
+    return optimize_and_assemble_code_unit(u, const_cache, code_flags, filename);
 }
 
 static int
