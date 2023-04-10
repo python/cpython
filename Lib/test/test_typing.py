@@ -859,7 +859,6 @@ class UnpackTests(BaseTestCase):
         dir_items = set(dir(Unpack[Tuple[int]]))
         for required_item in [
             '__args__', '__parameters__', '__origin__',
-            'copy_with',
         ]:
             with self.subTest(required_item=required_item):
                 self.assertIn(required_item, dir_items)
@@ -1712,7 +1711,6 @@ class UnionTests(BaseTestCase):
         dir_items = set(dir(Union[str, int]))
         for required_item in [
             '__args__', '__parameters__', '__origin__',
-            'copy_with',
         ]:
             with self.subTest(required_item=required_item):
                 self.assertIn(required_item, dir_items)
@@ -1862,8 +1860,6 @@ class BaseCallableTests:
         dir_items = set(dir(Callable[..., int]))
         for required_item in [
             '__args__', '__parameters__', '__origin__',
-            # TODO: add to `collections.abc.Callable`:
-            # 'copy_with',
         ]:
             with self.subTest(required_item=required_item):
                 self.assertIn(required_item, dir_items)
@@ -2184,7 +2180,6 @@ class LiteralTests(BaseTestCase):
         dir_items = set(dir(Literal[1, 2, 3]))
         for required_item in [
             '__args__', '__parameters__', '__origin__',
-            'copy_with',
         ]:
             with self.subTest(required_item=required_item):
                 self.assertIn(required_item, dir_items)
@@ -7358,7 +7353,6 @@ class AnnotatedTests(BaseTestCase):
         for required_item in [
             '__args__', '__parameters__', '__origin__',
             '__metadata__',
-            'copy_with',
         ]:
             with self.subTest(required_item=required_item):
                 self.assertIn(required_item, dir_items)
@@ -8086,7 +8080,6 @@ class ConcatenateTests(BaseTestCase):
         dir_items = set(dir(Concatenate[int, P]))
         for required_item in [
             '__args__', '__parameters__', '__origin__',
-            'copy_with',
         ]:
             with self.subTest(required_item=required_item):
                 self.assertIn(required_item, dir_items)
@@ -8376,7 +8369,6 @@ class SpecialAttrsTests(BaseTestCase):
         for required_item in [
             'bar', 'baz',
             '__args__', '__parameters__', '__origin__',
-            'copy_with',
         ]:
             with self.subTest(required_item=required_item):
                 self.assertIn(required_item, dir_items)
