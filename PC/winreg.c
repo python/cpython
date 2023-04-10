@@ -41,7 +41,7 @@ static char errNotAHandle[] = "Object is not a handle";
 /* Forward declares */
 
 typedef struct {
-    PyTypeObject* PyHKEY_Type;
+    PyTypeObject *PyHKEY_Type;
 } winreg_state;
 
 /* Doc strings */
