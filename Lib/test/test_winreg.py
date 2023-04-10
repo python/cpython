@@ -6,7 +6,7 @@ import os, sys, errno
 import threading
 import unittest
 from platform import machine, win32_edition
-from test.support import cpython_only import_helper
+from test.support import cpython_only, import_helper
 
 # Do this first so test will be skipped if module doesn't exist
 import_helper.import_module('winreg', required_on=['win'])
