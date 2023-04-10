@@ -34,7 +34,8 @@ typedef struct {
 typedef struct _PyCfgBasicblock_ {
     /* Each basicblock in a compilation unit is linked via b_list in the
        reverse order that the block are allocated.  b_list points to the next
-       block, not to be confused with b_next, which is next by control flow. */
+       block in this list, not to be confused with b_next, which is next by
+       control flow. */
     struct _PyCfgBasicblock_ *b_list;
     /* The label of this block if it is a jump target, -1 otherwise */
     _PyCfgJumpTargetLabel b_label;
