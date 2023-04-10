@@ -237,14 +237,17 @@ _PyLong_SetSignAndDigitCount(PyLongObject *op, int sign, Py_ssize_t size)
     assert(size >= 0);
     assert(-1 <= sign && sign <= 1);
     assert(sign != 0 || size == 0);
-    op->long_value.lv_tag = TAG_FROM_SIGN_AND_SIZE(sign, (size_t)size);
+    op->long_value.lv_tag = TAG_FROM_SIGN_AND_SIZE(sign, (size_t)size) |
+        (op->long_value.lv_tag & SIGN_STATIC);
 }
 
 static inline void
 _PyLong_SetDigitCount(PyLongObject *op, Py_ssize_t size)
 {
     assert(size >= 0);
-    op->long_value.lv_tag = (((size_t)size) << NON_SIZE_BITS) | (op->long_value.lv_tag & SIGN_MASK);
+    op->long_value.lv_tag = (((size_t)size) << NON_SIZE_BITS) |
+        (op->long_value.lv_tag & SIGN_MASK) |
+        (op->long_value.lv_tag & SIGN_STATIC);
 }
 
 #define NON_SIZE_MASK ~((1 << NON_SIZE_BITS) - 1)
