@@ -10,8 +10,9 @@ extern "C" {
 
 #include <stdbool.h>
 
-#include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ast_state.h"     // struct ast_state
+#include "pycore_atexit.h"        // struct atexit_state
+#include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ceval_state.h"   // struct _ceval_state
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_context.h"       // struct _Py_context_state
@@ -30,20 +31,6 @@ extern "C" {
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
-
-
-// atexit state
-typedef struct {
-    PyObject *func;
-    PyObject *args;
-    PyObject *kwargs;
-} atexit_callback;
-
-struct atexit_state {
-    atexit_callback **callbacks;
-    int ncallbacks;
-    int callback_len;
-};
 
 
 struct _Py_long_state {

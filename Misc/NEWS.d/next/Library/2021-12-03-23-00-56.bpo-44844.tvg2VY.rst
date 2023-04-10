@@ -1,0 +1,1 @@
+Enables :mod:`webbrowser` to detect and launch Microsoft Edge browser.
