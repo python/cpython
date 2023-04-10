@@ -499,30 +499,44 @@ PyEval_ThreadsInitialized(void)
     return _PyEval_ThreadsInitialized();
 }
 
+static void
+init_shared_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
+{
+    assert(gil_created(gil));
+    interp->ceval.gil = gil;
+    interp->ceval.own_gil = 0;
+}
+
+static void
+init_own_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
+{
+    assert(!gil_created(gil));
+    create_gil(gil);
+    assert(gil_created(gil));
+    interp->ceval.gil = gil;
+    interp->ceval.own_gil = 1;
+}
+
 PyStatus
 _PyEval_InitGIL(PyThreadState *tstate, int own_gil)
 {
     assert(tstate->interp->ceval.gil == NULL);
+    int locked;
     if (!own_gil) {
         /* The interpreter will share the main interpreter's instead. */
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
         assert(tstate->interp != main_interp);
-        struct _gil_runtime_state *gil = main_interp->ceval.gil;
-        assert(gil_created(gil));
-        tstate->interp->ceval.gil = gil;
-        tstate->interp->ceval.own_gil = 0;
-        return _PyStatus_OK();
+        init_shared_gil(tstate->interp, main_interp->ceval.gil);
+        locked = _Py_atomic_load_relaxed(&main_interp->ceval.gil->locked);
     }
-
-    struct _gil_runtime_state *gil = &tstate->interp->_gil;
-    assert(!gil_created(gil));
-
-    PyThread_init_thread();
-    create_gil(gil);
-    assert(gil_created(gil));
-    tstate->interp->ceval.gil = gil;
-    tstate->interp->ceval.own_gil = 1;
-    take_gil(tstate);
+    else {
+        PyThread_init_thread();
+        init_own_gil(tstate->interp, &tstate->interp->_gil);
+        locked = 0;
+    }
+    if (!locked) {
+        take_gil(tstate);
+    }
     return _PyStatus_OK();
 }
 
