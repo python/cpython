@@ -2208,7 +2208,8 @@ winreg_traverse(PyObject *module, visitproc visit, void *arg)
     return 0;
 }
 
-static winreg_clear(PyObject *module)
+static int
+winreg_clear(PyObject *module)
 {
     winreg_state *state = _PyModule_GetState(module);
     Py_CLEAR(state->PyHKEY_Type);
