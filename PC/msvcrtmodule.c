@@ -577,22 +577,28 @@ static struct PyModuleDef msvcrtmodule = {
     NULL
 };
 
+static int
+insertptr(PyObject *mod, char *name, void *value)
+{
+    PyObject *v = PyLong_FromVoidPtr(value);
+    if (v == NULL) {
+        return -1;
+    }
+    int rc = PyModule_AddObjectRef(mod, name, v);
+    Py_DECREF(v);
+    return rc;
+}
+
 #define INSERTINT(MOD, NAME, VAL) do {                  \
     if (PyModule_AddIntConstant(MOD, NAME, VAL) < 0) {  \
         goto error;                                     \
     }                                                   \
 } while (0)
 
-#define INSERTPTR(MOD, NAME, PTR) do {              \
-    PyObject *v = PyLong_FromVoidPtr(PTR);          \
-    if (v == NULL) {                                \
-        goto error;                                 \
-    }                                               \
-    int rc = PyModule_AddObjectRef(MOD, NAME, v);   \
-    Py_DECREF(v);                                   \
-    if (rc < 0) {                                   \
-        goto error;                                 \
-    }                                               \
+#define INSERTPTR(MOD, NAME, PTR) do {      \
+    if (insertptr(MOD, NAME, PTR) < 0) {    \
+        goto error;                         \
+    }                                       \
 } while (0)
 
 #define INSERTSTR(MOD, NAME, CONST) do {                    \
