@@ -21,10 +21,16 @@
 
 #if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
 
-static BOOL PyHKEY_AsHKEY(PyObject *m, PyObject *ob, HKEY *pRes, BOOL bNoneOK);
-static BOOL clinic_HKEY_converter(PyObject *m, PyObject *ob, void *p);
-static PyObject *PyHKEY_FromHKEY(PyObject *m, HKEY h);
-static BOOL PyHKEY_Close(PyObject *m, PyObject *obHandle);
+typedef struct {
+    PyTypeObject *PyHKEY_Type;
+} winreg_state;
+
+/* Forward declares */
+
+static BOOL PyHKEY_AsHKEY(winreg_state *st, PyObject *ob, HKEY *pRes, BOOL bNoneOK);
+static BOOL clinic_HKEY_converter(winreg_state *st, PyObject *ob, void *p);
+static PyObject *PyHKEY_FromHKEY(winreg_state *st, HKEY h);
+static BOOL PyHKEY_Close(winreg_state *st, PyObject *obHandle);
 
 static struct PyModuleDef winregmodule;
 
@@ -37,12 +43,6 @@ static char errNotAHandle[] = "Object is not a handle";
 */
 #define PyErr_SetFromWindowsErrWithFunction(rc, fnname) \
     PyErr_SetFromWindowsErr(rc)
-
-/* Forward declares */
-
-typedef struct {
-    PyTypeObject *PyHKEY_Type;
-} winreg_state;
 
 /* Doc strings */
 PyDoc_STRVAR(module_doc,
@@ -121,8 +121,7 @@ typedef struct {
     HKEY hkey;
 } PyHKEYObject;
 
-#define PyHKEY_Check(m, op) \
-    Py_IS_TYPE(op, ((winreg_state *)_PyModule_GetState(m))->PyHKEY_Type)
+#define PyHKEY_Check(st, op) Py_IS_TYPE(op, st->PyHKEY_Type)
 
 static char *failMsg = "bad operand type";
 
@@ -250,7 +249,7 @@ class HKEY_converter(CConverter):
 
     def parse_arg(self, argname, displayname):
         return """
-        if (!{converter}(module, {argname}, &{paramname})) {{{{
+        if (!{converter}(_PyModule_GetState(module), {argname}, &{paramname})) {{{{
             goto exit;
         }}}}
         """.format(argname=argname, paramname=self.parser_name,
@@ -263,7 +262,7 @@ class HKEY_return_converter(CReturnConverter):
         self.declare(data)
         self.err_occurred_if_null_pointer("_return_value", data)
         data.return_conversion.append(
-            'return_value = PyHKEY_FromHKEY(module, _return_value);\n')
+            'return_value = PyHKEY_FromHKEY(_PyModule_GetState(module), _return_value);\n')
 
 # HACK: this only works for PyHKEYObjects, nothing else.
 #       Should this be generalized and enshrined in clinic.py,
@@ -276,7 +275,7 @@ class self_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = (PyObject *)_return_value;\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=1bf6a0ebbb134810]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=17e645060c7b8ae1]*/
 
 #include "clinic/winreg.c.h"
 
@@ -297,9 +296,9 @@ static PyObject *
 winreg_HKEYType_Close_impl(PyHKEYObject *self)
 /*[clinic end generated code: output=fced3a624fb0c344 input=6786ac75f6b89de6]*/
 {
-    PyObject *m = PyType_GetModule(Py_TYPE(self));
-    assert(m != NULL);
-    if (!PyHKEY_Close(m, (PyObject *)self)) {
+    winreg_state *st = _PyType_GetModuleState(Py_TYPE(self));
+    assert(st != NULL);
+    if (!PyHKEY_Close(st, (PyObject *)self)) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -357,9 +356,9 @@ winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
                               PyObject *exc_value, PyObject *traceback)
 /*[clinic end generated code: output=923ebe7389e6a263 input=fb32489ee92403c7]*/
 {
-    PyObject *m = PyType_GetModule(Py_TYPE(self));
-    assert(m != NULL);
-    if (!PyHKEY_Close(m, (PyObject *)self)) {
+    winreg_state *st = _PyType_GetModuleState(Py_TYPE(self));
+    assert(st != NULL);
+    if (!PyHKEY_Close(st, (PyObject *)self)) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -437,15 +436,15 @@ PyHKEY_New(PyObject *m, HKEY hInit)
 }
 
 BOOL
-PyHKEY_Close(PyObject *m, PyObject *ob_handle)
+PyHKEY_Close(winreg_state *st, PyObject *ob_handle)
 {
     LONG rc;
     HKEY key;
 
-    if (!PyHKEY_AsHKEY(m, ob_handle, &key, TRUE)) {
+    if (!PyHKEY_AsHKEY(st, ob_handle, &key, TRUE)) {
         return FALSE;
     }
-    if (PyHKEY_Check(m, ob_handle)) {
+    if (PyHKEY_Check(st, ob_handle)) {
         ((PyHKEYObject*)ob_handle)->hkey = 0;
     }
     rc = key ? RegCloseKey(key) : ERROR_SUCCESS;
@@ -455,7 +454,7 @@ PyHKEY_Close(PyObject *m, PyObject *ob_handle)
 }
 
 BOOL
-PyHKEY_AsHKEY(PyObject *m, PyObject *ob, HKEY *pHANDLE, BOOL bNoneOK)
+PyHKEY_AsHKEY(winreg_state *st, PyObject *ob, HKEY *pHANDLE, BOOL bNoneOK)
 {
     if (ob == Py_None) {
         if (!bNoneOK) {
@@ -466,7 +465,7 @@ PyHKEY_AsHKEY(PyObject *m, PyObject *ob, HKEY *pHANDLE, BOOL bNoneOK)
         }
         *pHANDLE = (HKEY)0;
     }
-    else if (PyHKEY_Check(m ,ob)) {
+    else if (PyHKEY_Check(st ,ob)) {
         PyHKEYObject *pH = (PyHKEYObject *)ob;
         *pHANDLE = pH->hkey;
     }
@@ -487,19 +486,17 @@ PyHKEY_AsHKEY(PyObject *m, PyObject *ob, HKEY *pHANDLE, BOOL bNoneOK)
 }
 
 BOOL
-clinic_HKEY_converter(PyObject *m, PyObject *ob, void *p)
+clinic_HKEY_converter(winreg_state *st, PyObject *ob, void *p)
 {
-    if (!PyHKEY_AsHKEY(m, ob, (HKEY *)p, FALSE)) {
+    if (!PyHKEY_AsHKEY(st, ob, (HKEY *)p, FALSE)) {
         return FALSE;
     }
     return TRUE;
 }
 
 PyObject *
-PyHKEY_FromHKEY(PyObject *m, HKEY h)
+PyHKEY_FromHKEY(winreg_state *st, HKEY h)
 {
-    winreg_state *st = _PyModule_GetState(m);
-
     PyHKEYObject *op = (PyHKEYObject *)PyObject_GC_New(PyHKEYObject,
                                                        st->PyHKEY_Type);
     op->hkey = h;
@@ -512,11 +509,11 @@ PyHKEY_FromHKEY(PyObject *m, HKEY h)
   The module methods
 ************************************************************************/
 BOOL
-PyWinObject_CloseHKEY(PyObject *m, PyObject *obHandle)
+PyWinObject_CloseHKEY(winreg_state *st, PyObject *obHandle)
 {
     BOOL ok;
-    if (PyHKEY_Check(m, obHandle)) {
-        ok = PyHKEY_Close(m, obHandle);
+    if (PyHKEY_Check(st, obHandle)) {
+        ok = PyHKEY_Close(st, obHandle);
     }
 #if SIZEOF_LONG >= SIZEOF_HKEY
     else if (PyLong_Check(obHandle)) {
@@ -866,7 +863,7 @@ static PyObject *
 winreg_CloseKey(PyObject *module, PyObject *hkey)
 /*[clinic end generated code: output=a4fa537019a80d15 input=5b1aac65ba5127ad]*/
 {
-    if (!PyHKEY_Close(module, hkey)) {
+    if (!PyHKEY_Close(_PyModule_GetState(module), hkey)) {
         return NULL;
     }
     Py_RETURN_NONE;
