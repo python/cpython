@@ -1552,7 +1552,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         .allow_threads = allow_threads,
         .allow_daemon_threads = allow_daemon_threads,
         .check_multi_interp_extensions = check_multi_interp_extensions,
-		.own_gil = own_gil,
+        .own_gil = own_gil,
     };
     PyStatus status = _Py_NewInterpreterFromConfig(&substate, &config);
     if (PyStatus_Exception(status)) {
