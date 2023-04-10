@@ -357,9 +357,7 @@ winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
 /*[clinic end generated code: output=923ebe7389e6a263 input=fb32489ee92403c7]*/
 {
     PyObject *m = PyType_GetModule(Py_TYPE(self));
-    if (m == NULL) {
-        return NULL;
-    }
+    assert(m != NULL);
     if (!PyHKEY_Close(m, (PyObject *)self))
         return NULL;
     Py_RETURN_NONE;
