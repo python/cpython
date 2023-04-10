@@ -2155,7 +2155,7 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
     instantiating is the same as instantiating the underlying type, binding
     it to types is also the same.
 
-    The metadata itself is storred in '__metadata__' attribute as a tuple.
+    The metadata itself is stored in '__metadata__' attribute as a tuple.
     """
     def __init__(self, origin, metadata):
         if isinstance(origin, _AnnotatedAlias):
