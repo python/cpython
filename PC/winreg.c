@@ -2202,7 +2202,7 @@ static PyModuleDef_Slot winreg_slots[] = {
 
 static winreg_traverse(PyObject* module, visitproc visit, void* arg)
 {
-    winreg_state *state = PyModule_GetState(module);
+    winreg_state *state = _PyModule_GetState(module);
     Py_VISIT(state->PyHKEY_Type);
     return 0;
 }
