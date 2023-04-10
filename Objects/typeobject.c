@@ -9141,6 +9141,7 @@ type_new_set_names(PyTypeObject *type)
                 "Error calling __set_name__ on '%.100s' instance %R "
                 "in '%.100s'",
                 Py_TYPE(value)->tp_name, key, type->tp_name);
+            goto error;
         }
         else {
             Py_DECREF(res);
