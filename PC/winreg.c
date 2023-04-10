@@ -298,9 +298,7 @@ winreg_HKEYType_Close_impl(PyHKEYObject *self)
 /*[clinic end generated code: output=fced3a624fb0c344 input=6786ac75f6b89de6]*/
 {
     PyObject *m = PyType_GetModule(Py_TYPE(self));
-    if (m == NULL) {
-        return NULL;
-    }
+    assert(m != NULL);
     if (!PyHKEY_Close(m, (PyObject *)self))
         return NULL;
     Py_RETURN_NONE;
