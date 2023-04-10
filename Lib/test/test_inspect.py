@@ -4155,17 +4155,8 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(ba.args, (10, 20))
 
     def test_signature_bind_positional_only(self):
-        P = inspect.Parameter
-
-        def test(a_po, b_po, c_po=3, foo=42, *, bar=50, **kwargs):
+        def test(a_po, b_po, c_po=3, /, foo=42, *, bar=50, **kwargs):
             return a_po, b_po, c_po, foo, bar, kwargs
-
-        sig = inspect.signature(test)
-        new_params = collections.OrderedDict(tuple(sig.parameters.items()))
-        for name in ('a_po', 'b_po', 'c_po'):
-            new_params[name] = new_params[name].replace(kind=P.POSITIONAL_ONLY)
-        new_sig = sig.replace(parameters=new_params.values())
-        test.__signature__ = new_sig
 
         self.assertEqual(self.call(test, 1, 2, 4, 5, bar=6),
                          (1, 2, 4, 5, 6, {}))
@@ -4176,14 +4167,20 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(self.call(test, 1, 2, foo=4, bar=5),
                          (1, 2, 3, 4, 5, {}))
 
-        with self.assertRaisesRegex(TypeError, "but was passed as a keyword"):
-            self.call(test, 1, 2, foo=4, bar=5, c_po=10)
+        self.assertEqual(self.call(test, 1, 2, foo=4, bar=5, c_po=10),
+                         (1, 2, 3, 4, 5, {'c_po': 10}))
 
-        with self.assertRaisesRegex(TypeError, "parameter is positional only"):
-            self.call(test, 1, 2, c_po=4)
+        self.assertEqual(self.call(test, 1, 2, c_po=4),
+                         (1, 2, 3, 42, 50, {'c_po': 4}))
 
-        with self.assertRaisesRegex(TypeError, "parameter is positional only"):
+        with self.assertRaisesRegex(TypeError, "missing 2 required positional arguments"):
             self.call(test, a_po=1, b_po=2)
+
+        def test_without_var_kwargs(a_po, b_po, c_po=3, /, foo=42, *, bar=50):
+            return a_po, b_po, c_po, foo, bar
+
+        with self.assertRaisesRegex(TypeError, "positional-only arguments passed as keyword"):
+            self.call(test_without_var_kwargs, 1, 2, foo=4, bar=5, c_po=10)
 
     def test_signature_bind_with_self_arg(self):
         # Issue #17071: one of the parameters is named "self

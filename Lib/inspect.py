@@ -3109,6 +3109,8 @@ class Signature:
         parameters_ex = ()
         arg_vals = iter(args)
 
+        pos_only_param_in_kwargs = []
+
         while True:
             # Let's iterate through the positional arguments and corresponding
             # parameters
@@ -3129,10 +3131,9 @@ class Signature:
                         break
                     elif param.name in kwargs:
                         if param.kind == _POSITIONAL_ONLY:
-                            msg = '{arg!r} parameter is positional only, ' \
-                                  'but was passed as a keyword'
-                            msg = msg.format(arg=param.name)
-                            raise TypeError(msg) from None
+                            # Raise a TypeError once we are sure there is no
+                            # **kwargs param later.
+                            pos_only_param_in_kwargs.append(param)
                         parameters_ex = (param,)
                         break
                     elif (param.kind == _VAR_KEYWORD or
@@ -3215,20 +3216,21 @@ class Signature:
 
             else:
                 if param.kind == _POSITIONAL_ONLY:
-                    # This should never happen in case of a properly built
-                    # Signature object (but let's have this check here
-                    # to ensure correct behaviour just in case)
-                    raise TypeError('{arg!r} parameter is positional only, '
-                                    'but was passed as a keyword'. \
-                                    format(arg=param.name))
-
-                arguments[param_name] = arg_val
+                    # Restore the param in case there is a kwargs_param
+                    kwargs[param_name] = arg_val
+                else:
+                    arguments[param_name] = arg_val
 
         if kwargs:
             if kwargs_param is not None:
                 # Process our '**kwargs'-like parameter
                 arguments[kwargs_param.name] = kwargs
             else:
+                if pos_only_param_in_kwargs:
+                    raise TypeError('got some positional-only arguments passed as '
+                                    'keyword arguments: {arg!r} '. \
+                                    format(arg=', '.join(
+                                    param.name for param in pos_only_param_in_kwargs)))
                 raise TypeError(
                     'got an unexpected keyword argument {arg!r}'.format(
                         arg=next(iter(kwargs))))
