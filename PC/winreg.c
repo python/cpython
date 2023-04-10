@@ -2209,7 +2209,7 @@ static winreg_traverse(PyObject* module, visitproc visit, void* arg)
 
 static winreg_clear(PyObject *module)
 {
-    winreg_state *state = PyModule_GetState(module);
+    winreg_state *state = _PyModule_GetState(module);
     Py_CLEAR(state->PyHKEY_Type);
     return 0;
 }
