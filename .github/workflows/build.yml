@@ -128,7 +128,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Configure CPython
-      run: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-dev
+      run: SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-dev
     - name: Build CPython
       run: make -j4
     - name: Display build info
