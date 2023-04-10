@@ -829,6 +829,8 @@ stack_effect(int opcode, int oparg, int jump)
 
         case LOAD_METHOD:
             return 1;
+        case LOAD_ZERO_SUPER_METHOD:
+            return -1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -1039,11 +1041,16 @@ compiler_addop_name(struct compiler_unit *u, location loc,
     if (arg < 0) {
         return ERROR;
     }
-    if (opcode == LOAD_ATTR) {
+    if (opcode == LOAD_ATTR || opcode == LOAD_ZERO_SUPER_ATTR) {
         arg <<= 1;
     }
     if (opcode == LOAD_METHOD) {
         opcode = LOAD_ATTR;
+        arg <<= 1;
+        arg |= 1;
+    }
+    if (opcode == LOAD_ZERO_SUPER_METHOD) {
+        opcode = LOAD_ZERO_SUPER_ATTR;
         arg <<= 1;
         arg |= 1;
     }
@@ -4214,6 +4221,63 @@ is_import_originated(struct compiler *c, expr_ty e)
     return flags & DEF_IMPORT;
 }
 
+static int
+is_zero_arg_super_call(struct compiler *c, expr_ty e)
+{
+    if (e->kind != Call_kind ||
+        e->v.Call.func->kind != Name_kind ||
+        !_PyUnicode_EqualToASCIIString(e->v.Call.func->v.Name.id, "super") ||
+        asdl_seq_LEN(e->v.Call.args) != 0 ||
+        asdl_seq_LEN(e->v.Call.keywords) != 0) {
+        return 0;
+    }
+
+    PyObject *super_name = e->v.Call.func->v.Name.id;
+    // try to detect statically-visible shadowing of 'super' name
+    int scope = _PyST_GetScope(c->u->u_ste, super_name);
+    if (scope != GLOBAL_IMPLICIT) {
+        return 0;
+    }
+    scope = _PyST_GetScope(c->c_st->st_top, super_name);
+    if (scope != 0) {
+        return 0;
+    }
+    // enclosing function should have at least one argument
+    if (c->u->u_metadata.u_argcount == 0 &&
+        c->u->u_metadata.u_posonlyargcount == 0) {
+        return 0;
+    }
+    // __class__ cell should be available
+    if (get_ref_type(c, &_Py_ID(__class__)) == FREE) {
+        return 1;
+    }
+    return 0;
+}
+
+static int
+load_args_for_zero_super(struct compiler *c, expr_ty e) {
+    location loc = LOC(e);
+
+    // load super() global
+    PyObject *super_name = e->v.Attribute.value->v.Call.func->v.Name.id;
+    RETURN_IF_ERROR(compiler_nameop(c, loc, super_name, Load));
+
+    // load __class__ cell
+    PyObject *name = &_Py_ID(__class__);
+    assert(get_ref_type(c, name) == FREE);
+    RETURN_IF_ERROR(compiler_nameop(c, loc, name, Load));
+
+    // load self (first argument)
+    Py_ssize_t i = 0;
+    PyObject *key, *value;
+    if (!PyDict_Next(c->u->u_metadata.u_varnames, &i, &key, &value)) {
+        return ERROR;
+    }
+    RETURN_IF_ERROR(compiler_nameop(c, loc, key, Load));
+
+    return SUCCESS;
+}
+
 // If an attribute access spans multiple lines, update the current start
 // location to point to the attribute name.
 static location
@@ -4281,11 +4345,19 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
             return 0;
         }
     }
+
     /* Alright, we can optimize the code. */
-    VISIT(c, expr, meth->v.Attribute.value);
     location loc = LOC(meth);
-    loc = update_start_location_to_match_attr(c, loc, meth);
-    ADDOP_NAME(c, loc, LOAD_METHOD, meth->v.Attribute.attr, names);
+
+    if (is_zero_arg_super_call(c, meth->v.Attribute.value)) {
+        RETURN_IF_ERROR(load_args_for_zero_super(c, meth));
+        ADDOP_NAME(c, loc, LOAD_ZERO_SUPER_METHOD, meth->v.Attribute.attr, names);
+    } else {
+        VISIT(c, expr, meth->v.Attribute.value);
+        loc = update_start_location_to_match_attr(c, loc, meth);
+        ADDOP_NAME(c, loc, LOAD_METHOD, meth->v.Attribute.attr, names);
+    }
+
     VISIT_SEQ(c, expr, e->v.Call.args);
 
     if (kwdsl) {
@@ -5293,6 +5365,11 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_formatted_value(c, e);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
+        if (e->v.Attribute.ctx == Load && is_zero_arg_super_call(c, e->v.Attribute.value)) {
+            RETURN_IF_ERROR(load_args_for_zero_super(c, e));
+            ADDOP_NAME(c, loc, LOAD_ZERO_SUPER_ATTR, e->v.Attribute.attr, names);
+            return SUCCESS;
+        }
         VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);

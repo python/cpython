@@ -9358,14 +9358,15 @@ super_repr(PyObject *self)
 }
 
 static PyObject *
-super_getattro(PyObject *self, PyObject *name)
+do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
+                PyTypeObject *su_obj_type, PyObject *name, int *meth_found)
 {
-    superobject *su = (superobject *)self;
     PyTypeObject *starttype;
-    PyObject *mro;
+    PyObject *mro, *res;
     Py_ssize_t i, n;
+    int temp_su = 0;
 
-    starttype = su->obj_type;
+    starttype = su_obj_type;
     if (starttype == NULL)
         goto skip;
 
@@ -9385,7 +9386,7 @@ super_getattro(PyObject *self, PyObject *name)
 
     /* No need to check the last one: it's gonna be skipped anyway.  */
     for (i = 0; i+1 < n; i++) {
-        if ((PyObject *)(su->type) == PyTuple_GET_ITEM(mro, i))
+        if ((PyObject *)(su_type) == PyTuple_GET_ITEM(mro, i))
             break;
     }
     i++;  /* skip su->type (if any)  */
@@ -9400,19 +9401,22 @@ super_getattro(PyObject *self, PyObject *name)
         PyObject *dict = _PyType_CAST(obj)->tp_dict;
         assert(dict != NULL && PyDict_Check(dict));
 
-        PyObject *res = PyDict_GetItemWithError(dict, name);
+        res = PyDict_GetItemWithError(dict, name);
         if (res != NULL) {
             Py_INCREF(res);
-
-            descrgetfunc f = Py_TYPE(res)->tp_descr_get;
-            if (f != NULL) {
-                PyObject *res2;
-                res2 = f(res,
-                    /* Only pass 'obj' param if this is instance-mode super
-                       (See SF ID #743627)  */
-                    (su->obj == (PyObject *)starttype) ? NULL : su->obj,
-                    (PyObject *)starttype);
-                Py_SETREF(res, res2);
+            if (meth_found && _PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+                *meth_found = 1;
+            } else {
+                descrgetfunc f = Py_TYPE(res)->tp_descr_get;
+                if (f != NULL) {
+                    PyObject *res2;
+                    res2 = f(res,
+                        /* Only pass 'obj' param if this is instance-mode super
+                        (See SF ID #743627)  */
+                        (su_obj == (PyObject *)starttype) ? NULL : su_obj,
+                        (PyObject *)starttype);
+                    Py_SETREF(res, res2);
+                }
             }
 
             Py_DECREF(mro);
@@ -9428,7 +9432,25 @@ super_getattro(PyObject *self, PyObject *name)
     Py_DECREF(mro);
 
   skip:
-    return PyObject_GenericGetAttr(self, name);
+    if (su == NULL) {
+        su = PyObject_Vectorcall((PyObject *)&PySuper_Type, NULL, 0, NULL);
+        if (su == NULL) {
+            return NULL;
+        }
+        temp_su = 1;
+    }
+    res = PyObject_GenericGetAttr((PyObject *)su, name);
+    if (temp_su) {
+        Py_DECREF(su);
+    }
+    return res;
+}
+
+static PyObject *
+super_getattro(PyObject *self, PyObject *name)
+{
+    superobject *su = (superobject *)self;
+    return do_super_lookup(su, su->type, su->obj, su->obj_type, name, NULL);
 }
 
 static PyTypeObject *
@@ -9482,6 +9504,18 @@ supercheck(PyTypeObject *type, PyObject *obj)
                     "super(type, obj): "
                     "obj must be an instance or subtype of type");
     return NULL;
+}
+
+PyObject *
+_PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *meth_found)
+{
+    PyTypeObject *su_obj_type = supercheck(su_type, su_obj);
+    if (su_obj_type == NULL) {
+        return NULL;
+    }
+    PyObject *res = do_super_lookup(NULL, su_type, su_obj, su_obj_type, name, meth_found);
+    Py_DECREF(su_obj_type);
+    return res;
 }
 
 static PyObject *
