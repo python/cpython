@@ -10,6 +10,7 @@ import unittest
 import _testcapi
 from test import support
 from test.support import import_helper
+from test.support import os_helper
 from test.support import script_helper
 
 
@@ -547,8 +548,6 @@ class DestroyTests(TestBase):
         t.start()
         t.join()
 
-    # XXX Fix this test!
-    @unittest.skip('blocking forever')
     def test_still_running(self):
         main, = interpreters.list_all()
         interp = interpreters.create()
@@ -699,8 +698,6 @@ class RunStringTests(TestBase):
             content = file.read()
             self.assertEqual(content, expected)
 
-    # XXX Fix this test!
-    @unittest.skip('blocking forever')
     def test_already_running(self):
         with _running(self.id):
             with self.assertRaises(RuntimeError):
@@ -921,7 +918,7 @@ class RunStringTests(TestBase):
         t = threading.Thread(target=f)
         t.start()
         """)
-        with support.temp_dir() as dirname:
+        with os_helper.temp_dir() as dirname:
             filename = script_helper.make_script(dirname, 'interp', script)
             with script_helper.spawn_python(filename) as proc:
                 retcode = proc.wait()
