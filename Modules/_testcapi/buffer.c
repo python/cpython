@@ -8,17 +8,22 @@
 typedef struct {
     PyObject_HEAD
     PyObject *obj;
-    long references;
+    Py_ssize_t references;
 } testBufObject;
 
 static PyObject *
 testbuf_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    testBufObject *self = (testBufObject *)type->tp_alloc(type, 0);
-    if (self == NULL) {
+    PyObject *obj = PyBytes_FromString("test");
+    if (obj == NULL) {
         return NULL;
     }
-    self->obj = PyBytes_FromString("test");
+    testBufObject *self = (testBufObject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+    self->obj = obj;
     self->references = 0;
     return (PyObject *)self;
 }

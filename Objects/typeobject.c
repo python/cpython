@@ -7665,28 +7665,32 @@ wrap_descr_delete(PyObject *self, PyObject *args, void *wrapped)
 static PyObject *
 wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
 {
-    int flags = 0;
+    PyObject *arg = NULL;
 
-    if (!check_num_args(args, 1)) {
+    if (!PyArg_UnpackTuple(args, "", 1, 1, &arg)) {
         return NULL;
     }
-    if (!PyArg_ParseTuple(args, "i", &flags)) {
+    Py_ssize_t flags = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
+    if (flags == -1 && PyErr_Occurred()) {
         return NULL;
     }
+
     return PyMemoryView_FromObjectAndFlags(self, flags);
 }
 
 static PyObject *
 wrap_releasebuffer(PyObject *self, PyObject *args, void *wrapped)
 {
-    PyMemoryViewObject *mview;
-
-    if (!check_num_args(args, 1)) {
+    PyObject *arg = NULL;
+    if (!PyArg_UnpackTuple(args, "", 1, 1, &arg)) {
         return NULL;
     }
-    if (!PyArg_ParseTuple(args, "O!", &PyMemoryView_Type, &mview)) {
+    if (!PyMemoryView_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "expected a memoryview object");
         return NULL;
     }
+    PyMemoryViewObject *mview = (PyMemoryViewObject *)arg;
     if (mview->view.obj != self) {
         PyErr_SetString(PyExc_ValueError,
                         "memoryview's buffer is not this object");
@@ -7697,12 +7701,7 @@ wrap_releasebuffer(PyObject *self, PyObject *args, void *wrapped)
                         "memoryview's buffer has already been released");
         return NULL;
     }
-    PyObject *release = PyUnicode_FromString("release");
-    if (release == NULL) {
-        return NULL;
-    }
-    PyObject *res = PyObject_CallMethodNoArgs((PyObject *)mview, release);
-    Py_DECREF(release);
+    PyObject *res = PyObject_CallMethodNoArgs((PyObject *)mview, &_Py_ID(release));
     if (res == NULL) {
         return NULL;
     }

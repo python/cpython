@@ -1115,6 +1115,7 @@ extern "C" {
     INIT_ID(reducer_override), \
     INIT_ID(registry), \
     INIT_ID(rel_tol), \
+    INIT_ID(release), \
     INIT_ID(reload), \
     INIT_ID(repl), \
     INIT_ID(replace), \
