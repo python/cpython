@@ -2125,6 +2125,8 @@ exec_module(PyObject *m)
     d = PyModule_GetDict(m);
     st->PyHKEY_Type = (PyTypeObject *)
                        PyType_FromModuleAndSpec(m, &pyhkey_type_spec, NULL);
+    if (st->PyHKEY_Type == NULL)
+        return -1;
     if (PyDict_SetItemString(d, "HKEYType",
                              (PyObject *)st->PyHKEY_Type) != 0)
         return -1;
