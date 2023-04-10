@@ -206,12 +206,17 @@ The :mod:`gc` module provides the following functions:
 
 .. function:: freeze()
 
-   Freeze all the objects tracked by gc - move them to a permanent generation
-   and ignore all the future collections. This can be used before a POSIX
-   fork() call to make the gc copy-on-write friendly or to speed up collection.
-   Also collection before a POSIX fork() call may free pages for future
-   allocation which can cause copy-on-write too so it's advised to disable gc
-   in parent process and freeze before fork and enable gc in child process.
+   Freeze all the objects tracked by the garbage collector; move them to a
+   permanent generation and ignore them in all the future collections.
+
+   If a process will ``fork()`` without ``exec()``, avoiding unnecessary
+   copy-on-write in child processes will maximize memory sharing and reduce
+   overall memory usage. This requires both avoiding creation of freed "holes"
+   in memory pages in the parent process and ensuring that GC collections in
+   child processes won't touch the ``gc_refs`` counter of long-lived objects
+   originating in the parent process. To accomplish both, call ``gc.disable()``
+   early in the parent process, ``gc.freeze()`` right before ``fork()``, and
+   ``gc.enable()`` early in child processes.
 
    .. versionadded:: 3.7
 
