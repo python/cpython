@@ -258,6 +258,13 @@ _Py_bytes_istitle(const char *cptr, Py_ssize_t len)
     const unsigned char *e;
     int cased, previous_is_cased;
 
+    if (len == 1) {
+        if (Py_ISUPPER(*p)) {
+            Py_RETURN_TRUE;
+        }
+        Py_RETURN_FALSE;
+    }
+
     /* Special case for empty strings */
     if (len == 0)
         Py_RETURN_FALSE;
