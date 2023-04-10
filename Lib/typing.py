@@ -2039,7 +2039,7 @@ class _ProtocolMeta(ABCMeta):
                     val = getattr_static(instance, attr)
                 except AttributeError:
                     break
-                if callable(getattr(cls, attr, None)) and val is None:
+                if val is None and callable(getattr(cls, attr, None)):
                     break
             else:
                 return True
@@ -2154,6 +2154,8 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
     with extra annotations. The alias behaves like a normal typing alias,
     instantiating is the same as instantiating the underlying type, binding
     it to types is also the same.
+
+    The metadata itself is stored in a '__metadata__' attribute as a tuple.
     """
     def __init__(self, origin, metadata):
         if isinstance(origin, _AnnotatedAlias):
@@ -2209,6 +2211,10 @@ class Annotated:
     Details:
 
     - It's an error to call `Annotated` with less than two arguments.
+    - Access the metadata via the ``__metadata__`` attribute::
+
+        Annotated[int, '$'].__metadata__ == ('$',)
+
     - Nested Annotated are flattened::
 
         Annotated[Annotated[T, Ann1, Ann2], Ann3] == Annotated[T, Ann1, Ann2, Ann3]

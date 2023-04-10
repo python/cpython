@@ -498,6 +498,9 @@
     <ClInclude Include="..\Include\internal\pycore_ast_state.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_atexit.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_atomic.h">
       <Filter>Include\internal</Filter>
     </ClInclude>

@@ -5097,8 +5097,7 @@ class BasicConfigTest(unittest.TestCase):
             message = []
 
             def dummy_handle_error(record):
-                _, v, _ = sys.exc_info()
-                message.append(str(v))
+                message.append(str(sys.exception()))
 
             handler.handleError = dummy_handle_error
             logging.debug('The Øresund Bridge joins Copenhagen to Malmö')
