@@ -596,10 +596,6 @@ static int
 exec_module(PyObject* m)
 {
     int st;
-    PyObject *m = PyModule_Create(&msvcrtmodule);
-    if (m == NULL) {
-        return NULL;
-    }
     PyObject *d = PyModule_GetDict(m);  // Borrowed ref.
 
     /* constants for the locking() function's mode argument */
