@@ -16,13 +16,14 @@
 #  define _SGI_MP_SOURCE
 #endif
 
-// stdlib.h, stdio.h, and errno.h headers are not used by Python
+// stdlib.h, stdio.h, errno.h and string.h headers are not used by Python
 // headers, but kept for backward compatibility. They are excluded from the
 // limited C API of Python 3.11.
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  include <stdlib.h>
 #  include <stdio.h>              // FILE*
 #  include <errno.h>              // errno
+#  include <string.h>             // memcpy()
 #endif
 #ifndef MS_WINDOWS
 #  include <unistd.h>
@@ -33,7 +34,6 @@
 
 #include <assert.h>               // assert()
 #include <wchar.h>                // wchar_t
-#include <string.h>               // memcpy()
 
 #include "pyport.h"
 #include "pymacro.h"

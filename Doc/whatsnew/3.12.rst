@@ -1029,7 +1029,6 @@ New Features
   - ``_Py_SetImmortal`` Sets the immortal reference count to a PyObject.
   - ``PyObject_HEAD_INIT`` This will now initialize reference count to
     ``_Py_IMMORTAL_REFCNT`` when used with ``Py_BUILD_CORE``.
-  - ``Py_MEMCPY`` A portable version of memcpy.
   - ``SSTATE_INTERNED_IMMORTAL`` An identifier for interned unicode objects
      that are immortal.
   - ``SSTATE_INTERNED_IMMORTAL_STATIC`` An identifier for interned unicode
