@@ -8546,7 +8546,7 @@ os_setpgrp_impl(PyObject *module)
 #include <processsnapshot.h>
 
 static PyObject*
-win32_getppid()
+win32_getppid(void)
 {
     DWORD error;
     PyObject* result = NULL;
@@ -13330,7 +13330,7 @@ static int has_ShellExecute = -1;
 static HINSTANCE (CALLBACK *Py_ShellExecuteW)(HWND, LPCWSTR, LPCWSTR, LPCWSTR,
                                               LPCWSTR, INT);
 static int
-check_ShellExecute()
+check_ShellExecute(void)
 {
     HINSTANCE hShell32;
 

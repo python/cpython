@@ -596,8 +596,11 @@ static int
 exec_module(PyObject* m)
 {
     int st;
-    PyObject *d, *version;
-    d = PyModule_GetDict(m);
+    PyObject *m = PyModule_Create(&msvcrtmodule);
+    if (m == NULL) {
+        return NULL;
+    }
+    PyObject *d = PyModule_GetDict(m);  // Borrowed ref.
 
     /* constants for the locking() function's mode argument */
     insertint(d, "LK_LOCK", _LK_LOCK);
@@ -630,7 +633,7 @@ exec_module(PyObject* m)
                                     _VC_ASSEMBLY_PUBLICKEYTOKEN);
     if (st < 0) {
         return -1;
-}
+    }
 #endif
 #ifdef _CRT_ASSEMBLY_VERSION
     st = PyModule_AddStringConstant(m, "CRT_ASSEMBLY_VERSION",
@@ -649,11 +652,16 @@ exec_module(PyObject* m)
 
     /* constants for the 2010 crt versions */
 #if defined(_VC_CRT_MAJOR_VERSION) && defined (_VC_CRT_MINOR_VERSION) && defined(_VC_CRT_BUILD_VERSION) && defined(_VC_CRT_RBUILD_VERSION)
-    version = PyUnicode_FromFormat("%d.%d.%d.%d", _VC_CRT_MAJOR_VERSION,
-                                                  _VC_CRT_MINOR_VERSION,
-                                                  _VC_CRT_BUILD_VERSION,
-                                                  _VC_CRT_RBUILD_VERSION);
-    st = PyModule_AddObject(m, "CRT_ASSEMBLY_VERSION", version);
+    PyObject *version = PyUnicode_FromFormat("%d.%d.%d.%d",
+                                             _VC_CRT_MAJOR_VERSION,
+                                             _VC_CRT_MINOR_VERSION,
+                                             _VC_CRT_BUILD_VERSION,
+                                             _VC_CRT_RBUILD_VERSION);
+    if (version == NULL) {
+        return -1;
+    }
+    st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
+    Py_DECREF(version);
     if (st < 0) {
         return -1;
     }
@@ -662,7 +670,6 @@ exec_module(PyObject* m)
     (void)st;
 
     return 0;
-
 }
 
 static PyModuleDef_Slot msvcrt_slots[] = {
