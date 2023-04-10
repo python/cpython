@@ -1243,8 +1243,7 @@ lru_cache_clear_list(lru_list_elem *link)
 {
     while (link != NULL) {
         lru_list_elem *next = link->next;
-        Py_DECREF(link);
-        link = next;
+        Py_SETREF(link, next);
     }
 }
 

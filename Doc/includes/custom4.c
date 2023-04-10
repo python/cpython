@@ -1,6 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "structmember.h"
+#include <stddef.h> /* for offsetof() */
 
 typedef struct {
     PyObject_HEAD
@@ -58,7 +58,7 @@ static int
 Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"first", "last", "number", NULL};
-    PyObject *first = NULL, *last = NULL, *tmp;
+    PyObject *first = NULL, *last = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|UUi", kwlist,
                                      &first, &last,
@@ -66,20 +66,16 @@ Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     if (first) {
-        tmp = self->first;
-        self->first = Py_NewRef(first);
-        Py_DECREF(tmp);
+        Py_SETREF(self->first, Py_NewRef(first));
     }
     if (last) {
-        tmp = self->last;
-        self->last = Py_NewRef(last);
-        Py_DECREF(tmp);
+        Py_SETREF(self->last, Py_NewRef(last));
     }
     return 0;
 }
 
 static PyMemberDef Custom_members[] = {
-    {"number", T_INT, offsetof(CustomObject, number), 0,
+    {"number", Py_T_INT, offsetof(CustomObject, number), 0,
      "custom number"},
     {NULL}  /* Sentinel */
 };
@@ -102,9 +98,7 @@ Custom_setfirst(CustomObject *self, PyObject *value, void *closure)
                         "The first attribute value must be a string");
         return -1;
     }
-    Py_INCREF(value);
-    Py_CLEAR(self->first);
-    self->first = value;
+    Py_XSETREF(self->first, Py_NewRef(value));
     return 0;
 }
 
@@ -126,9 +120,7 @@ Custom_setlast(CustomObject *self, PyObject *value, void *closure)
                         "The last attribute value must be a string");
         return -1;
     }
-    Py_INCREF(value);
-    Py_CLEAR(self->last);
-    self->last = value;
+    Py_XSETREF(self->last, Py_NewRef(value));
     return 0;
 }
 
@@ -154,7 +146,7 @@ static PyMethodDef Custom_methods[] = {
 };
 
 static PyTypeObject CustomType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "custom4.Custom",
     .tp_doc = PyDoc_STR("Custom objects"),
     .tp_basicsize = sizeof(CustomObject),
@@ -171,7 +163,7 @@ static PyTypeObject CustomType = {
 };
 
 static PyModuleDef custommodule = {
-    PyModuleDef_HEAD_INIT,
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "custom4",
     .m_doc = "Example module that creates an extension type.",
     .m_size = -1,

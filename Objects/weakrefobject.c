@@ -824,8 +824,7 @@ PyWeakref_NewRef(PyObject *ob, PyObject *callback)
                        during GC.  Return that one instead of this one
                        to avoid violating the invariants of the list
                        of weakrefs for ob. */
-                    Py_DECREF(result);
-                    result = (PyWeakReference*)Py_NewRef(ref);
+                    Py_SETREF(result, (PyWeakReference*)Py_NewRef(ref));
                 }
             }
             else {
@@ -888,8 +887,7 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
                        during GC.  Return that one instead of this one
                        to avoid violating the invariants of the list
                        of weakrefs for ob. */
-                    Py_DECREF(result);
-                    result = (PyWeakReference*)Py_NewRef(proxy);
+                    Py_SETREF(result, (PyWeakReference*)Py_NewRef(proxy));
                     goto skip_insert;
                 }
                 prev = ref;
@@ -961,9 +959,8 @@ PyObject_ClearWeakRefs(PyObject *object)
     if (*list != NULL) {
         PyWeakReference *current = *list;
         Py_ssize_t count = _PyWeakref_GetWeakrefCount(current);
-        PyObject *err_type, *err_value, *err_tb;
+        PyObject *exc = PyErr_GetRaisedException();
 
-        PyErr_Fetch(&err_type, &err_value, &err_tb);
         if (count == 1) {
             PyObject *callback = current->wr_callback;
 
@@ -982,7 +979,7 @@ PyObject_ClearWeakRefs(PyObject *object)
 
             tuple = PyTuple_New(count * 2);
             if (tuple == NULL) {
-                _PyErr_ChainExceptions(err_type, err_value, err_tb);
+                _PyErr_ChainExceptions1(exc);
                 return;
             }
 
@@ -1012,7 +1009,7 @@ PyObject_ClearWeakRefs(PyObject *object)
             Py_DECREF(tuple);
         }
         assert(!PyErr_Occurred());
-        PyErr_Restore(err_type, err_value, err_tb);
+        PyErr_SetRaisedException(exc);
     }
 }
 

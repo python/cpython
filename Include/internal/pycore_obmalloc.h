@@ -658,6 +658,7 @@ struct _obmalloc_usage {
 
 
 struct _obmalloc_state {
+    int dump_debug_stats;
     struct _obmalloc_pools pools;
     struct _obmalloc_mgmt mgmt;
     struct _obmalloc_usage usage;

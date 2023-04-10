@@ -158,6 +158,7 @@ And a function to display the chores for a given day::
     ...     for chore, days in chores.items():
     ...         if day in days:
     ...             print(chore)
+    ...
     >>> show_chores(chores_for_ethan, Weekday.SATURDAY)
     answer SO questions
 
@@ -283,6 +284,7 @@ The values are chosen by :func:`_generate_next_value_`, which can be
 overridden::
 
     >>> class AutoName(Enum):
+    ...     @staticmethod
     ...     def _generate_next_value_(name, start, count, last_values):
     ...         return name
     ...
@@ -371,6 +373,11 @@ below)::
     >>> Color.BLUE == 2
     False
 
+.. warning::
+
+   It is possible to reload modules -- if a reloaded module contains
+   enums, they will be recreated, and the new members may not
+   compare identical/equal to the original members.
 
 Allowed members and attributes of enumerations
 ----------------------------------------------
@@ -457,6 +464,31 @@ Allowing subclassing of enums that define members would lead to a violation of
 some important invariants of types and instances.  On the other hand, it makes
 sense to allow sharing some common behavior between a group of enumerations.
 (See `OrderedEnum`_ for an example.)
+
+
+.. _enum-dataclass-support:
+
+Dataclass support
+-----------------
+
+When inheriting from a :class:`~dataclasses.dataclass`,
+the :meth:`~Enum.__repr__` omits the inherited class' name.  For example::
+
+    >>> @dataclass
+    ... class CreatureDataMixin:
+    ...     size: str
+    ...     legs: int
+    ...     tail: bool = field(repr=False, default=True)
+    ...
+    >>> class Creature(CreatureDataMixin, Enum):
+    ...     BEETLE = 'small', 6
+    ...     DOG = 'medium', 4
+    ...
+    >>> Creature.DOG
+    <Creature.DOG: size='medium', legs=4>
+
+Use the :func:`!dataclass` argument ``repr=False``
+to use the standard :func:`repr`.
 
 
 Pickling
@@ -687,6 +719,7 @@ It is also possible to name the combinations::
     ...     W = 2
     ...     X = 1
     ...     RWX = 7
+    ...
     >>> Perm.RWX
     <Perm.RWX: 7>
     >>> ~Perm.RWX
@@ -955,12 +988,11 @@ but remain normal attributes.
 """"""""""""""""""""
 
 Enum members are instances of their enum class, and are normally accessed as
-``EnumClass.member``.  In Python versions starting with ``3.5`` you could access
-members from other members -- this practice is discouraged, is deprecated
-in ``3.12``, and will be removed in ``3.14``.
+``EnumClass.member``.  In certain situations, such as writing custom enum
+behavior, being able to access one member directly from another is useful,
+and is supported.
 
 .. versionchanged:: 3.5
-.. versionchanged:: 3.12
 
 
 Creating members that are mixed with other data types

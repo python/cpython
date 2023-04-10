@@ -11,6 +11,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_code.h"          // _PyCode_New()
+#include "pycore_long.h"          // _PyLong_DigitCount
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "marshal.h"              // Py_MARSHAL_VERSION
 
@@ -232,15 +233,15 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
     digit d;
 
     W_TYPE(TYPE_LONG, p);
-    if (Py_SIZE(ob) == 0) {
+    if (_PyLong_IsZero(ob)) {
         w_long((long)0, p);
         return;
     }
 
     /* set l to number of base PyLong_MARSHAL_BASE digits */
-    n = Py_ABS(Py_SIZE(ob));
+    n = _PyLong_DigitCount(ob);
     l = (n-1) * PyLong_MARSHAL_RATIO;
-    d = ob->ob_digit[n-1];
+    d = ob->long_value.ob_digit[n-1];
     assert(d != 0); /* a PyLong is always normalized */
     do {
         d >>= PyLong_MARSHAL_SHIFT;
@@ -251,17 +252,17 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
         p->error = WFERR_UNMARSHALLABLE;
         return;
     }
-    w_long((long)(Py_SIZE(ob) > 0 ? l : -l), p);
+    w_long((long)(_PyLong_IsNegative(ob) ? -l : l), p);
 
     for (i=0; i < n-1; i++) {
-        d = ob->ob_digit[i];
+        d = ob->long_value.ob_digit[i];
         for (j=0; j < PyLong_MARSHAL_RATIO; j++) {
             w_short(d & PyLong_MARSHAL_MASK, p);
             d >>= PyLong_MARSHAL_SHIFT;
         }
         assert (d == 0);
     }
-    d = ob->ob_digit[n-1];
+    d = ob->long_value.ob_digit[n-1];
     do {
         w_short(d & PyLong_MARSHAL_MASK, p);
         d >>= PyLong_MARSHAL_SHIFT;
@@ -839,7 +840,7 @@ r_PyLong(RFILE *p)
     if (ob == NULL)
         return NULL;
 
-    Py_SET_SIZE(ob, n > 0 ? size : -size);
+    _PyLong_SetSignAndDigitCount(ob, n < 0 ? -1 : 1, size);
 
     for (i = 0; i < size-1; i++) {
         d = 0;
@@ -853,7 +854,7 @@ r_PyLong(RFILE *p)
                 goto bad_digit;
             d += (digit)md << j*PyLong_MARSHAL_SHIFT;
         }
-        ob->ob_digit[i] = d;
+        ob->long_value.ob_digit[i] = d;
     }
 
     d = 0;
@@ -880,7 +881,7 @@ r_PyLong(RFILE *p)
     }
     /* top digit should be nonzero, else the resulting PyLong won't be
        normalized */
-    ob->ob_digit[size-1] = d;
+    ob->long_value.ob_digit[size-1] = d;
     return (PyObject *)ob;
   bad_digit:
     Py_DECREF(ob);
@@ -1217,8 +1218,7 @@ r_object(RFILE *p)
                 if (!PyErr_Occurred())
                     PyErr_SetString(PyExc_TypeError,
                         "NULL object in marshal data for tuple");
-                Py_DECREF(v);
-                v = NULL;
+                Py_SETREF(v, NULL);
                 break;
             }
             PyTuple_SET_ITEM(v, i, v2);
@@ -1244,8 +1244,7 @@ r_object(RFILE *p)
                 if (!PyErr_Occurred())
                     PyErr_SetString(PyExc_TypeError,
                         "NULL object in marshal data for list");
-                Py_DECREF(v);
-                v = NULL;
+                Py_SETREF(v, NULL);
                 break;
             }
             PyList_SET_ITEM(v, i, v2);
@@ -1277,8 +1276,7 @@ r_object(RFILE *p)
             Py_DECREF(val);
         }
         if (PyErr_Occurred()) {
-            Py_DECREF(v);
-            v = NULL;
+            Py_SETREF(v, NULL);
         }
         retval = v;
         break;
@@ -1322,8 +1320,7 @@ r_object(RFILE *p)
                     if (!PyErr_Occurred())
                         PyErr_SetString(PyExc_TypeError,
                             "NULL object in marshal data for set");
-                    Py_DECREF(v);
-                    v = NULL;
+                    Py_SETREF(v, NULL);
                     break;
                 }
                 if (PySet_Add(v, v2) == -1) {

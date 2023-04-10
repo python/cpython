@@ -3,6 +3,7 @@
 #endif
 
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
+PyAPI_FUNC(void) _Py_NewReferenceNoTotal(PyObject *op);
 
 #ifdef Py_TRACE_REFS
 /* Py_TRACE_REFS is such major surgery that we call external routines. */
@@ -10,7 +11,11 @@ PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
 #endif
 
 #ifdef Py_REF_DEBUG
-PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
+/* These are useful as debugging aids when chasing down refleaks. */
+PyAPI_FUNC(Py_ssize_t) _Py_GetGlobalRefTotal(void);
+#  define _Py_GetRefTotal() _Py_GetGlobalRefTotal()
+PyAPI_FUNC(Py_ssize_t) _Py_GetLegacyRefTotal(void);
+PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_GetRefTotal(PyInterpreterState *);
 #endif
 
 
@@ -229,7 +234,18 @@ struct _typeobject {
  * It should should be treated as an opaque blob
  * by code other than the specializer and interpreter. */
 struct _specialization_cache {
+    // In order to avoid bloating the bytecode with lots of inline caches, the
+    // members of this structure have a somewhat unique contract. They are set
+    // by the specialization machinery, and are invalidated by PyType_Modified.
+    // The rules for using them are as follows:
+    // - If getitem is non-NULL, then it is the same Python function that
+    //   PyType_Lookup(cls, "__getitem__") would return.
+    // - If getitem is NULL, then getitem_version is meaningless.
+    // - If getitem->func_version == getitem_version, then getitem can be called
+    //   with two positional arguments and no keyword arguments, and has neither
+    //   *args nor **kwargs (as required by BINARY_SUBSCR_GETITEM):
     PyObject *getitem;
+    uint32_t getitem_version;
 };
 
 /* The *real* layout of a type object when allocated on the heap */
@@ -320,27 +336,54 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
  * triggered as a side-effect of `dst` getting torn down no longer believes
  * `dst` points to a valid object.
  *
- * gh-98724: Use the _tmp_dst_ptr variable to evaluate the 'dst' macro argument
- * exactly once, to prevent the duplication of side effects in this macro.
+ * Temporary variables are used to only evalutate macro arguments once and so
+ * avoid the duplication of side effects. _Py_TYPEOF() or memcpy() is used to
+ * avoid a miscompilation caused by type punning. See Py_CLEAR() comment for
+ * implementation details about type punning.
+ *
+ * The memcpy() implementation does not emit a compiler warning if 'src' has
+ * not the same type than 'src': any pointer type is accepted for 'src'.
  */
-#define Py_SETREF(dst, src)                                     \
-    do {                                                        \
-        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
-        PyObject *_tmp_dst = (*_tmp_dst_ptr);                   \
-        *_tmp_dst_ptr = _PyObject_CAST(src);                    \
-        Py_DECREF(_tmp_dst);                                    \
+#ifdef _Py_TYPEOF
+#define Py_SETREF(dst, src) \
+    do { \
+        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_DECREF(_tmp_old_dst); \
     } while (0)
+#else
+#define Py_SETREF(dst, src) \
+    do { \
+        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
+        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+        PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
+        Py_DECREF(_tmp_old_dst); \
+    } while (0)
+#endif
 
 /* Py_XSETREF() is a variant of Py_SETREF() that uses Py_XDECREF() instead of
  * Py_DECREF().
  */
-#define Py_XSETREF(dst, src)                                    \
-    do {                                                        \
-        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
-        PyObject *_tmp_dst = (*_tmp_dst_ptr);                   \
-        *_tmp_dst_ptr = _PyObject_CAST(src);                    \
-        Py_XDECREF(_tmp_dst);                                   \
+#ifdef _Py_TYPEOF
+#define Py_XSETREF(dst, src) \
+    do { \
+        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+        _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_XDECREF(_tmp_old_dst); \
     } while (0)
+#else
+#define Py_XSETREF(dst, src) \
+    do { \
+        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
+        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+        PyObject *_tmp_src = _PyObject_CAST(src); \
+        memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
+        Py_XDECREF(_tmp_old_dst); \
+    } while (0)
+#endif
 
 
 PyAPI_DATA(PyTypeObject) _PyNone_Type;
@@ -480,7 +523,7 @@ PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
         /* If "cond" is false, then _tstate remains NULL and the deallocator \
          * is run normally without involving the trashcan */ \
         if (cond) { \
-            _tstate = PyThreadState_Get(); \
+            _tstate = _PyThreadState_UncheckedGet(); \
             if (_PyTrash_begin(_tstate, _PyObject_CAST(op))) { \
                 break; \
             } \

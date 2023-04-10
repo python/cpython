@@ -388,7 +388,7 @@ objects dynamically. Note that both ``PyModule_FromDefAndSpec`` and
 
 .. c:function:: PyObject * PyModule_FromDefAndSpec(PyModuleDef *def, PyObject *spec)
 
-   Create a new module object, given the definition in *module* and the
+   Create a new module object, given the definition in *def* and the
    ModuleSpec *spec*.  This behaves like :c:func:`PyModule_FromDefAndSpec2`
    with *module_api_version* set to :const:`PYTHON_API_VERSION`.
 
@@ -396,7 +396,7 @@ objects dynamically. Note that both ``PyModule_FromDefAndSpec`` and
 
 .. c:function:: PyObject * PyModule_FromDefAndSpec2(PyModuleDef *def, PyObject *spec, int module_api_version)
 
-   Create a new module object, given the definition in *module* and the
+   Create a new module object, given the definition in *def* and the
    ModuleSpec *spec*, assuming the API version *module_api_version*.
    If that version does not match the version of the running interpreter,
    a :exc:`RuntimeWarning` is emitted.
