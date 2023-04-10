@@ -3044,12 +3044,10 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(_foo(*ba.args, **ba.kwargs), (12, 10, 20))
 
 
-        def foo(a, b, c, d, **kwargs):
+        def foo(a, b, /, c, d, **kwargs):
             pass
         sig = inspect.signature(foo)
         params = sig.parameters.copy()
-        params['a'] = params['a'].replace(kind=Parameter.POSITIONAL_ONLY)
-        params['b'] = params['b'].replace(kind=Parameter.POSITIONAL_ONLY)
         foo.__signature__ = inspect.Signature(params.values())
         sig = inspect.signature(foo)
         self.assertEqual(str(sig), '(a, b, /, c, d, **kwargs)')
@@ -3556,13 +3554,8 @@ class TestSignatureObject(unittest.TestCase):
         P = inspect.Parameter
         S = inspect.Signature
 
-        def test(a_po, *, b, **kwargs):
+        def test(a_po, /, *, b, **kwargs):
             return a_po, kwargs
-
-        sig = inspect.signature(test)
-        new_params = list(sig.parameters.values())
-        new_params[0] = new_params[0].replace(kind=P.POSITIONAL_ONLY)
-        test.__signature__ = sig.replace(parameters=new_params)
 
         self.assertEqual(str(inspect.signature(test)),
                          '(a_po, /, *, b, **kwargs)')
@@ -4157,15 +4150,8 @@ class TestSignatureBind(unittest.TestCase):
     def test_signature_bind_positional_only(self):
         P = inspect.Parameter
 
-        def test(a_po, b_po, c_po=3, foo=42, *, bar=50, **kwargs):
+        def test(a_po, b_po, c_po=3, /, foo=42, *, bar=50, **kwargs):
             return a_po, b_po, c_po, foo, bar, kwargs
-
-        sig = inspect.signature(test)
-        new_params = collections.OrderedDict(tuple(sig.parameters.items()))
-        for name in ('a_po', 'b_po', 'c_po'):
-            new_params[name] = new_params[name].replace(kind=P.POSITIONAL_ONLY)
-        new_sig = sig.replace(parameters=new_params.values())
-        test.__signature__ = new_sig
 
         self.assertEqual(self.call(test, 1, 2, 4, 5, bar=6),
                          (1, 2, 4, 5, 6, {}))
