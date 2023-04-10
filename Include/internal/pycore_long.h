@@ -116,7 +116,13 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
 #define SIGN_MASK 3
 #define SIGN_ZERO 1
 #define SIGN_NEGATIVE 2
+#define SIGN_STATIC 4
 #define NON_SIZE_BITS 3
+
+static inline uintptr_t
+_PyLong_ClearStaticFlag(uintptr_t lv_tag) {
+    return lv_tag & ~SIGN_STATIC;
+}
 
 /* All *compact" values are guaranteed to fit into
  * a Py_ssize_t with at least one bit to spare.
@@ -128,20 +134,20 @@ PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
 static inline int
 _PyLong_IsNonNegativeCompact(const PyLongObject* op) {
     assert(PyLong_Check(op));
-    return op->long_value.lv_tag <= (1 << NON_SIZE_BITS);
+    return _PyLong_ClearStaticFlag(op->long_value.lv_tag) <= (1 << NON_SIZE_BITS);
 }
 
 static inline int
 _PyLong_IsCompact(const PyLongObject* op) {
     assert(PyLong_Check(op));
-    return op->long_value.lv_tag < (2 << NON_SIZE_BITS);
+    return _PyLong_ClearStaticFlag(op->long_value.lv_tag) < (2 << NON_SIZE_BITS);
 }
 
 static inline int
 _PyLong_BothAreCompact(const PyLongObject* a, const PyLongObject* b) {
     assert(PyLong_Check(a));
     assert(PyLong_Check(b));
-    return (a->long_value.lv_tag | b->long_value.lv_tag) < (2 << NON_SIZE_BITS);
+    return _PyLong_ClearStaticFlag(a->long_value.lv_tag | b->long_value.lv_tag) < (2 << NON_SIZE_BITS);
 }
 
 /* Returns a *compact* value, iff `_PyLong_IsCompact` is true for `op`.
@@ -175,6 +181,12 @@ static inline bool
 _PyLong_IsPositive(const PyLongObject *op)
 {
     return (op->long_value.lv_tag & SIGN_MASK) == 0;
+}
+
+static inline bool
+_PyLong_IsStatic(const PyLongObject *op)
+{
+    return (op->long_value.lv_tag & SIGN_STATIC) == SIGN_STATIC;
 }
 
 static inline Py_ssize_t
@@ -217,6 +229,7 @@ _PyLong_SameSign(const PyLongObject *a, const PyLongObject *b)
 }
 
 #define TAG_FROM_SIGN_AND_SIZE(sign, size) ((1 - (sign)) | ((size) << NON_SIZE_BITS))
+#define TAG_STATIC_FROM_SIGN_AND_SIZE(sign, size) TAG_FROM_SIGN_AND_SIZE(sign, size) | SIGN_STATIC
 
 static inline void
 _PyLong_SetSignAndDigitCount(PyLongObject *op, int sign, Py_ssize_t size)
@@ -247,15 +260,15 @@ _PyLong_FlipSign(PyLongObject *op) {
     { \
         .ob_base = _PyObject_IMMORTAL_INIT(&PyLong_Type), \
         .long_value  = { \
-            .lv_tag = TAG_FROM_SIGN_AND_SIZE( \
+            .lv_tag = TAG_STATIC_FROM_SIGN_AND_SIZE( \
                 (val) == 0 ? 0 : ((val) < 0 ? -1 : 1), \
                 (val) == 0 ? 0 : 1), \
             { ((val) >= 0 ? (val) : -(val)) }, \
         } \
     }
 
-#define _PyLong_FALSE_TAG TAG_FROM_SIGN_AND_SIZE(0, 0)
-#define _PyLong_TRUE_TAG TAG_FROM_SIGN_AND_SIZE(1, 1)
+#define _PyLong_FALSE_TAG TAG_STATIC_FROM_SIGN_AND_SIZE(0, 0)
+#define _PyLong_TRUE_TAG TAG_STATIC_FROM_SIGN_AND_SIZE(1, 1)
 
 #ifdef __cplusplus
 }
