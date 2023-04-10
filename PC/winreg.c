@@ -299,8 +299,9 @@ winreg_HKEYType_Close_impl(PyHKEYObject *self)
 {
     PyObject *m = PyType_GetModule(Py_TYPE(self));
     assert(m != NULL);
-    if (!PyHKEY_Close(m, (PyObject *)self))
+    if (!PyHKEY_Close(m, (PyObject *)self)) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -358,8 +359,9 @@ winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
 {
     PyObject *m = PyType_GetModule(Py_TYPE(self));
     assert(m != NULL);
-    if (!PyHKEY_Close(m, (PyObject *)self))
+    if (!PyHKEY_Close(m, (PyObject *)self)) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -426,8 +428,10 @@ PyHKEY_New(PyObject *m, HKEY hInit)
 {
     winreg_state *st = _PyModule_GetState(m);
     PyHKEYObject *key = PyObject_GC_New(PyHKEYObject, st->PyHKEY_Type);
-    if (key)
-        key->hkey = hInit;
+    if (key == NULL) {
+        return NULL;
+    }
+    key->hkey = hInit;
     PyObject_GC_Track(key);
     return (PyObject *)key;
 }
@@ -485,8 +489,9 @@ PyHKEY_AsHKEY(PyObject *m, PyObject *ob, HKEY *pHANDLE, BOOL bNoneOK)
 BOOL
 clinic_HKEY_converter(PyObject *m, PyObject *ob, void *p)
 {
-    if (!PyHKEY_AsHKEY(m, ob, (HKEY *)p, FALSE))
+    if (!PyHKEY_AsHKEY(m, ob, (HKEY *)p, FALSE)) {
         return FALSE;
+    }
     return TRUE;
 }
 
@@ -861,8 +866,9 @@ static PyObject *
 winreg_CloseKey(PyObject *module, PyObject *hkey)
 /*[clinic end generated code: output=a4fa537019a80d15 input=5b1aac65ba5127ad]*/
 {
-    if (!PyHKEY_Close(module, hkey))
+    if (!PyHKEY_Close(module, hkey)) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -2125,14 +2131,17 @@ exec_module(PyObject *m)
     d = PyModule_GetDict(m);
     st->PyHKEY_Type = (PyTypeObject *)
                        PyType_FromModuleAndSpec(m, &pyhkey_type_spec, NULL);
-    if (st->PyHKEY_Type == NULL)
+    if (st->PyHKEY_Type == NULL) {
         return -1;
+    }
     if (PyDict_SetItemString(d, "HKEYType",
-                             (PyObject *)st->PyHKEY_Type) != 0)
+                             (PyObject *)st->PyHKEY_Type) != 0) {
         return -1;
+    }
     if (PyDict_SetItemString(d, "error",
-                             PyExc_OSError) != 0)
+                             PyExc_OSError) != 0) {
         return -1;
+    }
 
     /* Add the relevant constants */
     ADD_KEY(HKEY_CLASSES_ROOT);
