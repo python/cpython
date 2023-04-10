@@ -513,6 +513,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
 
     // Create and initialize the new interpreter.
     PyThreadState *save_tstate = _PyThreadState_GET();
+    assert(save_tstate != NULL);
     const _PyInterpreterConfig config = isolated
         ? (_PyInterpreterConfig)_PyInterpreterConfig_INIT
         : (_PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
