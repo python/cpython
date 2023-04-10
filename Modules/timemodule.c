@@ -438,8 +438,9 @@ static PyObject *
 time_sleep_until(PyObject *self, PyObject *deadline_obj)
 {
     _PyTime_t deadline;
-    if (_PyTime_FromSecondsObject(&deadline, deadline_obj, _PyTime_ROUND_TIMEOUT))
+    if (_PyTime_FromSecondsObject(&deadline, deadline_obj, _PyTime_ROUND_TIMEOUT)) {
         return NULL;
+    }
     if (deadline < 0) {
         PyErr_SetString(PyExc_ValueError,
                         "sleep_until deadline must be non-negative");
