@@ -161,7 +161,7 @@ def deepcopy(x, memo=None, _nil=[]):
                 else:
                     y = _reconstruct(x, memo, *rv)
 
-    # If is its own copy, don't memoize.
+    # If is its own copy, don't memorize.
     if y is not x:
         memo[d] = y
         _keep_alive(x, memo) # Make sure x lives at least as long as d
