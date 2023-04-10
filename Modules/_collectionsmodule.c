@@ -2112,12 +2112,24 @@ static PyObject*
 defdict_or(PyObject* left, PyObject* right)
 {
     PyObject *self, *other;
-    collections_state *state = find_module_state_by_def(Py_TYPE(left));
+
+    // Find module state
+    PyTypeObject *tp = Py_TYPE(left);
+    PyObject *mod = PyType_GetModuleByDef(tp, &_collectionsmodule);
+    if (mod == NULL) {
+        PyErr_Clear();
+        tp = Py_TYPE(right);
+        mod = PyType_GetModuleByDef(tp, &_collectionsmodule);
+    }
+    assert(mod != NULL);
+    collections_state *state = get_module_state(mod);
+
     if (PyObject_TypeCheck(left, state->defdict_type)) {
         self = left;
         other = right;
     }
     else {
+        assert(PyObject_TypeCheck(right, state->defdict_type));
         self = right;
         other = left;
     }
