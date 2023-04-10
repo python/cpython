@@ -140,6 +140,8 @@ def bench_nbody(loops, reference, iterations):
 engine = Engine(verbose=True)
 # This performs all of the steps that normally happen at build time:
 engine.build()
+with open("Tools/justin/generated.h", "w") as file:
+    file.write(engine.dump())
 # This performs all of the steps that normally happen during startup:
 engine.load()
 
@@ -149,6 +151,6 @@ advance = engine.trace(advance)
 report_energy = engine.trace(report_energy)
 nbody_jit_time = bench_nbody(loops, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)
 
-# print(f"nbody_jit is {nbody_time / nbody_jit_time - 1:.0%} faster than nbody!")
-# from . import TRACING_TIME, COMPILING_TIME, COMPILED_TIME
-# print(round(nbody_time, 3), round(nbody_jit_time, 3), round(TRACING_TIME, 3), round(COMPILING_TIME, 3), round(COMPILED_TIME, 3), round(nbody_jit_time - TRACING_TIME - COMPILED_TIME - COMPILING_TIME, 3))
+print(f"nbody_jit is {nbody_time / nbody_jit_time - 1:.0%} faster than nbody!")
+from . import TRACING_TIME, COMPILING_TIME, COMPILED_TIME
+print(round(nbody_time, 3), round(nbody_jit_time, 3), round(TRACING_TIME, 3), round(COMPILING_TIME, 3), round(COMPILED_TIME, 3), round(nbody_jit_time - TRACING_TIME - COMPILED_TIME - COMPILING_TIME, 3))

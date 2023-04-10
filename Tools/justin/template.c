@@ -1,5 +1,3 @@
-#define Py_BUILD_CORE
-
 #include "Python.h"
 
 #include "pycore_abstract.h"
@@ -31,31 +29,19 @@
 extern int _justin_continue(PyThreadState *tstate, _PyInterpreterFrame *frame,
                             PyObject **stack_pointer);
 extern _Py_CODEUNIT _justin_next_instr;
-extern int _justin_oparg;
+extern _Py_CODEUNIT _justin_next_trace;
+extern void _justin_oparg;
 
 
 // Get dispatches and staying on trace working for multiple instructions:
 #undef DISPATCH
-#define DISPATCH()                                          \
-    do {                                                    \
-        if (_check && next_instr != _next_trace) {          \
-            goto _return_ok;                                \
-        }                                                   \
-        goto _JUSTIN_CONTINUE;                              \
+#define DISPATCH()                                        \
+    do {                                                  \
+        if (_JUSTIN_CHECK && next_instr != _next_trace) { \
+            goto _return_ok;                              \
+        }                                                 \
+        goto _continue;                                   \
     } while (0)
-#undef TARGET
-#define TARGET(OP) INSTRUCTION_START(OP);
-#define _JUSTIN_PART(N)                             \
-    do {                                            \
-        extern _Py_CODEUNIT _justin_next_trace_##N; \
-        extern _Py_CODEUNIT _justin_oparg_##N;      \
-        _check = _JUSTIN_CHECK_##N;                 \
-        _next_trace = &_justin_next_trace_##N;      \
-        oparg = (uintptr_t)&_justin_oparg_##N;      \
-        opcode = _JUSTIN_OPCODE_##N;                \
-    } while (0)
-#undef PREDICTED
-#define PREDICTED(OP)
 
 int
 _justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
@@ -64,13 +50,14 @@ _justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
     // Locals that the instruction implementations expect to exist:
     _Py_atomic_int *const eval_breaker = &tstate->interp->ceval.eval_breaker;
     _Py_CODEUNIT *next_instr = &_justin_next_instr;
-    int oparg;
-    uint8_t opcode;
+    int oparg = (uintptr_t)&_justin_oparg;
+    uint8_t opcode = _JUSTIN_OPCODE;
     // Stuff to make Justin work:
-    _Py_CODEUNIT *_next_trace;
-    int _check;
+    _Py_CODEUNIT *_next_trace = &_justin_next_trace;
     // Now, the actual instruction definition:
 %s
+    Py_UNREACHABLE();
+_continue:;
     // Finally, the continuation:
     __attribute__((musttail))
     return _justin_continue(tstate, frame, stack_pointer);

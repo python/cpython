@@ -152,6 +152,8 @@ class ObjectParser:
             if self._fix_up_holes and hole.symbol in offsets:
                 # TODO: fix offset too? Or just assert that relocs are only in main section?
                 hole = Hole(hole.symbol, hole.kind, hole.offset, hole.addend + offsets[hole.symbol])
+            if hole.symbol.startswith(".rodata") or hole.symbol.startswith("_cstring"):
+                hole = Hole("_justin_base", hole.kind, hole.offset, hole.addend)
             fixed.append(hole)
         return Stencil(body, fixed)
     
@@ -281,27 +283,26 @@ def mmap_windows(size):
 class Engine:
     _CC_FLAGS = [
         "-DNDEBUG",
+        "-DPy_BUILD_CORE",
         "-I.",
-        "-IInclude",
-        "-IInclude/internal",
-        "-IPC",
+        "-I./Include",
+        "-I./Include/internal",
+        "-I./PC",
         "-O3",
         "-Wall",
-        "-Werror",
-        # Not all instructions use the variables and labels we provide:
-        "-Wno-unused-but-set-variable",
+        "-Wextra",
         "-Wno-unused-label",
         "-Wno-unused-variable",
-        "-c",
-        # Don't need these:
+        # We don't need this (and it causes weird relocations):
         "-fno-asynchronous-unwind-tables",
-        # Need this to leave room for patching our 64-bit pointers:
-        "-mcmodel=large",
-        # Don't want relocations to use the global offset table:
-        "-fno-pic",
+        # # Don't want relocations to use the global offset table:
+        # "-fno-pic",
+        # # We don't need this (and it causes weird crashes):
+        # "-fomit-frame-pointer",
+        # # Need this to leave room for patching our 64-bit pointers:
+        # "-mcmodel=large",
     ]
     _OFFSETOF_CO_CODE_ADAPTIVE = 192
-    _WINDOW = 1
     _OPS = [
         "BINARY_OP",
         "BINARY_OP_ADD_FLOAT",
@@ -336,23 +337,24 @@ class Engine:
         if self._verbose:
             print(*args, **kwargs, file=sys.stderr)
 
-    def _compile(self, opnames, path) -> Stencil:
-        self._stderr(f"Building stencil for {' + '.join(opnames)}.")
-        defines = []
-        for i, opname in enumerate(opnames):
-            branches = int("JUMP_IF" in opname or "FOR_ITER" in opname)
-            defines.append(f"-D_JUSTIN_CHECK_{i}={branches}")
-            defines.append(f"-D_JUSTIN_OPCODE_{i}={opname}")
+    @staticmethod
+    def _use_ghccc(path: str) -> None:
+        ll = pathlib.Path(path)
+        ir = ll.read_text()
+        ir = ir.replace("i32 @_justin_continue", "ghccc i32 @_justin_continue")
+        ir = ir.replace("i32 @_justin_entry", "ghccc i32 @_justin_entry")
+        ll.write_text(ir)
+
+    def _compile(self, opname, path) -> Stencil:
+        self._stderr(f"Building stencil for {opname}.")
+        branches = int("JUMP_IF" in opname or "FOR_ITER" in opname)
+        defines = [f"-D_JUSTIN_CHECK={branches}", f"-D_JUSTIN_OPCODE={opname}"]
         with tempfile.NamedTemporaryFile(suffix=".o") as o, tempfile.NamedTemporaryFile(suffix=".ll") as ll:
             subprocess.run(
                 ["clang", *self._CC_FLAGS, *defines, path, "-emit-llvm", "-S", "-o",  ll.name],
                 check=True,
             )
-            llp = pathlib.Path(ll.name)
-            ir = llp.read_text()
-            ir = ir.replace("i32 @_justin_continue", "ghccc i32 @_justin_continue")
-            ir = ir.replace("i32 @_justin_entry", "ghccc i32 @_justin_entry")
-            llp.write_text(ir)
+            self._use_ghccc(ll.name)
             subprocess.run(
                 ["llc-14", "-O3", "--code-model", "large", "--filetype", "obj", ll.name, "-o",  o.name],
                 check=True,
@@ -366,32 +368,88 @@ class Engine:
         for body, opname in re.findall(pattern, generated_cases):
             self._cases[opname] = body.replace("%", "%%").replace(" " * 8, " " * 4)
         template = TOOLS_JUSTIN_TEMPLATE.read_text()
-        self._TRUE_OPS = []
-        for w in range(1, self._WINDOW + 1):
-            self._TRUE_OPS += itertools.product(self._OPS, repeat=w)
-        if ("FOR_ITER_LIST", "FOR_ITER_LIST") in self._TRUE_OPS:
-            self._TRUE_OPS.remove(("FOR_ITER_LIST", "FOR_ITER_LIST"))  # XXX
-        for opnames in self._TRUE_OPS:
-            parts = []
-            for i, opname in enumerate(opnames):
-                parts.append(f"#undef _JUSTIN_CONTINUE")
-                parts.append(f"#define _JUSTIN_CONTINUE _continue_{i}")
-                parts.append(f"    _JUSTIN_PART({i});")
-                parts.append(self._cases[opname])
-                parts.append(f"    Py_UNREACHABLE();")
-                parts.append(f"_continue_{i}:")
-                parts.append(f"    ;")
-            body = template % "\n".join(parts)
+        for opname in self._OPS:
+            body = template % self._cases[opname]
             with tempfile.NamedTemporaryFile("w", suffix=".c") as c:
                 c.write(body)
                 c.flush()
-                self._stencils_built[opnames] = self._compile(opnames, c.name)
+                self._stencils_built[opname] = self._compile(opname, c.name)
         self._trampoline_built = self._compile(("<trampoline>",), TOOLS_JUSTIN_TRAMPOLINE)
 
+    def dump(self) -> str:
+        lines = []
+        kinds = set()
+        opnames = []
+        for opname, stencil in sorted(self._stencils_built.items()) + [("trampoline", self._trampoline_built)]:
+            opnames.append(opname)
+            lines.append(f"")
+            lines.append(f"// {opname}")
+            lines.append(f"static const unsigned char {opname}_stencil_bytes[] = {{")
+            for chunk in itertools.batched(stencil.body, 8):
+                lines.append(f"    {', '.join(f'0x{byte:02X}' for byte in chunk)},")
+            lines.append(f"}};")
+            lines.append(f"static const Hole {opname}_stencil_holes[] = {{")
+            for hole in stencil.holes:
+                if hole.symbol.startswith("_justin_"):
+                    kind = f"HOLE_{hole.symbol.removeprefix('_justin_')}"
+                else:
+                    kind = f"LOAD_{hole.symbol}"
+                lines.append(f"    {{.offset = {hole.offset:3}, .addend = {hole.addend:3}, .kind = {kind}}},")
+                kinds.add(kind)
+            lines.append(f"}};")
+            lines.append(f"static const Stencil {opname}_stencil = {{")
+            lines.append(f"    .nbytes = Py_ARRAY_LENGTH({opname}_stencil_bytes),")
+            lines.append(f"    .bytes = {opname}_stencil_bytes,")
+            lines.append(f"    .nholes = Py_ARRAY_LENGTH({opname}_stencil_holes),")
+            lines.append(f"    .holes = {opname}_stencil_holes,")
+            lines.append(f"}};")
+        lines.append(f"")
+        lines.append(f"static const Stencil stencils[256] = {{")
+        assert opnames[-1] == "trampoline"
+        for opname in opnames[:-1]:
+            lines.append(f"    [{opname}] = {opname}_stencil,")
+        lines.append(f"}};")
+        lines.append(f"")
+        lines.append(f"#define GET_PATCHES() \\")
+        lines.append(f"    {{ \\")
+        for kind in sorted(kinds):
+            if kind.startswith("HOLE_"):
+                value = "0xBAD0BAD0BAD0BAD0"
+            else:
+                assert kind.startswith("LOAD_")
+                value = f"(uintptr_t)&{kind.removeprefix('LOAD_')}"
+            lines.append(f"        [{kind}] = {value}, \\")
+        lines.append(f"    }}")
+        header = []
+        header.append(f"// Don't be scared... this entire file is generated by Justin!")
+        header.append(f"")
+        header.append(f"typedef enum {{")
+        for kind in sorted(kinds):
+            header.append(f"    {kind},")
+        header.append(f"}} HoleKind;")
+        header.append(f"")
+        header.append(f"typedef struct {{")
+        header.append(f"    const uintptr_t offset;")
+        header.append(f"    const uintptr_t addend;")
+        header.append(f"    const HoleKind kind;")
+        header.append(f"}} Hole;")
+        header.append(f"")
+        header.append(f"typedef struct {{")
+        header.append(f"    const size_t nbytes;")
+        header.append(f"    const unsigned char * const bytes;")
+        header.append(f"    const size_t nholes;")
+        header.append(f"    const Hole * const holes;")
+        header.append(f"}} Stencil;")
+        header.append(f"")
+        lines[:0] = header
+        lines.append("")
+        return "\n".join(lines)
+
+
     def load(self) -> None:
-        for opnames, stencil in self._stencils_built.items():
-            self._stderr(f"Loading stencil for {' + '.join(opnames)}.")
-            self._stencils_loaded[opnames] = stencil.load()
+        for opname, stencil in self._stencils_built.items():
+            self._stderr(f"Loading stencil for {opname}.")
+            self._stencils_loaded[opname] = stencil.load()
         self._trampoline_loaded = self._trampoline_built.load()
 
     def trace(self, f, *, warmup: int = 2):
@@ -409,7 +467,15 @@ class Engine:
                     traced = list(recorded)[ix:]
                     self._stderr(f"Compiling trace for {frame.f_code.co_filename}:{frame.f_lineno}.")
                     TRACING_TIME += time.perf_counter() - start
-                    wrapper = self._compile_trace(frame.f_code, traced)
+                    traced = self._clean_trace(frame.f_code, traced)
+                    c_traced_type = (ctypes.c_int * len(traced))
+                    c_traced = c_traced_type() 
+                    c_traced[:] = traced
+                    compile_trace = ctypes.pythonapi._PyJustin_CompileTrace
+                    compile_trace.argtypes = (ctypes.py_object, ctypes.c_int, c_traced_type)
+                    compile_trace.restype = ctypes.c_void_p
+                    wrapper = WRAPPER_TYPE(compile_trace(frame.f_code, len(traced), c_traced))
+                    # wrapper = self._compile_trace(frame.f_code, traced)
                     start = time.perf_counter()
                     compiled[i] = wrapper
                 if i in compiled:
@@ -442,41 +508,42 @@ class Engine:
             finally:
                 sys.settrace(None)
         return wrapper
+    
+    @staticmethod
+    def _clean_trace(code: types.CodeType, trace: typing.Iterable[int]):
+        skip = 0
+        out = []
+        for x, i in enumerate(trace):
+            if skip:
+                skip -= 1
+                continue
+            opcode, _ = code._co_code_adaptive[i : i + 2]
+            opname = dis._all_opname[opcode]
+            if "__" in opname: # XXX
+                skip = 1
+            # if opname == "END_FOR":
+            #     continue
+            out.append(i // 2)
+        return out
 
     def _compile_trace(self, code: types.CodeType, trace: typing.Sequence[int]):
         # This needs to be *fast*.
         start = time.perf_counter()
-        pre = []
+        bundles = []
         skip = 0
-        for x in range(len(trace)):
+        size = len(self._trampoline_loaded)
+        for x, i in enumerate(trace):
             if skip:
                 skip -= 1
                 continue
-            i = trace[x]
             opcode, oparg = code._co_code_adaptive[i : i + 2]
             opname = dis._all_opname[opcode]
             if "__" in opname: # XXX
                 skip = 1
             j = trace[(x + skip + 1) % len(trace)]
-            pre.append((i, j, opname, oparg))
-        bundles = []
-        x = 0
-        size = len(self._trampoline_loaded)
-        while x < len(pre):
-            for w in range(self._WINDOW, 0, -1):
-                pres = pre[x:x+w]
-                i = pres[0][0]
-                js = tuple(p[1] for p in pres)
-                opnames = tuple(p[2] for p in pres)
-                opargs = tuple(p[3] for p in pres)
-                if opnames in self._stencils_loaded:
-                    stencil = self._stencils_loaded[opnames]
-                    bundles.append((stencil, i, js, opargs))
-                    size += len(stencil)
-                    x += w
-                    break
-            else:
-                print(f"Failed to find stencil for {pre[x]}.")
+            stencil = self._stencils_loaded[opname]
+            bundles.append((stencil, i, j, oparg))
+            size += len(stencil)
         lengths = [
             len(self._trampoline_loaded),  *(len(stencil) for stencil, _, _, _ in bundles)
         ]
@@ -491,27 +558,21 @@ class Engine:
         buffer = bytearray()
         buffer += (
             self._trampoline_loaded.copy_and_patch(
-                _cstring=base + len(buffer),
+                _justin_base=base + len(buffer),
                 _justin_continue=continuations[0],
-                _justin_next_instr = first_instr + trace[0],
             )
         )
-        for (stencil, i, js, opargs), continuation in zip(
+        for (stencil, i, j, oparg), continuation in zip(
             bundles, continuations[1:], strict=True,
         ):
-            patches = {}
-            for x, (j, oparg) in enumerate(zip(js, opargs, strict=True)):
-                patches[f"_justin_next_trace_{x}"] = first_instr + j
-                patches[f"_justin_oparg_{x}"] = oparg
-            patches[".rodata.str1.1"] = base + len(buffer)
-            patches[".rodata"] = base + len(buffer)
             buffer += (
                 stencil.copy_and_patch(
-                    _cstring=base + len(buffer),
+                    _justin_base=base + len(buffer),
                     _justin_continue=continuation,
                     _justin_next_instr=first_instr + i,
+                    _justin_next_trace=first_instr + j,
+                    _justin_oparg=oparg,
                     _justin_target=len(buffer),
-                    **patches,
                 )
             )
         assert len(buffer) == size

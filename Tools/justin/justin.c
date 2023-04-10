@@ -1,15 +1,16 @@
-#define Py_BUILD_CORE
-
 #include "Python.h"
+#include "pycore_abstract.h"
+#include "pycore_floatobject.h"
 #include "pycore_opcode.h"
+#include "pycore_justin.h"
 
-#include "stencils.h"
-#include "stencils.c"
+// #include "justin.h"
+#include "generated.h"
 
 #ifdef MS_WINDOWS
-#include <windows.h>
+    #include <windows.h>
 #else
-#include <sys/mman.h>
+    #include <sys/mman.h>
 #endif
 
 
@@ -80,23 +81,8 @@ _PyJustin_CompileTrace(PyCodeObject *code, int size, int *trace)
     if (memory == NULL) {
         return NULL;
     }
-    // Set up our patches:
-    uintptr_t patches[] = {
-    #define BAD 0xBAD0BAD0BAD0BAD0
-        [HOLE_base] = BAD,
-        [HOLE_continue] = BAD,
-        [HOLE_next_instr] = BAD,
-        [HOLE_next_trace] = BAD,
-        [HOLE_oparg] = BAD,
-    #undef BAD
-    #define LOAD(SYMBOL) [LOAD_##SYMBOL] = (uintptr_t)&(SYMBOL)
-        LOAD(_Py_Dealloc),
-        LOAD(_Py_DecRefTotal_DO_NOT_USE_THIS),
-        LOAD(_Py_NegativeRefcount),
-        LOAD(PyThreadState_Get),
-    #undef LOAD
-    };
     void *head = memory;
+    uintptr_t patches[] = GET_PATCHES();
     // First, the trampoline:
     const Stencil *stencil = &trampoline_stencil;
     patches[HOLE_base] = (uintptr_t)head;
@@ -106,11 +92,12 @@ _PyJustin_CompileTrace(PyCodeObject *code, int size, int *trace)
     for (int i = 0; i < size; i++) {
         _Py_CODEUNIT *instruction = first_instruction + trace[i];
         const Stencil *stencil = &stencils[instruction->op.code];
+        assert(stencil->nbytes && stencil->bytes);
         patches[HOLE_base] = (uintptr_t)head;
         patches[HOLE_continue] = (i != size - 1) 
                                ? (uintptr_t)head + stencil->nbytes
                                : (uintptr_t)memory + trampoline_stencil.nbytes;
-        patches[HOLE_next_instr] = (uintptr_t)(first_instruction + trace[i] + 1);
+        patches[HOLE_next_instr] = (uintptr_t)(first_instruction + trace[i]);
         patches[HOLE_next_trace] = (uintptr_t)(first_instruction + trace[(i + 1) % size]);
         patches[HOLE_oparg] = instruction->op.arg;
         head = copy_and_patch(head, stencil, patches);

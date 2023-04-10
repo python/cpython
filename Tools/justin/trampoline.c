@@ -1,5 +1,3 @@
-#define Py_BUILD_CORE
-
 #include "Python.h"
 
 #include "pycore_frame.h"
