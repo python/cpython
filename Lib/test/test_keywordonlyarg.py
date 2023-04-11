@@ -67,6 +67,20 @@ class KeywordOnlyArgTestCase(unittest.TestCase):
                     "positional arguments but 3 were given")
         self.assertEqual(str(exc.exception), expected)
 
+        with self.assertRaises(TypeError) as exc:
+            f.__name__ = 'changed_f'
+            f(1, 2, 3)
+        expected = (f"{f.__qualname__}() takes from 1 to 2 "
+                        "positional arguments but 3 were given")
+        self.assertEqual(str(exc.exception), expected)
+
+        with self.assertRaises(TypeError) as exc:
+            f.__qualname__ = 'changed_f2'
+            f(1, 2, 3)
+        expected = (f"{f.__qualname__}() takes from 1 to 2 "
+                    "positional arguments but 3 were given")
+        self.assertEqual(str(exc.exception), expected)
+
     def testSyntaxErrorForFunctionCall(self):
         self.assertRaisesSyntaxError("f(p, k=1, p2)")
         self.assertRaisesSyntaxError("f(p, k1=50, *(1,2), k1=100)")

@@ -498,6 +498,12 @@ Too many arguments:
     Traceback (most recent call last):
       ...
     TypeError: f() takes from 1 to 2 positional arguments but 3 positional arguments (and 1 keyword-only argument) were given
+    >>> def f(): pass
+    >>> f.__name__ = 'changed_f'
+    >>> f(1)
+    Traceback (most recent call last):
+      ...
+    TypeError: changed_f() takes 0 positional arguments but 1 was given
 
 Too few and missing arguments:
 
