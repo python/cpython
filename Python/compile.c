@@ -7148,10 +7148,6 @@ _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts)
     }
 
     cfg_builder g;
-    memset(&g, 0, sizeof(cfg_builder));
-    if (_PyCfgBuilder_Init(&g) < 0) {
-        goto error;
-    }
     if (instructions_to_cfg(instructions, &g) < 0) {
         goto error;
     }
