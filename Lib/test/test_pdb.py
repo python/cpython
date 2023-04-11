@@ -240,9 +240,11 @@ def test_pdb_breakpoint_commands():
 
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'break 3',
+    ...     'break 4, +',
     ...     'disable 1',
     ...     'ignore 1 10',
     ...     'condition 1 1 < 2',
+    ...     'condition 1 1 <',
     ...     'break 4',
     ...     'break 4',
     ...     'break',
@@ -264,6 +266,8 @@ def test_pdb_breakpoint_commands():
     ...     'commands 10',  # out of range
     ...     'commands a',   # display help
     ...     'commands 4',   # already deleted
+    ...     'break 6, undefined', # condition causing `NameError` during evaluation
+    ...     'continue', # will stop, ignoring runtime error
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -271,12 +275,16 @@ def test_pdb_breakpoint_commands():
     -> print(1)
     (Pdb) break 3
     Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
+    (Pdb) break 4, +
+    *** Invalid condition +: SyntaxError: invalid syntax
     (Pdb) disable 1
     Disabled breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
     (Pdb) ignore 1 10
     Will ignore next 10 crossings of breakpoint 1.
     (Pdb) condition 1 1 < 2
     New condition set for breakpoint 1.
+    (Pdb) condition 1 1 <
+    *** Invalid condition 1 <: SyntaxError: invalid syntax
     (Pdb) break 4
     Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
     (Pdb) break 4
@@ -331,8 +339,13 @@ def test_pdb_breakpoint_commands():
             end
     (Pdb) commands 4
     *** cannot set commands: Breakpoint 4 already deleted
+    (Pdb) break 6, undefined
+    Breakpoint 5 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:6
     (Pdb) continue
     3
+    > <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>(6)test_function()
+    -> print(4)
+    (Pdb) continue
     4
     """
 
@@ -571,6 +584,165 @@ def test_pdb_whatis_command():
     Function mymethod
     (Pdb) whatis MyClass().mymethod
     Method mymethod
+    (Pdb) continue
+    """
+
+def test_pdb_display_command():
+    """Test display command
+
+    >>> def test_function():
+    ...     a = 0
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     a = 1
+    ...     a = 2
+    ...     a = 3
+    ...     a = 4
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'display +',
+    ...     'display',
+    ...     'display a',
+    ...     'n',
+    ...     'display',
+    ...     'undisplay a',
+    ...     'n',
+    ...     'display a',
+    ...     'undisplay',
+    ...     'display a < 1',
+    ...     'n',
+    ...     'display undefined',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(4)test_function()
+    -> a = 1
+    (Pdb) display +
+    *** Unable to display +: SyntaxError: invalid syntax
+    (Pdb) display
+    No expression is being displayed
+    (Pdb) display a
+    display a: 0
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(5)test_function()
+    -> a = 2
+    display a: 1  [old: 0]
+    (Pdb) display
+    Currently displaying:
+    a: 1
+    (Pdb) undisplay a
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(6)test_function()
+    -> a = 3
+    (Pdb) display a
+    display a: 2
+    (Pdb) undisplay
+    (Pdb) display a < 1
+    display a < 1: False
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(7)test_function()
+    -> a = 4
+    (Pdb) display undefined
+    display undefined: ** raised NameError: name 'undefined' is not defined **
+    (Pdb) continue
+    """
+
+def test_pdb_alias_command():
+    """Test alias command
+
+    >>> class A:
+    ...     def __init__(self):
+    ...         self.attr1 = 10
+    ...         self.attr2 = 'str'
+    ...     def method(self):
+    ...         pass
+
+    >>> def test_function():
+    ...     o = A()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     o.method()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")',
+    ...     'alias ps pi self',
+    ...     'pi o',
+    ...     's',
+    ...     'ps',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_alias_command[1]>(4)test_function()
+    -> o.method()
+    (Pdb) alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
+    (Pdb) alias ps pi self
+    (Pdb) pi o
+    o.attr1 = 10
+    o.attr2 = str
+    (Pdb) s
+    --Call--
+    > <doctest test.test_pdb.test_pdb_alias_command[0]>(5)method()
+    -> def method(self):
+    (Pdb) ps
+    self.attr1 = 10
+    self.attr2 = str
+    (Pdb) continue
+    """
+
+def test_pdb_where_command():
+    """Test where command
+
+    >>> def g():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> def f():
+    ...     g();
+
+    >>> def test_function():
+    ...     f()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'w',
+    ...     'where',
+    ...     'u',
+    ...     'w',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) w
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+      <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) where
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+      <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) u
+    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+    (Pdb) w
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+      <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) continue
     """
 
@@ -1500,6 +1672,31 @@ def test_pdb_issue_gh_101673():
       3  ->        import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) p a
     2
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_103225():
+    """See GH-103225
+
+    Make sure longlist uses 1-based line numbers in frames that correspond to a module
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'longlist',
+    ...     'continue'
+    ... ]):
+    ...     a = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     b = 2
+    > <doctest test.test_pdb.test_pdb_issue_gh_103225[0]>(7)<module>()
+    -> b = 2
+    (Pdb) longlist
+      1     with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+      2         'longlist',
+      3         'continue'
+      4     ]):
+      5         a = 1
+      6         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+      7  ->     b = 2
     (Pdb) continue
     """
 

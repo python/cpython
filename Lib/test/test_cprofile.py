@@ -100,7 +100,7 @@ profilee.py:88(helper2)                           <-       6    0.234    0.300  
 profilee.py:98(subhelper)                         <-       8    0.064    0.080  profilee.py:88(helper2)
 {built-in method builtins.hasattr}                <-       4    0.000    0.004  profilee.py:73(helper1)
                                                            8    0.000    0.008  profilee.py:88(helper2)
-{built-in method sys.exc_info}                    <-       4    0.000    0.000  profilee.py:73(helper1)
+{built-in method sys.exception}                   <-       4    0.000    0.000  profilee.py:73(helper1)
 {method 'append' of 'list' objects}               <-       4    0.000    0.000  profilee.py:73(helper1)"""
 _ProfileOutput['print_callees'] = """\
 <string>:1(<module>)                              ->       1    0.270    1.000  profilee.py:25(testfunc)
