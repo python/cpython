@@ -1202,7 +1202,7 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
 }
 
 static void
-dump_traceback(int fd, PyThreadState *tstate, int write_header)
+dump_traceback(int fd, PyThreadState *tstate, int write_header, bool include_context)
 {
     _PyInterpreterFrame *frame;
     unsigned int depth;
@@ -1239,6 +1239,12 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
         assert(frame->owner != FRAME_OWNED_BY_CSTACK);
         depth++;
     }
+
+    if (include_context && tstate->segfault_context[0] != '\0') {
+        PUTS(fd, "Context: ");
+        PUTS(fd, tstate->segfault_context);
+        PUTS(fd, "\n");
+    }
 }
 
 /* Dump the traceback of a Python thread into fd. Use write() to write the
@@ -1250,7 +1256,7 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
 void
 _Py_DumpTraceback(int fd, PyThreadState *tstate)
 {
-    dump_traceback(fd, tstate, 1);
+    dump_traceback(fd, tstate, 1, false);
 }
 
 /* Write the thread identifier into the file 'fd': "Current thread 0xHHHH:\" if
@@ -1279,7 +1285,7 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
    handlers if signals were received. */
 const char*
 _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
-                         PyThreadState *current_tstate)
+                         PyThreadState *current_tstate, bool include_context)
 {
     PyThreadState *tstate;
     unsigned int nthreads;
@@ -1334,7 +1340,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
         if (tstate == current_tstate && tstate->interp->gc.collecting) {
             PUTS(fd, "  Garbage-collecting\n");
         }
-        dump_traceback(fd, tstate, 0);
+        dump_traceback(fd, tstate, 0, include_context);
         tstate = PyThreadState_Next(tstate);
         nthreads++;
     } while (tstate != NULL);

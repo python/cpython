@@ -1,3 +1,5 @@
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 #include "pycore_initconfig.h"    // _PyStatus_ERR
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
@@ -194,7 +196,7 @@ faulthandler_dump_traceback(int fd, int all_threads,
     tstate = PyGILState_GetThisThreadState();
 
     if (all_threads) {
-        (void)_Py_DumpTracebackThreads(fd, NULL, tstate);
+        (void)_Py_DumpTracebackThreads(fd, NULL, tstate, true);
     }
     else {
         if (tstate != NULL)
@@ -229,7 +231,7 @@ faulthandler_dump_traceback_py(PyObject *self,
         return NULL;
 
     if (all_threads) {
-        errmsg = _Py_DumpTracebackThreads(fd, NULL, tstate);
+        errmsg = _Py_DumpTracebackThreads(fd, NULL, tstate, false);
         if (errmsg != NULL) {
             PyErr_SetString(PyExc_RuntimeError, errmsg);
             return NULL;
@@ -578,7 +580,7 @@ faulthandler_thread(void *unused)
 
         _Py_write_noraise(thread.fd, thread.header, (int)thread.header_len);
 
-        errmsg = _Py_DumpTracebackThreads(thread.fd, thread.interp, NULL);
+        errmsg = _Py_DumpTracebackThreads(thread.fd, thread.interp, NULL, false);
         ok = (errmsg == NULL);
 
         if (thread.exit)
@@ -1179,6 +1181,46 @@ faulthandler_raise_exception(PyObject *self, PyObject *args)
 }
 #endif
 
+static PyObject *
+faulthandler_set_context(PyObject *self,
+                         PyObject *args) {
+    char *str = NULL;
+    Py_ssize_t size;
+    PyThreadState *tstate;
+
+    if (!PyArg_ParseTuple(args, "s#", &str, &size)) {
+        printf("ooof");
+        return NULL;
+    }
+
+    tstate = get_thread_state();
+    if (tstate == NULL)
+        return NULL;
+
+    if (size > 120) {
+        PyErr_SetString(PyExc_ValueError, "You can only pass 120 characters or less into the set_context method");
+        return NULL;
+    }
+
+    memcpy(tstate->segfault_context, str, size);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+faulthandler_clear_context(PyObject *self,
+                           PyObject *args) {
+    PyThreadState *tstate;
+
+    tstate = get_thread_state();
+    if (tstate == NULL)
+        return NULL;
+
+    memset(&tstate->segfault_context, 0, sizeof(tstate->segfault_context));
+
+    Py_RETURN_NONE;
+}
+
 PyDoc_STRVAR(module_doc,
 "faulthandler module.");
 
@@ -1206,6 +1248,13 @@ static PyMethodDef module_methods[] = {
      faulthandler_cancel_dump_traceback_later_py, METH_NOARGS,
      PyDoc_STR("cancel_dump_traceback_later():\ncancel the previous call "
                "to dump_traceback_later().")},
+   {"clear_context",
+    faulthandler_clear_context, METH_NOARGS,
+    PyDoc_STR("Clear the segfault context")},
+    {"set_context",
+     faulthandler_set_context, METH_VARARGS,
+     PyDoc_STR("Set the segfault context")},
+
 #ifdef FAULTHANDLER_USER
     {"register",
      _PyCFunction_CAST(faulthandler_register_py), METH_VARARGS|METH_KEYWORDS,
