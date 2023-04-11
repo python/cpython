@@ -1,0 +1,1 @@
+Virtual environments can now always be deactivated in fish shell.
