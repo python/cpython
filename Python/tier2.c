@@ -1074,9 +1074,14 @@ emit_type_guard(_Py_CODEUNIT *write_curr, int guard_opcode, int guard_oparg, int
         _PyOpcode_OpName[guard_opcode]);
 #endif
     write_curr->op.code = guard_opcode;
-    write_curr->op.arg = guard_oparg;
+    write_curr->op.arg = guard_oparg & 0xFF;
     write_curr++;
-    _py_set_opcode(write_curr, BB_BRANCH);
+
+    write_curr->op.code = NOP;
+    write_curr->op.arg = 0;
+    write_curr++;
+
+    write_curr->op.code = BB_BRANCH;
     write_curr->op.arg = 0;
     write_curr++;
     _PyBBBranchCache *cache = (_PyBBBranchCache *)write_curr;
@@ -2460,8 +2465,12 @@ _PyTier2_GenerateNextBBMetaWithTypeContext(
         __type_stack_shrink(&(type_context_copy->type_stack_ptr), n_required_pop);
     }
     // For type branches, they directly precede the bb branch instruction
+    // It's always
+    // TYPE_BRANCH
+    // NOP
+    // BB_BRANCH
     _Py_CODEUNIT *prev_type_guard = BB_IS_TYPE_BRANCH(bb_id_tagged)
-        ? curr_executing_instr - 1 : NULL;
+        ? curr_executing_instr - 2 : NULL;
     if (BB_TEST_IS_SUCCESSOR(bb_flag) && prev_type_guard != NULL) {
         // Propagate the type guard information.
 #if TYPEPROP_DEBUG && defined(Py_DEBUG)
