@@ -499,6 +499,10 @@ sys
   :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`.
   (Contributed by Irit Katriel in :gh:`102778`.)
 
+* :func:`sys._current_exceptions` now returns a mapping from thread-id to an
+  exception instance, rather than to a ``(typ, exc, tb)`` tuple.
+  (Contributed by Irit Katriel in :gh:`103176`.)
+
 
 Optimizations
 =============
@@ -939,6 +943,10 @@ Changes in the Python API
   based on other attributes of the instance) this will be fine.  If
   synchronization is needed, implement locking within the cached property getter
   function or around multi-threaded access points.
+
+* :func:`sys._current_exceptions` now returns a mapping from thread-id to an
+  exception instance, rather than to a ``(typ, exc, tb)`` tuple.
+  (Contributed by Irit Katriel in :gh:`103176`.)
 
 
 Build Changes
