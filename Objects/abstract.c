@@ -5,6 +5,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_object.h"        // _Py_CheckSlotResult()
+#include "pycore_long.h"          // _Py_IsNegative
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_unionobject.h"   // _PyUnion_Check()
@@ -806,8 +807,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
         PyErr_Format(PyExc_TypeError,
                      "__format__ must return a str, not %.200s",
                      Py_TYPE(result)->tp_name);
-        Py_DECREF(result);
-        result = NULL;
+        Py_SETREF(result, NULL);
         goto done;
     }
 
@@ -1484,7 +1484,7 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
         /* Whether or not it is less than or equal to
            zero is determined by the sign of ob_size
         */
-        if (_PyLong_Sign(value) < 0)
+        if (_PyLong_IsNegative((PyLongObject *)value))
             result = PY_SSIZE_T_MIN;
         else
             result = PY_SSIZE_T_MAX;
@@ -2791,8 +2791,7 @@ PyObject_GetIter(PyObject *o)
                          "iter() returned non-iterator "
                          "of type '%.100s'",
                          Py_TYPE(res)->tp_name);
-            Py_DECREF(res);
-            res = NULL;
+            Py_SETREF(res, NULL);
         }
         return res;
     }
@@ -2812,8 +2811,7 @@ PyObject_GetAIter(PyObject *o) {
         PyErr_Format(PyExc_TypeError,
                      "aiter() returned not an async iterator of type '%.100s'",
                      Py_TYPE(it)->tp_name);
-        Py_DECREF(it);
-        it = NULL;
+        Py_SETREF(it, NULL);
     }
     return it;
 }

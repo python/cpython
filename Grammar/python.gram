@@ -957,6 +957,7 @@ kwargs[asdl_seq*]:
     | ','.kwarg_or_double_starred+
 
 starred_expression[expr_ty]:
+    | invalid_starred_expression
     | '*' a=expression { _PyAST_Starred(a, Load, EXTRA) }
 
 kwarg_or_starred[KeywordOrStarred*]:
@@ -1083,6 +1084,8 @@ invalid_arguments:
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
     | a=NAME b='=' expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?")}
+    | (args ',')? a=NAME b='=' &(',' | ')') {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected argument value expression")}
     | a=args b=for_if_clauses { _PyPegen_nonparen_genexp_in_call(p, a, b) }
     | args ',' a=expression b=for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
@@ -1095,6 +1098,8 @@ invalid_kwarg:
     | !(NAME '=') a=expression b='=' {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(
             a, b, "expression cannot contain assignment, perhaps you meant \"==\"?") }
+    | a='**' expression '=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to keyword argument unpacking") }
 
 # IMPORTANT: Note that the "_without_invalid" suffix causes the rule to not call invalid rules under it
 expression_without_invalid[expr_ty]:
@@ -1254,7 +1259,9 @@ invalid_try_stmt:
     | a='try' ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'try' statement on line %d", a->lineno) }
     | 'try' ':' block !('except' | 'finally') { RAISE_SYNTAX_ERROR("expected 'except' or 'finally' block") }
-    | a='try' ':' block* ((except_block+ except_star_block) | (except_star_block+ except_block)) block* {
+    | 'try' ':' block* except_block+ a='except' b='*' expression ['as' NAME] ':' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot have both 'except' and 'except*' on the same 'try'") }
+    | 'try' ':' block* except_star_block+ a='except' [expression ['as' NAME]] ':' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot have both 'except' and 'except*' on the same 'try'") }
 invalid_except_stmt:
     | 'except' '*'? a=expression ',' expressions ['as' NAME ] ':' {
@@ -1326,3 +1333,5 @@ invalid_kvpair:
         RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, a->lineno, a->end_col_offset - 1, a->end_lineno, -1, "':' expected after dictionary key") }
     | expression ':' a='*' bitwise_or { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "cannot use a starred expression in a dictionary value") }
     | expression a=':' &('}'|',') {RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }
+invalid_starred_expression:
+    | a='*' expression '=' b=expression { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to iterable argument unpacking") }

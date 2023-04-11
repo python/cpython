@@ -79,7 +79,7 @@ abc_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    state = PyType_GetModuleState(type);
+    state = _PyType_GetModuleState(type);
     if (state == NULL) {
         Py_DECREF(self);
         return NULL;
@@ -624,8 +624,7 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
 
     switch (PyObject_IsTrue(result)) {
     case -1:
-        Py_DECREF(result);
-        result = NULL;
+        Py_SETREF(result, NULL);
         break;
     case 0:
         Py_DECREF(result);

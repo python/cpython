@@ -67,7 +67,7 @@
 #include <windows.h>
 #include <tchar.h>
 #else
-#include "ctypes_dlfcn.h"
+#include <dlfcn.h>
 #endif
 
 #ifdef __APPLE__
@@ -100,6 +100,7 @@
 #include "pycore_global_objects.h"  // _Py_ID()
 
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
+
 
 static void pymem_destructor(PyObject *ptr)
 {
@@ -285,7 +286,7 @@ static WCHAR *FormatError(DWORD code)
 #ifndef DONT_USE_SEH
 static void SetException(DWORD code, EXCEPTION_RECORD *pr)
 {
-    if (PySys_Audit("ctypes.seh_exception", "I", code) < 0) {
+    if (PySys_Audit("ctypes.set_exception", "I", code) < 0) {
         /* An exception was set by the audit hook */
         return;
     }
@@ -831,7 +832,11 @@ static int _call_function_pointer(int flags,
 #endif
 
 #   ifdef USING_APPLE_OS_LIBFFI
+#    ifdef HAVE_BUILTIN_AVAILABLE
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
+#    else
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME (ffi_prep_cif_var != NULL)
+#    endif
 #   elif HAVE_FFI_PREP_CIF_VAR
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME true
 #   else
@@ -1008,41 +1013,43 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
 void _ctypes_extend_error(PyObject *exc_class, const char *fmt, ...)
 {
     va_list vargs;
-    PyObject *tp, *v, *tb, *s, *cls_str, *msg_str;
 
     va_start(vargs, fmt);
-    s = PyUnicode_FromFormatV(fmt, vargs);
+    PyObject *s = PyUnicode_FromFormatV(fmt, vargs);
     va_end(vargs);
-    if (!s)
+    if (s == NULL) {
         return;
+    }
 
-    PyErr_Fetch(&tp, &v, &tb);
-    PyErr_NormalizeException(&tp, &v, &tb);
-    if (PyType_Check(tp))
-        cls_str = PyType_GetName((PyTypeObject *)tp);
-    else
-        cls_str = PyObject_Str(tp);
+    assert(PyErr_Occurred());
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(exc != NULL);
+    PyObject *cls_str = PyType_GetName(Py_TYPE(exc));
     if (cls_str) {
         PyUnicode_AppendAndDel(&s, cls_str);
         PyUnicode_AppendAndDel(&s, PyUnicode_FromString(": "));
-        if (s == NULL)
+        if (s == NULL) {
             goto error;
-    } else
+        }
+    }
+    else {
         PyErr_Clear();
-    msg_str = PyObject_Str(v);
-    if (msg_str)
+    }
+
+    PyObject *msg_str = PyObject_Str(exc);
+    if (msg_str) {
         PyUnicode_AppendAndDel(&s, msg_str);
+    }
     else {
         PyErr_Clear();
         PyUnicode_AppendAndDel(&s, PyUnicode_FromString("???"));
     }
-    if (s == NULL)
+    if (s == NULL) {
         goto error;
+    }
     PyErr_SetObject(exc_class, s);
 error:
-    Py_XDECREF(tp);
-    Py_XDECREF(v);
-    Py_XDECREF(tb);
+    Py_XDECREF(exc);
     Py_XDECREF(s);
 }
 
@@ -1444,8 +1451,13 @@ copy_com_pointer(PyObject *self, PyObject *args)
 #else
 #ifdef __APPLE__
 #ifdef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
-#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
-    __builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+#  ifdef HAVE_BUILTIN_AVAILABLE
+#    define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
+        __builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+#  else
+#    define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH_RUNTIME \
+         (_dyld_shared_cache_contains_path != NULL)
+#  endif
 #else
 // Support the deprecated case of compiling on an older macOS version
 static void *libsystem_b_handle;
@@ -1527,10 +1539,10 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     if (PySys_Audit("ctypes.dlopen", "O", name) < 0) {
         return NULL;
     }
-    handle = ctypes_dlopen(name_str, mode);
+    handle = dlopen(name_str, mode);
     Py_XDECREF(name2);
     if (!handle) {
-        const char *errmsg = ctypes_dlerror();
+        const char *errmsg = dlerror();
         if (!errmsg)
             errmsg = "dlopen() error";
         PyErr_SetString(PyExc_OSError,
@@ -1548,7 +1560,7 @@ static PyObject *py_dl_close(PyObject *self, PyObject *args)
         return NULL;
     if (dlclose(handle)) {
         PyErr_SetString(PyExc_OSError,
-                               ctypes_dlerror());
+                               dlerror());
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1566,10 +1578,10 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
     if (PySys_Audit("ctypes.dlsym/handle", "O", args) < 0) {
         return NULL;
     }
-    ptr = ctypes_dlsym((void*)handle, name);
+    ptr = dlsym((void*)handle, name);
     if (!ptr) {
         PyErr_SetString(PyExc_OSError,
-                               ctypes_dlerror());
+                               dlerror());
         return NULL;
     }
     return PyLong_FromVoidPtr(ptr);

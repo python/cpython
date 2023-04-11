@@ -569,6 +569,7 @@ extern "C" {
     INIT_ID(True), \
     INIT_ID(WarningMessage), \
     INIT_ID(_), \
+    INIT_ID(_WindowsConsoleIO), \
     INIT_ID(__IOBase_closed), \
     INIT_ID(__abc_tpflags__), \
     INIT_ID(__abs__), \
@@ -725,6 +726,7 @@ extern "C" {
     INIT_ID(__xor__), \
     INIT_ID(_abc_impl), \
     INIT_ID(_abstract_), \
+    INIT_ID(_active), \
     INIT_ID(_annotation), \
     INIT_ID(_anonymous_), \
     INIT_ID(_argtypes_), \
@@ -743,8 +745,10 @@ extern "C" {
     INIT_ID(_get_sourcefile), \
     INIT_ID(_handle_fromlist), \
     INIT_ID(_initializing), \
+    INIT_ID(_io), \
     INIT_ID(_is_text_encoding), \
     INIT_ID(_length_), \
+    INIT_ID(_limbo), \
     INIT_ID(_lock_unlock_module), \
     INIT_ID(_loop), \
     INIT_ID(_needs_com_addref_), \
@@ -793,6 +797,7 @@ extern "C" {
     INIT_ID(byteorder), \
     INIT_ID(bytes), \
     INIT_ID(bytes_per_sep), \
+    INIT_ID(c), \
     INIT_ID(c_call), \
     INIT_ID(c_exception), \
     INIT_ID(c_return), \
@@ -842,6 +847,7 @@ extern "C" {
     INIT_ID(coro), \
     INIT_ID(count), \
     INIT_ID(cwd), \
+    INIT_ID(d), \
     INIT_ID(data), \
     INIT_ID(database), \
     INIT_ID(decode), \
@@ -869,6 +875,7 @@ extern "C" {
     INIT_ID(dst), \
     INIT_ID(dst_dir_fd), \
     INIT_ID(duration), \
+    INIT_ID(e), \
     INIT_ID(effective_ids), \
     INIT_ID(element_factory), \
     INIT_ID(encode), \
@@ -975,8 +982,12 @@ extern "C" {
     INIT_ID(keyfile), \
     INIT_ID(keys), \
     INIT_ID(kind), \
+    INIT_ID(kw), \
+    INIT_ID(kw1), \
+    INIT_ID(kw2), \
     INIT_ID(lambda), \
     INIT_ID(last), \
+    INIT_ID(last_exc), \
     INIT_ID(last_node), \
     INIT_ID(last_traceback), \
     INIT_ID(last_type), \
@@ -1037,6 +1048,7 @@ extern "C" {
     INIT_ID(node_offset), \
     INIT_ID(ns), \
     INIT_ID(nstype), \
+    INIT_ID(nt), \
     INIT_ID(null), \
     INIT_ID(number), \
     INIT_ID(obj), \
@@ -1073,6 +1085,9 @@ extern "C" {
     INIT_ID(pid), \
     INIT_ID(policy), \
     INIT_ID(pos), \
+    INIT_ID(pos1), \
+    INIT_ID(pos2), \
+    INIT_ID(posix), \
     INIT_ID(print_file_and_line), \
     INIT_ID(priority), \
     INIT_ID(progress), \
@@ -1131,6 +1146,7 @@ extern "C" {
     INIT_ID(signed), \
     INIT_ID(size), \
     INIT_ID(sizehint), \
+    INIT_ID(skip_file_prefixes), \
     INIT_ID(sleep), \
     INIT_ID(sock), \
     INIT_ID(sort), \
@@ -1193,6 +1209,7 @@ extern "C" {
     INIT_ID(value), \
     INIT_ID(values), \
     INIT_ID(version), \
+    INIT_ID(volume), \
     INIT_ID(warnings), \
     INIT_ID(warnoptions), \
     INIT_ID(wbits), \

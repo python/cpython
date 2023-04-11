@@ -364,8 +364,8 @@ class NormalizationTest(unittest.TestCase):
         except PermissionError:
             self.skipTest(f"Permission error when downloading {TESTDATAURL} "
                           f"into the test data directory")
-        except (OSError, HTTPException):
-            self.fail(f"Could not retrieve {TESTDATAURL}")
+        except (OSError, HTTPException) as exc:
+            self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
 
         with testdata:
             self.run_normalization_tests(testdata)

@@ -197,7 +197,7 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
     timeout: double = 5.0
     detect_types: int = 0
     isolation_level: IsolationLevel = ""
-    check_same_thread: bool(accept={int}) = True
+    check_same_thread: bool = True
     factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
     cached_statements as cache_size: int = 128
     uri: bool = False
@@ -212,7 +212,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
                               int check_same_thread, PyObject *factory,
                               int cache_size, int uri,
                               enum autocommit_mode autocommit)
-/*[clinic end generated code: output=cba057313ea7712f input=b21abce28ebcd304]*/
+/*[clinic end generated code: output=cba057313ea7712f input=9b0ab6c12f674fa3]*/
 {
     if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
         return -1;
@@ -485,7 +485,7 @@ _sqlite3.Connection.blobopen as blobopen
         Row index.
     /
     *
-    readonly: bool(accept={int}) = False
+    readonly: bool = False
         Open the BLOB without write permissions.
     name: str = "main"
         Database name.
@@ -496,7 +496,7 @@ Open and return a BLOB object.
 static PyObject *
 blobopen_impl(pysqlite_Connection *self, const char *table, const char *col,
               int row, int readonly, const char *name)
-/*[clinic end generated code: output=0c8e2e58516d0b5c input=1e7052516acfc94d]*/
+/*[clinic end generated code: output=0c8e2e58516d0b5c input=fa73c83aa7a7ddee]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -908,7 +908,6 @@ final_callback(sqlite3_context *context)
     PyObject* function_result;
     PyObject** aggregate_instance;
     int ok;
-    PyObject *exception, *value, *tb;
 
     aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, 0);
     if (aggregate_instance == NULL) {
@@ -923,7 +922,7 @@ final_callback(sqlite3_context *context)
     }
 
     // Keep the exception (if any) of the last call to step, value, or inverse
-    PyErr_Fetch(&exception, &value, &tb);
+    PyObject *exc = PyErr_GetRaisedException();
 
     callback_context *ctx = (callback_context *)sqlite3_user_data(context);
     assert(ctx != NULL);
@@ -938,7 +937,7 @@ final_callback(sqlite3_context *context)
     }
     if (!ok) {
         int attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
-        _PyErr_ChainExceptions(exception, value, tb);
+        _PyErr_ChainExceptions1(exc);
 
         /* Note: contrary to the step, value, and inverse callbacks, SQLite
          * does _not_, as of SQLite 3.38.0, propagate errors to sqlite3_step()
@@ -949,7 +948,7 @@ final_callback(sqlite3_context *context)
                 : "user-defined aggregate's 'finalize' method raised error");
     }
     else {
-        PyErr_Restore(exception, value, tb);
+        PyErr_SetRaisedException(exc);
     }
 
 error:
@@ -1564,7 +1563,7 @@ pysqlite_connection_set_trace_callback_impl(pysqlite_Connection *self,
 /*[clinic input]
 _sqlite3.Connection.enable_load_extension as pysqlite_connection_enable_load_extension
 
-    enable as onoff: bool(accept={int})
+    enable as onoff: bool
     /
 
 Enable dynamic loading of SQLite extension modules.
@@ -1573,7 +1572,7 @@ Enable dynamic loading of SQLite extension modules.
 static PyObject *
 pysqlite_connection_enable_load_extension_impl(pysqlite_Connection *self,
                                                int onoff)
-/*[clinic end generated code: output=9cac37190d388baf input=5f00e93f7a9d3540]*/
+/*[clinic end generated code: output=9cac37190d388baf input=2a1e87931486380f]*/
 {
     int rc;
 
@@ -2274,15 +2273,14 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
         if (commit) {
             /* Commit failed; try to rollback in order to unlock the database.
              * If rollback also fails, chain the exceptions. */
-            PyObject *exc, *val, *tb;
-            PyErr_Fetch(&exc, &val, &tb);
+            PyObject *exc = PyErr_GetRaisedException();
             result = pysqlite_connection_rollback_impl(self);
             if (result == NULL) {
-                _PyErr_ChainExceptions(exc, val, tb);
+                _PyErr_ChainExceptions1(exc);
             }
             else {
                 Py_DECREF(result);
-                PyErr_Restore(exc, val, tb);
+                PyErr_SetRaisedException(exc);
             }
         }
         return NULL;

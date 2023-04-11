@@ -160,7 +160,7 @@ The :class:`date`, :class:`.datetime`, :class:`.time`, and :class:`timezone` typ
 share these common features:
 
 - Objects of these types are immutable.
-- Objects of these types are hashable, meaning that they can be used as
+- Objects of these types are :term:`hashable`, meaning that they can be used as
   dictionary keys.
 - Objects of these types support efficient pickling via the :mod:`pickle` module.
 
@@ -737,18 +737,16 @@ Instance methods:
 .. method:: date.strftime(format)
 
    Return a string representing the date, controlled by an explicit format string.
-   Format codes referring to hours, minutes or seconds will see 0 values. For a
-   complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`.
+   Format codes referring to hours, minutes or seconds will see 0 values.
+   See also :ref:`strftime-strptime-behavior` and :meth:`date.isoformat`.
 
 
 .. method:: date.__format__(format)
 
    Same as :meth:`.date.strftime`. This makes it possible to specify a format
    string for a :class:`.date` object in :ref:`formatted string
-   literals <f-strings>` and when using :meth:`str.format`. For a
-   complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`.
+   literals <f-strings>` and when using :meth:`str.format`.
+   See also :ref:`strftime-strptime-behavior` and :meth:`date.isoformat`.
 
 Examples of Usage: :class:`date`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -765,6 +763,7 @@ Example of counting days to an event::
     >>> my_birthday = date(today.year, 6, 24)
     >>> if my_birthday < today:
     ...     my_birthday = my_birthday.replace(year=today.year + 1)
+    ...
     >>> my_birthday
     datetime.date(2008, 6, 24)
     >>> time_to_birthday = abs(my_birthday - today)
@@ -974,19 +973,18 @@ Other constructors, all class methods:
    microsecond of the result are all 0, and :attr:`.tzinfo` is ``None``.
 
 
-.. classmethod:: datetime.combine(date, time, tzinfo=self.tzinfo)
+.. classmethod:: datetime.combine(date, time, tzinfo=time.tzinfo)
 
    Return a new :class:`.datetime` object whose date components are equal to the
    given :class:`date` object's, and whose time components
    are equal to the given :class:`.time` object's. If the *tzinfo*
    argument is provided, its value is used to set the :attr:`.tzinfo` attribute
    of the result, otherwise the :attr:`~.time.tzinfo` attribute of the *time* argument
-   is used.
+   is used.  If the *date* argument is a :class:`.datetime` object, its time components
+   and :attr:`.tzinfo` attributes are ignored.
 
    For any :class:`.datetime` object *d*,
-   ``d == datetime.combine(d.date(), d.time(), d.tzinfo)``. If date is a
-   :class:`.datetime` object, its time components and :attr:`.tzinfo` attributes
-   are ignored.
+   ``d == datetime.combine(d.date(), d.time(), d.tzinfo)``.
 
    .. versionchanged:: 3.6
       Added the *tzinfo* argument.
@@ -1051,8 +1049,8 @@ Other constructors, all class methods:
 
    :exc:`ValueError` is raised if the date_string and format
    can't be parsed by :func:`time.strptime` or if it returns a value which isn't a
-   time tuple. For a complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`.
+   time tuple.  See also :ref:`strftime-strptime-behavior` and
+   :meth:`datetime.fromisoformat`.
 
 
 
@@ -1350,7 +1348,7 @@ Instance methods:
 
       Because naive ``datetime`` objects are treated by many ``datetime`` methods
       as local times, it is preferred to use aware datetimes to represent times
-      in UTC; as a result, using ``utcfromtimetuple`` may give misleading
+      in UTC; as a result, using :meth:`datetime.utctimetuple` may give misleading
       results. If you have a naive ``datetime`` representing UTC, use
       ``datetime.replace(tzinfo=timezone.utc)`` to make it aware, at which point
       you can use :meth:`.datetime.timetuple`.
@@ -1510,20 +1508,21 @@ Instance methods:
    (which :func:`time.ctime` invokes, but which
    :meth:`datetime.ctime` does not invoke) conforms to the C standard.
 
+
 .. method:: datetime.strftime(format)
 
-   Return a string representing the date and time, controlled by an explicit format
-   string. For a complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`.
+   Return a string representing the date and time,
+   controlled by an explicit format string.
+   See also :ref:`strftime-strptime-behavior` and :meth:`datetime.isoformat`.
 
 
 .. method:: datetime.__format__(format)
 
    Same as :meth:`.datetime.strftime`. This makes it possible to specify a format
    string for a :class:`.datetime` object in :ref:`formatted string
-   literals <f-strings>` and when using :meth:`str.format`. For a
-   complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`.
+   literals <f-strings>` and when using :meth:`str.format`.
+   See also :ref:`strftime-strptime-behavior` and :meth:`datetime.isoformat`.
+
 
 Examples of Usage: :class:`.datetime`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1868,17 +1867,15 @@ Instance methods:
 .. method:: time.strftime(format)
 
    Return a string representing the time, controlled by an explicit format
-   string. For a complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`.
+   string.  See also :ref:`strftime-strptime-behavior` and :meth:`time.isoformat`.
 
 
 .. method:: time.__format__(format)
 
-   Same as :meth:`.time.strftime`. This makes it possible to specify a format string
-   for a :class:`.time` object in :ref:`formatted string
-   literals <f-strings>` and when using :meth:`str.format`. For a
-   complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`.
+   Same as :meth:`.time.strftime`. This makes it possible to specify
+   a format string for a :class:`.time` object in :ref:`formatted string
+   literals <f-strings>` and when using :meth:`str.format`.
+   See also :ref:`strftime-strptime-behavior` and :meth:`time.isoformat`.
 
 
 .. method:: time.utcoffset()
@@ -2320,6 +2317,14 @@ versus :meth:`strptime`:
 :meth:`strftime` and :meth:`strptime` Format Codes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+These methods accept format codes that can be used to parse and format dates::
+
+   >>> datetime.strptime('31/01/22 23:59:59.999999',
+   ...                   '%d/%m/%y %H:%M:%S.%f')
+   datetime.datetime(2022, 1, 31, 23, 59, 59, 999999)
+   >>> _.strftime('%a %d %b %Y, %I:%M%p')
+   'Mon 31 Jan 2022, 11:59PM'
+
 The following is a list of all the format codes that the 1989 C standard
 requires, and these work on all platforms with a standard C implementation.
 
@@ -2601,7 +2606,7 @@ Notes:
 
 (9)
    When used with the :meth:`strptime` method, the leading zero is optional
-   for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%J``, ``%U``,
+   for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
 
 .. rubric:: Footnotes

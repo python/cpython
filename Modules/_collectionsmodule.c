@@ -990,7 +990,7 @@ deque_count(dequeobject *deque, PyObject *v)
 }
 
 PyDoc_STRVAR(count_doc,
-"D.count(value) -> integer -- return number of occurrences of value");
+"D.count(value) -- return number of occurrences of value");
 
 static int
 deque_contains(dequeobject *deque, PyObject *v)
@@ -1098,7 +1098,7 @@ deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(index_doc,
-"D.index(value, [start, [stop]]) -> integer -- return first index of value.\n"
+"D.index(value, [start, [stop]]) -- return first index of value.\n"
 "Raises ValueError if the value is not present.");
 
 /* insert(), remove(), and delitem() are implemented in terms of
@@ -1256,7 +1256,6 @@ deque_remove(dequeobject *deque, PyObject *value)
 static int
 deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
 {
-    PyObject *old_value;
     block *b;
     Py_ssize_t n, len=Py_SIZE(deque), halflen=(len+1)>>1, index=i;
 
@@ -1282,9 +1281,7 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
         while (--n >= 0)
             b = b->leftlink;
     }
-    old_value = b->data[i];
-    b->data[i] = Py_NewRef(v);
-    Py_DECREF(old_value);
+    Py_SETREF(b->data[i], Py_NewRef(v));
     return 0;
 }
 
@@ -1511,15 +1508,13 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
 static PyObject *
 deque_sizeof(dequeobject *deque, void *unused)
 {
-    Py_ssize_t res;
-    Py_ssize_t blocks;
-
-    res = _PyObject_SIZE(Py_TYPE(deque));
+    size_t res = _PyObject_SIZE(Py_TYPE(deque));
+    size_t blocks;
     blocks = (size_t)(deque->leftindex + Py_SIZE(deque) + BLOCKLEN - 1) / BLOCKLEN;
-    assert(deque->leftindex + Py_SIZE(deque) - 1 ==
-           (blocks - 1) * BLOCKLEN + deque->rightindex);
+    assert(((size_t)deque->leftindex + (size_t)Py_SIZE(deque) - 1) ==
+           ((blocks - 1) * BLOCKLEN + (size_t)deque->rightindex));
     res += blocks * sizeof(block);
-    return PyLong_FromSsize_t(res);
+    return PyLong_FromSize_t(res);
 }
 
 PyDoc_STRVAR(sizeof_doc,

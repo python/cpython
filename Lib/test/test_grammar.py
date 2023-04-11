@@ -3,7 +3,6 @@
 
 from test.support import check_syntax_error
 from test.support import import_helper
-from test.support.warnings_helper import check_syntax_warning
 import inspect
 import unittest
 import sys
@@ -15,7 +14,6 @@ from sys import *
 # with import machinery
 import test.ann_module as ann_module
 import typing
-from collections import ChainMap
 from test import ann_module2
 import test
 
@@ -414,6 +412,28 @@ class GrammarTests(unittest.TestCase):
             class Cbad2(C):
                 x: int
                 x.y: list = []
+
+    def test_annotations_inheritance(self):
+        # Check that annotations are not inherited by derived classes
+        class A:
+            attr: int
+        class B(A):
+            pass
+        class C(A):
+            attr: str
+        class D:
+            attr2: int
+        class E(A, D):
+            pass
+        class F(C, A):
+            pass
+        self.assertEqual(A.__annotations__, {"attr": int})
+        self.assertEqual(B.__annotations__, {})
+        self.assertEqual(C.__annotations__, {"attr" : str})
+        self.assertEqual(D.__annotations__, {"attr2" : int})
+        self.assertEqual(E.__annotations__, {})
+        self.assertEqual(F.__annotations__, {})
+
 
     def test_var_annot_metaclass_semantics(self):
         class CMeta(type):

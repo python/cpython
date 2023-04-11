@@ -109,9 +109,20 @@ class TestDictWatchers(unittest.TestCase):
             self.watch(wid, d)
             with catch_unraisable_exception() as cm:
                 d["foo"] = "bar"
-                self.assertIs(cm.unraisable.object, d)
+                self.assertIn(
+                    "PyDict_EVENT_ADDED watcher callback for <dict at",
+                    cm.unraisable.object
+                )
                 self.assertEqual(str(cm.unraisable.exc_value), "boom!")
             self.assert_events([])
+
+    def test_dealloc_error(self):
+        d = {}
+        with self.watcher(kind=self.ERROR) as wid:
+            self.watch(wid, d)
+            with catch_unraisable_exception() as cm:
+                del d
+                self.assertEqual(str(cm.unraisable.exc_value), "boom!")
 
     def test_two_watchers(self):
         d1 = {}
@@ -334,6 +345,204 @@ class TestTypeWatchers(unittest.TestCase):
                 stack.enter_context(ctx)
             with self.assertRaisesRegex(RuntimeError, r"no more type watcher IDs"):
                 self.add_watcher()
+
+
+class TestCodeObjectWatchers(unittest.TestCase):
+    @contextmanager
+    def code_watcher(self, which_watcher):
+        wid = _testcapi.add_code_watcher(which_watcher)
+        try:
+            yield wid
+        finally:
+            _testcapi.clear_code_watcher(wid)
+
+    def assert_event_counts(self, exp_created_0, exp_destroyed_0,
+                            exp_created_1, exp_destroyed_1):
+        self.assertEqual(
+            exp_created_0, _testcapi.get_code_watcher_num_created_events(0))
+        self.assertEqual(
+            exp_destroyed_0, _testcapi.get_code_watcher_num_destroyed_events(0))
+        self.assertEqual(
+            exp_created_1, _testcapi.get_code_watcher_num_created_events(1))
+        self.assertEqual(
+            exp_destroyed_1, _testcapi.get_code_watcher_num_destroyed_events(1))
+
+    def test_code_object_events_dispatched(self):
+        # verify that all counts are zero before any watchers are registered
+        self.assert_event_counts(0, 0, 0, 0)
+
+        # verify that all counts remain zero when a code object is
+        # created and destroyed with no watchers registered
+        co1 = _testcapi.code_newempty("test_watchers", "dummy1", 0)
+        self.assert_event_counts(0, 0, 0, 0)
+        del co1
+        self.assert_event_counts(0, 0, 0, 0)
+
+        # verify counts are as expected when first watcher is registered
+        with self.code_watcher(0):
+            self.assert_event_counts(0, 0, 0, 0)
+            co2 = _testcapi.code_newempty("test_watchers", "dummy2", 0)
+            self.assert_event_counts(1, 0, 0, 0)
+            del co2
+            self.assert_event_counts(1, 1, 0, 0)
+
+            # again with second watcher registered
+            with self.code_watcher(1):
+                self.assert_event_counts(1, 1, 0, 0)
+                co3 = _testcapi.code_newempty("test_watchers", "dummy3", 0)
+                self.assert_event_counts(2, 1, 1, 0)
+                del co3
+                self.assert_event_counts(2, 2, 1, 1)
+
+        # verify counts are reset and don't change after both watchers are cleared
+        co4 = _testcapi.code_newempty("test_watchers", "dummy4", 0)
+        self.assert_event_counts(0, 0, 0, 0)
+        del co4
+        self.assert_event_counts(0, 0, 0, 0)
+
+    def test_error(self):
+        with self.code_watcher(2):
+            with catch_unraisable_exception() as cm:
+                co = _testcapi.code_newempty("test_watchers", "dummy0", 0)
+
+                self.assertEqual(
+                    cm.unraisable.object,
+                    f"PY_CODE_EVENT_CREATE watcher callback for {co!r}"
+                )
+                self.assertEqual(str(cm.unraisable.exc_value), "boom!")
+
+    def test_dealloc_error(self):
+        co = _testcapi.code_newempty("test_watchers", "dummy0", 0)
+        with self.code_watcher(2):
+            with catch_unraisable_exception() as cm:
+                del co
+
+                self.assertEqual(str(cm.unraisable.exc_value), "boom!")
+
+    def test_clear_out_of_range_watcher_id(self):
+        with self.assertRaisesRegex(ValueError, r"Invalid code watcher ID -1"):
+            _testcapi.clear_code_watcher(-1)
+        with self.assertRaisesRegex(ValueError, r"Invalid code watcher ID 8"):
+            _testcapi.clear_code_watcher(8)  # CODE_MAX_WATCHERS = 8
+
+    def test_clear_unassigned_watcher_id(self):
+        with self.assertRaisesRegex(ValueError, r"No code watcher set for ID 1"):
+            _testcapi.clear_code_watcher(1)
+
+    def test_allocate_too_many_watchers(self):
+        with self.assertRaisesRegex(RuntimeError, r"no more code watcher IDs available"):
+            _testcapi.allocate_too_many_code_watchers()
+
+
+class TestFuncWatchers(unittest.TestCase):
+    @contextmanager
+    def add_watcher(self, func):
+        wid = _testcapi.add_func_watcher(func)
+        try:
+            yield
+        finally:
+            _testcapi.clear_func_watcher(wid)
+
+    def test_func_events_dispatched(self):
+        events = []
+        def watcher(*args):
+            events.append(args)
+
+        with self.add_watcher(watcher):
+            def myfunc():
+                pass
+            self.assertIn((_testcapi.PYFUNC_EVENT_CREATE, myfunc, None), events)
+            myfunc_id = id(myfunc)
+
+            new_code = self.test_func_events_dispatched.__code__
+            myfunc.__code__ = new_code
+            self.assertIn((_testcapi.PYFUNC_EVENT_MODIFY_CODE, myfunc, new_code), events)
+
+            new_defaults = (123,)
+            myfunc.__defaults__ = new_defaults
+            self.assertIn((_testcapi.PYFUNC_EVENT_MODIFY_DEFAULTS, myfunc, new_defaults), events)
+
+            new_defaults = (456,)
+            _testcapi.set_func_defaults_via_capi(myfunc, new_defaults)
+            self.assertIn((_testcapi.PYFUNC_EVENT_MODIFY_DEFAULTS, myfunc, new_defaults), events)
+
+            new_kwdefaults = {"self": 123}
+            myfunc.__kwdefaults__ = new_kwdefaults
+            self.assertIn((_testcapi.PYFUNC_EVENT_MODIFY_KWDEFAULTS, myfunc, new_kwdefaults), events)
+
+            new_kwdefaults = {"self": 456}
+            _testcapi.set_func_kwdefaults_via_capi(myfunc, new_kwdefaults)
+            self.assertIn((_testcapi.PYFUNC_EVENT_MODIFY_KWDEFAULTS, myfunc, new_kwdefaults), events)
+
+            # Clear events reference to func
+            events = []
+            del myfunc
+            self.assertIn((_testcapi.PYFUNC_EVENT_DESTROY, myfunc_id, None), events)
+
+    def test_multiple_watchers(self):
+        events0 = []
+        def first_watcher(*args):
+            events0.append(args)
+
+        events1 = []
+        def second_watcher(*args):
+            events1.append(args)
+
+        with self.add_watcher(first_watcher):
+            with self.add_watcher(second_watcher):
+                def myfunc():
+                    pass
+
+                event = (_testcapi.PYFUNC_EVENT_CREATE, myfunc, None)
+                self.assertIn(event, events0)
+                self.assertIn(event, events1)
+
+    def test_watcher_raises_error(self):
+        class MyError(Exception):
+            pass
+
+        def watcher(*args):
+            raise MyError("testing 123")
+
+        with self.add_watcher(watcher):
+            with catch_unraisable_exception() as cm:
+                def myfunc():
+                    pass
+
+                self.assertEqual(
+                    cm.unraisable.object,
+                    f"PyFunction_EVENT_CREATE watcher callback for {myfunc!r}"
+                )
+
+    def test_dealloc_watcher_raises_error(self):
+        class MyError(Exception):
+            pass
+
+        def watcher(*args):
+            raise MyError("testing 123")
+
+        def myfunc():
+            pass
+
+        with self.add_watcher(watcher):
+            with catch_unraisable_exception() as cm:
+                del myfunc
+
+                self.assertIsInstance(cm.unraisable.exc_value, MyError)
+
+    def test_clear_out_of_range_watcher_id(self):
+        with self.assertRaisesRegex(ValueError, r"invalid func watcher ID -1"):
+            _testcapi.clear_func_watcher(-1)
+        with self.assertRaisesRegex(ValueError, r"invalid func watcher ID 8"):
+            _testcapi.clear_func_watcher(8)  # FUNC_MAX_WATCHERS = 8
+
+    def test_clear_unassigned_watcher_id(self):
+        with self.assertRaisesRegex(ValueError, r"no func watcher set for ID 1"):
+            _testcapi.clear_func_watcher(1)
+
+    def test_allocate_too_many_watchers(self):
+        with self.assertRaisesRegex(RuntimeError, r"no more func watcher IDs"):
+            _testcapi.allocate_too_many_func_watchers()
 
 
 if __name__ == "__main__":

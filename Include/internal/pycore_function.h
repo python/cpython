@@ -8,7 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-struct _py_func_runtime_state {
+#define FUNC_MAX_WATCHERS 8
+
+struct _py_func_state {
     uint32_t next_version;
 };
 

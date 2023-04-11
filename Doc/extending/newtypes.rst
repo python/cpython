@@ -286,36 +286,11 @@ be read-only or read-write.  The structures in the table are defined as::
 
 For each entry in the table, a :term:`descriptor` will be constructed and added to the
 type which will be able to extract a value from the instance structure.  The
-:attr:`type` field should contain one of the type codes defined in the
-:file:`structmember.h` header; the value will be used to determine how to
+:attr:`type` field should contain a type code like :c:macro:`Py_T_INT` or
+:c:macro:`Py_T_DOUBLE`; the value will be used to determine how to
 convert Python values to and from C values.  The :attr:`flags` field is used to
-store flags which control how the attribute can be accessed.
-
-The following flag constants are defined in :file:`structmember.h`; they may be
-combined using bitwise-OR.
-
-+---------------------------+----------------------------------------------+
-| Constant                  | Meaning                                      |
-+===========================+==============================================+
-| :const:`READONLY`         | Never writable.                              |
-+---------------------------+----------------------------------------------+
-| :const:`PY_AUDIT_READ`    | Emit an ``object.__getattr__``               |
-|                           | :ref:`audit events <audit-events>` before    |
-|                           | reading.                                     |
-+---------------------------+----------------------------------------------+
-
-.. versionchanged:: 3.10
-   :const:`RESTRICTED`, :const:`READ_RESTRICTED` and :const:`WRITE_RESTRICTED`
-   are deprecated. However, :const:`READ_RESTRICTED` is an alias for
-   :const:`PY_AUDIT_READ`, so fields that specify either :const:`RESTRICTED`
-   or :const:`READ_RESTRICTED` will also raise an audit event.
-
-.. index::
-   single: READONLY
-   single: READ_RESTRICTED
-   single: WRITE_RESTRICTED
-   single: RESTRICTED
-   single: PY_AUDIT_READ
+store flags which control how the attribute can be accessed: you can set it to
+:c:macro:`Py_READONLY` to prevent Python code from setting it.
 
 An interesting advantage of using the :c:member:`~PyTypeObject.tp_members` table to build
 descriptors that are used at runtime is that any attribute defined this way can

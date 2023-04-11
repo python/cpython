@@ -1,2 +1,0 @@
-Fix bug where an :exc:`ExceptionGroup` subclass can wrap a
-:exc:`BaseException`.

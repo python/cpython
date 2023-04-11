@@ -201,23 +201,13 @@ class property(DynamicClassAttribute):
                         )
         else:
             if self.fget is None:
-                if self.member is None:   # not sure this can happen, but just in case
+                # look for a member by this name.
+                try:
+                    return ownerclass._member_map_[self.name]
+                except KeyError:
                     raise AttributeError(
                             '%r has no attribute %r' % (ownerclass, self.name)
-                            )
-                # issue warning deprecating this behavior
-                import warnings
-                warnings.warn(
-                        "`member.member` access (e.g. `Color.RED.BLUE`) is "
-                        "deprecated and will be removed in 3.14.",
-                        DeprecationWarning,
-                        stacklevel=2,
-                        )
-                return self.member
-                # XXX: uncomment in 3.14 and remove warning above
-                # raise AttributeError(
-                #         '%r member has no attribute %r' % (ownerclass, self.name)
-                #         )
+                            ) from None
             else:
                 return self.fget(instance)
 
@@ -266,23 +256,20 @@ class _proto_member:
             args = (args, )     # wrap it one more time
         if not enum_class._use_args_:
             enum_member = enum_class._new_member_(enum_class)
-            if not hasattr(enum_member, '_value_'):
+        else:
+            enum_member = enum_class._new_member_(enum_class, *args)
+        if not hasattr(enum_member, '_value_'):
+            if enum_class._member_type_ is object:
+                enum_member._value_ = value
+            else:
                 try:
                     enum_member._value_ = enum_class._member_type_(*args)
                 except Exception as exc:
-                    enum_member._value_ = value
-        else:
-            enum_member = enum_class._new_member_(enum_class, *args)
-            if not hasattr(enum_member, '_value_'):
-                if enum_class._member_type_ is object:
-                    enum_member._value_ = value
-                else:
-                    try:
-                        enum_member._value_ = enum_class._member_type_(*args)
-                    except Exception as exc:
-                        raise TypeError(
-                                '_value_ not set in __new__, unable to create it'
-                                ) from None
+                    new_exc = TypeError(
+                            '_value_ not set in __new__, unable to create it'
+                            )
+                    new_exc.__cause__ = exc
+                    raise new_exc
         value = enum_member._value_
         enum_member._name_ = member_name
         enum_member.__objclass__ = enum_class
@@ -317,22 +304,32 @@ class _proto_member:
                 ):
                 # no other instances found, record this member in _member_names_
                 enum_class._member_names_.append(member_name)
-        # get redirect in place before adding to _member_map_
-        # but check for other instances in parent classes first
-        descriptor = None
+        # if necessary, get redirect in place and then add it to _member_map_
+        found_descriptor = None
         for base in enum_class.__mro__[1:]:
             descriptor = base.__dict__.get(member_name)
             if descriptor is not None:
                 if isinstance(descriptor, (property, DynamicClassAttribute)):
+                    found_descriptor = descriptor
                     break
-        redirect = property()
-        redirect.member = enum_member
-        redirect.__set_name__(enum_class, member_name)
-        if descriptor:
-            redirect.fget = getattr(descriptor, 'fget', None)
-            redirect.fset = getattr(descriptor, 'fset', None)
-            redirect.fdel = getattr(descriptor, 'fdel', None)
-        setattr(enum_class, member_name, redirect)
+                elif (
+                        hasattr(descriptor, 'fget') and
+                        hasattr(descriptor, 'fset') and
+                        hasattr(descriptor, 'fdel')
+                    ):
+                    found_descriptor = descriptor
+                    continue
+        if found_descriptor:
+            redirect = property()
+            redirect.member = enum_member
+            redirect.__set_name__(enum_class, member_name)
+            # earlier descriptor found; copy fget, fset, fdel to this one.
+            redirect.fget = found_descriptor.fget
+            redirect.fset = found_descriptor.fset
+            redirect.fdel = found_descriptor.fdel
+            setattr(enum_class, member_name, redirect)
+        else:
+            setattr(enum_class, member_name, enum_member)
         # now add to _member_map_ (even aliases)
         enum_class._member_map_[member_name] = enum_member
         try:
@@ -436,7 +433,9 @@ class _EnumDict(dict):
             if isinstance(value, auto):
                 single = True
                 value = (value, )
-            if isinstance(value, tuple):
+            if type(value) is tuple and any(isinstance(v, auto) for v in value):
+                # insist on an actual tuple, no subclasses, in keeping with only supporting
+                # top-level auto() usage (not contained in any other data structure)
                 auto_valued = []
                 for v in value:
                     if isinstance(v, auto):
@@ -516,8 +515,13 @@ class EnumType(type):
         #
         # adjust the sunders
         _order_ = classdict.pop('_order_', None)
+        _gnv = classdict.get('_generate_next_value_')
+        if _gnv is not None and type(_gnv) is not staticmethod:
+            _gnv = staticmethod(_gnv)
         # convert to normal dict
         classdict = dict(classdict.items())
+        if _gnv is not None:
+            classdict['_generate_next_value_'] = _gnv
         #
         # data type of member and the controlling Enum class
         member_type, first_enum = metacls._get_mixins_(cls, bases)
@@ -683,7 +687,7 @@ class EnumType(type):
                         'member order does not match _order_:\n  %r\n  %r'
                         % (enum_class._member_names_, _order_)
                         )
-
+        #
         return enum_class
 
     def __bool__(cls):
@@ -860,13 +864,15 @@ class EnumType(type):
                 member_name, member_value = item
             classdict[member_name] = member_value
 
-        # TODO: replace the frame hack if a blessed way to know the calling
-        # module is ever developed
         if module is None:
             try:
-                module = sys._getframe(2).f_globals['__name__']
-            except (AttributeError, ValueError, KeyError):
-                pass
+                module = sys._getframemodulename(2)
+            except AttributeError:
+                # Fall back on _getframe if _getframemodulename is missing
+                try:
+                    module = sys._getframe(2).f_globals['__name__']
+                except (AttributeError, ValueError, KeyError):
+                    pass
         if module is None:
             _make_class_unpicklable(classdict)
         else:
@@ -919,7 +925,7 @@ class EnumType(type):
     def _check_for_existing_members_(mcls, class_name, bases):
         for chain in bases:
             for base in chain.__mro__:
-                if issubclass(base, Enum) and base._member_names_:
+                if isinstance(base, EnumType) and base._member_names_:
                     raise TypeError(
                             "<enum %r> cannot extend %r"
                             % (class_name, base)
@@ -938,7 +944,7 @@ class EnumType(type):
         # ensure final parent class is an Enum derivative, find any concrete
         # data type, and check that Enum has no members
         first_enum = bases[-1]
-        if not issubclass(first_enum, Enum):
+        if not isinstance(first_enum, EnumType):
             raise TypeError("new enumerations should be created as "
                     "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
         member_type = mcls._find_data_type_(class_name, bases) or object
@@ -950,12 +956,20 @@ class EnumType(type):
             for base in chain.__mro__:
                 if base is object:
                     continue
-                elif issubclass(base, Enum):
+                elif isinstance(base, EnumType):
                     # if we hit an Enum, use it's _value_repr_
                     return base._value_repr_
                 elif '__repr__' in base.__dict__:
                     # this is our data repr
-                    return base.__dict__['__repr__']
+                    # double-check if a dataclass with a default __repr__
+                    if (
+                            '__dataclass_fields__' in base.__dict__
+                            and '__dataclass_params__' in base.__dict__
+                            and base.__dict__['__dataclass_params__'].repr
+                        ):
+                        return _dataclass_repr
+                    else:
+                        return base.__dict__['__repr__']
         return None
 
     @classmethod
@@ -968,13 +982,11 @@ class EnumType(type):
                 base_chain.add(base)
                 if base is object:
                     continue
-                elif issubclass(base, Enum):
+                elif isinstance(base, EnumType):
                     if base._member_type_ is not object:
                         data_types.add(base._member_type_)
                         break
                 elif '__new__' in base.__dict__ or '__init__' in base.__dict__:
-                    if issubclass(base, Enum):
-                        continue
                     data_types.add(candidate or base)
                     break
                 else:
@@ -1046,20 +1058,20 @@ class Enum(metaclass=EnumType):
 
     Access them by:
 
-    - attribute access::
+    - attribute access:
 
-    >>> Color.RED
-    <Color.RED: 1>
+      >>> Color.RED
+      <Color.RED: 1>
 
     - value lookup:
 
-    >>> Color(1)
-    <Color.RED: 1>
+      >>> Color(1)
+      <Color.RED: 1>
 
     - name lookup:
 
-    >>> Color['RED']
-    <Color.RED: 1>
+      >>> Color['RED']
+      <Color.RED: 1>
 
     Enumerations can be iterated over, and know how many members they have:
 
@@ -1072,6 +1084,13 @@ class Enum(metaclass=EnumType):
     Methods can be added to enumerations, and members can have their own
     attributes -- see the documentation for details.
     """
+
+    @classmethod
+    def __signature__(cls):
+        if cls._member_names_:
+            return '(*values)'
+        else:
+            return '(new_class_name, /, names, *, module=None, qualname=None, type=None, start=1, boundary=None)'
 
     def __new__(cls, value):
         # all enum instances are actually created during class construction
@@ -1127,6 +1146,7 @@ class Enum(metaclass=EnumType):
     def __init__(self, *args, **kwds):
         pass
 
+    @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         """
         Generate the next value when not given.
@@ -1269,6 +1289,7 @@ class StrEnum(str, ReprEnum):
         member._value_ = value
         return member
 
+    @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         """
         Return the lower-cased version of the member name.
@@ -1282,10 +1303,10 @@ def _reduce_ex_by_global_name(self, proto):
 class FlagBoundary(StrEnum):
     """
     control how out of range values are handled
-    "strict" -> error is raised  [default for Flag]
-    "conform" -> extra bits are discarded
-    "eject" -> lose flag status [default for IntFlag]
-    "keep" -> keep flag status and all bits
+    "strict" -> error is raised
+    "conform" -> extra bits are discarded   [default for Flag]
+    "eject" -> lose flag status
+    "keep" -> keep flag status and all bits [default for IntFlag]
     """
     STRICT = auto()
     CONFORM = auto()
@@ -1318,6 +1339,7 @@ class Flag(Enum, boundary=CONFORM):
 
     _numeric_repr_ = repr
 
+    @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         """
         Generate the next value when not given.
@@ -1410,12 +1432,11 @@ class Flag(Enum, boundary=CONFORM):
                     % (cls.__name__, value, unknown, bin(unknown))
                     )
         # normal Flag?
-        __new__ = getattr(cls, '__new_member__', None)
-        if cls._member_type_ is object and not __new__:
+        if cls._member_type_ is object:
             # construct a singleton enum pseudo-member
             pseudo_member = object.__new__(cls)
         else:
-            pseudo_member = (__new__ or cls._member_type_.__new__)(cls, value)
+            pseudo_member = cls._member_type_.__new__(cls, value)
         if not hasattr(pseudo_member, '_value_'):
             pseudo_member._value_ = value
         if member_value:
@@ -1546,10 +1567,13 @@ def unique(enumeration):
                 (enumeration, alias_details))
     return enumeration
 
-def _power_of_two(value):
-    if value < 1:
-        return False
-    return value == 2 ** _high_bit(value)
+def _dataclass_repr(self):
+    dcf = self.__dataclass_fields__
+    return ', '.join(
+            '%s=%r' % (k, getattr(self, k))
+            for k in dcf.keys()
+            if dcf[k].repr
+            )
 
 def global_enum_repr(self):
     """
