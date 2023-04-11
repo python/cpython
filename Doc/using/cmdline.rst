@@ -495,8 +495,8 @@ Miscellaneous options
    Reserved for various implementation-specific options.  CPython currently
    defines the following possible values:
 
-   * ``-X faulthandler`` to enable :mod:`faulthandler`. See also
-   * :envvar:`PYTHONFAULTHANDLER`.
+   * ``-X faulthandler`` to enable :mod:`faulthandler`.
+     See also :envvar:`PYTHONFAULTHANDLER`.
    * ``-X showrefcount`` to output the total reference count and number of used
      memory blocks when the program finishes or after each statement in the
      interactive interpreter. This only works on :ref:`debug builds
