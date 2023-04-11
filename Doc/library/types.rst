@@ -82,10 +82,6 @@ Dynamic Type Creation
 
    .. versionadded:: 3.7
 
-.. seealso::
-
-   :pep:`560` - Core support for typing module and generic types
-
 .. function:: get_original_bases(cls, /)
 
     Return the objects in the bases list of the class's definition as they
@@ -101,9 +97,6 @@ Dynamic Type Creation
         class Bar(Foo[int], float): ...
         class Baz(list[str]): ...
 
-        Foo.__bases__ == (Generic,)
-        get_original_bases(Foo) == (Generic[T],)
-
         Bar.__bases__ == (Foo, float)
         get_original_bases(Bar) == (Foo[int], float)
 
@@ -114,6 +107,10 @@ Dynamic Type Creation
         get_original_bases(int) == (object,)
 
     .. versionadded:: 3.12
+
+.. seealso::
+
+   :pep:`560` - Core support for typing module and generic types
 
 
 Standard Interpreter Types
