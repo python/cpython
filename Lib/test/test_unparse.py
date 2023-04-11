@@ -277,6 +277,31 @@ class UnparseTestCase(ASTTestCase):
     def test_raise_from(self):
         self.check_ast_roundtrip(raise_from)
 
+    def test_unicode_mangled_keywords(self):
+        # See issue 46520
+        self.check_ast_roundtrip('𝕕𝕖𝕗 = 1')
+        self.check_ast_roundtrip('del 𝕕𝕖𝕝')
+        self.check_ast_roundtrip('f(𝕕𝕖𝕗, 𝕕𝕖𝕗 = 2, *𝕕𝕖𝕗, **𝕕𝕖𝕗)')
+        self.check_ast_roundtrip('def 𝕕𝕖𝕗(𝕕𝕖𝕗, 𝕕𝕖𝕗 = 2, *𝕕𝕖𝕗, **𝕕𝕖𝕗): pass')
+        self.check_ast_roundtrip('class 𝕔𝕝𝕒𝕤𝕤: pass')
+        self.check_ast_roundtrip('with 𝕨𝕚𝕥𝕙 as 𝕒𝕤: pass')
+        self.check_ast_roundtrip('try: pass\nexcept 𝕖𝕩𝕔𝕖𝕡𝕥 as 𝕒𝕤: pass')
+        self.check_ast_roundtrip('import 𝕚𝕞𝕡𝕠𝕣𝕥 as 𝕒𝕤')
+        self.check_ast_roundtrip('from 𝕗𝕣𝕠𝕞 import 𝕚𝕞𝕡𝕠𝕣𝕥 as 𝕒𝕤')
+        self.check_ast_roundtrip('global 𝕘𝕝𝕠𝕓𝕒𝕝')
+        self.check_ast_roundtrip('nonlocal 𝕟𝕠𝕟𝕝𝕠𝕔𝕒𝕝')
+        self.check_ast_roundtrip('foo.𝕝𝕒𝕞𝕓𝕕𝕒')
+        self.check_ast_roundtrip('lambda 𝕝𝕒𝕞𝕓𝕕𝕒: 1')
+        self.check_ast_roundtrip('(𝕕𝕖𝕗 := 1)')
+        # `match` is parsed unusually, allowing ASCII keywords in many
+        # places.
+        self.check_ast_roundtrip('''match match:
+            case [*case]: 1
+            case {**case}: 1
+            case 𝕔𝕝𝕒𝕤𝕤(case = 1): 1
+            case case as 𝕒𝕤: 1'''
+        )
+
     def test_bytes(self):
         self.check_ast_roundtrip("b'123'")
 
