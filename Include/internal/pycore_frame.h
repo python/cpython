@@ -209,7 +209,7 @@ _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
  * frames like the ones in generators and coroutines.
  */
 void
-_PyFrame_Clear(_PyInterpreterFrame * frame);
+_PyFrame_ClearExceptCode(_PyInterpreterFrame * frame);
 
 int
 _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg);

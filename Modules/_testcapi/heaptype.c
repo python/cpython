@@ -174,7 +174,7 @@ test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(
         }
         if (res == 0) {
             PyErr_SetString(PyExc_AssertionError,
-                    "TypeError did not inlclude expected message.");
+                    "TypeError did not include expected message.");
             goto finally;
         }
         result = Py_NewRef(Py_None);
@@ -265,7 +265,7 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     /* deallocate the spec (and all contents) */
 
-    // (Explicitly ovewrite memory before freeing,
+    // (Explicitly overwrite memory before freeing,
     // so bugs show themselves even without the debug allocator's help.)
     memset(spec, 0xdd, sizeof(PyType_Spec));
     PyMem_Del(spec);
@@ -623,16 +623,15 @@ heapctypesubclasswithfinalizer_init(PyObject *self, PyObject *args, PyObject *kw
 static void
 heapctypesubclasswithfinalizer_finalize(PyObject *self)
 {
-    PyObject *error_type, *error_value, *error_traceback, *m;
     PyObject *oldtype = NULL, *newtype = NULL, *refcnt = NULL;
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     if (_testcapimodule == NULL) {
         goto cleanup_finalize;
     }
-    m = PyState_FindModule(_testcapimodule);
+    PyObject *m = PyState_FindModule(_testcapimodule);
     if (m == NULL) {
         goto cleanup_finalize;
     }
@@ -667,7 +666,7 @@ cleanup_finalize:
     Py_XDECREF(refcnt);
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 static PyType_Slot HeapCTypeSubclassWithFinalizer_slots[] = {

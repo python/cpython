@@ -19,12 +19,6 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     int optimize,
     struct _arena *arena);
 
-int _PyFuture_FromAST(
-    struct _mod * mod,
-    PyObject *filename,
-    PyFutureFeatures* futures);
-
-extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 
 typedef struct {
     int optimize;
@@ -38,6 +32,16 @@ extern int _PyAST_Optimize(
     struct _mod *,
     struct _arena *arena,
     _PyASTOptimizeState *state);
+
+/* Utility for a number of growing arrays used in the compiler */
+int _PyCompile_EnsureArrayLargeEnough(
+        int idx,
+        void **array,
+        int *alloc,
+        int default_alloc,
+        size_t item_size);
+
+int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 
 /* Access compiler internals for unit testing */
 
