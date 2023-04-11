@@ -138,7 +138,7 @@ class GeneratorTest(unittest.TestCase):
         func.__name__ = "func_name"
         gen = func()
         self.assertEqual(gen.__name__, "func_name")
-        self.assertEqual(gen.__qualname__, "func_qualname")
+        self.assertEqual(gen.__qualname__, "func_name")
 
         # unnamed generator
         gen = (x for x in range(10))
