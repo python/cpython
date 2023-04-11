@@ -864,8 +864,8 @@ conflict.
    Python memory allocations using the :mod:`tracemalloc` module. The value of
    the variable is the maximum number of frames stored in a traceback of a
    trace. For example, ``PYTHONTRACEMALLOC=1`` stores only the most recent
-   frame. See the :func:`tracemalloc.start` for more information. This is
-   equivalent to setting the :option:`-X` ``tracemalloc`` option.
+   frame. See the :func:`tracemalloc.start` for more information.
+   This is equivalent to setting the :option:`-X` ``tracemalloc`` option.
 
    .. versionadded:: 3.4
 
