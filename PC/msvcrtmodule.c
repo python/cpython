@@ -609,11 +609,11 @@ PyMODINIT_FUNC
 PyInit_msvcrt(void)
 {
     int st;
-    PyObject *d, *version;
     PyObject *m = PyModule_Create(&msvcrtmodule);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
-    d = PyModule_GetDict(m);
+    }
+    PyObject *d = PyModule_GetDict(m);  // Borrowed ref.
 
     /* constants for the locking() function's mode argument */
     insertint(d, "LK_LOCK", _LK_LOCK);
@@ -644,30 +644,47 @@ PyInit_msvcrt(void)
 #ifdef _VC_ASSEMBLY_PUBLICKEYTOKEN
     st = PyModule_AddStringConstant(m, "VC_ASSEMBLY_PUBLICKEYTOKEN",
                                     _VC_ASSEMBLY_PUBLICKEYTOKEN);
-    if (st < 0) return NULL;
+    if (st < 0) {
+        goto error;
+    }
 #endif
 #ifdef _CRT_ASSEMBLY_VERSION
     st = PyModule_AddStringConstant(m, "CRT_ASSEMBLY_VERSION",
                                     _CRT_ASSEMBLY_VERSION);
-    if (st < 0) return NULL;
+    if (st < 0) {
+        goto error;
+    }
 #endif
 #ifdef __LIBRARIES_ASSEMBLY_NAME_PREFIX
     st = PyModule_AddStringConstant(m, "LIBRARIES_ASSEMBLY_NAME_PREFIX",
                                     __LIBRARIES_ASSEMBLY_NAME_PREFIX);
-    if (st < 0) return NULL;
+    if (st < 0) {
+        goto error;
+    }
 #endif
 
     /* constants for the 2010 crt versions */
 #if defined(_VC_CRT_MAJOR_VERSION) && defined (_VC_CRT_MINOR_VERSION) && defined(_VC_CRT_BUILD_VERSION) && defined(_VC_CRT_RBUILD_VERSION)
-    version = PyUnicode_FromFormat("%d.%d.%d.%d", _VC_CRT_MAJOR_VERSION,
-                                                  _VC_CRT_MINOR_VERSION,
-                                                  _VC_CRT_BUILD_VERSION,
-                                                  _VC_CRT_RBUILD_VERSION);
-    st = PyModule_AddObject(m, "CRT_ASSEMBLY_VERSION", version);
-    if (st < 0) return NULL;
+    PyObject *version = PyUnicode_FromFormat("%d.%d.%d.%d",
+                                             _VC_CRT_MAJOR_VERSION,
+                                             _VC_CRT_MINOR_VERSION,
+                                             _VC_CRT_BUILD_VERSION,
+                                             _VC_CRT_RBUILD_VERSION);
+    if (version == NULL) {
+        goto error;
+    }
+    st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
+    Py_DECREF(version);
+    if (st < 0) {
+        goto error;
+    }
 #endif
     /* make compiler warning quiet if st is unused */
     (void)st;
 
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }

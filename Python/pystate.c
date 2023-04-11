@@ -380,7 +380,7 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime);
 _Py_COMP_DIAG_POP
 
-#define NUMLOCKS 4
+#define NUMLOCKS 5
 
 static int
 alloc_for_runtime(PyThread_type_lock locks[NUMLOCKS])
@@ -432,6 +432,7 @@ init_runtime(_PyRuntimeState *runtime,
         &runtime->xidregistry.mutex,
         &runtime->getargs.mutex,
         &runtime->unicode_state.ids.lock,
+        &runtime->imports.extensions.mutex,
     };
     for (int i = 0; i < NUMLOCKS; i++) {
         assert(locks[i] != NULL);
@@ -516,6 +517,7 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
         &runtime->xidregistry.mutex,
         &runtime->getargs.mutex,
         &runtime->unicode_state.ids.lock,
+        &runtime->imports.extensions.mutex,
     };
     for (int i = 0; i < NUMLOCKS; i++) {
         FREE_LOCK(*lockptrs[i]);
@@ -544,6 +546,7 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
         &runtime->xidregistry.mutex,
         &runtime->getargs.mutex,
         &runtime->unicode_state.ids.lock,
+        &runtime->imports.extensions.mutex,
     };
     int reinit_err = 0;
     for (int i = 0; i < NUMLOCKS; i++) {
@@ -2041,14 +2044,13 @@ _PyThread_CurrentExceptions(void)
             if (id == NULL) {
                 goto fail;
             }
-            PyObject *exc_info = _PyErr_StackItemToExcInfoTuple(err_info);
-            if (exc_info == NULL) {
-                Py_DECREF(id);
-                goto fail;
-            }
-            int stat = PyDict_SetItem(result, id, exc_info);
+            PyObject *exc = err_info->exc_value;
+            assert(exc == NULL ||
+                   exc == Py_None ||
+                   PyExceptionInstance_Check(exc));
+
+            int stat = PyDict_SetItem(result, id, exc == NULL ? Py_None : exc);
             Py_DECREF(id);
-            Py_DECREF(exc_info);
             if (stat < 0) {
                 goto fail;
             }
