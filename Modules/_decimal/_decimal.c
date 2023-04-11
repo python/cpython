@@ -107,14 +107,6 @@ get_module_state(PyObject *mod)
     return state;
 }
 
-static inline decimal_state *
-get_module_state_by_cls(PyTypeObject *cls)
-{
-    decimal_state *state = (decimal_state *)PyType_GetModuleState(cls);
-    assert(state != NULL);
-    return state;
-}
-
 static struct PyModuleDef _decimal_module;
 
 static inline decimal_state *
@@ -2797,7 +2789,7 @@ dec_from_float(PyObject *type, PyObject *pyfloat)
     PyObject *context;
     PyObject *result;
 
-    decimal_state *state = get_module_state_by_def((PyObject *)type);
+    decimal_state *state = get_module_state_by_def((PyTypeObject *)type);
     CURRENT_CONTEXT(state, context);
     result = PyDecType_FromFloatExact(state->PyDec_Type, pyfloat, context);
     if (type != (PyObject *)state->PyDec_Type && result != NULL) {
@@ -5914,7 +5906,6 @@ _decimal_exec(PyObject *m)
     }
 
     decimal_state *state = get_module_state(m);
-    signal_map_init(state);
 
     /* Init external C-API functions */
     state->_py_long_multiply = PyLong_Type.tp_as_number->nb_multiply;
@@ -6132,18 +6123,6 @@ error:
     Py_CLEAR(collections); /* GCOV_NOT_REACHED */
     Py_CLEAR(collections_abc); /* GCOV_NOT_REACHED */
     Py_CLEAR(MutableMapping); /* GCOV_NOT_REACHED */
-    Py_CLEAR(state->Rational); /* GCOV_NOT_REACHED */
-    Py_CLEAR(state->SignalTuple); /* GCOV_NOT_REACHED */
-    Py_CLEAR(state->DecimalTuple); /* GCOV_NOT_REACHED */
-    Py_CLEAR(state->default_context_template); /* GCOV_NOT_REACHED */
-#ifndef WITH_DECIMAL_CONTEXTVAR
-    Py_CLEAR(state->tls_context_key); /* GCOV_NOT_REACHED */
-#else
-    Py_CLEAR(state->current_context_var); /* GCOV_NOT_REACHED */
-#endif
-    Py_CLEAR(state->basic_context_template); /* GCOV_NOT_REACHED */
-    Py_CLEAR(state->extended_context_template); /* GCOV_NOT_REACHED */
-    Py_CLEAR(m); /* GCOV_NOT_REACHED */
 
     return -1; /* GCOV_NOT_REACHED */
 }
