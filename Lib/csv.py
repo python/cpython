@@ -449,10 +449,10 @@ class Sniffer:
         hasHeader = 0
         # here we added the special case where all cols are strings and dictionary has been emptied
         if not columnTypes and col_are_strings==True and columns>0:
-            #dictionary now takes the average length of strings
+            # dictionary now takes the average length of strings
             columnTypes[0] = int(average_size/columns)
         for col, colType in columnTypes.items():
-            if type(colType) == type(0): # it's a length
+            if type(colType) is int: # it's a length
                 if len(header[col]) != colType:
                     hasHeader += 1
                 else:
