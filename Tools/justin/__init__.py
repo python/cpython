@@ -105,7 +105,7 @@ class ObjectParser:
                 addend = int(addend, 16) if addend else 0
                 assert value.startswith(self._symbol_prefix)
                 value = value.removeprefix(self._symbol_prefix)
-                relocs[section].append(Hole(value, type, int(offset, 16), addend))
+                relocs[section].append(Hole(value, int(offset, 16), addend))
             else:
                 break
         return relocs
@@ -138,7 +138,7 @@ class ObjectParser:
         offsets = {}
         for name, size, type in self._parse_headers():
             size_before = len(body)
-            holes += [Hole(hole.symbol, hole.kind, hole.offset+size_before, hole.addend) for hole in relocs[name]]
+            holes += [Hole(hole.symbol, hole.offset+size_before, hole.addend) for hole in relocs[name]]
             offsets[name] = size_before
             body += self._parse_full_contents(name)
             assert len(body) - size_before == size
@@ -146,9 +146,9 @@ class ObjectParser:
         for hole in holes:
             if self._fix_up_holes and hole.symbol in offsets:
                 # TODO: fix offset too? Or just assert that relocs are only in main section?
-                hole = Hole(hole.symbol, hole.kind, hole.offset, hole.addend + offsets[hole.symbol])
+                hole = Hole(hole.symbol, hole.offset, hole.addend + offsets[hole.symbol])
             if hole.symbol.startswith(".rodata") or hole.symbol.startswith("_cstring"):
-                hole = Hole("_justin_base", hole.kind, hole.offset, hole.addend)
+                hole = Hole("_justin_base", hole.offset, hole.addend)
             fixed.append(hole)
         return Stencil(body, fixed)
     
@@ -199,7 +199,6 @@ def _get_object_parser(path: str) -> ObjectParser:
 @dataclasses.dataclass(frozen=True)
 class Hole:
     symbol: str
-    kind: str
     offset: int
     addend: int
 
