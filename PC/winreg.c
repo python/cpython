@@ -499,6 +499,9 @@ PyHKEY_FromHKEY(winreg_state *st, HKEY h)
 {
     PyHKEYObject *op = (PyHKEYObject *)PyObject_GC_New(PyHKEYObject,
                                                        st->PyHKEY_Type);
+    if (op == NULL) {
+        return NULL;
+    }
     op->hkey = h;
     PyObject_GC_Track(op);
     return (PyObject *)op;
