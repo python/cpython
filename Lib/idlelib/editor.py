@@ -1292,6 +1292,7 @@ class EditorWindow:
         # Delete whitespace left, until hitting a real char or closest
         # preceding virtual tab stop.
         chars = text.get("insert linestart", "insert")
+        echars = text.get("insert", "insert lineend")
         if chars == '':
             if text.compare("insert", ">", "1.0"):
                 # easy: delete preceding newline
@@ -1299,7 +1300,10 @@ class EditorWindow:
             else:
                 text.bell()     # at start of buffer
             return "break"
-        if  chars[-1] not in " \t":
+        isindent = _line_indent_re.fullmatch(chars)
+        istrailing = _line_indent_re.fullmatch(echars)
+        if chars[-1] not in " \t" or not (isindent or istrailing):
+            # non-indent char or found between non-indent chars
             # easy: delete preceding real char
             text.delete("insert-1c")
             return "break"
@@ -1308,12 +1312,17 @@ class EditorWindow:
         tabwidth = self.tabwidth
         have = len(chars.expandtabs(tabwidth))
         assert have > 0
-        want = ((have - 1) // self.indentwidth) * self.indentwidth
+        if istrailing and not isindent:
+            # Delete all trailing whitespace
+            want = 0
+        else:
+            # Delete consistent with indentation
+            want = ((have - 1) // self.indentwidth) * self.indentwidth
         # Debug prompt is multilined....
         ncharsdeleted = 0
         while True:
             chars = chars[:-1]
-            ncharsdeleted = ncharsdeleted + 1
+            ncharsdeleted += 1
             have = len(chars.expandtabs(tabwidth))
             if have <= want or chars[-1] not in " \t":
                 break

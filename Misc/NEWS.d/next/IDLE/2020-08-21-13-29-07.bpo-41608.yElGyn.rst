@@ -1,0 +1,2 @@
+Improve smart backspace so only one space is deleted if there are non-whitespace
+characters either side and all trailing whitespace is deleted if it is not an indent

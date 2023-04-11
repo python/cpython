@@ -1,6 +1,7 @@
 "Test editor, coverage 35%."
 
 from idlelib import editor
+import functools
 import unittest
 from collections import namedtuple
 from test.support import requires
@@ -179,6 +180,93 @@ class IndentAndNewlineTest(unittest.TestCase):
         nl(None)
         # Deletes selected text before adding new line.
         eq(get('1.0', 'end'), '  def f1(self, a,\n         \n    return a + b\n')
+
+
+class BackspaceTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.window = Editor(root=cls.root)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.window._close()
+        del cls.window
+        cls.root.update_idletasks()
+        for id in cls.root.tk.call('after', 'info'):
+            cls.root.after_cancel(id)
+        cls.root.destroy()
+        del cls.root
+
+    @staticmethod
+    def perform_backspace(func):
+        @functools.wraps(func)
+        def new_test_method(self):
+            text = self.window.text
+            before, position, after = func(self)
+            text.delete('1.0', 'end')
+            text.insert('insert', before)
+            text.mark_set('insert', '%s.%d' % (text.index('insert').split('.')[0], position))
+            text.event_generate('<<smart-backspace>>')
+            self.assertEqual(text.get('insert linestart', 'insert lineend'),
+                             after)
+
+        return new_test_method
+
+    @perform_backspace
+    def test_empty(self):
+        return '', 0, ''
+
+    @perform_backspace
+    def test_just_whitespace_0(self):
+        return ' '*8, 8, ' '*4
+
+    @perform_backspace
+    def test_just_whitespace_1(self):
+        return ' '*8, 7, ' '*5
+
+    @perform_backspace
+    def test_just_whitespace_2(self):
+        return ' '*8, 4, ' '*4
+
+    @perform_backspace
+    def test_indent_0(self):
+        return ' '*8 + 'a', 8, ' '*4 + 'a'
+
+    @perform_backspace
+    def test_indent_1(self):
+        return ' '*8 + 'a', 7, ' '*5 + 'a'
+
+    @perform_backspace
+    def test_normal_char_0(self):
+        return ' '*8 + 'a'*4, 12, ' '*8 + 'a'*3
+
+    @perform_backspace
+    def test_normal_char_1(self):
+        return ' '*8 + 'a'*4, 11, ' '*8 + 'a'*3
+
+    @perform_backspace
+    def test_surrounded_whitespace_0(self):
+        return 'aa  a', 4, 'aa a'
+
+    @perform_backspace
+    def test_surrounded_whitespace_1(self):
+        return '    a   a  ', 8, '    a  a  '
+
+    @perform_backspace
+    def test_trailing_0(self):
+        return 'a' + ' '*7, 8, 'a'
+
+    @perform_backspace
+    def test_trailing_1(self):
+        return ' '*4 + 'a' + ' '*7, 12, ' '*4 + 'a'
+
+    @perform_backspace
+    def test_trailing_2(self):
+        return ' '*4 + 'a' + ' '*7, 10, ' '*4 + 'a' + ' '*2
 
 
 class RMenuTest(unittest.TestCase):
