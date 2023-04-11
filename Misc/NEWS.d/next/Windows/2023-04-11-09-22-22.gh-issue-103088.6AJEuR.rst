@@ -1,0 +1,3 @@
+Fixes venvs not working in bash on Windows across different disks
+
+PCbuild\build.bat now can use an existing Python 3.11 installation
