@@ -1,0 +1,2 @@
+In :mod:`pdb`, *args* and *retval* commands were fixed to properly handle
+objects for which :func:`repr` raises an exception.

@@ -552,7 +552,9 @@ can be overridden by the local file.
 
 .. pdbcommand:: retval
 
-   Print the return value for the last return of a function.
+   Print the return value for the last return of a function.  This command must
+   be used immediately after the return line is executed; *return* command can
+   be used to jump to the location where *retval* can be used.
 
 .. rubric:: Footnotes
 

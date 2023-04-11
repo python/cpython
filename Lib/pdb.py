@@ -1226,7 +1226,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         for i in range(n):
             name = co.co_varnames[i]
             if name in dict:
-                self.message('%s = %r' % (name, dict[name]))
+                try:
+                    r = dict[name]
+                    repr(r)
+                except Exception as e:
+                    r = e
+                self.message('%s = %r' % (name, r))
             else:
                 self.message('%s = *** undefined ***' % (name,))
     do_a = do_args
@@ -1236,7 +1241,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Print the return value for the last return of a function.
         """
         if '__return__' in self.curframe_locals:
-            self.message(repr(self.curframe_locals['__return__']))
+            try:
+                self.message(repr(self.curframe_locals['__return__']))
+            except:
+                self._error_exc()
         else:
             self.error('Not yet returned!')
     do_rv = do_retval
