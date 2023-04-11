@@ -237,6 +237,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case JUMP_BACKWARD:
             return 0;
+        case JUMP_BACKWARD_INTO_TRACE:
+            return 0;
         case POP_JUMP_IF_FALSE:
             return 1;
         case POP_JUMP_IF_TRUE:
@@ -583,6 +585,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case JUMP_BACKWARD:
             return 0;
+        case JUMP_BACKWARD_INTO_TRACE:
+            return 0;
         case POP_JUMP_IF_FALSE:
             return 0;
         case POP_JUMP_IF_TRUE:
@@ -695,7 +699,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC0000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
 struct opcode_metadata {
     bool valid_entry;
     enum InstructionFormat instr_format;
@@ -818,7 +822,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [IMPORT_NAME] = { true, INSTR_FMT_IB },
     [IMPORT_FROM] = { true, INSTR_FMT_IB },
     [JUMP_FORWARD] = { true, INSTR_FMT_IB },
-    [JUMP_BACKWARD] = { true, INSTR_FMT_IB },
+    [JUMP_BACKWARD] = { true, INSTR_FMT_IBC0000 },
+    [JUMP_BACKWARD_INTO_TRACE] = { true, INSTR_FMT_IBC0000 },
     [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB },
     [POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB },
     [POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB },

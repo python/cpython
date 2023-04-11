@@ -1875,10 +1875,30 @@ dummy_func(
             JUMPBY(oparg);
         }
 
-        inst(JUMP_BACKWARD, (--)) {
+        inst(JUMP_BACKWARD, (unused/1, unused/4 --)) {
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
+        }
+
+        inst(JUMP_BACKWARD_INTO_TRACE, (unused/1, trace/4 --)) {
+            assert(oparg < INSTR_OFFSET());
+            JUMPBY(-oparg);
+            CHECK_EVAL_BREAKER();
+            int status = ((int (*)(PyThreadState *, _PyInterpreterFrame *, PyObject **))(uintptr_t)trace)(tstate, frame, stack_pointer);
+            next_instr = frame->prev_instr;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            frame->stacktop = -1;
+            switch (status) {
+                case 0:
+                case -1:
+                    DISPATCH();
+                case -2:
+                    goto error;
+                case -3:
+                    goto handle_eval_breaker;
+            }
+            Py_UNREACHABLE();
         }
 
         inst(POP_JUMP_IF_FALSE, (cond -- )) {

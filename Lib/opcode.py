@@ -323,6 +323,9 @@ _specializations = {
         "FOR_ITER_RANGE",
         "FOR_ITER_GEN",
     ],
+    "JUMP_BACKWARD": [
+        "JUMP_BACKWARD_INTO_TRACE",
+    ],
     "LOAD_ATTR": [
         # These potentially push [NULL, bound method] onto the stack.
         "LOAD_ATTR_CLASS",
@@ -417,6 +420,10 @@ _cache_format = {
     "SEND": {
         "counter": 1,
     },
+    "JUMP_BACKWARD": {
+        "counter": 1,
+        "trace": 4,
+    }
 }
 
 _inline_cache_entries = [
