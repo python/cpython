@@ -47,6 +47,7 @@ def clean_lines(text):
 '''
 
 # XXX Handle these.
+# Tab separated:
 EXCLUDED = clean_lines('''
 # @begin=conf@
 
