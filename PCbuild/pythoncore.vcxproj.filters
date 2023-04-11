@@ -1094,6 +1094,9 @@
     <ClCompile Include="..\Python\asdl.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\assemble.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\ast.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1107,9 +1110,6 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ceval.c">
-      <Filter>Python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\flowgraph.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\codecs.c">
@@ -1128,6 +1128,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\fileutils.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\flowgraph.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\formatter_unicode.c">
