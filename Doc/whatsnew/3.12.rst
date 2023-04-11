@@ -192,6 +192,10 @@ Other Language Changes
 * :class:`slice` objects are now hashable, allowing them to be used as dict keys and
   set items. (Contributed by Will Bradshaw and Furkan Onder in :gh:`101264`.)
 
+* Exceptions raised in a typeobject's ``__set_name__`` method are no longer
+  wrapped by a :exc:`RuntimeError`. Context information is added to the
+  exception as a :pep:`678` note. (Contributed by Irit Katriel in :gh:`77757`.)
+
 New Modules
 ===========
 
