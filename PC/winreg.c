@@ -412,7 +412,7 @@ static PyType_Slot pyhkey_type_slots[] = {
 };
 
 static PyType_Spec pyhkey_type_spec = {
-    .name = "winreg.PYHkey",
+    .name = "winreg.PyHKEY",
     .basicsize = sizeof(PyHKEYObject),
     .flags = (Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE |
               Py_TPFLAGS_DISALLOW_INSTANTIATION),
