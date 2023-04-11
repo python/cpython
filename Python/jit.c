@@ -5,7 +5,7 @@
 #include "pycore_opcode.h"
 #include "pycore_sliceobject.h"
 
-#include "generated.h"
+#include "jit_stencils.h"
 
 #ifdef MS_WINDOWS
     #include <windows.h>
@@ -39,7 +39,7 @@ alloc(size_t nbytes)
 
 
 void
-_PyJustin_Free(unsigned char *memory)
+_PyJIT_Free(unsigned char *memory)
 {
     memory -= sizeof(size_t);
     size_t nbytes = *(size_t *)memory;
@@ -62,9 +62,9 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
 
 
 // The world's smallest compiler?
-// Make sure to call _PyJustin_Free on the memory when you're done with it!
+// Make sure to call _PyJIT_Free on the memory when you're done with it!
 unsigned char *
-_PyJustin_CompileTrace(int size, _Py_CODEUNIT **trace)
+_PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
 {
     // First, loop over everything once to find the total compiled size:
     size_t nbytes = trampoline_stencil.nbytes;

@@ -135,16 +135,9 @@ def bench_nbody(loops, reference, iterations):
 
     return time.perf_counter() - t0
 
-
-# First, create our JIT engine:
-engine = Engine(verbose=True)
-# # This performs all of the steps that normally happen at build time:
-# engine.build()
-# with open("Tools/justin/generated.h", "w") as file:
-#     file.write(engine.dump())
-
 loops = 1 << 3
 nbody_time = bench_nbody(loops, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)
+engine = Engine(verbose=True)
 advance = engine.trace(advance)
 report_energy = engine.trace(report_energy)
 bench_nbody(loops, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)

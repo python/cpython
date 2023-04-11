@@ -1,3 +1,5 @@
+import sys
+
 """The Justin(time) template JIT for CPython 3.12, based on copy-and-patch."""
 
 import collections
@@ -21,6 +23,15 @@ TOOLS_JUSTIN_TRAMPOLINE = TOOLS_JUSTIN / "trampoline.c"
 PYTHON_GENERATED_CASES_C_H = TOOLS_JUSTIN.parent.parent / "Python" / "generated_cases.c.h"
 
 WRAPPER_TYPE = ctypes.PYFUNCTYPE(ctypes.c_int)
+
+def batched(iterable, n):
+    """Batch an iterable into lists of size n."""
+    it = iter(iterable)
+    while True:
+        batch = list(itertools.islice(it, n))
+        if not batch:
+            return
+        yield batch
 
 # XXX: Do --reloc, then --headers, then --full-contents (per-section)
 # Maybe need --syms to check that justin_entry is indeed first/only?
@@ -332,7 +343,7 @@ class Engine:
             opnames.append(opname)
             lines.append(f"// {opname}")
             lines.append(f"static const unsigned char {opname}_stencil_bytes[] = {{")
-            for chunk in itertools.batched(stencil.body, 8):
+            for chunk in batched(stencil.body, 8):
                 lines.append(f"    {', '.join(f'0x{byte:02X}' for byte in chunk)},")
             lines.append(f"}};")
             lines.append(f"static const Hole {opname}_stencil_holes[] = {{")
@@ -515,3 +526,10 @@ class Engine:
         out = out[i:] + out[:i]
         opnames = opnames[i:] + opnames[:i]
         return out
+
+# First, create our JIT engine:
+engine = Engine(verbose=True)
+# This performs all of the steps that normally happen at build time:
+engine.build()
+with open(sys.argv[2], "w") as file:
+    file.write(engine.dump())
