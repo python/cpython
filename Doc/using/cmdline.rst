@@ -873,8 +873,8 @@ conflict.
 .. envvar:: PYTHONPROFILEIMPORTTIME
 
    If this environment variable is set to a non-empty string, Python will
-   show how long each import takes.  This is equivalent to setting the
-   :option:`-X` ``importtime`` option.
+   show how long each import takes.
+   This is equivalent to setting the :option:`-X` ``importtime`` option.
 
    .. versionadded:: 3.7
 
