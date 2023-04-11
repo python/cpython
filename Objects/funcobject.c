@@ -517,7 +517,16 @@ func_set_name(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
                         "__name__ must be set to a string object");
         return -1;
     }
+
+    _Py_DECLARE_STR(dot, ".");
+    PyObject *dotted_path = PyUnicode_Split(op->func_qualname, &_Py_STR(dot), -1);
+    Py_ssize_t n = PyList_GET_SIZE(dotted_path);
+    PyList_SetItem(dotted_path, n - 1, value);
+    Py_INCREF(value);
+    dotted_path = PyUnicode_Join(&_Py_STR(dot), dotted_path);
+
     Py_XSETREF(op->func_name, Py_NewRef(value));
+    Py_XSETREF(op->func_qualname, Py_NewRef(dotted_path));
     return 0;
 }
 
