@@ -2089,9 +2089,9 @@ Resolving MRO entries
 .. method:: object.__mro_entries__(self, bases)
 
    If a base that appears in a class definition is not an instance of
-   :class:`type`, then an ``__mro_entries__`` method is searched on the base.
-   If an ``__mro_entries__`` method is found, the base is substituted with the
-   result of a call to ``__mro_entries__`` when creating the class.
+   :class:`type`, then an :meth:`!__mro_entries__` method is searched on the base.
+   If an :meth:`!__mro_entries__` method is found, the base is substituted with the
+   result of a call to :meth:`!__mro_entries__` when creating the class.
    The method is called with the original bases tuple
    passed to the *bases* parameter, and must return a tuple
    of classes that will be used instead of the base. The returned tuple may be
@@ -2103,7 +2103,7 @@ Resolving MRO entries
       Dynamically resolve bases that are not instances of :class:`type`.
 
    :pep:`560`
-      Core support for typing module and generic types
+      Core support for typing module and generic types.
 
 
 Determining the appropriate metaclass
