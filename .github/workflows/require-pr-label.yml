@@ -8,6 +8,7 @@ jobs:
   label:
     name: DO-NOT-MERGE
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - uses: mheap/github-action-required-labels@v4
