@@ -587,9 +587,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_commands(self, arg):
         """(Pdb) commands [bpnumber]
-           (com) ...
-           (com) end
-           (Pdb)
+        (com) ...
+        (com) end
+        (Pdb)
 
         Specify a list of commands for breakpoint number bpnumber.
         The commands themselves are entered on the following lines.
