@@ -1711,13 +1711,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             usage_end = lines.index("")
         else:
             usage_end = 1
-        usage = "\n".join([f"{' ' * len(self.prompt)}Usage: {lines[0].strip()}"] + \
-                [f"{' ' * len(self.prompt + 'Usage: ')}"
-                 f"{line.strip()}" for line in lines[1:usage_end]])
-
-        description = "\n".join(f"      {line.strip()}" for line in lines[usage_end:])
-
-        return f"{usage}\n{description}"
+        formatted = []
+        indent = " " * len(self.prompt)
+        for i, line in enumerate(lines):
+            if i == 0:
+                prefix = "Usage: "
+            elif i < usage_end:
+                prefix = "       "
+            else:
+                prefix = ""
+            formatted.append(indent + prefix + line)
+        return "\n".join(formatted)
 
 # Collect all command help into docstring, if not run with -OO
 
