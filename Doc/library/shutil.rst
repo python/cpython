@@ -433,15 +433,26 @@ Directory and files operations
    When no *path* is specified, the results of :func:`os.environ` are used,
    returning either the "PATH" value or a fallback of :attr:`os.defpath`.
 
-   On Windows, the current directory is always prepended to the *path* whether
-   or not you use the default or provide your own, which is the behavior the
-   command shell uses when finding executables.  Additionally, when finding the
-   *cmd* in the *path*, the ``PATHEXT`` environment variable is checked.  For
-   example, if you call ``shutil.which("python")``, :func:`which` will search
-   ``PATHEXT`` to know that it should look for ``python.exe`` within the *path*
-   directories.  For example, on Windows::
+   On Windows, the current directory is prepended to the *path* if *mode* does
+   not include ``os.X_OK``. When the *mode* does include ``os.X_OK``, the
+   Windows API ``NeedCurrentDirectoryForExePathW`` will be consulted to
+   determine if the current directory should be prepended to *path*. To avoid
+   consulting the current working directory for executables: set the environment
+   variable ``NoDefaultCurrentDirectoryInExePath``.
+
+   Also on Windows, the ``PATHEXT`` variable is used to resolve commands
+   that may not already include an extension. For example, if you call
+   ``shutil.which("python")``, :func:`which` will search ``PATHEXT``
+   to know that it should look for ``python.exe`` within the *path*
+   directories. For example, on Windows::
 
       >>> shutil.which("python")
+      'C:\\Python33\\python.EXE'
+
+   This is also applied when *cmd* is a path that contains a directory
+   component::
+
+      >> shutil.which("C:\\Python33\\python")
       'C:\\Python33\\python.EXE'
 
    .. versionadded:: 3.3
@@ -449,6 +460,15 @@ Directory and files operations
    .. versionchanged:: 3.8
       The :class:`bytes` type is now accepted.  If *cmd* type is
       :class:`bytes`, the result type is also :class:`bytes`.
+
+   .. versionchanged:: 3.12
+      On Windows, the current directory is no longer prepended to the search
+      path if *mode* includes ``os.X_OK`` and WinAPI
+      ``NeedCurrentDirectoryForExePathW(cmd)`` is false, else the current
+      directory is prepended even if it is already in the search path;
+      ``PATHEXT`` is used now even when *cmd* includes a directory component
+      or ends with an extension that is in ``PATHEXT``; and filenames that
+      have no extension can now be found.
 
 .. exception:: Error
 

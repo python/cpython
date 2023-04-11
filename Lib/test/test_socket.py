@@ -8,6 +8,7 @@ import _thread as thread
 import array
 import contextlib
 import errno
+import gc
 import io
 import itertools
 import math
@@ -835,6 +836,12 @@ def requireSocket(*args):
 ## Begin Tests
 
 class GeneralModuleTests(unittest.TestCase):
+
+    @unittest.skipUnless(_socket is not None, 'need _socket module')
+    def test_socket_type(self):
+        self.assertTrue(gc.is_tracked(_socket.socket))
+        with self.assertRaisesRegex(TypeError, "immutable"):
+            _socket.socket.foo = 1
 
     def test_SocketType_is_socketobject(self):
         import _socket
@@ -2562,8 +2569,7 @@ class BasicHyperVTest(unittest.TestCase):
         socket.HV_GUID_LOOPBACK
 
     def testCreateHyperVSocketWithUnknownProtoFailure(self):
-        expected = "A protocol was specified in the socket function call " \
-            "that does not support the semantics of the socket type requested"
+        expected = r"\[WinError 10041\]"
         with self.assertRaisesRegex(OSError, expected):
             socket.socket(socket.AF_HYPERV, socket.SOCK_STREAM)
 

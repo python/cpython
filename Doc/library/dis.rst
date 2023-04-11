@@ -59,7 +59,7 @@ the following command can be used to display the disassembly of
      3           2 LOAD_GLOBAL              1 (NULL + len)
                 12 LOAD_FAST                0 (alist)
                 14 CALL                     1
-                24 RETURN_VALUE
+                22 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -1040,15 +1040,6 @@ iterations of the loop.
 
    Performs a Boolean operation.  The operation name can be found in
    ``cmp_op[opname]``.
-
-
-.. opcode:: COMPARE_AND_BRANCH (opname)
-
-   Compares the top two values on the stack, popping them, then branches.
-   The direction and offset of the jump is embedded as a ``POP_JUMP_IF_TRUE``
-   or ``POP_JUMP_IF_FALSE`` instruction immediately following the cache.
-
-   .. versionadded:: 3.12
 
 
 .. opcode:: IS_OP (invert)
