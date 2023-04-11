@@ -504,8 +504,9 @@ Miscellaneous options
    * ``-X tracemalloc`` to start tracing Python memory allocations using the
      :mod:`tracemalloc` module. By default, only the most recent frame is
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
-     :func:`tracemalloc.start` and :envvar:`PYTHONTRACEMALLOC` for more
-     information.
+     tracing with a traceback limit of *NFRAME* frames.
+     See :func:`tracemalloc.start` and :envvar:`PYTHONTRACEMALLOC`
+     for more information.
    * ``-X int_max_str_digits`` configures the :ref:`integer string conversion
      length limitation <int_max_str_digits>`.  See also
      :envvar:`PYTHONINTMAXSTRDIGITS`.
