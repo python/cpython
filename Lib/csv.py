@@ -414,7 +414,7 @@ class Sniffer:
             if len(row) != columns:
                 continue # skip rows that have irregular number of columns
 
-            #checking if all col are strings
+            # checking if all col are strings
             for cols in list(columnTypes.keys()):
                 if row[cols].isnumeric():
                     col_are_strings = False
@@ -447,7 +447,7 @@ class Sniffer:
         # finally, compare results against first row and "vote"
         # on whether it's a header
         hasHeader = 0
-        # here we added the special case where all cols are strings and dictionnary has been emptied
+        # here we added the special case where all cols are strings and dictionary has been emptied
         if not columnTypes and col_are_strings==True and columns>0:
             #dictionary now takes the average length of strings
             columnTypes[0] = int(average_size/columns)
