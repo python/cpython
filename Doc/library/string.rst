@@ -235,7 +235,7 @@ dictionary keys (e.g., the strings ``'10'`` or ``':-]'``) within a format string
 The *arg_name* can be followed by any number of index or
 attribute expressions. An expression of the form ``'.name'`` selects the named
 attribute using :func:`getattr`, while an expression of the form ``'[index]'``
-does an index lookup using :func:`__getitem__`.
+does an index lookup using :meth:`~object.__getitem__`.
 
 .. versionchanged:: 3.1
    The positional argument specifiers can be omitted for :meth:`str.format`,

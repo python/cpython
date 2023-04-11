@@ -2686,28 +2686,15 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(Private._Private__corporal, 'Radar')
         self.assertEqual(Private._Private__major_, 'Hoolihan')
 
-    @unittest.skipIf(
-            python_version <= (3, 13),
-            'member.member access currently deprecated',
-            )
-    def test_exception_for_member_from_member_access(self):
-        with self.assertRaisesRegex(AttributeError, "<enum .Di.> member has no attribute .NO."):
-            class Di(Enum):
-                YES = 1
-                NO = 0
-            nope = Di.YES.NO
-
-    @unittest.skipIf(
-            python_version > (3, 13),
-            'member.member access now raises',
-            )
-    def test_warning_for_member_from_member_access(self):
-        with self.assertWarnsRegex(DeprecationWarning, '`member.member` access .* is deprecated and will be removed in 3.14'):
-            class Di(Enum):
-                YES = 1
-                NO = 0
-            warn = Di.YES.NO
+    def test_member_from_member_access(self):
+        class Di(Enum):
+            YES = 1
+            NO = 0
+            name = 3
+        warn = Di.YES.NO
         self.assertIs(warn, Di.NO)
+        self.assertIs(Di.name, Di['name'])
+        self.assertEqual(Di.name.name, 'name')
 
     def test_dynamic_members_with_static_methods(self):
         #

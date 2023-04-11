@@ -6,10 +6,10 @@
  * object:
  *   1. Checks for future statements.  See future.c
  *   2. Builds a symbol table.  See symtable.c.
- *   3. Generate code for basic blocks.  See compiler_mod() in this file.
- *   4. Assemble the basic blocks into final code.  See assemble() in
- *      this file.
- *   5. Optimize the byte code (peephole optimizations).
+ *   3. Generate an instruction sequence. See compiler_mod() in this file.
+ *   4. Generate a control flow graph and run optimizations on it.  See flowgraph.c.
+ *   5. Assemble the basic blocks into final code.  See optimize_and_assemble() in
+ *      this file, and assembler.c.
  *
  * Note that compiler_mod() suggests module, but the module ast type
  * (mod_ty) has cases for expressions and interactive statements.
@@ -101,15 +101,6 @@ location_is_after(location loc1, location loc2) {
              (loc1.col_offset > loc2.end_col_offset));
 }
 
-static inline bool
-same_location(location a, location b)
-{
-    return a.lineno == b.lineno &&
-           a.end_lineno == b.end_lineno &&
-           a.col_offset == b.col_offset &&
-           a.end_col_offset == b.end_col_offset;
-}
-
 #define LOC(x) SRC_LOCATION_FROM_AST(x)
 
 typedef _PyCfgJumpTargetLabel jump_target_label;
@@ -127,46 +118,6 @@ static jump_target_label NO_LABEL = {-1};
 
 #define USE_LABEL(C, LBL) \
     RETURN_IF_ERROR(instr_sequence_use_label(INSTR_SEQUENCE(C), (LBL).id))
-
-
-static void
-write_instr(_Py_CODEUNIT *codestr, cfg_instr *instruction, int ilen)
-{
-    int opcode = instruction->i_opcode;
-    assert(!IS_PSEUDO_OPCODE(opcode));
-    int oparg = instruction->i_oparg;
-    assert(HAS_ARG(opcode) || oparg == 0);
-    int caches = _PyOpcode_Caches[opcode];
-    switch (ilen - caches) {
-        case 4:
-            codestr->op.code = EXTENDED_ARG;
-            codestr->op.arg = (oparg >> 24) & 0xFF;
-            codestr++;
-            /* fall through */
-        case 3:
-            codestr->op.code = EXTENDED_ARG;
-            codestr->op.arg = (oparg >> 16) & 0xFF;
-            codestr++;
-            /* fall through */
-        case 2:
-            codestr->op.code = EXTENDED_ARG;
-            codestr->op.arg = (oparg >> 8) & 0xFF;
-            codestr++;
-            /* fall through */
-        case 1:
-            codestr->op.code = opcode;
-            codestr->op.arg = oparg & 0xFF;
-            codestr++;
-            break;
-        default:
-            Py_UNREACHABLE();
-    }
-    while (caches--) {
-        codestr->op.code = CACHE;
-        codestr->op.arg = 0;
-        codestr++;
-    }
-}
 
 
 /* fblockinfo tracks the current frame block.
@@ -198,21 +149,8 @@ enum {
     COMPILER_SCOPE_COMPREHENSION,
 };
 
-typedef struct {
-    int i_opcode;
-    int i_oparg;
-    location i_loc;
-} instruction;
-
-typedef struct instr_sequence_ {
-    instruction *s_instrs;
-    int s_allocated;
-    int s_used;
-
-    int *s_labelmap;       /* label id --> instr offset */
-    int s_labelmap_size;
-    int s_next_free_label; /* next free label id */
-} instr_sequence;
+typedef _PyCompilerInstruction instruction;
+typedef _PyCompile_InstructionSequence instr_sequence;
 
 #define INITIAL_INSTR_SEQUENCE_SIZE 100
 #define INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE 10
@@ -314,7 +252,6 @@ static int
 instr_sequence_addop(instr_sequence *seq, int opcode, int oparg, location loc)
 {
     assert(IS_WITHIN_OPCODE_RANGE(opcode));
-    assert(!IS_ASSEMBLER_OPCODE(opcode));
     assert(HAS_ARG(opcode) || HAS_TARGET(opcode) || oparg == 0);
     assert(0 <= oparg && oparg < (1 << 30));
 
@@ -432,32 +369,17 @@ error:
 struct compiler_unit {
     PySTEntryObject *u_ste;
 
-    PyObject *u_name;
-    PyObject *u_qualname;  /* dot-separated qualified name (lazy) */
     int u_scope_type;
 
-    /* The following fields are dicts that map objects to
-       the index of them in co_XXX.      The index is used as
-       the argument for opcodes that refer to those collections.
-    */
-    PyObject *u_consts;    /* all constants */
-    PyObject *u_names;     /* all names */
-    PyObject *u_varnames;  /* local variables */
-    PyObject *u_cellvars;  /* cell variables */
-    PyObject *u_freevars;  /* free variables */
 
     PyObject *u_private;        /* for private name mangling */
-
-    Py_ssize_t u_argcount;        /* number of arguments for block */
-    Py_ssize_t u_posonlyargcount;        /* number of positional only arguments for block */
-    Py_ssize_t u_kwonlyargcount; /* number of keyword only arguments for block */
 
     instr_sequence u_instr_sequence; /* codegen output */
 
     int u_nfblocks;
     struct fblockinfo u_fblock[CO_MAXBLOCKS];
 
-    int u_firstlineno; /* the first lineno of the block */
+    _PyCompile_CodeUnitMetadata u_metadata;
 };
 
 /* This struct captures the global state of a compilation.
@@ -566,7 +488,7 @@ static int compiler_match(struct compiler *, stmt_ty);
 static int compiler_pattern_subpattern(struct compiler *,
                                        pattern_ty, pattern_context *);
 
-static PyCodeObject *assemble(struct compiler *, int addNone);
+static PyCodeObject *optimize_and_assemble(struct compiler *, int addNone);
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
@@ -750,13 +672,13 @@ compiler_unit_free(struct compiler_unit *u)
 {
     instr_sequence_fini(&u->u_instr_sequence);
     Py_CLEAR(u->u_ste);
-    Py_CLEAR(u->u_name);
-    Py_CLEAR(u->u_qualname);
-    Py_CLEAR(u->u_consts);
-    Py_CLEAR(u->u_names);
-    Py_CLEAR(u->u_varnames);
-    Py_CLEAR(u->u_freevars);
-    Py_CLEAR(u->u_cellvars);
+    Py_CLEAR(u->u_metadata.u_name);
+    Py_CLEAR(u->u_metadata.u_qualname);
+    Py_CLEAR(u->u_metadata.u_consts);
+    Py_CLEAR(u->u_metadata.u_names);
+    Py_CLEAR(u->u_metadata.u_varnames);
+    Py_CLEAR(u->u_metadata.u_freevars);
+    Py_CLEAR(u->u_metadata.u_cellvars);
     Py_CLEAR(u->u_private);
     PyObject_Free(u);
 }
@@ -783,8 +705,8 @@ compiler_set_qualname(struct compiler *c)
         if (u->u_scope_type == COMPILER_SCOPE_FUNCTION
             || u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION
             || u->u_scope_type == COMPILER_SCOPE_CLASS) {
-            assert(u->u_name);
-            mangled = _Py_Mangle(parent->u_private, u->u_name);
+            assert(u->u_metadata.u_name);
+            mangled = _Py_Mangle(parent->u_private, u->u_metadata.u_name);
             if (!mangled) {
                 return ERROR;
             }
@@ -802,14 +724,14 @@ compiler_set_qualname(struct compiler *c)
                 || parent->u_scope_type == COMPILER_SCOPE_LAMBDA)
             {
                 _Py_DECLARE_STR(dot_locals, ".<locals>");
-                base = PyUnicode_Concat(parent->u_qualname,
+                base = PyUnicode_Concat(parent->u_metadata.u_qualname,
                                         &_Py_STR(dot_locals));
                 if (base == NULL) {
                     return ERROR;
                 }
             }
             else {
-                base = Py_NewRef(parent->u_qualname);
+                base = Py_NewRef(parent->u_metadata.u_qualname);
             }
         }
     }
@@ -821,15 +743,15 @@ compiler_set_qualname(struct compiler *c)
         if (name == NULL) {
             return ERROR;
         }
-        PyUnicode_Append(&name, u->u_name);
+        PyUnicode_Append(&name, u->u_metadata.u_name);
         if (name == NULL) {
             return ERROR;
         }
     }
     else {
-        name = Py_NewRef(u->u_name);
+        name = Py_NewRef(u->u_metadata.u_name);
     }
-    u->u_qualname = name;
+    u->u_metadata.u_qualname = name;
 
     return SUCCESS;
 }
@@ -930,6 +852,7 @@ static int
 codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 {
     assert(!HAS_ARG(opcode));
+    assert(!IS_ASSEMBLER_OPCODE(opcode));
     return instr_sequence_addop(seq, opcode, 0, loc);
 }
 
@@ -1077,7 +1000,7 @@ compiler_add_const(PyObject *const_cache, struct compiler_unit *u, PyObject *o)
         return ERROR;
     }
 
-    Py_ssize_t arg = dict_add_o(u->u_consts, key);
+    Py_ssize_t arg = dict_add_o(u->u_metadata.u_consts, key);
     Py_DECREF(key);
     return arg;
 }
@@ -1140,6 +1063,7 @@ codegen_addop_i(instr_sequence *seq, int opcode, Py_ssize_t oparg, location loc)
        EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
 
     int oparg_ = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
+    assert(!IS_ASSEMBLER_OPCODE(opcode));
     return instr_sequence_addop(seq, opcode, oparg_, loc);
 }
 
@@ -1149,6 +1073,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 {
     assert(IS_LABEL(target));
     assert(IS_JUMP_OPCODE(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
+    assert(!IS_ASSEMBLER_OPCODE(opcode));
     return instr_sequence_addop(seq, opcode, target.id, loc);
 }
 
@@ -1180,7 +1105,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 
 #define ADDOP_N(C, LOC, OP, O, TYPE) { \
     assert(!HAS_CONST(OP)); /* use ADDOP_LOAD_CONST_NEW */ \
-    if (compiler_addop_o((C)->u, (LOC), (OP), (C)->u->u_ ## TYPE, (O)) < 0) { \
+    if (compiler_addop_o((C)->u, (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)) < 0) { \
         Py_DECREF((O)); \
         return ERROR; \
     } \
@@ -1188,7 +1113,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
 }
 
 #define ADDOP_NAME(C, LOC, OP, O, TYPE) \
-    RETURN_IF_ERROR(compiler_addop_name((C)->u, (LOC), (OP), (C)->u->u_ ## TYPE, (O)))
+    RETURN_IF_ERROR(compiler_addop_name((C)->u, (LOC), (OP), (C)->u->u_metadata.u_ ## TYPE, (O)))
 
 #define ADDOP_I(C, LOC, OP, O) \
     RETURN_IF_ERROR(codegen_addop_i(INSTR_SEQUENCE(C), (OP), (O), (LOC)))
@@ -1265,18 +1190,18 @@ compiler_enter_scope(struct compiler *c, identifier name,
         return ERROR;
     }
     u->u_scope_type = scope_type;
-    u->u_argcount = 0;
-    u->u_posonlyargcount = 0;
-    u->u_kwonlyargcount = 0;
+    u->u_metadata.u_argcount = 0;
+    u->u_metadata.u_posonlyargcount = 0;
+    u->u_metadata.u_kwonlyargcount = 0;
     u->u_ste = PySymtable_Lookup(c->c_st, key);
     if (!u->u_ste) {
         compiler_unit_free(u);
         return ERROR;
     }
-    u->u_name = Py_NewRef(name);
-    u->u_varnames = list2dict(u->u_ste->ste_varnames);
-    u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
-    if (!u->u_varnames || !u->u_cellvars) {
+    u->u_metadata.u_name = Py_NewRef(name);
+    u->u_metadata.u_varnames = list2dict(u->u_ste->ste_varnames);
+    u->u_metadata.u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
+    if (!u->u_metadata.u_varnames || !u->u_metadata.u_cellvars) {
         compiler_unit_free(u);
         return ERROR;
     }
@@ -1284,8 +1209,8 @@ compiler_enter_scope(struct compiler *c, identifier name,
         /* Cook up an implicit __class__ cell. */
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
-        assert(PyDict_GET_SIZE(u->u_cellvars) == 0);
-        res = PyDict_SetItem(u->u_cellvars, &_Py_ID(__class__),
+        assert(PyDict_GET_SIZE(u->u_metadata.u_cellvars) == 0);
+        res = PyDict_SetItem(u->u_metadata.u_cellvars, &_Py_ID(__class__),
                              _PyLong_GetZero());
         if (res < 0) {
             compiler_unit_free(u);
@@ -1293,22 +1218,22 @@ compiler_enter_scope(struct compiler *c, identifier name,
         }
     }
 
-    u->u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
-                               PyDict_GET_SIZE(u->u_cellvars));
-    if (!u->u_freevars) {
+    u->u_metadata.u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
+                               PyDict_GET_SIZE(u->u_metadata.u_cellvars));
+    if (!u->u_metadata.u_freevars) {
         compiler_unit_free(u);
         return ERROR;
     }
 
     u->u_nfblocks = 0;
-    u->u_firstlineno = lineno;
-    u->u_consts = PyDict_New();
-    if (!u->u_consts) {
+    u->u_metadata.u_firstlineno = lineno;
+    u->u_metadata.u_consts = PyDict_New();
+    if (!u->u_metadata.u_consts) {
         compiler_unit_free(u);
         return ERROR;
     }
-    u->u_names = PyDict_New();
-    if (!u->u_names) {
+    u->u_metadata.u_names = PyDict_New();
+    if (!u->u_metadata.u_names) {
         compiler_unit_free(u);
         return ERROR;
     }
@@ -1667,7 +1592,7 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
        coincide with the line number of first "real" statement in module.
-       If body is empty, then lineno will be set later in assemble. */
+       If body is empty, then lineno will be set later in optimize_and_assemble. */
     if (c->u->u_scope_type == COMPILER_SCOPE_MODULE && asdl_seq_LEN(stmts)) {
         st = (stmt_ty)asdl_seq_GET(stmts, 0);
         loc = LOC(st);
@@ -1738,7 +1663,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
     if (compiler_codegen(c, mod) < 0) {
         return NULL;
     }
-    PyCodeObject *co = assemble(c, addNone);
+    PyCodeObject *co = optimize_and_assemble(c, addNone);
     compiler_exit_scope(c);
     return co;
 }
@@ -1762,8 +1687,8 @@ get_ref_type(struct compiler *c, PyObject *name)
                      "unknown scope in unit %S (%R); "
                      "symbols: %R; locals: %R; globals: %R",
                      name,
-                     c->u->u_name, c->u->u_ste->ste_id,
-                     c->u->u_ste->ste_symbols, c->u->u_varnames, c->u->u_names);
+                     c->u->u_metadata.u_name, c->u->u_ste->ste_id,
+                     c->u->u_ste->ste_symbols, c->u->u_metadata.u_varnames, c->u->u_metadata.u_names);
         return ERROR;
     }
     return scope;
@@ -1803,10 +1728,10 @@ compiler_make_closure(struct compiler *c, location loc,
             }
             int arg;
             if (reftype == CELL) {
-                arg = compiler_lookup_arg(c->u->u_cellvars, name);
+                arg = compiler_lookup_arg(c->u->u_metadata.u_cellvars, name);
             }
             else {
-                arg = compiler_lookup_arg(c->u->u_freevars, name);
+                arg = compiler_lookup_arg(c->u->u_metadata.u_freevars, name);
             }
             if (arg == -1) {
                 PyObject *freevars = _PyCode_GetFreevars(co);
@@ -1818,7 +1743,7 @@ compiler_make_closure(struct compiler *c, location loc,
                     "freevars of code %S: %R",
                     name,
                     reftype,
-                    c->u->u_name,
+                    c->u->u_metadata.u_name,
                     co->co_name,
                     freevars);
                 Py_DECREF(freevars);
@@ -2187,9 +2112,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return ERROR;
     }
 
-    c->u->u_argcount = asdl_seq_LEN(args->args);
-    c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
-    c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
+    c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
+    c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
+    c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     for (i = docstring ? 1 : 0; i < asdl_seq_LEN(body); i++) {
         VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
     }
@@ -2199,7 +2124,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             return ERROR;
         }
     }
-    co = assemble(c, 1);
+    co = optimize_and_assemble(c, 1);
     compiler_exit_scope(c);
     if (co == NULL) {
         Py_XDECREF(co);
@@ -2259,8 +2184,8 @@ compiler_class(struct compiler *c, stmt_ty s)
             compiler_exit_scope(c);
             return ERROR;
         }
-        assert(c->u->u_qualname);
-        ADDOP_LOAD_CONST(c, loc, c->u->u_qualname);
+        assert(c->u->u_metadata.u_qualname);
+        ADDOP_LOAD_CONST(c, loc, c->u->u_metadata.u_qualname);
         if (compiler_nameop(c, loc, &_Py_ID(__qualname__), Store) < 0) {
             compiler_exit_scope(c);
             return ERROR;
@@ -2274,7 +2199,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         /* Return __classcell__ if it is referenced, otherwise return None */
         if (c->u->u_ste->ste_needs_class_closure) {
             /* Store __classcell__ into class namespace & return it */
-            i = compiler_lookup_arg(c->u->u_cellvars, &_Py_ID(__class__));
+            i = compiler_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__class__));
             if (i < 0) {
                 compiler_exit_scope(c);
                 return ERROR;
@@ -2289,12 +2214,12 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         else {
             /* No methods referenced __class__, so just return None */
-            assert(PyDict_GET_SIZE(c->u->u_cellvars) == 0);
+            assert(PyDict_GET_SIZE(c->u->u_metadata.u_cellvars) == 0);
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
         }
         ADDOP_IN_SCOPE(c, NO_LOCATION, RETURN_VALUE);
         /* create the code object */
-        co = assemble(c, 1);
+        co = optimize_and_assemble(c, 1);
     }
     /* leave the new scope */
     compiler_exit_scope(c);
@@ -2561,17 +2486,17 @@ compiler_lambda(struct compiler *c, expr_ty e)
        docstring. */
     RETURN_IF_ERROR(compiler_add_const(c->c_const_cache, c->u, Py_None));
 
-    c->u->u_argcount = asdl_seq_LEN(args->args);
-    c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
-    c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
+    c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
+    c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
+    c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
     VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
     if (c->u->u_ste->ste_generator) {
-        co = assemble(c, 0);
+        co = optimize_and_assemble(c, 0);
     }
     else {
         location loc = LOCATION(e->lineno, e->lineno, 0, 0);
         ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
-        co = assemble(c, 1);
+        co = optimize_and_assemble(c, 1);
     }
     compiler_exit_scope(c);
     if (co == NULL) {
@@ -3717,7 +3642,7 @@ compiler_nameop(struct compiler *c, location loc,
     Py_ssize_t arg;
     enum { OP_FAST, OP_GLOBAL, OP_DEREF, OP_NAME } optype;
 
-    PyObject *dict = c->u->u_names;
+    PyObject *dict = c->u->u_metadata.u_names;
     PyObject *mangled;
 
     assert(!_PyUnicode_EqualToASCIIString(name, "None") &&
@@ -3738,11 +3663,11 @@ compiler_nameop(struct compiler *c, location loc,
     scope = _PyST_GetScope(c->u->u_ste, mangled);
     switch (scope) {
     case FREE:
-        dict = c->u->u_freevars;
+        dict = c->u->u_metadata.u_freevars;
         optype = OP_DEREF;
         break;
     case CELL:
-        dict = c->u->u_cellvars;
+        dict = c->u->u_metadata.u_cellvars;
         optype = OP_DEREF;
         break;
     case LOCAL:
@@ -4708,7 +4633,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
 
     if (gen_index == 0) {
         /* Receive outermost iter as an implicit argument */
-        c->u->u_argcount = 1;
+        c->u->u_metadata.u_argcount = 1;
         ADDOP_I(c, loc, LOAD_FAST, 0);
     }
     else {
@@ -4821,7 +4746,7 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
 
     if (gen_index == 0) {
         /* Receive outermost iter as an implicit argument */
-        c->u->u_argcount = 1;
+        c->u->u_metadata.u_argcount = 1;
         ADDOP_I(c, loc, LOAD_FAST, 0);
     }
     else {
@@ -4969,7 +4894,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         }
     }
 
-    co = assemble(c, 1);
+    co = optimize_and_assemble(c, 1);
     compiler_exit_scope(c);
     if (is_top_level_await && is_async_generator){
         c->u->u_ste->ste_coroutine = 1;
@@ -6592,378 +6517,6 @@ compiler_match(struct compiler *c, stmt_ty s)
 #undef WILDCARD_CHECK
 #undef WILDCARD_STAR_CHECK
 
-
-/* End of the compiler section, beginning of the assembler section */
-
-
-struct assembler {
-    PyObject *a_bytecode;  /* bytes containing bytecode */
-    int a_offset;              /* offset into bytecode */
-    PyObject *a_except_table;  /* bytes containing exception table */
-    int a_except_table_off;    /* offset into exception table */
-    /* Location Info */
-    int a_lineno;          /* lineno of last emitted instruction */
-    PyObject* a_linetable; /* bytes containing location info */
-    int a_location_off;    /* offset of last written location info frame */
-};
-
-static int
-assemble_init(struct assembler *a, int firstlineno)
-{
-    memset(a, 0, sizeof(struct assembler));
-    a->a_lineno = firstlineno;
-    a->a_linetable = NULL;
-    a->a_location_off = 0;
-    a->a_except_table = NULL;
-    a->a_bytecode = PyBytes_FromStringAndSize(NULL, DEFAULT_CODE_SIZE);
-    if (a->a_bytecode == NULL) {
-        goto error;
-    }
-    a->a_linetable = PyBytes_FromStringAndSize(NULL, DEFAULT_CNOTAB_SIZE);
-    if (a->a_linetable == NULL) {
-        goto error;
-    }
-    a->a_except_table = PyBytes_FromStringAndSize(NULL, DEFAULT_LNOTAB_SIZE);
-    if (a->a_except_table == NULL) {
-        goto error;
-    }
-    return SUCCESS;
-error:
-    Py_XDECREF(a->a_bytecode);
-    Py_XDECREF(a->a_linetable);
-    Py_XDECREF(a->a_except_table);
-    return ERROR;
-}
-
-static void
-assemble_free(struct assembler *a)
-{
-    Py_XDECREF(a->a_bytecode);
-    Py_XDECREF(a->a_linetable);
-    Py_XDECREF(a->a_except_table);
-}
-
-static inline void
-write_except_byte(struct assembler *a, int byte) {
-    unsigned char *p = (unsigned char *) PyBytes_AS_STRING(a->a_except_table);
-    p[a->a_except_table_off++] = byte;
-}
-
-#define CONTINUATION_BIT 64
-
-static void
-assemble_emit_exception_table_item(struct assembler *a, int value, int msb)
-{
-    assert ((msb | 128) == 128);
-    assert(value >= 0 && value < (1 << 30));
-    if (value >= 1 << 24) {
-        write_except_byte(a, (value >> 24) | CONTINUATION_BIT | msb);
-        msb = 0;
-    }
-    if (value >= 1 << 18) {
-        write_except_byte(a, ((value >> 18)&0x3f) | CONTINUATION_BIT | msb);
-        msb = 0;
-    }
-    if (value >= 1 << 12) {
-        write_except_byte(a, ((value >> 12)&0x3f) | CONTINUATION_BIT | msb);
-        msb = 0;
-    }
-    if (value >= 1 << 6) {
-        write_except_byte(a, ((value >> 6)&0x3f) | CONTINUATION_BIT | msb);
-        msb = 0;
-    }
-    write_except_byte(a, (value&0x3f) | msb);
-}
-
-/* See Objects/exception_handling_notes.txt for details of layout */
-#define MAX_SIZE_OF_ENTRY 20
-
-static int
-assemble_emit_exception_table_entry(struct assembler *a, int start, int end, basicblock *handler)
-{
-    Py_ssize_t len = PyBytes_GET_SIZE(a->a_except_table);
-    if (a->a_except_table_off + MAX_SIZE_OF_ENTRY >= len) {
-        RETURN_IF_ERROR(_PyBytes_Resize(&a->a_except_table, len * 2));
-    }
-    int size = end-start;
-    assert(end > start);
-    int target = handler->b_offset;
-    int depth = handler->b_startdepth - 1;
-    if (handler->b_preserve_lasti) {
-        depth -= 1;
-    }
-    assert(depth >= 0);
-    int depth_lasti = (depth<<1) | handler->b_preserve_lasti;
-    assemble_emit_exception_table_item(a, start, (1<<7));
-    assemble_emit_exception_table_item(a, size, 0);
-    assemble_emit_exception_table_item(a, target, 0);
-    assemble_emit_exception_table_item(a, depth_lasti, 0);
-    return SUCCESS;
-}
-
-static int
-assemble_exception_table(struct assembler *a, basicblock *entryblock)
-{
-    basicblock *b;
-    int ioffset = 0;
-    basicblock *handler = NULL;
-    int start = -1;
-    for (b = entryblock; b != NULL; b = b->b_next) {
-        ioffset = b->b_offset;
-        for (int i = 0; i < b->b_iused; i++) {
-            cfg_instr *instr = &b->b_instr[i];
-            if (instr->i_except != handler) {
-                if (handler != NULL) {
-                    RETURN_IF_ERROR(
-                        assemble_emit_exception_table_entry(a, start, ioffset, handler));
-                }
-                start = ioffset;
-                handler = instr->i_except;
-            }
-            ioffset += _PyCfg_InstrSize(instr);
-        }
-    }
-    if (handler != NULL) {
-        RETURN_IF_ERROR(assemble_emit_exception_table_entry(a, start, ioffset, handler));
-    }
-    return SUCCESS;
-}
-
-/* Code location emitting code. See locations.md for a description of the format. */
-
-#define MSB 0x80
-
-static void
-write_location_byte(struct assembler* a, int val)
-{
-    PyBytes_AS_STRING(a->a_linetable)[a->a_location_off] = val&255;
-    a->a_location_off++;
-}
-
-
-static uint8_t *
-location_pointer(struct assembler* a)
-{
-    return (uint8_t *)PyBytes_AS_STRING(a->a_linetable) +
-        a->a_location_off;
-}
-
-static void
-write_location_first_byte(struct assembler* a, int code, int length)
-{
-    a->a_location_off += write_location_entry_start(
-        location_pointer(a), code, length);
-}
-
-static void
-write_location_varint(struct assembler* a, unsigned int val)
-{
-    uint8_t *ptr = location_pointer(a);
-    a->a_location_off += write_varint(ptr, val);
-}
-
-
-static void
-write_location_signed_varint(struct assembler* a, int val)
-{
-    uint8_t *ptr = location_pointer(a);
-    a->a_location_off += write_signed_varint(ptr, val);
-}
-
-static void
-write_location_info_short_form(struct assembler* a, int length, int column, int end_column)
-{
-    assert(length > 0 &&  length <= 8);
-    int column_low_bits = column & 7;
-    int column_group = column >> 3;
-    assert(column < 80);
-    assert(end_column >= column);
-    assert(end_column - column < 16);
-    write_location_first_byte(a, PY_CODE_LOCATION_INFO_SHORT0 + column_group, length);
-    write_location_byte(a, (column_low_bits << 4) | (end_column - column));
-}
-
-static void
-write_location_info_oneline_form(struct assembler* a, int length, int line_delta, int column, int end_column)
-{
-    assert(length > 0 &&  length <= 8);
-    assert(line_delta >= 0 && line_delta < 3);
-    assert(column < 128);
-    assert(end_column < 128);
-    write_location_first_byte(a, PY_CODE_LOCATION_INFO_ONE_LINE0 + line_delta, length);
-    write_location_byte(a, column);
-    write_location_byte(a, end_column);
-}
-
-static void
-write_location_info_long_form(struct assembler* a, location loc, int length)
-{
-    assert(length > 0 &&  length <= 8);
-    write_location_first_byte(a, PY_CODE_LOCATION_INFO_LONG, length);
-    write_location_signed_varint(a, loc.lineno - a->a_lineno);
-    assert(loc.end_lineno >= loc.lineno);
-    write_location_varint(a, loc.end_lineno - loc.lineno);
-    write_location_varint(a, loc.col_offset + 1);
-    write_location_varint(a, loc.end_col_offset + 1);
-}
-
-static void
-write_location_info_none(struct assembler* a, int length)
-{
-    write_location_first_byte(a, PY_CODE_LOCATION_INFO_NONE, length);
-}
-
-static void
-write_location_info_no_column(struct assembler* a, int length, int line_delta)
-{
-    write_location_first_byte(a, PY_CODE_LOCATION_INFO_NO_COLUMNS, length);
-    write_location_signed_varint(a, line_delta);
-}
-
-#define THEORETICAL_MAX_ENTRY_SIZE 25 /* 1 + 6 + 6 + 6 + 6 */
-
-static int
-write_location_info_entry(struct assembler* a, location loc, int isize)
-{
-    Py_ssize_t len = PyBytes_GET_SIZE(a->a_linetable);
-    if (a->a_location_off + THEORETICAL_MAX_ENTRY_SIZE >= len) {
-        assert(len > THEORETICAL_MAX_ENTRY_SIZE);
-        RETURN_IF_ERROR(_PyBytes_Resize(&a->a_linetable, len*2));
-    }
-    if (loc.lineno < 0) {
-        write_location_info_none(a, isize);
-        return SUCCESS;
-    }
-    int line_delta = loc.lineno - a->a_lineno;
-    int column = loc.col_offset;
-    int end_column = loc.end_col_offset;
-    assert(column >= -1);
-    assert(end_column >= -1);
-    if (column < 0 || end_column < 0) {
-        if (loc.end_lineno == loc.lineno || loc.end_lineno == -1) {
-            write_location_info_no_column(a, isize, line_delta);
-            a->a_lineno = loc.lineno;
-            return SUCCESS;
-        }
-    }
-    else if (loc.end_lineno == loc.lineno) {
-        if (line_delta == 0 && column < 80 && end_column - column < 16 && end_column >= column) {
-            write_location_info_short_form(a, isize, column, end_column);
-            return SUCCESS;
-        }
-        if (line_delta >= 0 && line_delta < 3 && column < 128 && end_column < 128) {
-            write_location_info_oneline_form(a, isize, line_delta, column, end_column);
-            a->a_lineno = loc.lineno;
-            return SUCCESS;
-        }
-    }
-    write_location_info_long_form(a, loc, isize);
-    a->a_lineno = loc.lineno;
-    return SUCCESS;
-}
-
-static int
-assemble_emit_location(struct assembler* a, location loc, int isize)
-{
-    if (isize == 0) {
-        return SUCCESS;
-    }
-    while (isize > 8) {
-        RETURN_IF_ERROR(write_location_info_entry(a, loc, 8));
-        isize -= 8;
-    }
-    return write_location_info_entry(a, loc, isize);
-}
-
-static int
-assemble_location_info(struct assembler *a, basicblock *entryblock, int firstlineno)
-{
-    a->a_lineno = firstlineno;
-    location loc = NO_LOCATION;
-    int size = 0;
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        for (int j = 0; j < b->b_iused; j++) {
-            if (!same_location(loc, b->b_instr[j].i_loc)) {
-                RETURN_IF_ERROR(assemble_emit_location(a, loc, size));
-                loc = b->b_instr[j].i_loc;
-                size = 0;
-            }
-            size += _PyCfg_InstrSize(&b->b_instr[j]);
-        }
-    }
-    RETURN_IF_ERROR(assemble_emit_location(a, loc, size));
-    return SUCCESS;
-}
-
-/* assemble_emit_instr()
-   Extend the bytecode with a new instruction.
-   Update lnotab if necessary.
-*/
-
-static int
-assemble_emit_instr(struct assembler *a, cfg_instr *i)
-{
-    Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
-    _Py_CODEUNIT *code;
-
-    int size = _PyCfg_InstrSize(i);
-    if (a->a_offset + size >= len / (int)sizeof(_Py_CODEUNIT)) {
-        if (len > PY_SSIZE_T_MAX / 2) {
-            return ERROR;
-        }
-        RETURN_IF_ERROR(_PyBytes_Resize(&a->a_bytecode, len * 2));
-    }
-    code = (_Py_CODEUNIT *)PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
-    a->a_offset += size;
-    write_instr(code, i, size);
-    return SUCCESS;
-}
-
-static int
-assemble_emit(struct assembler *a, basicblock *entryblock, int first_lineno,
-              PyObject *const_cache)
-{
-    RETURN_IF_ERROR(assemble_init(a, first_lineno));
-
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        for (int j = 0; j < b->b_iused; j++) {
-            RETURN_IF_ERROR(assemble_emit_instr(a, &b->b_instr[j]));
-        }
-    }
-
-    RETURN_IF_ERROR(assemble_location_info(a, entryblock, a->a_lineno));
-
-    RETURN_IF_ERROR(assemble_exception_table(a, entryblock));
-
-    RETURN_IF_ERROR(_PyBytes_Resize(&a->a_except_table, a->a_except_table_off));
-    RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_except_table));
-
-    RETURN_IF_ERROR(_PyBytes_Resize(&a->a_linetable, a->a_location_off));
-    RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_linetable));
-
-    RETURN_IF_ERROR(_PyBytes_Resize(&a->a_bytecode, a->a_offset * sizeof(_Py_CODEUNIT)));
-    RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_bytecode));
-    return SUCCESS;
-}
-
-static PyObject *
-dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
-{
-    PyObject *tuple, *k, *v;
-    Py_ssize_t i, pos = 0, size = PyDict_GET_SIZE(dict);
-
-    tuple = PyTuple_New(size);
-    if (tuple == NULL)
-        return NULL;
-    while (PyDict_Next(dict, &pos, &k, &v)) {
-        i = PyLong_AS_LONG(v);
-        assert((i - offset) < size);
-        assert((i - offset) >= 0);
-        PyTuple_SET_ITEM(tuple, i - offset, Py_NewRef(k));
-    }
-    return tuple;
-}
-
 static PyObject *
 consts_dict_keys_inorder(PyObject *dict)
 {
@@ -7051,153 +6604,13 @@ _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj)
     return SUCCESS;
 }
 
-// This is in codeobject.c.
-extern void _Py_set_localsplus_info(int, PyObject *, unsigned char,
-                                   PyObject *, PyObject *);
-
-static void
-compute_localsplus_info(struct compiler_unit *u, int nlocalsplus,
-                        PyObject *names, PyObject *kinds)
-{
-    PyObject *k, *v;
-    Py_ssize_t pos = 0;
-    while (PyDict_Next(u->u_varnames, &pos, &k, &v)) {
-        int offset = (int)PyLong_AS_LONG(v);
-        assert(offset >= 0);
-        assert(offset < nlocalsplus);
-        // For now we do not distinguish arg kinds.
-        _PyLocals_Kind kind = CO_FAST_LOCAL;
-        if (PyDict_GetItem(u->u_cellvars, k) != NULL) {
-            kind |= CO_FAST_CELL;
-        }
-        _Py_set_localsplus_info(offset, k, kind, names, kinds);
-    }
-    int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
-
-    // This counter mirrors the fix done in fix_cell_offsets().
-    int numdropped = 0;
-    pos = 0;
-    while (PyDict_Next(u->u_cellvars, &pos, &k, &v)) {
-        if (PyDict_GetItem(u->u_varnames, k) != NULL) {
-            // Skip cells that are already covered by locals.
-            numdropped += 1;
-            continue;
-        }
-        int offset = (int)PyLong_AS_LONG(v);
-        assert(offset >= 0);
-        offset += nlocals - numdropped;
-        assert(offset < nlocalsplus);
-        _Py_set_localsplus_info(offset, k, CO_FAST_CELL, names, kinds);
-    }
-
-    pos = 0;
-    while (PyDict_Next(u->u_freevars, &pos, &k, &v)) {
-        int offset = (int)PyLong_AS_LONG(v);
-        assert(offset >= 0);
-        offset += nlocals - numdropped;
-        assert(offset < nlocalsplus);
-        _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
-    }
-}
-
-static PyCodeObject *
-makecode(struct compiler_unit *u, struct assembler *a, PyObject *const_cache,
-         PyObject *constslist, int maxdepth, int nlocalsplus, int code_flags,
-         PyObject *filename)
-{
-    PyCodeObject *co = NULL;
-    PyObject *names = NULL;
-    PyObject *consts = NULL;
-    PyObject *localsplusnames = NULL;
-    PyObject *localspluskinds = NULL;
-    names = dict_keys_inorder(u->u_names, 0);
-    if (!names) {
-        goto error;
-    }
-    if (_PyCompile_ConstCacheMergeOne(const_cache, &names) < 0) {
-        goto error;
-    }
-
-    consts = PyList_AsTuple(constslist); /* PyCode_New requires a tuple */
-    if (consts == NULL) {
-        goto error;
-    }
-    if (_PyCompile_ConstCacheMergeOne(const_cache, &consts) < 0) {
-        goto error;
-    }
-
-    assert(u->u_posonlyargcount < INT_MAX);
-    assert(u->u_argcount < INT_MAX);
-    assert(u->u_kwonlyargcount < INT_MAX);
-    int posonlyargcount = (int)u->u_posonlyargcount;
-    int posorkwargcount = (int)u->u_argcount;
-    assert(INT_MAX - posonlyargcount - posorkwargcount > 0);
-    int kwonlyargcount = (int)u->u_kwonlyargcount;
-
-    localsplusnames = PyTuple_New(nlocalsplus);
-    if (localsplusnames == NULL) {
-        goto error;
-    }
-    localspluskinds = PyBytes_FromStringAndSize(NULL, nlocalsplus);
-    if (localspluskinds == NULL) {
-        goto error;
-    }
-    compute_localsplus_info(u, nlocalsplus, localsplusnames, localspluskinds);
-
-    struct _PyCodeConstructor con = {
-        .filename = filename,
-        .name = u->u_name,
-        .qualname = u->u_qualname ? u->u_qualname : u->u_name,
-        .flags = code_flags,
-
-        .code = a->a_bytecode,
-        .firstlineno = u->u_firstlineno,
-        .linetable = a->a_linetable,
-
-        .consts = consts,
-        .names = names,
-
-        .localsplusnames = localsplusnames,
-        .localspluskinds = localspluskinds,
-
-        .argcount = posonlyargcount + posorkwargcount,
-        .posonlyargcount = posonlyargcount,
-        .kwonlyargcount = kwonlyargcount,
-
-        .stacksize = maxdepth,
-
-        .exceptiontable = a->a_except_table,
-    };
-
-    if (_PyCode_Validate(&con) < 0) {
-        goto error;
-    }
-
-    if (_PyCompile_ConstCacheMergeOne(const_cache, &localsplusnames) < 0) {
-        goto error;
-    }
-    con.localsplusnames = localsplusnames;
-
-    co = _PyCode_New(&con);
-    if (co == NULL) {
-        goto error;
-    }
-
- error:
-    Py_XDECREF(names);
-    Py_XDECREF(consts);
-    Py_XDECREF(localsplusnames);
-    Py_XDECREF(localspluskinds);
-    return co;
-}
-
 
 static int *
 build_cellfixedoffsets(struct compiler_unit *u)
 {
-    int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(u->u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(u->u_freevars);
+    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(u->u_metadata.u_freevars);
 
     int noffsets = ncellvars + nfreevars;
     int *fixed = PyMem_New(int, noffsets);
@@ -7211,8 +6624,8 @@ build_cellfixedoffsets(struct compiler_unit *u)
 
     PyObject *varname, *cellindex;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(u->u_cellvars, &pos, &varname, &cellindex)) {
-        PyObject *varindex = PyDict_GetItem(u->u_varnames, varname);
+    while (PyDict_Next(u->u_metadata.u_cellvars, &pos, &varname, &cellindex)) {
+        PyObject *varindex = PyDict_GetItem(u->u_metadata.u_varnames, varname);
         if (varindex != NULL) {
             assert(PyLong_AS_LONG(cellindex) < INT_MAX);
             assert(PyLong_AS_LONG(varindex) < INT_MAX);
@@ -7229,14 +6642,14 @@ static int
 insert_prefix_instructions(struct compiler_unit *u, basicblock *entryblock,
                            int *fixed, int nfreevars, int code_flags)
 {
-    assert(u->u_firstlineno > 0);
+    assert(u->u_metadata.u_firstlineno > 0);
 
     /* Add the generator prefix instructions. */
     if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
         cfg_instr make_gen = {
             .i_opcode = RETURN_GENERATOR,
             .i_oparg = 0,
-            .i_loc = LOCATION(u->u_firstlineno, u->u_firstlineno, -1, -1),
+            .i_loc = LOCATION(u->u_metadata.u_firstlineno, u->u_metadata.u_firstlineno, -1, -1),
             .i_target = NULL,
         };
         RETURN_IF_ERROR(_PyBasicblock_InsertInstruction(entryblock, 0, &make_gen));
@@ -7250,12 +6663,12 @@ insert_prefix_instructions(struct compiler_unit *u, basicblock *entryblock,
     }
 
     /* Set up cells for any variable that escapes, to be put in a closure. */
-    const int ncellvars = (int)PyDict_GET_SIZE(u->u_cellvars);
+    const int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
     if (ncellvars) {
-        // u->u_cellvars has the cells out of order so we sort them
+        // u->u_metadata.u_cellvars has the cells out of order so we sort them
         // before adding the MAKE_CELL instructions.  Note that we
         // adjust for arg cells, which come first.
-        const int nvars = ncellvars + (int)PyDict_GET_SIZE(u->u_varnames);
+        const int nvars = ncellvars + (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
         int *sorted = PyMem_RawCalloc(nvars, sizeof(int));
         if (sorted == NULL) {
             PyErr_NoMemory();
@@ -7298,9 +6711,9 @@ insert_prefix_instructions(struct compiler_unit *u, basicblock *entryblock,
 static int
 fix_cell_offsets(struct compiler_unit *u, basicblock *entryblock, int *fixedmap)
 {
-    int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(u->u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(u->u_freevars);
+    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(u->u_metadata.u_freevars);
     int noffsets = ncellvars + nfreevars;
 
     // First deal with duplicates (arg cells).
@@ -7344,12 +6757,12 @@ fix_cell_offsets(struct compiler_unit *u, basicblock *entryblock, int *fixedmap)
 static int
 prepare_localsplus(struct compiler_unit* u, cfg_builder *g, int code_flags)
 {
-    assert(PyDict_GET_SIZE(u->u_varnames) < INT_MAX);
-    assert(PyDict_GET_SIZE(u->u_cellvars) < INT_MAX);
-    assert(PyDict_GET_SIZE(u->u_freevars) < INT_MAX);
-    int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(u->u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(u->u_freevars);
+    assert(PyDict_GET_SIZE(u->u_metadata.u_varnames) < INT_MAX);
+    assert(PyDict_GET_SIZE(u->u_metadata.u_cellvars) < INT_MAX);
+    assert(PyDict_GET_SIZE(u->u_metadata.u_freevars) < INT_MAX);
+    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(u->u_metadata.u_freevars);
     assert(INT_MAX - nlocals - ncellvars > 0);
     assert(INT_MAX - nlocals - ncellvars - nfreevars > 0);
     int nlocalsplus = nlocals + ncellvars + nfreevars;
@@ -7389,13 +6802,17 @@ add_return_at_end(struct compiler *c, int addNone)
     return SUCCESS;
 }
 
+static int cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq);
 
 static PyCodeObject *
-assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
+optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
                    int code_flags, PyObject *filename)
 {
+    instr_sequence optimized_instrs;
+    memset(&optimized_instrs, 0, sizeof(instr_sequence));
+
     PyCodeObject *co = NULL;
-    PyObject *consts = consts_dict_keys_inorder(u->u_consts);
+    PyObject *consts = consts_dict_keys_inorder(u->u_metadata.u_consts);
     if (consts == NULL) {
         goto error;
     }
@@ -7404,25 +6821,18 @@ assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
         goto error;
     }
     int nparams = (int)PyList_GET_SIZE(u->u_ste->ste_varnames);
-    int nlocals = (int)PyDict_GET_SIZE(u->u_varnames);
-    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, code_flags, nlocals, nparams) < 0) {
+    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
+    assert(u->u_metadata.u_firstlineno);
+    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, code_flags, nlocals,
+                                nparams, u->u_metadata.u_firstlineno) < 0) {
+        goto error;
+    }
+
+    if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
         goto error;
     }
 
     /** Assembly **/
-    /* Set firstlineno if it wasn't explicitly set. */
-    if (!u->u_firstlineno) {
-        if (g.g_entryblock->b_instr && g.g_entryblock->b_instr->i_loc.lineno) {
-            u->u_firstlineno = g.g_entryblock->b_instr->i_loc.lineno;
-        }
-        else {
-            u->u_firstlineno = 1;
-        }
-    }
-    if (_PyCfg_ResolveLineNumbers(&g, u->u_firstlineno) < 0) {
-        goto error;
-    }
-
     int nlocalsplus = prepare_localsplus(u, &g, code_flags);
     if (nlocalsplus < 0) {
         goto error;
@@ -7432,7 +6842,6 @@ assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     if (maxdepth < 0) {
         goto error;
     }
-    /* TO DO -- For 3.12, make sure that `maxdepth <= MAX_ALLOWED_STACK_USE` */
 
     _PyCfg_ConvertExceptionHandlersToNops(g.g_entryblock);
 
@@ -7441,25 +6850,26 @@ assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     if (_PyCfg_ResolveJumps(&g) < 0) {
         goto error;
     }
+    if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
+        goto error;
+    }
+
 
     /* Can't modify the bytecode after computing jump offsets. */
 
-    struct assembler a;
-    int res = assemble_emit(&a, g.g_entryblock, u->u_firstlineno, const_cache);
-    if (res == SUCCESS) {
-        co = makecode(u, &a, const_cache, consts, maxdepth, nlocalsplus,
-                      code_flags, filename);
-    }
-    assemble_free(&a);
+    co = _PyAssemble_MakeCodeObject(&u->u_metadata, const_cache, consts,
+                                    maxdepth, g.g_entryblock, nlocalsplus,
+                                    code_flags, filename);
 
  error:
     Py_XDECREF(consts);
+    instr_sequence_fini(&optimized_instrs);
     _PyCfgBuilder_Fini(&g);
     return co;
 }
 
 static PyCodeObject *
-assemble(struct compiler *c, int addNone)
+optimize_and_assemble(struct compiler *c, int addNone)
 {
     struct compiler_unit *u = c->u;
     PyObject *const_cache = c->c_const_cache;
@@ -7474,8 +6884,31 @@ assemble(struct compiler *c, int addNone)
         return NULL;
     }
 
-    return assemble_code_unit(u, const_cache, code_flags, filename);
+    return optimize_and_assemble_code_unit(u, const_cache, code_flags, filename);
 }
+
+static int
+cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq)
+{
+    int lbl = 0;
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        b->b_label = (jump_target_label){lbl};
+        lbl += b->b_iused;
+    }
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        RETURN_IF_ERROR(instr_sequence_use_label(seq, b->b_label.id));
+        for (int i = 0; i < b->b_iused; i++) {
+            cfg_instr *instr = &b->b_instr[i];
+            int arg = HAS_TARGET(instr->i_opcode) ?
+                      instr->i_target->b_label.id :
+                      instr->i_oparg;
+            RETURN_IF_ERROR(
+                instr_sequence_addop(seq, instr->i_opcode, arg, instr->i_loc));
+        }
+    }
+    return SUCCESS;
+}
+
 
 /* Access to compiler optimizations for unit tests.
  *
@@ -7492,7 +6925,7 @@ assemble(struct compiler *c, int addNone)
  */
 
 static int
-instructions_to_cfg(PyObject *instructions, cfg_builder *g)
+instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
 {
     assert(PyList_Check(instructions));
 
@@ -7526,8 +6959,7 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
 
     for (int i = 0; i < num_insts; i++) {
         if (is_target[i]) {
-            jump_target_label lbl = {i};
-            RETURN_IF_ERROR(_PyCfgBuilder_UseLabel(g, lbl));
+            RETURN_IF_ERROR(instr_sequence_use_label(seq, i));
         }
         PyObject *item = PyList_GET_ITEM(instructions, i);
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 6) {
@@ -7565,11 +6997,10 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
         if (PyErr_Occurred()) {
             goto error;
         }
-        RETURN_IF_ERROR(_PyCfgBuilder_Addop(g, opcode, oparg, loc));
+        RETURN_IF_ERROR(instr_sequence_addop(seq, opcode, oparg, loc));
     }
-    cfg_instr *last = _PyCfg_BasicblockLastInstr(g->g_curblock);
-    if (last && !IS_TERMINATOR_OPCODE(last->i_opcode)) {
-        RETURN_IF_ERROR(_PyCfgBuilder_Addop(g, RETURN_VALUE, 0, NO_LOCATION));
+    if (seq->s_used && !IS_TERMINATOR_OPCODE(seq->s_instrs[seq->s_used-1].i_opcode)) {
+        RETURN_IF_ERROR(instr_sequence_addop(seq, RETURN_VALUE, 0, NO_LOCATION));
     }
     PyMem_Free(is_target);
     return SUCCESS;
@@ -7578,8 +7009,23 @@ error:
     return ERROR;
 }
 
+static int
+instructions_to_cfg(PyObject *instructions, cfg_builder *g)
+{
+    instr_sequence seq;
+    memset(&seq, 0, sizeof(instr_sequence));
+
+    RETURN_IF_ERROR(
+        instructions_to_instr_sequence(instructions, &seq));
+
+    RETURN_IF_ERROR(instr_sequence_to_cfg(&seq, g));
+    instr_sequence_fini(&seq);
+    return SUCCESS;
+}
+
 static PyObject *
-instr_sequence_to_instructions(instr_sequence *seq) {
+instr_sequence_to_instructions(instr_sequence *seq)
+{
     PyObject *instructions = PyList_New(0);
     if (instructions == NULL) {
         return NULL;
@@ -7702,15 +7148,12 @@ _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts)
     }
 
     cfg_builder g;
-    memset(&g, 0, sizeof(cfg_builder));
-    if (_PyCfgBuilder_Init(&g) < 0) {
-        goto error;
-    }
     if (instructions_to_cfg(instructions, &g) < 0) {
         goto error;
     }
-    int code_flags = 0, nlocals = 0, nparams = 0;
-    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, code_flags, nlocals, nparams) < 0) {
+    int code_flags = 0, nlocals = 0, nparams = 0, firstlineno = 1;
+    if (_PyCfg_OptimizeCodeUnit(&g, consts, const_cache, code_flags, nlocals,
+                                nparams, firstlineno) < 0) {
         goto error;
     }
     res = cfg_to_instructions(&g);
