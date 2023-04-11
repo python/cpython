@@ -327,7 +327,7 @@ The :mod:`csv` module defines the following constants:
 
    Instructs :class:`writer` objects to quote all non-numeric fields.
 
-   Instructs the reader to convert all non-quoted fields to type *float*.
+   Instructs :class:`reader` to convert all non-quoted fields to type *float*.
 
 
 .. data:: QUOTE_NONE
@@ -342,14 +342,20 @@ The :mod:`csv` module defines the following constants:
 .. data:: QUOTE_NOTNULL
 
    Instructs :class:`writer` objects to quote all fields which are not
-   ``None``. If a field value is ``None`` an empty (unquoted) string
-   is written.
+   ``None``.  This is similar to QUOTE_ALL, except that if a
+   field value is ``None`` an empty (unquoted) string is written.
+   
+   Instructs :class:`reader` to interpret an empty (unquoted) field as None, and
+   otherwise behave as QUOTE_ALL.
 
 .. data:: QUOTE_STRINGS
 
-   Instructs :class:`writer` quotes are always placed around fields
-   which are strings.  Note that ``None`` will be written as a
-   bar (unquoted) empty string.
+   Instructs :class:`writer` objects to always place quotes around fields
+   which are strings.  This is similar to QUOTE_NONNUMERIC, except that if a
+   field value is ``None`` an empty (unquoted) string is written.
+
+   Instructs :class:`reader` to interpret an empty (unquoted) string as None, and
+   otherwise behave as QUOTE_NONNUMERIC.
 
 The :mod:`csv` module defines the following exception:
 
