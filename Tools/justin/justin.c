@@ -70,7 +70,7 @@ _PyJustin_CompileTrace(int size, _Py_CODEUNIT **trace)
     size_t nbytes = trampoline_stencil.nbytes;
     for (int i = 0; i < size; i++) {
         _Py_CODEUNIT *instruction = trace[i];
-        const Stencil *stencil = stencils[instruction->op.code];
+        const Stencil *stencil = &stencils[instruction->op.code];
         if (stencil->nbytes == 0) {
             // This opcode isn't supported:
             return NULL;
@@ -92,7 +92,7 @@ _PyJustin_CompileTrace(int size, _Py_CODEUNIT **trace)
     // Then, all of the stencils:
     for (int i = 0; i < size; i++) {
         _Py_CODEUNIT *instruction = trace[i];
-        const Stencil *stencil = stencils[instruction->op.code];
+        const Stencil *stencil = &stencils[instruction->op.code];
         patches[HOLE_base] = (uintptr_t)head;
         patches[HOLE_continue] = (i != size - 1) 
                                ? (uintptr_t)head + stencil->nbytes

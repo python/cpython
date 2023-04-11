@@ -155,12 +155,6 @@ static const Hole BINARY_OP_stencil_holes[] = {
     {.offset = 376, .addend =   0, .kind = LOAD_PyNumber_InPlaceTrueDivide},
     {.offset = 384, .addend =   0, .kind = LOAD_PyNumber_InPlaceXor},
 };
-static const Stencil BINARY_OP_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(BINARY_OP_stencil_bytes),
-    .bytes = BINARY_OP_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(BINARY_OP_stencil_holes),
-    .holes = BINARY_OP_stencil_holes,
-};
 
 // BINARY_OP_ADD_FLOAT
 static const unsigned char BINARY_OP_ADD_FLOAT_stencil_bytes[] = {
@@ -198,12 +192,6 @@ static const Hole BINARY_OP_ADD_FLOAT_stencil_holes[] = {
     {.offset = 104, .addend =   0, .kind = LOAD__PyFloat_ExactDealloc},
     {.offset = 145, .addend =   0, .kind = LOAD_PyFloat_FromDouble},
     {.offset = 182, .addend =   0, .kind = HOLE_continue},
-};
-static const Stencil BINARY_OP_ADD_FLOAT_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(BINARY_OP_ADD_FLOAT_stencil_bytes),
-    .bytes = BINARY_OP_ADD_FLOAT_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(BINARY_OP_ADD_FLOAT_stencil_holes),
-    .holes = BINARY_OP_ADD_FLOAT_stencil_holes,
 };
 
 // BINARY_OP_ADD_INT
@@ -244,12 +232,6 @@ static const Hole BINARY_OP_ADD_INT_stencil_holes[] = {
     {.offset = 137, .addend =   0, .kind = LOAD_PyObject_Free},
     {.offset = 165, .addend =   0, .kind = LOAD_PyObject_Free},
 };
-static const Stencil BINARY_OP_ADD_INT_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(BINARY_OP_ADD_INT_stencil_bytes),
-    .bytes = BINARY_OP_ADD_INT_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(BINARY_OP_ADD_INT_stencil_holes),
-    .holes = BINARY_OP_ADD_INT_stencil_holes,
-};
 
 // BINARY_OP_MULTIPLY_FLOAT
 static const unsigned char BINARY_OP_MULTIPLY_FLOAT_stencil_bytes[] = {
@@ -288,12 +270,6 @@ static const Hole BINARY_OP_MULTIPLY_FLOAT_stencil_holes[] = {
     {.offset = 145, .addend =   0, .kind = LOAD_PyFloat_FromDouble},
     {.offset = 182, .addend =   0, .kind = HOLE_continue},
 };
-static const Stencil BINARY_OP_MULTIPLY_FLOAT_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(BINARY_OP_MULTIPLY_FLOAT_stencil_bytes),
-    .bytes = BINARY_OP_MULTIPLY_FLOAT_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(BINARY_OP_MULTIPLY_FLOAT_stencil_holes),
-    .holes = BINARY_OP_MULTIPLY_FLOAT_stencil_holes,
-};
 
 // BINARY_OP_SUBTRACT_FLOAT
 static const unsigned char BINARY_OP_SUBTRACT_FLOAT_stencil_bytes[] = {
@@ -331,12 +307,6 @@ static const Hole BINARY_OP_SUBTRACT_FLOAT_stencil_holes[] = {
     {.offset = 104, .addend =   0, .kind = LOAD__PyFloat_ExactDealloc},
     {.offset = 145, .addend =   0, .kind = LOAD_PyFloat_FromDouble},
     {.offset = 182, .addend =   0, .kind = HOLE_continue},
-};
-static const Stencil BINARY_OP_SUBTRACT_FLOAT_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(BINARY_OP_SUBTRACT_FLOAT_stencil_bytes),
-    .bytes = BINARY_OP_SUBTRACT_FLOAT_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(BINARY_OP_SUBTRACT_FLOAT_stencil_holes),
-    .holes = BINARY_OP_SUBTRACT_FLOAT_stencil_holes,
 };
 
 // BINARY_OP_SUBTRACT_INT
@@ -377,12 +347,6 @@ static const Hole BINARY_OP_SUBTRACT_INT_stencil_holes[] = {
     {.offset = 137, .addend =   0, .kind = LOAD_PyObject_Free},
     {.offset = 165, .addend =   0, .kind = LOAD_PyObject_Free},
 };
-static const Stencil BINARY_OP_SUBTRACT_INT_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(BINARY_OP_SUBTRACT_INT_stencil_bytes),
-    .bytes = BINARY_OP_SUBTRACT_INT_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(BINARY_OP_SUBTRACT_INT_stencil_holes),
-    .holes = BINARY_OP_SUBTRACT_INT_stencil_holes,
-};
 
 // BINARY_SUBSCR
 static const unsigned char BINARY_SUBSCR_stencil_bytes[] = {
@@ -415,12 +379,6 @@ static const Hole BINARY_SUBSCR_stencil_holes[] = {
     {.offset =  81, .addend =   0, .kind = HOLE_continue},
     {.offset =  98, .addend =   0, .kind = LOAD__Py_Dealloc},
     {.offset = 119, .addend =   0, .kind = LOAD__Py_Dealloc},
-};
-static const Stencil BINARY_SUBSCR_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(BINARY_SUBSCR_stencil_bytes),
-    .bytes = BINARY_SUBSCR_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(BINARY_SUBSCR_stencil_holes),
-    .holes = BINARY_SUBSCR_stencil_holes,
 };
 
 // BINARY_SUBSCR_LIST_INT
@@ -455,12 +413,6 @@ static const Hole BINARY_SUBSCR_LIST_INT_stencil_holes[] = {
     {.offset =  93, .addend =   0, .kind = LOAD_PyObject_Free},
     {.offset = 116, .addend =   0, .kind = LOAD__Py_Dealloc},
     {.offset = 136, .addend =   0, .kind = HOLE_continue},
-};
-static const Stencil BINARY_SUBSCR_LIST_INT_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(BINARY_SUBSCR_LIST_INT_stencil_bytes),
-    .bytes = BINARY_SUBSCR_LIST_INT_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(BINARY_SUBSCR_LIST_INT_stencil_holes),
-    .holes = BINARY_SUBSCR_LIST_INT_stencil_holes,
 };
 
 // BUILD_SLICE
@@ -520,12 +472,6 @@ static const Hole BUILD_SLICE_stencil_holes[] = {
     {.offset = 232, .addend =   0, .kind = HOLE_oparg},
     {.offset = 263, .addend =   0, .kind = HOLE_continue},
     {.offset = 290, .addend =   0, .kind = HOLE_next_instr},
-};
-static const Stencil BUILD_SLICE_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(BUILD_SLICE_stencil_bytes),
-    .bytes = BUILD_SLICE_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(BUILD_SLICE_stencil_holes),
-    .holes = BUILD_SLICE_stencil_holes,
 };
 
 // CALL_NO_KW_BUILTIN_FAST
@@ -600,12 +546,6 @@ static const Hole CALL_NO_KW_BUILTIN_FAST_stencil_holes[] = {
     {.offset = 341, .addend =   0, .kind = HOLE_oparg},
     {.offset = 436, .addend =   0, .kind = HOLE_continue},
 };
-static const Stencil CALL_NO_KW_BUILTIN_FAST_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(CALL_NO_KW_BUILTIN_FAST_stencil_bytes),
-    .bytes = CALL_NO_KW_BUILTIN_FAST_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(CALL_NO_KW_BUILTIN_FAST_stencil_holes),
-    .holes = CALL_NO_KW_BUILTIN_FAST_stencil_holes,
-};
 
 // COMPARE_OP_INT
 static const unsigned char COMPARE_OP_INT_stencil_bytes[] = {
@@ -656,12 +596,6 @@ static const Hole COMPARE_OP_INT_stencil_holes[] = {
     {.offset = 245, .addend =   0, .kind = LOAD__Py_TrueStruct},
     {.offset = 268, .addend =   0, .kind = HOLE_continue},
 };
-static const Stencil COMPARE_OP_INT_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(COMPARE_OP_INT_stencil_bytes),
-    .bytes = COMPARE_OP_INT_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(COMPARE_OP_INT_stencil_holes),
-    .holes = COMPARE_OP_INT_stencil_holes,
-};
 
 // COPY
 static const unsigned char COPY_stencil_bytes[] = {
@@ -677,12 +611,6 @@ static const Hole COPY_stencil_holes[] = {
     {.offset =   2, .addend =   0, .kind = HOLE_next_instr},
     {.offset =  16, .addend =   0, .kind = HOLE_oparg},
     {.offset =  46, .addend =   0, .kind = HOLE_continue},
-};
-static const Stencil COPY_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(COPY_stencil_bytes),
-    .bytes = COPY_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(COPY_stencil_holes),
-    .holes = COPY_stencil_holes,
 };
 
 // FOR_ITER_LIST
@@ -728,12 +656,6 @@ static const Hole FOR_ITER_LIST_stencil_holes[] = {
     {.offset = 177, .addend =   0, .kind = HOLE_oparg},
     {.offset = 197, .addend =   0, .kind = HOLE_next_trace},
 };
-static const Stencil FOR_ITER_LIST_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(FOR_ITER_LIST_stencil_bytes),
-    .bytes = FOR_ITER_LIST_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(FOR_ITER_LIST_stencil_holes),
-    .holes = FOR_ITER_LIST_stencil_holes,
-};
 
 // JUMP_BACKWARD
 static const unsigned char JUMP_BACKWARD_stencil_bytes[] = {
@@ -754,12 +676,6 @@ static const Hole JUMP_BACKWARD_stencil_holes[] = {
     {.offset =  27, .addend =   0, .kind = HOLE_oparg},
     {.offset =  75, .addend =   0, .kind = HOLE_continue},
 };
-static const Stencil JUMP_BACKWARD_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(JUMP_BACKWARD_stencil_bytes),
-    .bytes = JUMP_BACKWARD_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(JUMP_BACKWARD_stencil_holes),
-    .holes = JUMP_BACKWARD_stencil_holes,
-};
 
 // JUMP_FORWARD
 static const unsigned char JUMP_FORWARD_stencil_bytes[] = {
@@ -771,12 +687,6 @@ static const unsigned char JUMP_FORWARD_stencil_bytes[] = {
 static const Hole JUMP_FORWARD_stencil_holes[] = {
     {.offset =   2, .addend =   0, .kind = HOLE_next_instr},
     {.offset =  16, .addend =   0, .kind = HOLE_continue},
-};
-static const Stencil JUMP_FORWARD_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(JUMP_FORWARD_stencil_bytes),
-    .bytes = JUMP_FORWARD_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(JUMP_FORWARD_stencil_holes),
-    .holes = JUMP_FORWARD_stencil_holes,
 };
 
 // LOAD_CONST
@@ -795,12 +705,6 @@ static const Hole LOAD_CONST_stencil_holes[] = {
     {.offset =  24, .addend =   0, .kind = HOLE_oparg},
     {.offset =  54, .addend =   0, .kind = HOLE_continue},
 };
-static const Stencil LOAD_CONST_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(LOAD_CONST_stencil_bytes),
-    .bytes = LOAD_CONST_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(LOAD_CONST_stencil_holes),
-    .holes = LOAD_CONST_stencil_holes,
-};
 
 // LOAD_FAST
 static const unsigned char LOAD_FAST_stencil_bytes[] = {
@@ -816,12 +720,6 @@ static const Hole LOAD_FAST_stencil_holes[] = {
     {.offset =   2, .addend =   0, .kind = HOLE_next_instr},
     {.offset =  16, .addend =   0, .kind = HOLE_oparg},
     {.offset =  45, .addend =   0, .kind = HOLE_continue},
-};
-static const Stencil LOAD_FAST_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(LOAD_FAST_stencil_bytes),
-    .bytes = LOAD_FAST_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(LOAD_FAST_stencil_holes),
-    .holes = LOAD_FAST_stencil_holes,
 };
 
 // LOAD_FAST__LOAD_CONST
@@ -843,12 +741,6 @@ static const Hole LOAD_FAST__LOAD_CONST_stencil_holes[] = {
     {.offset =  16, .addend =   0, .kind = HOLE_oparg},
     {.offset =  72, .addend =   0, .kind = HOLE_continue},
 };
-static const Stencil LOAD_FAST__LOAD_CONST_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(LOAD_FAST__LOAD_CONST_stencil_bytes),
-    .bytes = LOAD_FAST__LOAD_CONST_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(LOAD_FAST__LOAD_CONST_stencil_holes),
-    .holes = LOAD_FAST__LOAD_CONST_stencil_holes,
-};
 
 // LOAD_FAST__LOAD_FAST
 static const unsigned char LOAD_FAST__LOAD_FAST_stencil_bytes[] = {
@@ -867,12 +759,6 @@ static const Hole LOAD_FAST__LOAD_FAST_stencil_holes[] = {
     {.offset =   2, .addend =   0, .kind = HOLE_next_instr},
     {.offset =  16, .addend =   0, .kind = HOLE_oparg},
     {.offset =  64, .addend =   0, .kind = HOLE_continue},
-};
-static const Stencil LOAD_FAST__LOAD_FAST_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(LOAD_FAST__LOAD_FAST_stencil_bytes),
-    .bytes = LOAD_FAST__LOAD_FAST_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(LOAD_FAST__LOAD_FAST_stencil_holes),
-    .holes = LOAD_FAST__LOAD_FAST_stencil_holes,
 };
 
 // POP_JUMP_IF_FALSE
@@ -926,12 +812,6 @@ static const Hole POP_JUMP_IF_FALSE_stencil_holes[] = {
     {.offset = 227, .addend =   0, .kind = HOLE_next_trace},
     {.offset = 242, .addend =   0, .kind = HOLE_continue},
 };
-static const Stencil POP_JUMP_IF_FALSE_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(POP_JUMP_IF_FALSE_stencil_bytes),
-    .bytes = POP_JUMP_IF_FALSE_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(POP_JUMP_IF_FALSE_stencil_holes),
-    .holes = POP_JUMP_IF_FALSE_stencil_holes,
-};
 
 // POP_TOP
 static const unsigned char POP_TOP_stencil_bytes[] = {
@@ -951,12 +831,6 @@ static const Hole POP_TOP_stencil_holes[] = {
     {.offset =  45, .addend =   0, .kind = LOAD__Py_Dealloc},
     {.offset =  57, .addend =   0, .kind = HOLE_continue},
 };
-static const Stencil POP_TOP_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(POP_TOP_stencil_bytes),
-    .bytes = POP_TOP_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(POP_TOP_stencil_holes),
-    .holes = POP_TOP_stencil_holes,
-};
 
 // PUSH_NULL
 static const unsigned char PUSH_NULL_stencil_bytes[] = {
@@ -969,12 +843,6 @@ static const unsigned char PUSH_NULL_stencil_bytes[] = {
 static const Hole PUSH_NULL_stencil_holes[] = {
     {.offset =   2, .addend =   0, .kind = HOLE_next_instr},
     {.offset =  28, .addend =   0, .kind = HOLE_continue},
-};
-static const Stencil PUSH_NULL_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(PUSH_NULL_stencil_bytes),
-    .bytes = PUSH_NULL_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(PUSH_NULL_stencil_holes),
-    .holes = PUSH_NULL_stencil_holes,
 };
 
 // STORE_FAST
@@ -999,12 +867,6 @@ static const Hole STORE_FAST_stencil_holes[] = {
     {.offset =  73, .addend =   0, .kind = LOAD__Py_Dealloc},
     {.offset =  85, .addend =   0, .kind = HOLE_continue},
 };
-static const Stencil STORE_FAST_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(STORE_FAST_stencil_bytes),
-    .bytes = STORE_FAST_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(STORE_FAST_stencil_holes),
-    .holes = STORE_FAST_stencil_holes,
-};
 
 // STORE_FAST__LOAD_FAST
 static const unsigned char STORE_FAST__LOAD_FAST_stencil_bytes[] = {
@@ -1027,12 +889,6 @@ static const Hole STORE_FAST__LOAD_FAST_stencil_holes[] = {
     {.offset =  22, .addend =   0, .kind = HOLE_oparg},
     {.offset =  56, .addend =   0, .kind = LOAD__Py_Dealloc},
     {.offset =  86, .addend =   0, .kind = HOLE_continue},
-};
-static const Stencil STORE_FAST__LOAD_FAST_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(STORE_FAST__LOAD_FAST_stencil_bytes),
-    .bytes = STORE_FAST__LOAD_FAST_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(STORE_FAST__LOAD_FAST_stencil_holes),
-    .holes = STORE_FAST__LOAD_FAST_stencil_holes,
 };
 
 // STORE_FAST__STORE_FAST
@@ -1063,12 +919,6 @@ static const Hole STORE_FAST__STORE_FAST_stencil_holes[] = {
     {.offset = 103, .addend =   0, .kind = HOLE_continue},
     {.offset = 116, .addend =   0, .kind = LOAD__Py_Dealloc},
     {.offset = 128, .addend =   0, .kind = HOLE_continue},
-};
-static const Stencil STORE_FAST__STORE_FAST_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(STORE_FAST__STORE_FAST_stencil_bytes),
-    .bytes = STORE_FAST__STORE_FAST_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(STORE_FAST__STORE_FAST_stencil_holes),
-    .holes = STORE_FAST__STORE_FAST_stencil_holes,
 };
 
 // STORE_SLICE
@@ -1116,12 +966,6 @@ static const Hole STORE_SLICE_stencil_holes[] = {
     {.offset = 191, .addend =   0, .kind = LOAD__Py_Dealloc},
     {.offset = 215, .addend =   0, .kind = HOLE_next_instr},
 };
-static const Stencil STORE_SLICE_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(STORE_SLICE_stencil_bytes),
-    .bytes = STORE_SLICE_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(STORE_SLICE_stencil_holes),
-    .holes = STORE_SLICE_stencil_holes,
-};
 
 // STORE_SUBSCR_LIST_INT
 static const unsigned char STORE_SUBSCR_LIST_INT_stencil_bytes[] = {
@@ -1164,12 +1008,6 @@ static const Hole STORE_SUBSCR_LIST_INT_stencil_holes[] = {
     {.offset = 192, .addend =   0, .kind = LOAD__Py_Dealloc},
     {.offset = 207, .addend =   0, .kind = HOLE_continue},
 };
-static const Stencil STORE_SUBSCR_LIST_INT_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(STORE_SUBSCR_LIST_INT_stencil_bytes),
-    .bytes = STORE_SUBSCR_LIST_INT_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(STORE_SUBSCR_LIST_INT_stencil_holes),
-    .holes = STORE_SUBSCR_LIST_INT_stencil_holes,
-};
 
 // SWAP
 static const unsigned char SWAP_stencil_bytes[] = {
@@ -1186,12 +1024,6 @@ static const Hole SWAP_stencil_holes[] = {
     {.offset =   2, .addend =   0, .kind = HOLE_next_instr},
     {.offset =  21, .addend =   0, .kind = HOLE_oparg},
     {.offset =  49, .addend =   0, .kind = HOLE_continue},
-};
-static const Stencil SWAP_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(SWAP_stencil_bytes),
-    .bytes = SWAP_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(SWAP_stencil_holes),
-    .holes = SWAP_stencil_holes,
 };
 
 // UNPACK_SEQUENCE_LIST
@@ -1234,12 +1066,6 @@ static const Hole UNPACK_SEQUENCE_LIST_stencil_holes[] = {
     {.offset = 157, .addend =   0, .kind = HOLE_oparg},
     {.offset = 177, .addend =   0, .kind = HOLE_continue},
 };
-static const Stencil UNPACK_SEQUENCE_LIST_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(UNPACK_SEQUENCE_LIST_stencil_bytes),
-    .bytes = UNPACK_SEQUENCE_LIST_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(UNPACK_SEQUENCE_LIST_stencil_holes),
-    .holes = UNPACK_SEQUENCE_LIST_stencil_holes,
-};
 
 // UNPACK_SEQUENCE_TUPLE
 static const unsigned char UNPACK_SEQUENCE_TUPLE_stencil_bytes[] = {
@@ -1281,12 +1107,6 @@ static const Hole UNPACK_SEQUENCE_TUPLE_stencil_holes[] = {
     {.offset = 157, .addend =   0, .kind = HOLE_oparg},
     {.offset = 177, .addend =   0, .kind = HOLE_continue},
 };
-static const Stencil UNPACK_SEQUENCE_TUPLE_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(UNPACK_SEQUENCE_TUPLE_stencil_bytes),
-    .bytes = UNPACK_SEQUENCE_TUPLE_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(UNPACK_SEQUENCE_TUPLE_stencil_holes),
-    .holes = UNPACK_SEQUENCE_TUPLE_stencil_holes,
-};
 
 // UNPACK_SEQUENCE_TWO_TUPLE
 static const unsigned char UNPACK_SEQUENCE_TWO_TUPLE_stencil_bytes[] = {
@@ -1315,12 +1135,6 @@ static const Hole UNPACK_SEQUENCE_TWO_TUPLE_stencil_holes[] = {
     {.offset =  76, .addend =   0, .kind = LOAD__Py_Dealloc},
     {.offset =  88, .addend =   0, .kind = HOLE_oparg},
     {.offset = 108, .addend =   0, .kind = HOLE_continue},
-};
-static const Stencil UNPACK_SEQUENCE_TWO_TUPLE_stencil = {
-    .nbytes = Py_ARRAY_LENGTH(UNPACK_SEQUENCE_TWO_TUPLE_stencil_bytes),
-    .bytes = UNPACK_SEQUENCE_TWO_TUPLE_stencil_bytes,
-    .nholes = Py_ARRAY_LENGTH(UNPACK_SEQUENCE_TWO_TUPLE_stencil_holes),
-    .holes = UNPACK_SEQUENCE_TWO_TUPLE_stencil_holes,
 };
 
 // trampoline
@@ -1352,6 +1166,7 @@ static const Hole trampoline_stencil_holes[] = {
     {.offset =  13, .addend =   0, .kind = LOAD_PyThreadState_Get},
     {.offset = 142, .addend =   0, .kind = HOLE_continue},
 };
+
 static const Stencil trampoline_stencil = {
     .nbytes = Py_ARRAY_LENGTH(trampoline_stencil_bytes),
     .bytes = trampoline_stencil_bytes,
@@ -1359,90 +1174,100 @@ static const Stencil trampoline_stencil = {
     .holes = trampoline_stencil_holes,
 };
 
-static const Stencil * const stencils[256] = {
-    [BINARY_OP] = &BINARY_OP_stencil,
-    [BINARY_OP_ADD_FLOAT] = &BINARY_OP_ADD_FLOAT_stencil,
-    [BINARY_OP_ADD_INT] = &BINARY_OP_ADD_INT_stencil,
-    [BINARY_OP_MULTIPLY_FLOAT] = &BINARY_OP_MULTIPLY_FLOAT_stencil,
-    [BINARY_OP_SUBTRACT_FLOAT] = &BINARY_OP_SUBTRACT_FLOAT_stencil,
-    [BINARY_OP_SUBTRACT_INT] = &BINARY_OP_SUBTRACT_INT_stencil,
-    [BINARY_SUBSCR] = &BINARY_SUBSCR_stencil,
-    [BINARY_SUBSCR_LIST_INT] = &BINARY_SUBSCR_LIST_INT_stencil,
-    [BUILD_SLICE] = &BUILD_SLICE_stencil,
-    [CALL_NO_KW_BUILTIN_FAST] = &CALL_NO_KW_BUILTIN_FAST_stencil,
-    [COMPARE_OP_INT] = &COMPARE_OP_INT_stencil,
-    [COPY] = &COPY_stencil,
-    [FOR_ITER_LIST] = &FOR_ITER_LIST_stencil,
-    [JUMP_BACKWARD] = &JUMP_BACKWARD_stencil,
-    [JUMP_FORWARD] = &JUMP_FORWARD_stencil,
-    [LOAD_CONST] = &LOAD_CONST_stencil,
-    [LOAD_FAST] = &LOAD_FAST_stencil,
-    [LOAD_FAST__LOAD_CONST] = &LOAD_FAST__LOAD_CONST_stencil,
-    [LOAD_FAST__LOAD_FAST] = &LOAD_FAST__LOAD_FAST_stencil,
-    [POP_JUMP_IF_FALSE] = &POP_JUMP_IF_FALSE_stencil,
-    [POP_TOP] = &POP_TOP_stencil,
-    [PUSH_NULL] = &PUSH_NULL_stencil,
-    [STORE_FAST] = &STORE_FAST_stencil,
-    [STORE_FAST__LOAD_FAST] = &STORE_FAST__LOAD_FAST_stencil,
-    [STORE_FAST__STORE_FAST] = &STORE_FAST__STORE_FAST_stencil,
-    [STORE_SLICE] = &STORE_SLICE_stencil,
-    [STORE_SUBSCR_LIST_INT] = &STORE_SUBSCR_LIST_INT_stencil,
-    [SWAP] = &SWAP_stencil,
-    [UNPACK_SEQUENCE_LIST] = &UNPACK_SEQUENCE_LIST_stencil,
-    [UNPACK_SEQUENCE_TUPLE] = &UNPACK_SEQUENCE_TUPLE_stencil,
-    [UNPACK_SEQUENCE_TWO_TUPLE] = &UNPACK_SEQUENCE_TWO_TUPLE_stencil,
+#define INIT_STENCIL(OP) [(OP)] = {                \
+    .nbytes = Py_ARRAY_LENGTH(OP##_stencil_bytes), \
+    .bytes = OP##_stencil_bytes,                   \
+    .nholes = Py_ARRAY_LENGTH(OP##_stencil_holes), \
+    .holes = OP##_stencil_holes,                   \
+}
+
+static const Stencil stencils[256] = {
+    INIT_STENCIL(BINARY_OP),
+    INIT_STENCIL(BINARY_OP_ADD_FLOAT),
+    INIT_STENCIL(BINARY_OP_ADD_INT),
+    INIT_STENCIL(BINARY_OP_MULTIPLY_FLOAT),
+    INIT_STENCIL(BINARY_OP_SUBTRACT_FLOAT),
+    INIT_STENCIL(BINARY_OP_SUBTRACT_INT),
+    INIT_STENCIL(BINARY_SUBSCR),
+    INIT_STENCIL(BINARY_SUBSCR_LIST_INT),
+    INIT_STENCIL(BUILD_SLICE),
+    INIT_STENCIL(CALL_NO_KW_BUILTIN_FAST),
+    INIT_STENCIL(COMPARE_OP_INT),
+    INIT_STENCIL(COPY),
+    INIT_STENCIL(FOR_ITER_LIST),
+    INIT_STENCIL(JUMP_BACKWARD),
+    INIT_STENCIL(JUMP_FORWARD),
+    INIT_STENCIL(LOAD_CONST),
+    INIT_STENCIL(LOAD_FAST),
+    INIT_STENCIL(LOAD_FAST__LOAD_CONST),
+    INIT_STENCIL(LOAD_FAST__LOAD_FAST),
+    INIT_STENCIL(POP_JUMP_IF_FALSE),
+    INIT_STENCIL(POP_TOP),
+    INIT_STENCIL(PUSH_NULL),
+    INIT_STENCIL(STORE_FAST),
+    INIT_STENCIL(STORE_FAST__LOAD_FAST),
+    INIT_STENCIL(STORE_FAST__STORE_FAST),
+    INIT_STENCIL(STORE_SLICE),
+    INIT_STENCIL(STORE_SUBSCR_LIST_INT),
+    INIT_STENCIL(SWAP),
+    INIT_STENCIL(UNPACK_SEQUENCE_LIST),
+    INIT_STENCIL(UNPACK_SEQUENCE_TUPLE),
+    INIT_STENCIL(UNPACK_SEQUENCE_TWO_TUPLE),
 };
 
+#define INIT_HOLE(NAME) [HOLE_##NAME] = (uintptr_t)0xBAD0BAD0BAD0BAD0
+#define INIT_LOAD(NAME) [LOAD_##NAME] = (uintptr_t)&(NAME)
+
 #define GET_PATCHES() { \
-    [HOLE_base] = (uintptr_t)0xBAD0BAD0BAD0BAD0, \
-    [HOLE_continue] = (uintptr_t)0xBAD0BAD0BAD0BAD0, \
-    [HOLE_next_instr] = (uintptr_t)0xBAD0BAD0BAD0BAD0, \
-    [HOLE_next_trace] = (uintptr_t)0xBAD0BAD0BAD0BAD0, \
-    [HOLE_oparg] = (uintptr_t)0xBAD0BAD0BAD0BAD0, \
-    [LOAD_PyCFunction_Type] = (uintptr_t)&PyCFunction_Type, \
-    [LOAD_PyFloat_FromDouble] = (uintptr_t)&PyFloat_FromDouble, \
-    [LOAD_PyFloat_Type] = (uintptr_t)&PyFloat_Type, \
-    [LOAD_PyListIter_Type] = (uintptr_t)&PyListIter_Type, \
-    [LOAD_PyList_Type] = (uintptr_t)&PyList_Type, \
-    [LOAD_PyLong_Type] = (uintptr_t)&PyLong_Type, \
-    [LOAD_PyNumber_Add] = (uintptr_t)&PyNumber_Add, \
-    [LOAD_PyNumber_And] = (uintptr_t)&PyNumber_And, \
-    [LOAD_PyNumber_FloorDivide] = (uintptr_t)&PyNumber_FloorDivide, \
-    [LOAD_PyNumber_InPlaceAdd] = (uintptr_t)&PyNumber_InPlaceAdd, \
-    [LOAD_PyNumber_InPlaceAnd] = (uintptr_t)&PyNumber_InPlaceAnd, \
-    [LOAD_PyNumber_InPlaceFloorDivide] = (uintptr_t)&PyNumber_InPlaceFloorDivide, \
-    [LOAD_PyNumber_InPlaceLshift] = (uintptr_t)&PyNumber_InPlaceLshift, \
-    [LOAD_PyNumber_InPlaceMatrixMultiply] = (uintptr_t)&PyNumber_InPlaceMatrixMultiply, \
-    [LOAD_PyNumber_InPlaceMultiply] = (uintptr_t)&PyNumber_InPlaceMultiply, \
-    [LOAD_PyNumber_InPlaceOr] = (uintptr_t)&PyNumber_InPlaceOr, \
-    [LOAD_PyNumber_InPlaceRemainder] = (uintptr_t)&PyNumber_InPlaceRemainder, \
-    [LOAD_PyNumber_InPlaceRshift] = (uintptr_t)&PyNumber_InPlaceRshift, \
-    [LOAD_PyNumber_InPlaceSubtract] = (uintptr_t)&PyNumber_InPlaceSubtract, \
-    [LOAD_PyNumber_InPlaceTrueDivide] = (uintptr_t)&PyNumber_InPlaceTrueDivide, \
-    [LOAD_PyNumber_InPlaceXor] = (uintptr_t)&PyNumber_InPlaceXor, \
-    [LOAD_PyNumber_Lshift] = (uintptr_t)&PyNumber_Lshift, \
-    [LOAD_PyNumber_MatrixMultiply] = (uintptr_t)&PyNumber_MatrixMultiply, \
-    [LOAD_PyNumber_Multiply] = (uintptr_t)&PyNumber_Multiply, \
-    [LOAD_PyNumber_Or] = (uintptr_t)&PyNumber_Or, \
-    [LOAD_PyNumber_Remainder] = (uintptr_t)&PyNumber_Remainder, \
-    [LOAD_PyNumber_Rshift] = (uintptr_t)&PyNumber_Rshift, \
-    [LOAD_PyNumber_Subtract] = (uintptr_t)&PyNumber_Subtract, \
-    [LOAD_PyNumber_TrueDivide] = (uintptr_t)&PyNumber_TrueDivide, \
-    [LOAD_PyNumber_Xor] = (uintptr_t)&PyNumber_Xor, \
-    [LOAD_PyObject_Free] = (uintptr_t)&PyObject_Free, \
-    [LOAD_PyObject_GetItem] = (uintptr_t)&PyObject_GetItem, \
-    [LOAD_PyObject_IsTrue] = (uintptr_t)&PyObject_IsTrue, \
-    [LOAD_PyObject_SetItem] = (uintptr_t)&PyObject_SetItem, \
-    [LOAD_PySlice_New] = (uintptr_t)&PySlice_New, \
-    [LOAD_PyThreadState_Get] = (uintptr_t)&PyThreadState_Get, \
-    [LOAD_PyTuple_Type] = (uintptr_t)&PyTuple_Type, \
-    [LOAD__PyBuildSlice_ConsumeRefs] = (uintptr_t)&_PyBuildSlice_ConsumeRefs, \
-    [LOAD__PyFloat_ExactDealloc] = (uintptr_t)&_PyFloat_ExactDealloc, \
-    [LOAD__PyLong_Add] = (uintptr_t)&_PyLong_Add, \
-    [LOAD__PyLong_Subtract] = (uintptr_t)&_PyLong_Subtract, \
-    [LOAD__PyNumber_InPlacePowerNoMod] = (uintptr_t)&_PyNumber_InPlacePowerNoMod, \
-    [LOAD__PyNumber_PowerNoMod] = (uintptr_t)&_PyNumber_PowerNoMod, \
-    [LOAD__Py_Dealloc] = (uintptr_t)&_Py_Dealloc, \
-    [LOAD__Py_FalseStruct] = (uintptr_t)&_Py_FalseStruct, \
-    [LOAD__Py_TrueStruct] = (uintptr_t)&_Py_TrueStruct, \
+    INIT_HOLE(base), \
+    INIT_HOLE(continue), \
+    INIT_HOLE(next_instr), \
+    INIT_HOLE(next_trace), \
+    INIT_HOLE(oparg), \
+    INIT_LOAD(PyCFunction_Type), \
+    INIT_LOAD(PyFloat_FromDouble), \
+    INIT_LOAD(PyFloat_Type), \
+    INIT_LOAD(PyListIter_Type), \
+    INIT_LOAD(PyList_Type), \
+    INIT_LOAD(PyLong_Type), \
+    INIT_LOAD(PyNumber_Add), \
+    INIT_LOAD(PyNumber_And), \
+    INIT_LOAD(PyNumber_FloorDivide), \
+    INIT_LOAD(PyNumber_InPlaceAdd), \
+    INIT_LOAD(PyNumber_InPlaceAnd), \
+    INIT_LOAD(PyNumber_InPlaceFloorDivide), \
+    INIT_LOAD(PyNumber_InPlaceLshift), \
+    INIT_LOAD(PyNumber_InPlaceMatrixMultiply), \
+    INIT_LOAD(PyNumber_InPlaceMultiply), \
+    INIT_LOAD(PyNumber_InPlaceOr), \
+    INIT_LOAD(PyNumber_InPlaceRemainder), \
+    INIT_LOAD(PyNumber_InPlaceRshift), \
+    INIT_LOAD(PyNumber_InPlaceSubtract), \
+    INIT_LOAD(PyNumber_InPlaceTrueDivide), \
+    INIT_LOAD(PyNumber_InPlaceXor), \
+    INIT_LOAD(PyNumber_Lshift), \
+    INIT_LOAD(PyNumber_MatrixMultiply), \
+    INIT_LOAD(PyNumber_Multiply), \
+    INIT_LOAD(PyNumber_Or), \
+    INIT_LOAD(PyNumber_Remainder), \
+    INIT_LOAD(PyNumber_Rshift), \
+    INIT_LOAD(PyNumber_Subtract), \
+    INIT_LOAD(PyNumber_TrueDivide), \
+    INIT_LOAD(PyNumber_Xor), \
+    INIT_LOAD(PyObject_Free), \
+    INIT_LOAD(PyObject_GetItem), \
+    INIT_LOAD(PyObject_IsTrue), \
+    INIT_LOAD(PyObject_SetItem), \
+    INIT_LOAD(PySlice_New), \
+    INIT_LOAD(PyThreadState_Get), \
+    INIT_LOAD(PyTuple_Type), \
+    INIT_LOAD(_PyBuildSlice_ConsumeRefs), \
+    INIT_LOAD(_PyFloat_ExactDealloc), \
+    INIT_LOAD(_PyLong_Add), \
+    INIT_LOAD(_PyLong_Subtract), \
+    INIT_LOAD(_PyNumber_InPlacePowerNoMod), \
+    INIT_LOAD(_PyNumber_PowerNoMod), \
+    INIT_LOAD(_Py_Dealloc), \
+    INIT_LOAD(_Py_FalseStruct), \
+    INIT_LOAD(_Py_TrueStruct), \
 }
