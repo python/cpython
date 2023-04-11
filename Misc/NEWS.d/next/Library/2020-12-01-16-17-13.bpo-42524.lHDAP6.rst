@@ -1,0 +1,1 @@
+Add `retval [variable]` option to pdb
