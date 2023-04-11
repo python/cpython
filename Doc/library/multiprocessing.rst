@@ -454,6 +454,8 @@ process which created it.
    as the :class:`multiprocessing.pool.Pool` examples will not work in the
    interactive interpreter. For example::
 
+   .. code-block:: pycon
+
       >>> from multiprocessing import Pool
       >>> p = Pool(5)
       >>> def f(x):
