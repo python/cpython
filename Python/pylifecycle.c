@@ -29,6 +29,7 @@
 #include "pycore_tuple.h"         // _PyTuple_InitTypes()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
+#include "pycore_genericalias.h"  // _PyGenericAlias_Init()
 #include "opcode.h"
 
 extern PyStatus _PyIO_InitTypes(PyInterpreterState *interp);
@@ -719,6 +720,11 @@ pycore_init_types(PyInterpreterState *interp)
     }
 
     status = _PyContext_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyGenericAlias_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1665,6 +1671,7 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyInterpreterState *interp)
 {
+    _PyGenericAlias_Fini(interp);
     _PyUnicode_FiniTypes(interp);
     _PySys_Fini(interp);
     _PyExc_Fini(interp);
