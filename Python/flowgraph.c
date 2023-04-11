@@ -43,12 +43,6 @@ is_block_push(cfg_instr *i)
 }
 
 static inline int
-is_relative_jump(cfg_instr *i)
-{
-    return IS_RELATIVE_JUMP(i->i_opcode);
-}
-
-static inline int
 is_jump(cfg_instr *i)
 {
     return IS_JUMP_OPCODE(i->i_opcode);
@@ -199,8 +193,7 @@ blocksize(basicblock *b)
 static void
 dump_instr(cfg_instr *i)
 {
-    const char *jrel = (is_relative_jump(i)) ? "jrel " : "";
-    const char *jabs = (is_jump(i) && !is_relative_jump(i))? "jabs " : "";
+    const char *jump = is_jump(i) ? "jump " : "";
 
     char arg[128];
 
@@ -211,8 +204,8 @@ dump_instr(cfg_instr *i)
     if (HAS_TARGET(i->i_opcode)) {
         sprintf(arg, "target: %p [%d] ", i->i_target, i->i_oparg);
     }
-    fprintf(stderr, "line: %d, opcode: %d %s%s%s\n",
-                    i->i_loc.lineno, i->i_opcode, arg, jabs, jrel);
+    fprintf(stderr, "line: %d, opcode: %d %s%s\n",
+                    i->i_loc.lineno, i->i_opcode, arg, jump);
 }
 
 static inline int
@@ -500,25 +493,20 @@ resolve_jump_offsets(basicblock *entryblock)
             for (int i = 0; i < b->b_iused; i++) {
                 cfg_instr *instr = &b->b_instr[i];
                 int isize = _PyCfg_InstrSize(instr);
-                /* Relative jumps are computed relative to
-                   the instruction pointer after fetching
-                   the jump instruction.
-                */
+                /* jump offsets are computed relative to
+                 * the instruction pointer after fetching
+                 * the jump instruction.
+                 */
                 bsize += isize;
                 if (is_jump(instr)) {
                     instr->i_oparg = instr->i_target->b_offset;
-                    if (is_relative_jump(instr)) {
-                        if (instr->i_oparg < bsize) {
-                            assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
-                            instr->i_oparg = bsize - instr->i_oparg;
-                        }
-                        else {
-                            assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
-                            instr->i_oparg -= bsize;
-                        }
+                    if (instr->i_oparg < bsize) {
+                        assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
+                        instr->i_oparg = bsize - instr->i_oparg;
                     }
                     else {
                         assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
+                        instr->i_oparg -= bsize;
                     }
                     if (_PyCfg_InstrSize(instr) != isize) {
                         extended_arg_recompile = 1;
