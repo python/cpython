@@ -167,7 +167,7 @@ executed as the "main" file:
    $ python fibo.py 50
    0 1 1 2 3 5 8 13 21 34
 
-If the module is imported, the code is not run::
+If the module is imported, then the code will not run::
 
    >>> import fibo
    >>>
