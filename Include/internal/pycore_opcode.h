@@ -12,8 +12,6 @@ extern "C" {
 
 #include "opcode.h"
 
-extern const uint32_t _PyOpcode_RelativeJump[9];
-
 extern const uint32_t _PyOpcode_Jump[9];
 
 extern const uint8_t _PyOpcode_Caches[256];
@@ -21,17 +19,6 @@ extern const uint8_t _PyOpcode_Caches[256];
 extern const uint8_t _PyOpcode_Deopt[256];
 
 #ifdef NEED_OPCODE_TABLES
-const uint32_t _PyOpcode_RelativeJump[9] = {
-    0U,
-    0U,
-    536870912U,
-    135020544U,
-    4163U,
-    0U,
-    0U,
-    0U,
-    48U,
-};
 const uint32_t _PyOpcode_Jump[9] = {
     0U,
     0U,
