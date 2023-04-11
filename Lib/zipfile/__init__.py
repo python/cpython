@@ -338,6 +338,22 @@ def _EndRecData(fpin):
     # Unable to find a valid end of central directory structure
     return None
 
+def _sanitize_filename(filename):
+    """Terminate the file name at the first null byte and
+    ensure paths always use forward slashes as the directory separator."""
+
+    # Terminate the file name at the first null byte.  Null bytes in file
+    # names are used as tricks by viruses in archives.
+    null_byte = filename.find(chr(0))
+    if null_byte >= 0:
+        filename = filename[0:null_byte]
+    # This is used to ensure paths in generated ZIP files always use
+    # forward slashes as the directory separator, as required by the
+    # ZIP format specification.
+    if os.sep != "/" and os.sep in filename:
+        filename = filename.replace(os.sep, "/")
+    return filename
+
 
 class ZipInfo (object):
     """Class with attributes describing each file in the ZIP archive."""
@@ -368,16 +384,9 @@ class ZipInfo (object):
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
         self.orig_filename = filename   # Original file name in archive
 
-        # Terminate the file name at the first null byte.  Null bytes in file
-        # names are used as tricks by viruses in archives.
-        null_byte = filename.find(chr(0))
-        if null_byte >= 0:
-            filename = filename[0:null_byte]
-        # This is used to ensure paths in generated ZIP files always use
-        # forward slashes as the directory separator, as required by the
-        # ZIP format specification.
-        if os.sep != "/" and os.sep in filename:
-            filename = filename.replace(os.sep, "/")
+        # Terminate the file name at the first null byte and
+        # ensure paths always use forward slashes as the directory separator.
+        filename = _sanitize_filename(filename)
 
         self.filename = filename        # Normalized file name
         self.date_time = date_time      # year, month, day, hour, min, sec
@@ -482,7 +491,7 @@ class ZipInfo (object):
         except UnicodeEncodeError:
             return self.filename.encode('utf-8'), self.flag_bits | _MASK_UTF_FILENAME
 
-    def _decodeExtra(self):
+    def _decodeExtra(self, filename_crc):
         # Try to decode the extra field.
         extra = self.extra
         unpack = struct.unpack
@@ -508,6 +517,21 @@ class ZipInfo (object):
                 except struct.error:
                     raise BadZipFile(f"Corrupt zip64 extra field. "
                                      f"{field} not found.") from None
+            elif tp == 0x7075:
+                data = extra[4:ln+4]
+                # Unicode Path Extra Field
+                try:
+                    up_version, up_name_crc = unpack('<BL', data[:5])
+                    if up_version == 1 and up_name_crc == filename_crc:
+                        up_unicode_name = data[5:].decode('utf-8')
+                        if up_unicode_name:
+                            self.filename = _sanitize_filename(up_unicode_name)
+                        else:
+                            warnings.warn("Empty unicode path extra field (0x7075)", stacklevel=2)
+                except struct.error as e:
+                    raise BadZipFile("Corrupt unicode path extra field (0x7075)") from e
+                except UnicodeDecodeError as e:
+                    raise BadZipFile('Corrupt unicode path extra field (0x7075): invalid utf-8 bytes') from e
 
             extra = extra[ln+4:]
 
@@ -1409,6 +1433,7 @@ class ZipFile:
             if self.debug > 2:
                 print(centdir)
             filename = fp.read(centdir[_CD_FILENAME_LENGTH])
+            orig_filename_crc = crc32(filename)
             flags = centdir[_CD_FLAG_BITS]
             if flags & _MASK_UTF_FILENAME:
                 # UTF-8 file names extension
@@ -1432,8 +1457,7 @@ class ZipFile:
             x._raw_time = t
             x.date_time = ( (d>>9)+1980, (d>>5)&0xF, d&0x1F,
                             t>>11, (t>>5)&0x3F, (t&0x1F) * 2 )
-
-            x._decodeExtra()
+            x._decodeExtra(orig_filename_crc)
             x.header_offset = x.header_offset + concat
             self.filelist.append(x)
             self.NameToInfo[x.filename] = x

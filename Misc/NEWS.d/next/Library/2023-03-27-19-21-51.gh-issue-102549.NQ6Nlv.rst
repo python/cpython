@@ -1,1 +1,0 @@
-Don't ignore exceptions in member type creation.

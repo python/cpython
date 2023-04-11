@@ -2100,46 +2100,44 @@ static struct PyMethodDef winreg_methods[] = {
     NULL,
 };
 
-static void
-insint(PyObject * d, char * name, long value)
-{
-    PyObject *v = PyLong_FromLong(value);
-    if (!v || PyDict_SetItemString(d, name, v))
-        PyErr_Clear();
-    Py_XDECREF(v);
-}
+#define ADD_INT(VAL) do {                               \
+    if (PyModule_AddIntConstant(m, #VAL, VAL) < 0) {    \
+        return -1;                                      \
+    }                                                   \
+} while (0)
 
-#define ADD_INT(val) insint(d, #val, val)
-
-static void
-inskey(PyObject * d, char * name, HKEY key)
+static int
+inskey(PyObject *mod, char *name, HKEY key)
 {
     PyObject *v = PyLong_FromVoidPtr(key);
-    if (!v || PyDict_SetItemString(d, name, v))
-        PyErr_Clear();
-    Py_XDECREF(v);
+    if (v == NULL) {
+        return -1;
+    }
+    int rc = PyModule_AddObjectRef(mod, name, v);
+    Py_DECREF(v);
+    return rc;
 }
 
-#define ADD_KEY(val) inskey(d, #val, val)
+#define ADD_KEY(VAL) do {           \
+    if (inskey(m, #VAL, VAL) < 0) { \
+        return -1;                  \
+    }                               \
+} while (0)
 
 static int
 exec_module(PyObject *m)
 {
     winreg_state *st = (winreg_state *)_PyModule_GetState(m);
 
-    PyObject *d;
-    d = PyModule_GetDict(m);
     st->PyHKEY_Type = (PyTypeObject *)
                        PyType_FromModuleAndSpec(m, &pyhkey_type_spec, NULL);
     if (st->PyHKEY_Type == NULL) {
         return -1;
     }
-    if (PyDict_SetItemString(d, "HKEYType",
-                             (PyObject *)st->PyHKEY_Type) != 0) {
+    if (PyModule_AddObjectRef(m, "HKEYType", (PyObject *)st->PyHKEY_Type) < 0) {
         return -1;
     }
-    if (PyDict_SetItemString(d, "error",
-                             PyExc_OSError) != 0) {
+    if (PyModule_AddObjectRef(m, "error", PyExc_OSError) < 0) {
         return -1;
     }
 
@@ -2203,6 +2201,7 @@ exec_module(PyObject *m)
     ADD_INT(REG_FULL_RESOURCE_DESCRIPTOR);
     ADD_INT(REG_RESOURCE_REQUIREMENTS_LIST);
 
+#undef ADD_INT
     return 0;
 }
 
