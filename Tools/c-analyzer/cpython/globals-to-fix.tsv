@@ -317,46 +317,16 @@ Modules/_collectionsmodule.c	-	dequeiter_type	-
 Modules/_collectionsmodule.c	-	dequereviter_type	-
 Modules/_collectionsmodule.c	-	tuplegetter_type	-
 Modules/_io/bufferedio.c	-	PyBufferedIOBase_Type	-
-Modules/_io/bufferedio.c	-	PyBufferedRWPair_Type	-
-Modules/_io/bufferedio.c	-	PyBufferedRandom_Type	-
-Modules/_io/bufferedio.c	-	PyBufferedReader_Type	-
-Modules/_io/bufferedio.c	-	PyBufferedWriter_Type	-
-Modules/_io/bytesio.c	-	PyBytesIO_Type	-
 Modules/_io/bytesio.c	-	_PyBytesIOBuffer_Type	-
-Modules/_io/fileio.c	-	PyFileIO_Type	-
 Modules/_io/iobase.c	-	PyIOBase_Type	-
 Modules/_io/iobase.c	-	PyRawIOBase_Type	-
-Modules/_io/stringio.c	-	PyStringIO_Type	-
 Modules/_io/textio.c	-	PyIncrementalNewlineDecoder_Type	-
 Modules/_io/textio.c	-	PyTextIOBase_Type	-
-Modules/_io/textio.c	-	PyTextIOWrapper_Type	-
 Modules/_io/winconsoleio.c	-	PyWindowsConsoleIO_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorNopGet_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
-Modules/itertoolsmodule.c	-	_grouper_type	-
-Modules/itertoolsmodule.c	-	accumulate_type	-
-Modules/itertoolsmodule.c	-	batched_type	-
-Modules/itertoolsmodule.c	-	chain_type	-
-Modules/itertoolsmodule.c	-	combinations_type	-
-Modules/itertoolsmodule.c	-	compress_type	-
-Modules/itertoolsmodule.c	-	count_type	-
-Modules/itertoolsmodule.c	-	cwr_type	-
-Modules/itertoolsmodule.c	-	cycle_type	-
-Modules/itertoolsmodule.c	-	dropwhile_type	-
-Modules/itertoolsmodule.c	-	filterfalse_type	-
-Modules/itertoolsmodule.c	-	groupby_type	-
-Modules/itertoolsmodule.c	-	islice_type	-
-Modules/itertoolsmodule.c	-	pairwise_type	-
-Modules/itertoolsmodule.c	-	permutations_type	-
-Modules/itertoolsmodule.c	-	product_type	-
-Modules/itertoolsmodule.c	-	repeat_type	-
-Modules/itertoolsmodule.c	-	starmap_type	-
-Modules/itertoolsmodule.c	-	takewhile_type	-
-Modules/itertoolsmodule.c	-	tee_type	-
-Modules/itertoolsmodule.c	-	teedataobject_type	-
-Modules/itertoolsmodule.c	-	ziplongest_type	-
 
 
 ##################################
@@ -371,11 +341,6 @@ Modules/itertoolsmodule.c	-	ziplongest_type	-
 ##-----------------------
 ## static types
 
-Modules/_asynciomodule.c	-	FutureIterType	-
-Modules/_asynciomodule.c	-	FutureType	-
-Modules/_asynciomodule.c	-	PyRunningLoopHolder_Type	-
-Modules/_asynciomodule.c	-	TaskStepMethWrapper_Type	-
-Modules/_asynciomodule.c	-	TaskType	-
 Modules/_ctypes/_ctypes.c	-	DictRemover_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCArrayType_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCArray_Type	-
@@ -425,19 +390,8 @@ Modules/_decimal/_decimal.c	-	PyDecContextManager_Type	-
 Modules/_decimal/_decimal.c	-	PyDecContext_Type	-
 Modules/_decimal/_decimal.c	-	PyDecSignalDictMixin_Type	-
 Modules/_decimal/_decimal.c	-	PyDec_Type	-
-Modules/_elementtree.c	-	ElementIter_Type	-
-Modules/_elementtree.c	-	Element_Type	-
-Modules/_elementtree.c	-	TreeBuilder_Type	-
-Modules/_elementtree.c	-	XMLParser_Type	-
-Modules/_pickle.c	-	Pdata_Type	-
-Modules/_pickle.c	-	PicklerMemoProxyType	-
-Modules/_pickle.c	-	Pickler_Type	-
-Modules/_pickle.c	-	UnpicklerMemoProxyType	-
-Modules/_pickle.c	-	Unpickler_Type	-
-Modules/_zoneinfo.c	-	PyZoneInfo_ZoneInfoType	-
 Modules/ossaudiodev.c	-	OSSAudioType	-
 Modules/ossaudiodev.c	-	OSSMixerType	-
-Modules/socketmodule.c	-	sock_type	-
 Modules/xxmodule.c	-	Null_Type	-
 Modules/xxmodule.c	-	Str_Type	-
 Modules/xxmodule.c	-	Xxo_Type	-
@@ -461,8 +415,6 @@ Modules/_cursesmodule.c	-	PyCursesError	-
 Modules/_decimal/_decimal.c	-	DecimalException	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
 Modules/ossaudiodev.c	-	OSSAudioError	-
-Modules/socketmodule.c	-	socket_herror	-
-Modules/socketmodule.c	-	socket_gaierror	-
 Modules/xxlimited_35.c	-	ErrorObject	-
 Modules/xxmodule.c	-	ErrorObject	-
 
@@ -470,24 +422,8 @@ Modules/xxmodule.c	-	ErrorObject	-
 ## cached - initialized once
 
 ## manually cached PyUnicodeOjbect
-Modules/_asynciomodule.c	-	context_kwname	-
 Modules/_ctypes/callproc.c	_ctypes_get_errobj	error_object_name	-
 Modules/_ctypes/_ctypes.c	CreateSwappedType	suffix	-
-
-## other - during module init
-Modules/_asynciomodule.c	-	asyncio_mod	-
-Modules/_asynciomodule.c	-	traceback_extract_stack	-
-Modules/_asynciomodule.c	-	asyncio_future_repr_func	-
-Modules/_asynciomodule.c	-	asyncio_get_event_loop_policy	-
-Modules/_asynciomodule.c	-	asyncio_iscoroutine_func	-
-Modules/_asynciomodule.c	-	asyncio_task_get_stack_func	-
-Modules/_asynciomodule.c	-	asyncio_task_print_stack_func	-
-Modules/_asynciomodule.c	-	asyncio_task_repr_func	-
-Modules/_asynciomodule.c	-	asyncio_InvalidStateError	-
-Modules/_asynciomodule.c	-	asyncio_CancelledError	-
-Modules/_zoneinfo.c	-	io_open	-
-Modules/_zoneinfo.c	-	_tzpath_find_tzfile	-
-Modules/_zoneinfo.c	-	_common_mod	-
 
 ##-----------------------
 ## other
@@ -513,22 +449,15 @@ Modules/_decimal/_decimal.c	-	extended_context_template	-
 Modules/_decimal/_decimal.c	-	round_map	-
 Modules/_decimal/_decimal.c	-	Rational	-
 Modules/_decimal/_decimal.c	-	SignalTuple	-
-Modules/arraymodule.c	array_array___reduce_ex___impl	array_reconstructor	-
 
 ## state
-Modules/_asynciomodule.c	-	cached_running_holder	-
 Modules/_asynciomodule.c	-	fi_freelist	-
 Modules/_asynciomodule.c	-	fi_freelist_len	-
-Modules/_asynciomodule.c	-	all_tasks	-
-Modules/_asynciomodule.c	-	current_tasks	-
-Modules/_asynciomodule.c	-	iscoroutine_typecache	-
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
 Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
 Modules/_tkinter.c	-	trbInCmd	-
-Modules/_zoneinfo.c	-	TIMEDELTA_CACHE	-
-Modules/_zoneinfo.c	-	ZONEINFO_WEAK_CACHE	-
 
 
 ##################################
@@ -543,7 +472,6 @@ Modules/pyexpat.c	PyUnknownEncodingHandler	template_buffer	-
 
 ## other
 Include/datetime.h	-	PyDateTimeAPI	-
-Modules/_asynciomodule.c	-	module_initialized	-
 Modules/_ctypes/cfield.c	_ctypes_get_fielddesc	initialized	-
 Modules/_ctypes/malloc_closure.c	-	_pagesize	-
 Modules/_cursesmodule.c	-	initialised	-
@@ -583,14 +511,10 @@ Modules/cjkcodecs/cjkcodecs.h	-	mapping_list	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-
 Modules/readline.c	-	libedit_history_start	-
-Modules/socketmodule.c	-	accept4_works	-
-Modules/socketmodule.c	-	sock_cloexec_works	-
 
 ##-----------------------
 ## state
 
-Modules/_asynciomodule.c	-	cached_running_holder_tsid	-
-Modules/_asynciomodule.c	-	task_name_counter	-
 Modules/_ctypes/cfield.c	-	formattable	-
 Modules/_ctypes/malloc_closure.c	-	free_list	-
 Modules/_curses_panel.c	-	lop	-
@@ -604,10 +528,6 @@ Modules/_tkinter.c	-	command_mutex	-
 Modules/_tkinter.c	-	HeadFHCD	-
 Modules/_tkinter.c	-	stdin_ready	-
 Modules/_tkinter.c	-	event_tstate	-
-Modules/_xxsubinterpretersmodule.c	-	_globals	-
-Modules/_zoneinfo.c	-	ZONEINFO_STRONG_CACHE	-
-Modules/_zoneinfo.c	-	ZONEINFO_STRONG_CACHE_MAX_SIZE	-
-Modules/_zoneinfo.c	-	NO_TTINFO	-
 Modules/readline.c	-	completer_word_break_characters	-
 Modules/readline.c	-	_history_length	-
 Modules/readline.c	-	should_auto_add_history	-
@@ -616,4 +536,3 @@ Modules/readline.c	-	sigwinch_ohandler	-
 Modules/readline.c	-	completed_input_string	-
 Modules/rotatingtree.c	-	random_stream	-
 Modules/rotatingtree.c	-	random_value	-
-Modules/socketmodule.c	-	defaulttimeout	-

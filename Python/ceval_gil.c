@@ -2,7 +2,7 @@
 #include "Python.h"
 #include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
-#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _Py_RunGC()
@@ -467,7 +467,7 @@ void _PyEval_SetSwitchInterval(unsigned long microseconds)
     gil->interval = microseconds;
 }
 
-unsigned long _PyEval_GetSwitchInterval()
+unsigned long _PyEval_GetSwitchInterval(void)
 {
     struct _gil_runtime_state *gil = &_PyRuntime.ceval.gil;
     return gil->interval;
@@ -624,7 +624,7 @@ _PyEval_ReInitThreads(PyThreadState *tstate)
     }
 
     /* Destroy all threads except the current one */
-    _PyThreadState_DeleteExcept(runtime, tstate);
+    _PyThreadState_DeleteExcept(tstate);
     return _PyStatus_OK();
 }
 #endif
@@ -870,10 +870,9 @@ _Py_FinishPendingCalls(PyThreadState *tstate)
     }
 
     if (make_pending_calls(tstate->interp) < 0) {
-        PyObject *exc, *val, *tb;
-        _PyErr_Fetch(tstate, &exc, &val, &tb);
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
         PyErr_BadInternalCall();
-        _PyErr_ChainExceptions(exc, val, tb);
+        _PyErr_ChainExceptions1(exc);
         _PyErr_Print(tstate);
     }
 }

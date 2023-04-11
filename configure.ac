@@ -1939,17 +1939,19 @@ if test "$Py_BOLT" = 'true' ; then
   DEF_MAKE_ALL_RULE="bolt-opt"
   DEF_MAKE_RULE="build_all"
 
+  # -fno-reorder-blocks-and-partition is required for bolt to work.
+  # Possibly GCC only.
+  AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[
+      CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
+  ])
+
   # These flags are required for bolt to work:
-  CFLAGS_NODIST="$CFLAGS_NODIST -fno-reorder-blocks-and-partition"
   LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
 
   # These flags are required to get good performance from bolt:
   CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
   # We want to add these no-pie flags to linking executables but not shared libraries:
   LINKCC="$LINKCC -fno-pie -no-pie"
-  # Designate the DWARF version into 4 since the LLVM-BOLT does not support DWARF5 yet.
-  CFLAGS="$CFLAGS -gdwarf-4"
-  LDFLAGS="$LDFLAGS -gdwarf-4"
   AC_SUBST(LLVM_BOLT)
   AC_PATH_TOOL(LLVM_BOLT, llvm-bolt, '', ${llvm_path})
   if test -n "${LLVM_BOLT}" -a -x "${LLVM_BOLT}"
@@ -2071,6 +2073,45 @@ case $CC in
         fi
 esac
 
+dnl Historically, some of our code assumed that signed integer overflow
+dnl is defined behaviour via twos-complement.
+dnl Set STRICT_OVERFLOW_CFLAGS and NO_STRICT_OVERFLOW_CFLAGS depending on compiler support.
+dnl Pass the latter to modules that depend on such behaviour.
+_SAVE_VAR([CFLAGS])
+CFLAGS="-fstrict-overflow -fno-strict-overflow"
+AC_CACHE_CHECK([if $CC supports -fstrict-overflow and -fno-strict-overflow],
+               [ac_cv_cc_supports_fstrict_overflow],
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[]], [[]])],
+    [ac_cv_cc_supports_fstrict_overflow=yes],
+    [ac_cv_cc_supports_fstrict_overflow=no]
+  )
+)
+_RESTORE_VAR([CFLAGS])
+
+AS_VAR_IF([ac_cv_cc_supports_fstrict_overflow], [yes],
+          [STRICT_OVERFLOW_CFLAGS="-fstrict-overflow"
+           NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"],
+          [STRICT_OVERFLOW_CFLAGS=""
+           NO_STRICT_OVERFLOW_CFLAGS=""])
+
+AC_MSG_CHECKING([for --with-strict-overflow])
+AC_ARG_WITH([strict-overflow],
+  AS_HELP_STRING(
+    [--with-strict-overflow],
+    [if 'yes', add -fstrict-overflow to CFLAGS, else add -fno-strict-overflow (default is no)]
+  ),
+  [
+    AS_VAR_IF(
+      [ac_cv_cc_supports_fstrict_overflow], [no],
+      [AC_MSG_WARN([--with-strict-overflow=yes requires a compiler that supports -fstrict-overflow])],
+      []
+    )
+  ],
+  [with_strict_overflow=no]
+)
+AC_MSG_RESULT([$with_strict_overflow])
+
 # Check if CC supports -Og optimization level
 _SAVE_VAR([CFLAGS])
 CFLAGS="-Og"
@@ -2101,15 +2142,8 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        # For gcc 4.x we need to use -fwrapv so lets check if its supported
-        if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
-           WRAP="-fwrapv"
-        fi
-
         if test -n "${cc_is_clang}"
         then
-            # Clang also needs -fwrapv
-            WRAP="-fwrapv"
             # bpo-30104: disable strict aliasing to compile correctly dtoa.c,
             # see Makefile.pre.in for more information
             CFLAGS_ALIASING="-fno-strict-aliasing"
@@ -2120,7 +2154,7 @@ then
 	    if test "$Py_DEBUG" = 'true' ; then
 		OPT="-g $PYDEBUG_CFLAGS -Wall"
 	    else
-		OPT="-g $WRAP -O3 -Wall"
+		OPT="-g -O3 -Wall"
 	    fi
 	    ;;
 	*)
@@ -2235,6 +2269,10 @@ AC_DEFUN([PY_CHECK_CC_WARNING], [
 ])
 
 # tweak BASECFLAGS based on compiler and platform
+AS_VAR_IF([with_strict_overflow], [yes],
+          [BASECFLAGS="$BASECFLAGS $STRICT_OVERFLOW_CFLAGS"],
+          [BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"])
+
 case $GCC in
 yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
@@ -2964,82 +3002,6 @@ AS_VAR_IF([ac_cv_pthread_key_t_is_arithmetic_type], [yes], [
 
 CC="$ac_save_cc"
 
-AC_SUBST(OTHER_LIBTOOL_OPT)
-case $ac_sys_system/$ac_sys_release in
-  Darwin/@<:@01567@:>@\..*)
-    OTHER_LIBTOOL_OPT="-prebind -seg1addr 0x10000000"
-    ;;
-  Darwin/*)
-    OTHER_LIBTOOL_OPT=""
-    ;;
-esac
-
-
-AC_SUBST(LIBTOOL_CRUFT)
-case $ac_sys_system/$ac_sys_release in
-  Darwin/@<:@01567@:>@\..*)
-    LIBTOOL_CRUFT="-framework System -lcc_dynamic"
-    if test "${enable_universalsdk}"; then
-	    :
-    else
-        LIBTOOL_CRUFT="${LIBTOOL_CRUFT} -arch_only `/usr/bin/arch`"
-    fi
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
-  Darwin/*)
-    gcc_version=`gcc -dumpversion`
-    if test ${gcc_version} '<' 4.0
-        then
-            LIBTOOL_CRUFT="-lcc_dynamic"
-        else
-            LIBTOOL_CRUFT=""
-    fi
-    AC_RUN_IFELSE([AC_LANG_SOURCE([[
-    #include <unistd.h>
-    int main(int argc, char*argv[])
-    {
-      if (sizeof(long) == 4) {
-    	  return 0;
-      } else {
-      	  return 1;
-      }
-    }
-    ]])],[ac_osx_32bit=yes],[ac_osx_32bit=no],[ac_osx_32bit=yes])
-
-    if test "${ac_osx_32bit}" = "yes"; then
-    	case `/usr/bin/arch` in
-    	i386)
-    		MACOSX_DEFAULT_ARCH="i386"
-    		;;
-    	ppc)
-    		MACOSX_DEFAULT_ARCH="ppc"
-    		;;
-    	*)
-    		AC_MSG_ERROR([Unexpected output of 'arch' on macOS])
-    		;;
-    	esac
-    else
-    	case `/usr/bin/arch` in
-    	i386)
-    		MACOSX_DEFAULT_ARCH="x86_64"
-    		;;
-    	ppc)
-    		MACOSX_DEFAULT_ARCH="ppc64"
-		;;
-    	arm64)
-    		MACOSX_DEFAULT_ARCH="arm64"
-    		;;
-    	*)
-    		AC_MSG_ERROR([Unexpected output of 'arch' on macOS])
-    		;;
-    	esac
-
-    fi
-
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT" -lSystem -lSystemStubs -arch_only ${MACOSX_DEFAULT_ARCH}"
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-    LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
-esac
 AC_MSG_CHECKING(for --enable-framework)
 if test "$enable_framework"
 then
@@ -3941,7 +3903,6 @@ dnl hence CPPFLAGS instead of CFLAGS.
       PY_CHECK_SQLITE_FUNC([sqlite3_column_decltype])
       PY_CHECK_SQLITE_FUNC([sqlite3_column_double])
       PY_CHECK_SQLITE_FUNC([sqlite3_complete])
-      PY_CHECK_SQLITE_FUNC([sqlite3_enable_shared_cache])
       PY_CHECK_SQLITE_FUNC([sqlite3_progress_handler])
       PY_CHECK_SQLITE_FUNC([sqlite3_result_double])
       PY_CHECK_SQLITE_FUNC([sqlite3_set_authorizer])
@@ -5834,7 +5795,7 @@ AC_MSG_RESULT($LDVERSION)
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
 AC_SUBST(LIBPYTHON)
-if test -n "$ANDROID_API_LEVEL" -o "$MACHDEP" = "cygwin"; then
+if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
 else
   LIBPYTHON=''
@@ -6582,6 +6543,7 @@ SRCDIRS="\
   Modules/_ctypes \
   Modules/_decimal \
   Modules/_decimal/libmpdec \
+  Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
   Modules/_sha3 \
@@ -7002,14 +6964,14 @@ AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
 ])
 
 # builtin hash modules
-default_hashlib_hashes="md5,sha1,sha256,sha512,sha3,blake2"
+default_hashlib_hashes="md5,sha1,sha2,sha3,blake2"
 AC_DEFINE([PY_BUILTIN_HASHLIB_HASHES], [], [enabled builtin hash modules]
 )
 AC_MSG_CHECKING(for --with-builtin-hashlib-hashes)
 AC_ARG_WITH(builtin-hashlib-hashes,
-            AS_HELP_STRING([--with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2],
+            AS_HELP_STRING([--with-builtin-hashlib-hashes=md5,sha1,sha2,sha3,blake2],
                            [builtin hash modules,
-                            md5, sha1, sha256, sha512, sha3 (with shake), blake2]),
+                            md5, sha1, sha2, sha3 (with shake), blake2]),
 [
   AS_CASE([$with_builtin_hashlib_hashes],
     [yes], [with_builtin_hashlib_hashes=$default_hashlib_hashes],
@@ -7026,8 +6988,7 @@ for builtin_hash in $with_builtin_hashlib_hashes; do
     AS_CASE($builtin_hash,
       [md5], [with_builtin_md5=yes],
       [sha1], [with_builtin_sha1=yes],
-      [sha256], [with_builtin_sha256=yes],
-      [sha512], [with_builtin_sha512=yes],
+      [sha2], [with_builtin_sha2=yes],
       [sha3], [with_builtin_sha3=yes],
       [blake2], [with_builtin_blake2=yes]
     )
@@ -7091,6 +7052,7 @@ AS_CASE([$ac_sys_system],
       [_scproxy],
       [_tkinter],
       [_xxsubinterpreters],
+      [_xxinterpchannels],
       [grp],
       [nis],
       [ossaudiodev],
@@ -7209,6 +7171,7 @@ PY_STDLIB_MOD_SIMPLE([select])
 PY_STDLIB_MOD_SIMPLE([_struct])
 PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
+PY_STDLIB_MOD_SIMPLE([_xxinterpchannels])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
 
 dnl multiprocessing modules
@@ -7267,10 +7230,15 @@ PY_STDLIB_MOD_SIMPLE([unicodedata])
 
 dnl By default we always compile these even when OpenSSL is available
 dnl (issue #14693). The modules are small.
-PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
-PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
-PY_STDLIB_MOD([_sha256], [test "$with_builtin_sha256" = yes])
-PY_STDLIB_MOD([_sha512], [test "$with_builtin_sha512" = yes])
+PY_STDLIB_MOD([_md5],
+  [test "$with_builtin_md5" = yes], [],
+  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
+PY_STDLIB_MOD([_sha1],
+  [test "$with_builtin_sha1" = yes], [],
+  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
+PY_STDLIB_MOD([_sha2],
+  [test "$with_builtin_sha2" = yes], [],
+  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
 PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
 PY_STDLIB_MOD([_blake2],
   [test "$with_builtin_blake2" = yes], [],
@@ -7281,7 +7249,7 @@ PY_STDLIB_MOD([_crypt],
   [$LIBCRYPT_CFLAGS], [$LIBCRYPT_LIBS])
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
-  [$LIBFFI_CFLAGS], [$LIBFFI_LIBS])
+  [$NO_STRICT_OVERFLOW_CFLAGS $LIBFFI_CFLAGS], [$LIBFFI_LIBS])
 PY_STDLIB_MOD([_curses],
   [], [test "$have_curses" != "no"],
   [$CURSES_CFLAGS], [$CURSES_LIBS]

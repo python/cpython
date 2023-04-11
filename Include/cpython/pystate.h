@@ -11,6 +11,9 @@ is available in a given context.  For example, forking the process
 might not be allowed in the current interpreter (i.e. os.fork() would fail).
 */
 
+/* Set if import should check a module for subinterpreter support. */
+#define Py_RTFLAGS_MULTI_INTERP_EXTENSIONS (1UL << 8)
+
 /* Set if threads are allowed. */
 #define Py_RTFLAGS_THREADS (1UL << 10)
 
@@ -107,6 +110,11 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
+struct _py_trashcan {
+    int delete_nesting;
+    PyObject *delete_later;
+};
+
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -114,7 +122,30 @@ struct _ts {
     PyThreadState *next;
     PyInterpreterState *interp;
 
-    int _status;
+    struct {
+        /* Has been initialized to a safe state.
+
+           In order to be effective, this must be set to 0 during or right
+           after allocation. */
+        unsigned int initialized:1;
+
+        /* Has been bound to an OS thread. */
+        unsigned int bound:1;
+        /* Has been unbound from its OS thread. */
+        unsigned int unbound:1;
+        /* Has been bound aa current for the GILState API. */
+        unsigned int bound_gilstate:1;
+        /* Currently in use (maybe holds the GIL). */
+        unsigned int active:1;
+
+        /* various stages of finalization */
+        unsigned int finalizing:1;
+        unsigned int cleared:1;
+        unsigned int finalized:1;
+
+        /* padding to align to 4 bytes */
+        unsigned int :24;
+    } _status;
 
     int py_recursion_remaining;
     int py_recursion_limit;
@@ -138,9 +169,7 @@ struct _ts {
     PyObject *c_traceobj;
 
     /* The exception currently being raised */
-    PyObject *curexc_type;
-    PyObject *curexc_value;
-    PyObject *curexc_traceback;
+    PyObject *current_exception;
 
     /* Pointer to the top of the exception stack for the exceptions
      * we may be currently handling.  (See _PyErr_StackItem above.)
@@ -160,8 +189,7 @@ struct _ts {
      */
     unsigned long native_thread_id;
 
-    int trash_delete_nesting;
-    PyObject *trash_delete_later;
+    struct _py_trashcan trash;
 
     /* Called when a thread state is deleted normally, but not when it
      * is destroyed after fork().
@@ -241,6 +269,8 @@ struct _ts {
 // Alias for backward compatibility with Python 3.8
 #define _PyInterpreterState_Get PyInterpreterState_Get
 
+/* An alias for the internal _PyThreadState_New(),
+   kept for stable ABI compatibility. */
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error

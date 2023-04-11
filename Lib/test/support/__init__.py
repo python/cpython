@@ -51,6 +51,8 @@ __all__ = [
     # sys
     "is_jython", "is_android", "is_emscripten", "is_wasi",
     "check_impl_detail", "unix_shell", "setswitchinterval",
+    # os
+    "get_pagesize",
     # network
     "open_urlresource",
     # processes
@@ -582,7 +584,8 @@ def darwin_malloc_err_warning(test_name):
     msg = ' NOTICE '
     detail = (f'{test_name} may generate "malloc can\'t allocate region"\n'
               'warnings on macOS systems. This behavior is known. Do not\n'
-              'report a bug unless tests are also failing. See bpo-40928.')
+              'report a bug unless tests are also failing.\n'
+              'See https://github.com/python/cpython/issues/85100')
 
     padding, _ = shutil.get_terminal_size()
     print(msg.center(padding, '-'))
@@ -1105,7 +1108,7 @@ def _run_suite(suite):
     if junit_xml_list is not None:
         junit_xml_list.append(result.get_xml_element())
 
-    if not result.testsRun and not result.skipped:
+    if not result.testsRun and not result.skipped and not result.errors:
         raise TestDidNotRun
     if not result.wasSuccessful():
         if len(result.errors) == 1 and not result.failures:
@@ -1890,6 +1893,18 @@ def setswitchinterval(interval):
         if _is_android_emulator:
             interval = minimum_interval
     return sys.setswitchinterval(interval)
+
+
+def get_pagesize():
+    """Get size of a page in bytes."""
+    try:
+        page_size = os.sysconf('SC_PAGESIZE')
+    except (ValueError, AttributeError):
+        try:
+            page_size = os.sysconf('SC_PAGE_SIZE')
+        except (ValueError, AttributeError):
+            page_size = 4096
+    return page_size
 
 
 @contextlib.contextmanager

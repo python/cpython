@@ -6,7 +6,6 @@ tests of their own.
 """
 
 import os
-import sys
 import unittest
 from test.support import import_helper
 
