@@ -998,7 +998,7 @@ Here is an incomplete list of things to consider:
   to prevent e.g. exploiting pre-existing links, and to make it easier to
   clean up after a failed extraction.
 * When working with untrusted data, use external (e.g. OS-level) limits on
-  ·disk, memory and CPU usage.
+  disk, memory and CPU usage.
 * Check filenames against an allow-list of characters
   (to filter out control characters, confusables, foreign path separators,
   etc.).
