@@ -130,12 +130,10 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
         for name, op in specialized_opmap.items():
             fobj.write(DEFINE.format(name, op))
 
-        iobj.write("\nextern const uint32_t _PyOpcode_RelativeJump[9];\n")
         iobj.write("\nextern const uint32_t _PyOpcode_Jump[9];\n")
         iobj.write("\nextern const uint8_t _PyOpcode_Caches[256];\n")
         iobj.write("\nextern const uint8_t _PyOpcode_Deopt[256];\n")
         iobj.write("\n#ifdef NEED_OPCODE_TABLES\n")
-        write_int_array_from_ops("_PyOpcode_RelativeJump", opcode['hasjrel'], iobj)
         write_int_array_from_ops("_PyOpcode_Jump", opcode['hasjrel'] + opcode['hasjabs'], iobj)
 
         iobj.write("\nconst uint8_t _PyOpcode_Caches[256] = {\n")

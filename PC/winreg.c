@@ -2059,27 +2059,29 @@ static struct PyMethodDef winreg_methods[] = {
     NULL,
 };
 
-static void
-insint(PyObject * d, char * name, long value)
-{
-    PyObject *v = PyLong_FromLong(value);
-    if (!v || PyDict_SetItemString(d, name, v))
-        PyErr_Clear();
-    Py_XDECREF(v);
-}
+#define ADD_INT(VAL) do {                               \
+    if (PyModule_AddIntConstant(m, #VAL, VAL) < 0) {    \
+        goto error;                                     \
+    }                                                   \
+} while (0)
 
-#define ADD_INT(val) insint(d, #val, val)
-
-static void
-inskey(PyObject * d, char * name, HKEY key)
+static int
+inskey(PyObject *mod, char *name, HKEY key)
 {
     PyObject *v = PyLong_FromVoidPtr(key);
-    if (!v || PyDict_SetItemString(d, name, v))
-        PyErr_Clear();
-    Py_XDECREF(v);
+    if (v == NULL) {
+        return -1;
+    }
+    int rc = PyModule_AddObjectRef(mod, name, v);
+    Py_DECREF(v);
+    return rc;
 }
 
-#define ADD_KEY(val) inskey(d, #val, val)
+#define ADD_KEY(VAL) do {           \
+    if (inskey(m, #VAL, VAL) < 0) { \
+        goto error;                 \
+    }                               \
+} while (0)
 
 
 static struct PyModuleDef winregmodule = {
@@ -2096,20 +2098,20 @@ static struct PyModuleDef winregmodule = {
 
 PyMODINIT_FUNC PyInit_winreg(void)
 {
-    PyObject *m, *d;
-    m = PyModule_Create(&winregmodule);
-    if (m == NULL)
+    PyObject *m = PyModule_Create(&winregmodule);
+    if (m == NULL) {
         return NULL;
-    d = PyModule_GetDict(m);
+    }
     PyHKEY_Type.tp_doc = PyHKEY_doc;
-    if (PyType_Ready(&PyHKEY_Type) < 0)
-        return NULL;
-    if (PyDict_SetItemString(d, "HKEYType",
-                             (PyObject *)&PyHKEY_Type) != 0)
-        return NULL;
-    if (PyDict_SetItemString(d, "error",
-                             PyExc_OSError) != 0)
-        return NULL;
+    if (PyType_Ready(&PyHKEY_Type) < 0) {
+        goto error;
+    }
+    if (PyModule_AddObjectRef(m, "HKEYType", (PyObject *)&PyHKEY_Type) < 0) {
+        goto error;
+    }
+    if (PyModule_AddObjectRef(m, "error", PyExc_OSError) < 0) {
+        goto error;
+    }
 
     /* Add the relevant constants */
     ADD_KEY(HKEY_CLASSES_ROOT);
@@ -2170,7 +2172,14 @@ PyMODINIT_FUNC PyInit_winreg(void)
     ADD_INT(REG_RESOURCE_LIST);
     ADD_INT(REG_FULL_RESOURCE_DESCRIPTOR);
     ADD_INT(REG_RESOURCE_REQUIREMENTS_LIST);
+
+#undef ADD_INT
+
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }
 
 #endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM || MS_WINDOWS_GAMES */
