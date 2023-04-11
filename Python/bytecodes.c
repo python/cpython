@@ -1886,6 +1886,9 @@ dummy_func(
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
             int status = ((int (*)(PyThreadState *, _PyInterpreterFrame *, PyObject **))(uintptr_t)trace)(tstate, frame, stack_pointer);
+            if (status) {
+                printf("Bailed with status %d!\n", status);
+            }
             next_instr = frame->prev_instr;
             stack_pointer = _PyFrame_GetStackPointer(frame);
             frame->stacktop = -1;

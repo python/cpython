@@ -406,7 +406,7 @@ class Engine:
         lines.append("")
         return "\n".join(lines)
 
-    def trace(self, f, *, warmup: int = 2):
+    def trace(self, f, *, warmup: int = 0):
         recorded = {}
         compiled = {}
         def tracer(frame: types.FrameType, event: str, arg: object):
@@ -439,22 +439,26 @@ class Engine:
                         compile_trace.restype = ctypes.POINTER(ctypes.c_ubyte)
                         buffer = ctypes.cast(compile_trace(len(traced), c_traced), ctypes.c_void_p)
                         if buffer is not None:
-                            compiled[j] = WRAPPER_TYPE(buffer.value)
+                            jump = ctypes.cast(ctypes.c_void_p(first_instr + j), ctypes.POINTER(ctypes.c_uint8))
+                            assert jump.contents.value == dis._all_opmap["JUMP_BACKWARD"]
+                            jump.contents.value = dis._all_opmap["JUMP_BACKWARD_INTO_TRACE"]
+                            ctypes.cast(ctypes.c_void_p(first_instr + j + 4), ctypes.POINTER(ctypes.c_uint64)).contents.value = buffer.value
+                            compiled[j] = True#WRAPPER_TYPE(buffer.value)
                         else:
                             compiled[j] = None
                             print("Failed (missing opcode)!")
                     self._compiling_time += time.perf_counter() - start
                     start = time.perf_counter()
                 if i in compiled:
-                    wrapper = compiled[i]
-                    if wrapper is not None:
-                        # self._stderr(f"Entering trace for {frame.f_code.co_filename}:{frame.f_lineno}.")
-                        self._tracing_time += time.perf_counter() - start
-                        start = time.perf_counter()
-                        status = wrapper()
-                        self._compiled_time += time.perf_counter() - start
-                        start = time.perf_counter()
-                        # self._stderr(f"Exiting trace for {frame.f_code.co_filename}:{frame.f_lineno} with status {status}.")
+                    # wrapper = compiled[i]
+                    # if wrapper is not None:
+                    #     # self._stderr(f"Entering trace for {frame.f_code.co_filename}:{frame.f_lineno}.")
+                    #     self._tracing_time += time.perf_counter() - start
+                    #     start = time.perf_counter()
+                    #     status = wrapper()
+                    #     self._compiled_time += time.perf_counter() - start
+                    #     start = time.perf_counter()
+                    #     # self._stderr(f"Exiting trace for {frame.f_code.co_filename}:{frame.f_lineno} with status {status}.")
                     recorded.clear()
                 else:
                     recorded[i] = len(recorded)
@@ -468,14 +472,17 @@ class Engine:
         def wrapper(*args, **kwargs):
             # This needs to be *fast*.
             nonlocal warmup
-            if 0 < warmup:
+            if warmup:
                 warmup -= 1
                 return f(*args, **kwargs)
+            warmup -= 1
             try:
+                print("Tracing...")
                 sys.settrace(tracer)
                 return f(*args, **kwargs)
             finally:
                 sys.settrace(None)
+                print("...done!")
         return wrapper
     
     @staticmethod
@@ -499,6 +506,12 @@ class Engine:
                 out[0] = out[-1]
                 opnames[0] = opnames[-1]
                 del out[-1], opnames[-1]
-                return out
+            else:
+                return None
+        try:
+            i = opnames.index("JUMP_BACKWARD")
+        except ValueError:
             return None
+        out = out[i:] + out[:i]
+        opnames = opnames[i:] + opnames[:i]
         return out
