@@ -1,0 +1,1 @@
+Fix :exc:`OSError` in :func:`shutil.copystat` when the destination file system doesn't have sufficient space for the source file's extended attributes.

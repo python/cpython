@@ -331,8 +331,13 @@ if hasattr(os, 'listxattr'):
                 value = os.getxattr(src, name, follow_symlinks=follow_symlinks)
                 os.setxattr(dst, name, value, follow_symlinks=follow_symlinks)
             except OSError as e:
+                # EINVAL can occur when the destination filesystem does not
+                # support extended attributed
+                # ENOSPC can occur when the destination filesystem has a
+                # smaller limit than the source filesystem for the size of
+                # extended attributes
                 if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA,
-                                   errno.EINVAL):
+                                   errno.EINVAL, errno.ENOSPC):
                     raise
 else:
     def _copyxattr(*args, **kwargs):
