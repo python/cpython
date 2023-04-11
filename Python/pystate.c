@@ -1986,14 +1986,13 @@ _PyThread_CurrentExceptions(void)
             if (id == NULL) {
                 goto fail;
             }
-            PyObject *exc_info = _PyErr_StackItemToExcInfoTuple(err_info);
-            if (exc_info == NULL) {
-                Py_DECREF(id);
-                goto fail;
-            }
-            int stat = PyDict_SetItem(result, id, exc_info);
+            PyObject *exc = err_info->exc_value;
+            assert(exc == NULL ||
+                   exc == Py_None ||
+                   PyExceptionInstance_Check(exc));
+
+            int stat = PyDict_SetItem(result, id, exc == NULL ? Py_None : exc);
             Py_DECREF(id);
-            Py_DECREF(exc_info);
             if (stat < 0) {
                 goto fail;
             }

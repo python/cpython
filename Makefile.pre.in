@@ -369,17 +369,18 @@ PYTHON_OBJS=	\
 		Python/Python-ast.o \
 		Python/Python-tokenize.o \
 		Python/asdl.o \
+		Python/assemble.o \
 		Python/ast.o \
 		Python/ast_opt.o \
 		Python/ast_unparse.o \
 		Python/bltinmodule.o \
 		Python/ceval.o \
-		Python/flowgraph.o \
 		Python/codecs.o \
 		Python/compile.o \
 		Python/context.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
+		Python/flowgraph.o \
 		Python/frame.o \
 		Python/frozenmain.o \
 		Python/future.o \
