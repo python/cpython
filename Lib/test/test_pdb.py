@@ -1,5 +1,6 @@
 # A test suite for pdb; not very comprehensive at the moment.
 
+import dis
 import doctest
 import os
 import pdb
@@ -2375,6 +2376,101 @@ def bœr():
         stdout, stderr = self._run_pdb(["gh93696_host.py"], commands)
         # verify that pdb found the source of the "frozen" function
         self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
+
+    def get_func_opnames(self, func_def, func_name):
+        extract_code = f"""
+            import dis
+            for inst in dis.get_instructions({func_name}):
+                print(inst.opname)
+        """
+
+        with redirect_stdout(StringIO()) as s:
+            exec(textwrap.dedent(func_def) + textwrap.dedent(extract_code))
+
+        return s.getvalue().splitlines()
+
+    def test_list_instruction(self):
+        func_def = """
+            def f():
+                a = [1, 2, 3]
+                return a[0]
+        """
+        func_exec = """
+            f()
+        """
+        script = func_def + func_exec
+
+        commands_li = """
+            break f
+            c
+            li
+        """
+
+        commands_lli = """
+            break f
+            c
+            lli
+        """
+
+        # Make sure all the opcodes are listed
+        stdout, stderr = self.run_pdb_module(script, commands_li)
+        for opname in self.get_func_opnames(func_def, "f"):
+            self.assertIn(opname, stdout)
+
+        stdout, stderr = self.run_pdb_module(script, commands_lli)
+        for opname in self.get_func_opnames(func_def, "f"):
+            self.assertIn(opname, stdout)
+
+    def test_instruction_level_control(self):
+        func_def = """
+            def f():
+                a = [1, 2, 3]
+                return a[0]
+        """
+        func_exec = """
+            f()
+        """
+        script = func_def + func_exec
+
+        commands = """
+            ni
+            li
+        """
+
+        # Check that after ni, current instruction is displayed
+        stdout, stderr = self.run_pdb_module(script, commands)
+        lines = [line.strip() for line in stdout.splitlines()]
+        for idx, line in enumerate(lines):
+            if "-->" in line:
+                # Found the current instruction indicator after ni
+                # Make sure that is listed in li
+                self.assertIn(line, lines[idx+1:])
+                break
+
+        commands = """
+            ni
+            ni
+            ni
+            c
+        """
+
+        stdout, stderr = self.run_pdb_module(script, commands)
+        curr_instr_lines = [line.strip() for line in stdout.splitlines() if "-->" in line]
+        self.assertEqual(len(curr_instr_lines), 3)
+        for line in curr_instr_lines:
+            # Make sure ni is moving forward, not stopping at the same instruction
+            self.assertEqual(curr_instr_lines.count(line), 1)
+
+        # this test is under the assumption that within 10 instructions the function
+        # f should be called
+        commands = "si\n" * 10 + "c\n"
+
+        stdout, stderr = self.run_pdb_module(script, commands)
+        curr_instr_lines = [line.strip() for line in stdout.splitlines()]
+        # Make sure si stepped into the function so the users can see the source
+        # code of the function
+        self.assertTrue(any("-> a = [1, 2, 3]" in line for line in curr_instr_lines))
+
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):

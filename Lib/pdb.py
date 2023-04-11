@@ -203,6 +203,7 @@ class _ModuleTarget(str):
 # command "pdb.line_prefix = '\n% '".
 # line_prefix = ': '    # Use this to get the old situation back
 line_prefix = '\n-> '   # Probably a better default
+inst_prefix = '\n--> '   # Probably a better default
 
 class Pdb(bdb.Bdb, cmd.Cmd):
 
@@ -330,6 +331,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if self.bp_commands(frame):
             self.interaction(frame, None)
 
+    def user_opcode(self, frame):
+        """This function is called when we are about to execute an opcode."""
+        if self._wait_for_mainpyfile:
+            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
+                or frame.f_lineno <= 0):
+                return
+            self._wait_for_mainpyfile = False
+        self.interaction(frame, None)
+
     def bp_commands(self, frame):
         """Call every command that was set for the current active breakpoint
         (if there is one).
@@ -422,6 +432,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.forget()
             return
         self.print_stack_entry(self.stack[self.curindex])
+        if self.trace_opcodes:
+            self.print_current_inst(frame)
         self._cmdloop()
         self.forget()
 
@@ -1087,14 +1099,33 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return 1
     do_s = do_step
 
+    def do_stepi(self, arg):
+        """s(tep)
+        Execute the current bytecode instruction, stop at the first
+        possible occasion (either in a function that is called or in
+        the current function).
+        """
+        self.set_stepi(self.curframe)
+        return 1
+    do_si = do_stepi
+
     def do_next(self, arg):
         """n(ext)
         Continue execution until the next line in the current function
-        is reached or it returns.
+        is reached or the current function returns.
         """
         self.set_next(self.curframe)
         return 1
     do_n = do_next
+
+    def do_nexti(self, arg):
+        """n(ext)
+        Continue execution until the next bytecode instruction in the
+        current function is reached or the current function returns.
+        """
+        self.set_nexti(self.curframe)
+        return 1
+    do_ni = do_nexti
 
     def do_run(self, arg):
         """run [args...]
@@ -1287,21 +1318,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     complete_p = _complete_expression
     complete_pp = _complete_expression
 
-    def do_list(self, arg):
-        """l(ist) [first [,last] | .]
-
-        List source code for the current file.  Without arguments,
-        list 11 lines around the current line or continue the previous
-        listing.  With . as argument, list 11 lines around the current
-        line.  With one argument, list 11 lines starting at that line.
-        With two arguments, list the given range; if the second
-        argument is less than the first, it is a count.
-
-        The current line in the current frame is indicated by "->".
-        If an exception is being debugged, the line where the
-        exception was originally raised or propagated is indicated by
-        ">>", if it differs from the current line.
-        """
+    def _do_list(self, arg, show_instructions=False):
         self.lastcmd = 'list'
         last = None
         if arg and arg != '.':
@@ -1335,19 +1352,60 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         breaklist = self.get_file_breaks(filename)
         try:
             lines = linecache.getlines(filename, self.curframe.f_globals)
+            instructions = dis.get_instructions(self.curframe.f_code, adaptive=True) \
+                            if show_instructions else None
             self._print_lines(lines[first-1:last], first, breaklist,
-                              self.curframe)
+                              self.curframe,
+                              instructions)
             self.lineno = min(last, len(lines))
             if len(lines) < last:
                 self.message('[EOF]')
         except KeyboardInterrupt:
             pass
+
+    def do_list(self, arg):
+        """l(ist) [first [,last] | .]
+
+        List source code for the current file.  Without arguments,
+        list 11 lines around the current line or continue the previous
+        listing.  With . as argument, list 11 lines around the current
+        line.  With one argument, list 11 lines starting at that line.
+        With two arguments, list the given range; if the second
+        argument is less than the first, it is a count.
+
+        The current line in the current frame is indicated by "->".
+        If an exception is being debugged, the line where the
+        exception was originally raised or propagated is indicated by
+        ">>", if it differs from the current line.
+        """
+        self._do_list(arg, False)
     do_l = do_list
 
-    def do_longlist(self, arg):
-        """longlist | ll
-        List the whole source code for the current function or frame.
+    def do_listi(self, arg):
+        """listi | li [first[, last] | .]
+
+        List source code for the current file with bytecode
+        instructions.
+
+        Without arguments, list 11 lines with their corresponding
+        instructions around the current line or continue the
+        previous listing.  With . as argument, list 11 lines with
+        their corresponding instructions around the current line.
+        With one argument, list 11 lines with their corresponding
+        instructions starting at that line. With two arguments,
+        list the given range; if the second argument is less than
+        the first, it is a count.
+
+        The current line in the current frame is indicated by "->".
+        The current instruction is indicated by "-->"
+        If an exception is being debugged, the line where the
+        exception was originally raised or propagated is indicated by
+        ">>", if it differs from the current line.
         """
+        self._do_list(arg, True)
+    do_li = do_listi
+
+    def _do_longlist(self, arg, show_instructions=False):
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
         try:
@@ -1355,8 +1413,26 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except OSError as err:
             self.error(err)
             return
-        self._print_lines(lines, lineno, breaklist, self.curframe)
+        instructions = dis.get_instructions(self.curframe.f_code, adaptive=True) \
+                        if show_instructions else None
+        self._print_lines(lines, lineno, breaklist, self.curframe,
+                instructions)
+
+    def do_longlist(self, arg):
+        """longlist | ll
+        List the whole source code for the current function or frame.
+        """
+        self._do_longlist(arg, False)
     do_ll = do_longlist
+
+    def do_longlisti(self, arg):
+        """longlisti | lli
+
+        List the whole source code with bytecode instructions for
+        the current function or frame.
+        """
+        self._do_longlist(arg, True)
+    do_lli = do_longlisti
 
     def do_source(self, arg):
         """source expression
@@ -1375,13 +1451,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     complete_source = _complete_expression
 
-    def _print_lines(self, lines, start, breaks=(), frame=None):
+    def _print_lines(self, lines, start, breaks=(), frame=None, instructions=None):
         """Print a range of lines."""
         if frame:
             current_lineno = frame.f_lineno
             exc_lineno = self.tb_lineno.get(frame, -1)
         else:
             current_lineno = exc_lineno = -1
+        if instructions:
+            inst = next(instructions)
         for lineno, line in enumerate(lines, start):
             s = str(lineno).rjust(3)
             if len(s) < 4:
@@ -1395,6 +1473,24 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             elif lineno == exc_lineno:
                 s += '>>'
             self.message(s + '\t' + line.rstrip())
+            if instructions:
+                # For the current line of the source code, get all the
+                # instructions belong to it. We keep a single iterator
+                # `instructions` for all the instructions compiled from
+                # the source and try to only go through the iterator once
+                while True:
+                    if inst.positions.lineno == lineno:
+                        current_inst = frame and frame.f_lasti == inst.offset
+                        disassem = inst._disassemble(lineno_width=None,
+                                                     mark_as_current=current_inst)
+                        self.message(f"     {disassem}")
+                    elif inst.positions.lineno is not None and \
+                            inst.positions.lineno > lineno:
+                        break
+                    try:
+                        inst = next(instructions)
+                    except StopIteration:
+                        break
 
     def do_whatis(self, arg):
         """whatis arg
@@ -1559,6 +1655,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.message(prefix +
                      self.format_stack_entry(frame_lineno, prompt_prefix))
 
+    def print_current_inst(self, frame):
+        for inst in dis.get_instructions(frame.f_code):
+            if inst.offset == frame.f_lasti:
+                self.message(inst._disassemble(lineno_width=None,
+                                               mark_as_current=True))
+                return
+
     # Provide help
 
     def do_help(self, arg):
@@ -1678,10 +1781,11 @@ if __doc__ is not None:
     # unfortunately we can't guess this order from the class definition
     _help_order = [
         'help', 'where', 'down', 'up', 'break', 'tbreak', 'clear', 'disable',
-        'enable', 'ignore', 'condition', 'commands', 'step', 'next', 'until',
-        'jump', 'return', 'retval', 'run', 'continue', 'list', 'longlist',
-        'args', 'p', 'pp', 'whatis', 'source', 'display', 'undisplay',
-        'interact', 'alias', 'unalias', 'debug', 'quit',
+        'enable', 'ignore', 'condition', 'commands', 'step', 'stepi',
+        'next', 'nexti', 'until', 'jump', 'return', 'retval', 'run',
+        'continue', 'list', 'listi', 'longlist', 'longlisti', 'args', 'p',
+        'pp', 'whatis', 'source', 'display', 'undisplay', 'interact', 'alias',
+        'unalias', 'debug', 'quit',
     ]
 
     for _command in _help_order:

@@ -379,6 +379,14 @@ can be overridden by the local file.
    Execute the current line, stop at the first possible occasion (either in a
    function that is called or on the next line in the current function).
 
+.. pdbcommand:: si | stepi
+
+   Execute the current bytecode instruction, stop at the first possible occasion
+   (either in a function that is called or on the next instruction in the
+   current function).
+
+   .. versionadded:: 3.12
+
 .. pdbcommand:: n(ext)
 
    Continue execution until the next line in the current function is reached or
@@ -386,6 +394,13 @@ can be overridden by the local file.
    that :pdbcmd:`step` stops inside a called function, while :pdbcmd:`next`
    executes called functions at (nearly) full speed, only stopping at the next
    line in the current function.)
+
+.. pdbcommand:: ni | nexti
+
+   Continue execution until the next bytecode instruction in the current function
+   is reached or it returns.
+
+   .. versionadded:: 3.12
 
 .. pdbcommand:: unt(il) [lineno]
 
@@ -433,12 +448,26 @@ can be overridden by the local file.
    .. versionadded:: 3.2
       The ``>>`` marker.
 
+.. pdbcommand:: li | listi [first[, last]]
+
+   Similar to :pdbcmd:`list`, but also display bytecode instructions with
+   the source code
+
+   .. versionadded:: 3.12
+
 .. pdbcommand:: ll | longlist
 
    List all source code for the current function or frame.  Interesting lines
    are marked as for :pdbcmd:`list`.
 
    .. versionadded:: 3.2
+
+.. pdbcommand:: lli | longlisti
+
+   Similar to :pdbcmd:`ll`, but also display bytecode instructions with
+   the source code
+
+   .. versionadded:: 3.12
 
 .. pdbcommand:: a(rgs)
 
