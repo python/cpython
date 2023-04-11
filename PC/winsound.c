@@ -204,31 +204,13 @@ static struct PyMethodDef sound_methods[] =
 
 #define ADD_DEFINE(CONST) do {                                  \
     if (PyModule_AddIntConstant(module, #CONST, CONST) < 0) {   \
-        goto error;                                             \
+        return -1;                                              \
     }                                                           \
 } while (0)
 
-
-static struct PyModuleDef winsoundmodule = {
-    PyModuleDef_HEAD_INIT,
-    "winsound",
-    sound_module_doc,
-    -1,
-    sound_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit_winsound(void)
+static int
+exec_module(PyObject *module)
 {
-    PyObject *module = PyModule_Create(&winsoundmodule);
-    if (module == NULL) {
-        return NULL;
-    }
-
     ADD_DEFINE(SND_ASYNC);
     ADD_DEFINE(SND_NODEFAULT);
     ADD_DEFINE(SND_NOSTOP);
@@ -248,9 +230,24 @@ PyInit_winsound(void)
 
 #undef ADD_DEFINE
 
-    return module;
+    return 0;
+}
 
-error:
-    Py_DECREF(module);
-    return NULL;
+static PyModuleDef_Slot sound_slots[] = {
+    {Py_mod_exec, exec_module},
+    {0, NULL}
+};
+
+static struct PyModuleDef winsoundmodule = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "winsound",
+    .m_doc = sound_module_doc,
+    .m_methods = sound_methods,
+    .m_slots = sound_slots,
+};
+
+PyMODINIT_FUNC
+PyInit_winsound(void)
+{
+    return PyModuleDef_Init(&winsoundmodule);
 }
