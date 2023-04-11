@@ -315,14 +315,14 @@ can be overridden by the local file.
    With a space separated list of breakpoint numbers, clear those breakpoints.
    Without argument, clear all breaks (but first ask confirmation).
 
-.. pdbcommand:: disable [bpnumber ...]
+.. pdbcommand:: disable bpnumber [bpnumber ...]
 
    Disable the breakpoints given as a space separated list of breakpoint
    numbers.  Disabling a breakpoint means it cannot cause the program to stop
    execution, but unlike clearing a breakpoint, it remains in the list of
    breakpoints and can be (re-)enabled.
 
-.. pdbcommand:: enable [bpnumber ...]
+.. pdbcommand:: enable bpnumber [bpnumber ...]
 
    Enable the breakpoints specified.
 
