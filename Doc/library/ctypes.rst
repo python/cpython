@@ -375,8 +375,8 @@ that they can be converted to the required C data type::
 
 .. _ctypes-calling-variadic-functions:
 
-Calling varadic functions
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Calling variadic functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 On a lot of platforms calling variadic functions through ctypes is exactly the same
 as calling functions with a fixed number of parameters. On some platforms, and in
@@ -390,7 +390,7 @@ regular, non-variadic, function arguments:
 
    libc.printf.argtypes = [ctypes.c_char_p]
 
-Because specifying the attribute does inhibit portability it is advised to always
+Because specifying the attribute does not inhibit portability it is advised to always
 specify ``argtypes`` for all variadic functions.
 
 
@@ -508,7 +508,7 @@ a string pointer and a char, and returns a pointer to a string::
 
 If you want to avoid the ``ord("x")`` calls above, you can set the
 :attr:`argtypes` attribute, and the second argument will be converted from a
-single character Python bytes object into a C char::
+single character Python bytes object into a C char:
 
 .. doctest::
 

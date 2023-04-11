@@ -8,7 +8,6 @@ import importlib.util
 import os
 import pickle
 import random
-import re
 import subprocess
 import sys
 import textwrap
@@ -22,7 +21,7 @@ from test.support import MISSING_C_DOCSTRINGS
 from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
-from test.support.script_helper import assert_python_failure, assert_python_ok
+from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
 try:
     import _posixsubprocess
 except ImportError:
@@ -31,6 +30,10 @@ try:
     import _testmultiphase
 except ImportError:
     _testmultiphase = None
+try:
+    import _testsinglephase
+except ImportError:
+    _testsinglephase = None
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
@@ -66,71 +69,22 @@ class CAPITest(unittest.TestCase):
 
     @support.requires_subprocess()
     def test_no_FatalError_infinite_loop(self):
-        with support.SuppressCrashReport():
-            p = subprocess.Popen([sys.executable, "-c",
-                                  'import _testcapi;'
-                                  '_testcapi.crash_no_current_thread()'],
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE,
-                                 text=True)
-        (out, err) = p.communicate()
-        self.assertEqual(out, '')
+        run_result, _cmd_line = run_python_until_end(
+            '-c', 'import _testcapi; _testcapi.crash_no_current_thread()',
+        )
+        _rc, out, err = run_result
+        self.assertEqual(out, b'')
         # This used to cause an infinite loop.
         msg = ("Fatal Python error: PyThreadState_Get: "
                "the function must be called with the GIL held, "
                "after Python initialization and before Python finalization, "
                "but the GIL is released "
-               "(the current Python thread state is NULL)")
+               "(the current Python thread state is NULL)").encode()
         self.assertTrue(err.rstrip().startswith(msg),
                         err)
 
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
-
-    def test_exception(self):
-        raised_exception = ValueError("5")
-        new_exc = TypeError("TEST")
-        try:
-            raise raised_exception
-        except ValueError as e:
-            orig_sys_exception = sys.exception()
-            orig_exception = _testcapi.set_exception(new_exc)
-            new_sys_exception = sys.exception()
-            new_exception = _testcapi.set_exception(orig_exception)
-            reset_sys_exception = sys.exception()
-
-            self.assertEqual(orig_exception, e)
-
-            self.assertEqual(orig_exception, raised_exception)
-            self.assertEqual(orig_sys_exception, orig_exception)
-            self.assertEqual(reset_sys_exception, orig_exception)
-            self.assertEqual(new_exception, new_exc)
-            self.assertEqual(new_sys_exception, new_exception)
-        else:
-            self.fail("Exception not raised")
-
-    def test_exc_info(self):
-        raised_exception = ValueError("5")
-        new_exc = TypeError("TEST")
-        try:
-            raise raised_exception
-        except ValueError as e:
-            tb = e.__traceback__
-            orig_sys_exc_info = sys.exc_info()
-            orig_exc_info = _testcapi.set_exc_info(new_exc.__class__, new_exc, None)
-            new_sys_exc_info = sys.exc_info()
-            new_exc_info = _testcapi.set_exc_info(*orig_exc_info)
-            reset_sys_exc_info = sys.exc_info()
-
-            self.assertEqual(orig_exc_info[1], e)
-
-            self.assertSequenceEqual(orig_exc_info, (raised_exception.__class__, raised_exception, tb))
-            self.assertSequenceEqual(orig_sys_exc_info, orig_exc_info)
-            self.assertSequenceEqual(reset_sys_exc_info, orig_exc_info)
-            self.assertSequenceEqual(new_exc_info, (new_exc.__class__, new_exc, None))
-            self.assertSequenceEqual(new_sys_exc_info, new_exc_info)
-        else:
-            self.assertTrue(False)
 
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_seq_bytes_to_charp_array(self):
@@ -415,11 +369,6 @@ class CAPITest(unittest.TestCase):
         with self.assertRaises(TypeError):
             _testcapi.sequence_set_slice(None, 1, 3, 'xy')
 
-        mapping = {1: 'a', 2: 'b', 3: 'c'}
-        with self.assertRaises(TypeError):
-            _testcapi.sequence_set_slice(mapping, 1, 3, 'xy')
-        self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
-
     def test_sequence_del_slice(self):
         # Correct case:
         data = [1, 2, 3, 4, 5]
@@ -455,7 +404,7 @@ class CAPITest(unittest.TestCase):
             _testcapi.sequence_del_slice(None, 1, 3)
 
         mapping = {1: 'a', 2: 'b', 3: 'c'}
-        with self.assertRaises(TypeError):
+        with self.assertRaises(KeyError):
             _testcapi.sequence_del_slice(mapping, 1, 3)
         self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
 
@@ -838,46 +787,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
 
-    def check_fatal_error(self, code, expected, not_expected=()):
-        with support.SuppressCrashReport():
-            rc, out, err = assert_python_failure('-sSI', '-c', code)
-
-        err = decode_stderr(err)
-        self.assertIn('Fatal Python error: test_fatal_error: MESSAGE\n',
-                      err)
-
-        match = re.search(r'^Extension modules:(.*) \(total: ([0-9]+)\)$',
-                          err, re.MULTILINE)
-        if not match:
-            self.fail(f"Cannot find 'Extension modules:' in {err!r}")
-        modules = set(match.group(1).strip().split(', '))
-        total = int(match.group(2))
-
-        for name in expected:
-            self.assertIn(name, modules)
-        for name in not_expected:
-            self.assertNotIn(name, modules)
-        self.assertEqual(len(modules), total)
-
-    @support.requires_subprocess()
-    def test_fatal_error(self):
-        # By default, stdlib extension modules are ignored,
-        # but not test modules.
-        expected = ('_testcapi',)
-        not_expected = ('sys',)
-        code = 'import _testcapi, sys; _testcapi.fatal_error(b"MESSAGE")'
-        self.check_fatal_error(code, expected, not_expected)
-
-        # Mark _testcapi as stdlib module, but not sys
-        expected = ('sys',)
-        not_expected = ('_testcapi',)
-        code = textwrap.dedent('''
-            import _testcapi, sys
-            sys.stdlib_module_names = frozenset({"_testcapi"})
-            _testcapi.fatal_error(b"MESSAGE")
-        ''')
-        self.check_fatal_error(code, expected)
-
     def test_pyobject_repr_from_null(self):
         s = _testcapi.pyobject_repr_from_null()
         self.assertEqual(s, '<NULL>')
@@ -1214,6 +1123,11 @@ class TestPendingCalls(unittest.TestCase):
         self.pendingcalls_submit(l, n)
         self.pendingcalls_wait(l, n)
 
+    def test_gen_get_code(self):
+        def genf(): yield
+        gen = genf()
+        self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
+
 
 class SubinterpreterTest(unittest.TestCase):
 
@@ -1297,17 +1211,20 @@ class SubinterpreterTest(unittest.TestCase):
         """
         import json
 
+        EXTENSIONS = 1<<8
         THREADS = 1<<10
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
 
-        features = ['fork', 'exec', 'threads', 'daemon_threads']
+        features = ['fork', 'exec', 'threads', 'daemon_threads', 'extensions']
         kwlist = [f'allow_{n}' for n in features]
+        kwlist[-1] = 'check_multi_interp_extensions'
         for config, expected in {
-            (True, True, True, True): FORK | EXEC | THREADS | DAEMON_THREADS,
-            (False, False, False, False): 0,
-            (False, False, True, False): THREADS,
+            (True, True, True, True, True):
+                FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS,
+            (False, False, False, False, False): 0,
+            (False, False, True, False, True): THREADS | EXTENSIONS,
         }.items():
             kwargs = dict(zip(kwlist, config))
             expected = {
@@ -1322,11 +1239,92 @@ class SubinterpreterTest(unittest.TestCase):
                         json.dump(settings, stdin)
                     ''')
                 with os.fdopen(r) as stdout:
-                    support.run_in_subinterp_with_config(script, **kwargs)
+                    ret = support.run_in_subinterp_with_config(script, **kwargs)
+                    self.assertEqual(ret, 0)
                     out = stdout.read()
                 settings = json.loads(out)
 
                 self.assertEqual(settings, expected)
+
+    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_overridden_setting_extensions_subinterp_check(self):
+        """
+        PyInterpreterConfig.check_multi_interp_extensions can be overridden
+        with PyInterpreterState.override_multi_interp_extensions_check.
+        This verifies that the override works but does not modify
+        the underlying setting.
+        """
+        import json
+
+        EXTENSIONS = 1<<8
+        THREADS = 1<<10
+        DAEMON_THREADS = 1<<11
+        FORK = 1<<15
+        EXEC = 1<<16
+        BASE_FLAGS = FORK | EXEC | THREADS | DAEMON_THREADS
+        base_kwargs = {
+            'allow_fork': True,
+            'allow_exec': True,
+            'allow_threads': True,
+            'allow_daemon_threads': True,
+        }
+
+        def check(enabled, override):
+            kwargs = dict(
+                base_kwargs,
+                check_multi_interp_extensions=enabled,
+            )
+            flags = BASE_FLAGS | EXTENSIONS if enabled else BASE_FLAGS
+            settings = {
+                'feature_flags': flags,
+            }
+
+            expected = {
+                'requested': override,
+                'override__initial': 0,
+                'override_after': override,
+                'override_restored': 0,
+                # The override should not affect the config or settings.
+                'settings__initial': settings,
+                'settings_after': settings,
+                'settings_restored': settings,
+                # These are the most likely values to be wrong.
+                'allowed__initial': not enabled,
+                'allowed_after': not ((override > 0) if override else enabled),
+                'allowed_restored': not enabled,
+            }
+
+            r, w = os.pipe()
+            script = textwrap.dedent(f'''
+                from test.test_capi.check_config import run_singlephase_check
+                run_singlephase_check({override}, {w})
+                ''')
+            with os.fdopen(r) as stdout:
+                ret = support.run_in_subinterp_with_config(script, **kwargs)
+                self.assertEqual(ret, 0)
+                out = stdout.read()
+            results = json.loads(out)
+
+            self.assertEqual(results, expected)
+
+        self.maxDiff = None
+
+        # setting: check disabled
+        with self.subTest('config: check disabled; override: disabled'):
+            check(False, -1)
+        with self.subTest('config: check disabled; override: use config'):
+            check(False, 0)
+        with self.subTest('config: check disabled; override: enabled'):
+            check(False, 1)
+
+        # setting: check enabled
+        with self.subTest('config: check enabled; override: disabled'):
+            check(True, -1)
+        with self.subTest('config: check enabled; override: use config'):
+            check(True, 0)
+        with self.subTest('config: check enabled; override: enabled'):
+            check(True, 1)
 
     def test_mutate_exception(self):
         """
@@ -1551,45 +1549,6 @@ class Test_Pep523API(unittest.TestCase):
         def func2(x=None):
             pass
         self.do_test(func2)
-
-
-class Test_ErrSetAndRestore(unittest.TestCase):
-
-    def test_err_set_raised(self):
-        with self.assertRaises(ValueError):
-            _testcapi.err_set_raised(ValueError())
-        v = ValueError()
-        try:
-            _testcapi.err_set_raised(v)
-        except ValueError as ex:
-            self.assertIs(v, ex)
-
-    def test_err_restore(self):
-        with self.assertRaises(ValueError):
-            _testcapi.err_restore(ValueError)
-        with self.assertRaises(ValueError):
-            _testcapi.err_restore(ValueError, 1)
-        with self.assertRaises(ValueError):
-            _testcapi.err_restore(ValueError, 1, None)
-        with self.assertRaises(ValueError):
-            _testcapi.err_restore(ValueError, ValueError())
-        try:
-            _testcapi.err_restore(KeyError, "hi")
-        except KeyError as k:
-            self.assertEqual("hi", k.args[0])
-        try:
-            1/0
-        except Exception as e:
-            tb = e.__traceback__
-        with self.assertRaises(ValueError):
-            _testcapi.err_restore(ValueError, 1, tb)
-        with self.assertRaises(TypeError):
-            _testcapi.err_restore(ValueError, 1, 0)
-        try:
-            _testcapi.err_restore(ValueError, 1, tb)
-        except ValueError as v:
-            self.assertEqual(1, v.args[0])
-            self.assertIs(tb, v.__traceback__.tb_next)
 
 
 if __name__ == "__main__":

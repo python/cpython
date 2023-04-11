@@ -1616,6 +1616,33 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zf.filelist[0].filename, "foo.txt")
             self.assertEqual(zf.filelist[1].filename, "\xf6.txt")
 
+    @requires_zlib()
+    def test_read_zipfile_containing_unicode_path_extra_field(self):
+        with zipfile.ZipFile(TESTFN, mode='w') as zf:
+            # create a file with a non-ASCII name
+            filename = '이름.txt'
+            filename_encoded = filename.encode('utf-8')
+
+            # create a ZipInfo object with Unicode path extra field
+            zip_info = zipfile.ZipInfo(filename)
+
+            tag_for_unicode_path = b'\x75\x70'
+            version_of_unicode_path = b'\x01'
+
+            import zlib
+            filename_crc = struct.pack('<L', zlib.crc32(filename_encoded))
+
+            extra_data = version_of_unicode_path + filename_crc + filename_encoded
+            tsize = len(extra_data).to_bytes(2, 'little')
+
+            zip_info.extra = tag_for_unicode_path + tsize + extra_data
+
+            # add the file to the ZIP archive
+            zf.writestr(zip_info, b'Hello World!')
+
+        with zipfile.ZipFile(TESTFN, "r") as zf:
+            self.assertEqual(zf.filelist[0].filename, "이름.txt")
+
     def test_read_after_write_unicode_filenames(self):
         with zipfile.ZipFile(TESTFN2, 'w') as zipfp:
             zipfp.writestr('приклад', b'sample')
@@ -3008,6 +3035,68 @@ class EncodedMetadataTests(unittest.TestCase):
         listing = os.listdir(TESTFN2)
         for name in self.file_names:
             self.assertIn(name, listing)
+
+
+class StripExtraTests(unittest.TestCase):
+    # Note: all of the "z" characters are technically invalid, but up
+    # to 3 bytes at the end of the extra will be passed through as they
+    # are too short to encode a valid extra.
+
+    ZIP64_EXTRA = 1
+
+    def test_no_data(self):
+        s = struct.Struct("<HH")
+        a = s.pack(self.ZIP64_EXTRA, 0)
+        b = s.pack(2, 0)
+        c = s.pack(3, 0)
+
+        self.assertEqual(b'', zipfile._strip_extra(a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b, zipfile._strip_extra(b, (self.ZIP64_EXTRA,)))
+        self.assertEqual(
+            b+b"z", zipfile._strip_extra(b+b"z", (self.ZIP64_EXTRA,)))
+
+        self.assertEqual(b+c, zipfile._strip_extra(a+b+c, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, zipfile._strip_extra(b+a+c, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, zipfile._strip_extra(b+c+a, (self.ZIP64_EXTRA,)))
+
+    def test_with_data(self):
+        s = struct.Struct("<HH")
+        a = s.pack(self.ZIP64_EXTRA, 1) + b"a"
+        b = s.pack(2, 2) + b"bb"
+        c = s.pack(3, 3) + b"ccc"
+
+        self.assertEqual(b"", zipfile._strip_extra(a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b, zipfile._strip_extra(b, (self.ZIP64_EXTRA,)))
+        self.assertEqual(
+            b+b"z", zipfile._strip_extra(b+b"z", (self.ZIP64_EXTRA,)))
+
+        self.assertEqual(b+c, zipfile._strip_extra(a+b+c, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, zipfile._strip_extra(b+a+c, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b+c, zipfile._strip_extra(b+c+a, (self.ZIP64_EXTRA,)))
+
+    def test_multiples(self):
+        s = struct.Struct("<HH")
+        a = s.pack(self.ZIP64_EXTRA, 1) + b"a"
+        b = s.pack(2, 2) + b"bb"
+
+        self.assertEqual(b"", zipfile._strip_extra(a+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"", zipfile._strip_extra(a+a+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(
+            b"z", zipfile._strip_extra(a+a+b"z", (self.ZIP64_EXTRA,)))
+        self.assertEqual(
+            b+b"z", zipfile._strip_extra(a+a+b+b"z", (self.ZIP64_EXTRA,)))
+
+        self.assertEqual(b, zipfile._strip_extra(a+a+b, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b, zipfile._strip_extra(a+b+a, (self.ZIP64_EXTRA,)))
+        self.assertEqual(b, zipfile._strip_extra(b+a+a, (self.ZIP64_EXTRA,)))
+
+    def test_too_short(self):
+        self.assertEqual(b"", zipfile._strip_extra(b"", (self.ZIP64_EXTRA,)))
+        self.assertEqual(b"z", zipfile._strip_extra(b"z", (self.ZIP64_EXTRA,)))
+        self.assertEqual(
+            b"zz", zipfile._strip_extra(b"zz", (self.ZIP64_EXTRA,)))
+        self.assertEqual(
+            b"zzz", zipfile._strip_extra(b"zzz", (self.ZIP64_EXTRA,)))
 
 
 if __name__ == "__main__":

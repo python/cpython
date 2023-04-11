@@ -31,7 +31,7 @@ class TestBase:
         # Inspect a mailbox.Message representation of the sample message
         self.assertIsInstance(msg, email.message.Message)
         self.assertIsInstance(msg, mailbox.Message)
-        for key, value in _sample_headers.items():
+        for key, value in _sample_headers:
             self.assertIn(value, msg.get_all(key))
         self.assertTrue(msg.is_multipart())
         self.assertEqual(len(msg.get_payload()), len(_sample_payloads))
@@ -2264,30 +2264,31 @@ H4sICM2D1UIAA3RleHQAC8nILFYAokSFktSKEoW0zJxUPa7wzJIMhZLyfIWczLzUYj0uAHTs
 
 _bytes_sample_message = _sample_message.encode('ascii')
 
-_sample_headers = {
-    "Return-Path":"<gkj@gregorykjohnson.com>",
-    "X-Original-To":"gkj+person@localhost",
-    "Delivered-To":"gkj+person@localhost",
-    "Received":"""from localhost (localhost [127.0.0.1])
+_sample_headers = [
+    ("Return-Path", "<gkj@gregorykjohnson.com>"),
+    ("X-Original-To", "gkj+person@localhost"),
+    ("Delivered-To", "gkj+person@localhost"),
+    ("Received", """from localhost (localhost [127.0.0.1])
         by andy.gregorykjohnson.com (Postfix) with ESMTP id 356ED9DD17
-        for <gkj+person@localhost>; Wed, 13 Jul 2005 17:23:16 -0400 (EDT)""",
-    "Delivered-To":"gkj@sundance.gregorykjohnson.com",
-    "Received":"""from localhost [127.0.0.1]
+        for <gkj+person@localhost>; Wed, 13 Jul 2005 17:23:16 -0400 (EDT)"""),
+    ("Delivered-To", "gkj@sundance.gregorykjohnson.com"),
+    ("Received", """from localhost [127.0.0.1]
         by localhost with POP3 (fetchmail-6.2.5)
-        for gkj+person@localhost (single-drop); Wed, 13 Jul 2005 17:23:16 -0400 (EDT)""",
-    "Received":"""from andy.gregorykjohnson.com (andy.gregorykjohnson.com [64.32.235.228])
+        for gkj+person@localhost (single-drop); Wed, 13 Jul 2005 17:23:16 -0400 (EDT)"""),
+    ("Received", """from andy.gregorykjohnson.com (andy.gregorykjohnson.com [64.32.235.228])
         by sundance.gregorykjohnson.com (Postfix) with ESMTP id 5B056316746
-        for <gkj@gregorykjohnson.com>; Wed, 13 Jul 2005 17:23:11 -0400 (EDT)""",
-    "Received":"""by andy.gregorykjohnson.com (Postfix, from userid 1000)
-        id 490CD9DD17; Wed, 13 Jul 2005 17:23:11 -0400 (EDT)""",
-    "Date":"Wed, 13 Jul 2005 17:23:11 -0400",
-    "From":""""Gregory K. Johnson" <gkj@gregorykjohnson.com>""",
-    "To":"gkj@gregorykjohnson.com",
-    "Subject":"Sample message",
-    "Mime-Version":"1.0",
-    "Content-Type":"""multipart/mixed; boundary="NMuMz9nt05w80d4+\"""",
-    "Content-Disposition":"inline",
-    "User-Agent": "Mutt/1.5.9i" }
+        for <gkj@gregorykjohnson.com>; Wed, 13 Jul 2005 17:23:11 -0400 (EDT)"""),
+    ("Received", """by andy.gregorykjohnson.com (Postfix, from userid 1000)
+        id 490CD9DD17; Wed, 13 Jul 2005 17:23:11 -0400 (EDT)"""),
+    ("Date", "Wed, 13 Jul 2005 17:23:11 -0400"),
+    ("From", """"Gregory K. Johnson" <gkj@gregorykjohnson.com>"""),
+    ("To", "gkj@gregorykjohnson.com"),
+    ("Subject", "Sample message"),
+    ("Mime-Version", "1.0"),
+    ("Content-Type", """multipart/mixed; boundary="NMuMz9nt05w80d4+\""""),
+    ("Content-Disposition", "inline"),
+    ("User-Agent", "Mutt/1.5.9i"),
+]
 
 _sample_payloads = ("""This is a sample message.
 

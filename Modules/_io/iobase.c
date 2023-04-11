@@ -220,7 +220,6 @@ static PyObject *
 _io__IOBase_close_impl(PyObject *self)
 /*[clinic end generated code: output=63c6a6f57d783d6d input=f4494d5c31dbc6b7]*/
 {
-    PyObject *res, *exc, *val, *tb;
     int rc, closed = iobase_is_closed(self);
 
     if (closed < 0) {
@@ -230,11 +229,11 @@ _io__IOBase_close_impl(PyObject *self)
         Py_RETURN_NONE;
     }
 
-    res = PyObject_CallMethodNoArgs(self, &_Py_ID(flush));
+    PyObject *res = PyObject_CallMethodNoArgs(self, &_Py_ID(flush));
 
-    PyErr_Fetch(&exc, &val, &tb);
+    PyObject *exc = PyErr_GetRaisedException();
     rc = PyObject_SetAttr(self, &_Py_ID(__IOBase_closed), Py_True);
-    _PyErr_ChainExceptions(exc, val, tb);
+    _PyErr_ChainExceptions1(exc);
     if (rc < 0) {
         Py_CLEAR(res);
     }
@@ -252,11 +251,10 @@ static void
 iobase_finalize(PyObject *self)
 {
     PyObject *res;
-    PyObject *error_type, *error_value, *error_traceback;
     int closed;
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     /* If `closed` doesn't exist or can't be evaluated as bool, then the
        object is probably in an unusable state, so ignore. */
@@ -297,7 +295,7 @@ iobase_finalize(PyObject *self)
     }
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 int
