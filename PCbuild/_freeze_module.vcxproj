@@ -426,14 +426,16 @@
 		 "-o" "$(PySourcePath)Python\deepfreeze\deepfreeze.c"'/>
     <!-- END deepfreeze rule -->
   </Target>
-  <!-- XXX: This absolutely doesn't belong here, but I don't know how any of
-       this works... and at this point, I'm too afraid to ask! -->
+  <!-- XXX: This is probably wrong, but I don't know how any of this works...
+       and at this point, I'm too afraid to ask! -->
   <Target Name="_RebuildJitStencils"
+          BeforeTargets="PrepareForBuild"
           DependsOnTargets="FindPythonForBuild"
           Condition="$(Configuration) != 'PGUpdate'">
 	  <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\justin\build.py" ^
                    "$(PySourcePath)Python\generated_cases.c.h" ^
-		               "$(PySourcePath)Python\jit_stencils.h"'/>
+		               "$(PySourcePath)Python\jit_stencils.h"'
+          WorkingDirectory="$(PySourcePath)" />
   </Target>
   <Target Name="_CleanFrozen" BeforeTargets="CoreClean" Condition="$(Configuration) != 'PGUpdate'">
     <ItemGroup>

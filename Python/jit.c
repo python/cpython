@@ -5,6 +5,7 @@
 #include "pycore_opcode.h"
 #include "pycore_sliceobject.h"
 
+#include "ceval_macros.h"
 #include "jit_stencils.h"
 
 #ifdef MS_WINDOWS
