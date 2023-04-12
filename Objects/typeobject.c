@@ -2335,6 +2335,9 @@ mro_internal(PyTypeObject *type, PyObject **p_old_mro)
     }
 
     type->tp_mro = new_mro;
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        _Py_EnsureImmortal(new_mro);
+    }
 
     type_mro_modified(type, type->tp_mro);
     /* corner case: the super class might have been hidden
@@ -4467,6 +4470,17 @@ _PyStaticType_Dealloc(PyTypeObject *type)
 
     type_dealloc_common(type);
 
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        if (type->tp_dict != NULL) {
+            type->tp_dict->ob_refcnt = 1;
+        }
+        if (type->tp_bases != NULL && PyTuple_GET_SIZE(type->tp_bases) > 0) {
+            type->tp_bases->ob_refcnt = 1;
+        }
+        if (type->tp_mro != NULL && PyTuple_GET_SIZE(type->tp_mro) > 0) {
+            type->tp_mro->ob_refcnt = 1;
+        }
+    }
     Py_CLEAR(type->tp_dict);
     Py_CLEAR(type->tp_bases);
     Py_CLEAR(type->tp_mro);
@@ -6554,6 +6568,9 @@ type_ready_set_bases(PyTypeObject *type)
             return -1;
         }
         type->tp_bases = bases;
+        if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+            _Py_EnsureImmortal(bases);
+        }
     }
     return 0;
 }
@@ -6571,6 +6588,9 @@ type_ready_set_dict(PyTypeObject *type)
         return -1;
     }
     type->tp_dict = dict;
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        _Py_SetImmortal(dict);
+    }
     return 0;
 }
 
