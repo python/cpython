@@ -562,14 +562,14 @@ class TestRmTree(BaseTest, unittest.TestCase):
             d = os.path.join(tmp_dir, 'a')
             os.mkdir(d)
             try:
-                real_fwalk = pathlib.Path._fwalk
+                real_rmtree = shutil._rmtree_safe_fd
                 class Called(Exception): pass
                 def _raiser(*args, **kwargs):
                     raise Called
-                pathlib.Path._fwalk = _raiser
+                shutil._rmtree_safe_fd = _raiser
                 self.assertRaises(Called, shutil.rmtree, d)
             finally:
-                pathlib.Path._fwalk = real_fwalk
+                shutil._rmtree_safe_fd = real_rmtree
         else:
             self.assertFalse(shutil._use_fd_functions)
             self.assertFalse(shutil.rmtree.avoids_symlink_attacks)
