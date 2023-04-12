@@ -32,6 +32,9 @@ Lib/test/test_importlib/resources/data01/*           noeol
 Lib/test/test_importlib/resources/namespacedata01/*  noeol
 Lib/test/xmltestdata/*                     noeol
 
+# Shell scripts should have LF even on Windows because of Cygwin
+Lib/venv/scripts/common/activate text eol=lf
+
 # CRLF files
 [attr]dos text eol=crlf
 
