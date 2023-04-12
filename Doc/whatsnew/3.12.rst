@@ -256,9 +256,9 @@ asyncio
 csv
 ---
 
-* Added :data:`QUOTE_NOTNULL` and :data:`QUOTE_STRINGS` flags to
+* Add :data:`~csv.QUOTE_NOTNULL` and :data:`~csv.QUOTE_STRINGS` flags to
   provide finer control treatment of ``None`` and empty strings by
-  :class:`reader` and :class:`writer` objects.
+  :class:`~csv.reader` and :class:`~csv.writer` objects.
 
 inspect
 -------
