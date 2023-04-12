@@ -2067,7 +2067,7 @@ defdict_dealloc(defdictobject *dd)
     PyTypeObject *tp = Py_TYPE(dd);
     PyObject_GC_UnTrack(dd);
     Py_CLEAR(dd->default_factory);
-    tp->tp_free(dd);
+    PyDict_Type.tp_dealloc((PyObject *)dd);
     Py_DECREF(tp);
 }
 
@@ -2154,14 +2154,14 @@ defdict_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(((defdictobject *)self)->default_factory);
-    return 0;
+    return PyDict_Type.tp_traverse(self, visit, arg);
 }
 
 static int
 defdict_tp_clear(defdictobject *dd)
 {
     Py_CLEAR(dd->default_factory);
-    return 0;
+    return PyDict_Type.tp_clear((PyObject *)dd);
 }
 
 static int
