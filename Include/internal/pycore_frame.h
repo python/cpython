@@ -61,7 +61,7 @@ typedef struct _PyInterpreterFrame {
     // over, or (in the case of a newly-created frame) a totally invalid value:
     _Py_CODEUNIT *prev_instr;
     int stacktop;  /* Offset of TOS from localsplus  */
-    uint16_t yield_offset;
+    uint16_t return_offset;
     char owner;
     /* Locals and stack */
     PyObject *localsplus[1];
@@ -121,7 +121,7 @@ _PyFrame_Initialize(
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
     frame->prev_instr = _PyCode_CODE(code) - 1;
-    frame->yield_offset = 0;
+    frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
