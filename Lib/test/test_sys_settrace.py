@@ -2828,7 +2828,6 @@ class TestLinesAfterTraceStarted(TraceTestCase):
 class TestSetLocalTrace(TraceTestCase):
 
     def test_with_branches(self):
-        events = []
 
         def tracefunc(frame, event, arg):
             if frame.f_code.co_name == "func":
@@ -2836,13 +2835,14 @@ class TestSetLocalTrace(TraceTestCase):
                 line = frame.f_lineno - frame.f_code.co_firstlineno
                 events.append((line, event))
             return tracefunc
+
         def func(arg = 1):
             N = 1
-            if arg >= 2:  # step 1
+            if arg >= 2:
                 not_reached = 3
             else:
                 reached = 5
-            if arg >= 3:  # step 3
+            if arg >= 3:
                 not_reached = 7
             else:
                 reached = 9
@@ -2859,6 +2859,7 @@ class TestSetLocalTrace(TraceTestCase):
             (10, 'return'),
         ]
 
+        events = []
         sys.settrace(tracefunc)
         sys._getframe().f_trace = tracefunc
         func()
