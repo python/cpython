@@ -76,13 +76,13 @@ extern PyTypeObject _PyExc_MemoryError;
                     .latin1 = _Py_str_latin1_INIT, \
                 }, \
                 .tuple_empty = { \
-                    .ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0) \
+                    .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, 0) \
                 }, \
                 .hamt_bitmap_node_empty = { \
-                    .ob_base = _PyVarObject_IMMORTAL_INIT(&_PyHamt_BitmapNode_Type, 0) \
+                    .ob_base = PyVarObject_HEAD_INIT(&_PyHamt_BitmapNode_Type, 0) \
                 }, \
                 .context_token_missing = { \
-                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyContextTokenMissing_Type), \
+                    .ob_base = PyObject_HEAD_INIT(&_PyContextTokenMissing_Type) \
                 }, \
             }, \
         }, \
@@ -117,11 +117,11 @@ extern PyTypeObject _PyExc_MemoryError;
             .singletons = { \
                 ._not_used = 1, \
                 .hamt_empty = { \
-                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyHamt_Type), \
+                    .ob_base = PyObject_HEAD_INIT(&_PyHamt_Type) \
                     .h_root = (PyHamtNode*)&_Py_SINGLETON(hamt_bitmap_node_empty), \
                 }, \
                 .last_resort_memory_error = { \
-                    _PyObject_IMMORTAL_INIT(&_PyExc_MemoryError), \
+                    PyObject_HEAD_INIT(&_PyExc_MemoryError) \
                 }, \
             }, \
         }, \
@@ -139,7 +139,7 @@ extern PyTypeObject _PyExc_MemoryError;
 
 #define _PyBytes_SIMPLE_INIT(CH, LEN) \
     { \
-        _PyVarObject_IMMORTAL_INIT(&PyBytes_Type, (LEN)), \
+        PyVarObject_HEAD_INIT(&PyBytes_Type, (LEN)) \
         .ob_shash = -1, \
         .ob_sval = { (CH) }, \
     }
@@ -150,7 +150,7 @@ extern PyTypeObject _PyExc_MemoryError;
 
 #define _PyUnicode_ASCII_BASE_INIT(LITERAL, ASCII) \
     { \
-        .ob_base = _PyObject_IMMORTAL_INIT(&PyUnicode_Type), \
+        .ob_base = PyObject_HEAD_INIT(&PyUnicode_Type) \
         .length = sizeof(LITERAL) - 1, \
         .hash = -1, \
         .state = { \

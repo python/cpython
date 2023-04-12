@@ -1538,30 +1538,19 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
 static void
 unicode_dealloc(PyObject *unicode)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 #ifdef Py_DEBUG
     if (!unicode_is_finalizing() && unicode_is_singleton(unicode)) {
         _Py_FatalRefcountError("deallocating an Unicode singleton");
     }
 #endif
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref an immortal string out of existence. Since
+     * the string is an immortal object, just re-set the reference count.
+     */
     if (PyUnicode_CHECK_INTERNED(unicode)) {
-        /* Revive the dead object temporarily. PyDict_DelItem() removes two
-           references (key and value) which were ignored by
-           PyUnicode_InternInPlace(). Use refcnt=3 rather than refcnt=2
-           to prevent calling unicode_dealloc() again. Adjust refcnt after
-           PyDict_DelItem(). */
-        assert(Py_REFCNT(unicode) == 0);
-        Py_SET_REFCNT(unicode, 3);
-        PyObject *interned = get_interned_dict(interp);
-        assert(interned != NULL);
-        if (PyDict_DelItem(interned, unicode) != 0) {
-            _PyErr_WriteUnraisableMsg("deletion of interned string failed",
-                                      NULL);
-        }
-        assert(Py_REFCNT(unicode) == 1);
-        Py_SET_REFCNT(unicode, 0);
+        _Py_SetImmortal(unicode);
+        return;
     }
-
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
         PyObject_Free(_PyUnicode_UTF8(unicode));
     }
@@ -14637,11 +14626,12 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
         return;
     }
 
-    /* The two references in interned dict (key and value) are not counted by
-       refcnt. unicode_dealloc() and _PyUnicode_ClearInterned() take care of
-       this. */
-    Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
-    _PyUnicode_STATE(s).interned = 1;
+    if (_Py_IsImmortal(s)) {
+        _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
+       return;
+    }
+    _Py_SetImmortal(s);
+    _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
 }
 
 void
@@ -14681,28 +14671,54 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     }
     assert(PyDict_CheckExact(interned));
 
-    /* Interned unicode strings are not forcibly deallocated; rather, we give
-       them their stolen references back, and then clear and DECREF the
-       interned dict. */
-
+    /* TODO:
+     * Currently, the runtime is not able to guarantee that it can exit without
+     * allocations that carry over to a future initialization of Python within
+     * the same process. i.e:
+     *   ./python -X showrefcount -c 'import itertools'
+     *   [237 refs, 237 blocks]
+     *
+     * Therefore, this should remain disabled for until there is a strict guarantee
+     * that no memory will be left after `Py_Finalize`.
+     */
+#ifdef Py_DEBUG
+    /* For all non-singleton interned strings, restore the two valid references
+       to that instance from within the intern string dictionary and let the
+       normal reference counting process clean up these instances. */
+    Py_ssize_t pos = 0;
+    PyObject *s, *ignored_value;
 #ifdef INTERNED_STATS
     fprintf(stderr, "releasing %zd interned strings\n",
             PyDict_GET_SIZE(interned));
 
     Py_ssize_t total_length = 0;
 #endif
-    Py_ssize_t pos = 0;
-    PyObject *s, *ignored_value;
     while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
-        assert(PyUnicode_CHECK_INTERNED(s));
-        // Restore the two references (key and value) ignored
-        // by PyUnicode_InternInPlace().
-        Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
-#ifdef INTERNED_STATS
-        total_length += PyUnicode_GET_LENGTH(s);
+        assert(PyUnicode_IS_READY(s));
+        switch (PyUnicode_CHECK_INTERNED(s)) {
+        case SSTATE_INTERNED_IMMORTAL:
+#ifdef Py_REF_DEBUG
+            // Update the total ref counts to account for the original
+            // reference to this string that no longer exists.
+            _Py_RefTotal--;
 #endif
-
-        _PyUnicode_STATE(s).interned = 0;
+            // Skip the Immortal Instance check and directly set the refcnt.
+            s->ob_refcnt = 2;
+            _PyUnicode_STATE(s).interned = 0;
+#ifdef INTERNED_STATS
+            total_length += PyUnicode_GET_LENGTH(s);
+#endif
+            break;
+        case SSTATE_INTERNED_IMMORTAL_STATIC:
+            break;
+        case SSTATE_INTERNED_MORTAL:
+            /* fall through */
+        case SSTATE_NOT_INTERNED:
+            /* fall through */
+        default:
+            Py_UNREACHABLE();
+        }
+        _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
     }
 #ifdef INTERNED_STATS
     fprintf(stderr,
@@ -14710,6 +14726,12 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             total_length);
 #endif
 
+struct _Py_unicode_state *state = &interp->unicode;
+    struct _Py_unicode_ids *ids = &state->ids;
+    for (Py_ssize_t i=0; i < ids->size; i++) {
+        Py_XINCREF(ids->array[i]);
+    }
+#endif /* Py_DEBUG */
     clear_interned_dict(interp);
 }
 
