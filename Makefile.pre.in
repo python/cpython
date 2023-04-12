@@ -1258,10 +1258,10 @@ regen-limited-abi: all
 ############################################################################
 # Regenerate all generated files
 
-regen-all: regen-cases regen-jit-stencils regen-opcode regen-opcode-targets regen-typeslots \
+regen-all: regen-cases regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen clinic \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
-	regen-test-levenshtein regen-global-objects
+	regen-test-levenshtein regen-global-objects regen-jit-stencils
 	@echo
 	@echo "Note: make regen-stdlib-module-names and make regen-configure should be run manually"
 
@@ -2430,8 +2430,10 @@ Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
 
 Python/jit.o: $(srcdir)/Python/jit_stencils.h
 
+Python/jit_stencils.h: regen-jit-stencils
+
 .PHONY: regen-jit-stencils
-regen-jit-stencils:
+regen-jit-stencils: regen-cases
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/justin/build.py \
 		$(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/jit_stencils.h
 

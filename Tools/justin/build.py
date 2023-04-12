@@ -3,26 +3,19 @@ import sys
 """The Justin(time) template JIT for CPython 3.12, based on copy-and-patch."""
 
 import collections
-import ctypes
 import dataclasses
-import dis
-import functools
 import itertools
 import pathlib
 import re
 import subprocess
 import sys
 import tempfile
-import time
-import types
 import typing
 
 TOOLS_JUSTIN = pathlib.Path(__file__).parent
 TOOLS_JUSTIN_TEMPLATE = TOOLS_JUSTIN / "template.c"
 TOOLS_JUSTIN_TRAMPOLINE = TOOLS_JUSTIN / "trampoline.c"
 PYTHON_GENERATED_CASES_C_H = TOOLS_JUSTIN.parent.parent / "Python" / "generated_cases.c.h"
-
-WRAPPER_TYPE = ctypes.PYFUNCTYPE(ctypes.c_int)
 
 def batched(iterable, n):
     """Batch an iterable into lists of size n."""
@@ -33,8 +26,7 @@ def batched(iterable, n):
             return
         yield batch
 
-# XXX: Do --reloc, then --headers, then --full-contents (per-section)
-# Maybe need --syms to check that justin_entry is indeed first/only?
+# XXX: This parsing needs to be way cleaned up. syms, headers, then disassembly and relocs per section
 class ObjectParser:
 
     _file_format: typing.ClassVar[str]
@@ -56,7 +48,9 @@ class ObjectParser:
             raise NotImplementedError(line)
         return lines
 
-    def _parse_headers(self) -> typing.Generator[tuple[str, int, str], None, None]:
+    def _parse_headers(self) -> typing.Generator[tuple[str, int, int, str], None, None]:
+        lines = self._dump("--headers")
+        print("\n".join(lines))
         lines = self._dump("--headers")
         line = next(lines, None)
         assert line == "Sections:"
@@ -70,27 +64,39 @@ class ObjectParser:
             assert match is not None, line
             idx, name, size, vma, type = match.groups()
             assert int(idx) == i
-            assert int(vma, 16) == 0
+            # assert int(vma, 16) == 0
             if type is not None:
-                yield (name, int(size, 16), type)
+                yield (name, int(size, 16), int(vma, 16), type)
 
-    # def _parse_syms(self) -> None:
-    #     lines = self._dump("--syms", "--section", ".text")
-    #     assert next(lines) == "SYMBOL TABLE:"
-    #     pattern = r"([0-9a-f]+)\s+([\sa-zA-Z]*)\s+(\*ABS\*|\*UND\*|[\w\.]+)\s+([0-9a-f]+)\s+([\w\.]+)"
-    #     for line in lines:
-    #         match = re.fullmatch(pattern, line)
-    #         assert match is not None, line
-    #         value, flags, section, size, name = match.groups()
-    #         assert int(value, 16) == 0
-    #         if section == "*ABS*":
-    #             assert flags == "l    df"
-    #             assert int(size, 16) == 0
-    #         elif section == "*UND*":
-    #             assert flags == ""
-    #             assert int(size, 16) == 0
-    #         else:
-    #             print(name, int(size, 16))
+    def _parse_syms(self) -> None:
+        lines = self._dump("--syms", "--section", ".text")
+        print("\n".join(lines))
+        lines = self._dump("--syms", "--section", ".text")
+        # return
+        assert next(lines) == "SYMBOL TABLE:"
+        syms = {}
+        pattern = r"([0-9a-f]+)\s+([\sa-zA-Z]*)\s+(\*ABS\*|\*UND\*|[\w\.,]+)(?:\s+([0-9a-f]+))?\s+(\w+)"
+        for line in lines:
+            match = re.fullmatch(pattern, line)
+            assert match is not None, repr(line)
+            value, flags, section, size, name = match.groups()
+            if size is None:
+                size = "0"
+            if section == "*ABS*":
+                assert flags == "l    df"
+                assert int(size, 16) == 0
+            elif section == "*UND*":
+                assert flags == ""
+                assert int(size, 16) == 0
+            else:
+                syms[name] = value
+                if name == "_justin_entry":
+                    assert flags == "g     F"
+                    assert int(size, 16) == 0
+                    assert int(value, 16) == 0
+                # print(name, int(size, 16))
+        
+        return syms
 
     def _parse_reloc(self) -> None:
         lines = self._dump("--reloc")
@@ -121,7 +127,7 @@ class ObjectParser:
                 break
         return relocs
 
-    def _parse_full_contents(self, section) -> bytes:
+    def _parse_full_contents(self, section, vma) -> bytes:
         lines = self._dump("--disassemble", "--reloc", "--section", section)
         print("\n".join(lines))
         lines = self._dump("--full-contents", "--section", section)
@@ -130,28 +136,31 @@ class ObjectParser:
         line = next(lines, None)
         if line is None:
             return b""
-        assert line == f"Contents of section {self._section_prefix}{section}:", line
+        # assert line == f"Contents of section {prefix}{section}:", line
         body = bytearray()
         pattern = r" ([\s0-9a-f]{4}) ([\s0-9a-f]{8}) ([\s0-9a-f]{8}) ([\s0-9a-f]{8}) ([\s0-9a-f]{8}) .*"
         for line in lines:
             match = re.fullmatch(pattern, line)
             assert match is not None, line
             i, *chunks = match.groups()
-            assert int(i, 16) == len(body), (i, len(body))
+            assert int(i, 16) - vma == len(body), (i, len(body))
             data = "".join(chunks).rstrip()
             body.extend(int(data, 16).to_bytes(len(data) // 2, "big"))
         return bytes(body)
 
     def parse(self):
+        self._parse_syms()
         relocs = self._parse_reloc()
+        offsets = {}
+        # breakpoint()
         body = b""
         holes = []
-        offsets = {}
-        for name, size, type in self._parse_headers():
+        for name, size, vma, type in self._parse_headers():
+            body += bytes(vma - len(body))
             size_before = len(body)
             holes += [Hole(hole.symbol, hole.offset+size_before, hole.addend) for hole in relocs[name]]
             offsets[name] = size_before
-            body += self._parse_full_contents(name)
+            body += self._parse_full_contents(name, vma)
             assert len(body) - size_before == size
         fixed = []
         for hole in holes:
@@ -180,15 +189,15 @@ class ObjectParserELF64X8664(ObjectParser):
 class ObjectParserMachO64BitARM64(ObjectParser):
     _file_format = "mach-o 64-bit arm64"
     _type = "ARM64_RELOC_UNSIGNED"
-    _section_prefix = "__TEXT,"
-    _fix_up_holes = False
+    _section_prefix = ""
+    _fix_up_holes = True
     _symbol_prefix = "_"
 
 class ObjectParserMachO64BitX8664(ObjectParser):
     _file_format = "mach-o 64-bit x86-64"
     _type = "X86_64_RELOC_UNSIGNED"
-    _section_prefix = "__TEXT,"
-    _fix_up_holes = False
+    _section_prefix = ""
+    _fix_up_holes = True
     _symbol_prefix = "_"
 
 def _get_object_parser(path: str) -> ObjectParser:
@@ -223,6 +232,7 @@ class Engine:
     _CPPFLAGS = [
         "-DNDEBUG",
         "-DPy_BUILD_CORE",
+        "-D_PyJIT_ACTIVE",
         "-I.",
         "-I./Include",
         "-I./Include/internal",
@@ -238,6 +248,8 @@ class Engine:
         "-fno-asynchronous-unwind-tables",
         # Don't want relocations to use the global offset table:
         "-fno-pic",
+        # The GHC calling convention uses %rbp as an argument-passing register:
+        "-fomit-frame-pointer",
         # Need this to leave room for patching our 64-bit pointers:
         "-mcmodel=large",
     ]
@@ -304,12 +316,12 @@ class Engine:
         defines = [f"-D_JUSTIN_CHECK={branches}", f"-D_JUSTIN_OPCODE={opname}"]
         with tempfile.NamedTemporaryFile(suffix=".o") as o, tempfile.NamedTemporaryFile(suffix=".ll") as ll:
             subprocess.run(
-                ["clang", *self._CPPFLAGS, *defines, *self._CFLAGS, path, "-emit-llvm", "-S", "-o", ll.name],
+                ["clang", *self._CPPFLAGS, *defines, *self._CFLAGS, "-emit-llvm", "-S", "-o", ll.name, path],
                 check=True,
             )
             self._use_ghccc(ll.name)
             subprocess.run(
-                ["clang", *self._CFLAGS, *defines, ll.name, "-c", "-o", o.name],
+                ["clang", *self._CFLAGS, "-c", "-o", o.name, ll.name],
                 check=True,
             )
             return _get_object_parser(o.name).parse()
@@ -319,7 +331,7 @@ class Engine:
         pattern = r"(?s:\n( {8}TARGET\((\w+)\) \{\n.*?\n {8}\})\n)"
         self._cases = {}
         for body, opname in re.findall(pattern, generated_cases):
-            self._cases[opname] = body.replace("%", "%%").replace(" " * 8, " " * 4)
+            self._cases[opname] = body.replace(" " * 8, " " * 4)
         template = TOOLS_JUSTIN_TEMPLATE.read_text()
         for opname in self._OPS:
             body = template % self._cases[opname]
@@ -416,116 +428,6 @@ class Engine:
         lines[:0] = header
         lines.append("")
         return "\n".join(lines)
-
-    def trace(self, f, *, warmup: int = 0):
-        recorded = {}
-        compiled = {}
-        def tracer(frame: types.FrameType, event: str, arg: object):
-            start = time.perf_counter()
-            # This needs to be *fast*.
-            assert frame.f_code is f.__code__
-            if event == "opcode":
-                i = frame.f_lasti
-                if i in recorded:
-                    ix = recorded[i]
-                    traced = list(recorded)[ix:]
-                    self._stderr(f"Compiling trace for {frame.f_code.co_filename}:{frame.f_lineno}.")
-                    self._tracing_time += time.perf_counter() - start
-                    start = time.perf_counter()
-                    traced = self._clean_trace(frame.f_code, traced)
-                    if traced is None:
-                        compiled[i] = None
-                        print("Failed (ends with super)!")
-                    else:
-                        j = traced[0] * 2
-                        if j != i and compiled.get(i, None) is None:
-                            compiled[i] = None
-                        code_unit_pointer = ctypes.POINTER(ctypes.c_uint16)
-                        c_traced_type = code_unit_pointer * len(traced)
-                        c_traced = c_traced_type() 
-                        first_instr = id(frame.f_code) + self._OFFSETOF_CO_CODE_ADAPTIVE
-                        c_traced[:] = [ctypes.cast(first_instr + i * 2, code_unit_pointer) for i in traced]
-                        compile_trace = ctypes.pythonapi._PyJIT_CompileTrace
-                        compile_trace.argtypes = (ctypes.c_int, c_traced_type)
-                        compile_trace.restype = ctypes.POINTER(ctypes.c_ubyte)
-                        buffer = ctypes.cast(compile_trace(len(traced), c_traced), ctypes.c_void_p)
-                        if buffer is not None:
-                            jump = ctypes.cast(ctypes.c_void_p(first_instr + j), ctypes.POINTER(ctypes.c_uint8))
-                            assert jump.contents.value == dis._all_opmap["JUMP_BACKWARD"]
-                            jump.contents.value = dis._all_opmap["JUMP_BACKWARD_INTO_TRACE"]
-                            ctypes.cast(ctypes.c_void_p(first_instr + j + 4), ctypes.POINTER(ctypes.c_uint64)).contents.value = buffer.value
-                            compiled[j] = True#WRAPPER_TYPE(buffer.value)
-                        else:
-                            compiled[j] = None
-                            print("Failed (missing opcode)!")
-                    self._compiling_time += time.perf_counter() - start
-                    start = time.perf_counter()
-                if i in compiled:
-                    # wrapper = compiled[i]
-                    # if wrapper is not None:
-                    #     # self._stderr(f"Entering trace for {frame.f_code.co_filename}:{frame.f_lineno}.")
-                    #     self._tracing_time += time.perf_counter() - start
-                    #     start = time.perf_counter()
-                    #     status = wrapper()
-                    #     self._compiled_time += time.perf_counter() - start
-                    #     start = time.perf_counter()
-                    #     # self._stderr(f"Exiting trace for {frame.f_code.co_filename}:{frame.f_lineno} with status {status}.")
-                    recorded.clear()
-                else:
-                    recorded[i] = len(recorded)
-            elif event == "call":
-                frame.f_trace_lines = False
-                frame.f_trace_opcodes = True
-                recorded.clear()
-            self._tracing_time += time.perf_counter() - start
-            return tracer
-        @functools.wraps(f)
-        def wrapper(*args, **kwargs):
-            # This needs to be *fast*.
-            nonlocal warmup
-            if warmup:
-                warmup -= 1
-                return f(*args, **kwargs)
-            warmup -= 1
-            try:
-                print("Tracing...")
-                sys.settrace(tracer)
-                return f(*args, **kwargs)
-            finally:
-                sys.settrace(None)
-                print("...done!")
-        return wrapper
-    
-    @staticmethod
-    def _clean_trace(code: types.CodeType, trace: typing.Iterable[int]):
-        skip = 0
-        out = []
-        opnames = []
-        for x, i in enumerate(trace):
-            if skip:
-                skip -= 1
-                continue
-            opcode, _ = code._co_code_adaptive[i : i + 2]
-            opname = dis._all_opname[opcode]
-            if "__" in opname: # XXX
-                skip = 1
-            opnames.append(opname)
-            out.append(i // 2)
-        # print(list(zip(opnames, out, strict=True)))
-        if skip:
-            if "__" not in opnames[0]:
-                out[0] = out[-1]
-                opnames[0] = opnames[-1]
-                del out[-1], opnames[-1]
-            else:
-                return None
-        try:
-            i = opnames.index("JUMP_BACKWARD")
-        except ValueError:
-            return None
-        out = out[i:] + out[:i]
-        opnames = opnames[i:] + opnames[:i]
-        return out
 
 # First, create our JIT engine:
 engine = Engine(verbose=True)

@@ -55,8 +55,8 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
     for (size_t i = 0; i < stencil->nholes; i++) {
         const Hole *hole = &stencil->holes[i];
         uintptr_t *addr = (uintptr_t *)(memory + hole->offset);
-        assert(*addr == 0);
-        *addr = hole->addend + patches[hole->kind];
+        // assert(*addr == 0);
+        *addr += hole->addend + patches[hole->kind];
     }
     return memory + stencil->nbytes;
 }
