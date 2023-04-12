@@ -577,6 +577,21 @@ class ConnectionTests(unittest.TestCase):
                                    cx.executemany, "insert into t values(?)",
                                    ((v,) for v in range(3)))
 
+    def test_connection_config(self):
+        op = sqlite.SQLITE_DBCONFIG_ENABLE_FKEY
+        with memory_database() as cx:
+            with self.assertRaisesRegex(ValueError, "unknown"):
+                cx.getconfig(-1)
+
+            old = cx.getconfig(op)
+            new = not old
+
+            cx.setconfig(op, new)
+            self.assertEqual(cx.getconfig(op), new)
+
+            cx.setconfig(op, old)
+            self.assertEqual(cx.getconfig(op), old)
+
 
 class UninitialisedConnectionTests(unittest.TestCase):
     def setUp(self):

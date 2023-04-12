@@ -1513,6 +1513,81 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(setconfig__doc__,
+"setconfig($self, op, enable, /)\n"
+"--\n"
+"\n"
+"\n"
+"\n"
+"  op\n"
+"    The configuration verb; one of the sqlite3.SQLITE_DBCONFIG codes.");
+
+#define SETCONFIG_METHODDEF    \
+    {"setconfig", _PyCFunction_CAST(setconfig), METH_FASTCALL, setconfig__doc__},
+
+static PyObject *
+setconfig_impl(pysqlite_Connection *self, int op, int enable);
+
+static PyObject *
+setconfig(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int op;
+    int enable;
+
+    if (!_PyArg_CheckPositional("setconfig", nargs, 2, 2)) {
+        goto exit;
+    }
+    op = _PyLong_AsInt(args[0]);
+    if (op == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    enable = PyObject_IsTrue(args[1]);
+    if (enable < 0) {
+        goto exit;
+    }
+    return_value = setconfig_impl(self, op, enable);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(getconfig__doc__,
+"getconfig($self, op, /)\n"
+"--\n"
+"\n"
+"\n"
+"\n"
+"  op\n"
+"    The configuration verb; one of the sqlite3.SQLITE_DBCONFIG codes.");
+
+#define GETCONFIG_METHODDEF    \
+    {"getconfig", (PyCFunction)getconfig, METH_O, getconfig__doc__},
+
+static int
+getconfig_impl(pysqlite_Connection *self, int op);
+
+static PyObject *
+getconfig(pysqlite_Connection *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int op;
+    int _return_value;
+
+    op = _PyLong_AsInt(arg);
+    if (op == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    _return_value = getconfig_impl(self, op);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 #ifndef CREATE_WINDOW_FUNCTION_METHODDEF
     #define CREATE_WINDOW_FUNCTION_METHODDEF
 #endif /* !defined(CREATE_WINDOW_FUNCTION_METHODDEF) */
@@ -1532,4 +1607,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=f10306e10427488b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e4a5908ca25f1741 input=a9049054013a1b77]*/

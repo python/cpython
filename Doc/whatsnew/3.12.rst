@@ -384,6 +384,11 @@ sqlite3
   :ref:`transaction handling <sqlite3-transaction-control-autocommit>`.
   (Contributed by Erlend E. Aasland in :gh:`83638`.)
 
+* Add :meth:`~sqlite3.Connection.getconfig` and
+  :meth:`~sqlite3.Connection.setconfig` to :class:`~sqlite3.Connection`
+  to make configuration changes to a database connection.
+  (Contributed by Erlend E. Aasland in :gh:`103489`.)
+
 threading
 ---------
 
