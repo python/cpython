@@ -7055,15 +7055,9 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
         static_builtin_state_clear(self);
     }
 
-    _Py_SetImmortal(self->tp_dict);
-    if (!_Py_IsImmortal(self->tp_bases)) {
-        assert(PyTuple_GET_SIZE(self->tp_bases) > 0);
-        _Py_SetImmortal(self->tp_bases);
-    }
-    if (!_Py_IsImmortal(self->tp_mro)) {
-        assert(PyTuple_GET_SIZE(self->tp_mro) > 0);
-        _Py_SetImmortal(self->tp_mro);
-    }
+    _Py_EnsureImmortal(self->tp_dict);
+    _Py_EnsureImmortal(self->tp_bases);
+    _Py_EnsureImmortal(self->tp_mro);
 
     return res;
 }
