@@ -665,6 +665,8 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     if _use_fd_functions:
         return _rmtree_safe_fd(dir_fd, path, onexc)
     else:
+        if dir_fd is not None:
+            raise NotImplementedError("dir_fd unavailable on this platform")
         return _rmtree_unsafe(path, onexc)
 
 # Allow introspection of whether or not the hardening against symlink
