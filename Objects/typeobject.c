@@ -2357,9 +2357,6 @@ mro_internal(PyTypeObject *type, PyObject **p_old_mro)
     }
 
     type->tp_mro = new_mro;
-    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        _Py_EnsureImmortal(new_mro);
-    }
 
     type_mro_modified(type, type->tp_mro);
     /* corner case: the super class might have been hidden
@@ -6599,9 +6596,6 @@ type_ready_set_bases(PyTypeObject *type)
             return -1;
         }
         type->tp_bases = bases;
-        if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-            _Py_EnsureImmortal(bases);
-        }
     }
     return 0;
 }
@@ -6619,9 +6613,6 @@ type_ready_set_dict(PyTypeObject *type)
         return -1;
     }
     type->tp_dict = dict;
-    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        _Py_SetImmortal(dict);
-    }
     return 0;
 }
 
@@ -7063,6 +7054,17 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
     if (res < 0) {
         static_builtin_state_clear(self);
     }
+
+    _Py_SetImmortal(self->tp_dict);
+    if (!_Py_IsImmortal(self->tp_bases)) {
+        assert(PyTuple_GET_SIZE(self->tp_bases) > 0);
+        _Py_SetImmortal(self->tp_bases);
+    }
+    if (!_Py_IsImmortal(self->tp_mro)) {
+        assert(PyTuple_GET_SIZE(self->tp_mro) > 0);
+        _Py_SetImmortal(self->tp_mro);
+    }
+
     return res;
 }
 

@@ -74,16 +74,6 @@ static inline void _Py_SetImmortal(PyObject *op)
 #define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
 
 static inline void
-_Py_EnsureImmortal(PyObject *op)
-{
-    if (_Py_IsImmortal(op)) {
-        return;
-    }
-    assert(op->ob_type != &PyTuple_Type || PyTuple_GET_SIZE(op) > 0);
-    _Py_SetImmortal(op);
-}
-
-static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
     if (_Py_IsImmortal(op)) {
