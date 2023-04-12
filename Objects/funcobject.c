@@ -518,15 +518,24 @@ func_set_name(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    _Py_DECLARE_STR(dot, ".");
-    PyObject *dotted_path = PyUnicode_Split(op->func_qualname, &_Py_STR(dot), -1);
+    PyObject *separator, *qual_name, *dotted_path, *new_dotted_path;
+
+    separator = PyUnicode_FromString(".");
+    qual_name = PyObject_GetAttrString((PyObject *)op, "__qualname__");
+    dotted_path = PyUnicode_Split(qual_name, separator, -1);
+
     Py_ssize_t n = PyList_GET_SIZE(dotted_path);
     PyList_SetItem(dotted_path, n - 1, value);
     Py_INCREF(value);
-    dotted_path = PyUnicode_Join(&_Py_STR(dot), dotted_path);
+    new_dotted_path = PyUnicode_Join(separator, dotted_path);
 
     Py_XSETREF(op->func_name, Py_NewRef(value));
-    Py_XSETREF(op->func_qualname, Py_NewRef(dotted_path));
+    Py_XSETREF(op->func_qualname, Py_NewRef(new_dotted_path));
+
+    Py_DECREF(qual_name);
+    Py_DECREF(dotted_path);
+    Py_DECREF(new_dotted_path);
+    Py_DECREF(separator);
     return 0;
 }
 
