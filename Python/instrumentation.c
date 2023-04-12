@@ -113,8 +113,10 @@ static const uint8_t INSTRUMENTED_OPCODES[256] = {
 static inline bool
 opcode_has_event(int opcode)
 {
-    return opcode < INSTRUMENTED_LINE &&
-        INSTRUMENTED_OPCODES[opcode] > 0;
+    return (
+        opcode < INSTRUMENTED_LINE &&
+        INSTRUMENTED_OPCODES[opcode] > 0
+    );
 }
 
 static inline bool
@@ -335,7 +337,8 @@ dump_monitors(const char *prefix, _Py_Monitors monitors, FILE*out)
 /* Like _Py_GetBaseOpcode but without asserts.
  * Does its best to give the right answer, but won't abort
  * if something is wrong */
-int get_base_opcode_best_attempt(PyCodeObject *code, int offset)
+static int
+get_base_opcode_best_attempt(PyCodeObject *code, int offset)
 {
     int opcode = _Py_OPCODE(_PyCode_CODE(code)[offset]);
     if (INSTRUMENTED_OPCODES[opcode] != opcode) {
@@ -414,7 +417,8 @@ dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
     assert(test); \
 } while (0)
 
-bool valid_opcode(int opcode)
+static bool
+valid_opcode(int opcode)
 {
     if (opcode > 0 &&
         opcode != RESERVED &&
