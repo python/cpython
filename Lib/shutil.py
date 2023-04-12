@@ -565,13 +565,6 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
 
 # version vulnerable to race conditions
 def _rmtree_unsafe(path, onexc):
-    try:
-        if path.is_symlink() or path.is_junction():
-            raise OSError("Cannot call rmtree on a symbolic link")
-    except OSError as err:
-        onexc(os.path.islink, str(path), err)
-        return
-
     walker = path.walk(
         top_down=False,
         follow_symlinks=False,
@@ -667,6 +660,14 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     else:
         if dir_fd is not None:
             raise NotImplementedError("dir_fd unavailable on this platform")
+        try:
+            if path.is_symlink() or path.is_junction():
+                # symlinks to directories are forbidden, see bug #1669
+                raise OSError("Cannot call rmtree on a symbolic link")
+        except OSError as err:
+            onexc(os.path.islink, str(path), err)
+            # can't continue even if onexc hook returns
+            return
         return _rmtree_unsafe(path, onexc)
 
 # Allow introspection of whether or not the hardening against symlink
