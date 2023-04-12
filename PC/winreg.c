@@ -390,6 +390,8 @@ static PyType_Slot pyhkey_type_slots[] = {
     {Py_tp_traverse, PyHKEY_traverseFunc},
     {Py_tp_hash, PyHKEY_hashFunc},
     {Py_tp_str, PyHKEY_strFunc},
+
+    // Number protocol
     {Py_nb_add, PyHKEY_binaryFailureFunc},
     {Py_nb_subtract, PyHKEY_binaryFailureFunc},
     {Py_nb_multiply, PyHKEY_binaryFailureFunc},
