@@ -2097,12 +2097,6 @@ Resolving MRO entries
    of classes that will be used instead of the base. The returned tuple may be
    empty: in these cases, the original base is ignored.
 
-
-.. attribute:: type.__orig_bases__
-
-   If the class originally had bases modified by :meth:`~object.__mro_entries__`,
-   this the *bases* tuple.
-
 .. seealso::
 
    :func:`types.resolve_bases`
