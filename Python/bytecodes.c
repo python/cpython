@@ -506,6 +506,7 @@ dummy_func(
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
             JUMPBY(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
+            frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -638,7 +639,6 @@ dummy_func(
             frame = cframe.current_frame = dying->previous;
             _PyEvalFrameClearAndPop(tstate, dying);
             frame->prev_instr += frame->return_offset;
-            frame->return_offset = 0;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -658,7 +658,6 @@ dummy_func(
             frame = cframe.current_frame = dying->previous;
             _PyEvalFrameClearAndPop(tstate, dying);
             frame->prev_instr += frame->return_offset;
-            frame->return_offset = 0;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -675,7 +674,6 @@ dummy_func(
             frame = cframe.current_frame = dying->previous;
             _PyEvalFrameClearAndPop(tstate, dying);
             frame->prev_instr += frame->return_offset;
-            frame->return_offset = 0;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -696,7 +694,6 @@ dummy_func(
             frame = cframe.current_frame = dying->previous;
             _PyEvalFrameClearAndPop(tstate, dying);
             frame->prev_instr += frame->return_offset;
-            frame->return_offset = 0;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -894,7 +891,6 @@ dummy_func(
             _PyInterpreterFrame *gen_frame = frame;
             frame = cframe.current_frame = frame->previous;
             gen_frame->previous = NULL;
-            frame->return_offset = 0;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -913,7 +909,6 @@ dummy_func(
             _PyInterpreterFrame *gen_frame = frame;
             frame = cframe.current_frame = frame->previous;
             gen_frame->previous = NULL;
-            frame->return_offset = 0;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -1732,6 +1727,7 @@ dummy_func(
             STACK_SHRINK(shrink_stack);
             new_frame->localsplus[0] = owner;
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+            frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -1759,6 +1755,7 @@ dummy_func(
             new_frame->localsplus[0] = owner;
             new_frame->localsplus[1] = Py_NewRef(name);
             JUMPBY(INLINE_CACHE_ENTRIES_LOAD_ATTR);
+            frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -2529,6 +2526,7 @@ dummy_func(
                     goto error;
                 }
                 JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+                frame->return_offset = 0;
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -2602,6 +2600,7 @@ dummy_func(
             // Manipulate stack directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -2639,6 +2638,7 @@ dummy_func(
             // Manipulate stack and cache directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
             JUMPBY(INLINE_CACHE_ENTRIES_CALL);
+            frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -3122,7 +3122,6 @@ dummy_func(
             _PyThreadState_PopFrame(tstate, frame);
             frame = cframe.current_frame = prev;
             _PyFrame_StackPush(frame, (PyObject *)gen);
-            assert(frame->return_offset == 0);
             goto resume_frame;
         }
 

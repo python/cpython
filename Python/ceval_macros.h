@@ -72,7 +72,7 @@
 #endif
 
 #if USE_COMPUTED_GOTOS
-#  define TARGET(op) TARGET_##op: INSTRUCTION_START(op); assert(frame->return_offset == 0);
+#  define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
 #  define TARGET(op) case op: TARGET_##op: INSTRUCTION_START(op);
