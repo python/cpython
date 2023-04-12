@@ -13,7 +13,6 @@ on:
     - '3.9'
     - '3.8'
     - '3.7'
-    - 'gh-102765'
   pull_request:
     branches:
     - 'main'
