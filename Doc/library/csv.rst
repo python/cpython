@@ -344,7 +344,7 @@ The :mod:`csv` module defines the following constants:
    Instructs :class:`writer` objects to quote all fields which are not
    ``None``.  This is similar to QUOTE_ALL, except that if a
    field value is ``None`` an empty (unquoted) string is written.
-   
+
    Instructs :class:`reader` to interpret an empty (unquoted) field as None, and
    otherwise behave as QUOTE_ALL.
 
