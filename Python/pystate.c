@@ -625,7 +625,6 @@ free_interpreter(PyInterpreterState *interp)
    main interpreter.  We fix those fields here, in addition
    to the other dynamically initialized fields.
   */
-
 static void
 init_interpreter(PyInterpreterState *interp,
                  _PyRuntimeState *runtime, int64_t id,
@@ -650,12 +649,22 @@ init_interpreter(PyInterpreterState *interp,
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
+    for(int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
+        interp->monitors.tools[i] = 0;
+    }
+    for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
+        for(int e = 0; e < PY_MONITORING_EVENTS; e++) {
+            interp->monitoring_callables[t][e] = NULL;
 
+        }
+    }
+    interp->sys_profile_initialized = false;
+    interp->sys_trace_initialized = false;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
     }
-
+    interp->f_opcode_trace_set = false;
     interp->_initialized = 1;
 }
 
@@ -788,6 +797,20 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
+    for(int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
+        interp->monitors.tools[i] = 0;
+    }
+    for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
+        for(int e = 0; e < PY_MONITORING_EVENTS; e++) {
+            Py_CLEAR(interp->monitoring_callables[t][e]);
+        }
+    }
+    interp->sys_profile_initialized = false;
+    interp->sys_trace_initialized = false;
+    for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
+        Py_CLEAR(interp->monitoring_tool_names[t]);
+    }
+
     PyConfig_Clear(&interp->config);
     Py_CLEAR(interp->codec_search_path);
     Py_CLEAR(interp->codec_search_cache);
@@ -845,7 +868,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         interp->code_watchers[i] = NULL;
     }
     interp->active_code_watchers = 0;
-
+    interp->f_opcode_trace_set = false;
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.
@@ -1237,6 +1260,7 @@ init_threadstate(PyThreadState *tstate,
     tstate->datastack_chunk = NULL;
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
+    tstate->what_event = -1;
 
     tstate->_status.initialized = 1;
 }
@@ -1412,8 +1436,14 @@ PyThreadState_Clear(PyThreadState *tstate)
           "PyThreadState_Clear: warning: thread still has a generator\n");
     }
 
-    tstate->c_profilefunc = NULL;
-    tstate->c_tracefunc = NULL;
+    if (tstate->c_profilefunc != NULL) {
+        tstate->interp->sys_profiling_threads--;
+        tstate->c_profilefunc = NULL;
+    }
+    if (tstate->c_tracefunc != NULL) {
+        tstate->interp->sys_tracing_threads--;
+        tstate->c_tracefunc = NULL;
+    }
     Py_CLEAR(tstate->c_profileobj);
     Py_CLEAR(tstate->c_traceobj);
 
