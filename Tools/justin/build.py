@@ -149,14 +149,15 @@ class ObjectParser:
         return bytes(body)
 
     def parse(self):
-        self._parse_syms()
+        # self._parse_syms()
         relocs = self._parse_reloc()
         offsets = {}
         # breakpoint()
         body = b""
         holes = []
         for name, size, vma, type in self._parse_headers():
-            body += bytes(vma - len(body))
+            if vma:
+                body += bytes(vma - len(body))
             size_before = len(body)
             holes += [Hole(hole.symbol, hole.offset+size_before, hole.addend) for hole in relocs[name]]
             offsets[name] = size_before
