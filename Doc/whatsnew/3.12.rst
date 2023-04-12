@@ -253,6 +253,13 @@ asyncio
 * :func:`asyncio.wait` now accepts generators yielding tasks.
   (Contributed by Kumar Aditya in :gh:`78530`.)
 
+csv
+---
+
+* Added :data:`QUOTE_NOTNULL` and :data:`QUOTE_STRINGS` flags to
+  provide finer control treatment of ``None`` and empty strings by
+  :class:`reader` and :class:`writer` objects.
+
 inspect
 -------
 
