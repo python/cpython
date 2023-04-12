@@ -141,9 +141,8 @@ Module Contents
    :func:`global_enum`
 
       Modify the :class:`str() <str>` and :func:`repr` of an enum
-      to show its members as belonging to the module instead of its class.
-      Should only be used if the enum members will be exported to the
-      module global namespace.
+      to show its members as belonging to the module instead of its class,
+      and export the enum members to the global namespace.
 
    :func:`show_flag_values`
 
@@ -169,6 +168,27 @@ Data Types
    :meth:`!__str__`, :meth:`!__format__`, and :meth:`!__reduce__` methods on the
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
+
+   .. method:: EnumType.__call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
+
+      This method is called in two different ways:
+
+      * to look up an existing member:
+
+         :cls:   The enum class being called.
+         :value: The value to lookup.
+
+      * to use the ``cls`` enum to create a new enum (only if the existing enum
+        does not have any members):
+
+         :cls:   The enum class being called.
+         :value: The name of the new Enum to create.
+         :names: The names/values of the members for the new Enum.
+         :module:    The name of the module the new Enum is created in.
+         :qualname:  The actual location in the module where this Enum can be found.
+         :type:  A mix-in type for the new Enum.
+         :start: The first integer value for the Enum (used by :class:`auto`).
+         :boundary:  How to handle out-of-range values from bit operations (:class:`Flag` only).
 
    .. method:: EnumType.__contains__(cls, member)
 
@@ -254,26 +274,6 @@ Data Types
       ``_ignore_`` is a list of names that will not become members, and whose
       names will also be removed from the completed enumeration.  See
       :ref:`TimePeriod <enum-time-period>` for an example.
-
-   .. method:: Enum.__call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
-
-      This method is called in two different ways:
-
-      * to look up an existing member:
-
-         :cls:   The enum class being called.
-         :value: The value to lookup.
-
-      * to use the ``cls`` enum to create a new enum:
-
-         :cls:   The enum class being called.
-         :value: The name of the new Enum to create.
-         :names: The names/values of the members for the new Enum.
-         :module:    The name of the module the new Enum is created in.
-         :qualname:  The actual location in the module where this Enum can be found.
-         :type:  A mix-in type for the new Enum.
-         :start: The first integer value for the Enum (used by :class:`auto`).
-         :boundary:  How to handle out-of-range values from bit operations (:class:`Flag` only).
 
    .. method:: Enum.__dir__(self)
 
@@ -728,7 +728,6 @@ Data Types
    .. attribute:: EJECT
 
       Out-of-range values lose their *Flag* membership and revert to :class:`int`.
-      This is the default for :class:`IntFlag`::
 
          >>> from enum import Flag, EJECT, auto
          >>> class EjectFlag(Flag, boundary=EJECT):
@@ -741,8 +740,8 @@ Data Types
 
    .. attribute:: KEEP
 
-      Out-of-range values are kept, and the *Flag* membership is kept. This is
-      used for some stdlib flags::
+      Out-of-range values are kept, and the *Flag* membership is kept.
+      This is the default for :class:`IntFlag`::
 
          >>> from enum import Flag, KEEP, auto
          >>> class KeepFlag(Flag, boundary=KEEP):

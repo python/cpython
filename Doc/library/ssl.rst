@@ -1218,7 +1218,7 @@ SSL sockets also have the following additional methods and attributes:
 
 .. method:: SSLSocket.shared_ciphers()
 
-   Return the list of ciphers shared by the client during the handshake.  Each
+   Return the list of ciphers available in both the client and server.  Each
    entry of the returned list is a three-value tuple containing the name of the
    cipher, the version of the SSL protocol that defines its use, and the number
    of secret bits the cipher uses.  :meth:`~SSLSocket.shared_ciphers` returns

@@ -21,6 +21,6 @@
 typedef PyObject *(*instrinsic_func1)(PyThreadState* tstate, PyObject *value);
 typedef PyObject *(*instrinsic_func2)(PyThreadState* tstate, PyObject *value1, PyObject *value2);
 
-extern instrinsic_func1 _PyIntrinsics_UnaryFunctions[];
-extern instrinsic_func2 _PyIntrinsics_BinaryFunctions[];
+extern const instrinsic_func1 _PyIntrinsics_UnaryFunctions[];
+extern const instrinsic_func2 _PyIntrinsics_BinaryFunctions[];
 
