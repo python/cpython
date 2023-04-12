@@ -88,6 +88,11 @@ The :mod:`urllib.request` module defines the following functions:
    parameter to ``urllib.urlopen``, can be obtained by using
    :class:`ProxyHandler` objects.
 
+   .. note::
+
+      The global default timeout value is set with no timeout, which may
+      not be the desired value for this function.
+
    .. audit-event:: urllib.Request fullurl,data,headers,method urllib.request.urlopen
 
       The default opener raises an :ref:`auditing event <auditing>`
@@ -660,6 +665,10 @@ OpenerDirector Objects
    timeout setting will be used). The timeout feature actually works only for
    HTTP, HTTPS and FTP connections.
 
+   .. note::
+
+      The global default timeout value is set with no timeout, which may
+      not be the desired value for this function.
 
 .. method:: OpenerDirector.error(proto, *args)
 
