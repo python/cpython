@@ -238,7 +238,8 @@ def _walk(top_down, on_error, follow_symlinks, follow_junctions, use_fd, actions
                                     follow_junctions or not entry.is_junction()):
                                 if not top_down:
                                     actions.append((_WalkAction.WALK, (
-                                        path._make_child_relpath(entry.name), fd, entry)))
+                                        path._make_child_relpath(entry.name), fd,
+                                        entry if use_fd and not follow_symlinks else None)))
                                 dirnames.append(entry.name)
                             else:
                                 filenames.append(entry.name)
