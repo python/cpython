@@ -873,6 +873,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     PyObject *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
     gid_t *extra_groups = NULL;
+    pid_t pid = -1;
     PyObject *cwd_obj2 = NULL;
     const char *cwd = NULL;
     int need_to_reenable_gc = 0;
@@ -1066,7 +1067,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     }
 #endif
 
-    pid_t pid = do_fork_exec(exec_array, argv, envp, cwd,
+    pid = do_fork_exec(exec_array, argv, envp, cwd,
                        p2cread, p2cwrite, c2pread, c2pwrite,
                        errread, errwrite, errpipe_read, errpipe_write,
                        close_fds, restore_signals, call_setsid, pgid_to_set,
