@@ -97,14 +97,14 @@ Dynamic Type Creation
         class Bar(Foo[int], float): ...
         class Baz(list[str]): ...
 
-        Bar.__bases__ == (Foo, float)
-        get_original_bases(Bar) == (Foo[int], float)
+        assert Bar.__bases__ == (Foo, float)
+        assert get_original_bases(Bar) == (Foo[int], float)
 
-        Baz.__bases__ == (list,)
-        get_original_bases(Baz) == (list[str],)
+        assert Baz.__bases__ == (list,)
+        assert get_original_bases(Baz) == (list[str],)
 
-        int.__bases__ == (object,)
-        get_original_bases(int) == (object,)
+        assert int.__bases__ == (object,)
+        assert get_original_bases(int) == (object,)
 
     .. versionadded:: 3.12
 

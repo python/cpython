@@ -156,9 +156,9 @@ def get_original_bases(cls, /):
         class Bar(Foo[int], float): ...
         class Baz(list[str]): ...
 
-        get_original_bases(Bar) == (Foo[int], float)
-        get_original_bases(Baz) == (list[str],)
-        get_original_bases(int) == (object,)
+        assert get_original_bases(Bar) == (Foo[int], float)
+        assert get_original_bases(Baz) == (list[str],)
+        assert get_original_bases(int) == (object,)
     """
     try:
         return cls.__orig_bases__
