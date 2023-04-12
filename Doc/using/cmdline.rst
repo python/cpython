@@ -495,7 +495,8 @@ Miscellaneous options
    Reserved for various implementation-specific options.  CPython currently
    defines the following possible values:
 
-   * ``-X faulthandler`` to enable :mod:`faulthandler`;
+   * ``-X faulthandler`` to enable :mod:`faulthandler`.
+     See also :envvar:`PYTHONFAULTHANDLER`.
    * ``-X showrefcount`` to output the total reference count and number of used
      memory blocks when the program finishes or after each statement in the
      interactive interpreter. This only works on :ref:`debug builds
@@ -503,8 +504,9 @@ Miscellaneous options
    * ``-X tracemalloc`` to start tracing Python memory allocations using the
      :mod:`tracemalloc` module. By default, only the most recent frame is
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
-     tracing with a traceback limit of *NFRAME* frames. See the
-     :func:`tracemalloc.start` for more information.
+     tracing with a traceback limit of *NFRAME* frames.
+     See :func:`tracemalloc.start` and :envvar:`PYTHONTRACEMALLOC`
+     for more information.
    * ``-X int_max_str_digits`` configures the :ref:`integer string conversion
      length limitation <int_max_str_digits>`.  See also
      :envvar:`PYTHONINTMAXSTRDIGITS`.
@@ -519,6 +521,7 @@ Miscellaneous options
    * ``-X utf8`` enables the :ref:`Python UTF-8 Mode <utf8-mode>`.
      ``-X utf8=0`` explicitly disables :ref:`Python UTF-8 Mode <utf8-mode>`
      (even when it would otherwise activate automatically).
+     See also :envvar:`PYTHONUTF8`.
    * ``-X pycache_prefix=PATH`` enables writing ``.pyc`` files to a parallel
      tree rooted at the given directory instead of to the code tree. See also
      :envvar:`PYTHONPYCACHEPREFIX`.
@@ -861,7 +864,9 @@ conflict.
    Python memory allocations using the :mod:`tracemalloc` module. The value of
    the variable is the maximum number of frames stored in a traceback of a
    trace. For example, ``PYTHONTRACEMALLOC=1`` stores only the most recent
-   frame. See the :func:`tracemalloc.start` for more information.
+   frame.
+   See the :func:`tracemalloc.start` function for more information.
+   This is equivalent to setting the :option:`-X` ``tracemalloc`` option.
 
    .. versionadded:: 3.4
 
@@ -869,8 +874,8 @@ conflict.
 .. envvar:: PYTHONPROFILEIMPORTTIME
 
    If this environment variable is set to a non-empty string, Python will
-   show how long each import takes.  This is exactly equivalent to setting
-   ``-X importtime`` on the command line.
+   show how long each import takes.
+   This is equivalent to setting the :option:`-X` ``importtime`` option.
 
    .. versionadded:: 3.7
 
@@ -1012,6 +1017,7 @@ conflict.
    If this environment variable is set to a non-empty string, enable
    :ref:`Python Development Mode <devmode>`, introducing additional runtime
    checks that are too expensive to be enabled by default.
+   This is equivalent to setting the :option:`-X` ``dev`` option.
 
    .. versionadded:: 3.7
 
