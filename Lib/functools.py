@@ -194,7 +194,6 @@ def total_ordering(cls):
     root = max(roots)       # prefer __lt__ to __le__ to __gt__ to __ge__
     for opname, opfunc in _convert[root]:
         if opname not in roots:
-            opfunc.__name__ = opname
             setattr(cls, opname, opfunc)
     return cls
 
