@@ -1011,6 +1011,77 @@ class TestLocalEvents(MonitoringTestBase, unittest.TestCase):
             ('line', 'func3', 6)])
 
 
+def line_from_offset(code, offset):
+    for start, end, line in code.co_lines():
+        if start <= offset < end:
+            return line - code.co_firstlineno
+    return -1
+
+class JumpRecorder:
+
+    event_type = E.JUMP
+    name = "jump"
+
+    def __init__(self, events):
+        self.events = events
+
+    def __call__(self, code, from_, to):
+        from_line = line_from_offset(code, from_)
+        to_line = line_from_offset(code, to)
+        self.events.append((self.name, code.co_name, from_line, to_line))
+
+
+class BranchRecorder(JumpRecorder):
+
+    event_type = E.BRANCH
+    name = "branch"
+
+
+JUMP_AND_BRANCH_RECORDERS = JumpRecorder, BranchRecorder
+JUMP_BRANCH_AND_LINE_RECORDERS = JumpRecorder, BranchRecorder, LineRecorder
+
+class TestBranchAndJumpEvents(CheckEvents):
+    maxDiff = None
+
+    def test_loop(self):
+
+        def func():
+            x = 1
+            for a in range(2):
+                if a:
+                    x = 4
+                else:
+                    x = 6
+
+        self.check_events(func, recorders = JUMP_AND_BRANCH_RECORDERS, expected = [
+            ('branch', 'func', 2, 2),
+            ('branch', 'func', 3, 6),
+            ('jump', 'func', 6, 2),
+            ('branch', 'func', 2, 2),
+            ('branch', 'func', 3, 4),
+            ('jump', 'func', 4, 2),
+            ('branch', 'func', 2, 2)])
+
+
+        self.check_events(func, recorders = JUMP_BRANCH_AND_LINE_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('line', 'func', 1),
+            ('line', 'func', 2),
+            ('branch', 'func', 2, 2),
+            ('line', 'func', 3),
+            ('branch', 'func', 3, 6),
+            ('line', 'func', 6),
+            ('jump', 'func', 6, 2),
+            ('branch', 'func', 2, 2),
+            ('line', 'func', 3),
+            ('branch', 'func', 3, 4),
+            ('line', 'func', 4),
+            ('jump', 'func', 4, 2),
+            ('branch', 'func', 2, 2),
+            ('line', 'func', 2),
+            ('line', 'check_events', 11)])
+
+
 class TestSetGetEvents(MonitoringTestBase, unittest.TestCase):
 
     def test_global(self):
