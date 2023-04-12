@@ -14,16 +14,6 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 
-static inline void
-_Py_EnsureImmortal(PyObject *op)
-{
-    if (_Py_IsImmortal(op)) {
-        return;
-    }
-    assert(op->ob_type != &PyTuple_Type || PyTuple_GET_SIZE(op) > 0);
-    _Py_SetImmortal(op);
-}
-
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     const char *func,
     const char *message);
