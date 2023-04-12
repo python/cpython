@@ -74,6 +74,22 @@ bool_vectorcall(PyObject *type, PyObject * const*args,
 /* Arithmetic operations redefined to return bool if both args are bool. */
 
 static PyObject *
+bool_invert(PyObject *v)
+{
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "Bitwise inversion '~' on bool is deprecated. This "
+                     "returns the bitwise inversion of the underlying int "
+                     "object and is usually not what you expect from negating "
+                     "a bool. Use the 'not' operator for boolean negation or "
+                     "~int(x) if you really want the bitwise inversion of the "
+                     "underlying int.",
+                     1) < 0) {
+        return NULL;
+    }
+    return PyLong_Type.tp_as_number->nb_invert(v);
+}
+
+static PyObject *
 bool_and(PyObject *a, PyObject *b)
 {
     if (!PyBool_Check(a) || !PyBool_Check(b))
@@ -119,7 +135,7 @@ static PyNumberMethods bool_as_number = {
     0,                          /* nb_positive */
     0,                          /* nb_absolute */
     0,                          /* nb_bool */
-    0,                          /* nb_invert */
+    (unaryfunc)bool_invert,     /* nb_invert */
     0,                          /* nb_lshift */
     0,                          /* nb_rshift */
     bool_and,                   /* nb_and */
