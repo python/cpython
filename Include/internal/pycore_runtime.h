@@ -155,6 +155,8 @@ typedef struct pyruntimestate {
         unsigned int next_version_tag;
     } types;
 
+    /* All non-static immortal objects (need to be cleaned up during fini). */
+    struct _Py_immortalized_objects immortalized_objects;
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_static_objects static_objects;
 
