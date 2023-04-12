@@ -207,29 +207,6 @@ PyHKEY_hashFunc(PyObject *ob)
 }
 
 
-static PyNumberMethods PyHKEY_NumberMethods =
-{
-    PyHKEY_binaryFailureFunc,           /* nb_add */
-    PyHKEY_binaryFailureFunc,           /* nb_subtract */
-    PyHKEY_binaryFailureFunc,           /* nb_multiply */
-    PyHKEY_binaryFailureFunc,           /* nb_remainder */
-    PyHKEY_binaryFailureFunc,           /* nb_divmod */
-    PyHKEY_ternaryFailureFunc,          /* nb_power */
-    PyHKEY_unaryFailureFunc,            /* nb_negative */
-    PyHKEY_unaryFailureFunc,            /* nb_positive */
-    PyHKEY_unaryFailureFunc,            /* nb_absolute */
-    PyHKEY_boolFunc,                    /* nb_bool */
-    PyHKEY_unaryFailureFunc,            /* nb_invert */
-    PyHKEY_binaryFailureFunc,           /* nb_lshift */
-    PyHKEY_binaryFailureFunc,           /* nb_rshift */
-    PyHKEY_binaryFailureFunc,           /* nb_and */
-    PyHKEY_binaryFailureFunc,           /* nb_xor */
-    PyHKEY_binaryFailureFunc,           /* nb_or */
-    PyHKEY_intFunc,                     /* nb_int */
-    0,                                  /* nb_reserved */
-    PyHKEY_unaryFailureFunc,            /* nb_float */
-};
-
 /*[clinic input]
 module winreg
 class winreg.HKEYType "PyHKEYObject *" "&PyHKEY_Type"
