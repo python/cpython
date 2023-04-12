@@ -208,7 +208,7 @@ class BasicTest(BaseTest):
     def test_upgrade_dependencies(self):
         builder = venv.EnvBuilder()
         bin_path = 'Scripts' if sys.platform == 'win32' else 'bin'
-        python_exe_realpath = os.path.realpath(sys.executable)
+        python_exe_realpath = os.path.realpath(sys._base_executable)
         python_exe = os.path.split(python_exe_realpath)[1]
         with tempfile.TemporaryDirectory() as fake_env_dir:
             expect_exe = os.path.normcase(
@@ -553,7 +553,7 @@ class BasicTest(BaseTest):
         self.addCleanup(rmtree, non_installed_dir)
         bindir = os.path.join(non_installed_dir, self.bindir)
         os.mkdir(bindir)
-        python_exe_realpath = os.path.realpath(sys.executable)
+        python_exe_realpath = os.path.realpath(sys._base_executable)
         shutil.copy2(python_exe_realpath, bindir)
         libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
         os.makedirs(libdir)
