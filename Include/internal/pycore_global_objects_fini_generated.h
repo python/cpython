@@ -1121,6 +1121,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(reducer_override));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(registry));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(rel_tol));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(release));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(reload));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(repl));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(replace));
