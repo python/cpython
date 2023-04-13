@@ -126,22 +126,22 @@ typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
         return NULL;
     }
 
-    if (constraints != NULL) {
-        if (!PyTuple_CheckExact(constraints)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "constraints must be a tuple");
-            return NULL;
-        }
-        Py_ssize_t n_constraints = PyTuple_GET_SIZE(constraints);
-        if (n_constraints == 1) {
-            PyErr_SetString(PyExc_TypeError,
-                            "A single constraint is not allowed");
-            return NULL;
-        } else if (n_constraints == 0) {
-            PyErr_SetString(PyExc_TypeError,
-                            "constraints must be a non-empty tuple");
-            return NULL;
-        }
+    if (!PyTuple_CheckExact(constraints)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "constraints must be a tuple");
+        return NULL;
+    }
+    Py_ssize_t n_constraints = PyTuple_GET_SIZE(constraints);
+    if (n_constraints == 1) {
+        PyErr_SetString(PyExc_TypeError,
+                        "A single constraint is not allowed");
+        return NULL;
+    } else if (n_constraints == 0) {
+        constraints = NULL;
+    }
+
+    if (Py_IsNone(bound)) {
+        bound = NULL;
     }
 
     return (PyObject *)typevarobject_alloc(name, bound, constraints,
