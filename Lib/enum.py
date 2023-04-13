@@ -981,7 +981,7 @@ class EnumType(type):
 
     @classmethod
     def _find_data_type_(mcls, class_name, bases):
-        # a datatype has a __new__ method, or a __dataclass_fields__ attribute
+        # a datatype has a __new__ method
         data_types = set()
         base_chain = set()
         for chain in bases:
@@ -994,7 +994,7 @@ class EnumType(type):
                     if base._member_type_ is not object:
                         data_types.add(base._member_type_)
                         break
-                elif '__new__' in base.__dict__:
+                elif '__new__' in base.__dict__ or '__dataclass_fields__' in base.__dict__:
                     if isinstance(base, EnumType):
                         continue
                     data_types.add(candidate or base)

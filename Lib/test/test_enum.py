@@ -2667,8 +2667,6 @@ class TestSpecial(unittest.TestCase):
             a: int
         class Entries(Foo, Enum):
             ENTRY1 = 1
-        self.assertEqual(repr(Entries.ENTRY1), '<Entries.ENTRY1: ha hah!>')
-        self.assertTrue(Entries.ENTRY1.value == Foo(1), Entries.ENTRY1.value)
         self.assertTrue(isinstance(Entries.ENTRY1, Foo))
         self.assertTrue(Entries._member_type_ is Foo, Entries._member_type_)
         self.assertTrue(Entries.ENTRY1.value == Foo(1), Entries.ENTRY1.value)
@@ -2679,7 +2677,7 @@ class TestSpecial(unittest.TestCase):
             def __init__(self, a):
                 self.a = a
             def __repr__(self):
-                return f'Foo(a={self.a!r})'
+                return 'Foo(a=%r)' % self._value_
         class Entries(Foo, Enum):
             ENTRY1 = 1
         #
