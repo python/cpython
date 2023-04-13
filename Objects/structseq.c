@@ -517,15 +517,27 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
         return -1;
     }
     initialize_static_fields(type, desc, members, tp_flags);
+
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        PyMem_Free(members);
+        return -1;
+    }
+    type->tp_dict = dict;
+
+    if (initialize_static_type(type, desc, n_members, n_unnamed_members) < 0) {
+        PyMem_Free(members);
+        Py_CLEAR(type->tp_dict);
+        return -1;
+    }
+
+    _Py_SetImmortal(type);
     if (_PyStaticType_InitBuiltin(type) < 0) {
         PyMem_Free(members);
+        Py_CLEAR(type->tp_dict);
         PyErr_Format(PyExc_RuntimeError,
                      "Can't initialize builtin type %s",
                      desc->name);
-        return -1;
-    }
-    if (initialize_static_type(type, desc, n_members, n_unnamed_members) < 0) {
-        PyMem_Free(members);
         return -1;
     }
     return 0;
@@ -570,35 +582,29 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 }
 
 
+/* This is exposed in the internal API, not the public API.
+   It is only called on builtin static types, which are all
+   initialized via _PyStructSequence_InitBuiltinWithFlags(). */
+
 void
 _PyStructSequence_FiniType(PyTypeObject *type)
 {
     // Ensure that the type is initialized
     assert(type->tp_name != NULL);
     assert(type->tp_base == &PyTuple_Type);
+    assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+    assert(_Py_IsImmortal(type));
 
     // Cannot delete a type if it still has subclasses
     if (_PyType_HasSubclasses(type)) {
+        // XXX Shouldn't this be an error?
         return;
     }
 
-    // Undo PyStructSequence_NewType()
-    type->tp_name = NULL;
+    // Undo _PyStructSequence_InitBuiltinWithFlags()
     PyMem_Free(type->tp_members);
 
     _PyStaticType_Dealloc(type);
-    assert(Py_REFCNT(type) == 1);
-    // Undo Py_INCREF(type) of _PyStructSequence_InitType().
-    // Don't use Py_DECREF(): static type must not be deallocated
-    Py_SET_REFCNT(type, 0);
-#ifdef Py_REF_DEBUG
-    _Py_DecRefTotal(_PyInterpreterState_GET());
-#endif
-
-    // Make sure that _PyStructSequence_InitType() will initialize
-    // the type again
-    assert(Py_REFCNT(type) == 0);
-    assert(type->tp_name == NULL);
 }
 
 

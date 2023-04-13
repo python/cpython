@@ -7030,6 +7030,7 @@ PyType_Ready(PyTypeObject *type)
 int
 _PyStaticType_InitBuiltin(PyTypeObject *self)
 {
+    assert(_Py_IsImmortal((PyObject *)self));
     self->tp_flags |= _Py_TPFLAGS_STATIC_BUILTIN;
 
     assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
