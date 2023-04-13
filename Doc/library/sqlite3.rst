@@ -1241,7 +1241,7 @@ Connection objects
 
       .. versionadded:: 3.12
 
-   .. method:: setconfig(op, enable, /)
+   .. method:: setconfig(op, enable=True, /)
 
       Set a boolean connection configuration option.
 
@@ -1249,7 +1249,7 @@ Connection objects
          A :ref:`SQLITE_DBCONFIG code <sqlite3-dbconfig-constants>`.
 
       :param bool enable:
-         ``True`` if the configuration option should be enabled;
+         ``True`` if the configuration option should be enabled (default);
          ``False`` if it should be disabled.
 
       .. versionadded:: 3.12

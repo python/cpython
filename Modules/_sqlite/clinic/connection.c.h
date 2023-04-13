@@ -1514,7 +1514,7 @@ exit:
 }
 
 PyDoc_STRVAR(setconfig__doc__,
-"setconfig($self, op, enable, /)\n"
+"setconfig($self, op, enable=True, /)\n"
 "--\n"
 "\n"
 "\n"
@@ -1533,19 +1533,23 @@ setconfig(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int op;
-    int enable;
+    int enable = 1;
 
-    if (!_PyArg_CheckPositional("setconfig", nargs, 2, 2)) {
+    if (!_PyArg_CheckPositional("setconfig", nargs, 1, 2)) {
         goto exit;
     }
     op = _PyLong_AsInt(args[0]);
     if (op == -1 && PyErr_Occurred()) {
         goto exit;
     }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
     enable = PyObject_IsTrue(args[1]);
     if (enable < 0) {
         goto exit;
     }
+skip_optional:
     return_value = setconfig_impl(self, op, enable);
 
 exit:
@@ -1607,4 +1611,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=e4a5908ca25f1741 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=84560376421204ce input=a9049054013a1b77]*/

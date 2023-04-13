@@ -2395,14 +2395,14 @@ _sqlite3.Connection.setconfig as setconfig
 
     op: int
         The configuration verb; one of the sqlite3.SQLITE_DBCONFIG codes.
-    enable: bool
+    enable: bool = True
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 setconfig_impl(pysqlite_Connection *self, int op, int enable)
-/*[clinic end generated code: output=c60b13e618aff873 input=523e31c0dc82f243]*/
+/*[clinic end generated code: output=c60b13e618aff873 input=01d77271ea8ca45f]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;

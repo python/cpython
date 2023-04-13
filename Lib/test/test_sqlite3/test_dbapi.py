@@ -583,14 +583,23 @@ class ConnectionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "unknown"):
                 cx.getconfig(-1)
 
+            # Toggle and verify.
             old = cx.getconfig(op)
             new = not old
-
             cx.setconfig(op, new)
             self.assertEqual(cx.getconfig(op), new)
 
-            cx.setconfig(op, old)
-            self.assertEqual(cx.getconfig(op), old)
+            cx.setconfig(op)  # defaults to True
+            self.assertTrue(cx.getconfig(op))
+
+            # Check that foreign key support was actually enabled.
+            with cx:
+                cx.executescript("""
+                    create table t(t integer primary key);
+                    create table u(u, foreign key(u) references t(t));
+                """)
+            with self.assertRaisesRegex(sqlite.IntegrityError, "constraint"):
+                cx.execute("insert into u values(0)")
 
 
 class UninitialisedConnectionTests(unittest.TestCase):
