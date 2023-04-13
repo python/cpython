@@ -9,7 +9,7 @@ Contributed by Sokolov Yura, modified by Tupteq.
 
 import time
 
-from . import Engine
+from . import trace
 
 
 DEFAULT_ARG = 9
@@ -58,12 +58,10 @@ def bench_fannkuch(loops: int) -> float:
         fannkuch(DEFAULT_ARG)
     return time.perf_counter() - t0
 
-loops = 1 << 1
+loops = 1 << 2
 fannkuch_time = bench_fannkuch(loops)
-engine = Engine(verbose=True)
-fannkuch = engine.trace(fannkuch)
-bench_fannkuch(loops)
+fannkuch = trace(fannkuch)
 fannkuch_jit_time = bench_fannkuch(loops)
 
 print(f"fannkuch_jit is {fannkuch_time / fannkuch_jit_time - 1:.0%} faster than fannkuch!")
-print(round(fannkuch_time, 3), round(fannkuch_jit_time, 3))#, round(engine._tracing_time, 3), round(engine._compiling_time, 3), round(engine._compiled_time, 3), round(fannkuch_jit_time - engine._tracing_time - engine._compiling_time - engine._compiled_time, 3))
+print(round(fannkuch_time, 3), round(fannkuch_jit_time, 3))

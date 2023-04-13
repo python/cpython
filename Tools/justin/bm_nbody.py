@@ -15,7 +15,7 @@ Modified by Tupteq, Fredrik Johansson, and Daniel Nanz.
 
 import time
 
-from . import Engine
+from . import trace
 
 __contact__ = "collinwinter@google.com (Collin Winter)"
 DEFAULT_ITERATIONS = 20000
@@ -135,13 +135,12 @@ def bench_nbody(loops, reference, iterations):
 
     return time.perf_counter() - t0
 
-loops = 1 << 3
+loops = 1 << 4
 nbody_time = bench_nbody(loops, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)
-engine = Engine(verbose=True)
-advance = engine.trace(advance)
-report_energy = engine.trace(report_energy)
-bench_nbody(loops, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)
+advance = trace(advance)
+report_energy = trace(report_energy)
+# bench_nbody(loops, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)
 nbody_jit_time = bench_nbody(loops, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)
 
 print(f"nbody_jit is {nbody_time / nbody_jit_time - 1:.0%} faster than nbody!")
-print(round(nbody_time, 3), round(nbody_jit_time, 3))#, round(engine._tracing_time, 3), round(engine._compiling_time, 3), round(engine._compiled_time, 3), round(nbody_jit_time - engine._tracing_time - engine._compiling_time - engine._compiled_time, 3))
+print(round(nbody_time, 3), round(nbody_jit_time, 3))

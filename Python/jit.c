@@ -74,7 +74,7 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
         _Py_CODEUNIT *instruction = trace[i];
         const Stencil *stencil = &stencils[instruction->op.code];
         if (stencil->nbytes == 0) {
-            // This opcode isn't supported:
+            printf("JIT: Unsupported opcode %d!\n", instruction->op.code);
             return NULL;
         }
         nbytes += stencil->nbytes;
