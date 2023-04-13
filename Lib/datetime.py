@@ -1810,10 +1810,27 @@ class datetime(date):
         return cls.fromtimestamp(t, tz)
 
     @classmethod
-    def utcnow(cls):
-        "Construct a UTC datetime from time.time()."
+    def utcnow_naive(cls):
+        "Construct a naive UTC datetime from time.time()."
         t = _time.time()
         return cls.utcfromtimestamp(t)
+
+    @classmethod
+    def utcnow_aware(cls):
+        "Construct an aware UTC datetime from time.time()."
+        return cls.now(timezone.utc)
+
+    @classmethod
+    def localnow_naive(cls):
+        "Construct a naive local datetime from time.time()."
+        return cls.now()
+
+    @classmethod
+    def localnow_aware(cls):
+        "Construct an aware local datetime from time.time()."
+        return cls.now().astimezone()
+
+    utcnow = utcnow_naive
 
     @classmethod
     def combine(cls, date, time, tzinfo=True):
