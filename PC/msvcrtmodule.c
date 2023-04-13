@@ -564,19 +564,6 @@ static struct PyMethodDef msvcrt_functions[] = {
     {NULL,                      NULL}
 };
 
-
-static struct PyModuleDef msvcrtmodule = {
-    PyModuleDef_HEAD_INIT,
-    "msvcrt",
-    NULL,
-    -1,
-    msvcrt_functions,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
 static void
 insertint(PyObject *d, char *name, int value)
 {
@@ -605,15 +592,11 @@ insertptr(PyObject *d, char *name, void *value)
     }
 }
 
-PyMODINIT_FUNC
-PyInit_msvcrt(void)
+static int
+exec_module(PyObject* m)
 {
     int st;
-    PyObject *d, *version;
-    PyObject *m = PyModule_Create(&msvcrtmodule);
-    if (m == NULL)
-        return NULL;
-    d = PyModule_GetDict(m);
+    PyObject *d = PyModule_GetDict(m);  // Borrowed ref.
 
     /* constants for the locking() function's mode argument */
     insertint(d, "LK_LOCK", _LK_LOCK);
@@ -644,30 +627,61 @@ PyInit_msvcrt(void)
 #ifdef _VC_ASSEMBLY_PUBLICKEYTOKEN
     st = PyModule_AddStringConstant(m, "VC_ASSEMBLY_PUBLICKEYTOKEN",
                                     _VC_ASSEMBLY_PUBLICKEYTOKEN);
-    if (st < 0) return NULL;
+    if (st < 0) {
+        return -1;
+    }
 #endif
 #ifdef _CRT_ASSEMBLY_VERSION
     st = PyModule_AddStringConstant(m, "CRT_ASSEMBLY_VERSION",
                                     _CRT_ASSEMBLY_VERSION);
-    if (st < 0) return NULL;
+    if (st < 0) {
+        return -1;
+    }
 #endif
 #ifdef __LIBRARIES_ASSEMBLY_NAME_PREFIX
     st = PyModule_AddStringConstant(m, "LIBRARIES_ASSEMBLY_NAME_PREFIX",
                                     __LIBRARIES_ASSEMBLY_NAME_PREFIX);
-    if (st < 0) return NULL;
+    if (st < 0) {
+        return -1;
+    }
 #endif
 
     /* constants for the 2010 crt versions */
 #if defined(_VC_CRT_MAJOR_VERSION) && defined (_VC_CRT_MINOR_VERSION) && defined(_VC_CRT_BUILD_VERSION) && defined(_VC_CRT_RBUILD_VERSION)
-    version = PyUnicode_FromFormat("%d.%d.%d.%d", _VC_CRT_MAJOR_VERSION,
-                                                  _VC_CRT_MINOR_VERSION,
-                                                  _VC_CRT_BUILD_VERSION,
-                                                  _VC_CRT_RBUILD_VERSION);
-    st = PyModule_AddObject(m, "CRT_ASSEMBLY_VERSION", version);
-    if (st < 0) return NULL;
+    PyObject *version = PyUnicode_FromFormat("%d.%d.%d.%d",
+                                             _VC_CRT_MAJOR_VERSION,
+                                             _VC_CRT_MINOR_VERSION,
+                                             _VC_CRT_BUILD_VERSION,
+                                             _VC_CRT_RBUILD_VERSION);
+    if (version == NULL) {
+        return -1;
+    }
+    st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
+    Py_DECREF(version);
+    if (st < 0) {
+        return -1;
+    }
 #endif
     /* make compiler warning quiet if st is unused */
     (void)st;
 
-    return m;
+    return 0;
+}
+
+static PyModuleDef_Slot msvcrt_slots[] = {
+    {Py_mod_exec, exec_module},
+    {0, NULL}
+};
+
+static struct PyModuleDef msvcrtmodule = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "msvcrt",
+    .m_methods = msvcrt_functions,
+    .m_slots = msvcrt_slots,
+};
+
+PyMODINIT_FUNC
+PyInit_msvcrt(void)
+{
+    return PyModuleDef_Init(&msvcrtmodule);
 }

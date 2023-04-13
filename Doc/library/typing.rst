@@ -423,7 +423,7 @@ to this is that a list of types can be used to substitute a :class:`ParamSpec`::
    >>> class Z(Generic[T, P]): ...
    ...
    >>> Z[int, [dict, float]]
-   __main__.Z[int, (<class 'dict'>, <class 'float'>)]
+   __main__.Z[int, [dict, float]]
 
 
 Furthermore, a generic with only one parameter specification variable will accept
@@ -434,9 +434,9 @@ to the former, so the following are equivalent::
    >>> class X(Generic[P]): ...
    ...
    >>> X[int, str]
-   __main__.X[(<class 'int'>, <class 'str'>)]
+   __main__.X[[int, str]]
    >>> X[[int, str]]
-   __main__.X[(<class 'int'>, <class 'str'>)]
+   __main__.X[[int, str]]
 
 Do note that generics with :class:`ParamSpec` may not have correct
 ``__parameters__`` after substitution in some cases because they
