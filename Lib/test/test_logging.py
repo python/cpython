@@ -3524,6 +3524,10 @@ class ConfigDictTest(BaseTest):
                 'd': 'e', 'f': 3 ,
                 'alpha numeric 1 with spaces' : 5,
                 'aplha numeric 1 %( - © ©ß¯' : 9,
+                'alpha numeric ] 1 with spaces' : 15,
+                'aplha ]] numeric 1 %( - © ©ß¯]' : 19,
+                ' aplha [ numeric 1 %( - © ©ß¯] ' : 11,
+                ' aplha ' : 32,
                 '' : 10,
                 'nest4' : {
                     'd': 'e', 'f': 3 ,
@@ -3576,6 +3580,10 @@ class ConfigDictTest(BaseTest):
         self.assertRaises(KeyError, bc.convert, 'cfg://nosuch')
         self.assertRaises(ValueError, bc.convert, 'cfg://!')
         self.assertRaises(KeyError, bc.convert, 'cfg://adict[2]')
+        self.assertRaises(KeyError, bc.convert, 'cfg://adict[alpha numeric ] 1 with spaces]')
+        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ aplha ]] numeric 1 %( - © ©ß¯] ]')
+        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ aplha [ numeric 1 %( - © ©ß¯] ]')
+        
 
     def test_namedtuple(self):
         # see bpo-39142
