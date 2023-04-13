@@ -1036,6 +1036,18 @@ iterations of the loop.
       pushed to the stack before the attribute or unbound method respectively.
 
 
+.. opcode:: LOAD_ZERO_SUPER_ATTR (namei)
+
+   This opcode implements zero-argument :func:`super` (i.e. ``super().method()``
+   and ``super().attr``). It works the same as :opcode:`LOAD_ATTR`, except that
+   instead of expecting a single receiver on the stack, it expects three objects
+   (from top of stack down): ``self`` (the first argument to the current
+   method), ``cls`` (the class within which the current method was defined), and
+   the global ``super``.
+
+   .. versionadded:: 3.12
+
+
 .. opcode:: COMPARE_OP (opname)
 
    Performs a Boolean operation.  The operation name can be found in
