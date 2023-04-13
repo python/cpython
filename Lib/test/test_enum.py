@@ -2737,10 +2737,10 @@ class TestSpecial(unittest.TestCase):
                 return 'ha hah!'
         class Entries(Foo, Enum):
             ENTRY1 = 1
+        self.assertEqual(repr(Entries.ENTRY1), '<Entries.ENTRY1: ha hah!>')
+        self.assertTrue(Entries.ENTRY1.value == Foo(1), Entries.ENTRY1.value)
         self.assertTrue(isinstance(Entries.ENTRY1, Foo))
         self.assertTrue(Entries._member_type_ is Foo, Entries._member_type_)
-        self.assertTrue(Entries.ENTRY1.value == Foo(1), Entries.ENTRY1.value)
-        self.assertEqual(repr(Entries.ENTRY1), '<Entries.ENTRY1: ha hah!>')
         #
         # check auto-generated dataclass __repr__ is not used
         #
@@ -2787,8 +2787,7 @@ class TestSpecial(unittest.TestCase):
             DOG = ('medium', 4)
         self.assertRegex(repr(Creature.DOG), "<Creature.DOG: .*CreatureDataMixin object at .*>")
 
-    def test_repr_with_init_data_type_mixin(self):
-        # non-data_type is a mixin that doesn't define __new__
+    def test_repr_with_init_mixin(self):
         class Foo:
             def __init__(self, a):
                 self.a = a
@@ -2797,9 +2796,9 @@ class TestSpecial(unittest.TestCase):
         class Entries(Foo, Enum):
             ENTRY1 = 1
         #
-        self.assertEqual(repr(Entries.ENTRY1), '<Entries.ENTRY1: Foo(a=1)>')
+        self.assertEqual(repr(Entries.ENTRY1), 'Foo(a=1)')
 
-    def test_repr_and_str_with_non_data_type_mixin(self):
+    def test_repr_and_str_with_no_init_mixin(self):
         # non-data_type is a mixin that doesn't define __new__
         class Foo:
             def __repr__(self):
@@ -2911,6 +2910,8 @@ class TestSpecial(unittest.TestCase):
 
     def test_init_exception(self):
         class Base:
+            def __new__(cls, *args):
+                return object.__new__(cls)
             def __init__(self, x):
                 raise ValueError("I don't like", x)
         with self.assertRaises(TypeError):
