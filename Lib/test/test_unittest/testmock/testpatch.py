@@ -997,7 +997,6 @@ class PatchTest(unittest.TestCase):
 
 
     def test_autospec_staticmethod_signature(self):
-        # Regression test for gh-102978
         # Patched methods which are decorated with @staticmethod should have the same signature
         class Foo:
             @staticmethod
