@@ -696,7 +696,8 @@ Data Types
 
    .. attribute:: STRICT
 
-      Out-of-range values cause a :exc:`ValueError` to be raised::
+      Out-of-range values cause a :exc:`ValueError` to be raised. This is the
+      default for :class:`Flag`::
 
          >>> from enum import Flag, STRICT, auto
          >>> class StrictFlag(Flag, boundary=STRICT):
@@ -714,7 +715,7 @@ Data Types
    .. attribute:: CONFORM
 
       Out-of-range values have invalid values removed, leaving a valid *Flag*
-      value. This is the default for :class:`Flag`::
+      value::
 
          >>> from enum import Flag, CONFORM, auto
          >>> class ConformFlag(Flag, boundary=CONFORM):
