@@ -305,7 +305,10 @@ class PurePath(object):
             if isinstance(arg, PurePath):
                 path = arg._raw_path
             else:
-                path = os.fspath(arg)
+                try:
+                    path = os.fspath(arg)
+                except TypeError:
+                    path = arg
                 if not isinstance(path, str):
                     raise TypeError(
                         "argument should be a str or an os.PathLike "
