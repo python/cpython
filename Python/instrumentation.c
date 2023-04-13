@@ -125,6 +125,7 @@ is_instrumented(int opcode) {
     return opcode >= MIN_INSTRUMENTED_OPCODE;
 }
 
+#ifndef NDEBUG
 static inline bool
 monitors_equals(_Py_Monitors a, _Py_Monitors b)
 {
@@ -135,6 +136,7 @@ monitors_equals(_Py_Monitors a, _Py_Monitors b)
     }
     return true;
 }
+#endif
 
 static inline _Py_Monitors
 monitors_sub(_Py_Monitors a, _Py_Monitors b)
@@ -146,6 +148,7 @@ monitors_sub(_Py_Monitors a, _Py_Monitors b)
     return res;
 }
 
+#ifndef NDEBUG
 static inline _Py_Monitors
 monitors_and(_Py_Monitors a, _Py_Monitors b)
 {
@@ -155,6 +158,7 @@ monitors_and(_Py_Monitors a, _Py_Monitors b)
     }
     return res;
 }
+#endif
 
 static inline _Py_Monitors
 monitors_or(_Py_Monitors a, _Py_Monitors b)
