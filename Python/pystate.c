@@ -2814,6 +2814,23 @@ _Py_EnsureImmortal(PyObject *obj)
 
     _Py_SetImmortal(obj);
     immortalized_add(&_PyRuntime.immortalized_objects, obj);
+
+    if (Py_TYPE(obj) == &PyDict_Type) {
+        Py_ssize_t i = 0;
+        PyObject *key, *value;  // borrowed ref
+        while (PyDict_Next(obj, &i, &key, &value)) {
+            _Py_EnsureImmortal(key);
+            _Py_EnsureImmortal(value);
+        }
+    }
+    else if (Py_TYPE(obj) == &PyTuple_Type) {
+        assert(PyTuple_GET_SIZE(obj) > 0);
+        Py_ssize_t size = PyTuple_GET_SIZE(obj);
+        assert(size > 0);
+        for (Py_ssize_t i = 0; i < size; i++) {
+            _Py_EnsureImmortal(PyTuple_GET_ITEM(obj, i));
+        }
+    }
 }
 
 void
