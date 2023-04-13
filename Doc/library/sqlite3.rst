@@ -573,7 +573,7 @@ Module constants
       package, a third-party library which used to upstream changes to
       :mod:`!sqlite3`. Today, it carries no meaning or practical value.
 
-.. _sqlite3-dbconfig-constants
+.. _sqlite3-dbconfig-constants:
 
 .. data:: SQLITE_DBCONFIG_DEFENSIVE
           SQLITE_DBCONFIG_DQS_DDL
