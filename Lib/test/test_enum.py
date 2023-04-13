@@ -2757,6 +2757,8 @@ class TestSpecial(unittest.TestCase):
             #
             a = ord('a')
         #
+        self.assertEqual(FlagFromChar._all_bits_, 316912650057057350374175801343)
+        self.assertEqual(FlagFromChar._flag_mask_, 158456325028528675187087900672)
         self.assertEqual(FlagFromChar.a, 158456325028528675187087900672)
         self.assertEqual(FlagFromChar.a|1, 158456325028528675187087900673)
         #
@@ -2771,6 +2773,8 @@ class TestSpecial(unittest.TestCase):
             a = ord('a')
             z = 1
         #
+        self.assertEqual(FlagFromChar._all_bits_, 316912650057057350374175801343)
+        self.assertEqual(FlagFromChar._flag_mask_, 158456325028528675187087900674)
         self.assertEqual(FlagFromChar.a.value, 158456325028528675187087900672)
         self.assertEqual((FlagFromChar.a|FlagFromChar.z).value, 158456325028528675187087900674)
         #
@@ -2784,6 +2788,8 @@ class TestSpecial(unittest.TestCase):
             #
             a = ord('a')
         #
+        self.assertEqual(FlagFromChar._all_bits_, 316912650057057350374175801343)
+        self.assertEqual(FlagFromChar._flag_mask_, 158456325028528675187087900672)
         self.assertEqual(FlagFromChar.a, 158456325028528675187087900672)
         self.assertEqual(FlagFromChar.a|1, 158456325028528675187087900673)
 
@@ -2963,18 +2969,18 @@ class OldTestFlag(unittest.TestCase):
             self.assertEqual(bool(f.value), bool(f))
 
     def test_boundary(self):
-        self.assertIs(enum.Flag._boundary_, CONFORM)
-        class Iron(Flag, boundary=STRICT):
+        self.assertIs(enum.Flag._boundary_, STRICT)
+        class Iron(Flag, boundary=CONFORM):
             ONE = 1
             TWO = 2
             EIGHT = 8
-        self.assertIs(Iron._boundary_, STRICT)
+        self.assertIs(Iron._boundary_, CONFORM)
         #
-        class Water(Flag, boundary=CONFORM):
+        class Water(Flag, boundary=STRICT):
             ONE = 1
             TWO = 2
             EIGHT = 8
-        self.assertIs(Water._boundary_, CONFORM)
+        self.assertIs(Water._boundary_, STRICT)
         #
         class Space(Flag, boundary=EJECT):
             ONE = 1
@@ -2987,10 +2993,10 @@ class OldTestFlag(unittest.TestCase):
             c = 4
             d = 6
         #
-        self.assertRaisesRegex(ValueError, 'invalid value 7', Iron, 7)
+        self.assertRaisesRegex(ValueError, 'invalid value 7', Water, 7)
         #
-        self.assertIs(Water(7), Water.ONE|Water.TWO)
-        self.assertIs(Water(~9), Water.TWO)
+        self.assertIs(Iron(7), Iron.ONE|Iron.TWO)
+        self.assertIs(Iron(~9), Iron.TWO)
         #
         self.assertEqual(Space(7), 7)
         self.assertTrue(type(Space(7)) is int)
@@ -2998,6 +3004,31 @@ class OldTestFlag(unittest.TestCase):
         self.assertEqual(list(Bizarre), [Bizarre.c])
         self.assertIs(Bizarre(3), Bizarre.b)
         self.assertIs(Bizarre(6), Bizarre.d)
+        #
+        class SkipFlag(enum.Flag):
+            A = 1
+            B = 2
+            C = 4 | B
+        #
+        self.assertTrue(SkipFlag.C in (SkipFlag.A|SkipFlag.C))
+        self.assertRaisesRegex(ValueError, 'SkipFlag.. invalid value 42', SkipFlag, 42)
+        #
+        class SkipIntFlag(enum.IntFlag):
+            A = 1
+            B = 2
+            C = 4 | B
+        #
+        self.assertTrue(SkipIntFlag.C in (SkipIntFlag.A|SkipIntFlag.C))
+        self.assertEqual(SkipIntFlag(42).value, 42)
+        #
+        class MethodHint(Flag):
+            HiddenText = 0x10
+            DigitsOnly = 0x01
+            LettersOnly = 0x02
+            OnlyMask = 0x0f
+        #
+        self.assertEqual(str(MethodHint.HiddenText|MethodHint.OnlyMask), 'MethodHint.HiddenText|DigitsOnly|LettersOnly|OnlyMask')
+
 
     def test_iter(self):
         Color = self.Color
