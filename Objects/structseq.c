@@ -522,7 +522,7 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
         }
         initialize_static_fields(type, desc, members, tp_flags);
 
-        Py_INCREF(type);  // XXX It should be immortal.
+        _Py_SetImmortal(type);
         initialized = 0;
     }
 #ifndef NDEBUG
@@ -532,6 +532,7 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
         assert(type->tp_members != NULL);
         assert(type->tp_base == &PyTuple_Type);
         assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+        assert(_Py_IsImmortal(type));
     }
 #endif
 
@@ -611,6 +612,7 @@ _PyStructSequence_FiniBuiltin(PyTypeObject *type)
     assert(type->tp_name != NULL);
     assert(type->tp_base == &PyTuple_Type);
     assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+    assert(_Py_IsImmortal(type));
 
     // Cannot delete a type if it still has subclasses
     if (_PyType_HasSubclasses(type)) {
@@ -624,17 +626,9 @@ _PyStructSequence_FiniBuiltin(PyTypeObject *type)
     type->tp_members = NULL;
 
     _PyStaticType_Dealloc(type);
-    assert(Py_REFCNT(type) == 1);
-    // Undo Py_INCREF(type) of _PyStructSequence_InitBuiltinWithFlags().
-    // Don't use Py_DECREF(): static type must not be deallocated
-    Py_SET_REFCNT(type, 0);
-#ifdef Py_REF_DEBUG
-    _Py_DecRefTotal(_PyInterpreterState_GET());
-#endif
 
     // Make sure that _PyStructSequence_InitBuiltinWithFlags()
     // will initialize the type again.
-    assert(Py_REFCNT(type) == 0);
     assert(type->tp_name == NULL);
 }
 
