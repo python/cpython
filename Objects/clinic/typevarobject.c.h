@@ -9,15 +9,15 @@ preserve
 
 
 PyDoc_STRVAR(typevar_new__doc__,
-"typevar(name, *, bound=None, constraints=None, covariant=False,\n"
+"typevar(name, *constraints, *, bound=None, covariant=False,\n"
 "        contravariant=False, autovariance=False)\n"
 "--\n"
 "\n"
 "Create a TypeVar.");
 
 static PyObject *
-typevar_new_impl(PyTypeObject *type, const char *name, PyObject *bound,
-                 PyObject *constraints, int covariant, int contravariant,
+typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
+                 PyObject *bound, int covariant, int contravariant,
                  int autovariance);
 
 static PyObject *
@@ -26,14 +26,14 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 6
+    #define NUM_KEYWORDS 5
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(name), &_Py_ID(bound), &_Py_ID(constraints), &_Py_ID(covariant), &_Py_ID(contravariant), &_Py_ID(autovariance), },
+        .ob_item = { &_Py_ID(name), &_Py_ID(bound), &_Py_ID(covariant), &_Py_ID(contravariant), &_Py_ID(autovariance), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -42,7 +42,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"name", "bound", "constraints", "covariant", "contravariant", "autovariance", NULL};
+    static const char * const _keywords[] = {"name", "bound", "covariant", "contravariant", "autovariance", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "typevar",
@@ -52,15 +52,15 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *argsbuf[6];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     const char *name;
+    PyObject *constraints = NULL;
     PyObject *bound = Py_None;
-    PyObject *constraints = Py_None;
     int covariant = 0;
     int contravariant = 0;
     int autovariance = 0;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywordsWithVararg(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 1, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -77,17 +77,12 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
+    constraints = fastargs[1];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    if (fastargs[1]) {
-        bound = fastargs[1];
-        if (!--noptargs) {
-            goto skip_optional_kwonly;
-        }
-    }
     if (fastargs[2]) {
-        constraints = fastargs[2];
+        bound = fastargs[2];
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
@@ -115,9 +110,10 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = typevar_new_impl(type, name, bound, constraints, covariant, contravariant, autovariance);
+    return_value = typevar_new_impl(type, name, constraints, bound, covariant, contravariant, autovariance);
 
 exit:
+    Py_XDECREF(constraints);
     return return_value;
 }
 
@@ -291,4 +287,4 @@ typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e500e924addebd33 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2514140af973a73f input=a9049054013a1b77]*/

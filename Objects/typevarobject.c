@@ -98,9 +98,9 @@ static typevarobject *typevarobject_alloc(const char *name, PyObject *bound,
 typevar.__new__ as typevar_new
 
     name: str
+    *constraints: object
     *
     bound: object = None
-    constraints: object = None
     covariant: bool = False
     contravariant: bool = False
     autovariance: bool = False
@@ -109,10 +109,10 @@ Create a TypeVar.
 [clinic start generated code]*/
 
 static PyObject *
-typevar_new_impl(PyTypeObject *type, const char *name, PyObject *bound,
-                 PyObject *constraints, int covariant, int contravariant,
+typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
+                 PyObject *bound, int covariant, int contravariant,
                  int autovariance)
-/*[clinic end generated code: output=1a13d705ffbce358 input=ef28fd4e62fcfc83]*/
+/*[clinic end generated code: output=e74ea8371ab8103a input=9d08a995b997a11b]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError,
