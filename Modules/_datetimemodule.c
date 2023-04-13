@@ -5161,6 +5161,16 @@ datetime_utcnow_aware(PyObject *cls, PyObject *dummy)
     return datetime_best_possible(cls, _PyTime_gmtime, PyDateTime_TimeZone_UTC);
 }
 
+/* Return best possible aware local time. */
+static PyObject *
+datetime_localnow_aware(PyObject *cls, PyObject *dummy)
+{
+    PyObject *now = datetime_best_possible(cls, _PyTime_localtime, Py_None);
+    PyObject *res = PyObject_CallMethodNoArgs(now, &_Py_ID(astimezone));
+    Py_DECREF(now);
+    return res;
+}
+
 /* Return new local datetime from timestamp (Python timestamp -- a double). */
 static PyObject *
 datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
@@ -6519,6 +6529,10 @@ static PyMethodDef datetime_methods[] = {
     {"utcnow_aware",   (PyCFunction)datetime_utcnow_aware,
      METH_NOARGS | METH_CLASS,
      PyDoc_STR("Return a new aware datetime representing UTC day and time.")},
+
+    {"localnow_aware",   (PyCFunction)datetime_localnow_aware,
+     METH_NOARGS | METH_CLASS,
+     PyDoc_STR("Return a new aware datetime representing local day and time.")},
 
     {"fromtimestamp", _PyCFunction_CAST(datetime_fromtimestamp),
      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
