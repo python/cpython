@@ -1013,7 +1013,6 @@ class PatchTest(unittest.TestCase):
 
 
     def test_autospec_classmethod_signature(self):
-        # Regression test for gh-102978
         # Patched methods which are decorated with @classmethod should have the same signature
         class Foo:
             @classmethod
