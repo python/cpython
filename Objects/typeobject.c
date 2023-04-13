@@ -8545,12 +8545,10 @@ typedef struct _PyBufferWrapper {
 } PyBufferWrapper;
 
 static int
-bufferwrapper_traverse(PyObject *self, visitproc visit, void *arg)
+bufferwrapper_traverse(PyBufferWrapper *self, visitproc visit, void *arg)
 {
-    PyBufferWrapper *bw = (PyBufferWrapper *)self;
-
-    Py_VISIT(bw->mv);
-    Py_VISIT(bw->obj);
+    Py_VISIT(self->mv);
+    Py_VISIT(self->obj);
     return 0;
 }
 
@@ -8590,7 +8588,7 @@ PyTypeObject _PyBufferWrapper_Type = {
     .tp_alloc = PyType_GenericAlloc,
     .tp_new = PyType_GenericNew,
     .tp_free = PyObject_GC_Del,
-    .tp_traverse = bufferwrapper_traverse,
+    .tp_traverse = (traverseproc)bufferwrapper_traverse,
     .tp_dealloc = bufferwrapper_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_as_buffer = &bufferwrapper_as_buffer,
