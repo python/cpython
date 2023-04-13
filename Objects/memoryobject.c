@@ -965,15 +965,31 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char order)
 memoryview.__new__
 
     object: object
-    *
-    _flags: int(c_default='PyBUF_FULL_RO') = PyBUF_FULL_RO
 
 Create a new memoryview object which references the given object.
 [clinic start generated code]*/
 
 static PyObject *
-memoryview_impl(PyTypeObject *type, PyObject *object, int _flags)
-/*[clinic end generated code: output=80388b83c45dafac input=2ea9a227b7f350e8]*/
+memoryview_impl(PyTypeObject *type, PyObject *object)
+/*[clinic end generated code: output=7de78e184ed66db8 input=f04429eb0bdf8c6e]*/
+{
+    return PyMemoryView_FromObject(object);
+}
+
+
+/*[clinic input]
+@classmethod
+memoryview._from_flags
+
+    object: object
+    _flags: int
+
+Create a new memoryview object which references the given object.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview__from_flags_impl(PyTypeObject *type, PyObject *object, int _flags)
+/*[clinic end generated code: output=bc1f4ba7d9b64525 input=860e7832e8edb1e5]*/
 {
     return PyMemoryView_FromObjectAndFlags(object, _flags);
 }
@@ -3191,6 +3207,7 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_TOLIST_METHODDEF
     MEMORYVIEW_CAST_METHODDEF
     MEMORYVIEW_TOREADONLY_METHODDEF
+    MEMORYVIEW__FROM_FLAGS_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, NULL},
     {NULL,          NULL}

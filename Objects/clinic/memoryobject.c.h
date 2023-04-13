@@ -9,16 +9,73 @@ preserve
 
 
 PyDoc_STRVAR(memoryview__doc__,
-"memoryview(object, *, _flags=PyBUF_FULL_RO)\n"
+"memoryview(object)\n"
 "--\n"
 "\n"
 "Create a new memoryview object which references the given object.");
 
 static PyObject *
-memoryview_impl(PyTypeObject *type, PyObject *object, int _flags);
+memoryview_impl(PyTypeObject *type, PyObject *object);
 
 static PyObject *
 memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(object), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"object", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "memoryview",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *object;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    object = fastargs[0];
+    return_value = memoryview_impl(type, object);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(memoryview__from_flags__doc__,
+"_from_flags($type, /, object, _flags)\n"
+"--\n"
+"\n"
+"Create a new memoryview object which references the given object.");
+
+#define MEMORYVIEW__FROM_FLAGS_METHODDEF    \
+    {"_from_flags", _PyCFunction_CAST(memoryview__from_flags), METH_FASTCALL|METH_KEYWORDS|METH_CLASS, memoryview__from_flags__doc__},
+
+static PyObject *
+memoryview__from_flags_impl(PyTypeObject *type, PyObject *object, int _flags);
+
+static PyObject *
+memoryview__from_flags(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -42,31 +99,24 @@ memoryview(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static const char * const _keywords[] = {"object", "_flags", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "memoryview",
+        .fname = "_from_flags",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
     PyObject *argsbuf[2];
-    PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *object;
-    int _flags = PyBUF_FULL_RO;
+    int _flags;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
-    if (!fastargs) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    object = fastargs[0];
-    if (!noptargs) {
-        goto skip_optional_kwonly;
-    }
-    _flags = _PyLong_AsInt(fastargs[1]);
+    object = args[0];
+    _flags = _PyLong_AsInt(args[1]);
     if (_flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
-skip_optional_kwonly:
-    return_value = memoryview_impl(type, object, _flags);
+    return_value = memoryview__from_flags_impl(type, object, _flags);
 
 exit:
     return return_value;
@@ -366,4 +416,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=392fda9a93c25dd2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=31ed11a9a4ac95c4 input=a9049054013a1b77]*/
