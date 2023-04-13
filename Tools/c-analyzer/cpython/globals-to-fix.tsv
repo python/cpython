@@ -135,6 +135,9 @@ Objects/stringlib/unicode_format.h	-	PyFieldNameIter_Type	-
 Objects/unicodeobject.c	-	EncodingMapType	-
 #Objects/unicodeobject.c	-	PyFieldNameIter_Type	-
 #Objects/unicodeobject.c	-	PyFormatterIter_Type	-
+Python/legacy_tracing.c	-	_PyLegacyEventHandler_Type	-
+Objects/object.c	-	_PyLegacyEventHandler_Type	-
+
 
 ##-----------------------
 ## static builtin structseq
@@ -297,6 +300,8 @@ Objects/object.c	-	_Py_NotImplementedStruct	-
 Objects/setobject.c	-	_dummy_struct	-
 Objects/setobject.c	-	_PySet_Dummy	-
 Objects/sliceobject.c	-	_Py_EllipsisObject	-
+Python/instrumentation.c	-	DISABLE	-
+Python/instrumentation.c	-	_PyInstrumentation_MISSING	-
 
 
 ##################################
@@ -311,11 +316,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 ##-----------------------
 ## static types
 
-Modules/_collectionsmodule.c	-	defdict_type	-
-Modules/_collectionsmodule.c	-	deque_type	-
-Modules/_collectionsmodule.c	-	dequeiter_type	-
-Modules/_collectionsmodule.c	-	dequereviter_type	-
-Modules/_collectionsmodule.c	-	tuplegetter_type	-
 Modules/_io/bufferedio.c	-	PyBufferedIOBase_Type	-
 Modules/_io/bytesio.c	-	_PyBytesIOBuffer_Type	-
 Modules/_io/iobase.c	-	PyIOBase_Type	-

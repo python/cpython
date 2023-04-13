@@ -611,6 +611,21 @@ class BasicTest(BaseTest):
         out, err = check_output(cmd)
         self.assertTrue(zip_landmark.encode() in out)
 
+    def test_activate_shell_script_has_no_dos_newlines(self):
+        """
+        Test that the `activate` shell script contains no CR LF.
+        This is relevant for Cygwin, as the Windows build might have
+        converted line endings accidentally.
+        """
+        venv_dir = pathlib.Path(self.env_dir)
+        rmtree(venv_dir)
+        [[scripts_dir], *_] = self.ENV_SUBDIRS
+        script_path = venv_dir / scripts_dir / "activate"
+        venv.create(venv_dir)
+        with open(script_path, 'rb') as script:
+            for line in script:
+                self.assertFalse(line.endswith(b'\r\n'), line)
+
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""

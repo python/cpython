@@ -43,12 +43,6 @@ is_block_push(cfg_instr *i)
 }
 
 static inline int
-is_relative_jump(cfg_instr *i)
-{
-    return IS_RELATIVE_JUMP(i->i_opcode);
-}
-
-static inline int
 is_jump(cfg_instr *i)
 {
     return IS_JUMP_OPCODE(i->i_opcode);
@@ -199,8 +193,7 @@ blocksize(basicblock *b)
 static void
 dump_instr(cfg_instr *i)
 {
-    const char *jrel = (is_relative_jump(i)) ? "jrel " : "";
-    const char *jabs = (is_jump(i) && !is_relative_jump(i))? "jabs " : "";
+    const char *jump = is_jump(i) ? "jump " : "";
 
     char arg[128];
 
@@ -211,8 +204,8 @@ dump_instr(cfg_instr *i)
     if (HAS_TARGET(i->i_opcode)) {
         sprintf(arg, "target: %p [%d] ", i->i_target, i->i_oparg);
     }
-    fprintf(stderr, "line: %d, opcode: %d %s%s%s\n",
-                    i->i_loc.lineno, i->i_opcode, arg, jabs, jrel);
+    fprintf(stderr, "line: %d, opcode: %d %s%s\n",
+                    i->i_loc.lineno, i->i_opcode, arg, jump);
 }
 
 static inline int
@@ -500,25 +493,20 @@ resolve_jump_offsets(basicblock *entryblock)
             for (int i = 0; i < b->b_iused; i++) {
                 cfg_instr *instr = &b->b_instr[i];
                 int isize = _PyCfg_InstrSize(instr);
-                /* Relative jumps are computed relative to
-                   the instruction pointer after fetching
-                   the jump instruction.
-                */
+                /* jump offsets are computed relative to
+                 * the instruction pointer after fetching
+                 * the jump instruction.
+                 */
                 bsize += isize;
                 if (is_jump(instr)) {
                     instr->i_oparg = instr->i_target->b_offset;
-                    if (is_relative_jump(instr)) {
-                        if (instr->i_oparg < bsize) {
-                            assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
-                            instr->i_oparg = bsize - instr->i_oparg;
-                        }
-                        else {
-                            assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
-                            instr->i_oparg -= bsize;
-                        }
+                    if (instr->i_oparg < bsize) {
+                        assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
+                        instr->i_oparg = bsize - instr->i_oparg;
                     }
                     else {
                         assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
+                        instr->i_oparg -= bsize;
                     }
                     if (_PyCfg_InstrSize(instr) != isize) {
                         extended_arg_recompile = 1;
@@ -1978,28 +1966,6 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
     return SUCCESS;
 }
 
-int
-_PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
-                       int code_flags, int nlocals, int nparams)
-{
-    assert(cfg_builder_check(g));
-    /** Preprocessing **/
-    /* Map labels to targets and mark exception handlers */
-    RETURN_IF_ERROR(translate_jump_labels_to_targets(g->g_entryblock));
-    RETURN_IF_ERROR(mark_except_handlers(g->g_entryblock));
-    RETURN_IF_ERROR(label_exception_targets(g->g_entryblock));
-
-    /** Optimization **/
-    RETURN_IF_ERROR(optimize_cfg(g, consts, const_cache));
-    RETURN_IF_ERROR(remove_unused_consts(g->g_entryblock, consts));
-    RETURN_IF_ERROR(
-        add_checks_for_loads_of_uninitialized_variables(
-            g->g_entryblock, nlocals, nparams));
-
-    RETURN_IF_ERROR(push_cold_blocks_to_end(g, code_flags));
-    return SUCCESS;
-}
-
 void
 _PyCfg_ConvertExceptionHandlersToNops(basicblock *entryblock)
 {
@@ -2149,8 +2115,8 @@ guarantee_lineno_for_exits(basicblock *entryblock, int firstlineno) {
     }
 }
 
-int
-_PyCfg_ResolveLineNumbers(cfg_builder *g, int firstlineno)
+static int
+resolve_line_numbers(cfg_builder *g, int firstlineno)
 {
     RETURN_IF_ERROR(duplicate_exits_without_lineno(g));
     propagate_line_numbers(g->g_entryblock);
@@ -2158,3 +2124,25 @@ _PyCfg_ResolveLineNumbers(cfg_builder *g, int firstlineno)
     return SUCCESS;
 }
 
+int
+_PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
+                       int code_flags, int nlocals, int nparams, int firstlineno)
+{
+    assert(cfg_builder_check(g));
+    /** Preprocessing **/
+    /* Map labels to targets and mark exception handlers */
+    RETURN_IF_ERROR(translate_jump_labels_to_targets(g->g_entryblock));
+    RETURN_IF_ERROR(mark_except_handlers(g->g_entryblock));
+    RETURN_IF_ERROR(label_exception_targets(g->g_entryblock));
+
+    /** Optimization **/
+    RETURN_IF_ERROR(optimize_cfg(g, consts, const_cache));
+    RETURN_IF_ERROR(remove_unused_consts(g->g_entryblock, consts));
+    RETURN_IF_ERROR(
+        add_checks_for_loads_of_uninitialized_variables(
+            g->g_entryblock, nlocals, nparams));
+
+    RETURN_IF_ERROR(push_cold_blocks_to_end(g, code_flags));
+    RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
+    return SUCCESS;
+}
