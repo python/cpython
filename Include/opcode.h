@@ -95,7 +95,7 @@ extern "C" {
 #define STORE_DEREF                            138
 #define DELETE_DEREF                           139
 #define JUMP_BACKWARD                          140
-#define LOAD_ZERO_SUPER_ATTR                   141
+#define LOAD_SUPER_ATTR                        141
 #define CALL_FUNCTION_EX                       142
 #define EXTENDED_ARG                           144
 #define LIST_APPEND                            145
@@ -143,8 +143,10 @@ extern "C" {
 #define JUMP                                   260
 #define JUMP_NO_INTERRUPT                      261
 #define LOAD_METHOD                            262
-#define LOAD_ZERO_SUPER_METHOD                 263
-#define MAX_PSEUDO_OPCODE                      263
+#define LOAD_SUPER_METHOD                      263
+#define LOAD_ZERO_SUPER_METHOD                 264
+#define LOAD_ZERO_SUPER_ATTR                   265
+#define MAX_PSEUDO_OPCODE                      265
 #define BINARY_OP_ADD_FLOAT                      6
 #define BINARY_OP_ADD_INT                        7
 #define BINARY_OP_ADD_UNICODE                    8
@@ -212,7 +214,9 @@ extern "C" {
     || ((op) == JUMP) \
     || ((op) == JUMP_NO_INTERRUPT) \
     || ((op) == LOAD_METHOD) \
+    || ((op) == LOAD_SUPER_METHOD) \
     || ((op) == LOAD_ZERO_SUPER_METHOD) \
+    || ((op) == LOAD_ZERO_SUPER_ATTR) \
     )
 
 #define HAS_CONST(op) (false\

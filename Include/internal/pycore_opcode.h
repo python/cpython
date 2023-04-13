@@ -179,7 +179,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [LOAD_GLOBAL_BUILTIN] = LOAD_GLOBAL,
     [LOAD_GLOBAL_MODULE] = LOAD_GLOBAL,
     [LOAD_NAME] = LOAD_NAME,
-    [LOAD_ZERO_SUPER_ATTR] = LOAD_ZERO_SUPER_ATTR,
+    [LOAD_SUPER_ATTR] = LOAD_SUPER_ATTR,
     [MAKE_CELL] = MAKE_CELL,
     [MAKE_FUNCTION] = MAKE_FUNCTION,
     [MAP_ADD] = MAP_ADD,
@@ -237,7 +237,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif   // NEED_OPCODE_TABLES
 
 #ifdef Py_DEBUG
-static const char *const _PyOpcode_OpName[264] = {
+static const char *const _PyOpcode_OpName[266] = {
     [CACHE] = "CACHE",
     [POP_TOP] = "POP_TOP",
     [PUSH_NULL] = "PUSH_NULL",
@@ -379,7 +379,7 @@ static const char *const _PyOpcode_OpName[264] = {
     [STORE_DEREF] = "STORE_DEREF",
     [DELETE_DEREF] = "DELETE_DEREF",
     [JUMP_BACKWARD] = "JUMP_BACKWARD",
-    [LOAD_ZERO_SUPER_ATTR] = "LOAD_ZERO_SUPER_ATTR",
+    [LOAD_SUPER_ATTR] = "LOAD_SUPER_ATTR",
     [CALL_FUNCTION_EX] = "CALL_FUNCTION_EX",
     [STORE_FAST__STORE_FAST] = "STORE_FAST__STORE_FAST",
     [EXTENDED_ARG] = "EXTENDED_ARG",
@@ -501,7 +501,9 @@ static const char *const _PyOpcode_OpName[264] = {
     [JUMP] = "JUMP",
     [JUMP_NO_INTERRUPT] = "JUMP_NO_INTERRUPT",
     [LOAD_METHOD] = "LOAD_METHOD",
+    [LOAD_SUPER_METHOD] = "LOAD_SUPER_METHOD",
     [LOAD_ZERO_SUPER_METHOD] = "LOAD_ZERO_SUPER_METHOD",
+    [LOAD_ZERO_SUPER_ATTR] = "LOAD_ZERO_SUPER_ATTR",
 };
 #endif
 

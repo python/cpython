@@ -1551,8 +1551,8 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
-        inst(LOAD_ZERO_SUPER_ATTR, (global_super, class, self -- res2 if (oparg & 1), res)) {
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 1);
+        inst(LOAD_SUPER_ATTR, (global_super, class, self -- res2 if (oparg & 1), res)) {
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 2);
             if (global_super == (PyObject *)&PySuper_Type) {
                 int meth_found = 0;
                 Py_DECREF(global_super);
@@ -1571,7 +1571,13 @@ dummy_func(
                     Py_DECREF(self);
                 }
             } else {
-                PyObject *super = PyObject_Vectorcall(global_super, NULL, 0, NULL);
+                PyObject *super;
+                if (oparg & 2) {
+                    super = PyObject_Vectorcall(global_super, NULL, 0, NULL);
+                } else {
+                    PyObject *stack[] = {class, self};
+                    super = PyObject_Vectorcall(global_super, stack, 2, NULL);
+                }
                 DECREF_INPUTS();
                 ERROR_IF(super == NULL, error);
                 res = PyObject_GetAttr(super, name);

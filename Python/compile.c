@@ -829,7 +829,9 @@ stack_effect(int opcode, int oparg, int jump)
 
         case LOAD_METHOD:
             return 1;
+        case LOAD_SUPER_METHOD:
         case LOAD_ZERO_SUPER_METHOD:
+        case LOAD_ZERO_SUPER_ATTR:
             return -1;
         default:
             return PY_INVALID_STACK_EFFECT;
@@ -1041,7 +1043,7 @@ compiler_addop_name(struct compiler_unit *u, location loc,
     if (arg < 0) {
         return ERROR;
     }
-    if (opcode == LOAD_ATTR || opcode == LOAD_ZERO_SUPER_ATTR) {
+    if (opcode == LOAD_ATTR) {
         arg <<= 1;
     }
     if (opcode == LOAD_METHOD) {
@@ -1049,10 +1051,23 @@ compiler_addop_name(struct compiler_unit *u, location loc,
         arg <<= 1;
         arg |= 1;
     }
-    if (opcode == LOAD_ZERO_SUPER_METHOD) {
-        opcode = LOAD_ZERO_SUPER_ATTR;
-        arg <<= 1;
+    if (opcode == LOAD_SUPER_ATTR) {
+        arg <<= 2;
+    }
+    if (opcode == LOAD_SUPER_METHOD) {
+        opcode = LOAD_SUPER_ATTR;
+        arg <<= 2;
         arg |= 1;
+    }
+    if (opcode == LOAD_ZERO_SUPER_ATTR) {
+        opcode = LOAD_SUPER_ATTR;
+        arg <<= 2;
+        arg |= 2;
+    }
+    if (opcode == LOAD_ZERO_SUPER_METHOD) {
+        opcode = LOAD_SUPER_ATTR;
+        arg <<= 2;
+        arg |= 3;
     }
     return codegen_addop_i(&u->u_instr_sequence, opcode, arg, loc);
 }
@@ -4222,15 +4237,15 @@ is_import_originated(struct compiler *c, expr_ty e)
 }
 
 static int
-is_zero_arg_super_call(struct compiler *c, expr_ty e)
+can_optimize_super_call(struct compiler *c, expr_ty e)
 {
     if (e->kind != Call_kind ||
         e->v.Call.func->kind != Name_kind ||
         !_PyUnicode_EqualToASCIIString(e->v.Call.func->v.Name.id, "super") ||
-        asdl_seq_LEN(e->v.Call.args) != 0 ||
         asdl_seq_LEN(e->v.Call.keywords) != 0) {
         return 0;
     }
+    Py_ssize_t num_args = asdl_seq_LEN(e->v.Call.args);
 
     PyObject *super_name = e->v.Call.func->v.Name.id;
     // try to detect statically-visible shadowing of 'super' name
@@ -4242,6 +4257,24 @@ is_zero_arg_super_call(struct compiler *c, expr_ty e)
     if (scope != 0) {
         return 0;
     }
+
+    if (num_args == 2) {
+        for (Py_ssize_t i = 0; i < num_args; i++) {
+            expr_ty elt = asdl_seq_GET(e->v.Call.args, i);
+            if (elt->kind == Starred_kind) {
+                return 0;
+            }
+        }
+        // exactly two non-starred args; we can just load
+        // the provided args
+        return 1;
+    }
+
+    if (num_args != 0) {
+        return 0;
+    }
+    // we need the following for zero-arg super():
+
     // enclosing function should have at least one argument
     if (c->u->u_metadata.u_argcount == 0 &&
         c->u->u_metadata.u_posonlyargcount == 0) {
@@ -4255,12 +4288,18 @@ is_zero_arg_super_call(struct compiler *c, expr_ty e)
 }
 
 static int
-load_args_for_zero_super(struct compiler *c, expr_ty e) {
+load_args_for_super(struct compiler *c, expr_ty e) {
     location loc = LOC(e);
 
     // load super() global
-    PyObject *super_name = e->v.Attribute.value->v.Call.func->v.Name.id;
+    PyObject *super_name = e->v.Call.func->v.Name.id;
     RETURN_IF_ERROR(compiler_nameop(c, loc, super_name, Load));
+
+    if (asdl_seq_LEN(e->v.Call.args) == 2) {
+        VISIT(c, expr, asdl_seq_GET(e->v.Call.args, 0));
+        VISIT(c, expr, asdl_seq_GET(e->v.Call.args, 1));
+        return SUCCESS;
+    }
 
     // load __class__ cell
     PyObject *name = &_Py_ID(__class__);
@@ -4349,9 +4388,11 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     /* Alright, we can optimize the code. */
     location loc = LOC(meth);
 
-    if (is_zero_arg_super_call(c, meth->v.Attribute.value)) {
-        RETURN_IF_ERROR(load_args_for_zero_super(c, meth));
-        ADDOP_NAME(c, loc, LOAD_ZERO_SUPER_METHOD, meth->v.Attribute.attr, names);
+    if (can_optimize_super_call(c, meth->v.Attribute.value)) {
+        RETURN_IF_ERROR(load_args_for_super(c, meth->v.Attribute.value));
+        int opcode = asdl_seq_LEN(meth->v.Attribute.value->v.Call.args) ?
+            LOAD_SUPER_METHOD : LOAD_ZERO_SUPER_METHOD;
+        ADDOP_NAME(c, loc, opcode, meth->v.Attribute.attr, names);
     } else {
         VISIT(c, expr, meth->v.Attribute.value);
         loc = update_start_location_to_match_attr(c, loc, meth);
@@ -5365,9 +5406,11 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_formatted_value(c, e);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
-        if (e->v.Attribute.ctx == Load && is_zero_arg_super_call(c, e->v.Attribute.value)) {
-            RETURN_IF_ERROR(load_args_for_zero_super(c, e));
-            ADDOP_NAME(c, loc, LOAD_ZERO_SUPER_ATTR, e->v.Attribute.attr, names);
+        if (e->v.Attribute.ctx == Load && can_optimize_super_call(c, e->v.Attribute.value)) {
+            RETURN_IF_ERROR(load_args_for_super(c, e->v.Attribute.value));
+            int opcode = asdl_seq_LEN(e->v.Attribute.value->v.Call.args) ?
+                LOAD_SUPER_ATTR : LOAD_ZERO_SUPER_ATTR;
+            ADDOP_NAME(c, loc, opcode, e->v.Attribute.attr, names);
             return SUCCESS;
         }
         VISIT(c, expr, e->v.Attribute.value);

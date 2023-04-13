@@ -1036,14 +1036,20 @@ iterations of the loop.
       pushed to the stack before the attribute or unbound method respectively.
 
 
-.. opcode:: LOAD_ZERO_SUPER_ATTR (namei)
+.. opcode:: LOAD_SUPER_ATTR (namei)
 
-   This opcode implements zero-argument :func:`super` (i.e. ``super().method()``
-   and ``super().attr``). It works the same as :opcode:`LOAD_ATTR`, except that
-   instead of expecting a single receiver on the stack, it expects three objects
-   (from top of stack down): ``self`` (the first argument to the current
-   method), ``cls`` (the class within which the current method was defined), and
-   the global ``super``.
+   This opcode implements :func:`super` (e.g. ``super().method()`` and
+   ``super().attr``). It works the same as :opcode:`LOAD_ATTR`, except that
+   ``namei`` is shifted left by 2 bits instead of 1, and instead of expecting a
+   single receiver on the stack, it expects three objects (from top of stack
+   down): ``self`` (the first argument to the current method), ``cls`` (the
+   class within which the current method was defined), and the global ``super``.
+
+   The low bit of ``namei`` signals to attempt a method load, as with
+   :opcode:`LOAD_ATTR`.
+
+   The second-low bit of ``namei``, if set, means that this was a zero-argument
+   call to :func:`super`.
 
    .. versionadded:: 3.12
 

@@ -362,6 +362,21 @@ class TestSuper(unittest.TestCase):
         with patch("test.test_super.super", MySuper) as m:
             self.assertEqual(C().method(), "super super")
 
+    def test_shadowed_dynamic_two_arg(self):
+        call_args = []
+        class MySuper:
+            def __init__(self, *args):
+                call_args.append(args)
+            msg = "super super"
+
+        class C:
+            def method(self):
+                return super(1, 2).msg
+
+        with patch("test.test_super.super", MySuper) as m:
+            self.assertEqual(C().method(), "super super")
+            self.assertEqual(call_args, [(1, 2)])
+
     def test_attribute_error(self):
         class C:
             def method(self):
