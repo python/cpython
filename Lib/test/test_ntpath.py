@@ -300,6 +300,11 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.join('//computer/share', 'a', 'b')", '//computer/share\\a\\b')
         tester("ntpath.join('//computer/share', 'a/b')", '//computer/share\\a/b')
 
+        tester("ntpath.join('\\\\', 'computer')", '\\\\computer')
+        tester("ntpath.join('\\\\computer\\', 'share')", '\\\\computer\\share')
+        tester("ntpath.join('\\\\computer\\share\\', 'a')", '\\\\computer\\share\\a')
+        tester("ntpath.join('\\\\computer\\share\\a\\', 'b')", '\\\\computer\\share\\a\\b')
+
     def test_normpath(self):
         tester("ntpath.normpath('A//////././//.//B')", r'A\B')
         tester("ntpath.normpath('A/./B')", r'A\B')

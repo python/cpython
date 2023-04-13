@@ -36,49 +36,13 @@ extension interface uses the modules :mod:`bdb` and :mod:`cmd`.
    Module :mod:`traceback`
       Standard interface to extract, format and print stack traces of Python programs.
 
-The debugger's prompt is ``(Pdb)``. Typical usage to run a program under control
-of the debugger is::
-
-   >>> import pdb
-   >>> import mymodule
-   >>> pdb.run('mymodule.test()')
-   > <string>(0)?()
-   (Pdb) continue
-   > <string>(1)?()
-   (Pdb) continue
-   NameError: 'spam'
-   > <string>(1)?()
-   (Pdb)
-
-.. versionchanged:: 3.3
-   Tab-completion via the :mod:`readline` module is available for commands and
-   command arguments, e.g. the current global and local names are offered as
-   arguments of the ``p`` command.
-
-:file:`pdb.py` can also be invoked as a script to debug other scripts.  For
-example::
-
-   python -m pdb myscript.py
-
-When invoked as a script, pdb will automatically enter post-mortem debugging if
-the program being debugged exits abnormally.  After post-mortem debugging (or
-after normal exit of the program), pdb will restart the program.  Automatic
-restarting preserves pdb's state (such as breakpoints) and in most cases is more
-useful than quitting the debugger upon program's exit.
-
-.. versionadded:: 3.2
-   :file:`pdb.py` now accepts a ``-c`` option that executes commands as if given
-   in a :file:`.pdbrc` file, see :ref:`debugger-commands`.
-
-.. versionadded:: 3.7
-   :file:`pdb.py` now accepts a ``-m`` option that execute modules similar to the way
-   ``python -m`` does. As with a script, the debugger will pause execution just
-   before the first line of the module.
-
-
 The typical usage to break into the debugger is to insert::
 
    import pdb; pdb.set_trace()
+
+Or::
+
+   breakpoint()
 
 at the location you want to break into the debugger, and then run the program.
 You can then step through the code following this statement, and continue
@@ -88,21 +52,75 @@ running without the debugger using the :pdbcmd:`continue` command.
    The built-in :func:`breakpoint()`, when called with defaults, can be used
    instead of ``import pdb; pdb.set_trace()``.
 
+::
+
+   def double(x):
+      breakpoint()
+      return x * 2
+   val = 3
+   print(f"{val} * 2 is {double(val)}")
+
+The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug mode::
+
+   > ...(3)double()
+   -> return x * 2
+   (Pdb) p x
+   3
+   (Pdb) continue
+   3 * 2 is 6
+
+.. versionchanged:: 3.3
+   Tab-completion via the :mod:`readline` module is available for commands and
+   command arguments, e.g. the current global and local names are offered as
+   arguments of the ``p`` command.
+
+
+You can also invoke :mod:`pdb` from the command line to debug other scripts.  For
+example::
+
+   python -m pdb myscript.py
+
+When invoked as a module, pdb will automatically enter post-mortem debugging if
+the program being debugged exits abnormally.  After post-mortem debugging (or
+after normal exit of the program), pdb will restart the program.  Automatic
+restarting preserves pdb's state (such as breakpoints) and in most cases is more
+useful than quitting the debugger upon program's exit.
+
+.. versionadded:: 3.2
+   ``-c`` option is introduced to execute commands as if given
+   in a :file:`.pdbrc` file, see :ref:`debugger-commands`.
+
+.. versionadded:: 3.7
+   ``-m`` option is introduced to execute modules similar to the way
+   ``python -m`` does. As with a script, the debugger will pause execution just
+   before the first line of the module.
+
+Typical usage to execute a statement under control of the debugger is::
+
+   >>> import pdb
+   >>> def f(x):
+   ...     print(1 / x)
+   >>> pdb.run("f(2)")
+   > <string>(1)<module>()
+   (Pdb) continue
+   0.5
+   >>>
+
 The typical usage to inspect a crashed program is::
 
    >>> import pdb
-   >>> import mymodule
-   >>> mymodule.test()
+   >>> def f(x):
+   ...     print(1 / x)
+   ...
+   >>> f(0)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-     File "./mymodule.py", line 4, in test
-       test2()
-     File "./mymodule.py", line 3, in test2
-       print(spam)
-   NameError: spam
+     File "<stdin>", line 2, in f
+   ZeroDivisionError: division by zero
    >>> pdb.pm()
-   > ./mymodule.py(3)test2()
-   -> print(spam)
+   > <stdin>(2)f()
+   (Pdb) p x
+   0
    (Pdb)
 
 
@@ -275,7 +293,7 @@ can be overridden by the local file.
 
 .. pdbcommand:: w(here)
 
-   Print a stack trace, with the most recent frame at the bottom.  An arrow
+   Print a stack trace, with the most recent frame at the bottom.  An arrow (``>``)
    indicates the current frame, which determines the context of most commands.
 
 .. pdbcommand:: d(own) [count]
@@ -315,14 +333,14 @@ can be overridden by the local file.
    With a space separated list of breakpoint numbers, clear those breakpoints.
    Without argument, clear all breaks (but first ask confirmation).
 
-.. pdbcommand:: disable [bpnumber ...]
+.. pdbcommand:: disable bpnumber [bpnumber ...]
 
    Disable the breakpoints given as a space separated list of breakpoint
    numbers.  Disabling a breakpoint means it cannot cause the program to stop
    execution, but unlike clearing a breakpoint, it remains in the list of
    breakpoints and can be (re-)enabled.
 
-.. pdbcommand:: enable [bpnumber ...]
+.. pdbcommand:: enable bpnumber [bpnumber ...]
 
    Enable the breakpoints specified.
 
@@ -442,7 +460,7 @@ can be overridden by the local file.
 
 .. pdbcommand:: a(rgs)
 
-   Print the argument list of the current function.
+   Print the arguments of the current function and their current values.
 
 .. pdbcommand:: p expression
 
@@ -475,6 +493,50 @@ can be overridden by the local file.
    in the current frame.
 
    Without *expression*, list all display expressions for the current frame.
+
+   .. note::
+
+      Display evaluates *expression* and compares to the result of the previous
+      evaluation of *expression*, so when the result is mutable, display may not
+      be able to pick up the changes.
+
+   Example::
+
+      lst = []
+      breakpoint()
+      pass
+      lst.append(1)
+      print(lst)
+
+   Display won't realize ``lst`` has been changed because the result of evaluation
+   is modified in place by ``lst.append(1)`` before being compared::
+
+      > example.py(3)<module>()
+      -> pass
+      (Pdb) display lst
+      display lst: []
+      (Pdb) n
+      > example.py(4)<module>()
+      -> lst.append(1)
+      (Pdb) n
+      > example.py(5)<module>()
+      -> print(lst)
+      (Pdb)
+
+   You can do some tricks with copy mechanism to make it work::
+
+      > example.py(3)<module>()
+      -> pass
+      (Pdb) display lst[:]
+      display lst[:]: []
+      (Pdb) n
+      > example.py(4)<module>()
+      -> lst.append(1)
+      (Pdb) n
+      > example.py(5)<module>()
+      -> print(lst)
+      display lst[:]: [1]  [old: []]
+      (Pdb)
 
    .. versionadded:: 3.2
 
@@ -552,7 +614,7 @@ can be overridden by the local file.
 
 .. pdbcommand:: retval
 
-   Print the return value for the last return of a function.
+   Print the return value for the last return of the current function.
 
 .. rubric:: Footnotes
 
