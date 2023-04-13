@@ -1,0 +1,3 @@
+Fixed the bug that caused :class:`argparse.ArgumentParser` to ignore the
+argument ``exit_on_error=False`` and exit instead of throwing
+for some errors.

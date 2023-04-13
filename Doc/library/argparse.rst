@@ -2199,10 +2199,12 @@ Exiting methods
                 raise Exception(f'Exiting because of an error: {message}')
             exit(status)
 
-.. method:: ArgumentParser.error(message)
+.. method:: ArgumentParser.error(message, action=None)
 
-   This method prints a usage message including the *message* to the
-   standard error and terminates the program with a status code of 2.
+   This method prints a usage message including the *message* and the *action*
+   causing the error (if it is set) to the standard error and terminates
+   the program with a status code of 2, if ``exit_on_error`` parameter is
+   set to ``True``. Otherwise, it raises an :exc:`ArgumentError`.
 
 
 Intermixed parsing

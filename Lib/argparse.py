@@ -92,6 +92,7 @@ import sys as _sys
 import warnings
 
 from gettext import gettext as _, ngettext
+from typing import Optional as _Optional
 
 SUPPRESS = '==SUPPRESS=='
 
@@ -1896,14 +1897,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             if not hasattr(namespace, dest):
                 setattr(namespace, dest, self._defaults[dest])
 
-        # parse the arguments and exit if there are any errors
-        if self.exit_on_error:
-            try:
-                namespace, args = self._parse_known_args(args, namespace)
-            except ArgumentError as err:
-                self.error(str(err))
-        else:
-            namespace, args = self._parse_known_args(args, namespace)
+        namespace, args = self._parse_known_args(args, namespace)
 
         if hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
             args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))
@@ -1970,7 +1964,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     if conflict_action in seen_non_default_actions:
                         msg = _('not allowed with argument %s')
                         action_name = _get_action_name(conflict_action)
-                        raise ArgumentError(action, msg % action_name)
+                        self.error(msg % action_name, action=action)
 
             # take the action if we didn't receive a SUPPRESS value
             # (e.g. from a default)
@@ -2019,7 +2013,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                             explicit_arg = new_explicit_arg
                         else:
                             msg = _('ignored explicit argument %r')
-                            raise ArgumentError(action, msg % explicit_arg)
+                            self.error(msg % explicit_arg, action=action)
 
                     # if the action expect exactly one argument, we've
                     # successfully matched the option; exit the loop
@@ -2033,7 +2027,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     # explicit argument
                     else:
                         msg = _('ignored explicit argument %r')
-                        raise ArgumentError(action, msg % explicit_arg)
+                        self.error(msg % explicit_arg, action=action)
 
                 # if there is no explicit argument, try to match the
                 # optional's string arguments with the following strings
@@ -2207,7 +2201,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 msg = ngettext('expected %s argument',
                                'expected %s arguments',
                                action.nargs) % action.nargs
-            raise ArgumentError(action, msg)
+            self.error(msg, action=action)
 
         # return the number of arguments matched
         return len(match.group(1))
@@ -2526,7 +2520,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         type_func = self._registry_get('type', action.type, action.type)
         if not callable(type_func):
             msg = _('%r is not callable')
-            raise ArgumentError(action, msg % type_func)
+            self.error(msg % type_func, action=action)
 
         # convert the value to the appropriate type
         try:
@@ -2535,14 +2529,14 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # ArgumentTypeErrors indicate errors
         except ArgumentTypeError as err:
             msg = str(err)
-            raise ArgumentError(action, msg)
+            self.error(msg, action=action)
 
         # TypeErrors or ValueErrors also indicate errors
         except (TypeError, ValueError):
             name = getattr(action.type, '__name__', repr(action.type))
             args = {'type': name, 'value': arg_string}
             msg = _('invalid %(type)s value: %(value)r')
-            raise ArgumentError(action, msg % args)
+            self.error(msg % args, action=action)
 
         # return the converted value
         return result
@@ -2553,7 +2547,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             args = {'value': value,
                     'choices': ', '.join(map(repr, action.choices))}
             msg = _('invalid choice: %(value)r (choose from %(choices)s)')
-            raise ArgumentError(action, msg % args)
+            self.error(msg % args, action=action)
 
     # =======================
     # Help-formatting methods
@@ -2617,15 +2611,18 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             self._print_message(message, _sys.stderr)
         _sys.exit(status)
 
-    def error(self, message):
-        """error(message: string)
-
-        Prints a usage message incorporating the message to stderr and
-        exits.
+    def error(self, message: str, action: _Optional[Action] = None):
+        """Prints a usage message incorporating the message to stderr and
+        exits or raises an ArgumentError if self.exit_on_error is False.
 
         If you override this in a subclass, it should not return -- it
         should either exit or raise an exception.
         """
+        if not self.exit_on_error:
+            raise ArgumentError(action, message)
+
         self.print_usage(_sys.stderr)
+        # If action is not None, custom formatting will be applied by ArgumentError
+        message = str(ArgumentError(action, message))
         args = {'prog': self.prog, 'message': message}
         self.exit(2, _('%(prog)s: error: %(message)s\n') % args)

@@ -174,8 +174,8 @@ class Namespace(argparse.Namespace):
 
 class _ArgParser(argparse.ArgumentParser):
 
-    def error(self, message):
-        super().error(message + "\nPass -h or --help for complete help.")
+    def error(self, message, action=None):
+        super().error(message + "\nPass -h or --help for complete help.", action=action)
 
 
 def _create_parser():
