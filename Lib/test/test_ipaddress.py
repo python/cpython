@@ -1298,10 +1298,14 @@ class IpaddrUnitTest(unittest.TestCase):
                          '2001:658:22a:cafe:200::1')
 
     def testIPv6IPv4MappedStringRepresentation(self):
-        ipv6_ipv4_mapped_str = '::ffff:1.2.3.4'
+        long_prefix_len = 30
+        prefix = '::ffff:'
+        ipv4 = '1.2.3.4'
+        ipv6_ipv4_mapped_str = '%s%s' % (prefix, ipv4)
         ipv6_ipv4_mapped_address = ipaddress.IPv6Address(ipv6_ipv4_mapped_str)
         ipv6_ipv4_mapped_interface = ipaddress.IPv6Interface(ipv6_ipv4_mapped_str)
         self.assertEqual(str(ipv6_ipv4_mapped_address), ipv6_ipv4_mapped_str)
+        self.assertEqual(ipv6_ipv4_mapped_address.exploded, ipv6_ipv4_mapped_str.exploded[long_prefix_len] + ipv4)
         self.assertEqual(str(ipv6_ipv4_mapped_interface.ip), ipv6_ipv4_mapped_str)
 
     def testGetScopeId(self):
