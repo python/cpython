@@ -1,0 +1,1 @@
+Added ``(local|utc)now_(naive|aware)`` class methods to ``datetime.datetime``.
