@@ -3033,47 +3033,61 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    at the right; 'tb' is trace-back info, 'val' the exception instance,
    and 'typ' the exception's type.)
 
-   Value stack                   Label         Instruction     Argument
-   []                                         SETUP_FINALLY         L1
-   []                                         <code for S>
-   []                                         POP_BLOCK
-   []                                         JUMP                  L0
+   The following syblos are used below:
 
-   [exc]                            L1:       BUILD_LIST   )  list for raised/reraised excs ("result")
-   [orig, res]                                COPY 2       )  make a copy of the original EG
+   i: the lasti of the current exception
+   exc': the handled exception (if any) when the current exception was raised
+   exc/orig: the exception that was caught by this try-except* construct
+   res: list of exceptions raised/reraised in the except* clauses
+   match/rest: the results of split in an except* clause
+   i', v: an exception raised in the try-except (and its lasti)
 
-   [orig, res, exc]                           <evaluate E1>
-   [orig, res, exc, E1]                       CHECK_EG_MATCH
-   [orig, res, rest/exc, match?]              COPY 1
-   [orig, res, rest/exc, match?, match?]      POP_JUMP_IF_NOT_NONE  H1
-   [orig, res, exc, None]                     POP_TOP
-   [orig, res, exc]                           JUMP L2
 
-   [orig, res, rest, match]         H1:       <assign to V1>  (or POP if no V1)
+   Value stack               Label                  Instruction     Argument
+   []                                             SETUP_CLEANUP         L1
+   []                                             <code for S>
+   []                                             POP_BLOCK
+   []                                             JUMP                  L0
 
-   [orig, res, rest]                          SETUP_FINALLY         R1
-   [orig, res, rest]                          <code for S1>
-   [orig, res, rest]                          JUMP                  L2
+   [i, exc', exc]               L1:               BUILD_LIST )  list of (re)raised excs
+   [i, exc', orig, res]                           COPY 2     )  copy of original EG
 
-   [orig, res, rest, i, v]          R1:       LIST_APPEND   3 ) exc raised in except* body - add to res
-   [orig, res, rest, i]                       POP
+   [i, exc', orig, res, exc]                      <evaluate E1>
+   [i, exc', orig, res, exc, E1]                  CHECK_EG_MATCH
+   [i, exc', orig, res, rest/exc, match]          COPY 1
+   [i, exc', orig, res, rest/exc, match, match]   POP_JUMP_IF_NOT_NONE  H1
+   [i, exc', orig, res, exc, None]                POP_TOP
+   [i, exc', orig, res, exc]                      JUMP                  L2
 
-   [orig, res, rest]                L2:       <evaluate E2>
+   [i, exc', orig, res, rest, match]      H1:     <assign to V1>  (or POP if no V1)
+
+   [i, exc', orig, res, rest]                     SETUP_CLEANUP         R1
+   [i, exc', orig, res, rest]                     <code for S1>
+   [i, exc', orig, res, rest]                     JUMP                  L2
+
+   [i, exc', orig, res, rest, i', v]      R1:     LIST_APPEND 3 ) exc raised in except* body --> res
+   [i, exc', orig, res, rest, i']                 SWAP 6 ) update lasti
+
+   [i', exc', orig, res, rest, i]                 POP
+
+   [i, exc', orig, res, rest]             L2:     <evaluate E2>
    .............................etc.......................
 
-   [orig, res, rest]                Ln+1:     LIST_APPEND 1  ) add unhandled exc to res (could be None)
+   [i, exc', orig, res, rest]            Ln+1:    LIST_APPEND 1  ) add unhandled exc to res (could be None)
 
-   [orig, res]                                CALL_INTRINSIC_2 PREP_RERAISE_STAR
-   [exc]                                      COPY 1
-   [exc, exc]                                 POP_JUMP_IF_NOT_NONE  RER
-   [exc]                                      POP_TOP
-   []                                         JUMP                  L0
+   [i, exc', orig, res]                           CALL_INTRINSIC_2 PREP_RERAISE_STAR
+   [i, exc', exc]                                 COPY 1
+   [i, exc', exc, exc]                            POP_JUMP_IF_NOT_NONE  RER
+   [i, exc', exc]                                 POP_TOP
+   [i, exc']                                      POP_TOP
+   [i]                                            POP_TOP
+   []                                             JUMP                  L0
 
-   [exc]                            RER:      SWAP 2
-   [exc, prev_exc_info]                       POP_EXCEPT
-   [exc]                                      RERAISE               0
+   [i, exc', exc]                         RER:    SWAP 2
+   [i, exc, exc']                                 POP_EXCEPT
+   [i, exc]                                       RERAISE 1
 
-   []                               L0:       <next statement>
+   []                                     L0:     <next statement>
 */
 static int
 compiler_try_star_except(struct compiler *c, stmt_ty s)
@@ -3087,7 +3101,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     NEW_JUMP_TARGET_LABEL(c, cleanup);
     NEW_JUMP_TARGET_LABEL(c, reraise_star);
 
-    ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
+    ADDOP_JUMP(c, loc, SETUP_CLEANUP, except);
 
     USE_LABEL(c, body);
     RETURN_IF_ERROR(
@@ -3118,12 +3132,12 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         if (i == 0) {
             /* create empty list for exceptions raised/reraise in the except* blocks */
             /*
-               [orig]       BUILD_LIST
+               [i, orig]            BUILD_LIST
             */
             /* Create a copy of the original EG */
             /*
-               [orig, []]   COPY 2
-               [orig, [], exc]
+               [i, orig, []]        COPY 2
+               [i, orig, [], exc]
             */
             ADDOP_I(c, loc, BUILD_LIST, 0);
             ADDOP_I(c, loc, COPY, 2);
@@ -3133,7 +3147,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             ADDOP(c, loc, CHECK_EG_MATCH);
             ADDOP_I(c, loc, COPY, 1);
             ADDOP_JUMP(c, loc, POP_JUMP_IF_NOT_NONE, handle_match);
-            ADDOP(c, loc, POP_TOP);  // match
+            ADDOP(c, loc, POP_TOP);  // match (None)
             ADDOP_JUMP(c, loc, JUMP, except);
         }
 
@@ -3196,7 +3210,8 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
 
         /* add exception raised to the res list */
         ADDOP_I(c, NO_LOCATION, LIST_APPEND, 3); // exc
-        ADDOP(c, NO_LOCATION, POP_TOP); // lasti
+        ADDOP_I(c, NO_LOCATION, SWAP, 6);  // save the new lasti
+        ADDOP(c, NO_LOCATION, POP_TOP); // remove the old lasti
         ADDOP_JUMP(c, NO_LOCATION, JUMP, except);
 
         USE_LABEL(c, except);
@@ -3217,7 +3232,9 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     ADDOP_JUMP(c, NO_LOCATION, POP_JUMP_IF_NOT_NONE, reraise);
 
     /* Nothing to reraise */
-    ADDOP(c, NO_LOCATION, POP_TOP);
+    ADDOP(c, NO_LOCATION, POP_TOP);   // exc (None)
+    ADDOP_I(c, NO_LOCATION, SWAP, 2); // [lasti, exc'] --> [exc', lasti]
+    ADDOP(c, NO_LOCATION, POP_TOP);   // lasti
     ADDOP(c, NO_LOCATION, POP_BLOCK);
     ADDOP(c, NO_LOCATION, POP_EXCEPT);
     ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
@@ -3226,7 +3243,7 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
     ADDOP(c, NO_LOCATION, POP_BLOCK);
     ADDOP_I(c, NO_LOCATION, SWAP, 2);
     ADDOP(c, NO_LOCATION, POP_EXCEPT);
-    ADDOP_I(c, NO_LOCATION, RERAISE, 0);
+    ADDOP_I(c, NO_LOCATION, RERAISE, 1);
 
     USE_LABEL(c, cleanup);
     POP_EXCEPT_AND_RERAISE(c, NO_LOCATION);

@@ -1443,6 +1443,52 @@ class TraceTestCase(unittest.TestCase):
              (7, 'line'),
              (7, 'return')])
 
+    def test_try_except_star_named_exception_not_matched(self):
+
+        def func():
+            try:
+                try:
+                    raise ValueError(3)
+                except* TypeError as e:
+                    5
+            except ValueError:
+                7
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (4, 'line'),
+             (6, 'line'),
+             (7, 'line'),
+             (7, 'return')])
+
+
+    def test_try_except_star_named_exception_partial_match(self):
+
+        def func():
+            try:
+                try:
+                    raise ExceptionGroup("eg", [ValueError(4), TypeError(5)])
+                except* TypeError as e:
+                    5
+            except ExceptionGroup:
+                return 7
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (4, 'line'),
+             (5, 'line'),
+             (6, 'line'),
+             (7, 'line'),
+             (7, 'return')])
+
     def test_try_except_star_nested(self):
 
         def func():
