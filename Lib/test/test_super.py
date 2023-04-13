@@ -385,6 +385,14 @@ class TestSuper(unittest.TestCase):
         with self.assertRaisesRegex(AttributeError, "'super' object has no attribute 'msg'"):
             C().method()
 
+    def test_bad_first_arg(self):
+        class C:
+            def method(self):
+                return super(1, self).method()
+
+        with self.assertRaisesRegex(TypeError, "argument 1 must be a type"):
+            C().method()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1556,10 +1556,9 @@ dummy_func(
 
         inst(LOAD_SUPER_ATTR, (global_super, class, self -- res2 if (oparg & 1), res)) {
             PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 2);
-            if (global_super == (PyObject *)&PySuper_Type) {
+            if (global_super == (PyObject *)&PySuper_Type && PyType_Check(class)) {
                 int meth_found = 0;
                 Py_DECREF(global_super);
-                assert(PyType_Check(class));
                 res = _PySuper_Lookup((PyTypeObject *)class, self, name, oparg & 1 ? &meth_found : NULL);
                 Py_DECREF(class);
                 if (res == NULL) {
