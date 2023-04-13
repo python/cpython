@@ -962,7 +962,6 @@ class SpecSignatureTest(unittest.TestCase):
 
 
     def test_autospec_signature_classmethod(self):
-        # Regression test for gh-102978
         class Foo:
             @classmethod
             def class_method(cls, a, b=10, *, c): pass
