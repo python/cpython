@@ -837,8 +837,7 @@ Some rules:
 4. When another data type is mixed in, the :attr:`value` attribute is *not the
    same* as the enum member itself, although it is equivalent and will compare
    equal.
-5. A ``data type`` is a mixin that defines :meth:`__new__`, or a
-   :class:`~dataclasses.dataclass`
+5. A ``data type`` is a mixin that defines :meth:`__new__`.
 6. %-style formatting:  ``%s`` and ``%r`` call the :class:`Enum` class's
    :meth:`__str__` and :meth:`__repr__` respectively; other codes (such as
    ``%i`` or ``%h`` for IntEnum) treat the enum member as its mixed-in type.
