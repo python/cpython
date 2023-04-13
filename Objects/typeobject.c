@@ -9433,7 +9433,7 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
 
   skip:
     if (su == NULL) {
-        su = PyObject_Vectorcall((PyObject *)&PySuper_Type, NULL, 0, NULL);
+        su = (superobject *)PyObject_Vectorcall((PyObject *)&PySuper_Type, NULL, 0, NULL);
         if (su == NULL) {
             return NULL;
         }
