@@ -9,6 +9,8 @@
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 .. sectionauthor:: Eric Raymond <esr@thyrsus.com>
 
+**Source code:** :source:`Lib/curses`
+
 --------------
 
 The :mod:`curses` module provides an interface to the curses library, the
@@ -27,20 +29,6 @@ Linux and the BSD variants of Unix.
    Whenever the documentation mentions a *character string* it can be specified
    as a Unicode string or a byte string.
 
-.. note::
-
-   Since version 5.4, the ncurses library decides how to interpret non-ASCII data
-   using the ``nl_langinfo`` function.  That means that you have to call
-   :func:`locale.setlocale` in the application and encode Unicode strings
-   using one of the system's available encodings.  This example uses the
-   system's default encoding::
-
-      import locale
-      locale.setlocale(locale.LC_ALL, '')
-      code = locale.getpreferredencoding()
-
-   Then use *code* as the encoding for :meth:`str.encode` calls.
-
 .. seealso::
 
    Module :mod:`curses.ascii`
@@ -55,9 +43,6 @@ Linux and the BSD variants of Unix.
    :ref:`curses-howto`
       Tutorial material on using curses with Python, by Andrew Kuchling and Eric
       Raymond.
-
-   The :source:`Tools/demo/` directory in the Python source distribution contains
-   some example programs using the curses bindings provided by this module.
 
 
 .. _curses-functions:
@@ -292,7 +277,7 @@ The module :mod:`curses` defines the following functions:
    Change the definition of a color, taking the number of the color to be changed
    followed by three RGB values (for the amounts of red, green, and blue
    components).  The value of *color_number* must be between ``0`` and
-   `COLORS - 1`.  Each of *r*, *g*, *b*, must be a value between ``0`` and
+   ``COLORS - 1``.  Each of *r*, *g*, *b*, must be a value between ``0`` and
    ``1000``.  When :func:`init_color` is used, all occurrences of that color on the
    screen immediately change to the new definition.  This function is a no-op on
    most terminals; it is active only if :func:`can_change_color` returns ``True``.
@@ -923,8 +908,8 @@ the following methods and attributes:
 
    Encoding used to encode method arguments (Unicode strings and characters).
    The encoding attribute is inherited from the parent window when a subwindow
-   is created, for example with :meth:`window.subwin`. By default, the locale
-   encoding is used (see :func:`locale.getpreferredencoding`).
+   is created, for example with :meth:`window.subwin`.
+   By default, current locale encoding is used (see :func:`locale.getencoding`).
 
    .. versionadded:: 3.3
 
@@ -1312,11 +1297,11 @@ the following methods and attributes:
    :meth:`refresh`.
 
 
-.. method:: window.vline(ch, n)
-            window.vline(y, x, ch, n)
+.. method:: window.vline(ch, n[, attr])
+            window.vline(y, x, ch, n[, attr])
 
    Display a vertical line starting at ``(y, x)`` with length *n* consisting of the
-   character *ch*.
+   character *ch* with attributes *attr*.
 
 
 Constants

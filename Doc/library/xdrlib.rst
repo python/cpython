@@ -3,12 +3,17 @@
 
 .. module:: xdrlib
    :synopsis: Encoders and decoders for the External Data Representation (XDR).
+   :deprecated:
 
 **Source code:** :source:`Lib/xdrlib.py`
 
 .. index::
    single: XDR
    single: External Data Representation
+
+.. deprecated-removed:: 3.11 3.13
+   The :mod:`xdrlib` module is deprecated
+   (see :pep:`PEP 594 <594#xdrlib>` for details).
 
 --------------
 

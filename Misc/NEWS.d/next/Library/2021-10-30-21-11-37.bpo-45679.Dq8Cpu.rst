@@ -1,2 +1,0 @@
-Fix caching of multi-value :data:`typing.Literal`. ``Literal[True, 2]`` is no
-longer equal to ``Literal[1, 2]``.

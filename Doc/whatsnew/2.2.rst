@@ -395,7 +395,7 @@ This section has just been a quick overview of the new features, giving enough
 of an explanation to start you programming, but many details have been
 simplified or ignored.  Where should you go to get a more complete picture?
 
-https://docs.python.org/dev/howto/descriptor.html is a lengthy tutorial introduction to
+The :ref:`descriptorhowto` is a lengthy tutorial introduction to
 the descriptor features, written by Guido van Rossum. If my description has
 whetted your appetite, go read this tutorial next, because it goes into much
 more detail about the new features while still remaining quite easy to read.
@@ -983,7 +983,7 @@ New and Improved Modules
   Jun-ichiro "itojun" Hagino.)
 
 * Two new format characters were added to the :mod:`struct` module for 64-bit
-  integers on platforms that support the C :c:type:`long long` type.  ``q`` is for
+  integers on platforms that support the C :c:expr:`long long` type.  ``q`` is for
   a signed 64-bit integer, and ``Q`` is for an unsigned one.  The value is
   returned in Python's long integer type.  (Contributed by Tim Peters.)
 
@@ -1102,7 +1102,7 @@ code, none of the changes described here will affect you very much.
 * A different argument parsing function, :c:func:`PyArg_UnpackTuple`, has been
   added that's simpler and presumably faster.  Instead of specifying a format
   string, the caller simply gives the minimum and maximum number of arguments
-  expected, and a set of pointers to :c:type:`PyObject\*` variables that will be
+  expected, and a set of pointers to :c:expr:`PyObject*` variables that will be
   filled in with argument values.
 
 * Two new flags :const:`METH_NOARGS` and :const:`METH_O` are available in method

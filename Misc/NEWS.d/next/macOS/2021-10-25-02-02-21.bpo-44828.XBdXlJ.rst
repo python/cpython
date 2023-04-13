@@ -1,3 +1,0 @@
-Avoid tkinter file dialog failure on macOS 12 Monterey when using the Tk
-8.6.11 provided by python.org macOS installers. Patch by Marc Culler of the
-Tk project.

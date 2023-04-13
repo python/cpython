@@ -1,5 +1,0 @@
-For frozen stdlib modules, record the original module name as
-``module.__spec__.loader_state.origname``.  If the value is different than
-``module.__spec__.name`` then the module was defined as an alias in
-Tools/scripts/freeze_modules.py.  If it is ``None`` then the module comes
-from a source file outside the stdlib.

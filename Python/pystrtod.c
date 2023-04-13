@@ -1,8 +1,8 @@
 /* -*- Mode: C; c-file-style: "python" -*- */
 
 #include <Python.h>
-#include "pycore_dtoa.h"
-#include "pycore_pymath.h"        // _Py_SET_53BIT_PRECISION_START
+#include "pycore_dtoa.h"          // _Py_dg_strtod()
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include <locale.h>
 
 /* Case-insensitive string match used for nan and inf detection; t should be
@@ -24,7 +24,7 @@ case_insensitive_match(const char *s, const char *t)
    the successfully parsed portion of the string.  On failure, return -1.0 and
    set *endptr to point to the start of the string. */
 
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
 
 double
 _Py_parse_inf_or_nan(const char *p, char **endptr)
@@ -82,12 +82,10 @@ _Py_parse_inf_or_nan(const char *p, char **endptr)
             s += 5;
         retval = negate ? -Py_HUGE_VAL : Py_HUGE_VAL;
     }
-#ifdef Py_NAN
     else if (case_insensitive_match(s, "nan")) {
         s += 3;
         retval = negate ? -Py_NAN : Py_NAN;
     }
-#endif
     else {
         s = p;
         retval = -1.0;
@@ -127,7 +125,7 @@ _Py_parse_inf_or_nan(const char *p, char **endptr)
  * Return value: the #gdouble value.
  **/
 
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
 
 static double
 _PyOS_ascii_strtod(const char *nptr, char **endptr)
@@ -441,7 +439,7 @@ _Py_string_to_number_with_underscores(
     return NULL;
 }
 
-#ifdef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 0
 
 /* Given a string that may have a decimal point in the current
    locale, change it back to a dot.  Since the string cannot get
@@ -918,6 +916,18 @@ char * PyOS_double_to_string(double val,
                       (flags & Py_DTSF_ALT ? "#" : ""), precision,
                       format_code);
         _PyOS_ascii_formatd(buf, bufsize, format, val, precision);
+
+        if (flags & Py_DTSF_NO_NEG_0 && buf[0] == '-') {
+            char *buf2 = buf + 1;
+            while (*buf2 == '0' || *buf2 == '.') {
+                ++buf2;
+            }
+            if (*buf2 == 0 || *buf2 == 'e') {
+                size_t len = buf2 - buf + strlen(buf2);
+                assert(buf[len] == 0);
+                memmove(buf, buf+1, len);
+            }
+        }
     }
 
     /* Add sign when requested.  It's convenient (esp. when formatting
@@ -942,7 +952,7 @@ char * PyOS_double_to_string(double val,
     return buf;
 }
 
-#else
+#else  // _PY_SHORT_FLOAT_REPR == 1
 
 /* _Py_dg_dtoa is available. */
 
@@ -997,8 +1007,8 @@ static char *
 format_float_short(double d, char format_code,
                    int mode, int precision,
                    int always_add_sign, int add_dot_0_if_integer,
-                   int use_alt_formatting, const char * const *float_strings,
-                   int *type)
+                   int use_alt_formatting, int no_negative_zero,
+                   const char * const *float_strings, int *type)
 {
     char *buf = NULL;
     char *p = NULL;
@@ -1023,6 +1033,11 @@ format_float_short(double d, char format_code,
     }
     assert(digits_end != NULL && digits_end >= digits);
     digits_len = digits_end - digits;
+
+    if (no_negative_zero && sign == 1 &&
+            (digits_len == 0 || (digits_len == 1 && digits[0] == '0'))) {
+        sign = 0;
+    }
 
     if (digits_len && !Py_ISDIGIT(digits[0])) {
         /* Infinities and nans here; adapt Gay's output,
@@ -1303,6 +1318,7 @@ char * PyOS_double_to_string(double val,
                               flags & Py_DTSF_SIGN,
                               flags & Py_DTSF_ADD_DOT_0,
                               flags & Py_DTSF_ALT,
+                              flags & Py_DTSF_NO_NEG_0,
                               float_strings, type);
 }
-#endif /* ifdef PY_NO_SHORT_FLOAT_REPR */
+#endif  // _PY_SHORT_FLOAT_REPR == 1

@@ -431,6 +431,7 @@ _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to)
 #define STRINGLIB(F) stringlib_##F
 #define STRINGLIB_CHAR char
 #define STRINGLIB_SIZEOF_CHAR 1
+#define STRINGLIB_FAST_MEMCHR memchr
 
 #include "stringlib/fastsearch.h"
 #include "stringlib/count.h"
@@ -773,7 +774,7 @@ _Py_bytes_tailmatch(const char *str, Py_ssize_t len,
 {
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
-    PyObject *subobj;
+    PyObject *subobj = NULL;
     int result;
 
     if (!stringlib_parse_args_finds(function_name, args, &subobj, &start, &end))

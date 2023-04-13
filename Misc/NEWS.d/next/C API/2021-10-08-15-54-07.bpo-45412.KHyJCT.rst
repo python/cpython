@@ -1,9 +1,0 @@
-Remove the following math macros using the ``errno`` variable:
-
-* ``Py_ADJUST_ERANGE1()``
-* ``Py_ADJUST_ERANGE2()``
-* ``Py_OVERFLOWED()``
-* ``Py_SET_ERANGE_IF_OVERFLOW()``
-* ``Py_SET_ERRNO_ON_MATH_ERROR()``
-
-Patch by Victor Stinner.

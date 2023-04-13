@@ -1,1 +1,0 @@
-Fix typing.Signature string representation for generic builtin types.
