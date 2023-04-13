@@ -474,6 +474,7 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
         for i in range(start, end):
             labels.add(target)
     starts_line = None
+    ret = []
     for offset, op, arg in _unpack_opargs(code):
         if linestarts is not None:
             starts_line = linestarts.get(offset, None)
@@ -534,9 +535,9 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                                     if arg & (1<<i))
             elif deop == BINARY_OP:
                 _, argrepr = _nb_ops[arg]
-        yield Instruction(_all_opname[op], op,
+        ret.append(Instruction(_all_opname[op], op,
                           arg, argval, argrepr,
-                          offset, starts_line, is_jump_target, positions)
+                          offset, starts_line, is_jump_target, positions))
         caches = _inline_cache_entries[deop]
         if not caches:
             continue
@@ -555,10 +556,11 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                     argrepr = f"{name}: {int.from_bytes(data, sys.byteorder)}"
                 else:
                     argrepr = ""
-                yield Instruction(
+                ret.append(Instruction(
                     "CACHE", CACHE, 0, None, argrepr, offset, None, False,
                     Positions(*next(co_positions, ()))
-                )
+                ))
+    return ret
 
 def disassemble(co, lasti=-1, *, file=None, show_caches=False, adaptive=False, tier2=False):
     """Disassemble a code object."""
