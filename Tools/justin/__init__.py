@@ -18,31 +18,36 @@ JUMP = sys.monitoring.events.JUMP
 INSTRUCTION = sys.monitoring.events.INSTRUCTION
 DISABLE = sys.monitoring.DISABLE
 
+VERBOSE = True
+
 @contextlib.contextmanager
 def _trace(f):
     code = f.__code__
     fake_code = _fake_code[code] = code.replace(co_code=code._co_code_adaptive)
     try:
-        print(f"JUSTIN: - Tracing {f.__qualname__}:")
+        if VERBOSE:
+            print(f"JUSTIN: - Tracing {f.__qualname__}:")
         set_local_events(OPTIMIZER_ID, code, JUMP)
         yield
     finally:
-        print(f"JUSTIN:   - Done tracing {f.__qualname__}!")
+        if VERBOSE:
+            print(f"JUSTIN:   - Done tracing {f.__qualname__}!")
         set_local_events(OPTIMIZER_ID, code, 0)
     f.__code__ = fake_code
 
 def _trace_jump(code: types.CodeType, i: int, j: int):
     if j <= i:
         set_local_events(OPTIMIZER_ID, code, INSTRUCTION | JUMP)
-        if code in _traces:
+        if VERBOSE and code in _traces:
             print(f"JUSTIN:     - Found inner loop!") 
         _traces[code] = i, []
-        if code not in _positions:
-            _positions[code] = [lineno for lineno, _, _, _ in code.co_positions()]
-        lines = [lineno for lineno in _positions[code][j // 2: i // 2] if lineno is not None]
-        lo = min(lines)
-        hi = max(lines)
-        print(f"JUSTIN:   - Recording loop at {code.co_filename}:{lo}-{hi}:")
+        if VERBOSE:
+            if code not in _positions:
+                _positions[code] = [lineno for lineno, _, _, _ in code.co_positions()]
+            lines = [lineno for lineno in _positions[code][j // 2: i // 2] if lineno is not None]
+            lo = min(lines)
+            hi = max(lines)
+            print(f"JUSTIN:   - Recording loop at {code.co_filename}:{lo}-{hi}:")
     return DISABLE
 
 def _trace_instruction(code: types.CodeType, i: int):
@@ -51,7 +56,8 @@ def _trace_instruction(code: types.CodeType, i: int):
     if i == jump:
         set_local_events(OPTIMIZER_ID, code, JUMP)
         _compile(_fake_code[code], trace)
-        print("JUSTIN:     - Done!")
+        if VERBOSE:
+            print("JUSTIN:     - Done!")
         del _traces[code]
 
 def trace(f, *, warmup: int = 2):
