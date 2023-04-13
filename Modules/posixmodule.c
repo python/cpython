@@ -4818,6 +4818,10 @@ os__path_isdir_impl(PyObject *module, PyObject *path)
                 case ERROR_PATH_NOT_FOUND:
                 case ERROR_NOT_READY:
                 case ERROR_BAD_NET_NAME:
+                case ERROR_BAD_NETPATH:
+                case ERROR_BAD_PATHNAME:
+                case ERROR_INVALID_NAME:
+                case ERROR_FILENAME_EXCED_RANGE:
                     /* These errors aren't worth retrying with the slow path */
                     slow_path = FALSE;
                     result = 0;
@@ -4925,6 +4929,10 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
                 case ERROR_PATH_NOT_FOUND:
                 case ERROR_NOT_READY:
                 case ERROR_BAD_NET_NAME:
+                case ERROR_BAD_NETPATH:
+                case ERROR_BAD_PATHNAME:
+                case ERROR_INVALID_NAME:
+                case ERROR_FILENAME_EXCED_RANGE:
                     /* These errors aren't worth retrying with the slow path */
                     slow_path = FALSE;
                     result = 0;
@@ -5028,6 +5036,10 @@ os__path_exists_impl(PyObject *module, PyObject *path)
                 case ERROR_PATH_NOT_FOUND:
                 case ERROR_NOT_READY:
                 case ERROR_BAD_NET_NAME:
+                case ERROR_BAD_NETPATH:
+                case ERROR_BAD_PATHNAME:
+                case ERROR_INVALID_NAME:
+                case ERROR_FILENAME_EXCED_RANGE:
                     /* These errors aren't worth retrying with the slow path */
                     slow_path = FALSE;
                     result = 0;
@@ -5129,6 +5141,10 @@ os__path_islink_impl(PyObject *module, PyObject *path)
                 case ERROR_PATH_NOT_FOUND:
                 case ERROR_NOT_READY:
                 case ERROR_BAD_NET_NAME:
+                case ERROR_BAD_NETPATH:
+                case ERROR_BAD_PATHNAME:
+                case ERROR_INVALID_NAME:
+                case ERROR_FILENAME_EXCED_RANGE:
                     /* These errors aren't worth retrying with the slow path */
                     slow_path = FALSE;
                     result = 0;
