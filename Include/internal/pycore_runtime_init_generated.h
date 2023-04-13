@@ -781,6 +781,7 @@ extern "C" {
     INIT_ID(attribute), \
     INIT_ID(authorizer_callback), \
     INIT_ID(autocommit), \
+    INIT_ID(autovariance), \
     INIT_ID(b), \
     INIT_ID(backtick), \
     INIT_ID(base), \
@@ -788,6 +789,7 @@ extern "C" {
     INIT_ID(big), \
     INIT_ID(binary_form), \
     INIT_ID(block), \
+    INIT_ID(bound), \
     INIT_ID(buffer), \
     INIT_ID(buffer_callback), \
     INIT_ID(buffer_size), \
@@ -840,13 +842,16 @@ extern "C" {
     INIT_ID(code), \
     INIT_ID(command), \
     INIT_ID(comment_factory), \
+    INIT_ID(constraints), \
     INIT_ID(consts), \
     INIT_ID(context), \
+    INIT_ID(contravariant), \
     INIT_ID(cookie), \
     INIT_ID(copy), \
     INIT_ID(copyreg), \
     INIT_ID(coro), \
     INIT_ID(count), \
+    INIT_ID(covariant), \
     INIT_ID(cwd), \
     INIT_ID(d), \
     INIT_ID(data), \
