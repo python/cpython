@@ -5138,13 +5138,27 @@ datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz)
     return self;
 }
 
-/* Return best possible UTC time -- this isn't constrained by the
+/* Return best possible naive UTC time -- this isn't constrained by the
  * precision of a timestamp.
  */
 static PyObject *
-datetime_utcnow(PyObject *cls, PyObject *dummy)
+datetime_utcnow_naive(PyObject *cls, PyObject *dummy)
 {
     return datetime_best_possible(cls, _PyTime_gmtime, Py_None);
+}
+
+/* Return best possible naive local time. */
+static PyObject *
+datetime_localnow_naive(PyObject *cls, PyObject *dummy)
+{
+    return datetime_best_possible(cls, _PyTime_localtime, Py_None);
+}
+
+/* Return best possible aware UTC time. */
+static PyObject *
+datetime_utcnow_aware(PyObject *cls, PyObject *dummy)
+{
+    return datetime_best_possible(cls, _PyTime_gmtime, PyDateTime_TimeZone_UTC);
 }
 
 /* Return new local datetime from timestamp (Python timestamp -- a double). */
@@ -6490,9 +6504,21 @@ static PyMethodDef datetime_methods[] = {
 
     DATETIME_DATETIME_NOW_METHODDEF
 
-    {"utcnow",         (PyCFunction)datetime_utcnow,
+    {"utcnow",         (PyCFunction)datetime_utcnow_naive,
      METH_NOARGS | METH_CLASS,
-     PyDoc_STR("Return a new datetime representing UTC day and time.")},
+     PyDoc_STR("Return a new naive datetime representing UTC day and time.")},
+
+    {"utcnow_naive",   (PyCFunction)datetime_utcnow_naive,
+     METH_NOARGS | METH_CLASS,
+     PyDoc_STR("Return a new naive datetime representing UTC day and time.")},
+
+    {"localnow_naive",   (PyCFunction)datetime_localnow_naive,
+     METH_NOARGS | METH_CLASS,
+     PyDoc_STR("Return a new naive datetime representing local day and time.")},
+
+    {"utcnow_aware",   (PyCFunction)datetime_utcnow_aware,
+     METH_NOARGS | METH_CLASS,
+     PyDoc_STR("Return a new aware datetime representing UTC day and time.")},
 
     {"fromtimestamp", _PyCFunction_CAST(datetime_fromtimestamp),
      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
