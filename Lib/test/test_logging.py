@@ -3583,7 +3583,6 @@ class ConfigDictTest(BaseTest):
         self.assertRaises(KeyError, bc.convert, 'cfg://adict[alpha numeric ] 1 with spaces]')
         self.assertRaises(ValueError, bc.convert, 'cfg://adict[ aplha ]] numeric 1 %( - © ©ß¯] ]')
         self.assertRaises(ValueError, bc.convert, 'cfg://adict[ aplha [ numeric 1 %( - © ©ß¯] ]')
-        
 
     def test_namedtuple(self):
         # see bpo-39142
