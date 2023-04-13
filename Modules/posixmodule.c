@@ -5127,13 +5127,12 @@ os__path_islink_impl(PyObject *module, PyObject *path)
     if (_path.wide) {    
         if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
-            if (// Cannot use fast path for reparse points ...
-                !(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
-                // ... unless it's a name surrogate (symlink)
-                || IsReparseTagNameSurrogate(statInfo.ReparseTag)
-            ) {
-                slow_path = FALSE;
+            slow_path = FALSE;
+            if (statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
                 result = (statInfo.ReparseTag == IO_REPARSE_TAG_SYMLINK);
+            }
+            else {
+                result = 0;
             }
         } else {
             switch(GetLastError()) {
