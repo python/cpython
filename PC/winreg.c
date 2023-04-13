@@ -32,8 +32,6 @@ static BOOL clinic_HKEY_converter(winreg_state *st, PyObject *ob, void *p);
 static PyObject *PyHKEY_FromHKEY(winreg_state *st, HKEY h);
 static BOOL PyHKEY_Close(winreg_state *st, PyObject *obHandle);
 
-static struct PyModuleDef winregmodule;
-
 static char errNotAHandle[] = "Object is not a handle";
 
 /* The win32api module reports the function name that failed,
