@@ -271,6 +271,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(argv)
         STRUCT_FOR_ID(as_integer_ratio)
         STRUCT_FOR_ID(ast)
+        STRUCT_FOR_ID(astimezone)
         STRUCT_FOR_ID(attribute)
         STRUCT_FOR_ID(authorizer_callback)
         STRUCT_FOR_ID(autocommit)
