@@ -2,6 +2,7 @@
 #include "pycore_abstract.h"
 #include "pycore_floatobject.h"
 #include "pycore_long.h"
+#include "pycore_object.h"
 #include "pycore_opcode.h"
 #include "pycore_sliceobject.h"
 

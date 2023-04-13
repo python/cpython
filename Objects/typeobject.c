@@ -9137,13 +9137,15 @@ type_new_set_names(PyTypeObject *type)
         Py_DECREF(set_name);
 
         if (res == NULL) {
-            _PyErr_FormatFromCause(PyExc_RuntimeError,
+            _PyErr_FormatNote(
                 "Error calling __set_name__ on '%.100s' instance %R "
                 "in '%.100s'",
                 Py_TYPE(value)->tp_name, key, type->tp_name);
             goto error;
         }
-        Py_DECREF(res);
+        else {
+            Py_DECREF(res);
+        }
     }
 
     Py_DECREF(names_to_set);

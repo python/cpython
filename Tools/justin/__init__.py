@@ -22,81 +22,92 @@ class Engine:
             print(*args, **kwargs, file=sys.stderr)
 
     def trace(self, f, *, warmup: int = 0):
+        fake_code = None
         recorded = {}
         compiled = {}
-        def tracer(frame: types.FrameType, event: str, arg: object):
+        def tracer(code: types.CodeType, i: int):
+            nonlocal fake_code
             start = time.perf_counter()
             # This needs to be *fast*.
-            assert frame.f_code is f.__code__
-            if event == "opcode":
-                i = frame.f_lasti
-                if i in recorded:
-                    ix = recorded[i]
-                    traced = list(recorded)[ix:]
-                    self._stderr(f"Compiling trace for {frame.f_code.co_filename}:{frame.f_lineno}.")
-                    self._tracing_time += time.perf_counter() - start
-                    start = time.perf_counter()
-                    traced = self._clean_trace(frame.f_code, traced)
-                    if traced is None:
-                        compiled[i] = None
-                        print("Failed (ends with super)!")
-                    else:
-                        j = traced[0] * 2
-                        if j != i and compiled.get(i, None) is None:
-                            compiled[i] = None
-                        code_unit_pointer = ctypes.POINTER(ctypes.c_uint16)
-                        c_traced_type = code_unit_pointer * len(traced)
-                        c_traced = c_traced_type()
-                        first_instr = id(frame.f_code) + self._OFFSETOF_CO_CODE_ADAPTIVE
-                        c_traced[:] = [ctypes.cast(first_instr + i * 2, code_unit_pointer) for i in traced]
-                        compile_trace = ctypes.pythonapi._PyJIT_CompileTrace
-                        compile_trace.argtypes = (ctypes.c_int, c_traced_type)
-                        compile_trace.restype = ctypes.POINTER(ctypes.c_ubyte)
-                        buffer = ctypes.cast(compile_trace(len(traced), c_traced), ctypes.c_void_p)
-                        if buffer is not None:
-                            jump = ctypes.cast(ctypes.c_void_p(first_instr + j), ctypes.POINTER(ctypes.c_uint8))
-                            assert jump.contents.value == dis._all_opmap["JUMP_BACKWARD"]
-                            jump.contents.value = dis._all_opmap["JUMP_BACKWARD_INTO_TRACE"]
-                            ctypes.cast(ctypes.c_void_p(first_instr + j + 4), ctypes.POINTER(ctypes.c_uint64)).contents.value = buffer.value
-                            compiled[j] = True#WRAPPER_TYPE(buffer.value)
-                        else:
-                            compiled[j] = None
-                            print("Failed (missing opcode)!")
-                    self._compiling_time += time.perf_counter() - start
-                    start = time.perf_counter()
-                if i in compiled:
-                    # wrapper = compiled[i]
-                    # if wrapper is not None:
-                    #     # self._stderr(f"Entering trace for {frame.f_code.co_filename}:{frame.f_lineno}.")
-                    #     self._tracing_time += time.perf_counter() - start
-                    #     start = time.perf_counter()
-                    #     status = wrapper()
-                    #     self._compiled_time += time.perf_counter() - start
-                    #     start = time.perf_counter()
-                    #     # self._stderr(f"Exiting trace for {frame.f_code.co_filename}:{frame.f_lineno} with status {status}.")
-                    recorded.clear()
+            assert code is f.__code__
+            if i in recorded:
+                ix = recorded[i]
+                traced = list(recorded)[ix:]
+                self._stderr(f"Compiling trace for {code.co_filename}:{i}.")
+                self._tracing_time += time.perf_counter() - start
+                start = time.perf_counter()
+                traced = self._clean_trace(fake_code, traced)
+                if traced is None:
+                    compiled[i] = None
+                    print("Failed (ends with super)!")
                 else:
-                    recorded[i] = len(recorded)
-            elif event == "call":
-                frame.f_trace_lines = False
-                frame.f_trace_opcodes = True
+                    j = traced[0] * 2
+                    if j != i and compiled.get(i, None) is None:
+                        compiled[i] = None
+                    code_unit_pointer = ctypes.POINTER(ctypes.c_uint16)
+                    c_traced_type = code_unit_pointer * len(traced)
+                    c_traced = c_traced_type()
+                    first_instr = id(fake_code) + self._OFFSETOF_CO_CODE_ADAPTIVE
+                    c_traced[:] = [ctypes.cast(first_instr + i * 2, code_unit_pointer) for i in traced]
+                    compile_trace = ctypes.pythonapi._PyJIT_CompileTrace
+                    compile_trace.argtypes = (ctypes.c_int, c_traced_type)
+                    compile_trace.restype = ctypes.POINTER(ctypes.c_ubyte)
+                    buffer = ctypes.cast(compile_trace(len(traced), c_traced), ctypes.c_void_p)
+                    if buffer is not None:
+                        jump = ctypes.cast(ctypes.c_void_p(first_instr + j), ctypes.POINTER(ctypes.c_uint8))
+                        assert jump.contents.value == dis._all_opmap["JUMP_BACKWARD"]
+                        jump.contents.value = dis._all_opmap["JUMP_BACKWARD_INTO_TRACE"]
+                        ctypes.cast(ctypes.c_void_p(first_instr + j + 4), ctypes.POINTER(ctypes.c_uint64)).contents.value = buffer.value
+                        compiled[j] = True#WRAPPER_TYPE(buffer.value)
+                    else:
+                        compiled[j] = None
+                        print("Failed (missing opcode)!")
+                self._compiling_time += time.perf_counter() - start
+                start = time.perf_counter()
+            if i in compiled:
                 recorded.clear()
+            else:
+                recorded[i] = len(recorded)
             self._tracing_time += time.perf_counter() - start
-            return tracer
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             # This needs to be *fast*.
-            nonlocal warmup
+            nonlocal warmup, fake_code
             if warmup:
                 warmup -= 1
                 return f(*args, **kwargs)
             warmup -= 1
             try:
                 print("Tracing...")
-                sys.settrace(tracer)
+                # Ew:
+                fake_code = f.__code__.replace(co_code=f.__code__._co_code_adaptive)
+                sys.monitoring.use_tool_id(
+                    sys.monitoring.OPTIMIZER_ID, "Justin"
+                )
+                sys.monitoring.set_local_events(
+                    sys.monitoring.OPTIMIZER_ID,
+                    f.__code__,
+                    sys.monitoring.events.INSTRUCTION,
+                )
+                sys.monitoring.register_callback(
+                    sys.monitoring.OPTIMIZER_ID,
+                    sys.monitoring.events.INSTRUCTION,
+                    tracer,
+                )
                 return f(*args, **kwargs)
             finally:
-                sys.settrace(None)
+                sys.monitoring.register_callback(
+                    sys.monitoring.OPTIMIZER_ID,
+                    sys.monitoring.events.INSTRUCTION,
+                    None,
+                )
+                sys.monitoring.set_local_events(
+                    sys.monitoring.OPTIMIZER_ID,
+                    f.__code__,
+                    0,
+                )
+                sys.monitoring.free_tool_id(sys.monitoring.OPTIMIZER_ID)
+                f.__code__ = fake_code
                 print("...done!")
         return wrapper
     
@@ -124,6 +135,9 @@ class Engine:
             else:
                 return None
         try:
+            # XXX: It's weird that our traces *start* with a jump backward.
+            # Put the JUMP_BACKWARD at the end of the trace. Functionally, it's
+            # the same:
             i = opnames.index("JUMP_BACKWARD")
         except ValueError:
             return None
