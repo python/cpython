@@ -1,2 +1,1 @@
-Improve the textual representation of IPv4-mapped IPv6 addresses to :mod:`ipaddress`. Patch by Oleksandr 
-Pavliuk.
+Improve the textual representation of IPv4-mapped IPv6 addresses (:rfc:`4291` Sections 2.2, 2.5.5.2) in :mod:`ipaddress.IPv6Address`. Patch by Oleksandr Pavliuk.
