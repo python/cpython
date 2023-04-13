@@ -2662,6 +2662,34 @@ class TestDateTime(TestDate):
             # Else try again a few times.
         self.assertLessEqual(abs(from_timestamp - from_now), tolerance)
 
+    def test_naive_now_is_naive(self):
+        dt = self.theclass.localnow_naive()
+        self.assertIsNone(dt.tzinfo)
+        dt = self.theclass.utcnow_naive()
+        self.assertIsNone(dt.tzinfo)
+
+    def test_aware_now_is_aware(self):
+        dt = self.theclass.localnow_aware()
+        self.assertIsNotNone(dt.tzinfo)
+        self.assertIsNotNone(dt.tzinfo.utcoffset(dt))
+        dt = self.theclass.utcnow_aware()
+        self.assertIsNotNone(dt.tzinfo)
+        self.assertIsNotNone(dt.tzinfo.utcoffset(dt))
+
+    @support.run_with_tz('MSK-03')  # Anything other than UTC
+    def test_aware_localnow_and_utcnow_are_equal(self):
+        localnow = self.theclass.localnow_aware()
+        utcnow = self.theclass.utcnow_aware()
+
+        # Call it a success if localnow_aware() and utcnow_aware() are within
+        # a second of each other.
+        tolerance = timedelta(seconds=1)
+        for dummy in range(3):
+            if abs(localnow - utcnow) <= tolerance:
+                break
+            # Else try again a few times.
+        self.assertLessEqual(abs(localnow - utcnow), tolerance)
+
     def test_strptime(self):
         string = '2004-12-01 13:02:47.197'
         format = '%Y-%m-%d %H:%M:%S.%f'
