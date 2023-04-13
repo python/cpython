@@ -81,9 +81,9 @@ class _BasePurePathTest(object):
                    r"where __fspath__ returns a str, not 'bytes'")
         with self.assertRaisesRegex(TypeError, message):
             P(b'a')
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, message):
             P(b'a', 'b')
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, message):
             P('a', b'b')
         with self.assertRaises(TypeError):
             P('a').joinpath(b'b')
