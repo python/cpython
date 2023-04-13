@@ -1,2 +1,0 @@
-IDLE: configdialog - Add docstrings and fix comments. Patch by Cheryl
-Sabella.

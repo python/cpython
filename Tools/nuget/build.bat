@@ -1,24 +1,29 @@
 @echo off
 setlocal
 set D=%~dp0
-set PCBUILD=%D%..\..\PCBuild\
+set PCBUILD=%D%..\..\PCbuild\
+if "%Py_OutDir%"=="" set Py_OutDir=%PCBUILD%
 
 set BUILDX86=
 set BUILDX64=
+set BUILDARM32=
 set REBUILD=
 set OUTPUT=
 set PACKAGES=
+set PYTHON_EXE=
 
 :CheckOpts
 if "%~1" EQU "-h" goto Help
 if "%~1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
 if "%~1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
+if "%~1" EQU "-arm32" (set BUILDARM32=1) && shift && goto CheckOpts
 if "%~1" EQU "-r" (set REBUILD=-r) && shift && goto CheckOpts
 if "%~1" EQU "-o" (set OUTPUT="/p:OutputPath=%~2") && shift && shift && goto CheckOpts
 if "%~1" EQU "--out" (set OUTPUT="/p:OutputPath=%~2") && shift && shift && goto CheckOpts
 if "%~1" EQU "-p" (set PACKAGES=%PACKAGES% %~2) && shift && shift && goto CheckOpts
+if "%~1" EQU "--python-exe" (set PYTHON_EXE="/p:PythonExe=%~2") && shift && shift && goto CheckOpts
 
-if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX64=1)
+if not defined BUILDX86 if not defined BUILDX64 if not defined BUILDARM32 (set BUILDX86=1) && (set BUILDX64=1) && (set BUILDARM32=1)
 
 call "%D%..\msi\get_externals.bat"
 call "%PCBUILD%find_msbuild.bat" %MSBUILD%
@@ -28,19 +33,28 @@ if defined PACKAGES set PACKAGES="/p:Packages=%PACKAGES%"
 
 if defined BUILDX86 (
     if defined REBUILD ( call "%PCBUILD%build.bat" -e -r
-    ) else if not exist "%PCBUILD%win32\python.exe" call "%PCBUILD%build.bat" -e
+    ) else if not exist "%Py_OutDir%win32\python.exe" call "%PCBUILD%build.bat" -e
     if errorlevel 1 goto :eof
 
-    %MSBUILD% "%D%make_pkg.proj" /p:Configuration=Release /p:Platform=x86 %OUTPUT% %PACKAGES%
+    %MSBUILD% "%D%make_pkg.proj" /p:Configuration=Release /p:Platform=x86 %OUTPUT% %PACKAGES% %PYTHON_EXE%
     if errorlevel 1 goto :eof
 )
 
 if defined BUILDX64 (
     if defined REBUILD ( call "%PCBUILD%build.bat" -p x64 -e -r
-    ) else if not exist "%PCBUILD%amd64\python.exe" call "%PCBUILD%build.bat" -p x64 -e
+    ) else if not exist "%Py_OutDir%amd64\python.exe" call "%PCBUILD%build.bat" -p x64 -e
     if errorlevel 1 goto :eof
 
-    %MSBUILD% "%D%make_pkg.proj" /p:Configuration=Release /p:Platform=x64 %OUTPUT% %PACKAGES%
+    %MSBUILD% "%D%make_pkg.proj" /p:Configuration=Release /p:Platform=x64 %OUTPUT% %PACKAGES% %PYTHON_EXE%
+    if errorlevel 1 goto :eof
+)
+
+if defined BUILDARM32 (
+    if defined REBUILD ( call "%PCBUILD%build.bat" -p ARM -e -r --no-tkinter
+    ) else if not exist "%Py_OutDir%arm32\python.exe" call "%PCBUILD%build.bat" -p ARM -e --no-tkinter
+    if errorlevel 1 goto :eof
+
+    %MSBUILD% "%D%make_pkg.proj" /p:Configuration=Release /p:Platform=ARM %OUTPUT% %PACKAGES% %PYTHON_EXE%
     if errorlevel 1 goto :eof
 )
 

@@ -12,6 +12,11 @@ umask 022
 
 "${FWK}/bin/python${PYVER}" -E -s -m ensurepip --upgrade
 
+# bpo-33290: An earlier "pip3 install --upgrade pip" may have installed
+#     a "pip" in the fw bin directory.  For a py3 install, remove it.
+
+rm -f "${FWK}/bin/pip"
+
 "${FWK}/bin/python${PYVER}" -E -s -Wi \
     "${FWK}/lib/python${PYVER}/compileall.py" -q -j0 \
     -f -x badsyntax \

@@ -1,5 +1,8 @@
-import unittest
+"Test delegator, coverage 100%."
+
 from idlelib.delegator import Delegator
+import unittest
+
 
 class DelegatorTest(unittest.TestCase):
 
@@ -35,6 +38,7 @@ class DelegatorTest(unittest.TestCase):
         self.assertNotIn('bit_length', mydel.__dict__)
         self.assertEqual(mydel._Delegator__cache, set())
         self.assertIs(mydel.delegate, float)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2, exit=2)

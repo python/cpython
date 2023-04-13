@@ -1,6 +1,0 @@
-signal.setitimer() may disable the timer when passed a tiny value.
-
-Tiny values (such as 1e-6) are valid non-zero values for setitimer(), which
-is specified as taking microsecond-resolution intervals. However, on some
-platform, our conversion routine could convert 1e-6 into a zero interval,
-therefore disabling the timer instead of (re-)scheduling it.

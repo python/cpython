@@ -1,1 +1,0 @@
-IDLE: call config.IdleConf.GetUserCfgDir only once.

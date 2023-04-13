@@ -33,6 +33,10 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+        <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7E85ECCF-A72C-4DA4-9E52-884508E80BA1}</ProjectGuid>
@@ -54,13 +58,14 @@
   <PropertyGroup>
     <TkOpts>msvcrt</TkOpts>
     <TkOpts Condition="$(Configuration) == 'Debug'">symbols,msvcrt</TkOpts>
-    <TkDirs>TCLDIR="$(tclDir.TrimEnd(`\`))" INSTALLDIR="$(OutDir.TrimEnd(`\`))"</TkDirs>
+    <TkDirs>BUILDDIRTOP="$(BuildDirTop)" TCLDIR="$(tclDir.TrimEnd(`\`))" INSTALLDIR="$(OutDir.TrimEnd(`\`))"</TkDirs>
     <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUGFLAGS="-wd4456 -wd4457 -wd4458 -wd4459 -wd4996"</DebugFlags>
+    <WarningsFlags>WARNINGS="-W3 -wd4244 -wd4267 -wd4311 -wd4312 -wd4334"</WarningsFlags>
     <NMakeBuildCommandLine>setlocal
 set VCINSTALLDIR=$(VCInstallDir)
 cd /D "$(tkDir)win"
-nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs) $(DebugFlags) all
-nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs) $(DebugFlags) install-binaries install-libraries
+nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs) $(DebugFlags) $(WarningsFlags) TCLSH_NATIVE="$(tclWin32Exe)" all
+nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs) $(DebugFlags) $(WarningsFlags) TCLSH_NATIVE="$(tclWin32Exe)" install-binaries install-libraries
 copy /Y ..\license.terms "$(OutDir)\tklicense.terms"
 </NMakeBuildCommandLine>
   </PropertyGroup>

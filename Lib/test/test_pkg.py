@@ -5,7 +5,6 @@ import os
 import tempfile
 import textwrap
 import unittest
-from test import support
 
 
 # Helpers to create and destroy hierarchies.
@@ -50,11 +49,13 @@ class TestPkg(unittest.TestCase):
         self.root = None
         self.pkgname = None
         self.syspath = list(sys.path)
-        self.modules_before = support.modules_setup()
+        self.modules_to_cleanup = set()  # Populated by mkhier().
 
     def tearDown(self):
         sys.path[:] = self.syspath
-        support.modules_cleanup(*self.modules_before)
+        for modulename in self.modules_to_cleanup:
+            if modulename in sys.modules:
+                del sys.modules[modulename]
         if self.root: # Only clean if the test was actually run
             cleanout(self.root)
 
@@ -75,17 +76,17 @@ class TestPkg(unittest.TestCase):
             os.mkdir(root)
         for name, contents in descr:
             comps = name.split()
+            self.modules_to_cleanup.add('.'.join(comps))
             fullname = root
             for c in comps:
                 fullname = os.path.join(fullname, c)
             if contents is None:
                 os.mkdir(fullname)
             else:
-                f = open(fullname, "w")
-                f.write(contents)
-                if contents and contents[-1] != '\n':
-                    f.write('\n')
-                f.close()
+                with open(fullname, "w") as f:
+                    f.write(contents)
+                    if not contents.endswith('\n'):
+                        f.write('\n')
         self.root = root
         # package name is the name of the first item
         self.pkgname = descr[0][0]
@@ -138,7 +139,7 @@ class TestPkg(unittest.TestCase):
 
         s = """
             from t2 import *
-            self.assertTrue(dir(), ['self', 'sub'])
+            self.assertEqual(dir(), ['self', 'sub'])
             """
         self.run_code(s)
 
