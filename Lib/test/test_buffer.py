@@ -4530,7 +4530,7 @@ class TestPythonBufferProtocol(unittest.TestCase):
             self.assertEqual(mv.tobytes(), b"hello")
 
         with self.assertRaises(RuntimeError):
-            memoryview_from_flags(immutable, inspect.BufferFlags.WRITABLE)
+            memoryview._from_flags(immutable, inspect.BufferFlags.WRITABLE)
         with memoryview(immutable) as mv:
             self.assertEqual(mv.tobytes(), b"hello")
             with self.assertRaises(TypeError):
