@@ -787,11 +787,7 @@ static PyGetSetDef ga_properties[] = {
 
 static PyObject*
 get_cache_key(PyObject *origin, PyObject *args, bool starred) {
-    PyObject *key = PyTuple_Pack(3, origin, args, PyBool_FromLong(starred));
-    if (key == NULL) {
-        return NULL;
-    }
-    return key;
+    return PyTuple_Pack(3, origin, args, PyBool_FromLong(starred));
 }
 
 static PyObject*
@@ -822,11 +818,8 @@ try_set_cache_entry(PyInterpreterState *interp,
         return -1;
     }
 
-    int res = _PyDict_SetItem_KnownHash(interp->genericalias_cache,
-                                        key, Py_NewRef((PyObject *)alias), hash);
-
-    Py_DECREF(key);
-    return res;
+    return _PyDict_SetItem_KnownHash(interp->genericalias_cache,
+                                     key, Py_NewRef((PyObject *)alias), hash);
 }
 
 /* A helper function to create GenericAlias' args tuple. */
@@ -1002,11 +995,14 @@ Py_GenericAlias(PyObject *origin, PyObject *args)
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *key = get_cache_key(origin, args, false);
-    if (key != NULL) {
-        PyObject *cached = get_cache_entry(interp, key);
-        if (cached != NULL) {
-            return cached;
-        }
+    if (key == NULL) {
+        return NULL;
+    }
+
+    PyObject *cached = get_cache_entry(interp, key);
+    if (cached != NULL) {
+        Py_DECREF(key);
+        return cached;
     }
 
     gaobject *alias = (gaobject*) PyType_GenericAlloc(
@@ -1018,6 +1014,7 @@ Py_GenericAlias(PyObject *origin, PyObject *args)
     if (key != NULL) {
         // Try setting cache, but if it fails - just go on:
         (void)try_set_cache_entry(interp, key, alias);
+        Py_DECREF(key);
     }
 
     return (PyObject *)alias;
