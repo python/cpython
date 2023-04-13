@@ -2345,8 +2345,6 @@ check_is_arg(expr_ty e)
          || value == Py_Ellipsis);
 }
 
-static PyTypeObject * infer_type(expr_ty e);
-
 /* Check operands of identity checks ("is" and "is not").
    Emit a warning if any operand is a constant except named singletons.
  */
@@ -2366,7 +2364,9 @@ check_compare(struct compiler *c, expr_ty e)
                         ? "\"is\" with %.200s literal. Did you mean \"==\"?"
                         : "\"is not\" with %.200s literal. Did you mean \"!=\"?";
                 expr_ty literal = !left ? e->v.Compare.left : right_expr;
-                return compiler_warn(c, LOC(e), msg, infer_type(literal)->tp_name);
+                return compiler_warn(
+                    c, LOC(e), msg, Py_TYPE(literal->v.Constant.value)->tp_name
+                );
             }
         }
         left = right;

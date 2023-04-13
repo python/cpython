@@ -1478,6 +1478,9 @@ class GrammarTests(unittest.TestCase):
         check('x is not (1, 2)', '"is not" with tuple literal')
         check('(1, 2) is not x', '"is not" with tuple literal')
 
+        check('None is 1', '"is" with int literal')
+        check('1 is None', '"is" with int literal')
+
         with warnings.catch_warnings():
             warnings.simplefilter('error', SyntaxWarning)
             compile('x is None', '<testcase>', 'exec')
