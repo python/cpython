@@ -7006,7 +7006,7 @@ PyType_Ready(PyTypeObject *type)
 int
 _PyStaticType_InitBuiltin(PyTypeObject *self)
 {
-    // XXX assert(_Py_IsImmortal((PyObject *)self));
+    assert(_Py_IsImmortal((PyObject *)self));
     self->tp_flags = self->tp_flags | _Py_TPFLAGS_STATIC_BUILTIN;
 
     static_builtin_state_init(self);
