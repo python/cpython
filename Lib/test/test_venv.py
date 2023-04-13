@@ -623,8 +623,9 @@ class BasicTest(BaseTest):
         script_path = venv_dir / scripts_dir / "activate"
         venv.create(venv_dir)
         with open(script_path, 'rb') as script:
-            for line in script:
-                self.assertFalse(line.endswith(b'\r\n'), line)
+            for i, line in enumerate(script, 1):
+                error_message = f"CR LF found in line {i}"
+                self.assertFalse(line.endswith(b'\r\n'), error_message)
 
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
