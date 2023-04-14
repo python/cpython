@@ -1,0 +1,2 @@
+Add :meth:`pathlib.Path.fwalk` for walking the directory trees with file
+descriptors, similar to :func:`os.fwalk`.

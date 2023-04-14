@@ -1,6 +1,7 @@
 import contextlib
 import collections.abc
 import io
+import itertools
 import os
 import sys
 import errno
@@ -2632,6 +2633,9 @@ class _BasePathTest(object):
 
 class WalkTests(unittest.TestCase):
 
+    def walk(self, top, **kwargs):
+        return top.walk(**kwargs)
+
     def setUp(self):
         self.addCleanup(os_helper.rmtree, os_helper.TESTFN)
 
@@ -2702,7 +2706,7 @@ class WalkTests(unittest.TestCase):
             del self.sub2_tree[1][:1]
 
     def test_walk_topdown(self):
-        walker = self.walk_path.walk()
+        walker = self.walk(self.walk_path)
         entry = next(walker)
         entry[1].sort()  # Ensure we visit SUB1 before SUB2
         self.assertEqual(entry, (self.walk_path, ["SUB1", "SUB2"], ["tmp1"]))
@@ -2722,7 +2726,7 @@ class WalkTests(unittest.TestCase):
             walk_path = self.walk_path
         # Prune the search.
         all = []
-        for root, dirs, files in walk_path.walk():
+        for root, dirs, files in self.walk(walk_path):
             all.append((root, dirs, files))
             if 'SUB1' in dirs:
                 # Note that this also mutates the dirs we appended to all!
@@ -2740,7 +2744,7 @@ class WalkTests(unittest.TestCase):
 
     def test_walk_bottom_up(self):
         seen_testfn = seen_sub1 = seen_sub11 = seen_sub2 = False
-        for path, dirnames, filenames in self.walk_path.walk(top_down=False):
+        for path, dirnames, filenames in self.walk(self.walk_path, top_down=False):
             if path == self.walk_path:
                 self.assertFalse(seen_testfn)
                 self.assertTrue(seen_sub1)
@@ -2773,7 +2777,7 @@ class WalkTests(unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     def test_walk_follow_symlinks(self):
-        walk_it = self.walk_path.walk(follow_symlinks=True)
+        walk_it = self.walk(self.walk_path, follow_symlinks=True)
         for root, dirs, files in walk_it:
             if root == self.link_path:
                 self.assertEqual(dirs, [])
@@ -2786,7 +2790,7 @@ class WalkTests(unittest.TestCase):
     def test_walk_symlink_location(self):
         # Tests whether symlinks end up in filenames or dirnames depending
         # on the `follow_symlinks` argument.
-        walk_it = self.walk_path.walk(follow_symlinks=False)
+        walk_it = self.walk(self.walk_path, follow_symlinks=False)
         for root, dirs, files in walk_it:
             if root == self.sub2_path:
                 self.assertIn("link", files)
@@ -2794,7 +2798,7 @@ class WalkTests(unittest.TestCase):
         else:
             self.fail("symlink not found")
 
-        walk_it = self.walk_path.walk(follow_symlinks=True)
+        walk_it = self.walk(self.walk_path, follow_symlinks=True)
         for root, dirs, files in walk_it:
             if root == self.sub2_path:
                 self.assertIn("link", dirs)
@@ -2802,7 +2806,7 @@ class WalkTests(unittest.TestCase):
 
     def test_walk_bad_dir(self):
         errors = []
-        walk_it = self.walk_path.walk(on_error=errors.append)
+        walk_it = self.walk(self.walk_path, on_error=errors.append)
         root, dirs, files = next(walk_it)
         self.assertEqual(errors, [])
         dir1 = 'SUB1'
@@ -2826,14 +2830,14 @@ class WalkTests(unittest.TestCase):
         path = pathlib.Path(base, *(['d']*depth))
         path.mkdir(parents=True)
 
-        iters = [base.walk(top_down=False) for _ in range(100)]
+        iters = [self.walk(base, top_down=False) for _ in range(100)]
         for i in range(depth + 1):
             expected = (path, ['d'] if i else [], [])
             for it in iters:
                 self.assertEqual(next(it), expected)
             path = path.parent
 
-        iters = [base.walk(top_down=True) for _ in range(100)]
+        iters = [self.walk(base, top_down=True) for _ in range(100)]
         path = base
         for i in range(depth + 1):
             expected = (path, ['d'] if i < depth else [], [])
@@ -2850,8 +2854,62 @@ class WalkTests(unittest.TestCase):
         path.mkdir(parents=True)
 
         with set_recursion_limit(recursion_limit):
-            list(base.walk())
-            list(base.walk(top_down=False))
+            list(self.walk(base))
+            list(self.walk(base, top_down=False))
+
+
+@unittest.skipUnless(hasattr(pathlib.Path, 'fwalk'), "Test needs pathlib.Path.fwalk()")
+class FwalkTests(WalkTests):
+    """Tests for pathlib.Path.fwalk()."""
+
+    def walk(self, top, **kwargs):
+        for root, dirs, files, root_fd in top.fwalk(**kwargs):
+            yield (root, dirs, files)
+
+    def _compare_to_walk(self, walk_top, walk_kwargs, fwalk_top, fwalk_kwargs):
+        """
+        compare with walk() results.
+        """
+        walk_top = pathlib.Path(walk_top)
+        walk_kwargs = walk_kwargs.copy()
+        fwalk_top = pathlib.Path(fwalk_top)
+        fwalk_kwargs = fwalk_kwargs.copy()
+        for top_down, follow_symlinks in itertools.product((True, False), repeat=2):
+            walk_kwargs.update(top_down=top_down, follow_symlinks=follow_symlinks)
+            fwalk_kwargs.update(top_down=top_down, follow_symlinks=follow_symlinks)
+
+            expected = {}
+            for root, dirs, files in walk_top.walk(**walk_kwargs):
+                expected[root] = (set(dirs), set(files))
+
+            for root, dirs, files, rootfd in fwalk_top.fwalk(**fwalk_kwargs):
+                self.assertIn(root, expected)
+                self.assertEqual(expected[root], (set(dirs), set(files)))
+
+    def test_compare_to_walk(self):
+        self._compare_to_walk(os_helper.TESTFN, {}, os_helper.TESTFN, {})
+
+    def test_dir_fd(self):
+        try:
+            fd = os.open(".", os.O_RDONLY)
+            self._compare_to_walk(os_helper.TESTFN, {}, os_helper.TESTFN, {'dir_fd': fd})
+        finally:
+            os.close(fd)
+
+    def test_yields_correct_dir_fd(self):
+        # check returned file descriptors
+        p = pathlib.Path(os_helper.TESTFN)
+        for top_down, follow_symlinks in itertools.product((True, False), repeat=2):
+            for root, dirs, files, rootfd in p.fwalk(top_down, follow_symlinks=follow_symlinks):
+                # check that the FD is valid
+                os.fstat(rootfd)
+                # redundant check
+                os.stat(rootfd)
+                # check that listdir() returns consistent information
+                self.assertEqual(set(os.listdir(rootfd)), set(dirs) | set(files))
+
+    # fwalk() keeps file descriptors open
+    test_walk_many_open_files = None
 
 
 class PathTest(_BasePathTest, unittest.TestCase):

@@ -278,8 +278,9 @@ inspect
 pathlib
 -------
 
-* Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
-  all file or directory names within them, similar to :func:`os.walk`.
+* Add :meth:`~pathlib.Path.walk` and :meth:`~pathlib.Path.fwalk`
+  for walking the directory trees and generating all file or directory names
+  within them, similar to :func:`os.walk` and :func:`~os.fwalk`.
   (Contributed by Stanislav Zmiev in :gh:`90385`.)
 
 * Add *walk_up* optional parameter to :meth:`pathlib.PurePath.relative_to`

@@ -203,6 +203,58 @@ class _RecursiveWildcardSelector(_Selector):
             return
 
 
+class _WalkAction:
+    WALK = object()
+    YIELD = object()
+    CLOSE = object()
+
+
+def _walk(top_down, on_error, follow_symlinks, use_fd, actions):
+    while actions:
+        action, value = actions.pop()
+        try:
+            if action is _WalkAction.WALK:
+                path, dir_fd, entry = value
+                dirnames = []
+                filenames = []
+                if use_fd:
+                    scandir, fd = path._scandir_fwalk(
+                        follow_symlinks, actions, dir_fd, entry)
+                    result = path, dirnames, filenames, fd
+                else:
+                    scandir, fd = path._scandir, None
+                    result = path, dirnames, filenames
+                with scandir() as scandir_it:
+                    if not top_down:
+                        actions.append((_WalkAction.YIELD, result))
+                    for entry in scandir_it:
+                        try:
+                            if entry.is_dir(follow_symlinks=follow_symlinks):
+                                if not top_down:
+                                    actions.append((_WalkAction.WALK, (
+                                        path._make_child_relpath(entry.name), fd,
+                                        entry if use_fd and not follow_symlinks else None)))
+                                dirnames.append(entry.name)
+                            else:
+                                filenames.append(entry.name)
+                        except OSError:
+                            filenames.append(entry.name)
+                if top_down:
+                    yield result
+                    for dirname in reversed(dirnames):
+                        actions.append((_WalkAction.WALK, (
+                            path._make_child_relpath(dirname), fd, None)))
+            elif action is _WalkAction.YIELD:
+                yield value
+            elif action is _WalkAction.CLOSE:
+                os.close(value)
+            else:
+                raise AssertionError(f"unknown walk action: {action}")
+        except OSError as error:
+            if on_error is not None:
+                on_error(error)
+
+
 #
 # Public API
 #
@@ -1254,47 +1306,41 @@ class Path(PurePath):
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
         sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
-        paths = [self]
+        actions = [(_WalkAction.WALK, (self, None, None))]
+        return _walk(top_down, on_error, follow_symlinks, False, actions)
 
-        while paths:
-            path = paths.pop()
-            if isinstance(path, tuple):
-                yield path
-                continue
-
-            # We may not have read permission for self, in which case we can't
-            # get a list of the files the directory contains. os.walk()
-            # always suppressed the exception in that instance, rather than
-            # blow up for a minor reason when (say) a thousand readable
-            # directories are still left to visit. That logic is copied here.
+    if {os.stat, os.open} <= os.supports_dir_fd and {os.stat, os.scandir} <= os.supports_fd:
+        def fwalk(self, top_down=True, *, on_error=None, follow_symlinks=False, dir_fd=None):
+            """Walk the directory tree from this directory, similar to os.fwalk()."""
+            sys.audit("pathlib.Path.fwalk", self, on_error, follow_symlinks, dir_fd)
+            actions = [(_WalkAction.WALK, (self, dir_fd, None))]
             try:
-                scandir_it = path._scandir()
-            except OSError as error:
-                if on_error is not None:
-                    on_error(error)
-                continue
+                return _walk(top_down, on_error, follow_symlinks, True, actions)
+            finally:
+                for action, value in reversed(actions):
+                    if action is _WalkAction.CLOSE:
+                        try:
+                            os.close(value)
+                        except OSError:
+                            pass
 
-            with scandir_it:
-                dirnames = []
-                filenames = []
-                for entry in scandir_it:
-                    try:
-                        is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
-                    except OSError:
-                        # Carried over from os.path.isdir().
-                        is_dir = False
-
-                    if is_dir:
-                        dirnames.append(entry.name)
-                    else:
-                        filenames.append(entry.name)
-
-            if top_down:
-                yield path, dirnames, filenames
+        def _scandir_fwalk(self, follow_symlinks, actions, dir_fd, entry):
+            name = self if dir_fd is None else self.name
+            if follow_symlinks:
+                fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
+                actions.append((_WalkAction.CLOSE, fd))
             else:
-                paths.append((path, dirnames, filenames))
-
-            paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
+                # Note: To guard against symlink races, we use the standard
+                # lstat()/open()/fstat() trick.
+                if entry is None:
+                    orig_st = os.stat(name, follow_symlinks=False, dir_fd=dir_fd)
+                else:
+                    orig_st = entry.stat(follow_symlinks=False)
+                fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
+                actions.append((_WalkAction.CLOSE, fd))
+                if not os.path.samestat(orig_st, os.stat(fd)):
+                    raise NotADirectoryError("Cannot walk into a symbolic link")
+            return lambda: os.scandir(fd), fd
 
 
 class PosixPath(Path, PurePosixPath):

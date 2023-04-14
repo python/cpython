@@ -1092,6 +1092,53 @@ call fails (for example because the path doesn't exist).
 
    .. versionadded:: 3.12
 
+.. method:: Path.fwalk(top_down=True, on_error=None, follow_symlinks=False, dir_fd=None)
+
+   This behaves exactly like :meth:`~Path.walk`, except that it yields a
+   4-tuple ``(dirpath, dirnames, filenames, dirfd)``, and it supports ``dir_fd``.
+
+   *dirpath*, *dirnames* and *filenames* are identical to :meth:`~Path.walk`
+   output, and *dirfd* is a file descriptor referring to the directory
+   *dirpath*.
+
+   .. note::
+      Since :meth:`~Path.fwalk` yields file descriptors, those are only valid
+      until the next iteration step, so you should duplicate them (e.g. with
+      :func:`os.dup`) if you want to keep them longer.
+
+   This example displays the number of bytes used by all files in each directory,
+   while ignoring ``__pycache__`` directories::
+
+      from pathlib import Path
+      for root, dirs, files, rootfd in Path("cpython/Lib/concurrent").fwalk(on_error=print):
+          print(
+              root,
+              "consumes",
+              sum(os.stat(name, dir_fd=rootfd).st_size for name in files),
+              "bytes in",
+              len(files),
+              "non-directory files"
+          )
+          if '__pycache__' in dirs:
+              dirs.remove('__pycache__')
+
+   This next example is a simple implementation of :func:`shutil.rmtree`.
+   Walking the tree bottom-up is essential as :func:`rmdir` doesn't allow
+   deleting a directory before it is empty::
+
+      # Delete everything reachable from the directory "top".
+      # CAUTION:  This is dangerous! For example, if top == Path('/'),
+      # it could delete all of your files.
+      for root, dirs, files, rootfd in top.fwalk(top_down=False):
+          for name in files:
+              os.unlink(name, dir_fd=rootfd)
+          for name in dirs:
+              os.rmdir(name, dir_fd=rootfd)
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.12
+
 .. method:: Path.lchmod(mode)
 
    Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
