@@ -1575,7 +1575,7 @@ dummy_func(
             } else {
                 PyObject *super;
                 if (oparg & 2) {
-                    super = PyObject_Vectorcall(global_super, NULL, 0, NULL);
+                    super = PyObject_CallNoArgs(global_super);
                 } else {
                     PyObject *stack[] = {class, self};
                     super = PyObject_Vectorcall(global_super, stack, 2, NULL);
