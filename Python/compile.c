@@ -3045,11 +3045,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    [orig, res, exc]                           <evaluate E1>
    [orig, res, exc, E1]                       CHECK_EG_MATCH
    [orig, res, rest/exc, match?]              COPY 1
-   [orig, res, rest/exc, match?, match?]      POP_JUMP_IF_NOT_NONE  H1
-   [orig, res, exc, None]                     POP_TOP
-   [orig, res, exc]                           JUMP L2
+   [orig, res, rest/exc, match?, match?]      POP_JUMP_IF_NONE      C1
 
-   [orig, res, rest, match]         H1:       <assign to V1>  (or POP if no V1)
+   [orig, res, rest, match]                   <assign to V1>  (or POP if no V1)
 
    [orig, res, rest]                          SETUP_FINALLY         R1
    [orig, res, rest]                          <code for S1>
@@ -3057,8 +3055,14 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
    [orig, res, rest, i, v]          R1:       LIST_APPEND   3 ) exc raised in except* body - add to res
    [orig, res, rest, i]                       POP
+   [orig, res, rest]                          JUMP                  LE2
 
-   [orig, res, rest]                L2:       <evaluate E2>
+   [orig, res, rest]                L2:       NOP  ) for lineno
+   [orig, res, rest]                          JUMP                  LE2
+
+   [orig, res, rest/exc, None]      C1:       POP
+
+   [orig, res, rest]               LE2:       <evaluate E2>
    .............................etc.......................
 
    [orig, res, rest]                Ln+1:     LIST_APPEND 1  ) add unhandled exc to res (could be None)
@@ -3114,7 +3118,8 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         location loc = LOC(handler);
         NEW_JUMP_TARGET_LABEL(c, next_except);
         except = next_except;
-        NEW_JUMP_TARGET_LABEL(c, handle_match);
+        NEW_JUMP_TARGET_LABEL(c, except_with_error);
+        NEW_JUMP_TARGET_LABEL(c, no_match);
         if (i == 0) {
             /* create empty list for exceptions raised/reraise in the except* blocks */
             /*
@@ -3132,12 +3137,8 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             VISIT(c, expr, handler->v.ExceptHandler.type);
             ADDOP(c, loc, CHECK_EG_MATCH);
             ADDOP_I(c, loc, COPY, 1);
-            ADDOP_JUMP(c, loc, POP_JUMP_IF_NOT_NONE, handle_match);
-            ADDOP(c, loc, POP_TOP);  // match
-            ADDOP_JUMP(c, loc, JUMP, except);
+            ADDOP_JUMP(c, loc, POP_JUMP_IF_NONE, no_match);
         }
-
-        USE_LABEL(c, handle_match);
 
         NEW_JUMP_TARGET_LABEL(c, cleanup_end);
         NEW_JUMP_TARGET_LABEL(c, cleanup_body);
@@ -3197,9 +3198,16 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         /* add exception raised to the res list */
         ADDOP_I(c, NO_LOCATION, LIST_APPEND, 3); // exc
         ADDOP(c, NO_LOCATION, POP_TOP); // lasti
-        ADDOP_JUMP(c, NO_LOCATION, JUMP, except);
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, except_with_error);
 
         USE_LABEL(c, except);
+        ADDOP(c, NO_LOCATION, NOP);  // to hold a propagated location info
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, except_with_error);
+
+        USE_LABEL(c, no_match);
+        ADDOP(c, loc, POP_TOP);  // match (None)
+
+        USE_LABEL(c, except_with_error);
 
         if (i == n - 1) {
             /* Add exc to the list (if not None it's the unhandled part of the EG) */
