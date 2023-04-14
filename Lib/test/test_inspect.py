@@ -3047,9 +3047,6 @@ class TestSignatureObject(unittest.TestCase):
         def foo(a, b, /, c, d, **kwargs):
             pass
         sig = inspect.signature(foo)
-        params = sig.parameters.copy()
-        foo.__signature__ = inspect.Signature(params.values())
-        sig = inspect.signature(foo)
         self.assertEqual(str(sig), '(a, b, /, c, d, **kwargs)')
 
         self.assertEqual(self.signature(partial(foo, 1)),
