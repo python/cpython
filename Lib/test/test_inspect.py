@@ -3583,6 +3583,14 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(sig.return_annotation, 42)
         self.assertEqual(sig, inspect.signature(test))
 
+    def test_signature_replaced(self):
+        def test():
+            pass
+
+        spam_param = inspect.Parameter('spam', inspect.Parameter.POSITIONAL_ONLY)
+        sig = test.__signature__ = inspect.Signature(parameters=(spam_param,))
+        self.assertEqual(sig, inspect.signature(test))
+
     def test_signature_on_mangled_parameters(self):
         class Spam:
             def foo(self, __p1:1=2, *, __p2:2=3):
