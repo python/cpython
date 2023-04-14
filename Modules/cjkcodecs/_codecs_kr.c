@@ -60,7 +60,7 @@ ENCODER(euc_kr)
         }
         else {
             /* Mapping is found in CP949 extension,
-               but we encode it in KS X 1001:1998 Annex 3,
+               but we encode it in KS X 1001:1998,
                make-up sequence for EUC-KR. */
 
             REQUIRE_OUTBUF(8);
@@ -120,7 +120,7 @@ DECODER(euc_kr)
 
         if (c == EUCKR_JAMO_FIRSTBYTE &&
             INBYTE2 == EUCKR_JAMO_FILLER) {
-            /* KS X 1001:1998 Annex 3 make-up sequence */
+            /* KS X 1001:1998 make-up sequence */
             DBCHAR cho, jung, jong;
 
             REQUIRE_INBUF(8);

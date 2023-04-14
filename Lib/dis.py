@@ -120,7 +120,10 @@ def distb(tb=None, *, file=None, show_caches=False, adaptive=False):
     """Disassemble a traceback (default: last traceback)."""
     if tb is None:
         try:
-            tb = sys.last_traceback
+            if hasattr(sys, 'last_exc'):
+                tb = sys.last_exc.__traceback__
+            else:
+                tb = sys.last_traceback
         except AttributeError:
             raise RuntimeError("no last traceback to disassemble") from None
         while tb.tb_next: tb = tb.tb_next
@@ -580,7 +583,12 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                            instr.offset > 0)
         if new_source_line:
             print(file=file)
-        is_current_instr = instr.offset == lasti
+        if show_caches:
+            is_current_instr = instr.offset == lasti
+        else:
+            # Each CACHE takes 2 bytes
+            is_current_instr = instr.offset <= lasti \
+                <= instr.offset + 2 * _inline_cache_entries[_deoptop(instr.opcode)]
         print(instr._disassemble(lineno_width, is_current_instr, offset_width),
               file=file)
     if exception_entries:

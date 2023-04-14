@@ -83,6 +83,7 @@ def_op('PUSH_NULL', 2)
 def_op('INTERPRETER_EXIT', 3)
 
 def_op('END_FOR', 4)
+def_op('END_SEND', 5)
 
 def_op('NOP', 9)
 
@@ -90,6 +91,10 @@ def_op('UNARY_NEGATIVE', 11)
 def_op('UNARY_NOT', 12)
 
 def_op('UNARY_INVERT', 15)
+
+# We reserve 17 as it is the initial value for the specializing counter
+# This helps us catch cases where we attempt to execute a cache.
+def_op('RESERVED', 17)
 
 def_op('BINARY_SUBSCR', 25)
 def_op('BINARY_SLICE', 26)
@@ -154,8 +159,6 @@ hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
 name_op('IMPORT_FROM', 109)     # Index in name list
 jrel_op('JUMP_FORWARD', 110)    # Number of words to skip
-jrel_op('JUMP_IF_FALSE_OR_POP', 111) # Number of words to skip
-jrel_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
 jrel_op('POP_JUMP_IF_FALSE', 114)
 jrel_op('POP_JUMP_IF_TRUE', 115)
 name_op('LOAD_GLOBAL', 116)     # Index in name list
@@ -193,8 +196,6 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
-def_op('COMPARE_AND_BRANCH', 141)   # Comparison and jump
-hascompare.append(141)
 
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
@@ -224,6 +225,28 @@ def_op('KW_NAMES', 172)
 hasconst.append(172)
 def_op('CALL_INTRINSIC_1', 173)
 def_op('CALL_INTRINSIC_2', 174)
+
+# Instrumented instructions
+MIN_INSTRUMENTED_OPCODE = 238
+
+def_op('INSTRUMENTED_POP_JUMP_IF_NONE', 238)
+def_op('INSTRUMENTED_POP_JUMP_IF_NOT_NONE', 239)
+def_op('INSTRUMENTED_RESUME', 240)
+def_op('INSTRUMENTED_CALL', 241)
+def_op('INSTRUMENTED_RETURN_VALUE', 242)
+def_op('INSTRUMENTED_YIELD_VALUE', 243)
+def_op('INSTRUMENTED_CALL_FUNCTION_EX', 244)
+def_op('INSTRUMENTED_JUMP_FORWARD', 245)
+def_op('INSTRUMENTED_JUMP_BACKWARD', 246)
+def_op('INSTRUMENTED_RETURN_CONST', 247)
+def_op('INSTRUMENTED_FOR_ITER', 248)
+def_op('INSTRUMENTED_POP_JUMP_IF_FALSE', 249)
+def_op('INSTRUMENTED_POP_JUMP_IF_TRUE', 250)
+def_op('INSTRUMENTED_END_FOR', 251)
+def_op('INSTRUMENTED_END_SEND', 252)
+def_op('INSTRUMENTED_INSTRUCTION', 253)
+def_op('INSTRUMENTED_LINE', 254)
+# 255 is reserved
 
 hasarg.extend([op for op in opmap.values() if op >= HAVE_ARGUMENT])
 
@@ -316,10 +339,10 @@ _specializations = {
         "CALL_NO_KW_TUPLE_1",
         "CALL_NO_KW_TYPE_1",
     ],
-    "COMPARE_AND_BRANCH": [
-        "COMPARE_AND_BRANCH_FLOAT",
-        "COMPARE_AND_BRANCH_INT",
-        "COMPARE_AND_BRANCH_STR",
+    "COMPARE_OP": [
+        "COMPARE_OP_FLOAT",
+        "COMPARE_OP_INT",
+        "COMPARE_OP_STR",
     ],
     "FOR_ITER": [
         "FOR_ITER_LIST",
@@ -377,20 +400,12 @@ _specializations = {
 _specialized_instructions = [
     opcode for family in _specializations.values() for opcode in family
 ]
-_specialization_stats = [
-    "success",
-    "failure",
-    "hit",
-    "deferred",
-    "miss",
-    "deopt",
-]
 
 _cache_format = {
     "LOAD_GLOBAL": {
         "counter": 1,
         "index": 1,
-        "module_keys_version": 2,
+        "module_keys_version": 1,
         "builtin_keys_version": 1,
     },
     "BINARY_OP": {
@@ -402,13 +417,8 @@ _cache_format = {
     "COMPARE_OP": {
         "counter": 1,
     },
-    "COMPARE_AND_BRANCH": {
-        "counter": 1,
-    },
     "BINARY_SUBSCR": {
         "counter": 1,
-        "type_version": 2,
-        "func_version": 1,
     },
     "FOR_ITER": {
         "counter": 1,
@@ -427,7 +437,6 @@ _cache_format = {
     "CALL": {
         "counter": 1,
         "func_version": 2,
-        "min_args": 1,
     },
     "STORE_SUBSCR": {
         "counter": 1,
