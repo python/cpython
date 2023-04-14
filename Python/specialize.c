@@ -327,7 +327,7 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_SUPER_BAD_CLASS 10
 #define SPEC_FAIL_SUPER_SHADOWED 11
 #define SPEC_FAIL_SUPER_NOT_METHOD 12
-#define SPEC_FAIL_SUPER_ERROR 13
+#define SPEC_FAIL_SUPER_ERROR_OR_NOT_FOUND 13
 
 /* Attributes */
 
@@ -533,22 +533,20 @@ _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *class, PyObject *
         goto fail;
     }
     PyTypeObject *tp = (PyTypeObject *)class;
-    int meth_found = 0;
-    PyObject *res = _PySuper_Lookup(tp, self, name, &meth_found);
+    PyObject *res = _PySuper_LookupDescr(tp, self, name);
     if (res == NULL) {
-        SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_ERROR);
+        SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_ERROR_OR_NOT_FOUND);
         PyErr_Clear();
         goto fail;
     }
-    if (!meth_found) {
-        SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_NOT_METHOD);
-        goto fail;
+    if (_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+        write_u32(cache->class_version, tp->tp_version_tag);
+        write_u32(cache->self_type_version, Py_TYPE(self)->tp_version_tag);
+        write_obj(cache->method, res);  // borrowed
+        instr->op.code = LOAD_SUPER_ATTR_METHOD;
+        goto success;
     }
-    write_u32(cache->class_version, tp->tp_version_tag);
-    write_u32(cache->self_type_version, Py_TYPE(self)->tp_version_tag);
-    write_obj(cache->method, res);  // borrowed
-    instr->op.code = LOAD_SUPER_ATTR_METHOD;
-    goto success;
+    SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_NOT_METHOD);
 
 fail:
     STAT_INC(LOAD_SUPER_ATTR, failure);
