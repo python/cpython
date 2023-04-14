@@ -3104,7 +3104,6 @@ if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # resources get picked up before their $srcdir counterparts.
     #   Objects/ -> typeslots.inc
     #   Include/ -> Python.h
-    #   Python/  -> importlib.h
     # (A side effect of this is that these resources will automatically be
     #  regenerated when building out-of-tree, regardless of whether or not
     #  the $srcdir counterpart is up-to-date.  This is an acceptable trade
