@@ -9406,7 +9406,8 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
             Py_INCREF(res);
             if (meth_found && _PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
                 *meth_found = 1;
-            } else {
+            }
+            else {
                 descrgetfunc f = Py_TYPE(res)->tp_descr_get;
                 if (f != NULL) {
                     PyObject *res2;
@@ -9433,7 +9434,8 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
 
   skip:
     if (su == NULL) {
-        su = (superobject *)PyObject_Vectorcall((PyObject *)&PySuper_Type, NULL, 0, NULL);
+        PyObject *args[] = {(PyObject *)su_type, su_obj};
+        su = (superobject *)PyObject_Vectorcall((PyObject *)&PySuper_Type, args, 2, NULL);
         if (su == NULL) {
             return NULL;
         }
