@@ -13,6 +13,7 @@ jobs:
   add-to-project:
     name: Add issues to projects
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       matrix:
         include:
@@ -22,7 +23,7 @@ jobs:
           - { project:  3, label: expert-subinterpreters }
           - { project: 29, label: expert-asyncio }
           - { project: 32, label: sprint }
-    
+
     steps:
       - uses: actions/add-to-project@v0.1.0
         with:
