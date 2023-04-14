@@ -1554,12 +1554,28 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
-        inst(LOAD_SUPER_ATTR, (global_super, class, self -- res2 if (oparg & 1), res)) {
+        family(load_super_attr, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
+            LOAD_SUPER_ATTR,
+            LOAD_SUPER_ATTR_METHOD,
+        };
+
+        inst(LOAD_SUPER_ATTR, (unused/9, global_super, class, self -- res2 if (oparg & 1), res)) {
             PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 2);
+            int load_method = oparg & 1;
+            #if ENABLE_SPECIALIZATION
+            _PySuperAttrCache *cache = (_PySuperAttrCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                next_instr--;
+                _Py_Specialize_LoadSuperAttr(global_super, class, self, next_instr, name, load_method);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(LOAD_SUPER_ATTR, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
             if (global_super == (PyObject *)&PySuper_Type && PyType_Check(class)) {
                 int meth_found = 0;
                 Py_DECREF(global_super);
-                res = _PySuper_Lookup((PyTypeObject *)class, self, name, oparg & 1 ? &meth_found : NULL);
+                res = _PySuper_Lookup((PyTypeObject *)class, self, name, load_method ? &meth_found : NULL);
                 Py_DECREF(class);
                 if (res == NULL) {
                     Py_DECREF(self);
@@ -1586,6 +1602,19 @@ dummy_func(
                 Py_DECREF(super);
                 ERROR_IF(res == NULL, error);
             }
+        }
+
+        inst(LOAD_SUPER_ATTR_METHOD, (unused/1, class_version/2, self_type_version/2, method/4, global_super, class, self -- res2, res)) {
+            DEOPT_IF(global_super != (PyObject *)&PySuper_Type, LOAD_SUPER_ATTR);
+            DEOPT_IF(!PyType_Check(class), LOAD_SUPER_ATTR);
+            DEOPT_IF(((PyTypeObject *)class)->tp_version_tag != class_version, LOAD_SUPER_ATTR);
+            PyTypeObject *self_type = Py_TYPE(self);
+            DEOPT_IF(self_type->tp_version_tag != self_type_version, LOAD_SUPER_ATTR);
+            res2 = method;
+            res = self; // transfer ownership
+            Py_INCREF(res2);
+            Py_DECREF(global_super);
+            Py_DECREF(class);
         }
 
         family(load_attr, INLINE_CACHE_ENTRIES_LOAD_ATTR) = {
