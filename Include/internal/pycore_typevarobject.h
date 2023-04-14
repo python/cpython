@@ -11,6 +11,8 @@ extern "C" {
 extern PyTypeObject _PyTypeVar_Type;
 extern PyTypeObject _PyTypeVarTuple_Type;
 extern PyTypeObject _PyParamSpec_Type;
+extern PyTypeObject _PyParamSpecArgs_Type;
+extern PyTypeObject _PyParamSpecKwargs_Type;
 
 extern PyObject *_Py_make_typevar(const char *, PyObject *);
 extern PyObject *_Py_make_paramspec(const char *);

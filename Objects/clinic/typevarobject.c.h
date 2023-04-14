@@ -222,6 +222,114 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(paramspecargs_new__doc__,
+"paramspecargs(origin)\n"
+"--\n"
+"\n"
+"Create a ParamSpecArgs object.");
+
+static PyObject *
+paramspecargs_new_impl(PyTypeObject *type, PyObject *origin);
+
+static PyObject *
+paramspecargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(origin), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"origin", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "paramspecargs",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *origin;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    origin = fastargs[0];
+    return_value = paramspecargs_new_impl(type, origin);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(paramspeckwargs_new__doc__,
+"paramspeckwargs(origin)\n"
+"--\n"
+"\n"
+"Create a ParamSpecKwargs object.");
+
+static PyObject *
+paramspeckwargs_new_impl(PyTypeObject *type, PyObject *origin);
+
+static PyObject *
+paramspeckwargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(origin), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"origin", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "paramspeckwargs",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *origin;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    origin = fastargs[0];
+    return_value = paramspeckwargs_new_impl(type, origin);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(typevartuple__doc__,
 "typevartuple(name)\n"
 "--\n"
@@ -287,4 +395,4 @@ typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2514140af973a73f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0a84cbcb2d2232fe input=a9049054013a1b77]*/

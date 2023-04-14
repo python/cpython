@@ -7,9 +7,11 @@
 /*[clinic input]
 class typevar "typevarobject *" "&_PyTypeVar_Type"
 class paramspec "paramspecobject *" "&_PyParamSpec_Type"
+class paramspecargs "paramspecargsobject *" "&_PyParamSpecArgs_Type"
+class paramspeckwargs "paramspeckwargsobject *" "&_PyParamSpecKwargs_Type"
 class typevartuple "typevartupleobject *" "&_PyTypeVarTuple_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d1b368d1521582f6]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=74cb9c15a049111b]*/
 
 #include "clinic/typevarobject.c.h"
 
@@ -154,12 +156,165 @@ PyTypeObject _PyTypeVar_Type = {
     .tp_name = "typing.TypeVar",
     .tp_basicsize = sizeof(typevarobject),
     .tp_dealloc = typevarobject_dealloc,
+    .tp_alloc = PyType_GenericAlloc,
     .tp_free = PyObject_GC_Del,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
     .tp_traverse = typevarobject_traverse,
     .tp_repr = typevarobject_repr,
     .tp_members = typevar_members,
     .tp_new = typevar_new,
+};
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *__origin__;
+} paramspecargsobject;
+
+static void paramspecargsobject_dealloc(PyObject *self)
+{
+    paramspecargsobject *psa = (paramspecargsobject *)self;
+
+    _PyObject_GC_UNTRACK(self);
+
+    Py_XDECREF(psa->__origin__);
+
+    Py_TYPE(self)->tp_free(self);
+}
+
+static int paramspecargsobject_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    paramspecargsobject *psa = (paramspecargsobject *)self;
+    Py_VISIT(psa->__origin__);
+    return 0;
+}
+
+static PyObject *paramspecargsobject_repr(PyObject *self)
+{
+    paramspecargsobject *psa = (paramspecargsobject *)self;
+
+    return PyUnicode_FromFormat("%R.args", psa->__origin__);
+}
+
+static PyMemberDef paramspecargs_members[] = {
+    {"__origin__", T_OBJECT, offsetof(paramspecargsobject, __origin__), READONLY},
+    {0}
+};
+
+static paramspecargsobject *paramspecargsobject_new(PyObject *origin)
+{
+    paramspecargsobject *psa = PyObject_GC_New(paramspecargsobject, &_PyParamSpecArgs_Type);
+    if (psa == NULL) {
+        return NULL;
+    }
+    psa->__origin__ = Py_NewRef(origin);
+    _PyObject_GC_TRACK(psa);
+    return psa;
+}
+
+/*[clinic input]
+@classmethod
+paramspecargs.__new__ as paramspecargs_new
+
+    origin: object
+
+Create a ParamSpecArgs object.
+[clinic start generated code]*/
+
+static PyObject *
+paramspecargs_new_impl(PyTypeObject *type, PyObject *origin)
+/*[clinic end generated code: output=9a1463dc8942fe4e input=3596a0bb6183c208]*/
+{
+    return (PyObject *)paramspecargsobject_new(origin);
+}
+
+PyTypeObject _PyParamSpecArgs_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "typing.ParamSpecArgs",
+    .tp_basicsize = sizeof(paramspecargsobject),
+    .tp_dealloc = paramspecargsobject_dealloc,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_free = PyObject_GC_Del,
+    .tp_repr = paramspecargsobject_repr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
+    .tp_traverse = paramspecargsobject_traverse,
+    .tp_members = paramspecargs_members,
+    .tp_new = paramspecargs_new,
+};
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *__origin__;
+} paramspeckwargsobject;
+
+static void paramspeckwargsobject_dealloc(PyObject *self)
+{
+    paramspeckwargsobject *psk = (paramspeckwargsobject *)self;
+
+    _PyObject_GC_UNTRACK(self);
+
+    Py_XDECREF(psk->__origin__);
+
+    Py_TYPE(self)->tp_free(self);
+}
+
+static int paramspeckwargsobject_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    paramspeckwargsobject *psk = (paramspeckwargsobject *)self;
+    Py_VISIT(psk->__origin__);
+    return 0;
+}
+
+static PyObject *paramspeckwargsobject_repr(PyObject *self)
+{
+    paramspeckwargsobject *psk = (paramspeckwargsobject *)self;
+
+    return PyUnicode_FromFormat("%R.kwargs", psk->__origin__);
+}
+
+static PyMemberDef paramspeckwargs_members[] = {
+    {"__origin__", T_OBJECT, offsetof(paramspeckwargsobject, __origin__), READONLY},
+    {0}
+};
+
+static paramspeckwargsobject *paramspeckwargsobject_new(PyObject *origin)
+{
+    paramspeckwargsobject *psk = PyObject_GC_New(paramspeckwargsobject, &_PyParamSpecKwargs_Type);
+    if (psk == NULL) {
+        return NULL;
+    }
+    psk->__origin__ = Py_NewRef(origin);
+    _PyObject_GC_TRACK(psk);
+    return psk;
+}
+
+/*[clinic input]
+@classmethod
+paramspeckwargs.__new__ as paramspeckwargs_new
+
+    origin: object
+
+Create a ParamSpecKwargs object.
+[clinic start generated code]*/
+
+static PyObject *
+paramspeckwargs_new_impl(PyTypeObject *type, PyObject *origin)
+/*[clinic end generated code: output=277b11967ebaf4ab input=981bca9b0cf9e40a]*/
+{
+    return (PyObject *)paramspeckwargsobject_new(origin);
+}
+
+PyTypeObject _PyParamSpecKwargs_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "typing.ParamSpecKwargs",
+    .tp_basicsize = sizeof(paramspeckwargsobject),
+    .tp_dealloc = paramspeckwargsobject_dealloc,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_free = PyObject_GC_Del,
+    .tp_repr = paramspeckwargsobject_repr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
+    .tp_traverse = paramspeckwargsobject_traverse,
+    .tp_members = paramspeckwargs_members,
+    .tp_new = paramspeckwargs_new,
 };
 
 typedef struct {
@@ -211,10 +366,26 @@ static PyMemberDef paramspec_members[] = {
     {0}
 };
 
+static PyObject *paramspecobject_args(PyObject *self, void *unused)
+{
+    return (PyObject *)paramspecargsobject_new(self);
+}
+
+static PyObject *paramspecobject_kwargs(PyObject *self, void *unused)
+{
+    return (PyObject *)paramspeckwargsobject_new(self);
+}
+
+static PyGetSetDef paramspec_getset[] = {
+    {"args", (getter)paramspecobject_args, NULL, "Represents positional arguments.", NULL},
+    {"kwargs", (getter)paramspecobject_kwargs, NULL, "Represents keyword arguments.", NULL},
+    {0},
+};
+
 static paramspecobject *paramspecobject_alloc(const char *name, PyObject *bound, bool covariant,
                                               bool contravariant, bool autovariance)
 {
-    paramspecobject *ps = PyObject_New(paramspecobject, &_PyParamSpec_Type);
+    paramspecobject *ps = PyObject_GC_New(paramspecobject, &_PyParamSpec_Type);
     if (ps == NULL) {
         return NULL;
     }
@@ -227,6 +398,7 @@ static paramspecobject *paramspecobject_alloc(const char *name, PyObject *bound,
     ps->covariant = covariant;
     ps->contravariant = contravariant;
     ps->autovariance = autovariance;
+    _PyObject_GC_TRACK(ps);
     return ps;
 }
 
@@ -270,11 +442,13 @@ PyTypeObject _PyParamSpec_Type = {
     .tp_name = "typing.ParamSpec",
     .tp_basicsize = sizeof(paramspecobject),
     .tp_dealloc = paramspecobject_dealloc,
+    .tp_alloc = PyType_GenericAlloc,
     .tp_free = PyObject_GC_Del,
     .tp_repr = paramspecobject_repr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
     .tp_traverse = paramspecobject_traverse,
     .tp_members = paramspec_members,
+    .tp_getset = paramspec_getset,
     .tp_new = paramspec_new,
 };
 
@@ -342,6 +516,7 @@ PyTypeObject _PyTypeVarTuple_Type = {
     .tp_name = "typing.TypeVarTuple",
     .tp_basicsize = sizeof(typevartupleobject),
     .tp_dealloc = typevartupleobject_dealloc,
+    .tp_alloc = PyType_GenericAlloc,
     .tp_repr = typevartupleobject_repr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
     .tp_members = typevartuple_members,

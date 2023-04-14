@@ -842,7 +842,6 @@ extern "C" {
     INIT_ID(code), \
     INIT_ID(command), \
     INIT_ID(comment_factory), \
-    INIT_ID(constraints), \
     INIT_ID(consts), \
     INIT_ID(context), \
     INIT_ID(contravariant), \
@@ -1073,6 +1072,7 @@ extern "C" {
     INIT_ID(optimize), \
     INIT_ID(options), \
     INIT_ID(order), \
+    INIT_ID(origin), \
     INIT_ID(out_fd), \
     INIT_ID(outgoing), \
     INIT_ID(overlapped), \

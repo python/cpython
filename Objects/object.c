@@ -14,6 +14,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
+#include "pycore_typevarobject.h" // _PyTypeVar_Type etc.
 #include "pycore_unionobject.h"   // _PyUnion_Type
 #include "pycore_interpreteridobject.h"  // _PyInterpreterID_Type
 
@@ -2083,6 +2084,11 @@ static PyTypeObject* static_types[] = {
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,
     &_PyWeakref_RefType,
+    &_PyTypeVar_Type,
+    &_PyTypeVarTuple_Type,
+    &_PyParamSpec_Type,
+    &_PyParamSpecArgs_Type,
+    &_PyParamSpecKwargs_Type,
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class
