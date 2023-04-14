@@ -25,9 +25,9 @@ def writeinst(opc:str, arg:int=0):
     return bytes(inst)
 
 
-###################
-# Type prop tests #
-###################
+################################################
+# Type prop tests: TYPE_SET and TYPE_OVERWRITE #
+################################################
 
 def test_typeprop1(a):
     # Dummy code won't be ran
@@ -82,6 +82,10 @@ expected = [
 insts = dis.get_instructions(test_typeprop1, tier2=True)
 for x,y in zip(insts, expected):
     assert x.opname == y
+
+################################################
+# Type prop tests: TYPE_SWAP                   #
+################################################
 
 bytecode = b"".join([
     # Tests TYPE_SWAP
@@ -151,9 +155,10 @@ for x,y in zip(insts, expected):
 
 
 #######################################
-# Type guard                          #
+# Tests for: Type guard               #
 # + Float unboxing                    #
 # + Jump rewriting test               #
+# + Tier2 guard stability             #
 #######################################
 
 def test_guard_elimination(a,b):
@@ -264,10 +269,9 @@ for x,y in zip(insts, expected):
     assert x.opname == y.opname
 
 
-######################
-# Backward jump test #
-# + loop peeling     #
-######################
+##############################
+# Test: Backward jump offset #
+##############################
 
 def test_backwards_jump(a):
     for i in range(64):
@@ -288,6 +292,10 @@ instidx, jmp_target = next((i,x) for i,x in enumerate(insts) if x.offset == back
 assert jmp_target.opname == "NOP" # Space for an EXTENDED_ARG
 assert insts[instidx + 1].opname == "BB_TEST_ITER_RANGE" # The loop predicate
 
+
+######################
+# Test: Loop peeling #
+######################
 
 def test_loop_peeling(a):
     for i in range(64):
@@ -320,3 +328,48 @@ endidx, _ = next(
 assert any(1 for _ in
     filter(lambda i: i.opname == 'BINARY_OP_ADD_FLOAT_UNBOXED', insts[instidx:endidx]))
 
+
+##################################
+# Test: Container specialisation #
+##################################
+
+def test_container(l):
+    l[2] = l[0] + l[1]
+
+
+trigger_tier2(test_container, ([1,2,3,4],))
+insts = dis.get_instructions(test_container, tier2=True)
+expected = [
+    "RESUME_QUICK",
+    "LOAD_FAST",
+    "LOAD_CONST",
+
+    "CHECK_LIST",
+    "NOP",
+    "BB_BRANCH_IF_FLAG_UNSET", # Fallthrough!
+
+    # Type prop from const array: No type guard needed
+    "BINARY_SUBSCR_LIST_INT_REST",
+    "LOAD_FAST",
+    "LOAD_CONST",
+    # CHECK_LIST should eliminate the type guard here
+    "BINARY_SUBSCR_LIST_INT_REST",
+
+    # We haven't implemented type prop into container types
+    # so these checks should get generated
+    "BINARY_CHECK_FLOAT",
+    "NOP",
+    "BB_BRANCH_IF_FLAG_SET",
+    "BINARY_CHECK_INT",
+    "NOP",
+    "BB_BRANCH_IF_FLAG_UNSET",
+    "BINARY_OP_ADD_INT_REST",
+    
+    "LOAD_FAST",
+    "LOAD_CONST",
+    # CHECK_LIST should eliminate the type guard here
+    "STORE_SUBSCR_LIST_INT_REST",
+    "RETURN_CONST",
+]
+for x,y in zip(insts, expected):
+    assert x.opname == y
