@@ -59,20 +59,26 @@
     #define USE_COMPUTED_GOTOS 0
 #endif
 
-#define _PyJIT_RECORD(CFRAME, NEXT_INSTR)                                                    \
-    do {                                                                                     \
-        if ((CFRAME).jit_recording_end) {                                                    \
-            if ((CFRAME).jit_recording_size < _PyJIT_MAX_RECORDING_LENGTH) {                 \
-                if ((CFRAME).jit_recording_size == 0 ||                                      \
-                    (CFRAME).jit_recording[cframe.jit_recording_size - 1] != (NEXT_INSTR)) { \
-                    (CFRAME).jit_recording[cframe.jit_recording_size++] = (NEXT_INSTR);      \
-                }                                                                            \
-            }                                                                                \
-            else {                                                                           \
-                (CFRAME).jit_recording_end = NULL;                                           \
-            }                                                                                \
-        }                                                                                    \
-    } while (0)
+#ifndef _PyJIT_ACTIVE
+    #define _PyJIT_RECORD(CFRAME, NEXT_INSTR)                                                    \
+        do {                                                                                     \
+            if ((CFRAME).jit_recording_end) {                                                    \
+                if ((CFRAME).jit_recording_size < _PyJIT_MAX_RECORDING_LENGTH) {                 \
+                    if ((CFRAME).jit_recording_size == 0 ||                                      \
+                        (CFRAME).jit_recording[cframe.jit_recording_size - 1] != (NEXT_INSTR)) { \
+                        (CFRAME).jit_recording[cframe.jit_recording_size++] = (NEXT_INSTR);      \
+                    }                                                                            \
+                }                                                                                \
+                else {                                                                           \
+                    (CFRAME).jit_recording_end = NULL;                                           \
+                }                                                                                \
+            }                                                                                    \
+        } while (0)
+#else
+    #define _PyJIT_RECORD(CFRAME, NEXT_INSTR) \
+        do {                                  \
+        } while (0)
+#endif
 
 #ifdef Py_STATS
 #define INSTRUCTION_START(op) \
