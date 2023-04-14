@@ -9,8 +9,6 @@ Contributed by Sokolov Yura, modified by Tupteq.
 
 import time
 
-from . import trace
-
 
 DEFAULT_ARG = 9
 
@@ -60,7 +58,6 @@ def bench_fannkuch(loops: int) -> float:
 
 loops = 1 << 2
 fannkuch_time = bench_fannkuch(loops)
-fannkuch = trace(fannkuch)
 fannkuch_jit_time = bench_fannkuch(loops)
 
 print(f"fannkuch_jit is {fannkuch_time / fannkuch_jit_time - 1:.0%} faster than fannkuch!")

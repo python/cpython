@@ -68,11 +68,7 @@ def _trace_instruction(code: types.CodeType, i: int):
         del _traces[code]
     return sys.monitoring.DISABLE
 
-def trace(f):
-    sys.monitoring.set_local_events(
-        sys.monitoring.OPTIMIZER_ID, f.__code__, sys.monitoring.events.JUMP
-    )
-    return f
+
 
 sys.monitoring.use_tool_id(sys.monitoring.OPTIMIZER_ID, "Justin")
 sys.monitoring.register_callback(
@@ -83,6 +79,9 @@ sys.monitoring.register_callback(
 sys.monitoring.register_callback(
     sys.monitoring.OPTIMIZER_ID, sys.monitoring.events.JUMP, _trace_jump
 )
+
+# It's important to realize *exactly* what this next line is doing:
+sys.monitoring.set_events(sys.monitoring.OPTIMIZER_ID, sys.monitoring.events.JUMP)
 
 _OFFSETOF_CO_CODE_ADAPTIVE = 192
 

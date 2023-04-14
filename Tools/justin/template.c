@@ -1,6 +1,7 @@
 #include "Python.h"
 
 #include "pycore_abstract.h"
+#include "pycore_dict.h"
 #include "pycore_emscripten_signal.h"
 #include "pycore_frame.h"
 #include "pycore_long.h"
@@ -26,6 +27,8 @@
             goto _return_deopt;  \
         }                        \
     } while (0)
+#undef PREDICT
+#define PREDICT(OP)
 #undef TARGET
 #define TARGET(OP) INSTRUCTION_START((OP));
 

@@ -15,8 +15,6 @@ Modified by Tupteq, Fredrik Johansson, and Daniel Nanz.
 
 import time
 
-from . import trace
-
 __contact__ = "collinwinter@google.com (Collin Winter)"
 DEFAULT_ITERATIONS = 20000
 DEFAULT_REFERENCE = 'sun'
@@ -137,8 +135,6 @@ def bench_nbody(loops, reference, iterations):
 
 loops = 1 << 4
 nbody_time = bench_nbody(loops, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)
-advance = trace(advance)
-report_energy = trace(report_energy)
 # bench_nbody(loops, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)
 nbody_jit_time = bench_nbody(loops, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)
 
