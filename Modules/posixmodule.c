@@ -16733,6 +16733,56 @@ INITFUNC(void)
     return PyModuleDef_Init(&posixmodule);
 }
 
+static PerfMapState perf_map_state;
+
+PyAPI_FUNC(void *) PyOS_PerfMapState_Init(void) {
+    char filename[100];
+    pid_t pid = getpid();
+    // Use nofollow flag to prevent symlink attacks.
+    int flags = O_WRONLY | O_CREAT | O_APPEND | O_NOFOLLOW | O_CLOEXEC;
+    snprintf(filename, sizeof(filename) - 1, "/tmp/perf-%jd.map",
+             (intmax_t)pid);
+    int fd = open(filename, flags, 0600);
+    if (fd == -1) {
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
+        return NULL;
+    }
+    else{
+        perf_map_state.perf_map = fdopen(fd, "a");
+        if (perf_map_state.perf_map == NULL) {
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
+            return NULL;
+        }
+    }
+    perf_map_state.map_lock = PyThread_allocate_lock();
+    return &perf_map_state;
+}
+
+PyAPI_FUNC(int) PyOS_WritePerfMapEntry(
+    const void *code_addr,
+    unsigned int code_size,
+    const char *entry_name
+) {
+    if (perf_map_state.perf_map == NULL) {
+        if(PyOS_PerfMapState_Init() == NULL){
+            return -1;
+        }
+    }
+    PyThread_acquire_lock(perf_map_state.map_lock, 1);
+    fprintf(perf_map_state.perf_map, "%p %x %s\n", code_addr, code_size, entry_name);
+    fflush(perf_map_state.perf_map);
+    PyThread_release_lock(perf_map_state.map_lock);
+    return 0;
+}
+
+PyAPI_FUNC(void) PyOS_PerfMapState_Fini(void) {
+    if (perf_map_state.perf_map != NULL) {
+        PyThread_free_lock(perf_map_state.map_lock);
+        fclose(perf_map_state.perf_map);
+        perf_map_state.perf_map = NULL;
+    }
+}
+
 #ifdef __cplusplus
 }
 #endif
