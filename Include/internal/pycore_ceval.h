@@ -67,7 +67,7 @@ typedef struct {
     void (*write_state)(void* state, const void *code_addr,
                         unsigned int code_size, PyCodeObject* code);
     // Callback to free the trampoline state
-    int (*free_state)(void* state);
+    void (*free_state)(void);
 } _PyPerf_Callbacks;
 
 extern int _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *);
