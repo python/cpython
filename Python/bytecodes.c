@@ -1989,10 +1989,9 @@ dummy_func(
             // _PyJumpBackwardCache *cache = (_PyJumpBackwardCache *)next_instr;
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                // printf("JIT: Recording started!\n");
+                next_instr[-1].op.code = JUMP_BACKWARD_RECORDING;
                 cframe.jit_recording_end = &next_instr[-1];
                 cframe.jit_recording_size = 0;
-                next_instr[-1].op.code = JUMP_BACKWARD_RECORDING;
                 GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
             }
             STAT_INC(JUMP_BACKWARD, deferred);
@@ -2002,24 +2001,17 @@ dummy_func(
         }
 
         inst(JUMP_BACKWARD_RECORDING, (unused/1, unused/4 --)) {
-            if (&next_instr[-1] == cframe.jit_recording_end) {
-                // printf("JIT: Recording succeeded!\n");
-                // printf("JIT: Compilation started!\n");
-                next_instr[-1].op.code = JUMP_BACKWARD_QUICK;  // XXX
+            next_instr--;
+            next_instr->op.code = JUMP_BACKWARD_QUICK;
+            if (next_instr == cframe.jit_recording_end) {
                 unsigned char *compiled = _PyJIT_CompileTrace(cframe.jit_recording_size, cframe.jit_recording);
                 if (compiled) {
-                    // printf("JIT: Compilation succeeded!\n");
-                    *(unsigned char **)(&next_instr[1]) = compiled;
-                    next_instr[-1].op.code = JUMP_BACKWARD_INTO_TRACE;
-                    GO_TO_INSTRUCTION(JUMP_BACKWARD_INTO_TRACE);
+                    next_instr->op.code = JUMP_BACKWARD_INTO_TRACE;
+                    *(unsigned char **)(&next_instr[2]) = compiled;
                 }
             }
-            else {
-                // printf("JIT: Recording failed!\n");
-            }
             cframe.jit_recording_end = NULL;
-            next_instr[-1].op.code = JUMP_BACKWARD_QUICK;
-            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+            DISPATCH_SAME_OPARG();
         }
 
         inst(JUMP_BACKWARD_INTO_TRACE, (unused/1, trace/4 --)) {
@@ -2028,7 +2020,7 @@ dummy_func(
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
             // printf("JIT: Entering trace for ");
-            // PyObject_Print(_PyFrame_GetFrameObject(frame), stdout, 0);
+            // PyObject_Print((PyObject *)_PyFrame_GetFrameObject(frame), stdout, 0);
             // printf("!\n");
             int status = ((int (*)(PyThreadState *, _PyInterpreterFrame *, PyObject **))(uintptr_t)trace)(tstate, frame, stack_pointer);
             // if (status) {
