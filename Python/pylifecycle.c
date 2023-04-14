@@ -1778,6 +1778,7 @@ Py_FinalizeEx(void)
      */
 
     _PyAtExit_Call(tstate->interp);
+    PyOS_PerfMapState_Fini();
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
