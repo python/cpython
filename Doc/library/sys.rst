@@ -220,6 +220,10 @@ always available.
 
    .. audit-event:: sys._current_exceptions "" sys._current_exceptions
 
+   .. versionchanged:: 3.12
+      Each value in the dictionary is now a single exception instance, rather
+      than a 3-tuple as returned from ``sys.exc_info()``.
+
 .. function:: breakpointhook()
 
    This hook function is called by built-in :func:`breakpoint`.  By default,
@@ -697,7 +701,7 @@ always available.
    the encoding used with the :term:`filesystem error handler <filesystem
    encoding and error handler>` to convert between Unicode filenames and bytes
    filenames. The filesystem error handler is returned from
-   :func:`getfilesystemencoding`.
+   :func:`getfilesystemencodeerrors`.
 
    For best compatibility, str should be used for filenames in all cases,
    although representing filenames as bytes is also supported. Functions
@@ -1102,22 +1106,25 @@ always available.
 
    .. versionadded:: 3.5
 
+.. data:: last_exc
+
+   This variable is not always defined; it is set to the exception instance
+   when an exception is not handled and the interpreter prints an error message
+   and a stack traceback.  Its intended use is to allow an interactive user to
+   import a debugger module and engage in post-mortem debugging without having
+   to re-execute the command that caused the error.  (Typical use is
+   ``import pdb; pdb.pm()`` to enter the post-mortem debugger; see :mod:`pdb`
+   module for more information.)
+
+   .. versionadded:: 3.12
 
 .. data:: last_type
           last_value
           last_traceback
 
-   These three variables are not always defined; they are set when an exception is
-   not handled and the interpreter prints an error message and a stack traceback.
-   Their intended use is to allow an interactive user to import a debugger module
-   and engage in post-mortem debugging without having to re-execute the command
-   that caused the error.  (Typical use is ``import pdb; pdb.pm()`` to enter the
-   post-mortem debugger; see :mod:`pdb` module for
-   more information.)
-
-   The meaning of the variables is the same as that of the return values from
-   :func:`exc_info` above.
-
+   These three variables are deprecated; use :data:`sys.last_exc` instead.
+   They hold the legacy representation of ``sys.last_exc``, as returned
+   from :func:`exc_info` above.
 
 .. data:: maxsize
 
@@ -1323,7 +1330,7 @@ always available.
 
    A string giving the site-specific directory prefix where the platform
    independent Python files are installed; on Unix, the default is
-   ``'/usr/local'``.  This can be set at build time with the ``--prefix``
+   :file:`/usr/local`. This can be set at build time with the :option:`--prefix`
    argument to the :program:`configure` script.  See
    :ref:`installation_paths` for derived paths.
 

@@ -135,6 +135,9 @@ Objects/stringlib/unicode_format.h	-	PyFieldNameIter_Type	-
 Objects/unicodeobject.c	-	EncodingMapType	-
 #Objects/unicodeobject.c	-	PyFieldNameIter_Type	-
 #Objects/unicodeobject.c	-	PyFormatterIter_Type	-
+Python/legacy_tracing.c	-	_PyLegacyEventHandler_Type	-
+Objects/object.c	-	_PyLegacyEventHandler_Type	-
+
 
 ##-----------------------
 ## static builtin structseq
@@ -297,6 +300,8 @@ Objects/object.c	-	_Py_NotImplementedStruct	-
 Objects/setobject.c	-	_dummy_struct	-
 Objects/setobject.c	-	_PySet_Dummy	-
 Objects/sliceobject.c	-	_Py_EllipsisObject	-
+Python/instrumentation.c	-	DISABLE	-
+Python/instrumentation.c	-	_PyInstrumentation_MISSING	-
 
 
 ##################################
@@ -311,11 +316,6 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 ##-----------------------
 ## static types
 
-Modules/_collectionsmodule.c	-	defdict_type	-
-Modules/_collectionsmodule.c	-	deque_type	-
-Modules/_collectionsmodule.c	-	dequeiter_type	-
-Modules/_collectionsmodule.c	-	dequereviter_type	-
-Modules/_collectionsmodule.c	-	tuplegetter_type	-
 Modules/_io/bufferedio.c	-	PyBufferedIOBase_Type	-
 Modules/_io/bytesio.c	-	_PyBytesIOBuffer_Type	-
 Modules/_io/iobase.c	-	PyIOBase_Type	-
@@ -386,14 +386,8 @@ Modules/_datetimemodule.c	-	PyDateTime_IsoCalendarDateType	-
 Modules/_datetimemodule.c	-	PyDateTime_TZInfoType	-
 Modules/_datetimemodule.c	-	PyDateTime_TimeType	-
 Modules/_datetimemodule.c	-	PyDateTime_TimeZoneType	-
-Modules/_pickle.c	-	Pdata_Type	-
-Modules/_pickle.c	-	PicklerMemoProxyType	-
-Modules/_pickle.c	-	Pickler_Type	-
-Modules/_pickle.c	-	UnpicklerMemoProxyType	-
-Modules/_pickle.c	-	Unpickler_Type	-
 Modules/ossaudiodev.c	-	OSSAudioType	-
 Modules/ossaudiodev.c	-	OSSMixerType	-
-Modules/socketmodule.c	-	sock_type	-
 Modules/xxmodule.c	-	Null_Type	-
 Modules/xxmodule.c	-	Str_Type	-
 Modules/xxmodule.c	-	Xxo_Type	-
@@ -414,8 +408,6 @@ Modules/_ctypes/_ctypes.c	-	PyExc_ArgError	-
 Modules/_cursesmodule.c	-	PyCursesError	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
 Modules/ossaudiodev.c	-	OSSAudioError	-
-Modules/socketmodule.c	-	socket_herror	-
-Modules/socketmodule.c	-	socket_gaierror	-
 Modules/xxlimited_35.c	-	ErrorObject	-
 Modules/xxmodule.c	-	ErrorObject	-
 
@@ -443,7 +435,6 @@ Modules/_datetimemodule.c	-	us_per_hour	-
 Modules/_datetimemodule.c	-	us_per_day	-
 Modules/_datetimemodule.c	-	us_per_week	-
 Modules/_datetimemodule.c	-	seconds_per_day	-
-Modules/arraymodule.c	array_array___reduce_ex___impl	array_reconstructor	-
 
 ## state
 Modules/_asynciomodule.c	-	fi_freelist	-
@@ -500,8 +491,6 @@ Modules/cjkcodecs/cjkcodecs.h	-	mapping_list	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-
 Modules/readline.c	-	libedit_history_start	-
-Modules/socketmodule.c	-	accept4_works	-
-Modules/socketmodule.c	-	sock_cloexec_works	-
 
 ##-----------------------
 ## state
@@ -519,7 +508,6 @@ Modules/_tkinter.c	-	command_mutex	-
 Modules/_tkinter.c	-	HeadFHCD	-
 Modules/_tkinter.c	-	stdin_ready	-
 Modules/_tkinter.c	-	event_tstate	-
-Modules/_xxinterpchannelsmodule.c	-	_globals	-
 Modules/readline.c	-	completer_word_break_characters	-
 Modules/readline.c	-	_history_length	-
 Modules/readline.c	-	should_auto_add_history	-
@@ -528,4 +516,3 @@ Modules/readline.c	-	sigwinch_ohandler	-
 Modules/readline.c	-	completed_input_string	-
 Modules/rotatingtree.c	-	random_stream	-
 Modules/rotatingtree.c	-	random_value	-
-Modules/socketmodule.c	-	defaulttimeout	-

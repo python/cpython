@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_atexit.h"          // struct atexit_runtime_state
 #include "pycore_atomic.h"          /* _Py_atomic_address */
 #include "pycore_ceval_state.h"     // struct _ceval_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
@@ -15,6 +16,7 @@ extern "C" {
 #include "pycore_global_objects.h"  // struct _Py_global_objects
 #include "pycore_import.h"          // struct _import_runtime_state
 #include "pycore_interp.h"          // PyInterpreterState
+#include "pycore_object_state.h"    // struct _py_object_runtime_state
 #include "pycore_parser.h"          // struct _parser_runtime_state
 #include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pyhash.h"          // struct pyhash_runtime_state
@@ -130,9 +132,7 @@ typedef struct pyruntimestate {
 
     struct _parser_runtime_state parser;
 
-#define NEXITFUNCS 32
-    void (*exitfuncs[NEXITFUNCS])(void);
-    int nexitfuncs;
+    struct _atexit_runtime_state atexit;
 
     struct _import_runtime_state imports;
     struct _ceval_runtime_state ceval;
@@ -150,6 +150,7 @@ typedef struct pyruntimestate {
     void *open_code_userdata;
     _Py_AuditHookEntry *audit_hook_head;
 
+    struct _py_object_runtime_state object_state;
     struct _Py_float_runtime_state float_state;
     struct _Py_unicode_runtime_state unicode_state;
 
@@ -161,7 +162,6 @@ typedef struct pyruntimestate {
     } types;
 
     /* All the objects that are shared by the runtime's interpreters. */
-    struct _Py_cached_objects cached_objects;
     struct _Py_static_objects static_objects;
 
     /* The following fields are here to avoid allocation during init.

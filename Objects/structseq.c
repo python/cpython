@@ -592,7 +592,7 @@ _PyStructSequence_FiniType(PyTypeObject *type)
     // Don't use Py_DECREF(): static type must not be deallocated
     Py_SET_REFCNT(type, 0);
 #ifdef Py_REF_DEBUG
-    _Py_DecRefTotal();
+    _Py_DecRefTotal(_PyInterpreterState_GET());
 #endif
 
     // Make sure that _PyStructSequence_InitType() will initialize

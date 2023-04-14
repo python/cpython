@@ -5,11 +5,13 @@
 from dataclasses import *
 
 import abc
+import io
 import pickle
 import inspect
 import builtins
 import types
 import weakref
+import traceback
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
@@ -282,6 +284,23 @@ class TestCase(unittest.TestCase):
             BUILTINS: int
         c = C(5)
         self.assertEqual(c.BUILTINS, 5)
+
+    def test_field_with_special_single_underscore_names(self):
+        # gh-98886
+
+        @dataclass
+        class X:
+            x: int = field(default_factory=lambda: 111)
+            _dflt_x: int = field(default_factory=lambda: 222)
+
+        X()
+
+        @dataclass
+        class Y:
+            y: int = field(default_factory=lambda: 111)
+            _HAS_DEFAULT_FACTORY: int = 222
+
+        assert Y(y=222).y == 222
 
     def test_field_named_like_builtin(self):
         # Attribute names can shadow built-in names
@@ -1526,6 +1545,16 @@ class TestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'dataclass type or instance'):
             fields(C())
 
+    def test_clean_traceback_from_fields_exception(self):
+        stdout = io.StringIO()
+        try:
+            fields(object)
+        except TypeError as exc:
+            traceback.print_exception(exc, file=stdout)
+        printed_traceback = stdout.getvalue()
+        self.assertNotIn("AttributeError", printed_traceback)
+        self.assertNotIn("__dataclass_fields__", printed_traceback)
+
     def test_helper_asdict(self):
         # Basic tests for asdict(), it should return a new dictionary.
         @dataclass
@@ -1706,19 +1735,17 @@ class TestCase(unittest.TestCase):
     def test_helper_asdict_defaultdict(self):
         # Ensure asdict() does not throw exceptions when a
         # defaultdict is a member of a dataclass
-
         @dataclass
         class C:
             mp: DefaultDict[str, List]
-
 
         dd = defaultdict(list)
         dd["x"].append(12)
         c = C(mp=dd)
         d = asdict(c)
 
-        assert d == {"mp": {"x": [12]}}
-        assert d["mp"] is not c.mp  # make sure defaultdict is copied
+        self.assertEqual(d, {"mp": {"x": [12]}})
+        self.assertTrue(d["mp"] is not c.mp)  # make sure defaultdict is copied
 
     def test_helper_astuple(self):
         # Basic tests for astuple(), it should return a new tuple.
@@ -1846,6 +1873,21 @@ class TestCase(unittest.TestCase):
         # Now, using a tuple_factory.  list is convenient here.
         t = astuple(c, tuple_factory=list)
         self.assertEqual(t, ['outer', T(1, ['inner', T(11, 12, 13)], 2)])
+
+    def test_helper_astuple_defaultdict(self):
+        # Ensure astuple() does not throw exceptions when a
+        # defaultdict is a member of a dataclass
+        @dataclass
+        class C:
+            mp: DefaultDict[str, List]
+
+        dd = defaultdict(list)
+        dd["x"].append(12)
+        c = C(mp=dd)
+        t = astuple(c)
+
+        self.assertEqual(t, ({"x": [12]},))
+        self.assertTrue(t[0] is not dd) # make sure defaultdict is copied
 
     def test_dynamic_class_creation(self):
         cls_dict = {'__annotations__': {'x': int, 'y': int},
@@ -3162,6 +3204,8 @@ class TestSlots(unittest.TestCase):
         with self.assertRaisesRegex(TypeError,
                                     "cannot create weak reference"):
             weakref.ref(a)
+        with self.assertRaises(AttributeError):
+            a.__weakref__
 
     def test_slots_weakref(self):
         @dataclass(slots=True, weakref_slot=True)
@@ -3170,7 +3214,9 @@ class TestSlots(unittest.TestCase):
 
         self.assertIn("__weakref__", A.__slots__)
         a = A(1)
-        weakref.ref(a)
+        a_ref = weakref.ref(a)
+
+        self.assertIs(a.__weakref__, a_ref)
 
     def test_slots_weakref_base_str(self):
         class Base:
@@ -3236,7 +3282,8 @@ class TestSlots(unittest.TestCase):
         self.assertIn("__weakref__", Base.__slots__)
         self.assertNotIn("__weakref__", A.__slots__)
         a = A(1)
-        weakref.ref(a)
+        a_ref = weakref.ref(a)
+        self.assertIs(a.__weakref__, a_ref)
 
     def test_weakref_slot_subclass_no_weakref_slot(self):
         @dataclass(slots=True, weakref_slot=True)
@@ -3252,7 +3299,8 @@ class TestSlots(unittest.TestCase):
         self.assertIn("__weakref__", Base.__slots__)
         self.assertNotIn("__weakref__", A.__slots__)
         a = A(1)
-        weakref.ref(a)
+        a_ref = weakref.ref(a)
+        self.assertIs(a.__weakref__, a_ref)
 
     def test_weakref_slot_normal_base_weakref_slot(self):
         class Base:
@@ -3267,7 +3315,8 @@ class TestSlots(unittest.TestCase):
         self.assertIn("__weakref__", Base.__slots__)
         self.assertNotIn("__weakref__", A.__slots__)
         a = A(1)
-        weakref.ref(a)
+        a_ref = weakref.ref(a)
+        self.assertIs(a.__weakref__, a_ref)
 
 
 class TestDescriptors(unittest.TestCase):

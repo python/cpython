@@ -255,7 +255,6 @@ class Printer:
             self.write(f".co_names = {co_names},")
             self.write(f".co_exceptiontable = {co_exceptiontable},")
             self.field(code, "co_flags")
-            self.write("._co_linearray_entry_size = 0,")
             self.field(code, "co_argcount")
             self.field(code, "co_posonlyargcount")
             self.field(code, "co_kwonlyargcount")
@@ -276,7 +275,6 @@ class Printer:
             self.write(f".co_qualname = {co_qualname},")
             self.write(f".co_linetable = {co_linetable},")
             self.write(f"._co_cached = NULL,")
-            self.write("._co_linearray = NULL,")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
             for i, op in enumerate(code.co_code[::2]):
                 if op == RESUME:
@@ -309,7 +307,7 @@ class Printer:
         return f"& {name}._object.ob_base.ob_base"
 
     def _generate_int_for_bits(self, name: str, i: int, digit: int) -> None:
-        sign = -1 if i < 0 else 0 if i == 0 else +1
+        sign = (i > 0) - (i < 0)
         i = abs(i)
         digits: list[int] = []
         while i:
@@ -318,10 +316,12 @@ class Printer:
         self.write("static")
         with self.indent():
             with self.block("struct"):
-                self.write("PyObject_VAR_HEAD")
+                self.write("PyObject ob_base;")
+                self.write("uintptr_t lv_tag;")
                 self.write(f"digit ob_digit[{max(1, len(digits))}];")
         with self.block(f"{name} =", ";"):
-            self.object_var_head("PyLong_Type", sign*len(digits))
+            self.object_head("PyLong_Type")
+            self.write(f".lv_tag = TAG_FROM_SIGN_AND_SIZE({sign}, {len(digits)}),")
             if digits:
                 ds = ", ".join(map(str, digits))
                 self.write(f".ob_digit = {{ {ds} }},")
@@ -345,7 +345,7 @@ class Printer:
             self.write('#error "PYLONG_BITS_IN_DIGIT should be 15 or 30"')
             self.write("#endif")
             # If neither clause applies, it won't compile
-        return f"& {name}.ob_base.ob_base"
+        return f"& {name}.ob_base"
 
     def generate_float(self, name: str, x: float) -> str:
         with self.block(f"static PyFloatObject {name} =", ";"):
