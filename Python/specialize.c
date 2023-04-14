@@ -277,7 +277,13 @@ _PyCode_Quicken(PyCodeObject *code)
         assert(opcode < MIN_INSTRUMENTED_OPCODE);
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
-            instructions[i + 1].cache = adaptive_counter_warmup();
+            // XXX
+            if (opcode == JUMP_BACKWARD) {
+                instructions[i + 1].cache = adaptive_counter_bits(63, ADAPTIVE_WARMUP_BACKOFF);
+            }
+            else {
+                instructions[i + 1].cache = adaptive_counter_warmup();
+            }
             i += caches;
             continue;
         }
