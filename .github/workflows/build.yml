@@ -33,6 +33,7 @@ jobs:
   check_source:
     name: 'Check for source changes'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       run_tests: ${{ steps.check.outputs.run_tests }}
     steps:
@@ -63,6 +64,7 @@ jobs:
   check_generated_files:
     name: 'Check if generated files are up to date'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
@@ -118,6 +120,7 @@ jobs:
   build_win32:
     name: 'Windows (x86)'
     runs-on: windows-latest
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
@@ -126,7 +129,6 @@ jobs:
     - uses: actions/checkout@v3
     - name: Build CPython
       run: .\PCbuild\build.bat -e -d -p Win32
-      timeout-minutes: 30
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
@@ -135,6 +137,7 @@ jobs:
   build_win_amd64:
     name: 'Windows (x64)'
     runs-on: windows-latest
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
@@ -145,7 +148,6 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
       run: .\PCbuild\build.bat -e -d -p x64
-      timeout-minutes: 30
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
@@ -154,6 +156,7 @@ jobs:
   build_macos:
     name: 'macOS'
     runs-on: macos-latest
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
@@ -184,6 +187,7 @@ jobs:
   build_ubuntu:
     name: 'Ubuntu'
     runs-on: ubuntu-20.04
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
@@ -241,6 +245,7 @@ jobs:
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
     runs-on: ubuntu-20.04
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     strategy:
@@ -290,6 +295,7 @@ jobs:
   build_asan:
     name: 'Address sanitizer'
     runs-on: ubuntu-20.04
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
