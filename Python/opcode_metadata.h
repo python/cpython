@@ -13,6 +13,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case RESUME:
             return 0;
+        case INSTRUMENTED_RESUME:
+            return 0;
         case LOAD_CLOSURE:
             return 0;
         case LOAD_FAST_CHECK:
@@ -39,6 +41,12 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case END_FOR:
             return 1+1;
+        case INSTRUMENTED_END_FOR:
+            return 2;
+        case END_SEND:
+            return 2;
+        case INSTRUMENTED_END_SEND:
+            return 2;
         case UNARY_NEGATIVE:
             return 1;
         case UNARY_NOT:
@@ -97,7 +105,11 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case RETURN_VALUE:
             return 1;
+        case INSTRUMENTED_RETURN_VALUE:
+            return 1;
         case RETURN_CONST:
+            return 0;
+        case INSTRUMENTED_RETURN_CONST:
             return 0;
         case GET_AITER:
             return 1;
@@ -109,6 +121,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case SEND_GEN:
             return 2;
+        case INSTRUMENTED_YIELD_VALUE:
+            return 1;
         case YIELD_VALUE:
             return 1;
         case POP_EXCEPT:
@@ -263,6 +277,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case FOR_ITER:
             return 1;
+        case INSTRUMENTED_FOR_ITER:
+            return 0;
         case FOR_ITER_LIST:
             return 1;
         case FOR_ITER_TUPLE:
@@ -286,6 +302,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case LOAD_ATTR_METHOD_LAZY_DICT:
             return 1;
         case KW_NAMES:
+            return 0;
+        case INSTRUMENTED_CALL:
             return 0;
         case CALL:
             return oparg + 2;
@@ -323,6 +341,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return oparg + 2;
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
             return oparg + 2;
+        case INSTRUMENTED_CALL_FUNCTION_EX:
+            return 0;
         case CALL_FUNCTION_EX:
             return ((oparg & 1) ? 1 : 0) + 3;
         case MAKE_FUNCTION:
@@ -339,9 +359,27 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case SWAP:
             return (oparg-2) + 2;
+        case INSTRUMENTED_LINE:
+            return 0;
+        case INSTRUMENTED_INSTRUCTION:
+            return 0;
+        case INSTRUMENTED_JUMP_FORWARD:
+            return 0;
+        case INSTRUMENTED_JUMP_BACKWARD:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_TRUE:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_FALSE:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_NONE:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_NOT_NONE:
+            return 0;
         case EXTENDED_ARG:
             return 0;
         case CACHE:
+            return 0;
+        case RESERVED:
             return 0;
         default:
             return -1;
@@ -358,6 +396,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case NOP:
             return 0;
         case RESUME:
+            return 0;
+        case INSTRUMENTED_RESUME:
             return 0;
         case LOAD_CLOSURE:
             return 1;
@@ -385,6 +425,12 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case END_FOR:
             return 0+0;
+        case INSTRUMENTED_END_FOR:
+            return 0;
+        case END_SEND:
+            return 1;
+        case INSTRUMENTED_END_SEND:
+            return 1;
         case UNARY_NEGATIVE:
             return 1;
         case UNARY_NOT:
@@ -443,7 +489,11 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case RETURN_VALUE:
             return 0;
+        case INSTRUMENTED_RETURN_VALUE:
+            return 0;
         case RETURN_CONST:
+            return 0;
+        case INSTRUMENTED_RETURN_CONST:
             return 0;
         case GET_AITER:
             return 1;
@@ -454,6 +504,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case SEND:
             return 2;
         case SEND_GEN:
+            return 1;
+        case INSTRUMENTED_YIELD_VALUE:
             return 1;
         case YIELD_VALUE:
             return 1;
@@ -609,6 +661,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case FOR_ITER:
             return 2;
+        case INSTRUMENTED_FOR_ITER:
+            return 0;
         case FOR_ITER_LIST:
             return 2;
         case FOR_ITER_TUPLE:
@@ -632,6 +686,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case LOAD_ATTR_METHOD_LAZY_DICT:
             return ((oparg & 1) ? 1 : 0) + 1;
         case KW_NAMES:
+            return 0;
+        case INSTRUMENTED_CALL:
             return 0;
         case CALL:
             return 1;
@@ -669,6 +725,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case CALL_NO_KW_METHOD_DESCRIPTOR_FAST:
             return 1;
+        case INSTRUMENTED_CALL_FUNCTION_EX:
+            return 0;
         case CALL_FUNCTION_EX:
             return 1;
         case MAKE_FUNCTION:
@@ -685,9 +743,27 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case SWAP:
             return (oparg-2) + 2;
+        case INSTRUMENTED_LINE:
+            return 0;
+        case INSTRUMENTED_INSTRUCTION:
+            return 0;
+        case INSTRUMENTED_JUMP_FORWARD:
+            return 0;
+        case INSTRUMENTED_JUMP_BACKWARD:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_TRUE:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_FALSE:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_NONE:
+            return 0;
+        case INSTRUMENTED_POP_JUMP_IF_NOT_NONE:
+            return 0;
         case EXTENDED_ARG:
             return 0;
         case CACHE:
+            return 0;
+        case RESERVED:
             return 0;
         default:
             return -1;
@@ -707,6 +783,7 @@ extern const struct opcode_metadata _PyOpcode_opcode_metadata[256];
 const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [NOP] = { true, INSTR_FMT_IX },
     [RESUME] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_RESUME] = { true, INSTR_FMT_IB },
     [LOAD_CLOSURE] = { true, INSTR_FMT_IB },
     [LOAD_FAST_CHECK] = { true, INSTR_FMT_IB },
     [LOAD_FAST] = { true, INSTR_FMT_IB },
@@ -720,6 +797,9 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [POP_TOP] = { true, INSTR_FMT_IX },
     [PUSH_NULL] = { true, INSTR_FMT_IX },
     [END_FOR] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_END_FOR] = { true, INSTR_FMT_IX },
+    [END_SEND] = { true, INSTR_FMT_IX },
+    [INSTRUMENTED_END_SEND] = { true, INSTR_FMT_IX },
     [UNARY_NEGATIVE] = { true, INSTR_FMT_IX },
     [UNARY_NOT] = { true, INSTR_FMT_IX },
     [UNARY_INVERT] = { true, INSTR_FMT_IX },
@@ -749,12 +829,15 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [RAISE_VARARGS] = { true, INSTR_FMT_IB },
     [INTERPRETER_EXIT] = { true, INSTR_FMT_IX },
     [RETURN_VALUE] = { true, INSTR_FMT_IX },
+    [INSTRUMENTED_RETURN_VALUE] = { true, INSTR_FMT_IX },
     [RETURN_CONST] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_RETURN_CONST] = { true, INSTR_FMT_IB },
     [GET_AITER] = { true, INSTR_FMT_IX },
     [GET_ANEXT] = { true, INSTR_FMT_IX },
     [GET_AWAITABLE] = { true, INSTR_FMT_IB },
     [SEND] = { true, INSTR_FMT_IBC },
     [SEND_GEN] = { true, INSTR_FMT_IBC },
+    [INSTRUMENTED_YIELD_VALUE] = { true, INSTR_FMT_IX },
     [YIELD_VALUE] = { true, INSTR_FMT_IX },
     [POP_EXCEPT] = { true, INSTR_FMT_IX },
     [RERAISE] = { true, INSTR_FMT_IB },
@@ -832,6 +915,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [GET_ITER] = { true, INSTR_FMT_IX },
     [GET_YIELD_FROM_ITER] = { true, INSTR_FMT_IX },
     [FOR_ITER] = { true, INSTR_FMT_IBC },
+    [INSTRUMENTED_FOR_ITER] = { true, INSTR_FMT_IB },
     [FOR_ITER_LIST] = { true, INSTR_FMT_IBC },
     [FOR_ITER_TUPLE] = { true, INSTR_FMT_IBC },
     [FOR_ITER_RANGE] = { true, INSTR_FMT_IBC },
@@ -844,6 +928,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [LOAD_ATTR_METHOD_NO_DICT] = { true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_METHOD_LAZY_DICT] = { true, INSTR_FMT_IBC00000000 },
     [KW_NAMES] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_CALL] = { true, INSTR_FMT_IB },
     [CALL] = { true, INSTR_FMT_IBC00 },
     [CALL_BOUND_METHOD_EXACT_ARGS] = { true, INSTR_FMT_IBC00 },
     [CALL_PY_EXACT_ARGS] = { true, INSTR_FMT_IBC00 },
@@ -862,6 +947,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = { true, INSTR_FMT_IBC00 },
     [CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS] = { true, INSTR_FMT_IBC00 },
     [CALL_NO_KW_METHOD_DESCRIPTOR_FAST] = { true, INSTR_FMT_IBC00 },
+    [INSTRUMENTED_CALL_FUNCTION_EX] = { true, INSTR_FMT_IX },
     [CALL_FUNCTION_EX] = { true, INSTR_FMT_IB },
     [MAKE_FUNCTION] = { true, INSTR_FMT_IB },
     [RETURN_GENERATOR] = { true, INSTR_FMT_IX },
@@ -870,7 +956,16 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [COPY] = { true, INSTR_FMT_IB },
     [BINARY_OP] = { true, INSTR_FMT_IBC },
     [SWAP] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_LINE] = { true, INSTR_FMT_IX },
+    [INSTRUMENTED_INSTRUCTION] = { true, INSTR_FMT_IX },
+    [INSTRUMENTED_JUMP_FORWARD] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_JUMP_BACKWARD] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_POP_JUMP_IF_NONE] = { true, INSTR_FMT_IB },
+    [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB },
     [EXTENDED_ARG] = { true, INSTR_FMT_IB },
     [CACHE] = { true, INSTR_FMT_IX },
+    [RESERVED] = { true, INSTR_FMT_IX },
 };
 #endif
