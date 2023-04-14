@@ -1,9 +1,12 @@
 #include "Python.h"
 #include "pycore_abstract.h"
+#include "pycore_dict.h"
 #include "pycore_floatobject.h"
+#include "pycore_intrinsics.h"
 #include "pycore_long.h"
 #include "pycore_object.h"
 #include "pycore_opcode.h"
+#include "pycore_pyerrors.h"
 #include "pycore_sliceobject.h"
 
 #include "ceval_macros.h"
@@ -74,7 +77,6 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
         _Py_CODEUNIT *instruction = trace[i];
         const Stencil *stencil = &stencils[instruction->op.code];
         if (stencil->nbytes == 0) {
-            printf("JIT: Unsupported opcode %d!\n", instruction->op.code);
             return NULL;
         }
         nbytes += stencil->nbytes;

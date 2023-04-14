@@ -1,14 +1,17 @@
 #include "Python.h"
 
 #include "pycore_abstract.h"
+#include "pycore_call.h"
 #include "pycore_dict.h"
 #include "pycore_emscripten_signal.h"
 #include "pycore_frame.h"
+#include "pycore_intrinsics.h"
 #include "pycore_long.h"
 #include "pycore_object.h"
 #include "pycore_opcode.h"
-#include "pycore_sliceobject.h"
+#include "pycore_pyerrors.h"
 #include "pycore_range.h"
+#include "pycore_sliceobject.h"
 
 #include "Python/ceval_macros.h"
 

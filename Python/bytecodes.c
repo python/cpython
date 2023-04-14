@@ -1977,13 +1977,16 @@ dummy_func(
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
+            // printf("JIT: Entering trace for ");
+            // fflush(stdout);
+            // PyFrameObject *frame_obj = _PyFrame_GetFrameObject(frame);
+            // PyObject_Print((PyObject *)frame_obj, stdout, 0);
+            // printf("\n");
+            // fflush(stdout);
             int status = ((int (*)(PyThreadState *, _PyInterpreterFrame *, PyObject **))(uintptr_t)trace)(tstate, frame, stack_pointer);
-            if (status) {
-                printf("Bailed with status %d!\n", status);
-            }
             next_instr = frame->prev_instr;
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            frame->stacktop = -1;
+            // printf("JIT: Done, with status %d (next instruction = %d, stack depth = %d)!\n", status, INSTR_OFFSET(), STACK_LEVEL());
             switch (status) {
                 case 0:
                 case -1:
@@ -2179,11 +2182,8 @@ dummy_func(
                 /* iterator ended normally */
                 assert(next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].op.code == END_FOR ||
                        next_instr[INLINE_CACHE_ENTRIES_FOR_ITER + oparg].op.code == INSTRUMENTED_END_FOR);
-                Py_DECREF(iter);
-                STACK_SHRINK(1);
-                /* Jump forward oparg, then skip following END_FOR instruction */
-                JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
-                DISPATCH();
+                next = Py_NewRef(Py_None);
+                JUMPBY(oparg);
             }
             // Common case: no jump, leave it to the code generator
         }
@@ -2229,11 +2229,9 @@ dummy_func(
                 it->it_seq = NULL;
                 Py_DECREF(seq);
             }
-            Py_DECREF(iter);
-            STACK_SHRINK(1);
             /* Jump forward oparg, then skip following END_FOR instruction */
-            JUMPBY(INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1);
-            DISPATCH();
+            JUMPBY(oparg);
+            next = Py_NewRef(Py_None);
         end_for_iter_list:
             // Common case: no jump, leave it to the code generator
         }
