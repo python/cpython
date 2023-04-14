@@ -13,8 +13,6 @@ class typevartuple "typevartupleobject *" "&_PyTypeVarTuple_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=74cb9c15a049111b]*/
 
-#include "clinic/typevarobject.c.h"
-
 typedef struct {
     PyObject_HEAD
     const char *name;
@@ -24,6 +22,8 @@ typedef struct {
     bool contravariant;
     bool autovariance;
 } typevarobject;
+
+#include "clinic/typevarobject.c.h"
 
 static void typevarobject_dealloc(PyObject *self)
 {
@@ -151,6 +151,27 @@ typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
                                            autovariance);
 }
 
+/*[clinic input]
+typevar.__typing_subst__ as typevar_typing_subst
+
+    arg: object
+
+[clinic start generated code]*/
+
+static PyObject *
+typevar_typing_subst_impl(typevarobject *self, PyObject *arg)
+/*[clinic end generated code: output=c76ced134ed8f4e1 input=6b70a4bb2da838de]*/
+{
+    // TODO _type_check
+    // TODO reject Unpack[]
+    return Py_NewRef(arg);
+}
+
+static PyMethodDef typevar_methods[] = {
+    TYPEVAR_TYPING_SUBST_METHODDEF
+    {0}
+};
+
 PyTypeObject _PyTypeVar_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "typing.TypeVar",
@@ -162,6 +183,7 @@ PyTypeObject _PyTypeVar_Type = {
     .tp_traverse = typevarobject_traverse,
     .tp_repr = typevarobject_repr,
     .tp_members = typevar_members,
+    .tp_methods = typevar_methods,
     .tp_new = typevar_new,
 };
 

@@ -117,31 +117,31 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(paramspec_new__doc__,
-"paramspec(name, *, bound=None, covariant=False, contravariant=False,\n"
-"          autovariance=False)\n"
+PyDoc_STRVAR(typevar_typing_subst__doc__,
+"__typing_subst__($self, /, arg)\n"
 "--\n"
-"\n"
-"Create a ParamSpec object.");
+"\n");
+
+#define TYPEVAR_TYPING_SUBST_METHODDEF    \
+    {"__typing_subst__", _PyCFunction_CAST(typevar_typing_subst), METH_FASTCALL|METH_KEYWORDS, typevar_typing_subst__doc__},
 
 static PyObject *
-paramspec_new_impl(PyTypeObject *type, const char *name, PyObject *bound,
-                   int covariant, int contravariant, int autovariance);
+typevar_typing_subst_impl(typevarobject *self, PyObject *arg);
 
 static PyObject *
-paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+typevar_typing_subst(typevarobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 5
+    #define NUM_KEYWORDS 1
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(name), &_Py_ID(bound), &_Py_ID(covariant), &_Py_ID(contravariant), &_Py_ID(autovariance), },
+        .ob_item = { &_Py_ID(arg), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -150,73 +150,22 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"name", "bound", "covariant", "contravariant", "autovariance", NULL};
+    static const char * const _keywords[] = {"arg", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "paramspec",
+        .fname = "__typing_subst__",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
-    PyObject * const *fastargs;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
-    const char *name;
-    PyObject *bound = Py_None;
-    int covariant = 0;
-    int contravariant = 0;
-    int autovariance = 0;
+    PyObject *argsbuf[1];
+    PyObject *arg;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
-    if (!fastargs) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    if (!PyUnicode_Check(fastargs[0])) {
-        _PyArg_BadArgument("paramspec", "argument 'name'", "str", fastargs[0]);
-        goto exit;
-    }
-    Py_ssize_t name_length;
-    name = PyUnicode_AsUTF8AndSize(fastargs[0], &name_length);
-    if (name == NULL) {
-        goto exit;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
-    if (!noptargs) {
-        goto skip_optional_kwonly;
-    }
-    if (fastargs[1]) {
-        bound = fastargs[1];
-        if (!--noptargs) {
-            goto skip_optional_kwonly;
-        }
-    }
-    if (fastargs[2]) {
-        covariant = PyObject_IsTrue(fastargs[2]);
-        if (covariant < 0) {
-            goto exit;
-        }
-        if (!--noptargs) {
-            goto skip_optional_kwonly;
-        }
-    }
-    if (fastargs[3]) {
-        contravariant = PyObject_IsTrue(fastargs[3]);
-        if (contravariant < 0) {
-            goto exit;
-        }
-        if (!--noptargs) {
-            goto skip_optional_kwonly;
-        }
-    }
-    autovariance = PyObject_IsTrue(fastargs[4]);
-    if (autovariance < 0) {
-        goto exit;
-    }
-skip_optional_kwonly:
-    return_value = paramspec_new_impl(type, name, bound, covariant, contravariant, autovariance);
+    arg = args[0];
+    return_value = typevar_typing_subst_impl(self, arg);
 
 exit:
     return return_value;
@@ -330,6 +279,111 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(paramspec_new__doc__,
+"paramspec(name, *, bound=None, covariant=False, contravariant=False,\n"
+"          autovariance=False)\n"
+"--\n"
+"\n"
+"Create a ParamSpec object.");
+
+static PyObject *
+paramspec_new_impl(PyTypeObject *type, const char *name, PyObject *bound,
+                   int covariant, int contravariant, int autovariance);
+
+static PyObject *
+paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(name), &_Py_ID(bound), &_Py_ID(covariant), &_Py_ID(contravariant), &_Py_ID(autovariance), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"name", "bound", "covariant", "contravariant", "autovariance", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "paramspec",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[5];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    const char *name;
+    PyObject *bound = Py_None;
+    int covariant = 0;
+    int contravariant = 0;
+    int autovariance = 0;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(fastargs[0])) {
+        _PyArg_BadArgument("paramspec", "argument 'name'", "str", fastargs[0]);
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(fastargs[0], &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (fastargs[1]) {
+        bound = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (fastargs[2]) {
+        covariant = PyObject_IsTrue(fastargs[2]);
+        if (covariant < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (fastargs[3]) {
+        contravariant = PyObject_IsTrue(fastargs[3]);
+        if (contravariant < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    autovariance = PyObject_IsTrue(fastargs[4]);
+    if (autovariance < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = paramspec_new_impl(type, name, bound, covariant, contravariant, autovariance);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(typevartuple__doc__,
 "typevartuple(name)\n"
 "--\n"
@@ -395,4 +449,4 @@ typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0a84cbcb2d2232fe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5bec221c90526610 input=a9049054013a1b77]*/

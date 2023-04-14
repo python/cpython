@@ -1292,6 +1292,15 @@ class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
             args = (*args[:i], tuple(args[i]), *args[i+1:])
         return args
 
+
+import builtins
+if hasattr(builtins, "TypeVar"):
+    TypeVar = builtins.TypeVar
+    TypeVarTuple = builtins.TypeVarTuple
+    ParamSpec = builtins.ParamSpec
+    ParamSpecArgs = type(ParamSpec("P").args)
+    ParamSpecKwargs = type(ParamSpec("P").kwargs)
+
 def _is_dunder(attr):
     return attr.startswith('__') and attr.endswith('__')
 

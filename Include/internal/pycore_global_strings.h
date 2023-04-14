@@ -267,6 +267,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(after_in_parent)
         STRUCT_FOR_ID(aggregate_class)
         STRUCT_FOR_ID(append)
+        STRUCT_FOR_ID(arg)
         STRUCT_FOR_ID(argdefs)
         STRUCT_FOR_ID(arguments)
         STRUCT_FOR_ID(argv)
