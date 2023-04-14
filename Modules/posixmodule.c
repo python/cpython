@@ -16736,6 +16736,11 @@ INITFUNC(void)
 static PerfMapState perf_map_state;
 
 PyAPI_FUNC(void *) PyOS_PerfMapState_Init(void) {
+    #ifdef MS_WINDOWS
+        PyErr_SetString(PyExc_RuntimeError, "perf map is not supported on Windows");
+        return NULL;
+    #endif
+
     char filename[100];
     pid_t pid = getpid();
     // Use nofollow flag to prevent symlink attacks.
