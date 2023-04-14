@@ -9,7 +9,6 @@ extern "C" {
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03060000
 PyAPI_FUNC(PyObject *) PyOS_FSPath(PyObject *path);
-#endif
 
 typedef struct {
      FILE* perf_map;
@@ -22,6 +21,8 @@ PyAPI_FUNC(int) PyOS_WritePerfMapEntry(const void *code_addr, unsigned int code_
 
 PyAPI_FUNC(void) PyOS_PerfMapState_Fini(void);
     
+#endif
+
 #ifdef __cplusplus
 }
 #endif
