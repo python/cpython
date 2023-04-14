@@ -1,114 +1,119 @@
 """The Justin(time) template JIT for CPython 3.12, based on copy-and-patch."""
 
-import contextlib
 import ctypes
 import dis
-import functools
 import sys
 import types
 import typing
 
-_fake_code = {}
-_traces = {}
-_positions = {}
-
-set_local_events = sys.monitoring.set_local_events
-OPTIMIZER_ID = sys.monitoring.OPTIMIZER_ID
-JUMP = sys.monitoring.events.JUMP
-INSTRUCTION = sys.monitoring.events.INSTRUCTION
-DISABLE = sys.monitoring.DISABLE
-
 VERBOSE = True
+WARMUP = 1 << 1
 
-@contextlib.contextmanager
-def _trace(f):
-    code = f.__code__
-    fake_code = _fake_code[code] = code.replace(co_code=code._co_code_adaptive)
-    try:
-        if VERBOSE:
-            print(f"JUSTIN: - Tracing {f.__qualname__}:")
-        set_local_events(OPTIMIZER_ID, code, JUMP)
-        yield
-    finally:
-        if VERBOSE:
-            print(f"JUSTIN:   - Done tracing {f.__qualname__}!")
-        set_local_events(OPTIMIZER_ID, code, 0)
-    f.__code__ = fake_code
+_co_code_adaptive = {}
+_traces = {}
+_lines = {}
+_warmups = {}
+
+INSTRUMENTED_JUMP_BACKWARD = dis._all_opmap["INSTRUMENTED_JUMP_BACKWARD"]
+JUMP_BACKWARD = dis._all_opmap["JUMP_BACKWARD"]
+JUMP_BACKWARD_INTO_TRACE = dis._all_opmap["JUMP_BACKWARD_INTO_TRACE"]
+
+_py_codeunit_p = ctypes.POINTER(ctypes.c_uint16)
+
+def _stderr(*args):
+    if VERBOSE:
+        print(*args, file=sys.stderr, flush=True)
+
+def _format_range(code: types.CodeType, i: int, j: int):
+    if code not in _lines:
+        _lines[code] = [lineno for lineno, _, _, _ in code.co_positions()]
+    lines = list(filter(None, _lines[code][i // 2: j // 2]))
+    lo = min(lines)
+    hi = max(lines)
+    return f"{code.co_filename}:{lo}-{hi}"
 
 def _trace_jump(code: types.CodeType, i: int, j: int):
     if j <= i:
-        set_local_events(OPTIMIZER_ID, code, INSTRUCTION | JUMP)
-        if VERBOSE and code in _traces:
-            print(f"JUSTIN:     - Found inner loop!") 
+        key = (code, i)
+        warmups = _warmups[key] = _warmups.get(key, 0) + 1
+        if warmups <= WARMUP:
+            _stderr(f"JUSTIN: - Warming up {_format_range(code, j, i)} ({warmups}/{WARMUP}).") 
+            return
+        _co_code_adaptive[code] = bytearray(code._co_code_adaptive)
+        sys.monitoring.set_local_events(
+            sys.monitoring.OPTIMIZER_ID,
+            code,
+            sys.monitoring.events.INSTRUCTION | sys.monitoring.events.JUMP,
+        )
+        if code in _traces:
+            _stderr(f"JUSTIN:   - Found inner loop!") 
         _traces[code] = i, []
-        if VERBOSE:
-            if code not in _positions:
-                _positions[code] = [lineno for lineno, _, _, _ in code.co_positions()]
-            lines = [lineno for lineno in _positions[code][j // 2: i // 2] if lineno is not None]
-            lo = min(lines)
-            hi = max(lines)
-            print(f"JUSTIN:   - Recording loop at {code.co_filename}:{lo}-{hi}:")
-    return DISABLE
+        _stderr(f"JUSTIN: - Recording loop at {_format_range(code, j, i)}:")
+    return sys.monitoring.DISABLE
 
 def _trace_instruction(code: types.CodeType, i: int):
     jump, trace = _traces[code]
     trace.append(i)
     if i == jump:
-        set_local_events(OPTIMIZER_ID, code, JUMP)
-        _compile(_fake_code[code], trace)
-        if VERBOSE:
-            print("JUSTIN:     - Done!")
+        _compile(code, _co_code_adaptive[code], trace)
+        sys.monitoring.set_local_events(
+            sys.monitoring.OPTIMIZER_ID, code, sys.monitoring.events.JUMP
+        )
+        _stderr("JUSTIN:   - Done!")
         del _traces[code]
+    return sys.monitoring.DISABLE
 
-def trace(f, *, warmup: int = 2):
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        # This needs to be *fast*.
-        nonlocal warmup
-        if 0 < warmup:
-            warmup -= 1
-            return f(*args, **kwargs)
-        if 0 == warmup:
-            warmup -= 1
-            with _trace(f):
-                return f(*args, **kwargs)
-        return f(*args, **kwargs)
-    return wrapper
+def trace(f):
+    sys.monitoring.set_local_events(
+        sys.monitoring.OPTIMIZER_ID, f.__code__, sys.monitoring.events.JUMP
+    )
+    return f
 
-sys.monitoring.use_tool_id(OPTIMIZER_ID, "Justin")
-sys.monitoring.register_callback(OPTIMIZER_ID, INSTRUCTION, _trace_instruction)
-sys.monitoring.register_callback(OPTIMIZER_ID, JUMP, _trace_jump)
+sys.monitoring.use_tool_id(sys.monitoring.OPTIMIZER_ID, "Justin")
+sys.monitoring.register_callback(
+    sys.monitoring.OPTIMIZER_ID,
+    sys.monitoring.events.INSTRUCTION,
+    _trace_instruction,
+)
+sys.monitoring.register_callback(
+    sys.monitoring.OPTIMIZER_ID, sys.monitoring.events.JUMP, _trace_jump
+)
 
 _OFFSETOF_CO_CODE_ADAPTIVE = 192
 
-def _compile(fake_code, traced):
-    traced = _remove_superinstructions(fake_code, traced)
+def _compile(code, co_code_adaptive, traced):
+    traced = _remove_superinstructions(co_code_adaptive, traced)
     j = traced[-1]
-    code_unit_pointer = ctypes.POINTER(ctypes.c_uint16)
-    c_traced_type = code_unit_pointer * len(traced)
+    c_traced_type = _py_codeunit_p * len(traced)
     c_traced = c_traced_type()
-    first_instr = id(fake_code) + _OFFSETOF_CO_CODE_ADAPTIVE
-    c_traced[:] = [ctypes.cast(first_instr + i, code_unit_pointer) for i in traced]
+    first_instr = id(code) + _OFFSETOF_CO_CODE_ADAPTIVE
+    buff = ctypes.cast(first_instr, _py_codeunit_p)
+    ctypes.memmove(
+        buff,
+        (ctypes.c_uint16 * (len(co_code_adaptive) // 2)).from_buffer(co_code_adaptive),
+        len(co_code_adaptive),
+    )
+    c_traced[:] = [ctypes.cast(first_instr + i, _py_codeunit_p) for i in traced]
+    jump = ctypes.cast(ctypes.c_void_p(first_instr + j), ctypes.POINTER(ctypes.c_uint8))
+    assert jump.contents.value == INSTRUMENTED_JUMP_BACKWARD
+    jump.contents.value = JUMP_BACKWARD
     compile_trace = ctypes.pythonapi._PyJIT_CompileTrace
     compile_trace.argtypes = (ctypes.c_int, c_traced_type)
     compile_trace.restype = ctypes.POINTER(ctypes.c_ubyte)
     buffer = ctypes.cast(compile_trace(len(traced), c_traced), ctypes.c_void_p)
-    if buffer.value is not None:
-        jump = ctypes.cast(ctypes.c_void_p(first_instr + j), ctypes.POINTER(ctypes.c_uint8))
-        assert jump.contents.value == dis._all_opmap["JUMP_BACKWARD"]
-        jump.contents.value = dis._all_opmap["JUMP_BACKWARD_INTO_TRACE"]
-        ctypes.cast(ctypes.c_void_p(first_instr + j + 4), ctypes.POINTER(ctypes.c_uint64)).contents.value = buffer.value
+    if buffer.value is None:
+        return False
+    jump.contents.value = JUMP_BACKWARD_INTO_TRACE
+    cache = ctypes.c_void_p(first_instr + j + 4)
+    ctypes.cast(cache, ctypes.POINTER(ctypes.c_uint64)).contents.value = buffer.value
+    return True
 
 
-def _remove_superinstructions(code: types.CodeType, trace: typing.Iterable[int]):
+def _remove_superinstructions(co_code_adaptive: bytearray, trace: typing.Iterable[int]):
     out = []
-    # opnames = []
     t = iter(trace)
     for i in t:
         out.append(i)
-        opname = dis._all_opname[code._co_code_adaptive[i]]
-        # opnames.append(opname)
-        if "__" in opname:
+        if "__" in dis._all_opname[co_code_adaptive[i]]:
             next(t)
-    # print(list(zip(opnames, out, strict=True)))
     return out

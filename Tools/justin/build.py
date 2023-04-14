@@ -49,8 +49,8 @@ class ObjectParser:
         return lines
 
     def _parse_headers(self) -> typing.Generator[tuple[str, int, int, str], None, None]:
-        lines = self._dump("--headers")
-        print("\n".join(lines))
+        # lines = self._dump("--headers")
+        # print("\n".join(lines))
         lines = self._dump("--headers")
         line = next(lines, None)
         assert line == "Sections:"
@@ -69,8 +69,8 @@ class ObjectParser:
                 yield (name, int(size, 16), int(vma, 16), type)
 
     def _parse_syms(self) -> None:
-        lines = self._dump("--syms", "--section", ".text")
-        print("\n".join(lines))
+        # lines = self._dump("--syms", "--section", ".text")
+        # print("\n".join(lines))
         lines = self._dump("--syms", "--section", ".text")
         # return
         assert next(lines) == "SYMBOL TABLE:"
@@ -128,10 +128,10 @@ class ObjectParser:
         return relocs
 
     def _parse_full_contents(self, section, vma) -> bytes:
-        lines = self._dump("--disassemble", "--reloc", "--section", section)
-        print("\n".join(lines))
-        lines = self._dump("--full-contents", "--section", section)
-        print("\n".join(lines))
+        # lines = self._dump("--disassemble", "--reloc", "--section", section)
+        # print("\n".join(lines))
+        # lines = self._dump("--full-contents", "--section", section)
+        # print("\n".join(lines))
         lines = self._dump("--full-contents", "--section", section)
         line = next(lines, None)
         if line is None:
@@ -269,6 +269,8 @@ class Engine:
         "COMPARE_OP_INT",
         "COPY",
         "FOR_ITER_LIST",
+        "FOR_ITER_RANGE",
+        "GET_ITER",
         "JUMP_BACKWARD",
         "JUMP_FORWARD",
         "LOAD_CONST",

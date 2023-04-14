@@ -7,6 +7,7 @@
 #include "pycore_object.h"
 #include "pycore_opcode.h"
 #include "pycore_sliceobject.h"
+#include "pycore_range.h"
 
 #include "Python/ceval_macros.h"
 
