@@ -56,6 +56,8 @@ from weakref import WeakSet, ReferenceType, ref
 import typing
 from typing import Unpack
 
+from test import support
+
 from typing import TypeVar
 T = TypeVar('T')
 K = TypeVar('K')
@@ -94,8 +96,11 @@ _UNPACKED_TUPLES = [
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
-    generic_types = [type, tuple, list, dict, set, frozenset, enumerate,
-                     defaultdict, deque,
+    c_generic_types = [
+        tuple, list, dict, set, frozenset, enumerate,
+        defaultdict, deque,
+    ]
+    generic_types = [*c_generic_types,
                      SequenceMatcher,
                      dircmp,
                      FileInput,
@@ -172,6 +177,30 @@ class BaseTest(unittest.TestCase):
                     self.assertEqual(a['test'], d['test'])
                 else:
                     self.assertEqual(alias(iter((1, 2, 3))), t((1, 2, 3)))
+
+    @support.cpython_only
+    def test_c_genericaliases_are_cached(self):
+        for t in self.c_generic_types:
+            if t is None:
+                continue
+            tname = t.__name__
+            with self.subTest(f"Testing {tname}"):
+                self.assertIs(t[int], t[int])
+
+    @support.cpython_only
+    def test_generic_alias_unpacks_are_cached(self):
+        self.assertIs((*tuple[int, str],)[0], (*tuple[int, str],)[0])
+        self.assertIs((*tuple[T, ...],)[0], (*tuple[T, ...],)[0])
+        self.assertIsNot((*tuple[int, str],)[0], tuple[int, str])
+
+    @support.cpython_only
+    def test_genericalias_constructor_is_no_cached(self):
+        for t in self.generic_types:
+            if t is None:
+                continue
+            tname = t.__name__
+            with self.subTest(f"Testing {tname}"):
+                self.assertIsNot(GenericAlias(t, [int]), GenericAlias(t, [int]))
 
     def test_unbound_methods(self):
         t = list[int]

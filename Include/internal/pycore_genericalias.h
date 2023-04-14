@@ -1,3 +1,5 @@
+#ifndef Py_INTERNAL_GENERICALIAS_H
+#define Py_INTERNAL_GENERICALIAS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -10,3 +12,4 @@ extern void _PyGenericAlias_Fini(PyInterpreterState *interp);
 #ifdef __cplusplus
 }
 #endif
+#endif /* !Py_INTERNAL_GENERICALIAS_H */
