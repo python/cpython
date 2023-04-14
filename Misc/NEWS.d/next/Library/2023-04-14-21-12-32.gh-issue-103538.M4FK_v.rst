@@ -1,0 +1,4 @@
+Remove code defined by the ``TK_AQUA`` macro, because:
+
+#. it reportedly was only needed for Tk 8.4.7 or earlier (see gh-issue-49370), whereas Tkinter has since required 8.5.12 (see gh-issue-91152); and
+#. it seems to have been unused since it was committed (in gh-issue-35685), as neither CPython nor Tcl/Tk ever defined the ``TK_AQUA`` macro anywhere.
