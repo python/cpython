@@ -384,6 +384,60 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(paramspec_typing_subst__doc__,
+"__typing_subst__($self, /, arg)\n"
+"--\n"
+"\n");
+
+#define PARAMSPEC_TYPING_SUBST_METHODDEF    \
+    {"__typing_subst__", _PyCFunction_CAST(paramspec_typing_subst), METH_FASTCALL|METH_KEYWORDS, paramspec_typing_subst__doc__},
+
+static PyObject *
+paramspec_typing_subst_impl(paramspecobject *self, PyObject *arg);
+
+static PyObject *
+paramspec_typing_subst(paramspecobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(arg), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"arg", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__typing_subst__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *arg;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    arg = args[0];
+    return_value = paramspec_typing_subst_impl(self, arg);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(typevartuple__doc__,
 "typevartuple(name)\n"
 "--\n"
@@ -449,4 +503,58 @@ typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5bec221c90526610 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(typevartuple_typing_subst__doc__,
+"__typing_subst__($self, /, arg)\n"
+"--\n"
+"\n");
+
+#define TYPEVARTUPLE_TYPING_SUBST_METHODDEF    \
+    {"__typing_subst__", _PyCFunction_CAST(typevartuple_typing_subst), METH_FASTCALL|METH_KEYWORDS, typevartuple_typing_subst__doc__},
+
+static PyObject *
+typevartuple_typing_subst_impl(typevartupleobject *self, PyObject *arg);
+
+static PyObject *
+typevartuple_typing_subst(typevartupleobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(arg), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"arg", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__typing_subst__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *arg;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    arg = args[0];
+    return_value = typevartuple_typing_subst_impl(self, arg);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=06d91d3e010cd9de input=a9049054013a1b77]*/

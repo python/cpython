@@ -23,6 +23,20 @@ typedef struct {
     bool autovariance;
 } typevarobject;
 
+typedef struct {
+    PyObject_HEAD
+    const char *name;
+} typevartupleobject;
+
+typedef struct {
+    PyObject_HEAD
+    const char *name;
+    PyObject *bound;
+    bool covariant;
+    bool contravariant;
+    bool autovariance;
+} paramspecobject;
+
 #include "clinic/typevarobject.c.h"
 
 static void typevarobject_dealloc(PyObject *self)
@@ -217,6 +231,21 @@ static PyObject *paramspecargsobject_repr(PyObject *self)
     return PyUnicode_FromFormat("%R.args", psa->__origin__);
 }
 
+static PyObject *paramspecargsobject_richcompare(PyObject *a, PyObject *b, int op)
+{
+    if (!Py_IS_TYPE(b, &_PyParamSpecArgs_Type)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    if (op != Py_EQ && op != Py_NE) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    return PyObject_RichCompare(
+        ((paramspecargsobject *)a)->__origin__,
+        ((paramspecargsobject *)b)->__origin__,
+        op
+    );
+}
+
 static PyMemberDef paramspecargs_members[] = {
     {"__origin__", T_OBJECT, offsetof(paramspecargsobject, __origin__), READONLY},
     {0}
@@ -257,6 +286,7 @@ PyTypeObject _PyParamSpecArgs_Type = {
     .tp_alloc = PyType_GenericAlloc,
     .tp_free = PyObject_GC_Del,
     .tp_repr = paramspecargsobject_repr,
+    .tp_richcompare = paramspecargsobject_richcompare,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
     .tp_traverse = paramspecargsobject_traverse,
     .tp_members = paramspecargs_members,
@@ -291,6 +321,21 @@ static PyObject *paramspeckwargsobject_repr(PyObject *self)
     paramspeckwargsobject *psk = (paramspeckwargsobject *)self;
 
     return PyUnicode_FromFormat("%R.kwargs", psk->__origin__);
+}
+
+static PyObject *paramspeckwargsobject_richcompare(PyObject *a, PyObject *b, int op)
+{
+    if (!Py_IS_TYPE(b, &_PyParamSpecKwargs_Type)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    if (op != Py_EQ && op != Py_NE) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    return PyObject_RichCompare(
+        ((paramspeckwargsobject *)a)->__origin__,
+        ((paramspeckwargsobject *)b)->__origin__,
+        op
+    );
 }
 
 static PyMemberDef paramspeckwargs_members[] = {
@@ -333,20 +378,12 @@ PyTypeObject _PyParamSpecKwargs_Type = {
     .tp_alloc = PyType_GenericAlloc,
     .tp_free = PyObject_GC_Del,
     .tp_repr = paramspeckwargsobject_repr,
+    .tp_richcompare = paramspeckwargsobject_richcompare,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
     .tp_traverse = paramspeckwargsobject_traverse,
     .tp_members = paramspeckwargs_members,
     .tp_new = paramspeckwargs_new,
 };
-
-typedef struct {
-    PyObject_HEAD
-    const char *name;
-    PyObject *bound;
-    bool covariant;
-    bool contravariant;
-    bool autovariance;
-} paramspecobject;
 
 static void paramspecobject_dealloc(PyObject *self)
 {
@@ -455,6 +492,35 @@ paramspec_new_impl(PyTypeObject *type, const char *name, PyObject *bound,
     return (PyObject *)paramspecobject_alloc(name, bound, covariant, contravariant, autovariance);
 }
 
+
+/*[clinic input]
+paramspec.__typing_subst__ as paramspec_typing_subst
+
+    arg: object
+
+[clinic start generated code]*/
+
+static PyObject *
+paramspec_typing_subst_impl(paramspecobject *self, PyObject *arg)
+/*[clinic end generated code: output=803e1ade3f13b57d input=4e0005d24023e896]*/
+{
+    if (PyTuple_Check(arg)) {
+        return Py_NewRef(arg);
+    } else if (PyList_Check(arg)) {
+        return PyList_AsTuple(arg);
+    } else {
+        // TODO: typing._is_param_expr
+        // (in particular _ConcatenateGenericAlias)
+        return Py_NewRef(arg);
+    }
+}
+
+static PyMethodDef paramspec_methods[] = {
+    PARAMSPEC_TYPING_SUBST_METHODDEF
+    {0}
+};
+
+
 // TODO:
 // - args/kwargs
 // - pickling
@@ -470,14 +536,10 @@ PyTypeObject _PyParamSpec_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
     .tp_traverse = paramspecobject_traverse,
     .tp_members = paramspec_members,
+    .tp_methods = paramspec_methods,
     .tp_getset = paramspec_getset,
     .tp_new = paramspec_new,
 };
-
-typedef struct {
-    PyObject_HEAD
-    const char *name;
-} typevartupleobject;
 
 static void typevartupleobject_dealloc(PyObject *self)
 {
@@ -485,6 +547,12 @@ static void typevartupleobject_dealloc(PyObject *self)
 
     free((void *)tvt->name);
     Py_TYPE(self)->tp_free(self);
+}
+
+static PyObject *typevartupleobject_iter(PyObject *self)
+{
+    // TODO Unpack[]
+    return Py_NewRef(self);
 }
 
 static PyObject *typevartupleobject_repr(PyObject *self)
@@ -529,6 +597,26 @@ typevartuple_impl(PyTypeObject *type, const char *name)
     return (PyObject *)typevartupleobject_alloc(name);
 }
 
+/*[clinic input]
+typevartuple.__typing_subst__ as typevartuple_typing_subst
+
+    arg: object
+
+[clinic start generated code]*/
+
+static PyObject *
+typevartuple_typing_subst_impl(typevartupleobject *self, PyObject *arg)
+/*[clinic end generated code: output=814316519441cd76 input=670c4e0a36e5d8c0]*/
+{
+    PyErr_SetString(PyExc_TypeError, "Substitution of bare TypeVarTuple is not supported");
+    return NULL;
+}
+
+static PyMethodDef typevartuple_methods[] = {
+    TYPEVARTUPLE_TYPING_SUBST_METHODDEF
+    {0}
+};
+
 // TODO:
 // - Iterable (for Unpack)
 // - Pickling
@@ -539,9 +627,11 @@ PyTypeObject _PyTypeVarTuple_Type = {
     .tp_basicsize = sizeof(typevartupleobject),
     .tp_dealloc = typevartupleobject_dealloc,
     .tp_alloc = PyType_GenericAlloc,
+    .tp_iter = typevartupleobject_iter,
     .tp_repr = typevartupleobject_repr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
     .tp_members = typevartuple_members,
+    .tp_methods = typevartuple_methods,
     .tp_new = typevartuple,
 };
 
