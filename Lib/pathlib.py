@@ -857,7 +857,7 @@ class Path(PurePath):
         elif self.drive:
             # There is a CWD on each drive-letter drive.
             cwd = self._flavour.abspath(self.drive)
-        elif self._tail:
+        elif self.root or self._tail:
             cwd = os.getcwd()
         else:
             path_str = os.getcwd()
