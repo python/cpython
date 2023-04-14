@@ -810,6 +810,9 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         check(('c:/a',),                'c:', '\\', ('c:\\', 'a'))
         check(('/a',),                  '', '\\', ('\\', 'a'))
         # UNC paths.
+        check(('//',),                  '\\\\', '', ('\\\\',))
+        check(('//a',),                 '\\\\a', '', ('\\\\a',))
+        check(('//a/',),                '\\\\a\\', '', ('\\\\a\\',))
         check(('//a/b',),               '\\\\a\\b', '\\', ('\\\\a\\b\\',))
         check(('//a/b/',),              '\\\\a\\b', '\\', ('\\\\a\\b\\',))
         check(('//a/b/c',),             '\\\\a\\b', '\\', ('\\\\a\\b\\', 'c'))
@@ -823,12 +826,26 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         # UNC paths.
         check(('a', '//b/c//', 'd'),    '\\\\b\\c', '\\', ('\\\\b\\c\\', 'd'))
         # Extended paths.
+        check(('//./c:',),              '\\\\.\\c:', '', ('\\\\.\\c:',))
         check(('//?/c:/',),             '\\\\?\\c:', '\\', ('\\\\?\\c:\\',))
         check(('//?/c:/a',),            '\\\\?\\c:', '\\', ('\\\\?\\c:\\', 'a'))
         check(('//?/c:/a', '/b'),       '\\\\?\\c:', '\\', ('\\\\?\\c:\\', 'b'))
         # Extended UNC paths (format is "\\?\UNC\server\share").
+        check(('//?',),                 '\\\\?', '', ('\\\\?',))
+        check(('//?/',),                '\\\\?\\', '', ('\\\\?\\',))
+        check(('//?/UNC',),             '\\\\?\\UNC', '', ('\\\\?\\UNC',))
+        check(('//?/UNC/',),            '\\\\?\\UNC\\', '', ('\\\\?\\UNC\\',))
+        check(('//?/UNC/b',),           '\\\\?\\UNC\\b', '', ('\\\\?\\UNC\\b',))
+        check(('//?/UNC/b/',),          '\\\\?\\UNC\\b\\', '', ('\\\\?\\UNC\\b\\',))
         check(('//?/UNC/b/c',),         '\\\\?\\UNC\\b\\c', '\\', ('\\\\?\\UNC\\b\\c\\',))
+        check(('//?/UNC/b/c/',),        '\\\\?\\UNC\\b\\c', '\\', ('\\\\?\\UNC\\b\\c\\',))
         check(('//?/UNC/b/c/d',),       '\\\\?\\UNC\\b\\c', '\\', ('\\\\?\\UNC\\b\\c\\', 'd'))
+        # UNC device paths
+        check(('//./BootPartition/',),   '\\\\.\\BootPartition', '\\', ('\\\\.\\BootPartition\\',))
+        check(('//?/BootPartition/',),   '\\\\?\\BootPartition', '\\', ('\\\\?\\BootPartition\\',))
+        check(('//./PhysicalDrive0',),   '\\\\.\\PhysicalDrive0', '', ('\\\\.\\PhysicalDrive0',))
+        check(('//?/Volume{}/',),        '\\\\?\\Volume{}', '\\', ('\\\\?\\Volume{}\\',))
+        check(('//./nul',),              '\\\\.\\nul', '', ('\\\\.\\nul',))
         # Second part has a root but not drive.
         check(('a', '/b', 'c'),         '', '\\', ('\\', 'b', 'c'))
         check(('Z:/a', '/b', 'c'),      'Z:', '\\', ('Z:\\', 'b', 'c'))
@@ -1371,6 +1388,13 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(pp, P('C:/a/b/dd:s'))
         pp = p.joinpath(P('E:d:s'))
         self.assertEqual(pp, P('E:d:s'))
+        # Joining onto a UNC path with no root
+        pp = P('//').joinpath('server')
+        self.assertEqual(pp, P('//server'))
+        pp = P('//server').joinpath('share')
+        self.assertEqual(pp, P('//server/share'))
+        pp = P('//./BootPartition').joinpath('Windows')
+        self.assertEqual(pp, P('//./BootPartition/Windows'))
 
     def test_div(self):
         # Basically the same as joinpath().
