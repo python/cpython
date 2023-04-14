@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_atexit.h"          // struct atexit_runtime_state
 #include "pycore_atomic.h"          /* _Py_atomic_address */
 #include "pycore_ceval_state.h"     // struct _ceval_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
@@ -131,9 +132,7 @@ typedef struct pyruntimestate {
 
     struct _parser_runtime_state parser;
 
-#define NEXITFUNCS 32
-    void (*exitfuncs[NEXITFUNCS])(void);
-    int nexitfuncs;
+    struct _atexit_runtime_state atexit;
 
     struct _import_runtime_state imports;
     struct _ceval_runtime_state ceval;

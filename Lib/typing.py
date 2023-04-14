@@ -1903,15 +1903,20 @@ class _TypingEllipsis:
     """Internal placeholder for ... (ellipsis)."""
 
 
-_TYPING_INTERNALS = ['__parameters__', '__orig_bases__',  '__orig_class__',
-                     '_is_protocol', '_is_runtime_protocol']
+_TYPING_INTERNALS = frozenset({
+    '__parameters__', '__orig_bases__',  '__orig_class__',
+    '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
+    '__callable_proto_members_only__',
+})
 
-_SPECIAL_NAMES = ['__abstractmethods__', '__annotations__', '__dict__', '__doc__',
-                  '__init__', '__module__', '__new__', '__slots__',
-                  '__subclasshook__', '__weakref__', '__class_getitem__']
+_SPECIAL_NAMES = frozenset({
+    '__abstractmethods__', '__annotations__', '__dict__', '__doc__',
+    '__init__', '__module__', '__new__', '__slots__',
+    '__subclasshook__', '__weakref__', '__class_getitem__'
+})
 
 # These special attributes will be not collected as protocol members.
-EXCLUDED_ATTRIBUTES = _TYPING_INTERNALS + _SPECIAL_NAMES + ['_MutableMapping__marker']
+EXCLUDED_ATTRIBUTES = _TYPING_INTERNALS | _SPECIAL_NAMES | {'_MutableMapping__marker'}
 
 
 def _get_protocol_attrs(cls):
@@ -1922,18 +1927,13 @@ def _get_protocol_attrs(cls):
     """
     attrs = set()
     for base in cls.__mro__[:-1]:  # without object
-        if base.__name__ in ('Protocol', 'Generic'):
+        if base.__name__ in {'Protocol', 'Generic'}:
             continue
         annotations = getattr(base, '__annotations__', {})
-        for attr in list(base.__dict__.keys()) + list(annotations.keys()):
+        for attr in (*base.__dict__, *annotations):
             if not attr.startswith('_abc_') and attr not in EXCLUDED_ATTRIBUTES:
                 attrs.add(attr)
     return attrs
-
-
-def _is_callable_members_only(cls):
-    # PEP 544 prohibits using issubclass() with protocols that have non-method members.
-    return all(callable(getattr(cls, attr, None)) for attr in _get_protocol_attrs(cls))
 
 
 def _no_init_or_replace_init(self, *args, **kwargs):
@@ -1994,32 +1994,57 @@ _PROTO_ALLOWLIST = {
 }
 
 
+@functools.cache
+def _lazy_load_getattr_static():
+    # Import getattr_static lazily so as not to slow down the import of typing.py
+    # Cache the result so we don't slow down _ProtocolMeta.__instancecheck__ unnecessarily
+    from inspect import getattr_static
+    return getattr_static
+
+
+_cleanups.append(_lazy_load_getattr_static.cache_clear)
+
+
 class _ProtocolMeta(ABCMeta):
     # This metaclass is really unfortunate and exists only because of
     # the lack of __instancehook__.
+    def __init__(cls, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        cls.__protocol_attrs__ = _get_protocol_attrs(cls)
+        # PEP 544 prohibits using issubclass()
+        # with protocols that have non-method members.
+        cls.__callable_proto_members_only__ = all(
+            callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
+        )
+
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
         # assigned in __init__.
+        is_protocol_cls = getattr(cls, "_is_protocol", False)
         if (
-            getattr(cls, '_is_protocol', False) and
+            is_protocol_cls and
             not getattr(cls, '_is_runtime_protocol', False) and
             not _allow_reckless_class_checks(depth=2)
         ):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
 
-        if ((not getattr(cls, '_is_protocol', False) or
-                _is_callable_members_only(cls)) and
-                issubclass(instance.__class__, cls)):
+        if super().__instancecheck__(instance):
             return True
-        if cls._is_protocol:
-            if all(hasattr(instance, attr) and
-                    # All *methods* can be blocked by setting them to None.
-                    (not callable(getattr(cls, attr, None)) or
-                     getattr(instance, attr) is not None)
-                    for attr in _get_protocol_attrs(cls)):
+
+        if is_protocol_cls:
+            getattr_static = _lazy_load_getattr_static()
+            for attr in cls.__protocol_attrs__:
+                try:
+                    val = getattr_static(instance, attr)
+                except AttributeError:
+                    break
+                if val is None and callable(getattr(cls, attr, None)):
+                    break
+            else:
                 return True
-        return super().__instancecheck__(instance)
+
+        return False
 
 
 class Protocol(Generic, metaclass=_ProtocolMeta):
@@ -2074,7 +2099,8 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                     return NotImplemented
                 raise TypeError("Instance and class checks can only be used with"
                                 " @runtime_checkable protocols")
-            if not _is_callable_members_only(cls):
+
+            if not cls.__callable_proto_members_only__ :
                 if _allow_reckless_class_checks():
                     return NotImplemented
                 raise TypeError("Protocols with non-method members"
@@ -2084,7 +2110,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                 raise TypeError('issubclass() arg 1 must be a class')
 
             # Second, perform the actual structural compatibility check.
-            for attr in _get_protocol_attrs(cls):
+            for attr in cls.__protocol_attrs__:
                 for base in other.__mro__:
                     # Check if the members appears in the class dictionary...
                     if attr in base.__dict__:
@@ -2128,6 +2154,8 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
     with extra annotations. The alias behaves like a normal typing alias,
     instantiating is the same as instantiating the underlying type, binding
     it to types is also the same.
+
+    The metadata itself is stored in a '__metadata__' attribute as a tuple.
     """
     def __init__(self, origin, metadata):
         if isinstance(origin, _AnnotatedAlias):
@@ -2183,6 +2211,10 @@ class Annotated:
     Details:
 
     - It's an error to call `Annotated` with less than two arguments.
+    - Access the metadata via the ``__metadata__`` attribute::
+
+        Annotated[int, '$'].__metadata__ == ('$',)
+
     - Nested Annotated are flattened::
 
         Annotated[Annotated[T, Ann1, Ann2], Ann3] == Annotated[T, Ann1, Ann2, Ann3]

@@ -452,7 +452,9 @@ process which created it.
    importable by the children. This is covered in :ref:`multiprocessing-programming`
    however it is worth pointing out here. This means that some examples, such
    as the :class:`multiprocessing.pool.Pool` examples will not work in the
-   interactive interpreter. For example::
+   interactive interpreter. For example:
+
+   .. code-block:: text
 
       >>> from multiprocessing import Pool
       >>> p = Pool(5)
@@ -460,16 +462,16 @@ process which created it.
       ...     return x*x
       ...
       >>> with p:
-      ...   p.map(f, [1,2,3])
+      ...     p.map(f, [1,2,3])
       Process PoolWorker-1:
       Process PoolWorker-2:
       Process PoolWorker-3:
       Traceback (most recent call last):
       Traceback (most recent call last):
       Traceback (most recent call last):
-      AttributeError: 'module' object has no attribute 'f'
-      AttributeError: 'module' object has no attribute 'f'
-      AttributeError: 'module' object has no attribute 'f'
+      AttributeError: Can't get attribute 'f' on <module '__main__' (<class '_frozen_importlib.BuiltinImporter'>)>
+      AttributeError: Can't get attribute 'f' on <module '__main__' (<class '_frozen_importlib.BuiltinImporter'>)>
+      AttributeError: Can't get attribute 'f' on <module '__main__' (<class '_frozen_importlib.BuiltinImporter'>)>
 
    (If you try this it will actually output three full tracebacks
    interleaved in a semi-random fashion, and then you may have to
