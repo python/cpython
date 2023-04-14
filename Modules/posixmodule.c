@@ -16739,28 +16739,28 @@ PyAPI_FUNC(void *) PyOS_PerfMapState_Init(void) {
     #ifdef MS_WINDOWS
         PyErr_SetString(PyExc_RuntimeError, "perf map is not supported on Windows");
         return NULL;
-    #endif
-
-    char filename[100];
-    pid_t pid = getpid();
-    // Use nofollow flag to prevent symlink attacks.
-    int flags = O_WRONLY | O_CREAT | O_APPEND | O_NOFOLLOW | O_CLOEXEC;
-    snprintf(filename, sizeof(filename) - 1, "/tmp/perf-%jd.map",
-             (intmax_t)pid);
-    int fd = open(filename, flags, 0600);
-    if (fd == -1) {
-        PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
-        return NULL;
-    }
-    else{
-        perf_map_state.perf_map = fdopen(fd, "a");
-        if (perf_map_state.perf_map == NULL) {
+    #else
+        char filename[100];
+        pid_t pid = getpid();
+        // Use nofollow flag to prevent symlink attacks.
+        int flags = O_WRONLY | O_CREAT | O_APPEND | O_NOFOLLOW | O_CLOEXEC;
+        snprintf(filename, sizeof(filename) - 1, "/tmp/perf-%jd.map",
+                 (intmax_t)pid);
+        int fd = open(filename, flags, 0600);
+        if (fd == -1) {
             PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
             return NULL;
         }
-    }
-    perf_map_state.map_lock = PyThread_allocate_lock();
-    return &perf_map_state;
+        else{
+            perf_map_state.perf_map = fdopen(fd, "a");
+            if (perf_map_state.perf_map == NULL) {
+                PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
+                return NULL;
+            }
+        }
+        perf_map_state.map_lock = PyThread_allocate_lock();
+        return &perf_map_state;
+     #endif
 }
 
 PyAPI_FUNC(int) PyOS_WritePerfMapEntry(
