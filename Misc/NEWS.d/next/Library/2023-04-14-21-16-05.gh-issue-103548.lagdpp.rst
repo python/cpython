@@ -1,0 +1,3 @@
+Improve performance of :meth:`pathlib.PurePath.is_absolute` and
+:meth:`pathlib.Path.absolute` by working with unnormalized paths and
+avoiding unnecessary joining.

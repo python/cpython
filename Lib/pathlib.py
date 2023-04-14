@@ -650,7 +650,7 @@ class PurePath(object):
         # ntpath.isabs() is defective - see GH-44626 .
         if self._flavour is ntpath:
             return bool(self.drive and self.root)
-        return self._flavour.isabs(self)
+        return self._flavour.isabs(self._raw_path)
 
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
@@ -857,8 +857,13 @@ class Path(PurePath):
         elif self.drive:
             # There is a CWD on each drive-letter drive.
             cwd = self._flavour.abspath(self.drive)
-        else:
+        elif self._tail:
             cwd = os.getcwd()
+        else:
+            path_str = os.getcwd()
+            path = type(self)(path_str)
+            path._str = path_str  # Fully normalized string from getcwd().
+            return path
         return type(self)(cwd, self._raw_path)
 
     def resolve(self, strict=False):
