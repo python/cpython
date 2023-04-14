@@ -1065,7 +1065,7 @@ class DisTests(DisTestBase):
         check(dis_nested_2, depth=None)
         check(dis_nested_2)
 
-    def test__try_compile_no_another_exc_on_error(self):
+    def test__try_compile_no_context_exc_on_error(self):
         # see gh-102114
         try:
             dis._try_compile(")", "")
