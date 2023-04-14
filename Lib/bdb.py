@@ -575,7 +575,7 @@ class Bdb:
             if line:
                 s += lprefix + line.strip()
         else:
-            s += '\nWarning: lineno is None'
+            s += f'{lprefix}Warning: lineno is None'
         return s
 
     # The following methods can be called by clients to use
