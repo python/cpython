@@ -2937,23 +2937,23 @@ wait_for_thread_shutdown(PyThreadState *tstate)
     Py_DECREF(threading);
 }
 
-#define NEXITFUNCS 32
 int Py_AtExit(void (*func)(void))
 {
-    if (_PyRuntime.nexitfuncs >= NEXITFUNCS)
+    if (_PyRuntime.atexit.ncallbacks >= NEXITFUNCS)
         return -1;
-    _PyRuntime.exitfuncs[_PyRuntime.nexitfuncs++] = func;
+    _PyRuntime.atexit.callbacks[_PyRuntime.atexit.ncallbacks++] = func;
     return 0;
 }
 
 static void
 call_ll_exitfuncs(_PyRuntimeState *runtime)
 {
-    while (runtime->nexitfuncs > 0) {
+    struct _atexit_runtime_state *state = &runtime->atexit;
+    while (state->ncallbacks > 0) {
         /* pop last function from the list */
-        runtime->nexitfuncs--;
-        void (*exitfunc)(void) = runtime->exitfuncs[runtime->nexitfuncs];
-        runtime->exitfuncs[runtime->nexitfuncs] = NULL;
+        state->ncallbacks--;
+        atexit_callbackfunc exitfunc = state->callbacks[state->ncallbacks];
+        state->callbacks[state->ncallbacks] = NULL;
 
         exitfunc();
     }

@@ -137,8 +137,9 @@ static inline void
 _PyObject_InitVar(PyVarObject *op, PyTypeObject *typeobj, Py_ssize_t size)
 {
     assert(op != NULL);
-    Py_SET_SIZE(op, size);
+    assert(typeobj != &PyLong_Type);
     _PyObject_Init((PyObject *)op, typeobj);
+    Py_SET_SIZE(op, size);
 }
 
 
@@ -374,7 +375,6 @@ extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 extern int _PyType_HasSubclasses(PyTypeObject *);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
-extern PyObject* _PyObject_GenericTryGetAttr(PyObject *, PyObject *);
 
 // Access macro to the members which are floating "behind" the object
 static inline PyMemberDef* _PyHeapType_GET_MEMBERS(PyHeapTypeObject *etype) {

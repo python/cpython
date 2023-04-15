@@ -284,6 +284,7 @@ The values are chosen by :func:`_generate_next_value_`, which can be
 overridden::
 
     >>> class AutoName(Enum):
+    ...     @staticmethod
     ...     def _generate_next_value_(name, start, count, last_values):
     ...         return name
     ...
@@ -372,6 +373,11 @@ below)::
     >>> Color.BLUE == 2
     False
 
+.. warning::
+
+   It is possible to reload modules -- if a reloaded module contains
+   enums, they will be recreated, and the new members may not
+   compare identical/equal to the original members.
 
 Allowed members and attributes of enumerations
 ----------------------------------------------
@@ -859,17 +865,19 @@ Some rules:
 4. When another data type is mixed in, the :attr:`value` attribute is *not the
    same* as the enum member itself, although it is equivalent and will compare
    equal.
-5. %-style formatting:  ``%s`` and ``%r`` call the :class:`Enum` class's
+5. A ``data type`` is a mixin that defines :meth:`__new__`, or a
+   :class:`~dataclasses.dataclass`
+6. %-style formatting:  ``%s`` and ``%r`` call the :class:`Enum` class's
    :meth:`__str__` and :meth:`__repr__` respectively; other codes (such as
    ``%i`` or ``%h`` for IntEnum) treat the enum member as its mixed-in type.
-6. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
+7. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
    and :func:`format` will use the enum's :meth:`__str__` method.
 
 .. note::
 
    Because :class:`IntEnum`, :class:`IntFlag`, and :class:`StrEnum` are
    designed to be drop-in replacements for existing constants, their
-   :meth:`__str__` method has been reset to their data types
+   :meth:`__str__` method has been reset to their data types'
    :meth:`__str__` method.
 
 When to use :meth:`__new__` vs. :meth:`__init__`
@@ -982,12 +990,11 @@ but remain normal attributes.
 """"""""""""""""""""
 
 Enum members are instances of their enum class, and are normally accessed as
-``EnumClass.member``.  In Python versions starting with ``3.5`` you could access
-members from other members -- this practice is discouraged, is deprecated
-in ``3.12``, and will be removed in ``3.14``.
+``EnumClass.member``.  In certain situations, such as writing custom enum
+behavior, being able to access one member directly from another is useful,
+and is supported.
 
 .. versionchanged:: 3.5
-.. versionchanged:: 3.12
 
 
 Creating members that are mixed with other data types

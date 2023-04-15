@@ -156,6 +156,9 @@ Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
 
+# explicitly protected, internal-only
+Modules/_xxinterpchannelsmodule.c	-	_globals	-
+
 
 ##################################
 ## not significant
@@ -350,7 +353,6 @@ Python/pylifecycle.c	-	INTERPRETER_TRAMPOLINE_CODEDEF	-
 Python/pystate.c	-	initial	-
 Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
-Python/specialize.c	-	compare_masks	-
 Python/stdlib_module_names.h	-	_Py_stdlib_module_names	-
 Python/sysmodule.c	-	_PySys_ImplCacheTag	-
 Python/sysmodule.c	-	_PySys_ImplName	-

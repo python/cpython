@@ -220,6 +220,10 @@ always available.
 
    .. audit-event:: sys._current_exceptions "" sys._current_exceptions
 
+   .. versionchanged:: 3.12
+      Each value in the dictionary is now a single exception instance, rather
+      than a 3-tuple as returned from ``sys.exc_info()``.
+
 .. function:: breakpointhook()
 
    This hook function is called by built-in :func:`breakpoint`.  By default,
@@ -697,7 +701,7 @@ always available.
    the encoding used with the :term:`filesystem error handler <filesystem
    encoding and error handler>` to convert between Unicode filenames and bytes
    filenames. The filesystem error handler is returned from
-   :func:`getfilesystemencoding`.
+   :func:`getfilesystemencodeerrors`.
 
    For best compatibility, str should be used for filenames in all cases,
    although representing filenames as bytes is also supported. Functions
