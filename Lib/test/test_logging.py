@@ -58,6 +58,7 @@ import warnings
 import weakref
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from unittest.mock import patch
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
@@ -4311,7 +4312,6 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             self.assertNotIn('.1000', s)
 
     def test_issue_102402_100msecs(self):
-        og_time_ns = time.time_ns
         tests = (
             # (time_ns, expected_msecs_value)
             (1_677_902_297_100_000_000, 100.0),  # exactly 100ms
@@ -4319,13 +4319,11 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             (1_677_903_920_000_998_503, 0.0),  # check truncating doesn't round
 
         )
-        try:
-            for ns, want in tests:
-                time.time_ns = lambda: ns
+        for ns, want in tests:
+            with patch('time.time_ns') as patched_ns:
+                patched_ns.return_value = ns
                 record = logging.makeLogRecord({'msg': 'test'})
-                self.assertEqual(record.msecs, want)
-        finally:
-            time.time_ns = og_time_ns
+            self.assertEqual(record.msecs, want)
 
 
 class TestBufferingFormatter(logging.BufferingFormatter):
