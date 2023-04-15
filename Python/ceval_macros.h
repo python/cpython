@@ -59,16 +59,36 @@
     #define USE_COMPUTED_GOTOS 0
 #endif
 
+#define _PyJIT_RECORD(CFRAME, NEXT_INSTR)                                                    \
+    do {                                                                                     \
+        if ((CFRAME).jit_recording_end) {                                                    \
+            if ((CFRAME).jit_recording_size < _PyJIT_MAX_RECORDING_LENGTH) {                 \
+                if ((CFRAME).jit_recording_size == 0 ||                                      \
+                    (CFRAME).jit_recording[cframe.jit_recording_size - 1] != (NEXT_INSTR)) { \
+                    (CFRAME).jit_recording[cframe.jit_recording_size++] = (NEXT_INSTR);      \
+                }                                                                            \
+            }                                                                                \
+            else {                                                                           \
+                (CFRAME).jit_recording_end = NULL;                                           \
+            }                                                                                \
+        }                                                                                    \
+    } while (0)
+
 #ifdef Py_STATS
 #define INSTRUCTION_START(op) \
     do { \
+        _PyJIT_RECORD(cframe, next_instr); \
         frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
         if (_py_stats) _py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op) (frame->prev_instr = next_instr++)
+#define INSTRUCTION_START(op)              \
+    do {                                   \
+        _PyJIT_RECORD(cframe, next_instr); \
+        frame->prev_instr = next_instr++;  \
+    } while (0)
 #endif
 
 #if USE_COMPUTED_GOTOS

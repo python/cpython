@@ -53,6 +53,9 @@ extern void _justin_oparg;
         goto _continue;                                   \
     } while (0)
 
+// XXX
+#define cframe (*tstate->cframe)
+
 int
 _justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
               PyObject **stack_pointer)
@@ -64,6 +67,9 @@ _justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
     uint8_t opcode = _JUSTIN_OPCODE;
     // Stuff to make Justin work:
     _Py_CODEUNIT *_next_trace = &_justin_next_trace;
+    if (opcode != JUMP_BACKWARD_QUICK && next_instr->op.code != opcode) {
+        goto _return_deopt;
+    }
     // Now, the actual instruction definition:
 %s
     Py_UNREACHABLE();

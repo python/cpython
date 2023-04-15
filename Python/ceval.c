@@ -9,6 +9,7 @@
 #include "pycore_code.h"
 #include "pycore_function.h"
 #include "pycore_intrinsics.h"
+#include "pycore_jit.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_instruments.h"
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -620,6 +621,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _PyCFrame *prev_cframe = tstate->cframe;
     cframe.previous = prev_cframe;
     tstate->cframe = &cframe;
+
+    cframe.jit_recording_end = NULL;
+    cframe.jit_recording_size = 0;
 
     assert(tstate->interp->interpreter_trampoline != NULL);
 #ifdef Py_DEBUG

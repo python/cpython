@@ -13,6 +13,7 @@
 #include "pycore_code.h"
 #include "pycore_function.h"
 #include "pycore_intrinsics.h"
+#include "pycore_jit.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_instruments.h"
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -1963,8 +1964,14 @@ dummy_func(
             JUMPBY(oparg);
         }
 
-        inst(JUMP_BACKWARD, (unused/1, unused/4 --)) {
-            next_instr->cache = 0;
+        // family(jump_backward, 5) = {
+        //     JUMP_BACKWARD,
+        //     JUMP_BACKWARD_INTO_TRACE,
+        //     JUMP_BACKWARD_RECORDING,
+        //     JUMP_BACKWARD_QUICK,
+        // };
+
+        inst(JUMP_BACKWARD_QUICK, (unused/1, unused/4 --)) {
             JUMPBY(_PyOpcode_Caches[JUMP_BACKWARD]);
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
@@ -1972,25 +1979,62 @@ dummy_func(
             DISPATCH();
         }
 
+        inst(JUMP_BACKWARD, (unused/1, unused/4 --)) {
+            #if ENABLE_SPECIALIZATION
+            // _PyJumpBackwardCache *cache = (_PyJumpBackwardCache *)next_instr;
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+                // printf("JIT: Recording started!\n");
+                cframe.jit_recording_end = &next_instr[-1];
+                cframe.jit_recording_size = 0;
+                next_instr[-1].op.code = JUMP_BACKWARD_RECORDING;
+                GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+            }
+            STAT_INC(JUMP_BACKWARD, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            #endif  /* ENABLE_SPECIALIZATION */
+            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+        }
+
+        inst(JUMP_BACKWARD_RECORDING, (unused/1, unused/4 --)) {
+            if (&next_instr[-1] == cframe.jit_recording_end) {
+                // printf("JIT: Recording succeeded!\n");
+                // printf("JIT: Compilation started!\n");
+                next_instr[-1].op.code = JUMP_BACKWARD_QUICK;  // XXX
+                unsigned char *compiled = _PyJIT_CompileTrace(cframe.jit_recording_size, cframe.jit_recording);
+                if (compiled) {
+                    // printf("JIT: Compilation succeeded!\n");
+                    *(unsigned char **)(&next_instr[1]) = compiled;
+                    next_instr[-1].op.code = JUMP_BACKWARD_INTO_TRACE;
+                    GO_TO_INSTRUCTION(JUMP_BACKWARD_INTO_TRACE);
+                }
+            }
+            else {
+                // printf("JIT: Recording failed!\n");
+            }
+            next_instr[-1].op.code = JUMP_BACKWARD_QUICK;
+            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+        }
+
         inst(JUMP_BACKWARD_INTO_TRACE, (unused/1, trace/4 --)) {
             JUMPBY(_PyOpcode_Caches[JUMP_BACKWARD]); 
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
-            // printf("JIT: Entering trace for ");
-            // fflush(stdout);
-            // PyFrameObject *frame_obj = _PyFrame_GetFrameObject(frame);
-            // PyObject_Print((PyObject *)frame_obj, stdout, 0);
-            // printf("\n");
-            // fflush(stdout);
+            // printf("JIT: Entering trace!\n");
             int status = ((int (*)(PyThreadState *, _PyInterpreterFrame *, PyObject **))(uintptr_t)trace)(tstate, frame, stack_pointer);
+            if (status) {
+                // printf("JIT: Leaving trace with status %d!\n", status);
+            }
             next_instr = frame->prev_instr;
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            // printf("JIT: Done, with status %d (next instruction = %d, stack depth = %d)!\n", status, INSTR_OFFSET(), STACK_LEVEL());
             switch (status) {
                 case 0:
-                case -1:
                     DISPATCH();
+                case -1:
+                    NEXTOPARG();
+                    opcode = _PyOpcode_Deopt[opcode];
+                    DISPATCH_GOTO();
                 case -2:
                     goto error;
                 case -3:

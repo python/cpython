@@ -352,6 +352,8 @@ _specializations = {
     ],
     "JUMP_BACKWARD": [
         "JUMP_BACKWARD_INTO_TRACE",
+        "JUMP_BACKWARD_QUICK",
+        "JUMP_BACKWARD_RECORDING",
     ],
     "LOAD_ATTR": [
         # These potentially push [NULL, bound method] onto the stack.
