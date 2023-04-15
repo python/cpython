@@ -857,13 +857,12 @@ class Path(PurePath):
         elif self.drive:
             # There is a CWD on each drive-letter drive.
             cwd = self._flavour.abspath(self.drive)
-        elif self.root or self._tail:
-            cwd = os.getcwd()
         else:
-            path_str = os.getcwd()
-            path = type(self)(path_str)
-            path._str = path_str  # Fully normalized string from getcwd().
-            return path
+            cwd = os.getcwd()
+            if not self.root and not self._tail:
+                path = type(self)(cwd)
+                path._str = cwd  # Fully normalized string from getcwd().
+                return path
         return type(self)(cwd, self._raw_path)
 
     def resolve(self, strict=False):
