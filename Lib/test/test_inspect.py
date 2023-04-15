@@ -2469,8 +2469,8 @@ class TestSignatureObject(unittest.TestCase):
         self.assertTrue(repr(sig).startswith('<Signature'))
         self.assertTrue('(po, /, pk' in repr(sig))
 
-        # We need to functions, because it is impossible to represent
-        # all arg kinds in a single one.
+        # We need two functions, because it is impossible to represent
+        # all param kinds in a single one.
         def test2(pod=42, /):
             pass
 
