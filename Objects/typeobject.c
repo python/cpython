@@ -8274,17 +8274,14 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
         (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
          (void *)PyObject_GenericGetAttr))
-        /* finding nothing is reasonable when __getattr__ is defined */
-        res = _PyObject_GenericTryGetAttr(self, name);
+        res = PyObject_GenericGetAttr(self, name);
     else {
         Py_INCREF(getattribute);
         res = call_attribute(self, getattribute, name);
         Py_DECREF(getattribute);
     }
-    if (res == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-        }
+    if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        PyErr_Clear();
         res = call_attribute(self, getattr, name);
     }
     Py_DECREF(getattr);
@@ -9140,13 +9137,15 @@ type_new_set_names(PyTypeObject *type)
         Py_DECREF(set_name);
 
         if (res == NULL) {
-            _PyErr_FormatFromCause(PyExc_RuntimeError,
+            _PyErr_FormatNote(
                 "Error calling __set_name__ on '%.100s' instance %R "
                 "in '%.100s'",
                 Py_TYPE(value)->tp_name, key, type->tp_name);
             goto error;
         }
-        Py_DECREF(res);
+        else {
+            Py_DECREF(res);
+        }
     }
 
     Py_DECREF(names_to_set);

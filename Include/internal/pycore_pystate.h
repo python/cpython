@@ -133,16 +133,6 @@ extern void _PyThreadState_BindDetached(PyThreadState *);
 extern void _PyThreadState_UnbindDetached(PyThreadState *);
 
 
-static inline void
-_PyThreadState_UpdateTracingState(PyThreadState *tstate)
-{
-    bool use_tracing =
-        (tstate->tracing == 0) &&
-        (tstate->c_tracefunc != NULL || tstate->c_profilefunc != NULL);
-    tstate->cframe->use_tracing = (use_tracing ? 255 : 0);
-}
-
-
 /* Other */
 
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
