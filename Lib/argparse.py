@@ -2395,7 +2395,10 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         args, argv = self.parse_known_intermixed_args(args, namespace)
         if argv:
             msg = _('unrecognized arguments: %s')
-            self.error(msg % ' '.join(argv))
+            formatted_msg = msg % ' '.join(argv)
+            if self.exit_on_error:
+                self.error(formatted_msg)
+            raise ArgumentError(None, formatted_msg)
         return args
 
     def parse_known_intermixed_args(self, args=None, namespace=None):

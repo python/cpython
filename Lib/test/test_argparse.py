@@ -5614,6 +5614,8 @@ class TestExitOnError(TestCase):
         msg = 'unrecognized arguments: --unknown'
         with self.assertRaisesRegex(argparse.ArgumentError, msg):
             self.parser.parse_args('--integers 4 --unknown'.split())
+        with self.assertRaisesRegex(argparse.ArgumentError, msg.replace('--', '')):
+            self.parser.parse_intermixed_args('--integers 4 unknown'.split())
 
     def test_exit_on_error_mutually_exclusive_group(self):
         other_parser = argparse.ArgumentParser(exit_on_error=False)
