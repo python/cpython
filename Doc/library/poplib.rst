@@ -28,6 +28,8 @@ quality of POP3 servers varies widely, and too many are quite poor. If your
 mailserver supports IMAP, you would be better off using the
 :class:`imaplib.IMAP4` class, as IMAP servers tend to be better implemented.
 
+.. include:: ../includes/wasm-notavail.rst
+
 The :mod:`poplib` module provides two classes:
 
 
@@ -47,8 +49,11 @@ The :mod:`poplib` module provides two classes:
       ``poplib.putline`` with arguments ``self`` and ``line``,
       where ``line`` is the bytes about to be sent to the remote host.
 
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket.
 
-.. class:: POP3_SSL(host, port=POP3_SSL_PORT, keyfile=None, certfile=None, timeout=None, context=None)
+.. class:: POP3_SSL(host, port=POP3_SSL_PORT, *, timeout=None, context=None)
 
    This is a subclass of :class:`POP3` that connects to the server over an SSL
    encrypted socket.  If *port* is not specified, 995, the standard POP3-over-SSL
@@ -58,13 +63,9 @@ The :mod:`poplib` module provides two classes:
    single (potentially long-lived) structure.  Please read :ref:`ssl-security`
    for best practices.
 
-   *keyfile* and *certfile* are a legacy alternative to *context* - they can
-   point to PEM-formatted private key and certificate chain files,
-   respectively, for the SSL connection.
-
    .. audit-event:: poplib.connect self,host,port poplib.POP3_SSL
 
-   .. audit-event:: poplib.putline self,line popplib.POP3_SSL
+   .. audit-event:: poplib.putline self,line poplib.POP3_SSL
 
       All commands will raise an :ref:`auditing event <auditing>`
       ``poplib.putline`` with arguments ``self`` and ``line``,
@@ -84,6 +85,13 @@ The :mod:`poplib` module provides two classes:
        Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
        :func:`ssl.create_default_context` select the system's trusted CA
        certificates for you.
+
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket.
+
+   .. versionchanged:: 3.12
+       The deprecated *keyfile* and *certfile* parameters have been removed.
 
 One exception is defined as an attribute of the :mod:`poplib` module:
 
@@ -111,10 +119,10 @@ One exception is defined as an attribute of the :mod:`poplib` module:
 POP3 Objects
 ------------
 
-All POP3 commands are represented by methods of the same name, in lower-case;
+All POP3 commands are represented by methods of the same name, in lowercase;
 most return the response text sent by the server.
 
-An :class:`POP3` instance has the following methods:
+A :class:`POP3` instance has the following methods:
 
 
 .. method:: POP3.set_debuglevel(level)
@@ -268,4 +276,3 @@ retrieves and prints all messages::
 
 At the end of the module, there is a test section that contains a more extensive
 example of usage.
-

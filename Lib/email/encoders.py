@@ -16,7 +16,6 @@ from base64 import encodebytes as _bencode
 from quopri import encodestring as _encodestring
 
 
-
 def _qencode(s):
     enc = _encodestring(s, quotetabs=True)
     # Must encode spaces, which quopri.encodestring() doesn't do
@@ -34,7 +33,6 @@ def encode_base64(msg):
     msg['Content-Transfer-Encoding'] = 'base64'
 
 
-
 def encode_quopri(msg):
     """Encode the message's payload in quoted-printable.
 
@@ -46,7 +44,6 @@ def encode_quopri(msg):
     msg['Content-Transfer-Encoding'] = 'quoted-printable'
 
 
-
 def encode_7or8bit(msg):
     """Set the Content-Transfer-Encoding header to 7bit or 8bit."""
     orig = msg.get_payload(decode=True)
@@ -64,6 +61,5 @@ def encode_7or8bit(msg):
         msg['Content-Transfer-Encoding'] = '7bit'
 
 
-
 def encode_noop(msg):
     """Do nothing."""

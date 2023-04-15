@@ -4,7 +4,9 @@ Common tests shared by test_unicode, test_userstring and test_bytes.
 
 import unittest, string, sys, struct
 from test import support
+from test.support import import_helper
 from collections import UserList
+import random
 
 class Sequence:
     def __init__(self, seq='wxyz'): self.seq = seq
@@ -79,12 +81,14 @@ class BaseTest:
                 self.assertIsNot(obj, realresult)
 
     # check that obj.method(*args) raises exc
-    def checkraises(self, exc, obj, methodname, *args):
+    def checkraises(self, exc, obj, methodname, *args, expected_msg=None):
         obj = self.fixtype(obj)
         args = self.fixtype(args)
         with self.assertRaises(exc) as cm:
             getattr(obj, methodname)(*args)
         self.assertNotEqual(str(cm.exception), '')
+        if expected_msg is not None:
+            self.assertEqual(str(cm.exception), expected_msg)
 
     # call obj.method(*args) without any checks
     def checkcall(self, obj, methodname, *args):
@@ -317,6 +321,80 @@ class BaseTest:
         else:
             self.checkraises(TypeError, 'hello', 'rindex', 42)
 
+    def test_find_periodic_pattern(self):
+        """Cover the special path for periodic patterns."""
+        def reference_find(p, s):
+            for i in range(len(s)):
+                if s.startswith(p, i):
+                    return i
+            return -1
+
+        rr = random.randrange
+        choices = random.choices
+        for _ in range(1000):
+            p0 = ''.join(choices('abcde', k=rr(10))) * rr(10, 20)
+            p = p0[:len(p0) - rr(10)] # pop off some characters
+            left = ''.join(choices('abcdef', k=rr(2000)))
+            right = ''.join(choices('abcdef', k=rr(2000)))
+            text = left + p + right
+            with self.subTest(p=p, text=text):
+                self.checkequal(reference_find(p, text),
+                                text, 'find', p)
+
+    def test_find_many_lengths(self):
+        haystack_repeats = [a * 10**e for e in range(6) for a in (1,2,5)]
+        haystacks = [(n, self.fixtype("abcab"*n + "da")) for n in haystack_repeats]
+
+        needle_repeats = [a * 10**e for e in range(6) for a in (1, 3)]
+        needles = [(m, self.fixtype("abcab"*m + "da")) for m in needle_repeats]
+
+        for n, haystack1 in haystacks:
+            haystack2 = haystack1[:-1]
+            for m, needle in needles:
+                answer1 = 5 * (n - m) if m <= n else -1
+                self.assertEqual(haystack1.find(needle), answer1, msg=(n,m))
+                self.assertEqual(haystack2.find(needle), -1, msg=(n,m))
+
+    def test_adaptive_find(self):
+        # This would be very slow for the naive algorithm,
+        # but str.find() should be O(n + m).
+        for N in 1000, 10_000, 100_000, 1_000_000:
+            A, B = 'a' * N, 'b' * N
+            haystack = A + A + B + A + A
+            needle = A + B + B + A
+            self.checkequal(-1, haystack, 'find', needle)
+            self.checkequal(0, haystack, 'count', needle)
+            self.checkequal(len(haystack), haystack + needle, 'find', needle)
+            self.checkequal(1, haystack + needle, 'count', needle)
+
+    def test_find_with_memory(self):
+        # Test the "Skip with memory" path in the two-way algorithm.
+        for N in 1000, 3000, 10_000, 30_000:
+            needle = 'ab' * N
+            haystack = ('ab'*(N-1) + 'b') * 2
+            self.checkequal(-1, haystack, 'find', needle)
+            self.checkequal(0, haystack, 'count', needle)
+            self.checkequal(len(haystack), haystack + needle, 'find', needle)
+            self.checkequal(1, haystack + needle, 'count', needle)
+
+    def test_find_shift_table_overflow(self):
+        """When the table of 8-bit shifts overflows."""
+        N = 2**8 + 100
+
+        # first check the periodic case
+        # here, the shift for 'b' is N + 1.
+        pattern1 = 'a' * N + 'b' + 'a' * N
+        text1 = 'babbaa' * N + pattern1
+        self.checkequal(len(text1)-len(pattern1),
+                        text1, 'find', pattern1)
+
+        # now check the non-periodic case
+        # here, the shift for 'd' is 3*(N+1)+1
+        pattern2 = 'ddd' + 'abc' * N + "eee"
+        text2 = pattern2[:-1] + "ddeede" * 2 * N + pattern2 + "de" * N
+        self.checkequal(len(text2) - N*len("de") - len(pattern2),
+                        text2, 'find', pattern2)
+
     def test_lower(self):
         self.checkequal('hello', 'HeLLo', 'lower')
         self.checkequal('hello', 'hello', 'lower')
@@ -427,6 +505,11 @@ class BaseTest:
         self.checkraises(ValueError, 'hello', 'split', '', 0)
 
     def test_rsplit(self):
+        # without arg
+        self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'rsplit')
+        self.checkequal(['a', 'b', 'c', 'd'], 'a  b  c d', 'rsplit')
+        self.checkequal([], '', 'rsplit')
+
         # by a char
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'rsplit', '|')
         self.checkequal(['a|b|c', 'd'], 'a|b|c|d', 'rsplit', '|', 1)
@@ -480,6 +563,9 @@ class BaseTest:
 
         # with keyword args
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'rsplit', sep='|')
+        self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'rsplit', sep=None)
+        self.checkequal(['a b c', 'd'],
+                        'a b c d', 'rsplit', sep=None, maxsplit=1)
         self.checkequal(['a|b|c', 'd'],
                         'a|b|c|d', 'rsplit', '|', maxsplit=1)
         self.checkequal(['a|b|c', 'd'],
@@ -505,6 +591,7 @@ class BaseTest:
         EQ("", "", "replace", "A", "")
         EQ("", "", "replace", "A", "A")
         EQ("", "", "replace", "", "", 100)
+        EQ("A", "", "replace", "", "A", 100)
         EQ("", "", "replace", "", "", sys.maxsize)
 
         # interleave (from=="", 'to' gets inserted everywhere)
@@ -672,6 +759,18 @@ class BaseTest:
         self.checkraises(TypeError, 'hello', 'replace', 42, 'h')
         self.checkraises(TypeError, 'hello', 'replace', 'h', 42)
 
+    def test_replace_uses_two_way_maxcount(self):
+        # Test that maxcount works in _two_way_count in fastsearch.h
+        A, B = "A"*1000, "B"*1000
+        AABAA = A + A + B + A + A
+        ABBA = A + B + B + A
+        self.checkequal(AABAA + ABBA,
+                        AABAA + ABBA, 'replace', ABBA, "ccc", 0)
+        self.checkequal(AABAA + "ccc",
+                        AABAA + ABBA, 'replace', ABBA, "ccc", 1)
+        self.checkequal(AABAA + "ccc",
+                        AABAA + ABBA, 'replace', ABBA, "ccc", 2)
+
     @unittest.skipIf(sys.maxsize > (1 << 32) or struct.calcsize('P') != 4,
                      'only applies to 32-bit platforms')
     def test_replace_overflow(self):
@@ -680,6 +779,42 @@ class BaseTest:
         self.checkraises(OverflowError, A2_16, "replace", "", A2_16)
         self.checkraises(OverflowError, A2_16, "replace", "A", A2_16)
         self.checkraises(OverflowError, A2_16, "replace", "AA", A2_16+A2_16)
+
+    def test_removeprefix(self):
+        self.checkequal('am', 'spam', 'removeprefix', 'sp')
+        self.checkequal('spamspam', 'spamspamspam', 'removeprefix', 'spam')
+        self.checkequal('spam', 'spam', 'removeprefix', 'python')
+        self.checkequal('spam', 'spam', 'removeprefix', 'spider')
+        self.checkequal('spam', 'spam', 'removeprefix', 'spam and eggs')
+
+        self.checkequal('', '', 'removeprefix', '')
+        self.checkequal('', '', 'removeprefix', 'abcde')
+        self.checkequal('abcde', 'abcde', 'removeprefix', '')
+        self.checkequal('', 'abcde', 'removeprefix', 'abcde')
+
+        self.checkraises(TypeError, 'hello', 'removeprefix')
+        self.checkraises(TypeError, 'hello', 'removeprefix', 42)
+        self.checkraises(TypeError, 'hello', 'removeprefix', 42, 'h')
+        self.checkraises(TypeError, 'hello', 'removeprefix', 'h', 42)
+        self.checkraises(TypeError, 'hello', 'removeprefix', ("he", "l"))
+
+    def test_removesuffix(self):
+        self.checkequal('sp', 'spam', 'removesuffix', 'am')
+        self.checkequal('spamspam', 'spamspamspam', 'removesuffix', 'spam')
+        self.checkequal('spam', 'spam', 'removesuffix', 'python')
+        self.checkequal('spam', 'spam', 'removesuffix', 'blam')
+        self.checkequal('spam', 'spam', 'removesuffix', 'eggs and spam')
+
+        self.checkequal('', '', 'removesuffix', '')
+        self.checkequal('', '', 'removesuffix', 'abcde')
+        self.checkequal('abcde', 'abcde', 'removesuffix', '')
+        self.checkequal('', 'abcde', 'removesuffix', 'abcde')
+
+        self.checkraises(TypeError, 'hello', 'removesuffix')
+        self.checkraises(TypeError, 'hello', 'removesuffix', 42)
+        self.checkraises(TypeError, 'hello', 'removesuffix', 42, 'h')
+        self.checkraises(TypeError, 'hello', 'removesuffix', 'h', 42)
+        self.checkraises(TypeError, 'hello', 'removesuffix', ("lo", "l"))
 
     def test_capitalize(self):
         self.checkequal(' hello ', ' hello ', 'capitalize')
@@ -1119,6 +1254,10 @@ class MixinStrUnicodeUserStringTest:
 
         self.checkraises(TypeError, 'abc', '__getitem__', 'def')
 
+        for idx_type in ('def', object()):
+            expected_msg = "string indices must be integers, not '{}'".format(type(idx_type).__name__)
+            self.checkraises(TypeError, 'abc', '__getitem__', idx_type, expected_msg=expected_msg)
+
     def test_slice(self):
         self.checkequal('abc', 'abc', '__getitem__', slice(0, 1000))
         self.checkequal('abc', 'abc', '__getitem__', slice(0, 3))
@@ -1246,17 +1385,17 @@ class MixinStrUnicodeUserStringTest:
 
     @support.cpython_only
     def test_formatting_c_limits(self):
-        from _testcapi import PY_SSIZE_T_MAX, INT_MAX, UINT_MAX
-        SIZE_MAX = (1 << (PY_SSIZE_T_MAX.bit_length() + 1)) - 1
+        _testcapi = import_helper.import_module('_testcapi')
+        SIZE_MAX = (1 << (_testcapi.PY_SSIZE_T_MAX.bit_length() + 1)) - 1
         self.checkraises(OverflowError, '%*s', '__mod__',
-                         (PY_SSIZE_T_MAX + 1, ''))
+                         (_testcapi.PY_SSIZE_T_MAX + 1, ''))
         self.checkraises(OverflowError, '%.*f', '__mod__',
-                         (INT_MAX + 1, 1. / 7))
+                         (_testcapi.INT_MAX + 1, 1. / 7))
         # Issue 15989
         self.checkraises(OverflowError, '%*s', '__mod__',
                          (SIZE_MAX + 1, ''))
         self.checkraises(OverflowError, '%.*f', '__mod__',
-                         (UINT_MAX + 1, 1. / 7))
+                         (_testcapi.UINT_MAX + 1, 1. / 7))
 
     def test_floatformatting(self):
         # float formatting

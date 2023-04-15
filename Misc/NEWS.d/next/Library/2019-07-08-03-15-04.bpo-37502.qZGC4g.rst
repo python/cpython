@@ -1,1 +1,0 @@
-pickle.loads() no longer raises TypeError when the buffers argument is set to None
