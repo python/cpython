@@ -878,6 +878,7 @@ static int
 set_update_internal(PySetObject *so, PyObject *other)
 {
     PyObject *key, *it;
+    Py_ssize_t length;
 
     if (PyAnySet_Check(other))
         return set_merge(so, other);
@@ -905,9 +906,23 @@ set_update_internal(PySetObject *so, PyObject *other)
         return 0;
     }
 
+    /* If there's a length or length hint, do one big resize at the start,
+     * rather than incrementally resizing as we insert new keys.
+     * Expect that there will be no (or few) overlapping keys.
+     * Use 0 as a default value to avoid changing the current mask.
+     */
+    length = PyObject_LengthHint(other, 0);
+    if (length < 0)
+        return -1;
+
     it = PyObject_GetIter(other);
     if (it == NULL)
         return -1;
+
+    if (length > so->mask) {
+        if (set_table_resize(so, (so->used + length)*2) != 0)
+            return -1;
+    }
 
     while ((key = PyIter_Next(it)) != NULL) {
         if (set_add_key(so, key)) {
