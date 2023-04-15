@@ -1,0 +1,2 @@
+:meth:`uuid.UUID.version` now conforms to its documentation returning either
+1 through 5, or ``None``. Patch by Jophine Pranjal.
