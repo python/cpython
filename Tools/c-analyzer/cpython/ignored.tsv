@@ -290,6 +290,7 @@ Modules/posixmodule.c	os_listxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	-	posix_constants_confstr	-
 Modules/posixmodule.c	-	posix_constants_pathconf	-
 Modules/posixmodule.c	-	posix_constants_sysconf	-
+Modules/posixmodule.c	-	perf_map_state	-
 Modules/pyexpat.c	-	ExpatMemoryHandler	-
 Modules/pyexpat.c	-	error_info_of	-
 Modules/pyexpat.c	-	handler_info	-
