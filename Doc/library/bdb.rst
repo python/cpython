@@ -78,7 +78,7 @@ The :mod:`bdb` module also defines two classes:
 
       .. versionadded:: 3.2
 
-      .. versionchanged:: 3.7
+      .. versionchanged:: 3.12
          Breakpoint type will now changed by corresponding type.
 
    .. method:: bpprint(out=None)
@@ -248,6 +248,8 @@ The :mod:`bdb` module also defines two classes:
 
       This method checks if there is a watchpoint in the filename and line
       belonging to *frame* or, at least, in the current function.
+
+     .. versionadded:: 3.12
 
    Derived classes should override these methods to gain control over debugger
    operation.

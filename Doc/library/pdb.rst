@@ -336,7 +336,7 @@ can be overridden by the local file.
    watchpoint, the number of times that breakpoint has been hit, the current
    ignore count, and the associated condition if any.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.12
 
 .. pdbcommand:: rwa(tch) [expr]
 
@@ -347,7 +347,7 @@ can be overridden by the local file.
    watchpoint, the number of times that breakpoint has been hit, the current
    ignore count, and the associated condition if any.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.12
 
 .. pdbcommand:: aw(atch) [expr]
 
@@ -358,7 +358,7 @@ can be overridden by the local file.
    watchpoint, the number of times that breakpoint has been hit, the current
    ignore count, and the associated condition if any.
 
-   .. versionadded:: 3.7
+   .. versionadded:: 3.12
 
 .. pdbcommand:: cl(ear) [filename:lineno | bpnumber ...]
 
