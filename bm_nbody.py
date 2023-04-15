@@ -143,7 +143,7 @@ if __name__ == '__main__':
     # Warmup
     bench_nbody(128, DEFAULT_REFERENCE, 128)
     # Showtime
-    print("It's showtime")
+    print("Starting benchmark...")
     taken = bench_nbody(DEFAULT_ITERATIONS, DEFAULT_REFERENCE, 50_000)
     print("Time taken is", taken, "s")
     
