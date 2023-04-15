@@ -533,13 +533,13 @@ class SysModuleTest(unittest.TestCase):
             main_id = threading.get_ident()
             self.assertIn(main_id, d)
             self.assertIn(thread_id, d)
-            self.assertEqual((None, None, None), d.pop(main_id))
+            self.assertEqual(None, d.pop(main_id))
 
             # Verify that the captured thread frame is blocked in g456, called
             # from f123.  This is a little tricky, since various bits of
             # threading.py are also in the thread's call stack.
-            exc_type, exc_value, exc_tb = d.pop(thread_id)
-            stack = traceback.extract_stack(exc_tb.tb_frame)
+            exc_value = d.pop(thread_id)
+            stack = traceback.extract_stack(exc_value.__traceback__.tb_frame)
             for i, (filename, lineno, funcname, sourceline) in enumerate(stack):
                 if funcname == "f123":
                     break
@@ -1446,7 +1446,7 @@ class SizeofTest(unittest.TestCase):
         def func():
             return sys._getframe()
         x = func()
-        check(x, size('3Pi3c7P2ic??2P'))
+        check(x, size('3Pii3c7P2ic??2P'))
         # function
         def func(): pass
         check(func, size('14Pi'))

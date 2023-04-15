@@ -169,6 +169,7 @@ class TestNtpath(NtpathTestCase):
 
         # gh-81790: support device namespace, including UNC drives.
         tester('ntpath.splitroot("//?/c:")', ("//?/c:", "", ""))
+        tester('ntpath.splitroot("//./c:")', ("//./c:", "", ""))
         tester('ntpath.splitroot("//?/c:/")', ("//?/c:", "/", ""))
         tester('ntpath.splitroot("//?/c:/dir")', ("//?/c:", "/", "dir"))
         tester('ntpath.splitroot("//?/UNC")', ("//?/UNC", "", ""))
@@ -179,8 +180,12 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitroot("//?/VOLUME{00000000-0000-0000-0000-000000000000}/spam")',
                ('//?/VOLUME{00000000-0000-0000-0000-000000000000}', '/', 'spam'))
         tester('ntpath.splitroot("//?/BootPartition/")', ("//?/BootPartition", "/", ""))
+        tester('ntpath.splitroot("//./BootPartition/")', ("//./BootPartition", "/", ""))
+        tester('ntpath.splitroot("//./PhysicalDrive0")', ("//./PhysicalDrive0", "", ""))
+        tester('ntpath.splitroot("//./nul")', ("//./nul", "", ""))
 
         tester('ntpath.splitroot("\\\\?\\c:")', ("\\\\?\\c:", "", ""))
+        tester('ntpath.splitroot("\\\\.\\c:")', ("\\\\.\\c:", "", ""))
         tester('ntpath.splitroot("\\\\?\\c:\\")', ("\\\\?\\c:", "\\", ""))
         tester('ntpath.splitroot("\\\\?\\c:\\dir")', ("\\\\?\\c:", "\\", "dir"))
         tester('ntpath.splitroot("\\\\?\\UNC")', ("\\\\?\\UNC", "", ""))
@@ -193,6 +198,9 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitroot("\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}\\spam")',
                ('\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}', '\\', 'spam'))
         tester('ntpath.splitroot("\\\\?\\BootPartition\\")', ("\\\\?\\BootPartition", "\\", ""))
+        tester('ntpath.splitroot("\\\\.\\BootPartition\\")', ("\\\\.\\BootPartition", "\\", ""))
+        tester('ntpath.splitroot("\\\\.\\PhysicalDrive0")', ("\\\\.\\PhysicalDrive0", "", ""))
+        tester('ntpath.splitroot("\\\\.\\nul")', ("\\\\.\\nul", "", ""))
 
         # gh-96290: support partial/invalid UNC drives
         tester('ntpath.splitroot("//")', ("//", "", ""))  # empty server & missing share
@@ -299,6 +307,11 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.join('//computer/share/', 'a', 'b')", '//computer/share/a\\b')
         tester("ntpath.join('//computer/share', 'a', 'b')", '//computer/share\\a\\b')
         tester("ntpath.join('//computer/share', 'a/b')", '//computer/share\\a/b')
+
+        tester("ntpath.join('\\\\', 'computer')", '\\\\computer')
+        tester("ntpath.join('\\\\computer\\', 'share')", '\\\\computer\\share')
+        tester("ntpath.join('\\\\computer\\share\\', 'a')", '\\\\computer\\share\\a')
+        tester("ntpath.join('\\\\computer\\share\\a\\', 'b')", '\\\\computer\\share\\a\\b')
 
     def test_normpath(self):
         tester("ntpath.normpath('A//////././//.//B')", r'A\B')
