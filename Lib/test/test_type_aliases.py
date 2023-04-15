@@ -5,26 +5,22 @@ from typing import TypeAliasType
 
 class TypeParamsInvalidTest(unittest.TestCase):
     def test_name_collision_01(self):
-        code = """type TA1[A, A] = None"""
+        code = """type TA1[A, **A] = None"""
 
         with self.assertRaisesRegex(SyntaxError, "duplicate type parameter 'A'"):
             exec(code, {}, {})
 
-    def test_name_collision_02(self):
+    def test_name_non_collision_02(self):
         code = """type TA1[A] = lambda A: None"""
+        exec(code, {}, {})
 
-        with self.assertRaisesRegex(SyntaxError, "cannot overwrite type parameter 'A'"):
-            exec(code, {}, {})
-
-    def test_name_collision_03(self):
+    def test_name_non_collision_03(self):
         code = textwrap.dedent("""\
             class Outer[A]:
                 type TA1[A] = None
             """
         )
-
-        with self.assertRaisesRegex(SyntaxError, "duplicate type parameter 'A'"):
-            exec(code, {}, {})
+        exec(code, {}, {})
 
 
 class TypeParamsAccessTest(unittest.TestCase):
@@ -33,7 +29,6 @@ class TypeParamsAccessTest(unittest.TestCase):
             type TA1[A, B] = dict[A, B]
             """
         )
-
         exec(code, {}, {})
 
     def test_alias_access_02(self):
@@ -41,7 +36,6 @@ class TypeParamsAccessTest(unittest.TestCase):
             type TA1[A, B] = TA1[A, B] | int
             """
         )
-
         exec(code, {}, {})
 
     def test_alias_access_03(self):
@@ -51,7 +45,6 @@ class TypeParamsAccessTest(unittest.TestCase):
                     type TA1[C] = TA1[A, B] | int
             """
         )
-
         exec(code, {}, {})
 
 

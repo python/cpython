@@ -6,108 +6,79 @@ from typing import TypeVar, TypeVarTuple, ParamSpec
 
 class TypeParamsInvalidTest(unittest.TestCase):
     def test_name_collision_01(self):
-        code = """def func[A, A](): ..."""
-
+        code = """def func[**A, A](): ..."""
         with self.assertRaisesRegex(SyntaxError, "duplicate type parameter 'A'"):
             exec(code, {}, {})
 
-    def test_name_collision_02(self):
+    def test_name_non_collision_02(self):
         code = """def func[A](A): ..."""
+        exec(code, {}, {})
 
-        with self.assertRaisesRegex(SyntaxError, "cannot overwrite type parameter 'A'"):
-            exec(code, {}, {})
-
-    def test_name_collision_03(self):
+    def test_name_non_collision_03(self):
         code = """def func[A](*A): ..."""
+        exec(code, {}, {})
 
-        with self.assertRaisesRegex(SyntaxError, "cannot overwrite type parameter 'A'"):
-            exec(code, {}, {})
-
-    def test_name_collision_04(self):
+    def test_name_non_collision_04(self):
         # Mangled names should not cause a conflict.
         code = textwrap.dedent("""\
             class ClassA:
                 def func[__A](self, __A): ...
             """
         )
-
         exec(code, {}, {})
 
-    def test_name_collision_05(self):
+    def test_name_non_collision_05(self):
         code = textwrap.dedent("""\
             class ClassA:
                 def func[_ClassA__A](self, __A): ...
             """
         )
+        exec(code, {}, {})
 
-        with self.assertRaisesRegex(SyntaxError, "cannot overwrite type parameter '__A'"):
-            exec(code, {}, {})
-
-    def test_name_collision_06(self):
+    def test_name_non_collision_06(self):
         code = textwrap.dedent("""\
             class ClassA[X]:
                 def func(self, X): ...
             """
         )
+        exec(code, {}, {})
 
-        with self.assertRaisesRegex(SyntaxError, "cannot overwrite type parameter 'X'"):
-            exec(code, {}, {})
-
-    def test_name_collision_07(self):
+    def test_name_non_collision_07(self):
         code = textwrap.dedent("""\
             class ClassA[X]:
                 def func(self):
                     X = 1
             """
         )
+        exec(code, {}, {})
 
-        with self.assertRaisesRegex(SyntaxError, "cannot overwrite type parameter 'X'"):
-            exec(code, {}, {})
-
-    def test_name_collision_08(self):
+    def test_name_non_collision_08(self):
         code = textwrap.dedent("""\
             class ClassA[X]:
                 def func(self):
                     a = [X for X in []]
             """
         )
+        exec(code, {}, {})
 
-        with self.assertRaisesRegex(SyntaxError, "cannot overwrite type parameter 'X'"):
-            exec(code, {}, {})
-
-    def test_name_collision_09(self):
-        code = textwrap.dedent("""\
-            class ClassA[X]:
-                def func(self):
-                    a = lambda X: None
-            """
-        )
-
-        with self.assertRaisesRegex(SyntaxError, "cannot overwrite type parameter 'X'"):
-            exec(code, {}, {})
-
-    def test_name_collision_10(self):
+    def test_name_non_collision_9(self):
         code = textwrap.dedent("""\
             class ClassA[X]:
                 def func[X](self):
                     ...
             """
         )
+        exec(code, {}, {})
 
-        with self.assertRaisesRegex(SyntaxError, "duplicate type parameter 'X'"):
-            exec(code, {}, {})
-
-    def test_name_collision_11(self):
+    def test_name_non_collision_10(self):
         code = textwrap.dedent("""\
             class ClassA[X]:
                 X: int
             """
         )
+        exec(code, {}, {})
 
-        with self.assertRaisesRegex(SyntaxError, "cannot overwrite type parameter 'X'"):
-            exec(code, {}, {})
-
-    def test_name_collision_12(self):
+    def test_name_non_collision_11(self):
         code = textwrap.dedent("""\
             def outer():
                 X = 1
@@ -115,11 +86,9 @@ class TypeParamsInvalidTest(unittest.TestCase):
                     nonlocal X
             """
         )
+        exec(code, {}, {})
 
-        with self.assertRaisesRegex(SyntaxError, "cannot overwrite type parameter 'X'"):
-            exec(code, {}, {})
-
-    def test_name_collision_13(self):
+    def test_name_non_collision_13(self):
         code = textwrap.dedent("""\
             X = 1
             def outer():
@@ -127,9 +96,7 @@ class TypeParamsInvalidTest(unittest.TestCase):
                     global X
             """
         )
-
-        with self.assertRaisesRegex(SyntaxError, "cannot overwrite type parameter 'X'"):
-            exec(code, {}, {})
+        exec(code, {}, {})
 
 
 class TypeParamsAccessTest(unittest.TestCase):
@@ -139,7 +106,6 @@ class TypeParamsAccessTest(unittest.TestCase):
                 ...
             """
         )
-
         exec(code, {}, {})
 
     def test_class_access_02(self):
@@ -149,7 +115,6 @@ class TypeParamsAccessTest(unittest.TestCase):
                 ...
             """
         )
-
         exec(code, {}, {})
 
     def test_class_access_03(self):
@@ -171,7 +136,6 @@ class TypeParamsAccessTest(unittest.TestCase):
                 ...
             """
         )
-
         exec(code, {}, {})
 
     def test_function_access_02(self):
@@ -206,7 +170,6 @@ class TypeParamsAccessTest(unittest.TestCase):
                             lambda : (A, B, C, D)
             """
         )
-
         exec(code, {}, {})
 
     def test_out_of_scope_01(self):
