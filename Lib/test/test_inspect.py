@@ -1820,8 +1820,7 @@ class TestGetcallargsFunctions(unittest.TestCase):
             self.assertEqualException(f, '2, 3, 4')
             self.assertEqualException(f, '1, 2, 3, a=1')
             self.assertEqualException(f, '2, 3, 4, c=5')
-            # XXX: success of this one depends on dict order
-            ## self.assertEqualException(f, '2, 3, 4, a=1, c=5')
+            self.assertEqualException(f, '2, 3, 4, a=1, c=5')
             # f got an unexpected keyword argument
             self.assertEqualException(f, 'c=2')
             self.assertEqualException(f, '2, c=3')
@@ -1832,17 +1831,19 @@ class TestGetcallargsFunctions(unittest.TestCase):
             self.assertEqualException(f, '1, a=2')
             self.assertEqualException(f, '1, **{"a":2}')
             self.assertEqualException(f, '1, 2, b=3')
-            # XXX: Python inconsistency
-            # - for functions and bound methods: unexpected keyword 'c'
-            # - for unbound methods: multiple values for keyword 'a'
-            #self.assertEqualException(f, '1, c=3, a=2')
+            self.assertEqualException(f, '1, c=3, a=2')
         # issue11256:
         f3 = self.makeCallable('**c')
         self.assertEqualException(f3, '1, 2')
         self.assertEqualException(f3, '1, 2, a=1, b=2')
         f4 = self.makeCallable('*, a, b=0')
-        self.assertEqualException(f3, '1, 2')
-        self.assertEqualException(f3, '1, 2, a=1, b=2')
+        self.assertEqualException(f4, '1, 2')
+        self.assertEqualException(f4, '1, 2, a=1, b=2')
+        self.assertEqualException(f4, 'a=1, a=3')
+        self.assertEqualException(f4, 'a=1, c=3')
+        self.assertEqualException(f4, 'a=1, a=3, b=4')
+        self.assertEqualException(f4, 'a=1, b=2, a=3, b=4')
+        self.assertEqualException(f4, 'a=1, a=2, a=3, b=4')
 
         # issue #20816: getcallargs() fails to iterate over non-existent
         # kwonlydefaults and raises a wrong TypeError
@@ -2872,8 +2873,6 @@ class TestSignatureObject(unittest.TestCase):
     def test_signature_on_partial(self):
         from functools import partial
 
-        Parameter = inspect.Parameter
-
         def test():
             pass
 
@@ -2987,8 +2986,6 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(self.signature(partial(partial(test, 1), 2)),
                          ((('c', ..., int, "positional_or_keyword"),),
                           42))
-
-        psig = inspect.signature(partial(partial(test, 1), 2))
 
         def foo(a):
             return a
@@ -4153,8 +4150,6 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(ba.args, (10, 20))
 
     def test_signature_bind_positional_only(self):
-        P = inspect.Parameter
-
         def test(a_po, b_po, c_po=3, /, foo=42, *, bar=50, **kwargs):
             return a_po, b_po, c_po, foo, bar, kwargs
 
@@ -4578,7 +4573,6 @@ class TestMain(unittest.TestCase):
         self.assertEqual(err, b'')
 
     def test_builtins(self):
-        module = importlib.import_module('unittest')
         _, out, err = assert_python_failure('-m', 'inspect',
                                             'sys')
         lines = err.decode().splitlines()
