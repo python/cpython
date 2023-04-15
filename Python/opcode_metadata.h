@@ -249,9 +249,9 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case JUMP_FORWARD:
             return 0;
-        case JUMP_BACKWARD_QUICK:
-            return 0;
         case JUMP_BACKWARD:
+            return 0;
+        case JUMP_BACKWARD_QUICK:
             return 0;
         case JUMP_BACKWARD_RECORDING:
             return 0;
@@ -639,9 +639,9 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 2;
         case JUMP_FORWARD:
             return 0;
-        case JUMP_BACKWARD_QUICK:
-            return 0;
         case JUMP_BACKWARD:
+            return 0;
+        case JUMP_BACKWARD_QUICK:
             return 0;
         case JUMP_BACKWARD_RECORDING:
             return 0;
@@ -913,8 +913,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [IMPORT_NAME] = { true, INSTR_FMT_IB },
     [IMPORT_FROM] = { true, INSTR_FMT_IB },
     [JUMP_FORWARD] = { true, INSTR_FMT_IB },
-    [JUMP_BACKWARD_QUICK] = { true, INSTR_FMT_IBC0000 },
     [JUMP_BACKWARD] = { true, INSTR_FMT_IXC0000 },
+    [JUMP_BACKWARD_QUICK] = { true, INSTR_FMT_IBC0000 },
     [JUMP_BACKWARD_RECORDING] = { true, INSTR_FMT_IXC0000 },
     [JUMP_BACKWARD_INTO_TRACE] = { true, INSTR_FMT_IBC0000 },
     [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB },

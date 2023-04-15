@@ -1976,6 +1976,20 @@ dummy_func(
         //     JUMP_BACKWARD_QUICK,
         // };
 
+        inst(JUMP_BACKWARD, (unused/1, unused/4 --)) {
+            #if ENABLE_SPECIALIZATION
+            if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {
+                next_instr[-1].op.code = JUMP_BACKWARD_RECORDING;
+                cframe.jit_recording_end = &next_instr[-1];
+                cframe.jit_recording_size = 0;
+                GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+            }
+            STAT_INC(JUMP_BACKWARD, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(next_instr->cache);
+            #endif  /* ENABLE_SPECIALIZATION */
+            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
+        }
+
         inst(JUMP_BACKWARD_QUICK, (unused/1, unused/4 --)) {
             JUMPBY(_PyOpcode_Caches[JUMP_BACKWARD]);
             assert(oparg < INSTR_OFFSET());
@@ -1984,63 +1998,63 @@ dummy_func(
             DISPATCH();
         }
 
-        inst(JUMP_BACKWARD, (unused/1, unused/4 --)) {
-            #if ENABLE_SPECIALIZATION
-            // _PyJumpBackwardCache *cache = (_PyJumpBackwardCache *)next_instr;
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr[-1].op.code = JUMP_BACKWARD_RECORDING;
-                cframe.jit_recording_end = &next_instr[-1];
-                cframe.jit_recording_size = 0;
-                GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
-            }
-            STAT_INC(JUMP_BACKWARD, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #endif  /* ENABLE_SPECIALIZATION */
-            GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
-        }
-
         inst(JUMP_BACKWARD_RECORDING, (unused/1, unused/4 --)) {
             next_instr--;
-            next_instr->op.code = JUMP_BACKWARD_QUICK;
+            unsigned char *compiled = NULL;
             if (next_instr == cframe.jit_recording_end) {
-                unsigned char *compiled = _PyJIT_CompileTrace(cframe.jit_recording_size, cframe.jit_recording);
-                if (compiled) {
-                    next_instr->op.code = JUMP_BACKWARD_INTO_TRACE;
-                    *(unsigned char **)(&next_instr[2]) = compiled;
-                }
+                next_instr->op.code = JUMP_BACKWARD_QUICK;  // XXX
+                compiled = _PyJIT_CompileTrace(cframe.jit_recording_size, cframe.jit_recording);
             }
             cframe.jit_recording_end = NULL;
+            if (compiled) {
+                STAT_INC(JUMP_BACKWARD, success);
+                next_instr->op.code = JUMP_BACKWARD_INTO_TRACE;
+                next_instr[1].cache = adaptive_counter_cooldown();
+                *(unsigned char **)(&next_instr[2]) = compiled;
+            }
+            else {
+                STAT_INC(JUMP_BACKWARD, failure);
+                next_instr->op.code = JUMP_BACKWARD;
+                next_instr[1].cache = adaptive_counter_backoff(next_instr[1].cache);
+            }
             DISPATCH_SAME_OPARG();
         }
 
         inst(JUMP_BACKWARD_INTO_TRACE, (unused/1, trace/4 --)) {
+            _Py_CODEUNIT *instr = next_instr - 1;
             JUMPBY(_PyOpcode_Caches[JUMP_BACKWARD]); 
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
-            // printf("JIT: Entering trace for ");
-            // PyObject_Print((PyObject *)_PyFrame_GetFrameObject(frame), stdout, 0);
-            // printf("!\n");
             int status = ((int (*)(PyThreadState *, _PyInterpreterFrame *, PyObject **))(uintptr_t)trace)(tstate, frame, stack_pointer);
-            // if (status) {
-            //     printf("JIT: Leaving trace with status %d!\n", status);
-            // }
             frame = cframe.current_frame;
             next_instr = frame->prev_instr;
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (status < 0) {
+                UPDATE_MISS_STATS(JUMP_BACKWARD);
+                if (ADAPTIVE_COUNTER_IS_ZERO(instr[1].cache)) {
+                    instr->op.code = JUMP_BACKWARD;
+                    _PyJIT_Free((unsigned char *)(uintptr_t)trace);
+                }
+                else {
+                    DECREMENT_ADAPTIVE_COUNTER(instr[1].cache);
+                }
+            }
+            else {
+                STAT_INC(JUMP_BACKWARD, hit);
+            }
             switch (status) {
-                case 0:
-                    DISPATCH();
                 case -1:
                     NEXTOPARG();
                     opcode = _PyOpcode_Deopt[opcode];
                     DISPATCH_GOTO();
-                case -2:
+                case 0:
+                    DISPATCH();
+                case 1:
                     goto error;
-                case -3:
+                case 2:
                     goto exit_unwind;
-                case -4:
+                case 3:
                     goto handle_eval_breaker;
             }
             Py_UNREACHABLE();

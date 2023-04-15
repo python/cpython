@@ -106,6 +106,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, COMPARE_OP, "compare_op");
     err += add_stat_dict(stats, UNPACK_SEQUENCE, "unpack_sequence");
     err += add_stat_dict(stats, FOR_ITER, "for_iter");
+    err += add_stat_dict(stats, JUMP_BACKWARD, "jump_backward");
     if (err < 0) {
         Py_DECREF(stats);
         return NULL;
@@ -279,7 +280,7 @@ _PyCode_Quicken(PyCodeObject *code)
         if (caches) {
             // XXX
             if (opcode == JUMP_BACKWARD) {
-                instructions[i + 1].cache = adaptive_counter_bits(63, ADAPTIVE_WARMUP_BACKOFF);
+                instructions[i + 1].cache = adaptive_counter_bits((1 << 6) - 1, 6);
             }
             else {
                 instructions[i + 1].cache = adaptive_counter_warmup();

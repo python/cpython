@@ -16,11 +16,11 @@
 
 #include "Python/ceval_macros.h"
 
-#define _JUSTIN_RETURN_OK                        0
 #define _JUSTIN_RETURN_DEOPT                    -1
-#define _JUSTIN_RETURN_GOTO_ERROR               -2
-#define _JUSTIN_RETURN_GOTO_EXIT_UNWIND         -3
-#define _JUSTIN_RETURN_GOTO_HANDLE_EVAL_BREAKER -4
+#define _JUSTIN_RETURN_OK                        0
+#define _JUSTIN_RETURN_GOTO_ERROR                1
+#define _JUSTIN_RETURN_GOTO_EXIT_UNWIND          2
+#define _JUSTIN_RETURN_GOTO_HANDLE_EVAL_BREAKER  3
 
 // We obviously don't want compiled code specializing itself:
 #undef ENABLE_SPECIALIZATION
