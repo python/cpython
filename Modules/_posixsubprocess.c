@@ -873,9 +873,9 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     PyObject *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
     gid_t *extra_groups = NULL;
-    pid_t pid = -1;
     PyObject *cwd_obj2 = NULL;
     const char *cwd = NULL;
+    pid_t pid = -1;
     int need_to_reenable_gc = 0;
     char *const *argv = NULL, *const *envp = NULL;
     Py_ssize_t extra_group_size = 0;
