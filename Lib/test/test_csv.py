@@ -187,6 +187,10 @@ class Test_Csv(unittest.TestCase):
                          quoting = csv.QUOTE_ALL)
         self._write_test(['a\nb',1], '"a\nb","1"',
                          quoting = csv.QUOTE_ALL)
+        self._write_test(['a','',None,1], '"a","",,1',
+                         quoting = csv.QUOTE_STRINGS)
+        self._write_test(['a','',None,1], '"a","",,"1"',
+                         quoting = csv.QUOTE_NOTNULL)
 
     def test_write_escape(self):
         self._write_test(['a',1,'p,q'], 'a,1,"p,q"',
