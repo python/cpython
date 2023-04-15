@@ -94,10 +94,8 @@ class MimeTypes:
         valid, so a ValueError will be raised if they are
         specified.
         """
-        if not ext:
-            warnings.warn('Empty extension specified')
-        elif not ext.startswith('.'):
-            raise ValueError("Extensions should start with a '.'")
+        if ext and not ext.startswith('.'):
+            raise ValueError("Extensions should start with a '.' or be empty")
         self.types_map[strict][ext] = type
         exts = self.types_map_inv[strict].setdefault(type, [])
         if ext not in exts:
