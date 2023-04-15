@@ -1308,6 +1308,45 @@ if hasattr(builtins, "TypeVar"):
     ParamSpecArgs = type(ParamSpec("P").args)
     ParamSpecKwargs = type(ParamSpec("P").kwargs)
 
+    import copyreg
+
+    def _make_typevar(name, bound, constraints, covariant, contravariant, autovariance):
+        return TypeVar(name, *constraints, bound=bound,
+                       covariant=covariant, contravariant=contravariant,
+                       autovariance=autovariance)
+
+    def _pickle_tv(tv):
+        return _make_typevar, (tv.__name__, tv.__bound__, tv.__constraints__,
+                               tv.__covariant__, tv.__contravariant__, tv.__autovariance__)
+
+    copyreg.pickle(TypeVar, _pickle_tv)
+
+    def _pickle_tvt(tvt):
+        return TypeVarTuple, (tvt.__name__,)
+
+    copyreg.pickle(TypeVarTuple, _pickle_tvt)
+
+    def _make_paramspec(name, bound, covariant, contravariant, autovariance):
+        return ParamSpec(name, bound=bound,
+                         covariant=covariant, contravariant=contravariant,
+                         autovariance=autovariance)
+
+    def _pickle_ps(ps):
+        return _make_paramspec, (ps.__name__, ps.__bound__,
+                                 ps.__covariant__, ps.__contravariant__, ps.__autovariance__)
+
+    copyreg.pickle(ParamSpec, _pickle_ps)
+
+    def _pickle_psargs(psargs):
+        return ParamSpecArgs, (psargs.__origin__,)
+
+    copyreg.pickle(ParamSpecArgs, _pickle_psargs)
+
+    def _pickle_pskwargs(pskwargs):
+        return ParamSpecKwargs, (pskwargs.__origin__,)
+
+    copyreg.pickle(ParamSpecKwargs, _pickle_pskwargs)
+
 def _is_dunder(attr):
     return attr.startswith('__') and attr.endswith('__')
 
