@@ -16,14 +16,14 @@
 
 static PyObject DISABLE =
 {
-    _PyObject_IMMORTAL_REFCNT,
-    &PyBaseObject_Type
+    .ob_refcnt = _PyObject_IMMORTAL_REFCNT,
+    .ob_type = &PyBaseObject_Type
 };
 
 PyObject _PyInstrumentation_MISSING =
 {
-    _PyObject_IMMORTAL_REFCNT,
-    &PyBaseObject_Type
+    .ob_refcnt = _PyObject_IMMORTAL_REFCNT,
+    .ob_type = &PyBaseObject_Type
 };
 
 static const int8_t EVENT_FOR_OPCODE[256] = {
