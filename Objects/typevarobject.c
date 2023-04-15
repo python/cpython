@@ -551,8 +551,35 @@ static void typevartupleobject_dealloc(PyObject *self)
 
 static PyObject *typevartupleobject_iter(PyObject *self)
 {
-    // TODO Unpack[]
-    return Py_NewRef(self);
+    PyObject *typing = NULL;
+    PyObject *unpack = NULL;
+    PyObject *unpacked = NULL;
+    PyObject *tuple = NULL;
+    PyObject *result = NULL;
+
+    typing = PyImport_ImportModule("typing");
+    if (typing == NULL) {
+        goto exit;
+    }
+    unpack = PyObject_GetAttrString(typing, "Unpack");
+    if (unpack == NULL) {
+        goto exit;
+    }
+    unpacked = PyObject_GetItem(unpack, self);
+    if (unpacked == NULL) {
+        goto exit;
+    }
+    tuple = PyTuple_Pack(1, unpacked);
+    if (tuple == NULL) {
+        goto exit;
+    }
+    result = PyObject_GetIter(tuple);
+exit:
+    Py_XDECREF(typing);
+    Py_XDECREF(unpack);
+    Py_XDECREF(unpacked);
+    Py_XDECREF(tuple);
+    return result;
 }
 
 static PyObject *typevartupleobject_repr(PyObject *self)
