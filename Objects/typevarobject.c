@@ -44,13 +44,13 @@ static PyObject *call_typing_func_object(const char *name, PyObject *args) {
     if (typing == NULL) {
         return NULL;
     }
-    PyObject *type_check = PyObject_GetAttrString(typing, name);
-    if (type_check == NULL) {
+    PyObject *func = PyObject_GetAttrString(typing, name);
+    if (func == NULL) {
         Py_DECREF(typing);
         return NULL;
     }
-    PyObject *result = PyObject_CallObject(type_check, args);
-    Py_DECREF(type_check);
+    PyObject *result = PyObject_CallObject(func, args);
+    Py_DECREF(func);
     Py_DECREF(typing);
     return result;
 }
@@ -171,6 +171,16 @@ typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
         return NULL;
     }
 
+    if (Py_IsNone(bound)) {
+        bound = NULL;
+    }
+    if (bound != NULL) {
+        bound = type_check(bound);
+        if (bound == NULL) {
+            return NULL;
+        }
+    }
+
     if (!PyTuple_CheckExact(constraints)) {
         PyErr_SetString(PyExc_TypeError,
                         "constraints must be a tuple");
@@ -180,18 +190,22 @@ typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
     if (n_constraints == 1) {
         PyErr_SetString(PyExc_TypeError,
                         "A single constraint is not allowed");
+        Py_XDECREF(bound);
         return NULL;
     } else if (n_constraints == 0) {
         constraints = NULL;
+    } else if (bound != NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Constraints cannot be combined with bound=...");
+        Py_XDECREF(bound);
+        return NULL;
     }
 
-    if (Py_IsNone(bound)) {
-        bound = NULL;
-    }
-
-    return (PyObject *)typevarobject_alloc(name, bound, constraints,
-                                           covariant, contravariant,
-                                           autovariance);
+    PyObject *tv = (PyObject *)typevarobject_alloc(name, bound, constraints,
+                                                   covariant, contravariant,
+                                                   autovariance);
+    Py_XDECREF(bound);
+    return tv;
 }
 
 /*[clinic input]
@@ -272,6 +286,10 @@ static PyObject *paramspecargsobject_repr(PyObject *self)
 {
     paramspecargsobject *psa = (paramspecargsobject *)self;
 
+    if (Py_IS_TYPE(psa->__origin__, &_PyParamSpec_Type)) {
+        return PyUnicode_FromFormat("%s.args",
+            ((paramspecobject *)psa->__origin__)->name);
+    }
     return PyUnicode_FromFormat("%R.args", psa->__origin__);
 }
 
@@ -364,6 +382,10 @@ static PyObject *paramspeckwargsobject_repr(PyObject *self)
 {
     paramspeckwargsobject *psk = (paramspeckwargsobject *)self;
 
+    if (Py_IS_TYPE(psk->__origin__, &_PyParamSpec_Type)) {
+        return PyUnicode_FromFormat("%s.kwargs",
+            ((paramspecobject *)psk->__origin__)->name);
+    }
     return PyUnicode_FromFormat("%R.kwargs", psk->__origin__);
 }
 
@@ -538,7 +560,10 @@ paramspec_new_impl(PyTypeObject *type, const char *name, PyObject *bound,
             return NULL;
         }
     }
-    return (PyObject *)paramspecobject_alloc(name, bound, covariant, contravariant, autovariance);
+    PyObject *ps = (PyObject *)paramspecobject_alloc(
+        name, bound, covariant, contravariant, autovariance);
+    Py_XDECREF(bound);
+    return ps;
 }
 
 
