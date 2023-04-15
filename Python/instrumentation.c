@@ -14,16 +14,16 @@
 /* Uncomment this to dump debugging output when assertions fail */
 // #define INSTRUMENT_DEBUG 1
 
-static PyObject DISABLE =
-{
-    _PyObject_IMMORTAL_REFCNT,
-    &PyBaseObject_Type
+static PyObject DISABLE = {
+    _PyObject_EXTRA_INIT
+    .ob_refcnt = _Py_IMMORTAL_REFCNT,
+    .ob_type = &PyBaseObject_Type
 };
 
-PyObject _PyInstrumentation_MISSING =
-{
-    _PyObject_IMMORTAL_REFCNT,
-    &PyBaseObject_Type
+PyObject _PyInstrumentation_MISSING = {
+    _PyObject_EXTRA_INIT
+    .ob_refcnt = _Py_IMMORTAL_REFCNT,
+    .ob_type = &PyBaseObject_Type
 };
 
 static const int8_t EVENT_FOR_OPCODE[256] = {
