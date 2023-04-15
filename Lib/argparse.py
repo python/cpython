@@ -713,6 +713,10 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
         """
         help = action.help
         if help is None:
+            # This ensures help would always be a string in an obvious way
+            # to make sure the contain check below works.
+            # However, in practice, the only way to access this code through
+            # normal operation has a checker for help being None already
             help = ''
 
         if '%(default)' not in help:
@@ -1124,7 +1128,7 @@ class _VersionAction(Action):
 
     def __init__(self,
                  option_strings,
-                 version=None,
+                 version,
                  dest=SUPPRESS,
                  default=SUPPRESS,
                  help="show program's version number and exit"):
@@ -1138,8 +1142,6 @@ class _VersionAction(Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         version = self.version
-        if version is None:
-            version = parser.version
         formatter = parser._get_formatter()
         formatter.add_text(version)
         parser._print_message(formatter.format_help(), _sys.stdout)
@@ -1506,6 +1508,8 @@ class _ActionsContainer(object):
         title_group_map = {}
         for group in self._action_groups:
             if group.title in title_group_map:
+                # This is practically impossible unless a derived class adds
+                # groups with duplicated titles in __init__.
                 msg = _('cannot merge actions - two groups are named %r')
                 raise ValueError(msg % (group.title))
             title_group_map[group.title] = group
@@ -1700,6 +1704,13 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
         return action
 
     def _remove_action(self, action):
+        # Currently this method will never be used because the only way to
+        # trigger _remove_action() method is from _handle_conflict_resolve
+        # and _MutuallyExclusiveGroup has to be an action container.
+        # However, the _add_action() method puts the action under the container
+        # of _MutuallyExclusiveGroup, the _remove_action() of
+        # _MutuallyExclusiveGroup will never be called - only the container's
+        # _remove_action() will be called.
         self._container._remove_action(action)
         self._group_actions.remove(action)
 
@@ -1789,13 +1800,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # add parent arguments and defaults
         for parent in parents:
+            if not isinstance(parent, ArgumentParser):
+                raise TypeError('parents must be a list of ArgumentParser')
             self._add_container_actions(parent)
-            try:
-                defaults = parent._defaults
-            except AttributeError:
-                pass
-            else:
-                self._defaults.update(defaults)
+            defaults = parent._defaults
+            self._defaults.update(defaults)
 
     # =======================
     # Pretty __repr__ methods

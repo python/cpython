@@ -13,6 +13,7 @@ import unittest
 import argparse
 import warnings
 
+from contextlib import redirect_stderr
 from test.support import os_helper
 from unittest import mock
 
@@ -1825,6 +1826,10 @@ class TestFileTypeOpenArgs(TestCase):
                 type('foo')
                 m.assert_called_with('foo', *args)
 
+    def test_invalid_file_type(self):
+        with self.assertRaises(ValueError):
+            argparse.FileType('b')('-test')
+
 
 class TestFileTypeMissingInitialization(TestCase):
     """
@@ -2017,6 +2022,27 @@ class TestActionExtend(ParserTestCase):
     successes = [
         ('--foo f1 --foo f2 f3 f4', NS(foo=['f1', 'f2', 'f3', 'f4'])),
     ]
+
+
+class TestInvalidAction(TestCase):
+    """Test invalid user defined Action"""
+
+    class ActionWithoutCall(argparse.Action):
+        pass
+
+    def test_invalid_type(self):
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument('--foo', action=self.ActionWithoutCall)
+        self.assertRaises(NotImplementedError, parser.parse_args, ['--foo', 'bar'])
+
+    def test_modified_invalid_action(self):
+        parser = ErrorRaisingArgumentParser()
+        action = parser.add_argument('--foo')
+        # Someone got crazy and did this
+        action.type = 1
+        self.assertRaises(ArgumentParserError, parser.parse_args, ['--foo', 'bar'])
+
 
 # ================
 # Subparsers tests
@@ -2652,6 +2678,9 @@ class TestParentParsers(TestCase):
               -w W
               -x X
         '''.format(progname, ' ' if progname else '' )))
+
+    def test_wrong_type_parents(self):
+        self.assertRaises(TypeError, ErrorRaisingArgumentParser, parents=[1])
 
 # ==============================
 # Mutually exclusive group tests
@@ -4669,6 +4698,9 @@ class TestInvalidArgumentConstructors(TestCase):
         self.assertValueError('--')
         self.assertValueError('---')
 
+    def test_invalid_prefix(self):
+        self.assertValueError('--foo', '+foo')
+
     def test_invalid_type(self):
         self.assertValueError('--foo', type='int')
         self.assertValueError('--foo', type=(int, float))
@@ -4732,6 +4764,9 @@ class TestInvalidArgumentConstructors(TestCase):
         self.assertTypeError('command', action='parsers', prog='PROG')
         self.assertTypeError('command', action='parsers',
                              parser_class=argparse.ArgumentParser)
+
+    def test_version_missing_params(self):
+        self.assertTypeError('command', action='version')
 
     def test_required_positional(self):
         self.assertTypeError('foo', required=True)
@@ -4904,10 +4939,7 @@ class TestOptionalsHelpVersionActions(TestCase):
     def test_alternate_help_version(self):
         parser = ErrorRaisingArgumentParser()
         parser.add_argument('-x', action='help')
-        parser.add_argument('-y', action='version')
         self.assertPrintHelpExit(parser, '-x')
-        self.assertArgumentParserError(parser, '-v')
-        self.assertArgumentParserError(parser, '--version')
         self.assertRaises(AttributeError, getattr, parser, 'format_version')
 
     def test_help_version_extra_arguments(self):
@@ -5325,6 +5357,19 @@ class TestIntermixedArgs(TestCase):
         group.add_argument('badger', nargs='*', default='X', help='BADGER')
         self.assertRaises(TypeError, parser.parse_intermixed_args, [])
         self.assertEqual(group.required, True)
+
+    def test_invalid_args(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        self.assertRaises(ArgumentParserError, parser.parse_intermixed_args, ['a'])
+
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        parser.add_argument('--foo', nargs="*")
+        parser.add_argument('foo')
+        parser.parse_args()
+        with io.StringIO() as buf, redirect_stderr(buf):
+            parser.parse_intermixed_args(['hello', '--foo'])
+            output = buf.getvalue()
+            self.assertIn("UserWarning", output)
 
 class TestIntermixedMessageContentError(TestCase):
     # case where Intermixed gives different error message
