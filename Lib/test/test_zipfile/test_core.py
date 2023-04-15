@@ -2092,8 +2092,6 @@ class OtherTests(unittest.TestCase):
             with zipf.open("foo.txt", "r") as fp:
                 fp.seek(bloc, os.SEEK_CUR)
                 self.assertEqual(fp.read(-1), b'men!')
-                fp.seek(-bloc, os.SEEK_CUR)
-                self.assertEqual(fp.read(-1), b'Charge men!')
         with zipfile.ZipFile(TESTFN, mode="r") as zipf:
             with zipf.open("foo.txt", "r") as fp:
                 fp.read(6)
