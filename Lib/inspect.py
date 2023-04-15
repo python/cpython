@@ -3021,7 +3021,12 @@ class Signature:
                                          kind.description)
                         raise ValueError(msg)
                     elif kind > top_kind:
-                        kind_defaults = False
+                        if (top_kind != _POSITIONAL_ONLY
+                                and kind != _POSITIONAL_OR_KEYWORD):
+                            # We still have to maintain defaults in cases like
+                            #    def some(pod=42, /, pk=1): ...
+                            # Here `pk` must have a default value.
+                            kind_defaults = False
                         top_kind = kind
 
                     if kind in (_POSITIONAL_ONLY, _POSITIONAL_OR_KEYWORD):
