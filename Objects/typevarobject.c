@@ -39,6 +39,35 @@ typedef struct {
 
 #include "clinic/typevarobject.c.h"
 
+static PyObject *call_typing_func_object(const char *name, PyObject *args) {
+    PyObject *typing = PyImport_ImportModule("typing");
+    if (typing == NULL) {
+        return NULL;
+    }
+    PyObject *type_check = PyObject_GetAttrString(typing, name);
+    if (type_check == NULL) {
+        Py_DECREF(typing);
+        return NULL;
+    }
+    PyObject *result = PyObject_CallObject(type_check, args);
+    Py_DECREF(type_check);
+    Py_DECREF(typing);
+    return result;
+}
+
+static PyObject *type_check(PyObject *arg) {
+    // Calling typing.py here leads to bootstrapping problems
+    if (Py_IsNone(arg)) {
+        return Py_NewRef(Py_TYPE(arg));
+    }
+    // TODO: real error message
+    PyObject *args = PyTuple_Pack(2, arg, Py_None);
+    if (args == NULL) {
+        return NULL;
+    }
+    return call_typing_func_object("_type_check", args);
+}
+
 static void typevarobject_dealloc(PyObject *self)
 {
     typevarobject *tv = (typevarobject *)self;
@@ -176,9 +205,11 @@ static PyObject *
 typevar_typing_subst_impl(typevarobject *self, PyObject *arg)
 /*[clinic end generated code: output=c76ced134ed8f4e1 input=6b70a4bb2da838de]*/
 {
-    // TODO _type_check
-    // TODO reject Unpack[]
-    return Py_NewRef(arg);
+    PyObject *args = PyTuple_Pack(2, self, arg);
+    if (args == NULL) {
+        return NULL;
+    }
+    return call_typing_func_object("_typevar_subst", args);
 }
 
 static PyMethodDef typevar_methods[] = {
@@ -488,7 +519,12 @@ paramspec_new_impl(PyTypeObject *type, const char *name, PyObject *bound,
         PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with autovariance.");
         return NULL;
     }
-    // TODO typing._type_check on bound
+    if (bound != NULL) {
+        bound = type_check(bound);
+        if (bound == NULL) {
+            return NULL;
+        }
+    }
     return (PyObject *)paramspecobject_alloc(name, bound, covariant, contravariant, autovariance);
 }
 
@@ -504,27 +540,42 @@ static PyObject *
 paramspec_typing_subst_impl(paramspecobject *self, PyObject *arg)
 /*[clinic end generated code: output=803e1ade3f13b57d input=4e0005d24023e896]*/
 {
-    if (PyTuple_Check(arg)) {
-        return Py_NewRef(arg);
-    } else if (PyList_Check(arg)) {
-        return PyList_AsTuple(arg);
-    } else {
-        // TODO: typing._is_param_expr
-        // (in particular _ConcatenateGenericAlias)
-        return Py_NewRef(arg);
+    PyObject *args = PyTuple_Pack(2, self, arg);
+    if (args == NULL) {
+        return NULL;
     }
+    return call_typing_func_object("_paramspec_subst", args);
+}
+
+/*[clinic input]
+paramspec.__typing_prepare_subst__ as paramspec_typing_prepare_subst
+
+    alias: object
+    args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+paramspec_typing_prepare_subst_impl(paramspecobject *self, PyObject *alias,
+                                    PyObject *args)
+/*[clinic end generated code: output=95449d630a2adb9a input=4375e2ffcb2ad635]*/
+{
+    PyObject *args_tuple = PyTuple_Pack(3, self, alias, args);
+    if (args_tuple == NULL) {
+        return NULL;
+    }
+    return call_typing_func_object("_paramspec_prepare_subst", args_tuple);
 }
 
 static PyMethodDef paramspec_methods[] = {
     PARAMSPEC_TYPING_SUBST_METHODDEF
+    PARAMSPEC_TYPING_PREPARE_SUBST_METHODDEF
     {0}
 };
 
 
 // TODO:
-// - args/kwargs
 // - pickling
-// - __typing_prepare_subst__
 PyTypeObject _PyParamSpec_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "typing.ParamSpec",
@@ -639,15 +690,34 @@ typevartuple_typing_subst_impl(typevartupleobject *self, PyObject *arg)
     return NULL;
 }
 
+/*[clinic input]
+typevartuple.__typing_prepare_subst__ as typevartuple_typing_prepare_subst
+
+    alias: object
+    args: object
+
+[clinic start generated code]*/
+
+static PyObject *
+typevartuple_typing_prepare_subst_impl(typevartupleobject *self,
+                                       PyObject *alias, PyObject *args)
+/*[clinic end generated code: output=ff999bc5b02036c1 input=a211b05f2eeb4306]*/
+{
+    PyObject *args_tuple = PyTuple_Pack(3, self, alias, args);
+    if (args_tuple == NULL) {
+        return NULL;
+    }
+    return call_typing_func_object("_typevartuple_prepare_subst", args_tuple);
+}
+
 static PyMethodDef typevartuple_methods[] = {
     TYPEVARTUPLE_TYPING_SUBST_METHODDEF
+    TYPEVARTUPLE_TYPING_PREPARE_SUBST_METHODDEF
     {0}
 };
 
 // TODO:
-// - Iterable (for Unpack)
 // - Pickling
-// - __typing_subst__/__typing_prepare_subst__
 PyTypeObject _PyTypeVarTuple_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "typing.TypeVarTuple",

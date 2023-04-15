@@ -1070,6 +1070,8 @@ class TypeVar(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
             raise TypeError(f"{arg} is not valid as type argument")
         return arg
 
+_typevar_subst = TypeVar.__typing_subst__
+
 
 class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
     """Type variable tuple.
@@ -1151,6 +1153,8 @@ class TypeVarTuple(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
 
     def __mro_entries__(self, bases):
         raise TypeError(f"Cannot subclass an instance of {type(self).__name__}")
+
+_typevartuple_prepare_subst = TypeVarTuple.__typing_prepare_subst__
 
 
 class ParamSpecArgs(_Final, _Immutable, _root=True):
@@ -1291,6 +1295,9 @@ class ParamSpec(_Final, _Immutable, _BoundVarianceMixin, _PickleUsingNameMixin,
         elif isinstance(args[i], list):
             args = (*args[:i], tuple(args[i]), *args[i+1:])
         return args
+
+_paramspec_subst = ParamSpec.__typing_subst__
+_paramspec_prepare_subst = ParamSpec.__typing_prepare_subst__
 
 
 import builtins

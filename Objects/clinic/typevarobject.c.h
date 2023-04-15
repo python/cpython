@@ -438,6 +438,63 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(paramspec_typing_prepare_subst__doc__,
+"__typing_prepare_subst__($self, /, alias, args)\n"
+"--\n"
+"\n");
+
+#define PARAMSPEC_TYPING_PREPARE_SUBST_METHODDEF    \
+    {"__typing_prepare_subst__", _PyCFunction_CAST(paramspec_typing_prepare_subst), METH_FASTCALL|METH_KEYWORDS, paramspec_typing_prepare_subst__doc__},
+
+static PyObject *
+paramspec_typing_prepare_subst_impl(paramspecobject *self, PyObject *alias,
+                                    PyObject *args);
+
+static PyObject *
+paramspec_typing_prepare_subst(paramspecobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(alias), &_Py_ID(args), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"alias", "args", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__typing_prepare_subst__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject *alias;
+    PyObject *__clinic_args;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    alias = args[0];
+    __clinic_args = args[1];
+    return_value = paramspec_typing_prepare_subst_impl(self, alias, __clinic_args);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(typevartuple__doc__,
 "typevartuple(name)\n"
 "--\n"
@@ -557,4 +614,61 @@ typevartuple_typing_subst(typevartupleobject *self, PyObject *const *args, Py_ss
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=06d91d3e010cd9de input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(typevartuple_typing_prepare_subst__doc__,
+"__typing_prepare_subst__($self, /, alias, args)\n"
+"--\n"
+"\n");
+
+#define TYPEVARTUPLE_TYPING_PREPARE_SUBST_METHODDEF    \
+    {"__typing_prepare_subst__", _PyCFunction_CAST(typevartuple_typing_prepare_subst), METH_FASTCALL|METH_KEYWORDS, typevartuple_typing_prepare_subst__doc__},
+
+static PyObject *
+typevartuple_typing_prepare_subst_impl(typevartupleobject *self,
+                                       PyObject *alias, PyObject *args);
+
+static PyObject *
+typevartuple_typing_prepare_subst(typevartupleobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(alias), &_Py_ID(args), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"alias", "args", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__typing_prepare_subst__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject *alias;
+    PyObject *__clinic_args;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    alias = args[0];
+    __clinic_args = args[1];
+    return_value = typevartuple_typing_prepare_subst_impl(self, alias, __clinic_args);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=b2896de46c103443 input=a9049054013a1b77]*/
