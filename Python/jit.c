@@ -65,7 +65,6 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
     return memory + stencil->nbytes;
 }
 
-
 // The world's smallest compiler?
 // Make sure to call _PyJIT_Free on the memory when you're done with it!
 unsigned char *
@@ -85,7 +84,6 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
     };
     unsigned char *memory = alloc(nbytes);
     if (memory == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
     unsigned char *head = memory;

@@ -2021,11 +2021,13 @@ dummy_func(
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
-            // printf("JIT: Entering trace!\n");
+            // printf("JIT: Entering trace for ");
+            // PyObject_Print(_PyFrame_GetFrameObject(frame), stdout, 0);
+            // printf("!\n");
             int status = ((int (*)(PyThreadState *, _PyInterpreterFrame *, PyObject **))(uintptr_t)trace)(tstate, frame, stack_pointer);
-            if (status) {
-                // printf("JIT: Leaving trace with status %d!\n", status);
-            }
+            // if (status) {
+            //     printf("JIT: Leaving trace with status %d!\n", status);
+            // }
             next_instr = frame->prev_instr;
             stack_pointer = _PyFrame_GetStackPointer(frame);
             switch (status) {

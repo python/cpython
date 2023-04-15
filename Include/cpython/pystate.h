@@ -59,7 +59,7 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_OPCODE 7
 
 // XXX
-#define _PyJIT_MAX_RECORDING_LENGTH (1 << 3)
+#define _PyJIT_MAX_RECORDING_LENGTH (1 << 4)
 
 // Internal structure: you should not use it directly, but use public functions
 // like PyThreadState_EnterTracing() and PyThreadState_LeaveTracing().
@@ -79,6 +79,7 @@ typedef struct _PyCFrame {
     struct _PyCFrame *previous;
     // JIT recording info:
     _Py_CODEUNIT *jit_recording_end;
+    // XXX: Dynamically allocate this?
     _Py_CODEUNIT *jit_recording[_PyJIT_MAX_RECORDING_LENGTH];
     int jit_recording_size;
     // XXX: Need to hold refs to code objects.

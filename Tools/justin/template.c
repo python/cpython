@@ -35,6 +35,8 @@
 #undef TARGET
 #define TARGET(OP) INSTRUCTION_START((OP));
 
+// XXX: Turn off trace recording in here?
+
 // Stuff that will be patched at "JIT time":
 extern int _justin_continue(PyThreadState *tstate, _PyInterpreterFrame *frame,
                             PyObject **stack_pointer);
@@ -68,6 +70,7 @@ _justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
     // Stuff to make Justin work:
     _Py_CODEUNIT *_next_trace = &_justin_next_trace;
     if (opcode != JUMP_BACKWARD_QUICK && next_instr->op.code != opcode) {
+        frame->prev_instr = next_instr;
         goto _return_deopt;
     }
     // Now, the actual instruction definition:
