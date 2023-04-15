@@ -22,6 +22,7 @@ import _io  # for open
 import marshal  # for loads
 import sys  # for modules
 import time  # for mktime
+import _warnings  # For warn()
 
 __all__ = ['ZipImportError', 'zipimporter']
 
@@ -42,7 +43,7 @@ END_CENTRAL_DIR_SIZE = 22
 STRING_END_ARCHIVE = b'PK\x05\x06'
 MAX_COMMENT_LEN = (1 << 16) - 1
 
-class zipimporter:
+class zipimporter(_bootstrap_external._LoaderBasics):
     """zipimporter(archivepath) -> zipimporter object
 
     Create a new zipimporter instance. 'archivepath' must be a path to
@@ -62,8 +63,7 @@ class zipimporter:
     # if found, or else read it from the archive.
     def __init__(self, path):
         if not isinstance(path, str):
-            import os
-            path = os.fsdecode(path)
+            raise TypeError(f"expected str, not {type(path)!r}")
         if not path:
             raise ZipImportError('archive path is empty', path=path)
         if alt_path_sep:
@@ -101,60 +101,38 @@ class zipimporter:
             self.prefix += path_sep
 
 
-    # Check whether we can satisfy the import of the module named by
-    # 'fullname', or whether it could be a portion of a namespace
-    # package. Return self if we can load it, a string containing the
-    # full path if it's a possible namespace portion, None if we
-    # can't load it.
-    def find_loader(self, fullname, path=None):
-        """find_loader(fullname, path=None) -> self, str or None.
+    def find_spec(self, fullname, target=None):
+        """Create a ModuleSpec for the specified module.
 
-        Search for a module specified by 'fullname'. 'fullname' must be the
-        fully qualified (dotted) module name. It returns the zipimporter
-        instance itself if the module was found, a string containing the
-        full path name if it's possibly a portion of a namespace package,
-        or None otherwise. The optional 'path' argument is ignored -- it's
-        there for compatibility with the importer protocol.
+        Returns None if the module cannot be found.
         """
-        mi = _get_module_info(self, fullname)
-        if mi is not None:
-            # This is a module or package.
-            return self, []
+        module_info = _get_module_info(self, fullname)
+        if module_info is not None:
+            return _bootstrap.spec_from_loader(fullname, self, is_package=module_info)
+        else:
+            # Not a module or regular package. See if this is a directory, and
+            # therefore possibly a portion of a namespace package.
 
-        # Not a module or regular package. See if this is a directory, and
-        # therefore possibly a portion of a namespace package.
-
-        # We're only interested in the last path component of fullname
-        # earlier components are recorded in self.prefix.
-        modpath = _get_module_path(self, fullname)
-        if _is_dir(self, modpath):
-            # This is possibly a portion of a namespace
-            # package. Return the string representing its path,
-            # without a trailing separator.
-            return None, [f'{self.archive}{path_sep}{modpath}']
-
-        return None, []
-
-
-    # Check whether we can satisfy the import of the module named by
-    # 'fullname'. Return self if we can, None if we can't.
-    def find_module(self, fullname, path=None):
-        """find_module(fullname, path=None) -> self or None.
-
-        Search for a module specified by 'fullname'. 'fullname' must be the
-        fully qualified (dotted) module name. It returns the zipimporter
-        instance itself if the module was found, or None if it wasn't.
-        The optional 'path' argument is ignored -- it's there for compatibility
-        with the importer protocol.
-        """
-        return self.find_loader(fullname, path)[0]
-
+            # We're only interested in the last path component of fullname
+            # earlier components are recorded in self.prefix.
+            modpath = _get_module_path(self, fullname)
+            if _is_dir(self, modpath):
+                # This is possibly a portion of a namespace
+                # package. Return the string representing its path,
+                # without a trailing separator.
+                path = f'{self.archive}{path_sep}{modpath}'
+                spec = _bootstrap.ModuleSpec(name=fullname, loader=None,
+                                             is_package=True)
+                spec.submodule_search_locations.append(path)
+                return spec
+            else:
+                return None
 
     def get_code(self, fullname):
         """get_code(fullname) -> code object.
 
         Return the code object for the specified module. Raise ZipImportError
-        if the module couldn't be found.
+        if the module couldn't be imported.
         """
         code, ispackage, modpath = _get_module_code(self, fullname)
         return code
@@ -184,7 +162,8 @@ class zipimporter:
     def get_filename(self, fullname):
         """get_filename(fullname) -> filename string.
 
-        Return the filename for the specified module.
+        Return the filename for the specified module or raise ZipImportError
+        if it couldn't be imported.
         """
         # Deciding the filename requires working out where the code
         # would come from if the module was actually loaded
@@ -236,8 +215,13 @@ class zipimporter:
 
         Load the module specified by 'fullname'. 'fullname' must be the
         fully qualified (dotted) module name. It returns the imported
-        module, or raises ZipImportError if it wasn't found.
+        module, or raises ZipImportError if it could not be imported.
+
+        Deprecated since Python 3.10. Use exec_module() instead.
         """
+        msg = ("zipimport.zipimporter.load_module() is deprecated and slated for "
+               "removal in Python 3.12; use exec_module() instead")
+        _warnings.warn(msg, DeprecationWarning)
         code, ispackage, modpath = _get_module_code(self, fullname)
         mod = sys.modules.get(fullname)
         if mod is None or not isinstance(mod, _module_type):
@@ -280,11 +264,18 @@ class zipimporter:
                 return None
         except ZipImportError:
             return None
-        if not _ZipImportResourceReader._registered:
-            from importlib.abc import ResourceReader
-            ResourceReader.register(_ZipImportResourceReader)
-            _ZipImportResourceReader._registered = True
-        return _ZipImportResourceReader(self, fullname)
+        from importlib.readers import ZipReader
+        return ZipReader(self, fullname)
+
+
+    def invalidate_caches(self):
+        """Reload the file data of the archive path."""
+        try:
+            self._files = _read_directory(self.archive)
+            _zip_directory_cache[self.archive] = self._files
+        except ZipImportError:
+            _zip_directory_cache.pop(self.archive, None)
+            self._files = {}
 
 
     def __repr__(self):
@@ -351,119 +342,126 @@ def _get_module_info(self, fullname):
 # data_size and file_offset are 0.
 def _read_directory(archive):
     try:
-        fp = _io.open(archive, 'rb')
+        fp = _io.open_code(archive)
     except OSError:
         raise ZipImportError(f"can't open Zip file: {archive!r}", path=archive)
 
     with fp:
+        # GH-87235: On macOS all file descriptors for /dev/fd/N share the same
+        # file offset, reset the file offset after scanning the zipfile diretory
+        # to not cause problems when some runs 'python3 /dev/fd/9 9<some_script'
+        start_offset = fp.tell()
         try:
-            fp.seek(-END_CENTRAL_DIR_SIZE, 2)
-            header_position = fp.tell()
-            buffer = fp.read(END_CENTRAL_DIR_SIZE)
-        except OSError:
-            raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
-        if len(buffer) != END_CENTRAL_DIR_SIZE:
-            raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
-        if buffer[:4] != STRING_END_ARCHIVE:
-            # Bad: End of Central Dir signature
-            # Check if there's a comment.
             try:
-                fp.seek(0, 2)
-                file_size = fp.tell()
+                fp.seek(-END_CENTRAL_DIR_SIZE, 2)
+                header_position = fp.tell()
+                buffer = fp.read(END_CENTRAL_DIR_SIZE)
             except OSError:
-                raise ZipImportError(f"can't read Zip file: {archive!r}",
-                                     path=archive)
-            max_comment_start = max(file_size - MAX_COMMENT_LEN -
-                                    END_CENTRAL_DIR_SIZE, 0)
-            try:
-                fp.seek(max_comment_start)
-                data = fp.read()
-            except OSError:
-                raise ZipImportError(f"can't read Zip file: {archive!r}",
-                                     path=archive)
-            pos = data.rfind(STRING_END_ARCHIVE)
-            if pos < 0:
-                raise ZipImportError(f'not a Zip file: {archive!r}',
-                                     path=archive)
-            buffer = data[pos:pos+END_CENTRAL_DIR_SIZE]
+                raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
             if len(buffer) != END_CENTRAL_DIR_SIZE:
-                raise ZipImportError(f"corrupt Zip file: {archive!r}",
-                                     path=archive)
-            header_position = file_size - len(data) + pos
-
-        header_size = _unpack_uint32(buffer[12:16])
-        header_offset = _unpack_uint32(buffer[16:20])
-        if header_position < header_size:
-            raise ZipImportError(f'bad central directory size: {archive!r}', path=archive)
-        if header_position < header_offset:
-            raise ZipImportError(f'bad central directory offset: {archive!r}', path=archive)
-        header_position -= header_size
-        arc_offset = header_position - header_offset
-        if arc_offset < 0:
-            raise ZipImportError(f'bad central directory size or offset: {archive!r}', path=archive)
-
-        files = {}
-        # Start of Central Directory
-        count = 0
-        try:
-            fp.seek(header_position)
-        except OSError:
-            raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
-        while True:
-            buffer = fp.read(46)
-            if len(buffer) < 4:
-                raise EOFError('EOF read where not expected')
-            # Start of file header
-            if buffer[:4] != b'PK\x01\x02':
-                break                                # Bad: Central Dir File Header
-            if len(buffer) != 46:
-                raise EOFError('EOF read where not expected')
-            flags = _unpack_uint16(buffer[8:10])
-            compress = _unpack_uint16(buffer[10:12])
-            time = _unpack_uint16(buffer[12:14])
-            date = _unpack_uint16(buffer[14:16])
-            crc = _unpack_uint32(buffer[16:20])
-            data_size = _unpack_uint32(buffer[20:24])
-            file_size = _unpack_uint32(buffer[24:28])
-            name_size = _unpack_uint16(buffer[28:30])
-            extra_size = _unpack_uint16(buffer[30:32])
-            comment_size = _unpack_uint16(buffer[32:34])
-            file_offset = _unpack_uint32(buffer[42:46])
-            header_size = name_size + extra_size + comment_size
-            if file_offset > header_offset:
-                raise ZipImportError(f'bad local header offset: {archive!r}', path=archive)
-            file_offset += arc_offset
-
-            try:
-                name = fp.read(name_size)
-            except OSError:
                 raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
-            if len(name) != name_size:
-                raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
-            # On Windows, calling fseek to skip over the fields we don't use is
-            # slower than reading the data because fseek flushes stdio's
-            # internal buffers.    See issue #8745.
-            try:
-                if len(fp.read(header_size - name_size)) != header_size - name_size:
-                    raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
-            except OSError:
-                raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
-
-            if flags & 0x800:
-                # UTF-8 file names extension
-                name = name.decode()
-            else:
-                # Historical ZIP filename encoding
+            if buffer[:4] != STRING_END_ARCHIVE:
+                # Bad: End of Central Dir signature
+                # Check if there's a comment.
                 try:
-                    name = name.decode('ascii')
-                except UnicodeDecodeError:
-                    name = name.decode('latin1').translate(cp437_table)
+                    fp.seek(0, 2)
+                    file_size = fp.tell()
+                except OSError:
+                    raise ZipImportError(f"can't read Zip file: {archive!r}",
+                                         path=archive)
+                max_comment_start = max(file_size - MAX_COMMENT_LEN -
+                                        END_CENTRAL_DIR_SIZE, 0)
+                try:
+                    fp.seek(max_comment_start)
+                    data = fp.read()
+                except OSError:
+                    raise ZipImportError(f"can't read Zip file: {archive!r}",
+                                         path=archive)
+                pos = data.rfind(STRING_END_ARCHIVE)
+                if pos < 0:
+                    raise ZipImportError(f'not a Zip file: {archive!r}',
+                                         path=archive)
+                buffer = data[pos:pos+END_CENTRAL_DIR_SIZE]
+                if len(buffer) != END_CENTRAL_DIR_SIZE:
+                    raise ZipImportError(f"corrupt Zip file: {archive!r}",
+                                         path=archive)
+                header_position = file_size - len(data) + pos
 
-            name = name.replace('/', path_sep)
-            path = _bootstrap_external._path_join(archive, name)
-            t = (path, compress, data_size, file_size, file_offset, time, date, crc)
-            files[name] = t
-            count += 1
+            header_size = _unpack_uint32(buffer[12:16])
+            header_offset = _unpack_uint32(buffer[16:20])
+            if header_position < header_size:
+                raise ZipImportError(f'bad central directory size: {archive!r}', path=archive)
+            if header_position < header_offset:
+                raise ZipImportError(f'bad central directory offset: {archive!r}', path=archive)
+            header_position -= header_size
+            arc_offset = header_position - header_offset
+            if arc_offset < 0:
+                raise ZipImportError(f'bad central directory size or offset: {archive!r}', path=archive)
+
+            files = {}
+            # Start of Central Directory
+            count = 0
+            try:
+                fp.seek(header_position)
+            except OSError:
+                raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
+            while True:
+                buffer = fp.read(46)
+                if len(buffer) < 4:
+                    raise EOFError('EOF read where not expected')
+                # Start of file header
+                if buffer[:4] != b'PK\x01\x02':
+                    break                                # Bad: Central Dir File Header
+                if len(buffer) != 46:
+                    raise EOFError('EOF read where not expected')
+                flags = _unpack_uint16(buffer[8:10])
+                compress = _unpack_uint16(buffer[10:12])
+                time = _unpack_uint16(buffer[12:14])
+                date = _unpack_uint16(buffer[14:16])
+                crc = _unpack_uint32(buffer[16:20])
+                data_size = _unpack_uint32(buffer[20:24])
+                file_size = _unpack_uint32(buffer[24:28])
+                name_size = _unpack_uint16(buffer[28:30])
+                extra_size = _unpack_uint16(buffer[30:32])
+                comment_size = _unpack_uint16(buffer[32:34])
+                file_offset = _unpack_uint32(buffer[42:46])
+                header_size = name_size + extra_size + comment_size
+                if file_offset > header_offset:
+                    raise ZipImportError(f'bad local header offset: {archive!r}', path=archive)
+                file_offset += arc_offset
+
+                try:
+                    name = fp.read(name_size)
+                except OSError:
+                    raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
+                if len(name) != name_size:
+                    raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
+                # On Windows, calling fseek to skip over the fields we don't use is
+                # slower than reading the data because fseek flushes stdio's
+                # internal buffers.    See issue #8745.
+                try:
+                    if len(fp.read(header_size - name_size)) != header_size - name_size:
+                        raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
+                except OSError:
+                    raise ZipImportError(f"can't read Zip file: {archive!r}", path=archive)
+
+                if flags & 0x800:
+                    # UTF-8 file names extension
+                    name = name.decode()
+                else:
+                    # Historical ZIP filename encoding
+                    try:
+                        name = name.decode('ascii')
+                    except UnicodeDecodeError:
+                        name = name.decode('latin1').translate(cp437_table)
+
+                name = name.replace('/', path_sep)
+                path = _bootstrap_external._path_join(archive, name)
+                t = (path, compress, data_size, file_size, file_offset, time, date, crc)
+                files[name] = t
+                count += 1
+        finally:
+            fp.seek(start_offset)
     _bootstrap._verbose_message('zipimport: found {} names in {!r}', count, archive)
     return files
 
@@ -533,7 +531,7 @@ def _get_data(archive, toc_entry):
     if data_size < 0:
         raise ZipImportError('negative data size')
 
-    with _io.open(archive, 'rb') as fp:
+    with _io.open_code(archive) as fp:
         # Check to make sure the local file header is correct
         try:
             fp.seek(file_offset)
@@ -578,33 +576,45 @@ def _eq_mtime(t1, t2):
     # dostime only stores even seconds, so be lenient
     return abs(t1 - t2) <= 1
 
+
 # Given the contents of a .py[co] file, unmarshal the data
-# and return the code object. Return None if it the magic word doesn't
-# match (we do this instead of raising an exception as we fall back
-# to .py if available and we don't want to mask other errors).
-def _unmarshal_code(pathname, data, mtime):
-    if len(data) < 16:
-        raise ZipImportError('bad pyc data')
+# and return the code object. Raises ImportError it the magic word doesn't
+# match, or if the recorded .py[co] metadata does not match the source.
+def _unmarshal_code(self, pathname, fullpath, fullname, data):
+    exc_details = {
+        'name': fullname,
+        'path': fullpath,
+    }
 
-    if data[:4] != _bootstrap_external.MAGIC_NUMBER:
-        _bootstrap._verbose_message('{!r} has bad magic', pathname)
-        return None  # signal caller to try alternative
+    flags = _bootstrap_external._classify_pyc(data, fullname, exc_details)
 
-    flags = _unpack_uint32(data[4:8])
-    if flags != 0:
-        # Hash-based pyc. We currently refuse to handle checked hash-based
-        # pycs. We could validate hash-based pycs against the source, but it
-        # seems likely that most people putting hash-based pycs in a zipfile
-        # will use unchecked ones.
+    hash_based = flags & 0b1 != 0
+    if hash_based:
+        check_source = flags & 0b10 != 0
         if (_imp.check_hash_based_pycs != 'never' and
-            (flags != 0x1 or _imp.check_hash_based_pycs == 'always')):
-            return None
-    elif mtime != 0 and not _eq_mtime(_unpack_uint32(data[8:12]), mtime):
-        _bootstrap._verbose_message('{!r} has bad mtime', pathname)
-        return None  # signal caller to try alternative
+                (check_source or _imp.check_hash_based_pycs == 'always')):
+            source_bytes = _get_pyc_source(self, fullpath)
+            if source_bytes is not None:
+                source_hash = _imp.source_hash(
+                    _bootstrap_external._RAW_MAGIC_NUMBER,
+                    source_bytes,
+                )
 
-    # XXX the pyc's size field is ignored; timestamp collisions are probably
-    # unimportant with zip files.
+                _bootstrap_external._validate_hash_pyc(
+                    data, source_hash, fullname, exc_details)
+    else:
+        source_mtime, source_size = \
+            _get_mtime_and_size_of_source(self, fullpath)
+
+        if source_mtime:
+            # We don't use _bootstrap_external._validate_timestamp_pyc
+            # to allow for a more lenient timestamp check.
+            if (not _eq_mtime(_unpack_uint32(data[8:12]), source_mtime) or
+                    _unpack_uint32(data[12:16]) != source_size):
+                _bootstrap._verbose_message(
+                    f'bytecode is stale for {fullname!r}')
+                return None
+
     code = marshal.loads(data[16:])
     if not isinstance(code, _code_type):
         raise TypeError(f'compiled module {pathname!r} is not a code object')
@@ -639,9 +649,9 @@ def _parse_dostime(d, t):
         -1, -1, -1))
 
 # Given a path to a .pyc file in the archive, return the
-# modification time of the matching .py file, or 0 if no source
-# is available.
-def _get_mtime_of_source(self, path):
+# modification time of the matching .py file and its size,
+# or (0, 0) if no source is available.
+def _get_mtime_and_size_of_source(self, path):
     try:
         # strip 'c' or 'o' from *.py[co]
         assert path[-1:] in ('c', 'o')
@@ -651,14 +661,33 @@ def _get_mtime_of_source(self, path):
         # with an embedded pyc time stamp
         time = toc_entry[5]
         date = toc_entry[6]
-        return _parse_dostime(date, time)
+        uncompressed_size = toc_entry[3]
+        return _parse_dostime(date, time), uncompressed_size
     except (KeyError, IndexError, TypeError):
-        return 0
+        return 0, 0
+
+
+# Given a path to a .pyc file in the archive, return the
+# contents of the matching .py file, or None if no source
+# is available.
+def _get_pyc_source(self, path):
+    # strip 'c' or 'o' from *.py[co]
+    assert path[-1:] in ('c', 'o')
+    path = path[:-1]
+
+    try:
+        toc_entry = self._files[path]
+    except KeyError:
+        return None
+    else:
+        return _get_data(self.archive, toc_entry)
+
 
 # Get the code object associated with the module specified by
 # 'fullname'.
 def _get_module_code(self, fullname):
     path = _get_module_path(self, fullname)
+    import_error = None
     for suffix, isbytecode, ispackage in _zip_searchorder:
         fullpath = path + suffix
         _bootstrap._verbose_message('trying {}{}{}', self.archive, path_sep, fullpath, verbosity=2)
@@ -669,9 +698,12 @@ def _get_module_code(self, fullname):
         else:
             modpath = toc_entry[0]
             data = _get_data(self.archive, toc_entry)
+            code = None
             if isbytecode:
-                mtime = _get_mtime_of_source(self, fullpath)
-                code = _unmarshal_code(modpath, data, mtime)
+                try:
+                    code = _unmarshal_code(self, modpath, fullpath, fullname, data)
+                except ImportError as exc:
+                    import_error = exc
             else:
                 code = _compile_source(modpath, data)
             if code is None:
@@ -681,75 +713,8 @@ def _get_module_code(self, fullname):
             modpath = toc_entry[0]
             return code, ispackage, modpath
     else:
-        raise ZipImportError(f"can't find module {fullname!r}", name=fullname)
-
-
-class _ZipImportResourceReader:
-    """Private class used to support ZipImport.get_resource_reader().
-
-    This class is allowed to reference all the innards and private parts of
-    the zipimporter.
-    """
-    _registered = False
-
-    def __init__(self, zipimporter, fullname):
-        self.zipimporter = zipimporter
-        self.fullname = fullname
-
-    def open_resource(self, resource):
-        fullname_as_path = self.fullname.replace('.', '/')
-        path = f'{fullname_as_path}/{resource}'
-        from io import BytesIO
-        try:
-            return BytesIO(self.zipimporter.get_data(path))
-        except OSError:
-            raise FileNotFoundError(path)
-
-    def resource_path(self, resource):
-        # All resources are in the zip file, so there is no path to the file.
-        # Raising FileNotFoundError tells the higher level API to extract the
-        # binary data and create a temporary file.
-        raise FileNotFoundError
-
-    def is_resource(self, name):
-        # Maybe we could do better, but if we can get the data, it's a
-        # resource.  Otherwise it isn't.
-        fullname_as_path = self.fullname.replace('.', '/')
-        path = f'{fullname_as_path}/{name}'
-        try:
-            self.zipimporter.get_data(path)
-        except OSError:
-            return False
-        return True
-
-    def contents(self):
-        # This is a bit convoluted, because fullname will be a module path,
-        # but _files is a list of file names relative to the top of the
-        # archive's namespace.  We want to compare file paths to find all the
-        # names of things inside the module represented by fullname.  So we
-        # turn the module path of fullname into a file path relative to the
-        # top of the archive, and then we iterate through _files looking for
-        # names inside that "directory".
-        from pathlib import Path
-        fullname_path = Path(self.zipimporter.get_filename(self.fullname))
-        relative_path = fullname_path.relative_to(self.zipimporter.archive)
-        # Don't forget that fullname names a package, so its path will include
-        # __init__.py, which we want to ignore.
-        assert relative_path.name == '__init__.py'
-        package_path = relative_path.parent
-        subdirs_seen = set()
-        for filename in self.zipimporter._files:
-            try:
-                relative = Path(filename).relative_to(package_path)
-            except ValueError:
-                continue
-            # If the path of the file (which is relative to the top of the zip
-            # namespace), relative to the package given when the resource
-            # reader was created, has a parent, then it's a name in a
-            # subdirectory and thus we skip it.
-            parent_name = relative.parent.name
-            if len(parent_name) == 0:
-                yield relative.name
-            elif parent_name not in subdirs_seen:
-                subdirs_seen.add(parent_name)
-                yield parent_name
+        if import_error:
+            msg = f"module load failed: {import_error}"
+            raise ZipImportError(msg, name=fullname) from import_error
+        else:
+            raise ZipImportError(f"can't find module {fullname!r}", name=fullname)

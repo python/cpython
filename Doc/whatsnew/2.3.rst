@@ -149,7 +149,7 @@ Here's the simplest example of a generator function::
            yield i
 
 A new keyword, :keyword:`yield`, was introduced for generators.  Any function
-containing a :keyword:`yield` statement is a generator function; this is
+containing a :keyword:`!yield` statement is a generator function; this is
 detected by Python's bytecode compiler which compiles the function specially as
 a result.
 
@@ -157,14 +157,14 @@ When you call a generator function, it doesn't return a single value; instead it
 returns a generator object that supports the iterator protocol.  On executing
 the :keyword:`yield` statement, the generator outputs the value of ``i``,
 similar to a :keyword:`return` statement.  The big difference between
-:keyword:`yield` and a :keyword:`return` statement is that on reaching a
-:keyword:`yield` the generator's state of execution is suspended and local
+:keyword:`!yield` and a :keyword:`!return` statement is that on reaching a
+:keyword:`!yield` the generator's state of execution is suspended and local
 variables are preserved.  On the next call to the generator's ``.next()``
 method, the function will resume executing immediately after the
-:keyword:`yield` statement.  (For complicated reasons, the :keyword:`yield`
-statement isn't allowed inside the :keyword:`try` block of a :keyword:`try`...\
-:keyword:`finally` statement; read :pep:`255` for a full explanation of the
-interaction between :keyword:`yield` and exceptions.)
+:keyword:`!yield` statement.  (For complicated reasons, the :keyword:`!yield`
+statement isn't allowed inside the :keyword:`try` block of a
+:keyword:`!try`...\ :keyword:`!finally` statement; read :pep:`255` for a full
+explanation of the interaction between :keyword:`!yield` and exceptions.)
 
 Here's a sample usage of the :func:`generate_ints` generator::
 
@@ -188,7 +188,7 @@ generate_ints(3)``.
 
 Inside a generator function, the :keyword:`return` statement can only be used
 without a value, and signals the end of the procession of values; afterwards the
-generator cannot return any further values. :keyword:`return` with a value, such
+generator cannot return any further values. :keyword:`!return` with a value, such
 as ``return 5``, is a syntax error inside a generator function.  The end of the
 generator's results can also be indicated by raising :exc:`StopIteration`
 manually, or by just letting the flow of execution fall off the bottom of the
@@ -527,7 +527,7 @@ creates a :class:`LogRecord` instance that is sent to any number of different
 of filters, and each filter can cause the :class:`LogRecord` to be ignored or
 can modify the record before passing it along.  When they're finally output,
 :class:`LogRecord` instances are converted to text by a :class:`Formatter`
-class.  All of these classes can be replaced by your own specially-written
+class.  All of these classes can be replaced by your own specially written
 classes.
 
 With all of these features the :mod:`logging` package should provide enough
@@ -589,7 +589,7 @@ strict language such as Pascal would also prevent you performing arithmetic with
 Booleans, and would require that the expression in an :keyword:`if` statement
 always evaluate to a Boolean result.  Python is not this strict and never will
 be, as :pep:`285` explicitly says.  This means you can still use any expression
-in an :keyword:`if` statement, even ones that evaluate to a list or tuple or
+in an :keyword:`!if` statement, even ones that evaluate to a list or tuple or
 some random object.  The Boolean type is a subclass of the :class:`int` class so
 that arithmetic using a Boolean still works. ::
 
@@ -1082,7 +1082,7 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
   hierarchy.  Classic classes are unaffected by this change.  Python 2.2
   originally used a topological sort of a class's ancestors, but 2.3 now uses the
   C3 algorithm as described in the paper `"A Monotonic Superclass Linearization
-  for Dylan" <http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.19.3910>`_. To
+  for Dylan" <https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.19.3910>`_. To
   understand the motivation for this change,  read Michele Simionato's article
   `"Python 2.3 Method Resolution Order" <http://www.phyast.pitt.edu/~micheles/mro.html>`_, or
   read the thread on python-dev starting with the message at
@@ -1231,7 +1231,7 @@ complete list of changes, or look through the CVS logs for all the details.
   repeat an array. (Contributed by Jason Orendorff.)
 
 * The :mod:`bsddb` module has been replaced by version 4.1.6 of the `PyBSDDB
-  <http://pybsddb.sourceforge.net>`_ package, providing a more complete interface
+  <https://pybsddb.sourceforge.net>`_ package, providing a more complete interface
   to the transactional features of the BerkeleyDB library.
 
   The old version of the module has been renamed to  :mod:`bsddb185` and is no
@@ -1247,8 +1247,8 @@ complete list of changes, or look through the CVS logs for all the details.
   will have to change your ``import`` statements to import it as :mod:`bsddb`.
 
 * The new :mod:`bz2` module is an interface to the bz2 data compression library.
-  bz2-compressed data is usually smaller than  corresponding :mod:`zlib`\
-  -compressed data. (Contributed by Gustavo Niemeyer.)
+  bz2-compressed data is usually smaller than  corresponding
+  :mod:`zlib`\ -compressed data. (Contributed by Gustavo Niemeyer.)
 
 * A set of standard date/time types has been added in the new :mod:`datetime`
   module.  See the following section for more details.
@@ -1650,7 +1650,7 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * The new :mod:`DocXMLRPCServer` module allows writing self-documenting XML-RPC
   servers. Run it in demo mode (as a program) to see it in action.   Pointing the
-  Web browser to the RPC server produces pydoc-style documentation; pointing
+  web browser to the RPC server produces pydoc-style documentation; pointing
   xmlrpclib to the server allows invoking the actual methods. (Contributed by
   Brian Quinlan.)
 
@@ -1905,8 +1905,8 @@ Changes to Python's build process and to the C API include:
   "")`` instead, but this will be slower than using :const:`METH_NOARGS`.
 
 * :c:func:`PyArg_ParseTuple` accepts new format characters for various sizes of
-  unsigned integers: ``B`` for :c:type:`unsigned char`, ``H`` for :c:type:`unsigned
-  short int`,  ``I`` for :c:type:`unsigned int`,  and ``K`` for :c:type:`unsigned
+  unsigned integers: ``B`` for :c:expr:`unsigned char`, ``H`` for :c:expr:`unsigned
+  short int`,  ``I`` for :c:expr:`unsigned int`,  and ``K`` for :c:expr:`unsigned
   long long`.
 
 * A new function, ``PyObject_DelItemString(mapping, char *key)`` was added

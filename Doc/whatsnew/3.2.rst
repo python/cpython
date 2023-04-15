@@ -48,9 +48,12 @@
    This saves the maintainer the effort of going through the SVN log
    when researching a change.
 
-This article explains the new features in Python 3.2 as compared to 3.1.  It
+This article explains the new features in Python 3.2 as compared to 3.1.
+Python 3.2 was released on February 20, 2011. It
 focuses on a few highlights and gives a few examples.  For full details, see the
-`Misc/NEWS <https://hg.python.org/cpython/file/3.2/Misc/NEWS>`_ file.
+`Misc/NEWS
+<https://github.com/python/cpython/blob/076ca6c3c8df3030307e548d9be792ce3c1c6eea/Misc/NEWS>`__
+file.
 
 .. seealso::
 
@@ -319,7 +322,7 @@ aspects that are visible to the programmer:
 * The tag that is unique to each interpreter is accessible from the :mod:`imp`
   module:
 
-   >>> import imp
+   >>> import imp # doctest: +SKIP
    >>> imp.get_tag() # doctest: +SKIP
    'cpython-32'
 
@@ -327,7 +330,7 @@ aspects that are visible to the programmer:
   be smarter.  It is no longer sufficient to simply strip the "c" from a ".pyc"
   filename.  Instead, use the new functions in the :mod:`imp` module:
 
-  >>> imp.source_from_cache('c:/py32/lib/__pycache__/collections.cpython-32.pyc')
+  >>> imp.source_from_cache('c:/py32/lib/__pycache__/collections.cpython-32.pyc') # doctest: +SKIP
   'c:/py32/lib/collections.py'
   >>> imp.cache_from_source('c:/py32/lib/collections.py') # doctest: +SKIP
   'c:/py32/lib/__pycache__/collections.cpython-32.pyc'
@@ -465,6 +468,7 @@ Some smaller changes made to the core Python language are:
     >>> class LowerCasedDict(dict):
     ...     def __getitem__(self, key):
     ...         return dict.__getitem__(self, key.lower())
+    ...
     >>> lcd = LowerCasedDict(part='widgets', quantity=10)
     >>> 'There are {QUANTITY} {Part} in stock'.format_map(lcd)
     'There are 10 widgets in stock'
@@ -472,6 +476,7 @@ Some smaller changes made to the core Python language are:
     >>> class PlaceholderDict(dict):
     ...     def __missing__(self, key):
     ...         return '<{}>'.format(key)
+    ...
     >>> 'Hello {name}, welcome to {location}'.format_map(PlaceholderDict())
     'Hello <name>, welcome to <location>'
 
@@ -742,7 +747,8 @@ Two methods have been deprecated:
 * :meth:`xml.etree.ElementTree.getiterator` use ``Element.iter`` instead.
 
 For details of the update, see `Introducing ElementTree
-<http://effbot.org/zone/elementtree-13-intro.htm>`_ on Fredrik Lundh's website.
+<https://web.archive.org/web/20200703234532/http://effbot.org/zone/elementtree-13-intro.htm>`_
+on Fredrik Lundh's website.
 
 (Contributed by Florent Xicluna and Fredrik Lundh, :issue:`6472`.)
 
@@ -969,10 +975,10 @@ sites do not finish before midnight, the barrier times-out and the ballots are
 sealed and deposited in a queue for later handling.
 
 See `Barrier Synchronization Patterns
-<https://parlab.eecs.berkeley.edu/wiki/_media/patterns/paraplop_g1_3.pdf>`_ for
-more examples of how barriers can be used in parallel computing.  Also, there is
+<https://osl.cs.illinois.edu/media/papers/karmani-2009-barrier_synchronization_pattern.pdf>`_
+for more examples of how barriers can be used in parallel computing.  Also, there is
 a simple but thorough explanation of barriers in `The Little Book of Semaphores
-<http://greenteapress.com/semaphores/downey08semaphores.pdf>`_, *section 3.6*.
+<https://greenteapress.com/semaphores/LittleBookOfSemaphores.pdf>`_, *section 3.6*.
 
 (Contributed by Kristján Valur Jónsson with an API review by Jeffrey Yasskin in
 :issue:`8777`.)
@@ -1643,7 +1649,7 @@ for secure (encrypted, authenticated) internet connections:
 * The :func:`ssl.wrap_socket` constructor function now takes a *ciphers*
   argument.  The *ciphers* string lists the allowed encryption algorithms using
   the format described in the `OpenSSL documentation
-  <https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
+  <https://www.openssl.org/docs/man1.0.2/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
 
 * When linked against recent versions of OpenSSL, the :mod:`ssl` module now
   supports the Server Name Indication extension to the TLS protocol, allowing
@@ -1742,7 +1748,7 @@ names.
   instead of module names for running specific tests (:issue:`10620`).  The new
   test discovery can find tests within packages, locating any test importable
   from the top-level directory.  The top-level directory can be specified with
-  the `-t` option, a pattern for matching files with ``-p``, and a directory to
+  the ``-t`` option, a pattern for matching files with ``-p``, and a directory to
   start discovery with ``-s``:
 
   .. code-block:: shell-session
@@ -1813,8 +1819,7 @@ names.
    ===============================   ==============================
 
   Likewise, the ``TestCase.fail*`` methods deprecated in Python 3.1 are expected
-  to be removed in Python 3.3.  Also see the :ref:`deprecated-aliases` section in
-  the :mod:`unittest` documentation.
+  to be removed in Python 3.3.
 
   (Contributed by Ezio Melotti; :issue:`9424`.)
 
@@ -1854,7 +1859,7 @@ asyncore
 
 :class:`asyncore.dispatcher` now provides a
 :meth:`~asyncore.dispatcher.handle_accepted()` method
-returning a `(sock, addr)` pair which is called when a connection has actually
+returning a ``(sock, addr)`` pair which is called when a connection has actually
 been established with a new remote endpoint. This is supposed to be used as a
 replacement for old :meth:`~asyncore.dispatcher.handle_accept()` and avoids
 the user  to call :meth:`~asyncore.dispatcher.accept()` directly.
@@ -1883,6 +1888,7 @@ inspect
     >>> from inspect import getgeneratorstate
     >>> def gen():
     ...     yield 'demo'
+    ...
     >>> g = gen()
     >>> getgeneratorstate(g)
     'GEN_CREATED'
@@ -1919,7 +1925,7 @@ inspect
 pydoc
 -----
 
-The :mod:`pydoc` module now provides a much-improved Web server interface, as
+The :mod:`pydoc` module now provides a much-improved web server interface, as
 well as a new command-line option ``-b`` to automatically open a browser window
 to display that server:
 
@@ -2053,7 +2059,7 @@ information:
   such as "3.2".
 
 It also provides access to the paths and variables corresponding to one of
-seven named schemes used by :mod:`distutils`.  Those include *posix_prefix*,
+seven named schemes used by ``distutils``.  Those include *posix_prefix*,
 *posix_home*, *posix_user*, *nt*, *nt_user*, *os2*, *os2_home*:
 
 * :func:`~sysconfig.get_paths` makes a dictionary containing installation paths
@@ -2309,7 +2315,7 @@ Multi-threading
 ===============
 
 * The mechanism for serializing execution of concurrently running Python threads
-  (generally known as the :term:`GIL` or :term:`Global Interpreter Lock`) has
+  (generally known as the :term:`GIL` or Global Interpreter Lock) has
   been rewritten.  Among the objectives were more predictable switching
   intervals and reduced overhead due to lock contention and the number of
   ensuing system calls.  The notion of a "check interval" to allow thread
@@ -2415,7 +2421,7 @@ Unicode
 =======
 
 Python has been updated to `Unicode 6.0.0
-<http://unicode.org/versions/Unicode6.0.0/>`_.  The update to the standard adds
+<https://unicode.org/versions/Unicode6.0.0/>`_.  The update to the standard adds
 over 2,000 new characters including `emoji <https://en.wikipedia.org/wiki/Emoji>`_
 symbols which are important for mobile phones.
 
@@ -2423,7 +2429,7 @@ In addition, the updated standard has altered the character properties for two
 Kannada characters (U+0CF1, U+0CF2) and one New Tai Lue numeric character
 (U+19DA), making the former eligible for use in identifiers while disqualifying
 the latter.  For more information, see `Unicode Character Database Changes
-<http://www.unicode.org/versions/Unicode6.0.0/#Database_Changes>`_.
+<https://www.unicode.org/versions/Unicode6.0.0/#Database_Changes>`_.
 
 
 Codecs
@@ -2503,7 +2509,7 @@ IDLE
 Code Repository
 ===============
 
-In addition to the existing Subversion code repository at http://svn.python.org
+In addition to the existing Subversion code repository at https://svn.python.org
 there is now a `Mercurial <https://www.mercurial-scm.org/>`_ repository at
 https://hg.python.org/\ .
 
@@ -2512,9 +2518,9 @@ repository.  This distributed version control system should make it easier for
 members of the community to create and share external changesets.  See
 :pep:`385` for details.
 
-To learn to use the new version control system, see the `tutorial by Joel
-Spolsky <http://hginit.com>`_ or the `Guide to Mercurial Workflows
-<https://www.mercurial-scm.org/guide>`_.
+To learn to use the new version control system, see the `Quick Start
+<https://www.mercurial-scm.org/wiki/QuickStart>`_ or the `Guide to
+Mercurial Workflows <https://www.mercurial-scm.org/guide>`_.
 
 
 Build and C API Changes
@@ -2589,10 +2595,12 @@ Changes to Python's build process and to the C API include:
   longer used and it had never been documented (:issue:`8837`).
 
 There were a number of other small changes to the C-API.  See the
-:source:`Misc/NEWS` file for a complete list.
+`Misc/NEWS <https://github.com/python/cpython/blob/v3.2.6/Misc/NEWS>`__
+file for a complete list.
 
 Also, there were a number of updates to the Mac OS X build, see
-:source:`Mac/BuildScript/README.txt` for details.  For users running a 32/64-bit
+`Mac/BuildScript/README.txt <https://github.com/python/cpython/blob/v3.2.6/Mac/BuildScript/README.txt>`_
+for details.  For users running a 32/64-bit
 build, there is a known problem with the default Tcl/Tk on Mac OS X 10.6.
 Accordingly, we recommend installing an updated alternative such as
 `ActiveState Tcl/Tk 8.5.9 <https://www.activestate.com/activetcl/downloads>`_\.

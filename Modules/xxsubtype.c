@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 PyDoc_STRVAR(xxsubtype__doc__,
 "xxsubtype is an example module showing how to subtype builtin types from C.\n"
@@ -39,8 +39,7 @@ spamlist_setstate(spamlistobject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:setstate", &state))
         return NULL;
     self->state = state;
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_NewRef(Py_None);
 }
 
 static PyObject *
@@ -53,12 +52,9 @@ spamlist_specialmeth(PyObject *self, PyObject *args, PyObject *kw)
             self = Py_None;
         if (kw == NULL)
             kw = Py_None;
-        Py_INCREF(self);
-        PyTuple_SET_ITEM(result, 0, self);
-        Py_INCREF(args);
-        PyTuple_SET_ITEM(result, 1, args);
-        Py_INCREF(kw);
-        PyTuple_SET_ITEM(result, 2, kw);
+        PyTuple_SET_ITEM(result, 0, Py_NewRef(self));
+        PyTuple_SET_ITEM(result, 1, Py_NewRef(args));
+        PyTuple_SET_ITEM(result, 2, Py_NewRef(kw));
     }
     return result;
 }
@@ -70,10 +66,10 @@ static PyMethodDef spamlist_methods[] = {
         PyDoc_STR("setstate(state)")},
     /* These entries differ only in the flags; they are used by the tests
        in test.test_descr. */
-    {"classmeth", (PyCFunction)spamlist_specialmeth,
+    {"classmeth", _PyCFunction_CAST(spamlist_specialmeth),
         METH_VARARGS | METH_KEYWORDS | METH_CLASS,
         PyDoc_STR("classmeth(*args, **kw)")},
-    {"staticmeth", (PyCFunction)spamlist_specialmeth,
+    {"staticmeth", _PyCFunction_CAST(spamlist_specialmeth),
         METH_VARARGS | METH_KEYWORDS | METH_STATIC,
         PyDoc_STR("staticmeth(*args, **kw)")},
     {NULL,      NULL},
@@ -89,7 +85,7 @@ spamlist_init(spamlistobject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-spamlist_state_get(spamlistobject *self)
+spamlist_state_get(spamlistobject *self, void *Py_UNUSED(ignored))
 {
     return PyLong_FromLong(self->state);
 }
@@ -106,10 +102,10 @@ static PyTypeObject spamlist_type = {
     sizeof(spamlistobject),
     0,
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -164,8 +160,7 @@ spamdict_setstate(spamdictobject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:setstate", &state))
         return NULL;
     self->state = state;
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_NewRef(Py_None);
 }
 
 static PyMethodDef spamdict_methods[] = {
@@ -197,10 +192,10 @@ static PyTypeObject spamdict_type = {
     sizeof(spamdictobject),
     0,
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -237,10 +232,11 @@ spam_bench(PyObject *self, PyObject *args)
 {
     PyObject *obj, *name, *res;
     int n = 1000;
-    time_t t0, t1;
+    time_t t0 = 0, t1 = 0;
 
     if (!PyArg_ParseTuple(args, "OU|i", &obj, &name, &n))
         return NULL;
+#ifdef HAVE_CLOCK
     t0 = clock();
     while (--n >= 0) {
         res = PyObject_GetAttr(obj, name);
@@ -249,6 +245,7 @@ spam_bench(PyObject *self, PyObject *args)
         Py_DECREF(res);
     }
     t1 = clock();
+#endif
     return PyFloat_FromDouble((double)(t1-t0) / CLOCKS_PER_SEC);
 }
 
@@ -277,14 +274,12 @@ xxsubtype_exec(PyObject* m)
     if (PyType_Ready(&spamdict_type) < 0)
         return -1;
 
-    Py_INCREF(&spamlist_type);
     if (PyModule_AddObject(m, "spamlist",
-                           (PyObject *) &spamlist_type) < 0)
+                           Py_NewRef(&spamlist_type)) < 0)
         return -1;
 
-    Py_INCREF(&spamdict_type);
     if (PyModule_AddObject(m, "spamdict",
-                           (PyObject *) &spamdict_type) < 0)
+                           Py_NewRef(&spamdict_type)) < 0)
         return -1;
     return 0;
 }

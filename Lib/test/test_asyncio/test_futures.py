@@ -7,9 +7,10 @@ import sys
 import threading
 import unittest
 from unittest import mock
-
+from types import GenericAlias
 import asyncio
 from asyncio import futures
+import warnings
 from test.test_asyncio import utils as test_utils
 from test import support
 
@@ -54,30 +55,30 @@ class DuckFuture:
                 or self.__exception is not None)
 
     def result(self):
-        assert not self.cancelled()
+        self.assertFalse(self.cancelled())
         if self.__exception is not None:
             raise self.__exception
         return self.__result
 
     def exception(self):
-        assert not self.cancelled()
+        self.assertFalse(self.cancelled())
         return self.__exception
 
     def set_result(self, result):
-        assert not self.done()
-        assert result is not None
+        self.assertFalse(self.done())
+        self.assertIsNotNone(result)
         self.__result = result
 
     def set_exception(self, exception):
-        assert not self.done()
-        assert exception is not None
+        self.assertFalse(self.done())
+        self.assertIsNotNone(exception)
         self.__exception = exception
 
     def __iter__(self):
         if not self.done():
             self._asyncio_future_blocking = True
             yield self
-        assert self.done()
+        self.assertTrue(self.done())
         return self.result()
 
 
@@ -91,12 +92,12 @@ class DuckTests(test_utils.TestCase):
     def test_wrap_future(self):
         f = DuckFuture()
         g = asyncio.wrap_future(f)
-        assert g is f
+        self.assertIs(g, f)
 
     def test_ensure_future(self):
         f = DuckFuture()
         g = asyncio.ensure_future(f)
-        assert g is f
+        self.assertIs(g, f)
 
 
 class BaseFutureTests:
@@ -108,6 +109,11 @@ class BaseFutureTests:
         super().setUp()
         self.loop = self.new_test_loop()
         self.addCleanup(self.loop.close)
+
+    def test_generic_alias(self):
+        future = self.cls[str]
+        self.assertEqual(future.__args__, (str,))
+        self.assertIsInstance(future, GenericAlias)
 
     def test_isfuture(self):
         class MyFuture:
@@ -139,8 +145,21 @@ class BaseFutureTests:
         f.cancel()
         self.assertTrue(f.cancelled())
 
-    def test_init_constructor_default_loop(self):
+    def test_constructor_without_loop(self):
+        with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+            self._new_future()
+
+    def test_constructor_use_running_loop(self):
+        async def test():
+            return self._new_future()
+        f = self.loop.run_until_complete(test())
+        self.assertIs(f._loop, self.loop)
+        self.assertIs(f.get_loop(), self.loop)
+
+    def test_constructor_use_global_loop(self):
+        # Deprecated in 3.10, undeprecated in 3.12
         asyncio.set_event_loop(self.loop)
+        self.addCleanup(asyncio.set_event_loop, None)
         f = self._new_future()
         self.assertIs(f._loop, self.loop)
         self.assertIs(f.get_loop(), self.loop)
@@ -200,6 +219,27 @@ class BaseFutureTests:
         fut = self.cls.__new__(self.cls, loop=self.loop)
         self.assertFalse(fut.cancelled())
         self.assertFalse(fut.done())
+
+    def test_future_cancel_message_getter(self):
+        f = self._new_future(loop=self.loop)
+        self.assertTrue(hasattr(f, '_cancel_message'))
+        self.assertEqual(f._cancel_message, None)
+
+        f.cancel('my message')
+        with self.assertRaises(asyncio.CancelledError):
+            self.loop.run_until_complete(f)
+        self.assertEqual(f._cancel_message, 'my message')
+
+    def test_future_cancel_message_setter(self):
+        f = self._new_future(loop=self.loop)
+        f.cancel('my message')
+        f._cancel_message = 'my new message'
+        self.assertEqual(f._cancel_message, 'my new message')
+
+        # Also check that the value is used for cancel().
+        with self.assertRaises(asyncio.CancelledError):
+            self.loop.run_until_complete(f)
+        self.assertEqual(f._cancel_message, 'my new message')
 
     def test_cancel(self):
         f = self._new_future(loop=self.loop)
@@ -451,16 +491,37 @@ class BaseFutureTests:
         f2 = asyncio.wrap_future(f1)
         self.assertIs(f1, f2)
 
+    def test_wrap_future_without_loop(self):
+        def run(arg):
+            return (arg, threading.get_ident())
+        ex = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = ex.submit(run, 'oi')
+        with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
+            asyncio.wrap_future(f1)
+        ex.shutdown(wait=True)
+
+    def test_wrap_future_use_running_loop(self):
+        def run(arg):
+            return (arg, threading.get_ident())
+        ex = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = ex.submit(run, 'oi')
+        async def test():
+            return asyncio.wrap_future(f1)
+        f2 = self.loop.run_until_complete(test())
+        self.assertIs(self.loop, f2._loop)
+        ex.shutdown(wait=True)
+
     def test_wrap_future_use_global_loop(self):
-        with mock.patch('asyncio.futures.events') as events:
-            events.get_event_loop = lambda: self.loop
-            def run(arg):
-                return (arg, threading.get_ident())
-            ex = concurrent.futures.ThreadPoolExecutor(1)
-            f1 = ex.submit(run, 'oi')
-            f2 = asyncio.wrap_future(f1)
-            self.assertIs(self.loop, f2._loop)
-            ex.shutdown(wait=True)
+        # Deprecated in 3.10, undeprecated in 3.12
+        asyncio.set_event_loop(self.loop)
+        self.addCleanup(asyncio.set_event_loop, None)
+        def run(arg):
+            return (arg, threading.get_ident())
+        ex = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = ex.submit(run, 'oi')
+        f2 = asyncio.wrap_future(f1)
+        self.assertIs(self.loop, f2._loop)
+        ex.shutdown(wait=True)
 
     def test_wrap_future_cancel(self):
         f1 = concurrent.futures.Future()
@@ -508,13 +569,10 @@ class BaseFutureTests:
         test_utils.run_briefly(self.loop)
         support.gc_collect()
 
-        if sys.version_info >= (3, 4):
-            regex = f'^{self.cls.__name__} exception was never retrieved\n'
-            exc_info = (type(exc), exc, exc.__traceback__)
-            m_log.error.assert_called_once_with(mock.ANY, exc_info=exc_info)
-        else:
-            regex = r'^Future/Task exception was never retrieved\n'
-            m_log.error.assert_called_once_with(mock.ANY, exc_info=False)
+        regex = f'^{self.cls.__name__} exception was never retrieved\n'
+        exc_info = (type(exc), exc, exc.__traceback__)
+        m_log.error.assert_called_once_with(mock.ANY, exc_info=exc_info)
+
         message = m_log.error.call_args[0][0]
         self.assertRegex(message, re.compile(regex, re.DOTALL))
 
@@ -546,10 +604,16 @@ class BaseFutureTests:
     def test_future_iter_throw(self):
         fut = self._new_future(loop=self.loop)
         fi = iter(fut)
-        self.assertRaises(TypeError, fi.throw,
-                          Exception, Exception("elephant"), 32)
-        self.assertRaises(TypeError, fi.throw,
-                          Exception("elephant"), Exception("elephant"))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(Exception, fi.throw, Exception, Exception("zebra"), None)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            self.assertRaises(TypeError, fi.throw,
+                            Exception, Exception("elephant"), 32)
+            self.assertRaises(TypeError, fi.throw,
+                            Exception("elephant"), Exception("elephant"))
+            # https://github.com/python/cpython/issues/101326
+            self.assertRaises(ValueError, fi.throw, ValueError, None, None)
         self.assertRaises(TypeError, fi.throw, list)
 
     def test_future_del_collect(self):
@@ -569,6 +633,13 @@ class CFutureTests(BaseFutureTests, test_utils.TestCase):
         cls = futures._CFuture
     except AttributeError:
         cls = None
+
+    def test_future_del_segfault(self):
+        fut = self._new_future(loop=self.loop)
+        with self.assertRaises(AttributeError):
+            del fut._asyncio_future_blocking
+        with self.assertRaises(AttributeError):
+            del fut._log_traceback
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
@@ -752,6 +823,21 @@ class BaseFutureDoneCallbackTests():
 
         fut.remove_done_callback(evil())
 
+    def test_remove_done_callbacks_list_clear(self):
+        # see https://github.com/python/cpython/issues/97592 for details
+
+        fut = self._new_future()
+        fut.add_done_callback(str)
+
+        for _ in range(63):
+            fut.add_done_callback(id)
+
+        class evil:
+            def __eq__(self, other):
+                fut.remove_done_callback(other)
+
+        fut.remove_done_callback(evil())
+
     def test_schedule_callbacks_list_mutation_1(self):
         # see http://bugs.python.org/issue28963 for details
 
@@ -813,6 +899,47 @@ class PyFutureDoneCallbackTests(BaseFutureDoneCallbackTests,
 
     def _new_future(self):
         return futures._PyFuture(loop=self.loop)
+
+
+class BaseFutureInheritanceTests:
+
+    def _get_future_cls(self):
+        raise NotImplementedError
+
+    def setUp(self):
+        super().setUp()
+        self.loop = self.new_test_loop()
+        self.addCleanup(self.loop.close)
+
+    def test_inherit_without_calling_super_init(self):
+        # See https://bugs.python.org/issue38785 for the context
+        cls = self._get_future_cls()
+
+        class MyFut(cls):
+            def __init__(self, *args, **kwargs):
+                # don't call super().__init__()
+                pass
+
+        fut = MyFut(loop=self.loop)
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "Future object is not initialized."
+        ):
+            fut.get_loop()
+
+
+class PyFutureInheritanceTests(BaseFutureInheritanceTests,
+                               test_utils.TestCase):
+    def _get_future_cls(self):
+        return futures._PyFuture
+
+
+@unittest.skipUnless(hasattr(futures, '_CFuture'),
+                     'requires the C _asyncio module')
+class CFutureInheritanceTests(BaseFutureInheritanceTests,
+                              test_utils.TestCase):
+    def _get_future_cls(self):
+        return futures._CFuture
 
 
 if __name__ == '__main__':

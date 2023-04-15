@@ -1,8 +1,9 @@
 from test import support
-gdbm = support.import_module("dbm.gnu") #skip if not supported
+from test.support import import_helper, cpython_only
+gdbm = import_helper.import_module("dbm.gnu") #skip if not supported
 import unittest
 import os
-from test.support import TESTFN, TESTFN_NONASCII, unlink
+from test.support.os_helper import TESTFN, TESTFN_NONASCII, unlink, FakePath
 
 
 filename = TESTFN
@@ -25,6 +26,12 @@ class TestGdbm(unittest.TestCase):
         if self.g is not None:
             self.g.close()
         unlink(filename)
+
+    @cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        self.g = gdbm.open(filename, 'c')
+        support.check_disallow_instantiation(self, type(self.g))
 
     def test_key_methods(self):
         self.g = gdbm.open(filename, 'c')
@@ -111,6 +118,20 @@ class TestGdbm(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                          "GDBM object has already been closed")
 
+    def test_bool_empty(self):
+        with gdbm.open(filename, 'c') as db:
+            self.assertFalse(bool(db))
+
+    def test_bool_not_empty(self):
+        with gdbm.open(filename, 'c') as db:
+            db['a'] = 'b'
+            self.assertTrue(bool(db))
+
+    def test_bool_on_closed_db_raises(self):
+        with gdbm.open(filename, 'c') as db:
+            db['a'] = 'b'
+        self.assertRaises(gdbm.error, bool, db)
+
     def test_bytes(self):
         with gdbm.open(filename, 'c') as db:
             db[b'bytes key \xbd'] = b'bytes value \xbd'
@@ -131,6 +152,17 @@ class TestGdbm(unittest.TestCase):
             self.assertEqual(db['Unicode key \U0001f40d'],
                              'Unicode value \U0001f40d'.encode())
 
+    def test_write_readonly_file(self):
+        with gdbm.open(filename, 'c') as db:
+            db[b'bytes key'] = b'bytes value'
+        with gdbm.open(filename, 'r') as db:
+            with self.assertRaises(gdbm.error):
+                del db[b'not exist key']
+            with self.assertRaises(gdbm.error):
+                del db[b'bytes key']
+            with self.assertRaises(gdbm.error):
+                db[b'not exist key'] = b'not exist value'
+
     @unittest.skipUnless(TESTFN_NONASCII,
                          'requires OS support of non-ASCII encodings')
     def test_nonascii_filename(self):
@@ -150,6 +182,15 @@ class TestGdbm(unittest.TestCase):
             gdbm.open(nonexisting_file)
         self.assertIn(nonexisting_file, str(cm.exception))
         self.assertEqual(cm.exception.filename, nonexisting_file)
+
+    def test_open_with_pathlib_path(self):
+        gdbm.open(FakePath(filename), "c").close()
+
+    def test_open_with_bytes_path(self):
+        gdbm.open(os.fsencode(filename), "c").close()
+
+    def test_open_with_pathlib_bytes_path(self):
+        gdbm.open(FakePath(os.fsencode(filename)), "c").close()
 
 
 if __name__ == '__main__':
