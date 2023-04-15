@@ -1,5 +1,9 @@
 import os
+import sys
 import unittest
+
+if sys.platform in ('win32', 'darwin'):
+    raise unittest.SkipTest('Linux only')
 
 
 class TestPerfMapWriting(unittest.TestCase):
