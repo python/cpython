@@ -1,1 +1,1 @@
-Fixed returning of empty byte strings after seek in zipfile module(This wasn't in a release version so the news is not probably unnecessary)
+Fixed returning of empty byte strings after seek in zipfile module(This wasn't in a release version so the news is probably unnecessary)
