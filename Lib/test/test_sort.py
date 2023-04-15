@@ -378,6 +378,12 @@ class TestOptimizedCompares(unittest.TestCase):
         self.assertRaises(TypeError, [(1.0, 1.0), (False, "A"), 6].sort)
         self.assertRaises(TypeError, [('a', 1), (1, 'a')].sort)
         self.assertRaises(TypeError, [(1, 'a'), ('a', 1)].sort)
+
+    def test_none_in_tuples(self):
+        expected = [(None, 1), (None, 2)]
+        actual = sorted([(None, 2), (None, 1)])
+        self.assertEqual(actual, expected)
+
 #==============================================================================
 
 if __name__ == "__main__":

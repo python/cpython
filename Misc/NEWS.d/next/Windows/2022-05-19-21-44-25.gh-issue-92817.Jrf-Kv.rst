@@ -1,3 +1,0 @@
-Ensures that :file:`py.exe` will prefer an active virtual environment over
-default tags specified with environment variables or through a
-:file:`py.ini` file.

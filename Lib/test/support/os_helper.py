@@ -4,6 +4,7 @@ import errno
 import os
 import re
 import stat
+import string
 import sys
 import time
 import unittest
@@ -11,11 +12,7 @@ import warnings
 
 
 # Filename used for testing
-if os.name == 'java':
-    # Jython disallows @ in module names
-    TESTFN_ASCII = '$test'
-else:
-    TESTFN_ASCII = '@test'
+TESTFN_ASCII = '@test'
 
 # Disambiguate TESTFN for parallel testing, while letting it remain a valid
 # module name.
@@ -141,6 +138,11 @@ for name in (
     try:
         name.decode(sys.getfilesystemencoding())
     except UnicodeDecodeError:
+        try:
+            name.decode(sys.getfilesystemencoding(),
+                        sys.getfilesystemencodeerrors())
+        except UnicodeDecodeError:
+            continue
         TESTFN_UNDECODABLE = os.fsencode(TESTFN_ASCII) + name
         break
 
@@ -258,7 +260,7 @@ def can_chmod():
             else:
                 can = stat.S_IMODE(mode1) != stat.S_IMODE(mode2)
     finally:
-        os.unlink(TESTFN)
+        unlink(TESTFN)
     _can_chmod = can
     return can
 
@@ -270,6 +272,48 @@ def skip_unless_working_chmod(test):
     """
     ok = can_chmod()
     msg = "requires working os.chmod()"
+    return test if ok else unittest.skip(msg)(test)
+
+
+# Check whether the current effective user has the capability to override
+# DAC (discretionary access control). Typically user root is able to
+# bypass file read, write, and execute permission checks. The capability
+# is independent of the effective user. See capabilities(7).
+_can_dac_override = None
+
+def can_dac_override():
+    global _can_dac_override
+
+    if not can_chmod():
+        _can_dac_override = False
+    if _can_dac_override is not None:
+        return _can_dac_override
+
+    try:
+        with open(TESTFN, "wb") as f:
+            os.chmod(TESTFN, 0o400)
+            try:
+                with open(TESTFN, "wb"):
+                    pass
+            except OSError:
+                _can_dac_override = False
+            else:
+                _can_dac_override = True
+    finally:
+        unlink(TESTFN)
+
+    return _can_dac_override
+
+
+def skip_if_dac_override(test):
+    ok = not can_dac_override()
+    msg = "incompatible with CAP_DAC_OVERRIDE"
+    return test if ok else unittest.skip(msg)(test)
+
+
+def skip_unless_dac_override(test):
+    ok = can_dac_override()
+    msg = "requires CAP_DAC_OVERRIDE"
     return test if ok else unittest.skip(msg)(test)
 
 
@@ -525,7 +569,7 @@ def fs_is_case_insensitive(directory):
 
 
 class FakePath:
-    """Simple implementing of the path protocol.
+    """Simple implementation of the path protocol.
     """
     def __init__(self, path):
         self.path = path
@@ -611,6 +655,11 @@ if hasattr(os, "umask"):
             yield
         finally:
             os.umask(oldmask)
+else:
+    @contextlib.contextmanager
+    def temp_umask(umask):
+        """no-op on platforms without umask()"""
+        yield
 
 
 class EnvironmentVarGuard(collections.abc.MutableMapping):
@@ -668,3 +717,37 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
             else:
                 self._environ[k] = v
         os.environ = self._environ
+
+
+try:
+    import ctypes
+    kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+
+    ERROR_FILE_NOT_FOUND = 2
+    DDD_REMOVE_DEFINITION = 2
+    DDD_EXACT_MATCH_ON_REMOVE = 4
+    DDD_NO_BROADCAST_SYSTEM = 8
+except (ImportError, AttributeError):
+    def subst_drive(path):
+        raise unittest.SkipTest('ctypes or kernel32 is not available')
+else:
+    @contextlib.contextmanager
+    def subst_drive(path):
+        """Temporarily yield a substitute drive for a given path."""
+        for c in reversed(string.ascii_uppercase):
+            drive = f'{c}:'
+            if (not kernel32.QueryDosDeviceW(drive, None, 0) and
+                    ctypes.get_last_error() == ERROR_FILE_NOT_FOUND):
+                break
+        else:
+            raise unittest.SkipTest('no available logical drive')
+        if not kernel32.DefineDosDeviceW(
+                DDD_NO_BROADCAST_SYSTEM, drive, path):
+            raise ctypes.WinError(ctypes.get_last_error())
+        try:
+            yield drive
+        finally:
+            if not kernel32.DefineDosDeviceW(
+                    DDD_REMOVE_DEFINITION | DDD_EXACT_MATCH_ON_REMOVE,
+                    drive, path):
+                raise ctypes.WinError(ctypes.get_last_error())

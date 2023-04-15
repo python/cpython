@@ -71,20 +71,32 @@ typedef long stwodigits; /* signed variant of twodigits */
         0 <= ob_digit[i] <= MASK.
    The allocation function takes care of allocating extra memory
    so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available.
+   We always allocate memory for at least one digit, so accessing ob_digit[0]
+   is always safe. However, in the case ob_size == 0, the contents of
+   ob_digit[0] may be undefined.
 
    CAUTION:  Generic code manipulating subtypes of PyVarObject has to
    aware that ints abuse  ob_size's sign bit.
 */
 
-struct _longobject {
-    PyObject_VAR_HEAD
+typedef struct _PyLongValue {
+    uintptr_t lv_tag; /* Number of digits, sign and flags */
     digit ob_digit[1];
+} _PyLongValue;
+
+struct _longobject {
+    PyObject_HEAD
+    _PyLongValue long_value;
 };
 
 PyAPI_FUNC(PyLongObject *) _PyLong_New(Py_ssize_t);
 
 /* Return a copy of src. */
 PyAPI_FUNC(PyObject *) _PyLong_Copy(PyLongObject *src);
+
+PyAPI_FUNC(PyLongObject *)
+_PyLong_FromDigits(int negative, Py_ssize_t digit_count, digit *digits);
+
 
 #ifdef __cplusplus
 }

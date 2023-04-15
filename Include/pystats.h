@@ -8,7 +8,7 @@ extern "C" {
 
 #ifdef Py_STATS
 
-#define SPECIALIZATION_FAILURE_KINDS 32
+#define SPECIALIZATION_FAILURE_KINDS 36
 
 /* Stats for determining who is calling PyEval_EvalFrame */
 #define EVAL_CALL_TOTAL 0
@@ -65,6 +65,11 @@ typedef struct _object_stats {
     uint64_t dict_materialized_new_key;
     uint64_t dict_materialized_too_big;
     uint64_t dict_materialized_str_subclass;
+    uint64_t type_cache_hits;
+    uint64_t type_cache_misses;
+    uint64_t type_cache_dunder_hits;
+    uint64_t type_cache_dunder_misses;
+    uint64_t type_cache_collisions;
 } ObjectStats;
 
 typedef struct _stats {
@@ -73,19 +78,22 @@ typedef struct _stats {
     ObjectStats object_stats;
 } PyStats;
 
-PyAPI_DATA(PyStats) _py_stats;
 
+PyAPI_DATA(PyStats) _py_stats_struct;
+PyAPI_DATA(PyStats *) _py_stats;
+
+extern void _Py_StatsClear(void);
 extern void _Py_PrintSpecializationStats(int to_file);
 
 #ifdef _PY_INTERPRETER
 
-#define _Py_INCREF_STAT_INC() _py_stats.object_stats.interpreter_increfs++
-#define _Py_DECREF_STAT_INC()  _py_stats.object_stats.interpreter_decrefs++
+#define _Py_INCREF_STAT_INC() do { if (_py_stats) _py_stats->object_stats.interpreter_increfs++; } while (0)
+#define _Py_DECREF_STAT_INC() do { if (_py_stats) _py_stats->object_stats.interpreter_decrefs++; } while (0)
 
 #else
 
-#define _Py_INCREF_STAT_INC() _py_stats.object_stats.increfs++
-#define _Py_DECREF_STAT_INC()  _py_stats.object_stats.decrefs++
+#define _Py_INCREF_STAT_INC() do { if (_py_stats) _py_stats->object_stats.increfs++; } while (0)
+#define _Py_DECREF_STAT_INC() do { if (_py_stats) _py_stats->object_stats.decrefs++; } while (0)
 
 #endif
 

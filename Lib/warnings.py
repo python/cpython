@@ -269,22 +269,32 @@ def _getcategory(category):
     return cat
 
 
-def _is_internal_frame(frame):
-    """Signal whether the frame is an internal CPython implementation detail."""
-    filename = frame.f_code.co_filename
+def _is_internal_filename(filename):
     return 'importlib' in filename and '_bootstrap' in filename
 
 
-def _next_external_frame(frame):
-    """Find the next frame that doesn't involve CPython internals."""
+def _is_filename_to_skip(filename, skip_file_prefixes):
+    return any(filename.startswith(prefix) for prefix in skip_file_prefixes)
+
+
+def _is_internal_frame(frame):
+    """Signal whether the frame is an internal CPython implementation detail."""
+    return _is_internal_filename(frame.f_code.co_filename)
+
+
+def _next_external_frame(frame, skip_file_prefixes):
+    """Find the next frame that doesn't involve Python or user internals."""
     frame = frame.f_back
-    while frame is not None and _is_internal_frame(frame):
+    while frame is not None and (
+            _is_internal_filename(filename := frame.f_code.co_filename) or
+            _is_filename_to_skip(filename, skip_file_prefixes)):
         frame = frame.f_back
     return frame
 
 
 # Code typically replaced by _warnings
-def warn(message, category=None, stacklevel=1, source=None):
+def warn(message, category=None, stacklevel=1, source=None,
+         *, skip_file_prefixes=()):
     """Issue a warning, or maybe ignore it or raise an exception."""
     # Check if message is already a Warning object
     if isinstance(message, Warning):
@@ -295,6 +305,11 @@ def warn(message, category=None, stacklevel=1, source=None):
     if not (isinstance(category, type) and issubclass(category, Warning)):
         raise TypeError("category must be a Warning subclass, "
                         "not '{:s}'".format(type(category).__name__))
+    if not isinstance(skip_file_prefixes, tuple):
+        # The C version demands a tuple for implementation performance.
+        raise TypeError('skip_file_prefixes must be a tuple of strs.')
+    if skip_file_prefixes:
+        stacklevel = max(2, stacklevel)
     # Get context information
     try:
         if stacklevel <= 1 or _is_internal_frame(sys._getframe(1)):
@@ -305,7 +320,7 @@ def warn(message, category=None, stacklevel=1, source=None):
             frame = sys._getframe(1)
             # Look for one frame less since the above line starts us off.
             for x in range(stacklevel-1):
-                frame = _next_external_frame(frame)
+                frame = _next_external_frame(frame, skip_file_prefixes)
                 if frame is None:
                     raise ValueError
     except ValueError:

@@ -8,6 +8,7 @@
 
 --------------
 
+
 .. seealso::
 
    :ref:`textseq`
@@ -234,7 +235,7 @@ dictionary keys (e.g., the strings ``'10'`` or ``':-]'``) within a format string
 The *arg_name* can be followed by any number of index or
 attribute expressions. An expression of the form ``'.name'`` selects the named
 attribute using :func:`getattr`, while an expression of the form ``'[index]'``
-does an index lookup using :func:`__getitem__`.
+does an index lookup using :meth:`~object.__getitem__`.
 
 .. versionchanged:: 3.1
    The positional argument specifiers can be omitted for :meth:`str.format`,
@@ -309,7 +310,7 @@ non-empty format specification typically modifies the result.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: format-spec
-   format_spec: [[`fill`]`align`][`sign`][z][#][0][`width`][`grouping_option`][.`precision`][`type`]
+   format_spec: [[`fill`]`align`][`sign`]["z"]["#"]["0"][`width`][`grouping_option`]["." `precision`][`type`]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
@@ -738,7 +739,7 @@ internationalization (i18n) since in that context, the simpler syntax and
 functionality makes it easier to translate than other built-in string
 formatting facilities in Python.  As an example of a library built on template
 strings for i18n, see the
-`flufl.i18n <http://flufli18n.readthedocs.io/en/latest/>`_ package.
+`flufl.i18n <https://flufli18n.readthedocs.io/en/latest/>`_ package.
 
 .. index:: single: $ (dollar); in template strings
 
