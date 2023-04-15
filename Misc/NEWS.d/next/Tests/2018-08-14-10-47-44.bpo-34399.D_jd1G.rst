@@ -1,1 +1,0 @@
-Update all RSA keys and DH params to use at least 2048 bits.

@@ -6,12 +6,12 @@
 int
 wmain(int argc, wchar_t **argv)
 {
-    return _Py_WindowsMain(argc, argv);
+    return Py_Main(argc, argv);
 }
 #else
 int
 main(int argc, char **argv)
 {
-    return _Py_UnixMain(argc, argv);
+    return Py_BytesMain(argc, argv);
 }
 #endif

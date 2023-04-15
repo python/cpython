@@ -2,7 +2,7 @@
 # error "ctype.h only compatible with byte-wise strings"
 #endif
 
-#include "bytes_methods.h"
+#include "pycore_bytes_methods.h"
 
 static PyObject*
 stringlib_isspace(PyObject *self, PyObject *Py_UNUSED(ignored))

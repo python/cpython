@@ -1,2 +1,0 @@
-Release the GIL during fstat() calls, avoiding hang of all threads when
-calling mmap.mmap(), os.urandom(), and random.seed().  Patch by Nir Soffer.

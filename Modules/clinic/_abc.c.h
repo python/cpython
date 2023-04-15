@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(_abc__reset_registry__doc__,
 "_reset_registry($module, self, /)\n"
 "--\n"
@@ -53,7 +59,7 @@ PyDoc_STRVAR(_abc__abc_register__doc__,
 "Internal ABC helper for subclasss registration. Should be never used outside abc module.");
 
 #define _ABC__ABC_REGISTER_METHODDEF    \
-    {"_abc_register", (PyCFunction)_abc__abc_register, METH_FASTCALL, _abc__abc_register__doc__},
+    {"_abc_register", _PyCFunction_CAST(_abc__abc_register), METH_FASTCALL, _abc__abc_register__doc__},
 
 static PyObject *
 _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass);
@@ -65,11 +71,11 @@ _abc__abc_register(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *self;
     PyObject *subclass;
 
-    if (!_PyArg_UnpackStack(args, nargs, "_abc_register",
-        2, 2,
-        &self, &subclass)) {
+    if (!_PyArg_CheckPositional("_abc_register", nargs, 2, 2)) {
         goto exit;
     }
+    self = args[0];
+    subclass = args[1];
     return_value = _abc__abc_register_impl(module, self, subclass);
 
 exit:
@@ -83,7 +89,7 @@ PyDoc_STRVAR(_abc__abc_instancecheck__doc__,
 "Internal ABC helper for instance checks. Should be never used outside abc module.");
 
 #define _ABC__ABC_INSTANCECHECK_METHODDEF    \
-    {"_abc_instancecheck", (PyCFunction)_abc__abc_instancecheck, METH_FASTCALL, _abc__abc_instancecheck__doc__},
+    {"_abc_instancecheck", _PyCFunction_CAST(_abc__abc_instancecheck), METH_FASTCALL, _abc__abc_instancecheck__doc__},
 
 static PyObject *
 _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
@@ -96,11 +102,11 @@ _abc__abc_instancecheck(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *self;
     PyObject *instance;
 
-    if (!_PyArg_UnpackStack(args, nargs, "_abc_instancecheck",
-        2, 2,
-        &self, &instance)) {
+    if (!_PyArg_CheckPositional("_abc_instancecheck", nargs, 2, 2)) {
         goto exit;
     }
+    self = args[0];
+    instance = args[1];
     return_value = _abc__abc_instancecheck_impl(module, self, instance);
 
 exit:
@@ -114,7 +120,7 @@ PyDoc_STRVAR(_abc__abc_subclasscheck__doc__,
 "Internal ABC helper for subclasss checks. Should be never used outside abc module.");
 
 #define _ABC__ABC_SUBCLASSCHECK_METHODDEF    \
-    {"_abc_subclasscheck", (PyCFunction)_abc__abc_subclasscheck, METH_FASTCALL, _abc__abc_subclasscheck__doc__},
+    {"_abc_subclasscheck", _PyCFunction_CAST(_abc__abc_subclasscheck), METH_FASTCALL, _abc__abc_subclasscheck__doc__},
 
 static PyObject *
 _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
@@ -127,11 +133,11 @@ _abc__abc_subclasscheck(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *self;
     PyObject *subclass;
 
-    if (!_PyArg_UnpackStack(args, nargs, "_abc_subclasscheck",
-        2, 2,
-        &self, &subclass)) {
+    if (!_PyArg_CheckPositional("_abc_subclasscheck", nargs, 2, 2)) {
         goto exit;
     }
+    self = args[0];
+    subclass = args[1];
     return_value = _abc__abc_subclasscheck_impl(module, self, subclass);
 
 exit:
@@ -159,4 +165,4 @@ _abc_get_cache_token(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _abc_get_cache_token_impl(module);
 }
-/*[clinic end generated code: output=9d6f861a8f45bc6f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c2e69611a495c98d input=a9049054013a1b77]*/

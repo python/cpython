@@ -6,14 +6,14 @@
                 <RegistryValue KeyPath="yes" Root="HKMU" Key="Software\Python\PyLauncher" Name="AssociateFiles" Value="1" Type="integer" />
                 
                 <ProgId Id="Python.File" Description="!(loc.PythonFileDescription)" Advertise="no" Icon="py.exe" IconIndex="1">
-                    <Extension Id="py" ContentType="text/plain">
+                    <Extension Id="py" ContentType="text/x-python">
                         <Verb Id="open" TargetFile="py.exe" Argument="&quot;%L&quot; %*" />
                     </Extension>
                 </ProgId>
                 <RegistryValue Root="HKCR" Key="Python.File\shellex\DropHandler" Value="{BEA218D2-6950-497B-9434-61683EC065FE}" Type="string" />
                 
                 <ProgId Id="Python.NoConFile" Description="!(loc.PythonNoConFileDescription)" Advertise="no" Icon="py.exe" IconIndex="1">
-                    <Extension Id="pyw" ContentType="text/plain">
+                    <Extension Id="pyw" ContentType="text/x-python">
                         <Verb Id="open" TargetFile="pyw.exe" Argument="&quot;%L&quot; %*" />
                     </Extension>
                 </ProgId>

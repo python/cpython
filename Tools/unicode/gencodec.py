@@ -72,9 +72,8 @@ def parsecodes(codes, len=len, range=range):
 
 def readmap(filename):
 
-    f = open(filename,'r')
-    lines = f.readlines()
-    f.close()
+    with open(filename) as f:
+        lines = f.readlines()
     enc2uni = {}
     identity = []
     unmapped = list(range(256))
@@ -359,18 +358,16 @@ encoding_table = codecs.charmap_build(decoding_table)
 def pymap(name,map,pyfile,encodingname,comments=1):
 
     code = codegen(name,map,encodingname,comments)
-    f = open(pyfile,'w')
-    f.write(code)
-    f.close()
+    with open(pyfile,'w') as f:
+        f.write(code)
 
 def marshalmap(name,map,marshalfile):
 
     d = {}
     for e,(u,c) in map.items():
         d[e] = (u,c)
-    f = open(marshalfile,'wb')
-    marshal.dump(d,f)
-    f.close()
+    with open(marshalfile,'wb') as f:
+        marshal.dump(d,f)
 
 def convertdir(dir, dirprefix='', nameprefix='', comments=1):
 
@@ -411,8 +408,8 @@ def rewritepythondir(dir, dirprefix='', comments=1):
         print('converting %s to %s' % (mapname,
                                        dirprefix + codefile))
         try:
-            map = marshal.load(open(os.path.join(dir,mapname),
-                               'rb'))
+            with open(os.path.join(dir, mapname), 'rb') as f:
+                map = marshal.load(f)
             if not map:
                 print('* map is empty; skipping')
             else:
