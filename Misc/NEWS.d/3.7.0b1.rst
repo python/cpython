@@ -77,7 +77,6 @@ used to test that string contains only ASCII characters.
 .. section: Core and Builtins
 
 Enforce :pep:`479` for all code.
-
 This means that manually raising a StopIteration exception from a generator
 is prohibited for all code, regardless of whether 'from __future__ import
 generator_stop' was used or not.
@@ -648,7 +647,6 @@ locale to the ``LC_NUMERIC`` locale to decode ``decimal_point`` and
 ``thousands_sep`` byte strings if they are non-ASCII or longer than 1 byte,
 and the ``LC_NUMERIC`` locale is different than the ``LC_CTYPE`` locale.
 This temporary change affects other threads.
-
 Same change for the :meth:`str.format` method when formatting a number
 (:class:`int`, :class:`float`, :class:`float` and subclasses) with the ``n``
 type (ex: ``'{:n}'.format(1234)``).
@@ -747,7 +745,6 @@ Add a new "_xxsubinterpreters" extension module that exposes the existing
 subinterpreter C-API and a new cross-interpreter data sharing mechanism. The
 module is primarily intended for more thorough testing of the existing
 subinterpreter support.
-
 Note that the _xxsubinterpreters module has been removed in 3.7.0rc1.
 
 ..

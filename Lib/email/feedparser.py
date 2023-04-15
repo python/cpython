@@ -41,7 +41,6 @@ NL = '\n'
 NeedMoreData = object()
 
 
-
 class BufferedSubFile(object):
     """A file-ish object that can have new data loaded into it.
 
@@ -132,7 +131,6 @@ class BufferedSubFile(object):
         return line
 
 
-
 class FeedParser:
     """A feed-style parser of email."""
 
@@ -320,7 +318,7 @@ class FeedParser:
                 self._cur.set_payload(EMPTYSTRING.join(lines))
                 return
             # Make sure a valid content type was specified per RFC 2045:6.4.
-            if (self._cur.get('content-transfer-encoding', '8bit').lower()
+            if (str(self._cur.get('content-transfer-encoding', '8bit')).lower()
                     not in ('7bit', '8bit', 'binary')):
                 defect = errors.InvalidMultipartContentTransferEncodingDefect()
                 self.policy.handle_defect(self._cur, defect)

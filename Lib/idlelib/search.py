@@ -80,7 +80,7 @@ class SearchDialog(SearchDialogBase):
         If no search was previously run, open a new search dialog.  In
         this case, no search is done.
 
-        If a seach was previously run, the search dialog won't be
+        If a search was previously run, the search dialog won't be
         shown and the options from the previous search (including the
         search pattern) will be used to find the next occurrence
         of the pattern.  Next is relative based on direction.

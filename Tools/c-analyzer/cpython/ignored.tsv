@@ -1,0 +1,699 @@
+filename	funcname	name	reason
+#???	-	somevar	???
+
+# All globals here are technically mutable but known to be safe.
+
+
+##################################
+## process-global values - set once
+
+# These will never re-initialize (but would be idempotent).
+# These are effectively const.
+
+##-----------------------
+## process-global resources
+
+## indicators for resource availability/capability
+# (set during first init)
+Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
+Python/fileutils.c	-	_Py_open_cloexec_works	-
+Python/fileutils.c	set_inheritable	ioctl_works	-
+# (set lazily, *after* first init)
+# XXX Is this thread-safe?
+Modules/posixmodule.c	os_dup2_impl	dup3_works	-
+
+## guards around resource init
+Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-
+
+##-----------------------
+## other values (not Python-specific)
+
+## cached computed data - set lazily (*after* first init)
+# XXX Are these safe relative to write races?
+Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
+Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
+Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
+Objects/unicodeobject.c	-	bloom_linebreak	-
+# This is safe:
+Objects/unicodeobject.c	_init_global_state	initialized	-
+
+##-----------------------
+## other values (Python-specific)
+
+## internal state - set before/during first init
+Modules/getbuildinfo.c	-	buildinfo	-
+Modules/getbuildinfo.c	-	initialized	-
+Python/getversion.c	-	initialized	-
+Python/getversion.c	-	version	-
+
+## public C-API - set during first init
+Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
+Python/pyhash.c	-	_Py_HashSecret	-
+
+
+##################################
+## state tied to Py_Main()
+# (only in main thread)
+
+##-----------------------
+## handling C argv
+
+Python/getopt.c	-	_PyOS_optarg	-
+Python/getopt.c	-	_PyOS_opterr	-
+Python/getopt.c	-	_PyOS_optind	-
+Python/getopt.c	-	opt_ptr	-
+Python/pathconfig.c	-	_Py_path_config	-
+
+##-----------------------
+## REPL
+
+Parser/myreadline.c	-	_PyOS_ReadlineLock	-
+Parser/myreadline.c	-	_PyOS_ReadlineTState	-
+Parser/myreadline.c	-	PyOS_InputHook	-
+Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
+
+
+##################################
+## runtime-global values - set once with each init
+
+# These are effectively const.
+
+##-----------------------
+## set by embedders before init
+# (whether directly or through a call)
+
+Python/initconfig.c	-	_Py_StandardStreamEncoding	-
+Python/initconfig.c	-	_Py_StandardStreamErrors	-
+
+##-----------------------
+## public C-API
+
+## deprecated
+Python/preconfig.c	-	Py_FileSystemDefaultEncoding	-
+Python/preconfig.c	-	Py_HasFileSystemDefaultEncoding	-
+Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	-
+Python/preconfig.c	-	_Py_HasFileSystemDefaultEncodeErrors	-
+
+## legacy config flags
+Python/initconfig.c	-	Py_UTF8Mode	-
+Python/initconfig.c	-	Py_DebugFlag	-
+Python/initconfig.c	-	Py_VerboseFlag	-
+Python/initconfig.c	-	Py_QuietFlag	-
+Python/initconfig.c	-	Py_InteractiveFlag	-
+Python/initconfig.c	-	Py_InspectFlag	-
+Python/initconfig.c	-	Py_OptimizeFlag	-
+Python/initconfig.c	-	Py_NoSiteFlag	-
+Python/initconfig.c	-	Py_BytesWarningFlag	-
+Python/initconfig.c	-	Py_FrozenFlag	-
+Python/initconfig.c	-	Py_IgnoreEnvironmentFlag	-
+Python/initconfig.c	-	Py_DontWriteBytecodeFlag	-
+Python/initconfig.c	-	Py_NoUserSiteDirectory	-
+Python/initconfig.c	-	Py_UnbufferedStdioFlag	-
+Python/initconfig.c	-	Py_HashRandomizationFlag	-
+Python/initconfig.c	-	Py_IsolatedFlag	-
+Python/initconfig.c	-	Py_LegacyWindowsFSEncodingFlag	-
+Python/initconfig.c	-	Py_LegacyWindowsStdioFlag	-
+
+##-----------------------
+## initialized statically, may be customized by embedders
+
+Python/frozen.c	-	PyImport_FrozenModules	-
+Python/import.c	-	inittab_copy	-
+Python/import.c	-	PyImport_Inittab	-
+
+
+##################################
+## runtime-global state
+
+##-----------------------
+## tied to each init/fini cycle
+
+## the consolidated runtime state
+Python/pylifecycle.c	-	_PyRuntime	-
+Python/pylifecycle.c	-	runtime_initialized	-
+
+# All cases of _PyArg_Parser are handled in c-analyzr/cpython/_analyzer.py.
+
+## main interp state in stdlib modules
+Modules/syslogmodule.c	-	S_ident_o	-
+Modules/syslogmodule.c	-	S_log_open	-
+
+##-----------------------
+## kept for stable ABI compatibility
+
+Objects/object.c	-	_Py_RefTotal	-
+
+##-----------------------
+## one-off temporary state
+
+# used during runtime init
+Python/sysmodule.c	-	_preinit_warnoptions	-
+Python/sysmodule.c	-	_preinit_xoptions	-
+
+# thread-safety
+# XXX need race protection?
+Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
+Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
+Python/pylifecycle.c	fatal_error	reentrant	-
+
+# explicitly protected, internal-only
+Modules/_xxinterpchannelsmodule.c	-	_globals	-
+
+
+##################################
+## not significant
+
+##-----------------------
+## not used (kept for compatibility)
+
+Python/pyfpe.c	-	PyFPE_counter	-
+
+##-----------------------
+## should be const
+# XXX Make them const.
+
+# These are all variables that we will be leaving global.
+
+# All module defs, type defs, etc. are handled in c-analyzr/cpython/_analyzer.py.
+# All kwlist arrays are handled in c-analyzr/cpython/_analyzer.py.
+
+# other vars that are actually constant
+
+Include/internal/pycore_blocks_output_buffer.h	-	BUFFER_BLOCK_SIZE	-
+Modules/_csv.c	-	quote_styles	-
+Modules/_ctypes/cfield.c	-	ffi_type_double	-
+Modules/_ctypes/cfield.c	-	ffi_type_float	-
+Modules/_ctypes/cfield.c	-	ffi_type_longdouble	-
+Modules/_ctypes/cfield.c	-	ffi_type_pointer	-
+Modules/_ctypes/cfield.c	-	ffi_type_sint16	-
+Modules/_ctypes/cfield.c	-	ffi_type_sint32	-
+Modules/_ctypes/cfield.c	-	ffi_type_sint64	-
+Modules/_ctypes/cfield.c	-	ffi_type_sint8	-
+Modules/_ctypes/cfield.c	-	ffi_type_uint16	-
+Modules/_ctypes/cfield.c	-	ffi_type_uint32	-
+Modules/_ctypes/cfield.c	-	ffi_type_uint64	-
+Modules/_ctypes/cfield.c	-	ffi_type_uint8	-
+Modules/_ctypes/cfield.c	-	ffi_type_void	-
+Modules/_datetimemodule.c	-	epoch	-
+Modules/_datetimemodule.c	-	max_fold_seconds	-
+Modules/_datetimemodule.c	datetime_isoformat	specs	-
+Modules/_datetimemodule.c	parse_hh_mm_ss_ff	correction	-
+Modules/_datetimemodule.c	time_isoformat	specs	-
+Modules/_decimal/_decimal.c	-	cond_map	-
+Modules/_decimal/_decimal.c	-	dec_signal_string	-
+Modules/_decimal/_decimal.c	-	dflt_ctx	-
+Modules/_decimal/_decimal.c	-	int_constants	-
+Modules/_decimal/_decimal.c	-	invalid_rounding_err	-
+Modules/_decimal/_decimal.c	-	invalid_signals_err	-
+Modules/_decimal/_decimal.c	-	signal_map	-
+Modules/_decimal/_decimal.c	-	ssize_constants	-
+Modules/_elementtree.c	-	ExpatMemoryHandler	-
+Modules/_hashopenssl.c	-	py_hashes	-
+Modules/_hacl/Hacl_Hash_SHA1.c	-	_h0	-
+Modules/_hacl/Hacl_Hash_MD5.c	-	_h0	-
+Modules/_hacl/Hacl_Hash_MD5.c	-	_t	-
+Modules/_io/_iomodule.c	-	static_types	-
+Modules/_io/textio.c	-	encodefuncs	-
+Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
+Modules/_localemodule.c	-	langinfo_constants	-
+Modules/_pickle.c	-	READ_WHOLE_LINE	-
+Modules/_sqlite/module.c	-	error_codes	-
+Modules/_sre/sre.c	pattern_repr	flag_names	-
+# XXX I'm pretty sure this is actually constant:
+Modules/_sre/sre_targets.h	-	sre_targets	-
+Modules/_sre.c	pattern_repr	flag_names	-
+Modules/_struct.c	-	bigendian_table	-
+Modules/_struct.c	-	lilendian_table	-
+Modules/_struct.c	-	native_table	-
+Modules/_tkinter.c	-	state_key	-
+Modules/_xxinterpchannelsmodule.c	-	_channelid_end_recv	-
+Modules/_xxinterpchannelsmodule.c	-	_channelid_end_send	-
+Modules/_zoneinfo.c	-	DAYS_BEFORE_MONTH	-
+Modules/_zoneinfo.c	-	DAYS_IN_MONTH	-
+Modules/_xxsubinterpretersmodule.c	-	no_exception	-
+Modules/arraymodule.c	-	descriptors	-
+Modules/arraymodule.c	-	emptybuf	-
+Modules/cjkcodecs/_codecs_cn.c	-	_mapping_list	-
+Modules/cjkcodecs/_codecs_cn.c	-	mapping_list	-
+Modules/cjkcodecs/_codecs_cn.c	-	_codec_list	-
+Modules/cjkcodecs/_codecs_cn.c	-	codec_list	-
+Modules/cjkcodecs/_codecs_hk.c	-	big5hkscs_pairenc_table	-
+Modules/cjkcodecs/_codecs_hk.c	-	_mapping_list	-
+Modules/cjkcodecs/_codecs_hk.c	-	mapping_list	-
+Modules/cjkcodecs/_codecs_hk.c	-	_codec_list	-
+Modules/cjkcodecs/_codecs_hk.c	-	codec_list	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	iso2022_kr_config	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	iso2022_jp_config	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	iso2022_jp_1_config	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	iso2022_jp_2_config	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	iso2022_jp_2004_config	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	iso2022_jp_3_config	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	iso2022_jp_ext_config	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	_mapping_list	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	mapping_list	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	_codec_list	-
+Modules/cjkcodecs/_codecs_iso2022.c	-	codec_list	-
+Modules/cjkcodecs/_codecs_jp.c	-	_mapping_list	-
+Modules/cjkcodecs/_codecs_jp.c	-	mapping_list	-
+Modules/cjkcodecs/_codecs_jp.c	-	_codec_list	-
+Modules/cjkcodecs/_codecs_jp.c	-	codec_list	-
+Modules/cjkcodecs/_codecs_kr.c	-	u2johabjamo	-
+Modules/cjkcodecs/_codecs_kr.c	-	_mapping_list	-
+Modules/cjkcodecs/_codecs_kr.c	-	mapping_list	-
+Modules/cjkcodecs/_codecs_kr.c	-	_codec_list	-
+Modules/cjkcodecs/_codecs_kr.c	-	codec_list	-
+Modules/cjkcodecs/_codecs_tw.c	-	_mapping_list	-
+Modules/cjkcodecs/_codecs_tw.c	-	mapping_list	-
+Modules/cjkcodecs/_codecs_tw.c	-	_codec_list	-
+Modules/cjkcodecs/_codecs_tw.c	-	codec_list	-
+Modules/cjkcodecs/cjkcodecs.h	-	__methods	-
+Modules/cmathmodule.c	-	acos_special_values	-
+Modules/cmathmodule.c	-	acosh_special_values	-
+Modules/cmathmodule.c	-	asinh_special_values	-
+Modules/cmathmodule.c	-	atanh_special_values	-
+Modules/cmathmodule.c	-	cosh_special_values	-
+Modules/cmathmodule.c	-	exp_special_values	-
+Modules/cmathmodule.c	-	log_special_values	-
+Modules/cmathmodule.c	-	rect_special_values	-
+Modules/cmathmodule.c	-	sinh_special_values	-
+Modules/cmathmodule.c	-	sqrt_special_values	-
+Modules/cmathmodule.c	-	tanh_special_values	-
+Modules/config.c	-	_PyImport_Inittab	-
+Modules/faulthandler.c	-	faulthandler_handlers	-
+Modules/getnameinfo.c	-	gni_afdl	-
+Modules/nismodule.c	-	TIMEOUT	-
+Modules/nismodule.c	-	aliases	-
+Modules/ossaudiodev.c	-	control_labels	-
+Modules/ossaudiodev.c	-	control_names	-
+Modules/posixmodule.c	os_getxattr_impl	buffer_sizes	-
+Modules/posixmodule.c	os_listxattr_impl	buffer_sizes	-
+Modules/posixmodule.c	-	posix_constants_confstr	-
+Modules/posixmodule.c	-	posix_constants_pathconf	-
+Modules/posixmodule.c	-	posix_constants_sysconf	-
+Modules/pyexpat.c	-	ExpatMemoryHandler	-
+Modules/pyexpat.c	-	error_info_of	-
+Modules/pyexpat.c	-	handler_info	-
+Modules/termios.c	-	termios_constants	-
+Modules/timemodule.c	init_timezone	YEAR	-
+Objects/bytearrayobject.c	-	_PyByteArray_empty_string	-
+Objects/complexobject.c	-	c_1	-
+Objects/exceptions.c	-	static_exceptions	-
+Objects/genobject.c	-	ASYNC_GEN_IGNORED_EXIT_MSG	-
+Objects/genobject.c	-	NON_INIT_CORO_MSG	-
+Objects/longobject.c	-	_PyLong_DigitValue	-
+Objects/object.c	-	_Py_SwappedOp	-
+Objects/object.c	-	_Py_abstract_hack	-
+Objects/object.c	-	last_final_reftotal	-
+Objects/object.c	-	static_types	-
+Objects/obmalloc.c	-	_PyMem	-
+Objects/obmalloc.c	-	_PyMem_Debug	-
+Objects/obmalloc.c	-	_PyMem_Raw	-
+Objects/obmalloc.c	-	_PyObject	-
+Objects/obmalloc.c	-	usedpools	-
+Objects/typeobject.c	-	name_op	-
+Objects/typeobject.c	-	slotdefs	-
+Objects/unicodeobject.c	-	stripfuncnames	-
+Objects/unicodeobject.c	-	utf7_category	-
+Objects/unicodeobject.c	unicode_decode_call_errorhandler_wchar	argparse	-
+Objects/unicodeobject.c	unicode_decode_call_errorhandler_writer	argparse	-
+Objects/unicodeobject.c	unicode_encode_call_errorhandler	argparse	-
+Objects/unicodeobject.c	unicode_translate_call_errorhandler	argparse	-
+Parser/parser.c	-	reserved_keywords	-
+Parser/parser.c	-	soft_keywords	-
+Parser/tokenizer.c	-	type_comment_prefix	-
+Python/ast_opt.c	fold_unaryop	ops	-
+Python/ceval.c	-	binary_ops	-
+Python/codecs.c	-	Py_hexdigits	-
+Python/codecs.c	-	ucnhash_capi	-
+Python/codecs.c	_PyCodecRegistry_Init	methods	-
+Python/compile.c	-	NO_LABEL	-
+Python/compile.c	-	NO_LOCATION	-
+Python/dynload_shlib.c	-	_PyImport_DynLoadFiletab	-
+Python/dynload_stub.c	-	_PyImport_DynLoadFiletab	-
+Python/frozen.c	-	aliases	-
+Python/frozen.c	-	bootstrap_modules	-
+Python/frozen.c	-	stdlib_modules	-
+Python/frozen.c	-	test_modules	-
+Python/frozen.c	-	_PyImport_FrozenAliases	-
+Python/frozen.c	-	_PyImport_FrozenBootstrap	-
+Python/frozen.c	-	_PyImport_FrozenStdlib	-
+Python/frozen.c	-	_PyImport_FrozenTest	-
+Python/getopt.c	-	longopts	-
+Python/import.c	-	_PyImport_Inittab	-
+Python/import.c	-	_PySys_ImplCacheTag	-
+Python/intrinsics.c	-	_PyIntrinsics_UnaryFunctions	-
+Python/intrinsics.c	-	_PyIntrinsics_BinaryFunctions	-
+Python/opcode_targets.h	-	opcode_targets	-
+Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
+Python/pyhash.c	-	PyHash_Func	-
+Python/pylifecycle.c	-	_C_LOCALE_WARNING	-
+Python/pylifecycle.c	-	_PyOS_mystrnicmp_hack	-
+Python/pylifecycle.c	-	_TARGET_LOCALES	-
+Python/pylifecycle.c	-	INTERPRETER_TRAMPOLINE_CODEDEF	-
+Python/pystate.c	-	initial	-
+Python/specialize.c	-	adaptive_opcodes	-
+Python/specialize.c	-	cache_requirements	-
+Python/stdlib_module_names.h	-	_Py_stdlib_module_names	-
+Python/sysmodule.c	-	_PySys_ImplCacheTag	-
+Python/sysmodule.c	-	_PySys_ImplName	-
+Python/sysmodule.c	-	whatstrings	-
+
+##-----------------------
+## test code
+
+Modules/_ctypes/_ctypes_test.c	-	_ctypes_test_slots	-
+Modules/_ctypes/_ctypes_test.c	-	_ctypes_testmodule	-
+Modules/_ctypes/_ctypes_test.c	-	_xxx_lib	-
+Modules/_ctypes/_ctypes_test.c	-	an_integer	-
+Modules/_ctypes/_ctypes_test.c	-	bottom	-
+Modules/_ctypes/_ctypes_test.c	-	last_tf_arg_s	-
+Modules/_ctypes/_ctypes_test.c	-	last_tf_arg_u	-
+Modules/_ctypes/_ctypes_test.c	-	last_tfrsuv_arg	-
+Modules/_ctypes/_ctypes_test.c	-	left	-
+Modules/_ctypes/_ctypes_test.c	-	module_methods	-
+Modules/_ctypes/_ctypes_test.c	-	my_eggs	-
+Modules/_ctypes/_ctypes_test.c	-	my_spams	-
+Modules/_ctypes/_ctypes_test.c	-	right	-
+Modules/_ctypes/_ctypes_test.c	-	top	-
+Modules/_testbuffer.c	-	NDArray_Type	-
+Modules/_testbuffer.c	-	StaticArray_Type	-
+Modules/_testbuffer.c	-	Struct	-
+Modules/_testbuffer.c	-	_testbuffer_functions	-
+Modules/_testbuffer.c	-	_testbuffermodule	-
+Modules/_testbuffer.c	-	calcsize	-
+Modules/_testbuffer.c	-	infobuf	-
+Modules/_testbuffer.c	-	ndarray_as_buffer	-
+Modules/_testbuffer.c	-	ndarray_as_mapping	-
+Modules/_testbuffer.c	-	ndarray_as_sequence	-
+Modules/_testbuffer.c	-	ndarray_getset	-
+Modules/_testbuffer.c	-	ndarray_methods	-
+Modules/_testbuffer.c	-	simple_fmt	-
+Modules/_testbuffer.c	-	simple_format	-
+Modules/_testbuffer.c	-	static_buffer	-
+Modules/_testbuffer.c	-	static_mem	-
+Modules/_testbuffer.c	-	static_shape	-
+Modules/_testbuffer.c	-	static_strides	-
+Modules/_testbuffer.c	-	staticarray_as_buffer	-
+Modules/_testbuffer.c	-	structmodule	-
+Modules/_testbuffer.c	ndarray_init	kwlist	-
+Modules/_testbuffer.c	ndarray_memoryview_from_buffer	format	-
+Modules/_testbuffer.c	ndarray_memoryview_from_buffer	info	-
+Modules/_testbuffer.c	ndarray_memoryview_from_buffer	shape	-
+Modules/_testbuffer.c	ndarray_memoryview_from_buffer	strides	-
+Modules/_testbuffer.c	ndarray_memoryview_from_buffer	suboffsets	-
+Modules/_testbuffer.c	ndarray_push	kwlist	-
+Modules/_testbuffer.c	staticarray_init	kwlist	-
+Modules/_testcapi/code.c	get_code_extra_index	key	-
+Modules/_testcapi/datetime.c	-	test_run_counter	-
+Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-
+Modules/_testcapi/heaptype.c	-	_testcapimodule	-
+Modules/_testcapi/mem.c	-	FmData	-
+Modules/_testcapi/mem.c	-	FmHook	-
+Modules/_testcapi/structmember.c	-	test_structmembersType_OldAPI	-
+Modules/_testcapi/unicode.c	-	_testcapimodule	-
+Modules/_testcapi/watchers.c	-	g_dict_watch_events	-
+Modules/_testcapi/watchers.c	-	g_dict_watchers_installed	-
+Modules/_testcapi/watchers.c	-	g_type_modified_events	-
+Modules/_testcapi/watchers.c	-	g_type_watchers_installed	-
+Modules/_testcapi/watchers.c	-	num_code_object_created_events	-
+Modules/_testcapi/watchers.c	-	num_code_object_destroyed_events	-
+Modules/_testcapi/watchers.c	-	pyfunc_watchers	-
+Modules/_testcapi/watchers.c	-	func_watcher_ids	-
+Modules/_testcapi/watchers.c	-	func_watcher_callbacks	-
+Modules/_testcapimodule.c	-	ContainerNoGC_members	-
+Modules/_testcapimodule.c	-	ContainerNoGC_type	-
+Modules/_testcapimodule.c	-	FmData	-
+Modules/_testcapimodule.c	-	FmHook	-
+Modules/_testcapimodule.c	-	GenericAlias_Type	-
+Modules/_testcapimodule.c	-	Generic_Type	-
+Modules/_testcapimodule.c	-	HeapCTypeSetattr_slots	-
+Modules/_testcapimodule.c	-	HeapCTypeSetattr_spec	-
+Modules/_testcapimodule.c	-	HeapCTypeSubclassWithFinalizer_slots	-
+Modules/_testcapimodule.c	-	HeapCTypeSubclassWithFinalizer_spec	-
+Modules/_testcapimodule.c	-	HeapCTypeSubclass_slots	-
+Modules/_testcapimodule.c	-	HeapCTypeSubclass_spec	-
+Modules/_testcapimodule.c	-	HeapCTypeWithBuffer_slots	-
+Modules/_testcapimodule.c	-	HeapCTypeWithBuffer_spec	-
+Modules/_testcapimodule.c	-	HeapCTypeWithDict_slots	-
+Modules/_testcapimodule.c	-	HeapCTypeWithDict_spec	-
+Modules/_testcapimodule.c	-	HeapCTypeWithNegativeDict_slots	-
+Modules/_testcapimodule.c	-	HeapCTypeWithNegativeDict_spec	-
+Modules/_testcapimodule.c	-	HeapCTypeWithWeakref_slots	-
+Modules/_testcapimodule.c	-	HeapCTypeWithWeakref_spec	-
+Modules/_testcapimodule.c	-	HeapCType_slots	-
+Modules/_testcapimodule.c	-	HeapCType_spec	-
+Modules/_testcapimodule.c	-	HeapDocCType_slots	-
+Modules/_testcapimodule.c	-	HeapDocCType_spec	-
+Modules/_testcapimodule.c	-	HeapGcCType_slots	-
+Modules/_testcapimodule.c	-	HeapGcCType_spec	-
+Modules/_testcapimodule.c	-	MethClass_Type	-
+Modules/_testcapimodule.c	-	MethInstance_Type	-
+Modules/_testcapimodule.c	-	MethStatic_Type	-
+Modules/_testcapimodule.c	-	MethodDescriptor2_Type	-
+Modules/_testcapimodule.c	-	MethodDescriptorBase_Type	-
+Modules/_testcapimodule.c	-	MethodDescriptorDerived_Type	-
+Modules/_testcapimodule.c	-	MethodDescriptorNopGet_Type	-
+Modules/_testcapimodule.c	-	MyList_Type	-
+Modules/_testcapimodule.c	-	PyRecursingInfinitelyError_Type	-
+Modules/_testcapimodule.c	-	TestError	-
+Modules/_testcapimodule.c	-	TestMethods	-
+Modules/_testcapimodule.c	-	_HashInheritanceTester_Type	-
+Modules/_testcapimodule.c	-	_testcapimodule	-
+Modules/_testcapimodule.c	-	awaitType	-
+Modules/_testcapimodule.c	-	awaitType_as_async	-
+Modules/_testcapimodule.c	-	capsule_context	-
+Modules/_testcapimodule.c	-	capsule_destructor_call_count	-
+Modules/_testcapimodule.c	-	capsule_error	-
+Modules/_testcapimodule.c	-	capsule_name	-
+Modules/_testcapimodule.c	-	capsule_pointer	-
+Modules/_testcapimodule.c	-	decimal_initialized	-
+Modules/_testcapimodule.c	-	generic_alias_methods	-
+Modules/_testcapimodule.c	-	generic_methods	-
+Modules/_testcapimodule.c	-	heapctype_members	-
+Modules/_testcapimodule.c	-	heapctypesetattr_members	-
+Modules/_testcapimodule.c	-	heapctypesubclass_members	-
+Modules/_testcapimodule.c	-	heapctypewithdict_getsetlist	-
+Modules/_testcapimodule.c	-	heapctypewithdict_members	-
+Modules/_testcapimodule.c	-	heapctypewithnegativedict_members	-
+Modules/_testcapimodule.c	-	heapctypewithweakref_members	-
+Modules/_testcapimodule.c	-	ipowType	-
+Modules/_testcapimodule.c	-	ipowType_as_number	-
+Modules/_testcapimodule.c	-	matmulType	-
+Modules/_testcapimodule.c	-	matmulType_as_number	-
+Modules/_testcapimodule.c	-	meth_class_methods	-
+Modules/_testcapimodule.c	-	meth_instance_methods	-
+Modules/_testcapimodule.c	-	meth_static_methods	-
+Modules/_testcapimodule.c	-	ml	-
+Modules/_testcapimodule.c	-	str1	-
+Modules/_testcapimodule.c	-	str2	-
+Modules/_testcapimodule.c	-	test_c_thread	-
+Modules/_testcapimodule.c	-	test_members	-
+Modules/_testcapimodule.c	-	test_run_counter	-
+Modules/_testcapimodule.c	-	test_structmembersType	-
+Modules/_testcapimodule.c	-	thread_done	-
+Modules/_testcapimodule.c	-	x	-
+Modules/_testcapimodule.c	-	wait_done	-
+Modules/_testcapimodule.c	getargs_keyword_only	keywords	-
+Modules/_testcapimodule.c	getargs_keywords	keywords	-
+Modules/_testcapimodule.c	getargs_positional_only_and_keywords	keywords	-
+Modules/_testcapimodule.c	getargs_s_hash_int2	keywords	static char*[]
+Modules/_testcapimodule.c	make_exception_with_doc	kwlist	-
+Modules/_testcapimodule.c	raise_SIGINT_then_send_None	PyId_send	-
+Modules/_testcapimodule.c	slot_tp_del	PyId___tp_del__	-
+Modules/_testcapimodule.c	test_capsule	buffer	-
+Modules/_testcapimodule.c	test_empty_argparse	kwlist	-
+Modules/_testcapimodule.c	test_structmembers_new	keywords	-
+Modules/_testcapimodule.c	getargs_s_hash_int	keywords	-
+Modules/_testcapimodule.c	-	g_dict_watch_events	-
+Modules/_testcapimodule.c	-	g_dict_watchers_installed	-
+Modules/_testcapimodule.c	-	g_type_modified_events	-
+Modules/_testcapimodule.c	-	g_type_watchers_installed	-
+Modules/_testimportmultiple.c	-	_barmodule	-
+Modules/_testimportmultiple.c	-	_foomodule	-
+Modules/_testimportmultiple.c	-	_testimportmultiple	-
+Modules/_testmultiphase.c	-	Example_Type_slots	-
+Modules/_testmultiphase.c	-	Example_Type_spec	-
+Modules/_testmultiphase.c	-	Example_methods	-
+Modules/_testmultiphase.c	-	StateAccessType_Type_slots	-
+Modules/_testmultiphase.c	-	StateAccessType_methods	-
+Modules/_testmultiphase.c	-	StateAccessType_spec	-
+Modules/_testmultiphase.c	-	Str_Type_slots	-
+Modules/_testmultiphase.c	-	Str_Type_spec	-
+Modules/_testmultiphase.c	-	def_bad_large	-
+Modules/_testmultiphase.c	-	def_bad_negative	-
+Modules/_testmultiphase.c	-	def_create_int_with_state	-
+Modules/_testmultiphase.c	-	def_create_null	-
+Modules/_testmultiphase.c	-	def_create_raise	-
+Modules/_testmultiphase.c	-	def_create_unreported_exception	-
+Modules/_testmultiphase.c	-	def_exec_err	-
+Modules/_testmultiphase.c	-	def_exec_raise	-
+Modules/_testmultiphase.c	-	def_exec_unreported_exception	-
+Modules/_testmultiphase.c	-	def_meth_state_access	-
+Modules/_testmultiphase.c	-	def_negative_size	-
+Modules/_testmultiphase.c	-	def_nonascii_kana	-
+Modules/_testmultiphase.c	-	def_nonascii_latin	-
+Modules/_testmultiphase.c	-	def_nonmodule	-
+Modules/_testmultiphase.c	-	def_nonmodule_with_exec_slots	-
+Modules/_testmultiphase.c	-	def_nonmodule_with_methods	-
+Modules/_testmultiphase.c	-	imp_dummy_def	-
+Modules/_testmultiphase.c	-	main_def	-
+Modules/_testmultiphase.c	-	main_slots	-
+Modules/_testmultiphase.c	-	meth_state_access_slots	-
+Modules/_testmultiphase.c	-	nonmodule_methods	-
+Modules/_testmultiphase.c	-	null_slots_def	-
+Modules/_testmultiphase.c	-	slots_bad_large	-
+Modules/_testmultiphase.c	-	slots_bad_negative	-
+Modules/_testmultiphase.c	-	slots_create_nonmodule	-
+Modules/_testmultiphase.c	-	slots_create_nonmodule	-
+Modules/_testmultiphase.c	-	slots_create_null	-
+Modules/_testmultiphase.c	-	slots_create_raise	-
+Modules/_testmultiphase.c	-	slots_create_unreported_exception	-
+Modules/_testmultiphase.c	-	slots_exec_err	-
+Modules/_testmultiphase.c	-	slots_exec_raise	-
+Modules/_testmultiphase.c	-	slots_exec_unreported_exception	-
+Modules/_testmultiphase.c	-	slots_nonmodule_with_exec_slots	-
+Modules/_testmultiphase.c	-	testexport_methods	-
+Modules/_testmultiphase.c	-	uninitialized_def	-
+Modules/_testsinglephase.c	-	global_state	-
+Modules/_xxtestfuzz/_xxtestfuzz.c	-	_fuzzmodule	-
+Modules/_xxtestfuzz/_xxtestfuzz.c	-	module_methods	-
+Modules/_xxtestfuzz/fuzzer.c	-	SRE_FLAG_DEBUG	-
+Modules/_xxtestfuzz/fuzzer.c	-	ast_literal_eval_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	compiled_patterns	-
+Modules/_xxtestfuzz/fuzzer.c	-	csv_error	-
+Modules/_xxtestfuzz/fuzzer.c	-	csv_module	-
+Modules/_xxtestfuzz/fuzzer.c	-	json_loads_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	regex_patterns	-
+Modules/_xxtestfuzz/fuzzer.c	-	sre_compile_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	sre_error_exception	-
+Modules/_xxtestfuzz/fuzzer.c	-	struct_error	-
+Modules/_xxtestfuzz/fuzzer.c	-	struct_unpack_method	-
+Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	CSV_READER_INITIALIZED	-
+Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	JSON_LOADS_INITIALIZED	-
+Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	SRE_COMPILE_INITIALIZED	-
+Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	SRE_MATCH_INITIALIZED	-
+Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	STRUCT_UNPACK_INITIALIZED	-
+Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	AST_LITERAL_EVAL_INITIALIZED	-
+
+##-----------------------
+## the analyzer should have ignored these
+# XXX Fix the analyzer.
+
+## forward/extern references
+Include/py_curses.h	-	PyCurses_API	-
+Include/pydecimal.h	-	_decimal_api	-
+Modules/_blake2/blake2module.c	-	blake2b_type_spec	-
+Modules/_blake2/blake2module.c	-	blake2s_type_spec	-
+Modules/_io/fileio.c	-	_Py_open_cloexec_works	-
+Modules/_io/_iomodule.h	-	PyIOBase_Type	-
+Modules/_io/_iomodule.h	-	PyRawIOBase_Type	-
+Modules/_io/_iomodule.h	-	PyBufferedIOBase_Type	-
+Modules/_io/_iomodule.h	-	PyTextIOBase_Type	-
+Modules/_io/_iomodule.h	-	PyFileIO_Type	-
+Modules/_io/_iomodule.h	-	PyBytesIO_Type	-
+Modules/_io/_iomodule.h	-	PyStringIO_Type	-
+Modules/_io/_iomodule.h	-	PyBufferedReader_Type	-
+Modules/_io/_iomodule.h	-	PyBufferedWriter_Type	-
+Modules/_io/_iomodule.h	-	PyBufferedRWPair_Type	-
+Modules/_io/_iomodule.h	-	PyBufferedRandom_Type	-
+Modules/_io/_iomodule.h	-	PyTextIOWrapper_Type	-
+Modules/_io/_iomodule.h	-	PyIncrementalNewlineDecoder_Type	-
+Modules/_io/_iomodule.h	-	_PyBytesIOBuffer_Type	-
+Modules/_io/_iomodule.h	-	_PyIO_Module	-
+Modules/_io/_iomodule.h	-	_PyIO_str_close	-
+Modules/_io/_iomodule.h	-	_PyIO_str_closed	-
+Modules/_io/_iomodule.h	-	_PyIO_str_decode	-
+Modules/_io/_iomodule.h	-	_PyIO_str_encode	-
+Modules/_io/_iomodule.h	-	_PyIO_str_fileno	-
+Modules/_io/_iomodule.h	-	_PyIO_str_flush	-
+Modules/_io/_iomodule.h	-	_PyIO_str_getstate	-
+Modules/_io/_iomodule.h	-	_PyIO_str_isatty	-
+Modules/_io/_iomodule.h	-	_PyIO_str_newlines	-
+Modules/_io/_iomodule.h	-	_PyIO_str_nl	-
+Modules/_io/_iomodule.h	-	_PyIO_str_peek	-
+Modules/_io/_iomodule.h	-	_PyIO_str_read	-
+Modules/_io/_iomodule.h	-	_PyIO_str_read1	-
+Modules/_io/_iomodule.h	-	_PyIO_str_readable	-
+Modules/_io/_iomodule.h	-	_PyIO_str_readall	-
+Modules/_io/_iomodule.h	-	_PyIO_str_readinto	-
+Modules/_io/_iomodule.h	-	_PyIO_str_readline	-
+Modules/_io/_iomodule.h	-	_PyIO_str_reset	-
+Modules/_io/_iomodule.h	-	_PyIO_str_seek	-
+Modules/_io/_iomodule.h	-	_PyIO_str_seekable	-
+Modules/_io/_iomodule.h	-	_PyIO_str_setstate	-
+Modules/_io/_iomodule.h	-	_PyIO_str_tell	-
+Modules/_io/_iomodule.h	-	_PyIO_str_truncate	-
+Modules/_io/_iomodule.h	-	_PyIO_str_writable	-
+Modules/_io/_iomodule.h	-	_PyIO_str_write	-
+Modules/_io/_iomodule.h	-	_PyIO_empty_str	-
+Modules/_io/_iomodule.h	-	_PyIO_empty_bytes	-
+Modules/_multiprocessing/multiprocessing.h	-	_PyMp_SemLockType	-
+Modules/_sqlite/module.c	-	_pysqlite_converters	-
+Modules/_sqlite/module.c	-	_pysqlite_enable_callback_tracebacks	-
+Modules/_sqlite/module.c	-	pysqlite_BaseTypeAdapted	-
+Modules/_sqlite/module.h	-	pysqlite_global_state	-
+Modules/_testcapimodule.c	-	_PyBytesIOBuffer_Type	-
+Modules/posixmodule.c	-	_Py_open_cloexec_works	-
+Modules/posixmodule.c	-	environ	-
+Objects/object.c	-	_Py_GenericAliasIterType	-
+Objects/object.c	-	_PyMemoryIter_Type	-
+Objects/object.c	-	_PyLineIterator	-
+Objects/object.c	-	_PyPositionsIterator	-
+Python/perf_trampoline.c	-	_Py_trampoline_func_start	-
+Python/perf_trampoline.c	-	_Py_trampoline_func_end	-
+Python/importdl.h	-	_PyImport_DynLoadFiletab	-
+Modules/expat/xmlrole.c	-	prolog0	-
+Modules/expat/xmlrole.c	-	prolog1	-
+Modules/expat/xmlrole.c	-	prolog2	-
+Modules/expat/xmlrole.c	-	doctype0	-
+Modules/expat/xmlrole.c	-	doctype1	-
+Modules/expat/xmlrole.c	-	doctype2	-
+Modules/expat/xmlrole.c	-	doctype3	-
+Modules/expat/xmlrole.c	-	doctype4	-
+Modules/expat/xmlrole.c	-	doctype5	-
+Modules/expat/xmlrole.c	-	internalSubset	-
+Modules/expat/xmlrole.c	-	entity0	-
+Modules/expat/xmlrole.c	-	entity1	-
+Modules/expat/xmlrole.c	-	entity2	-
+Modules/expat/xmlrole.c	-	entity3	-
+Modules/expat/xmlrole.c	-	entity4	-
+Modules/expat/xmlrole.c	-	entity5	-
+Modules/expat/xmlrole.c	-	entity6	-
+Modules/expat/xmlrole.c	-	entity7	-
+Modules/expat/xmlrole.c	-	entity8	-
+Modules/expat/xmlrole.c	-	entity9	-
+Modules/expat/xmlrole.c	-	entity10	-
+Modules/expat/xmlrole.c	-	notation0	-
+Modules/expat/xmlrole.c	-	notation1	-
+Modules/expat/xmlrole.c	-	notation2	-
+Modules/expat/xmlrole.c	-	notation3	-
+Modules/expat/xmlrole.c	-	notation4	-
+Modules/expat/xmlrole.c	-	attlist0	-
+Modules/expat/xmlrole.c	-	attlist1	-
+Modules/expat/xmlrole.c	-	attlist2	-
+Modules/expat/xmlrole.c	-	attlist3	-
+Modules/expat/xmlrole.c	-	attlist4	-
+Modules/expat/xmlrole.c	-	attlist5	-
+Modules/expat/xmlrole.c	-	attlist6	-
+Modules/expat/xmlrole.c	-	attlist7	-
+Modules/expat/xmlrole.c	-	attlist8	-
+Modules/expat/xmlrole.c	-	attlist9	-
+Modules/expat/xmlrole.c	-	element0	-
+Modules/expat/xmlrole.c	-	element1	-
+Modules/expat/xmlrole.c	-	element2	-
+Modules/expat/xmlrole.c	-	element3	-
+Modules/expat/xmlrole.c	-	element4	-
+Modules/expat/xmlrole.c	-	element5	-
+Modules/expat/xmlrole.c	-	element6	-
+Modules/expat/xmlrole.c	-	element7	-
+Modules/expat/xmlrole.c	-	externalSubset0	-
+Modules/expat/xmlrole.c	-	externalSubset1	-
+Modules/expat/xmlrole.c	-	condSect0	-
+Modules/expat/xmlrole.c	-	condSect1	-
+Modules/expat/xmlrole.c	-	condSect2	-
+Modules/expat/xmlrole.c	-	declClose	-
+Modules/expat/xmlrole.c	-	error	-
+
+## other
+Modules/_io/_iomodule.c	-	_PyIO_Module	-
+Modules/_sqlite/module.c	-	_sqlite3module	-

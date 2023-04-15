@@ -63,6 +63,7 @@ force-open-calltip= <Control-Key-backslash>
 format-paragraph= <Alt-Key-q>
 flash-paren= <Control-Key-0>
 run-module= <Key-F5>
+run-custom= <Shift-Key-F5>
 check-module= <Alt-Key-x>
 zoom-height= <Alt-Key-2>
 
@@ -122,6 +123,7 @@ force-open-calltip= <Control-Key-backslash>
 format-paragraph= <Alt-Key-q>
 flash-paren= <Control-Key-0>
 run-module= <Key-F5>
+run-custom= <Shift-Key-F5>
 check-module= <Alt-Key-x>
 zoom-height= <Alt-Key-2>
 
@@ -181,6 +183,7 @@ force-open-calltip= <Control-Key-backslash>
 format-paragraph= <Alt-Key-q>
 flash-paren= <Control-Key-0>
 run-module= <Key-F5>
+run-custom= <Shift-Key-F5>
 check-module= <Alt-Key-x>
 zoom-height= <Alt-Key-2>
 
@@ -240,6 +243,7 @@ force-open-calltip= <Control-Key-backslash>
 format-paragraph= <Option-Key-q>
 flash-paren= <Control-Key-0>
 run-module= <Key-F5>
+run-custom= <Shift-Key-F5>
 check-module= <Option-Key-x>
 zoom-height= <Option-Key-0>
 
@@ -300,5 +304,6 @@ force-open-calltip= <Control-Key-backslash>
 format-paragraph= <Option-Key-q>
 flash-paren= <Control-Key-0>
 run-module= <Key-F5>
+run-custom= <Shift-Key-F5>
 check-module= <Option-Key-x>
 zoom-height= <Option-Key-0>
