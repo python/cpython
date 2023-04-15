@@ -212,8 +212,21 @@ typevar_typing_subst_impl(typevarobject *self, PyObject *arg)
     return call_typing_func_object("_typevar_subst", args);
 }
 
+/*[clinic input]
+typevar.__reduce__ as typevar_reduce
+
+[clinic start generated code]*/
+
+static PyObject *
+typevar_reduce_impl(typevarobject *self)
+/*[clinic end generated code: output=02e5c55d7cf8a08f input=de76bc95f04fb9ff]*/
+{
+    return PyUnicode_FromString(self->name);
+}
+
 static PyMethodDef typevar_methods[] = {
     TYPEVAR_TYPING_SUBST_METHODDEF
+    TYPEVAR_REDUCE_METHODDEF
     {0}
 };
 
@@ -567,9 +580,22 @@ paramspec_typing_prepare_subst_impl(paramspecobject *self, PyObject *alias,
     return call_typing_func_object("_paramspec_prepare_subst", args_tuple);
 }
 
+/*[clinic input]
+paramspec.__reduce__ as paramspec_reduce
+
+[clinic start generated code]*/
+
+static PyObject *
+paramspec_reduce_impl(paramspecobject *self)
+/*[clinic end generated code: output=b83398674416db27 input=5bf349f0d5dd426c]*/
+{
+    return PyUnicode_FromString(self->name);
+}
+
 static PyMethodDef paramspec_methods[] = {
     PARAMSPEC_TYPING_SUBST_METHODDEF
     PARAMSPEC_TYPING_PREPARE_SUBST_METHODDEF
+    PARAMSPEC_REDUCE_METHODDEF
     {0}
 };
 
@@ -710,9 +736,22 @@ typevartuple_typing_prepare_subst_impl(typevartupleobject *self,
     return call_typing_func_object("_typevartuple_prepare_subst", args_tuple);
 }
 
+/*[clinic input]
+typevartuple.__reduce__ as typevartuple_reduce
+
+[clinic start generated code]*/
+
+static PyObject *
+typevartuple_reduce_impl(typevartupleobject *self)
+/*[clinic end generated code: output=3215bc0477913d20 input=3018a4d66147e807]*/
+{
+    return PyUnicode_FromString(self->name);
+}
+
 static PyMethodDef typevartuple_methods[] = {
     TYPEVARTUPLE_TYPING_SUBST_METHODDEF
     TYPEVARTUPLE_TYPING_PREPARE_SUBST_METHODDEF
+    TYPEVARTUPLE_REDUCE_METHODDEF
     {0}
 };
 

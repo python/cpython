@@ -171,6 +171,23 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(typevar_reduce__doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n");
+
+#define TYPEVAR_REDUCE_METHODDEF    \
+    {"__reduce__", (PyCFunction)typevar_reduce, METH_NOARGS, typevar_reduce__doc__},
+
+static PyObject *
+typevar_reduce_impl(typevarobject *self);
+
+static PyObject *
+typevar_reduce(typevarobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return typevar_reduce_impl(self);
+}
+
 PyDoc_STRVAR(paramspecargs_new__doc__,
 "paramspecargs(origin)\n"
 "--\n"
@@ -495,6 +512,23 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(paramspec_reduce__doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n");
+
+#define PARAMSPEC_REDUCE_METHODDEF    \
+    {"__reduce__", (PyCFunction)paramspec_reduce, METH_NOARGS, paramspec_reduce__doc__},
+
+static PyObject *
+paramspec_reduce_impl(paramspecobject *self);
+
+static PyObject *
+paramspec_reduce(paramspecobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return paramspec_reduce_impl(self);
+}
+
 PyDoc_STRVAR(typevartuple__doc__,
 "typevartuple(name)\n"
 "--\n"
@@ -671,4 +705,21 @@ typevartuple_typing_prepare_subst(typevartupleobject *self, PyObject *const *arg
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b2896de46c103443 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(typevartuple_reduce__doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n");
+
+#define TYPEVARTUPLE_REDUCE_METHODDEF    \
+    {"__reduce__", (PyCFunction)typevartuple_reduce, METH_NOARGS, typevartuple_reduce__doc__},
+
+static PyObject *
+typevartuple_reduce_impl(typevartupleobject *self);
+
+static PyObject *
+typevartuple_reduce(typevartupleobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return typevartuple_reduce_impl(self);
+}
+/*[clinic end generated code: output=ac9f83f64eee2f90 input=a9049054013a1b77]*/
