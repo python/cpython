@@ -11,6 +11,15 @@ with a prompt are output from the interpreter. Note that a secondary prompt on a
 line by itself in an example means you must type a blank line; this is used to
 end a multi-line command.
 
+.. only:: html
+
+   You can toggle the display of prompts and output by clicking on ``>>>``
+   in the upper-right corner of an example box.  If you hide the prompts
+   and output for an example, then you can easily copy and paste the input
+   lines into your interpreter.
+
+.. index:: single: # (hash); comment
+
 Many of the examples in this manual, even those entered at the interactive
 prompt, include comments.  Comments in Python start with the hash character,
 ``#``, and extend to the end of the physical line.  A comment may appear at the
@@ -61,8 +70,8 @@ the ones with a fractional part (e.g. ``5.0``, ``1.6``) have type
 :class:`float`.  We will see more about numeric types later in the tutorial.
 
 Division (``/``) always returns a float.  To do :term:`floor division` and
-get an integer result (discarding any fractional result) you can use the ``//``
-operator; to calculate the remainder you can use ``%``::
+get an integer result you can use the ``//`` operator; to calculate
+the remainder you can use ``%``::
 
    >>> 17 / 3  # classic division returns a float
    5.666666666666667
@@ -71,7 +80,7 @@ operator; to calculate the remainder you can use ``%``::
    5
    >>> 17 % 3  # the % operator returns the remainder of the division
    2
-   >>> 5 * 3 + 2  # result * divisor + remainder
+   >>> 5 * 3 + 2  # floored quotient * divisor + remainder
    17
 
 With Python, it is possible to use the ``**`` operator to calculate powers [#]_::
@@ -100,10 +109,8 @@ give you an error::
 There is full support for floating point; operators with mixed type operands
 convert the integer operand to floating point::
 
-   >>> 3 * 3.75 / 1.5
-   7.5
-   >>> 7.0 / 2
-   3.5
+   >>> 4 * 3.75 - 1
+   14.0
 
 In interactive mode, the last printed expression is assigned to the variable
 ``_``.  This means that when you are using Python as a desk calculator, it is
@@ -145,12 +152,12 @@ to escape quotes::
    "doesn't"
    >>> "doesn't"  # ...or use double quotes instead
    "doesn't"
-   >>> '"Yes," he said.'
-   '"Yes," he said.'
-   >>> "\"Yes,\" he said."
-   '"Yes," he said.'
-   >>> '"Isn\'t," she said.'
-   '"Isn\'t," she said.'
+   >>> '"Yes," they said.'
+   '"Yes," they said.'
+   >>> "\"Yes,\" they said."
+   '"Yes," they said.'
+   >>> '"Isn\'t," they said.'
+   '"Isn\'t," they said.'
 
 In the interactive interpreter, the output string is enclosed in quotes and
 special characters are escaped with backslashes.  While this might sometimes
@@ -161,10 +168,10 @@ enclosed in single quotes.  The :func:`print` function produces a more
 readable output, by omitting the enclosing quotes and by printing escaped
 and special characters::
 
-   >>> '"Isn\'t," she said.'
-   '"Isn\'t," she said.'
-   >>> print('"Isn\'t," she said.')
-   "Isn't," she said.
+   >>> '"Isn\'t," they said.'
+   '"Isn\'t," they said.'
+   >>> print('"Isn\'t," they said.')
+   "Isn't," they said.
    >>> s = 'First line.\nSecond line.'  # \n means newline
    >>> s  # without print(), \n is included in the output
    'First line.\nSecond line.'
@@ -181,6 +188,11 @@ the first quote::
    ame
    >>> print(r'C:\some\name')  # note the r before the quote
    C:\some\name
+
+There is one subtle aspect to raw strings: a raw string may not end in
+an odd number of ``\`` characters; see
+:ref:`the FAQ entry <faq-programming-raw-string-backslash>` for more information
+and workarounds.
 
 String literals can span multiple lines.  One way is using triple-quotes:
 ``"""..."""`` or ``'''...'''``.  End of lines are automatically
@@ -214,27 +226,31 @@ to each other are automatically concatenated. ::
    >>> 'Py' 'thon'
    'Python'
 
-This only works with two literals though, not with variables or expressions::
-
-   >>> prefix = 'Py'
-   >>> prefix 'thon'  # can't concatenate a variable and a string literal
-     ...
-   SyntaxError: invalid syntax
-   >>> ('un' * 3) 'ium'
-     ...
-   SyntaxError: invalid syntax
-
-If you want to concatenate variables or a variable and a literal, use ``+``::
-
-   >>> prefix + 'thon'
-   'Python'
-
 This feature is particularly useful when you want to break long strings::
 
    >>> text = ('Put several strings within parentheses '
    ...         'to have them joined together.')
    >>> text
    'Put several strings within parentheses to have them joined together.'
+
+This only works with two literals though, not with variables or expressions::
+
+   >>> prefix = 'Py'
+   >>> prefix 'thon'  # can't concatenate a variable and a string literal
+     File "<stdin>", line 1
+       prefix 'thon'
+              ^^^^^^
+   SyntaxError: invalid syntax
+   >>> ('un' * 3) 'ium'
+     File "<stdin>", line 1
+       ('un' * 3) 'ium'
+                  ^^^^^
+   SyntaxError: invalid syntax
+
+If you want to concatenate variables or a variable and a literal, use ``+``::
+
+   >>> prefix + 'thon'
+   'Python'
 
 Strings can be *indexed* (subscripted), with the first character having index 0.
 There is no separate character type; a character is simply a string of size
@@ -258,20 +274,12 @@ Indices may also be negative numbers, to start counting from the right::
 Note that since -0 is the same as 0, negative indices start from -1.
 
 In addition to indexing, *slicing* is also supported.  While indexing is used
-to obtain individual characters, *slicing* allows you to obtain substring::
+to obtain individual characters, *slicing* allows you to obtain a substring::
 
    >>> word[0:2]  # characters from position 0 (included) to 2 (excluded)
    'Py'
    >>> word[2:5]  # characters from position 2 (included) to 5 (excluded)
    'tho'
-
-Note how the start is always included, and the end always excluded.  This
-makes sure that ``s[:i] + s[i:]`` is always equal to ``s``::
-
-   >>> word[:2] + word[2:]
-   'Python'
-   >>> word[:4] + word[4:]
-   'Python'
 
 Slice indices have useful defaults; an omitted first index defaults to zero, an
 omitted second index defaults to the size of the string being sliced. ::
@@ -282,6 +290,14 @@ omitted second index defaults to the size of the string being sliced. ::
    'on'
    >>> word[-2:]  # characters from the second-last (included) to the end
    'on'
+
+Note how the start is always included, and the end always excluded.  This
+makes sure that ``s[:i] + s[i:]`` is always equal to ``s``::
+
+   >>> word[:2] + word[2:]
+   'Python'
+   >>> word[:4] + word[4:]
+   'Python'
 
 One way to remember how slices work is to think of the indices as pointing
 *between* characters, with the left edge of the first character numbered 0.
@@ -322,10 +338,12 @@ Python strings cannot be changed --- they are :term:`immutable`.
 Therefore, assigning to an indexed position in the string results in an error::
 
    >>> word[0] = 'J'
-     ...
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
    TypeError: 'str' object does not support item assignment
    >>> word[2:] = 'py'
-     ...
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
    TypeError: 'str' object does not support item assignment
 
 If you need a different string, you should create a new one::
@@ -377,7 +395,7 @@ items of different types, but usually the items all have the same type. ::
    >>> squares
    [1, 4, 9, 16, 25]
 
-Like strings (and all other built-in :term:`sequence` type), lists can be
+Like strings (and all other built-in :term:`sequence` types), lists can be
 indexed and sliced::
 
    >>> squares[0]  # indexing returns the item
@@ -388,7 +406,8 @@ indexed and sliced::
    [9, 16, 25]
 
 All slice operations return a new list containing the requested elements.  This
-means that the following slice returns a new (shallow) copy of the list::
+means that the following slice returns a
+:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
 
    >>> squares[:]
    [1, 4, 9, 16, 25]
@@ -460,16 +479,18 @@ First Steps Towards Programming
 ===============================
 
 Of course, we can use Python for more complicated tasks than adding two and two
-together.  For instance, we can write an initial sub-sequence of the *Fibonacci*
-series as follows::
+together.  For instance, we can write an initial sub-sequence of the
+`Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_number>`_
+as follows::
 
    >>> # Fibonacci series:
    ... # the sum of two elements defines the next
    ... a, b = 0, 1
-   >>> while b < 10:
-   ...     print(b)
+   >>> while a < 10:
+   ...     print(a)
    ...     a, b = b, a+b
    ...
+   0
    1
    1
    2
@@ -485,7 +506,7 @@ This example introduces several new features.
   first before any of the assignments take place.  The right-hand side expressions
   are evaluated  from the left to the right.
 
-* The :keyword:`while` loop executes as long as the condition (here: ``b < 10``)
+* The :keyword:`while` loop executes as long as the condition (here: ``a < 10``)
   remains true.  In Python, like in C, any non-zero integer value is true; zero is
   false.  The condition may also be a string or list value, in fact any sequence;
   anything with a non-zero length is true, empty sequences are false.  The test
@@ -518,11 +539,11 @@ This example introduces several new features.
   or end the output with a different string::
 
      >>> a, b = 0, 1
-     >>> while b < 1000:
-     ...     print(b, end=',')
+     >>> while a < 1000:
+     ...     print(a, end=',')
      ...     a, b = b, a+b
      ...
-     1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,
+     0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,
 
 
 .. rubric:: Footnotes

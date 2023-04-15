@@ -6,10 +6,13 @@ import os
 import re
 import string
 import sys
+import warnings
+
+warnings._deprecated(__name__, remove=(3, 13))
 
 AMD64 = "AMD64" in sys.version
-Itanium = "Itanium" in sys.version
-Win64 = AMD64 or Itanium
+# Keep msilib.Win64 around to preserve backwards compatibility.
+Win64 = AMD64
 
 # Partially taken from Wine
 datasizemask=      0x00ff
@@ -116,7 +119,7 @@ def add_data(db, table, values):
                 raise TypeError("Unsupported type %s" % field.__class__.__name__)
         try:
             v.Modify(MSIMODIFY_INSERT, r)
-        except Exception as e:
+        except Exception:
             raise MSIError("Could not insert "+repr(values)+" into "+table)
 
         r.ClearData()
@@ -150,9 +153,7 @@ def init_database(name, schema,
     si.SetProperty(PID_TITLE, "Installation Database")
     si.SetProperty(PID_SUBJECT, ProductName)
     si.SetProperty(PID_AUTHOR, Manufacturer)
-    if Itanium:
-        si.SetProperty(PID_TEMPLATE, "Intel64;1033")
-    elif AMD64:
+    if AMD64:
         si.SetProperty(PID_TEMPLATE, "x64;1033")
     else:
         si.SetProperty(PID_TEMPLATE, "Intel;1033")
@@ -272,10 +273,10 @@ class Directory:
         if component is None:
             component = self.logical
         self.component = component
-        if Win64:
+        if AMD64:
             flags |= 256
         if keyfile:
-            keyid = self.cab.gen_id(self.absolute, keyfile)
+            keyid = self.cab.gen_id(keyfile)
             self.keyfiles[keyfile] = keyid
         else:
             keyid = None

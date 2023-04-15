@@ -26,7 +26,7 @@ maxExponent: 6144
 minExponent: -6143
 rounding:    half_even
 
--- These tests comprese three parts:
+-- These tests comprise three parts:
 --   1. Sanity checks and other three-operand tests (especially those
 --      where the fused operation makes a difference)
 --   2. Multiply tests (third operand is neutral zero [0E+emax])
@@ -476,7 +476,7 @@ dqfma2756 fma   1e-4277 -1e-3311   0e+6144  -> -0E-6176 Underflow Subnormal Inex
 dqfma2757 fma  -1e-4277  1e-3311   0e+6144  -> -0E-6176 Underflow Subnormal Inexact Rounded Clamped
 dqfma2758 fma  -1e-4277 -1e-3311   0e+6144  ->  0E-6176 Underflow Subnormal Inexact Rounded Clamped
 
--- 'subnormal' boundary (all hard underflow or overflow in base arithemtic)
+-- 'subnormal' boundary (all hard underflow or overflow in base arithmetic)
 dqfma2760 fma  1e-6069 1e-101   0e+6144  -> 1E-6170 Subnormal
 dqfma2761 fma  1e-6069 1e-102   0e+6144  -> 1E-6171 Subnormal
 dqfma2762 fma  1e-6069 1e-103   0e+6144  -> 1E-6172 Subnormal

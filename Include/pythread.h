@@ -1,9 +1,7 @@
-
 #ifndef Py_PYTHREAD_H
 #define Py_PYTHREAD_H
 
 typedef void *PyThread_type_lock;
-typedef void *PyThread_type_sema;
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,20 +15,23 @@ typedef enum PyLockStatus {
     PY_LOCK_INTR
 } PyLockStatus;
 
-#ifndef Py_LIMITED_API
-#define PYTHREAD_INVALID_THREAD_ID ((unsigned long)-1)
-#endif
-
 PyAPI_FUNC(void) PyThread_init_thread(void);
 PyAPI_FUNC(unsigned long) PyThread_start_new_thread(void (*)(void *), void *);
-PyAPI_FUNC(void) PyThread_exit_thread(void);
+PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
 PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
+
+#if (defined(__APPLE__) || defined(__linux__) || defined(_WIN32) \
+     || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) \
+     || defined(__DragonFly__) || defined(_AIX))
+#define PY_HAVE_THREAD_NATIVE_ID
+PyAPI_FUNC(unsigned long) PyThread_get_thread_native_id(void);
+#endif
 
 PyAPI_FUNC(PyThread_type_lock) PyThread_allocate_lock(void);
 PyAPI_FUNC(void) PyThread_free_lock(PyThread_type_lock);
 PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
-#define WAIT_LOCK	1
-#define NOWAIT_LOCK	0
+#define WAIT_LOCK       1
+#define NOWAIT_LOCK     0
 
 /* PY_TIMEOUT_T is the integral type used to specify timeouts when waiting
    on a lock (see PyThread_acquire_lock_timed() below).
@@ -42,15 +43,24 @@ PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
    and floating-point numbers allowed.
 */
 #define PY_TIMEOUT_T long long
-#define PY_TIMEOUT_MAX PY_LLONG_MAX
 
-/* In the NT API, the timeout is a DWORD and is expressed in milliseconds */
-#if defined (NT_THREADS)
-#if 0xFFFFFFFFLL * 1000 < PY_TIMEOUT_MAX
-#undef PY_TIMEOUT_MAX
-#define PY_TIMEOUT_MAX (0xFFFFFFFFLL * 1000)
+#if defined(_POSIX_THREADS)
+   /* PyThread_acquire_lock_timed() uses _PyTime_FromNanoseconds(us * 1000),
+      convert microseconds to nanoseconds. */
+#  define PY_TIMEOUT_MAX (LLONG_MAX / 1000)
+#elif defined (NT_THREADS)
+   // WaitForSingleObject() accepts timeout in milliseconds in the range
+   // [0; 0xFFFFFFFE] (DWORD type). INFINITE value (0xFFFFFFFF) means no
+   // timeout. 0xFFFFFFFE milliseconds is around 49.7 days.
+#  if 0xFFFFFFFELL * 1000 < LLONG_MAX
+#    define PY_TIMEOUT_MAX (0xFFFFFFFELL * 1000)
+#  else
+#    define PY_TIMEOUT_MAX LLONG_MAX
+#  endif
+#else
+#  define PY_TIMEOUT_MAX LLONG_MAX
 #endif
-#endif
+
 
 /* If microseconds == 0, the call is non-blocking: it returns immediately
    even when the lock can't be acquired.
@@ -77,18 +87,49 @@ PyAPI_FUNC(int) PyThread_set_stacksize(size_t);
 PyAPI_FUNC(PyObject*) PyThread_GetInfo(void);
 #endif
 
-/* Thread Local Storage (TLS) API */
-PyAPI_FUNC(int) PyThread_create_key(void);
-PyAPI_FUNC(void) PyThread_delete_key(int);
-PyAPI_FUNC(int) PyThread_set_key_value(int, void *);
-PyAPI_FUNC(void *) PyThread_get_key_value(int);
-PyAPI_FUNC(void) PyThread_delete_key_value(int key);
+
+/* Thread Local Storage (TLS) API
+   TLS API is DEPRECATED.  Use Thread Specific Storage (TSS) API.
+
+   The existing TLS API has used int to represent TLS keys across all
+   platforms, but it is not POSIX-compliant.  Therefore, the new TSS API uses
+   opaque data type to represent TSS keys to be compatible (see PEP 539).
+*/
+Py_DEPRECATED(3.7) PyAPI_FUNC(int) PyThread_create_key(void);
+Py_DEPRECATED(3.7) PyAPI_FUNC(void) PyThread_delete_key(int key);
+Py_DEPRECATED(3.7) PyAPI_FUNC(int) PyThread_set_key_value(int key,
+                                                          void *value);
+Py_DEPRECATED(3.7) PyAPI_FUNC(void *) PyThread_get_key_value(int key);
+Py_DEPRECATED(3.7) PyAPI_FUNC(void) PyThread_delete_key_value(int key);
 
 /* Cleanup after a fork */
-PyAPI_FUNC(void) PyThread_ReInitTLS(void);
+Py_DEPRECATED(3.7) PyAPI_FUNC(void) PyThread_ReInitTLS(void);
+
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
+/* New in 3.7 */
+/* Thread Specific Storage (TSS) API */
+
+typedef struct _Py_tss_t Py_tss_t;  /* opaque */
+
+PyAPI_FUNC(Py_tss_t *) PyThread_tss_alloc(void);
+PyAPI_FUNC(void) PyThread_tss_free(Py_tss_t *key);
+
+/* The parameter key must not be NULL. */
+PyAPI_FUNC(int) PyThread_tss_is_created(Py_tss_t *key);
+PyAPI_FUNC(int) PyThread_tss_create(Py_tss_t *key);
+PyAPI_FUNC(void) PyThread_tss_delete(Py_tss_t *key);
+PyAPI_FUNC(int) PyThread_tss_set(Py_tss_t *key, void *value);
+PyAPI_FUNC(void *) PyThread_tss_get(Py_tss_t *key);
+#endif  /* New in 3.7 */
+
+#ifndef Py_LIMITED_API
+#  define Py_CPYTHON_PYTHREAD_H
+#  include "cpython/pythread.h"
+#  undef Py_CPYTHON_PYTHREAD_H
+#endif
 
 #ifdef __cplusplus
 }
 #endif
-
 #endif /* !Py_PYTHREAD_H */

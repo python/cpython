@@ -29,7 +29,7 @@ there are several possible ways it could have gotten there.
 * Some Windows machines also have Python installed.  At this writing we're aware
   of computers from Hewlett-Packard and Compaq that include Python.  Apparently
   some of HP/Compaq's administrative tools are written in Python.
-* Many Unix-compatible operating systems, such as Mac OS X and some Linux
+* Many Unix-compatible operating systems, such as macOS and some Linux
   distributions, have Python installed by default; it's included in the base
   installation.
 

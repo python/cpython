@@ -1,6 +1,6 @@
 '''Test (selected) IDLE Edit menu items.
 
-Edit modules have their own test files files
+Edit modules have their own test files
 '''
 from test.support import requires
 requires('gui')

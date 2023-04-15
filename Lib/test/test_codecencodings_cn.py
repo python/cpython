@@ -86,6 +86,10 @@ class Test_HZ(multibytecodec_support.TestBase, unittest.TestCase):
         (b'ab~{\x81\x81\x41\x44~}cd', 'replace', 'ab\uFFFD\uFFFD\u804Acd'),
         (b'ab~{\x41\x44~}cd', 'replace', 'ab\u804Acd'),
         (b"ab~{\x79\x79\x41\x44~}cd", "replace", "ab\ufffd\ufffd\u804acd"),
+        # issue 30003
+        ('ab~cd', 'strict',  b'ab~~cd'),  # escape ~
+        (b'~{Dc~~:C~}', 'strict', None),  # ~~ only in ASCII mode
+        (b'~{Dc~\n:C~}', 'strict', None), # ~\n only in ASCII mode
     )
 
 if __name__ == "__main__":
