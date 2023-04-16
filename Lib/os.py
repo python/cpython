@@ -432,21 +432,22 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
 __all__.append("walk")
 
+def _get_dir_entry(entry_path):
+    # TODO: Create a single DirEntry properly
+    # This is an ugly hack and won't work for fs root dir
+    scandir_it = scandir(path.dirname(entry_path))
+    with scandir_it:
+        for entry in scandir_it:
+            if entry.path == entry_path:
+                return entry
+        else:
+            raise FileNotFoundError(f"No such file or directory: {entry_path}")
+
 def scantree(top, top_down=True, on_error=None, follow_symlinks=False):
     sys.audit("os.scantree", top, top_down, on_error, follow_symlinks)
 
-    top = fspath(top)
-    # TODO: Create a single DirEntry properly
-    # This is an ugly hack and won't work for fs root dir
     try:
-        scandir_it = scandir(path.dirname(top))
-        with scandir_it:
-            for entry in scandir_it:
-                if entry.path == top:
-                    top_entry = entry
-                    break
-            else:
-                raise FileNotFoundError(f'Directory does not exist: {top}')
+        top_entry = _get_dir_entry(top)
     except OSError as error:
         if on_error is not None:
             on_error(error)
@@ -481,9 +482,23 @@ def scantree(top, top_down=True, on_error=None, follow_symlinks=False):
                     nondirs.append(entry)
 
         if top_down:
-            yield top_entry, dirs, nondirs
+            dirnames = yield top_entry, dirs.copy(), nondirs
         else:
             paths.append((top_entry, dirs, nondirs))
+
+        if dirnames is not None:
+            dir_map = {e.name: e for e in dirs}
+            dirs = []
+            for dirname in dirnames:
+                try:
+                    dirs.append(dir_map[dirname])
+                except KeyError:
+                    try:
+                        dirs.append(_get_dir_entry(path.join(top_entry.path, dirname)))
+                    except OSError as error:
+                        if on_error is not None:
+                            on_error(error)
+            yield None
 
         for new_path in reversed(dirs):
             paths.append(new_path)
