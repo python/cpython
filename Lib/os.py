@@ -434,16 +434,33 @@ __all__.append("walk")
 
 def scantree(top, top_down=True, on_error=None, follow_symlinks=False):
     sys.audit("os.scantree", top, top_down, on_error, follow_symlinks)
-    paths = [top]
 
+    top = fspath(top)
+    # TODO: Create a single DirEntry properly
+    # This is an ugly hack and won't work for fs root dir
+    try:
+        scandir_it = scandir(path.dirname(top))
+        with scandir_it:
+            for entry in scandir_it:
+                if entry.path == top:
+                    top_entry = entry
+                    break
+            else:
+                raise FileNotFoundError(f'Directory does not exist: {top}')
+    except OSError as error:
+        if on_error is not None:
+            on_error(error)
+        return
+
+    paths = [top_entry]
     while paths:
-        path = paths.pop()
-        if isinstance(path, tuple):
-            yield path
+        top_entry = paths.pop()
+        if isinstance(top_entry, tuple):
+            yield top_entry
             continue
 
         try:
-            scandir_it = scandir(path)
+            scandir_it = scandir(top_entry)
         except OSError as error:
             if on_error is not None:
                 on_error(error)
@@ -464,9 +481,9 @@ def scantree(top, top_down=True, on_error=None, follow_symlinks=False):
                     nondirs.append(entry)
 
         if top_down:
-            yield path, dirs, nondirs
+            yield top_entry, dirs, nondirs
         else:
-            paths.append((path, dirs, nondirs))
+            paths.append((top_entry, dirs, nondirs))
 
         for new_path in reversed(dirs):
             paths.append(new_path)
