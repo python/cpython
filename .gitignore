@@ -40,6 +40,10 @@ gmon.out
 .pytest_cache/
 .DS_Store
 
+*.pyabi
+*.symbols
+*.symbols.*
+
 *.exe
 
 # Ignore core dumps... but not Tools/msi/core/ or the like.
