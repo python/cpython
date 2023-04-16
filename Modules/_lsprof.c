@@ -677,7 +677,7 @@ typedef struct {
     const char* callback_method;
 } CallbackTableEntry;
 
-static CallbackTableEntry callback_table[] = {
+static const CallbackTableEntry callback_table[] = {
     {PY_MONITORING_EVENT_PY_START, "_pystart_callback"},
     {PY_MONITORING_EVENT_PY_RESUME, "_pystart_callback"},
     {PY_MONITORING_EVENT_PY_RETURN, "_pyreturn_callback"},
