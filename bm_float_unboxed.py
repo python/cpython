@@ -1,18 +1,17 @@
 import time
 
-def f():
-    a = 1.0
-    b = 2.0
-    return a + b + a * a + b - a - b
+def f(a, b, loops=200_000_000):
+    z = a + b
+    for _ in range(loops):
+        z + z + z + z + z + z + z + z + z + z + z + z + z + z + z + z 
 
 # Warmup
-f()
-f()
+f(1.0 , 2.0, 64)
+f(1.0 , 2.0, 64)
 
 # Running the actual benchmark
 
 print("Starting benchmark...")
 start = time.perf_counter()
-for _ in range(100_000_000):
-    f()
+f(1.0 , 2.0)
 print("Time taken is", time.perf_counter() - start, "s")
