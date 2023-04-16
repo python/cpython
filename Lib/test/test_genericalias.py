@@ -238,7 +238,6 @@ class BaseTest(unittest.TestCase):
 
     def test_no_chaining(self):
         t = list[int]
-        list[int]
         with self.assertRaises(TypeError):
             t[int]
 
