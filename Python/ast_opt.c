@@ -924,6 +924,8 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL_OPT(astfold_expr, expr_ty, node_->v.AnnAssign.value);
         break;
     case TypeAlias_kind:
+        CALL(astfold_expr, expr_ty, node_->v.TypeAlias.name);
+        CALL_SEQ(astfold_stmt, typeparam, node_->v.TypeAlias.typeparams);
         CALL(astfold_expr, expr_ty, node_->v.TypeAlias.value);
         break;
     case For_kind:

@@ -1175,7 +1175,7 @@ init_types(struct ast_state *state)
         "     | Return(expr? value)\n"
         "     | Delete(expr* targets)\n"
         "     | Assign(expr* targets, expr value, string? type_comment)\n"
-        "     | TypeAlias(identifier name, typeparam* typeparams, expr value)\n"
+        "     | TypeAlias(expr name, typeparam* typeparams, expr value)\n"
         "     | AugAssign(expr target, operator op, expr value)\n"
         "     | AnnAssign(expr target, expr annotation, expr? value, int simple)\n"
         "     | For(expr target, expr iter, stmt* body, stmt* orelse, string? type_comment)\n"
@@ -1248,7 +1248,7 @@ init_types(struct ast_state *state)
         return 0;
     state->TypeAlias_type = make_type(state, "TypeAlias", state->stmt_type,
                                       TypeAlias_fields, 3,
-        "TypeAlias(identifier name, typeparam* typeparams, expr value)");
+        "TypeAlias(expr name, typeparam* typeparams, expr value)");
     if (!state->TypeAlias_type) return 0;
     state->AugAssign_type = make_type(state, "AugAssign", state->stmt_type,
                                       AugAssign_fields, 3,
@@ -2192,8 +2192,8 @@ _PyAST_Assign(asdl_expr_seq * targets, expr_ty value, string type_comment, int
 }
 
 stmt_ty
-_PyAST_TypeAlias(identifier name, asdl_typeparam_seq * typeparams, expr_ty
-                 value, int lineno, int col_offset, int end_lineno, int
+_PyAST_TypeAlias(expr_ty name, asdl_typeparam_seq * typeparams, expr_ty value,
+                 int lineno, int col_offset, int end_lineno, int
                  end_col_offset, PyArena *arena)
 {
     stmt_ty p;
@@ -4047,7 +4047,7 @@ ast2obj_stmt(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->TypeAlias_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_identifier(state, o->v.TypeAlias.name);
+        value = ast2obj_expr(state, o->v.TypeAlias.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
@@ -6846,7 +6846,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
         return 1;
     }
     if (isinstance) {
-        identifier name;
+        expr_ty name;
         asdl_typeparam_seq* typeparams;
         expr_ty value;
 
@@ -6862,7 +6862,7 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (_Py_EnterRecursiveCall(" while traversing 'TypeAlias' node")) {
                 goto failed;
             }
-            res = obj2ast_identifier(state, tmp, &name, arena);
+            res = obj2ast_expr(state, tmp, &name, arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
