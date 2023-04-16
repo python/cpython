@@ -474,6 +474,23 @@ errorexit:
 }
 #endif
 
+static struct PyModuleDef _cjk_module;
+
+static void
+deinit_codecs(PyObject *mod)
+{
+    cjkcodecs_module_state *st = get_module_state(mod);
+    for (int i = 0; i < st->num_codecs; i++) {
+        const MultibyteCodec *codec = &st->codec_list[i];
+        if (codec && codec->codecdeinit) {
+            fprintf(stderr, "- deinit[%d]: %s\n", i, codec->encoding);
+            if (codec->codecdeinit(codec->config) < 0) {
+                PyErr_WriteUnraisable(mod);
+            }
+        }
+    }
+}
+
 static int
 _cjk_exec(PyObject *module)
 {
@@ -483,6 +500,8 @@ _cjk_exec(PyObject *module)
 static void
 _cjk_free(void *mod)
 {
+    deinit_codecs(mod);
+
     cjkcodecs_module_state *st = get_module_state((PyObject *)mod);
     PyMem_Free(st->mapping_list);
     PyMem_Free(st->codec_list);
