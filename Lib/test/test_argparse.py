@@ -5365,7 +5365,6 @@ class TestIntermixedArgs(TestCase):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         parser.add_argument('--foo', nargs="*")
         parser.add_argument('foo')
-        parser.parse_args()
         with io.StringIO() as buf, redirect_stderr(buf):
             parser.parse_intermixed_args(['hello', '--foo'])
             output = buf.getvalue()
