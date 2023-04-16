@@ -59,6 +59,14 @@ class CProfileTest(ProfileTest):
         # profile shouldn't be set once we leave the with-block.
         self.assertIs(sys.monitoring.get_tool(sys.monitoring.PROFILER_ID), None)
 
+    def test_second_profiler(self):
+        pr = self.profilerclass()
+        pr2 = self.profilerclass()
+        pr.enable()
+        self.assertRaises(ValueError, pr2.enable)
+        pr.disable()
+
+
 class TestCommandLine(unittest.TestCase):
     def test_sort(self):
         rc, out, err = assert_python_failure('-m', 'cProfile', '-s', 'demo')

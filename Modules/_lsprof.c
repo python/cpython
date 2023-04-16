@@ -672,6 +672,23 @@ PyObject* creturn_callback(ProfilerObject* self, PyObject *const *args, Py_ssize
     Py_RETURN_NONE;
 }
 
+typedef struct {
+    int event;
+    const char* callback_method;
+} CallbackTableEntry;
+
+static CallbackTableEntry callback_table[] = {
+    {PY_MONITORING_EVENT_PY_START, "_pystart_callback"},
+    {PY_MONITORING_EVENT_PY_RESUME, "_pystart_callback"},
+    {PY_MONITORING_EVENT_PY_RETURN, "_pyreturn_callback"},
+    {PY_MONITORING_EVENT_PY_YIELD, "_pyreturn_callback"},
+    {PY_MONITORING_EVENT_PY_UNWIND, "_pyreturn_callback"},
+    {PY_MONITORING_EVENT_CALL, "_ccall_callback"},
+    {PY_MONITORING_EVENT_C_RETURN, "_creturn_callback"},
+    {PY_MONITORING_EVENT_C_RAISE, "_creturn_callback"},
+    {0, NULL}
+};
+
 PyDoc_STRVAR(enable_doc, "\
 enable(subcalls=True, builtins=True)\n\
 \n\
@@ -688,6 +705,7 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
     int subcalls = -1;
     int builtins = -1;
     static char *kwlist[] = {"subcalls", "builtins", 0};
+    int all_events = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|pp:enable",
                                      kwlist, &subcalls, &builtins))
@@ -702,70 +720,25 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
     }
 
     if (PyObject_CallMethod(monitoring, "use_tool_id", "is", self->tool_id, "cProfile") == NULL) {
+        PyErr_Format(PyExc_ValueError, "Another profiling tool is already active");
         Py_DECREF(monitoring);
         return NULL;
     }
 
-    PyObject* self_pystart_callback  = PyObject_GetAttrString((PyObject*)self, "_pystart_callback");
-    PyObject* self_pyreturn_callback = PyObject_GetAttrString((PyObject*)self, "_pyreturn_callback");
-    PyObject* self_ccall_callback    = PyObject_GetAttrString((PyObject*)self, "_ccall_callback");
-    PyObject* self_creturn_callback  = PyObject_GetAttrString((PyObject*)self, "_creturn_callback");
-
-    if (!self_pystart_callback || !self_pyreturn_callback || !self_ccall_callback || !self_creturn_callback) {
-        Py_XDECREF(self_pystart_callback);
-        Py_XDECREF(self_pyreturn_callback);
-        Py_XDECREF(self_ccall_callback);
-        Py_XDECREF(self_creturn_callback);
-        Py_DECREF(monitoring);
-        return NULL;
+    for (int i = 0; callback_table[i].callback_method; i++) {
+        PyObject* callback = PyObject_GetAttrString((PyObject*)self, callback_table[i].callback_method);
+        if (!callback) {
+            Py_DECREF(monitoring);
+            return NULL;
+        }
+        Py_XDECREF(PyObject_CallMethod(monitoring, "register_callback", "iiO", self->tool_id,
+                                       (1 << callback_table[i].event),
+                                       callback));
+        Py_DECREF(callback);
+        all_events |= (1 << callback_table[i].event);
     }
 
-    Py_XDECREF(PyObject_CallMethod(monitoring, "register_callback", "iiO", self->tool_id,
-                                   (1 << PY_MONITORING_EVENT_PY_START),
-                                   self_pystart_callback));
-
-    Py_XDECREF(PyObject_CallMethod(monitoring, "register_callback", "iiO", self->tool_id,
-                                   (1 << PY_MONITORING_EVENT_PY_RESUME),
-                                   self_pystart_callback));
-
-    Py_XDECREF(PyObject_CallMethod(monitoring, "register_callback", "iiO", self->tool_id,
-                                   (1 << PY_MONITORING_EVENT_PY_RETURN),
-                                   self_pyreturn_callback));
-
-    Py_XDECREF(PyObject_CallMethod(monitoring, "register_callback", "iiO", self->tool_id,
-                                   (1 << PY_MONITORING_EVENT_PY_YIELD),
-                                   self_pyreturn_callback));
-
-    Py_XDECREF(PyObject_CallMethod(monitoring, "register_callback", "iiO", self->tool_id,
-                                   (1 << PY_MONITORING_EVENT_PY_UNWIND),
-                                   self_pyreturn_callback));
-
-    Py_XDECREF(PyObject_CallMethod(monitoring, "register_callback", "iiO", self->tool_id,
-                                   (1 << PY_MONITORING_EVENT_CALL),
-                                   self_ccall_callback));
-
-    Py_XDECREF(PyObject_CallMethod(monitoring, "register_callback", "iiO", self->tool_id,
-                                   (1 << PY_MONITORING_EVENT_C_RETURN),
-                                   self_creturn_callback));
-
-    Py_XDECREF(PyObject_CallMethod(monitoring, "register_callback", "iiO", self->tool_id,
-                                   (1 << PY_MONITORING_EVENT_C_RAISE),
-                                   self_creturn_callback));
-
-    Py_DECREF(self_pystart_callback);
-    Py_DECREF(self_pyreturn_callback);
-    Py_DECREF(self_ccall_callback);
-    Py_DECREF(self_creturn_callback);
-
-    if (!PyObject_CallMethod(monitoring, "set_events", "ii", self->tool_id,
-            (1 << PY_MONITORING_EVENT_PY_START)
-            | (1 << PY_MONITORING_EVENT_PY_RESUME)
-            | (1 << PY_MONITORING_EVENT_PY_RETURN)
-            | (1 << PY_MONITORING_EVENT_PY_YIELD)
-            | (1 << PY_MONITORING_EVENT_PY_UNWIND)
-            | (1 << PY_MONITORING_EVENT_CALL)
-            | (1 << PY_MONITORING_EVENT_C_RETURN)
-            | (1 << PY_MONITORING_EVENT_C_RAISE))) {
+    if (!PyObject_CallMethod(monitoring, "set_events", "ii", self->tool_id, all_events)) {
         Py_DECREF(monitoring);
         return NULL;
     }
@@ -807,6 +780,16 @@ profiler_disable(ProfilerObject *self, PyObject* noarg)
 
         if (!monitoring) {
             return NULL;
+        }
+
+        for (int i = 0; callback_table[i].callback_method; i++) {
+            result = PyObject_CallMethod(monitoring, "register_callback", "iiO", self->tool_id,
+                                         (1 << callback_table[i].event), Py_None);
+            if (!result) {
+                Py_DECREF(monitoring);
+                return NULL;
+            }
+            Py_DECREF(result);
         }
 
         result = PyObject_CallMethod(monitoring, "set_events", "ii", self->tool_id, 0);
