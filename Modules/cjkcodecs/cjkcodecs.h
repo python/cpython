@@ -208,6 +208,8 @@ get_module_state(PyObject *mod)
         (m)->bottom]) != NOCHAR)
 #define TRYMAP_ENC(charset, assi, uni)                     \
     _TRYMAP_ENC(&charset##_encmap[(uni) >> 8], assi, (uni) & 0xff)
+#define TRYMAP_ENC_PTR(map, assi, uni) \
+    _TRYMAP_ENC(&(map)[(uni) >> 8], assi, (uni) & 0xff)
 
 #define _TRYMAP_DEC(m, assi, val)                             \
     ((m)->map != NULL &&                                        \
@@ -216,6 +218,8 @@ get_module_state(PyObject *mod)
      ((assi) = (m)->map[(val) - (m)->bottom]) != UNIINV)
 #define TRYMAP_DEC(charset, assi, c1, c2)                     \
     _TRYMAP_DEC(&charset##_decmap[c1], assi, c2)
+#define TRYMAP_DEC_PTR(map, assi, c1, c2) \
+    _TRYMAP_DEC(&(map)[c1], assi, c2)
 
 #define BEGIN_MAPPINGS_LIST(NUM)                                    \
 static int                                                          \
@@ -273,8 +277,8 @@ add_codecs(cjkcodecs_module_state *st)                          \
 #define CODEC_STATELESS(enc) \
     NEXT_CODEC = (MultibyteCodec){#enc, NULL, NULL, NULL, \
                                   _STATELESS_METHODS(enc)};
-#define CODEC_STATELESS_WINIT(enc) \
-    NEXT_CODEC = (MultibyteCodec){#enc, NULL, \
+#define CODEC_STATELESS_WINIT(enc, config) \
+    NEXT_CODEC = (MultibyteCodec){#enc, config, \
                                   enc##_codec_init, enc##_codec_deinit, \
                                   _STATELESS_METHODS(enc)};
 
@@ -483,7 +487,6 @@ deinit_codecs(PyObject *mod)
     for (int i = 0; i < st->num_codecs; i++) {
         const MultibyteCodec *codec = &st->codec_list[i];
         if (codec && codec->codecdeinit) {
-            fprintf(stderr, "- deinit[%d]: %s\n", i, codec->encoding);
             if (codec->codecdeinit(codec->config) < 0) {
                 PyErr_WriteUnraisable(mod);
             }

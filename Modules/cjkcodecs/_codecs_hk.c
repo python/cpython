@@ -13,21 +13,28 @@
  * BIG5HKSCS codec
  */
 
-static const encode_map *big5_encmap = NULL;
-static const decode_map *big5_decmap = NULL;
+typedef struct {
+    const encode_map *big5_encmap;
+    const decode_map *big5_decmap;
+    int initialized;
+} big5_state;
 
 CODEC_INIT(big5hkscs)
 {
-    static int initialized = 0;
-
-    if (!initialized && IMPORT_MAP(tw, big5, &big5_encmap, &big5_decmap))
+    big5_state *st = (big5_state *)config;
+    if (st->initialized) {
+        return 0;
+    }
+    if (IMPORT_MAP(tw, big5, &st->big5_encmap, &st->big5_decmap)) {
         return -1;
-    initialized = 1;
+    }
+    st->initialized = 1;
     return 0;
 }
 
 CODEC_DEINIT(big5hkscs)
 {
+    PyMem_Free((void *)config);
     return 0;
 }
 
@@ -58,6 +65,7 @@ ENCODER(big5hkscs)
         insize = 1;
         REQUIRE_OUTBUF(2);
 
+        big5_state *st = (big5_state *)config;
         if (c < 0x10000) {
             if (TRYMAP_ENC(big5hkscs_bmp, code, c)) {
                 if (code == MULTIC) {
@@ -86,7 +94,7 @@ ENCODER(big5hkscs)
                     }
                 }
             }
-            else if (TRYMAP_ENC(big5, code, c))
+            else if (TRYMAP_ENC_PTR(st->big5_encmap, code, c))
                 ;
             else
                 return 1;
@@ -127,7 +135,8 @@ DECODER(big5hkscs)
         REQUIRE_INBUF(2);
 
         if (0xc6 > c || c > 0xc8 || (c < 0xc7 && INBYTE2 < 0xa1)) {
-            if (TRYMAP_DEC(big5, decoded, c, INBYTE2)) {
+            big5_state *st = (big5_state *)config;
+            if (TRYMAP_DEC_PTR(st->big5_decmap, decoded, c, INBYTE2)) {
                 OUTCHAR(decoded);
                 NEXT_IN(2);
                 continue;
@@ -189,7 +198,13 @@ BEGIN_MAPPINGS_LIST(3)
 END_MAPPINGS_LIST
 
 BEGIN_CODECS_LIST(1)
-  CODEC_STATELESS_WINIT(big5hkscs)
+{
+    big5_state *config = PyMem_Calloc(1, sizeof(big5_state));
+    if (config == NULL) {
+        return -1;
+    }
+    CODEC_STATELESS_WINIT(big5hkscs, config)
+}
 END_CODECS_LIST
 
 I_AM_A_MODULE_FOR(hk)
