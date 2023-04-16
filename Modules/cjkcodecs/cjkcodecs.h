@@ -261,12 +261,15 @@ add_codecs(cjkcodecs_module_state *st)                          \
     enc##_encode, NULL, NULL,           \
     enc##_decode, NULL, NULL,
 
+#define NEXT_CODEC \
+    st->codec_list[idx++]
+
 #define CODEC_STATEFUL(enc) \
-    st->codec_list[idx++] = (MultibyteCodec){#enc, NULL, NULL, _STATEFUL_METHODS(enc)};
+    NEXT_CODEC = (MultibyteCodec){#enc, NULL, NULL, _STATEFUL_METHODS(enc)};
 #define CODEC_STATELESS(enc) \
-    st->codec_list[idx++] = (MultibyteCodec){#enc, NULL, NULL, _STATELESS_METHODS(enc)};
+    NEXT_CODEC = (MultibyteCodec){#enc, NULL, NULL, _STATELESS_METHODS(enc)};
 #define CODEC_STATELESS_WINIT(enc) \
-    st->codec_list[idx++] = (MultibyteCodec){#enc, NULL, enc##_codec_init, _STATELESS_METHODS(enc)};
+    NEXT_CODEC = (MultibyteCodec){#enc, NULL, enc##_codec_init, _STATELESS_METHODS(enc)};
 
 #define END_CODECS_LIST             \
     assert(st->num_codecs == idx);  \

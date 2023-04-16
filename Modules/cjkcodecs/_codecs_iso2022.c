@@ -1124,7 +1124,7 @@ BEGIN_MAPPINGS_LIST(0)
 END_MAPPINGS_LIST
 
 #define ISO2022_CODEC(variation)                \
-st->codec_list[idx++] = (MultibyteCodec){       \
+NEXT_CODEC = (MultibyteCodec){                  \
     "iso2022_" #variation,                      \
     &iso2022_##variation##_config,              \
     iso2022_codec_init,                         \
