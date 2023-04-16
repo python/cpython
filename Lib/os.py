@@ -432,8 +432,8 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
 __all__.append("walk")
 
-def walkdir(top, top_down=True, on_error=None, follow_symlinks=False):
-    sys.audit("os.walkdir", top, top_down, on_error, follow_symlinks)
+def scantree(top, top_down=True, on_error=None, follow_symlinks=False):
+    sys.audit("os.scantree", top, top_down, on_error, follow_symlinks)
     paths = [top]
 
     while paths:
@@ -471,7 +471,7 @@ def walkdir(top, top_down=True, on_error=None, follow_symlinks=False):
         for new_path in reversed(dirs):
             paths.append(new_path)
 
-__all__.append("walkdir")
+__all__.append("scantree")
 
 if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
 
@@ -586,8 +586,8 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         CLOSE = object()
         WALK = object()
 
-    def fwalkdir(top, top_down=True, on_error=None, *, follow_symlinks=False, dir_fd=None):
-        sys.audit("os.fwalkdir", top, top_down, on_error, follow_symlinks, dir_fd)
+    def fscantree(top, top_down=True, on_error=None, *, follow_symlinks=False, dir_fd=None):
+        sys.audit("os.fscantree", top, top_down, on_error, follow_symlinks, dir_fd)
         top = fspath(top)
         isbytes = isinstance(top, bytes)
         # Note: To guard against symlink races, we use the standard
@@ -674,7 +674,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                     except OSError:
                         pass
 
-    __all__.append("fwalkdir")
+    __all__.append("fscantree")
 
 def execl(file, *args):
     """execl(file, *args)
