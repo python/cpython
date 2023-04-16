@@ -1128,6 +1128,7 @@ NEXT_CODEC = (MultibyteCodec){                  \
     "iso2022_" #variation,                      \
     &iso2022_##variation##_config,              \
     iso2022_codec_init,                         \
+    NULL,                                       \
     _STATEFUL_METHODS(iso2022)                  \
 };
 

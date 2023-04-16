@@ -28,6 +28,7 @@ typedef struct {
 } MultibyteCodec_State;
 
 typedef int (*mbcodec_init)(const void *config);
+typedef int (*mbcodec_deinit)(const void *config);
 typedef Py_ssize_t (*mbencode_func)(MultibyteCodec_State *state,
                         const void *config,
                         int kind, const void *data,
@@ -52,6 +53,7 @@ typedef struct {
     const char *encoding;
     const void *config;
     mbcodec_init codecinit;
+    mbcodec_init codecdeinit;
     mbencode_func encode;
     mbencodeinit_func encinit;
     mbencodereset_func encreset;

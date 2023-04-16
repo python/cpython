@@ -78,6 +78,9 @@ get_module_state(PyObject *mod)
 #define CODEC_INIT(encoding)                                            \
     static int encoding##_codec_init(const void *config)
 
+#define CODEC_DEINIT(encoding)                                          \
+    static int encoding##_codec_deinit(const void *config)
+
 #define ENCODER_INIT(encoding)                                          \
     static int encoding##_encode_init(                                  \
         MultibyteCodec_State *state, const void *config)
@@ -265,11 +268,15 @@ add_codecs(cjkcodecs_module_state *st)                          \
     st->codec_list[idx++]
 
 #define CODEC_STATEFUL(enc) \
-    NEXT_CODEC = (MultibyteCodec){#enc, NULL, NULL, _STATEFUL_METHODS(enc)};
+    NEXT_CODEC = (MultibyteCodec){#enc, NULL, NULL, NULL, \
+                                  _STATEFUL_METHODS(enc)};
 #define CODEC_STATELESS(enc) \
-    NEXT_CODEC = (MultibyteCodec){#enc, NULL, NULL, _STATELESS_METHODS(enc)};
+    NEXT_CODEC = (MultibyteCodec){#enc, NULL, NULL, NULL, \
+                                  _STATELESS_METHODS(enc)};
 #define CODEC_STATELESS_WINIT(enc) \
-    NEXT_CODEC = (MultibyteCodec){#enc, NULL, enc##_codec_init, _STATELESS_METHODS(enc)};
+    NEXT_CODEC = (MultibyteCodec){#enc, NULL, \
+                                  enc##_codec_init, enc##_codec_deinit, \
+                                  _STATELESS_METHODS(enc)};
 
 #define END_CODECS_LIST             \
     assert(st->num_codecs == idx);  \

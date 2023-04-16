@@ -26,6 +26,11 @@ CODEC_INIT(big5hkscs)
     return 0;
 }
 
+CODEC_DEINIT(big5hkscs)
+{
+    return 0;
+}
+
 /*
  * There are four possible pair unicode -> big5hkscs maps as in HKSCS 2004:
  *  U+00CA U+0304 -> 8862  (U+00CA alone is mapped to 8866)
