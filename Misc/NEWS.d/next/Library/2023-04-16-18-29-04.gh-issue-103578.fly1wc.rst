@@ -1,0 +1,1 @@
+Fixed a bug where :mod:`pdb` crashes when reading source file with different encoding.
