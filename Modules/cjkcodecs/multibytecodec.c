@@ -1953,14 +1953,14 @@ _multibytecodec___create_codec(PyObject *module, PyObject *arg)
 /*[clinic end generated code: output=cfa3dce8260e809d input=6840b2a6b183fcfa]*/
 {
     MultibyteCodecObject *self;
-    MultibyteCodec *codec;
 
-    if (!PyCapsule_IsValid(arg, PyMultibyteCodec_CAPSULE_NAME)) {
+    if (!PyCapsule_IsValid(arg, CODEC_CAPSULE)) {
         PyErr_SetString(PyExc_ValueError, "argument type invalid");
         return NULL;
     }
 
-    codec = PyCapsule_GetPointer(arg, PyMultibyteCodec_CAPSULE_NAME);
+    codec_capsule *data = PyCapsule_GetPointer(arg, CODEC_CAPSULE);
+    MultibyteCodec *codec = data->codec;
     if (codec->codecinit != NULL && codec->codecinit(codec->config) != 0)
         return NULL;
 
