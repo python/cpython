@@ -11,6 +11,11 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
 
+#define LATIN1(ch)  \
+    (ch < 128 \
+     ? (PyObject*)&_Py_SINGLETON(strings).ascii[ch] \
+     : (PyObject*)&_Py_SINGLETON(strings).latin1[ch - 128])
+
 static PyObject* code_repr(PyCodeObject *co);
 
 static const char *
@@ -111,6 +116,15 @@ PyCode_ClearWatcher(int watcher_id)
  * generic helpers
  ******************/
 
+ /* is_runtime_global_string(s): true iff s is a runtime global (singleton ascii strings) */
+ static int
+ is_runtime_global_string(PyObject *o) {
+     if (!PyUnicode_IS_ASCII(o))
+         return 0;
+
+     return PyUnicode_GET_LENGTH(o) == 1;
+ }
+
 /* all_name_chars(s): true iff s matches [a-zA-Z0-9_]* */
 static int
 all_name_chars(PyObject *o)
@@ -156,8 +170,27 @@ intern_string_constants(PyObject *tuple, int *modified)
             if (PyUnicode_READY(v) == -1) {
                 return -1;
             }
+            if (is_runtime_global_string(v)) {
+                // unfortunately, storing the immortal singletons
+                // in the interned string dict seem to cause some
+                // refcount issues
+                const void *data;
+                int kind;
+                Py_UCS4 ch;
 
-            if (all_name_chars(v)) {
+                kind = PyUnicode_KIND(v);
+                data = PyUnicode_DATA(v);
+                ch = PyUnicode_READ(kind, data, 0);
+                PyObject *w = LATIN1(ch);
+                if (w != v) {
+                    PyTuple_SET_ITEM(tuple, i, w);
+                    Py_INCREF(w);
+                    if (modified) {
+                        *modified = 1;
+                    }
+                }
+            }
+            else if (all_name_chars(v)) {
                 PyObject *w = v;
                 PyUnicode_InternInPlace(&v);
                 if (w != v) {

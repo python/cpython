@@ -244,13 +244,6 @@ init_interned_dict(PyInterpreterState *interp)
     if (interned == NULL) {
         return -1;
     }
-    for (int ch = 0; ch < 256; ch++) {
-        PyObject *singleton_str = LATIN1(ch);
-        if (PyDict_SetItem(interned, singleton_str, singleton_str) == -1) {
-            Py_DECREF(interned);
-            return -1;
-        }
-    }
     _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = interned;
     return 0;
 }
