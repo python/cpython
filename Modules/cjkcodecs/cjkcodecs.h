@@ -289,7 +289,6 @@ destroy_codec_capsule(PyObject *capsule)
 {
     void *ptr = PyCapsule_GetPointer(capsule, CODEC_CAPSULE);
     codec_capsule *data = (codec_capsule *)ptr;
-    fprintf(stderr, "uncapsulating %s\n", data->codec->encoding);
     Py_DECREF(data->cjk_module);
     PyMem_Free(ptr);
 }
@@ -297,7 +296,6 @@ destroy_codec_capsule(PyObject *capsule)
 static codec_capsule *
 capsulate_codec(PyObject *mod, const MultibyteCodec *codec)
 {
-    fprintf(stderr, "capsulating %s\n", codec->encoding);
     codec_capsule *data = PyMem_Malloc(sizeof(codec_capsule));
     if (data == NULL) {
         PyErr_NoMemory();
