@@ -1,5 +1,7 @@
 import dis
 
+print("Begin tests...")
+
 #########
 # Utils #
 #########
@@ -373,3 +375,49 @@ expected = [
 ]
 for x,y in zip(insts, expected):
     assert x.opname == y
+
+####################################################
+# Tests for: Tier 2 BB_TEST_ITER specialisation    #
+####################################################
+
+lst = [1, 2, 3]
+def test_iter_list(a):
+    for i in lst:
+        a = i + a
+    return a
+
+# Trigger only one JUMP_BACKWARD_QUICK
+# i.e., perfect specialisation the first time
+trigger_tier2(test_iter_list, (0,))
+
+# Make sure it looped 64 times
+assert test_iter_list(0) == 6
+
+# Make sure it jumped to the correct spot
+insts = dis.get_instructions(test_iter_list, tier2=True) 
+backwards_jump = next(x for x in insts if x.opname == "JUMP_BACKWARD_QUICK")
+instidx, jmp_target = next((i,x) for i,x in enumerate(insts) if x.offset == backwards_jump.argval)
+assert jmp_target.opname == "NOP" # Space for an EXTENDED_ARG
+assert insts[instidx + 1].opname == "BB_TEST_ITER_LIST" # The loop predicate
+
+
+def test_iter_tuple(a):
+    for i in (1, 2, 3):
+        a = i + a
+    return a
+
+# Trigger only one JUMP_BACKWARD_QUICK
+# i.e., perfect specialisation the first time
+trigger_tier2(test_iter_tuple, (0,))
+
+# Make sure it looped 64 times
+assert test_iter_tuple(0) == 6
+
+# Make sure it jumped to the correct spot
+insts = dis.get_instructions(test_iter_tuple, tier2=True) 
+backwards_jump = next(x for x in insts if x.opname == "JUMP_BACKWARD_QUICK")
+instidx, jmp_target = next((i,x) for i,x in enumerate(insts) if x.offset == backwards_jump.argval)
+assert jmp_target.opname == "NOP" # Space for an EXTENDED_ARG
+assert insts[instidx + 1].opname == "BB_TEST_ITER_TUPLE" # The loop predicate
+
+print("Tests completed")
