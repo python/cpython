@@ -1,2 +1,2 @@
 Starting benchmark...
-Time taken is 30.047266386000047 s
+Time taken is 30.735117989000173 s
