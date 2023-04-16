@@ -132,6 +132,7 @@ typedef struct {
 
 typedef struct {
     const MultibyteCodec *codec;
+    PyObject *cjk_module;
 } codec_capsule;
 
 #define MAP_CAPSULE "multibytecodec.map"

@@ -287,13 +287,15 @@ getmultibytecodec(void)
 static void
 destroy_codec_capsule(PyObject *capsule)
 {
-    void *data = PyCapsule_GetPointer(capsule, CODEC_CAPSULE);
-    fprintf(stderr, "uncapsulating %s\n", ((codec_capsule *)data)->codec->encoding);
-    PyMem_Free(data);
+    void *ptr = PyCapsule_GetPointer(capsule, CODEC_CAPSULE);
+    codec_capsule *data = (codec_capsule *)ptr;
+    fprintf(stderr, "uncapsulating %s\n", data->codec->encoding);
+    Py_DECREF(data->cjk_module);
+    PyMem_Free(ptr);
 }
 
 static codec_capsule *
-capsulate_codec(const MultibyteCodec *codec)
+capsulate_codec(PyObject *mod, const MultibyteCodec *codec)
 {
     fprintf(stderr, "capsulating %s\n", codec->encoding);
     codec_capsule *data = PyMem_Malloc(sizeof(codec_capsule));
@@ -302,18 +304,19 @@ capsulate_codec(const MultibyteCodec *codec)
         return NULL;
     }
     data->codec = codec;
+    data->cjk_module = Py_NewRef(mod);
     return data;
 }
 
 static PyObject *
-_getcodec(const MultibyteCodec *codec)
+_getcodec(PyObject *self, const MultibyteCodec *codec)
 {
     PyObject *cofunc = getmultibytecodec();
     if (cofunc == NULL) {
         return NULL;
     }
 
-    codec_capsule *data = capsulate_codec(codec);
+    codec_capsule *data = capsulate_codec(self, codec);
     if (data == NULL) {
         Py_DECREF(cofunc);
         return NULL;
@@ -349,7 +352,7 @@ getcodec(PyObject *self, PyObject *encoding)
     for (int i = 0; i < st->num_codecs; i++) {
         const MultibyteCodec *codec = &st->codec_list[i];
         if (strcmp(codec->encoding, enc) == 0) {
-            return _getcodec(codec);
+            return _getcodec(self, codec);
         }
     }
 
