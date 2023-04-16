@@ -39,6 +39,7 @@ int _PyTestCapi_Init_Structmember(PyObject *module);
 int _PyTestCapi_Init_Exceptions(PyObject *module);
 int _PyTestCapi_Init_Code(PyObject *module);
 int _PyTestCapi_Init_PyOS(PyObject *module);
+int _PyTestCapi_Init_GenericAlias(PyObject *mod);
 
 #ifdef LIMITED_API_AVAILABLE
 int _PyTestCapi_Init_VectorcallLimited(PyObject *module);

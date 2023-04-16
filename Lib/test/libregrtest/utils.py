@@ -210,6 +210,13 @@ def clear_caches():
     else:
         fractions._hash_algorithm.cache_clear()
 
+    try:
+        _testcapi = sys.modules['_testcapi']
+    except KeyError:
+        pass
+    else:
+        _testcapi.genericalias_cache_clear()
+
 
 def get_build_info():
     # Get most important configure and build options as a list of strings.

@@ -988,6 +988,7 @@ _Py_GenericAlias_impl_nocache(PyObject *origin, PyObject *args, bool starred) {
 static PyObject *
 _Py_GenericAlias_impl(PyObject *origin, PyObject *args, bool starred) {
     Py_hash_t hash;
+    bool unhashable = false;
     PyObject *star = NULL;
     PyObject *key = NULL;
     PyObject *result = NULL;
@@ -1009,33 +1010,40 @@ _Py_GenericAlias_impl(PyObject *origin, PyObject *args, bool starred) {
 
     hash = PyObject_Hash(key);
     if (hash == -1) {
-        goto error;
-    }
-
-    result = _PyDict_GetItem_KnownHash(interp->genericalias_cache, key, hash);
-    if (result) {
-        Py_INCREF(result);
-        goto done;
-    }
-    if (PyErr_Occurred()) {
-        goto error;
+        // `key` contains unhashable objects, stop right here.
+        // Just return the object itself without setting cache.
+        PyErr_Clear();
+        unhashable = true;
+    } else {
+        result = _PyDict_GetItem_KnownHash(interp->genericalias_cache,
+                                            key, hash);
+        if (result) {
+            Py_INCREF(result);
+            goto finally;
+        }
+        if (PyErr_Occurred()) {
+            goto error;
+        }
     }
 
     result = _Py_GenericAlias_impl_nocache(origin, args, starred);
     if (result == NULL) {
         goto error;
     }
+    if (unhashable) {
+        goto finally;
+    }
 
     if (_PyDict_SetItem_KnownHash(interp->genericalias_cache,
                                   key, result, hash) < 0) {
         goto error;
     } else {
-        goto done;
+        goto finally;
     }
 
 error:
     Py_XDECREF(result);
-done:
+finally:
     Py_XDECREF(key);
     Py_XDECREF(star);
     return result;

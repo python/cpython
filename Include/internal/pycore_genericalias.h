@@ -4,6 +4,10 @@
 extern "C" {
 #endif
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
 /* runtime lifecycle */
 
 extern PyStatus _PyGenericAlias_Init(PyInterpreterState *interp);
