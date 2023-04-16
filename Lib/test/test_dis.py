@@ -735,7 +735,7 @@ dis_loop_test_quickened_code = """\
            LOAD_FAST                0 (i)
            CALL_PY_WITH_DEFAULTS     1
            POP_TOP
-           JUMP_BACKWARD_QUICK     20 (to 16)
+           JUMP_BACKWARD_INTO_TRACE    20 (to 16)
 
 %3d     >> END_FOR
            RETURN_CONST             0 (None)

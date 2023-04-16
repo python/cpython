@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_abstract.h"
+#include "pycore_ceval.h"
 #include "pycore_dict.h"
 #include "pycore_floatobject.h"
 #include "pycore_intrinsics.h"

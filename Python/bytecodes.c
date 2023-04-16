@@ -2012,6 +2012,7 @@ dummy_func(
             else {
                 // printf("JIT: Recording failed!\n");
             }
+            cframe.jit_recording_end = NULL;
             next_instr[-1].op.code = JUMP_BACKWARD_QUICK;
             GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
         }
@@ -2028,6 +2029,7 @@ dummy_func(
             // if (status) {
             //     printf("JIT: Leaving trace with status %d!\n", status);
             // }
+            frame = cframe.current_frame;
             next_instr = frame->prev_instr;
             stack_pointer = _PyFrame_GetStackPointer(frame);
             switch (status) {
@@ -2040,6 +2042,8 @@ dummy_func(
                 case -2:
                     goto error;
                 case -3:
+                    goto exit_unwind;
+                case -4:
                     goto handle_eval_breaker;
             }
             Py_UNREACHABLE();

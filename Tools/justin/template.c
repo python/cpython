@@ -2,6 +2,7 @@
 
 #include "pycore_abstract.h"
 #include "pycore_call.h"
+#include "pycore_ceval.h"
 #include "pycore_dict.h"
 #include "pycore_emscripten_signal.h"
 #include "pycore_frame.h"
@@ -18,7 +19,8 @@
 #define _JUSTIN_RETURN_OK                        0
 #define _JUSTIN_RETURN_DEOPT                    -1
 #define _JUSTIN_RETURN_GOTO_ERROR               -2
-#define _JUSTIN_RETURN_GOTO_HANDLE_EVAL_BREAKER -3
+#define _JUSTIN_RETURN_GOTO_EXIT_UNWIND         -3
+#define _JUSTIN_RETURN_GOTO_HANDLE_EVAL_BREAKER -4
 
 // We obviously don't want compiled code specializing itself:
 #undef ENABLE_SPECIALIZATION
@@ -29,6 +31,14 @@
         if ((COND)) {            \
             goto _return_deopt;  \
         }                        \
+    } while (0)
+#undef DISPATCH
+#define DISPATCH()                                        \
+    do {                                                  \
+        if (_JUSTIN_CHECK && next_instr != _next_trace) { \
+            goto _return_ok;                              \
+        }                                                 \
+        goto _continue;                                   \
     } while (0)
 #undef PREDICT
 #define PREDICT(OP)
@@ -44,17 +54,6 @@ extern _Py_CODEUNIT _justin_next_instr;
 extern _Py_CODEUNIT _justin_next_trace;
 extern void _justin_oparg;
 
-
-// Get dispatches and staying on trace working for multiple instructions:
-#undef DISPATCH
-#define DISPATCH()                                        \
-    do {                                                  \
-        if (_JUSTIN_CHECK && next_instr != _next_trace) { \
-            goto _return_ok;                              \
-        }                                                 \
-        goto _continue;                                   \
-    } while (0)
-
 // XXX
 #define cframe (*tstate->cframe)
 
@@ -67,6 +66,8 @@ _justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
     _Py_CODEUNIT *next_instr = &_justin_next_instr;
     int oparg = (uintptr_t)&_justin_oparg;
     uint8_t opcode = _JUSTIN_OPCODE;
+    // XXX: This temporary solution only works because we don't trace KW_NAMES:
+    PyObject *kwnames = NULL;
     // Stuff to make Justin work:
     _Py_CODEUNIT *_next_trace = &_justin_next_trace;
     if (opcode != JUMP_BACKWARD_QUICK && next_instr->op.code != opcode) {
@@ -76,11 +77,14 @@ _justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
     // Now, the actual instruction definition:
 %s
     Py_UNREACHABLE();
-_continue:;
-    // Finally, the continuation:
-    __attribute__((musttail))
-    return _justin_continue(tstate, frame, stack_pointer);
     // Labels that the instruction implementations expect to exist:
+start_frame:
+    if (_Py_EnterRecursivePy(tstate)) {
+        goto exit_unwind;
+    }
+resume_frame:
+    SET_LOCALS_FROM_FRAME();
+    DISPATCH();
 pop_4_error:
     STACK_SHRINK(1);
 pop_3_error:
@@ -93,6 +97,10 @@ error:
     frame->prev_instr = next_instr;
     _PyFrame_SetStackPointer(frame, stack_pointer);
     return _JUSTIN_RETURN_GOTO_ERROR;
+exit_unwind:
+    frame->prev_instr = next_instr;
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+    return _JUSTIN_RETURN_GOTO_EXIT_UNWIND;
 handle_eval_breaker:
     frame->prev_instr = next_instr;
     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -105,4 +113,9 @@ _return_ok:
 _return_deopt:
     _PyFrame_SetStackPointer(frame, stack_pointer);
     return _JUSTIN_RETURN_DEOPT;
+_continue:
+    ;  // XXX
+    // Finally, the continuation:
+    __attribute__((musttail))
+    return _justin_continue(tstate, frame, stack_pointer);
 }

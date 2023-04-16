@@ -127,6 +127,15 @@ PyAPI_FUNC(int) _Py_CheckRecursiveCall(
 int _Py_CheckRecursiveCallPy(
     PyThreadState *tstate);
 
+static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
+    return (tstate->py_recursion_remaining-- <= 0) &&
+        _Py_CheckRecursiveCallPy(tstate);
+}
+
+static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
+    tstate->py_recursion_remaining++;
+}
+
 static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
                                                const char *where) {
     return (_Py_MakeRecCheck(tstate) && _Py_CheckRecursiveCall(tstate, where));
@@ -151,6 +160,8 @@ extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
 extern int _Py_HandlePending(PyThreadState *tstate);
+
+void _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 
 

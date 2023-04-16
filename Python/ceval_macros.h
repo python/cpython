@@ -363,6 +363,13 @@ do { \
     next_instr = frame->prev_instr; \
 } while (0);
 
+#define SET_LOCALS_FROM_FRAME()                          \
+    do {                                                 \
+        assert(_PyInterpreterFrame_LASTI(frame) >= -1);  \
+        next_instr = frame->prev_instr + 1;              \
+        stack_pointer = _PyFrame_GetStackPointer(frame); \
+    } while (0);
+
 // GH-89279: Force inlining by using a macro.
 #if defined(_MSC_VER) && SIZEOF_INT == 4
 #define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))

@@ -199,8 +199,6 @@ static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames);
-static void
-_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 #define UNBOUNDLOCAL_ERROR_MSG \
     "cannot access local variable '%s' where it is not associated with a value"
@@ -564,16 +562,6 @@ int _Py_CheckRecursiveCallPy(
     return 0;
 }
 
-static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
-    return (tstate->py_recursion_remaining-- <= 0) &&
-        _Py_CheckRecursiveCallPy(tstate);
-}
-
-
-static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
-    tstate->py_recursion_remaining++;
-}
-
 
 /* Disable unused label warnings.  They are handy for debugging, even
    if computed gotos aren't used. */
@@ -669,13 +657,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
-
-/* Sets the above local variables from the frame */
-#define SET_LOCALS_FROM_FRAME() \
-    assert(_PyInterpreterFrame_LASTI(frame) >= -1); \
-    /* Jump back to the last instruction executed... */ \
-    next_instr = frame->prev_instr + 1; \
-    stack_pointer = _PyFrame_GetStackPointer(frame);
 
 start_frame:
     if (_Py_EnterRecursivePy(tstate)) {
@@ -1415,7 +1396,7 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     frame->previous = NULL;
 }
 
-static void
+void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     if (frame->owner == FRAME_OWNED_BY_THREAD) {

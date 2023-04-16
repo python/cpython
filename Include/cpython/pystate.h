@@ -59,7 +59,7 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_OPCODE 7
 
 // XXX
-#define _PyJIT_MAX_RECORDING_LENGTH (1 << 4)
+#define _PyJIT_MAX_RECORDING_LENGTH (1 << 6)
 
 // Internal structure: you should not use it directly, but use public functions
 // like PyThreadState_EnterTracing() and PyThreadState_LeaveTracing().
