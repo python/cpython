@@ -10730,7 +10730,7 @@ type_param_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_TypeVar ( a -> v . Name . id , b , EXTRA );
+            _res = _PyAST_TypeVar ( CHECK ( expr_ty , _PyPegen_set_expr_context ( p , a , Store ) ) , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -10766,7 +10766,7 @@ type_param_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_TypeVarTuple ( a -> v . Name . id , EXTRA );
+            _res = _PyAST_TypeVarTuple ( CHECK ( expr_ty , _PyPegen_set_expr_context ( p , a , Store ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -10802,7 +10802,7 @@ type_param_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_ParamSpec ( a -> v . Name . id , EXTRA );
+            _res = _PyAST_ParamSpec ( CHECK ( expr_ty , _PyPegen_set_expr_context ( p , a , Store ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

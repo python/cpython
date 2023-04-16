@@ -654,16 +654,16 @@ struct _typeparam {
     enum _typeparam_kind kind;
     union {
         struct {
-            identifier name;
+            expr_ty name;
             expr_ty bound;
         } TypeVar;
 
         struct {
-            identifier name;
+            expr_ty name;
         } ParamSpec;
 
         struct {
-            identifier name;
+            expr_ty name;
         } TypeVarTuple;
 
     } v;
@@ -891,13 +891,13 @@ pattern_ty _PyAST_MatchOr(asdl_pattern_seq * patterns, int lineno, int
                           col_offset, int end_lineno, int end_col_offset,
                           PyArena *arena);
 type_ignore_ty _PyAST_TypeIgnore(int lineno, string tag, PyArena *arena);
-typeparam_ty _PyAST_TypeVar(identifier name, expr_ty bound, int lineno, int
+typeparam_ty _PyAST_TypeVar(expr_ty name, expr_ty bound, int lineno, int
                             col_offset, int end_lineno, int end_col_offset,
                             PyArena *arena);
-typeparam_ty _PyAST_ParamSpec(identifier name, int lineno, int col_offset, int
+typeparam_ty _PyAST_ParamSpec(expr_ty name, int lineno, int col_offset, int
                               end_lineno, int end_col_offset, PyArena *arena);
-typeparam_ty _PyAST_TypeVarTuple(identifier name, int lineno, int col_offset,
-                                 int end_lineno, int end_col_offset, PyArena
+typeparam_ty _PyAST_TypeVarTuple(expr_ty name, int lineno, int col_offset, int
+                                 end_lineno, int end_col_offset, PyArena
                                  *arena);
 
 

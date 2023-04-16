@@ -882,6 +882,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     }
     switch (node_->kind) {
     case FunctionDef_kind:
+        CALL_SEQ(astfold_typeparam, typeparam, node_->v.FunctionDef.typeparams);
         CALL(astfold_arguments, arguments_ty, node_->v.FunctionDef.args);
         CALL(astfold_body, asdl_seq, node_->v.FunctionDef.body);
         CALL_SEQ(astfold_expr, expr, node_->v.FunctionDef.decorator_list);
@@ -890,6 +891,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         }
         break;
     case AsyncFunctionDef_kind:
+        CALL_SEQ(astfold_typeparam, typeparam, node_->v.AsyncFunctionDef.typeparams);
         CALL(astfold_arguments, arguments_ty, node_->v.AsyncFunctionDef.args);
         CALL(astfold_body, asdl_seq, node_->v.AsyncFunctionDef.body);
         CALL_SEQ(astfold_expr, expr, node_->v.AsyncFunctionDef.decorator_list);
@@ -898,6 +900,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         }
         break;
     case ClassDef_kind:
+        CALL_SEQ(astfold_typeparam, typeparam, node_->v.ClassDef.typeparams);
         CALL_SEQ(astfold_expr, expr, node_->v.ClassDef.bases);
         CALL_SEQ(astfold_keyword, keyword, node_->v.ClassDef.keywords);
         CALL(astfold_body, asdl_seq, node_->v.ClassDef.body);
@@ -1086,11 +1089,14 @@ astfold_typeparam(typeparam_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     switch (node_->kind) {
         case TypeVar_kind:
+            CALL(astfold_expr, expr_ty, node_->v.TypeVar.name);
             CALL_OPT(astfold_expr, expr_ty, node_->v.TypeVar.bound);
             break;
         case ParamSpec_kind:
+            CALL(astfold_expr, expr_ty, node_->v.ParamSpec.name);
             break;
         case TypeVarTuple_kind:
+            CALL(astfold_expr, expr_ty, node_->v.TypeVarTuple.name);
             break;
     }
     return 1;
