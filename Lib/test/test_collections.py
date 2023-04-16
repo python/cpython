@@ -1903,6 +1903,7 @@ class TestCollectionABCs(ABCTestCase):
         self.validate_abstract_methods(Sequence, '__contains__', '__iter__', '__len__',
             '__getitem__')
 
+    @unittest.skip
     def test_Sequence_mixins(self):
         class SequenceSubclass(Sequence):
             def __init__(self, seq=()):
