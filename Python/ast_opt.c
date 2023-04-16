@@ -643,6 +643,7 @@ static int astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeStat
 static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_typeparam(typeparam_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 
 #define CALL(FUNC, TYPE, ARG) \
     if (!FUNC((ARG), ctx_, state)) \
@@ -925,7 +926,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         break;
     case TypeAlias_kind:
         CALL(astfold_expr, expr_ty, node_->v.TypeAlias.name);
-        CALL_SEQ(astfold_stmt, typeparam, node_->v.TypeAlias.typeparams);
+        CALL_SEQ(astfold_typeparam, typeparam, node_->v.TypeAlias.typeparams);
         CALL(astfold_expr, expr_ty, node_->v.TypeAlias.value);
         break;
     case For_kind:
@@ -1077,6 +1078,21 @@ astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
     CALL(astfold_pattern, expr_ty, node_->pattern);
     CALL_OPT(astfold_expr, expr_ty, node_->guard);
     CALL_SEQ(astfold_stmt, stmt, node_->body);
+    return 1;
+}
+
+static int
+astfold_typeparam(typeparam_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    switch (node_->kind) {
+        case TypeVar_kind:
+            CALL_OPT(astfold_expr, expr_ty, node_->v.TypeVar.bound);
+            break;
+        case ParamSpec_kind:
+            break;
+        case TypeVarTuple_kind:
+            break;
+    }
     return 1;
 }
 
