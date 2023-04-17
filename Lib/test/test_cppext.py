@@ -12,8 +12,8 @@ from test.support import os_helper
 
 MS_WINDOWS = (sys.platform == 'win32')
 
-PKG_CPPEXTDATA = os.path.join(os.path.dirname(__file__), "cppextdata")
 
+SETUP_TESTCPPEXT = support.findfile('setup_testcppext.py')
 
 @support.requires_subprocess()
 class TestCPPExt(unittest.TestCase):
@@ -31,8 +31,6 @@ class TestCPPExt(unittest.TestCase):
     @unittest.skipIf(
         '-fsanitize' in (sysconfig.get_config_var('PY_CFLAGS') or ''),
         'test does not work with analyzing builds')
-    # the test uses pip which needs a TLS connection to PyPI
-    @unittest.skipIf(ssl is None, 'No ssl module')
     # the test uses venv+pip: skip if it's not available
     @support.requires_venv_with_pip()
     def check_build(self, std_cpp03, extension_name):
