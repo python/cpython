@@ -263,10 +263,6 @@ linkcheck_allowed_redirects = {
     r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*'
 }
 
-# Ignore certain URLs.
-linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+']
-
-
 # Options for extensions
 # ----------------------
 
