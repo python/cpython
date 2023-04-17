@@ -1,7 +1,7 @@
 Creation of :ref:`virtual environments <venv-def>` is done by executing the
 command ``venv``::
 
-    python3 -m venv /path/to/new/virtual/environment
+    python -m venv /path/to/new/virtual/environment
 
 Running this command creates the target directory (creating any parent
 directories that don't exist already) and places a ``pyvenv.cfg`` file in it

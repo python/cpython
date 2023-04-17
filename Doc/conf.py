@@ -68,8 +68,10 @@ highlight_language = 'python3'
 # Minimum version of sphinx required
 needs_sphinx = '3.2'
 
+# Ignore any .rst files in the includes/ directory;
+# they're embedded in pages but not rendered individually.
 # Ignore any .rst files in the venv/ directory.
-exclude_patterns = ['venv/*', 'README.rst']
+exclude_patterns = ['includes/*.rst', 'venv/*', 'README.rst']
 venvdir = os.getenv('VENVDIR')
 if venvdir is not None:
     exclude_patterns.append(venvdir + '/*')
@@ -268,7 +270,7 @@ ogp_site_url = 'https://docs.python.org/3/'
 ogp_site_name = 'Python documentation'
 ogp_image = '_static/og-image.png'
 ogp_custom_meta_tags = [
-    '<meta property="og:image:width" content="200">',
-    '<meta property="og:image:height" content="200">',
-    '<meta name="theme-color" content="#3776ab">',
+    '<meta property="og:image:width" content="200" />',
+    '<meta property="og:image:height" content="200" />',
+    '<meta name="theme-color" content="#3776ab" />',
 ]

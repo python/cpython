@@ -1,10 +1,7 @@
 # gh-91321: Build a basic C++ test extension to check that the Python C API is
 # compatible with C++ and does not emit C++ compiler warnings.
 import os.path
-try:
-    import ssl
-except ImportError:
-    ssl = None
+import shutil
 import sys
 import unittest
 import subprocess
@@ -44,6 +41,10 @@ class TestCPPExt(unittest.TestCase):
             self._check_build(std_cpp03, extension_name)
 
     def _check_build(self, std_cpp03, extension_name):
+        pkg_dir = 'pkg'
+        os.mkdir(pkg_dir)
+        shutil.copy(SETUP_TESTCPPEXT, os.path.join(pkg_dir, "setup.py"))
+
         venv_dir = 'env'
         verbose = support.verbose
 
@@ -81,9 +82,16 @@ class TestCPPExt(unittest.TestCase):
                     self.fail(
                         f"{operation} failed with exit code {proc.returncode}")
 
+        cmd = [python, '-X', 'dev',
+               '-m', 'pip', 'install',
+               support.findfile('setuptools-67.6.1-py3-none-any.whl'),
+               support.findfile('wheel-0.40.0-py3-none-any.whl')]
+        run_cmd('Install build dependencies', cmd)
+
         # Build and install the C++ extension
         cmd = [python, '-X', 'dev',
-               '-m', 'pip', 'install', PKG_CPPEXTDATA]
+               '-m', 'pip', 'install', '--no-build-isolation',
+               os.path.abspath(pkg_dir)]
         run_cmd('Install', cmd)
 
         # Do a reference run. Until we test that running python

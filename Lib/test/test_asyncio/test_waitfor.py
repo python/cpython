@@ -159,7 +159,7 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
 
         fut = loop.create_future()
         task = asyncio.wait_for(fut, timeout=0.2)
-        loop.call_later(0.1, fut.set_result, "ok")
+        loop.call_soon(fut.set_result, "ok")
         res = await task
         self.assertEqual(res, "ok")
 

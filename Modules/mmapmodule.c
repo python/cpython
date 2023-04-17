@@ -29,6 +29,10 @@
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
+// to support MS_WINDOWS_SYSTEM OpenFileMappingA / CreateFileMappingA
+// need to be replaced with OpenFileMappingW / CreateFileMappingW
+#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_GAMES)
+
 #ifndef MS_WINDOWS
 #define UNIX
 # ifdef HAVE_FCNTL_H
@@ -502,7 +506,7 @@ mmap_resize_method(mmap_object *self,
         CloseHandle(self->map_handle);
         /* if the file mapping still exists, it cannot be resized. */
         if (self->tagname) {
-            self->map_handle = OpenFileMapping(FILE_MAP_WRITE, FALSE,
+            self->map_handle = OpenFileMappingA(FILE_MAP_WRITE, FALSE,
                                     self->tagname);
             if (self->map_handle) {
                 PyErr_SetFromWindowsErr(ERROR_USER_MAPPED_FILE);
@@ -531,7 +535,7 @@ mmap_resize_method(mmap_object *self,
 
         /* create a new file mapping and map a new view */
         /* FIXME: call CreateFileMappingW with wchar_t tagname */
-        self->map_handle = CreateFileMapping(
+        self->map_handle = CreateFileMappingA(
             self->file_handle,
             NULL,
             PAGE_READWRITE,
@@ -647,7 +651,7 @@ mmap_flush_method(mmap_object *self, PyObject *args)
     if (self->access == ACCESS_READ || self->access == ACCESS_COPY)
         Py_RETURN_NONE;
 
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     if (!FlushViewOfFile(self->data+offset, size)) {
         PyErr_SetFromWindowsErr(GetLastError());
         return NULL;
@@ -1514,12 +1518,12 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     off_lo = (DWORD)(offset & 0xFFFFFFFF);
     /* For files, it would be sufficient to pass 0 as size.
        For anonymous maps, we have to pass the size explicitly. */
-    m_obj->map_handle = CreateFileMapping(m_obj->file_handle,
-                                          NULL,
-                                          flProtect,
-                                          size_hi,
-                                          size_lo,
-                                          m_obj->tagname);
+    m_obj->map_handle = CreateFileMappingA(m_obj->file_handle,
+                                           NULL,
+                                           flProtect,
+                                           size_hi,
+                                           size_lo,
+                                           m_obj->tagname);
     if (m_obj->map_handle != NULL) {
         m_obj->data = (char *) MapViewOfFile(m_obj->map_handle,
                                              dwDesiredAccess,
@@ -1724,3 +1728,5 @@ PyInit_mmap(void)
 {
     return PyModuleDef_Init(&mmapmodule);
 }
+
+#endif /* !MS_WINDOWS || MS_WINDOWS_DESKTOP || MS_WINDOWS_GAMES */

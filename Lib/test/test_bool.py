@@ -319,6 +319,26 @@ class BoolTest(unittest.TestCase):
                 return -1
         self.assertRaises(ValueError, bool, Eggs())
 
+    def test_interpreter_convert_to_bool_raises(self):
+        class SymbolicBool:
+            def __bool__(self):
+                raise TypeError
+
+        class Symbol:
+            def __gt__(self, other):
+                return SymbolicBool()
+
+        x = Symbol()
+
+        with self.assertRaises(TypeError):
+            if x > 0:
+                msg = "x > 0 was true"
+            else:
+                msg = "x > 0 was false"
+
+        # This used to create negative refcounts, see gh-102250
+        del x
+
     def test_from_bytes(self):
         self.assertIs(bool.from_bytes(b'\x00'*8, 'big'), False)
         self.assertIs(bool.from_bytes(b'abcd', 'little'), True)

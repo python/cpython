@@ -39,20 +39,23 @@ err_restore(PyObject *self, PyObject *args) {
 static PyObject *
 exception_print(PyObject *self, PyObject *args)
 {
-    PyObject *value;
-    PyObject *tb = NULL;
+    PyObject *exc;
+    int legacy = 0;
 
-    if (!PyArg_ParseTuple(args, "O:exception_print", &value)) {
+    if (!PyArg_ParseTuple(args, "O|i:exception_print", &exc, &legacy)) {
         return NULL;
     }
-
-    if (PyExceptionInstance_Check(value)) {
-        tb = PyException_GetTraceback(value);
+    if (legacy) {
+        PyObject *tb = NULL;
+        if (PyExceptionInstance_Check(exc)) {
+            tb = PyException_GetTraceback(exc);
+        }
+        PyErr_Display((PyObject *) Py_TYPE(exc), exc, tb);
+        Py_XDECREF(tb);
     }
-
-    PyErr_Display((PyObject *) Py_TYPE(value), value, tb);
-    Py_XDECREF(tb);
-
+    else {
+        PyErr_DisplayException(exc);
+    }
     Py_RETURN_NONE;
 }
 
@@ -76,6 +79,40 @@ make_exception_with_doc(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     return PyErr_NewExceptionWithDoc(name, doc, base, dict);
+}
+
+static PyObject *
+exc_set_object(PyObject *self, PyObject *args)
+{
+    PyObject *exc;
+    PyObject *obj;
+
+    if (!PyArg_ParseTuple(args, "OO:exc_set_object", &exc, &obj)) {
+        return NULL;
+    }
+
+    PyErr_SetObject(exc, obj);
+    return NULL;
+}
+
+static PyObject *
+exc_set_object_fetch(PyObject *self, PyObject *args)
+{
+    PyObject *exc;
+    PyObject *obj;
+    PyObject *type;
+    PyObject *value;
+    PyObject *tb;
+
+    if (!PyArg_ParseTuple(args, "OO:exc_set_object", &exc, &obj)) {
+        return NULL;
+    }
+
+    PyErr_SetObject(exc, obj);
+    PyErr_Fetch(&type, &value, &tb);
+    Py_XDECREF(type);
+    Py_XDECREF(tb);
+    return value;
 }
 
 static PyObject *
@@ -247,6 +284,8 @@ static PyMethodDef test_methods[] = {
      PyDoc_STR("fatal_error(message, release_gil=False): call Py_FatalError(message)")},
     {"make_exception_with_doc", _PyCFunction_CAST(make_exception_with_doc),
      METH_VARARGS | METH_KEYWORDS},
+    {"exc_set_object",          exc_set_object,                  METH_VARARGS},
+    {"exc_set_object_fetch",    exc_set_object_fetch,            METH_VARARGS},
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
     {"set_exc_info",            test_set_exc_info,               METH_VARARGS},

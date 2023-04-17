@@ -6,9 +6,9 @@
 C API Stability
 ***************
 
-Python's C API is covered by the Backwards Compatibility Policy, :pep:`387`.
-While the C API will change with every minor release (e.g. from 3.9 to 3.10),
-most changes will be source-compatible, typically by only adding new API.
+Unless documented otherwise, Python's C API is covered by the Backwards
+Compatibility Policy, :pep:`387`.
+Most changes to it are source-compatible (typically by only adding new API).
 Changing existing API or removing API is only done after a deprecation period
 or to fix serious issues.
 
@@ -18,8 +18,38 @@ way; see :ref:`stable-abi-platform` below).
 So, code compiled for Python 3.10.0 will work on 3.10.8 and vice versa,
 but will need to be compiled separately for 3.9.x and 3.10.x.
 
+There are two tiers of C API with different stability exepectations:
+
+- *Unstable API*, may change in minor versions without a deprecation period.
+  It is marked by the ``PyUnstable`` prefix in names.
+- *Limited API*, is compatible across several minor releases.
+  When :c:macro:`Py_LIMITED_API` is defined, only this subset is exposed
+  from ``Python.h``.
+
+These are discussed in more detail below.
+
 Names prefixed by an underscore, such as ``_Py_InternalState``,
 are private API that can change without notice even in patch releases.
+If you need to use this API, consider reaching out to
+`CPython developers <https://discuss.python.org/c/core-dev/c-api/30>`_
+to discuss adding public API for your use case.
+
+.. _unstable-c-api:
+
+Unstable C API
+==============
+
+.. index:: single: PyUnstable
+
+Any API named with the ``PyUnstable`` prefix exposes CPython implementation
+details, and may change in every minor release (e.g. from 3.9 to 3.10) without
+any deprecation warnings.
+However, it will not change in a bugfix release (e.g. from 3.10.0 to 3.10.1).
+
+It is generally intended for specialized, low-level tools like debuggers.
+
+Projects that use this API are expected to follow
+CPython development and spend extra effort adjusting to changes.
 
 
 Stable Application Binary Interface
