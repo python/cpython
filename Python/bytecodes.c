@@ -1581,6 +1581,7 @@ dummy_func(
                     Py_DECREF(self);
                     ERROR_IF(true, error);
                 }
+                // Works with CALL, pushes two values: either `meth | self` or `NULL | meth`.
                 if (meth_found) {
                     res2 = res;
                     res = self;  // transfer ownership
