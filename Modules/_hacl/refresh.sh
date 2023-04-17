@@ -48,6 +48,7 @@ dist_files=(
   Hacl_Hash_MD5.h
   Hacl_Hash_SHA3.h
   internal/Hacl_Hash_MD5.h
+  internal/Hacl_Hash_SHA3.h
   internal/Hacl_SHA2_Generic.h
   Hacl_Streaming_SHA2.c
   Hacl_Hash_SHA1.c
