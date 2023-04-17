@@ -645,10 +645,9 @@ type_params[asdl_typeparam_seq*]: '[' t=type_param_seq  ']' { t }
 type_param_seq[asdl_typeparam_seq*]: a[asdl_typeparam_seq*]=','.type_param+ [','] { a }
 
 type_param[typeparam_ty] (memo):
-    | a=NAME b=[type_param_bound] { _PyAST_TypeVar(
-        CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
-    | '*' a=NAME { _PyAST_TypeVarTuple(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), EXTRA) }
-    | '**' a=NAME { _PyAST_ParamSpec(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), EXTRA) }
+    | a=NAME b=[type_param_bound] { _PyAST_TypeVar(a->v.Name.id, b, EXTRA) }
+    | '*' a=NAME { _PyAST_TypeVarTuple(a->v.Name.id, EXTRA) }
+    | '**' a=NAME { _PyAST_ParamSpec(a->v.Name.id, EXTRA) }
 
 type_param_bound[expr_ty]: ":" e=expression { e }
 

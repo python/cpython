@@ -1058,18 +1058,16 @@ class _Unparser(NodeVisitor):
                 self.interleave(lambda: self.write(", "), self.traverse, typeparams)
 
     def visit_TypeVar(self, node):
-        self.traverse(node.name)
+        self.write(node.name)
         if node.bound:
             self.write(": ")
             self.traverse(node.bound)
 
     def visit_TypeVarTuple(self, node):
-        self.write("*")
-        self.traverse(node.name)
+        self.write("*" + node.name)
 
     def visit_ParamSpec(self, node):
-        self.write("**")
-        self.traverse(node.name)
+        self.write("**" + node.name)
 
     def visit_TypeAlias(self, node):
         self.fill("type ")

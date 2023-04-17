@@ -681,15 +681,15 @@ validate_typeparam(struct validator *state, typeparam_ty tp)
     int ret = -1;
     switch (tp->kind) {
         case TypeVar_kind:
-            ret = validate_expr(state, tp->v.TypeVar.name, Store) &&
+            ret = validate_name(tp->v.TypeVar.name) &&
                 (!tp->v.TypeVar.bound ||
                  validate_expr(state, tp->v.TypeVar.bound, Load));
             break;
         case ParamSpec_kind:
-            ret = validate_expr(state, tp->v.ParamSpec.name, Store);
+            ret = validate_name(tp->v.ParamSpec.name);
             break;
         case TypeVarTuple_kind:
-            ret = validate_expr(state, tp->v.TypeVarTuple.name, Store);
+            ret = validate_name(tp->v.TypeVarTuple.name);
             break;
     }
     return ret;
@@ -772,7 +772,7 @@ validate_stmt(struct validator *state, stmt_ty stmt)
                validate_expr(state, stmt->v.AnnAssign.annotation, Load);
         break;
     case TypeAlias_kind:
-        ret = validate_name(stmt->v.TypeAlias.name->v.Name.id) &&
+        ret = validate_expr(state, stmt->v.TypeAlias.name, Store) &&
             validate_typeparams(state, stmt->v.TypeAlias.typeparams) &&
             validate_expr(state, stmt->v.TypeAlias.value, Load);
         break;

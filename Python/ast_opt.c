@@ -1089,14 +1089,11 @@ astfold_typeparam(typeparam_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     switch (node_->kind) {
         case TypeVar_kind:
-            CALL(astfold_expr, expr_ty, node_->v.TypeVar.name);
             CALL_OPT(astfold_expr, expr_ty, node_->v.TypeVar.bound);
             break;
         case ParamSpec_kind:
-            CALL(astfold_expr, expr_ty, node_->v.ParamSpec.name);
             break;
         case TypeVarTuple_kind:
-            CALL(astfold_expr, expr_ty, node_->v.TypeVarTuple.name);
             break;
     }
     return 1;

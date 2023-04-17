@@ -1896,9 +1896,9 @@ init_types(struct ast_state *state)
     if (!state->TypeIgnore_type) return 0;
     state->typeparam_type = make_type(state, "typeparam", state->AST_type,
                                       NULL, 0,
-        "typeparam = TypeVar(expr name, expr? bound)\n"
-        "          | ParamSpec(expr name)\n"
-        "          | TypeVarTuple(expr name)");
+        "typeparam = TypeVar(identifier name, expr? bound)\n"
+        "          | ParamSpec(identifier name)\n"
+        "          | TypeVarTuple(identifier name)");
     if (!state->typeparam_type) return 0;
     if (!add_attributes(state, state->typeparam_type, typeparam_attributes, 4))
         return 0;
@@ -1910,19 +1910,19 @@ init_types(struct ast_state *state)
         return 0;
     state->TypeVar_type = make_type(state, "TypeVar", state->typeparam_type,
                                     TypeVar_fields, 2,
-        "TypeVar(expr name, expr? bound)");
+        "TypeVar(identifier name, expr? bound)");
     if (!state->TypeVar_type) return 0;
     if (PyObject_SetAttr(state->TypeVar_type, state->bound, Py_None) == -1)
         return 0;
     state->ParamSpec_type = make_type(state, "ParamSpec",
                                       state->typeparam_type, ParamSpec_fields,
                                       1,
-        "ParamSpec(expr name)");
+        "ParamSpec(identifier name)");
     if (!state->ParamSpec_type) return 0;
     state->TypeVarTuple_type = make_type(state, "TypeVarTuple",
                                          state->typeparam_type,
                                          TypeVarTuple_fields, 1,
-        "TypeVarTuple(expr name)");
+        "TypeVarTuple(identifier name)");
     if (!state->TypeVarTuple_type) return 0;
 
     state->recursion_depth = 0;
@@ -3714,7 +3714,7 @@ _PyAST_TypeIgnore(int lineno, string tag, PyArena *arena)
 }
 
 typeparam_ty
-_PyAST_TypeVar(expr_ty name, expr_ty bound, int lineno, int col_offset, int
+_PyAST_TypeVar(identifier name, expr_ty bound, int lineno, int col_offset, int
                end_lineno, int end_col_offset, PyArena *arena)
 {
     typeparam_ty p;
@@ -3737,8 +3737,8 @@ _PyAST_TypeVar(expr_ty name, expr_ty bound, int lineno, int col_offset, int
 }
 
 typeparam_ty
-_PyAST_ParamSpec(expr_ty name, int lineno, int col_offset, int end_lineno, int
-                 end_col_offset, PyArena *arena)
+_PyAST_ParamSpec(identifier name, int lineno, int col_offset, int end_lineno,
+                 int end_col_offset, PyArena *arena)
 {
     typeparam_ty p;
     if (!name) {
@@ -3759,8 +3759,8 @@ _PyAST_ParamSpec(expr_ty name, int lineno, int col_offset, int end_lineno, int
 }
 
 typeparam_ty
-_PyAST_TypeVarTuple(expr_ty name, int lineno, int col_offset, int end_lineno,
-                    int end_col_offset, PyArena *arena)
+_PyAST_TypeVarTuple(identifier name, int lineno, int col_offset, int
+                    end_lineno, int end_col_offset, PyArena *arena)
 {
     typeparam_ty p;
     if (!name) {
@@ -5674,7 +5674,7 @@ ast2obj_typeparam(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->TypeVar_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.TypeVar.name);
+        value = ast2obj_identifier(state, o->v.TypeVar.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
@@ -5689,7 +5689,7 @@ ast2obj_typeparam(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->ParamSpec_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.ParamSpec.name);
+        value = ast2obj_identifier(state, o->v.ParamSpec.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
@@ -5699,7 +5699,7 @@ ast2obj_typeparam(struct ast_state *state, void* _o)
         tp = (PyTypeObject *)state->TypeVarTuple_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.TypeVarTuple.name);
+        value = ast2obj_identifier(state, o->v.TypeVarTuple.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
@@ -12383,7 +12383,7 @@ obj2ast_typeparam(struct ast_state *state, PyObject* obj, typeparam_ty* out,
         return 1;
     }
     if (isinstance) {
-        expr_ty name;
+        identifier name;
         expr_ty bound;
 
         if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
@@ -12398,7 +12398,7 @@ obj2ast_typeparam(struct ast_state *state, PyObject* obj, typeparam_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'TypeVar' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &name, arena);
+            res = obj2ast_identifier(state, tmp, &name, arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12431,7 +12431,7 @@ obj2ast_typeparam(struct ast_state *state, PyObject* obj, typeparam_ty* out,
         return 1;
     }
     if (isinstance) {
-        expr_ty name;
+        identifier name;
 
         if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
             return 1;
@@ -12445,7 +12445,7 @@ obj2ast_typeparam(struct ast_state *state, PyObject* obj, typeparam_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'ParamSpec' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &name, arena);
+            res = obj2ast_identifier(state, tmp, &name, arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
@@ -12461,7 +12461,7 @@ obj2ast_typeparam(struct ast_state *state, PyObject* obj, typeparam_ty* out,
         return 1;
     }
     if (isinstance) {
-        expr_ty name;
+        identifier name;
 
         if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
             return 1;
@@ -12475,7 +12475,7 @@ obj2ast_typeparam(struct ast_state *state, PyObject* obj, typeparam_ty* out,
             if (_Py_EnterRecursiveCall(" while traversing 'TypeVarTuple' node")) {
                 goto failed;
             }
-            res = obj2ast_expr(state, tmp, &name, arena);
+            res = obj2ast_identifier(state, tmp, &name, arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
