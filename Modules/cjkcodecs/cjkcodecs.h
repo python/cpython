@@ -60,8 +60,20 @@ struct pair_encodemap {
     DBCHAR code;
 };
 
-static const MultibyteCodec *codec_list;
-static const struct dbcs_map *mapping_list;
+typedef struct {
+    int num_mappings;
+    int num_codecs;
+    struct dbcs_map *mapping_list;
+    MultibyteCodec *codec_list;
+} cjkcodecs_module_state;
+
+static inline cjkcodecs_module_state *
+get_module_state(PyObject *mod)
+{
+    void *state = PyModule_GetState(mod);
+    assert(state != NULL);
+    return (cjkcodecs_module_state *)state;
+}
 
 #define CODEC_INIT(encoding)                                            \
     static int encoding##_codec_init(const void *config)
@@ -202,16 +214,42 @@ static const struct dbcs_map *mapping_list;
 #define TRYMAP_DEC(charset, assi, c1, c2)                     \
     _TRYMAP_DEC(&charset##_decmap[c1], assi, c2)
 
-#define BEGIN_MAPPINGS_LIST static const struct dbcs_map _mapping_list[] = {
-#define MAPPING_ENCONLY(enc) {#enc, (void*)enc##_encmap, NULL},
-#define MAPPING_DECONLY(enc) {#enc, NULL, (void*)enc##_decmap},
-#define MAPPING_ENCDEC(enc) {#enc, (void*)enc##_encmap, (void*)enc##_decmap},
-#define END_MAPPINGS_LIST                               \
-    {"", NULL, NULL} };                                 \
-    static const struct dbcs_map *mapping_list =        \
-        (const struct dbcs_map *)_mapping_list;
+#define BEGIN_MAPPINGS_LIST(NUM)                                    \
+static int                                                          \
+add_mappings(cjkcodecs_module_state *st)                            \
+{                                                                   \
+    int idx = 0;                                                    \
+    (void)idx;                                                      \
+    st->num_mappings = NUM;                                         \
+    st->mapping_list = PyMem_Calloc(NUM, sizeof(struct dbcs_map));  \
+    if (st->mapping_list == NULL) {                                 \
+        return -1;                                                  \
+    }
 
-#define BEGIN_CODECS_LIST static const MultibyteCodec _codec_list[] = {
+#define MAPPING_ENCONLY(enc) \
+    st->mapping_list[idx++] = (struct dbcs_map){#enc, (void*)enc##_encmap, NULL};
+#define MAPPING_DECONLY(enc) \
+    st->mapping_list[idx++] = (struct dbcs_map){#enc, NULL, (void*)enc##_decmap};
+#define MAPPING_ENCDEC(enc) \
+    st->mapping_list[idx++] = (struct dbcs_map){#enc, (void*)enc##_encmap, (void*)enc##_decmap};
+
+#define END_MAPPINGS_LIST               \
+    assert(st->num_mappings == idx);    \
+    return 0;                           \
+}
+
+#define BEGIN_CODECS_LIST(NUM)                                  \
+static int                                                      \
+add_codecs(cjkcodecs_module_state *st)                          \
+{                                                               \
+    int idx = 0;                                                \
+    (void)idx;                                                  \
+    st->num_codecs = NUM;                                       \
+    st->codec_list = PyMem_Calloc(NUM, sizeof(MultibyteCodec)); \
+    if (st->codec_list == NULL) {                               \
+        return -1;                                              \
+    }
+
 #define _STATEFUL_METHODS(enc)          \
     enc##_encode,                       \
     enc##_encode_init,                  \
@@ -222,23 +260,21 @@ static const struct dbcs_map *mapping_list;
 #define _STATELESS_METHODS(enc)         \
     enc##_encode, NULL, NULL,           \
     enc##_decode, NULL, NULL,
-#define CODEC_STATEFUL(enc) {           \
-    #enc, NULL, NULL,                   \
-    _STATEFUL_METHODS(enc)              \
-},
-#define CODEC_STATELESS(enc) {          \
-    #enc, NULL, NULL,                   \
-    _STATELESS_METHODS(enc)             \
-},
-#define CODEC_STATELESS_WINIT(enc) {    \
-    #enc, NULL,                         \
-    enc##_codec_init,                   \
-    _STATELESS_METHODS(enc)             \
-},
-#define END_CODECS_LIST                                 \
-    {"", NULL,} };                                      \
-    static const MultibyteCodec *codec_list =           \
-        (const MultibyteCodec *)_codec_list;
+
+#define NEXT_CODEC \
+    st->codec_list[idx++]
+
+#define CODEC_STATEFUL(enc) \
+    NEXT_CODEC = (MultibyteCodec){#enc, NULL, NULL, _STATEFUL_METHODS(enc)};
+#define CODEC_STATELESS(enc) \
+    NEXT_CODEC = (MultibyteCodec){#enc, NULL, NULL, _STATELESS_METHODS(enc)};
+#define CODEC_STATELESS_WINIT(enc) \
+    NEXT_CODEC = (MultibyteCodec){#enc, NULL, enc##_codec_init, _STATELESS_METHODS(enc)};
+
+#define END_CODECS_LIST             \
+    assert(st->num_codecs == idx);  \
+    return 0;                       \
+}
 
 
 
@@ -249,53 +285,70 @@ getmultibytecodec(void)
 }
 
 static PyObject *
+_getcodec(const MultibyteCodec *codec)
+{
+    PyObject *cofunc = getmultibytecodec();
+    if (cofunc == NULL) {
+        return NULL;
+    }
+
+    PyObject *codecobj = PyCapsule_New((void *)codec,
+                                       PyMultibyteCodec_CAPSULE_NAME,
+                                       NULL);
+    if (codecobj == NULL) {
+        Py_DECREF(cofunc);
+        return NULL;
+    }
+
+    PyObject *res = PyObject_CallOneArg(cofunc, codecobj);
+    Py_DECREF(codecobj);
+    Py_DECREF(cofunc);
+    return res;
+}
+
+static PyObject *
 getcodec(PyObject *self, PyObject *encoding)
 {
-    PyObject *codecobj, *r, *cofunc;
-    const MultibyteCodec *codec;
-    const char *enc;
-
     if (!PyUnicode_Check(encoding)) {
         PyErr_SetString(PyExc_TypeError,
                         "encoding name must be a string.");
         return NULL;
     }
-    enc = PyUnicode_AsUTF8(encoding);
-    if (enc == NULL)
-        return NULL;
-
-    cofunc = getmultibytecodec();
-    if (cofunc == NULL)
-        return NULL;
-
-    for (codec = codec_list; codec->encoding[0]; codec++)
-        if (strcmp(codec->encoding, enc) == 0)
-            break;
-
-    if (codec->encoding[0] == '\0') {
-        PyErr_SetString(PyExc_LookupError,
-                        "no such codec is supported.");
+    const char *enc = PyUnicode_AsUTF8(encoding);
+    if (enc == NULL) {
         return NULL;
     }
 
-    codecobj = PyCapsule_New((void *)codec, PyMultibyteCodec_CAPSULE_NAME, NULL);
-    if (codecobj == NULL)
-        return NULL;
+    cjkcodecs_module_state *st = get_module_state(self);
+    for (int i = 0; i < st->num_codecs; i++) {
+        const MultibyteCodec *codec = &st->codec_list[i];
+        if (strcmp(codec->encoding, enc) == 0) {
+            return _getcodec(codec);
+        }
+    }
 
-    r = PyObject_CallOneArg(cofunc, codecobj);
-    Py_DECREF(codecobj);
-    Py_DECREF(cofunc);
-
-    return r;
+    PyErr_SetString(PyExc_LookupError,
+                    "no such codec is supported.");
+    return NULL;
 }
 
+static int add_mappings(cjkcodecs_module_state *);
+static int add_codecs(cjkcodecs_module_state *);
 
 static int
 register_maps(PyObject *module)
 {
-    const struct dbcs_map *h;
+    // Init module state.
+    cjkcodecs_module_state *st = get_module_state(module);
+    if (add_mappings(st) < 0) {
+        return -1;
+    }
+    if (add_codecs(st) < 0) {
+        return -1;
+    }
 
-    for (h = mapping_list; h->charset[0] != '\0'; h++) {
+    for (int i = 0; i < st->num_mappings; i++) {
+        const struct dbcs_map *h = &st->mapping_list[i];
         char mhname[256] = "__map_";
         strcpy(mhname + sizeof("__map_") - 1, h->charset);
 
@@ -394,6 +447,13 @@ _cjk_exec(PyObject *module)
     return register_maps(module);
 }
 
+static void
+_cjk_free(void *mod)
+{
+    cjkcodecs_module_state *st = get_module_state((PyObject *)mod);
+    PyMem_Free(st->mapping_list);
+    PyMem_Free(st->codec_list);
+}
 
 static struct PyMethodDef _cjk_methods[] = {
     {"getcodec", (PyCFunction)getcodec, METH_O, ""},
@@ -409,9 +469,10 @@ static PyModuleDef_Slot _cjk_slots[] = {
     static struct PyModuleDef _cjk_module = {                           \
         PyModuleDef_HEAD_INIT,                                          \
         .m_name = "_codecs_"#loc,                                       \
-        .m_size = 0,                                                    \
+        .m_size = sizeof(cjkcodecs_module_state),                       \
         .m_methods = _cjk_methods,                                      \
         .m_slots = _cjk_slots,                                          \
+        .m_free = _cjk_free,                                            \
     };                                                                  \
                                                                         \
     PyMODINIT_FUNC                                                      \

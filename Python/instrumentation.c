@@ -105,6 +105,8 @@ static const uint8_t INSTRUMENTED_OPCODES[256] = {
     [INSTRUMENTED_END_FOR] = INSTRUMENTED_END_FOR,
     [END_SEND] = INSTRUMENTED_END_SEND,
     [INSTRUMENTED_END_SEND] = INSTRUMENTED_END_SEND,
+    [FOR_ITER] = INSTRUMENTED_FOR_ITER,
+    [INSTRUMENTED_FOR_ITER] = INSTRUMENTED_FOR_ITER,
 
     [INSTRUMENTED_LINE] = INSTRUMENTED_LINE,
     [INSTRUMENTED_INSTRUCTION] = INSTRUMENTED_INSTRUCTION,
@@ -123,6 +125,7 @@ is_instrumented(int opcode) {
     return opcode >= MIN_INSTRUMENTED_OPCODE;
 }
 
+#ifndef NDEBUG
 static inline bool
 monitors_equals(_Py_Monitors a, _Py_Monitors b)
 {
@@ -133,6 +136,7 @@ monitors_equals(_Py_Monitors a, _Py_Monitors b)
     }
     return true;
 }
+#endif
 
 static inline _Py_Monitors
 monitors_sub(_Py_Monitors a, _Py_Monitors b)
@@ -144,6 +148,7 @@ monitors_sub(_Py_Monitors a, _Py_Monitors b)
     return res;
 }
 
+#ifndef NDEBUG
 static inline _Py_Monitors
 monitors_and(_Py_Monitors a, _Py_Monitors b)
 {
@@ -153,6 +158,7 @@ monitors_and(_Py_Monitors a, _Py_Monitors b)
     }
     return res;
 }
+#endif
 
 static inline _Py_Monitors
 monitors_or(_Py_Monitors a, _Py_Monitors b)

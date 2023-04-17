@@ -225,7 +225,22 @@ class GeneratorTest(unittest.TestCase):
         gi = f()
         self.assertIsNone(gi.gi_frame.f_back)
 
+    def test_issue103488(self):
 
+        def gen_raises():
+            yield
+            raise ValueError()
+
+        def loop():
+            try:
+                for _ in gen_raises():
+                    if True is False:
+                        return
+            except ValueError:
+                pass
+
+        #This should not raise
+        loop()
 
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
