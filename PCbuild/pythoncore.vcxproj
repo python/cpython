@@ -381,7 +381,7 @@
     <ClCompile Include="..\Modules\_lsprof.c" />
     <ClCompile Include="..\Modules\_pickle.c" />
     <ClCompile Include="..\Modules\_randommodule.c" />
-    <ClCompile Include="..\Modules\_sha3\sha3module.c" />
+    <ClCompile Include="..\Modules\sha3module.c" />
     <ClCompile Include="..\Modules\_sre\sre.c" />
     <ClInclude Include="..\Modules\_sre\sre.h" />
     <ClInclude Include="..\Modules\_sre\sre_constants.h" />
@@ -415,6 +415,7 @@
     <ClCompile Include="..\Modules\sha1module.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_SHA2.c" />
     <ClCompile Include="..\Modules\sha2module.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA3.c" />
     <ClCompile Include="..\Modules\signalmodule.c" />
     <ClCompile Include="..\Modules\_statisticsmodule.c" />
     <ClCompile Include="..\Modules\symtablemodule.c" />
