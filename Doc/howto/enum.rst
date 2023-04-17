@@ -865,17 +865,19 @@ Some rules:
 4. When another data type is mixed in, the :attr:`value` attribute is *not the
    same* as the enum member itself, although it is equivalent and will compare
    equal.
-5. %-style formatting:  ``%s`` and ``%r`` call the :class:`Enum` class's
+5. A ``data type`` is a mixin that defines :meth:`__new__`, or a
+   :class:`~dataclasses.dataclass`
+6. %-style formatting:  ``%s`` and ``%r`` call the :class:`Enum` class's
    :meth:`__str__` and :meth:`__repr__` respectively; other codes (such as
    ``%i`` or ``%h`` for IntEnum) treat the enum member as its mixed-in type.
-6. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
+7. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
    and :func:`format` will use the enum's :meth:`__str__` method.
 
 .. note::
 
    Because :class:`IntEnum`, :class:`IntFlag`, and :class:`StrEnum` are
    designed to be drop-in replacements for existing constants, their
-   :meth:`__str__` method has been reset to their data types
+   :meth:`__str__` method has been reset to their data types'
    :meth:`__str__` method.
 
 When to use :meth:`__new__` vs. :meth:`__init__`

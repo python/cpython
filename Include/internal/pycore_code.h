@@ -441,32 +441,6 @@ adaptive_counter_backoff(uint16_t counter) {
 
 /* Line array cache for tracing */
 
-extern int _PyCode_CreateLineArray(PyCodeObject *co);
-
-static inline int
-_PyCode_InitLineArray(PyCodeObject *co)
-{
-    if (co->_co_linearray) {
-        return 0;
-    }
-    return _PyCode_CreateLineArray(co);
-}
-
-static inline int
-_PyCode_LineNumberFromArray(PyCodeObject *co, int index)
-{
-    assert(co->_co_linearray != NULL);
-    assert(index >= 0);
-    assert(index < Py_SIZE(co));
-    if (co->_co_linearray_entry_size == 2) {
-        return ((int16_t *)co->_co_linearray)[index];
-    }
-    else {
-        assert(co->_co_linearray_entry_size == 4);
-        return ((int32_t *)co->_co_linearray)[index];
-    }
-}
-
 typedef struct _PyShimCodeDef {
     const uint8_t *code;
     int codelen;
@@ -499,6 +473,10 @@ extern uint32_t _Py_next_func_version;
 #define COMPARISON_EQUALS 8
 
 #define COMPARISON_NOT_EQUALS (COMPARISON_UNORDERED | COMPARISON_LESS_THAN | COMPARISON_GREATER_THAN)
+
+extern int _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
+
+extern int _Py_GetBaseOpcode(PyCodeObject *code, int offset);
 
 
 #ifdef __cplusplus
