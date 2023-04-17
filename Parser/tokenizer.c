@@ -43,6 +43,28 @@
             tok->lineno++; \
             tok->col_offset = 0;
 
+#ifdef Py_DEBUG
+static inline tokenizer_mode* TOK_GET_MODE(struct tok_state* tok) {
+    assert(tok->tok_mode_stack_index >= 0);
+    assert(tok->tok_mode_stack_index < MAXLEVEL);
+    return &(tok->tok_mode_stack[tok->tok_mode_stack_index]);
+}
+static inline tokenizer_mode* TOK_NEXT_MODE(struct tok_state* tok) {
+    assert(tok->tok_mode_stack_index >= 0);
+    assert(tok->tok_mode_stack_index < MAXLEVEL);
+    return &(tok->tok_mode_stack[++tok->tok_mode_stack_index]);
+}
+static inline int *TOK_GET_BRACKET_MARK(tokenizer_mode* mode) {
+    assert(mode->bracket_mark_index >= 0);
+    assert(mode->bracket_mark_index < MAX_EXPR_NEXTING);
+    return &(mode->bracket_mark[mode->bracket_mark_index]);
+}
+#else
+#define TOK_GET_MODE(tok) (&(tok->tok_mode_stack[tok->tok_mode_stack_index]))
+#define TOK_NEXT_MODE(tok) (&(tok->tok_mode_stack[++tok->tok_mode_stack_index]))
+#define TOK_GET_BRACKET_MARK(mode) (&(mode->bracket_mark[mode->bracket_mark_index]))
+#endif
+
 /* Forward */
 static struct tok_state *tok_new(void);
 static int tok_nextc(struct tok_state *tok);
@@ -373,7 +395,7 @@ update_fstring_expr(struct tok_state *tok, char cur)
     assert(tok->cur != NULL);
 
     Py_ssize_t size = strlen(tok->cur);
-    tokenizer_mode *tok_mode = &(tok->tok_mode_stack[tok->tok_mode_stack_index]);
+    tokenizer_mode *tok_mode = TOK_GET_MODE(tok);
 
     switch (cur) {
         case '{':
@@ -2186,7 +2208,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
         p_start = tok->start;
         p_end = tok->cur;
-        tokenizer_mode *current_tok = &(tok->tok_mode_stack[++tok->tok_mode_stack_index]);
+        tokenizer_mode *current_tok = TOK_NEXT_MODE(tok);
         current_tok->kind = TOK_FSTRING_MODE;
         current_tok->f_string_quote = quote;
         current_tok->f_string_quote_size = quote_size;
@@ -2266,7 +2288,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                      * does the initial quote matches with f-strings quotes
                      * and if it is, then this must be a missing '}' token
                      * so raise the proper error */
-                    tokenizer_mode *current_tok = &(tok->tok_mode_stack[tok->tok_mode_stack_index]);
+                    tokenizer_mode *current_tok = TOK_GET_MODE(tok);
                     if (current_tok->f_string_quote == quote &&
                         current_tok->f_string_quote_size == quote_size) {
                         return MAKE_TOKEN(syntaxerror(tok, "f-string: expecting '}'", start));
@@ -2318,7 +2340,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     /* Punctuation character */
     int is_punctuation = (c == ':' || c == '}' || c == '!' || c == '{');
     if (is_punctuation && tok->tok_mode_stack_index > 0 && current_tok->bracket_mark_index >= 0) {
-        int mark = current_tok->bracket_mark[current_tok->bracket_mark_index];
+        int mark = *TOK_GET_BRACKET_MARK(current_tok);
         /* This code block gets executed before the bracket_stack is incremented
          * by the `{` case, so for ensuring that we are on the 0th level, we need
          * to adjust it manually */
@@ -2372,7 +2394,6 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         if (tok->tok_mode_stack_index > 0) {
             current_tok->bracket_stack++;
         }
-
         break;
     case ')':
     case ']':
@@ -2397,7 +2418,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             if (tok->tok_mode_stack_index > 0 && opening == '{') {
                 assert(current_tok->bracket_stack >= 0);
                 int previous_bracket = current_tok->bracket_stack - 1;
-                if (previous_bracket == current_tok->bracket_mark[current_tok->bracket_mark_index]) {
+                if (previous_bracket == *TOK_GET_BRACKET_MARK(current_tok)) {
                     return MAKE_TOKEN(syntaxerror(tok, "f-string: unmatched '%c'", c));
                 }
             }
@@ -2417,7 +2438,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
         if (tok->tok_mode_stack_index > 0) {
             current_tok->bracket_stack--;
-            if (c == '}' && current_tok->bracket_stack == current_tok->bracket_mark[current_tok->bracket_mark_index]) {
+            if (c == '}' && current_tok->bracket_stack == *TOK_GET_BRACKET_MARK(current_tok)) {
                 current_tok->bracket_mark_index--;
                 current_tok->kind = TOK_FSTRING_MODE;
             }
@@ -2461,10 +2482,10 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
             if (current_tok->bracket_mark_index >= MAX_EXPR_NEXTING) {
                 return MAKE_TOKEN(syntaxerror(tok, "f-string: expressions nested too deeply"));
             }
-
-            current_tok->bracket_mark[++current_tok->bracket_mark_index] = current_tok->bracket_stack;
+            current_tok->bracket_mark_index++;
+            *TOK_GET_BRACKET_MARK(current_tok) = current_tok->bracket_stack;
         }
-        tok->tok_mode_stack[tok->tok_mode_stack_index].kind = TOK_REGULAR_MODE;
+        TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
         return tok_get_normal_mode(tok, current_tok, token);
     }
 
@@ -2529,8 +2550,9 @@ f_string_middle:
             if (peek != '{' || in_format_spec) {
                 tok_backup(tok, peek);
                 tok_backup(tok, c);
-                current_tok->bracket_mark[++current_tok->bracket_mark_index] = current_tok->bracket_stack;
-                tok->tok_mode_stack[tok->tok_mode_stack_index].kind = TOK_REGULAR_MODE;
+                current_tok->bracket_mark_index++;
+                *TOK_GET_BRACKET_MARK(current_tok) = current_tok->bracket_stack;
+                TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
                 p_start = tok->start;
                 p_end = tok->cur;
             } else {
@@ -2556,7 +2578,7 @@ f_string_middle:
             } else {
                 tok_backup(tok, peek);
                 tok_backup(tok, c);
-                tok->tok_mode_stack[tok->tok_mode_stack_index].kind = TOK_REGULAR_MODE;
+                TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
                 p_start = tok->start;
                 p_end = tok->cur;
             }
@@ -2606,7 +2628,7 @@ f_string_middle:
 static int
 tok_get(struct tok_state *tok, struct token *token)
 {
-    tokenizer_mode *current_tok = &(tok->tok_mode_stack[tok->tok_mode_stack_index]);
+    tokenizer_mode *current_tok = TOK_GET_MODE(tok);
     if (current_tok->kind == TOK_REGULAR_MODE) {
         return tok_get_normal_mode(tok, current_tok, token);
     } else {
