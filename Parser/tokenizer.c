@@ -2317,7 +2317,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
     /* Punctuation character */
     int is_punctuation = (c == ':' || c == '}' || c == '!' || c == '{');
-    if (is_punctuation && tok->tok_mode_stack_index > 0) {
+    if (is_punctuation && tok->tok_mode_stack_index > 0 && current_tok->bracket_mark_index >= 0) {
         int mark = current_tok->bracket_mark[current_tok->bracket_mark_index];
         /* This code block gets executed before the bracket_stack is incremented
          * by the `{` case, so for ensuring that we are on the 0th level, we need
