@@ -15,6 +15,7 @@ MS_WINDOWS = (sys.platform == 'win32')
 
 SETUP_TESTCPPEXT = support.findfile('setup_testcppext.py')
 
+
 @support.requires_subprocess()
 class TestCPPExt(unittest.TestCase):
     def test_build_cpp11(self):
