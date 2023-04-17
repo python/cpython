@@ -506,8 +506,6 @@ Modules/cjkcodecs/_codecs_iso2022.c	jisx0208_init	initialized	-
 Modules/cjkcodecs/_codecs_iso2022.c	jisx0212_init	initialized	-
 Modules/cjkcodecs/_codecs_iso2022.c	jisx0213_init	initialized	-
 Modules/cjkcodecs/_codecs_iso2022.c	gb2312_init	initialized	-
-Modules/cjkcodecs/cjkcodecs.h	-	codec_list	-
-Modules/cjkcodecs/cjkcodecs.h	-	mapping_list	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-
 Modules/readline.c	-	libedit_history_start	-
