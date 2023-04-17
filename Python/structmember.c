@@ -113,7 +113,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         PyErr_SetString(
             PyExc_SystemError,
             "PyMember_SetOne used with Py_RELATIVE_OFFSET");
-        return NULL;
+        return -1;
     }
 
     addr += l->offset;
