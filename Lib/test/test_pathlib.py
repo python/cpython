@@ -1774,13 +1774,13 @@ class _BasePathTest(object):
 
     def test_iterdir(self):
         P = self.cls
-        p = P(BASE)
-        it = p.iterdir()
-        paths = set(it)
-        expected = ['dirA', 'dirB', 'dirC', 'dirE', 'fileA']
-        if os_helper.can_symlink():
-            expected += ['linkA', 'linkB', 'brokenLink', 'brokenLinkLoop']
-        self.assertEqual(paths, { P(BASE, q) for q in expected })
+        for p in [P(BASE), P(BASE, '')]:
+            it = p.iterdir()
+            paths = set(it)
+            expected = ['dirA', 'dirB', 'dirC', 'dirE', 'fileA']
+            if os_helper.can_symlink():
+                expected += ['linkA', 'linkB', 'brokenLink', 'brokenLinkLoop']
+            self.assertEqual(paths, { P(BASE, q) for q in expected })
 
     @os_helper.skip_unless_symlink
     def test_iterdir_symlink(self):

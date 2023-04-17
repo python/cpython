@@ -750,10 +750,11 @@ class Path(PurePath):
     def _make_child_relpath(self, name):
         path_str = str(self)
         tail = self._tail
-        if tail:
+        if tail and tail[-1]:
             path_str = f'{path_str}{self._flavour.sep}{name}'
         elif path_str != '.':
             path_str = f'{path_str}{name}'
+            tail = tail[:-1]
         else:
             path_str = name
         path = type(self)(path_str)
