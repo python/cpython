@@ -258,7 +258,7 @@ csv
 
 * Add :data:`~csv.QUOTE_NOTNULL` and :data:`~csv.QUOTE_STRINGS` flags to
   provide finer grained control of ``None`` and empty strings by
-  :class:`~csv.reader` and :class:`~csv.writer` objects.
+  :class:`~csv.writer` objects.
 
 inspect
 -------
