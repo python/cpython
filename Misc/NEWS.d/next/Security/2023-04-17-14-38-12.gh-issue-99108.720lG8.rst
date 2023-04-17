@@ -1,0 +1,2 @@
+Upgrade built-in hashlib SHA3 implementation to a verified implementation
+from the HACL* project.
