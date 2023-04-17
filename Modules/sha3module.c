@@ -103,7 +103,7 @@ Return a new SHA3 hash object.
 
 static PyObject *
 py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
-/*[clinic end generated code: output=90409addc5d5e8b0 input=bcfcdf2e4368347a]*/
+/*[clinic end generated code: output=90409addc5d5e8b0 input=637e5f8f6a93982a]*/
 {
     Py_buffer buf = {NULL, NULL};
     SHA3State *state = _PyType_GetModuleState(type);
