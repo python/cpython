@@ -38,13 +38,13 @@ enum tokenizer_mode_kind_t {
     TOK_FSTRING_MODE,
 };
 
-#define MAX_EXPR_NEXTING 2
+#define MAX_EXPR_NEXTING 3
 
 typedef struct _tokenizer_mode {
     enum tokenizer_mode_kind_t kind;
 
     int bracket_stack;
-    int bracket_mark[MAX_EXPR_NEXTING+1];
+    int bracket_mark[MAX_EXPR_NEXTING];
     int bracket_mark_index;
 
     char f_string_quote;
