@@ -343,7 +343,26 @@ class FileHash:
         return f'<FileHash mode: {self.mode} value: {self.value}>'
 
 
-class Distribution(metaclass=abc.ABCMeta):
+class DeprecatedNonAbstract:
+    def __new__(cls, *args, **kwargs):
+        all_names = {
+            name for subclass in inspect.getmro(cls) for name in vars(subclass)
+        }
+        abstract = {
+            name
+            for name in all_names
+            if getattr(getattr(cls, name), '__isabstractmethod__', False)
+        }
+        if abstract:
+            warnings.warn(
+                f"Unimplemented abstract methods {abstract}",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return super().__new__(cls)
+
+
+class Distribution(DeprecatedNonAbstract):
     """A Python distribution package."""
 
     @abc.abstractmethod
