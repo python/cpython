@@ -38,7 +38,7 @@ enum tokenizer_mode_kind_t {
     TOK_FSTRING_MODE,
 };
 
-#define MAX_EXPR_NEXTING 3
+#define MAX_EXPR_NESTING 3
 
 typedef struct _tokenizer_mode {
     enum tokenizer_mode_kind_t kind;
