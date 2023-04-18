@@ -416,7 +416,7 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
             Py_ssize_t nargs, PyObject *kwargs)
 {
     if (!PyType_Check(type)) {
-        const char *e = "called match pattern must be a type";
+        const char *e = "called match pattern must be a class";
         _PyErr_Format(tstate, PyExc_TypeError, e);
         return NULL;
     }
