@@ -597,8 +597,6 @@ insertptr(PyObject *mod, char *name, void *value)
 static int
 exec_module(PyObject* m)
 {
-    int st;
-
     /* constants for the locking() function's mode argument */
     INSERTINT(m, "LK_LOCK", _LK_LOCK);
     INSERTINT(m, "LK_NBLCK", _LK_NBLCK);
@@ -651,7 +649,7 @@ exec_module(PyObject* m)
     if (version == NULL) {
         return -1;
     }
-    st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
+    int st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
     Py_DECREF(version);
     if (st < 0) {
         return -1;
