@@ -1128,7 +1128,7 @@ class _VersionAction(Action):
 
     def __init__(self,
                  option_strings,
-                 version,
+                 version=None,
                  dest=SUPPRESS,
                  default=SUPPRESS,
                  help="show program's version number and exit"):
@@ -1142,6 +1142,8 @@ class _VersionAction(Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         version = self.version
+        if version is None:
+            version = parser.version
         formatter = parser._get_formatter()
         formatter.add_text(version)
         parser._print_message(formatter.format_help(), _sys.stdout)
