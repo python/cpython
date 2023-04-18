@@ -13,8 +13,7 @@ import unittest
 import argparse
 import warnings
 
-from contextlib import redirect_stderr
-from test.support import os_helper
+from test.support import os_helper, captured_stderr
 from unittest import mock
 
 
@@ -5365,10 +5364,9 @@ class TestIntermixedArgs(TestCase):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         parser.add_argument('--foo', nargs="*")
         parser.add_argument('foo')
-        with io.StringIO() as buf, redirect_stderr(buf):
+        with captured_stderr() as stderr:
             parser.parse_intermixed_args(['hello', '--foo'])
-            output = buf.getvalue()
-            self.assertIn("UserWarning", output)
+            self.assertIn("UserWarning", stderr.getvalue())
 
 class TestIntermixedMessageContentError(TestCase):
     # case where Intermixed gives different error message
