@@ -19,26 +19,27 @@ typedef struct {
     PyTypeObject *writer_type;
     PyTypeObject *multibytecodec_type;
     PyObject *str_write;
-} _multibytecodec_state;
+} module_state;
 
-static _multibytecodec_state *
-_multibytecodec_get_state(PyObject *module)
+static module_state *
+get_module_state(PyObject *module)
 {
-    _multibytecodec_state *state = PyModule_GetState(module);
+    module_state *state = PyModule_GetState(module);
     assert(state != NULL);
     return state;
 }
 
 static struct PyModuleDef _multibytecodecmodule;
-static _multibytecodec_state *
-_multibyte_codec_find_state_by_type(PyTypeObject *type)
+
+static module_state *
+find_state_by_def(PyTypeObject *type)
 {
     PyObject *module = PyType_GetModuleByDef(type, &_multibytecodecmodule);
     assert(module != NULL);
-    return _multibytecodec_get_state(module);
+    return get_module_state(module);
 }
 
-#define clinic_get_state() _multibyte_codec_find_state_by_type(type)
+#define clinic_get_state() find_state_by_def(type)
 /*[clinic input]
 module _multibytecodec
 class _multibytecodec.MultibyteCodec "MultibyteCodecObject *" "clinic_get_state()->multibytecodec_type"
@@ -1040,7 +1041,7 @@ mbiencoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (codec == NULL)
         goto errorexit;
 
-    _multibytecodec_state *state = _multibyte_codec_find_state_by_type(type);
+    module_state *state = find_state_by_def(type);
     if (!MultibyteCodec_Check(state, codec)) {
         PyErr_SetString(PyExc_TypeError, "codec is unexpected type");
         goto errorexit;
@@ -1315,7 +1316,7 @@ mbidecoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (codec == NULL)
         goto errorexit;
 
-    _multibytecodec_state *state = _multibyte_codec_find_state_by_type(type);
+    module_state *state = find_state_by_def(type);
     if (!MultibyteCodec_Check(state, codec)) {
         PyErr_SetString(PyExc_TypeError, "codec is unexpected type");
         goto errorexit;
@@ -1630,7 +1631,7 @@ mbstreamreader_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (codec == NULL)
         goto errorexit;
 
-    _multibytecodec_state *state = _multibyte_codec_find_state_by_type(type);
+    module_state *state = find_state_by_def(type);
     if (!MultibyteCodec_Check(state, codec)) {
         PyErr_SetString(PyExc_TypeError, "codec is unexpected type");
         goto errorexit;
@@ -1735,7 +1736,7 @@ _multibytecodec_MultibyteStreamWriter_write_impl(MultibyteStreamWriterObject *se
                                                  PyObject *strobj)
 /*[clinic end generated code: output=68ade3aea26410ac input=199f26f68bd8425a]*/
 {
-    _multibytecodec_state *state = PyType_GetModuleState(cls);
+    module_state *state = PyType_GetModuleState(cls);
     assert(state != NULL);
     if (mbstreamwriter_iwrite(self, strobj, state->str_write)) {
         return NULL;
@@ -1766,7 +1767,7 @@ _multibytecodec_MultibyteStreamWriter_writelines_impl(MultibyteStreamWriterObjec
         return NULL;
     }
 
-    _multibytecodec_state *state = PyType_GetModuleState(cls);
+    module_state *state = PyType_GetModuleState(cls);
     assert(state != NULL);
     for (i = 0; i < PySequence_Length(lines); i++) {
         /* length can be changed even within this loop */
@@ -1817,7 +1818,7 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
 
     assert(PyBytes_Check(pwrt));
 
-    _multibytecodec_state *state = PyType_GetModuleState(cls);
+    module_state *state = PyType_GetModuleState(cls);
     assert(state != NULL);
 
     if (PyBytes_Size(pwrt) > 0) {
@@ -1853,7 +1854,7 @@ mbstreamwriter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (codec == NULL)
         goto errorexit;
 
-    _multibytecodec_state *state = _multibyte_codec_find_state_by_type(type);
+    module_state *state = find_state_by_def(type);
     if (!MultibyteCodec_Check(state, codec)) {
         PyErr_SetString(PyExc_TypeError, "codec is unexpected type");
         goto errorexit;
@@ -1963,7 +1964,7 @@ _multibytecodec___create_codec(PyObject *module, PyObject *arg)
     if (codec->codecinit != NULL && codec->codecinit(codec->config) != 0)
         return NULL;
 
-    _multibytecodec_state *state = _multibytecodec_get_state(module);
+    module_state *state = get_module_state(module);
     self = PyObject_GC_New(MultibyteCodecObject, state->multibytecodec_type);
     if (self == NULL)
         return NULL;
@@ -1976,7 +1977,7 @@ _multibytecodec___create_codec(PyObject *module, PyObject *arg)
 static int
 _multibytecodec_traverse(PyObject *mod, visitproc visit, void *arg)
 {
-    _multibytecodec_state *state = _multibytecodec_get_state(mod);
+    module_state *state = get_module_state(mod);
     Py_VISIT(state->multibytecodec_type);
     Py_VISIT(state->encoder_type);
     Py_VISIT(state->decoder_type);
@@ -1988,7 +1989,7 @@ _multibytecodec_traverse(PyObject *mod, visitproc visit, void *arg)
 static int
 _multibytecodec_clear(PyObject *mod)
 {
-    _multibytecodec_state *state = _multibytecodec_get_state(mod);
+    module_state *state = get_module_state(mod);
     Py_CLEAR(state->multibytecodec_type);
     Py_CLEAR(state->encoder_type);
     Py_CLEAR(state->decoder_type);
@@ -2022,7 +2023,7 @@ _multibytecodec_free(void *mod)
 static int
 _multibytecodec_exec(PyObject *mod)
 {
-    _multibytecodec_state *state = _multibytecodec_get_state(mod);
+    module_state *state = get_module_state(mod);
     state->str_write = PyUnicode_InternFromString("write");
     if (state->str_write == NULL) {
         return -1;
@@ -2056,7 +2057,7 @@ static PyModuleDef_Slot _multibytecodec_slots[] = {
 static struct PyModuleDef _multibytecodecmodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_multibytecodec",
-    .m_size = sizeof(_multibytecodec_state),
+    .m_size = sizeof(module_state),
     .m_methods = _multibytecodec_methods,
     .m_slots = _multibytecodec_slots,
     .m_traverse = _multibytecodec_traverse,
