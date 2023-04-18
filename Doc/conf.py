@@ -270,8 +270,6 @@ linkcheck_anchors_ignore = [
 ]
 
 linkcheck_ignore = [
-    # A code sample in Misc/NEWS.d/3.9.0a1.rst
-    'https:\/\/$',
     # The crawler gets "Anchor not found"
     r'https://github.com.+?#.*',
     r'https://devguide.python.org.+?/#.*',
