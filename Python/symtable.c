@@ -393,7 +393,7 @@ PySymtable_Lookup(struct symtable *st, void *key)
 long
 _PyST_GetSymbol(PySTEntryObject *ste, PyObject *name)
 {
-    PyObject *v;
+    PyObject *v = NULL;
     if (ste->ste_current_typeparam_overlay) {
         assert(ste->ste_typeparam_overlays != NULL);
         PyObject *inner_ste = PyDict_GetItemWithError(ste->ste_typeparam_overlays,
@@ -403,9 +403,9 @@ _PyST_GetSymbol(PySTEntryObject *ste, PyObject *name)
             return 0;
         }
         v = PyDict_GetItemWithError(((PySTEntryObject *)inner_ste)->ste_symbols, name);
-        assert(v != NULL);
+        assert(!PyErr_Occurred());
     }
-    else {
+    if (v == NULL) {
         v = PyDict_GetItemWithError(ste->ste_symbols, name);
     }
     if (!v)
