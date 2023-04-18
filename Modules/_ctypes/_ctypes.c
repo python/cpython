@@ -145,6 +145,10 @@ PyObject *ComError;  // Borrowed reference to: &PyComError_Type
 /****************************************************************/
 
 typedef struct {
+    PyTypeObject *Union_Type;
+} _ctypes_state;
+
+typedef struct {
     PyObject_HEAD
     PyObject *key;
     PyObject *dict;
@@ -4485,6 +4489,21 @@ static PyTypeObject Union_Type = {
     0,                                          /* tp_free */
 };
 
+static PyType_Slot union_type_slots[] = {
+    {Py_bf_getbuffer, PyCData_NewGetBuffer},
+    {Py_tp_traverse, PyCData_traverse},
+    {Py_tp_clear, PyCData_clear},
+    {Py_tp_init, Struct_init},
+    {Py_tp_new, GenericPyCData_new},
+    {0, NULL},
+};
+
+static PyType_Spec union_type_spec = {
+    .name = "_ctypes.Union",
+    .basicsize = sizeof(CDataObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .slots = &union_type_slots,
+};
 
 /******************************************************************/
 /*
@@ -5626,6 +5645,9 @@ _ctypes_add_types(PyObject *mod)
         } \
     } while (0)
 
+    _ctypes_state *st = PyModule_GetState(mod);
+    assert(st);
+
     /* Note:
        ob_type is the metatype (the 'type'), defaults to PyType_Type,
        tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
@@ -5653,11 +5675,20 @@ _ctypes_add_types(PyObject *mod)
      */
 
     MOD_ADD_TYPE(&Struct_Type, &PyCStructType_Type, &PyCData_Type);
-    MOD_ADD_TYPE(&Union_Type, &UnionType_Type, &PyCData_Type);
+    // MOD_ADD_TYPE(&Union_Type, &UnionType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&PyCPointer_Type, &PyCPointerType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&PyCArray_Type, &PyCArrayType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&Simple_Type, &PyCSimpleType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&PyCFuncPtr_Type, &PyCFuncPtrType_Type, &PyCData_Type);
+
+    st->Union_Type = (PyTypeObject *)PyType_FromModuleAndSpec(mod, &union_type_spec, &PyCData_Type);
+    if (st->Union_Type == NULL) {
+        return -1;
+    }
+    Py_SET_TYPE(st->Union_Type, &UnionType_Type);
+    if (PyModule_AddType(mod, st->Union_Type) < 0) {
+        return -1;
+    }
 
     /*************************************************
      *
@@ -5780,13 +5811,31 @@ static PyModuleDef_Slot _ctypes_module_slots[] = {
 };
 
 
+static int
+_ctypes_traverse(PyObject *mod, visitproc visit, void *arg)
+{
+    _ctypes_state *st = _PyModule_GetState(mod);
+    Py_VISIT(st->Union_Type);
+    return 0;
+}
+
+static int
+_ctypes_clear(PyObject *mod)
+{
+    _ctypes_state *st = _PyModule_GetState(mod);
+    Py_CLEAR(st->Union_Type);
+    return 0;
+}
+
 static struct PyModuleDef _ctypesmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_ctypes",
     .m_doc = _ctypes__doc__,
-    .m_size = 0,
+    .m_size = sizeof(_ctypes_state),
     .m_methods = _ctypes_module_methods,
     .m_slots = _ctypes_module_slots,
+    .m_traverse = _ctypes_traverse,
+    .m_clear = _ctypes_clear,
 };
 
 
