@@ -1016,9 +1016,10 @@ _Py_GenericAlias_impl(PyObject *origin, PyObject *args, bool starred) {
         unhashable = true;
     } else {
         result = _PyDict_GetItem_KnownHash(interp->genericalias_cache,
-                                            key, hash);
+                                           key, hash);
         if (result) {
             Py_INCREF(result);
+            Py_DECREF(args);
             goto finally;
         }
         if (PyErr_Occurred()) {
@@ -1043,6 +1044,9 @@ _Py_GenericAlias_impl(PyObject *origin, PyObject *args, bool starred) {
 
 error:
     Py_XDECREF(result);
+    if (arg_res == 1) {
+        Py_DECREF(args);
+    }
 finally:
     Py_XDECREF(key);
     Py_XDECREF(star);
