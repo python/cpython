@@ -2551,7 +2551,7 @@ f_string_middle:
                 tok_backup(tok, peek);
                 tok_backup(tok, c);
                 current_tok->bracket_mark_index++;
-                if (current_tok->bracket_mark_index >= MAX_EXPR_NEXTING) {
+                if (current_tok->bracket_mark_index >= MAX_EXPR_NESTING) {
                     return MAKE_TOKEN(syntaxerror(tok, "f-string: expressions nested too deeply"));
                 }
                 *TOK_GET_BRACKET_MARK(current_tok) = current_tok->bracket_stack;
