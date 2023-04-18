@@ -1070,7 +1070,8 @@ class _Unparser(NodeVisitor):
         self.write("**" + node.name)
 
     def visit_TypeAlias(self, node):
-        self.fill("type " + node.name)
+        self.fill("type ")
+        self.traverse(node.name)
         self._typeparams_helper(node.typeparams)
         self.write(" = ")
         self.traverse(node.value)

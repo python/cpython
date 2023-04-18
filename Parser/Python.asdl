@@ -25,7 +25,7 @@ module Python
 
           | Delete(expr* targets)
           | Assign(expr* targets, expr value, string? type_comment)
-          | TypeAlias(identifier name, typeparam* typeparams, expr value)
+          | TypeAlias(expr name, typeparam* typeparams, expr value)
           | AugAssign(expr target, operator op, expr value)
           -- 'simple' indicates that we annotate simple name without parens
           | AnnAssign(expr target, expr annotation, expr? value, int simple)
