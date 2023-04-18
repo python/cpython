@@ -207,6 +207,7 @@ static int symtable_enter_block(struct symtable *st, identifier name,
 static int symtable_exit_block(struct symtable *st);
 static int symtable_visit_stmt(struct symtable *st, stmt_ty s);
 static int symtable_visit_expr(struct symtable *st, expr_ty s);
+static int symtable_visit_typeparam(struct symtable *st, typeparam_ty s);
 static int symtable_visit_genexp(struct symtable *st, expr_ty s);
 static int symtable_visit_listcomp(struct symtable *st, expr_ty s);
 static int symtable_visit_setcomp(struct symtable *st, expr_ty s);
@@ -1195,11 +1196,19 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_SEQ(st, expr, s->v.FunctionDef.args->defaults);
         if (s->v.FunctionDef.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr, s->v.FunctionDef.args->kw_defaults);
+        if (s->v.FunctionDef.decorator_list)
+            VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
+        if (s->v.FunctionDef.typeparams) {
+            if (!symtable_enter_block(st, s->v.FunctionDef.name,
+                                      TypeParamBlock, (void *)s,
+                                      LOCATION(s))) {
+                VISIT_QUIT(st, 0);
+            }
+            VISIT_SEQ(st, typeparam, s->v.FunctionDef.typeparams);
+        }
         if (!symtable_visit_annotations(st, s, s->v.FunctionDef.args,
                                         s->v.FunctionDef.returns))
             VISIT_QUIT(st, 0);
-        if (s->v.FunctionDef.decorator_list)
-            VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
         if (!symtable_enter_block(st, s->v.FunctionDef.name,
                                   FunctionBlock, (void *)s,
                                   LOCATION(s)))
@@ -1208,6 +1217,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT_SEQ(st, stmt, s->v.FunctionDef.body);
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
+        if (s->v.FunctionDef.typeparams &&
+            !symtable_exit_block(st)) {
+            VISIT_QUIT(st, 0);
+        }
         break;
     case ClassDef_kind: {
         PyObject *tmp;
@@ -1721,6 +1734,33 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case Tuple_kind:
         VISIT_SEQ(st, expr, e->v.Tuple.elts);
+        break;
+    }
+    VISIT_QUIT(st, 1);
+}
+
+static int
+symtable_visit_typeparam(struct symtable *st, typeparam_ty tp)
+{
+    if (++st->recursion_depth > st->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+                        "maximum recursion depth exceeded during compilation");
+        VISIT_QUIT(st, 0);
+    }
+    switch(tp->kind) {
+    case TypeVar_kind:
+        if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_PARAM, LOCATION(tp)))
+            VISIT_QUIT(st, 0);
+        if (tp->v.TypeVar.bound)
+            VISIT(st, expr, tp->v.TypeVar.bound);
+        break;
+    case TypeVarTuple_kind:
+        if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_PARAM, LOCATION(tp)))
+            VISIT_QUIT(st, 0);
+        break;
+    case ParamSpec_kind:
+        if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_PARAM, LOCATION(tp)))
+            VISIT_QUIT(st, 0);
         break;
     }
     VISIT_QUIT(st, 1);

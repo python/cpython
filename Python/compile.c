@@ -196,6 +196,7 @@ enum {
     COMPILER_SCOPE_ASYNC_FUNCTION,
     COMPILER_SCOPE_LAMBDA,
     COMPILER_SCOPE_COMPREHENSION,
+    COMPILER_SCOPE_TYPE_PARAMS,
 };
 
 typedef struct {
@@ -2120,6 +2121,21 @@ wrap_in_stopiteration_handler(struct compiler *c)
 }
 
 static int
+compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
+{
+    if (!typeparams) {
+        return SUCCESS;
+    }
+
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(typeparams); i++) {
+        typeparam_ty typeparam = asdl_seq_GET(typeparams, i);
+        RETURN_IF_ERROR(compiler_visit_expr(c, typeparam->constraint));
+        RETURN_IF_ERROR(compiler_visit_expr(c, typeparam->bound));
+    }
+    return SUCCESS;
+}
+
+static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
     PyCodeObject *co;
@@ -2127,8 +2143,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     arguments_ty args;
     expr_ty returns;
     identifier name;
-    asdl_expr_seq* decos;
+    asdl_expr_seq *decos;
     asdl_stmt_seq *body;
+    asdl_typeparam_seq *typeparams;
     Py_ssize_t i, funcflags;
     int annotations;
     int scope_type;
@@ -2142,6 +2159,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         decos = s->v.AsyncFunctionDef.decorator_list;
         name = s->v.AsyncFunctionDef.name;
         body = s->v.AsyncFunctionDef.body;
+        typeparams = s->v.AsyncFunctionDef.typeparams;
 
         scope_type = COMPILER_SCOPE_ASYNC_FUNCTION;
     } else {
@@ -2152,6 +2170,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         decos = s->v.FunctionDef.decorator_list;
         name = s->v.FunctionDef.name;
         body = s->v.FunctionDef.body;
+        typeparams = s->v.FunctionDef.typeparams;
 
         scope_type = COMPILER_SCOPE_FUNCTION;
     }
@@ -2169,6 +2188,14 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (funcflags == -1) {
         return ERROR;
     }
+
+    if (typeparams) {
+        RETURN_IF_ERROR(
+            compiler_enter_scope(c, name, COMPILER_SCOPE_TYPE_PARAMS, (void *)typeparams, firstlineno)
+        );
+        RETURN_IF_ERROR(compiler_type_params(c, typeparams));
+    }
+
     annotations = compiler_visit_annotations(c, loc, args, returns);
     RETURN_IF_ERROR(annotations);
     if (annotations > 0) {
@@ -2200,6 +2227,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
     }
     co = assemble(c, 1);
+    if (typeparams) {
+        compiler_exit_scope(c);
+    }
     compiler_exit_scope(c);
     if (co == NULL) {
         Py_XDECREF(co);
