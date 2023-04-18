@@ -307,12 +307,16 @@ def get_docstring(node, clean=True):
 
 
 _line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
-def _splitlines_no_ff(source, maxlines=-1):
+def _splitlines_no_ff(source, maxlines=None):
+    """Split a string into lines ignoring form feed and other chars.
+
+    This mimics how the Python parser splits source code.
+    """
     lines = []
     for lineno, match in enumerate(_line_pattern.finditer(source), 1):
-        if maxlines > 0 and lineno > maxlines:
+        if maxlines is not None and lineno > maxlines:
             break
-        lines.append(match[0].replace("\r\n", "\n"))
+        lines.append(match[0])
     return lines
 
 
