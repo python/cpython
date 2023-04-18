@@ -1,1 +1,1 @@
-Fixed ``version`` and ``parent`` argument validation mechanism of :mod:`argparse`. Improved test coverage.
+Fixed ``parent`` argument validation mechanism of :mod:`argparse`. Improved test coverage.
