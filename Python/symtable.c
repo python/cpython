@@ -78,6 +78,8 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_symbols = NULL;
     ste->ste_varnames = NULL;
     ste->ste_children = NULL;
+    ste->ste_current_typeparam_overlay = NULL;
+    ste->ste_typeparam_overlays = NULL;
 
     ste->ste_directives = NULL;
 
@@ -141,6 +143,8 @@ ste_dealloc(PySTEntryObject *ste)
     Py_XDECREF(ste->ste_varnames);
     Py_XDECREF(ste->ste_children);
     Py_XDECREF(ste->ste_directives);
+    Py_XDECREF(ste->ste_typeparam_overlays);
+    Py_XDECREF(ste->ste_current_typeparam_overlay);
     PyObject_Free(ste);
 }
 
@@ -389,7 +393,21 @@ PySymtable_Lookup(struct symtable *st, void *key)
 long
 _PyST_GetSymbol(PySTEntryObject *ste, PyObject *name)
 {
-    PyObject *v = PyDict_GetItemWithError(ste->ste_symbols, name);
+    PyObject *v;
+    if (ste->ste_current_typeparam_overlay) {
+        assert(ste->ste_typeparam_overlays != NULL);
+        PyObject *inner_ste = PyDict_GetItemWithError(ste->ste_typeparam_overlays,
+                                                      ste->ste_current_typeparam_overlay);
+        if (inner_ste == NULL) {
+            assert(PyErr_Occurred());
+            return 0;
+        }
+        v = PyDict_GetItemWithError(((PySTEntryObject *)inner_ste)->ste_symbols, name);
+        assert(v != NULL);
+    }
+    else {
+        v = PyDict_GetItemWithError(ste->ste_symbols, name);
+    }
     if (!v)
         return 0;
     assert(PyLong_Check(v));
@@ -400,6 +418,7 @@ int
 _PyST_GetScope(PySTEntryObject *ste, PyObject *name)
 {
     long symbol = _PyST_GetSymbol(ste, name);
+    assert(!PyErr_Occurred());
     return (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
 }
 
@@ -960,6 +979,46 @@ symtable_exit_block(struct symtable *st)
 }
 
 static int
+symtable_enter_typeparam_overlay(struct symtable *st, identifier name,
+                                 void *ast, int lineno, int col_offset,
+                                 int end_lineno, int end_col_offset)
+{
+    PySTEntryObject *ste = ste_new(st, name, TypeParamBlock, ast, lineno, col_offset,
+                                   end_lineno, end_col_offset);
+    if (ste == NULL) {
+        return 0;
+    }
+    PyObject *key = PyLong_FromVoidPtr(ast);
+    if (key == NULL) {
+        Py_DECREF(ste);
+        return 0;
+    }
+    struct _symtable_entry *cur = st->st_cur;
+    cur->ste_current_typeparam_overlay = Py_NewRef(key);
+    if (cur->ste_typeparam_overlays == NULL) {
+        cur->ste_typeparam_overlays = PyDict_New();
+        if (cur->ste_typeparam_overlays == NULL) {
+            Py_DECREF(key);
+            Py_DECREF(ste);
+            return 0;
+        }
+    }
+    if (PyDict_SetItem(cur->ste_typeparam_overlays, key, (PyObject *)ste) < 0) {
+        Py_DECREF(key);
+        Py_DECREF(ste);
+        return 0;
+    }
+    Py_DECREF(key);
+    Py_DECREF(ste);
+    return 1;
+}
+
+static int symtable_leave_typeparam_overlay(struct symtable *st) {
+    Py_CLEAR(st->st_cur->ste_current_typeparam_overlay);
+    return 1;
+}
+
+static int
 symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
                      void *ast, int lineno, int col_offset,
                      int end_lineno, int end_col_offset)
@@ -1012,6 +1071,47 @@ symtable_lookup(struct symtable *st, PyObject *name)
     long ret = _PyST_GetSymbol(st->st_cur, mangled);
     Py_DECREF(mangled);
     return ret;
+}
+
+static int
+symtable_add_typeparam(struct symtable *st, PyObject *name,
+                       int lineno, int col_offset, int end_lineno, int end_col_offset)
+{
+    PyObject *typeparams;
+    PyObject *current;
+    if (!(typeparams = PyDict_GetItemWithError(st->st_cur->ste_typeparam_overlays,
+                                               st->st_cur->ste_current_typeparam_overlay))) {
+        if (PyErr_Occurred()) {
+            return 0;
+        }
+        else {
+            PyErr_SetString(PyExc_SystemError, "Invalid typeparam overlay");
+            return 0;
+        }
+    }
+    assert(Py_IS_TYPE(typeparams, &PySTEntry_Type));
+    struct _symtable_entry *ste = (struct _symtable_entry *)typeparams;
+    PyObject *dict = ste->ste_symbols;
+    if ((current = PyDict_GetItemWithError(dict, name))) {
+        PyErr_Format(PyExc_SyntaxError, "duplicate type parameter '%U'", name);
+        PyErr_RangedSyntaxLocationObject(st->st_filename,
+                                            lineno, col_offset + 1,
+                                            end_lineno, end_col_offset + 1);
+        return 0;
+    }
+    else if (PyErr_Occurred()) {
+        return 0;
+    }
+    PyObject *flags = PyLong_FromLong(CELL << SCOPE_OFFSET);
+    if (flags == NULL) {
+        return 0;
+    }
+    if (PyDict_SetItem(dict, name, flags) < 0) {
+        Py_DECREF(flags);
+        return 0;
+    }
+    Py_DECREF(flags);
+    return 1;
 }
 
 static int
@@ -1199,9 +1299,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.FunctionDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
         if (s->v.FunctionDef.typeparams) {
-            if (!symtable_enter_block(st, s->v.FunctionDef.name,
-                                      TypeParamBlock, (void *)s,
-                                      LOCATION(s))) {
+            if (!symtable_enter_typeparam_overlay(st, s->v.FunctionDef.name,
+                                                  (void *)s->v.FunctionDef.typeparams,
+                                                  LOCATION(s))) {
                 VISIT_QUIT(st, 0);
             }
             VISIT_SEQ(st, typeparam, s->v.FunctionDef.typeparams);
@@ -1218,7 +1318,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
         if (s->v.FunctionDef.typeparams &&
-            !symtable_exit_block(st)) {
+            !symtable_leave_typeparam_overlay(st)) {
             VISIT_QUIT(st, 0);
         }
         break;
@@ -1749,17 +1849,17 @@ symtable_visit_typeparam(struct symtable *st, typeparam_ty tp)
     }
     switch(tp->kind) {
     case TypeVar_kind:
-        if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_PARAM, LOCATION(tp)))
+        if (!symtable_add_typeparam(st, tp->v.TypeVar.name, LOCATION(tp)))
             VISIT_QUIT(st, 0);
         if (tp->v.TypeVar.bound)
             VISIT(st, expr, tp->v.TypeVar.bound);
         break;
     case TypeVarTuple_kind:
-        if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_PARAM, LOCATION(tp)))
+        if (!symtable_add_typeparam(st, tp->v.TypeVarTuple.name, LOCATION(tp)))
             VISIT_QUIT(st, 0);
         break;
     case ParamSpec_kind:
-        if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_PARAM, LOCATION(tp)))
+        if (!symtable_add_typeparam(st, tp->v.ParamSpec.name, LOCATION(tp)))
             VISIT_QUIT(st, 0);
         break;
     }

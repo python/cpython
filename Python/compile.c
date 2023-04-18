@@ -2129,8 +2129,19 @@ compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
 
     for (Py_ssize_t i = 0; i < asdl_seq_LEN(typeparams); i++) {
         typeparam_ty typeparam = asdl_seq_GET(typeparams, i);
-        RETURN_IF_ERROR(compiler_visit_expr(c, typeparam->constraint));
-        RETURN_IF_ERROR(compiler_visit_expr(c, typeparam->bound));
+        // TODO(PEP 695): Actually emit a TypeVar
+        ADDOP_LOAD_CONST(c, LOC(typeparam), Py_None);
+        switch(typeparam->kind) {
+        case TypeVar_kind:
+            compiler_nameop(c, LOC(typeparam), typeparam->v.TypeVar.name, Store);
+            break;
+        case TypeVarTuple_kind:
+            compiler_nameop(c, LOC(typeparam), typeparam->v.TypeVarTuple.name, Store);
+            break;
+        case ParamSpec_kind:
+            compiler_nameop(c, LOC(typeparam), typeparam->v.ParamSpec.name, Store);
+            break;
+        }
     }
     return SUCCESS;
 }
@@ -2190,9 +2201,12 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     if (typeparams) {
-        RETURN_IF_ERROR(
-            compiler_enter_scope(c, name, COMPILER_SCOPE_TYPE_PARAMS, (void *)typeparams, firstlineno)
-        );
+        assert(c->u->u_ste->ste_current_typeparam_overlay == NULL);
+        PyObject *ptr = PyLong_FromVoidPtr((void *)typeparams);
+        if (ptr == NULL) {
+            return ERROR;
+        }
+        c->u->u_ste->ste_current_typeparam_overlay = ptr;
         RETURN_IF_ERROR(compiler_type_params(c, typeparams));
     }
 
@@ -2227,10 +2241,10 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
     }
     co = assemble(c, 1);
-    if (typeparams) {
-        compiler_exit_scope(c);
-    }
     compiler_exit_scope(c);
+    if (typeparams) {
+        Py_CLEAR(c->u->u_ste->ste_current_typeparam_overlay);
+    }
     if (co == NULL) {
         Py_XDECREF(co);
         return ERROR;
@@ -2242,6 +2256,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     Py_DECREF(co);
 
     RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
+    assert(c->u->u_ste->ste_current_typeparam_overlay == NULL);
     return compiler_nameop(c, loc, name, Store);
 }
 
