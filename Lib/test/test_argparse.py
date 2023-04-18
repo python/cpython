@@ -1308,6 +1308,19 @@ class TestPositionalsActionAppend(ParserTestCase):
         ('a b c', NS(spam=['a', ['b', 'c']])),
     ]
 
+
+class TestPositionalsActionExtend(ParserTestCase):
+    """Test the 'extend' action"""
+
+    argument_signatures = [
+        Sig('spam', action='extend'),
+        Sig('spam', action='extend', nargs=2),
+    ]
+    failures = ['', '--foo', 'a', 'a b', 'a b c d']
+    successes = [
+        ('a b c', NS(spam=['a', 'b', 'c'])),
+    ]
+
 # ========================================
 # Combined optionals and positionals tests
 # ========================================
@@ -1342,6 +1355,36 @@ class TestOptionalsAlmostNumericAndPositionals(ParserTestCase):
         ('a', NS(x='a', y=False)),
         ('-k4', NS(x=None, y=True)),
         ('-k4 a', NS(x='a', y=True)),
+    ]
+
+
+class TestOptionalsAndPositionalsAppend(ParserTestCase):
+    """Tests negative number args when numeric options are present"""
+
+    argument_signatures = [
+        Sig('foo', nargs='*', action='append'),
+        Sig('--bar'),
+    ]
+    failures = ['-foo']
+    successes = [
+        ('a b', NS(foo=[['a', 'b']], bar=None)),
+        ('--bar a b', NS(foo=[['b']], bar='a')),
+        ('a b --bar c', NS(foo=[['a', 'b']], bar='c')),
+    ]
+
+
+class TestOptionalsAndPositionalsExtend(ParserTestCase):
+    """Tests negative number args when numeric options are present"""
+
+    argument_signatures = [
+        Sig('foo', nargs='*', action='extend'),
+        Sig('--bar'),
+    ]
+    failures = ['-foo']
+    successes = [
+        ('a b', NS(foo=['a', 'b'], bar=None)),
+        ('--bar a b', NS(foo=['b'], bar='a')),
+        ('a b --bar c', NS(foo=['a', 'b'], bar='c')),
     ]
 
 
