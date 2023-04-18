@@ -193,23 +193,12 @@ typedef struct trampoline_api_st trampoline_api_t;
 #define trampoline_api _PyRuntime.ceval.perf.trampoline_api
 #define perf_map_file _PyRuntime.ceval.perf.map_file
 
-static void *
-perf_map_get_file(void)
-{
-    return PyOS_PerfMapState_Init();;
-}
-
-static void
-perf_map_close(void)
-{
-    PyOS_PerfMapState_Fini();
-}
 
 static void
 perf_map_write_entry(void *state, const void *code_addr,
                          unsigned int code_size, PyCodeObject *co)
 {
-    assert(state != NULL);    
+    assert(state != NULL);
     const char *entry = "";
     if (co->co_qualname != NULL) {
         entry = PyUnicode_AsUTF8(co->co_qualname);
@@ -224,9 +213,9 @@ perf_map_write_entry(void *state, const void *code_addr,
 }
 
 _PyPerf_Callbacks _Py_perfmap_callbacks = {
-    &perf_map_get_file,
+    NULL,
     &perf_map_write_entry,
-    &perf_map_close
+    NULL,
 };
 
 static int
@@ -430,7 +419,7 @@ _PyPerfTrampoline_Init(int activate)
         if (new_code_arena() < 0) {
             return -1;
         }
-        if (trampoline_api.state == NULL) {
+        if (trampoline_api.state == NULL && trampoline_api.init_state != NULL) {
             void *state = trampoline_api.init_state();
             if (state == NULL) {
                 return -1;
@@ -456,10 +445,6 @@ _PyPerfTrampoline_Fini(void)
         tstate->interp->eval_frame = NULL;
     }
     free_code_arenas();
-    if (trampoline_api.state != NULL) {
-        trampoline_api.free_state();
-        trampoline_api.state = NULL;
-    }
     extra_code_index = -1;
 #endif
     return 0;
@@ -472,6 +457,7 @@ _PyPerfTrampoline_AfterFork_Child(void)
     // Restart trampoline in file in child.
     int was_active = _PyIsPerfTrampolineActive();
     _PyPerfTrampoline_Fini();
+    _PyOS_PerfMapState_Fini();
     if (was_active) {
         _PyPerfTrampoline_Init(1);
     }

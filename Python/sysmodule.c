@@ -2130,7 +2130,7 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
     if (strcmp(backend, "perf") == 0) {
         _PyPerf_Callbacks cur_cb;
         _PyPerfTrampoline_GetCallbacks(&cur_cb);
-        if (cur_cb.init_state != _Py_perfmap_callbacks.init_state) {
+        if (cur_cb.write_state != _Py_perfmap_callbacks.write_state) {
             if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_callbacks) < 0 ) {
                 PyErr_SetString(PyExc_ValueError, "can't activate perf trampoline");
                 return NULL;

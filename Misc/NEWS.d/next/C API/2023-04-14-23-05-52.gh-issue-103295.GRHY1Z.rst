@@ -1,1 +1,3 @@
-The PyOS_WritePerfMapEntry function has been added to write entries to a perf map file that can be used for profiling Python programs. This function can be used to write the code address, code size, and entry name for a given section of code to the perf map file. The PyOS_PerfMapState_Init function is used to initialize the perf map state and create a perf map file in /tmp, and PyOS_PerfMapState_Fini is used to clean up the state and close the file. Note that perf map is not supported on Windows.
+Introduced :c:func:`PyOS_WritePerfMapEntry`, :c:func:`_PyOS_PerfMapState_Init` and
+:c:func:`_PyOS_PerfMapState_Fini`. These allow extension modules (JIT compilers in
+particular) to write to perf-map files in a thread safe manner.
