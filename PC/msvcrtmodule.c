@@ -651,7 +651,7 @@ exec_module(PyObject* m)
     if (version == NULL) {
         return -1;
     }
-    int st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
+    st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
     Py_DECREF(version);
     if (st < 0) {
         return -1;
