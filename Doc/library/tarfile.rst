@@ -515,13 +515,20 @@ be finalized; only the internally used file object will be closed. See the
 
 .. attribute:: TarFile.errorlevel
 
-   If *errorlevel* is ``0``, all errors are ignored when using :meth:`TarFile.extract`
+   If *errorlevel* is ``0``, errors are ignored when using :meth:`TarFile.extract`
    and :meth:`TarFile.extractall`.
    Nevertheless, they appear as error messages in the debug output when
    *debug* is greater than 0.
-   If ``1`` (the default), all *fatal* errors are raised as :exc:`OSError`
-   exceptions. If ``2``, all *non-fatal* errors are raised as :exc:`TarError`
-   exceptions as well.
+   If ``1`` (the default), all *fatal* errors are raised as :exc:`OSError` or
+   :exc:`FilterError` exceptions. If ``2``, all *non-fatal* errors are raised
+   as :exc:`TarError` exceptions as well.
+
+   Some exceptions, e.g. ones caused by wrong argument types or data
+   corruption, are always raised.
+
+   Custom :ref:`extraction filters <tarfile-extraction-filter>`
+   should raise :exc:`FilterError` for *fatal* errors
+   and :exc:`ExtractError` for *non-fatal* ones.
 
    Note that when an exception is raised, the archive may be partially
    extracted. It is the user’s responsibility to clean up.

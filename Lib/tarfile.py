@@ -2272,10 +2272,7 @@ class TarFile(object):
                 self.utime(tarinfo, dirpath)
                 self.chmod(tarinfo, dirpath)
             except ExtractError as e:
-                if self.errorlevel > 1:
-                    raise
-                else:
-                    self._dbg(1, "tarfile: %s" % e)
+                self._handle_nonfatal_error(e)
 
     def extract(self, member, path="", set_attrs=True, *, numeric_owner=False,
                 filter=None):
@@ -2306,11 +2303,10 @@ class TarFile(object):
         unfiltered = tarinfo
         try:
             tarinfo = filter_function(tarinfo, path)
-        except TarError as e:
-            if self.errorlevel > 0:
-                raise
-            else:
-                self._dbg(1, "tarfile: %s" % e)
+        except (OSError, FilterError) as e:
+            self._handle_fatal_error(e)
+        except ExtractError as e:
+            self._handle_nonfatal_error(e)
         if tarinfo is None:
             self._dbg(2, "tarfile: Excluded %r" % unfiltered.name)
             return None
@@ -2329,18 +2325,28 @@ class TarFile(object):
                                  set_attrs=set_attrs,
                                  numeric_owner=numeric_owner)
         except OSError as e:
-            if self.errorlevel > 0:
-                raise
-            else:
-                if e.filename is None:
-                    self._dbg(1, "tarfile: %s" % e.strerror)
-                else:
-                    self._dbg(1, "tarfile: %s %r" % (e.strerror, e.filename))
+            self._handle_fatal_error(e)
         except ExtractError as e:
-            if self.errorlevel > 1:
-                raise
+            self._handle_nonfatal_error(e)
+
+    def _handle_nonfatal_error(self, e):
+        """Handle non-fatal error (ExtractError) according to errorlevel"""
+        if self.errorlevel > 1:
+            raise
+        else:
+            self._dbg(1, "tarfile: %s" % e)
+
+    def _handle_fatal_error(self, e):
+        """Handle "fatal" error according to self.errorlevel"""
+        if self.errorlevel > 0:
+            raise
+        elif isinstance(e, OSError):
+            if e.filename is None:
+                self._dbg(1, "tarfile: %s" % e.strerror)
             else:
-                self._dbg(1, "tarfile: %s" % e)
+                self._dbg(1, "tarfile: %s %r" % (e.strerror, e.filename))
+        else:
+            self._dbg(1, "tarfile: %s %s" % (type(e).__name__, e))
 
     def extractfile(self, member):
         """Extract a member from the archive as a file object. `member' may be
