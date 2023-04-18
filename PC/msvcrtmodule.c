@@ -578,19 +578,19 @@ insertptr(PyObject *mod, char *name, void *value)
 
 #define INSERTINT(MOD, NAME, VAL) do {                  \
     if (PyModule_AddIntConstant(MOD, NAME, VAL) < 0) {  \
-        goto error;                                     \
+        return -1;                                      \
     }                                                   \
 } while (0)
 
 #define INSERTPTR(MOD, NAME, PTR) do {      \
     if (insertptr(MOD, NAME, PTR) < 0) {    \
-        goto error;                         \
+        return -1;                          \
     }                                       \
 } while (0)
 
 #define INSERTSTR(MOD, NAME, CONST) do {                    \
     if (PyModule_AddStringConstant(MOD, NAME, CONST) < 0) { \
-        goto error;                                         \
+        return -1;                                          \
     }                                                       \
 } while (0)
 
