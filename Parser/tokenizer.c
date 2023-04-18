@@ -56,7 +56,7 @@ static inline tokenizer_mode* TOK_NEXT_MODE(struct tok_state* tok) {
 }
 static inline int *TOK_GET_BRACKET_MARK(tokenizer_mode* mode) {
     assert(mode->bracket_mark_index >= 0);
-    assert(mode->bracket_mark_index < MAX_EXPR_NEXTING);
+    assert(mode->bracket_mark_index < MAX_EXPR_NESTING);
     return &(mode->bracket_mark[mode->bracket_mark_index]);
 }
 #else
