@@ -2480,7 +2480,7 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
     if ((start_char == '{' && peek1 != '{') || (start_char == '}' && peek1 != '}')) {
         if (start_char == '{') {
             current_tok->bracket_mark_index++;
-            if (current_tok->bracket_mark_index >= MAX_EXPR_NEXTING) {
+            if (current_tok->bracket_mark_index >= MAX_EXPR_NESTING) {
                 return MAKE_TOKEN(syntaxerror(tok, "f-string: expressions nested too deeply"));
             }
             *TOK_GET_BRACKET_MARK(current_tok) = current_tok->bracket_stack;
