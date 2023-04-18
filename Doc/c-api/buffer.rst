@@ -99,7 +99,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       For :term:`contiguous` arrays, the value points to the beginning of
       the memory block.
 
-   .. c:member:: void *obj
+   .. c:member:: PyObject *obj
 
       A new reference to the exporting object. The reference is owned by
       the consumer and automatically decremented and set to ``NULL`` by
@@ -498,6 +498,13 @@ Buffer-related functions
 
    This function fails if *len* != *src->len*.
 
+
+.. c:function:: int PyObject_CopyData(PyObject *dest, PyObject *src)
+
+   Copy data from *src* to *dest* buffer. Can convert between C-style and
+   or Fortran-style buffers.
+
+   ``0`` is returned on success, ``-1`` on error.
 
 .. c:function:: void PyBuffer_FillContiguousStrides(int ndims, Py_ssize_t *shape, Py_ssize_t *strides, int itemsize, char order)
 

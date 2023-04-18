@@ -8,6 +8,7 @@ import threading
 import unittest
 import hashlib
 
+from test import support
 from test.support import hashlib_helper
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -16,6 +17,8 @@ try:
     import ssl
 except ImportError:
     ssl = None
+
+support.requires_working_socket(module=True)
 
 here = os.path.dirname(__file__)
 # Self-signed cert file for 'localhost'
@@ -614,6 +617,15 @@ class TestUrlopen(unittest.TestCase):
             pass
         self.assertEqual(handler.headers_received["Range"], "bytes=20-39")
 
+    def test_sending_headers_camel(self):
+        handler = self.start_server()
+        req = urllib.request.Request("http://localhost:%s/" % handler.port,
+                                     headers={"X-SoMe-hEader": "foobar"})
+        with urllib.request.urlopen(req):
+            pass
+        self.assertIn("X-Some-Header", handler.headers_received.keys())
+        self.assertNotIn("X-SoMe-hEader", handler.headers_received.keys())
+
     def test_basic(self):
         handler = self.start_server()
         with urllib.request.urlopen("http://localhost:%s" % handler.port) as open_url:
@@ -660,6 +672,24 @@ class TestUrlopen(unittest.TestCase):
                              (index, len(lines[index]), len(line)))
         self.assertEqual(index + 1, len(lines))
 
+    def test_issue16464(self):
+        # See https://bugs.python.org/issue16464
+        # and https://bugs.python.org/issue46648
+        handler = self.start_server([
+            (200, [], b'any'),
+            (200, [], b'any'),
+        ])
+        opener = urllib.request.build_opener()
+        request = urllib.request.Request("http://localhost:%s" % handler.port)
+        self.assertEqual(None, request.data)
+
+        opener.open(request, "1".encode("us-ascii"))
+        self.assertEqual(b"1", request.data)
+        self.assertEqual("1", request.get_header("Content-length"))
+
+        opener.open(request, "1234567890".encode("us-ascii"))
+        self.assertEqual(b"1234567890", request.data)
+        self.assertEqual("10", request.get_header("Content-length"))
 
 def setUpModule():
     thread_info = threading_helper.threading_setup()

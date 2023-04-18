@@ -28,7 +28,7 @@
    Copyright (c) 2002-2003 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2002-2006 Karl Waclawek <karl@waclawek.net>
    Copyright (c) 2003      Greg Stein <gstein@users.sourceforge.net>
-   Copyright (c) 2016-2021 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2022 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2018      Yury Gribov <tetra2005@gmail.com>
    Copyright (c) 2019      David Loffredo <loffredo@steptools.com>
    Licensed under the MIT license:
@@ -107,7 +107,9 @@
 
 #include <limits.h> // ULONG_MAX
 
-#if defined(_WIN32) && ! defined(__USE_MINGW_ANSI_STDIO)
+#if defined(_WIN32)                                                            \
+    && (! defined(__USE_MINGW_ANSI_STDIO)                                      \
+        || (1 - __USE_MINGW_ANSI_STDIO - 1 == 0))
 #  define EXPAT_FMT_ULL(midpart) "%" midpart "I64u"
 #  if defined(_WIN64) // Note: modifiers "td" and "zu" do not work for MinGW
 #    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "I64d"

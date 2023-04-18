@@ -7,7 +7,8 @@
 #endif
 
 #include "Python.h"
-#include "pycore_dtoa.h"
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
+#include "pycore_dtoa.h"          // _Py_dg_stdnan()
 /* we need DBL_MAX, DBL_MIN, DBL_EPSILON, DBL_MANT_DIG and FLT_RADIX from
    float.h.  We assume that FLT_RADIX is either 2 or 16. */
 #include <float.h>
@@ -89,14 +90,14 @@ else {
 
 /* Constants cmath.inf, cmath.infj, cmath.nan, cmath.nanj.
    cmath.nan and cmath.nanj are defined only when either
-   PY_NO_SHORT_FLOAT_REPR is *not* defined (which should be
+   _PY_SHORT_FLOAT_REPR is 1 (which should be
    the most common situation on machines using an IEEE 754
    representation), or Py_NAN is defined. */
 
 static double
 m_inf(void)
 {
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
     return _Py_dg_infinity(0);
 #else
     return Py_HUGE_VAL;
@@ -112,12 +113,12 @@ c_infj(void)
     return r;
 }
 
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
 
 static double
 m_nan(void)
 {
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
     return _Py_dg_stdnan(0);
 #else
     return Py_NAN;
@@ -828,7 +829,7 @@ cmath_sqrt_impl(PyObject *module, Py_complex z)
     ax = fabs(z.real);
     ay = fabs(z.imag);
 
-    if (ax < DBL_MIN && ay < DBL_MIN && (ax > 0. || ay > 0.)) {
+    if (ax < DBL_MIN && ay < DBL_MIN) {
         /* here we catch cases where hypot(ax, ay) is subnormal */
         ax = ldexp(ax, CM_SCALE_UP);
         s = ldexp(sqrt(ax + hypot(ax, ldexp(ay, CM_SCALE_UP))),
@@ -956,12 +957,12 @@ cmath.log
 
 log(z[, base]) -> the logarithm of z to the given base.
 
-If the base not specified, returns the natural logarithm (base e) of z.
+If the base is not specified, returns the natural logarithm (base e) of z.
 [clinic start generated code]*/
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
-/*[clinic end generated code: output=4effdb7d258e0d94 input=230ed3a71ecd000a]*/
+/*[clinic end generated code: output=4effdb7d258e0d94 input=e1f81d4fcfd26497]*/
 {
     Py_complex y;
 
@@ -1012,7 +1013,7 @@ cmath_phase_impl(PyObject *module, Py_complex z)
     double phi;
 
     errno = 0;
-    phi = c_atan2(z);
+    phi = c_atan2(z); /* should not cause any exception */
     if (errno != 0)
         return math_error();
     else
@@ -1281,7 +1282,7 @@ cmath_exec(PyObject *mod)
                            PyComplex_FromCComplex(c_infj())) < 0) {
         return -1;
     }
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+#if _PY_SHORT_FLOAT_REPR == 1
     if (PyModule_AddObject(mod, "nan", PyFloat_FromDouble(m_nan())) < 0) {
         return -1;
     }

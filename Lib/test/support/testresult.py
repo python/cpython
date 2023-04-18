@@ -145,11 +145,7 @@ def get_test_runner_class(verbosity, buffer=False):
         return functools.partial(unittest.TextTestRunner,
                                  resultclass=RegressionTestResult,
                                  buffer=buffer,
-                                 verbosity=verbosity,
-                                 # disable descriptions so errors are
-                                 # readily traceable. bpo-46126
-                                 descriptions=False,
-                                 )
+                                 verbosity=verbosity)
     return functools.partial(QuietRegressionTestRunner, buffer=buffer)
 
 def get_test_runner(stream, verbosity, capture_output=False):

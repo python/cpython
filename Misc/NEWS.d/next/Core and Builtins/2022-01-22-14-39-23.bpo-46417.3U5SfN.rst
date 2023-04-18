@@ -1,5 +1,0 @@
-Fix a race condition on setting a type ``__bases__`` attribute: the internal
-function ``add_subclass()`` now gets the ``PyTypeObject.tp_subclasses``
-member after calling :c:func:`PyWeakref_NewRef` which can trigger a garbage
-collection which can indirectly modify ``PyTypeObject.tp_subclasses``. Patch
-by Victor Stinner.

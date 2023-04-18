@@ -1,2 +1,0 @@
-Correctly calculate indentation levels for lines with whitespace character
-that are ended by line continuation characters. Patch by Pablo Galindo

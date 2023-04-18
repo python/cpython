@@ -34,10 +34,10 @@ A Cookbook Approach
 ===================
 
 There are two approaches to building extension modules on Windows, just as there
-are on Unix: use the :mod:`distutils` package to control the build process, or
-do things manually.  The distutils approach works well for most extensions;
-documentation on using :mod:`distutils` to build and package extension modules
-is available in :ref:`distutils-index`.  If you find you really need to do
+are on Unix: use the ``setuptools`` package to control the build process, or
+do things manually.  The setuptools approach works well for most extensions;
+documentation on using ``setuptools`` to build and package extension modules
+is available in :ref:`setuptools-index`.  If you find you really need to do
 things manually, it may be instructive to study the project file for the
 :source:`winsound <PCbuild/winsound.vcxproj>` standard library module.
 
@@ -106,8 +106,7 @@ Using DLLs in Practice
 
 
 Windows Python is built in Microsoft Visual C++; using other compilers may or
-may not work (though Borland seems to).  The rest of this section is MSVC++
-specific.
+may not work.  The rest of this section is MSVC++ specific.
 
 When creating DLLs in Windows, you must pass :file:`pythonXY.lib` to the linker.
 To build two DLLs, spam and ni (which uses C functions found in spam), you could
@@ -134,4 +133,3 @@ Developer Studio will throw in a lot of import libraries that you do not really
 need, adding about 100K to your executable.  To get rid of them, use the Project
 Settings dialog, Link tab, to specify *ignore default libraries*.  Add the
 correct :file:`msvcrtxx.lib` to the list of libraries.
-

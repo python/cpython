@@ -38,6 +38,14 @@ class HANDLE_converter(CConverter):
     type = 'void *'
     format_unit = '"_Py_PARSE_UINTPTR"'
 
+    def parse_arg(self, argname, displayname):
+        return """
+            {paramname} = PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.parser_name)
+
 class HANDLE_return_converter(CReturnConverter):
     type = 'void *'
 
@@ -66,7 +74,7 @@ class wchar_t_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = PyUnicode_FromOrdinal(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d102511df3cda2eb]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=1e8e9fa3538ec08f]*/
 
 /*[clinic input]
 module msvcrt
@@ -245,6 +253,8 @@ msvcrt_getch_impl(PyObject *module)
     return ch;
 }
 
+#ifdef MS_WINDOWS_DESKTOP
+
 /*[clinic input]
 msvcrt.getwch -> wchar_t
 
@@ -262,6 +272,8 @@ msvcrt_getwch_impl(PyObject *module)
     Py_END_ALLOW_THREADS
     return ch;
 }
+
+#endif /* MS_WINDOWS_DESKTOP */
 
 /*[clinic input]
 msvcrt.getche -> byte_char
@@ -281,6 +293,8 @@ msvcrt_getche_impl(PyObject *module)
     return ch;
 }
 
+#ifdef MS_WINDOWS_DESKTOP
+
 /*[clinic input]
 msvcrt.getwche -> wchar_t
 
@@ -298,6 +312,8 @@ msvcrt_getwche_impl(PyObject *module)
     Py_END_ALLOW_THREADS
     return ch;
 }
+
+#endif /* MS_WINDOWS_DESKTOP */
 
 /*[clinic input]
 msvcrt.putch
@@ -318,6 +334,8 @@ msvcrt_putch_impl(PyObject *module, char char_value)
     Py_RETURN_NONE;
 }
 
+#ifdef MS_WINDOWS_DESKTOP
+
 /*[clinic input]
 msvcrt.putwch
 
@@ -337,6 +355,8 @@ msvcrt_putwch_impl(PyObject *module, int unicode_char)
     Py_RETURN_NONE;
 
 }
+
+#endif /* MS_WINDOWS_DESKTOP */
 
 /*[clinic input]
 msvcrt.ungetch
@@ -366,6 +386,8 @@ msvcrt_ungetch_impl(PyObject *module, char char_value)
     Py_RETURN_NONE;
 }
 
+#ifdef MS_WINDOWS_DESKTOP
+
 /*[clinic input]
 msvcrt.ungetwch
 
@@ -389,6 +411,8 @@ msvcrt_ungetwch_impl(PyObject *module, int unicode_char)
         return PyErr_SetFromErrno(PyExc_OSError);
     Py_RETURN_NONE;
 }
+
+#endif /* MS_WINDOWS_DESKTOP */
 
 #ifdef _DEBUG
 /*[clinic input]
@@ -467,6 +491,8 @@ msvcrt_set_error_mode_impl(PyObject *module, int mode)
 }
 #endif /* _DEBUG */
 
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
+
 /*[clinic input]
 msvcrt.GetErrorMode
 
@@ -485,6 +511,8 @@ msvcrt_GetErrorMode_impl(PyObject *module)
 
     return PyLong_FromUnsignedLong(res);
 }
+
+#endif /* MS_WINDOWS_APP || MS_WINDOWS_SYSTEM */
 
 /*[clinic input]
 msvcrt.SetErrorMode
@@ -536,19 +564,6 @@ static struct PyMethodDef msvcrt_functions[] = {
     {NULL,                      NULL}
 };
 
-
-static struct PyModuleDef msvcrtmodule = {
-    PyModuleDef_HEAD_INIT,
-    "msvcrt",
-    NULL,
-    -1,
-    msvcrt_functions,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
 static void
 insertint(PyObject *d, char *name, int value)
 {
@@ -577,15 +592,11 @@ insertptr(PyObject *d, char *name, void *value)
     }
 }
 
-PyMODINIT_FUNC
-PyInit_msvcrt(void)
+static int
+exec_module(PyObject* m)
 {
     int st;
-    PyObject *d, *version;
-    PyObject *m = PyModule_Create(&msvcrtmodule);
-    if (m == NULL)
-        return NULL;
-    d = PyModule_GetDict(m);
+    PyObject *d = PyModule_GetDict(m);  // Borrowed ref.
 
     /* constants for the locking() function's mode argument */
     insertint(d, "LK_LOCK", _LK_LOCK);
@@ -593,10 +604,12 @@ PyInit_msvcrt(void)
     insertint(d, "LK_NBRLCK", _LK_NBRLCK);
     insertint(d, "LK_RLCK", _LK_RLCK);
     insertint(d, "LK_UNLCK", _LK_UNLCK);
+#ifdef MS_WINDOWS_DESKTOP
     insertint(d, "SEM_FAILCRITICALERRORS", SEM_FAILCRITICALERRORS);
     insertint(d, "SEM_NOALIGNMENTFAULTEXCEPT", SEM_NOALIGNMENTFAULTEXCEPT);
     insertint(d, "SEM_NOGPFAULTERRORBOX", SEM_NOGPFAULTERRORBOX);
     insertint(d, "SEM_NOOPENFILEERRORBOX", SEM_NOOPENFILEERRORBOX);
+#endif
 #ifdef _DEBUG
     insertint(d, "CRT_WARN", _CRT_WARN);
     insertint(d, "CRT_ERROR", _CRT_ERROR);
@@ -614,30 +627,61 @@ PyInit_msvcrt(void)
 #ifdef _VC_ASSEMBLY_PUBLICKEYTOKEN
     st = PyModule_AddStringConstant(m, "VC_ASSEMBLY_PUBLICKEYTOKEN",
                                     _VC_ASSEMBLY_PUBLICKEYTOKEN);
-    if (st < 0) return NULL;
+    if (st < 0) {
+        return -1;
+    }
 #endif
 #ifdef _CRT_ASSEMBLY_VERSION
     st = PyModule_AddStringConstant(m, "CRT_ASSEMBLY_VERSION",
                                     _CRT_ASSEMBLY_VERSION);
-    if (st < 0) return NULL;
+    if (st < 0) {
+        return -1;
+    }
 #endif
 #ifdef __LIBRARIES_ASSEMBLY_NAME_PREFIX
     st = PyModule_AddStringConstant(m, "LIBRARIES_ASSEMBLY_NAME_PREFIX",
                                     __LIBRARIES_ASSEMBLY_NAME_PREFIX);
-    if (st < 0) return NULL;
+    if (st < 0) {
+        return -1;
+    }
 #endif
 
     /* constants for the 2010 crt versions */
 #if defined(_VC_CRT_MAJOR_VERSION) && defined (_VC_CRT_MINOR_VERSION) && defined(_VC_CRT_BUILD_VERSION) && defined(_VC_CRT_RBUILD_VERSION)
-    version = PyUnicode_FromFormat("%d.%d.%d.%d", _VC_CRT_MAJOR_VERSION,
-                                                  _VC_CRT_MINOR_VERSION,
-                                                  _VC_CRT_BUILD_VERSION,
-                                                  _VC_CRT_RBUILD_VERSION);
-    st = PyModule_AddObject(m, "CRT_ASSEMBLY_VERSION", version);
-    if (st < 0) return NULL;
+    PyObject *version = PyUnicode_FromFormat("%d.%d.%d.%d",
+                                             _VC_CRT_MAJOR_VERSION,
+                                             _VC_CRT_MINOR_VERSION,
+                                             _VC_CRT_BUILD_VERSION,
+                                             _VC_CRT_RBUILD_VERSION);
+    if (version == NULL) {
+        return -1;
+    }
+    st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
+    Py_DECREF(version);
+    if (st < 0) {
+        return -1;
+    }
 #endif
     /* make compiler warning quiet if st is unused */
     (void)st;
 
-    return m;
+    return 0;
+}
+
+static PyModuleDef_Slot msvcrt_slots[] = {
+    {Py_mod_exec, exec_module},
+    {0, NULL}
+};
+
+static struct PyModuleDef msvcrtmodule = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "msvcrt",
+    .m_methods = msvcrt_functions,
+    .m_slots = msvcrt_slots,
+};
+
+PyMODINIT_FUNC
+PyInit_msvcrt(void)
+{
+    return PyModuleDef_Init(&msvcrtmodule);
 }
