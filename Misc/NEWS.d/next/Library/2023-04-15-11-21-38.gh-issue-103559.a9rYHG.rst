@@ -1,1 +1,1 @@
-Update the bundled copies of pip and setuptools to versions 23.1 and 67.6.1 respectively.
+Update the bundled copy of pip to version 23.1.
