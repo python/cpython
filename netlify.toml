@@ -1,7 +1,7 @@
 [build]
     base = "Doc"
     command = "make html"
-    publish = "Doc/build/html"
+    publish = "build/html"
     # Do not trigger netlify builds if docs were not changed.
     # Changed files should be in sync with `.github/workflows/doc.yml`
     ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF . ../netlify.toml"
