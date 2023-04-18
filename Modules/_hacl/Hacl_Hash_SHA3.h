@@ -35,7 +35,7 @@ extern "C" {
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
-#include "Hacl_Spec.h"
+#include "Hacl_Streaming_Types.h"
 
 typedef struct Hacl_Streaming_Keccak_hash_buf_s
 {

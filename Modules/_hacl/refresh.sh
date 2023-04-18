@@ -22,7 +22,7 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good.
-expected_hacl_star_rev=ba6a4928d810f4ed9e24040c55d019d0808104a7
+expected_hacl_star_rev=a41202dc7378b6e41c609d6b2f8f8b8e10581827
 
 hacl_dir="$(realpath "$1")"
 cd "$(dirname "$0")"
@@ -40,7 +40,6 @@ fi
 
 declare -a dist_files
 dist_files=(
-  Hacl_Spec.h
   Hacl_Streaming_SHA2.h
   Hacl_Streaming_Types.h
   Hacl_Hash_SHA1.h
