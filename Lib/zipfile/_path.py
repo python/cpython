@@ -298,23 +298,26 @@ class Path:
 
     @property
     def name(self):
-        return pathlib.Path(self.at).name or self.filename.name
+        return pathlib.Path(self.at.rstrip("/")).name or self.filename.name
 
     @property
     def suffix(self):
-        return pathlib.Path(self.at).suffix or self.filename.suffix
+        return pathlib.Path(self.at.rstrip("/")).suffix or self.filename.suffix
 
     @property
     def suffixes(self):
-        return pathlib.Path(self.at).suffixes or self.filename.suffixes
+        return pathlib.Path(self.at.rstrip("/")).suffixes or self.filename.suffixes
 
     @property
     def stem(self):
-        return pathlib.Path(self.at).stem or self.filename.stem
+        return pathlib.Path(self.at.rstrip("/")).stem or self.filename.stem
 
     @property
     def filename(self):
-        return pathlib.Path(self.root.filename).joinpath(self.at)
+        path = pathlib.Path(self.root.filename)
+        if self.at:
+            path = path.joinpath(self.at.rstrip("/"))
+        return path
 
     def read_text(self, *args, **kwargs):
         encoding, args, kwargs = _extract_text_encoding(*args, **kwargs)
