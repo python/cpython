@@ -17,10 +17,12 @@ struct validator {
 static int validate_stmts(struct validator *, asdl_stmt_seq *);
 static int validate_exprs(struct validator *, asdl_expr_seq *, expr_context_ty, int);
 static int validate_patterns(struct validator *, asdl_pattern_seq *, int);
+static int validate_typeparams(struct validator *, asdl_typeparam_seq *);
 static int _validate_nonempty_seq(asdl_seq *, const char *, const char *);
 static int validate_stmt(struct validator *, stmt_ty);
 static int validate_expr(struct validator *, expr_ty, expr_context_ty);
 static int validate_pattern(struct validator *, pattern_ty, int);
+static int validate_typeparam(struct validator *, typeparam_ty);
 
 #define VALIDATE_POSITIONS(node) \
     if (node->lineno > node->end_lineno) { \
@@ -673,6 +675,27 @@ validate_pattern(struct validator *state, pattern_ty p, int star_ok)
 }
 
 static int
+validate_typeparam(struct validator *state, typeparam_ty tp)
+{
+    VALIDATE_POSITIONS(tp);
+    int ret = -1;
+    switch (tp->kind) {
+        case TypeVar_kind:
+            ret = validate_name(tp->v.TypeVar.name) &&
+                (!tp->v.TypeVar.bound ||
+                 validate_expr(state, tp->v.TypeVar.bound, Load));
+            break;
+        case ParamSpec_kind:
+            ret = validate_name(tp->v.ParamSpec.name);
+            break;
+        case TypeVarTuple_kind:
+            ret = validate_name(tp->v.TypeVarTuple.name);
+            break;
+    }
+    return ret;
+}
+
+static int
 _validate_nonempty_seq(asdl_seq *seq, const char *what, const char *owner)
 {
     if (asdl_seq_LEN(seq))
@@ -709,6 +732,7 @@ validate_stmt(struct validator *state, stmt_ty stmt)
     switch (stmt->kind) {
     case FunctionDef_kind:
         ret = validate_body(state, stmt->v.FunctionDef.body, "FunctionDef") &&
+            validate_typeparams(state, stmt->v.FunctionDef.typeparams) &&
             validate_arguments(state, stmt->v.FunctionDef.args) &&
             validate_exprs(state, stmt->v.FunctionDef.decorator_list, Load, 0) &&
             (!stmt->v.FunctionDef.returns ||
@@ -716,6 +740,7 @@ validate_stmt(struct validator *state, stmt_ty stmt)
         break;
     case ClassDef_kind:
         ret = validate_body(state, stmt->v.ClassDef.body, "ClassDef") &&
+            validate_typeparams(state, stmt->v.ClassDef.typeparams) &&
             validate_exprs(state, stmt->v.ClassDef.bases, Load, 0) &&
             validate_keywords(state, stmt->v.ClassDef.keywords) &&
             validate_exprs(state, stmt->v.ClassDef.decorator_list, Load, 0);
@@ -747,7 +772,9 @@ validate_stmt(struct validator *state, stmt_ty stmt)
                validate_expr(state, stmt->v.AnnAssign.annotation, Load);
         break;
     case TypeAlias_kind:
-        ret = validate_expr(state, stmt->v.TypeAlias.value, Load);
+        ret = validate_expr(state, stmt->v.TypeAlias.name, Store) &&
+            validate_typeparams(state, stmt->v.TypeAlias.typeparams) &&
+            validate_expr(state, stmt->v.TypeAlias.value, Load);
         break;
     case For_kind:
         ret = validate_expr(state, stmt->v.For.target, Store) &&
@@ -896,6 +923,7 @@ validate_stmt(struct validator *state, stmt_ty stmt)
         break;
     case AsyncFunctionDef_kind:
         ret = validate_body(state, stmt->v.AsyncFunctionDef.body, "AsyncFunctionDef") &&
+            validate_typeparams(state, stmt->v.AsyncFunctionDef.typeparams) &&
             validate_arguments(state, stmt->v.AsyncFunctionDef.args) &&
             validate_exprs(state, stmt->v.AsyncFunctionDef.decorator_list, Load, 0) &&
             (!stmt->v.AsyncFunctionDef.returns ||
@@ -963,6 +991,20 @@ validate_patterns(struct validator *state, asdl_pattern_seq *patterns, int star_
         pattern_ty pattern = asdl_seq_GET(patterns, i);
         if (!validate_pattern(state, pattern, star_ok)) {
             return 0;
+        }
+    }
+    return 1;
+}
+
+static int
+validate_typeparams(struct validator *state, asdl_typeparam_seq *tps)
+{
+    Py_ssize_t i;
+    for (i = 0; i < asdl_seq_LEN(tps); i++) {
+        typeparam_ty tp = asdl_seq_GET(tps, i);
+        if (tp) {
+            if (!validate_typeparam(state, tp))
+                return 0;
         }
     }
     return 1;
