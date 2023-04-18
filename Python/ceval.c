@@ -672,7 +672,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         _PyCode_CODE(tstate->interp->interpreter_trampoline);
     entry_frame.stacktop = 0;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
-    entry_frame.yield_offset = 0;
+    entry_frame.return_offset = 0;
     /* Push frame */
     entry_frame.previous = prev_cframe->current_frame;
     frame->previous = &entry_frame;
@@ -881,6 +881,7 @@ exit_unwind:
     _PyInterpreterFrame *dying = frame;
     frame = cframe.current_frame = dying->previous;
     _PyEvalFrameClearAndPop(tstate, dying);
+    frame->return_offset = 0;
     if (frame == &entry_frame) {
         /* Restore previous cframe and exit */
         tstate->cframe = cframe.previous;
