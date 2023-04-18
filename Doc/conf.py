@@ -263,6 +263,26 @@ linkcheck_allowed_redirects = {
     r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*'
 }
 
+linkcheck_anchors_ignore = [
+    # ignore anchors that starts with a '/', e.g. Wikipedia media:
+    # https://en.wikipedia.org/wiki/Walrus#/media/File:Pacific_Walrus_-_Bull_(8247646168).jpg
+    r'\/.*',
+]
+
+linkcheck_ignore = [
+    # A code sample in Misc/NEWS.d/3.9.0a1.rst
+    'https:\/\/$',
+    # The crawler gets "Anchor not found"
+    r'https://github.com.+?#.*',
+    r'https://devguide.python.org.+?/#.*',
+    r'https://developer.apple.com/documentation/.+?#.*',
+    # Robot crawlers not allowed: "403 Client Error: Forbidden"
+    r'https://support.enthought.com/hc/.*',
+    # SSLError CertificateError, even though it is valid
+    r'https://unix.org/version2/whatsnew/lp64_wp.html',
+]
+
+
 # Options for extensions
 # ----------------------
 

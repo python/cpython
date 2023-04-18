@@ -1605,8 +1605,8 @@ expression support in the :mod:`re` module).
    converts it to ``"ss"``.
 
    The casefolding algorithm is
-   `described in section 3.13 of the Unicode Standard
-   <http://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G53253>`__.
+   `described in section 3.13 'Default Case Folding' of the Unicode Standard
+   <http://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
 
    .. versionadded:: 3.3
 
@@ -1768,8 +1768,9 @@ expression support in the :mod:`re` module).
    one character, ``False`` otherwise.  Alphabetic characters are those characters defined
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
-   from the `Alphabetic property defined in the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G91002>`_.
+   from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
+   Ideographic' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf>`_.
 
 
 .. method:: str.isascii()
@@ -1904,8 +1905,8 @@ expression support in the :mod:`re` module).
    lowercase.
 
    The lowercasing algorithm used is
-   `described in section 3.13 of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
+   `described in section 3.13 'Default Case Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
 
 
 .. method:: str.lstrip([chars])
@@ -2250,8 +2251,8 @@ expression support in the :mod:`re` module).
    titlecase).
 
    The uppercasing algorithm used is
-   `described in section 3.13 of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
+   `described in section 3.13 'Default Case Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
 
 
 .. method:: str.zfill(width)
