@@ -908,7 +908,7 @@ set_update_internal(PySetObject *so, PyObject *other)
 
     /* If there's a length or length hint, do one big resize at the start,
      * rather than incrementally resizing as we insert new keys.
-     * Expect that there will be no (or few) overlapping keys.
+     * Expect that there will be no (or few) duplicated keys.
      * Use 0 as a default value to avoid changing the current mask.
      */
     length = PyObject_LengthHint(other, 0);
@@ -919,7 +919,7 @@ set_update_internal(PySetObject *so, PyObject *other)
     if (it == NULL)
         return -1;
 
-    if (length > so->mask) {
+    if ((so->fill + length)*5 >= so->mask*3) {
         if (set_table_resize(so, (so->used + length)*2) != 0)
             return -1;
     }
