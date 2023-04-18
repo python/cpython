@@ -342,10 +342,23 @@ details of bytecode instructions as :class:`Instruction` instances:
       human readable name for operation
 
 
+   .. data:: baseopcode
+
+      numeric code for the base operation if operation is specialized. Otherwise equal to :data:`opcode`
+
+
+   .. data:: baseopname
+
+      human readable name for the base operation if operation is specialized. Otherwise equal to :data:`opname`
+
+
    .. data:: arg
 
       numeric argument to operation (if any), otherwise ``None``
 
+   .. data:: oparg
+
+      alias for :data:`arg`
 
    .. data:: argval
 
@@ -363,6 +376,22 @@ details of bytecode instructions as :class:`Instruction` instances:
       start index of operation within bytecode sequence
 
 
+   .. data:: start_offset
+
+      start index of operation within bytecode sequence including prefixed ``EXTENDED_ARG`` operations if present.
+      Otherwise equal to :data:`offset`
+
+
+   .. data:: cache_offset
+
+      start index of the cache entries following the operation
+
+
+   .. data:: end_offset
+
+      end index of the cache entries following the operation
+
+
    .. data:: starts_line
 
       line started by this opcode (if any), otherwise ``None``
@@ -371,6 +400,11 @@ details of bytecode instructions as :class:`Instruction` instances:
    .. data:: is_jump_target
 
       ``True`` if other code jumps to here, otherwise ``False``
+
+
+   .. data:: jump_target
+
+      bytecode index of the jump target if this is a jump operation, otherwise ``None``
 
 
    .. data:: positions
@@ -383,6 +417,10 @@ details of bytecode instructions as :class:`Instruction` instances:
    .. versionchanged:: 3.11
 
       Field ``positions`` is added.
+
+   .. versionchanged:: 3.12
+
+      Fields ``start_offset``, ``cache_offset``, ``end_offset``, ``baseopname``, ``baseopcode``, ``jump_target`` and ``oparg`` are added.
 
 
 .. class:: Positions
