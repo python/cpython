@@ -37,7 +37,7 @@ inherits from :class:`Enum` itself.
 .. note:: Case of Enum Members
 
     Because Enums are used to represent constants, and to help avoid issues
-    with name clashes betweewe mixin-class methods/attributes and enum names,
+    with name clashes between mixin-class methods/attributes and enum names,
     we strongly recommend using UPPER_CASE names for members, and will be using
     that style in our examples.
 
