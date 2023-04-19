@@ -62,14 +62,14 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-    MultibyteCodec *codec;
+    const MultibyteCodec *codec;
 } MultibyteCodecObject;
 
 #define MultibyteCodec_Check(state, op) Py_IS_TYPE((op), state->multibytecodec_type)
 
 #define _MultibyteStatefulCodec_HEAD            \
     PyObject_HEAD                               \
-    MultibyteCodec *codec;                      \
+    const MultibyteCodec *codec;                \
     MultibyteCodec_State state;                 \
     PyObject *errors;
 typedef struct {

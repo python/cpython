@@ -258,7 +258,7 @@ csv
 
 * Add :data:`~csv.QUOTE_NOTNULL` and :data:`~csv.QUOTE_STRINGS` flags to
   provide finer grained control of ``None`` and empty strings by
-  :class:`~csv.reader` and :class:`~csv.writer` objects.
+  :class:`~csv.writer` objects.
 
 inspect
 -------
@@ -730,6 +730,24 @@ Removed
   ``distutils`` and cannot be updated to something else, the ``setuptools``
   project can be installed: it still provides ``distutils``.
   (Contributed by Victor Stinner in :gh:`92584`.)
+
+* Remove the bundled setuptools wheel from :mod:`ensurepip`,
+  and stop installing setuptools in environments created by :mod:`venv`.
+
+  ``pip (>= 22.1)`` does not require setuptools to be installed in the
+  environment. ``setuptools``-based (and ``distutils``-based) packages
+  can still be used with ``pip install``, since pip will provide
+  ``setuptools`` in the build environment it uses for building a
+  package.
+
+  ``easy_install``, ``pkg_resources``, ``setuptools`` and ``distutils``
+  are no longer provided by default in environments created with
+  ``venv`` or bootstrapped with ``ensurepip``, since they are part of
+  the ``setuptools`` package. For projects relying on these at runtime,
+  the ``setuptools`` project should be declared as a dependency and
+  installed separately (typically, using pip).
+
+  (Contributed by Pradyun Gedam in :gh:`95299`.)
 
 * Removed many old deprecated :mod:`unittest` features:
 
