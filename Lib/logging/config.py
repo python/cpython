@@ -68,8 +68,9 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
             cp.read_file(fname)
         else:
             encoding = io.text_encoding(encoding)
-            cp.read(fname, encoding=encoding)
-
+            files = cp.read(fname, encoding=encoding)
+            if not files:
+                raise ValueError(f"{fname} doesn't exist")
     formatters = _create_formatters(cp)
 
     # critical section

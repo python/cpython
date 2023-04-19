@@ -1756,6 +1756,10 @@ class ConfigFileTest(BaseTest):
         self.apply_config(test_config)
         self.assertEqual(logging.getLogger().handlers[0].name, 'hand1')
 
+    def test_exception_if_file_not_present(self):
+        """Test if not present file raises ValueError"""
+        self.assertRaises(ValueError, logging.config.fileConfig, 'randfile')
+
     def test_defaults_do_no_interpolation(self):
         """bpo-33802 defaults should not get interpolated"""
         ini = textwrap.dedent("""
