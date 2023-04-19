@@ -272,7 +272,7 @@ class TypeCommentTests(unittest.TestCase):
             pass
 
     def test_fstring(self):
-        for tree in self.parse_all(fstring, minver=6):
+        for tree in self.parse_all(fstring):
             pass
 
     def test_underscorednumber(self):
