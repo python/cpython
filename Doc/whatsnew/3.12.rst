@@ -1021,7 +1021,7 @@ New Features
     inheriting or extending the base class size.
   - :c:func:`PyObject_GetTypeData` and :c:func:`PyType_GetTypeDataSize`
     added to allow access to subclass-specific instance data.
-  - :c:macro:`Py_TPFLAGS_ITEMS_AT_END` and :c:func:`PyObject_GetItemData`
+  - :const:`Py_TPFLAGS_ITEMS_AT_END` and :c:func:`PyObject_GetItemData`
     added to allow safely extending certain variable-sized types, including
     :c:var:`PyType_Type`.
   - :c:macro:`Py_RELATIVE_OFFSET` added to allow defining

@@ -1171,7 +1171,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       :c:member:`~PyTypeObject.tp_weaklistoffset` field is set in a superclass.
 
 
-   .. c:macro:: Py_TPFLAGS_ITEMS_AT_END
+   .. data:: Py_TPFLAGS_ITEMS_AT_END
 
       Only usable with variable-size types, i.e. ones with non-zero
       :c:member:`~PyObject.tp_itemsize`.

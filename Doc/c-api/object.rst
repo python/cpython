@@ -427,10 +427,10 @@ Object Protocol
 .. c:function:: PyObject* PyObject_GetItemData(PyObject *o)
 
    Get a pointer to per-item data for a class with
-   :c:macro:`Py_TPFLAGS_ITEMS_AT_END`.
+   :const:`Py_TPFLAGS_ITEMS_AT_END`.
 
    On error, set an exception and return ``NULL``.
    :py:exc:`TypeError` is raised if *o* does not have
-   :c:macro:`Py_TPFLAGS_ITEMS_AT_END` set.
+   :const:`Py_TPFLAGS_ITEMS_AT_END` set.
 
    .. versionadded:: 3.12

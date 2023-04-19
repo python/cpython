@@ -363,7 +363,7 @@ The following functions and structs are used to create
       - The requested :c:member:`PyType_Spec.basicsize` is zero,
         suggesting that the subclass does not access the instance's memory
         directly.
-      - With the :c:macro:`Py_TPFLAGS_ITEMS_AT_END` flag.
+      - With the :const:`Py_TPFLAGS_ITEMS_AT_END` flag.
 
    .. c:member:: int flags
 
