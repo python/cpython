@@ -4447,48 +4447,6 @@ static PyTypeObject Struct_Type = {
     0,                                          /* tp_free */
 };
 
-static PyTypeObject Union_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.Union",
-    sizeof(CDataObject),                        /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    &PyCData_as_buffer,                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("Union base class"),              /* tp_doc */
-    (traverseproc)PyCData_traverse,             /* tp_traverse */
-    (inquiry)PyCData_clear,                     /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    Struct_init,                                /* tp_init */
-    0,                                          /* tp_alloc */
-    GenericPyCData_new,                         /* tp_new */
-    0,                                          /* tp_free */
-};
-
 static PyType_Slot union_type_slots[] = {
     {Py_bf_getbuffer, PyCData_NewGetBuffer},
     {Py_tp_traverse, PyCData_traverse},
@@ -4502,7 +4460,7 @@ static PyType_Spec union_type_spec = {
     .name = "_ctypes.Union",
     .basicsize = sizeof(CDataObject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    .slots = &union_type_slots,
+    .slots = union_type_slots,
 };
 
 /******************************************************************/
@@ -5681,7 +5639,9 @@ _ctypes_add_types(PyObject *mod)
     MOD_ADD_TYPE(&Simple_Type, &PyCSimpleType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&PyCFuncPtr_Type, &PyCFuncPtrType_Type, &PyCData_Type);
 
-    st->Union_Type = (PyTypeObject *)PyType_FromModuleAndSpec(mod, &union_type_spec, &PyCData_Type);
+    st->Union_Type = (PyTypeObject *)
+                      PyType_FromModuleAndSpec(mod, &union_type_spec,
+                                               (PyObject *)&PyCData_Type);
     if (st->Union_Type == NULL) {
         return -1;
     }
