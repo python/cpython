@@ -44,7 +44,7 @@ or :class:`datetime.datetime` objects.
 .. versionchanged:: 3.9
    Old API removed.
 
-.. versionchanged:: 3.10
+.. versionchanged:: 3.13
    Support added for reading and writing :class:`UID` tokens in XML
    plists.
 
