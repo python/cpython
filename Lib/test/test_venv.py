@@ -227,7 +227,6 @@ class BasicTest(BaseTest):
                         'install',
                         '--upgrade',
                         'pip',
-                        'setuptools'
                     ]
                 )
 
@@ -745,7 +744,6 @@ class EnsurePipTest(BaseTest):
         # future pip versions, this test can likely be relaxed further.
         out = out.decode("latin-1") # Force to text, prevent decoding errors
         self.assertIn("Successfully uninstalled pip", out)
-        self.assertIn("Successfully uninstalled setuptools", out)
         # Check pip is now gone from the virtual environment. This only
         # applies in the system_site_packages=False case, because in the
         # other case, pip may still be available in the system site-packages

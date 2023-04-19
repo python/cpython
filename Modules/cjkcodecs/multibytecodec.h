@@ -62,7 +62,7 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-    MultibyteCodec *codec;
+    const MultibyteCodec *codec;
     PyObject *cjk_module;
 } MultibyteCodecObject;
 
@@ -70,7 +70,7 @@ typedef struct {
 
 #define _MultibyteStatefulCodec_HEAD            \
     PyObject_HEAD                               \
-    MultibyteCodec *codec;                      \
+    const MultibyteCodec *codec;                \
     MultibyteCodec_State state;                 \
     PyObject *errors;
 typedef struct {

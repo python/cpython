@@ -67,7 +67,7 @@ typedef struct {
 static char *incnewkwarglist[] = {"errors", NULL};
 static char *streamkwarglist[] = {"stream", "errors", NULL};
 
-static PyObject *multibytecodec_encode(MultibyteCodec *,
+static PyObject *multibytecodec_encode(const MultibyteCodec *,
                 MultibyteCodec_State *, PyObject *, Py_ssize_t *,
                 PyObject *, int);
 
@@ -221,7 +221,7 @@ expand_encodebuffer(MultibyteEncodeBuffer *buf, Py_ssize_t esize)
  */
 
 static int
-multibytecodec_encerror(MultibyteCodec *codec,
+multibytecodec_encerror(const MultibyteCodec *codec,
                         MultibyteCodec_State *state,
                         MultibyteEncodeBuffer *buf,
                         PyObject *errors, Py_ssize_t e)
@@ -375,7 +375,7 @@ errorexit:
 }
 
 static int
-multibytecodec_decerror(MultibyteCodec *codec,
+multibytecodec_decerror(const MultibyteCodec *codec,
                         MultibyteCodec_State *state,
                         MultibyteDecodeBuffer *buf,
                         PyObject *errors, Py_ssize_t e)
@@ -479,7 +479,7 @@ errorexit:
 }
 
 static PyObject *
-multibytecodec_encode(MultibyteCodec *codec,
+multibytecodec_encode(const MultibyteCodec *codec,
                       MultibyteCodec_State *state,
                       PyObject *text, Py_ssize_t *inpos_t,
                       PyObject *errors, int flags)
@@ -1970,7 +1970,7 @@ _multibytecodec___create_codec(PyObject *module, PyObject *arg)
     }
 
     codec_capsule *data = PyCapsule_GetPointer(arg, CODEC_CAPSULE);
-    MultibyteCodec *codec = data->codec;
+    const MultibyteCodec *codec = data->codec;
     if (codec->codecinit != NULL && codec->codecinit(codec->config) != 0)
         return NULL;
 
