@@ -514,6 +514,7 @@ be finalized; only the internally used file object will be closed. See the
       Return an :class:`io.BufferedReader` object.
 
 .. attribute:: TarFile.errorlevel
+   :type: int
 
    If *errorlevel* is ``0``, errors are ignored when using :meth:`TarFile.extract`
    and :meth:`TarFile.extractall`.
