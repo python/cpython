@@ -280,13 +280,7 @@ _PyTestCapi_Init_HeaptypeRelative(PyObject *m) {
         return -1;
     }
 
-#ifdef __alignof_is_defined
-    // C11
-    PyModule_AddIntConstant(m, "alignof_max_align_t", alignof(max_align_t));
-#else
-    // if alignof and max_align_t is unavailable, skip the alignment tests
-    PyModule_AddIntConstant(m, "alignof_max_align_t", 1);
-#endif
+    PyModule_AddIntConstant(m, "alignof_max_align_t", ALIGNOF_MAX_ALIGN_T);
 
     return 0;
 }
