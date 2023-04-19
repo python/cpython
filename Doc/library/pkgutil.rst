@@ -91,7 +91,7 @@ support.
    .. versionchanged:: 3.4
       Updated to be based on :pep:`451`
 
-   .. deprecated:: 3.12
+   .. deprecated-removed:: 3.12 3.14
       Use :func:`importlib.util.find_spec` instead.
 
 
@@ -127,7 +127,7 @@ support.
    .. versionchanged:: 3.4
       Updated to be based on :pep:`451`
 
-   .. deprecated:: 3.12
+   .. deprecated-removed:: 3.12 3.14
       Use :func:`importlib.util.find_spec` instead.
 
 

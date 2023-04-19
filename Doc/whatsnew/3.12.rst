@@ -572,11 +572,6 @@ Deprecated
   :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
-* :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
-  now raise :exc:`DeprecationWarning`;
-  use :func:`importlib.util.find_spec` instead.
-  (Contributed by Nikita Sobolev in :gh:`97850`.)
-
 * The :meth:`~asyncio.get_event_loop` method of the
   default event loop policy now emits a :exc:`DeprecationWarning` if there
   is no current event loop set and it decides to create one.
@@ -694,6 +689,11 @@ Pending Removal in Python 3.14
 
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
   and will be removed in 3.14.
+
+* :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
+  now raise :exc:`DeprecationWarning`;
+  use :func:`importlib.util.find_spec` instead.
+  (Contributed by Nikita Sobolev in :gh:`97850`.)
 
 Pending Removal in Future Versions
 ----------------------------------
