@@ -53,6 +53,7 @@ typedef struct _symtable_entry {
                                          that represent typeparam overlays */
     PyObject *ste_current_typeparam_overlay; /* active typeparam overlay
                                                 (key in ste_typeparam_overlays) */
+    struct _symtable_entry *ste_parent_typeparam_overlay;
     _Py_block_ty ste_type;   /* module, class, function or annotation */
     int ste_nested;      /* true if block is nested */
     unsigned ste_free : 1;        /* true if block has free variables */

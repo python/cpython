@@ -80,6 +80,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_children = NULL;
     ste->ste_current_typeparam_overlay = NULL;
     ste->ste_typeparam_overlays = NULL;
+    ste->ste_parent_typeparam_overlay = NULL;
 
     ste->ste_directives = NULL;
 
@@ -145,6 +146,7 @@ ste_dealloc(PySTEntryObject *ste)
     Py_XDECREF(ste->ste_directives);
     Py_XDECREF(ste->ste_typeparam_overlays);
     Py_XDECREF(ste->ste_current_typeparam_overlay);
+    Py_XDECREF(ste->ste_parent_typeparam_overlay);
     PyObject_Free(ste);
 }
 
@@ -913,6 +915,16 @@ analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
     temp_bound = PySet_New(bound);
     if (!temp_bound)
         goto error;
+    if (entry->ste_parent_typeparam_overlay) {
+        PySTEntryObject *inner_ste = entry->ste_parent_typeparam_overlay;
+        PyObject *name;
+        Py_ssize_t pos = 0;
+        while (PyDict_Next(inner_ste->ste_symbols, &pos, &name, NULL)) {
+            if (PySet_Add(temp_bound, name) < 0) {
+                goto error;
+            }
+        }
+    }
     temp_free = PySet_New(free);
     if (!temp_free)
         goto error;
@@ -978,7 +990,7 @@ symtable_exit_block(struct symtable *st)
     return 1;
 }
 
-static int
+static PySTEntryObject *
 symtable_enter_typeparam_overlay(struct symtable *st, identifier name,
                                  void *ast, int lineno, int col_offset,
                                  int end_lineno, int end_col_offset)
@@ -986,12 +998,12 @@ symtable_enter_typeparam_overlay(struct symtable *st, identifier name,
     PySTEntryObject *ste = ste_new(st, name, TypeParamBlock, ast, lineno, col_offset,
                                    end_lineno, end_col_offset);
     if (ste == NULL) {
-        return 0;
+        return NULL;
     }
     PyObject *key = PyLong_FromVoidPtr(ast);
     if (key == NULL) {
         Py_DECREF(ste);
-        return 0;
+        return NULL;
     }
     struct _symtable_entry *cur = st->st_cur;
     cur->ste_current_typeparam_overlay = Py_NewRef(key);
@@ -1000,17 +1012,17 @@ symtable_enter_typeparam_overlay(struct symtable *st, identifier name,
         if (cur->ste_typeparam_overlays == NULL) {
             Py_DECREF(key);
             Py_DECREF(ste);
-            return 0;
+            return NULL;
         }
     }
     if (PyDict_SetItem(cur->ste_typeparam_overlays, key, (PyObject *)ste) < 0) {
         Py_DECREF(key);
         Py_DECREF(ste);
-        return 0;
+        return NULL;
     }
     Py_DECREF(key);
     Py_DECREF(ste);
-    return 1;
+    return ste;
 }
 
 static int symtable_leave_typeparam_overlay(struct symtable *st) {
@@ -1289,7 +1301,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT_QUIT(st, 0);
     }
     switch (s->kind) {
-    case FunctionDef_kind:
+    case FunctionDef_kind: {
         if (!symtable_add_def(st, s->v.FunctionDef.name, DEF_LOCAL, LOCATION(s)))
             VISIT_QUIT(st, 0);
         if (s->v.FunctionDef.args->defaults)
@@ -1298,10 +1310,12 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_SEQ_WITH_NULL(st, expr, s->v.FunctionDef.args->kw_defaults);
         if (s->v.FunctionDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
+        PySTEntryObject *ste = NULL;
         if (s->v.FunctionDef.typeparams) {
-            if (!symtable_enter_typeparam_overlay(st, s->v.FunctionDef.name,
-                                                  (void *)s->v.FunctionDef.typeparams,
-                                                  LOCATION(s))) {
+            ste = symtable_enter_typeparam_overlay(st, s->v.FunctionDef.name,
+                                                   (void *)s->v.FunctionDef.typeparams,
+                                                   LOCATION(s));
+            if (ste == NULL) {
                 VISIT_QUIT(st, 0);
             }
             VISIT_SEQ(st, typeparam, s->v.FunctionDef.typeparams);
@@ -1313,6 +1327,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                   FunctionBlock, (void *)s,
                                   LOCATION(s)))
             VISIT_QUIT(st, 0);
+        if (ste != NULL) {
+            Py_INCREF(ste);
+            st->st_cur->ste_parent_typeparam_overlay = ste;
+        }
         VISIT(st, arguments, s->v.FunctionDef.args);
         VISIT_SEQ(st, stmt, s->v.FunctionDef.body);
         if (!symtable_exit_block(st))
@@ -1322,6 +1340,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_QUIT(st, 0);
         }
         break;
+    }
     case ClassDef_kind: {
         PyObject *tmp;
         if (!symtable_add_def(st, s->v.ClassDef.name, DEF_LOCAL, LOCATION(s)))
