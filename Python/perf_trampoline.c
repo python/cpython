@@ -198,7 +198,6 @@ static void
 perf_map_write_entry(void *state, const void *code_addr,
                          unsigned int code_size, PyCodeObject *co)
 {
-    assert(state != NULL);
     const char *entry = "";
     if (co->co_qualname != NULL) {
         entry = PyUnicode_AsUTF8(co->co_qualname);
