@@ -39,6 +39,7 @@
             tok->col_offset = 0;
 
 #define INSIDE_FSTRING(tok) (tok->tok_mode_stack_index > 0)
+#define INSIDE_FSTRING_EXPR(tok) (tok->curly_bracket_expr_start_depth >= 0)
 #ifdef Py_DEBUG
 static inline tokenizer_mode* TOK_GET_MODE(struct tok_state* tok) {
     assert(tok->tok_mode_stack_index >= 0);
@@ -2330,7 +2331,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
     /* Punctuation character */
     int is_punctuation = (c == ':' || c == '}' || c == '!' || c == '{');
-    if (is_punctuation && INSIDE_FSTRING(tok) && current_tok->curly_bracket_expr_start_depth >= 0) {
+    if (is_punctuation && INSIDE_FSTRING(tok) && INSIDE_FSTRING_EXPR(current_tok)) {
         /* This code block gets executed before the curly_bracket_depth is incremented
          * by the `{` case, so for ensuring that we are on the 0th level, we need
          * to adjust it manually */
@@ -2537,7 +2538,7 @@ f_string_middle:
         int in_format_spec = (
                 current_tok->last_expr_end != -1
                 &&
-                current_tok->curly_bracket_expr_start_depth >= 0
+                INSIDE_FSTRING_EXPR(current_tok)
         );
         if (c == '{') {
             int peek = tok_nextc(tok);
