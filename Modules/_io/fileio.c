@@ -536,7 +536,7 @@ fileio_dealloc(fileio *self)
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
-    Py_CLEAR(self->dict);
+    (void)fileio_clear(self);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
 }

@@ -368,6 +368,15 @@ _enter_buffered_busy(buffered *self)
         (self->buffer_size * (size / self->buffer_size)))
 
 
+static int
+buffered_clear(buffered *self)
+{
+    self->ok = 0;
+    Py_CLEAR(self->raw);
+    Py_CLEAR(self->dict);
+    return 0;
+}
+
 static void
 buffered_dealloc(buffered *self)
 {
@@ -379,7 +388,6 @@ buffered_dealloc(buffered *self)
     self->ok = 0;
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
-    Py_CLEAR(self->raw);
     if (self->buffer) {
         PyMem_Free(self->buffer);
         self->buffer = NULL;
@@ -388,7 +396,7 @@ buffered_dealloc(buffered *self)
         PyThread_free_lock(self->lock);
         self->lock = NULL;
     }
-    Py_CLEAR(self->dict);
+    (void)buffered_clear(self);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
 }
@@ -409,15 +417,6 @@ buffered_traverse(buffered *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->raw);
     Py_VISIT(self->dict);
-    return 0;
-}
-
-static int
-buffered_clear(buffered *self)
-{
-    self->ok = 0;
-    Py_CLEAR(self->raw);
-    Py_CLEAR(self->dict);
     return 0;
 }
 
@@ -2128,6 +2127,8 @@ bufferedrwpair_traverse(rwpair *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
+    Py_VISIT(self->reader);
+    Py_VISIT(self->writer);
     return 0;
 }
 
@@ -2147,9 +2148,7 @@ bufferedrwpair_dealloc(rwpair *self)
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
-    Py_CLEAR(self->reader);
-    Py_CLEAR(self->writer);
-    Py_CLEAR(self->dict);
+    (void)bufferedrwpair_clear(self);
     tp->tp_free((PyObject *) self);
     Py_DECREF(tp);
 }

@@ -1403,7 +1403,7 @@ textiowrapper_dealloc(textio *self)
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
-    textiowrapper_clear(self);
+    (void)textiowrapper_clear(self);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
 }
