@@ -271,9 +271,9 @@ linkcheck_anchors_ignore = [
 
 linkcheck_ignore = [
     # The crawler gets "Anchor not found"
-    r'https://github.com.+?#.*',
-    r'https://devguide.python.org.+?/#.*',
     r'https://developer.apple.com/documentation/.+?#.*',
+    r'https://devguide.python.org.+?/#.*',
+    r'https://github.com.+?#.*',
     # Robot crawlers not allowed: "403 Client Error: Forbidden"
     r'https://support.enthought.com/hc/.*',
     # SSLError CertificateError, even though it is valid
