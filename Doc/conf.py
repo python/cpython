@@ -254,9 +254,14 @@ coverage_ignore_c_items = {
 # Options for the link checker
 # ----------------------------
 
-# Ignore certain URLs.
-linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+']
-
+linkcheck_allowed_redirects = {
+    # bpo-NNNN -> BPO -> GH Issues
+    r'https://bugs.python.org/issue\?@action=redirect&bpo=\d+': 'https://github.com/python/cpython/issues/\d+',
+    # GH-NNNN used to refer to pull requests
+    r'https://github.com/python/cpython/issues/\d+': 'https://github.com/python/cpython/pull/\d+',
+    # :source:`something` linking files in the repository
+    r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*'
+}
 
 # Options for extensions
 # ----------------------
