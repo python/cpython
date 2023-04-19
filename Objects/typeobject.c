@@ -3553,10 +3553,22 @@ static const PySlot_Offset pyslot_offsets[] = {
 /* Align up to the nearest multiple of alignof(max_align_t)
  * (like _Py_ALIGN_UP, but for a size rather than pointer)
  */
+#if __alignof_is_defined
+    // C11
+    #define MAX_ALIGN alignof(max_align_t)
+#else
+    // workaround for MSVC
+    typedef union {
+        intmax_t x;
+        long double y;
+        void *z;
+        void (*f)();
+    } _max_align_t_wannabe;
+    #define MAX_ALIGN _Alignof(_max_align_t_wannabe)
+#endif
 static Py_ssize_t
 _align_up(Py_ssize_t size) {
-    const Py_ssize_t alignment = alignof(max_align_t);
-    return (size + alignment - 1) & ~(alignment - 1);
+    return (size + MAX_ALIGN - 1) & ~(MAX_ALIGN - 1);
 }
 
 /* Given a PyType_FromMetaclass `bases` argument (NULL, type, or tuple of
