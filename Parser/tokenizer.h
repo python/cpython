@@ -43,9 +43,8 @@ enum tokenizer_mode_kind_t {
 typedef struct _tokenizer_mode {
     enum tokenizer_mode_kind_t kind;
 
-    int bracket_stack;
-    int bracket_mark[MAX_EXPR_NESTING];
-    int bracket_mark_index;
+    int curly_bracket_depth;
+    int curly_bracket_expr_start_depth;
 
     char f_string_quote;
     int f_string_quote_size;
