@@ -284,18 +284,45 @@ getmultibytecodec(void)
     return _PyImport_GetModuleAttrString("_multibytecodec", "__create_codec");
 }
 
+static void
+destroy_codec_capsule(PyObject *capsule)
+{
+    void *ptr = PyCapsule_GetPointer(capsule, CODEC_CAPSULE);
+    codec_capsule *data = (codec_capsule *)ptr;
+    Py_DECREF(data->cjk_module);
+    PyMem_Free(ptr);
+}
+
+static codec_capsule *
+capsulate_codec(PyObject *mod, const MultibyteCodec *codec)
+{
+    codec_capsule *data = PyMem_Malloc(sizeof(codec_capsule));
+    if (data == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    data->codec = codec;
+    data->cjk_module = Py_NewRef(mod);
+    return data;
+}
+
 static PyObject *
-_getcodec(const MultibyteCodec *codec)
+_getcodec(PyObject *self, const MultibyteCodec *codec)
 {
     PyObject *cofunc = getmultibytecodec();
     if (cofunc == NULL) {
         return NULL;
     }
 
-    PyObject *codecobj = PyCapsule_New((void *)codec,
-                                       PyMultibyteCodec_CAPSULE_NAME,
-                                       NULL);
+    codec_capsule *data = capsulate_codec(self, codec);
+    if (data == NULL) {
+        Py_DECREF(cofunc);
+        return NULL;
+    }
+    PyObject *codecobj = PyCapsule_New(data, CODEC_CAPSULE,
+                                       destroy_codec_capsule);
     if (codecobj == NULL) {
+        PyMem_Free(data);
         Py_DECREF(cofunc);
         return NULL;
     }
@@ -323,7 +350,7 @@ getcodec(PyObject *self, PyObject *encoding)
     for (int i = 0; i < st->num_codecs; i++) {
         const MultibyteCodec *codec = &st->codec_list[i];
         if (strcmp(codec->encoding, enc) == 0) {
-            return _getcodec(codec);
+            return _getcodec(self, codec);
         }
     }
 
@@ -352,8 +379,7 @@ register_maps(PyObject *module)
         char mhname[256] = "__map_";
         strcpy(mhname + sizeof("__map_") - 1, h->charset);
 
-        PyObject *capsule = PyCapsule_New((void *)h,
-                                          PyMultibyteCodec_CAPSULE_NAME, NULL);
+        PyObject *capsule = PyCapsule_New((void *)h, MAP_CAPSULE, NULL);
         if (capsule == NULL) {
             return -1;
         }
@@ -417,14 +443,14 @@ importmap(const char *modname, const char *symbol,
     o = PyObject_GetAttrString(mod, symbol);
     if (o == NULL)
         goto errorexit;
-    else if (!PyCapsule_IsValid(o, PyMultibyteCodec_CAPSULE_NAME)) {
+    else if (!PyCapsule_IsValid(o, MAP_CAPSULE)) {
         PyErr_SetString(PyExc_ValueError,
                         "map data must be a Capsule.");
         goto errorexit;
     }
     else {
         struct dbcs_map *map;
-        map = PyCapsule_GetPointer(o, PyMultibyteCodec_CAPSULE_NAME);
+        map = PyCapsule_GetPointer(o, MAP_CAPSULE);
         if (encmap != NULL)
             *encmap = map->encmap;
         if (decmap != NULL)
