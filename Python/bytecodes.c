@@ -1979,9 +1979,7 @@ dummy_func(
         inst(JUMP_BACKWARD, (unused/1, unused/4 --)) {
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {
-                next_instr[-1].op.code = JUMP_BACKWARD_RECORDING;
-                cframe.jit_recording_end = &next_instr[-1];
-                cframe.jit_recording_size = 0;
+                _Py_Specialize_JumpBackwardBegin(&cframe, next_instr - 1);
                 GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
             }
             STAT_INC(JUMP_BACKWARD, deferred);
@@ -2000,33 +1998,17 @@ dummy_func(
 
         inst(JUMP_BACKWARD_RECORDING, (unused/1, unused/4 --)) {
             next_instr--;
-            unsigned char *compiled = NULL;
-            if (next_instr == cframe.jit_recording_end) {
-                next_instr->op.code = JUMP_BACKWARD_QUICK;  // XXX
-                compiled = _PyJIT_CompileTrace(cframe.jit_recording_size, cframe.jit_recording);
-            }
-            cframe.jit_recording_end = NULL;
-            if (compiled) {
-                STAT_INC(JUMP_BACKWARD, success);
-                next_instr->op.code = JUMP_BACKWARD_INTO_TRACE;
-                next_instr[1].cache = adaptive_counter_cooldown();
-                *(unsigned char **)(&next_instr[2]) = compiled;
-            }
-            else {
-                STAT_INC(JUMP_BACKWARD, failure);
-                next_instr->op.code = JUMP_BACKWARD;
-                next_instr[1].cache = adaptive_counter_backoff(next_instr[1].cache);
-            }
+            _Py_Specialize_JumpBackwardEnd(&cframe, next_instr);
             DISPATCH_SAME_OPARG();
         }
 
         inst(JUMP_BACKWARD_INTO_TRACE, (unused/1, trace/4 --)) {
             _Py_CODEUNIT *instr = next_instr - 1;
-            JUMPBY(_PyOpcode_Caches[JUMP_BACKWARD]); 
+            JUMPBY(_PyOpcode_Caches[JUMP_BACKWARD]);
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
-            int status = ((int (*)(PyThreadState *, _PyInterpreterFrame *, PyObject **))(uintptr_t)trace)(tstate, frame, stack_pointer);
+            int status = ((int (*)(PyThreadState *, _PyInterpreterFrame *, PyObject **, _Py_CODEUNIT *))(uintptr_t)trace)(tstate, frame, stack_pointer, next_instr);
             frame = cframe.current_frame;
             next_instr = frame->prev_instr;
             stack_pointer = _PyFrame_GetStackPointer(frame);

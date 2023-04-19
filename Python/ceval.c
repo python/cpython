@@ -611,7 +611,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     tstate->cframe = &cframe;
 
     cframe.jit_recording_end = NULL;
-    cframe.jit_recording_size = 0;
 
     assert(tstate->interp->interpreter_trampoline != NULL);
 #ifdef Py_DEBUG

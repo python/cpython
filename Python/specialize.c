@@ -3,6 +3,7 @@
 #include "pycore_dict.h"
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
 #include "pycore_global_strings.h"  // _Py_ID()
+#include "pycore_jit.h"
 #include "pycore_long.h"
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
@@ -278,13 +279,7 @@ _PyCode_Quicken(PyCodeObject *code)
         assert(opcode < MIN_INSTRUMENTED_OPCODE);
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
-            // XXX
-            if (opcode == JUMP_BACKWARD) {
-                instructions[i + 1].cache = adaptive_counter_bits((1 << 6) - 1, 6);
-            }
-            else {
-                instructions[i + 1].cache = adaptive_counter_warmup();
-            }
+            instructions[i + 1].cache = adaptive_counter_warmup();
             i += caches;
             continue;
         }
@@ -460,6 +455,12 @@ _PyCode_Quicken(PyCodeObject *code)
 
 #define SPEC_FAIL_UNPACK_SEQUENCE_ITERATOR 9
 #define SPEC_FAIL_UNPACK_SEQUENCE_SEQUENCE 10
+
+// JUMP_BACKWARD
+
+#define SPEC_FAIL_JUMP_BACKWARD_TOO_LONG 9
+#define SPEC_FAIL_JUMP_BACKWARD_INNER_LOOP 10
+#define SPEC_FAIL_JUMP_BACKWARD_UNSUPPORTED_OPCODE 11
 
 static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
@@ -2196,3 +2197,54 @@ success:
     STAT_INC(SEND, success);
     cache->counter = adaptive_counter_cooldown();
 }
+
+void
+_Py_Specialize_JumpBackwardBegin(_PyCFrame *cframe, _Py_CODEUNIT *instr)
+{
+    assert(ENABLE_SPECIALIZATION);
+    // assert(_PyOpcode_Caches[JUMP_BACKWARD] == INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
+    instr->op.code = JUMP_BACKWARD_RECORDING;
+    if (cframe->jit_recording_end) {
+        SPECIALIZATION_FAIL(JUMP_BACKWARD, SPEC_FAIL_JUMP_BACKWARD_INNER_LOOP);
+    }
+    cframe->jit_recording_end = instr;
+    cframe->jit_recording_size = 0;
+}
+
+void
+_Py_Specialize_JumpBackwardReset(_PyCFrame *cframe)
+{
+    assert(ENABLE_SPECIALIZATION);
+    // assert(_PyOpcode_Caches[JUMP_BACKWARD] == INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
+    _Py_CODEUNIT *instr = cframe->jit_recording_end;
+    cframe->jit_recording_end = NULL;
+    // assert(instr->op.code == JUMP_BACKWARD_RECORDING);
+    instr->op.code = JUMP_BACKWARD;
+    instr[1].cache = adaptive_counter_backoff(instr[1].cache);
+    SPECIALIZATION_FAIL(JUMP_BACKWARD, SPEC_FAIL_JUMP_BACKWARD_TOO_LONG);
+}
+
+void
+_Py_Specialize_JumpBackwardEnd(_PyCFrame *cframe, _Py_CODEUNIT *instr)
+{
+    assert(ENABLE_SPECIALIZATION);
+    // assert(_PyOpcode_Caches[JUMP_BACKWARD] == INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
+    if (instr == cframe->jit_recording_end) {
+        instr->op.code = JUMP_BACKWARD_QUICK;
+        unsigned char *compiled = _PyJIT_CompileTrace(cframe->jit_recording_size, cframe->jit_recording);
+        if (compiled) {
+            STAT_INC(JUMP_BACKWARD, success);
+            instr->op.code = JUMP_BACKWARD_INTO_TRACE;
+            instr[1].cache = adaptive_counter_cooldown();
+            *(unsigned char **)(&instr[2]) = compiled;
+            goto done;
+        }
+        SPECIALIZATION_FAIL(JUMP_BACKWARD, SPEC_FAIL_JUMP_BACKWARD_UNSUPPORTED_OPCODE);
+    }
+    STAT_INC(JUMP_BACKWARD, failure);
+    instr->op.code = JUMP_BACKWARD;
+    instr[1].cache = adaptive_counter_backoff(instr[1].cache);
+done:
+    cframe->jit_recording_end = NULL;
+}
+

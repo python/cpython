@@ -22,9 +22,6 @@
 #define _JUSTIN_RETURN_GOTO_EXIT_UNWIND          2
 #define _JUSTIN_RETURN_GOTO_HANDLE_EVAL_BREAKER  3
 
-// We obviously don't want compiled code specializing itself:
-#undef ENABLE_SPECIALIZATION
-#define ENABLE_SPECIALIZATION 0
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     do {                         \
@@ -32,13 +29,10 @@
             goto _return_deopt;  \
         }                        \
     } while (0)
-#undef DISPATCH
-#define DISPATCH()                                        \
-    do {                                                  \
-        if (_JUSTIN_CHECK && next_instr != _next_trace) { \
-            goto _return_ok;                              \
-        }                                                 \
-        goto _continue;                                   \
+#undef DISPATCH_GOTO
+#define DISPATCH_GOTO() \
+    do {                \
+        goto _continue; \
     } while (0)
 #undef PREDICT
 #define PREDICT(OP)
@@ -49,9 +43,8 @@
 
 // Stuff that will be patched at "JIT time":
 extern int _justin_continue(PyThreadState *tstate, _PyInterpreterFrame *frame,
-                            PyObject **stack_pointer);
+                            PyObject **stack_pointer, _Py_CODEUNIT *next_instr);
 extern _Py_CODEUNIT _justin_next_instr;
-extern _Py_CODEUNIT _justin_next_trace;
 extern void _justin_oparg;
 
 // XXX
@@ -59,18 +52,21 @@ extern void _justin_oparg;
 
 int
 _justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
-              PyObject **stack_pointer)
+              PyObject **stack_pointer, _Py_CODEUNIT *next_instr)
 {
     // Locals that the instruction implementations expect to exist:
     _Py_atomic_int *const eval_breaker = &tstate->interp->ceval.eval_breaker;
-    _Py_CODEUNIT *next_instr = &_justin_next_instr;
     int oparg = (uintptr_t)&_justin_oparg;
     uint8_t opcode = _JUSTIN_OPCODE;
     // XXX: This temporary solution only works because we don't trace KW_NAMES:
     PyObject *kwnames = NULL;
-    // Stuff to make Justin work:
-    _Py_CODEUNIT *_next_trace = &_justin_next_trace;
-    if (opcode != JUMP_BACKWARD_QUICK && next_instr->op.code != opcode) {
+    // XXX: This compiles but results in garbage stats:
+#ifdef Py_STATS
+    int lastopcode = frame->prev_instr->op.arg;
+#endif
+    if (next_instr != &_justin_next_instr || 
+        (opcode != JUMP_BACKWARD_QUICK && next_instr->op.code != opcode))
+    {
         frame->prev_instr = next_instr;
         goto _return_deopt;
     }
@@ -117,5 +113,5 @@ _continue:
     ;  // XXX
     // Finally, the continuation:
     __attribute__((musttail))
-    return _justin_continue(tstate, frame, stack_pointer);
+    return _justin_continue(tstate, frame, stack_pointer, next_instr);
 }

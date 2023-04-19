@@ -70,7 +70,7 @@
                     }                                                                            \
                 }                                                                                \
                 else {                                                                           \
-                    (CFRAME).jit_recording_end = NULL;                                           \
+                    _Py_Specialize_JumpBackwardReset(&(CFRAME));                                 \
                 }                                                                                \
             }                                                                                    \
         } while (0)

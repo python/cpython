@@ -237,6 +237,9 @@ extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
                                           int oparg);
 extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_JumpBackwardBegin(_PyCFrame *cframe, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_JumpBackwardReset(_PyCFrame *cframe);
+extern void _Py_Specialize_JumpBackwardEnd(_PyCFrame *cframe, _Py_CODEUNIT *instr);
 
 /* Finalizer function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Fini(PyCodeObject *co);

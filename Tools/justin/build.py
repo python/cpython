@@ -243,6 +243,7 @@ class Engine:
         "-O3",
         "-Wall",
         "-Wextra",
+        "-Wno-unused-but-set-variable",
         "-Wno-unused-label",
         "-Wno-unused-variable",
         # We don't need this (and it causes weird relocations):
