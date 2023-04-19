@@ -21,7 +21,7 @@ jobs:
   documentation-links:
     runs-on: ubuntu-latest
     steps:
-      - uses: readthedocs/actions/preview@v1
+      - uses: readthedocs/actions/preview@212a0c4917cd5db3f95d08786dd313666fe38cac  # v1.1
         with:
           project-slug: "cpython-previews"
           single-version: "true"

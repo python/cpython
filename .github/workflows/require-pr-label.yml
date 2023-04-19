@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: mheap/github-action-required-labels@v4
+      - uses: mheap/github-action-required-labels@422e4c352ef83db91089e6acfbf09d8725e08abc  # v4
         with:
           mode: exactly
           count: 0
