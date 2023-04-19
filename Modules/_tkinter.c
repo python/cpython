@@ -121,7 +121,7 @@ Copyright (C) 1994 Steen Lumholt.
 #define WAIT_FOR_STDIN
 
 static PyObject *
-_get_tcl_lib_path()
+_get_tcl_lib_path(void)
 {
     static PyObject *tcl_library_path = NULL;
     static int already_checked = 0;
@@ -238,6 +238,64 @@ _get_tcl_lib_path()
 
 */
 
+typedef struct {
+    // Types and exceptions
+    PyObject *PyTclObject_Type;
+    PyObject *Tkapp_Type;
+    PyObject *Tktt_Type;
+    PyObject *Tkinter_TclError;
+
+    // Locking
+    PyThread_type_lock tcl_lock;
+
+    // Error handling
+    PyObject *excInCmd;
+    int errorInCmd;
+    int quitMainLoop;
+
+    // Util
+    int Tkinter_busywaitinterval;
+    struct _fhcdata *HeadFHCD;
+    int stdin_ready;
+    PyThreadState *event_tstate;
+} module_state;
+
+extern module_state global_state;
+
+#define GLOBAL_STATE() (&global_state)
+
+static inline module_state *
+get_module_state(PyObject *mod)
+{
+    void *state = _PyModule_GetState(mod);
+    assert(state != NULL);
+    return (module_state *)state;
+}
+
+static inline module_state *
+get_module_state_by_cls(PyTypeObject *cls)
+{
+    void *state = _PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (module_state *)state;
+}
+
+extern struct PyModuleDef _tkintermodule;
+
+static inline PyObject *
+find_module_by_type(PyTypeObject *tp)
+{
+    return PyType_GetModuleByDef(tp, &_tkintermodule);
+}
+
+static inline module_state *
+find_module_state_by_type(PyTypeObject *tp)
+{
+    PyObject *mod = find_module_by_type(tp);
+    assert(mod != NULL);
+    return get_module_state(mod);
+}
+
 module_state global_state;
 
 #ifdef TCL_THREADS
@@ -328,11 +386,6 @@ typedef struct {
 
 
 /**** Error Handling ****/
-
-#ifdef TKINTER_PROTECT_LOADTK
-static int tk_load_failed = 0;
-#endif
-
 
 static PyObject *Tkapp_UnicodeResult(TkappObject *);
 
@@ -536,17 +589,7 @@ Tcl_AppInit(Tcl_Interp *interp)
         return TCL_OK;
     }
 
-#ifdef TKINTER_PROTECT_LOADTK
-    if (tk_load_failed) {
-        PySys_WriteStderr("Tk_Init error: %s\n", TKINTER_LOADTK_ERRMSG);
-        return TCL_ERROR;
-    }
-#endif
-
     if (Tk_Init(interp) == TCL_ERROR) {
-#ifdef TKINTER_PROTECT_LOADTK
-        tk_load_failed = 1;
-#endif
         PySys_WriteStderr("Tk_Init error: %s\n", Tcl_GetStringResult(interp));
         return TCL_ERROR;
     }
@@ -640,12 +683,6 @@ Tkapp_New(module_state *st, const char *screenName, const char *className,
         Tcl_SetVar(v->interp,
                         "_tkinter_skip_tk_init", "1", TCL_GLOBAL_ONLY);
     }
-#ifdef TKINTER_PROTECT_LOADTK
-    else if (tk_load_failed) {
-        Tcl_SetVar(v->interp,
-                        "_tkinter_tk_failed", "1", TCL_GLOBAL_ONLY);
-    }
-#endif
 
     /* some initial arguments need to be in argv */
     if (sync || use) {
@@ -707,18 +744,6 @@ Tkapp_New(module_state *st, const char *screenName, const char *className,
 
     if (Tcl_AppInit(v->interp) != TCL_OK) {
         PyObject *result = Tkinter_Error(v);
-#ifdef TKINTER_PROTECT_LOADTK
-        if (wantTk) {
-            const char *_tkinter_tk_failed;
-            _tkinter_tk_failed = Tcl_GetVar(v->interp,
-                            "_tkinter_tk_failed", TCL_GLOBAL_ONLY);
-
-            if ( _tkinter_tk_failed != NULL &&
-                            strcmp(_tkinter_tk_failed, "1") == 0) {
-                tk_load_failed = 1;
-            }
-        }
-#endif
         Py_DECREF((PyObject *)v);
         return (TkappObject *)result;
     }
@@ -2836,19 +2861,6 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
     const char * _tk_exists = NULL;
     int err;
 
-#ifdef TKINTER_PROTECT_LOADTK
-    /* Up to Tk 8.4.13, Tk_Init deadlocks on the second call when the
-     * first call failed.
-     * To avoid the deadlock, we just refuse the second call through
-     * a static variable.
-     */
-    if (tk_load_failed) {
-        module_state *st = self->state;
-        PyErr_SetString(st->Tkinter_TclError, TKINTER_LOADTK_ERRMSG);
-        return NULL;
-    }
-#endif
-
     /* We want to guard against calling Tk_Init() multiple times */
     CHECK_TCL_APPARTMENT;
     ENTER_TCL
@@ -2868,9 +2880,6 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self)
     if (_tk_exists == NULL || strcmp(_tk_exists, "1") != 0)     {
         if (Tk_Init(interp)             == TCL_ERROR) {
             Tkinter_Error(self);
-#ifdef TKINTER_PROTECT_LOADTK
-            tk_load_failed = 1;
-#endif
             return NULL;
         }
     }

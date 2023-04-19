@@ -1119,18 +1119,19 @@ static const struct iso2022_designation iso2022_jp_ext_designations[] = {
 CONFIGDEF(jp_ext, NO_SHIFT | USE_JISX0208_EXT)
 
 
-BEGIN_MAPPINGS_LIST
+BEGIN_MAPPINGS_LIST(0)
   /* no mapping table here */
 END_MAPPINGS_LIST
 
-#define ISO2022_CODEC(variation) {              \
+#define ISO2022_CODEC(variation)                \
+NEXT_CODEC = (MultibyteCodec){                  \
     "iso2022_" #variation,                      \
     &iso2022_##variation##_config,              \
     iso2022_codec_init,                         \
     _STATEFUL_METHODS(iso2022)                  \
-},
+};
 
-BEGIN_CODECS_LIST
+BEGIN_CODECS_LIST(7)
   ISO2022_CODEC(kr)
   ISO2022_CODEC(jp)
   ISO2022_CODEC(jp_1)
