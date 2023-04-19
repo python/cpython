@@ -136,7 +136,7 @@ The following classes are available:
 .. class:: UID(data)
 
    Wraps an :class:`int`.  This is used when reading or writing NSKeyedArchiver
-   encoded data, which contains UID (see Wikipedia).
+   encoded data, which contains UID (see Swift foundation source).
 
    It has one attribute, :attr:`data`, which can be used to retrieve the int value
    of the UID.  :attr:`data` must be in the range ``0 <= data < 2**64``.
