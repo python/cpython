@@ -14630,6 +14630,15 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
         _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
        return;
     }
+#ifdef Py_REF_DEBUG
+    /* The reference count value excluding the 2 references from the
+       interned dictionary should be excluded from the RefTotal. The
+       decrements to these objects will not be registered so they
+       need to be accounted for in here. */
+       for (Py_ssize_t i = 0; i < Py_REFCNT(s) - 2; i++) {
+           _Py_DecRefTotal(_PyInterpreterState_GET());
+       }
+#endif
     _Py_SetImmortal(s);
     _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
 }
@@ -14697,14 +14706,10 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         assert(PyUnicode_IS_READY(s));
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_INTERNED_IMMORTAL:
-#ifdef Py_REF_DEBUG
-            // Update the total ref counts to account for the original
-            // reference to this string that no longer exists.
-            _Py_RefTotal--;
-#endif
-            // Skip the Immortal Instance check and directly set the refcnt.
+            // Skip the Immortal Instance check and restore
+            // the two references (key and value) ignored
+            // by PyUnicode_InternInPlace().
             s->ob_refcnt = 2;
-            _PyUnicode_STATE(s).interned = 0;
 #ifdef INTERNED_STATS
             total_length += PyUnicode_GET_LENGTH(s);
 #endif
@@ -14726,7 +14731,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             total_length);
 #endif
 
-struct _Py_unicode_state *state = &interp->unicode;
+    struct _Py_unicode_state *state = &interp->unicode;
     struct _Py_unicode_ids *ids = &state->ids;
     for (Py_ssize_t i=0; i < ids->size; i++) {
         Py_XINCREF(ids->array[i]);
