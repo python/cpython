@@ -29,6 +29,7 @@ import functools
 import io
 import logging
 import logging.handlers
+import os
 import queue
 import re
 import struct
@@ -59,17 +60,26 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
     configuration).
     """
     import configparser
+    
+    if isinstance(fname, str):
+        if not os.path.exists(fname):
+            raise FileNotFoundError(f"{fname} doesn't exit")
+        elif not os.path.getsize(fname):
+            raise ValueError(f"{fname} configuration file is empty")
 
     if isinstance(fname, configparser.RawConfigParser):
         cp = fname
     else:
-        cp = configparser.ConfigParser(defaults)
-        if hasattr(fname, 'readline'):
-            cp.read_file(fname)
-        else:
-            encoding = io.text_encoding(encoding)
-            cp.read(fname, encoding=encoding)
-
+        try:
+            cp = configparser.ConfigParser(defaults)
+            if hasattr(fname, 'readline'):
+                cp.read_file(fname)
+            else:
+                encoding = io.text_encoding(encoding)
+                cp.read(fname, encoding=encoding)
+        except configparser.ParsingError as e:
+            raise ValueError(f"{fname} is invalid, errored with: {e}")
+        
     formatters = _create_formatters(cp)
 
     # critical section
