@@ -100,7 +100,7 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
         patches[HOLE_continue] = (i != size - 1) 
                                ? (uintptr_t)head + stencil->nbytes
                                : (uintptr_t)memory + trampoline_stencil.nbytes;
-        patches[HOLE_next_instr] = (uintptr_t)trace[i];
+        patches[HOLE_next_instr] = (uintptr_t)instruction;
         patches[HOLE_oparg] = instruction->op.arg;
         head = copy_and_patch(head, stencil, patches);
     };

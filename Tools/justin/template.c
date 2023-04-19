@@ -60,13 +60,13 @@ _justin_entry(PyThreadState *tstate, _PyInterpreterFrame *frame,
     uint8_t opcode = _JUSTIN_OPCODE;
     // XXX: This temporary solution only works because we don't trace KW_NAMES:
     PyObject *kwnames = NULL;
-    // XXX: This compiles but results in garbage stats:
 #ifdef Py_STATS
     int lastopcode = frame->prev_instr->op.arg;
 #endif
-    if (next_instr != &_justin_next_instr || 
-        (opcode != JUMP_BACKWARD_QUICK && next_instr->op.code != opcode))
-    {
+    if (next_instr != &_justin_next_instr) {
+        goto _return_ok;
+    }
+    if (opcode != JUMP_BACKWARD_QUICK && next_instr->op.code != opcode) {
         frame->prev_instr = next_instr;
         goto _return_deopt;
     }
