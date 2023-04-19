@@ -250,7 +250,8 @@ asyncio
   :mod:`asyncio` does not support legacy generator-based coroutines.
   (Contributed by Kumar Aditya in :gh:`102748`.)
 
-* :func:`asyncio.wait` now accepts generators yielding tasks.
+* :func:`asyncio.wait` and :func:`asyncio.as_completed` now accepts generators
+  yielding tasks.
   (Contributed by Kumar Aditya in :gh:`78530`.)
 
 csv
