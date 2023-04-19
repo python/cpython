@@ -249,10 +249,28 @@ make_heaptype_with_member(PyObject *module, PyObject *args)
 }
 
 
+static PyObject *
+test_alignof_max_align_t(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    // We define ALIGNOF_MAX_ALIGN_T even if the compiler doesn't have
+    // max_afign_t. Double-check that it's correct.
+    assert(ALIGNOF_MAX_ALIGN_T > 0);
+    assert(ALIGNOF_MAX_ALIGN_T >= _Alignof(long long));
+    assert(ALIGNOF_MAX_ALIGN_T >= _Alignof(long double));
+    assert(ALIGNOF_MAX_ALIGN_T >= _Alignof(void*));
+    assert(ALIGNOF_MAX_ALIGN_T >= _Alignof(void (*)(void)));
+
+    // Ensure it's a power of two
+    assert((ALIGNOF_MAX_ALIGN_T & (ALIGNOF_MAX_ALIGN_T - 1)) == 0);
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"make_sized_heaptypes", make_sized_heaptypes, METH_VARARGS},
     {"subclass_var_heaptype", subclass_var_heaptype, METH_VARARGS},
     {"make_heaptype_with_member", make_heaptype_with_member, METH_VARARGS},
+    {"test_alignof_max_align_t", test_alignof_max_align_t, METH_NOARGS},
     {NULL},
 };
 

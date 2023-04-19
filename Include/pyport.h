@@ -745,4 +745,10 @@ extern char * _getpty(int *, int, mode_t, int);
 #undef __bool__
 #endif
 
+// Make sure we have alignof(max_align_t)
+// (autoconf report alignment of unknown types to 0)
+#if ALIGNOF_MAX_ALIGN_T <= 0
+#error "ALIGNOF_MAX_ALIGN_T must be positive"
+#endif
+
 #endif /* Py_PYPORT_H */
