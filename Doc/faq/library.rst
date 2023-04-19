@@ -780,8 +780,8 @@ socket to :meth:`select.select` to check if it's writable.
    The :mod:`asyncio` module provides a general purpose single-threaded and
    concurrent asynchronous library, which can be used for writing non-blocking
    network code.
-   The third-party `Twisted <https://twisted.org/>`_ library is a popular and
-   feature-rich alternative.
+   The third-party `Twisted <https://twisted.org/>`_ library is
+   a popular and feature-rich alternative.
 
 
 Databases

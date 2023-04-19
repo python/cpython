@@ -1606,7 +1606,7 @@ expression support in the :mod:`re` module).
 
    The casefolding algorithm is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <http://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
 
    .. versionadded:: 3.3
 
