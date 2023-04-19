@@ -67,6 +67,7 @@ SOFT_KEYWORD = 60
 FSTRING_START = 61
 FSTRING_MIDDLE = 62
 FSTRING_END = 63
+FSTRING_EXPR = 69
 # These aren't used by the C tokenizer but are needed for tokenize.py
 ERRORTOKEN = 64
 COMMENT = 65

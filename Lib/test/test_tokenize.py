@@ -381,21 +381,33 @@ c"""', """\
     STRING     'rb"\""a\\\\\\nb\\\\\\nc"\""' (1, 0) (3, 4)
     """)
         self.check_tokenize('f"abc"', """\
-    STRING     'f"abc"'      (1, 0) (1, 6)
+    FSTRING_START \'f"\'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'abc'         (1, 2) (1, 5)
+    FSTRING_END \'"\'           (1, 5) (1, 6)
     """)
         self.check_tokenize('fR"a{b}c"', """\
-    STRING     'fR"a{b}c"'   (1, 0) (1, 9)
+    FSTRING_START \'fR"\'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'a'           (1, 3) (1, 4)
+    FSTRING_EXPR '{b}'         (1, 4) (1, 7)
+    FSTRING_MIDDLE 'c'           (1, 7) (1, 8)
+    FSTRING_END \'"\'           (1, 8) (1, 9)
     """)
         self.check_tokenize('f"""abc"""', """\
-    STRING     'f\"\"\"abc\"\"\"'  (1, 0) (1, 10)
+    FSTRING_START 'f\"""'        (1, 0) (1, 4)
+    FSTRING_MIDDLE 'abc'         (1, 4) (1, 7)
+    FSTRING_END '\"""'         (1, 7) (1, 10)
     """)
         self.check_tokenize(r'f"abc\
 def"', """\
-    STRING     'f"abc\\\\\\ndef"' (1, 0) (2, 4)
+    FSTRING_START \'f"\'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 2) (2, 3)
+    FSTRING_END \'"\'           (2, 3) (2, 4)
     """)
         self.check_tokenize(r'Rf"abc\
 def"', """\
-    STRING     'Rf"abc\\\\\\ndef"' (1, 0) (2, 4)
+    FSTRING_START \'Rf"\'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 3) (2, 3)
+    FSTRING_END \'"\'           (2, 3) (2, 4)
     """)
 
     def test_function(self):

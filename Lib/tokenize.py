@@ -29,6 +29,7 @@ from codecs import lookup, BOM_UTF8
 import collections
 import functools
 from io import TextIOWrapper
+from io import BytesIO
 import itertools as _itertools
 import re
 import sys
@@ -37,6 +38,14 @@ from token import EXACT_TOKEN_TYPES
 
 cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
+fstring_re = re.compile(
+    r'''
+    (?P<start>^[fFrR]{1,2}(?P<quote>[\'\"]{1,3}))
+    (?P<middle>.*)
+    (?P=quote)$
+    ''',
+    re.VERBOSE | re.DOTALL
+)
 
 import token
 __all__ = token.__all__ + ["tokenize", "generate_tokens", "detect_encoding",
@@ -430,7 +439,7 @@ def tokenize(readline):
     return _tokenize(rl_gen.__next__, encoding)
 
 
-def _tokenize(readline, encoding):
+def _tokenize_normal_mode(readline, encoding):
     lnum = parenlev = continued = 0
     numchars = '0123456789'
     contstr, needcont = '', 0
@@ -611,6 +620,115 @@ def _tokenize(readline, encoding):
     for indent in indents[1:]:                 # pop remaining indent levels
         yield TokenInfo(DEDENT, '', (lnum, 0), (lnum, 0), '')
     yield TokenInfo(ENDMARKER, '', (lnum, 0), (lnum, 0), '')
+
+
+def _tokenize_fstring_mode(line, tok_start):
+    line_number, start = tok_start
+
+    parts = fstring_re.match(line)
+    end = line_number, start + len(parts.group('start'))
+    yield TokenInfo(
+        type=FSTRING_START,
+        string=parts.group('start'),
+        start=(line_number, start),
+        end=end,
+        line=line)
+
+    middle = parts.group('middle')
+    mid_token, mid_expr = '', ''
+    curly_brackets = []
+    start, i = end[1], 0
+
+    for c in middle:
+        match c:
+            case '{':
+                # TODO: handle {{ and \{
+                curly_brackets.append(c)
+                mid_expr += c
+                yield TokenInfo(
+                    type=FSTRING_MIDDLE,
+                    string=mid_token,
+                    start=end,
+                    end=(line_number, start + i),
+                    line=line)
+                mid_token = ''
+                end = line_number, start + i
+            case '}':
+                curly_brackets.pop()
+                mid_expr += c
+                yield TokenInfo(
+                    type=FSTRING_EXPR,
+                    string=mid_expr,
+                    # +1 is needed here since this token is yielded when
+                    # reading the }, before incrementing i.
+                    start=end,
+                    end=(line_number, start + i + 1),
+                    line=line)
+                mid_expr = ''
+                end = line_number, start + i + 1
+            case '\n':
+                if mid_expr:
+                    mid_expr += c
+                else:
+                    mid_token += c
+                line_number += 1
+                start = 0
+                i = -1
+            case _:
+                if mid_expr:
+                    mid_expr += c
+                else:
+                    mid_token += c
+        i += 1
+
+    # once the end of the expression is reached, release what's left of
+    # mid_token
+    start += i
+    yield TokenInfo(
+        type=FSTRING_MIDDLE,
+        string=mid_token,
+        start=end,
+        end=(line_number, start),
+        line=line)
+    end = line_number, start
+
+    if curly_brackets:
+        # TODO: handle syntax error of not matching {}
+        pass
+
+    yield TokenInfo(
+        type=FSTRING_END,
+        string=parts.group('quote'),
+        start=end,
+        end=(line_number, start + len(parts.group('quote'))),
+        line=line)
+
+
+def _is_fstring(tok):
+    """Checks whether a STRING token is a fstring or not.
+
+    Args:
+        tok: TokenInfo object of type STRING.
+
+    Returns:
+        bool
+    """
+    return tok.string.lower().startswith(('f', 'rf', 'fr'))
+
+
+def _tokenize(readline, encoding):
+    """Tokenize Python code implementing the string mode and the normal mode.
+
+    See PEP701 por more details.
+    """
+    tokens = _tokenize_normal_mode(readline, encoding)
+
+    for tok in tokens:
+        if tok.type != STRING or not _is_fstring(tok):
+            yield tok
+        else:
+            for t in _tokenize_fstring_mode(tok.string, tok.start):
+                yield t
 
 
 def generate_tokens(readline):
