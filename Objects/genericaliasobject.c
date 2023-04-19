@@ -851,6 +851,7 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     gaobject *self = (gaobject *)type->tp_alloc(type, 0);
     if (self == NULL) {
+        Py_DECREF(arguments);
         return NULL;
     }
     setup_ga(self, origin, arguments, false);
@@ -1037,6 +1038,7 @@ _Py_GenericAlias_impl(PyObject *origin, PyObject *args, bool starred) {
 
     if (_PyDict_SetItem_KnownHash(interp->genericalias_cache,
                                   key, result, hash) < 0) {
+        Py_DECREF(origin);
         goto error;
     } else {
         goto finally;
@@ -1044,9 +1046,7 @@ _Py_GenericAlias_impl(PyObject *origin, PyObject *args, bool starred) {
 
 error:
     Py_XDECREF(result);
-    if (arg_res == 1) {
-        Py_DECREF(args);
-    }
+    Py_DECREF(args);
 finally:
     Py_XDECREF(key);
     Py_XDECREF(star);
