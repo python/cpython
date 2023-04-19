@@ -3804,22 +3804,19 @@ class TestExtractionFilters(unittest.TestCase):
     def test_errorlevel(self):
         def extracterror_filter(tarinfo, path):
             raise tarfile.ExtractError('failed with ExtractError')
-        def tarerror_filter(tarinfo, path):
-            raise tarfile.ExtractError('failed with base TarError')
         def filtererror_filter(tarinfo, path):
             raise tarfile.FilterError('failed with FilterError')
         def oserror_filter(tarinfo, path):
             raise OSError('failed with OSError')
+        def tarerror_filter(tarinfo, path):
+            raise tarfile.TarError('failed with base TarError')
         def valueerror_filter(tarinfo, path):
             raise ValueError('failed with ValueError')
 
         with ArchiveMaker() as arc:
             arc.add('file')
 
-        # If errorlevel is 0, errors are ignored when using TarFile.extract().
-
-        with self.check_context(arc.open(errorlevel=0), tarerror_filter):
-            self.expect_file('file')
+        # If errorlevel is 0, errors affected by errorlevel are ignored
 
         with self.check_context(arc.open(errorlevel=0), extracterror_filter):
             self.expect_file('file')
@@ -3830,13 +3827,13 @@ class TestExtractionFilters(unittest.TestCase):
         with self.check_context(arc.open(errorlevel=0), oserror_filter):
             self.expect_file('file')
 
+        with self.check_context(arc.open(errorlevel=0), tarerror_filter):
+            self.expect_exception(tarfile.TarError)
+
         with self.check_context(arc.open(errorlevel=0), valueerror_filter):
             self.expect_exception(ValueError)
 
         # If 1, all fatal errors are raised
-
-        with self.check_context(arc.open(errorlevel=1), tarerror_filter):
-            self.expect_file('file')
 
         with self.check_context(arc.open(errorlevel=1), extracterror_filter):
             self.expect_file('file')
@@ -3847,13 +3844,13 @@ class TestExtractionFilters(unittest.TestCase):
         with self.check_context(arc.open(errorlevel=1), oserror_filter):
             self.expect_exception(OSError)
 
+        with self.check_context(arc.open(errorlevel=1), tarerror_filter):
+            self.expect_exception(tarfile.TarError)
+
         with self.check_context(arc.open(errorlevel=1), valueerror_filter):
             self.expect_exception(ValueError)
 
         # If 2, all non-fatal errors are raised as well.
-
-        with self.check_context(arc.open(errorlevel=2), tarerror_filter):
-            self.expect_exception(tarfile.TarError)
 
         with self.check_context(arc.open(errorlevel=2), extracterror_filter):
             self.expect_exception(tarfile.ExtractError)
@@ -3864,12 +3861,15 @@ class TestExtractionFilters(unittest.TestCase):
         with self.check_context(arc.open(errorlevel=2), oserror_filter):
             self.expect_exception(OSError)
 
+        with self.check_context(arc.open(errorlevel=2), tarerror_filter):
+            self.expect_exception(tarfile.TarError)
+
         with self.check_context(arc.open(errorlevel=2), valueerror_filter):
             self.expect_exception(ValueError)
 
-        # We only handle TarError & OSError specially.
+        # We only handle ExtractionError, FilterError & OSError specially.
 
-        with self.check_context(arc.open(errorlevel='boo!'), tarerror_filter):
+        with self.check_context(arc.open(errorlevel='boo!'), filtererror_filter):
             self.expect_exception(TypeError)  # errorlevel is not int
 
 
