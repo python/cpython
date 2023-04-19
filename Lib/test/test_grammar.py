@@ -1470,16 +1470,16 @@ class GrammarTests(unittest.TestCase):
         def check(test, msg):
             self.check_syntax_warning(test, msg)
 
-        check('x is 1', '"is" with int literal')
-        check('x is "thing"', '"is" with str literal')
-        check('1 is x', '"is" with int literal')
-        check('x is y is 1', '"is" with int literal')
-        check('x is not 1', '"is not" with int literal')
-        check('x is not (1, 2)', '"is not" with tuple literal')
-        check('(1, 2) is not x', '"is not" with tuple literal')
+        check('x is 1', '"is" with \'int\' literal')
+        check('x is "thing"', '"is" with \'str\' literal')
+        check('1 is x', '"is" with \'int\' literal')
+        check('x is y is 1', '"is" with \'int\' literal')
+        check('x is not 1', '"is not" with \'int\' literal')
+        check('x is not (1, 2)', '"is not" with \'tuple\' literal')
+        check('(1, 2) is not x', '"is not" with \'tuple\' literal')
 
-        check('None is 1', '"is" with int literal')
-        check('1 is None', '"is" with int literal')
+        check('None is 1', '"is" with \'int\' literal')
+        check('1 is None', '"is" with \'int\' literal')
 
         with warnings.catch_warnings():
             warnings.simplefilter('error', SyntaxWarning)

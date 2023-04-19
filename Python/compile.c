@@ -2285,8 +2285,8 @@ check_compare(struct compiler *c, expr_ty e)
         if (op == Is || op == IsNot) {
             if (!right || !left) {
                 const char *msg = (op == Is)
-                        ? "\"is\" with %.200s literal. Did you mean \"==\"?"
-                        : "\"is not\" with %.200s literal. Did you mean \"!=\"?";
+                        ? "\"is\" with '%.200s' literal. Did you mean \"==\"?"
+                        : "\"is not\" with '%.200s' literal. Did you mean \"!=\"?";
                 expr_ty literal = !left ? e->v.Compare.left : right_expr;
                 return compiler_warn(
                     c, LOC(e), msg, Py_TYPE(literal->v.Constant.value)->tp_name
