@@ -84,9 +84,13 @@ Dynamic Type Creation
 
 .. function:: get_original_bases(cls, /)
 
-    Return the objects in the bases list of the class's definition as they
-    existed prior to any modification by :meth:`~object.__mro_entries__`. This
-    is useful for introspecting :ref:`Generics <user-defined-generics>`.
+    Return the tuple of objects originally given as the bases of *cls* before
+    the :meth:`~object.__mro_entries__` method has been called on any bases
+    (following the mechanisms laid out in :pep:`560`). This is useful for
+    introspecting :ref:`Generics <user-defined-generics>`.
+
+    For classes that have an ``__orig_bases__`` attribute, this
+    function simply returns the value of ``cls.__orig_bases__``.
 
     Examples::
 
