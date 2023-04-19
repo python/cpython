@@ -1053,21 +1053,21 @@ compiler_addop_name(struct compiler_unit *u, location loc,
     }
     if (opcode == LOAD_SUPER_ATTR) {
         arg <<= 2;
+        arg |= 2;
     }
     if (opcode == LOAD_SUPER_METHOD) {
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
-        arg |= 1;
+        arg |= 3;
     }
     if (opcode == LOAD_ZERO_SUPER_ATTR) {
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
-        arg |= 2;
     }
     if (opcode == LOAD_ZERO_SUPER_METHOD) {
         opcode = LOAD_SUPER_ATTR;
         arg <<= 2;
-        arg |= 3;
+        arg |= 1;
     }
     return codegen_addop_i(&u->u_instr_sequence, opcode, arg, loc);
 }

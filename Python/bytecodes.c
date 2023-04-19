@@ -1574,13 +1574,8 @@ dummy_func(
                     Py_DECREF(self);
                 }
             } else {
-                PyObject *super;
-                if (oparg & 2) {
-                    super = PyObject_CallNoArgs(global_super);
-                } else {
-                    PyObject *stack[] = {class, self};
-                    super = PyObject_Vectorcall(global_super, stack, 2, NULL);
-                }
+                PyObject *stack[] = {class, self};
+                PyObject *super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
                 DECREF_INPUTS();
                 ERROR_IF(super == NULL, error);
                 res = PyObject_GetAttr(super, name);
