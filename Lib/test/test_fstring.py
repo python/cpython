@@ -13,6 +13,7 @@ import re
 import types
 import decimal
 import unittest
+from test import support
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure
 
@@ -536,6 +537,7 @@ x = (
                              r"""f'{("x}'""",
                              ])
 
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_mismatched_parens(self):
         self.assertAllRaise(SyntaxError, r"closing parenthesis '\}' "
                             r"does not match opening parenthesis '\('",
