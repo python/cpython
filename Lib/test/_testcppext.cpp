@@ -237,15 +237,15 @@ static PyModuleDef_Slot _testcppext_slots[] = {
 PyDoc_STRVAR(_testcppext_doc, "C++ test extension.");
 
 static struct PyModuleDef _testcppext_module = {
-    PyModuleDef_HEAD_INIT,  // m_base
-    STR(NAME),  // m_name
-    _testcppext_doc,  // m_doc
-    0,  // m_size
-    _testcppext_methods,  // m_methods
-    _testcppext_slots,  // m_slots
-    _Py_NULL,  // m_traverse
-    _Py_NULL,  // m_clear
-    _Py_NULL,  // m_free
+    PyModuleDef_HEAD_INIT,
+    .m_name = STR(NAME),
+    .m_doc = _testcppext_doc,
+    .m_size = 0,
+    .m_methods = _testcppext_methods,
+    .m_slots = _testcppext_slots,
+    .m_traverse = _Py_NULL,
+    .m_clear = _Py_NULL,
+    .m_free = _Py_NULL,
 };
 
 #define _FUNC_NAME(NAME) PyInit_ ## NAME
