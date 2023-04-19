@@ -931,7 +931,7 @@ x = (
         # lambda doesn't work without parens, because the colon
         # makes the parser think it's a format_spec
         # emit warning if we can match a format_spec
-        self.assertAllRaise(SyntaxError, 
+        self.assertAllRaise(SyntaxError,
                             "f-string: lambda expressions are not allowed "
                             "without parentheses",
                             ["f'{lambda x:x}'",
@@ -939,9 +939,9 @@ x = (
                              "f'{lambda *arg, :x}'",
                              "f'{1, lambda:x}'",
                              ])
-        
+
         # but don't emit the paren warning in general cases
-        self.assertAllRaise(SyntaxError, 
+        self.assertAllRaise(SyntaxError,
                             "f-string: expecting a valid expression after '{'",
                             ["f'{lambda x:}'",
                              "f'{lambda :}'",
