@@ -4812,23 +4812,9 @@ os__path_isdir_impl(PyObject *module, PyObject *path)
                 slow_path = FALSE;
                 result = 0;
             }
-        } else {
-            switch(GetLastError()) {
-                case ERROR_FILE_NOT_FOUND:
-                case ERROR_PATH_NOT_FOUND:
-                case ERROR_NOT_READY:
-                case ERROR_BAD_NET_NAME:
-                case ERROR_BAD_NETPATH:
-                case ERROR_BAD_PATHNAME:
-                case ERROR_INVALID_NAME:
-                case ERROR_FILENAME_EXCED_RANGE:
-                    /* These errors aren't worth retrying with the slow path */
+        } else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(GetLastError())) {
                     slow_path = FALSE;
                     result = 0;
-                case ERROR_NOT_SUPPORTED:
-                    /* indicates the API couldn't be loaded */
-                    break;
-            }
         }
     }
     if (slow_path) {
@@ -4923,23 +4909,9 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
                 slow_path = FALSE;
                 result = 0;
             }
-        } else {
-            switch(GetLastError()) {
-                case ERROR_FILE_NOT_FOUND:
-                case ERROR_PATH_NOT_FOUND:
-                case ERROR_NOT_READY:
-                case ERROR_BAD_NET_NAME:
-                case ERROR_BAD_NETPATH:
-                case ERROR_BAD_PATHNAME:
-                case ERROR_INVALID_NAME:
-                case ERROR_FILENAME_EXCED_RANGE:
-                    /* These errors aren't worth retrying with the slow path */
+        } else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(GetLastError())) {
                     slow_path = FALSE;
                     result = 0;
-                case ERROR_NOT_SUPPORTED:
-                    /* indicates the API couldn't be loaded */
-                    break;
-            }
         }
     }
     if (slow_path) {
@@ -5030,23 +5002,9 @@ os__path_exists_impl(PyObject *module, PyObject *path)
                 slow_path = FALSE;
                 result = 1;
             }
-        } else {
-            switch(GetLastError()) {
-                case ERROR_FILE_NOT_FOUND:
-                case ERROR_PATH_NOT_FOUND:
-                case ERROR_NOT_READY:
-                case ERROR_BAD_NET_NAME:
-                case ERROR_BAD_NETPATH:
-                case ERROR_BAD_PATHNAME:
-                case ERROR_INVALID_NAME:
-                case ERROR_FILENAME_EXCED_RANGE:
-                    /* These errors aren't worth retrying with the slow path */
+        } else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(GetLastError())) {
                     slow_path = FALSE;
                     result = 0;
-                case ERROR_NOT_SUPPORTED:
-                    /* indicates the API couldn't be loaded */
-                    break;
-            }
         }
     }
     if (slow_path) {
@@ -5134,23 +5092,9 @@ os__path_islink_impl(PyObject *module, PyObject *path)
             else {
                 result = 0;
             }
-        } else {
-            switch(GetLastError()) {
-                case ERROR_FILE_NOT_FOUND:
-                case ERROR_PATH_NOT_FOUND:
-                case ERROR_NOT_READY:
-                case ERROR_BAD_NET_NAME:
-                case ERROR_BAD_NETPATH:
-                case ERROR_BAD_PATHNAME:
-                case ERROR_INVALID_NAME:
-                case ERROR_FILENAME_EXCED_RANGE:
-                    /* These errors aren't worth retrying with the slow path */
+        } else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(GetLastError())) {
                     slow_path = FALSE;
                     result = 0;
-                case ERROR_NOT_SUPPORTED:
-                    /* indicates the API couldn't be loaded */
-                    break;
-            }
         }
     }
     if (slow_path) {
