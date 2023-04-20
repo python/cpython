@@ -721,7 +721,7 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
-        if not isinstance(path_pattern, type(self)):
+        if not isinstance(path_pattern, PurePath) or self._flavour is not path_pattern._flavour:
             path_pattern = type(self)(path_pattern)
         match = path_pattern._matcher.search(self._lines_normcase)
         return match is not None
