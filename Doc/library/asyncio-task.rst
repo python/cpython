@@ -829,6 +829,9 @@ Waiting Primitives
       Deprecation warning is emitted if not all awaitable objects in the *aws*
       iterable are Future-like objects and there is no running event loop.
 
+   .. versionchanged:: 3.12
+      Added support for generators yielding tasks.
+
 
 Running in Threads
 ==================
