@@ -733,7 +733,7 @@ class StructTest(unittest.TestCase):
             else:
                 max_ = 2 ** (size * 8 - 1) - 1
                 min_ = -2 ** (size * 8 - 1)
-            error_msg = f"'{int_type}' format requires {min_} <= number <= {max_}"
+            error_msg = f"'{int_type}' format requires {min_} <= arg 1 <= {max_}"
             for number in [int(-1e50), min_ - 1, max_ + 1, int(1e50)]:
                 with self.subTest(format_str=fmt_str, number=number):
                     with self.assertRaisesRegex(struct.error, error_msg):
