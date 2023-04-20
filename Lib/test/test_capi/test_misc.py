@@ -762,7 +762,7 @@ class CAPITest(unittest.TestCase):
     def test_heaptype_relative_sizes(self):
         # Test subclassing using "relative" basicsize, see PEP 697
         def check(extra_base_size, extra_size):
-            Base, Sub, instance, data_ptr, data_size = (
+            Base, Sub, instance, data_ptr, data_offset, data_size = (
                 _testcapi.make_sized_heaptypes(
                     extra_base_size, -extra_size))
 
@@ -773,7 +773,6 @@ class CAPITest(unittest.TestCase):
 
             else:
                 # The following offsets should be in increasing order:
-                data_offset = data_ptr - id(instance)
                 offsets = [
                     (0, 'start of object'),
                     (Base.__basicsize__, 'end of base data'),

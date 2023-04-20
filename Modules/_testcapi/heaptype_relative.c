@@ -58,7 +58,9 @@ make_sized_heaptypes(PyObject *module, PyObject *args)
         goto finally;
     }
 
-    result = Py_BuildValue("OOOKn", base, sub, instance, (unsigned long long)data_ptr,
+    result = Py_BuildValue("OOOKnn", base, sub, instance,
+                           (unsigned long long)data_ptr,
+                           (Py_ssize_t)(data_ptr - (void*)instance),
                            data_size);
   finally:
     Py_XDECREF(base);
