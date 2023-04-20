@@ -68,8 +68,10 @@ highlight_language = 'python3'
 # Minimum version of sphinx required
 needs_sphinx = '3.2'
 
+# Ignore any .rst files in the includes/ directory;
+# they're embedded in pages but not rendered individually.
 # Ignore any .rst files in the venv/ directory.
-exclude_patterns = ['venv/*', 'README.rst']
+exclude_patterns = ['includes/*.rst', 'venv/*', 'README.rst']
 venvdir = os.getenv('VENVDIR')
 if venvdir is not None:
     exclude_patterns.append(venvdir + '/*')
@@ -252,9 +254,14 @@ coverage_ignore_c_items = {
 # Options for the link checker
 # ----------------------------
 
-# Ignore certain URLs.
-linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+']
-
+linkcheck_allowed_redirects = {
+    # bpo-NNNN -> BPO -> GH Issues
+    r'https://bugs.python.org/issue\?@action=redirect&bpo=\d+': 'https://github.com/python/cpython/issues/\d+',
+    # GH-NNNN used to refer to pull requests
+    r'https://github.com/python/cpython/issues/\d+': 'https://github.com/python/cpython/pull/\d+',
+    # :source:`something` linking files in the repository
+    r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*'
+}
 
 # Options for extensions
 # ----------------------
