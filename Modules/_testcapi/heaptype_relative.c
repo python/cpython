@@ -252,8 +252,8 @@ make_heaptype_with_member(PyObject *module, PyObject *args)
 static PyObject *
 test_alignof_max_align_t(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    // We define ALIGNOF_MAX_ALIGN_T even if the compiler doesn't have
-    // max_afign_t. Double-check that it's correct.
+    // We define ALIGNOF_MAX_ALIGN_T even if the compiler doesn't support
+    // max_align_t. Double-check that it's correct.
     assert(ALIGNOF_MAX_ALIGN_T > 0);
     assert(ALIGNOF_MAX_ALIGN_T >= _Alignof(long long));
     assert(ALIGNOF_MAX_ALIGN_T >= _Alignof(long double));
