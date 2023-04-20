@@ -3177,14 +3177,23 @@ class NoneInfoTests_Misc(unittest.TestCase):
             with self.subTest(tarformat=tarformat):
                 tar = tarfile.open(fileobj=bio, mode='w', format=tarformat)
                 tarinfo = tar.gettarinfo(tarname)
-                tar.addfile(tarinfo)
-                for attr_name in ('mtime', 'mode', 'uid', 'gid',
-                                  'uname', 'gname'):
-                    with self.subTest(attr_name=attr_name):
-                        replaced = tarinfo.replace(**{attr_name: None})
-                        with self.assertRaisesRegex(ValueError,
-                                                    f"{attr_name}"):
-                            tar.addfile(replaced)
+                try:
+                    tar.addfile(tarinfo)
+                except Exception:
+                    if tarformat == tarfile.USTAR_FORMAT:
+                        # In the old, limited format, adding might fail for
+                        # reasons like the UID being too large
+                        pass
+                    else:
+                        raise
+                else:
+                    for attr_name in ('mtime', 'mode', 'uid', 'gid',
+                                    'uname', 'gname'):
+                        with self.subTest(attr_name=attr_name):
+                            replaced = tarinfo.replace(**{attr_name: None})
+                            with self.assertRaisesRegex(ValueError,
+                                                        f"{attr_name}"):
+                                tar.addfile(replaced)
 
     def test_list(self):
         # Change some metadata to None, then compare list() output
