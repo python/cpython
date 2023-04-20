@@ -559,4 +559,4 @@ PyAPI_FUNC(int) PyType_Unwatch(int watcher_id, PyObject *type);
  * Returns 1 if the type already had a valid version tag or a new one was
  * assigned, or 0 if a new tag could not be assigned.
  */
-PyAPI_FUNC(int) PyUnstable_AssignVersionTag(PyTypeObject *type);
+PyAPI_FUNC(int) PyUnstable_Type_AssignVersionTag(PyTypeObject *type);

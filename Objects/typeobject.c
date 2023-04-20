@@ -598,7 +598,7 @@ assign_version_tag(PyTypeObject *type)
     return 1;
 }
 
-int PyUnstable_AssignVersionTag(PyTypeObject *type)
+int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
 {
     return assign_version_tag(type);
 }

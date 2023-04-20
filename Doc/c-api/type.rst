@@ -232,7 +232,7 @@ Type Objects
 
    .. versionadded:: 3.11
 
-.. c:function:: int PyUnstable_AssignVersionTag(PyTypeObject *type)
+.. c:function:: int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
 
    Attempt to assign a version tag to the given type.
 
