@@ -16,6 +16,7 @@ class PdbxTestInput(object):
     def __exit__(self, *exc):
         sys.stdin = self.real_stdin
 
+
 def test_pdbx_basic_commands():
     """Test the basic commands of pdb.
 
@@ -32,14 +33,35 @@ def test_pdbx_basic_commands():
     >>> with PdbxTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     'step',
     ...     'step',
+    ...     'step',
+    ...     'step',
+    ...     'step',
+    ...     'step',
+    ...     'step',
     ...     'return',
     ...     'next',
     ...     'n',
     ...     'continue',
     ... ]):
-    ...    test_function()
+    ...     test_function()
     > <doctest test.test_pdbx.test_pdbx_basic_commands[1]>(3)test_function()
     -> for i in range(5):
+    (Pdbx) step
+    > <doctest test.test_pdbx.test_pdbx_basic_commands[1]>(4)test_function()
+    -> n = f(i)
+    (Pdbx) step
+    > <doctest test.test_pdbx.test_pdbx_basic_commands[0]>(2)f()
+    -> x = x + 1
+    (Pdbx) step
+    > <doctest test.test_pdbx.test_pdbx_basic_commands[0]>(3)f()
+    -> return x
+    (Pdbx) step
+    ----return----
+    > <doctest test.test_pdbx.test_pdbx_basic_commands[0]>(3)f()
+    -> return x
+    (Pdbx) step
+    > <doctest test.test_pdbx.test_pdbx_basic_commands[1]>(5)test_function()
+    -> pass
     (Pdbx) step
     > <doctest test.test_pdbx.test_pdbx_basic_commands[1]>(4)test_function()
     -> n = f(i)
@@ -73,17 +95,21 @@ def test_pdbx_basic_breakpoint():
     ...     a = 3
 
     >>> with PdbxTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     'break invalid',
     ...     'break f',
     ...     'continue',
     ...     'clear',
     ...     'return',
     ...     'break 6',
+    ...     'break 100',
     ...     'continue',
     ...     'continue',
     ... ]):
-    ...    test_function()
+    ...     test_function()
     > <doctest test.test_pdbx.test_pdbx_basic_breakpoint[1]>(3)test_function()
     -> for i in range(5):
+    (Pdbx) break invalid
+    Invalid breakpoint argument: invalid
     (Pdbx) break f
     (Pdbx) continue
     ----call----
@@ -94,9 +120,83 @@ def test_pdbx_basic_breakpoint():
     > <doctest test.test_pdbx.test_pdbx_basic_breakpoint[1]>(5)test_function()
     -> pass
     (Pdbx) break 6
+    (Pdbx) break 100
+    Can't find line 100 in file <doctest test.test_pdbx.test_pdbx_basic_breakpoint[1]>
     (Pdbx) continue
     > <doctest test.test_pdbx.test_pdbx_basic_breakpoint[1]>(6)test_function()
     -> a = 3
+    (Pdbx) continue
+    """
+
+def test_pdbx_where_command():
+    """Test where command
+
+    >>> def g():
+    ...     import bdbx; bdbx.break_here()
+    ...     pass
+
+    >>> def f():
+    ...     g();
+
+    >>> def test_function():
+    ...     f()
+
+    >>> with PdbxTestInput([  # doctest: +ELLIPSIS
+    ...     'w',
+    ...     'where',
+    ...     'u',
+    ...     'w',
+    ...     'd',
+    ...     'w',
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdbx.test_pdbx_where_command[0]>(3)g()
+    -> pass
+    (Pdbx) w
+    ...
+      <doctest test.test_pdbx.test_pdbx_where_command[3]>(10)<module>()
+    -> test_function()
+      <doctest test.test_pdbx.test_pdbx_where_command[2]>(2)test_function()
+    -> f()
+      <doctest test.test_pdbx.test_pdbx_where_command[1]>(2)f()
+    -> g();
+    > <doctest test.test_pdbx.test_pdbx_where_command[0]>(3)g()
+    -> pass
+    (Pdbx) where
+    ...
+      <doctest test.test_pdbx.test_pdbx_where_command[3]>(10)<module>()
+    -> test_function()
+      <doctest test.test_pdbx.test_pdbx_where_command[2]>(2)test_function()
+    -> f()
+      <doctest test.test_pdbx.test_pdbx_where_command[1]>(2)f()
+    -> g();
+    > <doctest test.test_pdbx.test_pdbx_where_command[0]>(3)g()
+    -> pass
+    (Pdbx) u
+    > <doctest test.test_pdbx.test_pdbx_where_command[1]>(2)f()
+    -> g();
+    (Pdbx) w
+    ...
+      <doctest test.test_pdbx.test_pdbx_where_command[2]>(2)test_function()
+    -> f()
+    > <doctest test.test_pdbx.test_pdbx_where_command[1]>(2)f()
+    -> g();
+      <doctest test.test_pdbx.test_pdbx_where_command[0]>(3)g()
+    -> pass
+    (Pdbx) d
+    > <doctest test.test_pdbx.test_pdbx_where_command[0]>(3)g()
+    -> pass
+    (Pdbx) w
+    ...
+      <doctest test.test_pdbx.test_pdbx_where_command[3]>(10)<module>()
+    -> test_function()
+      <doctest test.test_pdbx.test_pdbx_where_command[2]>(2)test_function()
+    -> f()
+      <doctest test.test_pdbx.test_pdbx_where_command[1]>(2)f()
+    -> g();
+    > <doctest test.test_pdbx.test_pdbx_where_command[0]>(3)g()
+    -> pass
     (Pdbx) continue
     """
 

@@ -19,19 +19,35 @@ class BdbxSetBreakpointException(Exception):
     pass
 
 
+class BdbxQuit(Exception):
+    pass
+
+
 class Breakpoint:
-    def __init__(self, file, line_number, code):
+    _next_id = 1
+
+    def __init__(self, file: str, line_number: int, code: CodeType | None = None):
+        self._id = self._get_next_id()
         self.file = file
         self.line_number = line_number
         self.code = code 
 
-    def belong_to(self, code):
+    def belong_to(self, code: CodeType):
+        """returns True if the breakpoint belongs to the given code object"""
         if self.file == code.co_filename and \
                 self.line_number >= code.co_firstlineno:
             for instr in dis.get_instructions(code):
                 if instr.positions.lineno == self.line_number:
                     return True
         return False
+
+    def __str__(self):
+        return f"Breakpoint {self._id} at {self.file}:{self.line_number}"
+
+    @classmethod
+    def _get_next_id(cls):
+        cls._next_id += 1
+        return cls._next_id - 1
 
 
 class MonitorGenie:
@@ -54,6 +70,7 @@ class MonitorGenie:
         self._action = None
         self._frame = None
         self._tool_id = tool_id
+        self._returning = False
         self._tasks = []
         self._bound_breakpoints: dict[CodeType, list[Breakpoint]] = {}
         self._free_breakpoints: list[Breakpoint] = []
@@ -73,20 +90,28 @@ class MonitorGenie:
         self._set_events_for_breakpoints()
         self._action, self._frame = action, frame
         if action == "step":
-            self._add_local_events(frame.f_code, MEVENT.LINE | MEVENT.CALL | MEVENT.PY_RETURN \
-                                    | MEVENT.PY_YIELD)
+            if not self._returning:
+                self._add_local_events(frame.f_code, MEVENT.LINE | MEVENT.CALL | MEVENT.PY_RETURN \
+                                       | MEVENT.PY_YIELD)
+            elif frame.f_back:
+                self._add_local_events(frame.f_back.f_code, MEVENT.LINE | MEVENT.CALL | MEVENT.PY_RETURN \
+                                       | MEVENT.PY_YIELD)
         elif action == "next":
-            self._add_local_events(frame.f_code, MEVENT.LINE | MEVENT.PY_RETURN | MEVENT.PY_YIELD)
-            if frame.f_back:
+            if not self._returning:
+                self._add_local_events(frame.f_code, MEVENT.LINE | MEVENT.PY_RETURN | MEVENT.PY_YIELD)
+            elif frame.f_back:
                 self._add_local_events(frame.f_back.f_code, MEVENT.LINE | MEVENT.PY_RETURN | MEVENT.PY_YIELD)
         elif action == "return":
             if frame.f_back:
                 self._add_local_events(frame.f_back.f_code, MEVENT.LINE | MEVENT.PY_RETURN | MEVENT.PY_YIELD)
         elif action == "continue":
             pass
+
+        self._returning = False
         sys.monitoring.restart_events()
 
     def add_breakpoint(self, breakpoint: Breakpoint):
+        """adds a breakpoint to the list of breakpoints"""
         if breakpoint.code is None:
             self._free_breakpoints.append(breakpoint)
         else:
@@ -95,6 +120,7 @@ class MonitorGenie:
             self._bound_breakpoints[breakpoint.code].append(breakpoint)
 
     def remove_breakpoint(self, breakpoint: Breakpoint):
+        """removes a breakpoint from the list of breakpoints"""
         if breakpoint.code is None:
             self._free_breakpoints.remove(breakpoint)
         else:
@@ -169,6 +195,7 @@ class MonitorGenie:
         sys.monitoring.register_callback(self._tool_id, MEVENT.LINE, self._line_callback)
         sys.monitoring.register_callback(self._tool_id, MEVENT.CALL, self._call_callback)
         sys.monitoring.register_callback(self._tool_id, MEVENT.PY_START, self._start_callback)
+        sys.monitoring.register_callback(self._tool_id, MEVENT.PY_YIELD, self._return_callback)
         sys.monitoring.register_callback(self._tool_id, MEVENT.PY_RETURN, self._return_callback)
 
     def _line_callback(self, code, line_number):
@@ -208,6 +235,7 @@ class MonitorGenie:
 
     def _return_callback(self, code, instruction_offset, retval):
         if self._stophere(code):
+            self._returning = True
             self._start_debugger(sys._getframe().f_back, None, MEVENT.PY_RETURN,
                                  {"code": code, "instruction_offset": instruction_offset, "retval": retval})
         else:
@@ -277,15 +305,12 @@ class Bdbx:
         self._monitor_genie.add_breakpoint(bp)
 
     def set_file_breakpoint(self, filename, line_number):
-        abspath = self._lookupmodule(filename)
-        if not abspath:
-            abspath = filename
-            #raise BdbxSetBreakpointException(f"{filename} is not a valid file name!")
-        try:
-            line_number = int(line_number)
-        except ValueError:
-            raise BdbxSetBreakpointException(f"{line_number} is not a valid line number!")
-        bp = Breakpoint(abspath, line_number, None)
+        """Set a breakpoint at the given line number in the given file
+
+            The caller is responsible for checking that the file exists and
+            that the line number is valid.
+        """
+        bp = Breakpoint(filename, line_number, None)
         self._breakpoints.append(bp)
         self._monitor_genie.add_breakpoint(bp)
 
@@ -295,11 +320,26 @@ class Bdbx:
                 self._monitor_genie.remove_breakpoint(bp)
         self._breakpoints = []
 
+    def select_frame(self, index, offset=False):
+        """Select a frame in the stack"""
+        if offset:
+            index += self._curr_frame_idx
+        if index < 0:
+            index = 0
+        elif index >= len(self._stack):
+            index = len(self._stack) - 1
+        self._curr_frame_idx = index
+        self._curr_frame = self._stack[index]
+
     # Data accessors
 
     def get_current_frame(self):
         """Get the current frame"""
         return self._curr_frame
+
+    def get_current_frame_idx(self):
+        """Get the current frame index"""
+        return self._curr_frame_idx
 
     def get_stack(self):
         """Get the current stack"""
@@ -323,6 +363,7 @@ class Bdbx:
         self._stop_frame = frame
         self._curr_frame = frame
         self._stack = self._get_stack_from_frame(frame)
+        self._curr_frame_idx = len(self._stack) - 1
 
         if event == MEVENT.LINE:
             self._stop_event = StopEvent(frame, event_arg["line_number"])
@@ -348,48 +389,8 @@ class Bdbx:
         while frame:
             stack.append(frame)
             frame = frame.f_back
-        return reversed(stack)
-
-    def _canonic(self, filename):
-        """Return canonical form of filename.
-
-        For real filenames, the canonical form is a case-normalized (on
-        case insensitive filesystems) absolute path.  'Filenames' with
-        angle brackets, such as "<stdin>", generated in interactive
-        mode, are returned unchanged.
-        """
-        if filename == "<" + filename[1:-1] + ">":
-            return filename
-        canonic = self.fncache.get(filename)
-        if not canonic:
-            canonic = os.path.abspath(filename)
-            canonic = os.path.normcase(canonic)
-            self.fncache[filename] = canonic
-        return canonic
-
-    def _lookupmodule(self, filename):
-        """Helper function for break/clear parsing -- may be overridden.
-
-        lookupmodule() translates (possibly incomplete) file or module name
-        into an absolute file name.
-        """
-        if os.path.isabs(filename) and os.path.exists(filename):
-            return filename
-        f = os.path.join(sys.path[0], filename)
-        if os.path.exists(f) and self._canonic(f) == self._main_pyfile:
-            return f
-        root, ext = os.path.splitext(filename)
-        if ext == '':
-            filename = filename + '.py'
-        if os.path.isabs(filename):
-            return filename
-        for dirname in sys.path:
-            while os.path.islink(dirname):
-                dirname = os.readlink(dirname)
-            fullname = os.path.join(dirname, filename)
-            if os.path.exists(fullname):
-                return fullname
-        return None
+        stack.reverse()
+        return stack
 
 
 class Pdbx(Bdbx, cmd.Cmd):
@@ -467,15 +468,58 @@ class Pdbx(Bdbx, cmd.Cmd):
             s += lprefix + line.strip()
         return s
 
-    def _print_stack_entry(self, frame, lineno):
+    def _print_stack_entry(self, frame, line_number=None):
         if frame is self.get_current_frame():
             prefix = '> '
         else:
             prefix = '  '
+        if line_number is None:
+            line_number = frame.f_lineno
         self.message(prefix +
-                     self._format_stack_entry(frame, lineno, '\n-> '))
+                     self._format_stack_entry(frame, line_number, '\n-> '))
 
-    def _checkline(self, filename, lineno):
+    def _canonic(self, filename):
+        """Return canonical form of filename.
+
+        For real filenames, the canonical form is a case-normalized (on
+        case insensitive filesystems) absolute path.  'Filenames' with
+        angle brackets, such as "<stdin>", generated in interactive
+        mode, are returned unchanged.
+        """
+        if filename == "<" + filename[1:-1] + ">":
+            return filename
+        canonic = self.fncache.get(filename)
+        if not canonic:
+            canonic = os.path.abspath(filename)
+            canonic = os.path.normcase(canonic)
+            self.fncache[filename] = canonic
+        return canonic
+
+    def _lookupmodule(self, filename):
+        """Helper function for break/clear parsing -- may be overridden.
+
+        lookupmodule() translates (possibly incomplete) file or module name
+        into an absolute file name.
+        """
+        if os.path.isabs(filename) and os.path.exists(filename):
+            return filename
+        f = os.path.join(sys.path[0], filename)
+        if os.path.exists(f) and self._canonic(f) == self._main_pyfile:
+            return f
+        root, ext = os.path.splitext(filename)
+        if ext == '':
+            filename = filename + '.py'
+        if os.path.isabs(filename):
+            return filename
+        for dirname in sys.path:
+            while os.path.islink(dirname):
+                dirname = os.readlink(dirname)
+            fullname = os.path.join(dirname, filename)
+            if os.path.exists(fullname):
+                return fullname
+        return None
+
+    def _confirm_line_executable(self, filename, line_number):
         """Check whether specified line seems to be executable.
 
         Return `lineno` if it is, 0 if not (e.g. a docstring, comment, blank
@@ -484,63 +528,69 @@ class Pdbx(Bdbx, cmd.Cmd):
         # this method should be callable before starting debugging, so default
         # to "no globals" if there is no current frame
         globs = self.get_current_frame().f_globals if self.get_current_frame() else None
-        line = linecache.getline(filename, lineno, globs)
+        line = linecache.getline(filename, line_number, globs)
         if not line:
-            self.message('End of file')
-            return 0
+            raise ValueError(f"Can't find line {line_number} in file {filename}")
         line = line.strip()
         # Don't allow setting breakpoint at a blank line
         if (not line or (line[0] == '#') or
              (line[:3] == '"""') or line[:3] == "'''"):
-            self.error('Blank or comment')
-            return 0
-        return lineno
+            raise ValueError(f"Can't set breakpoint at line {line_number} in file {filename}, it's blank or a comment")
 
-    def _lineinfo(self, identifier):
-        failed = (None, None, None)
-        # Input is identifier, may be in single quotes
-        idstring = identifier.split("'")
-        if len(idstring) == 1:
-            # not in single quotes
-            id = idstring[0].strip()
-        elif len(idstring) == 3:
-            # quoted
-            id = idstring[1].strip()
-        else:
-            return failed
-        if id == '': return failed
-        parts = id.split('.')
-        # Protection for derived debuggers
-        if parts[0] == 'self':
-            del parts[0]
-            if len(parts) == 0:
-                return failed
-        # Best first guess at file to look at
-        fname = self.defaultFile()
-        if len(parts) == 1:
-            item = parts[0]
-        else:
-            # More than one part.
-            # First is module, second is method/class
-            f = self._lookupmodule(parts[0])
-            if f:
-                fname = f
-            item = parts[1]
-        answer = self._find_function(item, fname)
-        return answer or failed
+    def _parse_breakpoint_arg(self, arg):
+        """Parse a breakpoint argument.
 
-    def _find_function(funcname, filename):
-        cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
-        try:
-            fp = tokenize.open(filename)
-        except OSError:
-            return None
-        # consumer of this info expects the first line to be 1
-        with fp:
-            for lineno, line in enumerate(fp, start=1):
-                if cre.match(line):
-                    return funcname, filename, lineno
-        return None
+        Return a tuple (filename, lineno, function, condition)
+        from [filename:]lineno | function, condition
+        """
+        filename = None
+        line_number = None
+        function = None
+        condition = None
+        # parse stuff after comma: condition
+        comma = arg.find(',')
+        if comma >= 0:
+            condition = arg[comma+1:].lstrip()
+            arg = arg[:comma]
+
+        # parse stuff before comma: [filename:]lineno | function
+        colon = arg.rfind(':')
+        if colon >= 0:
+            filename = arg[:colon].rstrip()
+            filename = self._lookupmodule(filename)
+            if filename is None:
+                raise ValueError(f"Invalid filename: {filename}")
+            line_number = arg[colon+1:]
+            try:
+                line_number = int(line_number)
+            except ValueError:
+                raise ValueError(f"Invalid line number: {line_number}")
+        else:
+            # no colon; can be lineno or function
+            try:
+                # Maybe it's a function?
+                frame = self.get_current_frame()
+                function = eval(arg,
+                                frame.f_globals,
+                                frame.f_locals)
+                if hasattr(function, "__func__"):
+                    # It's a method
+                    function = function.__func__
+                code = function.__code__
+                filename = code.co_filename
+                line_number = code.co_firstlineno
+            except:
+                # Then it has to be a line number
+                function = None
+                try:
+                    line_number = int(arg)
+                except ValueError:
+                    raise ValueError(f"Invalid breakpoint argument: {arg}")
+                filename = self._default_file
+        # Before returning, check that line on the file is executable
+        self._confirm_line_executable(filename, line_number)
+
+        return filename, line_number, function, condition
 
     # ======================================================================
     # The following methods are called by the cmd.Cmd base class
@@ -549,56 +599,19 @@ class Pdbx(Bdbx, cmd.Cmd):
 
     def do_break(self, arg):
         if not arg:
-            print(self.get_breakpoints())
+            for bp in self.get_breakpoints():
+                print(bp)
             return False
-        # parse arguments; comma has lowest precedence
-        # and cannot occur in filename
-        filename = None
-        lineno = None
-        # parse stuff before comma: [filename:]lineno | function
-        colon = arg.rfind(':')
-        if colon >= 0:
-            filename = arg[:colon].rstrip()
-            line_number = arg[colon+1:]
-            try:
-                self.set_file_breakpoint(filename, line_number)
-            except BdbxSetBreakpointException as e:
-                self.error(e)
-                return False
+        try:
+            filename, line_number, function, condition = self._parse_breakpoint_arg(arg)
+        except ValueError as exc:
+            self.error(str(exc))
+            return False
+
+        if function:
+            self.set_function_breakpoint(function)
         else:
-            # no colon; can be lineno or function
-            try:
-                lineno = int(arg)
-            except ValueError:
-                try:
-                    frame = self.get_current_frame()
-                    func = eval(arg,
-                                frame.f_globals,
-                                frame.f_locals)
-                except:
-                    func = arg
-                    (ok, filename, line_number) = self._lineinfo(arg)
-                    if not ok:
-                        self.error(f"Can't find function '{arg}'")
-                        return False
-                    try:
-                        self.set_file_breakpoint(filename, line_number)
-                    except BdbxSetBreakpointException as e:
-                        self.error(e)
-                    return False
-                try:
-                    self.set_function_breakpoint(func)
-                except BdbxSetBreakpointException as e:
-                    self.error(e)
-                    return False
-                return False
-        if not filename:
-            filename = self._default_file
-        # Check for reasonable breakpoint
-        line = self._checkline(filename, lineno)
-        if line:
-            # now set the break point
-            self.set_file_breakpoint(filename, line)
+            self.set_file_breakpoint(filename, line_number)
         return False
 
     do_b = do_break
@@ -613,6 +626,27 @@ class Pdbx(Bdbx, cmd.Cmd):
 
     do_c = do_continue
 
+    def do_down(self, arg):
+        """d(own) [count]
+
+        Move the current frame count (default one) levels down in the
+        stack trace (to a newer frame).
+        """
+        try:
+            count = int(arg or 1)
+        except ValueError:
+            self.error("Invalid count")
+            return False
+
+        self.select_frame(count, offset=True)
+        self._print_stack_entry(self.get_current_frame())
+        return False
+
+    do_d = do_down
+
+    def do_EOF(self, arg):
+        raise BdbxQuit("quit")
+
     def do_next(self, arg):
         self.set_action("next")
         return True
@@ -620,7 +654,7 @@ class Pdbx(Bdbx, cmd.Cmd):
     do_n = do_next
 
     def do_quit(self, arg):
-        raise Exception("quit")
+        raise BdbxQuit("quit")
 
     do_q = do_quit
 
@@ -636,11 +670,29 @@ class Pdbx(Bdbx, cmd.Cmd):
 
     do_s = do_step
 
+    def do_up(self, arg):
+        """u(p) [count]
+
+        Move the current frame count (default one) levels up in the
+        stack trace (to an older frame).
+        """
+
+        try:
+            count = int(arg or 1)
+        except ValueError:
+            self.error("Invalid count")
+            return False
+
+        self.select_frame(-count, offset=True)
+        self._print_stack_entry(self.get_current_frame())
+        return False
+
+    do_u = do_up
+
     def do_where(self, arg):
         try:
             for frame in self.get_stack():
-                lineno = frame.f_lineno
-                self._print_stack_entry(frame, lineno)
+                self._print_stack_entry(frame)
         except KeyboardInterrupt:
             pass
         return False
