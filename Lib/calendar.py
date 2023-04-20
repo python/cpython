@@ -7,6 +7,7 @@ set the first day of the week (0=Monday, 6=Sunday)."""
 
 import sys
 import datetime
+from enum import IntEnum, global_enum
 import locale as _locale
 from itertools import repeat
 
@@ -16,6 +17,9 @@ __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "timegm", "month_name", "month_abbr", "day_name", "day_abbr",
            "Calendar", "TextCalendar", "HTMLCalendar", "LocaleTextCalendar",
            "LocaleHTMLCalendar", "weekheader",
+           "Weekday", "Month", "JANUARY", "FEBRUARY", "MARCH",
+           "APRIL", "MAY", "JUNE", "JULY",
+           "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMEMBER", "DECEMBER",
            "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY",
            "SATURDAY", "SUNDAY"]
 
@@ -35,6 +39,35 @@ class IllegalWeekdayError(ValueError):
         self.weekday = weekday
     def __str__(self):
         return "bad weekday number %r; must be 0 (Monday) to 6 (Sunday)" % self.weekday
+
+
+# Constants for months referenced later
+@global_enum
+class Month(IntEnum):
+    JANUARY = 1
+    FEBRUARY = 2
+    MARCH = 3
+    APRIL = 4
+    MAY = 5
+    JUNE = 6
+    JULY = 7
+    AUGUST = 8
+    SEPTEMBER = 9
+    OCTOBER = 10
+    NOVEMEMBER = 11
+    DECEMBER = 12
+
+
+# Constants for weekdays
+@global_enum
+class Weekday(IntEnum):
+    MONDAY = 0
+    TUESDAY = 1
+    WEDNESDAY = 2
+    THURSDAY = 3
+    FRIDAY = 4
+    SATURDAY = 5
+    SUNDAY = 6
 
 
 # Constants for months referenced later
@@ -94,9 +127,6 @@ day_abbr = _localized_day('%a')
 # Full and abbreviated names of months (1-based arrays!!!)
 month_name = _localized_month('%B')
 month_abbr = _localized_month('%b')
-
-# Constants for weekdays
-(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY) = range(7)
 
 
 def isleap(year):
@@ -260,10 +290,7 @@ class Calendar(object):
         Each month contains between 4 and 6 weeks and each week contains 1-7
         days. Days are datetime.date objects.
         """
-        months = [
-            self.monthdatescalendar(year, i)
-            for i in range(January, January+12)
-        ]
+        months = [self.monthdatescalendar(year, m) for m in Month]
         return [months[i:i+width] for i in range(0, len(months), width) ]
 
     def yeardays2calendar(self, year, width=3):
@@ -273,10 +300,7 @@ class Calendar(object):
         (day number, weekday number) tuples. Day numbers outside this month are
         zero.
         """
-        months = [
-            self.monthdays2calendar(year, i)
-            for i in range(January, January+12)
-        ]
+        months = [self.monthdays2calendar(year, m) for m in Month]
         return [months[i:i+width] for i in range(0, len(months), width) ]
 
     def yeardayscalendar(self, year, width=3):
@@ -285,10 +309,7 @@ class Calendar(object):
         yeardatescalendar()). Entries in the week lists are day numbers.
         Day numbers outside this month are zero.
         """
-        months = [
-            self.monthdayscalendar(year, i)
-            for i in range(January, January+12)
-        ]
+        months = [self.monthdayscalendar(year, m) for m in Month]
         return [months[i:i+width] for i in range(0, len(months), width) ]
 
 
