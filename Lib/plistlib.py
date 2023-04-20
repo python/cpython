@@ -55,7 +55,7 @@ Parse Plist example:
     print(pl["foo"])
 """
 __all__ = [
-    "InvalidFileException", "FMT_XML", "FMT_BINARY", "load", "dump", "loads", "dumps", "UID", "CFUID"
+    "InvalidFileException", "FMT_XML", "FMT_BINARY", "load", "dump", "loads", "dumps", "UID", "CFUID_KEY"
 ]
 
 import binascii
@@ -113,7 +113,7 @@ PLISTHEADER = b"""\
 """
 
 # CF$UID KEY
-CFUID = "CF$UID"
+CFUID_KEY = "CF$UID"
 
 
 # Regex to find any control chars, except for \t \n and \r
@@ -245,8 +245,8 @@ class _PlistParser:
                              (self.current_key,self.parser.CurrentLineNumber))
         d = self.stack.pop()
         # Unmarshal CF$UID to UID and replace the dict node
-        if len(d) == 1 and CFUID in d and isinstance(d[CFUID], int):
-            uid = UID(d[CFUID])
+        if len(d) == 1 and CFUID_KEY in d and isinstance(d[CFUID_KEY], int):
+            uid = UID(d[CFUID_KEY])
             if self.previous_dict_key:
                 self.stack[-1][self.previous_dict_key] = uid
             elif not self.stack:
