@@ -1779,13 +1779,15 @@ class ConfigFileTest(BaseTest):
 
             prince
             """
-        
+
         file = io.StringIO(textwrap.dedent(test_config))
         self.assertRaises(ValueError, logging.config.fileConfig, file)
 
     def test_exception_if_confg_file_is_empty(self):
-        _, filename = tempfile.mkstemp()
-        self.assertRaises(ValueError, logging.config.fileConfig, filename)
+        fd, fn = tempfile.mkstemp(prefix='test_empty_', suffix='.ini')
+        os.close(fd)
+        self.assertRaises(ValueError, logging.config.fileConfig, fn)
+        os.unlink(fn)
 
     def test_exception_if_confg_file_does_not_exists(self):
         self.assertRaises(FileNotFoundError, logging.config.fileConfig, 'filenotfound')

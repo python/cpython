@@ -60,7 +60,7 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
     configuration).
     """
     import configparser
-    
+
     if isinstance(fname, str):
         if not os.path.exists(fname):
             raise FileNotFoundError(f"{fname} doesn't exit")
@@ -79,7 +79,7 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
                 cp.read(fname, encoding=encoding)
         except configparser.ParsingError as e:
             raise ValueError(f"{fname} is invalid, errored with: {e}")
-        
+
     formatters = _create_formatters(cp)
 
     # critical section
