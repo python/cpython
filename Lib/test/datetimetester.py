@@ -2481,6 +2481,11 @@ class TestDateTime(TestDate):
         self.assertEqual(t.timestamp(),
                          18000 + 3600 + 2*60 + 3 + 4*1e-6)
 
+    @unittest.skipUnless(sys.platform == "win32", "This only overflows on Windows")
+    def test_timestamp_overflow_windows(self):
+        t = self.theclass(9000, 1, 1, 1, 2, 3, 4)
+        self.assertRaises(OverflowError, t.timestamp)
+
     @support.run_with_tz('MSK-03')  # Something east of Greenwich
     def test_microsecond_rounding(self):
         for fts in [self.theclass.fromtimestamp,

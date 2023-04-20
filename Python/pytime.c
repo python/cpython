@@ -1307,8 +1307,17 @@ _PyTime_localtime(time_t t, struct tm *tm)
 
     error = localtime_s(tm, &t);
     if (error != 0) {
+        // There are only 3 cases where an error could occur:
+        //   * tm is NULL
+        //   * &t is NULL (impossible in this usage)
+        //   * it overflows (t < 0 or t > _MAX__TIME64_T)
         errno = error;
-        PyErr_SetFromErrno(PyExc_OSError);
+        if (tm == NULL) {
+            PyErr_SetFromErrno(PyExc_OSError);
+        } else {
+            PyErr_SetString(PyExc_OverflowError,
+                            "localtime argument out of range");
+        }
         return -1;
     }
     return 0;
