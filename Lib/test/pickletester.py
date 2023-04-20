@@ -3490,6 +3490,11 @@ class AbstractPickleModuleTests:
         def bad_property(self):
             1/0
 
+        # File without read and readline
+        class F:
+            pass
+        self.assertRaises((AttributeError, TypeError), self.Unpickler, F())
+
         # File without read
         class F:
             readline = raises_oserror
@@ -3510,6 +3515,16 @@ class AbstractPickleModuleTests:
         class F:
             readline = bad_property
             read = raises_oserror
+        self.assertRaises(ZeroDivisionError, self.Unpickler, F())
+
+        # File with bad readline, no read
+        class F:
+            readline = bad_property
+        self.assertRaises(ZeroDivisionError, self.Unpickler, F())
+
+        # File with bad read, no readline
+        class F:
+            read = bad_property
         self.assertRaises(ZeroDivisionError, self.Unpickler, F())
 
         # File with bad peek
