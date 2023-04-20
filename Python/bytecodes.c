@@ -1557,16 +1557,16 @@ dummy_func(
         inst(LOAD_SUPER_ATTR, (global_super, class, self -- res2 if (oparg & 1), res)) {
             PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 2);
             if (global_super == (PyObject *)&PySuper_Type && PyType_Check(class)) {
-                int meth_found = 0;
+                int method = 0;
                 Py_DECREF(global_super);
-                res = _PySuper_Lookup((PyTypeObject *)class, self, name, oparg & 1 ? &meth_found : NULL);
+                res = _PySuper_Lookup((PyTypeObject *)class, self, name, oparg & 1 ? &method : NULL);
                 Py_DECREF(class);
                 if (res == NULL) {
                     Py_DECREF(self);
                     ERROR_IF(true, error);
                 }
                 // Works with CALL, pushes two values: either `meth | self` or `NULL | meth`.
-                if (meth_found) {
+                if (method) {
                     res2 = res;
                     res = self;  // transfer ownership
                 } else {

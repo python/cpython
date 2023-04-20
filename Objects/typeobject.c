@@ -9357,17 +9357,17 @@ super_repr(PyObject *self)
             su->type ? su->type->tp_name : "NULL");
 }
 
+// if `method` is non-NULL, we are looking for a method descriptor,
+// and setting `*method` to 1 means we found one.
 static PyObject *
 do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
-                PyTypeObject *su_obj_type, PyObject *name, int *meth_found)
+                PyTypeObject *su_obj_type, PyObject *name, int *method)
 {
-    PyTypeObject *starttype;
     PyObject *mro, *res;
     Py_ssize_t i, n;
     int temp_su = 0;
 
-    starttype = su_obj_type;
-    if (starttype == NULL)
+    if (su_obj_type == NULL)
         goto skip;
 
     /* We want __class__ to return the class of the super object
@@ -9377,7 +9377,7 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
         _PyUnicode_Equal(name, &_Py_ID(__class__)))
         goto skip;
 
-    mro = starttype->tp_mro;
+    mro = su_obj_type->tp_mro;
     if (mro == NULL)
         goto skip;
 
@@ -9393,7 +9393,7 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
     if (i >= n)
         goto skip;
 
-    /* keep a strong reference to mro because starttype->tp_mro can be
+    /* keep a strong reference to mro because su_obj_type->tp_mro can be
        replaced during PyDict_GetItemWithError(dict, name)  */
     Py_INCREF(mro);
     do {
@@ -9404,8 +9404,8 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
         res = PyDict_GetItemWithError(dict, name);
         if (res != NULL) {
             Py_INCREF(res);
-            if (meth_found && _PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
-                *meth_found = 1;
+            if (method && _PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+                *method = 1;
             }
             else {
                 descrgetfunc f = Py_TYPE(res)->tp_descr_get;
@@ -9414,8 +9414,8 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
                     res2 = f(res,
                         /* Only pass 'obj' param if this is instance-mode super
                         (See SF ID #743627)  */
-                        (su_obj == (PyObject *)starttype) ? NULL : su_obj,
-                        (PyObject *)starttype);
+                        (su_obj == (PyObject *)su_obj_type) ? NULL : su_obj,
+                        (PyObject *)su_obj_type);
                     Py_SETREF(res, res2);
                 }
             }
@@ -9509,13 +9509,13 @@ supercheck(PyTypeObject *type, PyObject *obj)
 }
 
 PyObject *
-_PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *meth_found)
+_PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *method)
 {
     PyTypeObject *su_obj_type = supercheck(su_type, su_obj);
     if (su_obj_type == NULL) {
         return NULL;
     }
-    PyObject *res = do_super_lookup(NULL, su_type, su_obj, su_obj_type, name, meth_found);
+    PyObject *res = do_super_lookup(NULL, su_type, su_obj, su_obj_type, name, method);
     Py_DECREF(su_obj_type);
     return res;
 }
