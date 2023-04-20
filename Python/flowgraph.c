@@ -1354,6 +1354,126 @@ apply_static_swaps(basicblock *block, int i)
     }
 }
 
+#define NO_SIDE_EFFECT(opcode) \
+    ((opcode) == LOAD_FAST || (opcode) == COPY || (opcode) == LOAD_CONST || (opcode) == POP_TOP || (opcode) == SWAP)
+
+typedef struct arg_ty {
+    enum {
+        CONST,
+        VARNAME
+    } type;
+    int val;
+} arg_ty;
+
+#define PUSH(type, val) do { arg_ty v = {type, val}; *stack_pointer++ = v; } while(0)
+#define POP() (*--stack_pointer)
+#define TOP() (stack_pointer[-1])
+#define STACK_EMPTY() (stack_pointer - stack <= 0)
+#define STACK_LEN() (stack_pointer - stack)
+
+static int
+simulate_stack(arg_ty *stack, int start, int end, basicblock *bb) {
+    arg_ty *stack_pointer = stack;
+    cfg_instr *instr;
+    int opcode;
+    int oparg;
+    arg_ty top, bottom;
+
+    for (int i = start; i < end; i++) {
+        instr = &bb->b_instr[i];
+        opcode = instr->i_opcode;
+        oparg = instr->i_oparg;
+        switch(opcode) {
+            case LOAD_FAST:
+                printf("LOAD FAST");
+                printf(" %d\n", oparg);
+                PUSH(VARNAME, oparg);
+                break;
+            case LOAD_CONST:
+                printf("LOAD CONST");
+                printf(" %d\n", oparg);
+                PUSH(CONST, oparg);
+                break;
+            case POP_TOP:
+                printf("POP_TOP");
+                printf(" %d\n", oparg);
+                if (STACK_LEN() < 1)
+                    goto fail_optimization;
+                --stack_pointer;
+                break;
+            case COPY:
+                printf("COPY");
+                printf(" %d\n", oparg);
+                if (STACK_LEN() < oparg)
+                    goto fail_optimization;
+                bottom = stack_pointer[-(1 + (oparg-1))];
+                PUSH(bottom.type, bottom.val);
+                break;
+            case SWAP:
+                printf("SWAP");
+                printf(" %d\n", oparg);
+                if (STACK_LEN() < oparg)
+                    goto fail_optimization;
+                top = stack_pointer[-1];
+                bottom = stack_pointer[-(2 + (oparg-2))];
+                stack_pointer[-1] = bottom;
+                stack_pointer[-(2 + (oparg-2))] = top;
+                break;
+            default:
+                printf("unknown opcode %d, %d\n", opcode, NO_SIDE_EFFECT(opcode));
+                break;
+        }
+    }
+    return stack_pointer - stack;
+fail_optimization:
+    return -500;
+}
+
+static int
+calculate_config(int *stack_config, arg_ty *stack, int stack_len)
+{
+    PyObject *config_values = PyDict_New();
+    int latest_num = 0, element;
+    for (int i = 0; i < stack_len; i++) {
+        PyObject *el = PyTuple_New(2);
+        PyTuple_SetItem(el, 0, PyLong_FromLong(stack[i].val));
+        PyTuple_SetItem(el, 1, PyLong_FromLong(stack[i].type));
+        if (PyDict_Contains(config_values, el)) {
+            PyObject *num = PyDict_GetItem(config_values, el);
+            element = PyLong_AsLong(num);
+            Py_DecRef(num);
+        } else {
+            element = latest_num++;
+        }
+        stack_config[i] = element;
+        Py_DecRef(el);
+    }
+    Py_DecRef(config_values);
+}
+
+static int
+superoptimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
+{
+    assert(PyDict_CheckExact(const_cache));
+    assert(PyList_CheckExact(consts));
+    arg_ty *stack = PyMem_Malloc(10 * sizeof(arg_ty));
+    int *stack_config = PyMem_Malloc(10 * sizeof(int));
+    for (int i = 0; i < bb->b_iused; i++) {
+        int j = i;
+        while (j < bb->b_iused && NO_SIDE_EFFECT(bb->b_instr[j].i_opcode) && j-i < 6)
+            j += 1;
+        if (j - i < 3)
+            continue;
+        int stack_len = simulate_stack(stack, i, j, bb);
+        if (stack_len == -500)
+            continue;
+        int config_len = calculate_config(stack_config, stack, stack_len);
+        printf("NUMBER OF INSTRS %d, STACK EFFECT %d, i %d, j %d\n", j - i, stack_len, i, j);
+    }
+    PyMem_Free(stack);
+    return SUCCESS;
+}
+
 static int
 optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
 {
@@ -1387,16 +1507,6 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
         nextnextop = i+2 < bb->b_iused ? bb->b_instr[i+2].i_opcode : 0;
         assert(!IS_ASSEMBLER_OPCODE(opcode));
         switch (opcode) {
-            case LOAD_FAST:
-            {
-                if (nextop == LOAD_FAST && nextnextop == SWAP && bb->b_instr[i+2].i_oparg == 2) {
-                    cfg_instr tmp = *inst;
-                    bb->b_instr[i] = bb->b_instr[i+1];
-                    bb->b_instr[i+1] = tmp;
-                    INSTR_SET_OP0(&bb->b_instr[i+2], NOP);
-                }
-                break;
-            }
             /* Remove LOAD_CONST const; conditional jump */
             case LOAD_CONST:
             {
@@ -1556,6 +1666,9 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         RETURN_IF_ERROR(optimize_basic_block(const_cache, b, consts));
         assert(b->b_predecessors == 0);
+    }
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        RETURN_IF_ERROR(superoptimize_basic_block(const_cache, b, consts));
     }
     RETURN_IF_ERROR(remove_redundant_nops_and_pairs(g->g_entryblock));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
