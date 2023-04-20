@@ -33,6 +33,14 @@ Constructors for container types must conform to two rules:
 #. Once all the fields which may contain references to other containers are
    initialized, it must call :c:func:`PyObject_GC_Track`.
 
+Similarly, the deallocator for the object must conform to a similar pair of
+rules:
+
+#. Before fields which refer to other containers are invalidated,
+   :c:func:`PyObject_GC_UnTrack` must be called.
+
+#. The object's memory must be deallocated using :c:func:`PyObject_GC_Del`.
+
    .. warning::
       If a type adds the Py_TPFLAGS_HAVE_GC, then it *must* implement at least
       a :c:member:`~PyTypeObject.tp_traverse` handler or explicitly use one
@@ -99,14 +107,6 @@ Constructors for container types must conform to two rules:
    This is analogous to the Python function :func:`gc.is_finalized`.
 
    .. versionadded:: 3.9
-
-Similarly, the deallocator for the object must conform to a similar pair of
-rules:
-
-#. Before fields which refer to other containers are invalidated,
-   :c:func:`PyObject_GC_UnTrack` must be called.
-
-#. The object's memory must be deallocated using :c:func:`PyObject_GC_Del`.
 
 
 .. c:function:: void PyObject_GC_Del(void *op)
@@ -228,3 +228,36 @@ garbage collection runs.
    Returns the current state, 0 for disabled and 1 for enabled.
 
    .. versionadded:: 3.10
+
+
+Querying Garbage Collector State
+--------------------------------
+
+The C-API provides the following interface for querying information about
+the garbage collector.
+
+.. c:function:: void PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
+
+   Run supplied *callback* on all live GC-capable objects. *arg* is passed through to
+   all invocations of *callback*.
+
+   .. warning::
+      If new objects are (de)allocated by the callback it is undefined if they
+      will be visited.
+
+      Garbage collection is disabled during operation. Explicitly running a collection
+      in the callback may lead to undefined behaviour e.g. visiting the same objects
+      multiple times or not at all.
+
+   .. versionadded:: 3.12
+
+.. c:type:: int (*gcvisitobjects_t)(PyObject *object, void *arg)
+
+   Type of the visitor function to be passed to :c:func:`PyUnstable_GC_VisitObjects`.
+   *arg* is the same as the *arg* passed to ``PyUnstable_GC_VisitObjects``.
+   Return ``0`` to continue iteration, return ``1`` to stop iteration. Other return
+   values are reserved for now so behavior on returning anything else is undefined.
+
+   .. versionadded:: 3.12
+
+

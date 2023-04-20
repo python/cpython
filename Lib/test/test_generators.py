@@ -162,6 +162,85 @@ class GeneratorTest(unittest.TestCase):
             with self.assertRaises((TypeError, pickle.PicklingError)):
                 pickle.dumps(g, proto)
 
+    def test_send_non_none_to_new_gen(self):
+        def f():
+            yield 1
+        g = f()
+        with self.assertRaises(TypeError):
+            g.send(0)
+        self.assertEqual(next(g), 1)
+
+    def test_handle_frame_object_in_creation(self):
+
+        #Attempt to expose partially constructed frames
+        #See https://github.com/python/cpython/issues/94262
+
+        def cb(*args):
+            inspect.stack()
+
+        def gen():
+            yield 1
+
+        thresholds = gc.get_threshold()
+
+        gc.callbacks.append(cb)
+        gc.set_threshold(1, 0, 0)
+        try:
+            gen()
+        finally:
+            gc.set_threshold(*thresholds)
+            gc.callbacks.pop()
+
+        class Sneaky:
+            def __del__(self):
+                inspect.stack()
+
+        sneaky = Sneaky()
+        sneaky._s = Sneaky()
+        sneaky._s._s = sneaky
+
+        gc.set_threshold(1, 0, 0)
+        try:
+            del sneaky
+            gen()
+        finally:
+            gc.set_threshold(*thresholds)
+
+    def test_ag_frame_f_back(self):
+        async def f():
+            yield
+        ag = f()
+        self.assertIsNone(ag.ag_frame.f_back)
+
+    def test_cr_frame_f_back(self):
+        async def f():
+            pass
+        cr = f()
+        self.assertIsNone(cr.cr_frame.f_back)
+        cr.close()  # Suppress RuntimeWarning.
+
+    def test_gi_frame_f_back(self):
+        def f():
+            yield
+        gi = f()
+        self.assertIsNone(gi.gi_frame.f_back)
+
+    def test_issue103488(self):
+
+        def gen_raises():
+            yield
+            raise ValueError()
+
+        def loop():
+            try:
+                for _ in gen_raises():
+                    if True is False:
+                        return
+            except ValueError:
+                pass
+
+        #This should not raise
+        loop()
 
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
@@ -170,16 +249,16 @@ class ExceptionTest(unittest.TestCase):
     def test_except_throw(self):
         def store_raise_exc_generator():
             try:
-                self.assertEqual(sys.exc_info()[0], None)
+                self.assertIsNone(sys.exception())
                 yield
             except Exception as exc:
                 # exception raised by gen.throw(exc)
-                self.assertEqual(sys.exc_info()[0], ValueError)
+                self.assertIsInstance(sys.exception(), ValueError)
                 self.assertIsNone(exc.__context__)
                 yield
 
                 # ensure that the exception is not lost
-                self.assertEqual(sys.exc_info()[0], ValueError)
+                self.assertIsInstance(sys.exception(), ValueError)
                 yield
 
                 # we should be able to raise back the ValueError
@@ -201,11 +280,11 @@ class ExceptionTest(unittest.TestCase):
             next(make)
         self.assertIsNone(cm.exception.__context__)
 
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_except_next(self):
         def gen():
-            self.assertEqual(sys.exc_info()[0], ValueError)
+            self.assertIsInstance(sys.exception(), ValueError)
             yield "done"
 
         g = gen()
@@ -213,23 +292,23 @@ class ExceptionTest(unittest.TestCase):
             raise ValueError
         except Exception:
             self.assertEqual(next(g), "done")
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_except_gen_except(self):
         def gen():
             try:
-                self.assertEqual(sys.exc_info()[0], None)
+                self.assertIsNone(sys.exception())
                 yield
                 # we are called from "except ValueError:", TypeError must
                 # inherit ValueError in its context
                 raise TypeError()
             except TypeError as exc:
-                self.assertEqual(sys.exc_info()[0], TypeError)
+                self.assertIsInstance(sys.exception(), TypeError)
                 self.assertEqual(type(exc.__context__), ValueError)
             # here we are still called from the "except ValueError:"
-            self.assertEqual(sys.exc_info()[0], ValueError)
+            self.assertIsInstance(sys.exception(), ValueError)
             yield
-            self.assertIsNone(sys.exc_info()[0])
+            self.assertIsNone(sys.exception())
             yield "done"
 
         g = gen()
@@ -240,25 +319,45 @@ class ExceptionTest(unittest.TestCase):
             next(g)
 
         self.assertEqual(next(g), "done")
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
+
+    def test_nested_gen_except_loop(self):
+        def gen():
+            for i in range(100):
+                self.assertIsInstance(sys.exception(), TypeError)
+                yield "doing"
+
+        def outer():
+            try:
+                raise TypeError
+            except:
+                for x in gen():
+                    yield x
+
+        try:
+            raise ValueError
+        except Exception:
+            for x in outer():
+                self.assertEqual(x, "doing")
+        self.assertEqual(sys.exception(), None)
 
     def test_except_throw_exception_context(self):
         def gen():
             try:
                 try:
-                    self.assertEqual(sys.exc_info()[0], None)
+                    self.assertIsNone(sys.exception())
                     yield
                 except ValueError:
                     # we are called from "except ValueError:"
-                    self.assertEqual(sys.exc_info()[0], ValueError)
+                    self.assertIsInstance(sys.exception(), ValueError)
                     raise TypeError()
             except Exception as exc:
-                self.assertEqual(sys.exc_info()[0], TypeError)
+                self.assertIsInstance(sys.exception(), TypeError)
                 self.assertEqual(type(exc.__context__), ValueError)
             # we are still called from "except ValueError:"
-            self.assertEqual(sys.exc_info()[0], ValueError)
+            self.assertIsInstance(sys.exception(), ValueError)
             yield
-            self.assertIsNone(sys.exc_info()[0])
+            self.assertIsNone(sys.exception())
             yield "done"
 
         g = gen()
@@ -269,7 +368,7 @@ class ExceptionTest(unittest.TestCase):
             g.throw(exc)
 
         self.assertEqual(next(g), "done")
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_except_throw_bad_exception(self):
         class E(Exception):
@@ -296,6 +395,15 @@ class ExceptionTest(unittest.TestCase):
         next(gen)
         with self.assertRaises(StopIteration):
             gen.throw(E)
+
+    def test_gen_3_arg_deprecation_warning(self):
+        def g():
+            yield 42
+
+        gen = g()
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(TypeError):
+                gen.throw(TypeError, TypeError(24), None)
 
     def test_stopiteration_error(self):
         # See also PEP 479.
@@ -889,7 +997,7 @@ From the Iterators list, about the types of these things.
 >>> type(i)
 <class 'generator'>
 >>> [s for s in dir(i) if not s.startswith('_')]
-['close', 'gi_code', 'gi_frame', 'gi_running', 'gi_yieldfrom', 'send', 'throw']
+['close', 'gi_code', 'gi_frame', 'gi_running', 'gi_suspended', 'gi_yieldfrom', 'send', 'throw']
 >>> from test.support import HAVE_DOCSTRINGS
 >>> print(i.__next__.__doc__ if HAVE_DOCSTRINGS else 'Implement next(self).')
 Implement next(self).
@@ -2068,6 +2176,12 @@ caught ValueError ()
 >>> g.throw(ValueError("xyz"))  # value only
 caught ValueError (xyz)
 
+>>> import warnings
+>>> warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+# Filter DeprecationWarning: regarding the (type, val, tb) signature of throw().
+# Deprecation warnings are re-enabled below.
+
 >>> g.throw(ValueError, ValueError(1))   # value+matching type
 caught ValueError (1)
 
@@ -2135,6 +2249,12 @@ ValueError: 6
 Traceback (most recent call last):
   ...
 ValueError: 7
+
+>>> warnings.filters.pop(0)
+('ignore', None, <class 'DeprecationWarning'>, None, 0)
+
+# Re-enable DeprecationWarning: the (type, val, tb) exception representation is deprecated,
+#                               and may be removed in a future version of Python.
 
 Plain "raise" inside a generator should preserve the traceback (#13188).
 The traceback should have 3 levels:

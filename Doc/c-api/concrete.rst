@@ -111,6 +111,7 @@ Other Objects
    memoryview.rst
    weakref.rst
    capsule.rst
+   frame.rst
    gen.rst
    coro.rst
    contextvars.rst

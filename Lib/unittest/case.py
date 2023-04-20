@@ -9,6 +9,7 @@ import warnings
 import collections
 import contextlib
 import traceback
+import time
 import types
 
 from . import result
@@ -102,11 +103,30 @@ def _id(obj):
     return obj
 
 
+def _enter_context(cm, addcleanup):
+    # We look up the special methods on the type to match the with
+    # statement.
+    cls = type(cm)
+    try:
+        enter = cls.__enter__
+        exit = cls.__exit__
+    except AttributeError:
+        raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
+                        f"not support the context manager protocol") from None
+    result = enter(cm)
+    addcleanup(exit, cm, None, None, None)
+    return result
+
+
 _module_cleanups = []
 def addModuleCleanup(function, /, *args, **kwargs):
     """Same as addCleanup, except the cleanup items are called even if
     setUpModule fails (unlike tearDownModule)."""
     _module_cleanups.append((function, args, kwargs))
+
+def enterModuleContext(cm):
+    """Same as enterContext, but module-wide."""
+    return _enter_context(cm, addModuleCleanup)
 
 
 def doModuleCleanups():
@@ -365,11 +385,11 @@ class TestCase(object):
     # of difflib.  See #11763.
     _diffThreshold = 2**16
 
-    # Attribute used by TestSuite for classSetUp
-
-    _classSetupFailed = False
-
-    _class_cleanups = []
+    def __init_subclass__(cls, *args, **kwargs):
+        # Attribute used by TestSuite for classSetUp
+        cls._classSetupFailed = False
+        cls._class_cleanups = []
+        super().__init_subclass__(*args, **kwargs)
 
     def __init__(self, methodName='runTest'):
         """Create an instance of the class that will use the named test
@@ -426,11 +446,24 @@ class TestCase(object):
         Cleanup items are called even if setUp fails (unlike tearDown)."""
         self._cleanups.append((function, args, kwargs))
 
+    def enterContext(self, cm):
+        """Enters the supplied context manager.
+
+        If successful, also adds its __exit__ method as a cleanup
+        function and returns the result of the __enter__ method.
+        """
+        return _enter_context(cm, self.addCleanup)
+
     @classmethod
     def addClassCleanup(cls, function, /, *args, **kwargs):
         """Same as addCleanup, except the cleanup items are called even if
         setUpClass fails (unlike tearDownClass)."""
         cls._class_cleanups.append((function, args, kwargs))
+
+    @classmethod
+    def enterClassContext(cls, cm):
+        """Same as enterContext, but class-wide."""
+        return _enter_context(cm, cls.addClassCleanup)
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -478,7 +511,7 @@ class TestCase(object):
         return hash((type(self), self._testMethodName))
 
     def __str__(self):
-        return "%s (%s)" % (self._testMethodName, strclass(self.__class__))
+        return "%s (%s.%s)" % (self._testMethodName, strclass(self.__class__), self._testMethodName)
 
     def __repr__(self):
         return "<%s testMethod=%s>" % \
@@ -540,12 +573,21 @@ class TestCase(object):
         else:
             addUnexpectedSuccess(self)
 
+    def _addDuration(self, result, elapsed):
+        try:
+            addDuration = result.addDuration
+        except AttributeError:
+            warnings.warn("TestResult has no addDuration method",
+                          RuntimeWarning)
+        else:
+            addDuration(self, elapsed)
+
     def _callSetUp(self):
         self.setUp()
 
     def _callTestMethod(self, method):
         if method() is not None:
-            warnings.warn(f'It is deprecated to return a value!=None from a '
+            warnings.warn(f'It is deprecated to return a value that is not None from a '
                           f'test case ({method})', DeprecationWarning, stacklevel=3)
 
     def _callTearDown(self):
@@ -580,6 +622,7 @@ class TestCase(object):
                 getattr(testMethod, "__unittest_expecting_failure__", False)
             )
             outcome = _Outcome(result)
+            start_time = time.perf_counter()
             try:
                 self._outcome = outcome
 
@@ -593,6 +636,7 @@ class TestCase(object):
                     with outcome.testPartExecutor(self):
                         self._callTearDown()
                 self.doCleanups()
+                self._addDuration(result, (time.perf_counter() - start_time))
 
                 if outcome.success:
                     if expecting_failure:
