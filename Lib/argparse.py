@@ -1186,6 +1186,8 @@ class _SubParsersAction(Action):
         if kwargs.get('prog') is None:
             kwargs['prog'] = '%s %s' % (self._prog_prefix, name)
 
+        subspace_name = kwargs.pop('subspace_name', None)
+
         aliases = kwargs.pop('aliases', ())
 
         if name in self._name_parser_map:
@@ -1204,6 +1206,10 @@ class _SubParsersAction(Action):
         # create the parser and add it to the map
         parser = self._parser_class(**kwargs)
         self._name_parser_map[name] = parser
+
+        # add the subspace_name attribute to the parser if specified
+        if subspace_name is not None:
+            setattr(parser, 'subspace_name', subspace_name)
 
         # make parser available under aliases also
         for alias in aliases:
@@ -1239,8 +1245,12 @@ class _SubParsersAction(Action):
         # in a new namespace object and then update the original
         # namespace for the relevant parts.
         subnamespace, arg_strings = parser.parse_known_args(arg_strings, None)
-        for key, value in vars(subnamespace).items():
-            setattr(namespace, key, value)
+
+        if hasattr(parser, 'subspace_name'):
+            setattr(namespace, parser.subspace_name, subnamespace)
+        else:
+            for key, value in vars(subnamespace).items():
+                setattr(namespace, key, value)
 
         if arg_strings:
             vars(namespace).setdefault(_UNRECOGNIZED_ARGS_ATTR, [])
