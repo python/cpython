@@ -1,1 +1,1 @@
-fix pause_reading is for one message when called in connection_made
+Fix :func:`_UnixReadPipeTransport.pause_reading` to make it work when called from :func;`connection_made`.
