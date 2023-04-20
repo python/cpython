@@ -1,0 +1,1 @@
+Adapt the :mod:`winsound` extension module to :pep:`687`.
