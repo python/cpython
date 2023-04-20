@@ -1,0 +1,3 @@
+Add the keyword argument ``subspace_dest`` of type ``Optional[str]`` to
+:func:`argparse._SubParsersAction.add_parser` to allow sub-namespaces which
+correspond to subparsers
