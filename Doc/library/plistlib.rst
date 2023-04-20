@@ -155,9 +155,16 @@ The following constants are available:
 
 .. data:: FMT_BINARY
 
-   The binary format for plist files
-
+   The binary format for plist files.
+   
    .. versionadded:: 3.4
+
+
+.. data:: CFUID_KEY
+
+   The dictionary key used to represent a UID in XML-format plist files.
+ 
+   .. versionadded :: 3.13
 
 
 Examples
