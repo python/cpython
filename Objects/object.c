@@ -1491,12 +1491,6 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
     return _PyObject_GenericGetAttrWithDict(obj, name, NULL, 0);
 }
 
-PyObject *
-_PyObject_GenericTryGetAttr(PyObject *obj, PyObject *name)
-{
-    return _PyObject_GenericGetAttrWithDict(obj, name, NULL, 1);
-}
-
 int
 _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
                                  PyObject *value, PyObject *dict)
@@ -1971,13 +1965,11 @@ PyObject _Py_NotImplementedStruct = {
     1, &_PyNotImplemented_Type
 };
 
-#ifdef MS_WINDOWS
-extern PyTypeObject PyHKEY_Type;
-#endif
 extern PyTypeObject _Py_GenericAliasIterType;
 extern PyTypeObject _PyMemoryIter_Type;
 extern PyTypeObject _PyLineIterator;
 extern PyTypeObject _PyPositionsIterator;
+extern PyTypeObject _PyLegacyEventHandler_Type;
 
 static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
@@ -2023,9 +2015,6 @@ static PyTypeObject* static_types[] = {
     &PyFunction_Type,
     &PyGen_Type,
     &PyGetSetDescr_Type,
-#ifdef MS_WINDOWS
-    &PyHKEY_Type,
-#endif
     &PyInstanceMethod_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
@@ -2075,6 +2064,7 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_BitmapNode_Type,
     &_PyHamt_CollisionNode_Type,
     &_PyHamt_Type,
+    &_PyLegacyEventHandler_Type,
     &_PyInterpreterID_Type,
     &_PyLineIterator,
     &_PyManagedBuffer_Type,
