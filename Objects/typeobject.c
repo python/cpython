@@ -18,7 +18,6 @@
 #include "structmember.h"         // PyMemberDef
 
 #include <ctype.h>
-#include <stdalign.h>             // alignof
 #include <stddef.h>               // ptrdiff_t
 
 /*[clinic input]

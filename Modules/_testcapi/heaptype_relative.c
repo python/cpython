@@ -1,6 +1,5 @@
 #define Py_LIMITED_API 0x030c0000 // 3.12
 #include "parts.h"
-#include <stdalign.h>             // alignof
 #include <stddef.h>               // max_align_t
 #include <string.h>               // memset
 
