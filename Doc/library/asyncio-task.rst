@@ -257,8 +257,8 @@ Creating Tasks
    .. note::
 
       :meth:`asyncio.TaskGroup.create_task` is a new alternative
-      based on `structural concurrency principles <https://en.wikipedia.org/wiki/Structured_concurrency>`_
-      that allows for waiting for a group of related tasks with strong safety guarantees.
+      leveraging structural concurrency; it allows for waiting 
+      for a group of related tasks with strong safety guarantees.
 
    .. important::
 
@@ -465,10 +465,7 @@ Running Tasks Concurrently
       provides stronger safety guarantees than *gather* for scheduling a nesting of subtasks.
       That is, if a task (or a subtask, a task scheduled by a task)
       raises an exception, *TaskGroup* will, while *gather* will not,
-      cancel the remaining scheduled tasks). However the terser *gather* might be
-      preferred for *Iterable* of tasks which individually handle their own exceptions, or more
-      generally, when having some tasks survive the cancellation
-      of others is an acceptable outcome.
+      cancel the remaining scheduled tasks).
 
    .. _asyncio_example_gather:
 
