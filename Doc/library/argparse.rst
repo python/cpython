@@ -1853,16 +1853,16 @@ Sub-commands
      >>> parser.parse_args(['co', 'bar'])
      Namespace(foo='bar')
 
-   In addition ``add_parser`` supports a ``subspace_name`` keyword argument which makes arguments corresponding to the subparser to be stored in a nested :class:`Namespace` object. This is useful for modular command-line programs, and avoiding possibly conflicting ``dest`` parameters between a parser and its parents.
+   In addition ``add_parser`` supports a ``subspace_name`` keyword argument which makes arguments corresponding to the subparser to be stored in a nested :class:`Namespace` object. This is useful for modular command-line programs, and avoiding possibly conflicting ``dest`` parameters between a parser and its parents::
 
-      >>> parser = argparse.ArgumentParser()
-      >>> subparsers = parser.add_subparsers(dest='action')
-      >>> checkout = subparsers.add_parser('checkout', subspace_name='checkout_args')
-      >>> checkout.add_argument('name')
-      >>> commit = subparsers.add_parser('commit', subspace_name='commit_args')
-      >>> commit.add_argument('--message')
-      >>> parser.parse_args('commit --message bugfix'.split())
-      Namespace(action='commit', commit_args=Namespace(message='bugfix'))
+     >>> parser = argparse.ArgumentParser()
+     >>> subparsers = parser.add_subparsers(dest='action')
+     >>> checkout = subparsers.add_parser('checkout', subspace_name='checkout_args')
+     >>> checkout.add_argument('name')
+     >>> commit = subparsers.add_parser('commit', subspace_name='commit_args')
+     >>> commit.add_argument('--message')
+     >>> parser.parse_args('commit --message bugfix'.split())
+     Namespace(action='commit', commit_args=Namespace(message='bugfix'))
 
    One particularly effective way of handling sub-commands is to combine the use
    of the :meth:`add_subparsers` method with calls to :meth:`set_defaults` so
