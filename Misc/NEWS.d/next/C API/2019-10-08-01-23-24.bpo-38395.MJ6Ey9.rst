@@ -1,3 +1,0 @@
-Fix a crash in :class:`weakref.proxy` objects due to incorrect lifetime
-management when calling some associated methods that may delete the last
-reference to object being referenced by the proxy. Patch by Pablo Galindo.

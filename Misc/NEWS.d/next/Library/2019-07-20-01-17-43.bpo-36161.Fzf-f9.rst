@@ -1,1 +1,0 @@
-In :mod:`posix`, use ``ttyname_r`` instead of ``ttyname`` for thread safety.

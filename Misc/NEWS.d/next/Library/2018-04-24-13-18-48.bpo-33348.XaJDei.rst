@@ -1,2 +1,0 @@
-lib2to3 now recognizes expressions after ``*`` and `**` like in ``f(*[] or
-[])``.

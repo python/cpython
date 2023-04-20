@@ -51,7 +51,7 @@ def fixup_parse_tree(cls_node):
             # already in the preferred format, do nothing
             return
 
-    # !%@#! oneliners have no suite node, we have to fake one up
+    # !%@#! one-liners have no suite node, we have to fake one up
     for i, node in enumerate(cls_node.children):
         if node.type == token.COLON:
             break

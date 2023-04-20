@@ -29,20 +29,12 @@
 #include "sqlite3.h"
 #include "connection.h"
 
-int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection);
-
 /**
  * Checks the SQLite error code and sets the appropriate DB-API exception.
  * Returns the error code (0 means no error occurred).
  */
-int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st);
+int _pysqlite_seterror(pysqlite_state *state, sqlite3 *db);
 
 sqlite_int64 _pysqlite_long_as_int64(PyObject * value);
-
-#if SQLITE_VERSION_NUMBER >= 3007014
-#define SQLITE3_CLOSE sqlite3_close_v2
-#else
-#define SQLITE3_CLOSE sqlite3_close
-#endif
 
 #endif

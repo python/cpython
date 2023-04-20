@@ -20,12 +20,15 @@ def codec_search_function(encoding):
         return tuple(testcodec.getregentry())
     return None
 
-codecs.register(codec_search_function)
-
 # test codec's name (see test/testcodec.py)
 codecname = 'testcodec'
 
 class CharmapCodecTest(unittest.TestCase):
+
+    def setUp(self):
+        codecs.register(codec_search_function)
+        self.addCleanup(codecs.unregister, codec_search_function)
+
     def test_constructorx(self):
         self.assertEqual(str(b'abc', codecname), 'abc')
         self.assertEqual(str(b'xdef', codecname), 'abcdef')

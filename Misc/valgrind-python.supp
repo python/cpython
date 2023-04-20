@@ -264,6 +264,14 @@
 }
 
 {
+   Uninitialised byte(s) false alarm, see bpo-35561
+   Memcheck:Param
+   epoll_ctl(event)
+   fun:epoll_ctl
+   fun:pyepoll_internal_ctl
+}
+
+{
    ZLIB problems, see test_gzip
    Memcheck:Cond
    obj:/lib/libz.so.1.2.3

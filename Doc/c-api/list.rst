@@ -22,13 +22,13 @@ List Objects
 .. c:function:: int PyList_Check(PyObject *p)
 
    Return true if *p* is a list object or an instance of a subtype of the list
-   type.
+   type.  This function always succeeds.
 
 
 .. c:function:: int PyList_CheckExact(PyObject *p)
 
    Return true if *p* is a list object, but not an instance of a subtype of
-   the list type.
+   the list type.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyList_New(Py_ssize_t len)
@@ -53,7 +53,7 @@ List Objects
 
 .. c:function:: Py_ssize_t PyList_GET_SIZE(PyObject *list)
 
-   Macro form of :c:func:`PyList_Size` without error checking.
+   Similar to :c:func:`PyList_Size`, but without error checking.
 
 
 .. c:function:: PyObject* PyList_GetItem(PyObject *list, Py_ssize_t index)
@@ -66,7 +66,7 @@ List Objects
 
 .. c:function:: PyObject* PyList_GET_ITEM(PyObject *list, Py_ssize_t i)
 
-   Macro form of :c:func:`PyList_GetItem` without error checking.
+   Similar to :c:func:`PyList_GetItem`, but without error checking.
 
 
 .. c:function:: int PyList_SetItem(PyObject *list, Py_ssize_t index, PyObject *item)
@@ -142,10 +142,3 @@ List Objects
 
    Return a new tuple object containing the contents of *list*; equivalent to
    ``tuple(list)``.
-
-
-.. c:function:: int PyList_ClearFreeList()
-
-   Clear the free list. Return the total number of freed items.
-
-   .. versionadded:: 3.3

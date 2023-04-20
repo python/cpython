@@ -1,3 +1,0 @@
-Deprecated the ``split()`` method in :class:`_tkinter.TkappType` in favour
-of the ``splitlist()`` method which has more consistent and predicable
-behavior.

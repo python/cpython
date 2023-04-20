@@ -11,6 +11,27 @@
 #define PARAMFLAG_FLCID 0x4
 #endif
 
+/*
+ * bpo-13097: Max number of arguments CFuncPtr._argtypes_ and
+ * _ctypes_callproc() will accept.
+ *
+ * This limit is enforced for the `alloca()` call in `_ctypes_callproc`,
+ * to avoid allocating a massive buffer on the stack.
+ */
+#ifndef CTYPES_MAX_ARGCOUNT
+  #ifdef __EMSCRIPTEN__
+    #define CTYPES_MAX_ARGCOUNT 1000
+  #else
+    #define CTYPES_MAX_ARGCOUNT 1024
+  #endif
+#endif
+
+#if defined(__has_builtin)
+#if __has_builtin(__builtin_available)
+#define HAVE_BUILTIN_AVAILABLE 1
+#endif
+#endif
+
 typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;
 typedef PyObject *(* GETFUNC)(void *, Py_ssize_t size);
@@ -68,7 +89,7 @@ typedef struct {
     ffi_type *atypes[1];
 } CThunkObject;
 extern PyTypeObject PyCThunk_Type;
-#define CThunk_CheckExact(v)        ((v)->ob_type == &PyCThunk_Type)
+#define CThunk_CheckExact(v)        Py_IS_TYPE(v, &PyCThunk_Type)
 
 typedef struct {
     /* First part identical to tagCDataObject */
@@ -102,7 +123,7 @@ typedef struct {
 } PyCFuncPtrObject;
 
 extern PyTypeObject PyCStgDict_Type;
-#define PyCStgDict_CheckExact(v)            ((v)->ob_type == &PyCStgDict_Type)
+#define PyCStgDict_CheckExact(v)            Py_IS_TYPE(v, &PyCStgDict_Type)
 #define PyCStgDict_Check(v)         PyObject_TypeCheck(v, &PyCStgDict_Type)
 
 extern int PyCStructUnionType_update_stgdict(PyObject *fields, PyObject *type, int isStruct);
@@ -112,12 +133,12 @@ extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palig
 
 
 extern PyTypeObject PyCData_Type;
-#define CDataObject_CheckExact(v)       ((v)->ob_type == &PyCData_Type)
+#define CDataObject_CheckExact(v)       Py_IS_TYPE(v, &PyCData_Type)
 #define CDataObject_Check(v)            PyObject_TypeCheck(v, &PyCData_Type)
 #define _CDataObject_HasExternalBuffer(v)  ((v)->b_ptr != (char *)&(v)->b_value)
 
 extern PyTypeObject PyCSimpleType_Type;
-#define PyCSimpleTypeObject_CheckExact(v)       ((v)->ob_type == &PyCSimpleType_Type)
+#define PyCSimpleTypeObject_CheckExact(v)       Py_IS_TYPE(v, &PyCSimpleType_Type)
 #define PyCSimpleTypeObject_Check(v)    PyObject_TypeCheck(v, &PyCSimpleType_Type)
 
 extern PyTypeObject PyCField_Type;
@@ -208,7 +229,7 @@ typedef struct {
     PyObject *checker;
     int flags;                  /* calling convention and such */
 
-    /* pep3118 fields, pointers neeed PyMem_Free */
+    /* pep3118 fields, pointers need PyMem_Free */
     char *format;
     int ndim;
     Py_ssize_t *shape;
@@ -314,7 +335,7 @@ struct tagPyCArgObject {
 };
 
 extern PyTypeObject PyCArg_Type;
-#define PyCArg_CheckExact(v)        ((v)->ob_type == &PyCArg_Type)
+#define PyCArg_CheckExact(v)        Py_IS_TYPE(v, &PyCArg_Type)
 extern PyCArgObject *PyCArgObject_new(void);
 
 extern PyObject *
@@ -343,10 +364,6 @@ extern PyObject *PyExc_ArgError;
 extern char *_ctypes_conversion_encoding;
 extern char *_ctypes_conversion_errors;
 
-#if defined(HAVE_WCHAR_H)
-#  define CTYPES_UNICODE
-#endif
-
 
 extern void _ctypes_free_closure(void *);
 extern void *_ctypes_alloc_closure(void);
@@ -364,6 +381,14 @@ PyObject *_ctypes_get_errobj(int **pspace);
 
 #ifdef MS_WIN32
 extern PyObject *ComError;
+#endif
+
+#ifdef USING_MALLOC_CLOSURE_DOT_C
+void Py_ffi_closure_free(void *p);
+void *Py_ffi_closure_alloc(size_t size, void** codeloc);
+#else
+#define Py_ffi_closure_free ffi_closure_free
+#define Py_ffi_closure_alloc ffi_closure_alloc
 #endif
 
 /*

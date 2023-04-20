@@ -1,3 +1,0 @@
-:mod:`compileall` has a higher default recursion limit and new command-line
-arguments for path manipulation, symlinks handling, and multiple
-optimization levels.
