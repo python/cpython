@@ -985,6 +985,11 @@ class UnionTests(unittest.TestCase):
     def test_or_type_operator_reference_cycle(self):
         if not hasattr(sys, 'gettotalrefcount'):
             self.skipTest('Cannot get total reference count.')
+        try:
+            import _testcapi
+        except ImportError:
+            self.skipTest('Cannot clear types.GenericAlias cache.')
+
         gc.collect()
         before = sys.gettotalrefcount()
         for _ in range(30):
@@ -993,6 +998,7 @@ class UnionTests(unittest.TestCase):
             T.blah = U
             del T
             del U
+        _testcapi.genericalias_cache_clear()
         gc.collect()
         leeway = 15
         self.assertLessEqual(sys.gettotalrefcount() - before, leeway,
