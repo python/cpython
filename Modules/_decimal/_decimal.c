@@ -227,7 +227,7 @@ incr_false(void)
 static inline void
 signal_map_init(decimal_state *state)
 {
-    static DecCondMap signal_map[] = {
+    const DecCondMap signal_map[] = {
         {"InvalidOperation", "decimal.InvalidOperation", MPD_IEEE_Invalid_operation, NULL},
         {"FloatOperation", "decimal.FloatOperation", MPD_Float_operation, NULL},
         {"DivisionByZero", "decimal.DivisionByZero", MPD_Division_by_zero, NULL},
@@ -1422,10 +1422,8 @@ context_repr(PyDecContextObject *self)
     char traps[MPD_MAX_SIGNAL_LIST];
     int n, mem;
 
-#ifdef NDEBUG
     decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     assert(PyDecContext_Check(state, self));
-#endif
     ctx = CTX(self);
 
     mem = MPD_MAX_SIGNAL_LIST;
@@ -2368,9 +2366,7 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     mpd_context_t maxctx;
     decimal_state *state = get_module_state_by_def(type);
 
-#ifdef NDEBUG
     assert(PyType_IsSubtype(type, state->PyDec_Type));
-#endif
 
     if (PyLong_Check(v)) {
         return PyDecType_FromLongExact(type, v, context);
@@ -4667,9 +4663,7 @@ dec_richcompare(PyObject *v, PyObject *w, int op)
     int r;
     decimal_state *state = find_state_left_or_right(v, w);
 
-#ifdef NDEBUG
     assert(PyDec_Check(state, v));
-#endif
 
     CURRENT_CONTEXT(state, context);
     CONVERT_BINOP_CMP(&a, &b, v, w, op, context);
@@ -5870,13 +5864,7 @@ _decimal_exec(PyObject *m)
     mpd_reallocfunc = PyMem_Realloc;
     mpd_callocfunc = mpd_callocfunc_em;
     mpd_free = PyMem_Free;
-
-    static int minalloc_is_set = 0;
-    if (minalloc_is_set == 0) {
-        // FIXME: mpd_setminalloc may be used only once at program start.
-        mpd_setminalloc(_Py_DEC_MINALLOC);
-        minalloc_is_set = 1;
-    }
+    mpd_setminalloc(_Py_DEC_MINALLOC);
 
     decimal_state *state = get_module_state(m);
 
