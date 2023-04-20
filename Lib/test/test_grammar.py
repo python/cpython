@@ -236,12 +236,9 @@ class TokenTests(unittest.TestCase):
             check(f"[{num}for x in ()]")
             check(f"{num}spam", error=True)
 
+            with self.assertWarnsRegex(SyntaxWarning, r'invalid \w+ literal'):
+                compile(f"{num}is x", "<testcase>", "eval")
             with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', '"is" with int literal',
-                                        SyntaxWarning)
-                with self.assertWarnsRegex(SyntaxWarning,
-                            r'invalid \w+ literal'):
-                    compile(f"{num}is x", "<testcase>", "eval")
                 warnings.simplefilter('error', SyntaxWarning)
                 with self.assertRaisesRegex(SyntaxError,
                             r'invalid \w+ literal'):
