@@ -1463,7 +1463,7 @@ class SizeofTest(unittest.TestCase):
             check(bar, size('PP'))
         # generator
         def get_gen(): yield 1
-        check(get_gen(), size('PP4P4c7P2ic??2P'))
+        check(get_gen(), size('PP4P3cPc7P2ic??2P'))
         # iterator
         check(iter('abc'), size('lP'))
         # callable-iterator
@@ -1551,7 +1551,7 @@ class SizeofTest(unittest.TestCase):
         check(int, s)
         # class
         s = vsize(fmt +                 # PyTypeObject
-                  '4P'                  # PyAsyncMethods
+                  '5P'                  # PyAsyncMethods
                   '36P'                 # PyNumberMethods
                   '3P'                  # PyMappingMethods
                   '10P'                 # PySequenceMethods

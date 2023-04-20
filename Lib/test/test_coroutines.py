@@ -2465,5 +2465,72 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(foo().send(None), 1)
 
 
+class CoroutineAwaiterTest(unittest.TestCase):
+    def test_basic_await(self):
+        async def coro():
+            self.assertIs(coro_obj.cr_awaiter, awaiter_obj)
+            return "success"
+
+        async def awaiter():
+            return await coro_obj
+
+        coro_obj = coro()
+        awaiter_obj = awaiter()
+        self.assertIsNone(coro_obj.cr_awaiter)
+        self.assertEqual(run_async(awaiter_obj), ([], "success"))
+
+    class FakeFuture:
+        def __await__(self):
+            return iter(["future"])
+
+    def test_coro_outlives_awaiter(self):
+        async def coro():
+            await self.FakeFuture()
+
+        async def awaiter(cr):
+            await cr
+
+        coro_obj = coro()
+        self.assertIsNone(coro_obj.cr_awaiter)
+        awaiter_obj = awaiter(coro_obj)
+        self.assertIsNone(coro_obj.cr_awaiter)
+
+        v1 = awaiter_obj.send(None)
+        self.assertEqual(v1, "future")
+        self.assertIs(coro_obj.cr_awaiter, awaiter_obj)
+
+        awaiter_id = id(awaiter_obj)
+        del awaiter_obj
+        self.assertEqual(id(coro_obj.cr_awaiter), awaiter_id)
+
+    def test_async_gen_awaiter(self):
+        async def coro():
+            self.assertIs(coro_obj.cr_awaiter, agen)
+            await self.FakeFuture()
+
+        async def async_gen(cr):
+            await cr
+            yield "hi"
+
+        coro_obj = coro()
+        self.assertIsNone(coro_obj.cr_awaiter)
+        agen = async_gen(coro_obj)
+        self.assertIsNone(coro_obj.cr_awaiter)
+
+        v1 = agen.asend(None).send(None)
+        self.assertEqual(v1, "future")
+
+    def test_set_invalid_awaiter(self):
+        async def coro():
+            return True
+
+        coro_obj = coro()
+        msg = "awaiter must be None, a coroutine, or an async generator"
+        with self.assertRaisesRegex(TypeError, msg):
+            coro_obj.__set_awaiter__("testing 123")
+        run_async(coro_obj)
+
+
+
 if __name__=="__main__":
     unittest.main()

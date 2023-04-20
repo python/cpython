@@ -2477,6 +2477,25 @@ class BaseTaskTests:
         finally:
             loop.close()
 
+    def test_get_awaiter(self):
+        ctask = getattr(tasks, '_CTask', None)
+        if ctask is None or not issubclass(self.Task, ctask):
+            self.skipTest("Only subclasses of _CTask set cr_awaiter on wrapped coroutines")
+
+        async def coro():
+            self.assertIs(coro_obj.cr_awaiter, awaiter_obj)
+            return "ok"
+
+        async def awaiter(coro):
+            task = self.loop.create_task(coro)
+            return await task
+
+        coro_obj = coro()
+        awaiter_obj = awaiter(coro_obj)
+        self.assertIsNone(coro_obj.cr_awaiter)
+        self.assertEqual(self.loop.run_until_complete(awaiter_obj), "ok")
+        self.assertIsNone(coro_obj.cr_awaiter)
+
 
 def add_subclass_tests(cls):
     BaseTask = cls.Task
@@ -3225,6 +3244,23 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
             # NameError should not happen:
             self.one_loop.call_exception_handler.assert_not_called()
 
+    def test_propagate_awaiter(self):
+        async def coro(idx):
+            self.assertIs(coro_objs[idx].cr_awaiter, awaiter_obj)
+            return "ok"
+
+        async def awaiter(coros):
+            tasks = [self.one_loop.create_task(c) for c in coros]
+            return await asyncio.gather(*tasks)
+
+        coro_objs = [coro(0), coro(1)]
+        awaiter_obj = awaiter(coro_objs)
+        self.assertIsNone(coro_objs[0].cr_awaiter)
+        self.assertIsNone(coro_objs[1].cr_awaiter)
+        self.assertEqual(self.one_loop.run_until_complete(awaiter_obj), ["ok", "ok"])
+        self.assertIsNone(coro_objs[0].cr_awaiter)
+        self.assertIsNone(coro_objs[1].cr_awaiter)
+
 
 class RunCoroutineThreadsafeTests(test_utils.TestCase):
     """Test case for asyncio.run_coroutine_threadsafe."""
@@ -3366,6 +3402,57 @@ class CompatibilityTests(test_utils.TestCase):
         self.loop.close()
         self.loop = None
         super().tearDown()
+
+
+class GetAsyncStackTests(test_utils.TestCase):
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(None)
+
+    def tearDown(self):
+        self.loop.close()
+        self.loop = None
+        asyncio.set_event_loop_policy(None)
+
+    def check_stack(self, frames, expected_funcs):
+        given = [f.f_code for f in frames]
+        expected = [f.__code__ for f in expected_funcs]
+        self.assertEqual(given, expected)
+
+    def test_single_task(self):
+        async def coro():
+            await coro2()
+
+        async def coro2():
+            stack = asyncio.get_async_stack()
+            self.check_stack(stack, [coro, coro2])
+
+        self.loop.run_until_complete(coro())
+
+    def test_cross_tasks(self):
+        async def coro():
+            t = asyncio.ensure_future(coro2())
+            await t
+
+        async def coro2():
+            t = asyncio.ensure_future(coro3())
+            await t
+
+        async def coro3():
+            stack = asyncio.get_async_stack()
+            self.check_stack(stack, [coro, coro2, coro3])
+
+        self.loop.run_until_complete(coro())
+
+    def test_cross_gather(self):
+        async def coro():
+            await asyncio.gather(coro2(), coro2())
+
+        async def coro2():
+            stack = asyncio.get_async_stack()
+            self.check_stack(stack, [coro, coro2])
+
+        self.loop.run_until_complete(coro())
 
 
 if __name__ == '__main__':

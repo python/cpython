@@ -702,6 +702,7 @@ extern "C" {
     INIT_ID(__rtruediv__), \
     INIT_ID(__rxor__), \
     INIT_ID(__set__), \
+    INIT_ID(__set_awaiter__), \
     INIT_ID(__set_name__), \
     INIT_ID(__setattr__), \
     INIT_ID(__setitem__), \

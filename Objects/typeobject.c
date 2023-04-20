@@ -6379,6 +6379,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
         COPYASYNC(am_await);
         COPYASYNC(am_aiter);
         COPYASYNC(am_anext);
+        COPYASYNC(am_set_awaiter);
     }
 
     if (type->tp_as_sequence != NULL && base->tp_as_sequence != NULL) {
@@ -8577,6 +8578,40 @@ slot_am_anext(PyObject *self)
     return NULL;
 }
 
+static PyObject *
+wrap_setawaiterfunc(PyObject *self, PyObject *args, void *wrapped)
+{
+    setawaiterfunc func = (setawaiterfunc)wrapped;
+    PyObject *other;
+
+    if (!check_num_args(args, 1))
+        return NULL;
+    other = PyTuple_GET_ITEM(args, 0);
+    if ((*func)(self, other) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+slot_am_set_awaiter(PyObject *self, PyObject *awaiter)
+{
+    int unbound;
+    PyObject *func = NULL, *res = NULL;
+    func = lookup_maybe_method(self, &_Py_ID(__set_awaiter__), &unbound);
+    if (func != NULL) {
+        PyObject *args[2] = {self, awaiter};
+        res = vectorcall_unbound(_PyThreadState_GET(), unbound, func, args, 2);
+        Py_DECREF(func);
+        return res;
+    }
+    PyErr_Format(PyExc_AttributeError,
+                 "object %.50s does not have __set_awaiter__ method",
+                 Py_TYPE(self)->tp_name);
+    return NULL;
+}
+
 /*
 Table mapping __foo__ names to tp_foo offsets and slot_tp_foo wrapper functions.
 
@@ -8696,6 +8731,8 @@ static pytype_slotdef slotdefs[] = {
            "__aiter__($self, /)\n--\n\nReturn an awaitable, that resolves in asynchronous iterator."),
     AMSLOT(__anext__, am_anext, slot_am_anext, wrap_unaryfunc,
            "__anext__($self, /)\n--\n\nReturn a value or raise StopAsyncIteration."),
+    AMSLOT(__set_awaiter__, am_set_awaiter, slot_am_set_awaiter, wrap_setawaiterfunc,
+           "__set_awaiter__($self, awaiter)\n--\n\nSet or forward awaiter."),
 
     BINSLOT(__add__, nb_add, slot_nb_add,
            "+"),

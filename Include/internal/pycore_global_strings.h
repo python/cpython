@@ -196,6 +196,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__rtruediv__)
         STRUCT_FOR_ID(__rxor__)
         STRUCT_FOR_ID(__set__)
+        STRUCT_FOR_ID(__set_awaiter__)
         STRUCT_FOR_ID(__set_name__)
         STRUCT_FOR_ID(__setattr__)
         STRUCT_FOR_ID(__setitem__)

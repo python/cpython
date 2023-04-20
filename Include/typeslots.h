@@ -86,3 +86,7 @@
 /* New in 3.10 */
 #define Py_am_send 81
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+/* New in 3.12 */
+#define Py_am_set_awaiter 82
+#endif

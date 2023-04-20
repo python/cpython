@@ -124,12 +124,14 @@ typedef struct {
 } PyMappingMethods;
 
 typedef PySendResult (*sendfunc)(PyObject *iter, PyObject *value, PyObject **result);
+typedef int (*setawaiterfunc)(PyObject *iter, PyObject *awaiter);
 
 typedef struct {
     unaryfunc am_await;
     unaryfunc am_aiter;
     unaryfunc am_anext;
     sendfunc am_send;
+    setawaiterfunc am_set_awaiter;
 } PyAsyncMethods;
 
 typedef struct {

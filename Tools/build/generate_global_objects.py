@@ -113,6 +113,7 @@ IDENTIFIERS = [
     '__rtruediv__',
     '__rxor__',
     '__set__',
+    '__set_awaiter__',
     '__setattr__',
     '__setitem__',
     '__str__',

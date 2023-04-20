@@ -7,6 +7,15 @@
 extern "C" {
 #endif
 
+static inline int _PyAwaitable_SetAwaiter(PyObject *receiver, PyObject *awaiter) {
+    PyTypeObject *ty = Py_TYPE(receiver);
+    PyAsyncMethods *am = (PyAsyncMethods *) ty->tp_as_async;
+    if ((am != NULL) && (am->am_set_awaiter != NULL)) {
+        return am->am_set_awaiter(receiver, awaiter);
+    }
+    return 0;
+}
+
 /* --- Generators --------------------------------------------------------- */
 
 /* _PyGenObject_HEAD defines the initial segment of generator
@@ -24,6 +33,7 @@ extern "C" {
     char prefix##_hooks_inited;                                             \
     char prefix##_closed;                                                   \
     char prefix##_running_async;                                            \
+    PyObject *prefix##_awaiter;                                             \
     /* The frame */                                                         \
     int8_t prefix##_frame_state;                                            \
     PyObject *prefix##_iframe[1];                                           \

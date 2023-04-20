@@ -60,6 +60,7 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
             return err;
         }
     }
+    Py_VISIT(gen->gi_awaiter);
     /* No need to visit cr_origin, because it's just tuples/str/int, so can't
        participate in a reference cycle. */
     return exc_state_traverse(&gen->gi_exc_state, visit, arg);
@@ -73,6 +74,16 @@ _PyGen_Finalize(PyObject *self)
     if (gen->gi_frame_state >= FRAME_COMPLETED) {
         /* Generator isn't paused, so no need to close */
         return;
+    }
+
+    if (PyCoro_CheckExact(self)) {
+        /* If we're suspended in an `await`, remove us as the awaiter of the
+         * target awaitable. */
+        PyObject *yf = _PyGen_yf(gen);
+        if (yf) {
+            _PyAwaitable_SetAwaiter(yf, NULL);
+            Py_DECREF(yf);
+        }
     }
 
     if (PyAsyncGen_CheckExact(self)) {
@@ -156,6 +167,7 @@ gen_dealloc(PyGenObject *gen)
     Py_CLEAR(gen->gi_name);
     Py_CLEAR(gen->gi_qualname);
     _PyErr_ClearExcState(&gen->gi_exc_state);
+    Py_CLEAR(gen->gi_awaiter);
     PyObject_GC_Del(gen);
 }
 
@@ -250,6 +262,10 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
         assert(!PyAsyncGen_CheckExact(gen) ||
             !PyErr_ExceptionMatches(PyExc_StopAsyncIteration));
     }
+
+    /* Avoid holding on to the reference to the awaiter any longer than
+       necessary */
+    Py_CLEAR(gen->gi_awaiter);
 
     /* generator can't be rerun, so release the frame */
     /* first clean reference cycle through stored exception traceback */
@@ -808,6 +824,7 @@ static PyAsyncMethods gen_as_async = {
     0,                                          /* am_aiter */
     0,                                          /* am_anext */
     (sendfunc)PyGen_am_send,                    /* am_send  */
+    0,                                          /* am_set_awaiter */
 };
 
 
@@ -882,6 +899,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     gen->gi_name = Py_NewRef(func->func_name);
     assert(func->func_qualname != NULL);
     gen->gi_qualname = Py_NewRef(func->func_qualname);
+    gen->gi_awaiter = NULL;
     _PyObject_GC_TRACK(gen);
     return (PyObject *)gen;
 }
@@ -968,6 +986,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
         gen->gi_qualname = Py_NewRef(qualname);
     else
         gen->gi_qualname = Py_NewRef(_PyGen_GetCode(gen)->co_qualname);
+    gen->gi_awaiter = NULL;
     _PyObject_GC_TRACK(gen);
     return (PyObject *)gen;
 }
@@ -1080,6 +1099,33 @@ coro_get_cr_await(PyCoroObject *coro, void *Py_UNUSED(ignored))
     return yf;
 }
 
+/* Awaiters are only set on coroutines or async generators */
+static PyObject *
+get_awaiter(PyGenObject *gen, void *Py_UNUSED(ignored))
+{
+    PyObject *awaiter = gen->gi_awaiter;
+    if (awaiter == NULL) {
+        Py_RETURN_NONE;
+    }
+    Py_INCREF(awaiter);
+    return awaiter;
+}
+
+static int
+set_awaiter(PyGenObject *gen, PyObject *awaiter)
+{
+    // awaiter must be null, an async generator, a coroutine, or None
+    if ((awaiter != NULL) && !(PyAsyncGen_CheckExact(awaiter) || PyCoro_CheckExact(awaiter) || (awaiter == Py_None))) {
+        PyErr_Format(PyExc_TypeError, "awaiter must be None, a coroutine, or an async generator, not %R", Py_TYPE(awaiter));
+        return -1;
+    }
+    if (gen->gi_frame_state < FRAME_COMPLETED) {
+        Py_XINCREF(awaiter);
+        Py_XSETREF(gen->gi_awaiter, awaiter);
+    }
+    return 0;
+}
+
 static PyObject *
 cr_getsuspended(PyCoroObject *coro, void *Py_UNUSED(ignored))
 {
@@ -1122,6 +1168,7 @@ static PyGetSetDef coro_getsetlist[] = {
     {"cr_frame", (getter)cr_getframe, NULL, NULL},
     {"cr_code", (getter)cr_getcode, NULL, NULL},
     {"cr_suspended", (getter)cr_getsuspended, NULL, NULL},
+    {"cr_awaiter", (getter)get_awaiter, NULL, NULL},
     {NULL} /* Sentinel */
 };
 
@@ -1160,6 +1207,7 @@ static PyAsyncMethods coro_as_async = {
     0,                                          /* am_aiter */
     0,                                          /* am_anext */
     (sendfunc)PyGen_am_send,                    /* am_send  */
+    (setawaiterfunc)set_awaiter,                /* am_set_awaiter */
 };
 
 PyTypeObject PyCoro_Type = {
@@ -1539,6 +1587,7 @@ static PyGetSetDef async_gen_getsetlist[] = {
      {"ag_frame",  (getter)ag_getframe, NULL, NULL},
      {"ag_code",  (getter)ag_getcode, NULL, NULL},
      {"ag_suspended",  (getter)ag_getsuspended, NULL, NULL},
+     {"ag_awaiter", (getter)get_awaiter, NULL, NULL},
     {NULL} /* Sentinel */
 };
 
@@ -1578,6 +1627,7 @@ static PyAsyncMethods async_gen_as_async = {
     PyObject_SelfIter,                          /* am_aiter */
     (unaryfunc)async_gen_anext,                 /* am_anext */
     (sendfunc)PyGen_am_send,                    /* am_send  */
+    (setawaiterfunc)set_awaiter,                /* am_set_awaiter */
 };
 
 
@@ -1844,12 +1894,18 @@ static PyMethodDef async_gen_asend_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
+static int
+async_gen_asend_set_awaiter(PyAsyncGenASend *o, PyObject *awaiter)
+{
+    return set_awaiter((PyGenObject *) o->ags_gen, awaiter);
+}
 
 static PyAsyncMethods async_gen_asend_as_async = {
     PyObject_SelfIter,                          /* am_await */
     0,                                          /* am_aiter */
     0,                                          /* am_anext */
     0,                                          /* am_send  */
+    (setawaiterfunc)async_gen_asend_set_awaiter, /* am_set_awaiter */
 };
 
 
@@ -2267,6 +2323,7 @@ static PyAsyncMethods async_gen_athrow_as_async = {
     0,                                          /* am_aiter */
     0,                                          /* am_anext */
     0,                                          /* am_send  */
+    0,                                          /* am_set_awaiter */
 };
 
 

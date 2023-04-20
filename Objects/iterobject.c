@@ -461,6 +461,7 @@ static PyAsyncMethods anextawaitable_as_async = {
     0,                                          /* am_aiter */
     0,                                          /* am_anext */
     0,                                          /* am_send  */
+    0,                                          /* am_set_awaiter */
 };
 
 PyTypeObject _PyAnextAwaitable_Type = {

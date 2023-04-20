@@ -1693,5 +1693,39 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.loop.run_until_complete(run())
 
 
+class AsyncGeneratorAwaiterTest(unittest.TestCase):
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(None)
+
+    def tearDown(self):
+        self.loop.close()
+        self.loop = None
+        asyncio.set_event_loop_policy(None)
+
+    def test_basic_await(self):
+        async def async_gen():
+            self.assertIs(agen_obj.ag_awaiter, awaiter_obj)
+            yield 10
+
+        async def awaiter(agen):
+            async for x in agen:
+                pass
+
+        agen_obj = async_gen()
+        awaiter_obj = awaiter(agen_obj)
+        self.assertIsNone(agen_obj.ag_awaiter)
+        self.loop.run_until_complete(awaiter_obj)
+
+    def test_set_invalid_awaiter(self):
+        async def async_gen():
+            yield "hi"
+
+        agen_obj = async_gen()
+        msg = "awaiter must be None, a coroutine, or an async generator"
+        with self.assertRaisesRegex(TypeError, msg):
+            agen_obj.__set_awaiter__("testing 123")
+
+
 if __name__ == "__main__":
     unittest.main()

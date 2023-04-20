@@ -1,0 +1,17 @@
+When profiling an async Python application it's useful to see both the stack
+for the currently executing task as well as the chain of coroutines that are
+transitively awaiting the task. Consider the following example, where T
+represents a task, C represents a coroutine, and A '->' B indicates A is
+awaiting B.
+
+T0    +---> T1         |     |     |         C0    |     C2         |     |
+|         v     |     v         C1    |     C3         |     | +-----|
+
+The async stack from C3 would be C3, C2, C1, C0. In contrast, the
+synchronous call stack while C3 is executing is only C3, C2. It's possible
+to reconstruct this view in most cases using what is currently available in
+CPython, however it's difficult to do so efficiently, and would be very
+challenging to do so, let alone efficiently, in an out of process profiler
+that leverages eBPF. This adds a new field `{cr,ag}_awaiter` to coroutines
+and async generators, respectively, that allows one to efficiently
+reconstruct the chain of suspended coroutines.

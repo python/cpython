@@ -708,6 +708,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__rtruediv__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__rxor__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__set__));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__set_awaiter__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__set_name__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__setattr__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__setitem__));

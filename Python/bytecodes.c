@@ -813,6 +813,13 @@ dummy_func(
         };
 
         inst(SEND, (unused/1, receiver, v -- receiver, retval)) {
+            if ((frame->owner == FRAME_OWNED_BY_GENERATOR) &&
+                (frame->f_code->co_flags & (CO_COROUTINE | CO_ASYNC_GENERATOR))) {
+                int st = _PyAwaitable_SetAwaiter(receiver, (PyObject *) _PyFrame_GetGenerator(frame));
+                if (st < 0) {
+                    goto error;
+                }
+            }
             #if ENABLE_SPECIALIZATION
             _PySendCache *cache = (_PySendCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -865,6 +872,12 @@ dummy_func(
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type &&
                      Py_TYPE(gen) != &PyCoro_Type, SEND);
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, SEND);
+            if (PyCoro_CheckExact(receiver)) {
+                int st = _PyAwaitable_SetAwaiter(receiver, (PyObject *) _PyFrame_GetGenerator(frame));
+                if (st < 0) {
+                    goto error;
+                }
+            }
             STAT_INC(SEND, hit);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
             frame->return_offset = oparg;

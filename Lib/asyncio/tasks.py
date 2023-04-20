@@ -7,6 +7,7 @@ __all__ = (
     'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
     'current_task', 'all_tasks',
     '_register_task', '_unregister_task', '_enter_task', '_leave_task',
+    'get_async_stack'
 )
 
 import concurrent.futures
@@ -14,6 +15,7 @@ import contextvars
 import functools
 import inspect
 import itertools
+import sys
 import types
 import warnings
 import weakref
@@ -684,6 +686,11 @@ class _GatheringFuture(futures.Future):
             self._cancel_requested = True
         return ret
 
+    def __set_awaiter__(self, awaiter):
+        for child in self._children:
+            if hasattr(child, "__set_awaiter__"):
+                child.__set_awaiter__(awaiter)
+
 
 def gather(*coros_or_futures, return_exceptions=False):
     """Return a future aggregating results from the given coroutines/futures.
@@ -895,6 +902,62 @@ def run_coroutine_threadsafe(coro, loop):
 
     loop.call_soon_threadsafe(callback)
     return future
+
+
+def get_async_stack():
+    """Return the async call stack for the currently executing task as a list of
+    frames, with the most recent frame last.
+
+    The async call stack consists of the call stack for the currently executing
+    task, if any, plus the call stack formed by the transitive set of coroutines/async
+    generators awaiting the current task.
+
+    Consider the following example, where T represents a task, C represents
+    a coroutine, and A '->' B indicates A is awaiting B.
+
+    T0    +---> T1
+    |     |     |
+    C0    |     C2
+    |     |     |
+    v     |     v
+    C1    |     C3
+    |     |
+    +-----|
+
+    The await stack from C3 would be C3, C2, C1, C0. In contrast, the
+    synchronous call stack while C3 is executing is only C3, C2.
+    """
+    if not hasattr(sys, "_getframe"):
+        return []
+
+    task = current_task()
+    coro = task.get_coro()
+    coro_frame = coro.cr_frame
+
+    # Get the active portion of the stack
+    stack = []
+    frame = sys._getframe().f_back
+    while frame is not None:
+        stack.append(frame)
+        if frame is coro_frame:
+            break
+        frame = frame.f_back
+    assert frame is coro_frame
+
+    # Get the suspended portion of the stack
+    awaiter = coro.cr_awaiter
+    while awaiter is not None:
+        if hasattr(awaiter, "cr_frame"):
+            stack.append(awaiter.cr_frame)
+            awaiter = awaiter.cr_awaiter
+        elif hasattr(awaiter, "ag_frame"):
+            stack.append(awaiter.ag_frame)
+            awaiter = awaiter.ag_awaiter
+        else:
+            raise ValueError(f"Unexpected awaiter {awaiter}")
+
+    stack.reverse()
+    return stack
 
 
 # WeakSet containing all alive tasks.
