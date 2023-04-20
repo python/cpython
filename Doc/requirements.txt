@@ -11,4 +11,4 @@ sphinx-lint==0.6.7
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.
-python-docs-theme>=2022.1
+python-docs-theme@https://github.com/python/python-docs-theme/commit/aaca238208fcc91faa6572f1b9ee5d0eba787bb8
