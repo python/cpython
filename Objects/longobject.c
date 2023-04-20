@@ -3281,8 +3281,11 @@ long_dealloc(PyObject *self)
     if (pylong && _PyLong_IsCompact(pylong)) {
         stwodigits ival = medium_value(pylong);
         if (IS_SMALL_INT(ival)) {
-            _Py_SetImmortal(self);
-            return;
+            PyLongObject *small_pylong = (PyLongObject *)get_small_int((sdigit)ival);
+            if (pylong == small_pylong) {
+                _Py_SetImmortal(self);
+                return;
+            }
         }
     }
     Py_TYPE(self)->tp_free(self);
