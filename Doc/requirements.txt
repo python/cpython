@@ -12,4 +12,4 @@ sphinxext-opengraph==0.7.5
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.
-python-docs-theme@git+https://github.com/python/python-docs-theme@aaca238208fcc91faa6572f1b9ee5d0eba787bb8
+python-docs-theme@git+https://github.com/python/python-docs-theme@d39c3112a89023492d9f0efa9bdf7a51ca7f436d
