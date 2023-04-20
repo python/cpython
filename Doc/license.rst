@@ -100,7 +100,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       analyze, test, perform and/or display publicly, prepare derivative works,
       distribute, and otherwise use Python |release| alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2022 Python Software Foundation; All Rights
+      copyright, i.e., "Copyright © 2001-2023 Python Software Foundation; All Rights
       Reserved" are retained in Python |release| alone or in any derivative version
       prepared by Licensee.
 
@@ -382,6 +382,7 @@ Project, https://www.wide.ad.jp/. ::
    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
    OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
    SUCH DAMAGE.
+
 
 Asynchronous socket services
 ----------------------------
@@ -988,9 +989,12 @@ https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
 Audioop
 -------
+
 The audioop module uses the code base in g771.c file of the SoX project::
+
     Programming the AdLib/Sound Blaster
     FM Music Chips
     Version 2.0 (24 Feb 1992)

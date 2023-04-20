@@ -423,11 +423,29 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a1 3507 (Set lineno of module's RESUME to 0)
 #     Python 3.12a1 3508 (Add CLEANUP_THROW)
 #     Python 3.12a1 3509 (Conditional jumps only jump forward)
-#     Python 3.12a1 3510 (FOR_ITER leaves iterator on the stack)
-#     Python 3.12a1 3511 (Add STOPITERATION_ERROR instruction)
-#     Python 3.12a1 3512 (Remove all unused consts from code objects)
+#     Python 3.12a2 3510 (FOR_ITER leaves iterator on the stack)
+#     Python 3.12a2 3511 (Add STOPITERATION_ERROR instruction)
+#     Python 3.12a2 3512 (Remove all unused consts from code objects)
+#     Python 3.12a4 3513 (Add CALL_INTRINSIC_1 instruction, removed STOPITERATION_ERROR, PRINT_EXPR, IMPORT_STAR)
+#     Python 3.12a4 3514 (Remove ASYNC_GEN_WRAP, LIST_TO_TUPLE, and UNARY_POSITIVE)
+#     Python 3.12a5 3515 (Embed jump mask in COMPARE_OP oparg)
+#     Python 3.12a5 3516 (Add COMPARE_AND_BRANCH instruction)
+#     Python 3.12a5 3517 (Change YIELD_VALUE oparg to exception block depth)
+#     Python 3.12a6 3518 (Add RETURN_CONST instruction)
+#     Python 3.12a6 3519 (Modify SEND instruction)
+#     Python 3.12a6 3520 (Remove PREP_RERAISE_STAR, add CALL_INTRINSIC_2)
+#     Python 3.12a7 3521 (Shrink the LOAD_GLOBAL caches)
+#     Python 3.12a7 3522 (Removed JUMP_IF_FALSE_OR_POP/JUMP_IF_TRUE_OR_POP)
+#     Python 3.12a7 3523 (Convert COMPARE_AND_BRANCH back to COMPARE_OP)
+#     Python 3.12a7 3524 (Shrink the BINARY_SUBSCR caches)
+#     Python 3.12b1 3525 (Shrink the CALL caches)
+#     Python 3.12a7 3526 (Add instrumentation support)
 
 #     Python 3.13 will start with 3550
+
+#     Please don't copy-paste the same pre-release tag for new entries above!!!
+#     You should always use the *upcoming* tag. For example, if 3.12a6 came out
+#     a week ago, I should put "Python 3.12a7" next to my new magic number.
 
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -438,7 +456,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3512).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3526).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
@@ -1144,7 +1162,8 @@ class SourceLoader(_LoaderBasics):
                 source_mtime is not None):
             if hash_based:
                 if source_hash is None:
-                    source_hash = _imp.source_hash(source_bytes)
+                    source_hash = _imp.source_hash(_RAW_MAGIC_NUMBER,
+                                                   source_bytes)
                 data = _code_to_hash_pyc(code_object, source_hash, check_source)
             else:
                 data = _code_to_timestamp_pyc(code_object, source_mtime,

@@ -2,14 +2,12 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 from collections import OrderedDict
-from contextlib import contextmanager, ExitStack
 import _thread
 import importlib.machinery
 import importlib.util
 import os
 import pickle
 import random
-import re
 import subprocess
 import sys
 import textwrap
@@ -20,11 +18,10 @@ import warnings
 import weakref
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
-from test.support import catch_unraisable_exception
 from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
-from test.support.script_helper import assert_python_failure, assert_python_ok
+from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
 try:
     import _posixsubprocess
 except ImportError:
@@ -33,6 +30,10 @@ try:
     import _testmultiphase
 except ImportError:
     _testmultiphase = None
+try:
+    import _testsinglephase
+except ImportError:
+    _testsinglephase = None
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
@@ -68,71 +69,22 @@ class CAPITest(unittest.TestCase):
 
     @support.requires_subprocess()
     def test_no_FatalError_infinite_loop(self):
-        with support.SuppressCrashReport():
-            p = subprocess.Popen([sys.executable, "-c",
-                                  'import _testcapi;'
-                                  '_testcapi.crash_no_current_thread()'],
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE,
-                                 text=True)
-        (out, err) = p.communicate()
-        self.assertEqual(out, '')
+        run_result, _cmd_line = run_python_until_end(
+            '-c', 'import _testcapi; _testcapi.crash_no_current_thread()',
+        )
+        _rc, out, err = run_result
+        self.assertEqual(out, b'')
         # This used to cause an infinite loop.
         msg = ("Fatal Python error: PyThreadState_Get: "
                "the function must be called with the GIL held, "
                "after Python initialization and before Python finalization, "
                "but the GIL is released "
-               "(the current Python thread state is NULL)")
+               "(the current Python thread state is NULL)").encode()
         self.assertTrue(err.rstrip().startswith(msg),
                         err)
 
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
-
-    def test_exception(self):
-        raised_exception = ValueError("5")
-        new_exc = TypeError("TEST")
-        try:
-            raise raised_exception
-        except ValueError as e:
-            orig_sys_exception = sys.exception()
-            orig_exception = _testcapi.set_exception(new_exc)
-            new_sys_exception = sys.exception()
-            new_exception = _testcapi.set_exception(orig_exception)
-            reset_sys_exception = sys.exception()
-
-            self.assertEqual(orig_exception, e)
-
-            self.assertEqual(orig_exception, raised_exception)
-            self.assertEqual(orig_sys_exception, orig_exception)
-            self.assertEqual(reset_sys_exception, orig_exception)
-            self.assertEqual(new_exception, new_exc)
-            self.assertEqual(new_sys_exception, new_exception)
-        else:
-            self.fail("Exception not raised")
-
-    def test_exc_info(self):
-        raised_exception = ValueError("5")
-        new_exc = TypeError("TEST")
-        try:
-            raise raised_exception
-        except ValueError as e:
-            tb = e.__traceback__
-            orig_sys_exc_info = sys.exc_info()
-            orig_exc_info = _testcapi.set_exc_info(new_exc.__class__, new_exc, None)
-            new_sys_exc_info = sys.exc_info()
-            new_exc_info = _testcapi.set_exc_info(*orig_exc_info)
-            reset_sys_exc_info = sys.exc_info()
-
-            self.assertEqual(orig_exc_info[1], e)
-
-            self.assertSequenceEqual(orig_exc_info, (raised_exception.__class__, raised_exception, tb))
-            self.assertSequenceEqual(orig_sys_exc_info, orig_exc_info)
-            self.assertSequenceEqual(reset_sys_exc_info, orig_exc_info)
-            self.assertSequenceEqual(new_exc_info, (new_exc.__class__, new_exc, None))
-            self.assertSequenceEqual(new_sys_exc_info, new_exc_info)
-        else:
-            self.assertTrue(False)
 
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_seq_bytes_to_charp_array(self):
@@ -140,8 +92,9 @@ class CAPITest(unittest.TestCase):
         class Z(object):
             def __len__(self):
                 return 1
-        self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
+        with self.assertRaisesRegex(TypeError, 'indexing'):
+            _posixsubprocess.fork_exec(
+                          1,Z(),True,(1, 2),5,6,7,8,9,10,11,12,13,14,True,True,17,False,19,20,21,22,False)
         # Issue #15736: overflow in _PySequence_BytesToCharpArray()
         class Z(object):
             def __len__(self):
@@ -149,7 +102,7 @@ class CAPITest(unittest.TestCase):
             def __getitem__(self, i):
                 return b'x'
         self.assertRaises(MemoryError, _posixsubprocess.fork_exec,
-                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
+                          1,Z(),True,(1, 2),5,6,7,8,9,10,11,12,13,14,True,True,17,False,19,20,21,22,False)
 
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_subprocess_fork_exec(self):
@@ -159,7 +112,7 @@ class CAPITest(unittest.TestCase):
 
         # Issue #15738: crash in subprocess_fork_exec()
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          Z(),[b'1'],3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)
+                          Z(),[b'1'],True,(1, 2),5,6,7,8,9,10,11,12,13,14,True,True,17,False,19,20,21,22,False)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
@@ -324,42 +277,6 @@ class CAPITest(unittest.TestCase):
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
 
-    def test_set_nomemory(self):
-        code = """if 1:
-            import _testcapi
-
-            class C(): pass
-
-            # The first loop tests both functions and that remove_mem_hooks()
-            # can be called twice in a row. The second loop checks a call to
-            # set_nomemory() after a call to remove_mem_hooks(). The third
-            # loop checks the start and stop arguments of set_nomemory().
-            for outer_cnt in range(1, 4):
-                start = 10 * outer_cnt
-                for j in range(100):
-                    if j == 0:
-                        if outer_cnt != 3:
-                            _testcapi.set_nomemory(start)
-                        else:
-                            _testcapi.set_nomemory(start, start + 1)
-                    try:
-                        C()
-                    except MemoryError as e:
-                        if outer_cnt != 3:
-                            _testcapi.remove_mem_hooks()
-                        print('MemoryError', outer_cnt, j)
-                        _testcapi.remove_mem_hooks()
-                        break
-        """
-        rc, out, err = assert_python_ok('-c', code)
-        lines = out.splitlines()
-        for i, line in enumerate(lines, 1):
-            self.assertIn(b'MemoryError', out)
-            *_, count = line.split(b' ')
-            count = int(count)
-            self.assertLessEqual(count, i*5)
-            self.assertGreaterEqual(count, i*5-2)
-
     def test_mapping_keys_values_items(self):
         class Mapping1(dict):
             def keys(self):
@@ -452,11 +369,6 @@ class CAPITest(unittest.TestCase):
         with self.assertRaises(TypeError):
             _testcapi.sequence_set_slice(None, 1, 3, 'xy')
 
-        mapping = {1: 'a', 2: 'b', 3: 'c'}
-        with self.assertRaises(TypeError):
-            _testcapi.sequence_set_slice(mapping, 1, 3, 'xy')
-        self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
-
     def test_sequence_del_slice(self):
         # Correct case:
         data = [1, 2, 3, 4, 5]
@@ -492,7 +404,7 @@ class CAPITest(unittest.TestCase):
             _testcapi.sequence_del_slice(None, 1, 3)
 
         mapping = {1: 'a', 2: 'b', 3: 'c'}
-        with self.assertRaises(TypeError):
+        with self.assertRaises(KeyError):
             _testcapi.sequence_del_slice(mapping, 1, 3)
         self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
 
@@ -875,46 +787,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
 
-    def check_fatal_error(self, code, expected, not_expected=()):
-        with support.SuppressCrashReport():
-            rc, out, err = assert_python_failure('-sSI', '-c', code)
-
-        err = decode_stderr(err)
-        self.assertIn('Fatal Python error: test_fatal_error: MESSAGE\n',
-                      err)
-
-        match = re.search(r'^Extension modules:(.*) \(total: ([0-9]+)\)$',
-                          err, re.MULTILINE)
-        if not match:
-            self.fail(f"Cannot find 'Extension modules:' in {err!r}")
-        modules = set(match.group(1).strip().split(', '))
-        total = int(match.group(2))
-
-        for name in expected:
-            self.assertIn(name, modules)
-        for name in not_expected:
-            self.assertNotIn(name, modules)
-        self.assertEqual(len(modules), total)
-
-    @support.requires_subprocess()
-    def test_fatal_error(self):
-        # By default, stdlib extension modules are ignored,
-        # but not test modules.
-        expected = ('_testcapi',)
-        not_expected = ('sys',)
-        code = 'import _testcapi, sys; _testcapi.fatal_error(b"MESSAGE")'
-        self.check_fatal_error(code, expected, not_expected)
-
-        # Mark _testcapi as stdlib module, but not sys
-        expected = ('sys',)
-        not_expected = ('_testcapi',)
-        code = textwrap.dedent('''
-            import _testcapi, sys
-            sys.stdlib_module_names = frozenset({"_testcapi"})
-            _testcapi.fatal_error(b"MESSAGE")
-        ''')
-        self.check_fatal_error(code, expected)
-
     def test_pyobject_repr_from_null(self):
         s = _testcapi.pyobject_repr_from_null()
         self.assertEqual(s, '<NULL>')
@@ -1251,6 +1123,11 @@ class TestPendingCalls(unittest.TestCase):
         self.pendingcalls_submit(l, n)
         self.pendingcalls_wait(l, n)
 
+    def test_gen_get_code(self):
+        def genf(): yield
+        gen = genf()
+        self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
+
 
 class SubinterpreterTest(unittest.TestCase):
 
@@ -1334,17 +1211,20 @@ class SubinterpreterTest(unittest.TestCase):
         """
         import json
 
+        EXTENSIONS = 1<<8
         THREADS = 1<<10
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
 
-        features = ['fork', 'exec', 'threads', 'daemon_threads']
+        features = ['fork', 'exec', 'threads', 'daemon_threads', 'extensions']
         kwlist = [f'allow_{n}' for n in features]
+        kwlist[-1] = 'check_multi_interp_extensions'
         for config, expected in {
-            (True, True, True, True): FORK | EXEC | THREADS | DAEMON_THREADS,
-            (False, False, False, False): 0,
-            (False, False, True, False): THREADS,
+            (True, True, True, True, True):
+                FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS,
+            (False, False, False, False, False): 0,
+            (False, False, True, False, True): THREADS | EXTENSIONS,
         }.items():
             kwargs = dict(zip(kwlist, config))
             expected = {
@@ -1359,11 +1239,92 @@ class SubinterpreterTest(unittest.TestCase):
                         json.dump(settings, stdin)
                     ''')
                 with os.fdopen(r) as stdout:
-                    support.run_in_subinterp_with_config(script, **kwargs)
+                    ret = support.run_in_subinterp_with_config(script, **kwargs)
+                    self.assertEqual(ret, 0)
                     out = stdout.read()
                 settings = json.loads(out)
 
                 self.assertEqual(settings, expected)
+
+    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_overridden_setting_extensions_subinterp_check(self):
+        """
+        PyInterpreterConfig.check_multi_interp_extensions can be overridden
+        with PyInterpreterState.override_multi_interp_extensions_check.
+        This verifies that the override works but does not modify
+        the underlying setting.
+        """
+        import json
+
+        EXTENSIONS = 1<<8
+        THREADS = 1<<10
+        DAEMON_THREADS = 1<<11
+        FORK = 1<<15
+        EXEC = 1<<16
+        BASE_FLAGS = FORK | EXEC | THREADS | DAEMON_THREADS
+        base_kwargs = {
+            'allow_fork': True,
+            'allow_exec': True,
+            'allow_threads': True,
+            'allow_daemon_threads': True,
+        }
+
+        def check(enabled, override):
+            kwargs = dict(
+                base_kwargs,
+                check_multi_interp_extensions=enabled,
+            )
+            flags = BASE_FLAGS | EXTENSIONS if enabled else BASE_FLAGS
+            settings = {
+                'feature_flags': flags,
+            }
+
+            expected = {
+                'requested': override,
+                'override__initial': 0,
+                'override_after': override,
+                'override_restored': 0,
+                # The override should not affect the config or settings.
+                'settings__initial': settings,
+                'settings_after': settings,
+                'settings_restored': settings,
+                # These are the most likely values to be wrong.
+                'allowed__initial': not enabled,
+                'allowed_after': not ((override > 0) if override else enabled),
+                'allowed_restored': not enabled,
+            }
+
+            r, w = os.pipe()
+            script = textwrap.dedent(f'''
+                from test.test_capi.check_config import run_singlephase_check
+                run_singlephase_check({override}, {w})
+                ''')
+            with os.fdopen(r) as stdout:
+                ret = support.run_in_subinterp_with_config(script, **kwargs)
+                self.assertEqual(ret, 0)
+                out = stdout.read()
+            results = json.loads(out)
+
+            self.assertEqual(results, expected)
+
+        self.maxDiff = None
+
+        # setting: check disabled
+        with self.subTest('config: check disabled; override: disabled'):
+            check(False, -1)
+        with self.subTest('config: check disabled; override: use config'):
+            check(False, 0)
+        with self.subTest('config: check disabled; override: enabled'):
+            check(False, 1)
+
+        # setting: check enabled
+        with self.subTest('config: check enabled; override: disabled'):
+            check(True, -1)
+        with self.subTest('config: check enabled; override: use config'):
+            check(True, 0)
+        with self.subTest('config: check enabled; override: enabled'):
+            check(True, 1)
 
     def test_mutate_exception(self):
         """
@@ -1450,6 +1411,9 @@ class TestThreadState(unittest.TestCase):
         ret = assert_python_ok('-X', 'tracemalloc', '-c', code)
         self.assertIn(b'callback called', ret.out)
 
+    def test_gilstate_matches_current(self):
+        _testcapi.test_current_tstate_matches()
+
 
 class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
@@ -1469,124 +1433,6 @@ class Test_testinternalcapi(unittest.TestCase):
     locals().update((name, getattr(_testinternalcapi, name))
                     for name in dir(_testinternalcapi)
                     if name.startswith('test_'))
-
-
-@support.requires_subprocess()
-class PyMemDebugTests(unittest.TestCase):
-    PYTHONMALLOC = 'debug'
-    # '0x04c06e0' or '04C06E0'
-    PTR_REGEX = r'(?:0x)?[0-9a-fA-F]+'
-
-    def check(self, code):
-        with support.SuppressCrashReport():
-            out = assert_python_failure(
-                '-c', code,
-                PYTHONMALLOC=self.PYTHONMALLOC,
-                # FreeBSD: instruct jemalloc to not fill freed() memory
-                # with junk byte 0x5a, see JEMALLOC(3)
-                MALLOC_CONF="junk:false",
-            )
-        stderr = out.err
-        return stderr.decode('ascii', 'replace')
-
-    def test_buffer_overflow(self):
-        out = self.check('import _testcapi; _testcapi.pymem_buffer_overflow()')
-        regex = (r"Debug memory block at address p={ptr}: API 'm'\n"
-                 r"    16 bytes originally requested\n"
-                 r"    The [0-9] pad bytes at p-[0-9] are FORBIDDENBYTE, as expected.\n"
-                 r"    The [0-9] pad bytes at tail={ptr} are not all FORBIDDENBYTE \(0x[0-9a-f]{{2}}\):\n"
-                 r"        at tail\+0: 0x78 \*\*\* OUCH\n"
-                 r"        at tail\+1: 0xfd\n"
-                 r"        at tail\+2: 0xfd\n"
-                 r"        .*\n"
-                 r"(    The block was made by call #[0-9]+ to debug malloc/realloc.\n)?"
-                 r"    Data at p: cd cd cd .*\n"
-                 r"\n"
-                 r"Enable tracemalloc to get the memory block allocation traceback\n"
-                 r"\n"
-                 r"Fatal Python error: _PyMem_DebugRawFree: bad trailing pad byte")
-        regex = regex.format(ptr=self.PTR_REGEX)
-        regex = re.compile(regex, flags=re.DOTALL)
-        self.assertRegex(out, regex)
-
-    def test_api_misuse(self):
-        out = self.check('import _testcapi; _testcapi.pymem_api_misuse()')
-        regex = (r"Debug memory block at address p={ptr}: API 'm'\n"
-                 r"    16 bytes originally requested\n"
-                 r"    The [0-9] pad bytes at p-[0-9] are FORBIDDENBYTE, as expected.\n"
-                 r"    The [0-9] pad bytes at tail={ptr} are FORBIDDENBYTE, as expected.\n"
-                 r"(    The block was made by call #[0-9]+ to debug malloc/realloc.\n)?"
-                 r"    Data at p: cd cd cd .*\n"
-                 r"\n"
-                 r"Enable tracemalloc to get the memory block allocation traceback\n"
-                 r"\n"
-                 r"Fatal Python error: _PyMem_DebugRawFree: bad ID: Allocated using API 'm', verified using API 'r'\n")
-        regex = regex.format(ptr=self.PTR_REGEX)
-        self.assertRegex(out, regex)
-
-    def check_malloc_without_gil(self, code):
-        out = self.check(code)
-        expected = ('Fatal Python error: _PyMem_DebugMalloc: '
-                    'Python memory allocator called without holding the GIL')
-        self.assertIn(expected, out)
-
-    def test_pymem_malloc_without_gil(self):
-        # Debug hooks must raise an error if PyMem_Malloc() is called
-        # without holding the GIL
-        code = 'import _testcapi; _testcapi.pymem_malloc_without_gil()'
-        self.check_malloc_without_gil(code)
-
-    def test_pyobject_malloc_without_gil(self):
-        # Debug hooks must raise an error if PyObject_Malloc() is called
-        # without holding the GIL
-        code = 'import _testcapi; _testcapi.pyobject_malloc_without_gil()'
-        self.check_malloc_without_gil(code)
-
-    def check_pyobject_is_freed(self, func_name):
-        code = textwrap.dedent(f'''
-            import gc, os, sys, _testcapi
-            # Disable the GC to avoid crash on GC collection
-            gc.disable()
-            try:
-                _testcapi.{func_name}()
-                # Exit immediately to avoid a crash while deallocating
-                # the invalid object
-                os._exit(0)
-            except _testcapi.error:
-                os._exit(1)
-        ''')
-        assert_python_ok(
-            '-c', code,
-            PYTHONMALLOC=self.PYTHONMALLOC,
-            MALLOC_CONF="junk:false",
-        )
-
-    def test_pyobject_null_is_freed(self):
-        self.check_pyobject_is_freed('check_pyobject_null_is_freed')
-
-    def test_pyobject_uninitialized_is_freed(self):
-        self.check_pyobject_is_freed('check_pyobject_uninitialized_is_freed')
-
-    def test_pyobject_forbidden_bytes_is_freed(self):
-        self.check_pyobject_is_freed('check_pyobject_forbidden_bytes_is_freed')
-
-    def test_pyobject_freed_is_freed(self):
-        self.check_pyobject_is_freed('check_pyobject_freed_is_freed')
-
-
-class PyMemMallocDebugTests(PyMemDebugTests):
-    PYTHONMALLOC = 'malloc_debug'
-
-
-@unittest.skipUnless(support.with_pymalloc(), 'need pymalloc')
-class PyMemPymallocDebugTests(PyMemDebugTests):
-    PYTHONMALLOC = 'pymalloc_debug'
-
-
-@unittest.skipUnless(support.Py_DEBUG, 'need Py_DEBUG')
-class PyMemDefaultTests(PyMemDebugTests):
-    # test default allocator of Python compiled in debug mode
-    PYTHONMALLOC = ''
 
 
 @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
@@ -1703,334 +1549,6 @@ class Test_Pep523API(unittest.TestCase):
         def func2(x=None):
             pass
         self.do_test(func2)
-
-
-class TestDictWatchers(unittest.TestCase):
-    # types of watchers testcapimodule can add:
-    EVENTS = 0   # appends dict events as strings to global event list
-    ERROR = 1    # unconditionally sets and signals a RuntimeException
-    SECOND = 2   # always appends "second" to global event list
-
-    def add_watcher(self, kind=EVENTS):
-        return _testcapi.add_dict_watcher(kind)
-
-    def clear_watcher(self, watcher_id):
-        _testcapi.clear_dict_watcher(watcher_id)
-
-    @contextmanager
-    def watcher(self, kind=EVENTS):
-        wid = self.add_watcher(kind)
-        try:
-            yield wid
-        finally:
-            self.clear_watcher(wid)
-
-    def assert_events(self, expected):
-        actual = _testcapi.get_dict_watcher_events()
-        self.assertEqual(actual, expected)
-
-    def watch(self, wid, d):
-        _testcapi.watch_dict(wid, d)
-
-    def unwatch(self, wid, d):
-        _testcapi.unwatch_dict(wid, d)
-
-    def test_set_new_item(self):
-        d = {}
-        with self.watcher() as wid:
-            self.watch(wid, d)
-            d["foo"] = "bar"
-            self.assert_events(["new:foo:bar"])
-
-    def test_set_existing_item(self):
-        d = {"foo": "bar"}
-        with self.watcher() as wid:
-            self.watch(wid, d)
-            d["foo"] = "baz"
-            self.assert_events(["mod:foo:baz"])
-
-    def test_clone(self):
-        d = {}
-        d2 = {"foo": "bar"}
-        with self.watcher() as wid:
-            self.watch(wid, d)
-            d.update(d2)
-            self.assert_events(["clone"])
-
-    def test_no_event_if_not_watched(self):
-        d = {}
-        with self.watcher() as wid:
-            d["foo"] = "bar"
-            self.assert_events([])
-
-    def test_del(self):
-        d = {"foo": "bar"}
-        with self.watcher() as wid:
-            self.watch(wid, d)
-            del d["foo"]
-            self.assert_events(["del:foo"])
-
-    def test_pop(self):
-        d = {"foo": "bar"}
-        with self.watcher() as wid:
-            self.watch(wid, d)
-            d.pop("foo")
-            self.assert_events(["del:foo"])
-
-    def test_clear(self):
-        d = {"foo": "bar"}
-        with self.watcher() as wid:
-            self.watch(wid, d)
-            d.clear()
-            self.assert_events(["clear"])
-
-    def test_dealloc(self):
-        d = {"foo": "bar"}
-        with self.watcher() as wid:
-            self.watch(wid, d)
-            del d
-            self.assert_events(["dealloc"])
-
-    def test_unwatch(self):
-        d = {}
-        with self.watcher() as wid:
-            self.watch(wid, d)
-            d["foo"] = "bar"
-            self.unwatch(wid, d)
-            d["hmm"] = "baz"
-            self.assert_events(["new:foo:bar"])
-
-    def test_error(self):
-        d = {}
-        with self.watcher(kind=self.ERROR) as wid:
-            self.watch(wid, d)
-            with catch_unraisable_exception() as cm:
-                d["foo"] = "bar"
-                self.assertIs(cm.unraisable.object, d)
-                self.assertEqual(str(cm.unraisable.exc_value), "boom!")
-            self.assert_events([])
-
-    def test_two_watchers(self):
-        d1 = {}
-        d2 = {}
-        with self.watcher() as wid1:
-            with self.watcher(kind=self.SECOND) as wid2:
-                self.watch(wid1, d1)
-                self.watch(wid2, d2)
-                d1["foo"] = "bar"
-                d2["hmm"] = "baz"
-                self.assert_events(["new:foo:bar", "second"])
-
-    def test_watch_non_dict(self):
-        with self.watcher() as wid:
-            with self.assertRaisesRegex(ValueError, r"Cannot watch non-dictionary"):
-                self.watch(wid, 1)
-
-    def test_watch_out_of_range_watcher_id(self):
-        d = {}
-        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID -1"):
-            self.watch(-1, d)
-        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID 8"):
-            self.watch(8, d)  # DICT_MAX_WATCHERS = 8
-
-    def test_watch_unassigned_watcher_id(self):
-        d = {}
-        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
-            self.watch(1, d)
-
-    def test_unwatch_non_dict(self):
-        with self.watcher() as wid:
-            with self.assertRaisesRegex(ValueError, r"Cannot watch non-dictionary"):
-                self.unwatch(wid, 1)
-
-    def test_unwatch_out_of_range_watcher_id(self):
-        d = {}
-        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID -1"):
-            self.unwatch(-1, d)
-        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID 8"):
-            self.unwatch(8, d)  # DICT_MAX_WATCHERS = 8
-
-    def test_unwatch_unassigned_watcher_id(self):
-        d = {}
-        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
-            self.unwatch(1, d)
-
-    def test_clear_out_of_range_watcher_id(self):
-        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID -1"):
-            self.clear_watcher(-1)
-        with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID 8"):
-            self.clear_watcher(8)  # DICT_MAX_WATCHERS = 8
-
-    def test_clear_unassigned_watcher_id(self):
-        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
-            self.clear_watcher(1)
-
-
-class TestTypeWatchers(unittest.TestCase):
-    # types of watchers testcapimodule can add:
-    TYPES = 0    # appends modified types to global event list
-    ERROR = 1    # unconditionally sets and signals a RuntimeException
-    WRAP = 2     # appends modified type wrapped in list to global event list
-
-    # duplicating the C constant
-    TYPE_MAX_WATCHERS = 8
-
-    def add_watcher(self, kind=TYPES):
-        return _testcapi.add_type_watcher(kind)
-
-    def clear_watcher(self, watcher_id):
-        _testcapi.clear_type_watcher(watcher_id)
-
-    @contextmanager
-    def watcher(self, kind=TYPES):
-        wid = self.add_watcher(kind)
-        try:
-            yield wid
-        finally:
-            self.clear_watcher(wid)
-
-    def assert_events(self, expected):
-        actual = _testcapi.get_type_modified_events()
-        self.assertEqual(actual, expected)
-
-    def watch(self, wid, t):
-        _testcapi.watch_type(wid, t)
-
-    def unwatch(self, wid, t):
-        _testcapi.unwatch_type(wid, t)
-
-    def test_watch_type(self):
-        class C: pass
-        with self.watcher() as wid:
-            self.watch(wid, C)
-            C.foo = "bar"
-            self.assert_events([C])
-
-    def test_event_aggregation(self):
-        class C: pass
-        with self.watcher() as wid:
-            self.watch(wid, C)
-            C.foo = "bar"
-            C.bar = "baz"
-            # only one event registered for both modifications
-            self.assert_events([C])
-
-    def test_lookup_resets_aggregation(self):
-        class C: pass
-        with self.watcher() as wid:
-            self.watch(wid, C)
-            C.foo = "bar"
-            # lookup resets type version tag
-            self.assertEqual(C.foo, "bar")
-            C.bar = "baz"
-            # both events registered
-            self.assert_events([C, C])
-
-    def test_unwatch_type(self):
-        class C: pass
-        with self.watcher() as wid:
-            self.watch(wid, C)
-            C.foo = "bar"
-            self.assertEqual(C.foo, "bar")
-            self.assert_events([C])
-            self.unwatch(wid, C)
-            C.bar = "baz"
-            self.assert_events([C])
-
-    def test_clear_watcher(self):
-        class C: pass
-        # outer watcher is unused, it's just to keep events list alive
-        with self.watcher() as _:
-            with self.watcher() as wid:
-                self.watch(wid, C)
-                C.foo = "bar"
-                self.assertEqual(C.foo, "bar")
-                self.assert_events([C])
-            C.bar = "baz"
-            # Watcher on C has been cleared, no new event
-            self.assert_events([C])
-
-    def test_watch_type_subclass(self):
-        class C: pass
-        class D(C): pass
-        with self.watcher() as wid:
-            self.watch(wid, D)
-            C.foo = "bar"
-            self.assert_events([D])
-
-    def test_error(self):
-        class C: pass
-        with self.watcher(kind=self.ERROR) as wid:
-            self.watch(wid, C)
-            with catch_unraisable_exception() as cm:
-                C.foo = "bar"
-                self.assertIs(cm.unraisable.object, C)
-                self.assertEqual(str(cm.unraisable.exc_value), "boom!")
-            self.assert_events([])
-
-    def test_two_watchers(self):
-        class C1: pass
-        class C2: pass
-        with self.watcher() as wid1:
-            with self.watcher(kind=self.WRAP) as wid2:
-                self.assertNotEqual(wid1, wid2)
-                self.watch(wid1, C1)
-                self.watch(wid2, C2)
-                C1.foo = "bar"
-                C2.hmm = "baz"
-                self.assert_events([C1, [C2]])
-
-    def test_watch_non_type(self):
-        with self.watcher() as wid:
-            with self.assertRaisesRegex(ValueError, r"Cannot watch non-type"):
-                self.watch(wid, 1)
-
-    def test_watch_out_of_range_watcher_id(self):
-        class C: pass
-        with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID -1"):
-            self.watch(-1, C)
-        with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID 8"):
-            self.watch(self.TYPE_MAX_WATCHERS, C)
-
-    def test_watch_unassigned_watcher_id(self):
-        class C: pass
-        with self.assertRaisesRegex(ValueError, r"No type watcher set for ID 1"):
-            self.watch(1, C)
-
-    def test_unwatch_non_type(self):
-        with self.watcher() as wid:
-            with self.assertRaisesRegex(ValueError, r"Cannot watch non-type"):
-                self.unwatch(wid, 1)
-
-    def test_unwatch_out_of_range_watcher_id(self):
-        class C: pass
-        with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID -1"):
-            self.unwatch(-1, C)
-        with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID 8"):
-            self.unwatch(self.TYPE_MAX_WATCHERS, C)
-
-    def test_unwatch_unassigned_watcher_id(self):
-        class C: pass
-        with self.assertRaisesRegex(ValueError, r"No type watcher set for ID 1"):
-            self.unwatch(1, C)
-
-    def test_clear_out_of_range_watcher_id(self):
-        with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID -1"):
-            self.clear_watcher(-1)
-        with self.assertRaisesRegex(ValueError, r"Invalid type watcher ID 8"):
-            self.clear_watcher(self.TYPE_MAX_WATCHERS)
-
-    def test_clear_unassigned_watcher_id(self):
-        with self.assertRaisesRegex(ValueError, r"No type watcher set for ID 1"):
-            self.clear_watcher(1)
-
-    def test_no_more_ids_available(self):
-        contexts = [self.watcher() for i in range(self.TYPE_MAX_WATCHERS)]
-        with ExitStack() as stack:
-            for ctx in contexts:
-                stack.enter_context(ctx)
-            with self.assertRaisesRegex(RuntimeError, r"no more type watcher IDs"):
-                self.add_watcher()
 
 
 if __name__ == "__main__":

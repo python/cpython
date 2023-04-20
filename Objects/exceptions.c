@@ -8,6 +8,7 @@
 #include <Python.h>
 #include <stdbool.h>
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
+#include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
@@ -288,13 +289,17 @@ BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb, void *Py_UNUSED(
         PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
         return -1;
     }
-    else if (!(tb == Py_None || PyTraceBack_Check(tb))) {
+    if (PyTraceBack_Check(tb)) {
+        Py_XSETREF(self->traceback, Py_NewRef(tb));
+    }
+    else if (tb == Py_None) {
+        Py_CLEAR(self->traceback);
+    }
+    else {
         PyErr_SetString(PyExc_TypeError,
                         "__traceback__ must be a traceback or None");
         return -1;
     }
-
-    Py_XSETREF(self->traceback, Py_NewRef(tb));
     return 0;
 }
 
@@ -411,6 +416,20 @@ void
 PyException_SetContext(PyObject *self, PyObject *context)
 {
     Py_XSETREF(_PyBaseExceptionObject_cast(self)->context, context);
+}
+
+PyObject *
+PyException_GetArgs(PyObject *self)
+{
+    PyObject *args = _PyBaseExceptionObject_cast(self)->args;
+    return Py_NewRef(args);
+}
+
+void
+PyException_SetArgs(PyObject *self, PyObject *args)
+{
+    Py_INCREF(args);
+    Py_XSETREF(_PyBaseExceptionObject_cast(self)->args, args);
 }
 
 const char *
@@ -753,7 +772,19 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
     else {
-        /* Do nothing - we don't interfere with subclasses */
+        /* user-defined subclass */
+        if (nested_base_exceptions) {
+            int nonbase = PyObject_IsSubclass((PyObject*)cls, PyExc_Exception);
+            if (nonbase == -1) {
+                goto error;
+            }
+            else if (nonbase == 1) {
+                PyErr_Format(PyExc_TypeError,
+                    "Cannot nest BaseExceptions in '%.200s'",
+                    cls->tp_name);
+                goto error;
+            }
+        }
     }
 
     if (!cls) {
@@ -3177,19 +3208,18 @@ SimpleExtendsException(PyExc_Exception, ReferenceError,
 #define MEMERRORS_SAVE 16
 
 static PyObject *
-MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+get_memory_error(int allow_allocation, PyObject *args, PyObject *kwds)
 {
     PyBaseExceptionObject *self;
-
-    /* If this is a subclass of MemoryError, don't use the freelist
-     * and just return a fresh object */
-    if (type != (PyTypeObject *) PyExc_MemoryError) {
-        return BaseException_new(type, args, kwds);
-    }
-
     struct _Py_exc_state *state = get_exc_state();
     if (state->memerrors_freelist == NULL) {
-        return BaseException_new(type, args, kwds);
+        if (!allow_allocation) {
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            return Py_NewRef(
+                &_Py_INTERP_SINGLETON(interp, last_resort_memory_error));
+        }
+        PyObject *result = BaseException_new((PyTypeObject *)PyExc_MemoryError, args, kwds);
+        return result;
     }
 
     /* Fetch object from freelist and revive it */
@@ -3207,6 +3237,33 @@ MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     _Py_NewReference((PyObject *)self);
     _PyObject_GC_TRACK(self);
     return (PyObject *)self;
+}
+
+static PyObject *
+MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    /* If this is a subclass of MemoryError, don't use the freelist
+     * and just return a fresh object */
+    if (type != (PyTypeObject *) PyExc_MemoryError) {
+        return BaseException_new(type, args, kwds);
+    }
+    return get_memory_error(1, args, kwds);
+}
+
+PyObject *
+_PyErr_NoMemory(PyThreadState *tstate)
+{
+    if (Py_IS_TYPE(PyExc_MemoryError, NULL)) {
+        /* PyErr_NoMemory() has been called before PyExc_MemoryError has been
+           initialized by _PyExc_Init() */
+        Py_FatalError("Out of memory and PyExc_MemoryError is not "
+                      "initialized yet");
+    }
+    PyObject *err = get_memory_error(0, NULL, NULL);
+    if (err != NULL) {
+        _PyErr_SetRaisedException(tstate, err);
+    }
+    return NULL;
 }
 
 static void
@@ -3240,6 +3297,7 @@ preallocate_memerrors(void)
     /* We create enough MemoryErrors and then decref them, which will fill
        up the freelist. */
     int i;
+
     PyObject *errors[MEMERRORS_SAVE];
     for (i = 0; i < MEMERRORS_SAVE; i++) {
         errors[i] = MemoryError_new((PyTypeObject *) PyExc_MemoryError,
@@ -3265,7 +3323,7 @@ free_preallocated_memerrors(struct _Py_exc_state *state)
 }
 
 
-static PyTypeObject _PyExc_MemoryError = {
+PyTypeObject _PyExc_MemoryError = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "MemoryError",
     sizeof(PyBaseExceptionObject),
@@ -3691,126 +3749,18 @@ _PyExc_Fini(PyInterpreterState *interp)
     _PyExc_FiniTypes(interp);
 }
 
-/* Helper to do the equivalent of "raise X from Y" in C, but always using
- * the current exception rather than passing one in.
- *
- * We currently limit this to *only* exceptions that use the BaseException
- * tp_init and tp_new methods, since we can be reasonably sure we can wrap
- * those correctly without losing data and without losing backwards
- * compatibility.
- *
- * We also aim to rule out *all* exceptions that might be storing additional
- * state, whether by having a size difference relative to BaseException,
- * additional arguments passed in during construction or by having a
- * non-empty instance dict.
- *
- * We need to be very careful with what we wrap, since changing types to
- * a broader exception type would be backwards incompatible for
- * existing codecs, and with different init or new method implementations
- * may either not support instantiation with PyErr_Format or lose
- * information when instantiated that way.
- *
- * XXX (ncoghlan): This could be made more comprehensive by exploiting the
- * fact that exceptions are expected to support pickling. If more builtin
- * exceptions (e.g. AttributeError) start to be converted to rich
- * exceptions with additional attributes, that's probably a better approach
- * to pursue over adding special cases for particular stateful subclasses.
- *
- * Returns a borrowed reference to the new exception (if any), NULL if the
- * existing exception was left in place.
- */
-PyObject *
-_PyErr_TrySetFromCause(const char *format, ...)
+int
+_PyException_AddNote(PyObject *exc, PyObject *note)
 {
-    PyObject* msg_prefix;
-    PyObject *exc, *val, *tb;
-    PyTypeObject *caught_type;
-    PyObject *instance_args;
-    Py_ssize_t num_args, caught_type_size, base_exc_size;
-    PyObject *new_exc, *new_val, *new_tb;
-    va_list vargs;
-    int same_basic_size;
-
-    PyErr_Fetch(&exc, &val, &tb);
-    caught_type = (PyTypeObject *)exc;
-    /* Ensure type info indicates no extra state is stored at the C level
-     * and that the type can be reinstantiated using PyErr_Format
-     */
-    caught_type_size = caught_type->tp_basicsize;
-    base_exc_size = _PyExc_BaseException.tp_basicsize;
-    same_basic_size = (
-        caught_type_size == base_exc_size ||
-        (_PyType_SUPPORTS_WEAKREFS(caught_type) &&
-            (caught_type_size == base_exc_size + (Py_ssize_t)sizeof(PyObject *))
-        )
-    );
-    if (caught_type->tp_init != (initproc)BaseException_init ||
-        caught_type->tp_new != BaseException_new ||
-        !same_basic_size ||
-        caught_type->tp_itemsize != _PyExc_BaseException.tp_itemsize) {
-        /* We can't be sure we can wrap this safely, since it may contain
-         * more state than just the exception type. Accordingly, we just
-         * leave it alone.
-         */
-        PyErr_Restore(exc, val, tb);
-        return NULL;
+    if (!PyExceptionInstance_Check(exc)) {
+        PyErr_Format(PyExc_TypeError,
+                     "exc must be an exception, not '%s'",
+                     Py_TYPE(exc)->tp_name);
+        return -1;
     }
-
-    /* Check the args are empty or contain a single string */
-    PyErr_NormalizeException(&exc, &val, &tb);
-    instance_args = ((PyBaseExceptionObject *)val)->args;
-    num_args = PyTuple_GET_SIZE(instance_args);
-    if (num_args > 1 ||
-        (num_args == 1 &&
-         !PyUnicode_CheckExact(PyTuple_GET_ITEM(instance_args, 0)))) {
-        /* More than 1 arg, or the one arg we do have isn't a string
-         */
-        PyErr_Restore(exc, val, tb);
-        return NULL;
-    }
-
-    /* Ensure the instance dict is also empty */
-    if (!_PyObject_IsInstanceDictEmpty(val)) {
-        /* While we could potentially copy a non-empty instance dictionary
-         * to the replacement exception, for now we take the more
-         * conservative path of leaving exceptions with attributes set
-         * alone.
-         */
-        PyErr_Restore(exc, val, tb);
-        return NULL;
-    }
-
-    /* For exceptions that we can wrap safely, we chain the original
-     * exception to a new one of the exact same type with an
-     * error message that mentions the additional details and the
-     * original exception.
-     *
-     * It would be nice to wrap OSError and various other exception
-     * types as well, but that's quite a bit trickier due to the extra
-     * state potentially stored on OSError instances.
-     */
-    /* Ensure the traceback is set correctly on the existing exception */
-    if (tb != NULL) {
-        PyException_SetTraceback(val, tb);
-        Py_DECREF(tb);
-    }
-
-    va_start(vargs, format);
-    msg_prefix = PyUnicode_FromFormatV(format, vargs);
-    va_end(vargs);
-    if (msg_prefix == NULL) {
-        Py_DECREF(exc);
-        Py_DECREF(val);
-        return NULL;
-    }
-
-    PyErr_Format(exc, "%U (%s: %S)",
-                 msg_prefix, Py_TYPE(val)->tp_name, val);
-    Py_DECREF(exc);
-    Py_DECREF(msg_prefix);
-    PyErr_Fetch(&new_exc, &new_val, &new_tb);
-    PyErr_NormalizeException(&new_exc, &new_val, &new_tb);
-    PyException_SetCause(new_val, val);
-    PyErr_Restore(new_exc, new_val, new_tb);
-    return new_val;
+    PyObject *r = BaseException_add_note(exc, note);
+    int res = r == NULL ? -1 : 0;
+    Py_XDECREF(r);
+    return res;
 }
+

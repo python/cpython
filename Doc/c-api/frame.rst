@@ -19,6 +19,24 @@ can be used to get a frame object.
 
 See also :ref:`Reflection <reflection>`.
 
+.. c:var:: PyTypeObject PyFrame_Type
+
+   The type of frame objects.
+   It is the same object as :py:class:`types.FrameType` in the Python layer.
+
+   .. versionchanged:: 3.11
+
+      Previously, this type was only available after including
+      ``<frameobject.h>``.
+
+.. c:function:: int PyFrame_Check(PyObject *obj)
+
+   Return non-zero if *obj* is a frame object.
+
+   .. versionchanged:: 3.11
+
+      Previously, this function was only available after including
+      ``<frameobject.h>``.
 
 .. c:function:: PyFrameObject* PyFrame_GetBack(PyFrameObject *frame)
 
@@ -86,6 +104,8 @@ See also :ref:`Reflection <reflection>`.
    * Return a :term:`strong reference` to the variable value on success.
    * Raise :exc:`NameError` and return ``NULL`` if the variable does not exist.
    * Raise an exception and return ``NULL`` on error.
+
+   *name* type must be a :class:`str`.
 
    .. versionadded:: 3.12
 
