@@ -3,7 +3,7 @@
 # Sphinx version is pinned so that new versions that introduce new warnings
 # won't suddenly cause build failures. Updating the version is fine as long
 # as no warnings are raised by doing so.
-sphinx==5.3.0
+sphinx==6.1.3
 
 blurb
 
