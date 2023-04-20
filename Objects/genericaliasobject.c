@@ -1087,7 +1087,7 @@ void
 _PyGenericAlias_Fini(PyInterpreterState *interp) {
     if (interp->genericalias_cache != NULL) {
         PyObject *cache = interp->genericalias_cache;
-        PyObject_GC_Del(cache);
+        Py_DECREF(cache);
         interp->genericalias_cache = NULL;
     }
 };
