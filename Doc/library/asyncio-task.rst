@@ -462,8 +462,8 @@ Running Tasks Concurrently
    .. note::
       A new alternative to create and run tasks concurrently and
       wait for their completion is :class:`asyncio.TaskGroup`. *TaskGroup*
-      provides stronger safety guarantees than *gather* for scheduling a nesting of subtasks.
-      That is, if a task (or a subtask, a task scheduled by a task)
+      provides stronger safety guarantees than *gather* for scheduling a nesting of subtasks:
+      if a task (or a subtask, a task scheduled by a task)
       raises an exception, *TaskGroup* will, while *gather* will not,
       cancel the remaining scheduled tasks).
 
