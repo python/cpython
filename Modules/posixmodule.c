@@ -16736,10 +16736,7 @@ INITFUNC(void)
 static PerfMapState perf_map_state;
 
 PyAPI_FUNC(int) _PyOS_PerfMapState_Init(void) {
-#ifdef MS_WINDOWS
-    PyErr_SetString(PyExc_RuntimeError, "perf map is not supported on Windows");
-    return -1;
-#else
+#ifndef MS_WINDOWS
     char filename[100];
     pid_t pid = getpid();
     // Use nofollow flag to prevent symlink attacks.
@@ -16763,8 +16760,8 @@ PyAPI_FUNC(int) _PyOS_PerfMapState_Init(void) {
         PyErr_SetString(PyExc_RuntimeError, "failed to create a lock for perf-maps");
         return -1;
     }
-    return 0;
 #endif
+    return 0;
 }
 
 PyAPI_FUNC(int) PyOS_WritePerfMapEntry(
@@ -16772,10 +16769,7 @@ PyAPI_FUNC(int) PyOS_WritePerfMapEntry(
     unsigned int code_size,
     const char *entry_name
 ) {
-#ifdef MS_WINDOWS
-    PyErr_SetString(PyExc_RuntimeError, "perf map is not supported on Windows");
-    return -1;
-#else
+#ifndef MS_WINDOWS
     if (perf_map_state.perf_map == NULL) {
         if(_PyOS_PerfMapState_Init() == -1){
             return -1;
@@ -16785,15 +16779,12 @@ PyAPI_FUNC(int) PyOS_WritePerfMapEntry(
     fprintf(perf_map_state.perf_map, "%p %x %s\n", code_addr, code_size, entry_name);
     fflush(perf_map_state.perf_map);
     PyThread_release_lock(perf_map_state.map_lock);
-    return 0;
 #endif
+    return 0;
 }
 
 PyAPI_FUNC(void) _PyOS_PerfMapState_Fini(void) {
-#ifdef MS_WINDOWS
-        PyErr_SetString(PyExc_RuntimeError, "perf map is not supported on Windows");
-        return -1;
-#else
+#ifndef MS_WINDOWS
     if (perf_map_state.perf_map != NULL) {
         // close the file
         PyThread_acquire_lock(perf_map_state.map_lock, 1);
