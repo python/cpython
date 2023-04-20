@@ -257,7 +257,7 @@ Creating Tasks
    .. note::
 
       :meth:`asyncio.TaskGroup.create_task` is a new alternative
-      leveraging structural concurrency; it allows for waiting 
+      leveraging structural concurrency; it allows for waiting
       for a group of related tasks with strong safety guarantees.
 
    .. important::
