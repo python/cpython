@@ -4237,18 +4237,20 @@ is_import_originated(struct compiler *c, expr_ty e)
 }
 
 static int
-can_optimize_super_call(struct compiler *c, expr_ty e)
+can_optimize_super_call(struct compiler *c, expr_ty attr)
 {
+    expr_ty e = attr->v.Attribute.value;
     if (e->kind != Call_kind ||
         e->v.Call.func->kind != Name_kind ||
         !_PyUnicode_EqualToASCIIString(e->v.Call.func->v.Name.id, "super") ||
+        _PyUnicode_EqualToASCIIString(attr->v.Attribute.attr, "__class__") ||
         asdl_seq_LEN(e->v.Call.keywords) != 0) {
         return 0;
     }
     Py_ssize_t num_args = asdl_seq_LEN(e->v.Call.args);
 
     PyObject *super_name = e->v.Call.func->v.Name.id;
-    // try to detect statically-visible shadowing of 'super' name
+    // detect statically-visible shadowing of 'super' name
     int scope = _PyST_GetScope(c->u->u_ste, super_name);
     if (scope != GLOBAL_IMPLICIT) {
         return 0;
@@ -4388,7 +4390,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     /* Alright, we can optimize the code. */
     location loc = LOC(meth);
 
-    if (can_optimize_super_call(c, meth->v.Attribute.value)) {
+    if (can_optimize_super_call(c, meth)) {
         RETURN_IF_ERROR(load_args_for_super(c, meth->v.Attribute.value));
         int opcode = asdl_seq_LEN(meth->v.Attribute.value->v.Call.args) ?
             LOAD_SUPER_METHOD : LOAD_ZERO_SUPER_METHOD;
@@ -5406,7 +5408,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_formatted_value(c, e);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
-        if (e->v.Attribute.ctx == Load && can_optimize_super_call(c, e->v.Attribute.value)) {
+        if (e->v.Attribute.ctx == Load && can_optimize_super_call(c, e)) {
             RETURN_IF_ERROR(load_args_for_super(c, e->v.Attribute.value));
             int opcode = asdl_seq_LEN(e->v.Attribute.value->v.Call.args) ?
                 LOAD_SUPER_ATTR : LOAD_ZERO_SUPER_ATTR;

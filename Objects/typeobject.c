@@ -9370,13 +9370,6 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
     if (su_obj_type == NULL)
         goto skip;
 
-    /* We want __class__ to return the class of the super object
-       (i.e. super, or a subclass), not the class of su->obj. */
-    if (PyUnicode_Check(name) &&
-        PyUnicode_GET_LENGTH(name) == 9 &&
-        _PyUnicode_Equal(name, &_Py_ID(__class__)))
-        goto skip;
-
     mro = su_obj_type->tp_mro;
     if (mro == NULL)
         goto skip;
@@ -9452,6 +9445,14 @@ static PyObject *
 super_getattro(PyObject *self, PyObject *name)
 {
     superobject *su = (superobject *)self;
+
+    /* We want __class__ to return the class of the super object
+       (i.e. super, or a subclass), not the class of su->obj. */
+    if (PyUnicode_Check(name) &&
+        PyUnicode_GET_LENGTH(name) == 9 &&
+        _PyUnicode_Equal(name, &_Py_ID(__class__)))
+        return PyObject_GenericGetAttr(self, name);
+
     return do_super_lookup(su, su->type, su->obj, su->obj_type, name, NULL);
 }
 
