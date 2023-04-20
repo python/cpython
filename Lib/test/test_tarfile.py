@@ -3332,6 +3332,19 @@ class ArchiveMaker:
         bio = io.BytesIO(self.contents)
         return tarfile.open(fileobj=bio, **kwargs)
 
+# Under WASI, `os_helper.can_symlink` is False to make
+# `skip_unless_symlink` skip symlink tests. "
+# But in the following tests we use can_symlink to *determine* which
+# behavior is expected.
+# Like other symlink tests, skip these on WASI for now.
+if support.is_wasi:
+    def symlink_test(f):
+        return unittest.skip("WASI: Skip symlink test for now")(f)
+else:
+    def symlink_test(f):
+        return f
+
+
 class TestExtractionFilters(unittest.TestCase):
 
     # A temporary directory for the extraction results.
@@ -3441,6 +3454,7 @@ class TestExtractionFilters(unittest.TestCase):
                         tarfile.AbsolutePathError,
                         """['"].*escaped.evil['"] has an absolute path""")
 
+    @symlink_test
     def test_parent_symlink(self):
         # Test interplaying symlinks
         # Inspired by 'dirsymlink2a' in jwilk/traversal-archives
@@ -3484,6 +3498,7 @@ class TestExtractionFilters(unittest.TestCase):
             with self.check_context(arc.open(), 'data'):
                 self.expect_file('parent/evil')
 
+    @symlink_test
     def test_parent_symlink2(self):
         # Test interplaying symlinks
         # Inspired by 'dirsymlink2b' in jwilk/traversal-archives
@@ -3518,6 +3533,7 @@ class TestExtractionFilters(unittest.TestCase):
                     """'current/parent' would link to ['"].*['"], """
                     + "which is outside the destination")
 
+    @symlink_test
     def test_absolute_symlink(self):
         # Test symlink to an absolute path
         # Inspired by 'dirsymlink' in jwilk/traversal-archives
@@ -3547,6 +3563,7 @@ class TestExtractionFilters(unittest.TestCase):
                 tarfile.AbsoluteLinkError,
                 "'parent' is a symlink to an absolute path")
 
+    @symlink_test
     def test_sly_relative0(self):
         # Inspired by 'relative0' in jwilk/traversal-archives
         with ArchiveMaker() as arc:
@@ -3580,6 +3597,7 @@ class TestExtractionFilters(unittest.TestCase):
                         + "'.*moo', which is outside "
                         + "the destination")
 
+    @symlink_test
     def test_sly_relative2(self):
         # Inspired by 'relative2' in jwilk/traversal-archives
         with ArchiveMaker() as arc:
