@@ -745,10 +745,15 @@ extern char * _getpty(int *, int, mode_t, int);
 #undef __bool__
 #endif
 
-// Make sure we have alignof(max_align_t)
-// (autoconf report alignment of unknown types to 0)
-#if ALIGNOF_MAX_ALIGN_T <= 0
-#error "ALIGNOF_MAX_ALIGN_T must be positive"
+// Make sure we have maximum alignment, even if the current compiler
+// does not support max_align_t.
+// - Autoconf report alignment of unknown types to 0.
+// - We don't have the Py_MAX macro yet.
+// - 'long double' has maximum alignment on *most* platforms,
+//   looks like the best we can do for pre-C11 compilers.
+// - The value is tested, see test_alignof_max_align_t
+#if !defined(ALIGNOF_MAX_ALIGN_T) || ALIGNOF_MAX_ALIGN_T == 0
+#   define ALIGNOF_MAX_ALIGN_T _Alignof(long double)
 #endif
 
 #endif /* Py_PYPORT_H */
