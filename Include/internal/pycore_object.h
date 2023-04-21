@@ -14,6 +14,26 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 
+/* We need to maintain an internal copy of Py{Var}Object_HEAD_INIT to avoid
+   designated initializer conflicts in C++20. If we use the deinition in
+   object.h, we will be mixing designated and non-designated initializers in
+   pycore objects which is forbiddent in C++20. However, if we then use
+   designated initializers in object.h then Extensions without designated break.
+   Furthermore, we can't use designated initializers in Extensions since these
+   are not supported pre-C++20. Thus, keeping an internal copy here is the most
+   backwards compatible solution */
+#define _PyObject_HEAD_INIT(type)         \
+    {                                     \
+        _PyObject_EXTRA_INIT              \
+        .ob_refcnt = _Py_IMMORTAL_REFCNT, \
+        .ob_type = (type)                 \
+    },
+#define _PyVarObject_HEAD_INIT(type, size)    \
+    {                                         \
+        .ob_base = _PyObject_HEAD_INIT(type)  \
+        .ob_size = size                       \
+    },
+
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     const char *func,
     const char *message);

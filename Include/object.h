@@ -128,17 +128,26 @@ check by comparing the reference count field to the immortality reference count.
 // Make all internal uses of PyObject_HEAD_INIT immortal while preserving the
 // C-API expectation that the refcnt will be set to 1.
 #ifdef Py_BUILD_CORE
-#define PyObject_HEAD_INIT(type)        \
-    { _PyObject_EXTRA_INIT              \
-    .ob_refcnt = _Py_IMMORTAL_REFCNT, .ob_type = (type) },
+#define PyObject_HEAD_INIT(type) \
+    {                            \
+        _PyObject_EXTRA_INIT     \
+        _Py_IMMORTAL_REFCNT,     \
+        (type)                   \
+    },
 #else
-#define PyObject_HEAD_INIT(type)        \
-    { _PyObject_EXTRA_INIT              \
-    .ob_refcnt = 1, .ob_type = (type) },
+#define PyObject_HEAD_INIT(type) \
+    {                            \
+        _PyObject_EXTRA_INIT     \
+        1,                       \
+        (type)                   \
+    },
 #endif /* Py_BUILD_CORE */
 
-#define PyVarObject_HEAD_INIT(type, size)       \
-    { PyObject_HEAD_INIT(type) size },
+#define PyVarObject_HEAD_INIT(type, size) \
+    {                                     \
+        PyObject_HEAD_INIT(type)          \
+        (size)                            \
+    },
 
 /* PyObject_VAR_HEAD defines the initial segment of all variable-size
  * container objects.  These end with a declaration of an array with 1

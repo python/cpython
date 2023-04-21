@@ -15,13 +15,11 @@
 // #define INSTRUMENT_DEBUG 1
 
 static PyObject DISABLE = {
-    _PyObject_EXTRA_INIT
     .ob_refcnt = _Py_IMMORTAL_REFCNT,
     .ob_type = &PyBaseObject_Type
 };
 
 PyObject _PyInstrumentation_MISSING = {
-    _PyObject_EXTRA_INIT
     .ob_refcnt = _Py_IMMORTAL_REFCNT,
     .ob_type = &PyBaseObject_Type
 };
