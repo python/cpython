@@ -222,14 +222,6 @@ static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
 }
 #define _Py_IsImmortal(op) _Py_IsImmortal(_PyObject_CAST(op))
 
-static inline void _Py_SetImmortal(PyObject *op)
-{
-    if (op) {
-        op->ob_refcnt = _Py_IMMORTAL_REFCNT;
-    }
-}
-#define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
-
 static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
     return Py_TYPE(ob) == type;
 }

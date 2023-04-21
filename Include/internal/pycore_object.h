@@ -45,6 +45,14 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
+static inline void _Py_SetImmortal(PyObject *op)
+{
+    if (op) {
+        op->ob_refcnt = _Py_IMMORTAL_REFCNT;
+    }
+}
+#define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
+
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
