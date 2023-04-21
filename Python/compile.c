@@ -2204,9 +2204,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     if (typeparams) {
-        assert(c->u->u_ste->ste_active_typeparam_scope == 0);
-        c->u->u_ste->ste_num_typeparam_scopes += 1;
-        c->u->u_ste->ste_active_typeparam_scope = c->u->u_ste->ste_num_typeparam_scopes;
+        ADDOP(c, loc, PUSH_NULL);
+        RETURN_IF_ERROR(
+            compiler_enter_scope(c, name, scope_type, (void *)typeparams, firstlineno));
         RETURN_IF_ERROR(compiler_type_params(c, typeparams));
     }
 
@@ -2242,9 +2242,6 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
     co = assemble(c, 1);
     compiler_exit_scope(c);
-    if (typeparams) {
-        c->u->u_ste->ste_active_typeparam_scope = 0;
-    }
     if (co == NULL) {
         Py_XDECREF(co);
         return ERROR;
@@ -2254,6 +2251,19 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return ERROR;
     }
     Py_DECREF(co);
+    if (typeparams) {
+        PyCodeObject *co = assemble(c, 0);
+        compiler_exit_scope(c);
+        if (co == NULL) {
+            return ERROR;
+        }
+        if (compiler_make_closure(c, loc, co, 0) < 0) {
+            Py_DECREF(co);
+            return ERROR;
+        }
+        Py_DECREF(co);
+        ADDOP_I(c, loc, CALL, 0);
+    }
 
     RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
     return compiler_nameop(c, loc, name, Store);
@@ -7105,6 +7115,7 @@ compute_localsplus_info(struct compiler_unit *u, int nlocalsplus,
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
+    // printf("compute_localsplus_info %d %s\n", nlocalsplus, PyUnicode_AsUTF8(u->u_name));
     while (PyDict_Next(u->u_varnames, &pos, &k, &v)) {
         int offset = (int)PyLong_AS_LONG(v);
         assert(offset >= 0);

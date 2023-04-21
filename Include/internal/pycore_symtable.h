@@ -51,7 +51,9 @@ typedef struct _symtable_entry {
     PyObject *ste_directives;/* locations of global and nonlocal statements */
     int ste_active_typeparam_scope; /* 0 if no active typeparam scope */
     int ste_num_typeparam_scopes; /* number of typeparam scopes encountered */
-    PyObject *ste_typeparam_names; /* set of typeparam names */
+    PyObject *ste_typeparam_map; /* map of typeparam names to mangled names,
+                                    only exists while we're in ste_active_typeparam_scope */
+    PyObject *ste_parent_typeparam_map; /* same, but represents typeparams present in parents */
     _Py_block_ty ste_type;   /* module, class, function or annotation */
     int ste_nested;      /* true if block is nested */
     unsigned ste_free : 1;        /* true if block has free variables */

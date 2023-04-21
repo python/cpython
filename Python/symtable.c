@@ -78,9 +78,6 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_symbols = NULL;
     ste->ste_varnames = NULL;
     ste->ste_children = NULL;
-    ste->ste_num_typeparam_scopes = 0;
-    ste->ste_active_typeparam_scope = 0;
-    ste->ste_typeparam_names = NULL;
 
     ste->ste_directives = NULL;
 
@@ -144,7 +141,6 @@ ste_dealloc(PySTEntryObject *ste)
     Py_XDECREF(ste->ste_varnames);
     Py_XDECREF(ste->ste_children);
     Py_XDECREF(ste->ste_directives);
-    Py_XDECREF(ste->ste_typeparam_names);
     PyObject_Free(ste);
 }
 
@@ -390,30 +386,10 @@ PySymtable_Lookup(struct symtable *st, void *key)
     return (PySTEntryObject *)Py_XNewRef(v);
 }
 
-PyObject *
-_PyST_MangleTypeParam(PySTEntryObject *ste, PyObject *name)
-{
-    return PyUnicode_FromFormat("%d.%U", ste->ste_active_typeparam_scope, name);
-}
-
 long
 _PyST_GetSymbol(PySTEntryObject *ste, PyObject *name)
 {
     PyObject *v = NULL;
-    if (ste->ste_active_typeparam_scope) {
-        PyObject *mangled = _PyST_MangleTypeParam(ste, name);
-        if (mangled == NULL) {
-            assert(PyErr_Occurred());
-            return 0;
-        }
-        v = PyDict_GetItemWithError(ste->ste_symbols, mangled);
-        if (v) {
-            printf("Look for mangled %s in %p: %p %d %d\n", PyUnicode_AsUTF8(mangled), ste->ste_symbols, v,
-                PyLong_AS_LONG(v), (PyLong_AS_LONG(v) >> SCOPE_OFFSET) & SCOPE_MASK);
-        }
-        Py_DECREF(mangled);
-        assert(!PyErr_Occurred());
-    }
     if (v == NULL) {
         v = PyDict_GetItemWithError(ste->ste_symbols, name);
     }
@@ -993,25 +969,6 @@ symtable_exit_block(struct symtable *st)
 }
 
 static int
-symtable_enter_typeparam_overlay(struct symtable *st)
-{
-    struct _symtable_entry *cur = st->st_cur;
-    cur->ste_num_typeparam_scopes += 1;
-    cur->ste_active_typeparam_scope = cur->ste_num_typeparam_scopes;
-    cur->ste_typeparam_names = PySet_New(NULL);
-    if (cur->ste_typeparam_names == NULL) {
-        return 0;
-    }
-    return 1;
-}
-
-static void
-symtable_leave_typeparam_overlay(struct symtable *st) {
-    st->st_cur->ste_active_typeparam_scope = 0;
-    Py_CLEAR(st->st_cur->ste_typeparam_names);
-}
-
-static int
 symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
                      void *ast, int lineno, int col_offset,
                      int end_lineno, int end_col_offset)
@@ -1067,50 +1024,6 @@ symtable_lookup(struct symtable *st, PyObject *name)
 }
 
 static int
-symtable_add_typeparam(struct symtable *st, PyObject *name,
-                       int lineno, int col_offset, int end_lineno, int end_col_offset)
-{
-    struct _symtable_entry *ste = st->st_cur;
-    assert(ste->ste_active_typeparam_scope != 0);
-    PyObject *mangled = _PyST_MangleTypeParam(ste, name);
-    if (mangled == NULL) {
-        return 0;
-    }
-    PyObject *dict = ste->ste_symbols;
-    PyObject *current;
-    if ((current = PyDict_GetItemWithError(dict, mangled))) {
-        PyErr_Format(PyExc_SyntaxError, "duplicate type parameter '%U'", name);
-        PyErr_RangedSyntaxLocationObject(st->st_filename,
-                                            lineno, col_offset + 1,
-                                            end_lineno, end_col_offset + 1);
-        Py_DECREF(mangled);
-        return 0;
-    }
-    else if (PyErr_Occurred()) {
-        Py_DECREF(mangled);
-        return 0;
-    }
-    PyObject *flags = PyLong_FromLong((CELL << SCOPE_OFFSET) | DEF_TYPE_PARAM);
-    if (flags == NULL) {
-        Py_DECREF(mangled);
-        return 0;
-    }
-    if (PyDict_SetItem(dict, mangled, flags) < 0) {
-        Py_DECREF(mangled);
-        Py_DECREF(flags);
-        return 0;
-    }
-    if (PySet_Add(ste->ste_typeparam_names, name) < 0) {
-        Py_DECREF(mangled);
-        Py_DECREF(flags);
-        return 0;
-    }
-    Py_DECREF(mangled);
-    Py_DECREF(flags);
-    return 1;
-}
-
-static int
 symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _symtable_entry *ste,
                         int lineno, int col_offset, int end_lineno, int end_col_offset)
 {
@@ -1121,21 +1034,6 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
 
     if (!mangled)
         return 0;
-    if (ste->ste_active_typeparam_scope != 0) {
-        int result = PySet_Contains(ste->ste_typeparam_names, name);
-        if (result == -1) {
-            goto error;
-        }
-        if (result) {
-            PyObject *new_mangled = _PyST_MangleTypeParam(ste, name);
-            if (new_mangled == NULL) {
-                goto error;
-            }
-            printf("Mangled %s to %s\n", PyUnicode_AsUTF8(name), PyUnicode_AsUTF8(new_mangled));
-            flag = CELL << SCOPE_OFFSET;
-            Py_SETREF(mangled, new_mangled);
-        }
-    }
     dict = ste->ste_symbols;
     if ((o = PyDict_GetItemWithError(dict, mangled))) {
         val = PyLong_AS_LONG(o);
@@ -1309,7 +1207,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.FunctionDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
         if (s->v.FunctionDef.typeparams) {
-            if (!symtable_enter_typeparam_overlay(st)) {
+            if (!symtable_enter_block(st, s->v.FunctionDef.name,
+                                      FunctionBlock, (void *)s->v.FunctionDef.typeparams,
+                                      LOCATION(s))) {
                 VISIT_QUIT(st, 0);
             }
             VISIT_SEQ(st, typeparam, s->v.FunctionDef.typeparams);
@@ -1326,7 +1226,8 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
         if (s->v.FunctionDef.typeparams) {
-            symtable_leave_typeparam_overlay(st);
+            if (!symtable_exit_block(st))
+                VISIT_QUIT(st, 0);
         }
         break;
     }
@@ -1857,17 +1758,17 @@ symtable_visit_typeparam(struct symtable *st, typeparam_ty tp)
     }
     switch(tp->kind) {
     case TypeVar_kind:
-        if (!symtable_add_typeparam(st, tp->v.TypeVar.name, LOCATION(tp)))
+        if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
         if (tp->v.TypeVar.bound)
             VISIT(st, expr, tp->v.TypeVar.bound);
         break;
     case TypeVarTuple_kind:
-        if (!symtable_add_typeparam(st, tp->v.TypeVarTuple.name, LOCATION(tp)))
+        if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
         break;
     case ParamSpec_kind:
-        if (!symtable_add_typeparam(st, tp->v.ParamSpec.name, LOCATION(tp)))
+        if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
         break;
     }
