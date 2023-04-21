@@ -1,0 +1,1 @@
+Show argument number in struct.pack range error message
