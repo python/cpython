@@ -1281,6 +1281,19 @@ compiler_enter_scope(struct compiler *c, identifier name,
         compiler_unit_free(u);
         return ERROR;
     }
+    // if (u->u_ste->ste_parent_typeparam_overlay) {
+    //     PySTEntryObject *ste = u->u_ste->ste_parent_typeparam_overlay;
+    //     Py_ssize_t size = PyDict_Size(u->u_cellvars);
+    //     Py_ssize_t pos = 0;
+    //     while (PyDict_Next(ste->ste_symbols, &pos, &name, NULL)) {
+    //         PyObject *val = PyLong_FromLong(size);
+    //         size++;
+    //         if (PyDict_SetItem(u->u_cellvars, name, val) < 0) {
+    //             compiler_unit_free(u);
+    //             return ERROR;
+    //         }
+    //     }
+    // }
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
         int res;
@@ -1803,6 +1816,10 @@ compiler_make_closure(struct compiler *c, location loc,
                 return ERROR;
             }
             int arg;
+            if (c->u->u_ste->ste_current_typeparam_overlay) {
+                PyObject *inner_ste = PyDict_GetItem(c->u->u_ste->ste_typeparam_overlays,
+                                                     c->u->u_ste->ste_current_typeparam_overlay);
+            }
             if (reftype == CELL) {
                 arg = compiler_lookup_arg(c->u->u_cellvars, name);
             }

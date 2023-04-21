@@ -640,7 +640,8 @@ drop_class_free(PySTEntryObject *ste, PyObject *free)
  * All arguments are dicts.  Modifies symbols, others are read-only.
 */
 static int
-update_symbols(PyObject *symbols, PyObject *scopes,
+update_symbols(PyObject *symbols, PySTEntryObject *parent_typeparam_overlay,
+               PyObject *scopes,
                PyObject *bound, PyObject *free, int classflag)
 {
     PyObject *name = NULL, *itr = NULL;
@@ -665,6 +666,25 @@ update_symbols(PyObject *symbols, PyObject *scopes,
         }
         Py_DECREF(v_new);
     }
+    // if (parent_typeparam_overlay) {
+    //     while (PyDict_Next(parent_typeparam_overlay->ste_symbols, &pos, &name, &v)) {
+    //         long scope, flags;
+    //         assert(PyLong_Check(v));
+    //         flags = PyLong_AS_LONG(v);
+    //         v_scope = PyDict_GetItemWithError(scopes, name);
+    //         assert(v_scope && PyLong_Check(v_scope));
+    //         scope = PyLong_AS_LONG(v_scope);
+    //         flags |= (scope << SCOPE_OFFSET);
+    //         v_new = PyLong_FromLong(flags);
+    //         if (!v_new)
+    //             return 0;
+    //         if (PyDict_SetItem(symbols, name, v_new) < 0) {
+    //             Py_DECREF(v_new);
+    //             return 0;
+    //         }
+    //         Py_DECREF(v_new);
+    //     }
+    // }
 
     /* Record not yet resolved free variables from children (if any) */
     v_free = PyLong_FromLong(FREE << SCOPE_OFFSET);
@@ -757,6 +777,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 {
     PyObject *name, *v, *local = NULL, *scopes = NULL, *newbound = NULL;
     PyObject *newglobal = NULL, *newfree = NULL, *allfree = NULL;
+    PyObject *newbound_with_type_params = NULL;
     PyObject *temp;
     int i, success = 0;
     Py_ssize_t pos = 0;
@@ -858,9 +879,26 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         PySTEntryObject* entry;
         assert(c && PySTEntry_Check(c));
         entry = (PySTEntryObject*)c;
-        if (!analyze_child_block(entry, newbound, newfree, newglobal,
-                                 allfree))
-            goto error;
+        if (entry->ste_parent_typeparam_overlay) {
+            assert(newbound_with_type_params == NULL);
+            newbound_with_type_params = PySet_New(newbound);
+            Py_ssize_t pos = 0;
+            PyObject *name;
+            while (PyDict_Next(entry->ste_parent_typeparam_overlay->ste_symbols, &pos, &name, NULL)) {
+                if (PySet_Add(newbound_with_type_params, name) < 0) {
+                    goto error;
+                }
+            }
+            if (!analyze_child_block(entry, newbound_with_type_params, newfree, newglobal,
+                                    allfree))
+                goto error;
+            Py_CLEAR(newbound_with_type_params);
+        }
+        else {
+            if (!analyze_child_block(entry, newbound, newfree, newglobal,
+                                    allfree))
+                goto error;
+        }
         /* Check if any children have free variables */
         if (entry->ste_free || entry->ste_child_free)
             ste->ste_child_free = 1;
@@ -877,7 +915,8 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     else if (ste->ste_type == ClassBlock && !drop_class_free(ste, newfree))
         goto error;
     /* Records the results of the analysis in the symbol table entry */
-    if (!update_symbols(ste->ste_symbols, scopes, bound, newfree,
+    if (!update_symbols(ste->ste_symbols, ste->ste_parent_typeparam_overlay,
+                        scopes, bound, newfree,
                         ste->ste_type == ClassBlock))
         goto error;
 
@@ -893,6 +932,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     Py_XDECREF(newglobal);
     Py_XDECREF(newfree);
     Py_XDECREF(allfree);
+    Py_XDECREF(newbound_with_type_params);
     if (!success)
         assert(PyErr_Occurred());
     return success;
@@ -1114,7 +1154,7 @@ symtable_add_typeparam(struct symtable *st, PyObject *name,
     else if (PyErr_Occurred()) {
         return 0;
     }
-    PyObject *flags = PyLong_FromLong(CELL << SCOPE_OFFSET);
+    PyObject *flags = PyLong_FromLong(LOCAL << SCOPE_OFFSET);
     if (flags == NULL) {
         return 0;
     }
@@ -1330,6 +1370,17 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (ste != NULL) {
             Py_INCREF(ste);
             st->st_cur->ste_parent_typeparam_overlay = ste;
+            // Py_ssize_t pos = 0;
+            // PyObject *name;
+            // PyObject *cell_v = PyLong_FromLong(CELL << SCOPE_OFFSET);
+            // if (cell_v == NULL) {
+            //     VISIT_QUIT(st, 0);
+            // }
+            // while (PyDict_Next(ste->ste_symbols, &pos, &name, NULL)) {
+            //     if (PyDict_SetItem(st->st_cur->ste_symbols, name, cell_v) < 0) {
+            //         VISIT_QUIT(st, 0);
+            //     }
+            // }
         }
         VISIT(st, arguments, s->v.FunctionDef.args);
         VISIT_SEQ(st, stmt, s->v.FunctionDef.body);
