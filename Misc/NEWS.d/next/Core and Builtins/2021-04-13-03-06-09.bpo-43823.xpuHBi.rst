@@ -1,2 +1,0 @@
-Improve syntax errors for invalid dictionary literals. Patch by Pablo
-Galindo.

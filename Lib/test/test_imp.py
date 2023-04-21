@@ -1,3 +1,4 @@
+import gc
 import importlib
 import importlib.util
 import os
@@ -8,19 +9,21 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
+from test.support import warnings_helper
 import unittest
 import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import imp
+imp = warnings_helper.import_deprecated('imp')
 import _imp
+
+
+OS_PATH_NAME = os.path.__name__
 
 
 def requires_load_dynamic(meth):
     """Decorator to skip a test if not running under CPython or lacking
     imp.load_dynamic()."""
     meth = support.cpython_only(meth)
-    return unittest.skipIf(not hasattr(imp, 'load_dynamic'),
+    return unittest.skipIf(getattr(imp, 'load_dynamic', None) is None,
                            'imp.load_dynamic() required')(meth)
 
 
@@ -64,11 +67,7 @@ class ImportTests(unittest.TestCase):
         self.test_strings = mod.test_strings
         self.test_path = mod.__path__
 
-    def test_import_encoded_module(self):
-        for modname, encoding, teststr in self.test_strings:
-            mod = importlib.import_module('test.encoded_modules.'
-                                          'module_' + modname)
-            self.assertEqual(teststr, mod.test)
+    # test_import_encoded_module moved to test_source_encoding.py
 
     def test_find_module_encoding(self):
         for mod, encoding, _ in self.test_strings:
@@ -213,15 +212,17 @@ class ImportTests(unittest.TestCase):
         # state after reversion. Reinitialising the module contents
         # and just reverting os.environ to its previous state is an OK
         # workaround
-        orig_path = os.path
-        orig_getenv = os.getenv
-        with os_helper.EnvironmentVarGuard():
-            x = imp.find_module("os")
-            self.addCleanup(x[0].close)
-            new_os = imp.load_module("os", *x)
-            self.assertIs(os, new_os)
-            self.assertIs(orig_path, new_os.path)
-            self.assertIsNot(orig_getenv, new_os.getenv)
+        with import_helper.CleanImport('os', 'os.path', OS_PATH_NAME):
+            import os
+            orig_path = os.path
+            orig_getenv = os.getenv
+            with os_helper.EnvironmentVarGuard():
+                x = imp.find_module("os")
+                self.addCleanup(x[0].close)
+                new_os = imp.load_module("os", *x)
+                self.assertIs(os, new_os)
+                self.assertIs(orig_path, new_os.path)
+                self.assertIsNot(orig_getenv, new_os.getenv)
 
     @requires_load_dynamic
     def test_issue15828_load_extensions(self):
@@ -346,8 +347,8 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(_frozen_importlib.__spec__.origin, "frozen")
 
     def test_source_hash(self):
-        self.assertEqual(_imp.source_hash(42, b'hi'), b'\xc6\xe7Z\r\x03:}\xab')
-        self.assertEqual(_imp.source_hash(43, b'hi'), b'\x85\x9765\xf8\x9a\x8b9')
+        self.assertEqual(_imp.source_hash(42, b'hi'), b'\xfb\xd9G\x05\xaf$\x9b~')
+        self.assertEqual(_imp.source_hash(43, b'hi'), b'\xd0/\x87C\xccC\xff\xe2')
 
     def test_pyc_invalidation_mode_from_cmdline(self):
         cases = [
@@ -377,6 +378,69 @@ class ImportTests(unittest.TestCase):
             file, path, description = imp.find_module('mymod', path=['.'])
             mod = imp.load_module('mymod', file, path, description)
         self.assertEqual(mod.x, 42)
+
+    def test_issue98354(self):
+        # _imp.create_builtin should raise TypeError
+        # if 'name' attribute of 'spec' argument is not a 'str' instance
+
+        create_builtin = support.get_attribute(_imp, "create_builtin")
+
+        class FakeSpec:
+            def __init__(self, name):
+                self.name = self
+        spec = FakeSpec("time")
+        with self.assertRaises(TypeError):
+            create_builtin(spec)
+
+        class FakeSpec2:
+            name = [1, 2, 3, 4]
+        spec = FakeSpec2()
+        with self.assertRaises(TypeError):
+            create_builtin(spec)
+
+        import builtins
+        class UnicodeSubclass(str):
+            pass
+        class GoodSpec:
+            name = UnicodeSubclass("builtins")
+        spec = GoodSpec()
+        bltin = create_builtin(spec)
+        self.assertEqual(bltin, builtins)
+
+        class UnicodeSubclassFakeSpec(str):
+            def __init__(self, name):
+                self.name = self
+        spec = UnicodeSubclassFakeSpec("builtins")
+        bltin = create_builtin(spec)
+        self.assertEqual(bltin, builtins)
+
+    @support.cpython_only
+    def test_create_builtin_subinterp(self):
+        # gh-99578: create_builtin() behavior changes after the creation of the
+        # first sub-interpreter. Test both code paths, before and after the
+        # creation of a sub-interpreter. Previously, create_builtin() had
+        # a reference leak after the creation of the first sub-interpreter.
+
+        import builtins
+        create_builtin = support.get_attribute(_imp, "create_builtin")
+        class Spec:
+            name = "builtins"
+        spec = Spec()
+
+        def check_get_builtins():
+            refcnt = sys.getrefcount(builtins)
+            mod = _imp.create_builtin(spec)
+            self.assertIs(mod, builtins)
+            self.assertEqual(sys.getrefcount(builtins), refcnt + 1)
+            # Check that a GC collection doesn't crash
+            gc.collect()
+
+        check_get_builtins()
+
+        ret = support.run_in_subinterp("import builtins")
+        self.assertEqual(ret, 0)
+
+        check_get_builtins()
 
 
 class ReloadTests(unittest.TestCase):

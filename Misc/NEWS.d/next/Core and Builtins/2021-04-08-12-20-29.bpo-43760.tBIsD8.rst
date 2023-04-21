@@ -1,2 +1,0 @@
-Move the flag for checking whether tracing is enabled to the C stack, from the heap.
-Should speed up dispatch in the interpreter.

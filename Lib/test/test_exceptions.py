@@ -1,7 +1,6 @@
 # Python test set -- part 5, built-in exceptions
 
 import copy
-import gc
 import os
 import sys
 import unittest
@@ -156,6 +155,7 @@ class ExceptionTests(unittest.TestCase):
 
         ckmsg(s, "'continue' not properly in loop")
         ckmsg("continue\n", "'continue' not properly in loop")
+        ckmsg("f'{6 0}'", "invalid syntax. Perhaps you forgot a comma?")
 
     def testSyntaxErrorMissingParens(self):
         def ckmsg(src, msg, exception=SyntaxError):
@@ -168,15 +168,28 @@ class ExceptionTests(unittest.TestCase):
                 self.fail("failed to get expected SyntaxError")
 
         s = '''print "old style"'''
-        ckmsg(s, "Missing parentheses in call to 'print'. "
-                 "Did you mean print(\"old style\")?")
+        ckmsg(s, "Missing parentheses in call to 'print'. Did you mean print(...)?")
 
         s = '''print "old style",'''
-        ckmsg(s, "Missing parentheses in call to 'print'. "
-                 "Did you mean print(\"old style\", end=\" \")?")
+        ckmsg(s, "Missing parentheses in call to 'print'. Did you mean print(...)?")
+
+        s = 'print f(a+b,c)'
+        ckmsg(s, "Missing parentheses in call to 'print'. Did you mean print(...)?")
 
         s = '''exec "old style"'''
-        ckmsg(s, "Missing parentheses in call to 'exec'")
+        ckmsg(s, "Missing parentheses in call to 'exec'. Did you mean exec(...)?")
+
+        s = 'exec f(a+b,c)'
+        ckmsg(s, "Missing parentheses in call to 'exec'. Did you mean exec(...)?")
+
+        # Check that we don't incorrectly identify '(...)' as an expression to the right
+        # of 'print'
+
+        s = 'print (a+b,c) $ 42'
+        ckmsg(s, "invalid syntax")
+
+        s = 'exec (a+b,c) $ 42'
+        ckmsg(s, "invalid syntax")
 
         # should not apply to subclasses, see issue #31161
         s = '''if True:\nprint "No indent"'''
@@ -185,17 +198,26 @@ class ExceptionTests(unittest.TestCase):
         s = '''if True:\n        print()\n\texec "mixed tabs and spaces"'''
         ckmsg(s, "inconsistent use of tabs and spaces in indentation", TabError)
 
-    def check(self, src, lineno, offset, encoding='utf-8'):
+    def check(self, src, lineno, offset, end_lineno=None, end_offset=None, encoding='utf-8'):
         with self.subTest(source=src, lineno=lineno, offset=offset):
             with self.assertRaises(SyntaxError) as cm:
                 compile(src, '<fragment>', 'exec')
             self.assertEqual(cm.exception.lineno, lineno)
             self.assertEqual(cm.exception.offset, offset)
+            if end_lineno is not None:
+                self.assertEqual(cm.exception.end_lineno, end_lineno)
+            if end_offset is not None:
+                self.assertEqual(cm.exception.end_offset, end_offset)
+
             if cm.exception.text is not None:
                 if not isinstance(src, str):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
                 self.assertIn(line, cm.exception.text)
+
+    def test_error_offset_continuation_characters(self):
+        check = self.check
+        check('"\\\n"(1 for c in I,\\\n\\', 2, 2)
 
     def testSyntaxErrorOffset(self):
         check = self.check
@@ -206,26 +228,37 @@ class ExceptionTests(unittest.TestCase):
         check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
         check(b'# -*- coding: cp1251 -*-\nPython = "\xcf\xb3\xf2\xee\xed" +',
               2, 19, encoding='cp1251')
-        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 18)
+        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 10)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
-        check('[file for str(file) in []\n])', 1, 11)
+        check('[file for str(file) in []\n]', 1, 11)
+        check('a = « hello » « world »', 1, 5)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
+        check("ages = {'Alice'=22, 'Bob'=23}", 1, 9)
+        check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
+        check("[a b c d e f]", 1, 2)
+        check("for x yfff:", 1, 7)
+        check("f(a for a in b, c)", 1, 3, 1, 15)
+        check("f(a for a in b if a, c)", 1, 3, 1, 20)
+        check("f(a, b for b in c)", 1, 6, 1, 18)
+        check("f(a, b for b in c, d)", 1, 6, 1, 18)
 
         # Errors thrown by compile.c
         check('class foo:return 1', 1, 11)
         check('def f():\n  continue', 2, 3)
         check('def f():\n  break', 2, 3)
-        check('try:\n  pass\nexcept:\n  pass\nexcept ValueError:\n  pass', 2, 3)
+        check('try:\n  pass\nexcept:\n  pass\nexcept ValueError:\n  pass', 3, 1)
+        check('try:\n  pass\nexcept*:\n  pass', 3, 8)
+        check('try:\n  pass\nexcept*:\n  pass\nexcept* ValueError:\n  pass', 3, 8)
 
         # Errors thrown by tokenizer.c
         check('(0x+1)', 1, 3)
         check('x = 0xI', 1, 6)
-        check('0010 + 2', 1, 4)
+        check('0010 + 2', 1, 1)
         check('x = 32e-+4', 1, 8)
-        check('x = 0o9', 1, 6)
+        check('x = 0o9', 1, 7)
         check('\u03b1 = 0xI', 1, 6)
         check(b'\xce\xb1 = 0xI', 1, 6)
         check(b'# -*- coding: iso8859-7 -*-\n\xe1 = 0xI', 2, 6,
@@ -242,11 +275,32 @@ class ExceptionTests(unittest.TestCase):
             """, 9, 24)
         check("pass\npass\npass\n(1+)\npass\npass\npass", 4, 4)
         check("(1+)", 1, 4)
+        check("[interesting\nfoo()\n", 1, 1)
+        check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 0, -1)
+        check("""f'''
+            {
+            (123_a)
+            }'''""", 3, 17)
+        check("""f'''
+            {
+            f\"\"\"
+            {
+            (123_a)
+            }
+            \"\"\"
+            }'''""", 5, 17)
+        check('''f"""
+
+
+            {
+            6
+            0="""''', 5, 13)
 
         # Errors thrown by symtable.c
-        check('x = [(yield i) for i in range(3)]', 1, 5)
-        check('def f():\n  from _ import *', 1, 1)
-        check('def f(x, x):\n  pass', 1, 1)
+        check('x = [(yield i) for i in range(3)]', 1, 7)
+        check('def f():\n  from _ import *', 2, 17)
+        check('def f(x, x):\n  pass', 1, 10)
+        check('{i for i in range(5) if (j := 0) for j in range(5)}', 1, 38)
         check('def f(x):\n  nonlocal x', 2, 3)
         check('def f(x):\n  x = 1\n  global x', 3, 3)
         check('nonlocal x', 1, 1)
@@ -281,8 +335,7 @@ class ExceptionTests(unittest.TestCase):
             try:
                 _testcapi.raise_exception(BadException, 1)
             except TypeError as err:
-                exc, err, tb = sys.exc_info()
-                co = tb.tb_frame.f_code
+                co = err.__traceback__.tb_frame.f_code
                 self.assertEqual(co.co_name, "test_capi1")
                 self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
             else:
@@ -293,7 +346,7 @@ class ExceptionTests(unittest.TestCase):
             try:
                 _testcapi.raise_exception(BadException, 0)
             except RuntimeError as err:
-                exc, err, tb = sys.exc_info()
+                tb = err.__traceback__.tb_next
                 co = tb.tb_frame.f_code
                 self.assertEqual(co.co_name, "__init__")
                 self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
@@ -307,10 +360,9 @@ class ExceptionTests(unittest.TestCase):
             self.assertRaises(SystemError, _testcapi.raise_exception,
                               InvalidException, 1)
 
-        if not sys.platform.startswith('java'):
-            test_capi1()
-            test_capi2()
-            test_capi3()
+        test_capi1()
+        test_capi2()
+        test_capi3()
 
     def test_WindowsError(self):
         try:
@@ -493,11 +545,61 @@ class ExceptionTests(unittest.TestCase):
                                              'pickled "%r", attribute "%s' %
                                              (e, checkArgName))
 
+    def test_setstate(self):
+        e = Exception(42)
+        e.blah = 53
+        self.assertEqual(e.args, (42,))
+        self.assertEqual(e.blah, 53)
+        self.assertRaises(AttributeError, getattr, e, 'a')
+        self.assertRaises(AttributeError, getattr, e, 'b')
+        e.__setstate__({'a': 1 , 'b': 2})
+        self.assertEqual(e.args, (42,))
+        self.assertEqual(e.blah, 53)
+        self.assertEqual(e.a, 1)
+        self.assertEqual(e.b, 2)
+        e.__setstate__({'a': 11, 'args': (1,2,3), 'blah': 35})
+        self.assertEqual(e.args, (1,2,3))
+        self.assertEqual(e.blah, 35)
+        self.assertEqual(e.a, 11)
+        self.assertEqual(e.b, 2)
+
+    def test_invalid_setstate(self):
+        e = Exception(42)
+        with self.assertRaisesRegex(TypeError, "state is not a dictionary"):
+            e.__setstate__(42)
+
+    def test_notes(self):
+        for e in [BaseException(1), Exception(2), ValueError(3)]:
+            with self.subTest(e=e):
+                self.assertFalse(hasattr(e, '__notes__'))
+                e.add_note("My Note")
+                self.assertEqual(e.__notes__, ["My Note"])
+
+                with self.assertRaises(TypeError):
+                    e.add_note(42)
+                self.assertEqual(e.__notes__, ["My Note"])
+
+                e.add_note("Your Note")
+                self.assertEqual(e.__notes__, ["My Note", "Your Note"])
+
+                del e.__notes__
+                self.assertFalse(hasattr(e, '__notes__'))
+
+                e.add_note("Our Note")
+                self.assertEqual(e.__notes__, ["Our Note"])
+
+                e.__notes__ = 42
+                self.assertEqual(e.__notes__, 42)
+
+                with self.assertRaises(TypeError):
+                    e.add_note("will not work")
+                self.assertEqual(e.__notes__, 42)
+
     def testWithTraceback(self):
         try:
             raise IndexError(4)
-        except:
-            tb = sys.exc_info()[2]
+        except Exception as e:
+            tb = e.__traceback__
 
         e = BaseException().with_traceback(tb)
         self.assertIsInstance(e, BaseException)
@@ -522,17 +624,36 @@ class ExceptionTests(unittest.TestCase):
         else:
             self.fail("No exception raised")
 
-    def testInvalidAttrs(self):
-        self.assertRaises(TypeError, setattr, Exception(), '__cause__', 1)
-        self.assertRaises(TypeError, delattr, Exception(), '__cause__')
-        self.assertRaises(TypeError, setattr, Exception(), '__context__', 1)
-        self.assertRaises(TypeError, delattr, Exception(), '__context__')
+    def test_invalid_setattr(self):
+        TE = TypeError
+        exc = Exception()
+        msg = "'int' object is not iterable"
+        self.assertRaisesRegex(TE, msg, setattr, exc, 'args', 1)
+        msg = "__traceback__ must be a traceback or None"
+        self.assertRaisesRegex(TE, msg, setattr, exc, '__traceback__', 1)
+        msg = "exception cause must be None or derive from BaseException"
+        self.assertRaisesRegex(TE, msg, setattr, exc, '__cause__', 1)
+        msg = "exception context must be None or derive from BaseException"
+        self.assertRaisesRegex(TE, msg, setattr, exc, '__context__', 1)
+
+    def test_invalid_delattr(self):
+        TE = TypeError
+        try:
+            raise IndexError(4)
+        except Exception as e:
+            exc = e
+
+        msg = "may not be deleted"
+        self.assertRaisesRegex(TE, msg, delattr, exc, 'args')
+        self.assertRaisesRegex(TE, msg, delattr, exc, '__traceback__')
+        self.assertRaisesRegex(TE, msg, delattr, exc, '__cause__')
+        self.assertRaisesRegex(TE, msg, delattr, exc, '__context__')
 
     def testNoneClearsTracebackAttr(self):
         try:
             raise IndexError(4)
-        except:
-            tb = sys.exc_info()[2]
+        except Exception as e:
+            tb = e.__traceback__
 
         e = Exception()
         e.__traceback__ = tb
@@ -605,15 +726,27 @@ class ExceptionTests(unittest.TestCase):
         self.assertTrue(str(Exception('a')))
         self.assertTrue(str(Exception('a', 'b')))
 
-    def testExceptionCleanupNames(self):
+    def test_exception_cleanup_names(self):
         # Make sure the local variable bound to the exception instance by
         # an "except" statement is only visible inside the except block.
         try:
             raise Exception()
         except Exception as e:
-            self.assertTrue(e)
+            self.assertIsInstance(e, Exception)
+        self.assertNotIn('e', locals())
+        with self.assertRaises(UnboundLocalError):
+            e
+
+    def test_exception_cleanup_names2(self):
+        # Make sure the cleanup doesn't break if the variable is explicitly deleted.
+        try:
+            raise Exception()
+        except Exception as e:
+            self.assertIsInstance(e, Exception)
             del e
         self.assertNotIn('e', locals())
+        with self.assertRaises(UnboundLocalError):
+            e
 
     def testExceptionCleanupState(self):
         # Make sure exception state is cleaned up as soon as the except
@@ -638,6 +771,7 @@ class ExceptionTests(unittest.TestCase):
         except MyException as e:
             pass
         obj = None
+        gc_collect()  # For PyPy or other GCs.
         obj = wr()
         self.assertIsNone(obj)
 
@@ -649,6 +783,7 @@ class ExceptionTests(unittest.TestCase):
         except MyException:
             pass
         obj = None
+        gc_collect()  # For PyPy or other GCs.
         obj = wr()
         self.assertIsNone(obj)
 
@@ -660,6 +795,7 @@ class ExceptionTests(unittest.TestCase):
         except:
             pass
         obj = None
+        gc_collect()  # For PyPy or other GCs.
         obj = wr()
         self.assertIsNone(obj)
 
@@ -672,6 +808,7 @@ class ExceptionTests(unittest.TestCase):
             except:
                 break
         obj = None
+        gc_collect()  # For PyPy or other GCs.
         obj = wr()
         self.assertIsNone(obj)
 
@@ -690,6 +827,7 @@ class ExceptionTests(unittest.TestCase):
             # must clear the latter manually for our test to succeed.
             e.__context__ = None
             obj = None
+            gc_collect()  # For PyPy or other GCs.
             obj = wr()
             # guarantee no ref cycles on CPython (don't gc_collect)
             if check_impl_detail(cpython=False):
@@ -749,28 +887,28 @@ class ExceptionTests(unittest.TestCase):
             try:
                 raise KeyError("caught")
             except KeyError:
-                yield sys.exc_info()[0]
-                yield sys.exc_info()[0]
-            yield sys.exc_info()[0]
+                yield sys.exception()
+                yield sys.exception()
+            yield sys.exception()
         g = yield_raise()
-        self.assertEqual(next(g), KeyError)
-        self.assertEqual(sys.exc_info()[0], None)
-        self.assertEqual(next(g), KeyError)
-        self.assertEqual(sys.exc_info()[0], None)
-        self.assertEqual(next(g), None)
+        self.assertIsInstance(next(g), KeyError)
+        self.assertIsNone(sys.exception())
+        self.assertIsInstance(next(g), KeyError)
+        self.assertIsNone(sys.exception())
+        self.assertIsNone(next(g))
 
         # Same test, but inside an exception handler
         try:
             raise TypeError("foo")
         except TypeError:
             g = yield_raise()
-            self.assertEqual(next(g), KeyError)
-            self.assertEqual(sys.exc_info()[0], TypeError)
-            self.assertEqual(next(g), KeyError)
-            self.assertEqual(sys.exc_info()[0], TypeError)
-            self.assertEqual(next(g), TypeError)
+            self.assertIsInstance(next(g), KeyError)
+            self.assertIsInstance(sys.exception(), TypeError)
+            self.assertIsInstance(next(g), KeyError)
+            self.assertIsInstance(sys.exception(), TypeError)
+            self.assertIsInstance(next(g), TypeError)
             del g
-            self.assertEqual(sys.exc_info()[0], TypeError)
+            self.assertIsInstance(sys.exception(), TypeError)
 
     def test_generator_leaking2(self):
         # See issue 12475.
@@ -785,7 +923,7 @@ class ExceptionTests(unittest.TestCase):
             next(it)
         except StopIteration:
             pass
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_generator_leaking3(self):
         # See issue #23353.  When gen.throw() is called, the caller's
@@ -794,17 +932,17 @@ class ExceptionTests(unittest.TestCase):
             try:
                 yield
             except ZeroDivisionError:
-                yield sys.exc_info()[1]
+                yield sys.exception()
         it = g()
         next(it)
         try:
             1/0
         except ZeroDivisionError as e:
-            self.assertIs(sys.exc_info()[1], e)
+            self.assertIs(sys.exception(), e)
             gen_exc = it.throw(e)
-            self.assertIs(sys.exc_info()[1], e)
+            self.assertIs(sys.exception(), e)
             self.assertIs(gen_exc, e)
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_generator_leaking4(self):
         # See issue #23353.  When an exception is raised by a generator,
@@ -813,7 +951,7 @@ class ExceptionTests(unittest.TestCase):
             try:
                 1/0
             except ZeroDivisionError:
-                yield sys.exc_info()[0]
+                yield sys.exception()
                 raise
         it = g()
         try:
@@ -821,7 +959,7 @@ class ExceptionTests(unittest.TestCase):
         except TypeError:
             # The caller's exception state (TypeError) is temporarily
             # saved in the generator.
-            tp = next(it)
+            tp = type(next(it))
         self.assertIs(tp, ZeroDivisionError)
         try:
             next(it)
@@ -829,15 +967,15 @@ class ExceptionTests(unittest.TestCase):
             # with an exception, it shouldn't have restored the old
             # exception state (TypeError).
         except ZeroDivisionError as e:
-            self.assertIs(sys.exc_info()[1], e)
+            self.assertIs(sys.exception(), e)
         # We used to find TypeError here.
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_generator_doesnt_retain_old_exc(self):
         def g():
-            self.assertIsInstance(sys.exc_info()[1], RuntimeError)
+            self.assertIsInstance(sys.exception(), RuntimeError)
             yield
-            self.assertEqual(sys.exc_info(), (None, None, None))
+            self.assertIsNone(sys.exception())
         it = g()
         try:
             raise RuntimeError
@@ -845,7 +983,7 @@ class ExceptionTests(unittest.TestCase):
             next(it)
         self.assertRaises(StopIteration, next, it)
 
-    def test_generator_finalizing_and_exc_info(self):
+    def test_generator_finalizing_and_sys_exception(self):
         # See #7173
         def simple_gen():
             yield 1
@@ -857,7 +995,7 @@ class ExceptionTests(unittest.TestCase):
                 return next(gen)
         run_gen()
         gc_collect()
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def _check_generator_cleanup_exc_state(self, testfunc):
         # Issue #12791: exception state is cleaned up as soon as a generator
@@ -880,6 +1018,7 @@ class ExceptionTests(unittest.TestCase):
         next(g)
         testfunc(g)
         g = obj = None
+        gc_collect()  # For PyPy or other GCs.
         obj = wr()
         self.assertIsNone(obj)
 
@@ -927,13 +1066,206 @@ class ExceptionTests(unittest.TestCase):
         class MyObject:
             def __del__(self):
                 nonlocal e
-                e = sys.exc_info()
+                e = sys.exception()
         e = ()
         try:
             raise Exception(MyObject())
         except:
             pass
-        self.assertEqual(e, (None, None, None))
+        gc_collect()  # For PyPy or other GCs.
+        self.assertIsNone(e)
+
+    def test_raise_does_not_create_context_chain_cycle(self):
+        class A(Exception):
+            pass
+        class B(Exception):
+            pass
+        class C(Exception):
+            pass
+
+        # Create a context chain:
+        # C -> B -> A
+        # Then raise A in context of C.
+        try:
+            try:
+                raise A
+            except A as a_:
+                a = a_
+                try:
+                    raise B
+                except B as b_:
+                    b = b_
+                    try:
+                        raise C
+                    except C as c_:
+                        c = c_
+                        self.assertIsInstance(a, A)
+                        self.assertIsInstance(b, B)
+                        self.assertIsInstance(c, C)
+                        self.assertIsNone(a.__context__)
+                        self.assertIs(b.__context__, a)
+                        self.assertIs(c.__context__, b)
+                        raise a
+        except A as e:
+            exc = e
+
+        # Expect A -> C -> B, without cycle
+        self.assertIs(exc, a)
+        self.assertIs(a.__context__, c)
+        self.assertIs(c.__context__, b)
+        self.assertIsNone(b.__context__)
+
+    def test_no_hang_on_context_chain_cycle1(self):
+        # See issue 25782. Cycle in context chain.
+
+        def cycle():
+            try:
+                raise ValueError(1)
+            except ValueError as ex:
+                ex.__context__ = ex
+                raise TypeError(2)
+
+        try:
+            cycle()
+        except Exception as e:
+            exc = e
+
+        self.assertIsInstance(exc, TypeError)
+        self.assertIsInstance(exc.__context__, ValueError)
+        self.assertIs(exc.__context__.__context__, exc.__context__)
+
+    def test_no_hang_on_context_chain_cycle2(self):
+        # See issue 25782. Cycle at head of context chain.
+
+        class A(Exception):
+            pass
+        class B(Exception):
+            pass
+        class C(Exception):
+            pass
+
+        # Context cycle:
+        # +-----------+
+        # V           |
+        # C --> B --> A
+        with self.assertRaises(C) as cm:
+            try:
+                raise A()
+            except A as _a:
+                a = _a
+                try:
+                    raise B()
+                except B as _b:
+                    b = _b
+                    try:
+                        raise C()
+                    except C as _c:
+                        c = _c
+                        a.__context__ = c
+                        raise c
+
+        self.assertIs(cm.exception, c)
+        # Verify the expected context chain cycle
+        self.assertIs(c.__context__, b)
+        self.assertIs(b.__context__, a)
+        self.assertIs(a.__context__, c)
+
+    def test_no_hang_on_context_chain_cycle3(self):
+        # See issue 25782. Longer context chain with cycle.
+
+        class A(Exception):
+            pass
+        class B(Exception):
+            pass
+        class C(Exception):
+            pass
+        class D(Exception):
+            pass
+        class E(Exception):
+            pass
+
+        # Context cycle:
+        #             +-----------+
+        #             V           |
+        # E --> D --> C --> B --> A
+        with self.assertRaises(E) as cm:
+            try:
+                raise A()
+            except A as _a:
+                a = _a
+                try:
+                    raise B()
+                except B as _b:
+                    b = _b
+                    try:
+                        raise C()
+                    except C as _c:
+                        c = _c
+                        a.__context__ = c
+                        try:
+                            raise D()
+                        except D as _d:
+                            d = _d
+                            e = E()
+                            raise e
+
+        self.assertIs(cm.exception, e)
+        # Verify the expected context chain cycle
+        self.assertIs(e.__context__, d)
+        self.assertIs(d.__context__, c)
+        self.assertIs(c.__context__, b)
+        self.assertIs(b.__context__, a)
+        self.assertIs(a.__context__, c)
+
+    def test_context_of_exception_in_try_and_finally(self):
+        try:
+            try:
+                te = TypeError(1)
+                raise te
+            finally:
+                ve = ValueError(2)
+                raise ve
+        except Exception as e:
+            exc = e
+
+        self.assertIs(exc, ve)
+        self.assertIs(exc.__context__, te)
+
+    def test_context_of_exception_in_except_and_finally(self):
+        try:
+            try:
+                te = TypeError(1)
+                raise te
+            except:
+                ve = ValueError(2)
+                raise ve
+            finally:
+                oe = OSError(3)
+                raise oe
+        except Exception as e:
+            exc = e
+
+        self.assertIs(exc, oe)
+        self.assertIs(exc.__context__, ve)
+        self.assertIs(exc.__context__.__context__, te)
+
+    def test_context_of_exception_in_else_and_finally(self):
+        try:
+            try:
+                pass
+            except:
+                pass
+            else:
+                ve = ValueError(1)
+                raise ve
+            finally:
+                oe = OSError(2)
+                raise oe
+        except Exception as e:
+            exc = e
+
+        self.assertIs(exc, oe)
+        self.assertIs(exc.__context__, ve)
 
     def test_unicode_change_attributes(self):
         # See issue 7309. This was a crasher.
@@ -1003,11 +1335,26 @@ class ExceptionTests(unittest.TestCase):
         def g():
             try:
                 return g()
-            except RecursionError:
-                return sys.exc_info()
-        e, v, tb = g()
-        self.assertIsInstance(v, RecursionError, type(v))
-        self.assertIn("maximum recursion depth exceeded", str(v))
+            except RecursionError as e:
+                return e
+        exc = g()
+        self.assertIsInstance(exc, RecursionError, type(exc))
+        self.assertIn("maximum recursion depth exceeded", str(exc))
+
+
+    @cpython_only
+    def test_trashcan_recursion(self):
+        # See bpo-33930
+
+        def foo():
+            o = object()
+            for x in range(1_000_000):
+                # Create a big chain of method objects that will trigger
+                # a deep chain of calls when they need to be destructed.
+                o = o.__dir__
+
+        foo()
+        support.gc_collect()
 
     @cpython_only
     def test_recursion_normalizing_exception(self):
@@ -1023,6 +1370,7 @@ class ExceptionTests(unittest.TestCase):
         code = """if 1:
             import sys
             from _testinternalcapi import get_recursion_depth
+            from test import support
 
             class MyException(Exception): pass
 
@@ -1050,13 +1398,8 @@ class ExceptionTests(unittest.TestCase):
             generator = gen()
             next(generator)
             recursionlimit = sys.getrecursionlimit()
-            depth = get_recursion_depth()
             try:
-                # Upon the last recursive invocation of recurse(),
-                # tstate->recursion_depth is equal to (recursion_limit - 1)
-                # and is equal to recursion_limit when _gen_throw() calls
-                # PyErr_NormalizeException().
-                recurse(setrecursionlimit(depth + 2) - depth)
+                recurse(support.EXCEEDS_RECURSION_LIMIT)
             finally:
                 sys.setrecursionlimit(recursionlimit)
                 print('Done.')
@@ -1071,8 +1414,8 @@ class ExceptionTests(unittest.TestCase):
     @cpython_only
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
-        # PyErr_NormalizeException() maximum recursion depth has been
-        # exceeded.
+        # maximum recursion depth has been exceeded when creating
+        # an exception
         code = """if 1:
             import _testcapi
             try:
@@ -1082,8 +1425,7 @@ class ExceptionTests(unittest.TestCase):
         """
         rc, out, err = script_helper.assert_python_failure("-c", code)
         self.assertEqual(rc, 1)
-        self.assertIn(b'RecursionError: maximum recursion depth exceeded '
-                      b'while normalizing an exception', err)
+        self.assertIn(b'RecursionError: maximum recursion depth exceeded', err)
         self.assertIn(b'Done.', out)
 
 
@@ -1154,9 +1496,7 @@ class ExceptionTests(unittest.TestCase):
         """
         with SuppressCrashReport():
             rc, out, err = script_helper.assert_python_failure("-c", code)
-            self.assertIn(b'Fatal Python error: _PyErr_NormalizeException: '
-                          b'Cannot recover from MemoryErrors while '
-                          b'normalizing exceptions.', err)
+            self.assertIn(b'MemoryError', err)
 
     @cpython_only
     def test_MemoryError(self):
@@ -1237,6 +1577,7 @@ class ExceptionTests(unittest.TestCase):
             self.assertNotEqual(wr(), None)
         else:
             self.fail("MemoryError not raised")
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(wr(), None)
 
     @no_tracing
@@ -1257,6 +1598,7 @@ class ExceptionTests(unittest.TestCase):
             self.assertNotEqual(wr(), None)
         else:
             self.fail("RecursionError not raised")
+        gc_collect()  # For PyPy or other GCs.
         self.assertEqual(wr(), None)
 
     def test_errno_ENOTDIR(self):
@@ -1277,6 +1619,7 @@ class ExceptionTests(unittest.TestCase):
         with support.catch_unraisable_exception() as cm:
             del obj
 
+            gc_collect()  # For PyPy or other GCs.
             self.assertEqual(cm.unraisable.object, BrokenDel.__del__)
             self.assertIsNotNone(cm.unraisable.exc_traceback)
 
@@ -1348,7 +1691,7 @@ class ExceptionTests(unittest.TestCase):
                 raise ValueError
             except ValueError:
                 yield 1
-            self.assertEqual(sys.exc_info(), (None, None, None))
+            self.assertIsNone(sys.exception())
             yield 2
 
         gen = g()
@@ -1420,7 +1763,6 @@ class ExceptionTests(unittest.TestCase):
 
             gc_collect()
 
-global_for_suggestions = None
 
 class NameErrorTests(unittest.TestCase):
     def test_name_error_has_name(self):
@@ -1429,205 +1771,38 @@ class NameErrorTests(unittest.TestCase):
         except NameError as exc:
             self.assertEqual("bluch", exc.name)
 
-    def test_name_error_suggestions(self):
-        def Substitution():
-            noise = more_noise = a = bc = None
-            blech = None
-            print(bluch)
-
-        def Elimination():
-            noise = more_noise = a = bc = None
-            blch = None
-            print(bluch)
-
-        def Addition():
-            noise = more_noise = a = bc = None
-            bluchin = None
-            print(bluch)
-
-        def SubstitutionOverElimination():
-            blach = None
-            bluc = None
-            print(bluch)
-
-        def SubstitutionOverAddition():
-            blach = None
-            bluchi = None
-            print(bluch)
-
-        def EliminationOverAddition():
-            blucha = None
-            bluc = None
-            print(bluch)
-
-        for func, suggestion in [(Substitution, "'blech'?"),
-                                (Elimination, "'blch'?"),
-                                (Addition, "'bluchin'?"),
-                                (EliminationOverAddition, "'blucha'?"),
-                                (SubstitutionOverElimination, "'blach'?"),
-                                (SubstitutionOverAddition, "'blach'?")]:
-            err = None
-            try:
-                func()
-            except NameError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertIn(suggestion, err.getvalue())
-
-    def test_name_error_suggestions_from_globals(self):
-        def func():
-            print(global_for_suggestio)
-        try:
-            func()
-        except NameError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-        self.assertIn("'global_for_suggestions'?", err.getvalue())
-
-    def test_name_error_suggestions_from_builtins(self):
-        def func():
-            print(AttributeErrop)
-        try:
-            func()
-        except NameError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-        self.assertIn("'AttributeError'?", err.getvalue())
-
-    def test_name_error_suggestions_do_not_trigger_for_long_names(self):
+    def test_issue45826(self):
+        # regression test for bpo-45826
         def f():
-            somethingverywronghehehehehehe = None
-            print(somethingverywronghe)
+            with self.assertRaisesRegex(NameError, 'aaa'):
+                aab
 
         try:
             f()
-        except NameError as exc:
+        except self.failureException:
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
 
-        self.assertNotIn("somethingverywronghehe", err.getvalue())
+        self.assertIn("aab", err.getvalue())
 
-    def test_name_error_bad_suggestions_do_not_trigger_for_small_names(self):
-        vvv = mom = w = id = pytho = None
-
-        with self.subTest(name="b"):
-            try:
-                b
-            except NameError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-        with self.subTest(name="v"):
-            try:
-                v
-            except NameError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-        with self.subTest(name="m"):
-            try:
-                m
-            except NameError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-        with self.subTest(name="py"):
-            try:
-                py
-            except NameError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-    def test_name_error_suggestions_do_not_trigger_for_too_many_locals(self):
+    def test_issue45826_focused(self):
         def f():
-            # Mutating locals() is unreliable, so we need to do it by hand
-            a1 = a2 = a3 = a4 = a5 = a6 = a7 = a8 = a9 = a10 = a11 = a12 = a13 = \
-            a14 = a15 = a16 = a17 = a18 = a19 = a20 = a21 = a22 = a23 = a24 = a25 = \
-            a26 = a27 = a28 = a29 = a30 = a31 = a32 = a33 = a34 = a35 = a36 = a37 = \
-            a38 = a39 = a40 = a41 = a42 = a43 = a44 = a45 = a46 = a47 = a48 = a49 = \
-            a50 = a51 = a52 = a53 = a54 = a55 = a56 = a57 = a58 = a59 = a60 = a61 = \
-            a62 = a63 = a64 = a65 = a66 = a67 = a68 = a69 = a70 = a71 = a72 = a73 = \
-            a74 = a75 = a76 = a77 = a78 = a79 = a80 = a81 = a82 = a83 = a84 = a85 = \
-            a86 = a87 = a88 = a89 = a90 = a91 = a92 = a93 = a94 = a95 = a96 = a97 = \
-            a98 = a99 = a100 = a101 = a102 = a103 = a104 = a105 = a106 = a107 = \
-            a108 = a109 = a110 = a111 = a112 = a113 = a114 = a115 = a116 = a117 = \
-            a118 = a119 = a120 = a121 = a122 = a123 = a124 = a125 = a126 = \
-            a127 = a128 = a129 = a130 = a131 = a132 = a133 = a134 = a135 = a136 = \
-            a137 = a138 = a139 = a140 = a141 = a142 = a143 = a144 = a145 = \
-            a146 = a147 = a148 = a149 = a150 = a151 = a152 = a153 = a154 = a155 = \
-            a156 = a157 = a158 = a159 = a160 = a161 = None
-            print(a0)
+            try:
+                nonsense
+            except BaseException as E:
+                E.with_traceback(None)
+                raise ZeroDivisionError()
 
         try:
             f()
-        except NameError as exc:
+        except ZeroDivisionError:
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
 
-        self.assertNotIn("a1", err.getvalue())
+        self.assertIn("nonsense", err.getvalue())
+        self.assertIn("ZeroDivisionError", err.getvalue())
 
-    def test_name_error_with_custom_exceptions(self):
-        def f():
-            blech = None
-            raise NameError()
-
-        try:
-            f()
-        except NameError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("blech", err.getvalue())
-
-        def f():
-            blech = None
-            raise NameError
-
-        try:
-            f()
-        except NameError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("blech", err.getvalue())
-
-    def test_unbound_local_error_doesn_not_match(self):
-        def foo():
-            something = 3
-            print(somethong)
-            somethong = 3
-
-        try:
-            foo()
-        except UnboundLocalError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("something", err.getvalue())
+    # Note: name suggestion tests live in `test_traceback`.
 
 
 class AttributeErrorTests(unittest.TestCase):
@@ -1652,6 +1827,11 @@ class AttributeErrorTests(unittest.TestCase):
         except AttributeError as exc:
             self.assertEqual("bluch", exc.name)
             self.assertEqual(obj, exc.obj)
+        try:
+            object.__getattribute__(obj, "bluch")
+        except AttributeError as exc:
+            self.assertEqual("bluch", exc.name)
+            self.assertEqual(obj, exc.obj)
 
     def test_getattr_has_name_and_obj_for_method(self):
         class A:
@@ -1665,209 +1845,7 @@ class AttributeErrorTests(unittest.TestCase):
             self.assertEqual("bluch", exc.name)
             self.assertEqual(obj, exc.obj)
 
-    def test_getattr_suggestions(self):
-        class Substitution:
-            noise = more_noise = a = bc = None
-            blech = None
-
-        class Elimination:
-            noise = more_noise = a = bc = None
-            blch = None
-
-        class Addition:
-            noise = more_noise = a = bc = None
-            bluchin = None
-
-        class SubstitutionOverElimination:
-            blach = None
-            bluc = None
-
-        class SubstitutionOverAddition:
-            blach = None
-            bluchi = None
-
-        class EliminationOverAddition:
-            blucha = None
-            bluc = None
-
-        for cls, suggestion in [(Substitution, "'blech'?"),
-                                (Elimination, "'blch'?"),
-                                (Addition, "'bluchin'?"),
-                                (EliminationOverAddition, "'bluc'?"),
-                                (SubstitutionOverElimination, "'blach'?"),
-                                (SubstitutionOverAddition, "'blach'?")]:
-            try:
-                cls().bluch
-            except AttributeError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-
-            self.assertIn(suggestion, err.getvalue())
-
-    def test_getattr_suggestions_do_not_trigger_for_long_attributes(self):
-        class A:
-            blech = None
-
-        try:
-            A().somethingverywrong
-        except AttributeError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("blech", err.getvalue())
-
-    def test_getattr_error_bad_suggestions_do_not_trigger_for_small_names(self):
-        class MyClass:
-            vvv = mom = w = id = pytho = None
-
-        with self.subTest(name="b"):
-            try:
-                MyClass.b
-            except AttributeError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-        with self.subTest(name="v"):
-            try:
-                MyClass.v
-            except AttributeError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-        with self.subTest(name="m"):
-            try:
-                MyClass.m
-            except AttributeError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-        with self.subTest(name="py"):
-            try:
-                MyClass.py
-            except AttributeError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-            self.assertNotIn("you mean", err.getvalue())
-            self.assertNotIn("vvv", err.getvalue())
-            self.assertNotIn("mom", err.getvalue())
-            self.assertNotIn("'id'", err.getvalue())
-            self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'pytho'", err.getvalue())
-
-
-    def test_getattr_suggestions_do_not_trigger_for_big_dicts(self):
-        class A:
-            blech = None
-        # A class with a very big __dict__ will not be consider
-        # for suggestions.
-        for index in range(160):
-            setattr(A, f"index_{index}", None)
-
-        try:
-            A().bluch
-        except AttributeError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("blech", err.getvalue())
-
-    def test_getattr_suggestions_no_args(self):
-        class A:
-            blech = None
-            def __getattr__(self, attr):
-                raise AttributeError()
-
-        try:
-            A().bluch
-        except AttributeError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertIn("blech", err.getvalue())
-
-        class A:
-            blech = None
-            def __getattr__(self, attr):
-                raise AttributeError
-
-        try:
-            A().bluch
-        except AttributeError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertIn("blech", err.getvalue())
-
-    def test_getattr_suggestions_invalid_args(self):
-        class NonStringifyClass:
-            __str__ = None
-            __repr__ = None
-
-        class A:
-            blech = None
-            def __getattr__(self, attr):
-                raise AttributeError(NonStringifyClass())
-
-        class B:
-            blech = None
-            def __getattr__(self, attr):
-                raise AttributeError("Error", 23)
-
-        class C:
-            blech = None
-            def __getattr__(self, attr):
-                raise AttributeError(23)
-
-        for cls in [A, B, C]:
-            try:
-                cls().bluch
-            except AttributeError as exc:
-                with support.captured_stderr() as err:
-                    sys.__excepthook__(*sys.exc_info())
-
-            self.assertIn("blech", err.getvalue())
-
-    def test_attribute_error_with_failing_dict(self):
-        class T:
-            bluch = 1
-            def __dir__(self):
-                raise AttributeError("oh no!")
-
-        try:
-            T().blich
-        except AttributeError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("blech", err.getvalue())
-        self.assertNotIn("oh no!", err.getvalue())
-
-    def test_attribute_error_with_bad_name(self):
-        try:
-            raise AttributeError(name=12, obj=23)
-        except AttributeError as exc:
-            with support.captured_stderr() as err:
-                sys.__excepthook__(*sys.exc_info())
-
-        self.assertNotIn("?", err.getvalue())
+    # Note: name suggestion tests live in `test_traceback`.
 
 
 class ImportErrorTests(unittest.TestCase):
@@ -2017,7 +1995,7 @@ class SyntaxErrorTests(unittest.TestCase):
                  abcdefg
              SyntaxError: bad bad
              """)),
-            # End offset pass the source lenght
+            # End offset pass the source length
             (("bad.py", 1, 2, "abcdefg", 1, 100),
              dedent(
              """
@@ -2034,7 +2012,49 @@ class SyntaxErrorTests(unittest.TestCase):
                 except SyntaxError as exc:
                     with support.captured_stderr() as err:
                         sys.__excepthook__(*sys.exc_info())
+                    self.assertIn(expected, err.getvalue())
                     the_exception = exc
+
+    def test_encodings(self):
+        source = (
+            '# -*- coding: cp437 -*-\n'
+            '"┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))\n'
+        )
+        try:
+            with open(TESTFN, 'w', encoding='cp437') as testfile:
+                testfile.write(source)
+            rc, out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+            err = err.decode('utf-8').splitlines()
+
+            self.assertEqual(err[-3], '    "┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))')
+            self.assertEqual(err[-2], '                          ^^^^^^^^^^^^^^^^^^^')
+        finally:
+            unlink(TESTFN)
+
+        # Check backwards tokenizer errors
+        source = '# -*- coding: ascii -*-\n\n(\n'
+        try:
+            with open(TESTFN, 'w', encoding='ascii') as testfile:
+                testfile.write(source)
+            rc, out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+            err = err.decode('utf-8').splitlines()
+
+            self.assertEqual(err[-3], '    (')
+            self.assertEqual(err[-2], '    ^')
+        finally:
+            unlink(TESTFN)
+
+    def test_non_utf8(self):
+        # Check non utf-8 characters
+        try:
+            with open(TESTFN, 'bw') as testfile:
+                testfile.write(b"\x89")
+            rc, out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+            err = err.decode('utf-8').splitlines()
+
+            self.assertIn("SyntaxError: Non-UTF-8 code starting with '\\x89' in file", err[-1])
+        finally:
+            unlink(TESTFN)
 
     def test_attributes_new_constructor(self):
         args = ("bad.py", 1, 2, "abcdefg", 1, 100)
@@ -2071,20 +2091,40 @@ class SyntaxErrorTests(unittest.TestCase):
         self.assertRaises(TypeError, SyntaxError, "bad bad", args)
 
 
+class TestInvalidExceptionMatcher(unittest.TestCase):
+    def test_except_star_invalid_exception_type(self):
+        with self.assertRaises(TypeError):
+            try:
+                raise ValueError
+            except 42:
+                pass
+
+        with self.assertRaises(TypeError):
+            try:
+                raise ValueError
+            except (ValueError, 42):
+                pass
+
+
 class PEP626Tests(unittest.TestCase):
 
-    def lineno_after_raise(self, f, line):
+    def lineno_after_raise(self, f, *expected):
         try:
             f()
         except Exception as ex:
             t = ex.__traceback__
-            while t.tb_next:
-                t = t.tb_next
+        else:
+            self.fail("No exception raised")
+        lines = []
+        t = t.tb_next # Skip this function
+        while t:
             frame = t.tb_frame
-            if line is None:
-                self.assertEqual(frame.f_lineno, line)
-            else:
-                self.assertEqual(frame.f_lineno-frame.f_code.co_firstlineno, line)
+            lines.append(
+                None if frame.f_lineno is None else
+                frame.f_lineno-frame.f_code.co_firstlineno
+            )
+            t = t.tb_next
+        self.assertEqual(tuple(lines), expected)
 
     def test_lineno_after_raise_simple(self):
         def simple():
@@ -2160,8 +2200,20 @@ class PEP626Tests(unittest.TestCase):
         def f():
             1/0
         self.lineno_after_raise(f, 1)
-        f.__code__ = f.__code__.replace(co_linetable=b'\x04\x80\xff\x80')
+        f.__code__ = f.__code__.replace(co_linetable=b'\xf8\xf8\xf8\xf9\xf8\xf8\xf8')
         self.lineno_after_raise(f, None)
+
+    def test_lineno_after_raise_in_with_exit(self):
+        class ExitFails:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                raise ValueError
+
+        def after_with():
+            with ExitFails():
+                1/0
+        self.lineno_after_raise(after_with, 1, 1)
 
 if __name__ == '__main__':
     unittest.main()

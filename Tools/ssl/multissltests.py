@@ -35,7 +35,6 @@ except ImportError:
     from urllib2 import urlopen, HTTPError
 import re
 import shutil
-import string
 import subprocess
 import sys
 import tarfile
@@ -47,8 +46,8 @@ OPENSSL_OLD_VERSIONS = [
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "1.1.1k",
-    "3.0.0-alpha15"
+    "1.1.1t",
+    "3.0.8"
 ]
 
 LIBRESSL_OLD_VERSIONS = [
@@ -143,23 +142,6 @@ parser.add_argument(
     help="Keep original sources for debugging."
 )
 
-OPENSSL_FIPS_CNF = """\
-openssl_conf = openssl_init
-
-.include {self.install_dir}/ssl/fipsinstall.cnf
-# .include {self.install_dir}/ssl/openssl.cnf
-
-[openssl_init]
-providers = provider_sect
-
-[provider_sect]
-fips = fips_sect
-default = default_sect
-
-[default_sect]
-activate = 1
-"""
-
 
 class AbstractBuilder(object):
     library = None
@@ -170,8 +152,10 @@ class AbstractBuilder(object):
     install_target = 'install'
     jobs = os.cpu_count()
 
-    module_files = ("Modules/_ssl.c",
-                    "Modules/_hashopenssl.c")
+    module_files = (
+        os.path.join(PYTHONROOT, "Modules/_ssl.c"),
+        os.path.join(PYTHONROOT, "Modules/_hashopenssl.c"),
+    )
     module_libs = ("_ssl", "_hashlib")
 
     def __init__(self, version, args):
@@ -304,12 +288,12 @@ class AbstractBuilder(object):
         log.info("Unpacking files to {}".format(self.build_dir))
         tf.extractall(self.build_dir, members)
 
-    def _build_src(self):
+    def _build_src(self, config_args=()):
         """Now build openssl"""
         log.info("Running build in {}".format(self.build_dir))
         cwd = self.build_dir
         cmd = [
-            "./config",
+            "./config", *config_args,
             "shared", "--debug",
             "--prefix={}".format(self.install_dir)
         ]
@@ -374,7 +358,7 @@ class AbstractBuilder(object):
         env["LD_RUN_PATH"] = self.lib_dir
 
         log.info("Rebuilding Python modules")
-        cmd = [sys.executable, "setup.py", "build"]
+        cmd = ["make", "sharedmods", "checksharedmods"]
         self._subprocess_call(cmd, env=env)
         self.check_imports()
 
@@ -389,7 +373,11 @@ class AbstractBuilder(object):
 
     def run_python_tests(self, tests, network=True):
         if not tests:
-            cmd = [sys.executable, 'Lib/test/ssltests.py', '-j0']
+            cmd = [
+                sys.executable,
+                os.path.join(PYTHONROOT, 'Lib/test/ssltests.py'),
+                '-j0'
+            ]
         elif sys.version_info < (3, 3):
             cmd = [sys.executable, '-m', 'test.regrtest']
         else:
@@ -414,38 +402,26 @@ class BuildOpenSSL(AbstractBuilder):
     depend_target = 'depend'
 
     def _post_install(self):
-        if self.version.startswith("3.0"):
-            self._post_install_300()
+        if self.version.startswith("3."):
+            self._post_install_3xx()
 
-    def _post_install_300(self):
+    def _build_src(self, config_args=()):
+        if self.version.startswith("3."):
+            config_args += ("enable-fips",)
+        super()._build_src(config_args)
+
+    def _post_install_3xx(self):
         # create ssl/ subdir with example configs
+        # Install FIPS module
         self._subprocess_call(
-            ["make", "-j1", "install_ssldirs"],
+            ["make", "-j1", "install_ssldirs", "install_fips"],
             cwd=self.build_dir
         )
-        # Install FIPS module
-        # https://wiki.openssl.org/index.php/OpenSSL_3.0#Completing_the_installation_of_the_FIPS_Module
-        fipsinstall_cnf = os.path.join(
-            self.install_dir, "ssl", "fipsinstall.cnf"
-        )
-        openssl_fips_cnf = os.path.join(
-            self.install_dir, "ssl", "openssl-fips.cnf"
-        )
-        fips_mod = os.path.join(self.lib_dir, "ossl-modules/fips.so")
-        self._subprocess_call(
-            [
-                self.openssl_cli, "fipsinstall",
-                "-out", fipsinstall_cnf,
-                "-module", fips_mod,
-                # "-provider_name", "fips",
-                # "-mac_name", "HMAC",
-                # "-macopt", "digest:SHA256",
-                # "-macopt", "hexkey:00",
-                # "-section_name", "fips_sect"
-            ]
-        )
-        with open(openssl_fips_cnf, "w") as f:
-            f.write(OPENSSL_FIPS_CNF.format(self=self))
+        if not os.path.isdir(self.lib_dir):
+            # 3.0.0-beta2 uses lib64 on 64 bit platforms
+            lib64 = self.lib_dir + "64"
+            os.symlink(lib64, self.lib_dir)
+
     @property
     def short_version(self):
         """Short version for OpenSSL download URL"""
@@ -496,7 +472,7 @@ def main():
     start = datetime.now()
 
     if args.steps in {'modules', 'tests'}:
-        for name in ['setup.py', 'Modules/_ssl.c']:
+        for name in ['Makefile.pre.in', 'Modules/_ssl.c']:
             if not os.path.isfile(os.path.join(PYTHONROOT, name)):
                 parser.error(
                     "Must be executed from CPython build dir"

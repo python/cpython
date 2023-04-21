@@ -1,2 +1,0 @@
-Add a new :c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` type flag to disallow
-creating type instances. Patch by Victor Stinner.

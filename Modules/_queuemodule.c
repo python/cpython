@@ -1,3 +1,7 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
@@ -17,7 +21,7 @@ simplequeue_get_state(PyObject *module)
 }
 static struct PyModuleDef queuemodule;
 #define simplequeue_get_state_by_type(type) \
-    (simplequeue_get_state(_PyType_GetModuleByDef(type, &queuemodule)))
+    (simplequeue_get_state(PyType_GetModuleByDef(type, &queuemodule)))
 
 typedef struct {
     PyObject_HEAD
@@ -34,6 +38,13 @@ class _queue.SimpleQueue "simplequeueobject *" "simplequeue_get_state_by_type(ty
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=0a4023fe4d198c8d]*/
 
+static int
+simplequeue_clear(simplequeueobject *self)
+{
+    Py_CLEAR(self->lst);
+    return 0;
+}
+
 static void
 simplequeue_dealloc(simplequeueobject *self)
 {
@@ -46,7 +57,7 @@ simplequeue_dealloc(simplequeueobject *self)
             PyThread_release_lock(self->lock);
         PyThread_free_lock(self->lock);
     }
-    Py_XDECREF(self->lst);
+    (void)simplequeue_clear(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_TYPE(self)->tp_free(self);
@@ -57,6 +68,7 @@ static int
 simplequeue_traverse(simplequeueobject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->lst);
+    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
@@ -174,7 +186,7 @@ _queue.SimpleQueue.get
     cls: defining_class
     /
     block: bool = True
-    timeout: object = None
+    timeout as timeout_obj: object = None
 
 Remove and return an item from the queue.
 
@@ -190,11 +202,11 @@ in that case).
 
 static PyObject *
 _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
-                            int block, PyObject *timeout)
-/*[clinic end generated code: output=1969aefa7db63666 input=5fc4d56b9a54757e]*/
+                            int block, PyObject *timeout_obj)
+/*[clinic end generated code: output=5c2cca914cd1e55b input=5b4047bfbc645ec1]*/
 {
     _PyTime_t endtime = 0;
-    _PyTime_t timeout_val;
+    _PyTime_t timeout;
     PyObject *item;
     PyLockStatus r;
     PY_TIMEOUT_T microseconds;
@@ -203,24 +215,25 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
         /* Non-blocking */
         microseconds = 0;
     }
-    else if (timeout != Py_None) {
+    else if (timeout_obj != Py_None) {
         /* With timeout */
-        if (_PyTime_FromSecondsObject(&timeout_val,
-                                      timeout, _PyTime_ROUND_CEILING) < 0)
+        if (_PyTime_FromSecondsObject(&timeout,
+                                      timeout_obj, _PyTime_ROUND_CEILING) < 0) {
             return NULL;
-        if (timeout_val < 0) {
+        }
+        if (timeout < 0) {
             PyErr_SetString(PyExc_ValueError,
                             "'timeout' must be a non-negative number");
             return NULL;
         }
-        microseconds = _PyTime_AsMicroseconds(timeout_val,
+        microseconds = _PyTime_AsMicroseconds(timeout,
                                               _PyTime_ROUND_CEILING);
-        if (microseconds >= PY_TIMEOUT_MAX) {
+        if (microseconds > PY_TIMEOUT_MAX) {
             PyErr_SetString(PyExc_OverflowError,
                             "timeout value is too large");
             return NULL;
         }
-        endtime = _PyTime_GetMonotonicClock() + timeout_val;
+        endtime = _PyDeadline_Init(timeout);
     }
     else {
         /* Infinitely blocking */
@@ -239,6 +252,7 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
             r = PyThread_acquire_lock_timed(self->lock, microseconds, 1);
             Py_END_ALLOW_THREADS
         }
+
         if (r == PY_LOCK_INTR && Py_MakePendingCalls() < 0) {
             return NULL;
         }
@@ -250,12 +264,15 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
             return NULL;
         }
         self->locked = 1;
+
         /* Adjust timeout for next iteration (if any) */
-        if (endtime > 0) {
-            timeout_val = endtime - _PyTime_GetMonotonicClock();
-            microseconds = _PyTime_AsMicroseconds(timeout_val, _PyTime_ROUND_CEILING);
+        if (microseconds > 0) {
+            timeout = _PyDeadline_Get(endtime);
+            microseconds = _PyTime_AsMicroseconds(timeout,
+                                                  _PyTime_ROUND_CEILING);
         }
     }
+
     /* BEGIN GIL-protected critical section */
     assert(self->lst_pos < PyList_GET_SIZE(self->lst));
     item = simplequeue_pop_item(self);
@@ -348,7 +365,7 @@ static PyMethodDef simplequeue_methods[] = {
     _QUEUE_SIMPLEQUEUE_PUT_METHODDEF
     _QUEUE_SIMPLEQUEUE_PUT_NOWAIT_METHODDEF
     _QUEUE_SIMPLEQUEUE_QSIZE_METHODDEF
-    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,           NULL}              /* sentinel */
 };
@@ -362,6 +379,7 @@ static PyType_Slot simplequeue_slots[] = {
     {Py_tp_dealloc, simplequeue_dealloc},
     {Py_tp_doc, (void *)simplequeue_new__doc__},
     {Py_tp_traverse, simplequeue_traverse},
+    {Py_tp_clear, simplequeue_clear},
     {Py_tp_members, simplequeue_members},
     {Py_tp_methods, simplequeue_methods},
     {Py_tp_new, simplequeue_new},
@@ -371,7 +389,8 @@ static PyType_Slot simplequeue_slots[] = {
 static PyType_Spec simplequeue_spec = {
     .name = "_queue.SimpleQueue",
     .basicsize = sizeof(simplequeueobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = simplequeue_slots,
 };
 

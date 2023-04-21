@@ -8,13 +8,10 @@ import tempfile
 from importlib import resources
 
 
-
 __all__ = ["version", "bootstrap"]
-_PACKAGE_NAMES = ('setuptools', 'pip')
-_SETUPTOOLS_VERSION = "56.0.0"
-_PIP_VERSION = "21.1.1"
+_PACKAGE_NAMES = ('pip',)
+_PIP_VERSION = "23.0.1"
 _PROJECTS = [
-    ("setuptools", _SETUPTOOLS_VERSION, "py3"),
     ("pip", _PIP_VERSION, "py3"),
 ]
 
@@ -42,7 +39,7 @@ def _find_packages(path):
     # comparison since this case should not happen.
     filenames = sorted(filenames)
     for filename in filenames:
-        # filename is like 'pip-20.2.3-py2.py3-none-any.whl'
+        # filename is like 'pip-21.2.4-py3-none-any.whl'
         if not filename.endswith(".whl"):
             continue
         for name in _PACKAGE_NAMES:
@@ -52,7 +49,7 @@ def _find_packages(path):
         else:
             continue
 
-        # Extract '20.2.2' from 'pip-20.2.2-py2.py3-none-any.whl'
+        # Extract '21.2.4' from 'pip-21.2.4-py3-none-any.whl'
         version = filename.removeprefix(prefix).partition('-')[0]
         wheel_path = os.path.join(path, filename)
         packages[name] = _Package(version, None, wheel_path)
@@ -79,8 +76,8 @@ _PACKAGES = None
 
 
 def _run_pip(args, additional_paths=None):
-    # Run the bootstraping in a subprocess to avoid leaking any state that happens
-    # after pip has executed. Particulary, this avoids the case when pip holds onto
+    # Run the bootstrapping in a subprocess to avoid leaking any state that happens
+    # after pip has executed. Particularly, this avoids the case when pip holds onto
     # the files in *additional_paths*, preventing us to remove them at the end of the
     # invocation.
     code = f"""
@@ -90,8 +87,18 @@ sys.path = {additional_paths or []} + sys.path
 sys.argv[1:] = {args}
 runpy.run_module("pip", run_name="__main__", alter_sys=True)
 """
-    return subprocess.run([sys.executable, '-W', 'ignore::DeprecationWarning',
-                           "-c", code], check=True).returncode
+
+    cmd = [
+        sys.executable,
+        '-W',
+        'ignore::DeprecationWarning',
+        '-c',
+        code,
+    ]
+    if sys.flags.isolated:
+        # run code in isolated mode if currently running isolated
+        cmd.insert(1, '-I')
+    return subprocess.run(cmd, check=True).returncode
 
 
 def version():
@@ -144,17 +151,17 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
 
     _disable_pip_configuration_settings()
 
-    # By default, installing pip and setuptools installs all of the
+    # By default, installing pip installs all of the
     # following scripts (X.Y == running Python version):
     #
-    #   pip, pipX, pipX.Y, easy_install, easy_install-X.Y
+    #   pip, pipX, pipX.Y
     #
     # pip 1.5+ allows ensurepip to request that some of those be left out
     if altinstall:
-        # omit pip, pipX and easy_install
+        # omit pip, pipX
         os.environ["ENSUREPIP_OPTIONS"] = "altinstall"
     elif not default_pip:
-        # omit pip and easy_install
+        # omit pip
         os.environ["ENSUREPIP_OPTIONS"] = "install"
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -164,9 +171,9 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
         for name, package in _get_packages().items():
             if package.wheel_name:
                 # Use bundled wheel package
-                from ensurepip import _bundled
                 wheel_name = package.wheel_name
-                whl = resources.read_binary(_bundled, wheel_name)
+                wheel_path = resources.files("ensurepip") / "_bundled" / wheel_name
+                whl = wheel_path.read_bytes()
             else:
                 # Use the wheel package directory
                 with open(package.wheel_path, "rb") as fp:
@@ -262,14 +269,14 @@ def _main(argv=None):
         action="store_true",
         default=False,
         help=("Make an alternate install, installing only the X.Y versioned "
-              "scripts (Default: pipX, pipX.Y, easy_install-X.Y)."),
+              "scripts (Default: pipX, pipX.Y)."),
     )
     parser.add_argument(
         "--default-pip",
         action="store_true",
         default=False,
         help=("Make a default pip install, installing the unqualified pip "
-              "and easy_install in addition to the versioned scripts."),
+              "in addition to the versioned scripts."),
     )
 
     args = parser.parse_args(argv)

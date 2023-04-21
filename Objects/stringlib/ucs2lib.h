@@ -20,6 +20,11 @@
 #define STRINGLIB_NEW            _PyUnicode_FromUCS2
 #define STRINGLIB_CHECK          PyUnicode_Check
 #define STRINGLIB_CHECK_EXACT    PyUnicode_CheckExact
+#define STRINGLIB_MUTABLE 0
+#if SIZEOF_WCHAR_T == 2
+#define STRINGLIB_FAST_MEMCHR(s, c, n)              \
+    (Py_UCS2 *)wmemchr((const wchar_t *)(s), c, n)
+#endif
 
 #define STRINGLIB_TOSTR          PyObject_Str
 #define STRINGLIB_TOASCII        PyObject_ASCII

@@ -14,6 +14,7 @@ This module can be used to create the cached byte-code files at library
 installation time, which makes them available for use even by users who don't
 have write permission to the library directories.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Command-line use
 ----------------
@@ -166,9 +167,10 @@ Public functions
    If *force* is true, modules are re-compiled even if the timestamps are up to
    date.
 
-   If *rx* is given, its search method is called on the complete path to each
+   If *rx* is given, its ``search`` method is called on the complete path to each
    file considered for compilation, and if it returns a true value, the file
-   is skipped.
+   is skipped. This can be used to exclude files matching a regular expression,
+   given as a :ref:`re.Pattern <re-objects>` object.
 
    If *quiet* is ``False`` or ``0`` (the default), the filenames and other
    information are printed to standard out. Set to ``1``, only errors are
@@ -197,7 +199,7 @@ Public functions
 
    The *stripdir*, *prependdir* and *limit_sl_dest* arguments correspond to
    the ``-s``, ``-p`` and ``-e`` options described above.
-   They may be specified as ``str``, ``bytes`` or :py:class:`os.PathLike`.
+   They may be specified as ``str`` or :py:class:`os.PathLike`.
 
    If *hardlink_dupes* is true and two ``.pyc`` files with different optimization
    level have the same content, use hard links to consolidate duplicate files.
@@ -242,9 +244,10 @@ Public functions
    cases where the source file does not exist at the time the byte-code file is
    executed.
 
-   If *rx* is given, its search method is passed the full path name to the
+   If *rx* is given, its ``search`` method is passed the full path name to the
    file being compiled, and if it returns a true value, the file is not
-   compiled and ``True`` is returned.
+   compiled and ``True`` is returned. This can be used to exclude files matching
+   a regular expression, given as a :ref:`re.Pattern <re-objects>` object.
 
    If *quiet* is ``False`` or ``0`` (the default), the filenames and other
    information are printed to standard out. Set to ``1``, only errors are
@@ -266,7 +269,7 @@ Public functions
 
    The *stripdir*, *prependdir* and *limit_sl_dest* arguments correspond to
    the ``-s``, ``-p`` and ``-e`` options described above.
-   They may be specified as ``str``, ``bytes`` or :py:class:`os.PathLike`.
+   They may be specified as ``str`` or :py:class:`os.PathLike`.
 
    If *hardlink_dupes* is true and two ``.pyc`` files with different optimization
    level have the same content, use hard links to consolidate duplicate files.

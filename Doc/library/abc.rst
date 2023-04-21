@@ -21,7 +21,7 @@ The :mod:`collections` module has some concrete classes that derive from
 ABCs; these can, of course, be further derived. In addition, the
 :mod:`collections.abc` submodule has some ABCs that can be used to test whether
 a class or instance provides a particular interface, for example, if it is
-hashable or if it is a mapping.
+:term:`hashable` or if it is a mapping.
 
 
 This module provides the metaclass :class:`ABCMeta` for defining ABCs and
@@ -186,15 +186,15 @@ The :mod:`abc` module also provides the following decorator:
 
       class C(ABC):
           @abstractmethod
-          def my_abstract_method(self, ...):
+          def my_abstract_method(self, arg1):
               ...
           @classmethod
           @abstractmethod
-          def my_abstract_classmethod(cls, ...):
+          def my_abstract_classmethod(cls, arg2):
               ...
           @staticmethod
           @abstractmethod
-          def my_abstract_staticmethod(...):
+          def my_abstract_staticmethod(arg3):
               ...
 
           @property
@@ -255,7 +255,7 @@ The :mod:`abc` module also supports the following legacy decorators:
       class C(ABC):
           @classmethod
           @abstractmethod
-          def my_abstract_classmethod(cls, ...):
+          def my_abstract_classmethod(cls, arg):
               ...
 
 
@@ -276,7 +276,7 @@ The :mod:`abc` module also supports the following legacy decorators:
       class C(ABC):
           @staticmethod
           @abstractmethod
-          def my_abstract_staticmethod(...):
+          def my_abstract_staticmethod(arg):
               ...
 
 

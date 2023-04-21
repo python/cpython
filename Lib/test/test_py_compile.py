@@ -115,10 +115,10 @@ class PyCompileTestsBase:
         self.assertTrue(os.path.exists(self.pyc_path))
         self.assertFalse(os.path.exists(self.cache_path))
 
-    @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
-                     'non-root user required')
+    @os_helper.skip_if_dac_override
     @unittest.skipIf(os.name == 'nt',
                      'cannot control directory permissions on Windows')
+    @os_helper.skip_unless_working_chmod
     def test_exceptions_propagate(self):
         # Make sure that exceptions raised thanks to issues with writing
         # bytecode.
@@ -230,15 +230,17 @@ class PyCompileCLITestCase(unittest.TestCase):
     def tearDown(self):
         os_helper.rmtree(self.directory)
 
+    @support.requires_subprocess()
     def pycompilecmd(self, *args, **kwargs):
         # assert_python_* helpers don't return proc object. We'll just use
         # subprocess.run() instead of spawn_python() and its friends to test
         # stdin support of the CLI.
+        opts = '-m' if __debug__ else '-Om'
         if args and args[0] == '-' and 'input' in kwargs:
-            return subprocess.run([sys.executable, '-m', 'py_compile', '-'],
+            return subprocess.run([sys.executable, opts, 'py_compile', '-'],
                                   input=kwargs['input'].encode(),
                                   capture_output=True)
-        return script_helper.assert_python_ok('-m', 'py_compile', *args, **kwargs)
+        return script_helper.assert_python_ok(opts, 'py_compile', *args, **kwargs)
 
     def pycompilecmd_failure(self, *args):
         return script_helper.assert_python_failure('-m', 'py_compile', *args)
@@ -276,7 +278,7 @@ class PyCompileCLITestCase(unittest.TestCase):
         rc, stdout, stderr = self.pycompilecmd_failure(self.source_path, should_not_exists)
         self.assertEqual(rc, 1)
         self.assertEqual(stdout, b'')
-        self.assertIn(b'No such file or directory', stderr)
+        self.assertIn(b'no such file or directory', stderr.lower())
 
     def test_file_not_exists_with_quiet(self):
         should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')

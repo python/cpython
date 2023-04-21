@@ -1,3 +1,0 @@
-The :mod:`multiprocessing` ``Server`` class now explicitly catchs
-:exc:`SystemExit` and closes the client connection in this case. It happens
-when the ``Server.serve_client()`` method reachs the end of file (EOF).

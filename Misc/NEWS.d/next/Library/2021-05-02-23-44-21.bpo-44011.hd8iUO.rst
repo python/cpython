@@ -1,2 +1,0 @@
-Reimplement SSL/TLS support in asyncio, borrow the impelementation from
-uvloop library.

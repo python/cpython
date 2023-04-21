@@ -1,3 +1,5 @@
+.. _mod-weakref:
+
 :mod:`weakref` --- Weak references
 ==================================
 
@@ -63,9 +65,9 @@ or :class:`finalize` is all they need -- it's not usually necessary to
 create your own weak references directly.  The low-level machinery is
 exposed by the :mod:`weakref` module for the benefit of advanced uses.
 
-Not all objects can be weakly referenced; those objects which can include class
-instances, functions written in Python (but not in C), instance methods, sets,
-frozensets, some :term:`file objects <file object>`, :term:`generators <generator>`,
+Not all objects can be weakly referenced. Objects which support weak references
+include class instances, functions written in Python (but not in C), instance methods,
+sets, frozensets, some :term:`file objects <file object>`, :term:`generators <generator>`,
 type objects, sockets, arrays, deques, regular expression pattern objects, and code
 objects.
 
@@ -88,6 +90,10 @@ support weak references but can add support through subclassing::
 Extension types can easily be made to support weak references; see
 :ref:`weakref-support`.
 
+When ``__slots__`` are defined for a given type, weak reference support is
+disabled unless a ``'__weakref__'`` string is also present in the sequence of
+strings in the ``__slots__`` declaration.
+See :ref:`__slots__ documentation <slots>` for details.
 
 .. class:: ref(object[, callback])
 
@@ -137,8 +143,11 @@ Extension types can easily be made to support weak references; see
    ``ProxyType`` or ``CallableProxyType``, depending on whether *object* is
    callable.  Proxy objects are not :term:`hashable` regardless of the referent; this
    avoids a number of problems related to their fundamentally mutable nature, and
-   prevent their use as dictionary keys.  *callback* is the same as the parameter
+   prevents their use as dictionary keys.  *callback* is the same as the parameter
    of the same name to the :func:`ref` function.
+
+   Accessing an attribute of the proxy object after the referent is
+   garbage collected raises :exc:`ReferenceError`.
 
    .. versionchanged:: 3.8
       Extended the operator support on proxy objects to include the matrix
@@ -162,6 +171,30 @@ Extension types can easily be made to support weak references; see
    used to associate additional data with an object owned by other parts of an
    application without adding attributes to those objects.  This can be especially
    useful with objects that override attribute accesses.
+
+   Note that when a key with equal value to an existing key (but not equal identity)
+   is inserted into the dictionary, it replaces the value but does not replace the
+   existing key. Due to this, when the reference to the original key is deleted, it
+   also deletes the entry in the dictionary::
+
+      >>> class T(str): pass
+      ...
+      >>> k1, k2 = T(), T()
+      >>> d = weakref.WeakKeyDictionary()
+      >>> d[k1] = 1   # d = {k1: 1}
+      >>> d[k2] = 2   # d = {k1: 2}
+      >>> del k1      # d = {}
+
+   A workaround would be to remove the key prior to reassignment::
+
+      >>> class T(str): pass
+      ...
+      >>> k1, k2 = T(), T()
+      >>> d = weakref.WeakKeyDictionary()
+      >>> d[k1] = 1   # d = {k1: 1}
+      >>> del d[k1]
+      >>> d[k2] = 2   # d = {k2: 2}
+      >>> del k1      # d = {k2: 2}
 
    .. versionchanged:: 3.9
       Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
@@ -203,7 +236,7 @@ objects.
    discarded when no strong reference to it exists any more.
 
 
-.. class:: WeakMethod(method)
+.. class:: WeakMethod(method[, callback])
 
    A custom :class:`ref` subclass which simulates a weak reference to a bound
    method (i.e., a method defined on a class and looked up on an instance).
@@ -228,6 +261,8 @@ objects.
       0
       >>> r()
       >>>
+
+   *callback* is the same as the parameter of the same name to the :func:`ref` function.
 
    .. versionadded:: 3.4
 

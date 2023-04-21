@@ -1,1 +1,0 @@
-Build SQLite with ``SQLITE_OMIT_AUTOINIT`` on macOS. Patch by Erlend E. Aasland.

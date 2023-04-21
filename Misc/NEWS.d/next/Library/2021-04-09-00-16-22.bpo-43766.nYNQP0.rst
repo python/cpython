@@ -1,2 +1,0 @@
-Implement :pep:`647` in the :mod:`typing` module by adding
-:data:`TypeGuard`.

@@ -107,8 +107,11 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         protocol's connection_lost() method will (eventually) called
         with None as its argument.
         """
-        self._closed = True
-        self._ssl_protocol._start_shutdown()
+        if not self._closed:
+            self._closed = True
+            self._ssl_protocol._start_shutdown()
+        else:
+            self._ssl_protocol = None
 
     def __del__(self, _warnings=warnings):
         if not self._closed:

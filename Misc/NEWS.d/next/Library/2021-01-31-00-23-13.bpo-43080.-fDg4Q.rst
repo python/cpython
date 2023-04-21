@@ -1,1 +1,0 @@
-:mod:`pprint` now has support for :class:`dataclasses.dataclass`. Patch by Lewis Gaul.

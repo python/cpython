@@ -446,7 +446,7 @@ In ``importlib.metadata``: -  ``EntryPoint`` objects now expose a ``.dist``
 object referencing the ``Distribution`` when constructed from a
 ``Distribution``. - Add support for package discovery under package
 normalization rules. - The object returned by ``metadata()`` now has a
-formally-defined protocol called ``PackageMetadata`` with declared support
+formally defined protocol called ``PackageMetadata`` with declared support
 for the ``.get_all()`` method. - Synced with importlib_metadata 3.3.
 
 ..
@@ -767,7 +767,7 @@ results. Patch by Ammar Askar.
 .. nonce: -7-XGz
 .. section: Tests
 
-Update test_nntplib to use offical group name of news.aioe.org for testing.
+Update test_nntplib to use official group name of news.aioe.org for testing.
 Patch by Dong-hee Na.
 
 ..
@@ -786,7 +786,7 @@ Skip some asyncio tests on VxWorks.
 .. nonce: uzwlF_
 .. section: Tests
 
-Enhance ``test_select.test_select()``: it now takes 500 ms rather than 10
+Enhance ``test_select.test_select()``: it now takes 500 milliseconds rather than 10
 seconds. Use Python rather than a shell to make the test more portable.
 
 ..
@@ -863,7 +863,7 @@ and Peixing Xin.
 
 Now all platforms use a value for the "EXT_SUFFIX" build variable derived
 from SOABI (for instance in freeBSD, "EXT_SUFFIX" is now ".cpython-310d.so"
-instead of ".so"). Previosuly only Linux, Mac and VxWorks were using a value
+instead of ".so"). Previously only Linux, Mac and VxWorks were using a value
 for "EXT_SUFFIX" that included "SOABI".
 
 ..

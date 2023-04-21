@@ -44,7 +44,7 @@ Number Protocol
 .. c:function:: PyObject* PyNumber_FloorDivide(PyObject *o1, PyObject *o2)
 
    Return the floor of *o1* divided by *o2*, or ``NULL`` on failure.  This is
-   equivalent to the "classic" division of integers.
+   the equivalent of the Python expression ``o1 // o2``.
 
 
 .. c:function:: PyObject* PyNumber_TrueDivide(PyObject *o1, PyObject *o2)
@@ -53,7 +53,7 @@ Number Protocol
    *o2*, or ``NULL`` on failure.  The return value is "approximate" because binary
    floating point numbers are approximate; it is not possible to represent all real
    numbers in base two.  This function can return a floating point value when
-   passed two integers.
+   passed two integers.  This is the equivalent of the Python expression ``o1 / o2``.
 
 
 .. c:function:: PyObject* PyNumber_Remainder(PyObject *o1, PyObject *o2)
@@ -180,6 +180,7 @@ Number Protocol
    floating point numbers are approximate; it is not possible to represent all real
    numbers in base two.  This function can return a floating point value when
    passed two integers.  The operation is done *in-place* when *o1* supports it.
+   This is the equivalent of the Python statement ``o1 /= o2``.
 
 
 .. c:function:: PyObject* PyNumber_InPlaceRemainder(PyObject *o1, PyObject *o2)
@@ -272,11 +273,11 @@ Number Protocol
 
 .. c:function:: Py_ssize_t PyNumber_AsSsize_t(PyObject *o, PyObject *exc)
 
-   Returns *o* converted to a Py_ssize_t value if *o* can be interpreted as an
+   Returns *o* converted to a :c:type:`Py_ssize_t` value if *o* can be interpreted as an
    integer.  If the call fails, an exception is raised and ``-1`` is returned.
 
    If *o* can be converted to a Python int but the attempt to
-   convert to a Py_ssize_t value would raise an :exc:`OverflowError`, then the
+   convert to a :c:type:`Py_ssize_t` value would raise an :exc:`OverflowError`, then the
    *exc* argument is the type of exception that will be raised (usually
    :exc:`IndexError` or :exc:`OverflowError`).  If *exc* is ``NULL``, then the
    exception is cleared and the value is clipped to ``PY_SSIZE_T_MIN`` for a negative
@@ -285,6 +286,6 @@ Number Protocol
 
 .. c:function:: int PyIndex_Check(PyObject *o)
 
-   Returns ``1`` if *o* is an index integer (has the nb_index slot of  the
-   tp_as_number structure filled in), and ``0`` otherwise.
+   Returns ``1`` if *o* is an index integer (has the ``nb_index`` slot of the
+   ``tp_as_number`` structure filled in), and ``0`` otherwise.
    This function always succeeds.
