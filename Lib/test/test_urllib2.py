@@ -3,6 +3,7 @@ from test import support
 from test.support import os_helper
 from test.support import warnings_helper
 from test import test_urllib
+from unittest import mock
 
 import os
 import io
@@ -483,6 +484,7 @@ def build_test_opener(*handler_instances):
         opener.add_handler(h)
     return opener
 
+
 class MockHTTPHandler(urllib.request.HTTPHandler):
     # Very simple mock HTTP handler with no special behavior other than using a mock HTTP connection
 
@@ -492,6 +494,7 @@ class MockHTTPHandler(urllib.request.HTTPHandler):
 
     def http_open(self, req):
         return self.do_open(self.httpconn, req)
+
 
 class MockHTTPHandlerRedirect(urllib.request.BaseHandler):
     # useful for testing redirections and auth
@@ -1058,34 +1061,34 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(int(newreq.get_header('Content-length')),16)
 
     def test_http_handler_global_debuglevel(self):
-        http.client.HTTPConnection.debuglevel = 1
-        o = OpenerDirector()
-        h = MockHTTPHandler()
-        o.add_handler(h)
-        o.open("http://www.example.com")
-        self.assertEqual(h._debuglevel, 1)
+        with mock.patch.object(http.client.HTTPConnection, 'debuglevel', 6):
+            o = OpenerDirector()
+            h = MockHTTPHandler()
+            o.add_handler(h)
+            o.open("http://www.example.com")
+            self.assertEqual(h._debuglevel, 6)
 
     def test_http_handler_local_debuglevel(self):
         o = OpenerDirector()
-        h = MockHTTPHandler(debuglevel=1)
+        h = MockHTTPHandler(debuglevel=5)
         o.add_handler(h)
         o.open("http://www.example.com")
-        self.assertEqual(h._debuglevel, 1)
+        self.assertEqual(h._debuglevel, 5)
 
     def test_https_handler_global_debuglevel(self):
-        http.client.HTTPSConnection.debuglevel = 1
-        o = OpenerDirector()
-        h = MockHTTPSHandler()
-        o.add_handler(h)
-        o.open("https://www.example.com")
-        self.assertEqual(h._debuglevel, 1)
+        with mock.patch.object(http.client.HTTPSConnection, 'debuglevel', 7):
+            o = OpenerDirector()
+            h = MockHTTPSHandler()
+            o.add_handler(h)
+            o.open("https://www.example.com")
+            self.assertEqual(h._debuglevel, 7)
 
     def test_https_handler_local_debuglevel(self):
         o = OpenerDirector()
-        h = MockHTTPSHandler(debuglevel=1)
+        h = MockHTTPSHandler(debuglevel=4)
         o.add_handler(h)
         o.open("https://www.example.com")
-        self.assertEqual(h._debuglevel, 1)
+        self.assertEqual(h._debuglevel, 4)
 
     def test_http_doubleslash(self):
         # Checks the presence of any unnecessary double slash in url does not
