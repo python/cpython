@@ -237,7 +237,7 @@ static PyModuleDef_Slot _testcppext_slots[] = {
 PyDoc_STRVAR(_testcppext_doc, "C++ test extension.");
 
 static struct PyModuleDef _testcppext_module = {
-    PyModuleDef_HEAD_INIT,
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = STR(NAME),
     .m_doc = _testcppext_doc,
     .m_size = 0,

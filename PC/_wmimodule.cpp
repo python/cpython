@@ -308,7 +308,7 @@ static PyMethodDef wmi_functions[] = {
 };
 
 static PyModuleDef wmi_def = {
-    PyModuleDef_HEAD_INIT,
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_wmi",
     .m_doc = _Py_NULL,
     .m_size = 0,
