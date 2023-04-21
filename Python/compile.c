@@ -2211,7 +2211,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         if (!typeparams_name) {
             return ERROR;
         }
-        if (compiler_enter_scope(c, typeparams_name, scope_type,
+        if (compiler_enter_scope(c, typeparams_name, COMPILER_SCOPE_FUNCTION,
                                  (void *)typeparams, firstlineno) == -1) {
             Py_DECREF(typeparams_name);
             return ERROR;

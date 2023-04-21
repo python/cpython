@@ -1488,11 +1488,42 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.AsyncFunctionDef.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr,
                                 s->v.AsyncFunctionDef.args->kw_defaults);
+        if (s->v.AsyncFunctionDef.decorator_list)
+            VISIT_SEQ(st, expr, s->v.AsyncFunctionDef.decorator_list);
+        if (s->v.AsyncFunctionDef.typeparams) {
+            if (!symtable_enter_block(st, s->v.AsyncFunctionDef.name,
+                                      FunctionBlock, (void *)s->v.AsyncFunctionDef.typeparams,
+                                      LOCATION(s))) {
+                VISIT_QUIT(st, 0);
+            }
+            if (s->v.AsyncFunctionDef.args->defaults) {
+                PyObject *defaults_name = PyUnicode_FromString(".defaults");
+                if (defaults_name == NULL) {
+                    VISIT_QUIT(st, 0);
+                }
+                if (!symtable_add_def(st, defaults_name, DEF_PARAM, LOCATION(s))) {
+                    Py_DECREF(defaults_name);
+                    VISIT_QUIT(st, 0);
+                }
+                Py_DECREF(defaults_name);
+            }
+            if (has_kwonlydefaults(s->v.AsyncFunctionDef.args->kwonlyargs,
+                                   s->v.AsyncFunctionDef.args->kw_defaults)) {
+                PyObject *kwonly_name = PyUnicode_FromString(".kwonlydefaults");
+                if (kwonly_name == NULL) {
+                    VISIT_QUIT(st, 0);
+                }
+                if (!symtable_add_def(st, kwonly_name, DEF_PARAM, LOCATION(s))) {
+                    Py_DECREF(kwonly_name);
+                    VISIT_QUIT(st, 0);
+                }
+                Py_DECREF(kwonly_name);
+            }
+            VISIT_SEQ(st, typeparam, s->v.AsyncFunctionDef.typeparams);
+        }
         if (!symtable_visit_annotations(st, s, s->v.AsyncFunctionDef.args,
                                         s->v.AsyncFunctionDef.returns))
             VISIT_QUIT(st, 0);
-        if (s->v.AsyncFunctionDef.decorator_list)
-            VISIT_SEQ(st, expr, s->v.AsyncFunctionDef.decorator_list);
         if (!symtable_enter_block(st, s->v.AsyncFunctionDef.name,
                                   FunctionBlock, (void *)s,
                                   s->lineno, s->col_offset,
@@ -1503,6 +1534,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT_SEQ(st, stmt, s->v.AsyncFunctionDef.body);
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
+        if (s->v.AsyncFunctionDef.typeparams) {
+            if (!symtable_exit_block(st))
+                VISIT_QUIT(st, 0);
+        }
         break;
     case AsyncWith_kind:
         VISIT_SEQ(st, withitem, s->v.AsyncWith.items);
