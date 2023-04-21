@@ -47,7 +47,7 @@ class WidgetRedirector:
         tk.createcommand(w, self.dispatch)
 
     def __repr__(self):
-        return "%s(%s<%s>)" % (self.__class__.__name__,
+        return "{}({}<{}>)".format(self.__class__.__name__,
                                self.widget.__class__.__name__,
                                self.widget._w)
 
@@ -143,7 +143,7 @@ class OriginalCommand:
         self.orig_and_operation = (redir.orig, operation)
 
     def __repr__(self):
-        return "%s(%r, %r)" % (self.__class__.__name__,
+        return "{}({!r}, {!r})".format(self.__class__.__name__,
                                self.redir, self.operation)
 
     def __call__(self, *args):
