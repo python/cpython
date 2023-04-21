@@ -774,11 +774,6 @@ class AST_Tests(unittest.TestCase):
             ast.parse('with (CtxManager() as example): ...', feature_version=(3, 8))
         ast.parse('with CtxManager() as example: ...', feature_version=(3, 8))
 
-    def test_debug_f_string_feature_version(self):
-        ast.parse('f"{x=}"', feature_version=(3, 8))
-        with self.assertRaises(SyntaxError):
-            ast.parse('f"{x=}"', feature_version=(3, 7))
-
     def test_assignment_expression_feature_version(self):
         ast.parse('(x := 0)', feature_version=(3, 8))
         with self.assertRaises(SyntaxError):

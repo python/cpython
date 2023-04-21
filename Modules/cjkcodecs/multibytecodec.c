@@ -67,7 +67,7 @@ typedef struct {
 static char *incnewkwarglist[] = {"errors", NULL};
 static char *streamkwarglist[] = {"stream", "errors", NULL};
 
-static PyObject *multibytecodec_encode(MultibyteCodec *,
+static PyObject *multibytecodec_encode(const MultibyteCodec *,
                 MultibyteCodec_State *, PyObject *, Py_ssize_t *,
                 PyObject *, int);
 
@@ -221,7 +221,7 @@ expand_encodebuffer(MultibyteEncodeBuffer *buf, Py_ssize_t esize)
  */
 
 static int
-multibytecodec_encerror(MultibyteCodec *codec,
+multibytecodec_encerror(const MultibyteCodec *codec,
                         MultibyteCodec_State *state,
                         MultibyteEncodeBuffer *buf,
                         PyObject *errors, Py_ssize_t e)
@@ -375,7 +375,7 @@ errorexit:
 }
 
 static int
-multibytecodec_decerror(MultibyteCodec *codec,
+multibytecodec_decerror(const MultibyteCodec *codec,
                         MultibyteCodec_State *state,
                         MultibyteDecodeBuffer *buf,
                         PyObject *errors, Py_ssize_t e)
@@ -479,7 +479,7 @@ errorexit:
 }
 
 static PyObject *
-multibytecodec_encode(MultibyteCodec *codec,
+multibytecodec_encode(const MultibyteCodec *codec,
                       MultibyteCodec_State *state,
                       PyObject *text, Py_ssize_t *inpos_t,
                       PyObject *errors, int flags)
@@ -720,9 +720,17 @@ static struct PyMethodDef multibytecodec_methods[] = {
 };
 
 static int
-multibytecodec_traverse(PyObject *self, visitproc visit, void *arg)
+multibytecodec_clear(MultibyteCodecObject *self)
+{
+    Py_CLEAR(self->cjk_module);
+    return 0;
+}
+
+static int
+multibytecodec_traverse(MultibyteCodecObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->cjk_module);
     return 0;
 }
 
@@ -731,6 +739,7 @@ multibytecodec_dealloc(MultibyteCodecObject *self)
 {
     PyObject_GC_UnTrack(self);
     PyTypeObject *tp = Py_TYPE(self);
+    (void)multibytecodec_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -740,6 +749,7 @@ static PyType_Slot multibytecodec_slots[] = {
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_methods, multibytecodec_methods},
     {Py_tp_traverse, multibytecodec_traverse},
+    {Py_tp_clear, multibytecodec_clear},
     {0, NULL},
 };
 
@@ -1953,14 +1963,14 @@ _multibytecodec___create_codec(PyObject *module, PyObject *arg)
 /*[clinic end generated code: output=cfa3dce8260e809d input=6840b2a6b183fcfa]*/
 {
     MultibyteCodecObject *self;
-    MultibyteCodec *codec;
 
-    if (!PyCapsule_IsValid(arg, PyMultibyteCodec_CAPSULE_NAME)) {
+    if (!PyCapsule_IsValid(arg, CODEC_CAPSULE)) {
         PyErr_SetString(PyExc_ValueError, "argument type invalid");
         return NULL;
     }
 
-    codec = PyCapsule_GetPointer(arg, PyMultibyteCodec_CAPSULE_NAME);
+    codec_capsule *data = PyCapsule_GetPointer(arg, CODEC_CAPSULE);
+    const MultibyteCodec *codec = data->codec;
     if (codec->codecinit != NULL && codec->codecinit(codec->config) != 0)
         return NULL;
 
@@ -1969,6 +1979,7 @@ _multibytecodec___create_codec(PyObject *module, PyObject *arg)
     if (self == NULL)
         return NULL;
     self->codec = codec;
+    self->cjk_module = Py_NewRef(data->cjk_module);
 
     PyObject_GC_Track(self);
     return (PyObject *)self;
