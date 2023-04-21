@@ -78,9 +78,8 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_symbols = NULL;
     ste->ste_varnames = NULL;
     ste->ste_children = NULL;
-    ste->ste_current_typeparam_overlay = NULL;
-    ste->ste_typeparam_overlays = NULL;
-    ste->ste_parent_typeparam_overlay = NULL;
+    ste->ste_num_typeparam_scopes = 0;
+    ste->ste_active_typeparam_scope = 0;
 
     ste->ste_directives = NULL;
 
@@ -144,9 +143,6 @@ ste_dealloc(PySTEntryObject *ste)
     Py_XDECREF(ste->ste_varnames);
     Py_XDECREF(ste->ste_children);
     Py_XDECREF(ste->ste_directives);
-    Py_XDECREF(ste->ste_typeparam_overlays);
-    Py_XDECREF(ste->ste_current_typeparam_overlay);
-    Py_XDECREF(ste->ste_parent_typeparam_overlay);
     PyObject_Free(ste);
 }
 
@@ -392,19 +388,24 @@ PySymtable_Lookup(struct symtable *st, void *key)
     return (PySTEntryObject *)Py_XNewRef(v);
 }
 
+PyObject *
+_PyST_MangleTypeParam(PySTEntryObject *ste, PyObject *name)
+{
+    return PyUnicode_FromFormat("%d.%U", ste->ste_active_typeparam_scope, name);
+}
+
 long
 _PyST_GetSymbol(PySTEntryObject *ste, PyObject *name)
 {
     PyObject *v = NULL;
-    if (ste->ste_current_typeparam_overlay) {
-        assert(ste->ste_typeparam_overlays != NULL);
-        PyObject *inner_ste = PyDict_GetItemWithError(ste->ste_typeparam_overlays,
-                                                      ste->ste_current_typeparam_overlay);
-        if (inner_ste == NULL) {
+    if (ste->ste_active_typeparam_scope) {
+        PyObject *mangled = _PyST_MangleTypeParam(ste, name);
+        if (mangled == NULL) {
             assert(PyErr_Occurred());
             return 0;
         }
-        v = PyDict_GetItemWithError(((PySTEntryObject *)inner_ste)->ste_symbols, name);
+        v = PyDict_GetItemWithError(ste->ste_symbols, mangled);
+        Py_DECREF(mangled);
         assert(!PyErr_Occurred());
     }
     if (v == NULL) {
@@ -640,8 +641,7 @@ drop_class_free(PySTEntryObject *ste, PyObject *free)
  * All arguments are dicts.  Modifies symbols, others are read-only.
 */
 static int
-update_symbols(PyObject *symbols, PySTEntryObject *parent_typeparam_overlay,
-               PyObject *scopes,
+update_symbols(PyObject *symbols, PyObject *scopes,
                PyObject *bound, PyObject *free, int classflag)
 {
     PyObject *name = NULL, *itr = NULL;
@@ -666,25 +666,6 @@ update_symbols(PyObject *symbols, PySTEntryObject *parent_typeparam_overlay,
         }
         Py_DECREF(v_new);
     }
-    // if (parent_typeparam_overlay) {
-    //     while (PyDict_Next(parent_typeparam_overlay->ste_symbols, &pos, &name, &v)) {
-    //         long scope, flags;
-    //         assert(PyLong_Check(v));
-    //         flags = PyLong_AS_LONG(v);
-    //         v_scope = PyDict_GetItemWithError(scopes, name);
-    //         assert(v_scope && PyLong_Check(v_scope));
-    //         scope = PyLong_AS_LONG(v_scope);
-    //         flags |= (scope << SCOPE_OFFSET);
-    //         v_new = PyLong_FromLong(flags);
-    //         if (!v_new)
-    //             return 0;
-    //         if (PyDict_SetItem(symbols, name, v_new) < 0) {
-    //             Py_DECREF(v_new);
-    //             return 0;
-    //         }
-    //         Py_DECREF(v_new);
-    //     }
-    // }
 
     /* Record not yet resolved free variables from children (if any) */
     v_free = PyLong_FromLong(FREE << SCOPE_OFFSET);
@@ -879,26 +860,9 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         PySTEntryObject* entry;
         assert(c && PySTEntry_Check(c));
         entry = (PySTEntryObject*)c;
-        if (entry->ste_parent_typeparam_overlay) {
-            assert(newbound_with_type_params == NULL);
-            newbound_with_type_params = PySet_New(newbound);
-            Py_ssize_t pos = 0;
-            PyObject *name;
-            while (PyDict_Next(entry->ste_parent_typeparam_overlay->ste_symbols, &pos, &name, NULL)) {
-                if (PySet_Add(newbound_with_type_params, name) < 0) {
-                    goto error;
-                }
-            }
-            if (!analyze_child_block(entry, newbound_with_type_params, newfree, newglobal,
-                                    allfree))
-                goto error;
-            Py_CLEAR(newbound_with_type_params);
-        }
-        else {
-            if (!analyze_child_block(entry, newbound, newfree, newglobal,
-                                    allfree))
-                goto error;
-        }
+        if (!analyze_child_block(entry, newbound, newfree, newglobal,
+                                allfree))
+            goto error;
         /* Check if any children have free variables */
         if (entry->ste_free || entry->ste_child_free)
             ste->ste_child_free = 1;
@@ -915,8 +879,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     else if (ste->ste_type == ClassBlock && !drop_class_free(ste, newfree))
         goto error;
     /* Records the results of the analysis in the symbol table entry */
-    if (!update_symbols(ste->ste_symbols, ste->ste_parent_typeparam_overlay,
-                        scopes, bound, newfree,
+    if (!update_symbols(ste->ste_symbols, scopes, bound, newfree,
                         ste->ste_type == ClassBlock))
         goto error;
 
@@ -955,16 +918,6 @@ analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
     temp_bound = PySet_New(bound);
     if (!temp_bound)
         goto error;
-    if (entry->ste_parent_typeparam_overlay) {
-        PySTEntryObject *inner_ste = entry->ste_parent_typeparam_overlay;
-        PyObject *name;
-        Py_ssize_t pos = 0;
-        while (PyDict_Next(inner_ste->ste_symbols, &pos, &name, NULL)) {
-            if (PySet_Add(temp_bound, name) < 0) {
-                goto error;
-            }
-        }
-    }
     temp_free = PySet_New(free);
     if (!temp_free)
         goto error;
@@ -1030,44 +983,17 @@ symtable_exit_block(struct symtable *st)
     return 1;
 }
 
-static PySTEntryObject *
-symtable_enter_typeparam_overlay(struct symtable *st, identifier name,
-                                 void *ast, int lineno, int col_offset,
-                                 int end_lineno, int end_col_offset)
+static void
+symtable_enter_typeparam_overlay(struct symtable *st)
 {
-    PySTEntryObject *ste = ste_new(st, name, TypeParamBlock, ast, lineno, col_offset,
-                                   end_lineno, end_col_offset);
-    if (ste == NULL) {
-        return NULL;
-    }
-    PyObject *key = PyLong_FromVoidPtr(ast);
-    if (key == NULL) {
-        Py_DECREF(ste);
-        return NULL;
-    }
     struct _symtable_entry *cur = st->st_cur;
-    cur->ste_current_typeparam_overlay = Py_NewRef(key);
-    if (cur->ste_typeparam_overlays == NULL) {
-        cur->ste_typeparam_overlays = PyDict_New();
-        if (cur->ste_typeparam_overlays == NULL) {
-            Py_DECREF(key);
-            Py_DECREF(ste);
-            return NULL;
-        }
-    }
-    if (PyDict_SetItem(cur->ste_typeparam_overlays, key, (PyObject *)ste) < 0) {
-        Py_DECREF(key);
-        Py_DECREF(ste);
-        return NULL;
-    }
-    Py_DECREF(key);
-    Py_DECREF(ste);
-    return ste;
+    cur->ste_num_typeparam_scopes += 1;
+    cur->ste_active_typeparam_scope = cur->ste_num_typeparam_scopes;
 }
 
-static int symtable_leave_typeparam_overlay(struct symtable *st) {
-    Py_CLEAR(st->st_cur->ste_current_typeparam_overlay);
-    return 1;
+static void
+symtable_leave_typeparam_overlay(struct symtable *st) {
+    st->st_cur->ste_active_typeparam_scope = 0;
 }
 
 static int
@@ -1129,21 +1055,14 @@ static int
 symtable_add_typeparam(struct symtable *st, PyObject *name,
                        int lineno, int col_offset, int end_lineno, int end_col_offset)
 {
-    PyObject *typeparams;
-    PyObject *current;
-    if (!(typeparams = PyDict_GetItemWithError(st->st_cur->ste_typeparam_overlays,
-                                               st->st_cur->ste_current_typeparam_overlay))) {
-        if (PyErr_Occurred()) {
-            return 0;
-        }
-        else {
-            PyErr_SetString(PyExc_SystemError, "Invalid typeparam overlay");
-            return 0;
-        }
+    struct _symtable_entry *ste = st->st_cur;
+    assert(ste->ste_active_typeparam_scope != 0);
+    PyObject *mangled = _PyST_MangleTypeParam(ste, name);
+    if (mangled == NULL) {
+        return 0;
     }
-    assert(Py_IS_TYPE(typeparams, &PySTEntry_Type));
-    struct _symtable_entry *ste = (struct _symtable_entry *)typeparams;
     PyObject *dict = ste->ste_symbols;
+    PyObject *current;
     if ((current = PyDict_GetItemWithError(dict, name))) {
         PyErr_Format(PyExc_SyntaxError, "duplicate type parameter '%U'", name);
         PyErr_RangedSyntaxLocationObject(st->st_filename,
@@ -1154,7 +1073,7 @@ symtable_add_typeparam(struct symtable *st, PyObject *name,
     else if (PyErr_Occurred()) {
         return 0;
     }
-    PyObject *flags = PyLong_FromLong(LOCAL << SCOPE_OFFSET);
+    PyObject *flags = PyLong_FromLong(CELL << SCOPE_OFFSET);
     if (flags == NULL) {
         return 0;
     }
@@ -1350,14 +1269,8 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_SEQ_WITH_NULL(st, expr, s->v.FunctionDef.args->kw_defaults);
         if (s->v.FunctionDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
-        PySTEntryObject *ste = NULL;
         if (s->v.FunctionDef.typeparams) {
-            ste = symtable_enter_typeparam_overlay(st, s->v.FunctionDef.name,
-                                                   (void *)s->v.FunctionDef.typeparams,
-                                                   LOCATION(s));
-            if (ste == NULL) {
-                VISIT_QUIT(st, 0);
-            }
+            symtable_enter_typeparam_overlay(st);
             VISIT_SEQ(st, typeparam, s->v.FunctionDef.typeparams);
         }
         if (!symtable_visit_annotations(st, s, s->v.FunctionDef.args,
@@ -1367,28 +1280,12 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                   FunctionBlock, (void *)s,
                                   LOCATION(s)))
             VISIT_QUIT(st, 0);
-        if (ste != NULL) {
-            Py_INCREF(ste);
-            st->st_cur->ste_parent_typeparam_overlay = ste;
-            // Py_ssize_t pos = 0;
-            // PyObject *name;
-            // PyObject *cell_v = PyLong_FromLong(CELL << SCOPE_OFFSET);
-            // if (cell_v == NULL) {
-            //     VISIT_QUIT(st, 0);
-            // }
-            // while (PyDict_Next(ste->ste_symbols, &pos, &name, NULL)) {
-            //     if (PyDict_SetItem(st->st_cur->ste_symbols, name, cell_v) < 0) {
-            //         VISIT_QUIT(st, 0);
-            //     }
-            // }
-        }
         VISIT(st, arguments, s->v.FunctionDef.args);
         VISIT_SEQ(st, stmt, s->v.FunctionDef.body);
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
-        if (s->v.FunctionDef.typeparams &&
-            !symtable_leave_typeparam_overlay(st)) {
-            VISIT_QUIT(st, 0);
+        if (s->v.FunctionDef.typeparams) {
+            symtable_leave_typeparam_overlay(st);
         }
         break;
     }

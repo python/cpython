@@ -1816,10 +1816,6 @@ compiler_make_closure(struct compiler *c, location loc,
                 return ERROR;
             }
             int arg;
-            if (c->u->u_ste->ste_current_typeparam_overlay) {
-                PyObject *inner_ste = PyDict_GetItem(c->u->u_ste->ste_typeparam_overlays,
-                                                     c->u->u_ste->ste_current_typeparam_overlay);
-            }
             if (reftype == CELL) {
                 arg = compiler_lookup_arg(c->u->u_cellvars, name);
             }
@@ -2220,12 +2216,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     if (typeparams) {
-        assert(c->u->u_ste->ste_current_typeparam_overlay == NULL);
-        PyObject *ptr = PyLong_FromVoidPtr((void *)typeparams);
-        if (ptr == NULL) {
-            return ERROR;
-        }
-        c->u->u_ste->ste_current_typeparam_overlay = ptr;
+        assert(c->u->u_ste->ste_active_typeparam_scope == 0);
+        c->u->u_ste->ste_num_typeparam_scopes += 1;
+        c->u->u_ste->ste_active_typeparam_scope = c->u->u_ste->ste_num_typeparam_scopes;
         RETURN_IF_ERROR(compiler_type_params(c, typeparams));
     }
 
@@ -2262,7 +2255,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     co = assemble(c, 1);
     compiler_exit_scope(c);
     if (typeparams) {
-        Py_CLEAR(c->u->u_ste->ste_current_typeparam_overlay);
+        c->u->u_ste->ste_active_typeparam_scope = 0;
     }
     if (co == NULL) {
         Py_XDECREF(co);
@@ -2275,7 +2268,6 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     Py_DECREF(co);
 
     RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
-    assert(c->u->u_ste->ste_current_typeparam_overlay == NULL);
     return compiler_nameop(c, loc, name, Store);
 }
 

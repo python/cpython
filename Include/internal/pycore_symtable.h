@@ -49,11 +49,8 @@ typedef struct _symtable_entry {
     PyObject *ste_varnames;  /* list of function parameters */
     PyObject *ste_children;  /* list of child blocks */
     PyObject *ste_directives;/* locations of global and nonlocal statements */
-    PyObject *ste_typeparam_overlays; /* dict: map AST node addresses to symtable entries
-                                         that represent typeparam overlays */
-    PyObject *ste_current_typeparam_overlay; /* active typeparam overlay
-                                                (key in ste_typeparam_overlays) */
-    struct _symtable_entry *ste_parent_typeparam_overlay;
+    int ste_active_typeparam_scope; /* 0 if no active typeparam scope */
+    int ste_num_typeparam_scopes; /* number of typeparam scopes encountered */
     _Py_block_ty ste_type;   /* module, class, function or annotation */
     int ste_nested;      /* true if block is nested */
     unsigned ste_free : 1;        /* true if block has free variables */
