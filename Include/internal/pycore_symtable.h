@@ -51,6 +51,7 @@ typedef struct _symtable_entry {
     PyObject *ste_directives;/* locations of global and nonlocal statements */
     int ste_active_typeparam_scope; /* 0 if no active typeparam scope */
     int ste_num_typeparam_scopes; /* number of typeparam scopes encountered */
+    PyObject *ste_typeparam_names; /* set of typeparam names */
     _Py_block_ty ste_type;   /* module, class, function or annotation */
     int ste_nested;      /* true if block is nested */
     unsigned ste_free : 1;        /* true if block has free variables */
@@ -106,6 +107,7 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 #define DEF_IMPORT 2<<6        /* assignment occurred via import */
 #define DEF_ANNOT 2<<7         /* this name is annotated */
 #define DEF_COMP_ITER 2<<8     /* this name is a comprehension iteration variable */
+#define DEF_TYPE_PARAM 2<<9    /* this name is a type parameter */
 
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 

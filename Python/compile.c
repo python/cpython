@@ -1274,6 +1274,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
         compiler_unit_free(u);
         return ERROR;
     }
+    u->u_ste->ste_num_typeparam_scopes = 0;
     u->u_name = Py_NewRef(name);
     u->u_varnames = list2dict(u->u_ste->ste_varnames);
     u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
@@ -1281,19 +1282,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
         compiler_unit_free(u);
         return ERROR;
     }
-    // if (u->u_ste->ste_parent_typeparam_overlay) {
-    //     PySTEntryObject *ste = u->u_ste->ste_parent_typeparam_overlay;
-    //     Py_ssize_t size = PyDict_Size(u->u_cellvars);
-    //     Py_ssize_t pos = 0;
-    //     while (PyDict_Next(ste->ste_symbols, &pos, &name, NULL)) {
-    //         PyObject *val = PyLong_FromLong(size);
-    //         size++;
-    //         if (PyDict_SetItem(u->u_cellvars, name, val) < 0) {
-    //             compiler_unit_free(u);
-    //             return ERROR;
-    //         }
-    //     }
-    // }
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
         int res;
