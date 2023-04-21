@@ -17,9 +17,9 @@ __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "timegm", "month_name", "month_abbr", "day_name", "day_abbr",
            "Calendar", "TextCalendar", "HTMLCalendar", "LocaleTextCalendar",
            "LocaleHTMLCalendar", "weekheader",
-           "Weekday", "Month", "JANUARY", "FEBRUARY", "MARCH",
+           "Day", "Month", "JANUARY", "FEBRUARY", "MARCH",
            "APRIL", "MAY", "JUNE", "JULY",
-           "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMEMBER", "DECEMBER",
+           "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER",
            "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY",
            "SATURDAY", "SUNDAY"]
 
@@ -54,13 +54,13 @@ class Month(IntEnum):
     AUGUST = 8
     SEPTEMBER = 9
     OCTOBER = 10
-    NOVEMEMBER = 11
+    NOVEMBER = 11
     DECEMBER = 12
 
 
-# Constants for weekdays
+# Constants for days
 @global_enum
-class Weekday(IntEnum):
+class Day(IntEnum):
     MONDAY = 0
     TUESDAY = 1
     WEDNESDAY = 2
