@@ -1678,8 +1678,8 @@ _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
         Py_CLEAR(self->peek);
         return -1;
     }
-    if (_PyObject_LookupAttrId(file, &_Py_ID(read), &self->read) <= 0 ||
-        _PyObject_LookupAttrId(file, &_Py_ID(readline), &self->readline) <= 0)
+    if (_PyObject_LookupAttr(file, &_Py_ID(read), &self->read) <= 0 ||
+        _PyObject_LookupAttr(file, &_Py_ID(readline), &self->readline) <= 0)
     {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError,
