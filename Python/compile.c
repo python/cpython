@@ -2313,6 +2313,24 @@ compiler_class(struct compiler *c, stmt_ty s)
     if (asdl_seq_LEN(decos)) {
         firstlineno = ((expr_ty)asdl_seq_GET(decos, 0))->lineno;
     }
+    location loc = LOC(s);
+
+    asdl_typeparam_seq *typeparams = s->v.ClassDef.typeparams;
+    if (typeparams) {
+        ADDOP(c, loc, PUSH_NULL);
+        PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>",
+                                                         s->v.ClassDef.name);
+        if (!typeparams_name) {
+            return ERROR;
+        }
+        if (compiler_enter_scope(c, typeparams_name, COMPILER_SCOPE_FUNCTION,
+                                 (void *)typeparams, firstlineno) == -1) {
+            Py_DECREF(typeparams_name);
+            return ERROR;
+        }
+        Py_DECREF(typeparams_name);
+        RETURN_IF_ERROR(compiler_type_params(c, typeparams));
+    }
 
     /* ultimately generate code for:
          <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
@@ -2387,7 +2405,6 @@ compiler_class(struct compiler *c, stmt_ty s)
         return ERROR;
     }
 
-    location loc = LOC(s);
     /* 2. load the 'build_class' function */
     ADDOP(c, loc, PUSH_NULL);
     ADDOP(c, loc, LOAD_BUILD_CLASS);
@@ -2406,6 +2423,20 @@ compiler_class(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(compiler_call_helper(c, loc, 2,
                                          s->v.ClassDef.bases,
                                          s->v.ClassDef.keywords));
+
+    if (typeparams) {
+        PyCodeObject *co = assemble(c, 0);
+        compiler_exit_scope(c);
+        if (co == NULL) {
+            return ERROR;
+        }
+        if (compiler_make_closure(c, loc, co, 0) < 0) {
+            Py_DECREF(co);
+            return ERROR;
+        }
+        Py_DECREF(co);
+        ADDOP_I(c, loc, CALL, 0);
+    }
 
     /* 6. apply decorators */
     RETURN_IF_ERROR(compiler_apply_decorators(c, decos));

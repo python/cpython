@@ -1266,10 +1266,18 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         PyObject *tmp;
         if (!symtable_add_def(st, s->v.ClassDef.name, DEF_LOCAL, LOCATION(s)))
             VISIT_QUIT(st, 0);
-        VISIT_SEQ(st, expr, s->v.ClassDef.bases);
-        VISIT_SEQ(st, keyword, s->v.ClassDef.keywords);
         if (s->v.ClassDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.ClassDef.decorator_list);
+        if (s->v.ClassDef.typeparams) {
+            if (!symtable_enter_block(st, s->v.ClassDef.name,
+                                      FunctionBlock, (void *)s->v.ClassDef.typeparams,
+                                      LOCATION(s))) {
+                VISIT_QUIT(st, 0);
+            }
+            VISIT_SEQ(st, typeparam, s->v.ClassDef.typeparams);
+        }
+        VISIT_SEQ(st, expr, s->v.ClassDef.bases);
+        VISIT_SEQ(st, keyword, s->v.ClassDef.keywords);
         if (!symtable_enter_block(st, s->v.ClassDef.name, ClassBlock,
                                   (void *)s, s->lineno, s->col_offset,
                                   s->end_lineno, s->end_col_offset))
@@ -1280,6 +1288,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         st->st_private = tmp;
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
+        if (s->v.ClassDef.typeparams) {
+            if (!symtable_exit_block(st))
+                VISIT_QUIT(st, 0);
+        }
         break;
     }
     case Return_kind:
