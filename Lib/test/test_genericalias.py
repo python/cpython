@@ -216,6 +216,12 @@ class BaseTest(unittest.TestCase):
             with self.subTest(f"Testing {tname}"):
                 self.assertIsNot(GenericAlias(t, [int]), GenericAlias(t, [int]))
 
+    @support.cpython_only
+    def test_c_union_arg_order(self):
+        self.assertIsNot(int | str, str | int)
+        self.assertIsNot(int | str, int | None)
+        self.assertIsNot(int | str, int | str | None)
+
     def test_unbound_methods(self):
         t = list[int]
         a = t()
