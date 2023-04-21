@@ -2198,15 +2198,33 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     location loc = LOC(s);
+
+    if (typeparams) {
+        ADDOP(c, loc, PUSH_NULL);
+    }
+
     funcflags = compiler_default_arguments(c, loc, args);
     if (funcflags == -1) {
         return ERROR;
     }
 
     if (typeparams) {
-        ADDOP(c, loc, PUSH_NULL);
-        RETURN_IF_ERROR(
-            compiler_enter_scope(c, name, scope_type, (void *)typeparams, firstlineno));
+        PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>", name);
+        if (!typeparams_name) {
+            return ERROR;
+        }
+        if (compiler_enter_scope(c, typeparams_name, scope_type,
+                                 (void *)typeparams, firstlineno) == -1) {
+            Py_DECREF(typeparams_name);
+            return ERROR;
+        }
+        Py_DECREF(typeparams_name);
+        if ((funcflags & 0x01) || (funcflags & 0x02)) {
+            ADDOP_I(c, loc, LOAD_FAST, 0);
+        }
+        if ((funcflags & 0x01) && (funcflags & 0x02)) {
+            ADDOP_I(c, loc, LOAD_FAST, 1);
+        }
         RETURN_IF_ERROR(compiler_type_params(c, typeparams));
     }
 
@@ -2252,6 +2270,12 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
     Py_DECREF(co);
     if (typeparams) {
+        if (funcflags & 0x02) {
+            c->u->u_argcount += 1;
+        }
+        if (funcflags & 0x01) {
+            c->u->u_argcount += 1;
+        }
         PyCodeObject *co = assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
@@ -2262,7 +2286,16 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             return ERROR;
         }
         Py_DECREF(co);
-        ADDOP_I(c, loc, CALL, 0);
+        int oparg = 0;
+        if ((funcflags & 0x01) && (funcflags & 0x02)) {
+            ADDOP_I(c, loc, SWAP, 3);
+            oparg = 2;
+        }
+        else if ((funcflags & 0x01) || (funcflags & 0x02)) {
+            ADDOP_I(c, loc, SWAP, 2);
+            oparg = 1;
+        }
+        ADDOP_I(c, loc, CALL, oparg);
     }
 
     RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
@@ -7115,7 +7148,6 @@ compute_localsplus_info(struct compiler_unit *u, int nlocalsplus,
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
-    // printf("compute_localsplus_info %d %s\n", nlocalsplus, PyUnicode_AsUTF8(u->u_name));
     while (PyDict_Next(u->u_varnames, &pos, &k, &v)) {
         int offset = (int)PyLong_AS_LONG(v);
         assert(offset >= 0);
