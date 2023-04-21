@@ -264,7 +264,7 @@ linkcheck_allowed_redirects = {
 }
 
 linkcheck_anchors_ignore = [
-    # ignore anchors that starts with a '/', e.g. Wikipedia media:
+    # ignore anchors that start with a '/', e.g. Wikipedia media files:
     # https://en.wikipedia.org/wiki/Walrus#/media/File:Pacific_Walrus_-_Bull_(8247646168).jpg
     r'\/.*',
 ]
