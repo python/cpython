@@ -118,6 +118,7 @@ The :mod:`functools` module defines the following functions:
            def stdev(self):
                return statistics.stdev(self._data)
 
+   .. versionadded:: 3.8
 
    .. versionchanged:: 3.12
       Prior to Python 3.12, ``cached_property`` included an undocumented lock to
@@ -125,8 +126,6 @@ The :mod:`functools` module defines the following functions:
       run only once per instance. However, the lock was per-property, not
       per-instance, which could result in unacceptably high lock contention. In
       Python 3.12+ this locking is removed.
-
-   .. versionadded:: 3.8
 
 
 .. function:: cmp_to_key(func)
