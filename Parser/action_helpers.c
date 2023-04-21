@@ -1415,7 +1415,7 @@ expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, ex
         end_col_offset, arena
     );
 
-    if (debug) {
+    if (debug && !p->call_invalid_rules) {
         /* Find the non whitespace token after the "=" */
         int debug_end_line, debug_end_offset;
 

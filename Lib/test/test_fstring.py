@@ -1532,5 +1532,18 @@ x = (
                                     "f-string: expecting a valid expression after '{'"):
             compile("f'{**a}'", "?", "exec")
 
+    def test_semicolon(self):
+        self.assertAllRaise(SyntaxError,
+                            "f-string: expecting a valid expression after '{'",
+                            ["f'{_=}{;",
+                             "f'{1=}{+;'",
+                             "f'{1=}{2}{;'",
+                             ])
+        self.assertAllRaise(SyntaxError,
+                            "f-string: expecting '=', or '!', or ':', or '}'",
+                            ["f'{1=}{1;'",
+                             "f'{1=}{1;}'",
+                             ])
+
 if __name__ == '__main__':
     unittest.main()
