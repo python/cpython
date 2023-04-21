@@ -104,6 +104,7 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 #define DEF_IMPORT 2<<6        /* assignment occurred via import */
 #define DEF_ANNOT 2<<7         /* this name is annotated */
 #define DEF_COMP_ITER 2<<8     /* this name is a comprehension iteration variable */
+#define DEF_TYPE_PARAM 2<<9    /* this name is a type parameter */
 
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 

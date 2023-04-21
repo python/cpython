@@ -47,6 +47,9 @@
 #define ANNOTATION_NOT_ALLOWED \
 "'%s' can not be used within an annotation"
 
+#define DUPLICATE_TYPE_PARAM \
+"duplicate type parameter '%U'"
+
 
 #define LOCATION(x) \
  (x)->lineno, (x)->col_offset, (x)->end_lineno, (x)->end_col_offset
@@ -1042,6 +1045,13 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
                                              end_lineno, end_col_offset + 1);
             goto error;
         }
+        if ((flag & DEF_TYPE_PARAM) && (val & DEF_TYPE_PARAM)) {
+            PyErr_Format(PyExc_SyntaxError, DUPLICATE_TYPE_PARAM, name);
+            PyErr_RangedSyntaxLocationObject(st->st_filename,
+                                             lineno, col_offset + 1,
+                                             end_lineno, end_col_offset + 1);
+            goto error;
+        }
         val |= flag;
     }
     else if (PyErr_Occurred()) {
@@ -1836,17 +1846,17 @@ symtable_visit_typeparam(struct symtable *st, typeparam_ty tp)
     }
     switch(tp->kind) {
     case TypeVar_kind:
-        if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_LOCAL, LOCATION(tp)))
+        if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
         if (tp->v.TypeVar.bound)
             VISIT(st, expr, tp->v.TypeVar.bound);
         break;
     case TypeVarTuple_kind:
-        if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_LOCAL, LOCATION(tp)))
+        if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
         break;
     case ParamSpec_kind:
-        if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_LOCAL, LOCATION(tp)))
+        if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
         break;
     }
