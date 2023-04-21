@@ -196,7 +196,6 @@ enum {
     COMPILER_SCOPE_ASYNC_FUNCTION,
     COMPILER_SCOPE_LAMBDA,
     COMPILER_SCOPE_COMPREHENSION,
-    COMPILER_SCOPE_TYPE_PARAMS,
 };
 
 typedef struct {
@@ -1274,7 +1273,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
         compiler_unit_free(u);
         return ERROR;
     }
-    u->u_ste->ste_num_typeparam_scopes = 0;
     u->u_name = Py_NewRef(name);
     u->u_varnames = list2dict(u->u_ste->ste_varnames);
     u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
