@@ -1107,18 +1107,17 @@ New Features
   to bypass reference counts and introduced changes to the C-API:
 
   - ``_Py_IMMORTAL_REFCNT``: The reference count that defines an object
-    as immortal.
+      as immortal.
   - ``_Py_IsImmortal`` Checks if an object has the immortal reference count.
-  - ``_Py_SetImmortal`` Sets the immortal reference count to a PyObject.
   - ``PyObject_HEAD_INIT`` This will now initialize reference count to
-    ``_Py_IMMORTAL_REFCNT`` when used with ``Py_BUILD_CORE``.
+      ``_Py_IMMORTAL_REFCNT`` when used with ``Py_BUILD_CORE``.
   - ``SSTATE_INTERNED_IMMORTAL`` An identifier for interned unicode objects
-     that are immortal.
+       that are immortal.
   - ``SSTATE_INTERNED_IMMORTAL_STATIC`` An identifier for interned unicode
-     objects that are immortal and static
+       objects that are immortal and static
   - ``sys.getunicodeinternedsize`` This returns the total number of unicode
-    objects that have been interned. This is now needed for refleak.py to
-    correctly track reference counts and allocated blocks
+      objects that have been interned. This is now needed for refleak.py to
+      correctly track reference counts and allocated blocks
 
   (Contributed by Eddie Elizondo in :gh:`84436`.)
 
