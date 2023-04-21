@@ -1116,6 +1116,9 @@ New Features
      that are immortal.
   - ``SSTATE_INTERNED_IMMORTAL_STATIC`` An identifier for interned unicode
      objects that are immortal and static
+  - ``sys.getunicodeinternedsize`` This returns the total number of unicode
+    objects that have been interned. This is now needed for refleak.py to
+    correctly track reference counts and allocated blocks
 
   (Contributed by Eddie Elizondo in :gh:`84436`.)
 

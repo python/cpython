@@ -228,12 +228,16 @@ static inline PyObject* unicode_new_empty(void)
    to strings in this dictionary are *not* counted in the string's ob_refcnt.
    When the interned string reaches a refcnt of 0 the string deallocation
    function will delete the reference from this dictionary.
-   Another way to look at this is that to say that the actual reference
-   count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
 */
 static inline PyObject *get_interned_dict(PyInterpreterState *interp)
 {
     return _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
+}
+
+Py_ssize_t
+_PyUnicode_InternedSize()
+{
+    return PyObject_Length(get_interned_dict(_PyInterpreterState_GET()));
 }
 
 static int
@@ -14635,9 +14639,9 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
        interned dictionary should be excluded from the RefTotal. The
        decrements to these objects will not be registered so they
        need to be accounted for in here. */
-       for (Py_ssize_t i = 0; i < Py_REFCNT(s) - 2; i++) {
-           _Py_DecRefTotal(_PyInterpreterState_GET());
-       }
+    for (Py_ssize_t i = 0; i < Py_REFCNT(s) - 2; i++) {
+        _Py_DecRefTotal(_PyInterpreterState_GET());
+    }
 #endif
     _Py_SetImmortal(s);
     _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
