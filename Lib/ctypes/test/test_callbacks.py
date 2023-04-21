@@ -1,5 +1,7 @@
 import functools
 import unittest
+from test import support
+
 from ctypes import *
 from ctypes.test import need_symbol
 import _ctypes_test
@@ -287,7 +289,36 @@ class SampleCallbacksTestCase(unittest.TestCase):
         self.assertEqual(s.second, check.second)
         self.assertEqual(s.third, check.third)
 
-################################################################
+    def test_callback_too_many_args(self):
+        def func(*args):
+            return len(args)
+
+        CTYPES_MAX_ARGCOUNT = 1024
+        proto = CFUNCTYPE(c_int, *(c_int,) * CTYPES_MAX_ARGCOUNT)
+        cb = proto(func)
+        args1 = (1,) * CTYPES_MAX_ARGCOUNT
+        self.assertEqual(cb(*args1), CTYPES_MAX_ARGCOUNT)
+
+        args2 = (1,) * (CTYPES_MAX_ARGCOUNT + 1)
+        with self.assertRaises(ArgumentError):
+            cb(*args2)
+
+    def test_convert_result_error(self):
+        def func():
+            return ("tuple",)
+
+        proto = CFUNCTYPE(c_int)
+        ctypes_func = proto(func)
+        with support.catch_unraisable_exception() as cm:
+            # don't test the result since it is an uninitialized value
+            result = ctypes_func()
+
+            self.assertIsInstance(cm.unraisable.exc_value, TypeError)
+            self.assertEqual(cm.unraisable.err_msg,
+                             "Exception ignored on converting result "
+                             "of ctypes callback function")
+            self.assertIs(cm.unraisable.object, func)
+
 
 if __name__ == '__main__':
     unittest.main()

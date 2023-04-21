@@ -115,7 +115,8 @@ log = initlog           # The current logging function
 # 0 ==> unlimited input
 maxlen = 0
 
-def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
+def parse(fp=None, environ=os.environ, keep_blank_values=0,
+          strict_parsing=0, separator='&'):
     """Parse a query in the environment or from a file (default stdin)
 
         Arguments, all optional:
@@ -134,6 +135,9 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
         strict_parsing: flag indicating what to do with parsing errors.
             If false (the default), errors are silently ignored.
             If true, errors raise a ValueError exception.
+
+        separator: str. The symbol to use for separating the query arguments.
+            Defaults to &.
     """
     if fp is None:
         fp = sys.stdin
@@ -154,7 +158,7 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
     if environ['REQUEST_METHOD'] == 'POST':
         ctype, pdict = parse_header(environ['CONTENT_TYPE'])
         if ctype == 'multipart/form-data':
-            return parse_multipart(fp, pdict)
+            return parse_multipart(fp, pdict, separator=separator)
         elif ctype == 'application/x-www-form-urlencoded':
             clength = int(environ['CONTENT_LENGTH'])
             if maxlen and clength > maxlen:
@@ -178,10 +182,10 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
             qs = ""
         environ['QUERY_STRING'] = qs    # XXX Shouldn't, really
     return urllib.parse.parse_qs(qs, keep_blank_values, strict_parsing,
-                                 encoding=encoding)
+                                 encoding=encoding, separator=separator)
 
 
-def parse_multipart(fp, pdict, encoding="utf-8", errors="replace"):
+def parse_multipart(fp, pdict, encoding="utf-8", errors="replace", separator='&'):
     """Parse multipart input.
 
     Arguments:
@@ -200,9 +204,12 @@ def parse_multipart(fp, pdict, encoding="utf-8", errors="replace"):
     ctype = "multipart/form-data; boundary={}".format(boundary)
     headers = Message()
     headers.set_type(ctype)
-    headers['Content-Length'] = pdict['CONTENT-LENGTH']
+    try:
+        headers['Content-Length'] = pdict['CONTENT-LENGTH']
+    except KeyError:
+        pass
     fs = FieldStorage(fp, headers=headers, encoding=encoding, errors=errors,
-        environ={'REQUEST_METHOD': 'POST'})
+        environ={'REQUEST_METHOD': 'POST'}, separator=separator)
     return {k: fs.getlist(k) for k in fs}
 
 def _parseparam(s):
@@ -312,7 +319,7 @@ class FieldStorage:
     def __init__(self, fp=None, headers=None, outerboundary=b'',
                  environ=os.environ, keep_blank_values=0, strict_parsing=0,
                  limit=None, encoding='utf-8', errors='replace',
-                 max_num_fields=None):
+                 max_num_fields=None, separator='&'):
         """Constructor.  Read multipart/* until last part.
 
         Arguments, all optional:
@@ -360,6 +367,7 @@ class FieldStorage:
         self.keep_blank_values = keep_blank_values
         self.strict_parsing = strict_parsing
         self.max_num_fields = max_num_fields
+        self.separator = separator
         if 'REQUEST_METHOD' in environ:
             method = environ['REQUEST_METHOD'].upper()
         self.qs_on_post = None
@@ -586,7 +594,7 @@ class FieldStorage:
         query = urllib.parse.parse_qsl(
             qs, self.keep_blank_values, self.strict_parsing,
             encoding=self.encoding, errors=self.errors,
-            max_num_fields=self.max_num_fields)
+            max_num_fields=self.max_num_fields, separator=self.separator)
         self.list = [MiniFieldStorage(key, value) for key, value in query]
         self.skip_lines()
 
@@ -602,7 +610,7 @@ class FieldStorage:
             query = urllib.parse.parse_qsl(
                 self.qs_on_post, self.keep_blank_values, self.strict_parsing,
                 encoding=self.encoding, errors=self.errors,
-                max_num_fields=self.max_num_fields)
+                max_num_fields=self.max_num_fields, separator=self.separator)
             self.list.extend(MiniFieldStorage(key, value) for key, value in query)
 
         klass = self.FieldStorageClass or self.__class__
@@ -646,7 +654,7 @@ class FieldStorage:
                 else self.limit - self.bytes_read
             part = klass(self.fp, headers, ib, environ, keep_blank_values,
                          strict_parsing, limit,
-                         self.encoding, self.errors, max_num_fields)
+                         self.encoding, self.errors, max_num_fields, self.separator)
 
             if max_num_fields is not None:
                 max_num_fields -= 1
@@ -736,7 +744,8 @@ class FieldStorage:
         last_line_lfend = True
         _read = 0
         while 1:
-            if self.limit is not None and _read >= self.limit:
+
+            if self.limit is not None and 0 <= self.limit <= _read:
                 break
             line = self.fp.readline(1<<16) # bytes
             self.bytes_read += len(line)

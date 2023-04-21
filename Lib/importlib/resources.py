@@ -193,9 +193,11 @@ def path(package: Package, resource: Resource) -> Iterator[Path]:
         _check_location(package)
     # Fall-through for both the lack of resource_path() *and* if
     # resource_path() raises FileNotFoundError.
-    package_directory = Path(package.__spec__.origin).parent
-    file_path = package_directory / resource
-    if file_path.exists():
+    file_path = None
+    if package.__spec__.origin is not None:
+        package_directory = Path(package.__spec__.origin).parent
+        file_path = package_directory / resource
+    if file_path is not None and file_path.exists():
         yield file_path
     else:
         with open_binary(package, resource) as fp:

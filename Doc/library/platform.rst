@@ -209,13 +209,6 @@ Windows Platform
    which means the OS version uses debugging code, i.e. code that checks arguments,
    ranges, etc.
 
-   .. note::
-
-      This function works best with Mark Hammond's
-      :mod:`win32all` package installed, but also on Python 2.3 and
-      later (support for this was added in Python 2.6). It obviously
-      only runs on Win32 compatible platforms.
-
 .. function:: win32_edition()
 
    Returns a string representing the current Windows edition.  Possible

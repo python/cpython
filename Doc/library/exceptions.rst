@@ -42,12 +42,12 @@ include the originating exception(s) and the final exception.
 
 When raising a new exception (rather than using a bare ``raise`` to re-raise
 the exception currently being handled), the implicit exception context can be
-supplemented with an explicit cause by using :keyword:`from` with
+supplemented with an explicit cause by using :keyword:`from<raise>` with
 :keyword:`raise`::
 
    raise new_exc from original_exc
 
-The expression following :keyword:`from` must be an exception or ``None``. It
+The expression following :keyword:`from<raise>` must be an exception or ``None``. It
 will be set as :attr:`__cause__` on the raised exception. Setting
 :attr:`__cause__` also implicitly sets the :attr:`__suppress_context__`
 attribute to ``True``, so that using ``raise new_exc from None``
@@ -397,9 +397,25 @@ The following exceptions are the exceptions that are usually raised.
    or :func:`eval`, or when reading the initial script or standard input
    (also interactively).
 
-   Instances of this class have attributes :attr:`filename`, :attr:`lineno`,
-   :attr:`offset` and :attr:`text` for easier access to the details.  :func:`str`
-   of the exception instance returns only the message.
+   The :func:`str` of the exception instance returns only the error message.
+
+   .. attribute:: filename
+
+      The name of the file the syntax error occurred in.
+
+   .. attribute:: lineno
+
+      Which line number in the file the error occurred in. This is
+      1-indexed: the first line in the file has a ``lineno`` of 1.
+
+   .. attribute:: offset
+
+      The column in the line where the error occurred. This is
+      1-indexed: the first character in the line has an ``offset`` of 1.
+
+   .. attribute:: text
+
+      The source code text involved in the error.
 
 
 .. exception:: IndentationError

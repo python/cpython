@@ -24,9 +24,7 @@ askstring -- get a string from the user
 """
 
 from tkinter import *
-from tkinter import messagebox
-
-import tkinter # used at _QueryDialog for tkinter._default_root
+from tkinter import messagebox, _get_default_root
 
 
 class SimpleDialog:
@@ -41,6 +39,9 @@ class SimpleDialog:
         if title:
             self.root.title(title)
             self.root.iconname(title)
+
+        _setup_dialog(self.root)
+
         self.message = Message(self.root, text=text, aspect=400)
         self.message.pack(expand=1, fill=BOTH)
         self.frame = Frame(self.root)
@@ -128,17 +129,23 @@ class Dialog(Toplevel):
 
             title -- the dialog title
         '''
-        Toplevel.__init__(self, parent)
+        master = parent
+        if not master:
+            master = _get_default_root('create dialog window')
+
+        Toplevel.__init__(self, master)
 
         self.withdraw() # remain invisible for now
-        # If the master is not viewable, don't
+        # If the parent is not viewable, don't
         # make the child transient, or else it
         # would be opened withdrawn
-        if parent.winfo_viewable():
+        if parent is not None and parent.winfo_viewable():
             self.transient(parent)
 
         if title:
             self.title(title)
+
+        _setup_dialog(self)
 
         self.parent = parent
 
@@ -155,7 +162,7 @@ class Dialog(Toplevel):
 
         self.protocol("WM_DELETE_WINDOW", self.cancel)
 
-        if self.parent is not None:
+        if parent is not None:
             self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
                                       parent.winfo_rooty()+50))
 
@@ -249,6 +256,13 @@ class Dialog(Toplevel):
         pass # override
 
 
+def _setup_dialog(w):
+    if w._windowingsystem == "aqua":
+        w.tk.call("::tk::unsupported::MacWindowStyle", "style",
+                  w, "moveableModal", "")
+    elif w._windowingsystem == "x11":
+        w.wm_attributes("-type", "dialog")
+
 # --------------------------------------------------------------------
 # convenience dialogues
 
@@ -258,9 +272,6 @@ class _QueryDialog(Dialog):
                  initialvalue=None,
                  minvalue = None, maxvalue = None,
                  parent = None):
-
-        if not parent:
-            parent = tkinter._default_root
 
         self.prompt   = prompt
         self.minvalue = minvalue

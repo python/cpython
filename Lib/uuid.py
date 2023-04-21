@@ -45,7 +45,6 @@ Typical usage:
 """
 
 import os
-import platform
 import sys
 
 from enum import Enum
@@ -54,10 +53,13 @@ from enum import Enum
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 
 # The recognized platforms - known behaviors
-_AIX     = platform.system() == 'AIX'
-_DARWIN  = platform.system() == 'Darwin'
-_LINUX   = platform.system() == 'Linux'
-_WINDOWS = platform.system() == 'Windows'
+if sys.platform in ('win32', 'darwin'):
+    _AIX = _LINUX = False
+else:
+    import platform
+    _platform_system = platform.system()
+    _AIX     = _platform_system == 'AIX'
+    _LINUX   = _platform_system == 'Linux'
 
 RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
     'reserved for NCS compatibility', 'specified in RFC 4122',
@@ -688,9 +690,9 @@ def _random_getnode():
 #     @unittest.skipUnless(_uuid._ifconfig_getnode in _uuid._GETTERS, ...)
 if _LINUX:
     _OS_GETTERS = [_ip_getnode, _ifconfig_getnode]
-elif _DARWIN:
+elif sys.platform == 'darwin':
     _OS_GETTERS = [_ifconfig_getnode, _arp_getnode, _netstat_getnode]
-elif _WINDOWS:
+elif sys.platform == 'win32':
     _OS_GETTERS = [_netbios_getnode, _ipconfig_getnode]
 elif _AIX:
     _OS_GETTERS = [_netstat_getnode]

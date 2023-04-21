@@ -25,34 +25,34 @@ represents the database.  Here the data will be stored in the
 :file:`example.db` file::
 
    import sqlite3
-   conn = sqlite3.connect('example.db')
+   con = sqlite3.connect('example.db')
 
 You can also supply the special name ``:memory:`` to create a database in RAM.
 
 Once you have a :class:`Connection`, you can create a :class:`Cursor`  object
 and call its :meth:`~Cursor.execute` method to perform SQL commands::
 
-   c = conn.cursor()
+   cur = con.cursor()
 
    # Create table
-   c.execute('''CREATE TABLE stocks
-                (date text, trans text, symbol text, qty real, price real)''')
+   cur.execute('''CREATE TABLE stocks
+                  (date text, trans text, symbol text, qty real, price real)''')
 
    # Insert a row of data
-   c.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
+   cur.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
 
    # Save (commit) the changes
-   conn.commit()
+   con.commit()
 
    # We can also close the connection if we are done with it.
    # Just be sure any changes have been committed or they will be lost.
-   conn.close()
+   con.close()
 
 The data you've saved is persistent and is available in subsequent sessions::
 
    import sqlite3
-   conn = sqlite3.connect('example.db')
-   c = conn.cursor()
+   con = sqlite3.connect('example.db')
+   cur = con.cursor()
 
 Usually your SQL operations will need to use values from Python variables.  You
 shouldn't assemble your query using Python's string operations because doing so
@@ -67,19 +67,19 @@ example::
 
    # Never do this -- insecure!
    symbol = 'RHAT'
-   c.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
+   cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
 
    # Do this instead
    t = ('RHAT',)
-   c.execute('SELECT * FROM stocks WHERE symbol=?', t)
-   print(c.fetchone())
+   cur.execute('SELECT * FROM stocks WHERE symbol=?', t)
+   print(cur.fetchone())
 
    # Larger example that inserts many records at a time
    purchases = [('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
                 ('2006-04-05', 'BUY', 'MSFT', 1000, 72.00),
                 ('2006-04-06', 'SELL', 'IBM', 500, 53.00),
                ]
-   c.executemany('INSERT INTO stocks VALUES (?,?,?,?,?)', purchases)
+   cur.executemany('INSERT INTO stocks VALUES (?,?,?,?,?)', purchases)
 
 To retrieve data after executing a SELECT statement, you can either treat the
 cursor as an :term:`iterator`, call the cursor's :meth:`~Cursor.fetchone` method to
@@ -88,7 +88,7 @@ matching rows.
 
 This example uses the iterator form::
 
-   >>> for row in c.execute('SELECT * FROM stocks ORDER BY price'):
+   >>> for row in cur.execute('SELECT * FROM stocks ORDER BY price'):
            print(row)
 
    ('2006-01-05', 'BUY', 'RHAT', 100, 35.14)
@@ -98,10 +98,6 @@ This example uses the iterator form::
 
 
 .. seealso::
-
-   https://github.com/ghaering/pysqlite
-      The pysqlite web page -- sqlite3 is developed externally under the name
-      "pysqlite".
 
    https://www.sqlite.org
       The SQLite web page; the documentation describes the syntax and the
@@ -197,7 +193,9 @@ Module functions and constants
 
    *detect_types* defaults to 0 (i. e. off, no type detection), you can set it to
    any combination of :const:`PARSE_DECLTYPES` and :const:`PARSE_COLNAMES` to turn
-   type detection on.
+   type detection on. Due to SQLite behaviour, types can't be detected for generated
+   fields (for example ``max(data)``), even when *detect_types* parameter is set. In
+   such case, the returned type is :class:`str`.
 
    By default, *check_same_thread* is :const:`True` and only the creating thread may
    use the connection. If set :const:`False`, the returned connection may be shared
@@ -543,7 +541,7 @@ Connection Objects
          con.close()
 
 
-   .. method:: backup(target, *, pages=0, progress=None, name="main", sleep=0.250)
+   .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
       This method makes a backup of a SQLite database even while it's being accessed
       by other clients, or concurrently by the same connection.  The copy will be
@@ -770,23 +768,23 @@ Row Objects
 
 Let's assume we initialize a table as in the example given above::
 
-   conn = sqlite3.connect(":memory:")
-   c = conn.cursor()
-   c.execute('''create table stocks
+   con = sqlite3.connect(":memory:")
+   cur = con.cursor()
+   cur.execute('''create table stocks
    (date text, trans text, symbol text,
     qty real, price real)''')
-   c.execute("""insert into stocks
-             values ('2006-01-05','BUY','RHAT',100,35.14)""")
-   conn.commit()
-   c.close()
+   cur.execute("""insert into stocks
+               values ('2006-01-05','BUY','RHAT',100,35.14)""")
+   con.commit()
+   cur.close()
 
 Now we plug :class:`Row` in::
 
-   >>> conn.row_factory = sqlite3.Row
-   >>> c = conn.cursor()
-   >>> c.execute('select * from stocks')
+   >>> con.row_factory = sqlite3.Row
+   >>> cur = con.cursor()
+   >>> cur.execute('select * from stocks')
    <sqlite3.Cursor object at 0x7f4e7dd8fa80>
-   >>> r = c.fetchone()
+   >>> r = cur.fetchone()
    >>> type(r)
    <class 'sqlite3.Row'>
    >>> tuple(r)
@@ -1091,23 +1089,10 @@ committed:
 .. literalinclude:: ../includes/sqlite3/ctx_manager.py
 
 
-Common issues
--------------
-
-Multithreading
-^^^^^^^^^^^^^^
-
-Older SQLite versions had issues with sharing connections between threads.
-That's why the Python module disallows sharing connections and cursors between
-threads. If you still try to do so, you will get an exception at runtime.
-
-The only exception is calling the :meth:`~Connection.interrupt` method, which
-only makes sense to call from a different thread.
-
 .. rubric:: Footnotes
 
 .. [#f1] The sqlite3 module is not built with loadable extension support by
    default, because some platforms (notably Mac OS X) have SQLite
    libraries which are compiled without this feature. To get loadable
-   extension support, you must pass --enable-loadable-sqlite-extensions to
+   extension support, you must pass ``--enable-loadable-sqlite-extensions`` to
    configure.

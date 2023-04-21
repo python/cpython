@@ -56,12 +56,12 @@ created.  Socket addresses are represented as follows:
   bytes-like object can be used for either type of address when
   passing it as an argument.
 
-   .. versionchanged:: 3.3
-      Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
-      encoding.
+  .. versionchanged:: 3.3
+     Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
+     encoding.
 
-   .. versionchanged:: 3.5
-      Writable :term:`bytes-like object` is now accepted.
+  .. versionchanged:: 3.5
+     Writable :term:`bytes-like object` is now accepted.
 
 .. _host_port:
 
@@ -1046,6 +1046,19 @@ The :mod:`socket` module also offers various network-related services:
    .. versionchanged:: 3.8
       Windows support was added.
 
+   .. note::
+
+      On Windows network interfaces have different names in different contexts
+      (all names are examples):
+
+      * UUID: ``{FB605B73-AAC2-49A6-9A2F-25416AEA0573}``
+      * name: ``ethernet_32770``
+      * friendly name: ``vEthernet (nat)``
+      * description: ``Hyper-V Virtual Ethernet Adapter``
+
+      This function returns names of the second form from the list, ``ethernet_32770``
+      in this example case.
+
 
 .. function:: if_nametoindex(if_name)
 
@@ -1060,6 +1073,9 @@ The :mod:`socket` module also offers various network-related services:
    .. versionchanged:: 3.8
       Windows support was added.
 
+   .. seealso::
+      "Interface name" is a name as documented in :func:`if_nameindex`.
+
 
 .. function:: if_indextoname(if_index)
 
@@ -1073,6 +1089,9 @@ The :mod:`socket` module also offers various network-related services:
 
    .. versionchanged:: 3.8
       Windows support was added.
+
+   .. seealso::
+      "Interface name" is a name as documented in :func:`if_nameindex`.
 
 
 .. _socket-objects:
@@ -1627,7 +1646,9 @@ to sockets.
 
 .. method:: socket.setsockopt(level, optname, value: int)
 .. method:: socket.setsockopt(level, optname, value: buffer)
+   :noindex:
 .. method:: socket.setsockopt(level, optname, None, optlen: int)
+   :noindex:
 
    .. index:: module: struct
 

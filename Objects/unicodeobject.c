@@ -90,7 +90,8 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 extern "C" {
 #endif
 
-/* Maximum code point of Unicode 6.0: 0x10ffff (1,114,111) */
+// Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
+// The value must be the same in fileutils.c.
 #define MAX_UNICODE 0x10ffff
 
 #ifdef Py_DEBUG
@@ -1707,8 +1708,8 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
             *maxchar = ch;
             if (*maxchar > MAX_UNICODE) {
                 PyErr_Format(PyExc_ValueError,
-                             "character U+%x is not in range [U+0000; U+10ffff]",
-                             ch);
+                             "character U+%x is not in range [U+0000; U+%x]",
+                             ch, MAX_UNICODE);
                 return -1;
             }
         }
@@ -7998,7 +7999,7 @@ charmap_decode_mapping(const char *s,
                 goto Undefined;
             if (value < 0 || value > MAX_UNICODE) {
                 PyErr_Format(PyExc_TypeError,
-                             "character mapping must be in range(0x%lx)",
+                             "character mapping must be in range(0x%x)",
                              (unsigned long)MAX_UNICODE + 1);
                 goto onError;
             }
@@ -13610,7 +13611,7 @@ _PyUnicodeWriter_PrepareKindInternal(_PyUnicodeWriter *writer,
     {
     case PyUnicode_1BYTE_KIND: maxchar = 0xff; break;
     case PyUnicode_2BYTE_KIND: maxchar = 0xffff; break;
-    case PyUnicode_4BYTE_KIND: maxchar = 0x10ffff; break;
+    case PyUnicode_4BYTE_KIND: maxchar = MAX_UNICODE; break;
     default:
         Py_UNREACHABLE();
     }
@@ -15285,9 +15286,7 @@ PyUnicode_InternInPlace(PyObject **p)
             return;
         }
     }
-    Py_ALLOW_RECURSION
     t = PyDict_SetDefault(interned, s, s);
-    Py_END_ALLOW_RECURSION
     if (t == NULL) {
         PyErr_Clear();
         return;

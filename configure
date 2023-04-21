@@ -742,6 +742,7 @@ PYTHONFRAMEWORKPREFIX
 PYTHONFRAMEWORKDIR
 PYTHONFRAMEWORKIDENTIFIER
 PYTHONFRAMEWORK
+LIPO_INTEL64_FLAGS
 LIPO_32BIT_FLAGS
 ARCH_RUN_32BIT
 UNIVERSALSDK
@@ -782,7 +783,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -897,7 +897,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1150,15 +1149,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1296,7 +1286,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1449,7 +1439,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1502,9 +1491,12 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-universal-archs=ARCH
-                          select architectures for universal build ("32-bit",
-                          "64-bit", "3-way", "intel", "intel-32", "intel-64",
-                          or "all")
+                          specify the kind of macOS universal binary that
+                          should be created. This option is only valid when
+                          --enable-universalsdk is set; options are:
+                          ("universal2", "intel-64", "intel-32", "intel",
+                          "32-bit", "64-bit", "3-way", or "all") see
+                          Mac/README.rst
   --with-framework-name=FRAMEWORK
                           specify an alternate name of the framework built
                           with --enable-framework
@@ -3085,6 +3077,7 @@ then
 fi
 
 
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-universal-archs" >&5
 $as_echo_n "checking for --with-universal-archs... " >&6; }
 
@@ -3398,7 +3391,7 @@ $as_echo "#define _BSD_SOURCE 1" >>confdefs.h
   # has no effect, don't bother defining them
   Darwin/[6789].*)
     define_xopen_source=no;;
-  Darwin/1[0-9].*)
+  Darwin/[12][0-9].*)
     define_xopen_source=no;;
   # On AIX 4 and 5.1, mbstate_t is defined only when _XOPEN_SOURCE == 500 but
   # used in wcsnrtombs() and mbsnrtowcs() even if _XOPEN_SOURCE is not defined
@@ -5167,9 +5160,6 @@ $as_echo "$as_me:
 fi
 
 
-MULTIARCH=$($CC --print-multiarch 2>/dev/null)
-
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the platform triplet based on compiler characteristics" >&5
 $as_echo_n "checking for the platform triplet based on compiler characteristics... " >&6; }
 cat >> conftest.c <<EOF
@@ -5327,6 +5317,11 @@ else
 $as_echo "none" >&6; }
 fi
 rm -f conftest.c conftest.out
+
+if test x$PLATFORM_TRIPLET != xdarwin; then
+  MULTIARCH=$($CC --print-multiarch 2>/dev/null)
+fi
+
 
 if test x$PLATFORM_TRIPLET != x && test x$MULTIARCH != x; then
   if test x$PLATFORM_TRIPLET != x$MULTIARCH; then
@@ -6917,7 +6912,7 @@ fi
 
 
 
-# The -arch flags for universal builds on OSX
+# The -arch flags for universal builds on macOS
 UNIVERSAL_ARCH_FLAGS=
 
 
@@ -7385,6 +7380,7 @@ $as_echo_n "checking which compiler should be used... " >&6; }
 $as_echo "$CC" >&6; }
         fi
 
+        LIPO_INTEL64_FLAGS=""
         if test "${enable_universalsdk}"
         then
             case "$UNIVERSAL_ARCHS" in
@@ -7402,6 +7398,12 @@ $as_echo "$CC" >&6; }
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+               ;;
+            universal2)
+               UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
+               LIPO_32BIT_FLAGS=""
+               LIPO_INTEL64_FLAGS="-extract x86_64"
+               ARCH_RUN_32BIT="true"
                ;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
@@ -7424,7 +7426,7 @@ $as_echo "$CC" >&6; }
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
                ;;
             *)
-               as_fn_error $? "proper usage is --with-universal-arch=32-bit|64-bit|all|intel|3-way" "$LINENO" 5
+               as_fn_error $? "proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way" "$LINENO" 5
                ;;
             esac
 
@@ -7492,6 +7494,31 @@ $as_echo_n "checking which MACOSX_DEPLOYMENT_TARGET to use... " >&6; }
         EXPORT_MACOSX_DEPLOYMENT_TARGET=''
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MACOSX_DEPLOYMENT_TARGET" >&5
 $as_echo "$MACOSX_DEPLOYMENT_TARGET" >&6; }
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if specified universal architectures work" >&5
+$as_echo_n "checking if specified universal architectures work... " >&6; }
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <stdio.h>
+int
+main ()
+{
+printf("%d", 42);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+             as_fn_error $? "check config.log and use the '--with-universal-archs' option" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 
         # end of Darwin* tests
         ;;
@@ -9253,7 +9280,7 @@ fi
     		MACOSX_DEFAULT_ARCH="ppc"
     		;;
     	*)
-    		as_fn_error $? "Unexpected output of 'arch' on OSX" "$LINENO" 5
+    		as_fn_error $? "Unexpected output of 'arch' on macOS" "$LINENO" 5
     		;;
     	esac
     else
@@ -9263,9 +9290,12 @@ fi
     		;;
     	ppc)
     		MACOSX_DEFAULT_ARCH="ppc64"
+		;;
+    	arm64)
+    		MACOSX_DEFAULT_ARCH="arm64"
     		;;
     	*)
-    		as_fn_error $? "Unexpected output of 'arch' on OSX" "$LINENO" 5
+    		as_fn_error $? "Unexpected output of 'arch' on macOS" "$LINENO" 5
     		;;
     	esac
 
@@ -10903,10 +10933,10 @@ else
       main() {
         pthread_attr_t attr;
         pthread_t id;
-        if (pthread_attr_init(&attr)) exit(-1);
-        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) exit(-1);
-        if (pthread_create(&id, &attr, foo, NULL)) exit(-1);
-        exit(0);
+        if (pthread_attr_init(&attr)) return (-1);
+        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
+        if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        return (0);
       }
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
@@ -11815,6 +11845,31 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 $as_echo "#define HAVE_PRLIMIT 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _dyld_shared_cache_contains_path" >&5
+$as_echo_n "checking for _dyld_shared_cache_contains_path... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <mach-o/dyld.h>
+int
+main ()
+{
+void *x=_dyld_shared_cache_contains_path
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH 1" >>confdefs.h
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -14303,10 +14358,10 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 
-if $GREP noonsees conftest.$ac_objext >/dev/null ; then
+if grep noonsees conftest.$ac_objext >/dev/null ; then
   ax_cv_c_float_words_bigendian=yes
 fi
-if $GREP seesnoon conftest.$ac_objext >/dev/null ; then
+if grep seesnoon conftest.$ac_objext >/dev/null ; then
   if test "$ax_cv_c_float_words_bigendian" = unknown; then
     ax_cv_c_float_words_bigendian=no
   else
@@ -14891,7 +14946,7 @@ else
   int main()
   {
 	/* Success: exit code 0 */
-        exit((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
+        return ((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
   }
 
 _ACEOF
@@ -15191,12 +15246,7 @@ _ACEOF
 fi
 
 
-case $ac_sys_system in
-    Linux*|GNU*|Darwin|VxWorks)
-	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
-    *)
-	EXT_SUFFIX=${SHLIB_SUFFIX};;
-esac
+EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX}
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking LDVERSION" >&5
 $as_echo_n "checking LDVERSION... " >&6; }
@@ -15236,7 +15286,7 @@ else
 
 int main()
 {
-	exit(((-1)>>3 == -1) ? 0 : 1);
+	return (((-1)>>3 == -1) ? 0 : 1);
 }
 
 _ACEOF
@@ -15706,6 +15756,7 @@ else
 /* end confdefs.h.  */
 
 #include <poll.h>
+#include <unistd.h>
 
 int main()
 {

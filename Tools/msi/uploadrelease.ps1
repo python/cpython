@@ -90,7 +90,7 @@ if (-not $skipupload) {
     $d = "$target/$($p[0])/"
     & $plink -batch $user@$server mkdir $d
     & $plink -batch $user@$server chgrp downloads $d
-    & $plink -batch $user@$server chmod g-x,o+rx $d
+    & $plink -batch $user@$server chmod o+rx $d
     & $pscp -batch $chm.FullName "$user@${server}:$d"
     if (-not $?) { throw "Failed to upload $chm" }
 
@@ -115,7 +115,7 @@ if (-not $skipupload) {
             $sd = "$d$($a.Name)$($p[1])/"
             & $plink -batch $user@$server mkdir $sd
             & $plink -batch $user@$server chgrp downloads $sd
-            & $plink -batch $user@$server chmod g-x,o+rx $sd
+            & $plink -batch $user@$server chmod o+rx $sd
             & $pscp -batch $msi.FullName "$user@${server}:$sd"
             if (-not $?) { throw "Failed to upload $msi" }
             & $plink -batch $user@$server chgrp downloads $sd*

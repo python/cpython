@@ -79,6 +79,7 @@ import glob
 import pprint
 import signal
 import inspect
+import tokenize
 import traceback
 import linecache
 
@@ -93,7 +94,7 @@ __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
 def find_function(funcname, filename):
     cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
     try:
-        fp = open(filename)
+        fp = tokenize.open(filename)
     except OSError:
         return None
     # consumer of this info expects the first line to be 1
@@ -473,7 +474,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except Exception:
             ret = []
         # Then, try to complete file names as well.
-        globs = glob.glob(text + '*')
+        globs = glob.glob(glob.escape(text) + '*')
         for fn in globs:
             if os.path.isdir(fn):
                 ret.append(fn + '/')
@@ -1311,14 +1312,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             # _getval() already printed the error
             return
         code = None
-        # Is it a function?
-        try:
-            code = value.__code__
-        except Exception:
-            pass
-        if code:
-            self.message('Function %s' % code.co_name)
-            return
         # Is it an instance method?
         try:
             code = value.__func__.__code__
@@ -1326,6 +1319,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             pass
         if code:
             self.message('Method %s' % code.co_name)
+            return
+        # Is it a function?
+        try:
+            code = value.__code__
+        except Exception:
+            pass
+        if code:
+            self.message('Function %s' % code.co_name)
             return
         # Is it a class?
         if value.__class__ is type:
@@ -1685,8 +1686,9 @@ def main():
 
     sys.argv[:] = args      # Hide "pdb.py" and pdb options from argument list
 
-    # Replace pdb's dir with script's dir in front of module search path.
     if not run_as_module:
+        mainpyfile = os.path.realpath(mainpyfile)
+        # Replace pdb's dir with script's dir in front of module search path.
         sys.path[0] = os.path.dirname(mainpyfile)
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
@@ -1706,7 +1708,7 @@ def main():
             print("The program finished and will be restarted")
         except Restart:
             print("Restarting", mainpyfile, "with arguments:")
-            print("\t" + " ".join(args))
+            print("\t" + " ".join(sys.argv[1:]))
         except SystemExit:
             # In most cases SystemExit does not warrant a post-mortem session.
             print("The program exited via sys.exit(). Exit status:", end=' ')

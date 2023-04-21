@@ -1,0 +1,125 @@
+.. bpo: 42278
+.. date: 2021-08-29-12-39-44
+.. nonce: jvmQz_
+.. release date: 2021-08-30
+.. section: Security
+
+Replaced usage of :func:`tempfile.mktemp` with
+:class:`~tempfile.TemporaryDirectory` to avoid a potential race condition.
+
+..
+
+.. bpo: 44394
+.. date: 2021-06-29-02-45-53
+.. nonce: A220N1
+.. section: Security
+
+Update the vendored copy of libexpat to 2.4.1 (from 2.2.8) to get the fix
+for the CVE-2013-0340 "Billion Laughs" vulnerability. This copy is most used
+on Windows and macOS.
+
+..
+
+.. bpo: 43124
+.. date: 2021-05-08-11-50-46
+.. nonce: 2CTM6M
+.. section: Security
+
+Made the internal ``putcmd`` function in :mod:`smtplib` sanitize input for
+presence of ``\r`` and ``\n`` characters to avoid (unlikely) command
+injection.
+
+..
+
+.. bpo: 36384
+.. date: 2021-03-30-16-29-51
+.. nonce: sCAmLs
+.. section: Security
+
+:mod:`ipaddress` module no longer accepts any leading zeros in IPv4 address
+strings. Leading zeros are ambiguous and interpreted as octal notation by
+some libraries. For example the legacy function :func:`socket.inet_aton`
+treats leading zeros as octal notation. glibc implementation of modern
+:func:`~socket.inet_pton` does not accept any leading zeros. For a while the
+:mod:`ipaddress` module used to accept ambiguous leading zeros.
+
+..
+
+.. bpo: 44872
+.. date: 2021-08-09-16-16-03
+.. nonce: OKRlhK
+.. section: Core and Builtins
+
+Use new trashcan macros (Py_TRASHCAN_BEGIN/END) in frameobject.c instead of
+the old ones (Py_TRASHCAN_SAFE_BEGIN/END).
+
+..
+
+.. bpo: 33930
+.. date: 2021-08-09-14-29-52
+.. nonce: --5LQ-
+.. section: Core and Builtins
+
+Fix segmentation fault with deep recursion when cleaning method objects.
+Patch by Augusto Goulart and Pablo Galindo.
+
+..
+
+.. bpo: 44856
+.. date: 2021-08-07-01-26-12
+.. nonce: 9rk3li
+.. section: Core and Builtins
+
+Fix reference leaks in the error paths of ``update_bases()`` and
+``__build_class__``. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 45001
+.. date: 2021-08-26-16-25-48
+.. nonce: tn_dKp
+.. section: Library
+
+Made email date parsing more robust against malformed input, namely a
+whitespace-only ``Date:`` header. Patch by Wouter Bolsterlee.
+
+..
+
+.. bpo: 30511
+.. date: 2021-07-20-21-03-18
+.. nonce: eMFkRi
+.. section: Documentation
+
+Clarify that :func:`shutil.make_archive` is not thread-safe due to reliance
+on changing the current working directory.
+
+..
+
+.. bpo: 45007
+.. date: 2021-08-27-23-50-02
+.. nonce: NIBlVG
+.. section: Windows
+
+Update to OpenSSL 1.1.1l in Windows build
+
+..
+
+.. bpo: 45007
+.. date: 2021-08-30-00-04-10
+.. nonce: pixqUB
+.. section: macOS
+
+Update macOS installer builds to use OpenSSL 1.1.1l.
+
+..
+
+.. bpo: 44689
+.. date: 2021-07-20-22-27-01
+.. nonce: mmT_xH
+.. section: macOS
+
+:meth:`ctypes.util.find_library` now works correctly on macOS 11 Big Sur
+even if Python is built on an older version of macOS.  Previously, when
+built on older macOS systems, ``find_library`` was not able to find  macOS
+system libraries when running on Big Sur due to changes in  how system
+libraries are stored.

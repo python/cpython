@@ -1,5 +1,5 @@
-This is Python version 3.8.2
-============================
+This is Python version 3.8.16
+=============================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=3.8
    :alt: CPython build status on Travis CI
@@ -13,12 +13,12 @@ This is Python version 3.8.2
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython/branch/3.8
 
-.. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
-   :alt: Python Zulip chat
-   :target: https://python.zulipchat.com
+.. image:: https://img.shields.io/badge/discourse-join_chat-brightgreen.svg
+   :alt: Python Discourse chat
+   :target: https://discuss.python.org/
 
 
-Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
+Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -29,7 +29,7 @@ General Information
 
 - Website: https://www.python.org
 - Source code: https://github.com/python/cpython
-- Issue tracker: https://bugs.python.org
+- Issue tracker: https://github.com/python/cpython/issues/
 - Documentation: https://docs.python.org
 - Developer's Guide: https://devguide.python.org/
 
@@ -189,7 +189,7 @@ example, if ``test_os`` and ``test_gdb`` failed, you can run::
     make test TESTOPTS="-v test_os test_gdb"
 
 If the failure persists and appears to be a problem with Python rather than
-your environment, you can `file a bug report <https://bugs.python.org>`_ and
+your environment, you can `file a bug report <https://github.com/python/cpython/issues/>`_ and
 include relevant output from that command to show the issue.
 
 See `Running & Writing Tests <https://devguide.python.org/runtests/>`_
@@ -218,7 +218,7 @@ Issue Tracker and Mailing List
 ------------------------------
 
 Bug reports are welcome!  You can use the `issue tracker
-<https://bugs.python.org>`_ to report bugs, and/or submit pull requests `on
+<https://github.com/python/cpython/issues/>`_ to report bugs, and/or submit pull requests `on
 GitHub <https://github.com/python/cpython>`_.
 
 You can also follow development discussion on the `python-dev mailing list
@@ -246,14 +246,14 @@ See :pep:`569` for Python 3.8 release details.
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
+Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
 
-Copyright (c) 2000 BeOpen.com.  All rights reserved.
+Copyright © 2000 BeOpen.com.  All rights reserved.
 
-Copyright (c) 1995-2001 Corporation for National Research Initiatives.  All
+Copyright © 1995-2001 Corporation for National Research Initiatives.  All
 rights reserved.
 
-Copyright (c) 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
+Copyright © 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
 
 See the file "LICENSE" for information on the history of this software, terms &
 conditions for usage, and a DISCLAIMER OF ALL WARRANTIES.

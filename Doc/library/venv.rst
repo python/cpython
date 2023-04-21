@@ -27,7 +27,7 @@ See :pep:`405` for more information about Python virtual environments.
 .. seealso::
 
    `Python Packaging User Guide: Creating and using virtual environments
-   <https://packaging.python.org/installing/#creating-virtual-environments>`__
+   <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`__
 
 
 Creating virtual environments
@@ -386,7 +386,7 @@ subclass which installs setuptools and pip into a created virtual environment::
             :param context: The information for the virtual environment
                             creation request being processed.
             """
-            url = 'https://raw.github.com/pypa/pip/master/contrib/get-pip.py'
+            url = 'https://bootstrap.pypa.io/get-pip.py'
             self.install_script(context, 'pip', url)
 
     def main(args=None):

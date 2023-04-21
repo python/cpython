@@ -1,15 +1,18 @@
-"Test run, coverage 42%."
+"Test run, coverage 49%."
 
 from idlelib import run
-import unittest
-from unittest import mock
-from test.support import captured_stderr
-
 import io
 import sys
+from test.support import captured_output, captured_stderr
+import unittest
+from unittest import mock
+import idlelib
+from idlelib.idle_test.mock_idle import Func
+
+idlelib.testing = True  # Use {} for executing test user code.
 
 
-class RunTest(unittest.TestCase):
+class PrintExceptionTest(unittest.TestCase):
 
     def test_print_exception_unhashable(self):
         class UnhashableException(Exception):
@@ -282,7 +285,8 @@ class StdOutputFilesTest(unittest.TestCase):
         self.assertRaises(TypeError, f.close, 1)
 
 
-class TestSysRecursionLimitWrappers(unittest.TestCase):
+class RecursionLimitTest(unittest.TestCase):
+    # Test (un)install_recursionlimit_wrappers and fixdoc.
 
     def test_bad_setrecursionlimit_calls(self):
         run.install_recursionlimit_wrappers()
@@ -296,12 +300,12 @@ class TestSysRecursionLimitWrappers(unittest.TestCase):
         run.install_recursionlimit_wrappers()
         self.addCleanup(run.uninstall_recursionlimit_wrappers)
 
-        # check that setting the recursion limit works
+        # Check that setting the recursion limit works.
         orig_reclimit = sys.getrecursionlimit()
         self.addCleanup(sys.setrecursionlimit, orig_reclimit)
         sys.setrecursionlimit(orig_reclimit + 3)
 
-        # check that the new limit is returned by sys.getrecursionlimit()
+        # Check that the new limit is returned by sys.getrecursionlimit().
         new_reclimit = sys.getrecursionlimit()
         self.assertEqual(new_reclimit, orig_reclimit + 3)
 
@@ -313,12 +317,73 @@ class TestSysRecursionLimitWrappers(unittest.TestCase):
         self.assertEqual(new_reclimit, orig_reclimit)
 
     def test_fixdoc(self):
+        # Put here until better place for miscellaneous test.
         def func(): "docstring"
         run.fixdoc(func, "more")
         self.assertEqual(func.__doc__, "docstring\n\nmore")
         func.__doc__ = None
         run.fixdoc(func, "more")
         self.assertEqual(func.__doc__, "more")
+
+
+class HandleErrorTest(unittest.TestCase):
+    # Method of MyRPCServer
+    def test_fatal_error(self):
+        eq = self.assertEqual
+        with captured_output('__stderr__') as err,\
+             mock.patch('idlelib.run.thread.interrupt_main',
+                        new_callable=Func) as func:
+            try:
+                raise EOFError
+            except EOFError:
+                run.MyRPCServer.handle_error(None, 'abc', '123')
+            eq(run.exit_now, True)
+            run.exit_now = False
+            eq(err.getvalue(), '')
+
+            try:
+                raise IndexError
+            except IndexError:
+                run.MyRPCServer.handle_error(None, 'abc', '123')
+            eq(run.quitting, True)
+            run.quitting = False
+            msg = err.getvalue()
+            self.assertIn('abc', msg)
+            self.assertIn('123', msg)
+            self.assertIn('IndexError', msg)
+            eq(func.called, 2)
+
+
+class ExecRuncodeTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.addClassCleanup(setattr,run,'print_exception',run.print_exception)
+        cls.prt = Func()  # Need reference.
+        run.print_exception = cls.prt
+        mockrpc = mock.Mock()
+        mockrpc.console.getvar = Func(result=False)
+        cls.ex = run.Executive(mockrpc)
+
+    @classmethod
+    def tearDownClass(cls):
+        assert sys.excepthook == sys.__excepthook__
+
+    def test_exceptions(self):
+        ex = self.ex
+        ex.runcode('1/0')
+        self.assertIs(ex.user_exc_info[0], ZeroDivisionError)
+
+        self.addCleanup(setattr, sys, 'excepthook', sys.__excepthook__)
+        sys.excepthook = lambda t, e, tb: run.print_exception(t)
+        ex.runcode('1/0')
+        self.assertIs(self.prt.args[0], ZeroDivisionError)
+
+        sys.excepthook = lambda: None
+        ex.runcode('1/0')
+        t, e, tb = ex.user_exc_info
+        self.assertIs(t, TypeError)
+        self.assertTrue(isinstance(e.__context__, ZeroDivisionError))
 
 
 if __name__ == '__main__':

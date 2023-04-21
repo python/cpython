@@ -81,7 +81,7 @@ def formataddr(pair, charset='utf-8'):
     If the first element of pair is false, then the second element is
     returned unmodified.
 
-    Optional charset if given is the character set that is used to encode
+    The optional charset is the character set that is used to encode
     realname in case realname is not ASCII safe.  Can be an instance of str or
     a Charset-like object which has a header_encode method.  Default is
     'utf-8'.

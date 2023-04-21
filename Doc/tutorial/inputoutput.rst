@@ -172,7 +172,7 @@ Positional and keyword arguments can be arbitrarily combined::
 If you have a really long format string that you don't want to split up, it
 would be nice if you could reference the variables to be formatted by name
 instead of by position.  This can be done by simply passing the dict and using
-square brackets ``'[]'`` to access the keys ::
+square brackets ``'[]'`` to access the keys. ::
 
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
    >>> print('Jack: {0[Jack]:d}; Sjoerd: {0[Sjoerd]:d}; '
@@ -257,10 +257,10 @@ left with zeros.  It understands about plus and minus signs::
 Old string formatting
 ---------------------
 
-The ``%`` operator can also be used for string formatting. It interprets the
-left argument much like a :c:func:`sprintf`\ -style format string to be applied
-to the right argument, and returns the string resulting from this formatting
-operation. For example::
+The % operator (modulo) can also be used for string formatting. Given ``'string'
+% values``, instances of ``%`` in ``string`` are replaced with zero or more
+elements of ``values``. This operation is commonly known as string
+interpolation. For example::
 
    >>> import math
    >>> print('The value of pi is approximately %5.3f.' % math.pi)
@@ -329,11 +329,16 @@ equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
 
 If you're not using the :keyword:`with` keyword, then you should call
 ``f.close()`` to close the file and immediately free up any system
-resources used by it. If you don't explicitly close a file, Python's
-garbage collector will eventually destroy the object and close the
-open file for you, but the file may stay open for a while.  Another
-risk is that different Python implementations will do this clean-up at
-different times.
+resources used by it.
+
+.. warning::
+   Calling ``f.write()`` without using the :keyword:`!with` keyword or calling
+   ``f.close()`` **might** result in the arguments
+   of ``f.write()`` not being completely written to the disk, even if the
+   program exits successfully.
+
+..
+   See also https://bugs.python.org/issue17852
 
 After a file object is closed, either by a :keyword:`with` statement
 or by calling ``f.close()``, attempts to use the file object will

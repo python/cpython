@@ -751,6 +751,24 @@ append_ast_ext_slice(_PyUnicodeWriter *writer, slice_ty slice)
 }
 
 static int
+append_ast_index_slice(_PyUnicodeWriter *writer, slice_ty slice)
+{
+    int level = PR_TUPLE;
+    expr_ty value = slice->v.Index.value;
+    if (value->kind == Tuple_kind) {
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(value->v.Tuple.elts); i++) {
+            expr_ty element = asdl_seq_GET(value->v.Tuple.elts, i);
+            if (element->kind == Starred_kind) {
+                ++level;
+                break;
+            }
+        }
+    }
+    APPEND_EXPR(value, level);
+    return 0;
+}
+
+static int
 append_ast_slice(_PyUnicodeWriter *writer, slice_ty slice)
 {
     switch (slice->kind) {
@@ -759,8 +777,7 @@ append_ast_slice(_PyUnicodeWriter *writer, slice_ty slice)
     case ExtSlice_kind:
         return append_ast_ext_slice(writer, slice);
     case Index_kind:
-        APPEND_EXPR(slice->v.Index.value, PR_TUPLE);
-        return 0;
+        return append_ast_index_slice(writer, slice);
     default:
         PyErr_SetString(PyExc_SystemError,
                         "unexpected slice kind");

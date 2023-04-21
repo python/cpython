@@ -1,2 +1,0 @@
-:c:func:`PyNumber_ToBase` now raises a :exc:`SystemError` instead of
-crashing when called with invalid base.

@@ -1,4 +1,0 @@
-Fix a bug that was causing incomplete results when calling
-``pathlib.Path.glob`` in the presence of symlinks that point
-to files where the user does not have read access. Patch by Pablo
-Galindo and Matt Wozniski.

@@ -1,0 +1,180 @@
+.. bpo: 46794
+.. date: 2022-02-22-12-07-53
+.. nonce: 6WvJ9o
+.. release date: 2022-03-15
+.. section: Core and Builtins
+
+Bump up the libexpat version into 2.4.6
+
+..
+
+.. bpo: 46985
+.. date: 2022-03-11-13-34-16
+.. nonce: BgoMr2
+.. section: Library
+
+Upgrade pip wheel bundled with ensurepip (pip 22.0.4)
+
+..
+
+.. bpo: 46932
+.. date: 2022-03-07-20-20-34
+.. nonce: xbarAs
+.. section: Library
+
+Update bundled libexpat to 2.4.7
+
+..
+
+.. bpo: 46811
+.. date: 2022-02-20-21-03-31
+.. nonce: 8BxgdQ
+.. section: Library
+
+Make test suite support Expat >=2.4.5
+
+..
+
+.. bpo: 46784
+.. date: 2022-02-18-22-10-30
+.. nonce: SVOQJx
+.. section: Library
+
+Fix libexpat symbols collisions with user dynamically loaded or statically
+linked libexpat in embedded Python.
+
+..
+
+.. bpo: 46756
+.. date: 2022-02-15-11-57-53
+.. nonce: AigSPi
+.. section: Library
+
+Fix a bug in :meth:`urllib.request.HTTPPasswordMgr.find_user_password` and
+:meth:`urllib.request.HTTPPasswordMgrWithPriorAuth.is_authenticated` which
+allowed to bypass authorization. For example, access to URI
+``example.org/foobar`` was allowed if the user was authorized for URI
+``example.org/foo``.
+
+..
+
+.. bpo: 46400
+.. date: 2022-01-30-15-16-12
+.. nonce: vweUiO
+.. section: Library
+
+expat: Update libexpat from 2.4.1 to 2.4.4
+
+..
+
+.. bpo: 46474
+.. date: 2022-01-22-14-49-10
+.. nonce: eKQhvx
+.. section: Library
+
+In ``importlib.metadata.EntryPoint.pattern``, avoid potential REDoS by
+limiting ambiguity in consecutive whitespace.
+
+..
+
+.. bpo: 44849
+.. date: 2021-08-06-13-00-28
+.. nonce: O78F_f
+.. section: Library
+
+Fix the :func:`os.set_inheritable` function on FreeBSD 14 for file
+descriptor opened with the :data:`~os.O_PATH` flag: ignore the
+:data:`~errno.EBADF` error on ``ioctl()``, fallback on the ``fcntl()``
+implementation. Patch by Victor Stinner.
+
+..
+
+.. bpo: 41028
+.. date: 2020-06-18-23-37-03
+.. nonce: vM8bC8
+.. section: Documentation
+
+Language and version switchers, previously maintained in every cpython
+branches, are now handled by docsbuild-script.
+
+..
+
+.. bpo: 45195
+.. date: 2021-09-14-13-16-18
+.. nonce: EyQR1G
+.. section: Tests
+
+Fix test_readline.test_nonascii(): sometimes, the newline character is not
+written at the end, so don't expect it in the output. Patch by Victor
+Stinner.
+
+..
+
+.. bpo: 44949
+.. date: 2021-08-18-18-30-12
+.. nonce: VE5ENv
+.. section: Tests
+
+Fix auto history tests of test_readline: sometimes, the newline character is
+not written at the end, so don't expect it in the output.
+
+..
+
+.. bpo: 47024
+.. date: 2022-03-15-11-53-10
+.. nonce: p3PjRy
+.. section: Build
+
+Update Windows builds and macOS installer build to use OpenSSL 1.1.1n.
+
+..
+
+.. bpo: 45405
+.. date: 2021-10-11-16-27-38
+.. nonce: iSfdW5
+.. section: Build
+
+Prevent ``internal configure error`` when running ``configure`` with recent
+versions of clang.  Patch by David Bohman.
+
+..
+
+.. bpo: 45220
+.. date: 2021-09-16-18-00-43
+.. nonce: TgbkvW
+.. section: Build
+
+Avoid building with the Windows 11 SDK previews automatically. This may be
+overridden by setting the ``DefaultWindowsSDKVersion`` environment variable
+before building.
+
+..
+
+.. bpo: 44549
+.. date: 2022-03-07-17-46-40
+.. nonce: SPrGS9
+.. section: Windows
+
+Update bzip2 to 1.0.8 in Windows builds to mitigate CVE-2016-3189 and
+CVE-2019-12900
+
+..
+
+.. bpo: 46948
+.. date: 2022-03-07-16-34-11
+.. nonce: Ufd4tG
+.. section: Windows
+
+Prevent CVE-2022-26488 by ensuring the Add to PATH option in the Windows
+installer uses the correct path when being repaired.
+
+..
+
+.. bpo: 44828
+.. date: 2021-10-25-02-02-21
+.. nonce: XBdXlJ
+.. section: macOS
+
+Avoid tkinter file dialog failure on macOS 12 Monterey when using the Tk
+8.6.11 provided by python.org macOS installers. Patch by Marc Culler of the
+Tk project.

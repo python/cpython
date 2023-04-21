@@ -682,8 +682,10 @@ def _ss(data, c=None):
     calculated from ``c`` as given. Use the second case with care, as it can
     lead to garbage results.
     """
-    if c is None:
-        c = mean(data)
+    if c is not None:
+        T, total, count = _sum((x-c)**2 for x in data)
+        return (T, total)
+    c = mean(data)
     T, total, count = _sum((x-c)**2 for x in data)
     # The following sum should mathematically equal zero, but due to rounding
     # error may not.

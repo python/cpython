@@ -241,7 +241,7 @@ def testall(list, recursive, toplevel):
             if recursive or toplevel:
                 print('recursing down:')
                 import glob
-                names = glob.glob(os.path.join(filename, '*'))
+                names = glob.glob(os.path.join(glob.escape(filename), '*'))
                 testall(names, recursive, 0)
             else:
                 print('*** directory (use -r) ***')

@@ -1,0 +1,8 @@
+[suppress_type]
+name_regexp = _Py.*
+
+[suppress_variable]
+name_regexp = _Py.*
+
+[suppress_function]
+name_regexp = _Py.*

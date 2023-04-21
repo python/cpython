@@ -665,14 +665,14 @@ The ``errors`` module has the following attributes:
 
 .. data:: codes
 
-   A dictionary mapping numeric error codes to their string descriptions.
+   A dictionary mapping string descriptions to their error codes.
 
    .. versionadded:: 3.2
 
 
 .. data:: messages
 
-   A dictionary mapping string descriptions to their error codes.
+   A dictionary mapping numeric error codes to their string descriptions.
 
    .. versionadded:: 3.2
 

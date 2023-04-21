@@ -287,7 +287,7 @@ class Regrtest:
 
     def list_cases(self):
         support.verbose = False
-        support.set_match_tests(self.ns.match_tests)
+        support.set_match_tests(self.ns.match_tests, self.ns.ignore_tests)
 
         for test_name in self.selected:
             abstest = get_abs_module(self.ns, test_name)
@@ -394,7 +394,10 @@ class Regrtest:
 
         save_modules = sys.modules.keys()
 
-        self.log("Run tests sequentially")
+        msg = "Run tests sequentially"
+        if self.ns.timeout:
+            msg += " (timeout: %s)" % format_duration(self.ns.timeout)
+        self.log(msg)
 
         previous_test = None
         for test_index, test_name in enumerate(self.tests, 1):
@@ -599,7 +602,7 @@ class Regrtest:
     def cleanup(self):
         import glob
 
-        path = os.path.join(self.tmp_dir, 'test_python_*')
+        path = os.path.join(glob.escape(self.tmp_dir), 'test_python_*')
         print("Cleanup %s directory" % self.tmp_dir)
         for name in glob.glob(path):
             if os.path.isdir(name):

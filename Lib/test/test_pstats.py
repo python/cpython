@@ -76,5 +76,9 @@ class StatsTestCase(unittest.TestCase):
                           'calls')
 
 
+    def test_SortKey_enum(self):
+        self.assertEqual(SortKey.FILENAME, 'filename')
+        self.assertNotEqual(SortKey.FILENAME, SortKey.CALLS)
+
 if __name__ == "__main__":
     unittest.main()

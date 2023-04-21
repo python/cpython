@@ -1,0 +1,130 @@
+.. bpo: 41162
+.. date: 2020-07-03-20-41-29
+.. nonce: tb8pVj
+.. release date: 2020-07-13
+.. section: Security
+
+Audit hooks are now cleared later during finalization to avoid missing
+events.
+
+..
+
+.. bpo: 29778
+.. date: 2020-07-03-17-21-37
+.. nonce: cR_fGS
+.. section: Security
+
+Ensure :file:`python3.dll` is loaded from correct locations when Python is
+embedded (CVE-2020-15523).
+
+..
+
+.. bpo: 41247
+.. date: 2020-07-08-22-03-54
+.. nonce: PndYIk
+.. section: Core and Builtins
+
+Always cache the running loop holder when running
+``asyncio.set_running_loop``.
+
+..
+
+.. bpo: 41252
+.. date: 2020-07-08-21-55-23
+.. nonce: nBWL-Y
+.. section: Core and Builtins
+
+Fix incorrect refcounting in _ssl.c's ``_servername_callback()``.
+
+..
+
+.. bpo: 41218
+.. date: 2020-07-06-13-35-17
+.. nonce: oKnSr2
+.. section: Core and Builtins
+
+Python 3.8.3 had a regression where compiling with
+ast.PyCF_ALLOW_TOP_LEVEL_AWAIT would aggressively mark list comprehension
+with CO_COROUTINE. Now only list comprehension making use of async/await
+will tagged as so.
+
+..
+
+.. bpo: 41175
+.. date: 2020-06-30-20-17-31
+.. nonce: acJoXB
+.. section: Core and Builtins
+
+Guard against a NULL pointer dereference within bytearrayobject triggered by
+the ``bytearray() + bytearray()`` operation.
+
+..
+
+.. bpo: 39960
+.. date: 2020-06-23-18-32-41
+.. nonce: Kez3fP
+.. section: Core and Builtins
+
+The "hackcheck" that prevents sneaking around a type's __setattr__() by
+calling the superclass method was rewritten to allow C implemented heap
+types.
+
+..
+
+.. bpo: 41235
+.. date: 2020-07-07-21-56-26
+.. nonce: H2csMU
+.. section: Library
+
+Fix the error handling in :meth:`ssl.SSLContext.load_dh_params`.
+
+..
+
+.. bpo: 41193
+.. date: 2020-07-02-11-53-45
+.. nonce: 8-Tnql
+.. section: Library
+
+The ``write_history()`` atexit function of the readline completer now
+ignores any :exc:`OSError` to ignore error if the filesystem is read-only,
+instead of only ignoring :exc:`FileNotFoundError` and
+:exc:`PermissionError`.
+
+..
+
+.. bpo: 41043
+.. date: 2020-06-20-00-19-30
+.. nonce: p-Pk-H
+.. section: Library
+
+Fixed the use of :func:`~glob.glob` in the stdlib: literal part of the path
+is now always correctly escaped.
+
+..
+
+.. bpo: 39384
+.. date: 2020-05-30-12-44-29
+.. nonce: Iqxy3q
+.. section: Library
+
+Fixed email.contentmanager to allow set_content() to set a null string.
+
+..
+
+.. bpo: 37765
+.. date: 2020-07-07-18-44-30
+.. nonce: umc1o8
+.. section: IDLE
+
+Add keywords to module name completion list.  Rewrite Completions section of
+IDLE doc.
+
+..
+
+.. bpo: 41152
+.. date: 2020-06-29-14-51-15
+.. nonce: d6mV0C
+.. section: IDLE
+
+The encoding of ``stdin``, ``stdout`` and ``stderr`` in IDLE is now always
+UTF-8.

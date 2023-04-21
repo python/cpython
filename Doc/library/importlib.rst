@@ -438,8 +438,9 @@ ABC hierarchy::
             package. This attribute is not set on modules.
 
         - :attr:`__package__`
-            The parent package for the module/package. If the module is
-            top-level then it has a value of the empty string. The
+            The fully-qualified name of the package under which the module was
+            loaded as a submodule (or the empty string for top-level modules).
+            For packages, it is the same as :attr:`__name__`.  The
             :func:`importlib.util.module_for_loader` decorator can handle the
             details for :attr:`__package__`.
 
@@ -1036,7 +1037,7 @@ find and load modules.
 
 .. class:: WindowsRegistryFinder
 
-   :term:`Finder` for modules declared in the Windows registry.  This class
+   :term:`Finder <finder>` for modules declared in the Windows registry.  This class
    implements the :class:`importlib.abc.MetaPathFinder` ABC.
 
    Only class methods are defined by this class to alleviate the need for
@@ -1051,7 +1052,7 @@ find and load modules.
 
 .. class:: PathFinder
 
-   A :term:`Finder` for :data:`sys.path` and package ``__path__`` attributes.
+   A :term:`Finder <finder>` for :data:`sys.path` and package ``__path__`` attributes.
    This class implements the :class:`importlib.abc.MetaPathFinder` ABC.
 
    Only class methods are defined by this class to alleviate the need for
@@ -1100,7 +1101,7 @@ find and load modules.
       directory for ``''`` (i.e. the empty string).
 
 
-.. class:: FileFinder(path, \*loader_details)
+.. class:: FileFinder(path, *loader_details)
 
    A concrete implementation of :class:`importlib.abc.PathEntryFinder` which
    caches results from the file system.
@@ -1143,7 +1144,7 @@ find and load modules.
 
       Clear out the internal cache.
 
-   .. classmethod:: path_hook(\*loader_details)
+   .. classmethod:: path_hook(*loader_details)
 
       A class method which returns a closure for use on :attr:`sys.path_hooks`.
       An instance of :class:`FileFinder` is returned by the closure using the
@@ -1310,8 +1311,8 @@ find and load modules.
 
    (``__loader__``)
 
-   The loader to use for loading.  For namespace packages this should be
-   set to ``None``.
+   The :term:`Loader <loader>` that should be used when loading
+   the module.  :term:`Finders <finder>` should always set this.
 
    .. attribute:: origin
 
@@ -1344,8 +1345,9 @@ find and load modules.
 
    (``__package__``)
 
-   (Read-only) Fully-qualified name of the package to which the module
-   belongs as a submodule (or ``None``).
+   (Read-only) The fully-qualified name of the package under which the module
+   should be loaded as a submodule (or the empty string for top-level modules).
+   For packages, it is the same as :attr:`__name__`.
 
    .. attribute:: has_location
 
@@ -1437,7 +1439,7 @@ an :term:`importer`.
 
    If  **name** has no leading dots, then **name** is simply returned. This
    allows for usage such as
-   ``importlib.util.resolve_name('sys', __package__)`` without doing a
+   ``importlib.util.resolve_name('sys', __spec__.parent)`` without doing a
    check to see if the **package** argument is needed.
 
    :exc:`ValueError` is raised if **name** is a relative module name but

@@ -276,7 +276,9 @@ PyByteArray_Concat(PyObject *a, PyObject *b)
 
     result = (PyByteArrayObject *) \
         PyByteArray_FromStringAndSize(NULL, va.len + vb.len);
-    if (result != NULL) {
+    // result->ob_bytes is NULL if result is an empty string:
+    // if va.len + vb.len equals zero.
+    if (result != NULL && result->ob_bytes != NULL) {
         memcpy(result->ob_bytes, va.buf, va.len);
         memcpy(result->ob_bytes + va.len, vb.buf, vb.len);
     }
@@ -330,6 +332,7 @@ bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
     PyByteArrayObject *result;
     Py_ssize_t mysize;
     Py_ssize_t size;
+    const char *buf;
 
     if (count < 0)
         count = 0;
@@ -338,13 +341,14 @@ bytearray_repeat(PyByteArrayObject *self, Py_ssize_t count)
         return PyErr_NoMemory();
     size = mysize * count;
     result = (PyByteArrayObject *)PyByteArray_FromStringAndSize(NULL, size);
+    buf = PyByteArray_AS_STRING(self);
     if (result != NULL && size != 0) {
         if (mysize == 1)
-            memset(result->ob_bytes, self->ob_bytes[0], size);
+            memset(result->ob_bytes, buf[0], size);
         else {
             Py_ssize_t i;
             for (i = 0; i < count; i++)
-                memcpy(result->ob_bytes + i*mysize, self->ob_bytes, mysize);
+                memcpy(result->ob_bytes + i*mysize, buf, mysize);
         }
     }
     return (PyObject *)result;

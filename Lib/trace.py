@@ -287,8 +287,9 @@ class CoverageResults:
         if self.outfile:
             # try and store counts and module info into self.outfile
             try:
-                pickle.dump((self.counts, self.calledfuncs, self.callers),
-                            open(self.outfile, 'wb'), 1)
+                with open(self.outfile, 'wb') as f:
+                    pickle.dump((self.counts, self.calledfuncs, self.callers),
+                                f, 1)
             except OSError as err:
                 print("Can't save counts files because %s" % err, file=sys.stderr)
 
@@ -731,7 +732,7 @@ def main():
             sys.argv = [opts.progname, *opts.arguments]
             sys.path[0] = os.path.dirname(opts.progname)
 
-            with open(opts.progname) as fp:
+            with open(opts.progname, 'rb') as fp:
                 code = compile(fp.read(), opts.progname, 'exec')
             # try to emulate __main__ namespace as much as possible
             globs = {

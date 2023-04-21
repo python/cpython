@@ -4,6 +4,7 @@
         <Package InstallerVersion="300" Compressed="yes" InstallScope="perUser" Platform="$(var.Platform)" />
         <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
         
+        <PropertyRef Id="DetectTargetDir" />
         <PropertyRef Id="UpgradeTable" />
         
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">

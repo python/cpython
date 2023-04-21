@@ -1,2 +1,0 @@
-:mod:`multiprocessing` now supports abstract socket addresses (if abstract sockets
-are supported in the running platform). Patch by Pablo Galindo.

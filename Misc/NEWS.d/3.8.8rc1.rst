@@ -1,0 +1,367 @@
+.. bpo: 42967
+.. date: 2021-02-14-15-59-16
+.. nonce: YApqDS
+.. release date: 2021-02-16
+.. section: Security
+
+Fix web cache poisoning vulnerability by defaulting the query args separator
+to ``&``, and allowing the user to choose a custom separator.
+
+..
+
+.. bpo: 42938
+.. date: 2021-01-18-09-27-31
+.. nonce: 4Zn4Mp
+.. section: Security
+
+Avoid static buffers when computing the repr of :class:`ctypes.c_double` and
+:class:`ctypes.c_longdouble` values.
+
+..
+
+.. bpo: 42819
+.. date: 2021-01-04-23-54-34
+.. nonce: 4KO6wU
+.. section: Core and Builtins
+
+:mod:`readline`: Explicitly disable bracketed paste in the interactive
+interpreter, even if it's set in the inputrc, is enabled by default (eg GNU
+Readline 8.1), or a user calls ``readline.read_init_file()``. The Python
+REPL has not implemented bracketed paste support. Also, bracketed mode
+writes the ``"\x1b[?2004h"`` escape sequence into stdout which causes test
+failures in applications that don't support it. It can still be explicitly
+enabled by calling ``readline.parse_and_bind("set enable-bracketed-paste
+on")``. Patch by Dustin Rodrigues.
+
+..
+
+.. bpo: 43108
+.. date: 2021-02-02-20-23-31
+.. nonce: lqcCZ6
+.. section: Library
+
+Fixed a reference leak in the :mod:`curses` module. Patch by Pablo Galindo
+
+..
+
+.. bpo: 42780
+.. date: 2021-01-08-15-49-20
+.. nonce: rtqi6B
+.. section: Library
+
+Fix os.set_inheritable() for O_PATH file descriptors on Linux.
+
+..
+
+.. bpo: 41748
+.. date: 2021-01-05-21-26-29
+.. nonce: KdC0w3
+.. section: Library
+
+Fix HTMLParser parsing rules for element attributes containing commas with
+spaces. Patch by Karl Dubost.
+
+..
+
+.. bpo: 42759
+.. date: 2020-12-27-22-19-26
+.. nonce: lGi_03
+.. section: Library
+
+Fixed equality comparison of :class:`tkinter.Variable` and
+:class:`tkinter.font.Font`. Objects which belong to different Tcl
+interpreters are now always different, even if they have the same name.
+
+..
+
+.. bpo: 23328
+.. date: 2020-12-27-18-47-01
+.. nonce: _xqepZ
+.. section: Library
+
+Allow / character in username, password fields on _PROXY envars.
+
+..
+
+.. bpo: 42681
+.. date: 2020-12-20-22-50-15
+.. nonce: lDO6jb
+.. section: Library
+
+Fixed range checks for color and pair numbers in :mod:`curses`.
+
+..
+
+.. bpo: 42531
+.. date: 2020-12-02-16-28-04
+.. nonce: 2sLlFW
+.. section: Library
+
+:func:`importlib.resources.path` now works for :term:`package`\ s missing
+the optional :attr:`__file__` attribute (more specifically, packages whose
+:attr:`__spec__`\ ``.``\ :attr:`~importlib.machinery.ModuleSpec.origin`
+:keyword:`is` :data:`None`).
+
+..
+
+.. bpo: 42388
+.. date: 2020-11-22-11-22-28
+.. nonce: LMgM6B
+.. section: Library
+
+Fix subprocess.check_output(..., input=None) behavior when text=True to be
+consistent with that of the documentation and universal_newlines=True.
+
+..
+
+.. bpo: 42384
+.. date: 2020-11-17-14-32-39
+.. nonce: 1ZnQSn
+.. section: Library
+
+Make pdb populate sys.path[0] exactly the same as regular python execution.
+
+..
+
+.. bpo: 42383
+.. date: 2020-11-17-14-30-12
+.. nonce: ubl0Y_
+.. section: Library
+
+Fix pdb: previously pdb would fail to restart the debugging target if it was
+specified using a relative path and the current directory changed.
+
+..
+
+.. bpo: 42318
+.. date: 2020-11-14-13-46-27
+.. nonce: wYAcBD
+.. section: Library
+
+Fixed support of non-BMP characters in :mod:`tkinter` on macOS.
+
+..
+
+.. bpo: 42005
+.. date: 2020-10-11-13-48-03
+.. nonce: Jq6Az-
+.. section: Library
+
+Fix CLI of :mod:`cProfile` and :mod:`profile` to catch
+:exc:`BrokenPipeError`.
+
+..
+
+.. bpo: 41604
+.. date: 2020-08-21-15-24-14
+.. nonce: rTXleO
+.. section: Library
+
+Don't decrement the reference count of the previous user_ptr when
+set_panel_userptr fails.
+
+..
+
+.. bpo: 26407
+.. date: 2020-05-30-14-19-47
+.. nonce: MjWLO1
+.. section: Library
+
+Unexpected errors in calling the ``__iter__`` method are no longer masked by
+``TypeError`` in :func:`csv.reader`, :func:`csv.writer.writerow` and
+:meth:`csv.writer.writerows`.
+
+..
+
+.. bpo: 39068
+.. date: 2019-12-16-17-55-31
+.. nonce: Ti3f9P
+.. section: Library
+
+Fix initialization race condition in :func:`a85encode` and :func:`b85encode`
+in :mod:`base64`. Patch by Brandon Stansbury.
+
+..
+
+.. bpo: 36589
+.. date: 2019-11-16-22-56-51
+.. nonce: 0Io76D
+.. section: Library
+
+The :func:`curses.update_lines_cols` function now returns ``None`` instead
+of ``1`` on success.
+
+..
+
+.. bpo: 33289
+.. date: 2018-04-23-13-44-10
+.. nonce: anBnUr
+.. section: Library
+
+Correct call to :mod:`tkinter.colorchooser` to return RGB triplet of ints
+instead of floats.  Patch by Cheryl Sabella.
+
+..
+
+.. bpo: 40304
+.. date: 2021-01-20-23-03-49
+.. nonce: -LK7Ps
+.. section: Documentation
+
+Fix doc for type(name, bases, dict).  Patch by Boris Verkhovskiy and Éric
+Araujo.
+
+..
+
+.. bpo: 42811
+.. date: 2021-01-04-22-14-22
+.. nonce: HY2beA
+.. section: Documentation
+
+Updated importlib.utils.resolve_name() doc to use __spec__.parent instead of
+__package__. (Thanks Yair Frid.)
+
+..
+
+.. bpo: 42794
+.. date: 2021-01-01-08-52-36
+.. nonce: -7-XGz
+.. section: Tests
+
+Update test_nntplib to use offical group name of news.aioe.org for testing.
+Patch by Dong-hee Na.
+
+..
+
+.. bpo: 40810
+.. date: 2020-05-30-10-56-38
+.. nonce: LPqDLQ
+.. section: Tests
+
+In :mod:`sqlite3`, fix ``CheckTraceCallbackContent`` for SQLite pre 3.7.15.
+
+..
+
+.. bpo: 29076
+.. date: 2020-02-28-14-33-15
+.. nonce: Gtixi5
+.. section: Build
+
+Add fish shell support to macOS installer.
+
+..
+
+.. bpo: 41837
+.. date: 2021-01-05-20-36-40
+.. nonce: bmS7vB
+.. section: Windows
+
+Updated Windows installer to include OpenSSL 1.1.1i
+
+..
+
+.. bpo: 42584
+.. date: 2020-12-07-11-40-52
+.. nonce: AsYnVX
+.. section: Windows
+
+Upgrade Windows installer to use SQLite 3.34.0.
+
+..
+
+.. bpo: 41837
+.. date: 2021-01-04-00-48-08
+.. nonce: dX-unJ
+.. section: macOS
+
+Update macOS installer build to use OpenSSL 1.1.1i.
+
+..
+
+.. bpo: 42584
+.. date: 2020-12-07-11-37-35
+.. nonce: LygmqQ
+.. section: macOS
+
+Update macOS installer to use SQLite 3.34.0.
+
+..
+
+.. bpo: 43008
+.. date: 2021-01-26-18-12-17
+.. nonce: mbQUc7
+.. section: IDLE
+
+Make IDLE invoke :func:`sys.excepthook` in normal, 2-process mode. Patch by
+Ken Hilton.
+
+..
+
+.. bpo: 33065
+.. date: 2021-01-10-01-25-43
+.. nonce: zmyHYJ
+.. section: IDLE
+
+Fix problem debugging user classes with __repr__ method.
+
+..
+
+.. bpo: 42508
+.. date: 2020-11-30-19-46-05
+.. nonce: fE7w4M
+.. section: IDLE
+
+Keep IDLE running on macOS.  Remove obsolete workaround that prevented
+running files with shortcuts when using new universal2 installers built on
+macOS 11.
+
+..
+
+.. bpo: 23544
+.. date: 2019-11-14-23-41-07
+.. nonce: 3etemb
+.. section: IDLE
+
+Disable Debug=>Stack Viewer when user code is running or Debugger is active,
+to prevent hang or crash.  Patch by Zackery Spytz.
+
+..
+
+.. bpo: 32631
+.. date: 2019-06-30-20-31-09
+.. nonce: e7_4BG
+.. section: IDLE
+
+Finish zzdummy example extension module: make menu entries work; add
+docstrings and tests with 100% coverage.
+
+..
+
+.. bpo: 42726
+.. date: 2020-12-23-19-42-11
+.. nonce: a5EkTv
+.. section: Tools/Demos
+
+Fixed Python 3 compatibility issue with gdb/libpython.py handling of
+attribute dictionaries.
+
+..
+
+.. bpo: 43030
+.. date: 2021-01-27-10-27-47
+.. nonce: loDcD_
+.. section: C API
+
+Fixed a compiler warning in :c:func:`Py_UNICODE_ISSPACE()` on platforms with
+signed ``wchar_t``.
+
+..
+
+.. bpo: 40052
+.. date: 2020-03-24-09-27-10
+.. nonce: 27P2KG
+.. section: C API
+
+Fix an alignment build warning/error in function
+``PyVectorcall_Function()``. Patch by Andreas Schneider, Antoine Pitrou and
+Petr Viktorin.

@@ -130,7 +130,7 @@ do { \
 static pthread_condattr_t *condattr_monotonic = NULL;
 
 static void
-init_condattr()
+init_condattr(void)
 {
 #ifdef CONDATTR_MONOTONIC
     static pthread_condattr_t ca;

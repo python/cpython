@@ -54,7 +54,7 @@ Syntax errors raised in the tokenizer now always set correct "text" and
 .. section: Library
 
 The original fix for bpo-27657, "Fix urlparse() with numeric paths"
-(GH-16839) included in 3.8.1, inadvertently introduced a behavior change
+(PR 16839) included in 3.8.1, inadvertently introduced a behavior change
 that broke several third-party packages relying on the original undefined
 parsing behavior. The change is reverted in 3.8.2, restoring the behavior of
 3.8.0 and earlier releases.

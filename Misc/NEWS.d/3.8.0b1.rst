@@ -1612,7 +1612,7 @@ versions.
 .. nonce: Zot4sx
 .. section: Documentation
 
-Improve documentation of the stdin, stdout, and stderr arguments of of the
+Improve documentation of the stdin, stdout, and stderr arguments of the
 ``asyncio.subprocess_exec`` function to specify which values are supported.
 Also mention that decoding as text is not supported.
 

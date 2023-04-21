@@ -182,7 +182,7 @@ ThreadPoolExecutor Example
            'http://www.cnn.com/',
            'http://europe.wsj.com/',
            'http://www.bbc.co.uk/',
-           'http://some-made-up-domain.com/']
+           'http://nonexistant-subdomain.python.org/']
 
    # Retrieve a single page and report the URL and contents
    def load_url(url, timeout):
@@ -209,7 +209,8 @@ ProcessPoolExecutor
 The :class:`ProcessPoolExecutor` class is an :class:`Executor` subclass that
 uses a pool of processes to execute calls asynchronously.
 :class:`ProcessPoolExecutor` uses the :mod:`multiprocessing` module, which
-allows it to side-step the :term:`Global Interpreter Lock` but also means that
+allows it to side-step the :term:`Global Interpreter Lock
+<global interpreter lock>` but also means that
 only picklable objects can be executed and returned.
 
 The ``__main__`` module must be importable by worker subprocesses. This means
@@ -223,9 +224,9 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
    given, it will default to the number of processors on the machine.
-   If *max_workers* is lower or equal to ``0``, then a :exc:`ValueError`
+   If *max_workers* is less than or equal to ``0``, then a :exc:`ValueError`
    will be raised.
-   On Windows, *max_workers* must be equal or lower than ``61``. If it is not
+   On Windows, *max_workers* must be less than or equal to ``61``. If it is not
    then :exc:`ValueError` will be raised. If *max_workers* is ``None``, then
    the default chosen will be at most ``61``, even if more processors are
    available.
@@ -237,7 +238,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    each worker process; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently
    pending jobs will raise a :exc:`~concurrent.futures.process.BrokenProcessPool`,
-   as well any attempt to submit more jobs to the pool.
+   as well as any attempt to submit more jobs to the pool.
 
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a

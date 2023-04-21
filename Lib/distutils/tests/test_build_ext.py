@@ -492,12 +492,16 @@ class BuildExtTestCase(TempdirManager,
         # format the target value as defined in the Apple
         # Availability Macros.  We can't use the macro names since
         # at least one value we test with will not exist yet.
-        if target[1] < 10:
+        if target[:2] < (10, 10):
             # for 10.1 through 10.9.x -> "10n0"
             target = '%02d%01d0' % target
         else:
             # for 10.10 and beyond -> "10nn00"
-            target = '%02d%02d00' % target
+            if len(target) >= 2:
+                target = '%02d%02d00' % target
+            else:
+                # 11 and later can have no minor version (11 instead of 11.0)
+                target = '%02d0000' % target
         deptarget_ext = Extension(
             'deptarget',
             [deptarget_c],

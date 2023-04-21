@@ -1245,6 +1245,12 @@ class UnquotingTests(unittest.TestCase):
         self.assertEqual(expect, result,
                          "using unquote(): %r != %r" % (expect, result))
 
+    def test_unquoting_with_bytes_input(self):
+        # Bytes not supported yet
+        with self.assertRaisesRegex(TypeError, 'Expected str, got bytes'):
+            given = b'bl\xc3\xa5b\xc3\xa6rsyltet\xc3\xb8y'
+            urllib.parse.unquote(given)
+
 class urlencode_Tests(unittest.TestCase):
     """Tests for urlencode()"""
 
@@ -1482,6 +1488,24 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(expect, result,
                          "url2pathname() failed; %s != %s" %
                          (expect, result))
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'test specific to the nturl2path functions.')
+    def test_prefixes(self):
+        # Test special prefixes are correctly handled in pathname2url()
+        given = '\\\\?\\C:\\dir'
+        expect = '///C:/dir'
+        result = urllib.request.pathname2url(given)
+        self.assertEqual(expect, result,
+                         "pathname2url() failed; %s != %s" %
+                         (expect, result))
+        given = '\\\\?\\unc\\server\\share\\dir'
+        expect = '/server/share/dir'
+        result = urllib.request.pathname2url(given)
+        self.assertEqual(expect, result,
+                         "pathname2url() failed; %s != %s" %
+                         (expect, result))
+
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to the urllib.url2path function.')

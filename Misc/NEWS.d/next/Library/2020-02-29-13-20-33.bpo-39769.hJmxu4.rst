@@ -1,4 +1,0 @@
-The :func:`compileall.compile_dir` function's *ddir* parameter and the
-compileall command line flag `-d` no longer write the wrong pathname to the
-generated pyc file for submodules beneath the root of the directory tree
-being compiled.  This fixes a regression introduced with Python 3.5.

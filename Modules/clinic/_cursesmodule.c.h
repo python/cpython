@@ -2028,7 +2028,7 @@ PyDoc_STRVAR(_curses_color_content__doc__,
 "Return the red, green, and blue (RGB) components of the specified color.\n"
 "\n"
 "  color_number\n"
-"    The number of the color (0 - COLORS).\n"
+"    The number of the color (0 - (COLORS-1)).\n"
 "\n"
 "A 3-tuple is returned, containing the R, G, B values for the given color,\n"
 "which will be between 0 (no component) and 1000 (maximum amount of component).");
@@ -2076,13 +2076,13 @@ exit:
 }
 
 PyDoc_STRVAR(_curses_color_pair__doc__,
-"color_pair($module, color_number, /)\n"
+"color_pair($module, pair_number, /)\n"
 "--\n"
 "\n"
 "Return the attribute value for displaying text in the specified color.\n"
 "\n"
-"  color_number\n"
-"    The number of the color (0 - COLORS).\n"
+"  pair_number\n"
+"    The number of the color pair.\n"
 "\n"
 "This attribute value can be combined with A_STANDOUT, A_REVERSE, and the\n"
 "other A_* attributes.  pair_number() is the counterpart to this function.");
@@ -2091,13 +2091,13 @@ PyDoc_STRVAR(_curses_color_pair__doc__,
     {"color_pair", (PyCFunction)_curses_color_pair, METH_O, _curses_color_pair__doc__},
 
 static PyObject *
-_curses_color_pair_impl(PyObject *module, short color_number);
+_curses_color_pair_impl(PyObject *module, short pair_number);
 
 static PyObject *
 _curses_color_pair(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    short color_number;
+    short pair_number;
 
     if (PyFloat_Check(arg)) {
         PyErr_SetString(PyExc_TypeError,
@@ -2120,10 +2120,10 @@ _curses_color_pair(PyObject *module, PyObject *arg)
             goto exit;
         }
         else {
-            color_number = (short) ival;
+            pair_number = (short) ival;
         }
     }
-    return_value = _curses_color_pair_impl(module, color_number);
+    return_value = _curses_color_pair_impl(module, pair_number);
 
 exit:
     return return_value;
@@ -2699,7 +2699,7 @@ PyDoc_STRVAR(_curses_init_color__doc__,
 "Change the definition of a color.\n"
 "\n"
 "  color_number\n"
-"    The number of the color to be changed (0 - COLORS).\n"
+"    The number of the color to be changed (0 - (COLORS-1)).\n"
 "  r\n"
 "    Red component (0 - 1000).\n"
 "  g\n"
@@ -2709,7 +2709,7 @@ PyDoc_STRVAR(_curses_init_color__doc__,
 "\n"
 "When init_color() is used, all occurrences of that color on the screen\n"
 "immediately change to the new definition.  This function is a no-op on\n"
-"most terminals; it is active only if can_change_color() returns 1.");
+"most terminals; it is active only if can_change_color() returns true.");
 
 #define _CURSES_INIT_COLOR_METHODDEF    \
     {"init_color", (PyCFunction)(void(*)(void))_curses_init_color, METH_FASTCALL, _curses_init_color__doc__},
@@ -2841,9 +2841,9 @@ PyDoc_STRVAR(_curses_init_pair__doc__,
 "  pair_number\n"
 "    The number of the color-pair to be changed (1 - (COLOR_PAIRS-1)).\n"
 "  fg\n"
-"    Foreground color number (0 - COLORS).\n"
+"    Foreground color number (-1 - (COLORS-1)).\n"
 "  bg\n"
-"    Background color number (0 - COLORS).\n"
+"    Background color number (-1 - (COLORS-1)).\n"
 "\n"
 "If the color-pair was previously initialized, the screen is refreshed and\n"
 "all occurrences of that color-pair are changed to the new definition.");
@@ -3799,23 +3799,13 @@ PyDoc_STRVAR(_curses_update_lines_cols__doc__,
 #define _CURSES_UPDATE_LINES_COLS_METHODDEF    \
     {"update_lines_cols", (PyCFunction)_curses_update_lines_cols, METH_NOARGS, _curses_update_lines_cols__doc__},
 
-static int
+static PyObject *
 _curses_update_lines_cols_impl(PyObject *module);
 
 static PyObject *
 _curses_update_lines_cols(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-    int _return_value;
-
-    _return_value = _curses_update_lines_cols_impl(module);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong((long)_return_value);
-
-exit:
-    return return_value;
+    return _curses_update_lines_cols_impl(module);
 }
 
 #endif /* (defined(HAVE_CURSES_RESIZETERM) || defined(HAVE_CURSES_RESIZE_TERM)) */
@@ -4569,4 +4559,4 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=e5b3502f1d38dff0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c5267f2ffe238810 input=a9049054013a1b77]*/

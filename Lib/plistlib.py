@@ -285,8 +285,15 @@ class _PlistParser:
         self.parser.StartElementHandler = self.handle_begin_element
         self.parser.EndElementHandler = self.handle_end_element
         self.parser.CharacterDataHandler = self.handle_data
+        self.parser.EntityDeclHandler = self.handle_entity_decl
         self.parser.ParseFile(fileobj)
         return self.root
+
+    def handle_entity_decl(self, entity_name, is_parameter_entity, value, base, system_id, public_id, notation_name):
+        # Reject plist files with entity declarations to avoid XML vulnerabilies in expat.
+        # Regular plist files don't contain those declerations, and Apple's plutil tool does not
+        # accept them either.
+        raise InvalidFileException("XML entity declarations are not supported in plist files")
 
     def handle_begin_element(self, element, attrs):
         self.data = []
@@ -357,7 +364,11 @@ class _PlistParser:
         self.add_object(False)
 
     def end_integer(self):
-        self.add_object(int(self.get_data()))
+        raw = self.get_data()
+        if raw.startswith('0x') or raw.startswith('0X'):
+            self.add_object(int(raw, 16))
+        else:
+            self.add_object(int(raw))
 
     def end_real(self):
         self.add_object(float(self.get_data()))
@@ -589,7 +600,7 @@ class _BinaryPlistParser:
             return self._read_object(top_object)
 
         except (OSError, IndexError, struct.error, OverflowError,
-                UnicodeDecodeError):
+                ValueError):
             raise InvalidFileException()
 
     def _get_size(self, tokenL):
@@ -605,7 +616,7 @@ class _BinaryPlistParser:
     def _read_ints(self, n, size):
         data = self._fp.read(size * n)
         if size in _BINARY_FORMAT:
-            return struct.unpack('>' + _BINARY_FORMAT[size] * n, data)
+            return struct.unpack(f'>{n}{_BINARY_FORMAT[size]}', data)
         else:
             if not size or len(data) != size * n:
                 raise InvalidFileException()
@@ -664,18 +675,25 @@ class _BinaryPlistParser:
 
         elif tokenH == 0x40:  # data
             s = self._get_size(tokenL)
-            if self._use_builtin_types:
-                result = self._fp.read(s)
-            else:
-                result = Data(self._fp.read(s))
+            result = self._fp.read(s)
+            if len(result) != s:
+                raise InvalidFileException()
+            if not self._use_builtin_types:
+                result = Data(result)
 
         elif tokenH == 0x50:  # ascii string
             s = self._get_size(tokenL)
-            result =  self._fp.read(s).decode('ascii')
+            data = self._fp.read(s)
+            if len(data) != s:
+                raise InvalidFileException()
+            result = data.decode('ascii')
 
         elif tokenH == 0x60:  # unicode string
-            s = self._get_size(tokenL)
-            result = self._fp.read(s * 2).decode('utf-16be')
+            s = self._get_size(tokenL) * 2
+            data = self._fp.read(s)
+            if len(data) != s:
+                raise InvalidFileException()
+            result = data.decode('utf-16be')
 
         elif tokenH == 0x80:  # UID
             # used by Key-Archiver plist files
@@ -700,9 +718,11 @@ class _BinaryPlistParser:
             obj_refs = self._read_refs(s)
             result = self._dict_type()
             self._objects[ref] = result
-            for k, o in zip(key_refs, obj_refs):
-                result[self._read_object(k)] = self._read_object(o)
-
+            try:
+                for k, o in zip(key_refs, obj_refs):
+                    result[self._read_object(k)] = self._read_object(o)
+            except TypeError:
+                raise InvalidFileException()
         else:
             raise InvalidFileException()
 
@@ -716,7 +736,7 @@ def _count_to_size(count):
     elif count < 1 << 16:
         return 2
 
-    elif count << 1 << 32:
+    elif count < 1 << 32:
         return 4
 
     else:

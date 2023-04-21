@@ -63,7 +63,6 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_size(void);
 static PyStatus init_sys_streams(PyInterpreterState *interp);
-static PyStatus init_signals(void);
 static void call_py_exitfuncs(PyInterpreterState *);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
@@ -952,11 +951,8 @@ pyinit_main(_PyRuntimeState *runtime, PyInterpreterState *interp)
         return status;
     }
 
-    if (config->install_signal_handlers) {
-        status = init_signals();
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
+    if (_PySignal_Init(config->install_signal_handlers) < 0) {
+        return _PyStatus_ERR("can't initialize signals");
     }
 
     if (_PyTraceMalloc_Init(config->tracemalloc) < 0) {
@@ -1229,13 +1225,6 @@ Py_FinalizeEx(void)
         /* nothing */;
 #endif
 
-    /* Clear all loghooks */
-    /* We want minimal exposure of this function, so define the extern
-     * here. The linker should discover the correct function without
-     * exporting a symbol. */
-    extern void _PySys_ClearAuditHooks(void);
-    _PySys_ClearAuditHooks();
-
     /* Destroy all modules */
     PyImport_Cleanup();
 
@@ -1305,6 +1294,13 @@ Py_FinalizeEx(void)
 
     /* Clear interpreter state and all thread states. */
     PyInterpreterState_Clear(interp);
+
+    /* Clear all loghooks */
+    /* We want minimal exposure of this function, so define the extern
+     * here. The linker should discover the correct function without
+     * exporting a symbol. */
+    extern void _PySys_ClearAuditHooks(void);
+    _PySys_ClearAuditHooks();
 
     /* Now we decref the exception classes.  After this point nothing
        can raise an exception.  That's okay, because each Fini() method
@@ -2297,25 +2293,6 @@ Py_Exit(int sts)
     }
 
     exit(sts);
-}
-
-static PyStatus
-init_signals(void)
-{
-#ifdef SIGPIPE
-    PyOS_setsig(SIGPIPE, SIG_IGN);
-#endif
-#ifdef SIGXFZ
-    PyOS_setsig(SIGXFZ, SIG_IGN);
-#endif
-#ifdef SIGXFSZ
-    PyOS_setsig(SIGXFSZ, SIG_IGN);
-#endif
-    PyOS_InitInterrupts(); /* May imply init_signals() */
-    if (PyErr_Occurred()) {
-        return _PyStatus_ERR("can't import signal");
-    }
-    return _PyStatus_OK();
 }
 
 

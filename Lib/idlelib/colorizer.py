@@ -8,15 +8,17 @@ from idlelib.delegator import Delegator
 
 DEBUG = False
 
+
 def any(name, alternates):
     "Return a named group pattern matching list of alternates."
     return "(?P<%s>" % name + "|".join(alternates) + ")"
 
+
 def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
     builtinlist = [str(name) for name in dir(builtins)
-                                        if not name.startswith('_') and \
-                                        name not in keyword.kwlist]
+                   if not name.startswith('_') and
+                   name not in keyword.kwlist]
     builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
     comment = any("COMMENT", [r"#[^\n]*"])
     stringprefix = r"(?i:r|u|f|fr|rf|b|br|rb)?"
@@ -25,11 +27,13 @@ def make_pat():
     sq3string = stringprefix + r"'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
     dq3string = stringprefix + r'"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
-    return kw + "|" + builtin + "|" + comment + "|" + string +\
-           "|" + any("SYNC", [r"\n"])
+    return (kw + "|" + builtin + "|" + comment + "|" + string +
+            "|" + any("SYNC", [r"\n"]))
+
 
 prog = re.compile(make_pat(), re.S)
 idprog = re.compile(r"\s+(\w+)", re.S)
+
 
 def color_config(text):
     """Set color options of Text widget.
@@ -49,7 +53,7 @@ def color_config(text):
         selectforeground=select_colors['foreground'],
         selectbackground=select_colors['background'],
         inactiveselectbackground=select_colors['background'],  # new in 8.5
-    )
+        )
 
 
 class ColorDelegator(Delegator):
@@ -120,14 +124,17 @@ class ColorDelegator(Delegator):
             "BUILTIN": idleConf.GetHighlight(theme, "builtin"),
             "STRING": idleConf.GetHighlight(theme, "string"),
             "DEFINITION": idleConf.GetHighlight(theme, "definition"),
-            "SYNC": {'background':None,'foreground':None},
-            "TODO": {'background':None,'foreground':None},
+            "SYNC": {'background': None, 'foreground': None},
+            "TODO": {'background': None, 'foreground': None},
             "ERROR": idleConf.GetHighlight(theme, "error"),
-            # The following is used by ReplaceDialog:
+            # "hit" is used by ReplaceDialog to mark matches. It shouldn't be changed by Colorizer, but
+            # that currently isn't technically possible. This should be moved elsewhere in the future
+            # when fixing the "hit" tag's visibility, or when the replace dialog is replaced with a
+            # non-modal alternative.
             "hit": idleConf.GetHighlight(theme, "hit"),
             }
 
-        if DEBUG: print('tagdefs',self.tagdefs)
+        if DEBUG: print('tagdefs', self.tagdefs)
 
     def insert(self, index, chars, tags=None):
         "Insert chars into widget at index and mark for colorizing."
@@ -184,8 +191,8 @@ class ColorDelegator(Delegator):
         if self.allow_colorizing and not self.colorizing:
             self.after_id = self.after(1, self.recolorize)
         if DEBUG:
-            print("auto colorizing turned",\
-                  self.allow_colorizing and "on" or "off")
+            print("auto colorizing turned",
+                  "on" if self.allow_colorizing else "off")
         return "break"
 
     def recolorize(self):
@@ -232,10 +239,7 @@ class ColorDelegator(Delegator):
             head, tail = item
             self.tag_remove("SYNC", head, tail)
             item = self.tag_prevrange("SYNC", head)
-            if item:
-                head = item[1]
-            else:
-                head = "1.0"
+            head = item[1] if item else "1.0"
 
             chars = ""
             next = head
@@ -307,7 +311,7 @@ def _color_delegator(parent):  # htest #
         "elif False: print(0)\n"
         "else: float(None)\n"
         "if iF + If + IF: 'keyword matching must respect case'\n"
-        "if'': x or''  # valid string-keyword no-space combinations\n"
+        "if'': x or''  # valid keyword-string no-space combinations\n"
         "async def f(): await g()\n"
         "# All valid prefixes for unicode and byte strings should be colored.\n"
         "'x', '''x''', \"x\", \"\"\"x\"\"\"\n"

@@ -66,18 +66,20 @@ __all__ = ["all_feature_names"] + all_feature_names
 # code.h and used by compile.h, so that an editor search will find them here.
 # However, they're not exported in __all__, because they don't really belong to
 # this module.
-CO_NESTED            = 0x0010   # nested_scopes
-CO_GENERATOR_ALLOWED = 0        # generators (obsolete, was 0x1000)
-CO_FUTURE_DIVISION   = 0x2000   # division
-CO_FUTURE_ABSOLUTE_IMPORT = 0x4000 # perform absolute imports by default
-CO_FUTURE_WITH_STATEMENT  = 0x8000   # with statement
-CO_FUTURE_PRINT_FUNCTION  = 0x10000   # print function
-CO_FUTURE_UNICODE_LITERALS = 0x20000 # unicode string literals
-CO_FUTURE_BARRY_AS_BDFL = 0x40000
-CO_FUTURE_GENERATOR_STOP  = 0x80000 # StopIteration becomes RuntimeError in generators
-CO_FUTURE_ANNOTATIONS     = 0x100000  # annotations become strings at runtime
+CO_NESTED = 0x0010                      # nested_scopes
+CO_GENERATOR_ALLOWED = 0                # generators (obsolete, was 0x1000)
+CO_FUTURE_DIVISION = 0x20000            # division
+CO_FUTURE_ABSOLUTE_IMPORT = 0x40000     # perform absolute imports by default
+CO_FUTURE_WITH_STATEMENT = 0x80000      # with statement
+CO_FUTURE_PRINT_FUNCTION = 0x100000     # print function
+CO_FUTURE_UNICODE_LITERALS = 0x200000   # unicode string literals
+CO_FUTURE_BARRY_AS_BDFL = 0x400000
+CO_FUTURE_GENERATOR_STOP = 0x800000     # StopIteration becomes RuntimeError in generators
+CO_FUTURE_ANNOTATIONS = 0x1000000       # annotations become strings at runtime
+
 
 class _Feature:
+
     def __init__(self, optionalRelease, mandatoryRelease, compiler_flag):
         self.optional = optionalRelease
         self.mandatory = mandatoryRelease
@@ -88,7 +90,6 @@ class _Feature:
 
         This is a 5-tuple, of the same form as sys.version_info.
         """
-
         return self.optional
 
     def getMandatoryRelease(self):
@@ -97,13 +98,13 @@ class _Feature:
         This is a 5-tuple, of the same form as sys.version_info, or, if
         the feature was dropped, is None.
         """
-
         return self.mandatory
 
     def __repr__(self):
         return "_Feature" + repr((self.optional,
                                   self.mandatory,
                                   self.compiler_flag))
+
 
 nested_scopes = _Feature((2, 1, 0, "beta",  1),
                          (2, 2, 0, "alpha", 0),
@@ -142,5 +143,5 @@ generator_stop = _Feature((3, 5, 0, "beta", 1),
                           CO_FUTURE_GENERATOR_STOP)
 
 annotations = _Feature((3, 7, 0, "beta", 1),
-                       (4, 0, 0, "alpha", 0),
+                       (3, 10, 0, "alpha", 0),
                        CO_FUTURE_ANNOTATIONS)

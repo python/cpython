@@ -1,0 +1,107 @@
+.. bpo: 40527
+.. date: 2020-05-06-14-52-35
+.. nonce: gTNKuy
+.. release date: 2020-05-13
+.. section: Core and Builtins
+
+Fix command line argument parsing: no longer write errors multiple times
+into stderr.
+
+..
+
+.. bpo: 40417
+.. date: 2020-05-01-19-04-52
+.. nonce: Sti2lJ
+.. section: Core and Builtins
+
+Fix imp module deprecation warning when PyImport_ReloadModule is called.
+Patch by Robert Rouhani.
+
+..
+
+.. bpo: 39562
+.. date: 2020-05-01-14-58-16
+.. nonce: KCsX8n
+.. section: Core and Builtins
+
+The constant values of future flags in the :mod:`__future__` module are
+updated in order to prevent collision with compiler flags. Previously
+``PyCF_ALLOW_TOP_LEVEL_AWAIT`` was clashing with ``CO_FUTURE_DIVISION``.
+
+..
+
+.. bpo: 40559
+.. date: 2020-05-05-08-12-51
+.. nonce: 112wwa
+.. section: Library
+
+Fix possible memory leak in the C implementation of :class:`asyncio.Task`.
+
+..
+
+.. bpo: 40355
+.. date: 2020-05-02-14-24-48
+.. nonce: xTujaB
+.. section: Library
+
+Improve error reporting in :func:`ast.literal_eval` in the presence of
+malformed :class:`ast.Dict` nodes instead of silently ignoring any
+non-conforming elements. Patch by Curtis Bucher.
+
+..
+
+.. bpo: 40459
+.. date: 2020-05-02-04-29-31
+.. nonce: fSAYVD
+.. section: Library
+
+:func:`platform.win32_ver` now produces correct *ptype* strings instead of
+empty strings.
+
+..
+
+.. bpo: 40398
+.. date: 2020-04-26-22-25-36
+.. nonce: OdXnR3
+.. section: Library
+
+:func:`typing.get_args` now always returns an empty tuple for special
+generic aliases.
+
+..
+
+.. bpo: 40561
+.. date: 2020-05-08-08-39-40
+.. nonce: ZMB_2i
+.. section: Documentation
+
+Provide docstrings for webbrowser open functions.
+
+..
+
+.. bpo: 39435
+.. date: 2020-01-24-05-42-57
+.. nonce: EFcdFU
+.. section: Documentation
+
+Fix an incorrect signature for :func:`pickle.loads` in the docs
+
+..
+
+.. bpo: 40458
+.. date: 2020-05-01-20-57-57
+.. nonce: Eb0ueI
+.. section: Windows
+
+Increase reserved stack space to prevent overflow crash on Windows.
+
+..
+
+.. bpo: 40412
+.. date: 2020-05-01-17-28-04
+.. nonce: dE0D8N
+.. section: C API
+
+Nullify inittab_copy during finalization, preventing future interpreter
+initializations in an embedded situation from crashing. Patch by Gregory
+Szorc.

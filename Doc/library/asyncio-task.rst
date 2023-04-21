@@ -210,7 +210,7 @@ is :meth:`loop.run_in_executor`.
 Running an asyncio Program
 ==========================
 
-.. function:: run(coro, \*, debug=False)
+.. function:: run(coro, *, debug=False)
 
     Execute the :term:`coroutine` *coro* and return the result.
 
@@ -245,7 +245,7 @@ Running an asyncio Program
 Creating Tasks
 ==============
 
-.. function:: create_task(coro, \*, name=None)
+.. function:: create_task(coro, *, name=None)
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
    and schedule its execution.  Return the Task object.
@@ -317,7 +317,7 @@ Sleeping
 Running Tasks Concurrently
 ==========================
 
-.. awaitablefunction:: gather(\*aws, loop=None, return_exceptions=False)
+.. awaitablefunction:: gather(*aws, loop=None, return_exceptions=False)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
    sequence *concurrently*.
@@ -384,6 +384,14 @@ Running Tasks Concurrently
       #     Task B: factorial(3) = 6
       #     Task C: Compute factorial(4)...
       #     Task C: factorial(4) = 24
+
+   .. note::
+      If *return_exceptions* is False, cancelling gather() after it
+      has been marked done won't cancel any submitted awaitables.
+      For instance, gather can be marked done after propagating an
+      exception to the caller, therefore, calling ``gather.cancel()``
+      after catching an exception (raised by one of the awaitables) from
+      gather won't cancel any other awaitables.
 
    .. versionchanged:: 3.7
       If the *gather* itself is cancelled, the cancellation is
@@ -489,11 +497,11 @@ Timeouts
 Waiting Primitives
 ==================
 
-.. coroutinefunction:: wait(aws, \*, loop=None, timeout=None,\
+.. coroutinefunction:: wait(aws, *, loop=None, timeout=None,\
                             return_when=ALL_COMPLETED)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently and block until the condition specified
+   iterable concurrently and block until the condition specified
    by *return_when*.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
@@ -577,12 +585,12 @@ Waiting Primitives
       deprecated.
 
 
-.. function:: as_completed(aws, \*, loop=None, timeout=None)
+.. function:: as_completed(aws, *, loop=None, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently.  Return an iterator of :class:`Future` objects.
-   Each Future object returned represents the earliest result
-   from the set of the remaining awaitables.
+   iterable concurrently.  Return an iterator of coroutines.
+   Each coroutine returned can be awaited to get the earliest next
+   result from the iterable of the remaining awaitables.
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
@@ -592,8 +600,8 @@ Waiting Primitives
 
    Example::
 
-       for f in as_completed(aws):
-           earliest_result = await f
+       for coro in as_completed(aws):
+           earliest_result = await coro
            # ...
 
 
@@ -671,7 +679,7 @@ Introspection
 Task Object
 ===========
 
-.. class:: Task(coro, \*, loop=None, name=None)
+.. class:: Task(coro, *, loop=None, name=None)
 
    A :class:`Future-like <Future>` object that runs a Python
    :ref:`coroutine <coroutine>`.  Not thread-safe.
@@ -834,7 +842,7 @@ Task Object
       See the documentation of :meth:`Future.remove_done_callback`
       for more details.
 
-   .. method:: get_stack(\*, limit=None)
+   .. method:: get_stack(*, limit=None)
 
       Return the list of stack frames for this Task.
 
@@ -855,7 +863,7 @@ Task Object
       stack are returned, but the oldest frames of a traceback are
       returned.  (This matches the behavior of the traceback module.)
 
-   .. method:: print_stack(\*, limit=None, file=None)
+   .. method:: print_stack(*, limit=None, file=None)
 
       Print the stack or traceback for this Task.
 

@@ -49,8 +49,8 @@ class EntryPoint(
 
     pattern = re.compile(
         r'(?P<module>[\w.]+)\s*'
-        r'(:\s*(?P<attr>[\w.]+))?\s*'
-        r'(?P<extras>\[.*\])?\s*$'
+        r'(:\s*(?P<attr>[\w.]+)\s*)?'
+        r'((?P<extras>\[.*\])\s*)?$'
         )
     """
     A regular expression describing the syntax for an entry point,
@@ -408,8 +408,8 @@ class FastPath:
         names = zip_path.root.namelist()
         self.joinpath = zip_path.joinpath
 
-        return (
-            posixpath.split(child)[0]
+        return dict.fromkeys(
+            child.split(posixpath.sep, 1)[0]
             for child in names
             )
 
@@ -473,7 +473,6 @@ class MetadataPathFinder(DistributionFinder):
             path.search(Prepared(name))
             for path in map(FastPath, paths)
             )
-
 
 
 class PathDistribution(Distribution):

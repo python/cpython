@@ -67,6 +67,18 @@ class MimeTypesTestCase(unittest.TestCase):
             mime_dict = mimetypes.read_mime_types(file)
             eq(mime_dict[".pyunit"], "x-application/x-unittest")
 
+        # bpo-41048: read_mime_types should read the rule file with 'utf-8' encoding.
+        # Not with locale encoding. _bootlocale has been imported because io.open(...)
+        # uses it.
+        with support.temp_dir() as directory:
+            data = "application/no-mans-land  Fran\u00E7ais"
+            file = pathlib.Path(directory, "sample.mimetype")
+            file.write_text(data, encoding='utf-8')
+            import _bootlocale
+            with support.swap_attr(_bootlocale, 'getpreferredencoding', lambda do_setlocale=True: 'ASCII'):
+                mime_dict = mimetypes.read_mime_types(file)
+            eq(mime_dict[".Français"], "application/no-mans-land")
+
     def test_non_standard_types(self):
         eq = self.assertEqual
         # First try strict

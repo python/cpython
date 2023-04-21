@@ -28,6 +28,9 @@ import weakref
 import functools
 from test import support
 
+from unittest.mock import patch
+
+
 class RegressionTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
@@ -132,6 +135,19 @@ class RegressionTests(unittest.TestCase):
         con.execute("create table foo(bar integer)")
         con.execute("insert into foo(bar) values (5)")
         con.execute(SELECT)
+
+    def CheckBindMutatingList(self):
+        # Issue41662: Crash when mutate a list of parameters during iteration.
+        class X:
+            def __conform__(self, protocol):
+                parameters.clear()
+                return "..."
+        parameters = [X(), 0]
+        con = sqlite.connect(":memory:",detect_types=sqlite.PARSE_DECLTYPES)
+        con.execute("create table foo(bar X, baz integer)")
+        # Should not crash
+        with self.assertRaises(IndexError):
+            con.execute("insert into foo(bar, baz) values (?, ?)", parameters)
 
     def CheckErrorMsgDecodeError(self):
         # When porting the module to Python 3.0, the error message about
@@ -400,10 +416,50 @@ class RegressionTests(unittest.TestCase):
 
 
 
+class RecursiveUseOfCursors(unittest.TestCase):
+    # GH-80254: sqlite3 should not segfault for recursive use of cursors.
+    msg = "Recursive use of cursors not allowed"
+
+    def setUp(self):
+        self.con = sqlite.connect(":memory:",
+                                  detect_types=sqlite.PARSE_COLNAMES)
+        self.cur = self.con.cursor()
+        self.cur.execute("create table test(x foo)")
+        self.cur.executemany("insert into test(x) values (?)",
+                             [("foo",), ("bar",)])
+
+    def tearDown(self):
+        self.cur.close()
+        self.con.close()
+        del self.cur
+        del self.con
+
+    def test_recursive_cursor_init(self):
+        conv = lambda x: self.cur.__init__(self.con)
+        with patch.dict(sqlite.converters, {"INIT": conv}):
+            with self.assertRaisesRegex(sqlite.ProgrammingError, self.msg):
+                self.cur.execute(f'select x as "x [INIT]", x from test')
+
+    def test_recursive_cursor_close(self):
+        conv = lambda x: self.cur.close()
+        with patch.dict(sqlite.converters, {"CLOSE": conv}):
+            with self.assertRaisesRegex(sqlite.ProgrammingError, self.msg):
+                self.cur.execute(f'select x as "x [CLOSE]", x from test')
+
+    def test_recursive_cursor_fetch(self):
+        conv = lambda x, l=[]: self.cur.fetchone() if l else l.append(None)
+        with patch.dict(sqlite.converters, {"ITER": conv}):
+            self.cur.execute(f'select x as "x [ITER]", x from test')
+            with self.assertRaisesRegex(sqlite.ProgrammingError, self.msg):
+                self.cur.fetchall()
+
+
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
+    recursive_cursor = unittest.makeSuite(RecursiveUseOfCursors)
     return unittest.TestSuite((
         regression_suite,
+        recursive_cursor,
     ))
 
 def test():

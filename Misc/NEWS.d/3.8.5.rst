@@ -1,0 +1,88 @@
+.. bpo: 41304
+.. date: 2020-07-15-20-15-08
+.. nonce: vNEeYA
+.. release date: 2020-07-20
+.. section: Security
+
+Fixes `python3x._pth` being ignored on Windows, caused by the fix for
+:issue:`29778` (CVE-2020-15801).
+
+..
+
+.. bpo: 39603
+.. date: 2020-02-12-14-17-39
+.. nonce: Gt3RSg
+.. section: Security
+
+Prevent http header injection by rejecting control characters in
+http.client.putrequest(...).
+
+..
+
+.. bpo: 41295
+.. date: 2020-07-18-08-15-32
+.. nonce: pu8Ezo
+.. section: Core and Builtins
+
+Resolve a regression in CPython 3.8.4 where defining "__setattr__" in a
+multi-inheritance setup and calling up the hierarchy chain could fail if
+builtins/extension types were involved in the base types.
+
+..
+
+.. bpo: 41288
+.. date: 2020-07-13-15-06-35
+.. nonce: 8mn5P-
+.. section: Library
+
+Unpickling invalid NEWOBJ_EX opcode with the C implementation raises now
+UnpicklingError instead of crashing.
+
+..
+
+.. bpo: 39017
+.. date: 2020-07-12-22-16-58
+.. nonce: x3Cg-9
+.. section: Library
+
+Avoid infinite loop when reading specially crafted TAR files using the
+tarfile module (CVE-2019-20907).
+
+..
+
+.. bpo: 37703
+.. date: 2019-08-16-20-25-42
+.. nonce: Qm_l_H
+.. section: Documentation
+
+Updated Documentation to comprehensively elaborate on the behaviour of
+gather.cancel()
+
+..
+
+.. bpo: 41302
+.. date: 2020-07-15-17-56-32
+.. nonce: S3o-x9
+.. section: Build
+
+Enable building Python 3.8 with libmpdec-2.5.0 to ease maintenance for Linux
+distributions. Patch by Felix Yan.
+
+..
+
+.. bpo: 40741
+.. date: 2020-06-19-14-19-08
+.. nonce: L7yTbm
+.. section: macOS
+
+Update macOS installer to use SQLite 3.32.3.
+
+..
+
+.. bpo: 41300
+.. date: 2020-07-16-17-39-06
+.. nonce: wRixNb
+.. section: IDLE
+
+Save files with non-ascii chars. Fix regression released in 3.9.0b4 and
+3.8.4.

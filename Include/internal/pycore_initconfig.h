@@ -155,6 +155,8 @@ extern PyStatus _PyConfig_SetPyArgv(
     PyConfig *config,
     const _PyArgv *args);
 
+extern int _Py_global_config_int_max_str_digits;
+
 
 /* --- Function used for testing ---------------------------------- */
 

@@ -16,10 +16,10 @@ class Dialog:
     command  = None
 
     def __init__(self, master=None, **options):
-        self.master  = master
+        if not master:
+            master = options.get('parent')
+        self.master = master
         self.options = options
-        if not master and options.get('parent'):
-            self.master = options['parent']
 
     def _fixoptions(self):
         pass # hook

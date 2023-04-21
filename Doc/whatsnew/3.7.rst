@@ -171,7 +171,7 @@ on a per-module basis in Python 3.7 using a :mod:`__future__` import::
 
     from __future__ import annotations
 
-It will become the default in Python 4.0.
+It will become the default in Python 3.10.
 
 .. seealso::
 
@@ -636,7 +636,7 @@ The :mod:`asyncio` module has received many new features, usability and
 :ref:`performance improvements <whatsnew37-asyncio-perf>`.  Notable changes
 include:
 
-* The new :term:`provisional <provisional api>` :func:`asyncio.run` function can
+* The new :term:`provisional <provisional API>` :func:`asyncio.run` function can
   be used to run a coroutine from synchronous code by automatically creating and
   destroying the event loop.
   (Contributed by Yury Selivanov in :issue:`32314`.)
@@ -2556,3 +2556,16 @@ because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
 details, see the documentation for ``loop.create_datagram_endpoint()``.
 (Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
 :issue:`37228`.)
+
+Notable changes in Python 3.7.10
+================================
+
+Earlier Python versions allowed using both ``;`` and ``&`` as
+query parameter separators in :func:`urllib.parse.parse_qs` and
+:func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
+newer W3C recommendations, this has been changed to allow only a single
+separator key, with ``&`` as the default.  This change also affects
+:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+functions internally. For more details, please see their respective
+documentation.
+(Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)

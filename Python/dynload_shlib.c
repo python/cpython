@@ -105,7 +105,7 @@ _PyImport_FindSharedFuncptr(const char *prefix,
         const char *error = dlerror();
         if (error == NULL)
             error = "unknown dlopen() error";
-        error_ob = PyUnicode_FromString(error);
+        error_ob = PyUnicode_DecodeLocale(error, "surrogateescape");
         if (error_ob == NULL)
             return NULL;
         mod_name = PyUnicode_FromString(shortname);
@@ -113,7 +113,7 @@ _PyImport_FindSharedFuncptr(const char *prefix,
             Py_DECREF(error_ob);
             return NULL;
         }
-        path = PyUnicode_FromString(pathname);
+        path = PyUnicode_DecodeFSDefault(pathname);
         if (path == NULL) {
             Py_DECREF(error_ob);
             Py_DECREF(mod_name);

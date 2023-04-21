@@ -494,6 +494,12 @@ Path objects are traversable using the ``/`` operator.
    Invoke :meth:`ZipFile.open` on the current path. Accepts
    the same arguments as :meth:`ZipFile.open`.
 
+   .. caution::
+
+      The signature on this function changes in an incompatible way
+      in Python 3.9. For a future-compatible version, consider using
+      the third-party zipp.Path package (3.0 or later).
+
 .. method:: Path.iterdir()
 
    Enumerate the children of the current directory.

@@ -1,0 +1,18 @@
+# Requirements to build the Python documentation
+
+# Sphinx version is pinned so that new versions that introduce new warnings
+# won't suddenly cause build failures. Updating the version is fine as long
+# as no warnings are raised by doing so.
+sphinx==2.4.4
+# Docutils version is pinned to a version compatible with Sphinx
+# version 2.4.4. It can be removed after bumping Sphinx version to at
+# least 3.5.4.
+docutils==0.17.1
+# Jinja version is pinned to a version compatible with Sphinx version 2.4.4.
+jinja2==3.0.3
+
+blurb
+
+# The theme used by the documentation is stored separately, so we need
+# to install that as well.
+python-docs-theme

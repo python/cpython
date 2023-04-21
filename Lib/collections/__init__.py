@@ -48,7 +48,7 @@ def __getattr__(name):
         import warnings
         warnings.warn("Using or importing the ABCs from 'collections' instead "
                       "of from 'collections.abc' is deprecated since Python 3.3, "
-                      "and in 3.9 it will stop working",
+                      "and in 3.10 it will stop working",
                       DeprecationWarning, stacklevel=2)
         globals()[name] = obj
         return obj
@@ -695,6 +695,13 @@ class Counter(dict):
     #
     # To strip negative and zero counts, add-in an empty counter:
     #       c += Counter()
+    #
+    # Rich comparison operators for multiset subset and superset tests
+    # are deliberately omitted due to semantic conflicts with the
+    # existing inherited dict equality method.  Subset and superset
+    # semantics ignore zero counts and require that p≤q ∧ p≥q → p=q;
+    # however, that would not be the case for p=Counter(a=1, b=0)
+    # and q=Counter(a=1) where the dictionaries are not equal.
 
     def __add__(self, other):
         '''Add counts from two counters.

@@ -1,0 +1,195 @@
+.. bpo: 32381
+.. date: 2020-12-04-17-17-44
+.. nonce: NY5t2S
+.. release date: 2020-12-21
+.. section: Core and Builtins
+
+Fix encoding name when running a ``.pyc`` file on Windows:
+:c:func:`PyRun_SimpleFileExFlags()` now uses the correct encoding to decode
+the filename.
+
+..
+
+.. bpo: 42536
+.. date: 2020-12-02-20-23-31
+.. nonce: Kx3ZOu
+.. section: Core and Builtins
+
+Several built-in and standard library types now ensure that their internal
+result tuples are always tracked by the :term:`garbage collector <garbage
+collection>`:
+
+- :meth:`collections.OrderedDict.items() <collections.OrderedDict>`
+
+- :meth:`dict.items`
+
+- :func:`enumerate`
+
+- :func:`functools.reduce`
+
+- :func:`itertools.combinations`
+
+- :func:`itertools.combinations_with_replacement`
+
+- :func:`itertools.permutations`
+
+- :func:`itertools.product`
+
+- :func:`itertools.zip_longest`
+
+- :func:`zip`
+
+Previously, they could have become untracked by a prior garbage collection.
+Patch by Brandt Bucher.
+
+..
+
+.. bpo: 42630
+.. date: 2020-12-15-17-51-27
+.. nonce: jf4jBl
+.. section: Library
+
+:mod:`tkinter` functions and constructors which need a default root window
+raise now :exc:`RuntimeError` with descriptive message instead of obscure
+:exc:`AttributeError` or :exc:`NameError` if it is not created yet or cannot
+be created automatically.
+
+..
+
+.. bpo: 42644
+.. date: 2020-12-15-10-00-04
+.. nonce: XgLCNx
+.. section: Library
+
+`logging.disable` will now validate the types and value of its parameter. It
+also now accepts strings representing the levels (as does `loging.setLevel`)
+instead of only the numerical values.
+
+..
+
+.. bpo: 36541
+.. date: 2020-12-14-08-23-57
+.. nonce: qdEtZv
+.. section: Library
+
+Fixed lib2to3.pgen2 to be able to parse PEP-570 positional only argument
+syntax.
+
+..
+
+.. bpo: 42375
+.. date: 2020-11-19-04-13-53
+.. nonce: U8bp4s
+.. section: Library
+
+subprocess module update for DragonFlyBSD support.
+
+..
+
+.. bpo: 39825
+.. date: 2020-10-20-08-28-26
+.. nonce: n6KnG0
+.. section: Library
+
+Windows: Change ``sysconfig.get_config_var('EXT_SUFFIX')`` to the expected
+full ``platform_tag.extension`` format. Previously it was hard-coded to
+``.pyd``, now it is compatible with ``distutils.sysconfig`` and will result
+in something like ``.cp38-win_amd64.pyd``. This brings windows into
+conformance with the other platforms.
+
+..
+
+.. bpo: 39101
+.. date: 2020-10-11-21-43-03
+.. nonce: -I49Pm
+.. section: Library
+
+Fixed tests using IsolatedAsyncioTestCase from hanging on BaseExceptions.
+
+..
+
+.. bpo: 41907
+.. date: 2020-10-02-10-19-49
+.. nonce: wiIEsz
+.. section: Library
+
+fix `format()` behavior for `IntFlag`
+
+..
+
+.. bpo: 41889
+.. date: 2020-10-01-16-17-11
+.. nonce: qLkNh8
+.. section: Library
+
+Enum: fix regression involving inheriting a multiply-inherited enum
+
+..
+
+.. bpo: 41891
+.. date: 2020-09-30-13-35-29
+.. nonce: pNAeYI
+.. section: Library
+
+Ensure asyncio.wait_for waits for task completion
+
+..
+
+.. bpo: 40219
+.. date: 2020-07-13-19-43-11
+.. nonce: MUoJEP
+.. section: Library
+
+Lowered :class:`tkinter.ttk.LabeledScale` dummy widget to prevent hiding
+part of the content label.
+
+..
+
+.. bpo: 40084
+.. date: 2020-03-29-21-32-00
+.. nonce: MCYwcv
+.. section: Library
+
+Fix ``Enum.__dir__``: dir(Enum.member) now includes attributes as well as
+methods.
+
+..
+
+.. bpo: 17140
+.. date: 2020-12-16-21-06-16
+.. nonce: 1leSEg
+.. section: Documentation
+
+Add documentation for the :class:`multiprocessing.pool.ThreadPool` class.
+
+..
+
+.. bpo: 42604
+.. date: 2020-12-20-02-35-28
+.. nonce: gRd89w
+.. section: Build
+
+Now all platforms use a value for the "EXT_SUFFIX" build variable derived
+from SOABI (for instance in freeBSD, "EXT_SUFFIX" is now ".cpython-310d.so"
+instead of ".so"). Previosuly only Linux, Mac and VxWorks were using a value
+for "EXT_SUFFIX" that included "SOABI".
+
+..
+
+.. bpo: 42598
+.. date: 2020-12-13-14-43-10
+.. nonce: 7ipr5H
+.. section: Build
+
+Fix implicit function declarations in configure which could have resulted in
+incorrect configuration checks.  Patch contributed by Joshua Root.
+
+..
+
+.. bpo: 42613
+.. date: 2020-12-16-09-10-32
+.. nonce: J-jnm5
+.. section: Tools/Demos
+
+Fix ``freeze.py`` tool to use the prope config and library directories.
+Patch by Victor Stinner.

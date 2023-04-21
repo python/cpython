@@ -23,7 +23,7 @@ policy :attr:`~email.policy.Compat32`.  If you are going to use another policy,
 you should be using the :class:`~email.message.EmailMessage` class instead.
 
 An email message consists of *headers* and a *payload*.  Headers must be
-:rfc:`5233` style names and values, where the field name and value are
+:rfc:`5322` style names and values, where the field name and value are
 separated by a colon.  The colon is not part of either the field name or the
 field value.  The payload may be a simple text message, or a binary object, or
 a structured sequence of sub-messages each with their own set of headers and

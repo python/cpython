@@ -735,7 +735,7 @@ Fix IDLE Format menu tab toggle and file indent width. These functions
 
 Add an option to toggle IDLE's cursor blink for shell, editor, and output
 windows.  See Settings, General, Window Preferences, Cursor Blink. Patch by
-Zachary Spytz.
+Zackery Spytz.
 
 ..
 

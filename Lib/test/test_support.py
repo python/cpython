@@ -433,8 +433,12 @@ class TestSupport(unittest.TestCase):
                 if time.monotonic() > deadline:
                     self.fail("timeout")
 
-                with contextlib.redirect_stderr(stderr):
+                old_stderr = sys.__stderr__
+                try:
+                    sys.__stderr__ = stderr
                     support.reap_children()
+                finally:
+                    sys.__stderr__ = old_stderr
 
                 # Use environment_altered to check if reap_children() found
                 # the child process
@@ -527,6 +531,7 @@ class TestSupport(unittest.TestCase):
         test_access = Test('test.test_os.FileTests.test_access')
         test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')
 
+        # Test acceptance
         with support.swap_attr(support, '_match_test_func', None):
             # match all
             support.set_match_tests([])
@@ -534,44 +539,91 @@ class TestSupport(unittest.TestCase):
             self.assertTrue(support.match_test(test_chdir))
 
             # match all using None
-            support.set_match_tests(None)
+            support.set_match_tests(None, None)
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
             # match the full test identifier
-            support.set_match_tests([test_access.id()])
+            support.set_match_tests([test_access.id()], None)
             self.assertTrue(support.match_test(test_access))
             self.assertFalse(support.match_test(test_chdir))
 
             # match the module name
-            support.set_match_tests(['test_os'])
+            support.set_match_tests(['test_os'], None)
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
             # Test '*' pattern
-            support.set_match_tests(['test_*'])
+            support.set_match_tests(['test_*'], None)
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
             # Test case sensitivity
-            support.set_match_tests(['filetests'])
+            support.set_match_tests(['filetests'], None)
             self.assertFalse(support.match_test(test_access))
-            support.set_match_tests(['FileTests'])
+            support.set_match_tests(['FileTests'], None)
             self.assertTrue(support.match_test(test_access))
 
             # Test pattern containing '.' and a '*' metacharacter
-            support.set_match_tests(['*test_os.*.test_*'])
+            support.set_match_tests(['*test_os.*.test_*'], None)
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
             # Multiple patterns
-            support.set_match_tests([test_access.id(), test_chdir.id()])
+            support.set_match_tests([test_access.id(), test_chdir.id()], None)
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
-            support.set_match_tests(['test_access', 'DONTMATCH'])
+            support.set_match_tests(['test_access', 'DONTMATCH'], None)
             self.assertTrue(support.match_test(test_access))
             self.assertFalse(support.match_test(test_chdir))
+
+        # Test rejection
+        with support.swap_attr(support, '_match_test_func', None):
+            # match all
+            support.set_match_tests(ignore_patterns=[])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # match all using None
+            support.set_match_tests(None, None)
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # match the full test identifier
+            support.set_match_tests(None, [test_access.id()])
+            self.assertFalse(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # match the module name
+            support.set_match_tests(None, ['test_os'])
+            self.assertFalse(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+
+            # Test '*' pattern
+            support.set_match_tests(None, ['test_*'])
+            self.assertFalse(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+
+            # Test case sensitivity
+            support.set_match_tests(None, ['filetests'])
+            self.assertTrue(support.match_test(test_access))
+            support.set_match_tests(None, ['FileTests'])
+            self.assertFalse(support.match_test(test_access))
+
+            # Test pattern containing '.' and a '*' metacharacter
+            support.set_match_tests(None, ['*test_os.*.test_*'])
+            self.assertFalse(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+
+            # Multiple patterns
+            support.set_match_tests(None, [test_access.id(), test_chdir.id()])
+            self.assertFalse(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+
+            support.set_match_tests(None, ['test_access', 'DONTMATCH'])
+            self.assertFalse(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
 
     def test_fd_count(self):
         # We cannot test the absolute value of fd_count(): on old Linux
@@ -584,6 +636,24 @@ class TestSupport(unittest.TestCase):
         finally:
             os.close(fd)
         self.assertEqual(more - start, 1)
+
+    def check_print_warning(self, msg, expected):
+        stderr = io.StringIO()
+
+        old_stderr = sys.__stderr__
+        try:
+            sys.__stderr__ = stderr
+            support.print_warning(msg)
+        finally:
+            sys.__stderr__ = old_stderr
+
+        self.assertEqual(stderr.getvalue(), expected)
+
+    def test_print_warning(self):
+        self.check_print_warning("msg",
+                                 "Warning -- msg\n")
+        self.check_print_warning("a\nb",
+                                 'Warning -- a\nWarning -- b\n')
 
     # XXX -follows a list of untested API
     # make_legacy_pyc

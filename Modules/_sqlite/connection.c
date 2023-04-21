@@ -98,6 +98,10 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
         return -1;
     }
 
+    if (PySys_Audit("sqlite3.connect", "O", database_obj) < 0) {
+        return -1;
+    }
+
     database = PyBytes_AsString(database_obj);
 
     self->initialized = 1;
@@ -1521,6 +1525,10 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
             return NULL;
         }
         sleep_ms = (int)ms;
+    }
+
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
     }
 
     if (!pysqlite_check_connection((pysqlite_Connection *)target)) {

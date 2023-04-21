@@ -893,7 +893,7 @@ Here's an example implementation:
     ...     def __call__(self, /, *args, **kwargs):
     ...         args = deepcopy(args)
     ...         kwargs = deepcopy(kwargs)
-    ...         return super(CopyingMock, self).__call__(*args, **kwargs)
+    ...         return super().__call__(*args, **kwargs)
     ...
     >>> c = CopyingMock(return_value=None)
     >>> arg = set()

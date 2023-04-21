@@ -99,6 +99,8 @@ PCbuild/win32/
 /config.status
 /config.status.lineno
 /platform
+/profile-clean-stamp
+/profile-run-stamp
 /pybuilddir.txt
 /pyconfig.h
 /python-config

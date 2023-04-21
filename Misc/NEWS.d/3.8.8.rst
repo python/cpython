@@ -1,0 +1,8 @@
+.. bpo: 0
+.. date: 2021-02-19
+.. no changes: True
+.. nonce: -KzyCx
+.. release date: 2021-02-19
+.. section: Library
+
+There were no new changes in version 3.8.8.

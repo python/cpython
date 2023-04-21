@@ -104,8 +104,7 @@ write code that handles both IP versions correctly.  Address objects are
    1. A string in decimal-dot notation, consisting of four decimal integers in
       the inclusive range 0--255, separated by dots (e.g. ``192.168.0.1``). Each
       integer represents an octet (byte) in the address. Leading zeroes are
-      tolerated only for values less than 8 (as there is no ambiguity
-      between the decimal and octal interpretations of such strings).
+      not tolerated to prevent confusion with octal notation.
    2. An integer that fits into 32 bits.
    3. An integer packed into a :class:`bytes` object of length 4 (most
       significant octet first).
@@ -116,6 +115,18 @@ write code that handles both IP versions correctly.  Address objects are
    IPv4Address('192.168.0.1')
    >>> ipaddress.IPv4Address(b'\xC0\xA8\x00\x01')
    IPv4Address('192.168.0.1')
+
+
+   .. versionchanged:: 3.8
+
+      Leading zeros are tolerated, even in ambiguous cases that look like
+      octal notation.
+
+   .. versionchanged:: 3.8.12
+
+      Leading zeros are no longer tolerated and are treated as an error.
+      IPv4 address strings are now parsed as strict as glibc
+      :func:`~socket.inet_pton`.
 
    .. attribute:: version
 
@@ -487,7 +498,8 @@ dictionaries.
       hosts are all the IP addresses that belong to the network, except the
       network address itself and the network broadcast address.  For networks
       with a mask length of 31, the network address and network broadcast
-      address are also included in the result.
+      address are also included in the result. Networks with a mask of 32
+      will return a list containing the single host address.
 
          >>> list(ip_network('192.0.2.0/29').hosts())  #doctest: +NORMALIZE_WHITESPACE
          [IPv4Address('192.0.2.1'), IPv4Address('192.0.2.2'),
@@ -495,6 +507,8 @@ dictionaries.
           IPv4Address('192.0.2.5'), IPv4Address('192.0.2.6')]
          >>> list(ip_network('192.0.2.0/31').hosts())
          [IPv4Address('192.0.2.0'), IPv4Address('192.0.2.1')]
+         >>> list(ip_network('192.0.2.1/32').hosts())
+         [IPv4Address('192.0.2.1')]
 
    .. method:: overlaps(other)
 
@@ -656,6 +670,8 @@ dictionaries.
       hosts are all the IP addresses that belong to the network, except the
       Subnet-Router anycast address.  For networks with a mask length of 127,
       the Subnet-Router anycast address is also included in the result.
+      Networks with a mask of 128 will return a list containing the
+      single host address.
 
    .. method:: overlaps(other)
    .. method:: address_exclude(network)

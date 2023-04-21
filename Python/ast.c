@@ -22,6 +22,25 @@ static int validate_stmt(stmt_ty);
 static int validate_expr(expr_ty, expr_context_ty);
 
 static int
+validate_name(PyObject *name)
+{
+    assert(PyUnicode_Check(name));
+    static const char * const forbidden[] = {
+        "None",
+        "True",
+        "False",
+        NULL
+    };
+    for (int i = 0; forbidden[i] != NULL; i++) {
+        if (_PyUnicode_EqualToASCIIString(name, forbidden[i])) {
+            PyErr_Format(PyExc_ValueError, "Name node can't be used with '%s' constant", forbidden[i]);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int
 validate_comprehension(asdl_seq *gens)
 {
     Py_ssize_t i;
@@ -199,6 +218,9 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         actual_ctx = exp->v.Starred.ctx;
         break;
     case Name_kind:
+        if (!validate_name(exp->v.Name.id)) {
+            return 0;
+        }
         actual_ctx = exp->v.Name.ctx;
         break;
     case List_kind:
@@ -786,7 +808,8 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
     /* borrowed reference */
     c.c_filename = filename;
     c.c_normalize = NULL;
-    c.c_feature_version = flags ? flags->cf_feature_version : PY_MINOR_VERSION;
+    c.c_feature_version = flags && (flags->cf_flags & PyCF_ONLY_AST) ?
+        flags->cf_feature_version : PY_MINOR_VERSION;
 
     if (TYPE(n) == encoding_decl)
         n = CHILD(n, 0);
@@ -2437,8 +2460,25 @@ ast_for_atom(struct compiling *c, const node *n)
             return NULL;
         }
         pynum = parsenumber(c, STR(ch));
-        if (!pynum)
+        if (!pynum) {
+            PyThreadState *tstate = PyThreadState_GET();
+            // The only way a ValueError should happen in _this_ code is via
+            // PyLong_FromString hitting a length limit.
+            if (tstate->curexc_type == PyExc_ValueError &&
+                tstate->curexc_value != NULL) {
+                PyObject *type, *value, *tb;
+                // This acts as PyErr_Clear() as we're replacing curexc.
+                PyErr_Fetch(&type, &value, &tb);
+                Py_XDECREF(tb);
+                Py_DECREF(type);
+                ast_error(c, ch,
+                    "%S - Consider hexadecimal for huge integer literals "
+                    "to avoid decimal conversion limits.",
+                    value);
+                Py_DECREF(value);
+            }
             return NULL;
+        }
 
         if (PyArena_AddPyObject(c->c_arena, pynum) < 0) {
             Py_DECREF(pynum);
@@ -4876,7 +4916,7 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
 
     len = expr_end - expr_start;
     /* Allocate 3 extra bytes: open paren, close paren, null byte. */
-    str = PyMem_RawMalloc(len + 3);
+    str = PyMem_Malloc(len + 3);
     if (str == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -4892,7 +4932,7 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     mod_n = PyParser_SimpleParseStringFlagsFilename(str, "<fstring>",
                                                     Py_eval_input, 0);
     if (!mod_n) {
-        PyMem_RawFree(str);
+        PyMem_Free(str);
         return NULL;
     }
     /* Reuse str to find the correct column offset. */
@@ -4900,7 +4940,7 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     str[len+1] = '}';
     fstring_fix_node_location(n, mod_n, str);
     mod = PyAST_FromNode(mod_n, &cf, "<fstring>", c->c_arena);
-    PyMem_RawFree(str);
+    PyMem_Free(str);
     PyNode_Free(mod_n);
     if (!mod)
         return NULL;
@@ -5202,6 +5242,12 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     /* Check for =, which puts the text value of the expression in
        expr_text. */
     if (**str == '=') {
+        if (c->c_feature_version < 8) {
+            ast_error(c, n,
+                      "f-string: self documenting expressions are "
+                      "only supported in Python 3.8 and greater");
+            goto error;
+        }
         *str += 1;
 
         /* Skip over ASCII whitespace.  No need to test for end of string
@@ -5410,7 +5456,7 @@ ExprList_Append(ExprList *l, expr_ty exp)
             Py_ssize_t i;
             /* We're still using the cached data. Switch to
                alloc-ing. */
-            l->p = PyMem_RawMalloc(sizeof(expr_ty) * new_size);
+            l->p = PyMem_Malloc(sizeof(expr_ty) * new_size);
             if (!l->p)
                 return -1;
             /* Copy the cached data into the new buffer. */
@@ -5418,9 +5464,9 @@ ExprList_Append(ExprList *l, expr_ty exp)
                 l->p[i] = l->data[i];
         } else {
             /* Just realloc. */
-            expr_ty *tmp = PyMem_RawRealloc(l->p, sizeof(expr_ty) * new_size);
+            expr_ty *tmp = PyMem_Realloc(l->p, sizeof(expr_ty) * new_size);
             if (!tmp) {
-                PyMem_RawFree(l->p);
+                PyMem_Free(l->p);
                 l->p = NULL;
                 return -1;
             }
@@ -5448,7 +5494,7 @@ ExprList_Dealloc(ExprList *l)
         /* Do nothing. */
     } else {
         /* We have dynamically allocated. Free the memory. */
-        PyMem_RawFree(l->p);
+        PyMem_Free(l->p);
     }
     l->p = NULL;
     l->size = -1;

@@ -1993,7 +1993,7 @@ interp_create(PyObject *self, PyObject *args)
     }
 
     // Create and initialize the new interpreter.
-    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    PyThreadState *save_tstate = PyThreadState_Get();
     // XXX Possible GILState issues?
     PyThreadState *tstate = Py_NewInterpreter();
     PyThreadState_Swap(save_tstate);

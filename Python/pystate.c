@@ -473,24 +473,25 @@ _PyInterpreterState_IDInitref(PyInterpreterState *interp)
 }
 
 
-void
+int
 _PyInterpreterState_IDIncref(PyInterpreterState *interp)
 {
-    if (interp->id_mutex == NULL) {
-        return;
+    if (_PyInterpreterState_IDInitref(interp) < 0) {
+        return -1;
     }
+
     PyThread_acquire_lock(interp->id_mutex, WAIT_LOCK);
     interp->id_refcount += 1;
     PyThread_release_lock(interp->id_mutex);
+    return 0;
 }
 
 
 void
 _PyInterpreterState_IDDecref(PyInterpreterState *interp)
 {
-    if (interp->id_mutex == NULL) {
-        return;
-    }
+    assert(interp->id_mutex != NULL);
+
     struct _gilstate_runtime_state *gilstate = &_PyRuntime.gilstate;
     PyThread_acquire_lock(interp->id_mutex, WAIT_LOCK);
     assert(interp->id_refcount != 0);
@@ -1639,7 +1640,7 @@ _str_shared(PyObject *obj, _PyCrossInterpreterData *data)
     struct _shared_str_data *shared = PyMem_NEW(struct _shared_str_data, 1);
     shared->kind = PyUnicode_KIND(obj);
     shared->buffer = PyUnicode_DATA(obj);
-    shared->len = PyUnicode_GET_LENGTH(obj) - 1;
+    shared->len = PyUnicode_GET_LENGTH(obj);
     data->data = (void *)shared;
     Py_INCREF(obj);
     data->obj = obj;  // Will be "released" (decref'ed) when data released.

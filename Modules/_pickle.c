@@ -5988,23 +5988,30 @@ load_newobj_ex(UnpicklerObject *self)
     }
 
     if (!PyType_Check(cls)) {
-        Py_DECREF(kwargs);
-        Py_DECREF(args);
         PyErr_Format(st->UnpicklingError,
                      "NEWOBJ_EX class argument must be a type, not %.200s",
                      Py_TYPE(cls)->tp_name);
-        Py_DECREF(cls);
-        return -1;
+        goto error;
     }
 
     if (((PyTypeObject *)cls)->tp_new == NULL) {
-        Py_DECREF(kwargs);
-        Py_DECREF(args);
-        Py_DECREF(cls);
         PyErr_SetString(st->UnpicklingError,
                         "NEWOBJ_EX class argument doesn't have __new__");
-        return -1;
+        goto error;
     }
+    if (!PyTuple_Check(args)) {
+        PyErr_Format(st->UnpicklingError,
+                     "NEWOBJ_EX args argument must be a tuple, not %.200s",
+                     Py_TYPE(args)->tp_name);
+        goto error;
+    }
+    if (!PyDict_Check(kwargs)) {
+        PyErr_Format(st->UnpicklingError,
+                     "NEWOBJ_EX kwargs argument must be a dict, not %.200s",
+                     Py_TYPE(kwargs)->tp_name);
+        goto error;
+    }
+
     obj = ((PyTypeObject *)cls)->tp_new((PyTypeObject *)cls, args, kwargs);
     Py_DECREF(kwargs);
     Py_DECREF(args);
@@ -6014,6 +6021,12 @@ load_newobj_ex(UnpicklerObject *self)
     }
     PDATA_PUSH(self->stack, obj, -1);
     return 0;
+
+error:
+    Py_DECREF(kwargs);
+    Py_DECREF(args);
+    Py_DECREF(cls);
+    return -1;
 }
 
 static int

@@ -305,29 +305,23 @@ class TestBase_Mapping(unittest.TestCase):
             self._test_mapping_file_plain()
 
     def _test_mapping_file_plain(self):
-        unichrs = lambda s: ''.join(map(chr, map(eval, s.split('+'))))
+        def unichrs(s):
+            return ''.join(chr(int(x, 16)) for x in s.split('+'))
+
         urt_wa = {}
 
         with self.open_mapping_file() as f:
             for line in f:
                 if not line:
                     break
-                data = line.split('#')[0].strip().split()
+                data = line.split('#')[0].split()
                 if len(data) != 2:
                     continue
 
-                csetval = eval(data[0])
-                if csetval <= 0x7F:
-                    csetch = bytes([csetval & 0xff])
-                elif csetval >= 0x1000000:
-                    csetch = bytes([(csetval >> 24), ((csetval >> 16) & 0xff),
-                                    ((csetval >> 8) & 0xff), (csetval & 0xff)])
-                elif csetval >= 0x10000:
-                    csetch = bytes([(csetval >> 16), ((csetval >> 8) & 0xff),
-                                    (csetval & 0xff)])
-                elif csetval >= 0x100:
-                    csetch = bytes([(csetval >> 8), (csetval & 0xff)])
-                else:
+                if data[0][:2] != '0x':
+                    self.fail(f"Invalid line: {line!r}")
+                csetch = bytes.fromhex(data[0][2:])
+                if len(csetch) == 1 and 0x80 <= csetch[0]:
                     continue
 
                 unich = unichrs(data[1])

@@ -1,0 +1,696 @@
+.. bpo: 42103
+.. date: 2020-10-23-19-19-30
+.. nonce: cILT66
+.. release date: 2020-12-07
+.. section: Security
+
+Prevented potential DoS attack via CPU and RAM exhaustion when processing
+malformed Apple Property List files in binary format.
+
+..
+
+.. bpo: 42051
+.. date: 2020-10-19-10-56-27
+.. nonce: EU_B7u
+.. section: Security
+
+The :mod:`plistlib` module no longer accepts entity declarations in XML
+plist files to avoid XML vulnerabilities. This should not affect users as
+entity declarations are not used in regular plist files.
+
+..
+
+.. bpo: 40791
+.. date: 2020-05-28-06-06-47
+.. nonce: QGZClX
+.. section: Security
+
+Add ``volatile`` to the accumulator variable in ``hmac.compare_digest``,
+making constant-time-defeating optimizations less likely.
+
+..
+
+.. bpo: 41686
+.. date: 2020-11-17-16-25-50
+.. nonce: hX77kL
+.. section: Core and Builtins
+
+On Windows, the ``SIGINT`` event, ``_PyOS_SigintEvent()``, is now created
+even if Python is configured to not install signal handlers (if
+:c:member:`PyConfig.install_signal_handlers` equals to 0, or
+``Py_InitializeEx(0)``).
+
+..
+
+.. bpo: 42143
+.. date: 2020-10-27-21-34-05
+.. nonce: N6KXUO
+.. section: Core and Builtins
+
+Fix handling of errors during creation of ``PyFunctionObject``, which
+resulted in operations on uninitialized memory. Patch by Yonatan
+Goldschmidt.
+
+..
+
+.. bpo: 41984
+.. date: 2020-10-14-16-19-43
+.. nonce: SEtKMr
+.. section: Core and Builtins
+
+The garbage collector now tracks all user-defined classes. Patch by Brandt
+Bucher.
+
+..
+
+.. bpo: 41909
+.. date: 2020-10-04-10-55-12
+.. nonce: BqHPcm
+.. section: Core and Builtins
+
+Fixed stack overflow in :func:`issubclass` and :func:`isinstance` when
+getting the ``__bases__`` attribute leads to infinite recursion.
+
+..
+
+.. bpo: 41894
+.. date: 2020-10-02-11-35-33
+.. nonce: ffmtOt
+.. section: Core and Builtins
+
+When loading a native module and a load failure occurs, prevent a possible
+UnicodeDecodeError when not running in a UTF-8 locale by decoding the load
+error message using the current locale's encoding.
+
+..
+
+.. bpo: 17735
+.. date: 2020-12-03-22-22-24
+.. nonce: Qsaaue
+.. section: Library
+
+:func:`inspect.findsource` now raises :exc:`OSError` instead of
+:exc:`IndexError` when :attr:`co_lineno` of a code object is greater than
+the file length. This can happen, for example, when a file is edited after
+it was imported.  PR by Irit Katriel.
+
+..
+
+.. bpo: 42116
+.. date: 2020-12-03-15-42-32
+.. nonce: yIwroP
+.. section: Library
+
+Fix handling of trailing comments by :func:`inspect.getsource`.
+
+..
+
+.. bpo: 42482
+.. date: 2020-11-27-16-46-58
+.. nonce: EJC3sd
+.. section: Library
+
+:class:`~traceback.TracebackException` no longer holds a reference to the
+exception's traceback object. Consequently, instances of TracebackException
+for equivalent but non-equal exceptions now compare as equal.
+
+..
+
+.. bpo: 42406
+.. date: 2020-11-19-10-44-41
+.. nonce: r9rNCj
+.. section: Library
+
+We fixed an issue in `pickle.whichmodule` in which importing
+`multiprocessing` could change the how pickle identifies which module an
+object belongs to, potentially breaking the unpickling of those objects.
+
+..
+
+.. bpo: 42328
+.. date: 2020-11-15-17-02-00
+.. nonce: bqpPlR
+.. section: Library
+
+Fixed :meth:`tkinter.ttk.Style.map`. The function accepts now the
+representation of the default state as empty sequence (as returned by
+``Style.map()``). The structure of the result is now the same on all
+platform and does not depend on the value of ``wantobjects``.
+
+..
+
+.. bpo: 42014
+.. date: 2020-11-10-15-40-56
+.. nonce: ShM37l
+.. section: Library
+
+The ``onerror`` callback from ``shutil.rmtree`` now receives correct
+function when ``os.open`` fails.
+
+..
+
+.. bpo: 42237
+.. date: 2020-11-10-14-27-49
+.. nonce: F363jO
+.. section: Library
+
+Fix `os.sendfile()` on illumos.
+
+..
+
+.. bpo: 42249
+.. date: 2020-11-03-09-22-56
+.. nonce: vfNO2u
+.. section: Library
+
+Fixed writing binary Plist files larger than 4 GiB.
+
+..
+
+.. bpo: 35455
+.. date: 2020-11-02-14-10-48
+.. nonce: Q1xTIo
+.. section: Library
+
+On Solaris, :func:`~time.thread_time` is now implemented with
+``gethrvtime()`` because ``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` is not
+always available. Patch by Jakub Kulik.
+
+..
+
+.. bpo: 41754
+.. date: 2020-11-01-15-07-20
+.. nonce: DraSZh
+.. section: Library
+
+webbrowser: Ignore *NotADirectoryError* when calling ``xdg-settings``.
+
+..
+
+.. bpo: 29566
+.. date: 2020-10-31-13-28-36
+.. nonce: 6aDbty
+.. section: Library
+
+``binhex.binhex()`` consisently writes macOS 9 line endings.
+
+..
+
+.. bpo: 42183
+.. date: 2020-10-29-11-17-35
+.. nonce: 50ZcIi
+.. section: Library
+
+Fix a stack overflow error for asyncio Task or Future repr().
+
+The overflow occurs under some circumstances when a Task or Future
+recursively returns itself.
+
+..
+
+.. bpo: 42103
+.. date: 2020-10-23-19-20-14
+.. nonce: C5obK2
+.. section: Library
+
+:exc:`~plistlib.InvalidFileException` and :exc:`RecursionError` are now the
+only errors caused by loading malformed binary Plist file (previously
+ValueError and TypeError could be raised in some specific cases).
+
+..
+
+.. bpo: 41491
+.. date: 2020-10-19-14-02-09
+.. nonce: d1BUWH
+.. section: Library
+
+plistlib: fix parsing XML plists with hexadecimal integer values
+
+..
+
+.. bpo: 32498
+.. date: 2020-10-18-19-22-39
+.. nonce: MoqSgo
+.. section: Library
+
+Clearer exception message when passing an argument of type bytes to
+:func:`urllib.parse.unquote`.  This is only for 3.8; in 3.9 and later this
+function accepts bytes inputs as well.  PR by Irit Katriel.
+
+..
+
+.. bpo: 42065
+.. date: 2020-10-17-23-17-18
+.. nonce: 85BsRA
+.. section: Library
+
+Fix an incorrectly formatted error from :meth:`_codecs.charmap_decode` when
+called with a mapped value outside the range of valid Unicode code points.
+PR by Max Bernstein.
+
+..
+
+.. bpo: 41966
+.. date: 2020-10-17-07-52-53
+.. nonce: gwEQRZ
+.. section: Library
+
+Fix pickling pure Python :class:`datetime.time` subclasses. Patch by Dean
+Inwood.
+
+..
+
+.. bpo: 41976
+.. date: 2020-10-08-18-22-28
+.. nonce: Svm0wb
+.. section: Library
+
+Fixed a bug that was causing :func:`ctypes.util.find_library` to return
+``None`` when triying to locate a library in an environment when gcc>=9 is
+available and ``ldconfig`` is not. Patch by Pablo Galindo
+
+..
+
+.. bpo: 41900
+.. date: 2020-10-01-10-50-12
+.. nonce: Cho7oh
+.. section: Library
+
+C14N 2.0 serialisation in xml.etree.ElementTree failed for unprefixed
+attributes when a default namespace was defined.
+
+..
+
+.. bpo: 41855
+.. date: 2020-09-24-16-45-59
+.. nonce: q6Y1nm
+.. section: Library
+
+In ``importlib.metadata``, fix issue where multiple children can be returned
+from ``FastPath.zip_children()``. Backport of
+`python-devs/importlib_metadata#117
+<https://gitlab.com/python-devs/importlib_metadata/-/issues/117>`_.
+
+..
+
+.. bpo: 41840
+.. date: 2020-09-23-23-17-59
+.. nonce: QRFr4L
+.. section: Library
+
+Fix a bug in the :mod:`symtable` module that was causing module-scope global
+variables to not be reported as both local and global. Patch by Pablo
+Galindo.
+
+..
+
+.. bpo: 41831
+.. date: 2020-09-22-11-07-50
+.. nonce: k-Eop_
+.. section: Library
+
+``str()`` for the ``type`` attribute of the ``tkinter.Event`` object always
+returns now the numeric code returned by Tk instead of the name of the event
+type.
+
+..
+
+.. bpo: 41662
+.. date: 2020-08-30-21-38-57
+.. nonce: 6e9iZn
+.. section: Library
+
+No longer override exceptions raised in ``__len__()`` of a sequence of
+parameters in :mod:`sqlite3` with :exc:`~sqlite3.ProgrammingError`.
+
+..
+
+.. bpo: 41662
+.. date: 2020-08-29-16-07-36
+.. nonce: Mn79zh
+.. section: Library
+
+Fixed crash when mutate list of parameters during iteration in
+:mod:`sqlite3`.
+
+..
+
+.. bpo: 34215
+.. date: 2020-08-19-20-17-51
+.. nonce: _Cv8c-
+.. section: Library
+
+Clarify the error message for :exc:`asyncio.IncompleteReadError` when
+``expected`` is ``None``.
+
+..
+
+.. bpo: 41316
+.. date: 2020-07-28-12-08-58
+.. nonce: bSCbK4
+.. section: Library
+
+Fix the :mod:`tarfile` module to write only basename of TAR file to GZIP
+compression header.
+
+..
+
+.. bpo: 12800
+.. date: 2020-07-09-11-32-28
+.. nonce: fNgWwx
+.. section: Library
+
+Extracting a symlink from a tarball should succeed and overwrite the symlink
+if it already exists. The fix is to remove the existing file or symlink
+before extraction. Based on patch by Chris AtLee, Jeffrey Kintscher, and
+Senthil Kumaran.
+
+..
+
+.. bpo: 16936
+.. date: 2020-07-08-09-45-00
+.. nonce: z8o8Pn
+.. section: Library
+
+Allow ``ctypes.wintypes`` to be imported on non-Windows systems.
+
+..
+
+.. bpo: 40592
+.. date: 2020-05-14-16-01-34
+.. nonce: Cmk855
+.. section: Library
+
+:func:`shutil.which` now ignores empty entries in :envvar:`PATHEXT` instead
+of treating them as a match.
+
+..
+
+.. bpo: 40492
+.. date: 2020-05-04-12-16-00
+.. nonce: ONk9Na
+.. section: Library
+
+Fix ``--outfile`` for :mod:`cProfile` / :mod:`profile` not writing the
+output file in the original directory when the program being profiled
+changes the working directory.  PR by Anthony Sottile.
+
+..
+
+.. bpo: 40105
+.. date: 2020-04-03-16-13-59
+.. nonce: hfM2c0
+.. section: Library
+
+ZipFile truncates files to avoid corruption when a shorter comment is
+provided in append ("a") mode. Patch by Jan Mazur.
+
+..
+
+.. bpo: 27321
+.. date: 2020-01-19-18-40-26
+.. nonce: 8e6SpM
+.. section: Library
+
+Fixed KeyError exception when flattening an email to a string attempts to
+replace a non-existent Content-Transfer-Encoding header.
+
+..
+
+.. bpo: 32793
+.. date: 2019-08-20-05-17-32
+.. nonce: cgpXl6
+.. section: Library
+
+Fix a duplicated debug message when :meth:`smtplib.SMTP.connect` is called.
+
+..
+
+.. bpo: 42153
+.. date: 2020-11-15-13-46-31
+.. nonce: KjBhx3
+.. section: Documentation
+
+Fix the URL for the IMAP protocol documents.
+
+..
+
+.. bpo: 41910
+.. date: 2020-10-21-14-40-54
+.. nonce: CzBMit
+.. section: Documentation
+
+Document the default implementation of `object.__eq__`.
+
+..
+
+.. bpo: 41774
+.. date: 2020-09-24-15-35-13
+.. nonce: 5IqdGP
+.. section: Documentation
+
+In Programming FAQ "Sequences (Tuples/Lists)" section, add "How do you
+remove multiple items from a list".
+
+..
+
+.. bpo: 39416
+.. date: 2020-01-22-05-14-53
+.. nonce: uYjhEm
+.. section: Documentation
+
+Document some restrictions on the default string representations of numeric
+classes.
+
+..
+
+.. bpo: 41473
+.. date: 2020-12-04-11-47-09
+.. nonce: W_updK
+.. section: Tests
+
+Reenable test_gdb on gdb 9.2 and newer:
+https://bugzilla.redhat.com/show_bug.cgi?id=1866884 bug is fixed in gdb
+10.1.
+
+..
+
+.. bpo: 42553
+.. date: 2020-12-03-13-32-44
+.. nonce: 2TRE2N
+.. section: Tests
+
+Fix ``test_asyncio.test_call_later()`` race condition: don't measure asyncio
+performance in the ``call_later()`` unit test. The test failed randomly on
+the CI.
+
+..
+
+.. bpo: 40754
+.. date: 2020-11-13-21-51-34
+.. nonce: Ekoxkg
+.. section: Tests
+
+Include ``_testinternalcapi`` module in Windows installer for test suite
+
+..
+
+.. bpo: 41739
+.. date: 2020-10-12-00-11-47
+.. nonce: wSCc4K
+.. section: Tests
+
+Fix test_logging.test_race_between_set_target_and_flush(): the test now
+waits until all threads complete to avoid leaking running threads.
+
+..
+
+.. bpo: 41944
+.. date: 2020-10-05-17-43-46
+.. nonce: rf1dYb
+.. section: Tests
+
+Tests for CJK codecs no longer call ``eval()`` on content received via HTTP.
+
+..
+
+.. bpo: 41939
+.. date: 2020-10-05-09-37-43
+.. nonce: P4OlbA
+.. section: Tests
+
+Fix test_site.test_license_exists_at_url(): call
+``urllib.request.urlcleanup()`` to reset the global
+``urllib.request._opener``. Patch by Victor Stinner.
+
+..
+
+.. bpo: 41561
+.. date: 2020-09-18-16-14-03
+.. nonce: uPnwrW
+.. section: Tests
+
+test_ssl: skip test_min_max_version_mismatch when TLS 1.0 is not available
+
+..
+
+.. bpo: 41602
+.. date: 2020-08-25-19-25-36
+.. nonce: Z64s0I
+.. section: Tests
+
+Add tests for SIGINT handling in the runpy module.
+
+..
+
+.. bpo: 41306
+.. date: 2020-08-03-13-44-37
+.. nonce: VDoWXI
+.. section: Tests
+
+Fixed a failure in ``test_tk.test_widgets.ScaleTest`` happening when
+executing the test with Tk 8.6.10.
+
+..
+
+.. bpo: 42398
+.. date: 2020-11-18-11-58-44
+.. nonce: Yt5wO8
+.. section: Build
+
+Fix a race condition in "make regen-all" when make -jN option is used to run
+jobs in parallel. The clinic.py script now only use atomic write to write
+files. Moveover, generated files are now left unchanged if the content does
+not change, to not change the file modification time.
+
+..
+
+.. bpo: 42120
+.. date: 2020-11-16-22-41-02
+.. nonce: 9scgko
+.. section: Windows
+
+Remove macro definition of ``copysign`` (to ``_copysign``) in headers.
+
+..
+
+.. bpo: 38439
+.. date: 2020-10-20-13-19-42
+.. nonce: eMLi-t
+.. section: Windows
+
+Updates the icons for IDLE in the Windows Store package.
+
+..
+
+.. bpo: 41557
+.. date: 2020-08-26-09-35-06
+.. nonce: vt00cQ
+.. section: Windows
+
+Update Windows installer to use SQLite 3.33.0.
+
+..
+
+.. bpo: 38324
+.. date: 2020-05-30-02-46-43
+.. nonce: 476M-5
+.. section: Windows
+
+Avoid Unicode errors when accessing certain locale data on Windows.
+
+..
+
+.. bpo: 38443
+.. date: 2020-10-23-10-26-53
+.. nonce: vu64tl
+.. section: macOS
+
+The ``--enable-universalsdk`` and ``--with-universal-archs`` options for the
+configure script now check that the specified architectures can be used.
+
+..
+
+.. bpo: 41471
+.. date: 2020-10-19-12-25-19
+.. nonce: gwA7un
+.. section: macOS
+
+Ignore invalid prefix lengths in system proxy excludes.
+
+..
+
+.. bpo: 41557
+.. date: 2020-08-26-09-31-37
+.. nonce: mcQ75z
+.. section: macOS
+
+Update macOS installer to use SQLite 3.33.0.
+
+..
+
+.. bpo: 42426
+.. date: 2020-11-21-17-21-21
+.. nonce: kNnPoC
+.. section: IDLE
+
+Fix reporting offset of the RE error in searchengine.
+
+..
+
+.. bpo: 42415
+.. date: 2020-11-20-01-30-27
+.. nonce: CyD-va
+.. section: IDLE
+
+Get docstrings for IDLE calltips more often by using inspect.getdoc.
+
+..
+
+.. bpo: 33987
+.. date: 2020-10-24-21-27-37
+.. nonce: fIh9JL
+.. section: IDLE
+
+Mostly finish using ttk widgets, mainly for editor, settings, and searches.
+Some patches by Mark Roseman.
+
+..
+
+.. bpo: 41775
+.. date: 2020-09-24-14-31-16
+.. nonce: sB8Vre
+.. section: IDLE
+
+Use 'IDLE Shell' as shell title
+
+..
+
+.. bpo: 40511
+.. date: 2020-06-16-12-16-13
+.. nonce: XkihpM
+.. section: IDLE
+
+Typing opening and closing parentheses inside the parentheses of a function
+call will no longer cause unnecessary "flashing" off and on of an existing
+open call-tip, e.g. when typed in a string literal.
+
+..
+
+.. bpo: 38439
+.. date: 2020-04-22-09-37-40
+.. nonce: ieXL-c
+.. section: IDLE
+
+Add a 256×256 pixel IDLE icon to the Windows .ico file. Created by Andrew
+Clover. Remove the low-color gif variations from the .ico file.
+
+..
+
+.. bpo: 41986
+.. date: 2020-10-09-22-50-46
+.. nonce: JUPE59
+.. section: C API
+
+:c:data:`Py_FileSystemDefaultEncodeErrors` and :c:data:`Py_UTF8Mode` are
+available again in limited API.

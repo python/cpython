@@ -120,6 +120,8 @@ support ppc (Xcode 4 on 10.6 and later systems).  The flavor can be specified
 using the configure option ``--with-universal-archs=VALUE``. The following
 values are available:
 
+  * ``universal2``: ``arm64``, ``x86_64``
+
   * ``intel``:	  ``i386``, ``x86_64``
 
   * ``intel-32``: ``i386``
@@ -155,9 +157,14 @@ following combinations of SDKs and universal-archs flavors are available:
 
   * 10.15 and later SDKs support ``intel-64`` only
 
+  * 11.0 and later SDKs support ``universal2``
+
 The makefile for a framework build will also install ``python3.x-32``
 binaries when the universal architecture includes at least one 32-bit
 architecture (that is, for all flavors but ``64-bit`` and ``intel-64``).
+It will also install ``python3.x-intel64`` binaries in the ``universal2``
+case to allow easy execution with the Rosetta 2 Intel emulator on Apple
+Silicon Macs.
 
 Running a specific architecture
 ...............................
@@ -176,6 +183,9 @@ under that Python.  If you want to ensure that Python interpreters launched in
 subprocesses also run in 32-bit-mode if the main interpreter does, use
 a ``python3.x-32`` binary and use the value of ``sys.executable`` as the
 ``subprocess`` ``Popen`` executable value.
+
+Likewise, use ``python3.x-intel64`` to force execution in ``x86_64`` mode
+with ``universal2`` binaries.
 
 Building and using a framework-based Python on macOS
 ====================================================

@@ -117,7 +117,7 @@ The variables defined in the :mod:`signal` module are:
 
    Child process stopped or terminated.
 
-   .. availability:: Windows.
+   .. availability:: Unix.
 
 .. data:: SIGCLD
 

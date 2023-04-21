@@ -27,7 +27,7 @@ Interface summary:
    Return a deep copy of *x*.
 
 
-.. exception:: error
+.. exception:: Error
 
    Raised for module specific errors.
 

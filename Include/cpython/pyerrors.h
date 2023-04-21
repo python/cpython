@@ -148,7 +148,10 @@ PyAPI_FUNC(PyObject *) PyErr_ProgramTextObject(
     PyObject *filename,
     int lineno);
 
-/* Create a UnicodeEncodeError object */
+/* Create a UnicodeEncodeError object.
+ *
+ * TODO: This API will be removed in Python 3.11.
+ */
 Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_Create(
     const char *encoding,       /* UTF-8 encoded string */
     const Py_UNICODE *object,
@@ -158,7 +161,10 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_Create(
     const char *reason          /* UTF-8 encoded string */
     );
 
-/* Create a UnicodeTranslateError object */
+/* Create a UnicodeTranslateError object.
+ *
+ * TODO: This API will be removed in Python 3.11.
+ */
 Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_Create(
     const Py_UNICODE *object,
     Py_ssize_t length,

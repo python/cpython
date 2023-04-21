@@ -75,6 +75,8 @@ class SharedMemory:
             raise ValueError("'size' must be a positive integer")
         if create:
             self._flags = _O_CREX | os.O_RDWR
+            if size == 0:
+                raise ValueError("'size' must be a positive number different from zero")
         if name is None and not self._flags & os.O_EXCL:
             raise ValueError("'name' can only be None if create=True")
 
@@ -433,9 +435,12 @@ class ShareableList:
 
         if not isinstance(value, (str, bytes)):
             new_format = self._types_mapping[type(value)]
+            encoded_value = value
         else:
-            if len(value) > self._allocated_bytes[position]:
-                raise ValueError("exceeds available storage for existing str")
+            encoded_value = (value.encode(_encoding)
+                             if isinstance(value, str) else value)
+            if len(encoded_value) > self._allocated_bytes[position]:
+                raise ValueError("bytes/str item exceeds available storage")
             if current_format[-1] == "s":
                 new_format = current_format
             else:
@@ -448,8 +453,7 @@ class ShareableList:
             new_format,
             value
         )
-        value = value.encode(_encoding) if isinstance(value, str) else value
-        struct.pack_into(new_format, self.shm.buf, offset, value)
+        struct.pack_into(new_format, self.shm.buf, offset, encoded_value)
 
     def __reduce__(self):
         return partial(self.__class__, name=self.shm.name), ()

@@ -38,8 +38,8 @@ static int
 win32_urandom_init(int raise)
 {
     /* Acquire context */
-    if (!CryptAcquireContext(&hCryptProv, NULL, NULL,
-                             PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
+    if (!CryptAcquireContextW(&hCryptProv, NULL, NULL,
+                              PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
         goto error;
 
     return 0;

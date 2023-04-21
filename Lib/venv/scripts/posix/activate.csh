@@ -22,7 +22,7 @@ if (! "$?VIRTUAL_ENV_DISABLE_PROMPT") then
     else
         if (`basename "VIRTUAL_ENV"` == "__") then
             # special case for Aspen magic directories
-            # see http://www.zetadev.com/software/aspen/
+            # see https://aspen.io/
             set env_name = `basename \`dirname "$VIRTUAL_ENV"\``
         else
             set env_name = `basename "$VIRTUAL_ENV"`

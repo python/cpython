@@ -1,4 +1,5 @@
 import unittest
+import locale
 import re
 import subprocess
 import sys
@@ -57,6 +58,10 @@ class TclTest(unittest.TestCase):
     def test_eval_null_in_result(self):
         tcl = self.interp
         self.assertEqual(tcl.eval('set a "a\\0b"'), 'a\x00b')
+
+    def test_eval_surrogates_in_result(self):
+        tcl = self.interp
+        self.assertIn(tcl.eval(r'set a "<\ud83d\udcbb>"'), '<\U0001f4bb>')
 
     def testEvalException(self):
         tcl = self.interp
@@ -130,10 +135,14 @@ class TclTest(unittest.TestCase):
 
     def get_integers(self):
         integers = (0, 1, -1, 2**31-1, -2**31, 2**31, -2**31-1, 2**63-1, -2**63)
-        # bignum was added in Tcl 8.5, but its support is able only since 8.5.8
-        if (get_tk_patchlevel() >= (8, 6, 0, 'final') or
-            (8, 5, 8) <= get_tk_patchlevel() < (8, 6)):
-            integers += (2**63, -2**63-1, 2**1000, -2**1000)
+        # bignum was added in Tcl 8.5, but its support is able only since 8.5.8.
+        # Actually it is determined at compile time, so using get_tk_patchlevel()
+        # is not reliable.
+        # TODO: expose full static version.
+        if tcl_version >= (8, 5):
+            v = get_tk_patchlevel()
+            if v >= (8, 6, 0, 'final') or (8, 5, 8) <= v < (8, 6):
+                integers += (2**63, -2**63-1, 2**1000, -2**1000)
         return integers
 
     def test_getint(self):
@@ -190,28 +199,47 @@ class TclTest(unittest.TestCase):
 
     def testEvalFile(self):
         tcl = self.interp
-        with open(support.TESTFN, 'w') as f:
-            self.addCleanup(support.unlink, support.TESTFN)
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+        with open(filename, 'w') as f:
             f.write("""set a 1
             set b 2
             set c [ expr $a + $b ]
             """)
-        tcl.evalfile(support.TESTFN)
+        tcl.evalfile(filename)
         self.assertEqual(tcl.eval('set a'),'1')
         self.assertEqual(tcl.eval('set b'),'2')
         self.assertEqual(tcl.eval('set c'),'3')
 
     def test_evalfile_null_in_result(self):
         tcl = self.interp
-        with open(support.TESTFN, 'w') as f:
-            self.addCleanup(support.unlink, support.TESTFN)
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+        with open(filename, 'w') as f:
             f.write("""
             set a "a\0b"
             set b "a\\0b"
             """)
-        tcl.evalfile(support.TESTFN)
+        tcl.evalfile(filename)
         self.assertEqual(tcl.eval('set a'), 'a\x00b')
         self.assertEqual(tcl.eval('set b'), 'a\x00b')
+
+    def test_evalfile_surrogates_in_result(self):
+        tcl = self.interp
+        encoding = tcl.call('encoding', 'system')
+        self.addCleanup(tcl.call, 'encoding', 'system', encoding)
+        tcl.call('encoding', 'system', 'utf-8')
+
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+        with open(filename, 'wb') as f:
+            f.write(b"""
+            set a "<\xed\xa0\xbd\xed\xb2\xbb>"
+            set b "<\\ud83d\\udcbb>"
+            """)
+        tcl.evalfile(filename)
+        self.assertEqual(tcl.eval('set a'), '<\U0001f4bb>')
+        self.assertEqual(tcl.eval('set b'), '<\U0001f4bb>')
 
     def testEvalFileException(self):
         tcl = self.interp
@@ -418,7 +446,7 @@ class TclTest(unittest.TestCase):
             else:
                 self.assertEqual(result, str(i))
                 self.assertIsInstance(result, str)
-        if tcl_version < (8, 5):  # bignum was added in Tcl 8.5
+        if get_tk_patchlevel() < (8, 5):  # bignum was added in Tcl 8.5
             self.assertRaises(TclError, tcl.call, 'expr', str(2**1000))
 
     def test_passing_values(self):
@@ -435,6 +463,11 @@ class TclTest(unittest.TestCase):
         self.assertEqual(passValue('str\x00ing\u20ac'), 'str\x00ing\u20ac')
         self.assertEqual(passValue('str\x00ing\U0001f4bb'),
                          'str\x00ing\U0001f4bb')
+        if sys.platform != 'win32':
+            self.assertEqual(passValue('<\udce2\udc82\udcac>'),
+                             '<\u20ac>')
+            self.assertEqual(passValue('<\udced\udca0\udcbd\udced\udcb2\udcbb>'),
+                             '<\U0001f4bb>')
         self.assertEqual(passValue(b'str\x00ing'),
                          b'str\x00ing' if self.wantobjects else 'str\x00ing')
         self.assertEqual(passValue(b'str\xc0\x80ing'),
@@ -494,6 +527,9 @@ class TclTest(unittest.TestCase):
         check('string\xbd')
         check('string\u20ac')
         check('string\U0001f4bb')
+        if sys.platform != 'win32':
+            check('<\udce2\udc82\udcac>', '<\u20ac>')
+            check('<\udced\udca0\udcbd\udced\udcb2\udcbb>', '<\U0001f4bb>')
         check('')
         check(b'string', 'string')
         check(b'string\xe2\x82\xac', 'string\xe2\x82\xac')
@@ -537,6 +573,8 @@ class TclTest(unittest.TestCase):
             ('a \u20ac', ('a', '\u20ac')),
             ('a \U0001f4bb', ('a', '\U0001f4bb')),
             (b'a \xe2\x82\xac', ('a', '\u20ac')),
+            (b'a \xf0\x9f\x92\xbb', ('a', '\U0001f4bb')),
+            (b'a \xed\xa0\xbd\xed\xb2\xbb', ('a', '\U0001f4bb')),
             (b'a\xc0\x80b c\xc0\x80d', ('a\x00b', 'c\x00d')),
             ('a {b c}', ('a', 'b c')),
             (r'a b\ c', ('a', 'b c')),

@@ -1,0 +1,203 @@
+--- tk8.6.11/macosx/tkMacOSXDialog.c	2020-12-31 01:46:07.000000000 +0000
++++ tk8.6.11-patched/macosx/tkMacOSXDialog.c	2021-10-28 15:13:03.000000000 +0000
+@@ -221,7 +221,7 @@
+ 		returnCode: (NSModalResponse) returnCode
+ 	       contextInfo: (void *) contextInfo
+ {
+-    FilePanelCallbackInfo *callbackInfo = contextInfo;
++    FilePanelCallbackInfo *callbackInfo = (FilePanelCallbackInfo *)contextInfo;
+ 
+     if (returnCode == modalOK) {
+ 	Tcl_Obj *resultObj;
+@@ -266,7 +266,7 @@
+ - (void) tkAlertDidEnd: (NSAlert *) alert returnCode: (NSInteger) returnCode
+ 	contextInfo: (void *) contextInfo
+ {
+-    AlertCallbackInfo *callbackInfo = contextInfo;
++    AlertCallbackInfo *callbackInfo = (AlertCallbackInfo *)contextInfo;
+ 
+     if (returnCode >= NSAlertFirstButtonReturn) {
+ 	Tcl_Obj *resultObj = Tcl_NewStringObj(alertButtonStrings[
+@@ -350,49 +350,42 @@
+     FilePanelCallbackInfo *callbackInfo)
+ {
+     NSInteger modalReturnCode;
++    int OSVersion = [NSApp macOSVersion];
+ 
+-    if (parent && ![parent attachedSheet]) {
+-	[panel beginSheetModalForWindow:parent
+-	       completionHandler:^(NSModalResponse returnCode) {
+-	    [NSApp tkFilePanelDidEnd:panel
+-		       returnCode:returnCode
+-		       contextInfo:callbackInfo ];
+-	    }];
+-
+-	/*
+-	 * The sheet has been prepared, so now we have to run it as a modal
+-	 * window.  Using [NSApp runModalForWindow:] on macOS 10.15 or later
+-	 * generates warnings on stderr.  But using [NSOpenPanel runModal] or
+-	 * [NSSavePanel runModal] on 10.14 or earler does not cause the
+-	 * completion handler to run when the panel is closed.
+-	 */
++    /*
++     * Use a sheet if -parent is specified (unless there is already a sheet).
++     */
+ 
+-	if ([NSApp macOSVersion] > 101400) {
+-	    modalReturnCode = [panel runModal];
+-	} else {
++    if (parent && ![parent attachedSheet]) {
++	if (OSVersion < 101500) {
++	    [panel beginSheetModalForWindow:parent
++			  completionHandler:^(NSModalResponse returnCode) {
++		    [NSApp tkFilePanelDidEnd:panel
++				  returnCode:returnCode
++				 contextInfo:callbackInfo ];
++		}];
+ 	    modalReturnCode = [NSApp runModalForWindow:panel];
+-	}
+-    } else {
+-
+-	/*
+-	 * For the standalone file dialog, completion handlers do not work
+-	 * at all on macOS 10.14 and earlier.
+-	 */
+-
+-	if ([NSApp macOSVersion] > 101400) {
+-	    [panel beginWithCompletionHandler:^(NSModalResponse returnCode) {
++	} else if (OSVersion < 110000) {
++	    [panel beginSheetModalForWindow:parent
++			  completionHandler:^(NSModalResponse returnCode) {
+ 		    [NSApp tkFilePanelDidEnd:panel
+-			          returnCode:returnCode
+-			         contextInfo:callbackInfo ];
+-	    }];
++				  returnCode:returnCode
++				 contextInfo:callbackInfo ];
++		}];
+ 	    modalReturnCode = [panel runModal];
+ 	} else {
++	    [parent beginSheet: panel completionHandler:nil];
+ 	    modalReturnCode = [panel runModal];
+ 	    [NSApp tkFilePanelDidEnd:panel
+-		   	  returnCode:modalReturnCode
+-		         contextInfo:callbackInfo ];
+-	    [panel close];
++			  returnCode:modalReturnCode
++			 contextInfo:callbackInfo ];
++		[parent endSheet:panel];
+ 	}
++    } else {
++	modalReturnCode = [panel runModal];
++	[NSApp tkFilePanelDidEnd:panel
++		      returnCode:modalReturnCode
++		     contextInfo:callbackInfo ];
+     }
+     return callbackInfo->cmdObj ? modalOther : modalReturnCode;
+ }
+@@ -422,7 +414,7 @@
+     Tcl_Obj *const objv[])	/* Argument objects. */
+ {
+     int result = TCL_ERROR;
+-    Tk_Window parent, tkwin = clientData;
++    Tk_Window parent, tkwin = (Tk_Window)clientData;
+     const char *title = NULL;
+     int i;
+     NSColor *color = nil, *initialColor = nil;
+@@ -677,7 +669,7 @@
+     int objc,			/* Number of arguments. */
+     Tcl_Obj *const objv[])	/* Argument objects. */
+ {
+-    Tk_Window tkwin = clientData;
++    Tk_Window tkwin = (Tk_Window)clientData;
+     char *str;
+     int i, result = TCL_ERROR, haveParentOption = 0;
+     int index, len, multiple = 0;
+@@ -1679,10 +1671,10 @@
+     if (!fontchooserInterp) {
+ 	return;
+     }
+-    fcdPtr = Tcl_GetAssocData(fontchooserInterp, "::tk::fontchooser", NULL);
++    fcdPtr = (FontchooserData *)Tcl_GetAssocData(fontchooserInterp, "::tk::fontchooser", NULL);
+     switch (kind) {
+     case FontchooserClosed:
+-	if (fcdPtr->parent != None) {
++	if (fcdPtr->parent != NULL) {
+ 	    TkSendVirtualEvent(fcdPtr->parent, "TkFontchooserVisibility", NULL);
+ 	    fontchooserInterp = NULL;
+ 	}
+@@ -1738,7 +1730,7 @@
+ 
+     switch(optionIndex) {
+     case FontchooserParent:
+-	if (fcdPtr->parent != None) {
++	if (fcdPtr->parent != NULL) {
+ 	    resObj = Tcl_NewStringObj(
+ 		    ((TkWindow *)fcdPtr->parent)->pathName, -1);
+ 	} else {
+@@ -1801,7 +1793,7 @@
+     Tcl_Obj *const objv[])
+ {
+     Tk_Window tkwin = (Tk_Window)clientData;
+-    FontchooserData *fcdPtr = Tcl_GetAssocData(interp, "::tk::fontchooser",
++    FontchooserData *fcdPtr = (FontchooserData *)Tcl_GetAssocData(interp, "::tk::fontchooser",
+ 	    NULL);
+     int i, r = TCL_OK;
+ 
+@@ -1858,7 +1850,7 @@
+ 	    Tk_Window parent = Tk_NameToWindow(interp,
+ 		    Tcl_GetString(objv[i+1]), tkwin);
+ 
+-	    if (parent == None) {
++	    if (parent == NULL) {
+ 		return TCL_ERROR;
+ 	    }
+ 	    if (fcdPtr->parent) {
+@@ -1885,7 +1877,7 @@
+ 		fcdPtr->titleObj = NULL;
+ 	    }
+ 	    break;
+-	case FontchooserFont:
++	case FontchooserFont: {
+ 	    Tcl_GetStringFromObj(objv[i+1], &len);
+ 	    if (len) {
+ 		Tk_Font f = Tk_AllocFontFromObj(interp, tkwin, objv[i+1]);
+@@ -1919,6 +1911,7 @@
+ 			"TkFontchooserFontChanged", NULL);
+ 	    }
+ 	    break;
++	}
+ 	case FontchooserCmd:
+ 	    if (fcdPtr->cmdObj) {
+ 		Tcl_DecrRefCount(fcdPtr->cmdObj);
+@@ -1964,10 +1957,10 @@
+     TCL_UNUSED(int),
+     TCL_UNUSED(Tcl_Obj *const *))
+ {
+-    FontchooserData *fcdPtr = Tcl_GetAssocData(interp, "::tk::fontchooser",
++    FontchooserData *fcdPtr = (FontchooserData *)Tcl_GetAssocData(interp, "::tk::fontchooser",
+ 	    NULL);
+ 
+-    if (fcdPtr->parent == None) {
++    if (fcdPtr->parent == NULL) {
+ 	fcdPtr->parent = (Tk_Window)clientData;
+ 	Tk_CreateEventHandler(fcdPtr->parent, StructureNotifyMask,
+ 		FontchooserParentEventHandler, fcdPtr);
+@@ -2042,7 +2035,7 @@
+     ClientData clientData,
+     XEvent *eventPtr)
+ {
+-    FontchooserData *fcdPtr = clientData;
++    FontchooserData *fcdPtr = (FontchooserData *)clientData;
+ 
+     if (eventPtr->type == DestroyNotify) {
+ 	Tk_DeleteEventHandler(fcdPtr->parent, StructureNotifyMask,
+@@ -2074,7 +2067,7 @@
+     ClientData clientData,
+     Tcl_Interp *interp)
+ {
+-    FontchooserData *fcdPtr = clientData;
++    FontchooserData *fcdPtr = (FontchooserData *)clientData;
+ 
+     if (fcdPtr->titleObj) {
+ 	Tcl_DecrRefCount(fcdPtr->titleObj);

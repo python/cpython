@@ -23,14 +23,14 @@ jobs:
     name: 'Ubuntu (Coverage)'
     runs-on: ubuntu-latest
     env:
-      OPENSSL_VER: 1.1.1f
+      OPENSSL_VER: 1.1.1n
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v1
+      uses: actions/cache@v2.1.3
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -73,7 +73,7 @@ jobs:
     name: 'Ubuntu (C Coverage)'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure CPython

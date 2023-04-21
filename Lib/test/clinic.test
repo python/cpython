@@ -3260,3 +3260,108 @@ exit:
 static PyObject *
 test_keyword_only_parameter_impl(PyObject *module, PyBytesObject *co_lnotab)
 /*[clinic end generated code: output=f25914b402039493 input=303df5046c7e37a3]*/
+
+
+/*[clinic input]
+output push
+output preset buffer
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5bff3376ee0df0b5]*/
+
+#ifdef CONDITION_A
+/*[clinic input]
+test_preprocessor_guarded_condition_a
+[clinic start generated code]*/
+
+static PyObject *
+test_preprocessor_guarded_condition_a_impl(PyObject *module)
+/*[clinic end generated code: output=ad012af18085add6 input=8edb8706a98cda7e]*/
+#elif CONDITION_B
+/*[clinic input]
+test_preprocessor_guarded_elif_condition_b
+[clinic start generated code]*/
+
+static PyObject *
+test_preprocessor_guarded_elif_condition_b_impl(PyObject *module)
+/*[clinic end generated code: output=615f2dee82b138d1 input=53777cebbf7fee32]*/
+#else
+/*[clinic input]
+test_preprocessor_guarded_else
+[clinic start generated code]*/
+
+static PyObject *
+test_preprocessor_guarded_else_impl(PyObject *module)
+/*[clinic end generated code: output=13af7670aac51b12 input=6657ab31d74c29fc]*/
+#endif
+
+/*[clinic input]
+dump buffer
+output pop
+[clinic start generated code]*/
+
+#if defined(CONDITION_A)
+
+PyDoc_STRVAR(test_preprocessor_guarded_condition_a__doc__,
+"test_preprocessor_guarded_condition_a($module, /)\n"
+"--\n"
+"\n");
+
+#define TEST_PREPROCESSOR_GUARDED_CONDITION_A_METHODDEF    \
+    {"test_preprocessor_guarded_condition_a", (PyCFunction)test_preprocessor_guarded_condition_a, METH_NOARGS, test_preprocessor_guarded_condition_a__doc__},
+
+static PyObject *
+test_preprocessor_guarded_condition_a(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return test_preprocessor_guarded_condition_a_impl(module);
+}
+
+#endif /* defined(CONDITION_A) */
+
+#if !defined(CONDITION_A) && (CONDITION_B)
+
+PyDoc_STRVAR(test_preprocessor_guarded_elif_condition_b__doc__,
+"test_preprocessor_guarded_elif_condition_b($module, /)\n"
+"--\n"
+"\n");
+
+#define TEST_PREPROCESSOR_GUARDED_ELIF_CONDITION_B_METHODDEF    \
+    {"test_preprocessor_guarded_elif_condition_b", (PyCFunction)test_preprocessor_guarded_elif_condition_b, METH_NOARGS, test_preprocessor_guarded_elif_condition_b__doc__},
+
+static PyObject *
+test_preprocessor_guarded_elif_condition_b(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return test_preprocessor_guarded_elif_condition_b_impl(module);
+}
+
+#endif /* !defined(CONDITION_A) && (CONDITION_B) */
+
+#if !defined(CONDITION_A) && !(CONDITION_B)
+
+PyDoc_STRVAR(test_preprocessor_guarded_else__doc__,
+"test_preprocessor_guarded_else($module, /)\n"
+"--\n"
+"\n");
+
+#define TEST_PREPROCESSOR_GUARDED_ELSE_METHODDEF    \
+    {"test_preprocessor_guarded_else", (PyCFunction)test_preprocessor_guarded_else, METH_NOARGS, test_preprocessor_guarded_else__doc__},
+
+static PyObject *
+test_preprocessor_guarded_else(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return test_preprocessor_guarded_else_impl(module);
+}
+
+#endif /* !defined(CONDITION_A) && !(CONDITION_B) */
+
+#ifndef TEST_PREPROCESSOR_GUARDED_CONDITION_A_METHODDEF
+    #define TEST_PREPROCESSOR_GUARDED_CONDITION_A_METHODDEF
+#endif /* !defined(TEST_PREPROCESSOR_GUARDED_CONDITION_A_METHODDEF) */
+
+#ifndef TEST_PREPROCESSOR_GUARDED_ELIF_CONDITION_B_METHODDEF
+    #define TEST_PREPROCESSOR_GUARDED_ELIF_CONDITION_B_METHODDEF
+#endif /* !defined(TEST_PREPROCESSOR_GUARDED_ELIF_CONDITION_B_METHODDEF) */
+
+#ifndef TEST_PREPROCESSOR_GUARDED_ELSE_METHODDEF
+    #define TEST_PREPROCESSOR_GUARDED_ELSE_METHODDEF
+#endif /* !defined(TEST_PREPROCESSOR_GUARDED_ELSE_METHODDEF) */
+/*[clinic end generated code: output=3804bb18d454038c input=3fc80c9989d2f2e1]*/

@@ -103,14 +103,12 @@ paths longer than this would not resolve and errors would result.
 
 In the latest versions of Windows, this limitation can be expanded to
 approximately 32,000 characters. Your administrator will need to activate the
-"Enable Win32 long paths" group policy, or set the registry value
-``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem@LongPathsEnabled``
-to ``1``.
+"Enable Win32 long paths" group policy, or set ``LongPathsEnabled`` to ``1``
+in the registry key
+``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem``.
 
 This allows the :func:`open` function, the :mod:`os` module and most other
-path functionality to accept and return paths longer than 260 characters when
-using strings. (Use of bytes as paths is deprecated on Windows, and this feature
-is not available when using bytes.)
+path functionality to accept and return paths longer than 260 characters.
 
 After changing the above option, no further configuration is required.
 
@@ -341,6 +339,11 @@ full write access to shared locations such as ``TEMP`` and the registry.
 Instead, it will write to a private copy. If your scripts must modify the
 shared locations, you will need to install the full installer.
 
+For more detail on the technical basis for these limitations, please consult
+Microsoft's documentation on packaged full-trust apps, currently available at
+`docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes
+<https://docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes>`_
+
 
 .. _windows-nuget:
 
@@ -423,6 +426,12 @@ dependants, such as Idle), pip and the Python documentation are not included.
     runtime may have already been installed on a user's system previously or
     automatically via Windows Update, and can be detected by finding
     ``ucrtbase.dll`` in the system directory.
+
+.. note::
+
+   When running on Windows 7, Python 3.8 requires the KB2533623 update to be
+   installed. The embeddable distribution does not detect this update, and may
+   fail at runtime. Later versions of Windows include this update.
 
 Third-party packages should be installed by the application installer alongside
 the embedded distribution. Using pip to manage dependencies as for a regular
@@ -1109,7 +1118,7 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 cx_Freeze
 ---------
 
-`cx_Freeze <https://anthony-tuininga.github.io/cx_Freeze/>`_ is a :mod:`distutils`
+`cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ is a :mod:`distutils`
 extension (see :ref:`extending-distutils`) which wraps Python scripts into
 executable Windows programs (:file:`{*}.exe` files).  When you have done this,
 you can distribute your application without requiring your users to install
@@ -1151,8 +1160,6 @@ For extension modules, consult :ref:`building-on-windows`.
       or "Creating Python extensions in C/C++ with SWIG and compiling them with
       MinGW gcc under Windows" or "Installing Python extension with distutils
       and without Microsoft Visual C++" by Sébastien Sauvage, 2003
-
-   `MingW -- Python extensions <http://www.mingw.org/wiki/FAQ#toc14>`_
 
 
 Other Platforms

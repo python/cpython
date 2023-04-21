@@ -1,0 +1,450 @@
+.. bpo: 43434
+.. date: 2021-05-02-17-50-23
+.. nonce: cy7xz6
+.. release date: 2021-05-03
+.. section: Security
+
+Creating a :class:`sqlite3.Connection` object now also produces a
+``sqlite3.connect`` :ref:`auditing event <auditing>`. Previously this event
+was only produced by :func:`sqlite3.connect` calls. Patch by Erlend E.
+Aasland.
+
+..
+
+.. bpo: 43472
+.. date: 2021-04-21-22-53-31
+.. nonce: gjLBTb
+.. section: Security
+
+Ensures interpreter-level audit hooks receive the
+``cpython.PyInterpreterState_New`` event when called through the
+``_xxsubinterpreters`` module.
+
+..
+
+.. bpo: 43075
+.. date: 2021-01-31-05-28-14
+.. nonce: DoAXqO
+.. section: Security
+
+Fix Regular Expression Denial of Service (ReDoS) vulnerability in
+:class:`urllib.request.AbstractBasicAuthHandler`.  The ReDoS-vulnerable
+regex has quadratic worst-case complexity and it allows cause a denial of
+service when identifying crafted invalid RFCs. This ReDoS issue is on the
+client side and needs remote attackers to control the HTTP server.
+
+..
+
+.. bpo: 43105
+.. date: 2021-03-31-20-35-11
+.. nonce: PBVmHm
+.. section: Core and Builtins
+
+Importlib now resolves relative paths when creating module spec objects from
+file locations.
+
+..
+
+.. bpo: 42924
+.. date: 2021-01-13-14-06-01
+.. nonce: _WS1Ok
+.. section: Core and Builtins
+
+Fix ``bytearray`` repetition incorrectly copying data from the start of the
+buffer, even if the data is offset within the buffer (e.g. after reassigning
+a slice at the start of the ``bytearray`` to a shorter byte string).
+
+..
+
+.. bpo: 43993
+.. date: 2021-04-30-19-23-45
+.. nonce: T7_yoq
+.. section: Library
+
+Update bundled pip to 21.1.1.
+
+..
+
+.. bpo: 43937
+.. date: 2021-04-25-13-34-13
+.. nonce: isx95l
+.. section: Library
+
+Fixed the :mod:`turtle` module working with non-default root window.
+
+..
+
+.. bpo: 43930
+.. date: 2021-04-24-14-23-07
+.. nonce: R7ah0m
+.. section: Library
+
+Update bundled pip to 21.1 and setuptools to 56.0.0
+
+..
+
+.. bpo: 43920
+.. date: 2021-04-23-11-54-38
+.. nonce: cJMQ2D
+.. section: Library
+
+OpenSSL 3.0.0: :meth:`~ssl.SSLContext.load_verify_locations` now returns a
+consistent error message when cadata contains no valid certificate.
+
+..
+
+.. bpo: 43607
+.. date: 2021-04-22-22-39-58
+.. nonce: 7IYDkG
+.. section: Library
+
+:mod:`urllib` can now convert Windows paths with ``\\?\`` prefixes into URL
+paths.
+
+..
+
+.. bpo: 43284
+.. date: 2021-04-21-14-50-57
+.. nonce: 2QZn2T
+.. section: Library
+
+platform.win32_ver derives the windows version from
+sys.getwindowsversion().platform_version which in turn derives the version
+from kernel32.dll (which can be of a different version than Windows itself).
+Therefore change the platform.win32_ver to determine the version using the
+platform module's _syscmd_ver private function to return an accurate
+version.
+
+..
+
+.. bpo: 42248
+.. date: 2021-04-11-21-10-57
+.. nonce: pedB1E
+.. section: Library
+
+[Enum] ensure exceptions raised in ``_missing__`` are released
+
+..
+
+.. bpo: 43799
+.. date: 2021-04-10-11-35-50
+.. nonce: 1iV4pX
+.. section: Library
+
+OpenSSL 3.0.0: define ``OPENSSL_API_COMPAT`` 1.1.1 to suppress deprecation
+warnings. Python requires OpenSSL 1.1.1 APIs.
+
+..
+
+.. bpo: 43794
+.. date: 2021-04-09-16-14-22
+.. nonce: -1XPDH
+.. section: Library
+
+Add :data:`ssl.OP_IGNORE_UNEXPECTED_EOF` constants (OpenSSL 3.0.0)
+
+..
+
+.. bpo: 43789
+.. date: 2021-04-09-14-08-03
+.. nonce: eaHlAm
+.. section: Library
+
+OpenSSL 3.0.0: Don't call the password callback function a second time when
+first call has signaled an error condition.
+
+..
+
+.. bpo: 43788
+.. date: 2021-04-09-12-08-01
+.. nonce: YsvInM
+.. section: Library
+
+The header files for :mod:`ssl` error codes are now OpenSSL
+version-specific. Exceptions will now show correct reason and library codes.
+The ``make_ssl_data.py`` script has been rewritten to use OpenSSL's text
+file with error codes.
+
+..
+
+.. bpo: 43655
+.. date: 2021-04-04-20-51-19
+.. nonce: LwGy8R
+.. section: Library
+
+:mod:`tkinter` dialog windows are now recognized as dialogs by window
+managers on macOS and X Window.
+
+..
+
+.. bpo: 43534
+.. date: 2021-03-18-15-46-08
+.. nonce: vPE9Us
+.. section: Library
+
+:func:`turtle.textinput` and :func:`turtle.numinput` create now a transient
+window working on behalf of the canvas window.
+
+..
+
+.. bpo: 43522
+.. date: 2021-03-16-22-37-32
+.. nonce: dhNwOu
+.. section: Library
+
+Fix problem with :attr:`~ssl.SSLContext.hostname_checks_common_name`.
+OpenSSL does not copy hostflags from *struct SSL_CTX* to *struct SSL*.
+
+..
+
+.. bpo: 42967
+.. date: 2021-03-11-00-31-41
+.. nonce: 2PeQRw
+.. section: Library
+
+Allow :class:`bytes` ``separator`` argument in ``urllib.parse.parse_qs`` and
+``urllib.parse.parse_qsl`` when parsing :class:`str` query strings.
+Previously, this raised a ``TypeError``.
+
+..
+
+.. bpo: 43176
+.. date: 2021-02-09-07-24-29
+.. nonce: bocNQn
+.. section: Library
+
+Fixed processing of a dataclass that inherits from a frozen dataclass with
+no fields.  It is now correctly detected as an error.
+
+..
+
+.. bpo: 34463
+.. date: 2020-12-22-22-51-48
+.. nonce: TUD8V5
+.. section: Library
+
+Fixed discrepancy between :mod:`traceback` and the interpreter in formatting
+of SyntaxError with lineno not set (:mod:`traceback` was changed to match
+interpreter).
+
+..
+
+.. bpo: 41735
+.. date: 2020-09-07-21-51-17
+.. nonce: NKqGKy
+.. section: Library
+
+Fix thread locks in zlib module may go wrong in rare case. Patch by Ma Lin.
+
+..
+
+.. bpo: 26053
+.. date: 2020-09-01-10-12-13
+.. nonce: hXikw_
+.. section: Library
+
+Fixed bug where the :mod:`pdb` interactive run command echoed the args from
+the shell command line, even if those have been overridden at the pdb
+prompt.
+
+..
+
+.. bpo: 36470
+.. date: 2020-06-13-23-33-32
+.. nonce: oi6Kdb
+.. section: Library
+
+Fix dataclasses with ``InitVar``\s and :func:`~dataclasses.replace()`. Patch
+by Claudiu Popa.
+
+..
+
+.. bpo: 28577
+.. date: 2020-03-02-23-52-38
+.. nonce: EK91ae
+.. section: Library
+
+The hosts method on 32-bit prefix length IPv4Networks and 128-bit prefix
+IPv6Networks now returns a list containing the single Address instead of an
+empty list.
+
+..
+
+.. bpo: 32745
+.. date: 2018-08-09-23-47-10
+.. nonce: iQi9hI
+.. section: Library
+
+Fix a regression in the handling of ctypes' :data:`ctypes.c_wchar_p` type:
+embedded null characters would cause a :exc:`ValueError` to be raised. Patch
+by Zackery Spytz.
+
+..
+
+.. bpo: 43959
+.. date: 2021-04-27-22-22-22
+.. nonce: n2261q
+.. section: Documentation
+
+The documentation on the PyContextVar C-API was clarified.
+
+..
+
+.. bpo: 43938
+.. date: 2021-04-25-22-44-27
+.. nonce: nC660q
+.. section: Documentation
+
+Update dataclasses documentation to express that FrozenInstanceError is
+derived from AttributeError.
+
+..
+
+.. bpo: 43739
+.. date: 2021-04-06-07-05-49
+.. nonce: L4HjiX
+.. section: Documentation
+
+Fixing the example code in Doc/extending/extending.rst to declare and
+initialize the pmodule variable to be of the right type.
+
+..
+
+.. bpo: 43842
+.. date: 2021-04-16-14-07-40
+.. nonce: w60GAH
+.. section: Tests
+
+Fix a race condition in the SMTP test of test_logging. Don't close a file
+descriptor (socket) from a different thread while asyncore.loop() is polling
+the file descriptor. Patch by Victor Stinner.
+
+..
+
+.. bpo: 43811
+.. date: 2021-04-12-11-14-28
+.. nonce: vGNbnD
+.. section: Tests
+
+Tests multiple OpenSSL versions on GitHub Actions. Use ccache to speed up
+testing.
+
+..
+
+.. bpo: 43791
+.. date: 2021-04-09-15-10-38
+.. nonce: 4KxiXK
+.. section: Tests
+
+OpenSSL 3.0.0: Disable testing of legacy protocols TLS 1.0 and 1.1. Tests
+are failing with TLSV1_ALERT_INTERNAL_ERROR.
+
+..
+
+.. bpo: 35306
+.. date: 2021-04-22-20-39-49
+.. nonce: F0Cg6X
+.. section: Windows
+
+Avoid raising errors from :meth:`pathlib.Path.exists()` when passed an
+invalid filename.
+
+..
+
+.. bpo: 38822
+.. date: 2021-04-22-19-49-20
+.. nonce: jgdPmq
+.. section: Windows
+
+Fixed :func:`os.stat` failing on inaccessible directories with a trailing
+slash, rather than falling back to the parent directory's metadata. This
+implicitly affected :func:`os.path.exists` and :func:`os.path.isdir`.
+
+..
+
+.. bpo: 26227
+.. date: 2021-04-21-23-37-34
+.. nonce: QMY_eA
+.. section: Windows
+
+Fixed decoding of host names in :func:`socket.gethostbyaddr` and
+:func:`socket.gethostbyname_ex`.
+
+..
+
+.. bpo: 43745
+.. date: 2021-04-06-12-27-33
+.. nonce: rdKNda
+.. section: Windows
+
+Actually updates Windows release to OpenSSL 1.1.1k. Earlier releases were
+mislabelled and actually included 1.1.1i again.
+
+..
+
+.. bpo: 43492
+.. date: 2021-03-15-11-34-33
+.. nonce: AsYnVX
+.. section: Windows
+
+Upgrade Windows installer to use SQLite 3.35.5.
+
+..
+
+.. bpo: 44009
+.. date: 2021-05-02-03-45-30
+.. nonce: uvhmlh
+.. section: macOS
+
+Provide "python3.x-intel64" executable to allow reliably forcing macOS
+universal2 framework builds to run under Rosetta 2 Intel-64 emulation on
+Apple Silicon Macs.  This can be useful for testing or when universal2
+wheels are not yet available.
+
+..
+
+.. bpo: 41100
+.. date: 2021-04-10-17-01-18
+.. nonce: N9FhqU
+.. section: macOS
+
+As of 3.8.10, Python now supports building and running on macOS 11 (Big Sur)
+and on Apple Silicon Macs (based on the ``ARM64`` architecture). A new
+universal build variant, ``universal2``, is also available to natively
+support both ``ARM64`` and ``Intel 64`` in one set of executables. This
+backport from Python 3.9 does not include support for "weaklinking"; to
+support a range of macOS versions, continue to target for and build on the
+oldest version in the range; for 3.8.x, the ``universal2`` variant is only
+useful on macOS 11 or later.
+
+..
+
+.. bpo: 43492
+.. date: 2021-03-15-11-32-23
+.. nonce: 1ZRcV9
+.. section: macOS
+
+Update macOS installer to use SQLite 3.35.4.
+
+..
+
+.. bpo: 43655
+.. date: 2021-04-04-20-52-07
+.. nonce: HSyaKH
+.. section: IDLE
+
+IDLE dialog windows are now recognized as dialogs by window managers on
+macOS and X Window.
+
+..
+
+.. bpo: 43962
+.. date: 2021-04-28-13-13-07
+.. nonce: 9Jzs5X
+.. section: C API
+
+_PyInterpreterState_IDIncref() now calls _PyInterpreterState_IDInitref() and
+always increments id_refcount. Previously, calling
+_xxsubinterpreters.get_current() could create an id_refcount inconsistency
+when a _xxsubinterpreters.InterpreterID object was deallocated. Patch by
+Victor Stinner.

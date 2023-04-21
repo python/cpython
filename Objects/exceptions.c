@@ -2268,8 +2268,12 @@ MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyBaseExceptionObject *self;
 
-    if (type != (PyTypeObject *) PyExc_MemoryError)
+    /* If this is a subclass of MemoryError, don't use the freelist
+     * and just return a fresh object */
+    if (type != (PyTypeObject *) PyExc_MemoryError) {
         return BaseException_new(type, args, kwds);
+    }
+
     if (memerrors_freelist == NULL)
         return BaseException_new(type, args, kwds);
     /* Fetch object from freelist and revive it */
@@ -2289,8 +2293,15 @@ MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 MemoryError_dealloc(PyBaseExceptionObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     BaseException_clear(self);
+
+    if (Py_TYPE(self) != (PyTypeObject *)PyExc_MemoryError) {
+        Py_TYPE(self)->tp_free((PyObject *)self);
+        return;
+    }
+
+    _PyObject_GC_UNTRACK(self);
+
     if (memerrors_numfree >= MEMERRORS_SAVE)
         Py_TYPE(self)->tp_free((PyObject *)self);
     else {
@@ -2507,8 +2518,10 @@ _PyExc_Init(void)
     do { \
         PyObject *_code = PyLong_FromLong(CODE); \
         assert(_PyObject_RealIsSubclass(PyExc_ ## TYPE, PyExc_OSError)); \
-        if (!_code || PyDict_SetItem(errnomap, _code, PyExc_ ## TYPE)) \
+        if (!_code || PyDict_SetItem(errnomap, _code, PyExc_ ## TYPE)) { \
+            Py_XDECREF(_code); \
             return _PyStatus_ERR("errmap insertion problem."); \
+        } \
         Py_DECREF(_code); \
     } while (0)
 

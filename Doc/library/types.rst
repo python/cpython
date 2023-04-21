@@ -34,7 +34,7 @@ Dynamic Type Creation
    freshly created class namespace. It should accept the class namespace
    as its sole argument and update the namespace directly with the class
    contents. If no callback is provided, it has the same effect as passing
-   in ``lambda ns: ns``.
+   in ``lambda ns: None``.
 
    .. versionadded:: 3.3
 
@@ -109,6 +109,11 @@ Standard names are defined for the following types:
    The type of user-defined functions and functions created by
    :keyword:`lambda`  expressions.
 
+   .. audit-event:: function.__new__ code types.FunctionType
+
+   The audit event only occurs for direct instantiation of function objects,
+   and is not raised for normal compilation.
+
 
 .. data:: GeneratorType
 
@@ -138,10 +143,11 @@ Standard names are defined for the following types:
 
    The type for code objects such as returned by :func:`compile`.
 
-   .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags CodeType
+   .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags types.CodeType
 
    Note that the audited arguments may not match the names or positions
-   required by the initializer.
+   required by the initializer.  The audit event only occurs for direct
+   instantiation of code objects, and is not raised for normal compilation.
 
    .. method:: CodeType.replace(**kwargs)
 
@@ -203,7 +209,7 @@ Standard names are defined for the following types:
 
 .. class:: ModuleType(name, doc=None)
 
-   The type of :term:`modules <module>`. Constructor takes the name of the
+   The type of :term:`modules <module>`. The constructor takes the name of the
    module to be created and optionally its :term:`docstring`.
 
    .. note::
@@ -218,12 +224,23 @@ Standard names are defined for the following types:
 
       The :term:`loader` which loaded the module. Defaults to ``None``.
 
+      This attribute is to match :attr:`importlib.machinery.ModuleSpec.loader`
+      as stored in the attr:`__spec__` object.
+
+      .. note::
+         A future version of Python may stop setting this attribute by default.
+         To guard against this potential change, preferrably read from the
+         :attr:`__spec__` attribute instead or use
+         ``getattr(module, "__loader__", None)`` if you explicitly need to use
+         this attribute.
+
       .. versionchanged:: 3.4
          Defaults to ``None``. Previously the attribute was optional.
 
    .. attribute:: __name__
 
-      The name of the module.
+      The name of the module. Expected to match
+      :attr:`importlib.machinery.ModuleSpec.name`.
 
    .. attribute:: __package__
 
@@ -232,8 +249,25 @@ Standard names are defined for the following types:
       to ``''``, else it should be set to the name of the package (which can be
       :attr:`__name__` if the module is a package itself). Defaults to ``None``.
 
+      This attribute is to match :attr:`importlib.machinery.ModuleSpec.parent`
+      as stored in the attr:`__spec__` object.
+
+      .. note::
+         A future version of Python may stop setting this attribute by default.
+         To guard against this potential change, preferrably read from the
+         :attr:`__spec__` attribute instead or use
+         ``getattr(module, "__package__", None)`` if you explicitly need to use
+         this attribute.
+
       .. versionchanged:: 3.4
          Defaults to ``None``. Previously the attribute was optional.
+
+   .. attribute:: __spec__
+
+      A record of the the module's import-system-related state. Expected to be
+      an instance of :class:`importlib.machinery.ModuleSpec`.
+
+      .. versionadded:: 3.4
 
 
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
@@ -349,7 +383,9 @@ Additional Utility Classes and Functions
                return "{}({})".format(type(self).__name__, ", ".join(items))
 
            def __eq__(self, other):
-               return self.__dict__ == other.__dict__
+               if isinstance(self, SimpleNamespace) and isinstance(other, SimpleNamespace):
+                  return self.__dict__ == other.__dict__
+               return NotImplemented
 
    ``SimpleNamespace`` may be useful as a replacement for ``class NS: pass``.
    However, for a structured record type use :func:`~collections.namedtuple`

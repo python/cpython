@@ -31,6 +31,11 @@ class Address:
         without any Content Transfer Encoding.
 
         """
+
+        inputs = ''.join(filter(None, (display_name, username, domain, addr_spec)))
+        if '\r' in inputs or '\n' in inputs:
+            raise ValueError("invalid arguments; address parts cannot contain CR or LF")
+
         # This clause with its potential 'raise' may only happen when an
         # application program creates an Address object using an addr_spec
         # keyword.  The email library code itself must always supply username

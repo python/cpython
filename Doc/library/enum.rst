@@ -19,6 +19,12 @@ An enumeration is a set of symbolic names (members) bound to unique,
 constant values.  Within an enumeration, the members can be compared
 by identity, and the enumeration itself can be iterated over.
 
+.. note:: Case of Enum Members
+
+    Because Enums are used to represent constants we recommend using
+    UPPER_CASE names for enum members, and will be using that style
+    in our examples.
+
 
 Module Contents
 ---------------
@@ -50,6 +56,7 @@ helper, :class:`auto`.
     the bitwise operations without losing their :class:`Flag` membership.
 
 .. function:: unique
+    :noindex:
 
     Enum class decorator that ensures only one name is bound to any one value.
 
@@ -269,9 +276,13 @@ overridden::
 
 .. note::
 
-    The goal of the default :meth:`_generate_next_value_` methods is to provide
+    The goal of the default :meth:`_generate_next_value_` method is to provide
     the next :class:`int` in sequence with the last :class:`int` provided, but
     the way it does this is an implementation detail and may change.
+
+.. note::
+
+    The :meth:`_generate_next_value_` method must be defined before any members.
 
 Iteration
 ---------
@@ -739,9 +750,11 @@ Some rules:
    :meth:`__str__` and :meth:`__repr__` respectively; other codes (such as
    `%i` or `%h` for IntEnum) treat the enum member as its mixed-in type.
 5. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
-   and :func:`format` will use the mixed-in
-   type's :meth:`__format__`.  If the :class:`Enum` class's :func:`str` or
-   :func:`repr` is desired, use the `!s` or `!r` format codes.
+   and :func:`format` will use the mixed-in type's :meth:`__format__`
+   unless :meth:`__str__` or :meth:`__format__` is overridden in the subclass,
+   in which case the overridden methods or :class:`Enum` methods will be used.
+   Use the !s and !r format codes to force usage of the :class:`Enum` class's
+   :meth:`__str__` and :meth:`__repr__` methods.
 
 When to use :meth:`__new__` vs. :meth:`__init__`
 ------------------------------------------------
@@ -875,6 +888,32 @@ Using an auto-numbering :meth:`__new__` would look like::
     >>> Color.GREEN.value
     2
 
+To make a more general purpose ``AutoNumber``, add ``*args`` to the signature::
+
+    >>> class AutoNumber(NoValue):
+    ...     def __new__(cls, *args):      # this is the only change from above
+    ...         value = len(cls.__members__) + 1
+    ...         obj = object.__new__(cls)
+    ...         obj._value_ = value
+    ...         return obj
+    ...
+
+Then when you inherit from ``AutoNumber`` you can write your own ``__init__``
+to handle any extra arguments::
+
+    >>> class Swatch(AutoNumber):
+    ...     def __init__(self, pantone='unknown'):
+    ...         self.pantone = pantone
+    ...     AUBURN = '3497'
+    ...     SEA_GREEN = '1246'
+    ...     BLEACHED_CORAL = () # New color, no Pantone code yet!
+    ...
+    >>> Swatch.SEA_GREEN
+    <Swatch.SEA_GREEN: 2>
+    >>> Swatch.SEA_GREEN.pantone
+    '1246'
+    >>> Swatch.BLEACHED_CORAL.pantone
+    'unknown'
 
 .. note::
 

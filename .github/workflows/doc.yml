@@ -22,7 +22,7 @@ jobs:
     name: 'Docs'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: 'Install Dependencies'
       run: sudo ./.github/workflows/posix-deps-apt.sh && sudo apt-get install wamerican
     - name: 'Configure CPython'
@@ -34,7 +34,7 @@ jobs:
     - name: 'Build documentation'
       run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W -j4" doctest suspicious html
     - name: 'Upload'
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v2.2.2
       with:
         name: doc-html
         path: Doc/build/html

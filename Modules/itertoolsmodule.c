@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_tupleobject.h"
 #include "structmember.h"
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
 
 /* Itertools module written and maintained
    by Raymond D. Hettinger <python@rcn.com>
@@ -2255,6 +2256,11 @@ product_next(productobject *lz)
             lz->result = result;
             Py_DECREF(old_result);
         }
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        else if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
         /* Now, we've got the only copy so we can update it in-place */
         assert (npools==0 || Py_REFCNT(result) == 1);
 
@@ -2579,6 +2585,11 @@ combinations_next(combinationsobject *co)
                 goto empty;
             co->result = result;
             Py_DECREF(old_result);
+        }
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        else if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
         }
         /* Now, we've got the only copy so we can update it in-place
          * CPython's empty tuple is a singleton and cached in
@@ -2915,6 +2926,11 @@ cwr_next(cwrobject *co)
                 goto empty;
             co->result = result;
             Py_DECREF(old_result);
+        }
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        else if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
         }
         /* Now, we've got the only copy so we can update it in-place CPython's
            empty tuple is a singleton and cached in PyTuple's freelist. */
@@ -3258,6 +3274,11 @@ permutations_next(permutationsobject *po)
                 goto empty;
             po->result = result;
             Py_DECREF(old_result);
+        }
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        else if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
         }
         /* Now, we've got the only copy so we can update it in-place */
         assert(r == 0 || Py_REFCNT(result) == 1);
@@ -4535,6 +4556,11 @@ zip_longest_next(ziplongestobject *lz)
             olditem = PyTuple_GET_ITEM(result, i);
             PyTuple_SET_ITEM(result, i, item);
             Py_DECREF(olditem);
+        }
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
         }
     } else {
         result = PyTuple_New(tuplesize);

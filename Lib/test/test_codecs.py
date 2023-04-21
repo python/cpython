@@ -1532,6 +1532,12 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEqual("pyth\xf6n.org".encode("idna"), b"xn--pythn-mua.org")
         self.assertEqual("pyth\xf6n.org.".encode("idna"), b"xn--pythn-mua.org.")
 
+    def test_builtin_decode_length_limit(self):
+        with self.assertRaisesRegex(UnicodeError, "too long"):
+            (b"xn--016c"+b"a"*1100).decode("idna")
+        with self.assertRaisesRegex(UnicodeError, "too long"):
+            (b"xn--016c"+b"a"*70).decode("idna")
+
     def test_stream(self):
         r = codecs.getreader("idna")(io.BytesIO(b"abc"))
         r.read(3)
@@ -2181,6 +2187,18 @@ class CharmapTest(unittest.TestCase):
         self.assertEqual(
             codecs.charmap_decode(allbytes, "ignore", {}),
             ("", len(allbytes))
+        )
+
+        self.assertRaisesRegex(TypeError,
+            "character mapping must be in range\\(0x110000\\)",
+            codecs.charmap_decode,
+            b"\x00\x01\x02", "strict", {0: "A", 1: 'Bb', 2: -2}
+        )
+
+        self.assertRaisesRegex(TypeError,
+            "character mapping must be in range\\(0x110000\\)",
+            codecs.charmap_decode,
+            b"\x00\x01\x02", "strict", {0: "A", 1: 'Bb', 2: 999999999}
         )
 
     def test_decode_with_int2int_map(self):

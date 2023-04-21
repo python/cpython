@@ -51,22 +51,6 @@ class AuditTest(unittest.TestCase):
     def test_block_add_hook_baseexception(self):
         self.do_test("test_block_add_hook_baseexception")
 
-    def test_finalize_hooks(self):
-        returncode, events, stderr = self.run_python("test_finalize_hooks")
-        if stderr:
-            print(stderr, file=sys.stderr)
-        if returncode:
-            self.fail(stderr)
-
-        firstId = events[0][2]
-        self.assertSequenceEqual(
-            [
-                ("Created", " ", firstId),
-                ("cpython._PySys_ClearAuditHooks", " ", firstId),
-            ],
-            events,
-        )
-
     def test_pickle(self):
         support.import_module("pickle")
 
@@ -130,6 +114,24 @@ class AuditTest(unittest.TestCase):
         self.assertEqual(events[1][0], "socket.__new__")
         self.assertEqual(events[2][0], "socket.bind")
         self.assertTrue(events[2][2].endswith("('127.0.0.1', 8080)"))
+
+    def test_gc(self):
+        returncode, events, stderr = self.run_python("test_gc")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        self.assertEqual(
+            [event[0] for event in events],
+            ["gc.get_objects", "gc.get_referrers", "gc.get_referents"]
+        )
+
+    def test_not_in_gc(self):
+        returncode, _, stderr = self.run_python("test_not_in_gc")
+        if returncode:
+            self.fail(stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

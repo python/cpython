@@ -135,12 +135,14 @@ struct _is {
     struct _warnings_runtime_state warnings;
 
     PyObject *audit_hooks;
+
+    int int_max_str_digits;
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
 
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(struct _is *);
-PyAPI_FUNC(void) _PyInterpreterState_IDIncref(struct _is *);
+PyAPI_FUNC(int) _PyInterpreterState_IDIncref(struct _is *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(struct _is *);
 
 
@@ -316,6 +318,9 @@ PyAPI_FUNC(PyStatus) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 
 PyAPI_FUNC(void) _PyGILState_Reinit(_PyRuntimeState *runtime);
+
+
+PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }

@@ -33,6 +33,7 @@
 
       FSCTL_GET_REPARSE_POINT is not exported with WIN32_LEAN_AND_MEAN. */
 #  include <windows.h>
+#  include <shlwapi.h>
 #endif
 
 #include "pycore_ceval.h"     /* _PyEval_ReInitThreads() */
@@ -1650,9 +1651,28 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
 {
     HANDLE hFindFile;
     WIN32_FIND_DATAW FileData;
-    hFindFile = FindFirstFileW(pszFile, &FileData);
-    if (hFindFile == INVALID_HANDLE_VALUE)
+    LPCWSTR filename = pszFile;
+    size_t n = wcslen(pszFile);
+    if (n && (pszFile[n - 1] == L'\\' || pszFile[n - 1] == L'/')) {
+        // cannot use PyMem_Malloc here because we do not hold the GIL
+        filename = (LPCWSTR)malloc((n + 1) * sizeof(filename[0]));
+        wcsncpy_s((LPWSTR)filename, n + 1, pszFile, n);
+        while (--n > 0 && (filename[n] == L'\\' || filename[n] == L'/')) {
+            ((LPWSTR)filename)[n] = L'\0';
+        }
+        if (!n || (n == 1 && filename[1] == L':')) {
+            // Nothing left to query
+            free((void *)filename);
+            return FALSE;
+        }
+    }
+    hFindFile = FindFirstFileW(filename, &FileData);
+    if (pszFile != filename) {
+        free((void *)filename);
+    }
+    if (hFindFile == INVALID_HANDLE_VALUE) {
         return FALSE;
+    }
     FindClose(hFindFile);
     find_data_to_file_info(&FileData, info, reparse_tag);
     return TRUE;
@@ -4045,6 +4065,60 @@ exit:
     PyMem_Free(mountpath);
     return result;
 }
+
+
+/*[clinic input]
+os._path_splitroot
+
+    path: path_t
+
+Removes everything after the root on Win32.
+[clinic start generated code]*/
+
+static PyObject *
+os__path_splitroot_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=ab7f1a88b654581c input=dc93b1d3984cffb6]*/
+{
+    wchar_t *buffer;
+    wchar_t *end;
+    PyObject *result = NULL;
+
+    buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * (wcslen(path->wide) + 1));
+    if (!buffer) {
+        return NULL;
+    }
+    wcscpy(buffer, path->wide);
+    for (wchar_t *p = wcschr(buffer, L'/'); p; p = wcschr(p, L'/')) {
+        *p = L'\\';
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (buffer[0] && buffer[1] == L':') {
+        if (buffer[2] == L'\\') {
+            end = &buffer[3];
+        } else {
+            end = &buffer[2];
+        }
+    } else {
+        end = PathSkipRootW(buffer);
+    }
+    Py_END_ALLOW_THREADS
+    if (!end || end == buffer) {
+        result = Py_BuildValue("sO", "", path->object);
+    } else if (!*end) {
+        result = Py_BuildValue("Os", path->object, "");
+    } else {
+        size_t rootLen = (size_t)(end - buffer);
+        result = Py_BuildValue("NN",
+            PyUnicode_FromWideChar(path->wide, rootLen),
+            PyUnicode_FromWideChar(path->wide + rootLen, -1)
+        );
+    }
+    PyMem_Free(buffer);
+
+    return result;
+}
+
 
 #endif /* MS_WINDOWS */
 
@@ -7867,8 +7941,10 @@ os_waitpid_impl(PyObject *module, intptr_t pid, int options)
     if (res < 0)
         return (!async_err) ? posix_error() : NULL;
 
+    unsigned long long ustatus = (unsigned int)status;
+
     /* shift the status left a byte so this is more like the POSIX waitpid */
-    return Py_BuildValue(_Py_PARSE_INTPTR "i", res, status << 8);
+    return Py_BuildValue(_Py_PARSE_INTPTR "K", res, ustatus << 8);
 }
 #endif
 
@@ -8017,8 +8093,6 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
 }
 #endif /* defined(HAVE_READLINK) || defined(MS_WINDOWS) */
 
-#ifdef HAVE_SYMLINK
-
 #if defined(MS_WINDOWS)
 
 /* Remove the last portion of the path - return 0 on success */
@@ -8040,6 +8114,12 @@ _dirnameW(WCHAR *path)
     *ptr = 0;
     return 0;
 }
+
+#endif
+
+#ifdef HAVE_SYMLINK
+
+#if defined(MS_WINDOWS)
 
 /* Is this path absolute? */
 static int
@@ -9275,9 +9355,27 @@ done:
     if (!Py_off_t_converter(offobj, &offset))
         return NULL;
 
+
+#if defined(__sun) && defined(__SVR4)
+    // On illumos specifically sendfile() may perform a partial write but
+    // return -1/an error (in one confirmed case the destination socket
+    // had a 5 second timeout set and errno was EAGAIN) and it's on the client
+    // code to check if the offset parameter was modified by sendfile().
+    //
+    // We need this variable to track said change.
+    off_t original_offset = offset;
+#endif
+
     do {
         Py_BEGIN_ALLOW_THREADS
         ret = sendfile(out, in, &offset, count);
+#if defined(__sun) && defined(__SVR4)
+        // This handles illumos-specific sendfile() partial write behavior,
+        // see a comment above for more details.
+        if (ret < 0 && offset != original_offset) {
+            ret = offset - original_offset;
+        }
+#endif
         Py_END_ALLOW_THREADS
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     if (ret < 0)
@@ -13863,6 +13961,7 @@ static PyMethodDef posix_methods[] = {
     OS__GETDISKUSAGE_METHODDEF
     OS__GETFINALPATHNAME_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
+    OS__PATH_SPLITROOT_METHODDEF
     OS_GETLOADAVG_METHODDEF
     OS_URANDOM_METHODDEF
     OS_SETRESUID_METHODDEF

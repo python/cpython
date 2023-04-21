@@ -272,7 +272,7 @@ class DemoWindow(object):
         self.stop_btn.config(state=stop,
                              bg="#d00" if stop == NORMAL else "#fca")
         self.clear_btn.config(state=clear,
-                              bg="#d00" if clear == NORMAL else"#fca")
+                              bg="#d00" if clear == NORMAL else "#fca")
         self.output_lbl.config(text=txt, fg=color)
 
     def makeLoadDemoMenu(self, master):

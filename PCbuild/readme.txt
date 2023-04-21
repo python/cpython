@@ -157,7 +157,7 @@ interpreter, but they do implement several major features.  See the
 about getting the source for building these libraries.  The sub-projects
 are:
 _bz2
-    Python wrapper for version 1.0.6 of the libbzip2 compression library
+    Python wrapper for version 1.0.8 of the libbzip2 compression library
     Homepage:
         http://www.bzip.org/
 _lzma
@@ -165,7 +165,7 @@ _lzma
     Homepage:
         http://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.1.1c of the OpenSSL secure sockets
+    Python wrapper for version 1.1.1t of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
@@ -184,7 +184,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.31.1.0, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.35.5, which is itself built by sqlite3.vcxproj
     Homepage:
         http://www.sqlite.org/
 _tkinter
