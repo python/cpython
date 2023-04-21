@@ -14698,14 +14698,14 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     /* For all non-singleton interned strings, restore the two valid references
        to that instance from within the intern string dictionary and let the
        normal reference counting process clean up these instances. */
-    Py_ssize_t pos = 0;
-    PyObject *s, *ignored_value;
 #ifdef INTERNED_STATS
     fprintf(stderr, "releasing %zd interned strings\n",
             PyDict_GET_SIZE(interned));
 
     Py_ssize_t total_length = 0;
 #endif
+    Py_ssize_t pos = 0;
+    PyObject *s, *ignored_value;
     while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
         assert(PyUnicode_IS_READY(s));
         switch (PyUnicode_CHECK_INTERNED(s)) {

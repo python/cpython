@@ -14,12 +14,14 @@
 /* Uncomment this to dump debugging output when assertions fail */
 // #define INSTRUMENT_DEBUG 1
 
-static PyObject DISABLE = {
+static PyObject DISABLE =
+{
     .ob_refcnt = _Py_IMMORTAL_REFCNT,
     .ob_type = &PyBaseObject_Type
 };
 
-PyObject _PyInstrumentation_MISSING = {
+PyObject _PyInstrumentation_MISSING =
+{
     .ob_refcnt = _Py_IMMORTAL_REFCNT,
     .ob_type = &PyBaseObject_Type
 };
