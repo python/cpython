@@ -284,11 +284,14 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. method:: upgrade_dependencies(context)
 
-       Upgrades the core venv dependency packages (currently ``pip`` and
-       ``setuptools``) in the environment. This is done by shelling out to the
+       Upgrades the core venv dependency packages (currently ``pip``)
+       in the environment. This is done by shelling out to the
        ``pip`` executable in the environment.
 
        .. versionadded:: 3.9
+       .. versionchanged:: 3.12
+
+          ``setuptools`` is no longer a core venv dependency.
 
     .. method:: post_setup(context)
 

@@ -1176,6 +1176,9 @@ class _SelectorSocketTransport(_SelectorTransport):
             return
         self._buffer.extend([memoryview(data) for data in list_of_data])
         self._write_ready()
+        # If the entire buffer couldn't be written, register a write handler
+        if self._buffer:
+            self._loop._add_writer(self._sock_fd, self._write_ready)
 
     def can_write_eof(self):
         return True
