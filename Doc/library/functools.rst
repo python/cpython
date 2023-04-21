@@ -233,7 +233,7 @@ The :mod:`functools` module defines the following functions:
         @lru_cache(maxsize=32)
         def get_pep(num):
             'Retrieve text of a Python Enhancement Proposal'
-            resource = 'https://peps.python.org/pep-%04d/' % num
+            resource = f'https://peps.python.org/pep-{num:04d}'
             try:
                 with urllib.request.urlopen(resource) as s:
                     return s.read()
