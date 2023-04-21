@@ -273,6 +273,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             finally:
                 if self.done():
                     self._coro = None
+                    self = None  # Needed to break cycles when an exception occurs.
                 else:
                     _register_task(self)
 
@@ -365,6 +366,8 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                 new_exc = RuntimeError(f'Task got bad yield: {result!r}')
                 self._loop.call_soon(
                     self.__step, new_exc, context=self._context)
+        finally:
+            self = None  # Needed to break cycles when an exception occurs.
 
     def __wakeup(self, future):
         try:
