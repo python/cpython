@@ -152,11 +152,6 @@ def _comparable_version(version):
 
 ### Platform specific APIs
 
-_libc_search = re.compile(b'(__libc_init)'
-                          b'|'
-                          b'(GLIBC_([0-9.]+))'
-                          b'|'
-                          br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
 
 def libc_ver(executable=None, lib='', version='', chunksize=16384):
 
@@ -189,6 +184,12 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         if not executable:
             # sys.executable is not set.
             return lib, version
+
+    _libc_search = re.compile(b'(__libc_init)'
+                          b'|'
+                          b'(GLIBC_([0-9.]+))'
+                          b'|'
+                          br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
 
     V = _comparable_version
     # We use os.path.realpath()
@@ -247,9 +248,6 @@ def _norm_version(version, build=''):
     version = '.'.join(strings[:3])
     return version
 
-_ver_output = re.compile(r'(?:([\w ]+) ([\w.]+) '
-                         r'.*'
-                         r'\[.* ([\d.]+)\])')
 
 # Examples of VER command output:
 #
@@ -294,6 +292,10 @@ def _syscmd_ver(system='', release='', version='',
             break
     else:
         return system, release, version
+
+    _ver_output = re.compile(r'(?:([\w ]+) ([\w.]+) '
+                         r'.*'
+                         r'\[.* ([\d.]+)\])')
 
     # Parse the output
     info = info.strip()
@@ -1033,18 +1035,6 @@ def processor():
 
 ### Various APIs for extracting information from sys.version
 
-_sys_version_parser = re.compile(
-    r'([\w.+]+)\s*'  # "version<space>"
-    r'\(#?([^,]+)'  # "(#buildno"
-    r'(?:,\s*([\w ]*)'  # ", builddate"
-    r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
-    r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
-
-_pypy_sys_version_parser = re.compile(
-    r'([\w.+]+)\s*'
-    r'\(#?([^,]+),\s*([\w ]+),\s*([\w :]+)\)\s*'
-    r'\[PyPy [^\]]+\]?')
-
 _sys_version_cache = {}
 
 def _sys_version(sys_version=None):
@@ -1076,6 +1066,13 @@ def _sys_version(sys_version=None):
     if result is not None:
         return result
 
+    _sys_version_parser = re.compile(
+        r'([\w.+]+)\s*'  # "version<space>"
+        r'\(#?([^,]+)'  # "(#buildno"
+        r'(?:,\s*([\w ]*)'  # ", builddate"
+        r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
+        r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
+    
     if sys.platform.startswith('java'):
         # Jython
         name = 'Jython'
@@ -1091,6 +1088,11 @@ def _sys_version(sys_version=None):
 
     elif "PyPy" in sys_version:
         # PyPy
+        _pypy_sys_version_parser = re.compile(
+            r'([\w.+]+)\s*'
+            r'\(#?([^,]+),\s*([\w ]+),\s*([\w :]+)\)\s*'
+            r'\[PyPy [^\]]+\]?')
+
         name = "PyPy"
         match = _pypy_sys_version_parser.match(sys_version)
         if match is None:
@@ -1290,17 +1292,6 @@ def platform(aliased=False, terse=False):
 ### freedesktop.org os-release standard
 # https://www.freedesktop.org/software/systemd/man/os-release.html
 
-# NAME=value with optional quotes (' or "). The regular expression is less
-# strict than shell lexer, but that's ok.
-_os_release_line = re.compile(
-    "^(?P<name>[a-zA-Z0-9_]+)=(?P<quote>[\"\']?)(?P<value>.*)(?P=quote)$"
-)
-# unescape five special characters mentioned in the standard
-_os_release_unescape = re.compile(r"\\([\\\$\"\'`])")
-# /etc takes precedence over /usr/lib
-_os_release_candidates = ("/etc/os-release", "/usr/lib/os-release")
-_os_release_cache = None
-
 
 def _parse_os_release(lines):
     # These fields are mandatory fields with well-known defaults
@@ -1310,6 +1301,14 @@ def _parse_os_release(lines):
         "ID": "linux",
         "PRETTY_NAME": "Linux",
     }
+
+    # NAME=value with optional quotes (' or "). The regular expression is less
+    # strict than shell lexer, but that's ok.
+    _os_release_line = re.compile(
+        "^(?P<name>[a-zA-Z0-9_]+)=(?P<quote>[\"\']?)(?P<value>.*)(?P=quote)$"
+    )
+    # unescape five special characters mentioned in the standard
+    _os_release_unescape = re.compile(r"\\([\\\$\"\'`])")
 
     for line in lines:
         mo = _os_release_line.match(line)
@@ -1325,6 +1324,10 @@ def freedesktop_os_release():
     """Return operation system identification from freedesktop.org os-release
     """
     global _os_release_cache
+
+    # /etc takes precedence over /usr/lib
+    _os_release_candidates = ("/etc/os-release", "/usr/lib/os-release")
+    _os_release_cache = None
 
     if _os_release_cache is None:
         errno = None
