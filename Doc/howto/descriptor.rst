@@ -1288,10 +1288,10 @@ Using the non-data descriptor protocol, a pure Python version of
         def __call__(self, *args, **kwds):
             return self.f(*args, **kwds)
 
-The :func:`functools.update_wrapper` call adds a `__wrapped__` attribute
+The :func:`functools.update_wrapper` call adds a ``__wrapped__`` attribute
 that refers to the underlying function.  Also it carries forward
 the attributes necessary to make the wrapper look like the wrapped
-function: `__name__`, `__qualname__`, `__doc__`, and `__annotations__`.
+function: ``__name__``, ``__qualname__``, ``__doc__``, and ``__annotations__``.
 
 .. testcode::
     :hide:
@@ -1499,10 +1499,11 @@ chained together.  In Python 3.11, this functionality was deprecated.
     >>> G.__doc__
     "A doc for 'G'"
 
-The :func:`functools.update_wrapper` call adds a `__wrapped__` attribute
-that refers to the underlying function.  Also it carries forward
-the attributes necessary to make the wrapper look like the wrapped
-function: `__name__`, `__qualname__`, `__doc__`, and `__annotations__`.
+The :func:`functools.update_wrapper` call in ``ClassMethod`` adds a
+``__wrapped__`` attribute that refers to the underlying function.  Also
+it carries forward the attributes necessary to make the wrapper look
+like the wrapped function: ``__name__``, ``__qualname__``, ``__doc__``,
+and ``__annotations__``.
 
 
 Member objects and __slots__
