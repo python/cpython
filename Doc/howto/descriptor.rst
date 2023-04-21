@@ -1273,11 +1273,14 @@ Using the non-data descriptor protocol, a pure Python version of
 
 .. testcode::
 
+    import functools
+
     class StaticMethod:
         "Emulate PyStaticMethod_Type() in Objects/funcobject.c"
 
         def __init__(self, f):
             self.f = f
+            functools.update_wrapper(self, f)
 
         def __get__(self, obj, objtype=None):
             return self.f
@@ -1285,13 +1288,19 @@ Using the non-data descriptor protocol, a pure Python version of
         def __call__(self, *args, **kwds):
             return self.f(*args, **kwds)
 
+The :func:`functools.update_wrapper` call adds a `__wrapped__` attribute
+that refers to the underlying function.  Also it carries forward
+the attributes necessary to make the wrapper look like the wrapped
+function: `__name__`, `__qualname__`, `__doc__`, and `__annotations__`.
+
 .. testcode::
     :hide:
 
     class E_sim:
         @StaticMethod
-        def f(x):
-            return x * 10
+        def f(x: int) -> str:
+            "Simple function example"
+            return "!" * x
 
     wrapped_ord = StaticMethod(ord)
 
@@ -1299,11 +1308,51 @@ Using the non-data descriptor protocol, a pure Python version of
     :hide:
 
     >>> E_sim.f(3)
-    30
+    '!!!'
     >>> E_sim().f(3)
-    30
+    '!!!'
+
+    >>> sm = vars(E_sim)['f']
+    >>> type(sm).__name__
+    'StaticMethod'
+    >>> f = E_sim.f
+    >>> type(f).__name__
+    'function'
+    >>> sm.__name__
+    'f'
+    >>> f.__name__
+    'f'
+    >>> sm.__qualname__
+    'E_sim.f'
+    >>> f.__qualname__
+    'E_sim.f'
+    >>> sm.__doc__
+    'Simple function example'
+    >>> f.__doc__
+    'Simple function example'
+    >>> sm.__annotations__
+    {'x': <class 'int'>, 'return': <class 'str'>}
+    >>> f.__annotations__
+    {'x': <class 'int'>, 'return': <class 'str'>}
+    >>> sm.__module__ == f.__module__
+    True
+    >>> sm(3)
+    '!!!'
+    >>> f(3)
+    '!!!'
+
     >>> wrapped_ord('A')
     65
+    >>> wrapped_ord.__module__ == ord.__module__
+    True
+    >>> wrapped_ord.__wrapped__ == ord
+    True
+    >>> wrapped_ord.__name__ == ord.__name__
+    True
+    >>> wrapped_ord.__qualname__ == ord.__qualname__
+    True
+    >>> wrapped_ord.__doc__ == ord.__doc__
+    True
 
 
 Class methods
