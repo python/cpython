@@ -1,0 +1,2 @@
+Adapt :mod:`decimal` to :pep:`687`. Patch by Erlend Aasland and Charlie
+Zhao.
