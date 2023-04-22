@@ -1,0 +1,1 @@
+Add `__orig_bases__` to non-generic TypedDicts
