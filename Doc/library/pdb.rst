@@ -273,7 +273,7 @@ like ``foo = 1``.
 There are three preset *convenience variables*:
 
 * ``$_frame``: the current frame you are debugging
-* ``$_return``: the return value if the frame is returning
+* ``$_retval``: the return value if the frame is returning
 * ``$_exception``: the ``(exc_type, exc_value)`` tuple if the frame is raising an exception
 
 .. index::

@@ -292,7 +292,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.curframe_locals = self.curframe.f_locals
         self.set_convenience_variable('_frame', self.curframe)
         if '__return__' in self.curframe_locals:
-            self.set_convenience_variable('_return', self.curframe_locals['__return__'])
+            self.set_convenience_variable('_retval', self.curframe_locals['__return__'])
         if '__exception__' in self.curframe_locals:
             self.set_convenience_variable('_exception', self.curframe_locals['__exception__'])
         return self.execRcLines()

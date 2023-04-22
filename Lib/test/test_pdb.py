@@ -776,7 +776,7 @@ def test_convenience_variables():
     ...     'next',
     ...     '$_exception',      # Exception should be gone
     ...     'return',
-    ...     '$_return',         # Check return convenience variable
+    ...     '$_retval',         # Check return convenience variable
     ...     'continue',
     ... ]):
     ...     test_function()
@@ -819,7 +819,7 @@ def test_convenience_variables():
     --Return--
     > <doctest test.test_pdb.test_convenience_variables[0]>(7)util_function()->1
     -> return 1
-    (Pdb) $_return
+    (Pdb) $_retval
     1
     (Pdb) continue
     """
