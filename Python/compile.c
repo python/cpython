@@ -2132,7 +2132,13 @@ compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
         switch(typeparam->kind) {
         case TypeVar_kind:
             ADDOP_LOAD_CONST(c, loc, typeparam->v.TypeVar.name);
-            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVAR);
+            if (typeparam->v.TypeVar.bound) {
+                VISIT(c, expr, typeparam->v.TypeVar.bound);
+                ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_TYPEVAR_WITH_BOUND);
+            }
+            else {
+                ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVAR);
+            }
             compiler_nameop(c, loc, typeparam->v.TypeVar.name, Store);
             break;
         case TypeVarTuple_kind:

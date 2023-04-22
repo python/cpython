@@ -246,8 +246,15 @@ prep_reraise_star(PyThreadState* unused, PyObject *orig, PyObject *excs)
     return _PyExc_PrepReraiseStar(orig, excs);
 }
 
+static PyObject *
+make_typevar_with_bound(PyThreadState* unused, PyObject *name, PyObject *bound)
+{
+    assert(PyUnicode_Check(name));
+    return _Py_make_typevar(PyUnicode_AsUTF8(name), bound);
+}
+
 const instrinsic_func2
 _PyIntrinsics_BinaryFunctions[] = {
     [INTRINSIC_PREP_RERAISE_STAR] = prep_reraise_star,
+    [INTRINSIC_TYPEVAR_WITH_BOUND] = make_typevar_with_bound,
 };
-
