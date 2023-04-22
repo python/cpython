@@ -2463,18 +2463,43 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(str(S()), '()')
         self.assertEqual(repr(S().parameters), 'mappingproxy(OrderedDict())')
 
-        def test(po, pk, pod=42, pkd=100, *args, ko, **kwargs):
+        def test(po, /, pk, pkd=100, *args, ko, kod=10, **kwargs):
             pass
+
         sig = inspect.signature(test)
-        po = sig.parameters['po'].replace(kind=P.POSITIONAL_ONLY)
-        pod = sig.parameters['pod'].replace(kind=P.POSITIONAL_ONLY)
+        self.assertTrue(repr(sig).startswith('<Signature'))
+        self.assertTrue('(po, /, pk' in repr(sig))
+
+        # We need two functions, because it is impossible to represent
+        # all param kinds in a single one.
+        def test2(pod=42, /):
+            pass
+
+        sig2 = inspect.signature(test2)
+        self.assertTrue(repr(sig2).startswith('<Signature'))
+        self.assertTrue('(pod=42, /)' in repr(sig2))
+
+        po = sig.parameters['po']
+        pod = sig2.parameters['pod']
         pk = sig.parameters['pk']
         pkd = sig.parameters['pkd']
         args = sig.parameters['args']
         ko = sig.parameters['ko']
+        kod = sig.parameters['kod']
         kwargs = sig.parameters['kwargs']
 
         S((po, pk, args, ko, kwargs))
+        S((po, pk, ko, kod))
+        S((po, pod, ko))
+        S((po, pod, kod))
+        S((pod, ko, kod))
+        S((pod, kod))
+        S((pod, args, kod, kwargs))
+        # keyword-only parameters without default values
+        # can follow keyword-only parameters with default values:
+        S((kod, ko))
+        S((kod, ko, kwargs))
+        S((args, kod, ko))
 
         with self.assertRaisesRegex(ValueError, 'wrong parameter order'):
             S((pk, po, args, ko, kwargs))
@@ -2496,13 +2521,16 @@ class TestSignatureObject(unittest.TestCase):
             S((pod, po))
 
         with self.assertRaisesRegex(ValueError, 'follows default argument'):
+            S((pod, pk))
+
+        with self.assertRaisesRegex(ValueError, 'follows default argument'):
+            S((po, pod, pk))
+
+        with self.assertRaisesRegex(ValueError, 'follows default argument'):
             S((po, pkd, pk))
 
         with self.assertRaisesRegex(ValueError, 'follows default argument'):
             S((pkd, pk))
-
-        self.assertTrue(repr(sig).startswith('<Signature'))
-        self.assertTrue('(po, pk' in repr(sig))
 
     def test_signature_object_pickle(self):
         def foo(a, b, *, c:1={}, **kw) -> {42:'ham'}: pass
