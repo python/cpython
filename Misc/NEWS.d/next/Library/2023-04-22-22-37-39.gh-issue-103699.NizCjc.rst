@@ -1,1 +1,1 @@
-Add `__orig_bases__` to non-generic TypedDicts
+Add ``__orig_bases__`` to non-generic TypedDicts
