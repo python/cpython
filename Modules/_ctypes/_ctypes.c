@@ -145,6 +145,8 @@ PyObject *ComError;  // Borrowed reference to: &PyComError_Type
 /****************************************************************/
 
 typedef struct {
+    PyTypeObject *Struct_Type;
+    PyTypeObject *PyCStructType_Type;
     PyTypeObject *Union_Type;
     PyTypeObject *UnionType_Type;
 } _ctypes_state;
@@ -923,46 +925,23 @@ UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
 }
 
 
-PyTypeObject PyCStructType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.PyCStructType",                            /* tp_name */
-    0,                                          /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    &CDataType_as_sequence,                     /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    PyCStructType_setattro,                     /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    PyDoc_STR("metatype for the CData Objects"), /* tp_doc */
-    (traverseproc)CDataType_traverse,           /* tp_traverse */
-    (inquiry)CDataType_clear,                   /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    CDataType_methods,                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    PyCStructType_new,                                  /* tp_new */
-    0,                                          /* tp_free */
+static PyType_Slot pycstruct_type_type_slots[] = {
+    {Py_tp_base, NULL},  // filled out in module exec function
+    {Py_sq_repeat, CDataType_repeat},
+    {Py_tp_setattro, PyCStructType_setattro},
+    {Py_tp_doc, PyDoc_STR("metatype for the CData Objects")},
+    {Py_tp_traverse, CDataType_traverse},
+    {Py_tp_clear, CDataType_clear},
+    {Py_tp_methods, CDataType_methods},
+    {Py_tp_new, PyCStructType_new},
+    {0, NULL},
+};
+
+PyType_Spec pycstruct_type_type_spec = {
+    .name = "_ctypes.PyCStructType",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = pycstruct_type_type_slots,
 };
 
 static PyType_Slot union_type_type_slots[] = {
@@ -4382,46 +4361,21 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static PyTypeObject Struct_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.Structure",
-    sizeof(CDataObject),                        /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    &PyCData_as_buffer,                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("Structure base class"),          /* tp_doc */
-    (traverseproc)PyCData_traverse,             /* tp_traverse */
-    (inquiry)PyCData_clear,                     /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    Struct_init,                                /* tp_init */
-    0,                                          /* tp_alloc */
-    GenericPyCData_new,                         /* tp_new */
-    0,                                          /* tp_free */
+static PyType_Slot struct_type_slots[] = {
+    {Py_bf_getbuffer, PyCData_NewGetBuffer},
+    {Py_tp_traverse, PyCData_traverse},
+    {Py_tp_clear, PyCData_clear},
+    {Py_tp_init, Struct_init},
+    {Py_tp_new, GenericPyCData_new},
+    {0, NULL},
+};
+
+static PyType_Spec struct_type_spec = {
+    .name = "_ctypes.Structure",
+    .basicsize = sizeof(CDataObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = struct_type_slots,
 };
 
 static PyType_Slot union_type_slots[] = {
@@ -5599,7 +5553,6 @@ _ctypes_add_types(PyObject *mod)
      *
      * Metaclasses
      */
-    TYPE_READY_BASE(&PyCStructType_Type, &PyType_Type);
     TYPE_READY_BASE(&PyCPointerType_Type, &PyType_Type);
     TYPE_READY_BASE(&PyCArrayType_Type, &PyType_Type);
     TYPE_READY_BASE(&PyCSimpleType_Type, &PyType_Type);
@@ -5613,16 +5566,35 @@ _ctypes_add_types(PyObject *mod)
         return -1;
     }
 
+    pycstruct_type_type_slots[0].pfunc = &PyType_Type;
+    st->PyCStructType_Type = (PyTypeObject *)
+                              PyType_FromModuleAndSpec(mod,
+                                                       &pycstruct_type_type_spec,
+                                                       NULL);
+    if (st->PyCStructType_Type == NULL) {
+        return -1;
+    }
+
     /*************************************************
      *
      * Classes using a custom metaclass
      */
 
-    MOD_ADD_TYPE(&Struct_Type, &PyCStructType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&PyCPointer_Type, &PyCPointerType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&PyCArray_Type, &PyCArrayType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&Simple_Type, &PyCSimpleType_Type, &PyCData_Type);
     MOD_ADD_TYPE(&PyCFuncPtr_Type, &PyCFuncPtrType_Type, &PyCData_Type);
+
+    st->Struct_Type = (PyTypeObject *)
+                       PyType_FromModuleAndSpec(mod, &struct_type_spec,
+                                                (PyObject *)&PyCData_Type);
+    if (st->Struct_Type == NULL) {
+        return -1;
+    }
+    Py_SET_TYPE(st->Struct_Type, st->PyCStructType_Type);
+    if (PyModule_AddType(mod, st->Struct_Type) < 0) {
+        return -1;
+    }
 
     st->Union_Type = (PyTypeObject *)
                       PyType_FromModuleAndSpec(mod, &union_type_spec,
@@ -5631,7 +5603,6 @@ _ctypes_add_types(PyObject *mod)
         return -1;
     }
     Py_SET_TYPE(st->Union_Type, st->UnionType_Type);
-
     if (PyModule_AddType(mod, st->Union_Type) < 0) {
         return -1;
     }
@@ -5761,6 +5732,8 @@ static int
 _ctypes_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     _ctypes_state *st = _PyModule_GetState(mod);
+    Py_VISIT(st->PyCStructType_Type);
+    Py_VISIT(st->Struct_Type);
     Py_VISIT(st->Union_Type);
     Py_VISIT(st->UnionType_Type);
     return 0;
@@ -5770,6 +5743,8 @@ static int
 _ctypes_clear(PyObject *mod)
 {
     _ctypes_state *st = _PyModule_GetState(mod);
+    Py_CLEAR(st->PyCStructType_Type);
+    Py_CLEAR(st->Struct_Type);
     Py_CLEAR(st->Union_Type);
     Py_CLEAR(st->UnionType_Type);
     return 0;
