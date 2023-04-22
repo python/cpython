@@ -73,9 +73,10 @@ def dash_R(ns, test_name, test_func):
     fd_deltas = [0] * repcount
     getallocatedblocks = sys.getallocatedblocks
     gettotalrefcount = sys.gettotalrefcount
+    getunicodeinternedsize = sys.getunicodeinternedsize
     fd_count = os_helper.fd_count
     # initialize variables to make pyflakes quiet
-    rc_before = alloc_before = fd_before = 0
+    rc_before = alloc_before = fd_before = interned_before = 0
 
     if not ns.quiet:
         print("beginning", repcount, "repetitions", file=sys.stderr)
@@ -91,9 +92,13 @@ def dash_R(ns, test_name, test_func):
         dash_R_cleanup(fs, ps, pic, zdc, abcs)
         support.gc_collect()
 
-        # Read memory statistics immediately after the garbage collection
-        alloc_after = getallocatedblocks()
-        rc_after = gettotalrefcount()
+        # Read memory statistics immediately after the garbage collection.
+        # Also, readjust the reference counts and alloc blocks by ignoring
+        # any strings that might have been interned during test_func. These
+        # strings will be deallocated at runtime shutdown
+        interned_after = getunicodeinternedsize()
+        alloc_after = getallocatedblocks() - interned_after
+        rc_after = gettotalrefcount() - interned_after * 2
         fd_after = fd_count()
 
         if not ns.quiet:
@@ -106,6 +111,7 @@ def dash_R(ns, test_name, test_func):
         alloc_before = alloc_after
         rc_before = rc_after
         fd_before = fd_after
+        interned_before = interned_after
 
     if not ns.quiet:
         print(file=sys.stderr)
