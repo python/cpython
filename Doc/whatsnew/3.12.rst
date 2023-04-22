@@ -1129,6 +1129,24 @@ New Features
   to replace the legacy-api :c:func:`!PyErr_Display`. (Contributed by
   Irit Katriel in :gh:`102755`).
 
+* :pep:`683`: Introduced Immortal Objects to Python which allows objects
+  to bypass reference counts and introduced changes to the C-API:
+
+  - ``_Py_IMMORTAL_REFCNT``: The reference count that defines an object
+      as immortal.
+  - ``_Py_IsImmortal`` Checks if an object has the immortal reference count.
+  - ``PyObject_HEAD_INIT`` This will now initialize reference count to
+      ``_Py_IMMORTAL_REFCNT`` when used with ``Py_BUILD_CORE``.
+  - ``SSTATE_INTERNED_IMMORTAL`` An identifier for interned unicode objects
+       that are immortal.
+  - ``SSTATE_INTERNED_IMMORTAL_STATIC`` An identifier for interned unicode
+       objects that are immortal and static
+  - ``sys.getunicodeinternedsize`` This returns the total number of unicode
+      objects that have been interned. This is now needed for refleak.py to
+      correctly track reference counts and allocated blocks
+
+  (Contributed by Eddie Elizondo in :gh:`84436`.)
+
 Porting to Python 3.12
 ----------------------
 
@@ -1293,8 +1311,7 @@ Removed
    * :c:func:`!PyUnicode_GetSize`
    * :c:func:`!PyUnicode_GET_DATA_SIZE`
 
-* Remove the ``PyUnicode_InternImmortal()`` function and the
-  ``SSTATE_INTERNED_IMMORTAL`` macro.
+* Remove the ``PyUnicode_InternImmortal()`` function macro.
   (Contributed by Victor Stinner in :gh:`85858`.)
 
 * Remove ``Jython`` compatibility hacks from several stdlib modules and tests.
