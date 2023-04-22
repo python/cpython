@@ -1302,11 +1302,16 @@ _paramspec_prepare_subst = ParamSpec.__typing_prepare_subst__
 
 import builtins
 if hasattr(builtins, "TypeVar"):
-    TypeVar = builtins.TypeVar
-    TypeVarTuple = builtins.TypeVarTuple
-    ParamSpec = builtins.ParamSpec
+    class _Dummy[T, *Ts, **P]:
+        type_params = (T, Ts, P)
+
+    TypeVar = type(_Dummy.type_params[0])
+    TypeVarTuple = type(_Dummy.type_params[1])
+    ParamSpec = type(_Dummy.type_params[2])
     ParamSpecArgs = type(ParamSpec("P").args)
     ParamSpecKwargs = type(ParamSpec("P").kwargs)
+
+    del _Dummy
 
     import copyreg
 
