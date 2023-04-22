@@ -966,6 +966,7 @@ PyTypeObject PyCStructType_Type = {
 };
 
 static PyType_Slot union_type_type_slots[] = {
+    {Py_tp_base, NULL},  // filled out in module exec function
     {Py_sq_repeat, CDataType_repeat},
     {Py_tp_setattro, UnionType_setattro},
     {Py_tp_doc, PyDoc_STR("metatype for the CData Objects")},
@@ -973,7 +974,6 @@ static PyType_Slot union_type_type_slots[] = {
     {Py_tp_clear, CDataType_clear},
     {Py_tp_methods, CDataType_methods},
     {Py_tp_new, UnionType_new},
-    {Py_tp_base, &PyType_Type},
     {0, NULL},
 };
 
@@ -4426,6 +4426,7 @@ static PyTypeObject Struct_Type = {
 
 static PyType_Slot union_type_slots[] = {
     {Py_bf_getbuffer, PyCData_NewGetBuffer},
+    {Py_tp_doc, PyDoc_STR("Union base class")},
     {Py_tp_traverse, PyCData_traverse},
     {Py_tp_clear, PyCData_clear},
     {Py_tp_init, Struct_init},
@@ -4436,7 +4437,8 @@ static PyType_Slot union_type_slots[] = {
 static PyType_Spec union_type_spec = {
     .name = "_ctypes.Union",
     .basicsize = sizeof(CDataObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = union_type_slots,
 };
 
@@ -5603,6 +5605,7 @@ _ctypes_add_types(PyObject *mod)
     TYPE_READY_BASE(&PyCSimpleType_Type, &PyType_Type);
     TYPE_READY_BASE(&PyCFuncPtrType_Type, &PyType_Type);
 
+    union_type_type_slots[0].pfunc = &PyType_Type;
     st->UnionType_Type = (PyTypeObject *)
                           PyType_FromModuleAndSpec(mod, &union_type_type_spec,
                                                    NULL);
@@ -5759,6 +5762,7 @@ _ctypes_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     _ctypes_state *st = _PyModule_GetState(mod);
     Py_VISIT(st->Union_Type);
+    Py_VISIT(st->UnionType_Type);
     return 0;
 }
 
@@ -5767,6 +5771,7 @@ _ctypes_clear(PyObject *mod)
 {
     _ctypes_state *st = _PyModule_GetState(mod);
     Py_CLEAR(st->Union_Type);
+    Py_CLEAR(st->UnionType_Type);
     return 0;
 }
 
