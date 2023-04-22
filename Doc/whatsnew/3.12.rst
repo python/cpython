@@ -712,6 +712,12 @@ Pending Removal in Python 3.14
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
   and will be removed in 3.14.
 
+* *type*, *chocies*, and *metavar* parameters
+  of :class:`!argparse.BooleanOptionalAction` are deprecated
+  and will be removed in 3.14
+  (Contributed by Nikita Sobolev in :gh:`92248`.)
+
+
 Pending Removal in Future Versions
 ----------------------------------
 
