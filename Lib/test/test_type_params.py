@@ -231,12 +231,11 @@ class TypeParamsTraditionalTypeVars(unittest.TestCase):
         exec(code, {}, {})
 
 
-
 class TypeParamsTypeVarTest(unittest.TestCase):
     def test_typevar_01(self):
         def func1[A: str, B: str | int, C: (int, str)]():
             return (A, B, C)
-        
+
         a, b, c = func1()
 
         self.assertIsInstance(a, TypeVar)
@@ -257,7 +256,7 @@ class TypeParamsTypeVarTest(unittest.TestCase):
         self.assertTrue(c.__autovariance__)
         self.assertFalse(c.__covariant__)
         self.assertFalse(c.__contravariant__)
-    
+
     def test_typevar_generator(self):
         def get_generator[A]():
             def generator1[C]():
@@ -268,7 +267,7 @@ class TypeParamsTypeVarTest(unittest.TestCase):
                 yield B
                 yield from generator1()
             return generator2
-        
+
         gen = get_generator()
 
         a, b, c = [x for x in gen()]
@@ -285,7 +284,7 @@ class TypeParamsTypeVarTest(unittest.TestCase):
             async def coroutine[B]():
                 return (A, B)
             return coroutine
-        
+
         co = get_coroutine()
 
         a, b = asyncio.run(co())
@@ -306,11 +305,11 @@ class TypeParamsTypeVarTupleTest(unittest.TestCase):
 
         with self.assertRaisesRegex(SyntaxError, r"expected '\('"):
             exec(code, {}, {})
-        
+
     def test_typevartuple_02(self):
         def func1[*A]():
             return A
-        
+
         a = func1()
         self.assertIsInstance(a, TypeVarTuple)
 
@@ -325,11 +324,11 @@ class TypeParamsTypeVarParamSpec(unittest.TestCase):
 
         with self.assertRaisesRegex(SyntaxError, r"expected '\('"):
             exec(code, {}, {})
-        
+
     def test_paramspec_02(self):
         def func1[**A]():
             return A
-        
+
         a = func1()
         self.assertIsInstance(a, ParamSpec)
         self.assertTrue(a.__autovariance__)
@@ -345,7 +344,7 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
                 @staticmethod
                 def get_typeparams():
                     return A, B, C, D
-        
+
         a, b, c, d = Outer.Inner.get_typeparams()
         self.assertEqual(Outer.__type_variables__, (a, b))
         self.assertEqual(Outer.Inner.__type_variables__, (a, b, c, d))
@@ -356,7 +355,7 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
     def test_typeparams_dunder_class_02(self):
         class ClassA:
             pass
-        
+
         self.assertEqual(ClassA.__type_variables__, ())
 
     def test_typeparams_dunder_class_03(self):
@@ -374,9 +373,9 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
         def outer[A, B]():
             def inner[C, D]():
                 return A, B, C, D
-            
+
             return inner
-        
+
         inner = outer()
         a, b, c, d = inner()
         self.assertEqual(outer.__type_variables__, (a, b))
@@ -385,7 +384,7 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
     def test_typeparams_dunder_function_02(self):
         def func1():
             pass
-        
+
         self.assertEqual(func1.__type_variables__, ())
 
     def test_typeparams_dunder_function_03(self):
