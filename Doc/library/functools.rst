@@ -118,6 +118,7 @@ The :mod:`functools` module defines the following functions:
            def stdev(self):
                return statistics.stdev(self._data)
 
+   .. versionadded:: 3.8
 
    .. versionchanged:: 3.12
       Prior to Python 3.12, ``cached_property`` included an undocumented lock to
@@ -125,8 +126,6 @@ The :mod:`functools` module defines the following functions:
       run only once per instance. However, the lock was per-property, not
       per-instance, which could result in unacceptably high lock contention. In
       Python 3.12+ this locking is removed.
-
-   .. versionadded:: 3.8
 
 
 .. function:: cmp_to_key(func)
@@ -233,7 +232,7 @@ The :mod:`functools` module defines the following functions:
         @lru_cache(maxsize=32)
         def get_pep(num):
             'Retrieve text of a Python Enhancement Proposal'
-            resource = 'https://peps.python.org/pep-%04d/' % num
+            resource = f'https://peps.python.org/pep-{num:04d}'
             try:
                 with urllib.request.urlopen(resource) as s:
                     return s.read()
