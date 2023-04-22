@@ -123,7 +123,7 @@ __all__ = [
     'HTTPBasicAuthHandler', 'ProxyBasicAuthHandler', 'AbstractDigestAuthHandler',
     'HTTPDigestAuthHandler', 'ProxyDigestAuthHandler', 'HTTPHandler',
     'FileHandler', 'FTPHandler', 'CacheFTPHandler', 'DataHandler',
-    'UnknownHandler', 'HTTPErrorProcessor',
+    'HTTPSHandler', 'UnknownHandler', 'HTTPErrorProcessor',
     # Functions
     'urlopen', 'install_opener', 'build_opener',
     'pathname2url', 'url2pathname', 'getproxies',
