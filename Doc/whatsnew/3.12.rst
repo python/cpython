@@ -309,6 +309,13 @@ fractions
 * Objects of type :class:`fractions.Fraction` now support float-style
   formatting. (Contributed by Mark Dickinson in :gh:`100161`.)
 
+itertools
+---------
+
+* Added :class:`itertools.batched()` for collecting into even-sized
+  tuples where the last batch may be shorter than the rest.
+  (Contributed by Raymond Hettinger in :gh:`98363`.)
+
 math
 ----
 
