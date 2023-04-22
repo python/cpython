@@ -47,9 +47,8 @@ class WidgetRedirector:
         tk.createcommand(w, self.dispatch)
 
     def __repr__(self):
-        return "{}({}<{}>)".format(self.__class__.__name__,
-                               self.widget.__class__.__name__,
-                               self.widget._w)
+        w = self.widget
+        return f"{self.__class__.__name__,}({w.__class__.__name__}<{w._w}>)"
 
     def close(self):
         "Unregister operations and revert redirection created by .__init__."
