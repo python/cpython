@@ -618,26 +618,13 @@ Tkapp_New(const char *screenName, const char *className,
         //fprintf(stderr, "%s %p\n", value->typePtr->name, value->typePtr);
         v->ByteArrayType = value->typePtr;
         Tcl_DecrRefCount(value);
-
-        /* Tcl 8.7 has an unregistered "utf32string" type,
-           which can be retrieved by running `string length`
-           on a string with at least 2 characters.
-           If the "utf32string" type is not present,
-           then this retrieves the "string" type. */
-        Tcl_SetVar(v->interp, "mystring", "pq", 0);
-        Tcl_Eval(v->interp, "string length $mystring");
-        value = Tcl_GetVar2Ex(v->interp, "mystring", NULL, 0);
-        v->UTF32StringType = value->typePtr;
-        fprintf(stderr, "%s %p\n",
-            value->typePtr ? value->typePtr->name : "pure string",
-            value->typePtr);
-        Tcl_UnsetVar(v->interp, "mystring", 0);
     }
     v->DoubleType = Tcl_GetObjType("double");
     v->BignumType = Tcl_GetObjType("bignum");
     v->ListType = Tcl_GetObjType("list");
     v->ProcBodyType = Tcl_GetObjType("procbody");
     v->StringType = Tcl_GetObjType("string");
+    v->UTF32StringType = Tcl_GetObjType("utf32string");
 
     /* Delete the 'exit' command, which can screw things up */
     Tcl_DeleteCommand(v->interp, "exit");
