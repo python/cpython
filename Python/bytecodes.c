@@ -54,7 +54,7 @@ static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub
 static PyObject *container, *start, *stop, *v, *lhs, *rhs, *res2;
 static PyObject *list, *tuple, *dict, *owner, *set, *str, *tup, *map, *keys;
 static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter;
-static PyObject *aiter, *awaitable, *iterable, *w, *exc_value, *bc;
+static PyObject *aiter, *awaitable, *iterable, *w, *exc_value, *bc, *locals;
 static PyObject *orig, *excs, *update, *b, *fromlist, *level, *from;
 static PyObject **pieces, **values;
 static size_t jump;
@@ -179,6 +179,10 @@ dummy_func(
 
         inst(PUSH_NULL, (-- res)) {
             res = NULL;
+        }
+
+        inst(POP_NULL, (value --)) {
+            assert(value == NULL);
         }
 
         macro(END_FOR) = POP_TOP + POP_TOP;
@@ -882,6 +886,16 @@ dummy_func(
             }
         }
 
+        inst(LOAD_LOCALS, ( -- locals)) {
+            locals = LOCALS();
+            if (locals == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found when loading locals()");
+                ERROR_IF(true, error);
+            }
+            Py_INCREF(locals);
+        }
+
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             PyObject *ns = LOCALS();
@@ -1037,6 +1051,67 @@ dummy_func(
                                          NAME_ERROR_MSG, name);
                 }
                 goto error;
+            }
+        }
+
+        inst(LOAD_CLASS_OR_GLOBAL, (-- v)) {
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+            PyObject *locals = GETLOCAL(0);
+            if (locals == NULL) {
+                _PyErr_Format(tstate, PyExc_SystemError,
+                              "no locals when loading %R", name);
+                goto error;
+            }
+            if (PyDict_CheckExact(locals)) {
+                v = PyDict_GetItemWithError(locals, name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+            }
+            else {
+                v = PyObject_GetItem(locals, name);
+                if (v == NULL) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
+                        goto error;
+                    _PyErr_Clear(tstate);
+                }
+            }
+            if (v == NULL) {
+                v = PyDict_GetItemWithError(GLOBALS(), name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+                else {
+                    if (PyDict_CheckExact(BUILTINS())) {
+                        v = PyDict_GetItemWithError(BUILTINS(), name);
+                        if (v == NULL) {
+                            if (!_PyErr_Occurred(tstate)) {
+                                format_exc_check_arg(
+                                        tstate, PyExc_NameError,
+                                        NAME_ERROR_MSG, name);
+                            }
+                            goto error;
+                        }
+                        Py_INCREF(v);
+                    }
+                    else {
+                        v = PyObject_GetItem(BUILTINS(), name);
+                        if (v == NULL) {
+                            if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                                format_exc_check_arg(
+                                            tstate, PyExc_NameError,
+                                            NAME_ERROR_MSG, name);
+                            }
+                            goto error;
+                        }
+                    }
+                }
             }
         }
 

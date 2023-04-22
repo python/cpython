@@ -37,6 +37,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case PUSH_NULL:
             return 0;
+        case POP_NULL:
+            return 1;
         case END_FOR:
             return 1+1;
         case UNARY_NEGATIVE:
@@ -123,6 +125,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case LOAD_BUILD_CLASS:
             return 0;
+        case LOAD_LOCALS:
+            return 0;
         case STORE_NAME:
             return 1;
         case DELETE_NAME:
@@ -144,6 +148,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case STORE_GLOBAL:
             return 1;
         case DELETE_GLOBAL:
+            return 0;
+        case LOAD_CLASS_OR_GLOBAL:
             return 0;
         case LOAD_NAME:
             return 0;
@@ -383,6 +389,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case PUSH_NULL:
             return 1;
+        case POP_NULL:
+            return 0;
         case END_FOR:
             return 0+0;
         case UNARY_NEGATIVE:
@@ -469,6 +477,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case LOAD_BUILD_CLASS:
             return 1;
+        case LOAD_LOCALS:
+            return 1;
         case STORE_NAME:
             return 0;
         case DELETE_NAME:
@@ -491,6 +501,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case DELETE_GLOBAL:
             return 0;
+        case LOAD_CLASS_OR_GLOBAL:
+            return 1;
         case LOAD_NAME:
             return 1;
         case LOAD_GLOBAL:
@@ -719,6 +731,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [LOAD_CONST__LOAD_FAST] = { true, INSTR_FMT_IBIB },
     [POP_TOP] = { true, INSTR_FMT_IX },
     [PUSH_NULL] = { true, INSTR_FMT_IX },
+    [POP_NULL] = { true, INSTR_FMT_IX },
     [END_FOR] = { true, INSTR_FMT_IB },
     [UNARY_NEGATIVE] = { true, INSTR_FMT_IX },
     [UNARY_NOT] = { true, INSTR_FMT_IX },
@@ -762,6 +775,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [CLEANUP_THROW] = { true, INSTR_FMT_IX },
     [LOAD_ASSERTION_ERROR] = { true, INSTR_FMT_IX },
     [LOAD_BUILD_CLASS] = { true, INSTR_FMT_IX },
+    [LOAD_LOCALS] = { true, INSTR_FMT_IX },
     [STORE_NAME] = { true, INSTR_FMT_IB },
     [DELETE_NAME] = { true, INSTR_FMT_IB },
     [UNPACK_SEQUENCE] = { true, INSTR_FMT_IBC },
@@ -773,6 +787,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [DELETE_ATTR] = { true, INSTR_FMT_IB },
     [STORE_GLOBAL] = { true, INSTR_FMT_IB },
     [DELETE_GLOBAL] = { true, INSTR_FMT_IB },
+    [LOAD_CLASS_OR_GLOBAL] = { true, INSTR_FMT_IB },
     [LOAD_NAME] = { true, INSTR_FMT_IB },
     [LOAD_GLOBAL] = { true, INSTR_FMT_IBC000 },
     [LOAD_GLOBAL_MODULE] = { true, INSTR_FMT_IBC000 },

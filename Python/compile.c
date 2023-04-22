@@ -2200,14 +2200,29 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
     location loc = LOC(s);
 
+    int is_typeparams_in_class = 0;
+
     if (typeparams) {
         ADDOP(c, loc, PUSH_NULL);
+        // We'll swap in the callable here later.
+        ADDOP(c, loc, PUSH_NULL);
+        PySTEntryObject *ste = PySymtable_Lookup(c->c_st, (void *)typeparams);
+        if (ste == NULL) {
+            return ERROR;
+        }
+        is_typeparams_in_class = ste->ste_type_params_in_class;
+        if (is_typeparams_in_class) {
+            ADDOP(c, loc, LOAD_LOCALS);
+        }
+        Py_DECREF(ste);
     }
 
     funcflags = compiler_default_arguments(c, loc, args);
     if (funcflags == -1) {
         return ERROR;
     }
+
+    int num_typeparam_args = 0;
 
     if (typeparams) {
         PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>", name);
@@ -2220,11 +2235,16 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             return ERROR;
         }
         Py_DECREF(typeparams_name);
+        if (is_typeparams_in_class) {
+            num_typeparam_args += 1;
+        }
         if ((funcflags & 0x01) || (funcflags & 0x02)) {
-            ADDOP_I(c, loc, LOAD_FAST, 0);
+            ADDOP_I(c, loc, LOAD_FAST, 0 + is_typeparams_in_class);
+            num_typeparam_args += 1;
         }
         if ((funcflags & 0x01) && (funcflags & 0x02)) {
-            ADDOP_I(c, loc, LOAD_FAST, 1);
+            ADDOP_I(c, loc, LOAD_FAST, 1 + is_typeparams_in_class);
+            num_typeparam_args += 1;
         }
         RETURN_IF_ERROR(compiler_type_params(c, typeparams));
     }
@@ -2271,6 +2291,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
     Py_DECREF(co);
     if (typeparams) {
+        if (is_typeparams_in_class) {
+            c->u->u_argcount += 1;
+        }
         if (funcflags & 0x02) {
             c->u->u_argcount += 1;
         }
@@ -2287,16 +2310,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             return ERROR;
         }
         Py_DECREF(co);
-        int oparg = 0;
-        if ((funcflags & 0x01) && (funcflags & 0x02)) {
-            ADDOP_I(c, loc, SWAP, 3);
-            oparg = 2;
-        }
-        else if ((funcflags & 0x01) || (funcflags & 0x02)) {
-            ADDOP_I(c, loc, SWAP, 2);
-            oparg = 1;
-        }
-        ADDOP_I(c, loc, CALL, oparg);
+        ADDOP_I(c, loc, SWAP, num_typeparam_args + 2);
+        ADDOP(c, loc, POP_NULL);
+        ADDOP_I(c, loc, CALL, num_typeparam_args);
     }
 
     RETURN_IF_ERROR(compiler_apply_decorators(c, decos));
@@ -3903,7 +3919,13 @@ compiler_nameop(struct compiler *c, location loc,
         return SUCCESS;
     case OP_GLOBAL:
         switch (ctx) {
-        case Load: op = LOAD_GLOBAL; break;
+        case Load:
+            if (c->u->u_ste->ste_type_params_in_class) {
+                op = LOAD_CLASS_OR_GLOBAL;
+            } else {
+                op = LOAD_GLOBAL;
+            }
+            break;
         case Store: op = STORE_GLOBAL; break;
         case Del: op = DELETE_GLOBAL; break;
         }
