@@ -60,6 +60,7 @@ Copyright (C) 1994 Steen Lumholt.
 #error "Tk older than 8.5.12 not supported"
 #endif
 
+#define TCL_NO_TOMMATH_H
 #include <tclTomMath.h>
 
 #if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
