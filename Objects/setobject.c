@@ -2544,5 +2544,6 @@ static PyTypeObject _PySetDummy_Type = {
 
 static PyObject _dummy_struct = {
     _PyObject_EXTRA_INIT
-    _Py_IMMORTAL_REFCNT, &_PySetDummy_Type
+    { _Py_IMMORTAL_REFCNT },
+    &_PySetDummy_Type
 };
