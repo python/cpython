@@ -227,7 +227,6 @@ class BasicTest(BaseTest):
                         'install',
                         '--upgrade',
                         'pip',
-                        'setuptools'
                     ]
                 )
 
@@ -611,6 +610,22 @@ class BasicTest(BaseTest):
         out, err = check_output(cmd)
         self.assertTrue(zip_landmark.encode() in out)
 
+    def test_activate_shell_script_has_no_dos_newlines(self):
+        """
+        Test that the `activate` shell script contains no CR LF.
+        This is relevant for Cygwin, as the Windows build might have
+        converted line endings accidentally.
+        """
+        venv_dir = pathlib.Path(self.env_dir)
+        rmtree(venv_dir)
+        [[scripts_dir], *_] = self.ENV_SUBDIRS
+        script_path = venv_dir / scripts_dir / "activate"
+        venv.create(venv_dir)
+        with open(script_path, 'rb') as script:
+            for i, line in enumerate(script, 1):
+                error_message = f"CR LF found in line {i}"
+                self.assertFalse(line.endswith(b'\r\n'), error_message)
+
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
@@ -729,7 +744,6 @@ class EnsurePipTest(BaseTest):
         # future pip versions, this test can likely be relaxed further.
         out = out.decode("latin-1") # Force to text, prevent decoding errors
         self.assertIn("Successfully uninstalled pip", out)
-        self.assertIn("Successfully uninstalled setuptools", out)
         # Check pip is now gone from the virtual environment. This only
         # applies in the system_site_packages=False case, because in the
         # other case, pip may still be available in the system site-packages

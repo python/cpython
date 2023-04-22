@@ -138,6 +138,7 @@ void* _PyPegen_expect_forced_result(Parser *p, void* result, const char* expecte
 Token *_PyPegen_expect_forced_token(Parser *p, int type, const char* expected);
 expr_ty _PyPegen_expect_soft_keyword(Parser *p, const char *keyword);
 expr_ty _PyPegen_soft_keyword_token(Parser *p);
+expr_ty _PyPegen_fstring_middle_token(Parser* p);
 Token *_PyPegen_get_last_nonnwhitespace_token(Parser *);
 int _PyPegen_fill_token(Parser *p);
 expr_ty _PyPegen_name_token(Parser *p);
@@ -155,7 +156,7 @@ typedef enum {
 int _Pypegen_raise_decode_error(Parser *p);
 void _PyPegen_raise_tokenizer_init_error(PyObject *filename);
 int _Pypegen_tokenizer_error(Parser *p);
-void *_PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...);
+void *_PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...);
 void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                           Py_ssize_t lineno, Py_ssize_t col_offset,
                                           Py_ssize_t end_lineno, Py_ssize_t end_col_offset,
@@ -175,8 +176,9 @@ RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype,
     va_end(va);
     return NULL;
 }
-#define RAISE_SYNTAX_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, msg, ##__VA_ARGS__)
-#define RAISE_INDENTATION_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, msg, ##__VA_ARGS__)
+#define RAISE_SYNTAX_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, 0, msg, ##__VA_ARGS__)
+#define RAISE_INDENTATION_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, 0, msg, ##__VA_ARGS__)
+#define RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, 1, msg, ##__VA_ARGS__)
 #define RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, msg, ...) \
     RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, (b)->end_lineno, (b)->end_col_offset, msg, ##__VA_ARGS__)
 #define RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, msg, ...) \
@@ -308,6 +310,7 @@ StarEtc *_PyPegen_star_etc(Parser *, arg_ty, asdl_seq *, arg_ty);
 arguments_ty _PyPegen_make_arguments(Parser *, asdl_arg_seq *, SlashWithDefault *,
                                      asdl_arg_seq *, asdl_seq *, StarEtc *);
 arguments_ty _PyPegen_empty_arguments(Parser *);
+expr_ty _PyPegen_formatted_value(Parser *, expr_ty, Token *, expr_ty, expr_ty, int, int, int, int, PyArena *);
 AugOperator *_PyPegen_augoperator(Parser*, operator_ty type);
 stmt_ty _PyPegen_function_def_decorators(Parser *, asdl_expr_seq *, stmt_ty);
 stmt_ty _PyPegen_class_def_decorators(Parser *, asdl_expr_seq *, stmt_ty);
@@ -317,12 +320,16 @@ asdl_keyword_seq *_PyPegen_seq_delete_starred_exprs(Parser *, asdl_seq *);
 expr_ty _PyPegen_collect_call_seqs(Parser *, asdl_expr_seq *, asdl_seq *,
                      int lineno, int col_offset, int end_lineno,
                      int end_col_offset, PyArena *arena);
-expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_seq *);
+expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok);
+expr_ty _PyPegen_constant_from_string(Parser* p, Token* tok);
+expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *, int, int, int, int, PyArena *);
+expr_ty _PyPegen_FetchRawForm(Parser *p, int, int, int, int);
 expr_ty _PyPegen_ensure_imaginary(Parser *p, expr_ty);
 expr_ty _PyPegen_ensure_real(Parser *p, expr_ty);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
 int _PyPegen_check_barry_as_flufl(Parser *, Token *);
 int _PyPegen_check_legacy_stmt(Parser *p, expr_ty t);
+expr_ty _PyPegen_check_fstring_conversion(Parser *p, Token *, expr_ty t);
 mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 expr_ty _PyPegen_get_last_comprehension_item(comprehension_ty comprehension);
@@ -337,6 +344,9 @@ mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char
 void *_PyPegen_run_parser(Parser *);
 mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
 asdl_stmt_seq *_PyPegen_interactive_exit(Parser *);
+
+// TODO: move to the correct place in this file
+expr_ty _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* expr, Token*b);
 
 // Generated function in parse.c - function definition in python.gram
 void *_PyPegen_parse(Parser *);
