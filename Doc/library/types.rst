@@ -90,7 +90,9 @@ Dynamic Type Creation
     introspecting :ref:`Generics <user-defined-generics>`.
 
     For classes that have an ``__orig_bases__`` attribute, this
-    function simply returns the value of ``cls.__orig_bases__``.
+    function returns the value of ``cls.__orig_bases__``.
+    For classes without the ``__orig_bases__`` attribute, ``cls.__bases__`` is
+    returned.
 
     Examples::
 
