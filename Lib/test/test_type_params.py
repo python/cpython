@@ -8,15 +8,15 @@ class TypeParamsInvalidTest(unittest.TestCase):
     def test_name_collision_01(self):
         code = """def func[**A, A](): ..."""
         with self.assertRaisesRegex(SyntaxError, "duplicate type parameter 'A'"):
-            exec(code, {}, {})
+            exec(code, {})
 
     def test_name_non_collision_02(self):
         code = """def func[A](A): ..."""
-        exec(code, {}, {})
+        exec(code, {})
 
     def test_name_non_collision_03(self):
         code = """def func[A](*A): ..."""
-        exec(code, {}, {})
+        exec(code, {})
 
     def test_name_non_collision_04(self):
         # Mangled names should not cause a conflict.
@@ -25,7 +25,7 @@ class TypeParamsInvalidTest(unittest.TestCase):
                 def func[__A](self, __A): ...
             """
         )
-        exec(code, {}, {})
+        exec(code, {})
 
     def test_name_non_collision_05(self):
         code = textwrap.dedent("""\
@@ -33,7 +33,7 @@ class TypeParamsInvalidTest(unittest.TestCase):
                 def func[_ClassA__A](self, __A): ...
             """
         )
-        exec(code, {}, {})
+        exec(code, {})
 
     def test_name_non_collision_06(self):
         code = textwrap.dedent("""\
@@ -41,7 +41,7 @@ class TypeParamsInvalidTest(unittest.TestCase):
                 def func(self, X): ...
             """
         )
-        exec(code, {}, {})
+        exec(code, {})
 
     def test_name_non_collision_07(self):
         code = textwrap.dedent("""\
@@ -50,7 +50,7 @@ class TypeParamsInvalidTest(unittest.TestCase):
                     X = 1
             """
         )
-        exec(code, {}, {})
+        exec(code, {})
 
     def test_name_non_collision_08(self):
         code = textwrap.dedent("""\
@@ -59,7 +59,7 @@ class TypeParamsInvalidTest(unittest.TestCase):
                     a = [X for X in []]
             """
         )
-        exec(code, {}, {})
+        exec(code, {})
 
     def test_name_non_collision_9(self):
         code = textwrap.dedent("""\
@@ -68,7 +68,7 @@ class TypeParamsInvalidTest(unittest.TestCase):
                     ...
             """
         )
-        exec(code, {}, {})
+        exec(code, {})
 
     def test_name_non_collision_10(self):
         code = textwrap.dedent("""\
@@ -76,7 +76,7 @@ class TypeParamsInvalidTest(unittest.TestCase):
                 X: int
             """
         )
-        exec(code, {}, {})
+        exec(code, {})
 
     def test_name_non_collision_11(self):
         code = textwrap.dedent("""\
@@ -86,7 +86,7 @@ class TypeParamsInvalidTest(unittest.TestCase):
                     nonlocal X
             """
         )
-        exec(code, {}, {})
+        exec(code, {})
 
     def test_name_non_collision_13(self):
         code = textwrap.dedent("""\
@@ -96,7 +96,7 @@ class TypeParamsInvalidTest(unittest.TestCase):
                     global X
             """
         )
-        exec(code, {}, {})
+        exec(code, {})
 
 
 class TypeParamsAccessTest(unittest.TestCase):
@@ -106,7 +106,7 @@ class TypeParamsAccessTest(unittest.TestCase):
                 ...
             """
         )
-        exec(code, {}, {})
+        exec(code, {})
 
     def test_class_access_02(self):
         code = textwrap.dedent("""\
@@ -115,7 +115,7 @@ class TypeParamsAccessTest(unittest.TestCase):
                 ...
             """
         )
-        exec(code, {}, {})
+        exec(code, {})
 
     def test_class_access_03(self):
         code = textwrap.dedent("""\
@@ -128,7 +128,7 @@ class TypeParamsAccessTest(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(NameError, "name 'A' is not defined"):
-            exec(code, {}, {})
+            exec(code, {})
 
     def test_function_access_01(self):
         code = textwrap.dedent("""\
@@ -136,7 +136,7 @@ class TypeParamsAccessTest(unittest.TestCase):
                 ...
             """
         )
-        exec(code, {}, {})
+        exec(code, {})
 
     def test_function_access_02(self):
         code = textwrap.dedent("""\
@@ -146,7 +146,7 @@ class TypeParamsAccessTest(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(NameError, "name 'A' is not defined"):
-            exec(code, {}, {})
+            exec(code, {})
 
     def test_function_access_03(self):
         code = textwrap.dedent("""\
@@ -159,7 +159,7 @@ class TypeParamsAccessTest(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(NameError, "name 'A' is not defined"):
-            exec(code, {}, {})
+            exec(code, {})
 
     def test_nested_access_01(self):
         code = textwrap.dedent("""\
@@ -170,7 +170,7 @@ class TypeParamsAccessTest(unittest.TestCase):
                             lambda : (A, B, C, D)
             """
         )
-        exec(code, {}, {})
+        exec(code, {})
 
     def test_out_of_scope_01(self):
         code = textwrap.dedent("""\
@@ -180,7 +180,7 @@ class TypeParamsAccessTest(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(NameError, "name 'T' is not defined"):
-            exec(code, {}, {})
+            exec(code, {})
 
     def test_out_of_scope_02(self):
         code = textwrap.dedent("""\
@@ -192,7 +192,7 @@ class TypeParamsAccessTest(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(NameError, "name 'B' is not defined"):
-            exec(code, {}, {})
+            exec(code, {})
 
 
 class TypeParamsTraditionalTypeVars(unittest.TestCase):
@@ -204,7 +204,7 @@ class TypeParamsTraditionalTypeVars(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(TypeError, r"Cannot inherit from Generic\[...\] multiple types."):
-            exec(code, {}, {})
+            exec(code, {})
 
     def test_traditional_02(self):
         code = textwrap.dedent("""\
@@ -215,20 +215,15 @@ class TypeParamsTraditionalTypeVars(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(TypeError, r"Some type variables \(~S\) are not listed in Generic\[T\]"):
-            exec(code, {}, {})
+            exec(code, {})
 
     def test_traditional_03(self):
-        code = textwrap.dedent("""\
-                from typing import TypeVar
-                S = TypeVar("S")
-                def func[T](a: T, b: S) -> T | S:
-                    return a
-            """
-        )
-
         # This does not generate a runtime error, but it should be
         # flagged as an error by type checkers.
-        exec(code, {}, {})
+        from typing import TypeVar
+        S = TypeVar("S")
+        def func[T](a: T, b: S) -> T | S:
+            return a
 
 
 class TypeParamsTypeVarTest(unittest.TestCase):
@@ -304,7 +299,7 @@ class TypeParamsTypeVarTupleTest(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(SyntaxError, r"expected '\('"):
-            exec(code, {}, {})
+            exec(code, {})
 
     def test_typevartuple_02(self):
         def func1[*A]():
@@ -323,7 +318,7 @@ class TypeParamsTypeVarParamSpec(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(SyntaxError, r"expected '\('"):
-            exec(code, {}, {})
+            exec(code, {})
 
     def test_paramspec_02(self):
         def func1[**A]():
@@ -367,7 +362,7 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(AttributeError, "attribute '__type_variables__' of 'type' objects is not writable"):
-            exec(code, {}, {})
+            exec(code, {})
 
     def test_typeparams_dunder_function_01(self):
         def outer[A, B]():
@@ -396,4 +391,4 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(AttributeError, "attribute '__type_variables__' of 'function' objects is not writable"):
-            exec(code, {}, {})
+            exec(code, {})
