@@ -140,6 +140,10 @@ server is the address family.
            ForkingUDPServer
            ThreadingTCPServer
            ThreadingUDPServer
+           ForkingUnixStreamServer
+           ForkingUnixDatagramServer
+           ThreadingUnixStreamServer
+           ThreadingUnixDatagramServer
 
    These classes are pre-defined using the mix-in classes.
 
