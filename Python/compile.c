@@ -2444,6 +2444,8 @@ compiler_class(struct compiler *c, stmt_ty s)
                                          s->v.ClassDef.keywords));
 
     if (typeparams) {
+        int is_in_class = c->u->u_ste->ste_type_params_in_class;
+        c->u->u_argcount = is_in_class;
         PyCodeObject *co = assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
@@ -2454,7 +2456,10 @@ compiler_class(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(co);
-        ADDOP_I(c, loc, CALL, 0);
+        if (is_in_class) {
+            ADDOP(c, loc, LOAD_LOCALS);
+        }
+        ADDOP_I(c, loc, CALL, is_in_class);
     }
 
     /* 6. apply decorators */

@@ -206,6 +206,26 @@ class TypeParamsAccessTest(unittest.TestCase):
         with self.assertRaisesRegex(NameError, "name 'B' is not defined"):
             exec(code, {})
 
+    def test_class_scope_interaction_01(self):
+        code = textwrap.dedent("""\
+            class C:
+                x = 1
+                def method[T](self, arg: x): pass
+
+            assert C.method.__annotations__["arg"] == 1
+        """)
+        exec(code, {})
+
+    def test_class_scope_interaction_02(self):
+        code = textwrap.dedent("""\
+            class C:
+                class Base: pass
+                class Child[T](Base): pass
+
+            assert C.Child.__bases__ == (C.Base,)
+        """)
+        exec(code, {})
+
 
 class TypeParamsTraditionalTypeVars(unittest.TestCase):
     def test_traditional_01(self):
@@ -337,7 +357,6 @@ class TypeParamsTypeVarParamSpec(unittest.TestCase):
         self.assertTrue(a.__autovariance__)
         self.assertFalse(a.__covariant__)
         self.assertFalse(a.__contravariant__)
-
 
 
 class TypeParamsTypeParamsDunder(unittest.TestCase):
