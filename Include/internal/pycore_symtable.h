@@ -65,6 +65,8 @@ typedef struct _symtable_entry {
                                              closure over __class__
                                              should be created */
     unsigned ste_comp_iter_target : 1; /* true if visiting comprehension target */
+    unsigned ste_type_params_in_class : 1; /* true if this is a type parameters block
+                                              inside a class */
     int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
     int ste_lineno;          /* first line of block */
     int ste_col_offset;      /* offset of first line of block */

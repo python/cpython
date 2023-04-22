@@ -1123,6 +1123,56 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag,
                         lineno, col_offset, end_lineno, end_col_offset);
 }
 
+static int
+symtable_add_param(const char *name, struct symtable *st,
+                   int lineno, int col_offset, int end_lineno, int end_col_offset)
+{
+    PyObject *name_obj = PyUnicode_FromString(name);
+    if (name_obj == NULL) {
+        return 0;
+    }
+    if (!symtable_add_def(st, name_obj, DEF_PARAM,
+                          lineno, col_offset, end_lineno, end_col_offset)) {
+        Py_DECREF(name_obj);
+        return 0;
+    }
+    Py_DECREF(name_obj);
+    return 1;
+}
+
+static int
+symtable_enter_typeparam_block(struct symtable *st, identifier name,
+                               void *ast, int has_defaults, int has_kwdefaults,
+                               int lineno, int col_offset,
+                               int end_lineno, int end_col_offset)
+{
+    _Py_block_ty current_type = st->st_cur->ste_type;
+    if(!symtable_enter_block(st, name, FunctionBlock, ast, lineno,
+                             col_offset, end_lineno, end_col_offset)) {
+        return 0;
+    }
+    if (current_type == ClassBlock) {
+        st->st_cur->ste_type_params_in_class = 1;
+        if (!symtable_add_param(".namespace", st,
+                                lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
+    }
+    if (has_defaults) {
+        if (!symtable_add_param(".defaults", st,
+                                lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
+    }
+    if (has_kwdefaults) {
+        if (!symtable_add_param(".kwdefaults", st,
+                                lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 /* VISIT, VISIT_SEQ and VIST_SEQ_TAIL take an ASDL type as their second argument.
    They use the ASDL name to synthesize the name of the C type and the visit
    function.
@@ -1225,33 +1275,14 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.FunctionDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
         if (s->v.FunctionDef.typeparams) {
-            if (!symtable_enter_block(st, s->v.FunctionDef.name,
-                                      FunctionBlock, (void *)s->v.FunctionDef.typeparams,
-                                      LOCATION(s))) {
+            if (!symtable_enter_typeparam_block(
+                    st, s->v.FunctionDef.name,
+                    (void *)s->v.FunctionDef.typeparams,
+                    s->v.FunctionDef.args->defaults != NULL,
+                    has_kwonlydefaults(s->v.FunctionDef.args->kwonlyargs,
+                                       s->v.FunctionDef.args->kw_defaults),
+                    LOCATION(s))) {
                 VISIT_QUIT(st, 0);
-            }
-            if (s->v.FunctionDef.args->defaults) {
-                PyObject *defaults_name = PyUnicode_FromString(".defaults");
-                if (defaults_name == NULL) {
-                    VISIT_QUIT(st, 0);
-                }
-                if (!symtable_add_def(st, defaults_name, DEF_PARAM, LOCATION(s))) {
-                    Py_DECREF(defaults_name);
-                    VISIT_QUIT(st, 0);
-                }
-                Py_DECREF(defaults_name);
-            }
-            if (has_kwonlydefaults(s->v.FunctionDef.args->kwonlyargs,
-                                   s->v.FunctionDef.args->kw_defaults)) {
-                PyObject *kwonly_name = PyUnicode_FromString(".kwonlydefaults");
-                if (kwonly_name == NULL) {
-                    VISIT_QUIT(st, 0);
-                }
-                if (!symtable_add_def(st, kwonly_name, DEF_PARAM, LOCATION(s))) {
-                    Py_DECREF(kwonly_name);
-                    VISIT_QUIT(st, 0);
-                }
-                Py_DECREF(kwonly_name);
             }
             VISIT_SEQ(st, typeparam, s->v.FunctionDef.typeparams);
         }
@@ -1279,9 +1310,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.ClassDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.ClassDef.decorator_list);
         if (s->v.ClassDef.typeparams) {
-            if (!symtable_enter_block(st, s->v.ClassDef.name,
-                                      FunctionBlock, (void *)s->v.ClassDef.typeparams,
-                                      LOCATION(s))) {
+            if (!symtable_enter_typeparam_block(st, s->v.ClassDef.name,
+                                                (void *)s->v.ClassDef.typeparams,
+                                                false, false,
+                                                LOCATION(s))) {
                 VISIT_QUIT(st, 0);
             }
             VISIT_SEQ(st, typeparam, s->v.ClassDef.typeparams);
@@ -1513,33 +1545,14 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.AsyncFunctionDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.AsyncFunctionDef.decorator_list);
         if (s->v.AsyncFunctionDef.typeparams) {
-            if (!symtable_enter_block(st, s->v.AsyncFunctionDef.name,
-                                      FunctionBlock, (void *)s->v.AsyncFunctionDef.typeparams,
-                                      LOCATION(s))) {
+            if (!symtable_enter_typeparam_block(
+                    st, s->v.AsyncFunctionDef.name,
+                    (void *)s->v.AsyncFunctionDef.typeparams,
+                    s->v.AsyncFunctionDef.args->defaults != NULL,
+                    has_kwonlydefaults(s->v.AsyncFunctionDef.args->kwonlyargs,
+                                       s->v.AsyncFunctionDef.args->kw_defaults),
+                    LOCATION(s))) {
                 VISIT_QUIT(st, 0);
-            }
-            if (s->v.AsyncFunctionDef.args->defaults) {
-                PyObject *defaults_name = PyUnicode_FromString(".defaults");
-                if (defaults_name == NULL) {
-                    VISIT_QUIT(st, 0);
-                }
-                if (!symtable_add_def(st, defaults_name, DEF_PARAM, LOCATION(s))) {
-                    Py_DECREF(defaults_name);
-                    VISIT_QUIT(st, 0);
-                }
-                Py_DECREF(defaults_name);
-            }
-            if (has_kwonlydefaults(s->v.AsyncFunctionDef.args->kwonlyargs,
-                                   s->v.AsyncFunctionDef.args->kw_defaults)) {
-                PyObject *kwonly_name = PyUnicode_FromString(".kwonlydefaults");
-                if (kwonly_name == NULL) {
-                    VISIT_QUIT(st, 0);
-                }
-                if (!symtable_add_def(st, kwonly_name, DEF_PARAM, LOCATION(s))) {
-                    Py_DECREF(kwonly_name);
-                    VISIT_QUIT(st, 0);
-                }
-                Py_DECREF(kwonly_name);
             }
             VISIT_SEQ(st, typeparam, s->v.AsyncFunctionDef.typeparams);
         }

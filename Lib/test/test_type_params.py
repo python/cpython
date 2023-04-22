@@ -161,6 +161,18 @@ class TypeParamsAccessTest(unittest.TestCase):
         with self.assertRaisesRegex(NameError, "name 'A' is not defined"):
             exec(code, {})
 
+    def test_method_access_01(self):
+        code = textwrap.dedent("""\
+            class ClassA:
+                x = int
+                def func[T](self, a: x, b: T):
+                    ...
+
+            assert Class.func.__annotations__["a"] is int
+            """
+        )
+        exec(code, {})
+
     def test_nested_access_01(self):
         code = textwrap.dedent("""\
             class ClassA[A]:
