@@ -7125,7 +7125,7 @@ class TypedDictTests(BaseTestCase):
         a = A(a = 1)
         self.assertIs(type(a), dict)
         self.assertEqual(a, {'a': 1})
-    
+
     def test_orig_bases(self):
         self.assertEqual(ChildTotalMovie.__orig_bases__, (ParentNontotalMovie,))
 
