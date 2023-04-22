@@ -207,15 +207,11 @@ class TypeParamsTraditionalTypeVars(unittest.TestCase):
             exec(code, {})
 
     def test_traditional_02(self):
-        code = textwrap.dedent("""\
-                from typing import TypeVar
-                S = TypeVar("S")
-                class ClassA[T](dict[T, S]): ...
-            """
-        )
-
-        with self.assertRaisesRegex(TypeError, r"Some type variables \(~S\) are not listed in Generic\[T\]"):
-            exec(code, {})
+        # This does not generate a runtime error, but it should be
+        # flagged as an error by type checkers.
+        from typing import TypeVar
+        S = TypeVar("S")
+        class ClassA[T](dict[T, S]): ...
 
     def test_traditional_03(self):
         # This does not generate a runtime error, but it should be
