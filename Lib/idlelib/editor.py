@@ -38,6 +38,7 @@ darwin = sys.platform == 'darwin'
 def _sphinx_version():
     "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
     major, minor, micro, level, serial = sys.version_info
+    # TODO remove unneeded function since .chm no longer installed
     release = f'{major}{minor}'
     release += f'{micro}'
     if level == 'candidate':
