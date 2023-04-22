@@ -2128,19 +2128,22 @@ compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
 
     for (Py_ssize_t i = 0; i < asdl_seq_LEN(typeparams); i++) {
         typeparam_ty typeparam = asdl_seq_GET(typeparams, i);
+        location loc = LOC(typeparam);
         switch(typeparam->kind) {
         case TypeVar_kind:
-            // TODO(PEP 695): Actually emit a TypeVar
-            ADDOP_LOAD_CONST(c, LOC(typeparam), typeparam->v.TypeVar.name);
-            compiler_nameop(c, LOC(typeparam), typeparam->v.TypeVar.name, Store);
+            ADDOP_LOAD_CONST(c, loc, typeparam->v.TypeVar.name);
+            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVAR);
+            compiler_nameop(c, loc, typeparam->v.TypeVar.name, Store);
             break;
         case TypeVarTuple_kind:
-            ADDOP_LOAD_CONST(c, LOC(typeparam), typeparam->v.TypeVarTuple.name);
-            compiler_nameop(c, LOC(typeparam), typeparam->v.TypeVarTuple.name, Store);
+            ADDOP_LOAD_CONST(c, loc, typeparam->v.TypeVarTuple.name);
+            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVARTUPLE);
+            compiler_nameop(c, loc, typeparam->v.TypeVarTuple.name, Store);
             break;
         case ParamSpec_kind:
-            ADDOP_LOAD_CONST(c, LOC(typeparam), typeparam->v.ParamSpec.name);
-            compiler_nameop(c, LOC(typeparam), typeparam->v.ParamSpec.name, Store);
+            ADDOP_LOAD_CONST(c, loc, typeparam->v.ParamSpec.name);
+            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PARAMSPEC);
+            compiler_nameop(c, loc, typeparam->v.ParamSpec.name, Store);
             break;
         }
     }

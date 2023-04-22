@@ -519,7 +519,7 @@ static paramspecobject *paramspecobject_alloc(const char *name, PyObject *bound,
         Py_DECREF(ps);
         return NULL;
     }
-    ps->bound = Py_NewRef(bound);
+    ps->bound = Py_XNewRef(bound);
     ps->covariant = covariant;
     ps->contravariant = contravariant;
     ps->autovariance = autovariance;
@@ -797,7 +797,7 @@ PyTypeObject _PyTypeVarTuple_Type = {
 };
 
 PyObject *_Py_make_typevar(const char *name, PyObject *bound_or_constraints) {
-    if (PyTuple_CheckExact(bound_or_constraints)) {
+    if (bound_or_constraints != NULL && PyTuple_CheckExact(bound_or_constraints)) {
         return (PyObject *)typevarobject_alloc(name, NULL, bound_or_constraints, false, false, true);
     } else {
         return (PyObject *)typevarobject_alloc(name, bound_or_constraints, NULL, false, false, true);
