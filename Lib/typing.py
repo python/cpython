@@ -2994,6 +2994,9 @@ class _TypedDictMeta(type):
 
         tp_dict = type.__new__(_TypedDictMeta, name, (*generic_base, dict), ns)
 
+        if not hasattr(tp_dict, '__orig_bases__'):
+            tp_dict.__orig_bases__ = bases
+
         annotations = {}
         own_annotations = ns.get('__annotations__', {})
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
