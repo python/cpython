@@ -549,7 +549,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
     def test_pause_reading_connection_made(self):
         tr = self.socket_transport()
-        tr.pause_reading()
+        self.protocol.connection_made.side_effect = lambda _: tr.pause_reading()
         test_utils.run_briefly(self.loop)
         self.assertFalse(tr.is_reading())
         self.loop.assert_no_reader(7)
