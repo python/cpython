@@ -312,6 +312,7 @@ typedef struct {
     const Tcl_ObjType *ListType;
     const Tcl_ObjType *ProcBodyType;
     const Tcl_ObjType *StringType;
+    const Tcl_ObjType *UTF32StringType;
 } TkappObject;
 
 #define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
@@ -617,6 +618,20 @@ Tkapp_New(const char *screenName, const char *className,
         //fprintf(stderr, "%s %p\n", value->typePtr->name, value->typePtr);
         v->ByteArrayType = value->typePtr;
         Tcl_DecrRefCount(value);
+
+        /* Tcl 8.7 has an unregistered "utf32string" type,
+           which can be retrieved by running `string length`
+           on a string with at least 2 characters.
+           If the "utf32string" type is not present,
+           then this retrieves the "string" type. */
+        Tcl_SetVar(v->interp, "mystring", "pq", 0);
+        Tcl_Eval(v->interp, "string length $mystring");
+        value = Tcl_GetVar2Ex(v->interp, "mystring", NULL, 0);
+        v->UTF32StringType = value->typePtr;
+        fprintf(stderr, "%s %p\n",
+            value->typePtr ? value->typePtr->name : "pure string",
+            value->typePtr);
+        Tcl_UnsetVar(v->interp, "mystring", 0);
     }
     v->DoubleType = Tcl_GetObjType("double");
     v->BignumType = Tcl_GetObjType("bignum");
@@ -1189,7 +1204,8 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
       /* fall through: return tcl object. */
     }
 
-    if (value->typePtr == tkapp->StringType) {
+    if (value->typePtr == tkapp->StringType ||
+        value->typePtr == tkapp->UTF32StringType) {
         return unicodeFromTclObj(value);
     }
 
