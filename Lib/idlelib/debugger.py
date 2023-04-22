@@ -213,7 +213,8 @@ class Debugger:
                 m1 = "%s" % str(type)
             if value is not None:
                 try:
-                    m1 = f"{m1}: {str(value)}"
+                   # TODO redo entire section, tries not needed.
+                    m1 = f"{m1}: {value}"
                 except:
                     pass
             bg = "yellow"
