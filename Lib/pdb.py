@@ -270,6 +270,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.lineno = None
         self.stack = []
         self.curindex = 0
+        if hasattr(self, 'curframe') and self.curframe:
+            self.curframe.f_globals.pop('__pdb_convenience_variables', None)
         self.curframe = None
         self.tb_lineno.clear()
 
@@ -288,6 +290,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # locals whenever the .f_locals accessor is called, so we
         # cache it here to ensure that modifications are not overwritten.
         self.curframe_locals = self.curframe.f_locals
+        self.set_convenience_variable('_frame', self.curframe)
+        if '__return__' in self.curframe_locals:
+            self.set_convenience_variable('_return', self.curframe_locals['__return__'])
+        if '__exception__' in self.curframe_locals:
+            self.set_convenience_variable('_exception', self.curframe_locals['__exception__'])
         return self.execRcLines()
 
     # Can be executed earlier than 'setup' if desired
@@ -394,6 +401,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.message('--KeyboardInterrupt--')
 
     # Called before loop, handles display expressions
+    # Set up convenience variable containers
     def preloop(self):
         displaying = self.displaying.get(self.curframe)
         if displaying:
@@ -477,6 +485,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 next = line[marker+2:].lstrip()
                 self.cmdqueue.append(next)
                 line = line[:marker].rstrip()
+
+        # Replace all the convenience variables
+        line = re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_]*)', r'__pdb_convenience_variables["\1"]', line)
         return line
 
     def onecmd(self, line):
@@ -526,6 +537,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def error(self, msg):
         print('***', msg, file=self.stdout)
+
+    # convenience variables
+
+    def set_convenience_variable(self, name, value):
+        if not hasattr(self, 'curframe') or not self.curframe:
+            return
+        if '__pdb_convenience_variables' not in self.curframe.f_globals:
+            self.curframe.f_globals['__pdb_convenience_variables'] = {}
+        self.curframe.f_globals['__pdb_convenience_variables'][name] = value
 
     # Generic completion functions.  Individual complete_foo methods can be
     # assigned below to one of these functions.
@@ -1018,6 +1038,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.curindex = number
         self.curframe = self.stack[self.curindex][0]
         self.curframe_locals = self.curframe.f_locals
+        self.set_convenience_variable('_frame', self.curframe)
         self.print_stack_entry(self.stack[self.curindex])
         self.lineno = None
 
