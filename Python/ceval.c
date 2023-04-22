@@ -53,8 +53,11 @@
 #undef Py_DECREF
 #define Py_DECREF(arg) \
     do { \
-        _Py_DECREF_STAT_INC(); \
         PyObject *op = _PyObject_CAST(arg); \
+        if (_Py_IsImmortal(op)) { \
+            break; \
+        } \
+        _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
             destructor dealloc = Py_TYPE(op)->tp_dealloc; \
             (*dealloc)(op); \
@@ -77,8 +80,11 @@
 #undef _Py_DECREF_SPECIALIZED
 #define _Py_DECREF_SPECIALIZED(arg, dealloc) \
     do { \
-        _Py_DECREF_STAT_INC(); \
         PyObject *op = _PyObject_CAST(arg); \
+        if (_Py_IsImmortal(op)) { \
+            break; \
+        } \
+        _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
             destructor d = (destructor)(dealloc); \
             d(op); \
