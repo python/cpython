@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_typevarobject.h"
+#include "pycore_unionobject.h"   // _Py_union_type_or
 #include "structmember.h"
 
 /*[clinic input]
@@ -244,6 +245,10 @@ static PyMethodDef typevar_methods[] = {
     {0}
 };
 
+static PyNumberMethods typevar_as_number = {
+    .nb_or = _Py_union_type_or, // Add __or__ function
+};
+
 PyTypeObject _PyTypeVar_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "typing.TypeVar",
@@ -257,6 +262,7 @@ PyTypeObject _PyTypeVar_Type = {
     .tp_members = typevar_members,
     .tp_methods = typevar_methods,
     .tp_new = typevar_new,
+    .tp_as_number = &typevar_as_number,
 };
 
 typedef struct {
@@ -624,6 +630,9 @@ static PyMethodDef paramspec_methods[] = {
     {0}
 };
 
+static PyNumberMethods paramspec_as_number = {
+    .nb_or = _Py_union_type_or, // Add __or__ function
+};
 
 // TODO:
 // - pickling
@@ -641,6 +650,7 @@ PyTypeObject _PyParamSpec_Type = {
     .tp_methods = paramspec_methods,
     .tp_getset = paramspec_getset,
     .tp_new = paramspec_new,
+    .tp_as_number = &paramspec_as_number,
 };
 
 static void typevartupleobject_dealloc(PyObject *self)
