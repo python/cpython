@@ -3430,7 +3430,7 @@ class Menu(Widget):
     def index(self, index):
         """Return the index of a menu item identified by INDEX."""
         i = self.tk.call(self._w, 'index', index)
-        if i == 'none': return None
+        if i in ('', 'none'): return None
         return self.tk.getint(i)
 
     def invoke(self, index):
