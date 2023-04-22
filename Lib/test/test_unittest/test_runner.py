@@ -1367,7 +1367,7 @@ class Test_TextTestRunner(unittest.TestCase):
         self.assertTrue(runner.stream.stream is f)
 
     def test_durations(self):
-        def run(test, expect_durations):
+        def run(test, *, expect_durations=True):
             stream = BufferedWriter()
             runner = unittest.TextTestRunner(stream=stream, durations=5, verbosity=2)
             result = runner.run(test)
@@ -1389,21 +1389,21 @@ class Test_TextTestRunner(unittest.TestCase):
             def test_1(self):
                 pass
 
-        run(Foo('test_1'), True)
+        run(Foo('test_1'), expect_durations=True)
 
         # failure
         class Foo(unittest.TestCase):
             def test_1(self):
                 self.assertEqual(0, 1)
 
-        run(Foo('test_1'), True)
+        run(Foo('test_1'), expect_durations=True)
 
         # error
         class Foo(unittest.TestCase):
             def test_1(self):
                 1 / 0
 
-        run(Foo('test_1'), True)
+        run(Foo('test_1'), expect_durations=True)
 
 
         # error in setUp and tearDown
@@ -1414,7 +1414,7 @@ class Test_TextTestRunner(unittest.TestCase):
             def test_1(self):
                 pass
 
-        run(Foo('test_1'), True)
+        run(Foo('test_1'), expect_durations=True)
 
         # skip (expect no durations)
         class Foo(unittest.TestCase):
@@ -1422,7 +1422,7 @@ class Test_TextTestRunner(unittest.TestCase):
             def test_1(self):
                 pass
 
-        run(Foo('test_1'), False)
+        run(Foo('test_1'), expect_durations=False)
 
 
 
