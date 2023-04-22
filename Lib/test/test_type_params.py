@@ -168,7 +168,7 @@ class TypeParamsAccessTest(unittest.TestCase):
                 def func[T](self, a: x, b: T):
                     ...
 
-            assert Class.func.__annotations__["a"] is int
+            assert ClassA.func.__annotations__["a"] is int
             """
         )
         exec(code, {})
