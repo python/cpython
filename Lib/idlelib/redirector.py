@@ -143,8 +143,7 @@ class OriginalCommand:
         self.orig_and_operation = (redir.orig, operation)
 
     def __repr__(self):
-        return "{}({!r}, {!r})".format(self.__class__.__name__,
-                               self.redir, self.operation)
+        return f"{self.__class__.__name__,}({self.redir!r}, {self.operation!r})"
 
     def __call__(self, *args):
         return self.tk_call(self.orig_and_operation + args)
