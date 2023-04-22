@@ -7,7 +7,7 @@
 .. moduleauthor:: James C. Ahlstrom <jim@interet.com>
 .. sectionauthor:: James C. Ahlstrom <jim@interet.com>
 
-**Source code:** :source:`Lib/zipfile.py`
+**Source code:** :source:`Lib/zipfile/`
 
 --------------
 
