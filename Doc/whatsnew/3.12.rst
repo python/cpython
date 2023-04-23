@@ -407,6 +407,13 @@ threading
   profiling functions in all running threads in addition to the calling one.
   (Contributed by Pablo Galindo in :gh:`93503`.)
 
+types
+-----
+
+* Add :func:`types.get_original_bases` to allow for further introspection of
+  :ref:`user-defined-generics` when subclassed. (Contributed by
+  James Hilton-Balfe and Alex Waygood in :gh:`101827`.)
+
 unicodedata
 -----------
 
