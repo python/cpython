@@ -96,18 +96,26 @@ Dynamic Type Creation
 
     Examples::
 
-        from typing import TypeVar, Generic
+        from typing import TypeVar, Generic, NamedTuple, TypedDict
 
         T = TypeVar("T")
         class Foo(Generic[T]): ...
         class Bar(Foo[int], float): ...
         class Baz(list[str]): ...
+        Eggs = NamedTuple("Eggs", [("a", int), ("b", str)])
+        Spam = TypedDict("Spam", {"a": int, "b": str})
 
         assert Bar.__bases__ == (Foo, float)
         assert get_original_bases(Bar) == (Foo[int], float)
 
         assert Baz.__bases__ == (list,)
         assert get_original_bases(Baz) == (list[str],)
+
+        assert Eggs.__bases__ == (tuple,)
+        assert get_original_bases(Eggs) == (NamedTuple,)
+
+        assert Spam.__bases__ == (dict,)
+        assert get_original_bases(Spam) == (TypedDict,)
 
         assert int.__bases__ == (object,)
         assert get_original_bases(int) == (object,)
