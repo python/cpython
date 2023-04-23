@@ -772,7 +772,7 @@ def test_convenience_variables():
     ...     'next',
     ...     '$a',               # The value should be gone
     ...     'next',
-    ...     '$_exception[1]',   # Check exception convenience variable
+    ...     '$_exception',      # Check exception convenience variable
     ...     'next',
     ...     '$_exception',      # Exception should be gone
     ...     'return',
@@ -808,13 +808,13 @@ def test_convenience_variables():
     Exception: test
     > <doctest test.test_pdb.test_convenience_variables[0]>(4)util_function()
     -> raise Exception('test')
-    (Pdb) $_exception[1]
+    (Pdb) $_exception
     Exception('test')
     (Pdb) next
     > <doctest test.test_pdb.test_convenience_variables[0]>(5)util_function()
     -> except:
     (Pdb) $_exception
-    (<class 'Exception'>, Exception('test'))
+    *** KeyError: '_exception'
     (Pdb) return
     --Return--
     > <doctest test.test_pdb.test_convenience_variables[0]>(7)util_function()->1

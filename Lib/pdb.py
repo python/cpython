@@ -290,11 +290,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # locals whenever the .f_locals accessor is called, so we
         # cache it here to ensure that modifications are not overwritten.
         self.curframe_locals = self.curframe.f_locals
-        self.set_convenience_variable('_frame', self.curframe)
-        if '__return__' in self.curframe_locals:
-            self.set_convenience_variable('_retval', self.curframe_locals['__return__'])
-        if '__exception__' in self.curframe_locals:
-            self.set_convenience_variable('_exception', self.curframe_locals['__exception__'])
+        self.set_convenience_variable(self.curframe, '_frame', self.curframe)
         return self.execRcLines()
 
     # Can be executed earlier than 'setup' if desired
@@ -366,6 +362,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if self._wait_for_mainpyfile:
             return
         frame.f_locals['__return__'] = return_value
+        self.set_convenience_variable(frame, '_retval', return_value)
         self.message('--Return--')
         self.interaction(frame, None)
 
@@ -376,6 +373,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         exc_type, exc_value, exc_traceback = exc_info
         frame.f_locals['__exception__'] = exc_type, exc_value
+        self.set_convenience_variable(frame, '_exception', exc_value)
 
         # An 'Internal StopIteration' exception is an exception debug event
         # issued by the interpreter when handling a subgenerator run with
@@ -540,12 +538,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # convenience variables
 
-    def set_convenience_variable(self, name, value):
-        if not hasattr(self, 'curframe') or not self.curframe:
-            return
-        if '__pdb_convenience_variables' not in self.curframe.f_globals:
-            self.curframe.f_globals['__pdb_convenience_variables'] = {}
-        self.curframe.f_globals['__pdb_convenience_variables'][name] = value
+    def set_convenience_variable(self, frame, name, value):
+        if '__pdb_convenience_variables' not in frame.f_globals:
+            frame.f_globals['__pdb_convenience_variables'] = {}
+        frame.f_globals['__pdb_convenience_variables'][name] = value
 
     # Generic completion functions.  Individual complete_foo methods can be
     # assigned below to one of these functions.
@@ -1038,7 +1034,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.curindex = number
         self.curframe = self.stack[self.curindex][0]
         self.curframe_locals = self.curframe.f_locals
-        self.set_convenience_variable('_frame', self.curframe)
+        self.set_convenience_variable(self.curframe, '_frame', self.curframe)
         self.print_stack_entry(self.stack[self.curindex])
         self.lineno = None
 

@@ -274,7 +274,7 @@ There are three preset *convenience variables*:
 
 * ``$_frame``: the current frame you are debugging
 * ``$_retval``: the return value if the frame is returning
-* ``$_exception``: the ``(exc_type, exc_value)`` tuple if the frame is raising an exception
+* ``$_exception``: the exception if the frame is raising an exception
 
 .. index::
    pair: .pdbrc; file
