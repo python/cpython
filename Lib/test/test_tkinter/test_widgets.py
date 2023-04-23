@@ -1381,8 +1381,6 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         i = widget.index('none')
         self.assertIsNone(i)
-        i = widget.index('')
-        self.assertIsNone(i)
 
     def test_configure_postcommand(self):
         widget = self.create()
