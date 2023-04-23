@@ -2689,7 +2689,7 @@ class NamedTupleMeta(type):
                                module=ns['__module__'])
         nm_tpl.__bases__ = bases
         if Generic in bases:
-            class_getitem = Generic.__class_getitem__.__func__
+            class_getitem = _generic_class_getitem
             nm_tpl.__class_getitem__ = classmethod(class_getitem)
         # update from user namespace without overriding special namedtuple attributes
         for key in ns:
