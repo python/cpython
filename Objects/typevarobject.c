@@ -240,9 +240,18 @@ typevar_reduce_impl(typevarobject *self)
     return PyUnicode_FromString(self->name);
 }
 
+static PyObject *
+typevar_mro_entries(PyObject *self, PyObject *args)
+{
+    PyErr_SetString(PyExc_TypeError,
+                    "Cannot subclass an instance of TypeVar");
+    return NULL;
+}
+
 static PyMethodDef typevar_methods[] = {
     TYPEVAR_TYPING_SUBST_METHODDEF
     TYPEVAR_REDUCE_METHODDEF
+    {"__mro_entries__", typevar_mro_entries, METH_O},
     {0}
 };
 
@@ -697,10 +706,19 @@ paramspec_reduce_impl(paramspecobject *self)
     return PyUnicode_FromString(self->name);
 }
 
+static PyObject *
+paramspec_mro_entries(PyObject *self, PyObject *args)
+{
+    PyErr_SetString(PyExc_TypeError,
+                    "Cannot subclass an instance of ParamSpec");
+    return NULL;
+}
+
 static PyMethodDef paramspec_methods[] = {
     PARAMSPEC_TYPING_SUBST_METHODDEF
     PARAMSPEC_TYPING_PREPARE_SUBST_METHODDEF
     PARAMSPEC_REDUCE_METHODDEF
+    {"__mro_entries__", paramspec_mro_entries, METH_O},
     {0}
 };
 
@@ -902,10 +920,19 @@ typevartuple_reduce_impl(typevartupleobject *self)
     return PyUnicode_FromString(self->name);
 }
 
+static PyObject *
+typevartuple_mro_entries(PyObject *self, PyObject *args)
+{
+    PyErr_SetString(PyExc_TypeError,
+                    "Cannot subclass an instance of TypeVarTuple");
+    return NULL;
+}
+
 static PyMethodDef typevartuple_methods[] = {
     TYPEVARTUPLE_TYPING_SUBST_METHODDEF
     TYPEVARTUPLE_TYPING_PREPARE_SUBST_METHODDEF
     TYPEVARTUPLE_REDUCE_METHODDEF
+    {"__mro_entries__", typevartuple_mro_entries, METH_O},
     {0}
 };
 

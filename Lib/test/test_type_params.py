@@ -218,11 +218,12 @@ class TypeParamsAccessTest(unittest.TestCase):
 
     def test_class_scope_interaction_02(self):
         code = textwrap.dedent("""\
+            from typing import Generic
             class C:
                 class Base: pass
                 class Child[T](Base): pass
 
-            assert C.Child.__bases__ == (C.Base,)
+            assert C.Child.__bases__ == (C.Base, Generic)
         """)
         exec(code, {})
 
@@ -369,7 +370,7 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
 
         a, b, c, d = Outer.Inner.get_typeparams()
         self.assertEqual(Outer.__type_variables__, (a, b))
-        self.assertEqual(Outer.Inner.__type_variables__, (a, b, c, d))
+        self.assertEqual(Outer.Inner.__type_variables__, (c, d))
 
         self.assertEqual(Outer.__parameters__, (a, b))
         self.assertEqual(Outer.Inner.__parameters__, (c, d))
@@ -401,7 +402,7 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
         inner = outer()
         a, b, c, d = inner()
         self.assertEqual(outer.__type_variables__, (a, b))
-        self.assertEqual(inner.__type_variables__, (a, b, c, d))
+        self.assertEqual(inner.__type_variables__, (c, d))
 
     def test_typeparams_dunder_function_02(self):
         def func1():
