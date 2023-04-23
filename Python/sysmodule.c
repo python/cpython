@@ -1874,6 +1874,18 @@ sys_getallocatedblocks_impl(PyObject *module)
     return _Py_GetAllocatedBlocks();
 }
 
+/*[clinic input]
+sys.getunicodeinternedsize -> Py_ssize_t
+
+Return the number of elements of the unicode interned dictionary
+[clinic start generated code]*/
+
+static Py_ssize_t
+sys_getunicodeinternedsize_impl(PyObject *module)
+/*[clinic end generated code: output=ad0e4c9738ed4129 input=726298eaa063347a]*/
+{
+    return _PyUnicode_InternedSize();
+}
 
 /*[clinic input]
 sys._getframe
@@ -2243,6 +2255,7 @@ static PyMethodDef sys_methods[] = {
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
+    SYS_GETUNICODEINTERNEDSIZE_METHODDEF
     SYS_GETFILESYSTEMENCODING_METHODDEF
     SYS_GETFILESYSTEMENCODEERRORS_METHODDEF
 #ifdef Py_TRACE_REFS

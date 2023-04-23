@@ -670,6 +670,13 @@ always available.
    .. versionadded:: 3.4
 
 
+.. function:: getunicodeinternedsize()
+
+   Return the number of unicode objects that have been interned.
+
+   .. versionadded:: 3.12
+
+
 .. function:: getandroidapilevel()
 
    Return the build time API version of Android as an integer.

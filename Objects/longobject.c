@@ -52,8 +52,7 @@ static PyObject *
 get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
-    PyObject *v = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + ival];
-    return Py_NewRef(v);
+    return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + ival];
 }
 
 static PyLongObject *
@@ -3271,6 +3270,27 @@ long_richcompare(PyObject *self, PyObject *other, int op)
     Py_RETURN_RICHCOMPARE(result, 0, op);
 }
 
+static void
+long_dealloc(PyObject *self)
+{
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref small Ints out of existence. Instead,
+     * since small Ints are immortal, re-set the reference count.
+     */
+    PyLongObject *pylong = (PyLongObject*)self;
+    if (pylong && _PyLong_IsCompact(pylong)) {
+        stwodigits ival = medium_value(pylong);
+        if (IS_SMALL_INT(ival)) {
+            PyLongObject *small_pylong = (PyLongObject *)get_small_int((sdigit)ival);
+            if (pylong == small_pylong) {
+                _Py_SetImmortal(self);
+                return;
+            }
+        }
+    }
+    Py_TYPE(self)->tp_free(self);
+}
+
 static Py_hash_t
 long_hash(PyLongObject *v)
 {
@@ -6233,7 +6253,7 @@ PyTypeObject PyLong_Type = {
     "int",                                      /* tp_name */
     offsetof(PyLongObject, long_value.ob_digit),  /* tp_basicsize */
     sizeof(digit),                              /* tp_itemsize */
-    0,                                          /* tp_dealloc */
+    long_dealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
