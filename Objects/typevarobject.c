@@ -11,6 +11,7 @@ class paramspec "paramspecobject *" "&_PyParamSpec_Type"
 class paramspecargs "paramspecargsobject *" "&_PyParamSpecArgs_Type"
 class paramspeckwargs "paramspeckwargsobject *" "&_PyParamSpecKwargs_Type"
 class typevartuple "typevartupleobject *" "&_PyTypeVarTuple_Type"
+class Generic "PyObject *" "&PyGeneric_Type
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=74cb9c15a049111b]*/
 
@@ -821,3 +822,111 @@ PyObject *_Py_make_paramspec(const char *name) {
 PyObject *_Py_make_typevartuple(const char *name) {
     return (PyObject *)typevartupleobject_alloc(name);
 }
+
+PyDoc_STRVAR(generic_doc,
+"Abstract base class for generic types.\n\
+\n\
+A generic type is typically declared by inheriting from\n\
+this class parameterized with one or more type variables.\n\
+For example, a generic mapping type might be defined as::\n\
+\n\
+    class Mapping(Generic[KT, VT]):\n\
+        def __getitem__(self, key: KT) -> VT:\n\
+            ...\n\
+        # Etc.\n\
+\n\
+This class can then be used as follows::\n\
+\n\
+    def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -> VT:\n\
+        try:\n\
+            return mapping[key]\n\
+        except KeyError:\n\
+            return default\n\
+");
+
+PyDoc_STRVAR(generic_class_getitem_doc,
+"Parameterizes a generic class.\n\
+\n\
+At least, parameterizing a generic class is the *main* thing this method\n\
+does. For example, for some generic class `Foo`, this is called when we\n\
+do `Foo[int]` - there, with `cls=Foo` and `params=int`.\n\
+\n\
+However, note that this method is also called when defining generic\n\
+classes in the first place with `class Foo(Generic[T]): ...`.\n\
+");
+
+static PyObject *
+call_typing_args_kwargs(const char *name, PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+{
+    PyObject *typing = NULL, *func = NULL, *new_args = NULL;
+    typing = PyImport_ImportModule("typing");
+    if (typing == NULL) {
+        goto error;
+    }
+    func = PyObject_GetAttrString(typing, name);
+    if (func == NULL) {
+        goto error;
+    }
+    assert(PyTuple_Check(args));
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    new_args = PyTuple_New(nargs + 1);
+    if (new_args == NULL) {
+        goto error;
+    }
+    PyTuple_SET_ITEM(new_args, 0, Py_NewRef((PyObject *)cls));
+    for (Py_ssize_t i = 0; i < nargs; i++) {
+        PyObject *arg = PyTuple_GET_ITEM(args, i);
+        PyTuple_SET_ITEM(new_args, i + 1, Py_NewRef(arg));
+    }
+    PyObject *result = PyObject_Call(func, new_args, kwargs);
+    Py_DECREF(func);
+    Py_DECREF(typing);
+    Py_DecRef(new_args);
+    return result;
+error:
+    Py_XDECREF(typing);
+    Py_XDECREF(func);
+    Py_XDECREF(new_args);
+    return NULL;
+}
+
+static PyObject *
+generic_init_subclass(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+{
+    return call_typing_args_kwargs("_generic_init_subclass", cls, args, kwargs);
+}
+
+static PyObject *
+generic_class_getitem(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+{
+    return call_typing_args_kwargs("_generic_class_getitem", cls, args, kwargs);
+}
+
+PyObject *
+_Py_subscript_generic(PyObject *params)
+{
+    PyObject *args = PyTuple_Pack(2, &_PyGeneric_Type, params);
+    if (args == NULL) {
+        return NULL;
+    }
+    return call_typing_func_object("_generic_class_getitem", args);
+}
+
+static PyMethodDef generic_methods[] = {
+    {"__class_getitem__", (PyCFunction)(void (*)(void))generic_class_getitem,
+     METH_VARARGS | METH_KEYWORDS | METH_CLASS,
+     generic_class_getitem_doc},
+    {"__init_subclass__", (PyCFunction)(void (*)(void))generic_init_subclass,
+     METH_VARARGS | METH_KEYWORDS | METH_CLASS,
+     PyDoc_STR("Function to initialize subclasses.")},
+    {NULL} /* Sentinel */
+};
+
+PyTypeObject _PyGeneric_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "typing.Generic",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_doc = generic_doc,
+    .tp_methods = generic_methods,
+};

@@ -221,6 +221,12 @@ make_typevartuple(PyThreadState* unused, PyObject *v)
     return _Py_make_typevartuple(PyUnicode_AsUTF8(v));
 }
 
+static PyObject *
+subscript_generic(PyThreadState* unused, PyObject *v)
+{
+    return _Py_subscript_generic(v);
+}
+
 const instrinsic_func1
 _PyIntrinsics_UnaryFunctions[] = {
     [0] = no_intrinsic,
@@ -233,6 +239,7 @@ _PyIntrinsics_UnaryFunctions[] = {
     [INTRINSIC_TYPEVAR] = make_typevar,
     [INTRINSIC_PARAMSPEC] = make_paramspec,
     [INTRINSIC_TYPEVARTUPLE] = make_typevartuple,
+    [INTRINSIC_SUBSCRIPT_GENERIC] = subscript_generic,
 };
 
 

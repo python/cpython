@@ -1331,6 +1331,23 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                   DEF_LOCAL, LOCATION(s))) {
                 VISIT_QUIT(st, 0);
             }
+            for (Py_ssize_t i = 0; i < asdl_seq_LEN(s->v.ClassDef.typeparams); i++) {
+                typeparam_ty tp = asdl_seq_GET(s->v.ClassDef.typeparams, i);
+                PyObject *name;
+                switch (tp->kind) {
+                case TypeVar_kind:
+                    name = tp->v.TypeVar.name;
+                    break;
+                case ParamSpec_kind:
+                    name = tp->v.ParamSpec.name;
+                    break;
+                case TypeVarTuple_kind:
+                    name = tp->v.TypeVarTuple.name;
+                    break;
+                }
+                if (!symtable_add_def(st, name, USE, LOCATION(s)))
+                    VISIT_QUIT(st, 0);
+            }
         }
         VISIT_SEQ(st, stmt, s->v.ClassDef.body);
         st->st_private = tmp;
