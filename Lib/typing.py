@@ -1339,10 +1339,8 @@ class _BaseGenericAlias(_Final, _root=True):
 def _is_special_typing_construct(t) -> bool:
     return (
         hasattr(t, "__args__")
-        and
-        hasattr(t, "__origin__")
-        and
-        hasattr(t, "__parameters__")
+        and hasattr(t, "__origin__")
+        and hasattr(t, "__parameters__")
     )
 
 
