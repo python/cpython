@@ -1899,16 +1899,17 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         if cls.__init__ is Protocol.__init__:
             cls.__init__ = _no_init_or_replace_init
 
-def _dummy[T, *Ts, **P]():
+class _Dummy[T, *Ts, **P]():
     pass
 
-TypeVar = type(_dummy.__type_variables__[0])
-TypeVarTuple = type(_dummy.__type_variables__[1])
-ParamSpec = type(_dummy.__type_variables__[2])
+TypeVar = type(_Dummy.__type_variables__[0])
+TypeVarTuple = type(_Dummy.__type_variables__[1])
+ParamSpec = type(_Dummy.__type_variables__[2])
 ParamSpecArgs = type(ParamSpec("P").args)
 ParamSpecKwargs = type(ParamSpec("P").kwargs)
+Generic = _Dummy.__mro__[1]
 
-del _dummy
+del _Dummy
 
 def _pickle_psargs(psargs):
     return ParamSpecArgs, (psargs.__origin__,)
