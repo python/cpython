@@ -12,7 +12,7 @@
 #define INTRINSIC_TYPEVARTUPLE 9
 #define INTRINSIC_SUBSCRIPT_GENERIC 10
 
-#define MAX_INTRINSIC_1 9
+#define MAX_INTRINSIC_1 10
 
 
 /* Binary Functions: */

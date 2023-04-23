@@ -1126,6 +1126,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag,
 static int
 symtable_enter_typeparam_block(struct symtable *st, identifier name,
                                void *ast, int has_defaults, int has_kwdefaults,
+                               int is_class,
                                int lineno, int col_offset,
                                int end_lineno, int end_col_offset)
 {
@@ -1138,6 +1139,19 @@ symtable_enter_typeparam_block(struct symtable *st, identifier name,
         st->st_cur->ste_type_params_in_class = 1;
         _Py_DECLARE_STR(namespace, ".namespace");
         if (!symtable_add_def(st, &_Py_STR(namespace), DEF_PARAM,
+                              lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
+    }
+    if (is_class) {
+        _Py_DECLARE_STR(type_params, ".type_params");
+        // It gets "set" when we create the type params tuple and
+        // "used" when we build up the bases.
+        if (!symtable_add_def(st, &_Py_STR(type_params), DEF_LOCAL,
+                              lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
+        if (!symtable_add_def(st, &_Py_STR(type_params), USE,
                               lineno, col_offset, end_lineno, end_col_offset)) {
             return 0;
         }
@@ -1267,6 +1281,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                     s->v.FunctionDef.args->defaults != NULL,
                     has_kwonlydefaults(s->v.FunctionDef.args->kwonlyargs,
                                        s->v.FunctionDef.args->kw_defaults),
+                    false,
                     LOCATION(s))) {
                 VISIT_QUIT(st, 0);
             }
@@ -1298,7 +1313,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.ClassDef.typeparams) {
             if (!symtable_enter_typeparam_block(st, s->v.ClassDef.name,
                                                 (void *)s->v.ClassDef.typeparams,
-                                                false, false,
+                                                false, false, true,
                                                 LOCATION(s))) {
                 VISIT_QUIT(st, 0);
             }
@@ -1558,6 +1573,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                     st, s->v.AsyncFunctionDef.name,
                     (void *)s->v.AsyncFunctionDef.typeparams,
                     s->v.AsyncFunctionDef.args->defaults != NULL,
+                    false,
                     has_kwonlydefaults(s->v.AsyncFunctionDef.args->kwonlyargs,
                                        s->v.AsyncFunctionDef.args->kw_defaults),
                     LOCATION(s))) {

@@ -52,6 +52,7 @@ struct _Py_global_strings {
         STRUCT_FOR_STR(open_br, "{")
         STRUCT_FOR_STR(percent, "%")
         STRUCT_FOR_STR(shim_name, "<shim>")
+        STRUCT_FOR_STR(type_params, ".type_params")
         STRUCT_FOR_STR(utf_8, "utf-8")
     } literals;
 
