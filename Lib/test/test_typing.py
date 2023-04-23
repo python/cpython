@@ -1789,6 +1789,30 @@ class UnionTests(BaseTestCase):
 
         Union[Elem, str]  # Nor should this
 
+    def test_union_of_literals(self):
+        self.assertEqual(Union[Literal[1], Literal[2]].__args__,
+                         (Literal[1], Literal[2]))
+        self.assertEqual(Union[Literal[1], Literal[1]],
+                         Literal[1])
+
+        self.assertEqual(Union[Literal[False], Literal[0]].__args__,
+                         (Literal[False], Literal[0]))
+        self.assertEqual(Union[Literal[True], Literal[1]].__args__,
+                         (Literal[True], Literal[1]))
+
+        import enum
+        class Ints(enum.IntEnum):
+            A = 0
+            B = 1
+
+        self.assertEqual(Union[Literal[Ints.A], Literal[Ints.B]].__args__,
+                         (Literal[Ints.A], Literal[Ints.B]))
+
+        self.assertEqual(Union[Literal[0], Literal[Ints.A], Literal[False]].__args__,
+                         (Literal[0], Literal[Ints.A], Literal[False]))
+        self.assertEqual(Union[Literal[1], Literal[Ints.B], Literal[True]].__args__,
+                         (Literal[1], Literal[Ints.B], Literal[True]))
+
 
 class TupleTests(BaseTestCase):
 
@@ -2156,6 +2180,13 @@ class LiteralTests(BaseTestCase):
         Literal[Literal[1, 2], Literal[4, 5]]
         Literal[b"foo", u"bar"]
 
+    def test_enum(self):
+        import enum
+        class My(enum.Enum):
+            A = 'A'
+
+        self.assertEqual(Literal[My.A].__args__, (My.A,))
+
     def test_illegal_parameters_do_not_raise_runtime_errors(self):
         # Type checkers should reject these types, but we do not
         # raise errors at runtime to maintain maximum flexibility.
@@ -2244,6 +2275,20 @@ class LiteralTests(BaseTestCase):
         for l in l1, l2, l3:
             self.assertEqual(l, Literal[1, 2, 3])
             self.assertEqual(l.__args__, (1, 2, 3))
+
+    def test_does_not_flatten_enum(self):
+        import enum
+        class Ints(enum.IntEnum):
+            A = 1
+            B = 2
+
+        l = Literal[
+            Literal[Ints.A],
+            Literal[Ints.B],
+            Literal[1],
+            Literal[2],
+        ]
+        self.assertEqual(l.__args__, (Ints.A, Ints.B, 1, 2))
 
 
 XK = TypeVar('XK', str, bytes)
