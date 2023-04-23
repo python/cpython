@@ -2034,38 +2034,31 @@ class TarFile(object):
 
     def extractall(self, path=".", members=None, *, numeric_owner=False):
         """Extract all members from the archive to the current working
-           directory and set owner, modification time and permissions on
-           directories afterwards. `path' specifies a different directory
+           directory and set owner, modification time and permissions
+           afterwards. `path' specifies a different directory
            to extract to. `members' is optional and must be a subset of the
            list returned by getmembers(). If `numeric_owner` is True, only
            the numbers for user/group names are used and not the names.
         """
-        directories = []
 
         if members is None:
             members = self
 
         for tarinfo in members:
-            if tarinfo.isdir():
-                # Extract directories with a safe mode.
-                directories.append(tarinfo)
-                tarinfo = copy.copy(tarinfo)
-                tarinfo.mode = 0o700
+            # Extract tarfile contents with a safe mode.
+            tarinfo = copy.copy(tarinfo)
+            tarinfo.mode = 0o700
             # Do not set_attrs directories, as we will do that further down
             self.extract(tarinfo, path, set_attrs=not tarinfo.isdir(),
                          numeric_owner=numeric_owner)
 
-        # Reverse sort directories.
-        directories.sort(key=lambda a: a.name)
-        directories.reverse()
-
-        # Set correct owner, mtime and filemode on directories.
-        for tarinfo in directories:
-            dirpath = os.path.join(path, tarinfo.name)
+        # Set correct owner, mtime and filemode
+        for tarinfo in sorted (members, key=lambda a: a.name, reverse=True):
+            member_path = os.path.join(path, tarinfo.name)
             try:
-                self.chown(tarinfo, dirpath, numeric_owner=numeric_owner)
-                self.utime(tarinfo, dirpath)
-                self.chmod(tarinfo, dirpath)
+                self.chown(tarinfo, member_path, numeric_owner=numeric_owner)
+                self.utime(tarinfo, member_path)
+                self.chmod(tarinfo, member_path)
             except ExtractError as e:
                 if self.errorlevel > 1:
                     raise

@@ -2976,6 +2976,29 @@ class NumericOwnerTest(unittest.TestCase):
                               tarfl.extract, filename_1, TEMPDIR, False, True)
 
 
+class ReadonlyArchivedFileTest(TarTest):
+
+    def setUp(self):
+        self.file_name = os.path.join(TEMPDIR, 'read_only_file.txt')
+        with open(self.file_name, 'w') as outfile:
+            outfile.write('')
+
+        os.chmod(self.file_name, 0o444)
+
+    def tearDown(self):
+        os.remove(self.file_name)
+
+    def test_extract_doubly_added_file(self):
+        # gh-74623: tarring a readonly file twice, then extracting,
+        # should succeed.
+        with tarfile.open(tmpname, 'w') as tarfl:
+            tarfl.add(self.file_name)
+            tarfl.add(self.file_name)
+
+        with tarfile.open(tmpname) as tarfl:
+            tarfl.extractall()
+
+
 def setUpModule():
     os_helper.unlink(TEMPDIR)
     os.makedirs(TEMPDIR)
