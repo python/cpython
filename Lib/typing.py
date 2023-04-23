@@ -2503,7 +2503,10 @@ def get_args(tp):
     """
     if isinstance(tp, _AnnotatedAlias):
         return (tp.__origin__,) + tp.__metadata__
-    if isinstance(tp, (_GenericAlias, GenericAlias)) or _is_special_typing_construct(tp):
+    if (
+        isinstance(tp, (_GenericAlias, GenericAlias))
+        or _is_special_typing_construct(tp)
+    ):
         res = tp.__args__
         if _should_unflatten_callable_args(tp, res):
             res = (list(res[:-1]), res[-1])
