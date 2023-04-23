@@ -1,2 +1,2 @@
-:mod:`socketserver` Gains missing ``ForkingUnixStreamServer`` and
+:mod:`socketserver` Gains ``ForkingUnixStreamServer`` and
 ``ForkingUnixDatagramServer`` classes.
