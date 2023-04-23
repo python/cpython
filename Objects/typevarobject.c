@@ -11,9 +11,9 @@ class paramspec "paramspecobject *" "&_PyParamSpec_Type"
 class paramspecargs "paramspecargsobject *" "&_PyParamSpecArgs_Type"
 class paramspeckwargs "paramspeckwargsobject *" "&_PyParamSpecKwargs_Type"
 class typevartuple "typevartupleobject *" "&_PyTypeVarTuple_Type"
-class Generic "PyObject *" "&PyGeneric_Type
+class Generic "PyObject *" "&PyGeneric_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=74cb9c15a049111b]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9b0f1a94d4a27c0c]*/
 
 typedef struct {
     PyObject_HEAD
