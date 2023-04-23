@@ -361,21 +361,35 @@ tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {
     return 0;
 }
 
-
-/* Traverse and update all f-string buffers with the value */
+/* Traverse and remember all f-string buffers, in order to be able to restore
+   them after reallocating tok->buf */
 static void
-update_fstring_buffers(struct tok_state *tok, char value, int regular, int multiline)
+remember_fstring_buffers(struct tok_state *tok)
 {
     int index;
     tokenizer_mode *mode;
 
     for (index = tok->tok_mode_stack_index; index >= 0; --index) {
         mode = &(tok->tok_mode_stack[index]);
-        if (regular && mode->f_string_start != NULL) {
-            mode->f_string_start += value;
+        if (mode->kind == TOK_FSTRING_MODE) {
+            mode->f_string_start_offset = mode->f_string_start - tok->buf;
+            mode->f_string_multi_line_start_offset = mode->f_string_multi_line_start - tok->buf;
         }
-        if (multiline && mode->f_string_multi_line_start != NULL) {
-            mode->f_string_multi_line_start += value;
+    }
+}
+
+/* Traverse and restore all f-string buffers after reallocating tok->buf */
+static void
+restore_fstring_buffers(struct tok_state *tok)
+{
+    int index;
+    tokenizer_mode *mode;
+
+    for (index = tok->tok_mode_stack_index; index >= 0; --index) {
+        mode = &(tok->tok_mode_stack[index]);
+        if (mode->kind == TOK_FSTRING_MODE) {
+            mode->f_string_start = tok->buf + mode->f_string_start_offset;
+            mode->f_string_multi_line_start = tok->buf + mode->f_string_multi_line_start_offset;
         }
     }
 }
@@ -476,7 +490,7 @@ tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
         Py_ssize_t start = tok->start == NULL ? -1 : tok->start - tok->buf;
         Py_ssize_t line_start = tok->start == NULL ? -1 : tok->line_start - tok->buf;
         Py_ssize_t multi_line_start = tok->multi_line_start - tok->buf;
-        update_fstring_buffers(tok, -*tok->buf, /*regular=*/1, /*multiline=*/1);
+        remember_fstring_buffers(tok);
         newbuf = (char *)PyMem_Realloc(newbuf, newsize);
         if (newbuf == NULL) {
             tok->done = E_NOMEM;
@@ -489,7 +503,7 @@ tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
         tok->start = start < 0 ? NULL : tok->buf + start;
         tok->line_start = line_start < 0 ? NULL : tok->buf + line_start;
         tok->multi_line_start = multi_line_start < 0 ? NULL : tok->buf + multi_line_start;
-        update_fstring_buffers(tok, *tok->buf, /*regular=*/1, /*multiline=*/1);
+        restore_fstring_buffers(tok);
     }
     return 1;
 }
@@ -1051,7 +1065,7 @@ tok_underflow_interactive(struct tok_state *tok) {
     }
     else if (tok->start != NULL) {
         Py_ssize_t cur_multi_line_start = tok->multi_line_start - tok->buf;
-        update_fstring_buffers(tok, -*tok->buf, /*regular=*/0, /*multiline=*/1);
+        remember_fstring_buffers(tok);
         size_t size = strlen(newtok);
         ADVANCE_LINENO();
         if (!tok_reserve_buf(tok, size + 1)) {
@@ -1064,7 +1078,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         PyMem_Free(newtok);
         tok->inp += size;
         tok->multi_line_start = tok->buf + cur_multi_line_start;
-        update_fstring_buffers(tok, *tok->buf, /*regular=*/0, /*multiline=*/1);
+        restore_fstring_buffers(tok);
     }
     else {
         ADVANCE_LINENO();
@@ -2207,6 +2221,8 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         the_current_tok->f_string_quote_size = quote_size;
         the_current_tok->f_string_start = tok->start;
         the_current_tok->f_string_multi_line_start = tok->line_start;
+        the_current_tok->f_string_start_offset = -1;
+        the_current_tok->f_string_multi_line_start_offset = -1;
         the_current_tok->last_expr_buffer = NULL;
         the_current_tok->last_expr_size = 0;
         the_current_tok->last_expr_end = -1;
