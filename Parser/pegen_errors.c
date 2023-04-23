@@ -192,7 +192,10 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
 
 
 exit:
-    if (PyErr_Occurred()) {
+    // If we're in an f-string, we want the syntax error in the expression part
+    // to propagate, so that tokenizer errors (like expecting '}') that happen afterwards
+    // do not swallow it.
+    if (PyErr_Occurred() && p->tok->tok_mode_stack_index <= 0) {
         Py_XDECREF(value);
         Py_XDECREF(type);
         Py_XDECREF(traceback);
@@ -205,7 +208,7 @@ exit:
 // PARSER ERRORS
 
 void *
-_PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
+_PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...)
 {
     if (p->fill == 0) {
         va_list va;
@@ -214,8 +217,13 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
         va_end(va);
         return NULL;
     }
-
-    Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
+    if (use_mark && p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        return NULL;
+    }
+    Token *t = p->known_err_token != NULL
+                   ? p->known_err_token
+                   : p->tokens[use_mark ? p->mark : p->fill - 1];
     Py_ssize_t col_offset;
     Py_ssize_t end_col_offset = -1;
     if (t->col_offset == -1) {

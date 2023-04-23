@@ -273,7 +273,8 @@ _PyCode_Quicken(PyCodeObject *code)
     _Py_CODEUNIT *instructions = _PyCode_CODE(code);
     for (int i = 0; i < Py_SIZE(code); i++) {
         int previous_opcode = opcode;
-        opcode = _PyOpcode_Deopt[instructions[i].op.code];
+        opcode = _Py_GetBaseOpcode(code, i);
+        assert(opcode < MIN_INSTRUMENTED_OPCODE);
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
             instructions[i + 1].cache = adaptive_counter_warmup();
@@ -1737,6 +1738,7 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs,
 {
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[CALL] == INLINE_CACHE_ENTRIES_CALL);
+    assert(_Py_OPCODE(*instr) != INSTRUMENTED_CALL);
     _PyCallCache *cache = (_PyCallCache *)(instr + 1);
     int fail;
     if (PyCFunction_CheckExact(callable)) {
@@ -2149,7 +2151,9 @@ _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg)
         goto success;
     }
     else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
-        assert(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == END_FOR);
+        assert(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == END_FOR  ||
+            instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == INSTRUMENTED_END_FOR
+        );
         instr->op.code = FOR_ITER_GEN;
         goto success;
     }

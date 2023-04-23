@@ -194,7 +194,7 @@ yield_stmt[stmt_ty]: y=yield_expr { _PyAST_Expr(y, EXTRA) }
 
 assert_stmt[stmt_ty]: 'assert' a=expression b=[',' z=expression { z }] { _PyAST_Assert(a, b, EXTRA) }
 
-import_stmt[stmt_ty]: 
+import_stmt[stmt_ty]:
     | invalid_import
     | import_name
     | import_from
@@ -415,8 +415,8 @@ try_stmt[stmt_ty]:
     | invalid_try_stmt
     | 'try' &&':' b=block f=finally_block { _PyAST_Try(b, NULL, NULL, f, EXTRA) }
     | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_block+ el=[else_block] f=[finally_block] { _PyAST_Try(b, ex, el, f, EXTRA) }
-    | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_star_block+ el=[else_block] f=[finally_block] { 
-        CHECK_VERSION(stmt_ty, 11, "Exception groups are", 
+    | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_star_block+ el=[else_block] f=[finally_block] {
+        CHECK_VERSION(stmt_ty, 11, "Exception groups are",
                       _PyAST_TryStar(b, ex, el, f, EXTRA)) }
 
 
@@ -807,7 +807,7 @@ atom[expr_ty]:
     | 'True' { _PyAST_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
     | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
-    | &STRING strings
+    | &(STRING|FSTRING_START) strings
     | NUMBER
     | &'(' (tuple | group | genexp)
     | &'[' (list | listcomp)
@@ -877,7 +877,26 @@ lambda_param[arg_ty]: a=NAME { _PyAST_arg(a->v.Name.id, NULL, NULL, EXTRA) }
 # LITERALS
 # ========
 
-strings[expr_ty] (memo): a=STRING+ { _PyPegen_concatenate_strings(p, a) }
+fstring_middle[expr_ty]:
+    | fstring_replacement_field
+    | t=FSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
+fstring_replacement_field[expr_ty]:
+    | '{' a=(yield_expr | star_expressions) debug_expr="="? conversion=[fstring_conversion] format=[fstring_full_format_spec] '}' {
+        _PyPegen_formatted_value(p, a, debug_expr, conversion, format, EXTRA)
+    }
+    | invalid_replacement_field
+fstring_conversion[expr_ty]:
+    | conv_token="!" conv=NAME { _PyPegen_check_fstring_conversion(p, conv_token, conv) }
+fstring_full_format_spec[expr_ty]:
+    | ':' spec=fstring_format_spec* { spec ? _PyAST_JoinedStr((asdl_expr_seq*)spec, EXTRA) : NULL }
+fstring_format_spec[expr_ty]:
+    | t=FSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
+    | fstring_replacement_field
+fstring[expr_ty]:
+    | a=FSTRING_START b=fstring_middle* c=FSTRING_END { _PyPegen_joined_str(p, a, (asdl_expr_seq*)b, c) }
+
+string[expr_ty]: s[Token*]=STRING { _PyPegen_constant_from_string(p, s) }
+strings[expr_ty] (memo): a[asdl_expr_seq*]=(fstring|string)+ { _PyPegen_concatenate_strings(p, a, EXTRA) }
 
 list[expr_ty]:
     | '[' a=[star_named_expressions] ']' { _PyAST_List(a, Load, EXTRA) }
@@ -1118,6 +1137,8 @@ invalid_expression:
         _PyPegen_check_legacy_stmt(p, a) ? NULL : p->tokens[p->mark-1]->level == 0 ? NULL :
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Perhaps you forgot a comma?") }
    | a=disjunction 'if' b=disjunction !('else'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected 'else' after 'if' expression") }
+   | a='lambda' [lambda_params] b=':' &(FSTRING_MIDDLE | fstring_replacement_field)  {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "f-string: lambda expressions are not allowed without parentheses") }
 
 invalid_named_expression(memo):
     | a=expression ':=' expression {
@@ -1241,7 +1262,7 @@ invalid_group:
 invalid_import:
     | a='import' dotted_name 'from' dotted_name {
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "Did you mean to use 'from ... import ...' instead?") }
- 
+
 invalid_import_from_targets:
     | import_from_as_names ',' NEWLINE {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
@@ -1335,3 +1356,24 @@ invalid_kvpair:
     | expression a=':' &('}'|',') {RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }
 invalid_starred_expression:
     | a='*' expression '=' b=expression { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to iterable argument unpacking") }
+invalid_replacement_field:
+    | '{' a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '='") }
+    | '{' a='!' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '!'") }
+    | '{' a=':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before ':'") }
+    | '{' a='}' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '}'") }
+    | '{' !(yield_expr | star_expressions) { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting a valid expression after '{'")}
+    | '{' (yield_expr | star_expressions) !('=' | '!' | ':' | '}') {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '=', or '!', or ':', or '}'") }
+    | '{' (yield_expr | star_expressions) '=' !('!' | ':' | '}') {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '!', or ':', or '}'") }
+    | '{' (yield_expr | star_expressions) '='? invalid_conversion_character
+    | '{' (yield_expr | star_expressions) '='? ['!' NAME] !(':' | '}') {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting ':' or '}'") }
+    | '{' (yield_expr | star_expressions) '='? ['!' NAME] ':' fstring_format_spec* !'}' {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '}', or format specs") }
+    | '{' (yield_expr | star_expressions) '='? ['!' NAME] !'}' {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '}'") }
+
+invalid_conversion_character:
+    | '!' &(':' | '}') { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: missing conversion character") }
+    | '!' !NAME { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: invalid conversion character") }

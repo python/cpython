@@ -1427,8 +1427,7 @@ compiler_add_yield_from(struct compiler *c, location loc, int await)
     ADDOP(c, loc, CLEANUP_THROW);
 
     USE_LABEL(c, exit);
-    ADDOP_I(c, loc, SWAP, 2);
-    ADDOP(c, loc, POP_TOP);
+    ADDOP(c, loc, END_SEND);
     return SUCCESS;
 }
 
@@ -7148,10 +7147,6 @@ _PyCompile_OptimizeCfg(PyObject *instructions, PyObject *consts)
     }
 
     cfg_builder g;
-    memset(&g, 0, sizeof(cfg_builder));
-    if (_PyCfgBuilder_Init(&g) < 0) {
-        goto error;
-    }
     if (instructions_to_cfg(instructions, &g) < 0) {
         goto error;
     }

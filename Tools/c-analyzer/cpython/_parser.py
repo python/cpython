@@ -328,7 +328,6 @@ MAX_SIZES = {
     _abs('Python/frozen_modules/*.h'): (20_000, 500),
     _abs('Python/opcode_targets.h'): (10_000, 500),
     _abs('Python/stdlib_module_names.h'): (5_000, 500),
-    _abs('Python/importlib.h'): (200_000, 5000),
 
     # These large files are currently ignored (see above).
     _abs('Modules/_ssl_data.h'): (80_000, 10_000),

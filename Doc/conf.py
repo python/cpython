@@ -254,8 +254,31 @@ coverage_ignore_c_items = {
 # Options for the link checker
 # ----------------------------
 
-# Ignore certain URLs.
-linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+']
+linkcheck_allowed_redirects = {
+    # bpo-NNNN -> BPO -> GH Issues
+    r'https://bugs.python.org/issue\?@action=redirect&bpo=\d+': 'https://github.com/python/cpython/issues/\d+',
+    # GH-NNNN used to refer to pull requests
+    r'https://github.com/python/cpython/issues/\d+': 'https://github.com/python/cpython/pull/\d+',
+    # :source:`something` linking files in the repository
+    r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*'
+}
+
+linkcheck_anchors_ignore = [
+    # ignore anchors that start with a '/', e.g. Wikipedia media files:
+    # https://en.wikipedia.org/wiki/Walrus#/media/File:Pacific_Walrus_-_Bull_(8247646168).jpg
+    r'\/.*',
+]
+
+linkcheck_ignore = [
+    # The crawler gets "Anchor not found"
+    r'https://developer.apple.com/documentation/.+?#.*',
+    r'https://devguide.python.org.+?/#.*',
+    r'https://github.com.+?#.*',
+    # Robot crawlers not allowed: "403 Client Error: Forbidden"
+    r'https://support.enthought.com/hc/.*',
+    # SSLError CertificateError, even though it is valid
+    r'https://unix.org/version2/whatsnew/lp64_wp.html',
+]
 
 
 # Options for extensions
