@@ -1,4 +1,3 @@
-import os
 import sys
 from pathlib import Path
 
@@ -6,7 +5,7 @@ CPYTHON_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.append(str(CPYTHON_ROOT / "Parser"))
 
 from pygments.lexer import RegexLexer, bygroups, include, words
-from pygments.token import (Comment, Generic, Keyword, Name, Operator,
+from pygments.token import (Comment, Keyword, Name, Operator,
                             Punctuation, Text)
 
 from asdl import builtin_types

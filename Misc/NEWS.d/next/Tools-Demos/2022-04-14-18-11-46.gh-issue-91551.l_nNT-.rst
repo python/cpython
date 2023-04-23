@@ -1,1 +1,0 @@
-Remove the ancient Pynche color editor.  It has moved to https://gitlab.com/warsaw/pynche

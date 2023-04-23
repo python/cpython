@@ -12,7 +12,9 @@ import warnings
 import functools
 import itertools
 import posixpath
+import contextlib
 import collections
+import inspect
 
 from . import _adapters, _meta
 from ._collections import FreezableDefaultDict, Pair
@@ -24,7 +26,7 @@ from contextlib import suppress
 from importlib import import_module
 from importlib.abc import MetaPathFinder
 from itertools import starmap
-from typing import List, Mapping, Optional, Union
+from typing import List, Mapping, Optional, cast
 
 
 __all__ = [
@@ -134,6 +136,7 @@ class DeprecatedTuple:
     1
     """
 
+    # Do not remove prior to 2023-05-01 or Python 3.13
     _warn = functools.partial(
         warnings.warn,
         "EntryPoint tuple interface is deprecated. Access members by name.",
@@ -184,6 +187,10 @@ class EntryPoint(DeprecatedTuple):
     following the attr, and following any extras.
     """
 
+    name: str
+    value: str
+    group: str
+
     dist: Optional['Distribution'] = None
 
     def __init__(self, name, value, group):
@@ -217,17 +224,6 @@ class EntryPoint(DeprecatedTuple):
     def _for(self, dist):
         vars(self).update(dist=dist)
         return self
-
-    def __iter__(self):
-        """
-        Supply iter so one may construct dicts of EntryPoints by name.
-        """
-        msg = (
-            "Construction of dict of EntryPoints is deprecated in "
-            "favor of EntryPoints."
-        )
-        warnings.warn(msg, DeprecationWarning)
-        return iter((self.name, self))
 
     def matches(self, **params):
         """
@@ -274,77 +270,7 @@ class EntryPoint(DeprecatedTuple):
         return hash(self._key())
 
 
-class DeprecatedList(list):
-    """
-    Allow an otherwise immutable object to implement mutability
-    for compatibility.
-
-    >>> recwarn = getfixture('recwarn')
-    >>> dl = DeprecatedList(range(3))
-    >>> dl[0] = 1
-    >>> dl.append(3)
-    >>> del dl[3]
-    >>> dl.reverse()
-    >>> dl.sort()
-    >>> dl.extend([4])
-    >>> dl.pop(-1)
-    4
-    >>> dl.remove(1)
-    >>> dl += [5]
-    >>> dl + [6]
-    [1, 2, 5, 6]
-    >>> dl + (6,)
-    [1, 2, 5, 6]
-    >>> dl.insert(0, 0)
-    >>> dl
-    [0, 1, 2, 5]
-    >>> dl == [0, 1, 2, 5]
-    True
-    >>> dl == (0, 1, 2, 5)
-    True
-    >>> len(recwarn)
-    1
-    """
-
-    __slots__ = ()
-
-    _warn = functools.partial(
-        warnings.warn,
-        "EntryPoints list interface is deprecated. Cast to list if needed.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    def _wrap_deprecated_method(method_name: str):  # type: ignore
-        def wrapped(self, *args, **kwargs):
-            self._warn()
-            return getattr(super(), method_name)(*args, **kwargs)
-
-        return method_name, wrapped
-
-    locals().update(
-        map(
-            _wrap_deprecated_method,
-            '__setitem__ __delitem__ append reverse extend pop remove '
-            '__iadd__ insert sort'.split(),
-        )
-    )
-
-    def __add__(self, other):
-        if not isinstance(other, tuple):
-            self._warn()
-            other = tuple(other)
-        return self.__class__(tuple(self) + other)
-
-    def __eq__(self, other):
-        if not isinstance(other, tuple):
-            self._warn()
-            other = tuple(other)
-
-        return tuple(self).__eq__(other)
-
-
-class EntryPoints(DeprecatedList):
+class EntryPoints(tuple):
     """
     An immutable collection of selectable EntryPoint objects.
     """
@@ -355,14 +281,6 @@ class EntryPoints(DeprecatedList):
         """
         Get the EntryPoint in self matching name.
         """
-        if isinstance(name, int):
-            warnings.warn(
-                "Accessing entry points by index is deprecated. "
-                "Cast to tuple if needed.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return super().__getitem__(name)
         try:
             return next(iter(self.select(name=name)))
         except StopIteration:
@@ -386,10 +304,6 @@ class EntryPoints(DeprecatedList):
     def groups(self):
         """
         Return the set of all groups of all entry points.
-
-        For coverage while SelectableGroups is present.
-        >>> EntryPoints().groups
-        set()
         """
         return {ep.group for ep in self}
 
@@ -403,101 +317,6 @@ class EntryPoints(DeprecatedList):
             EntryPoint(name=item.value.name, value=item.value.value, group=item.name)
             for item in Sectioned.section_pairs(text or '')
         )
-
-
-class Deprecated:
-    """
-    Compatibility add-in for mapping to indicate that
-    mapping behavior is deprecated.
-
-    >>> recwarn = getfixture('recwarn')
-    >>> class DeprecatedDict(Deprecated, dict): pass
-    >>> dd = DeprecatedDict(foo='bar')
-    >>> dd.get('baz', None)
-    >>> dd['foo']
-    'bar'
-    >>> list(dd)
-    ['foo']
-    >>> list(dd.keys())
-    ['foo']
-    >>> 'foo' in dd
-    True
-    >>> list(dd.values())
-    ['bar']
-    >>> len(recwarn)
-    1
-    """
-
-    _warn = functools.partial(
-        warnings.warn,
-        "SelectableGroups dict interface is deprecated. Use select.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    def __getitem__(self, name):
-        self._warn()
-        return super().__getitem__(name)
-
-    def get(self, name, default=None):
-        self._warn()
-        return super().get(name, default)
-
-    def __iter__(self):
-        self._warn()
-        return super().__iter__()
-
-    def __contains__(self, *args):
-        self._warn()
-        return super().__contains__(*args)
-
-    def keys(self):
-        self._warn()
-        return super().keys()
-
-    def values(self):
-        self._warn()
-        return super().values()
-
-
-class SelectableGroups(Deprecated, dict):
-    """
-    A backward- and forward-compatible result from
-    entry_points that fully implements the dict interface.
-    """
-
-    @classmethod
-    def load(cls, eps):
-        by_group = operator.attrgetter('group')
-        ordered = sorted(eps, key=by_group)
-        grouped = itertools.groupby(ordered, by_group)
-        return cls((group, EntryPoints(eps)) for group, eps in grouped)
-
-    @property
-    def _all(self):
-        """
-        Reconstruct a list of all entrypoints from the groups.
-        """
-        groups = super(Deprecated, self).values()
-        return EntryPoints(itertools.chain.from_iterable(groups))
-
-    @property
-    def groups(self):
-        return self._all.groups
-
-    @property
-    def names(self):
-        """
-        for coverage:
-        >>> SelectableGroups().names
-        set()
-        """
-        return self._all.names
-
-    def select(self, **params):
-        if not params:
-            return self
-        return self._all.select(**params)
 
 
 class PackagePath(pathlib.PurePosixPath):
@@ -524,11 +343,30 @@ class FileHash:
         return f'<FileHash mode: {self.mode} value: {self.value}>'
 
 
-class Distribution:
+class DeprecatedNonAbstract:
+    def __new__(cls, *args, **kwargs):
+        all_names = {
+            name for subclass in inspect.getmro(cls) for name in vars(subclass)
+        }
+        abstract = {
+            name
+            for name in all_names
+            if getattr(getattr(cls, name), '__isabstractmethod__', False)
+        }
+        if abstract:
+            warnings.warn(
+                f"Unimplemented abstract methods {abstract}",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return super().__new__(cls)
+
+
+class Distribution(DeprecatedNonAbstract):
     """A Python distribution package."""
 
     @abc.abstractmethod
-    def read_text(self, filename):
+    def read_text(self, filename) -> Optional[str]:
         """Attempt to load metadata file given by the name.
 
         :param filename: The name of the file in the distribution info.
@@ -543,7 +381,7 @@ class Distribution:
         """
 
     @classmethod
-    def from_name(cls, name):
+    def from_name(cls, name: str):
         """Return the Distribution for the given package name.
 
         :param name: The name of the distribution package to search for.
@@ -551,13 +389,13 @@ class Distribution:
             package, if found.
         :raises PackageNotFoundError: When the named package's distribution
             metadata cannot be found.
+        :raises ValueError: When an invalid value is supplied for name.
         """
-        for resolver in cls._discover_resolvers():
-            dists = resolver(DistributionFinder.Context(name=name))
-            dist = next(iter(dists), None)
-            if dist is not None:
-                return dist
-        else:
+        if not name:
+            raise ValueError("A distribution name is required.")
+        try:
+            return next(cls.discover(name=name))
+        except StopIteration:
             raise PackageNotFoundError(name)
 
     @classmethod
@@ -602,7 +440,7 @@ class Distribution:
         The returned object will have keys that name the various bits of
         metadata.  See PEP 566 for details.
         """
-        text = (
+        opt_text = (
             self.read_text('METADATA')
             or self.read_text('PKG-INFO')
             # This last clause is here to support old egg-info files.  Its
@@ -610,6 +448,7 @@ class Distribution:
             # (which points to the egg-info file) attribute unchanged.
             or self.read_text('')
         )
+        text = cast(str, opt_text)
         return _adapters.Message(email.message_from_string(text))
 
     @property
@@ -638,8 +477,8 @@ class Distribution:
         :return: List of PackagePath for this distribution or None
 
         Result is `None` if the metadata file that enumerates files
-        (i.e. RECORD for dist-info or SOURCES.txt for egg-info) is
-        missing.
+        (i.e. RECORD for dist-info, or installed-files.txt or
+        SOURCES.txt for egg-info) is missing.
         Result may be empty if the metadata exists but is empty.
         """
 
@@ -652,9 +491,19 @@ class Distribution:
 
         @pass_none
         def make_files(lines):
-            return list(starmap(make_file, csv.reader(lines)))
+            return starmap(make_file, csv.reader(lines))
 
-        return make_files(self._read_files_distinfo() or self._read_files_egginfo())
+        @pass_none
+        def skip_missing_files(package_paths):
+            return list(filter(lambda path: path.locate().exists(), package_paths))
+
+        return skip_missing_files(
+            make_files(
+                self._read_files_distinfo()
+                or self._read_files_egginfo_installed()
+                or self._read_files_egginfo_sources()
+            )
+        )
 
     def _read_files_distinfo(self):
         """
@@ -663,10 +512,45 @@ class Distribution:
         text = self.read_text('RECORD')
         return text and text.splitlines()
 
-    def _read_files_egginfo(self):
+    def _read_files_egginfo_installed(self):
         """
-        SOURCES.txt might contain literal commas, so wrap each line
-        in quotes.
+        Read installed-files.txt and return lines in a similar
+        CSV-parsable format as RECORD: each file must be placed
+        relative to the site-packages directory and must also be
+        quoted (since file names can contain literal commas).
+
+        This file is written when the package is installed by pip,
+        but it might not be written for other installation methods.
+        Assume the file is accurate if it exists.
+        """
+        text = self.read_text('installed-files.txt')
+        # Prepend the .egg-info/ subdir to the lines in this file.
+        # But this subdir is only available from PathDistribution's
+        # self._path.
+        subdir = getattr(self, '_path', None)
+        if not text or not subdir:
+            return
+
+        paths = (
+            (subdir / name)
+            .resolve()
+            .relative_to(self.locate_file('').resolve())
+            .as_posix()
+            for name in text.splitlines()
+        )
+        return map('"{}"'.format, paths)
+
+    def _read_files_egginfo_sources(self):
+        """
+        Read SOURCES.txt and return lines in a similar CSV-parsable
+        format as RECORD: each file name must be quoted (since it
+        might contain literal commas).
+
+        Note that SOURCES.txt is not a reliable source for what
+        files are installed by a package. This file is generated
+        for a source archive, and the files that are present
+        there (e.g. setup.py) may not correctly reflect the files
+        that are present after the package has been installed.
         """
         text = self.read_text('SOURCES.txt')
         return text and map('"{}"'.format, text.splitlines())
@@ -945,13 +829,26 @@ class PathDistribution(Distribution):
         normalized name from the file system path.
         """
         stem = os.path.basename(str(self._path))
-        return self._name_from_stem(stem) or super()._normalized_name
+        return (
+            pass_none(Prepared.normalize)(self._name_from_stem(stem))
+            or super()._normalized_name
+        )
 
-    def _name_from_stem(self, stem):
-        name, ext = os.path.splitext(stem)
+    @staticmethod
+    def _name_from_stem(stem):
+        """
+        >>> PathDistribution._name_from_stem('foo-3.0.egg-info')
+        'foo'
+        >>> PathDistribution._name_from_stem('CherryPy-3.0.dist-info')
+        'CherryPy'
+        >>> PathDistribution._name_from_stem('face.egg-info')
+        'face'
+        >>> PathDistribution._name_from_stem('foo.bar')
+        """
+        filename, ext = os.path.splitext(stem)
         if ext not in ('.dist-info', '.egg-info'):
             return
-        name, sep, rest = stem.partition('-')
+        name, sep, rest = filename.partition('-')
         return name
 
 
@@ -991,29 +888,28 @@ def version(distribution_name):
     return distribution(distribution_name).version
 
 
-def entry_points(**params) -> Union[EntryPoints, SelectableGroups]:
+_unique = functools.partial(
+    unique_everseen,
+    key=operator.attrgetter('_normalized_name'),
+)
+"""
+Wrapper for ``distributions`` to return unique distributions by name.
+"""
+
+
+def entry_points(**params) -> EntryPoints:
     """Return EntryPoint objects for all installed packages.
 
     Pass selection parameters (group or name) to filter the
     result to entry points matching those properties (see
     EntryPoints.select()).
 
-    For compatibility, returns ``SelectableGroups`` object unless
-    selection parameters are supplied. In the future, this function
-    will return ``EntryPoints`` instead of ``SelectableGroups``
-    even when no selection parameters are supplied.
-
-    For maximum future compatibility, pass selection parameters
-    or invoke ``.select`` with parameters on the result.
-
-    :return: EntryPoints or SelectableGroups for all installed packages.
+    :return: EntryPoints for all installed packages.
     """
-    norm_name = operator.attrgetter('_normalized_name')
-    unique = functools.partial(unique_everseen, key=norm_name)
     eps = itertools.chain.from_iterable(
-        dist.entry_points for dist in unique(distributions())
+        dist.entry_points for dist in _unique(distributions())
     )
-    return SelectableGroups.load(eps).select(**params)
+    return EntryPoints(eps).select(**params)
 
 
 def files(distribution_name):
@@ -1057,8 +953,13 @@ def _top_level_declared(dist):
 
 
 def _top_level_inferred(dist):
-    return {
-        f.parts[0] if len(f.parts) > 1 else f.with_suffix('').name
+    opt_names = {
+        f.parts[0] if len(f.parts) > 1 else inspect.getmodulename(f)
         for f in always_iterable(dist.files)
-        if f.suffix == ".py"
     }
+
+    @pass_none
+    def importable_name(name):
+        return '.' not in name
+
+    return filter(importable_name, opt_names)

@@ -35,6 +35,15 @@ always available.
    can then log the event, raise an exception to abort the operation,
    or terminate the process entirely.
 
+   Note that audit hooks are primarily for collecting information about internal
+   or otherwise unobservable actions, whether by Python or libraries written in
+   Python. They are not suitable for implementing a "sandbox". In particular,
+   malicious code can trivially disable or bypass hooks added using this
+   function. At a minimum, any security-sensitive hooks must be added using the
+   C API :c:func:`PySys_AddAuditHook` before initialising the runtime, and any
+   modules allowing arbitrary memory modification (such as :mod:`ctypes`) should
+   be completely removed or closely monitored.
+
    .. audit-event:: sys.addaudithook "" sys.addaudithook
 
       Calling :func:`sys.addaudithook` will itself raise an auditing event
@@ -211,6 +220,10 @@ always available.
 
    .. audit-event:: sys._current_exceptions "" sys._current_exceptions
 
+   .. versionchanged:: 3.12
+      Each value in the dictionary is now a single exception instance, rather
+      than a 3-tuple as returned from ``sys.exc_info()``.
+
 .. function:: breakpointhook()
 
    This hook function is called by built-in :func:`breakpoint`.  By default,
@@ -250,7 +263,7 @@ always available.
    Print low-level information to stderr about the state of CPython's memory
    allocator.
 
-   If Python is `built in debug mode <debug-build>` (:option:`configure
+   If Python is :ref:`built in debug mode <debug-build>` (:option:`configure
    --with-pydebug option <--with-pydebug>`), it also performs some expensive
    internal consistency checks.
 
@@ -338,7 +351,7 @@ always available.
    |                             | memory support.                              |
    +-----------------------------+----------------------------------------------+
 
-   .. availability:: WebAssembly Emscripten platform (*wasm32-emscripten*).
+   .. availability:: Emscripten.
 
    .. versionadded:: 3.11
 
@@ -349,7 +362,7 @@ always available.
    files to (and read them from) a parallel directory tree rooted at this
    directory, rather than from ``__pycache__`` directories in the source code
    tree. Any ``__pycache__`` directories in the source code tree will be ignored
-   and new `.pyc` files written within the pycache prefix. Thus if you use
+   and new ``.pyc`` files written within the pycache prefix. Thus if you use
    :mod:`compileall` as a pre-build step, you must ensure you run it with the
    same pycache prefix (if any) that you will use at runtime.
 
@@ -502,9 +515,9 @@ always available.
    The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
-   ============================= ================================================================
+   ============================= ==============================================================================================================
    attribute                     flag
-   ============================= ================================================================
+   ============================= ==============================================================================================================
    :const:`debug`                :option:`-d`
    :const:`inspect`              :option:`-i`
    :const:`interactive`          :option:`-i`
@@ -520,7 +533,9 @@ always available.
    :const:`hash_randomization`   :option:`-R`
    :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
    :const:`utf8_mode`            :option:`-X utf8 <-X>`
-   ============================= ================================================================
+   :const:`safe_path`            :option:`-P`
+   :const:`int_max_str_digits`   :option:`-X int_max_str_digits <-X>` (:ref:`integer string conversion length limitation <int_max_str_digits>`)
+   ============================= ==============================================================================================================
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -539,6 +554,12 @@ always available.
       Mode <devmode>` and the ``utf8_mode`` attribute for the new  :option:`-X`
       ``utf8`` flag.
 
+   .. versionchanged:: 3.11
+      Added the ``safe_path`` attribute for :option:`-P` option.
+
+   .. versionchanged:: 3.11
+      Added the ``int_max_str_digits`` attribute.
+
 
 .. data:: float_info
 
@@ -551,49 +572,55 @@ always available.
 
    .. tabularcolumns:: |l|l|L|
 
-   +---------------------+----------------+--------------------------------------------------+
-   | attribute           | float.h macro  | explanation                                      |
-   +=====================+================+==================================================+
-   | :const:`epsilon`    | DBL_EPSILON    | difference between 1.0 and the least value       |
-   |                     |                | greater than 1.0 that is representable as a float|
-   |                     |                |                                                  |
-   |                     |                | See also :func:`math.ulp`.                       |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`dig`        | DBL_DIG        | maximum number of decimal digits that can be     |
-   |                     |                | faithfully represented in a float;  see below    |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`mant_dig`   | DBL_MANT_DIG   | float precision: the number of base-``radix``    |
-   |                     |                | digits in the significand of a float             |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`max`        | DBL_MAX        | maximum representable positive finite float      |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`max_exp`    | DBL_MAX_EXP    | maximum integer *e* such that ``radix**(e-1)`` is|
-   |                     |                | a representable finite float                     |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`max_10_exp` | DBL_MAX_10_EXP | maximum integer *e* such that ``10**e`` is in the|
-   |                     |                | range of representable finite floats             |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`min`        | DBL_MIN        | minimum representable positive *normalized* float|
-   |                     |                |                                                  |
-   |                     |                | Use :func:`math.ulp(0.0) <math.ulp>` to get the  |
-   |                     |                | smallest positive *denormalized* representable   |
-   |                     |                | float.                                           |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`min_exp`    | DBL_MIN_EXP    | minimum integer *e* such that ``radix**(e-1)`` is|
-   |                     |                | a normalized float                               |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`min_10_exp` | DBL_MIN_10_EXP | minimum integer *e* such that ``10**e`` is a     |
-   |                     |                | normalized float                                 |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`radix`      | FLT_RADIX      | radix of exponent representation                 |
-   +---------------------+----------------+--------------------------------------------------+
-   | :const:`rounds`     | FLT_ROUNDS     | integer constant representing the rounding mode  |
-   |                     |                | used for arithmetic operations.  This reflects   |
-   |                     |                | the value of the system FLT_ROUNDS macro at      |
-   |                     |                | interpreter startup time.  See section 5.2.4.2.2 |
-   |                     |                | of the C99 standard for an explanation of the    |
-   |                     |                | possible values and their meanings.              |
-   +---------------------+----------------+--------------------------------------------------+
+   +---------------------+---------------------+--------------------------------------------------+
+   | attribute           | float.h macro       | explanation                                      |
+   +=====================+=====================+==================================================+
+   | ``epsilon``         | ``DBL_EPSILON``     | difference between 1.0 and the least value       |
+   |                     |                     | greater than 1.0 that is representable as a float|
+   |                     |                     |                                                  |
+   |                     |                     | See also :func:`math.ulp`.                       |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``dig``             | ``DBL_DIG``         | maximum number of decimal digits that can be     |
+   |                     |                     | faithfully represented in a float;  see below    |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``mant_dig``        | ``DBL_MANT_DIG``    | float precision: the number of base-``radix``    |
+   |                     |                     | digits in the significand of a float             |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``max``             | ``DBL_MAX``         | maximum representable positive finite float      |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``max_exp``         | ``DBL_MAX_EXP``     | maximum integer *e* such that ``radix**(e-1)`` is|
+   |                     |                     | a representable finite float                     |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``max_10_exp``      | ``DBL_MAX_10_EXP``  | maximum integer *e* such that ``10**e`` is in the|
+   |                     |                     | range of representable finite floats             |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``min``             | ``DBL_MIN``         | minimum representable positive *normalized* float|
+   |                     |                     |                                                  |
+   |                     |                     | Use :func:`math.ulp(0.0) <math.ulp>` to get the  |
+   |                     |                     | smallest positive *denormalized* representable   |
+   |                     |                     | float.                                           |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``min_exp``         | ``DBL_MIN_EXP``     | minimum integer *e* such that ``radix**(e-1)`` is|
+   |                     |                     | a normalized float                               |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``min_10_exp``      | ``DBL_MIN_10_EXP``  | minimum integer *e* such that ``10**e`` is a     |
+   |                     |                     | normalized float                                 |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``radix``           | ``FLT_RADIX``       | radix of exponent representation                 |
+   +---------------------+---------------------+--------------------------------------------------+
+   | ``rounds``          | ``FLT_ROUNDS``      | integer representing the rounding mode for       |
+   |                     |                     | floating-point arithmetic. This reflects the     |
+   |                     |                     | value of the system ``FLT_ROUNDS`` macro at      |
+   |                     |                     | interpreter startup time:                        |
+   |                     |                     | ``-1`` indeterminable,                           |
+   |                     |                     | ``0`` toward zero,                               |
+   |                     |                     | ``1`` to nearest,                                |
+   |                     |                     | ``2`` toward positive infinity,                  |
+   |                     |                     | ``3`` toward negative infinity                   |
+   |                     |                     |                                                  |
+   |                     |                     | All other values for ``FLT_ROUNDS`` characterize |
+   |                     |                     | implementation-defined rounding behavior.        |
+   +---------------------+---------------------+--------------------------------------------------+
 
    The attribute :attr:`sys.float_info.dig` needs further explanation.  If
    ``s`` is any string representing a decimal number with at most
@@ -643,6 +670,13 @@ always available.
    .. versionadded:: 3.4
 
 
+.. function:: getunicodeinternedsize()
+
+   Return the number of unicode objects that have been interned.
+
+   .. versionadded:: 3.12
+
+
 .. function:: getandroidapilevel()
 
    Return the build time API version of Android as an integer.
@@ -674,7 +708,7 @@ always available.
    the encoding used with the :term:`filesystem error handler <filesystem
    encoding and error handler>` to convert between Unicode filenames and bytes
    filenames. The filesystem error handler is returned from
-   :func:`getfilesystemencoding`.
+   :func:`getfilesystemencodeerrors`.
 
    For best compatibility, str should be used for filenames in all cases,
    although representing filenames as bytes is also supported. Functions
@@ -718,6 +752,13 @@ always available.
    :c:member:`~PyConfig.filesystem_errors` members of :c:type:`PyConfig`.
 
    .. versionadded:: 3.6
+
+.. function:: get_int_max_str_digits()
+
+   Returns the current value for the :ref:`integer string conversion length
+   limitation <int_max_str_digits>`. See also :func:`set_int_max_str_digits`.
+
+   .. versionadded:: 3.11
 
 .. function:: getrefcount(object)
 
@@ -770,7 +811,23 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
-   .. audit-event:: sys._getframe "" sys._getframe
+   .. audit-event:: sys._getframe frame sys._getframe
+
+   .. impl-detail::
+
+      This function should be used for internal and specialized purposes only.
+      It is not guaranteed to exist in all implementations of Python.
+
+
+.. function:: _getframemodulename([depth])
+
+   Return the name of a module from the call stack.  If optional integer *depth*
+   is given, return the module that many calls below the top of the stack.  If
+   that is deeper than the call stack, or if the module is unidentifiable,
+   ``None`` is returned.  The default for *depth* is zero, returning the
+   module at the top of the call stack.
+
+   .. audit-event:: sys._getframemodulename depth sys._getframemodulename
 
    .. impl-detail::
 
@@ -859,7 +916,7 @@ always available.
 .. function:: get_asyncgen_hooks()
 
    Returns an *asyncgen_hooks* object, which is similar to a
-   :class:`~collections.namedtuple` of the form `(firstiter, finalizer)`,
+   :class:`~collections.namedtuple` of the form ``(firstiter, finalizer)``,
    where *firstiter* and *finalizer* are expected to be either ``None`` or
    functions which take an :term:`asynchronous generator iterator` as an
    argument, and are used to schedule finalization of an asynchronous
@@ -992,18 +1049,30 @@ always available.
 
    .. tabularcolumns:: |l|L|
 
-   +-------------------------+----------------------------------------------+
-   | Attribute               | Explanation                                  |
-   +=========================+==============================================+
-   | :const:`bits_per_digit` | number of bits held in each digit.  Python   |
-   |                         | integers are stored internally in base       |
-   |                         | ``2**int_info.bits_per_digit``               |
-   +-------------------------+----------------------------------------------+
-   | :const:`sizeof_digit`   | size in bytes of the C type used to          |
-   |                         | represent a digit                            |
-   +-------------------------+----------------------------------------------+
+   +----------------------------------------+-----------------------------------------------+
+   | Attribute                              | Explanation                                   |
+   +========================================+===============================================+
+   | :const:`bits_per_digit`                | number of bits held in each digit.  Python    |
+   |                                        | integers are stored internally in base        |
+   |                                        | ``2**int_info.bits_per_digit``                |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`sizeof_digit`                  | size in bytes of the C type used to           |
+   |                                        | represent a digit                             |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`default_max_str_digits`        | default value for                             |
+   |                                        | :func:`sys.get_int_max_str_digits` when it    |
+   |                                        | is not otherwise explicitly configured.       |
+   +----------------------------------------+-----------------------------------------------+
+   | :const:`str_digits_check_threshold`    | minimum non-zero value for                    |
+   |                                        | :func:`sys.set_int_max_str_digits`,           |
+   |                                        | :envvar:`PYTHONINTMAXSTRDIGITS`, or           |
+   |                                        | :option:`-X int_max_str_digits <-X>`.         |
+   +----------------------------------------+-----------------------------------------------+
 
    .. versionadded:: 3.1
+
+   .. versionchanged:: 3.11
+      Added ``default_max_str_digits`` and ``str_digits_check_threshold``.
 
 
 .. data:: __interactivehook__
@@ -1044,22 +1113,25 @@ always available.
 
    .. versionadded:: 3.5
 
+.. data:: last_exc
+
+   This variable is not always defined; it is set to the exception instance
+   when an exception is not handled and the interpreter prints an error message
+   and a stack traceback.  Its intended use is to allow an interactive user to
+   import a debugger module and engage in post-mortem debugging without having
+   to re-execute the command that caused the error.  (Typical use is
+   ``import pdb; pdb.pm()`` to enter the post-mortem debugger; see :mod:`pdb`
+   module for more information.)
+
+   .. versionadded:: 3.12
 
 .. data:: last_type
           last_value
           last_traceback
 
-   These three variables are not always defined; they are set when an exception is
-   not handled and the interpreter prints an error message and a stack traceback.
-   Their intended use is to allow an interactive user to import a debugger module
-   and engage in post-mortem debugging without having to re-execute the command
-   that caused the error.  (Typical use is ``import pdb; pdb.pm()`` to enter the
-   post-mortem debugger; see :mod:`pdb` module for
-   more information.)
-
-   The meaning of the variables is the same as that of the return values from
-   :func:`exc_info` above.
-
+   These three variables are deprecated; use :data:`sys.last_exc` instead.
+   They hold the legacy representation of ``sys.last_exc``, as returned
+   from :func:`exc_info` above.
 
 .. data:: maxsize
 
@@ -1083,7 +1155,8 @@ always available.
 
     A list of :term:`meta path finder` objects that have their
     :meth:`~importlib.abc.MetaPathFinder.find_spec` methods called to see if one
-    of the objects can find the module to be imported. The
+    of the objects can find the module to be imported. By default, it holds entries
+    that implement Python's default import semantics. The
     :meth:`~importlib.abc.MetaPathFinder.find_spec` method is called with at
     least the absolute name of the module being imported. If the module to be
     imported is contained in a package, then the parent package's :attr:`__path__`
@@ -1138,18 +1211,22 @@ always available.
    the environment variable :envvar:`PYTHONPATH`, plus an installation-dependent
    default.
 
-   As initialized upon program startup, the first item of this list, ``path[0]``,
-   is the directory containing the script that was used to invoke the Python
-   interpreter.  If the script directory is not available (e.g.  if the interpreter
-   is invoked interactively or if the script is read from standard input),
-   ``path[0]`` is the empty string, which directs Python to search modules in the
-   current directory first.  Notice that the script directory is inserted *before*
-   the entries inserted as a result of :envvar:`PYTHONPATH`.
+   By default, as initialized upon program startup, a potentially unsafe path
+   is prepended to :data:`sys.path` (*before* the entries inserted as a result
+   of :envvar:`PYTHONPATH`):
 
-   The initialization of :data:`sys.path` is documented at :ref:`sys-path-init`.
+   * ``python -m module`` command line: prepend the current working
+     directory.
+   * ``python script.py`` command line: prepend the script's directory.
+     If it's a symbolic link, resolve symbolic links.
+   * ``python -c code`` and ``python`` (REPL) command lines: prepend an empty
+     string, which means the current working directory.
+
+   To not prepend this potentially unsafe path, use the :option:`-P` command
+   line option or the :envvar:`PYTHONSAFEPATH` environment variable.
 
    A program is free to modify this list for its own purposes.  Only strings
-   and bytes should be added to :data:`sys.path`; all other data types are
+   should be added to :data:`sys.path`; all other data types are
    ignored during import.
 
 
@@ -1260,7 +1337,7 @@ always available.
 
    A string giving the site-specific directory prefix where the platform
    independent Python files are installed; on Unix, the default is
-   ``'/usr/local'``.  This can be set at build time with the ``--prefix``
+   :file:`/usr/local`. This can be set at build time with the :option:`--prefix`
    argument to the :program:`configure` script.  See
    :ref:`installation_paths` for derived paths.
 
@@ -1298,6 +1375,14 @@ always available.
    :data:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
+
+.. function:: set_int_max_str_digits(maxdigits)
+
+   Set the :ref:`integer string conversion length limitation
+   <int_max_str_digits>` used by this interpreter. See also
+   :func:`get_int_max_str_digits`.
+
+   .. versionadded:: 3.11
 
 .. function:: setprofile(profilefunc)
 
@@ -1515,6 +1600,38 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
 
+.. function:: activate_stack_trampoline(backend, /)
+
+   Activate the stack profiler trampoline *backend*.
+   The only supported backend is ``"perf"``.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+      * :ref:`perf_profiling`
+      * https://perf.wiki.kernel.org
+
+.. function:: deactivate_stack_trampoline()
+
+   Deactivate the current stack profiler trampoline backend.
+
+   If no stack profiler is activated, this function has no effect.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+.. function:: is_stack_trampoline_active()
+
+   Return ``True`` if a stack profiler trampoline is active.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
 .. function:: _enablelegacywindowsfsencoding()
 
    Changes the :term:`filesystem encoding and error handler` to 'mbcs' and
@@ -1649,6 +1766,8 @@ always available.
    |                  |                                                         |
    |                  |  * ``'nt'``: Windows threads                            |
    |                  |  * ``'pthread'``: POSIX threads                         |
+   |                  |  * ``'pthread-stubs'``: stub POSIX threads              |
+   |                  |    (on WebAssembly platforms without threading support) |
    |                  |  * ``'solaris'``: Solaris threads                       |
    +------------------+---------------------------------------------------------+
    | :const:`lock`    | Name of the lock implementation:                        |
@@ -1754,7 +1873,7 @@ always available.
 
    The version number used to form registry keys on Windows platforms. This is
    stored as string resource 1000 in the Python DLL.  The value is normally the
-   first three characters of :const:`version`.  It is provided in the :mod:`sys`
+   major and minor versions of the running Python interpreter.  It is provided in the :mod:`sys`
    module for informational purposes; modifying this value has no effect on the
    registry keys used by Python.
 
@@ -1769,13 +1888,13 @@ always available.
 
    .. code-block:: shell-session
 
-      $ ./python -Xpycache_prefix=some_path -Xdev
+      $ ./python -Xa=b -Xc
       Python 3.2a3+ (py3k, Oct 16 2010, 20:14:50)
       [GCC 4.4.3] on linux2
       Type "help", "copyright", "credits" or "license" for more information.
       >>> import sys
       >>> sys._xoptions
-      {'pycache_prefix': 'some_path', 'dev': True}
+      {'a': 'b', 'c': True}
 
    .. impl-detail::
 
@@ -1788,4 +1907,4 @@ always available.
 
 .. rubric:: Citations
 
-.. [C99] ISO/IEC 9899:1999.  "Programming languages -- C."  A public draft of this standard is available at http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf\ .
+.. [C99] ISO/IEC 9899:1999.  "Programming languages -- C."  A public draft of this standard is available at https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf\ .

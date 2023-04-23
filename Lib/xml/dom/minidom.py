@@ -358,6 +358,8 @@ class Attr(Node):
         self._name = qName
         self.namespaceURI = namespaceURI
         self._prefix = prefix
+        if localName is not None:
+            self._localName = localName
         self.childNodes = NodeList()
 
         # Add the single child node that represents the value of the attr

@@ -25,20 +25,17 @@ Such constructors may be factory functions or class instances.
    hence not valid as a constructor), raises :exc:`TypeError`.
 
 
-.. function:: pickle(type, function, constructor=None)
+.. function:: pickle(type, function, constructor_ob=None)
 
    Declares that *function* should be used as a "reduction" function for objects
    of type *type*.  *function* should return either a string or a tuple
-   containing two or three elements.
+   containing two or three elements. See the :attr:`~pickle.Pickler.dispatch_table`
+   for more details on the interface of *function*.
 
-   The optional *constructor* parameter, if provided, is a callable object which
-   can be used to reconstruct the object when called with the tuple of arguments
-   returned by *function* at pickling time.  A :exc:`TypeError` is raised if the
-   *constructor* is not callable.
+   The *constructor_ob* parameter is a legacy feature and is now ignored, but if
+   passed it must be a callable.
 
-   See the :mod:`pickle` module for more details on the interface
-   expected of *function* and *constructor*.  Note that the
-   :attr:`~pickle.Pickler.dispatch_table` attribute of a pickler
+   Note that the :attr:`~pickle.Pickler.dispatch_table` attribute of a pickler
    object or subclass of :class:`pickle.Pickler` can also be used for
    declaring reduction functions.
 
