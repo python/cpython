@@ -2156,19 +2156,19 @@ compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
                 ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVAR);
             }
             ADDOP_I(c, loc, COPY, 1);
-            compiler_nameop(c, loc, typeparam->v.TypeVar.name, Store);
+            RETURN_IF_ERROR(compiler_nameop(c, loc, typeparam->v.TypeVar.name, Store));
             break;
         case TypeVarTuple_kind:
             ADDOP_LOAD_CONST(c, loc, typeparam->v.TypeVarTuple.name);
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVARTUPLE);
             ADDOP_I(c, loc, COPY, 1);
-            compiler_nameop(c, loc, typeparam->v.TypeVarTuple.name, Store);
+            RETURN_IF_ERROR(compiler_nameop(c, loc, typeparam->v.TypeVarTuple.name, Store));
             break;
         case ParamSpec_kind:
             ADDOP_LOAD_CONST(c, loc, typeparam->v.ParamSpec.name);
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PARAMSPEC);
             ADDOP_I(c, loc, COPY, 1);
-            compiler_nameop(c, loc, typeparam->v.ParamSpec.name, Store);
+            RETURN_IF_ERROR(compiler_nameop(c, loc, typeparam->v.ParamSpec.name, Store));
             break;
         }
     }
@@ -2347,6 +2347,31 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 }
 
 static int
+compiler_set_type_params_in_class(struct compiler *c, location loc, asdl_typeparam_seq *typeparams)
+{
+    Py_ssize_t count = asdl_seq_LEN(typeparams);
+    for (Py_ssize_t i = 0; i < count; i++) {
+        typeparam_ty typeparam = asdl_seq_GET(typeparams, i);
+        PyObject *name;
+        switch(typeparam->kind) {
+        case TypeVar_kind:
+            name = typeparam->v.TypeVar.name;
+            break;
+        case TypeVarTuple_kind:
+            name = typeparam->v.TypeVarTuple.name;
+            break;
+        case ParamSpec_kind:
+            name = typeparam->v.ParamSpec.name;
+            break;
+        }
+        RETURN_IF_ERROR(compiler_nameop(c, loc, name, Load));
+    }
+    ADDOP_I(c, loc, BUILD_TUPLE, count);
+    RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_ID(__type_variables__), Store));
+    return 1;
+}
+
+static int
 compiler_class(struct compiler *c, stmt_ty s)
 {
     PyCodeObject *co;
@@ -2378,7 +2403,6 @@ compiler_class(struct compiler *c, stmt_ty s)
         RETURN_IF_ERROR(compiler_type_params(c, typeparams));
         _Py_DECLARE_STR(type_params, ".type_params");
         RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Store));
-        //ADDOP(c, loc, POP_TOP);
     }
 
     /* ultimately generate code for:
@@ -2416,6 +2440,12 @@ compiler_class(struct compiler *c, stmt_ty s)
         if (compiler_nameop(c, loc, &_Py_ID(__qualname__), Store) < 0) {
             compiler_exit_scope(c);
             return ERROR;
+        }
+        if (typeparams) {
+            if (!compiler_set_type_params_in_class(c, loc, typeparams)) {
+                compiler_exit_scope(c);
+                return ERROR;
+            }
         }
         /* compile the body proper */
         if (compiler_body(c, loc, s->v.ClassDef.body) < 0) {
