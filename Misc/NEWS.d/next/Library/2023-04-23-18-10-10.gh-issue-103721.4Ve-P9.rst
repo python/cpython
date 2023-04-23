@@ -1,0 +1,2 @@
+Allow defining ``GenericAlias``-like things.
+This lets libraries that want to do custom runtime handling of generic parameters and their substitutions integrate with the rest of typing, for example with ``typing.get_args``, ``typing.get_origin``, and as parameters to other generics like ``list``, ``dict`` and so on.
