@@ -1071,4 +1071,5 @@ PyTypeObject _PyGeneric_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc = generic_doc,
     .tp_methods = generic_methods,
+    .tp_new = PyType_GenericNew,
 };
