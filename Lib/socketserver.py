@@ -142,7 +142,7 @@ if hasattr(socket, "AF_UNIX"):
                     "ThreadingUnixStreamServer",
                     "ThreadingUnixDatagramServer"])
     if hasattr(os, "fork"):
-        __all__.extend(["ForkingUnixStreamServer","ForkingUnixDatagramServer"])
+        __all__.extend(["ForkingUnixStreamServer", "ForkingUnixDatagramServer"])
 
 # poll/select have the advantage of not requiring any extra file descriptor,
 # contrarily to epoll/kqueue (also, they require a single syscall).
