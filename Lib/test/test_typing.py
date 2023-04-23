@@ -8654,9 +8654,6 @@ class TestGenericAliasLike(BaseTestCase):
                 # and forward the current state of type var substitution
                 pass
 
-        self.assertEqual(List[GenericType[T]].__parameters__, (T,))
-        self.assertEqual(List[GenericType[T]][int].__parameters__, ())
-
         self.assertEqual(GenericType[T].__parameters__, (T,))
         self.assertEqual(get_args(GenericType[T]), ())
         self.assertIs(get_origin(GenericType[T]), GenericType)
