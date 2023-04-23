@@ -1251,8 +1251,8 @@ class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 
 class AbstractHTTPHandler(BaseHandler):
 
-    def __init__(self, debuglevel=0):
-        self._debuglevel = debuglevel
+    def __init__(self, debuglevel=None):
+        self._debuglevel = debuglevel if debuglevel is not None else http.client.HTTPConnection.debuglevel
 
     def set_http_debuglevel(self, level):
         self._debuglevel = level
@@ -1378,7 +1378,8 @@ if hasattr(http.client, 'HTTPSConnection'):
 
     class HTTPSHandler(AbstractHTTPHandler):
 
-        def __init__(self, debuglevel=0, context=None, check_hostname=None):
+        def __init__(self, debuglevel=None, context=None, check_hostname=None):
+            debuglevel = debuglevel if debuglevel is not None else http.client.HTTPSConnection.debuglevel
             AbstractHTTPHandler.__init__(self, debuglevel)
             if context is None:
                 http_version = http.client.HTTPSConnection._http_vsn
@@ -2474,7 +2475,13 @@ class ftpwrapper:
         return (ftpobj, retrlen)
 
     def endtransfer(self):
+        if not self.busy:
+            return
         self.busy = 0
+        try:
+            self.ftp.voidresp()
+        except ftperrors():
+            pass
 
     def close(self):
         self.keepalive = False
