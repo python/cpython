@@ -1336,6 +1336,16 @@ class _BaseGenericAlias(_Final, _root=True):
 #   e.g., Dict[T, int].__args__ == (T, int).
 
 
+def _is_special_typing_construct(t) -> bool:
+    return (
+        hasattr(t, "__args__")
+        and
+        hasattr(t, "__origin__")
+        and
+        hasattr(t, "__parameters__")
+    )
+
+
 class _GenericAlias(_BaseGenericAlias, _root=True):
     # The type of parameterized generics.
     #
@@ -2469,8 +2479,12 @@ def get_origin(tp):
     """
     if isinstance(tp, _AnnotatedAlias):
         return Annotated
-    if isinstance(tp, (_BaseGenericAlias, GenericAlias,
-                       ParamSpecArgs, ParamSpecKwargs)):
+    if (
+        isinstance(tp, (_BaseGenericAlias, GenericAlias,
+                       ParamSpecArgs, ParamSpecKwargs))
+        or
+        _is_special_typing_construct(tp)
+    ):
         return tp.__origin__
     if tp is Generic:
         return Generic
@@ -2492,7 +2506,7 @@ def get_args(tp):
     """
     if isinstance(tp, _AnnotatedAlias):
         return (tp.__origin__,) + tp.__metadata__
-    if isinstance(tp, (_GenericAlias, GenericAlias)):
+    if isinstance(tp, (_GenericAlias, GenericAlias)) or _is_special_typing_construct(tp):
         res = tp.__args__
         if _should_unflatten_callable_args(tp, res):
             res = (list(res[:-1]), res[-1])

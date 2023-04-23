@@ -8606,5 +8606,75 @@ class TypeIterationTests(BaseTestCase):
             self.assertNotIsInstance(type_to_test, collections.abc.Iterable)
 
 
+class TestGenericAliasLike(BaseTestCase):
+    def test(self):
+        T = TypeVar('T')
+
+        class GenericType(Generic[T]):
+            def __class_getitem__(cls, args):
+                # The goal is that the thing returned from here can
+                # act like a GenericAlias but also implement custom behavior
+                # In particular the original feature request involved tracking
+                # TypeVar substitutions at runtime for Pydantic
+                if not isinstance(args, tuple):
+                    args = (args,)
+                parameters = tuple([a for a in args if isinstance(a, TypeVar)])
+                args = tuple([a for a in args if a not in parameters])
+                return GenericAliasLike(args, parameters, cls)
+
+
+        class GenericAliasLike:
+            def __init__(self, args, parameters, origin):
+                self.__args__ = args
+                self.__parameters__ = parameters
+                self.__origin__ = origin
+
+            def __getitem__(slf, args):
+                # Here would go logic to do the tracking of type var substitution
+                # For the purposes of our tests this hardcoded version does just fine
+                self.assertEqual(args, (int,))
+                slf.__args__ = args
+                slf.__parameters__ = ()
+                return slf
+
+            def __eq__(self, other):
+                # implemented just for easy comparison in the tests
+                # below
+                if not isinstance(other, GenericAliasLike):
+                    return False
+                return (
+                    self.__args__ == other.__args__
+                    and
+                    self.__origin__ == other.__origin__
+                    and
+                    self.__parameters__ == other.__parameters__
+                )
+
+            # __call__ needs to be implemented for this to be considered a type by typing.py
+            def __call__(self):
+                # In a real implementation this is where we would call our __origin__
+                # and forward the current state of type var substitution
+                pass
+
+        self.assertEqual(List[GenericType[T]].__parameters__, (T,))
+        self.assertEqual(List[GenericType[T]][int].__parameters__, ())
+
+        self.assertEqual(GenericType[T].__parameters__, (T,))
+        self.assertEqual(get_args(GenericType[T]), ())
+        self.assertIs(get_origin(GenericType[T]), GenericType)
+
+        self.assertEqual(GenericType[int].__parameters__, ())
+        self.assertEqual(get_args(GenericType[int]), (int,))
+        self.assertIs(get_origin(GenericType[int]), GenericType)
+
+        self.assertEqual(List[GenericType[T]].__parameters__, (T,))
+        self.assertEqual(get_args(List[GenericType[T]]), (GenericType[T],))
+        self.assertIs(get_origin(List[GenericType[T]]), list)
+
+        self.assertEqual(List[GenericType[T]][int].__parameters__, ())
+        self.assertEqual(get_args(List[GenericType[T]][int]), (GenericType[int],))
+        self.assertIs(get_origin(List[GenericType[T]]), list)
+
+
 if __name__ == '__main__':
     main()
