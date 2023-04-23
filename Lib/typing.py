@@ -2480,8 +2480,7 @@ def get_origin(tp):
     if (
         isinstance(tp, (_BaseGenericAlias, GenericAlias,
                        ParamSpecArgs, ParamSpecKwargs))
-        or
-        _is_special_typing_construct(tp)
+        or _is_special_typing_construct(tp)
     ):
         return tp.__origin__
     if tp is Generic:
