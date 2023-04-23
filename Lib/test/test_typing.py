@@ -7153,6 +7153,9 @@ class TypedDictTests(BaseTestCase):
         class MixedGenericChild(GenericChild, OtherGenericChild, GenericParent[float]):
             pass
 
+        class MultipleGenericBases(GenericParent[int], GenericParent[float]):
+            pass
+
         self.assertEqual(Parent.__orig_bases__, (TypedDict,))
         self.assertEqual(Child.__orig_bases__, (Parent,))
         self.assertEqual(OtherChild.__orig_bases__, (Parent,))
@@ -7161,6 +7164,7 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(GenericChild.__orig_bases__, (GenericParent[int],))
         self.assertEqual(OtherGenericChild.__orig_bases__, (GenericParent[str],))
         self.assertEqual(MixedGenericChild.__orig_bases__, (GenericChild, OtherGenericChild, GenericParent[float]))
+        self.assertEqual(MultipleGenericBases.__orig_bases__, (GenericParent[int], GenericParent[float]))
 
 
 class RequiredTests(BaseTestCase):
