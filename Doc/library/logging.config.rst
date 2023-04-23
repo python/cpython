@@ -253,6 +253,7 @@ otherwise, the context is used to determine what to instantiate.
    * ``datefmt``
    * ``style``
    * ``validate`` (since version >=3.8)
+   * ``defaults`` (since version >=3.12)
 
   An optional ``class`` key indicates the name of the formatter's
   class (as a dotted module and class name).  The instantiation
@@ -953,15 +954,21 @@ Sections which specify formatter configuration are typified by the following.
 .. code-block:: ini
 
    [formatter_form01]
-   format=F1 %(asctime)s %(levelname)s %(message)s
+   format=F1 %(asctime)s %(levelname)s %(message)s %(customfield)s
    datefmt=
    style=%
    validate=True
+   defaults={'customfield': 'defaultvalue'}
    class=logging.Formatter
 
 The arguments for the formatter configuration are the same as the keys
 in the dictionary schema :ref:`formatters section
 <logging-config-dictschema-formatters>`.
+
+The ``defaults`` entry, when :ref:`evaluated <func-eval>` in the context of
+the ``logging`` package's namespace, is a dictionary of default values for
+custom formatting fields. If not provided, it defaults to ``None``.
+
 
 .. note::
 
