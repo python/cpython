@@ -107,6 +107,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_returns_value = 0;
     ste->ste_needs_class_closure = 0;
     ste->ste_comp_iter_target = 0;
+    ste->ste_type_params_in_class = 0;
     ste->ste_comp_iter_expr = 0;
 
     ste->ste_symbols = PyDict_New();
