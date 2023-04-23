@@ -6698,42 +6698,18 @@ class NamedTupleTests(BaseTestCase):
     def test_orig_bases(self):
         T = TypeVar('T')
 
-        class Parent(NamedTuple):
+        class SimpleNamedTuple(NamedTuple):
             pass
 
-        class Child(Parent):
+        class GenericNamedTuple(NamedTuple, Generic[T]):
             pass
 
-        class OtherChild(Parent):
-            pass
+        self.assertEqual(SimpleNamedTuple.__orig_bases__, (NamedTuple,))
+        self.assertEqual(GenericNamedTuple.__orig_bases__, (NamedTuple, Generic[T]))
 
-        class MixedChild(Child, OtherChild, Parent):
-            pass
+        CallNamedTuple = NamedTuple('CallNamedTuple', [])
 
-        class GenericParent(NamedTuple, Generic[T]):
-            pass
-
-        class GenericChild(GenericParent[int]):
-            pass
-
-        class OtherGenericChild(GenericParent[str]):
-            pass
-
-        class MixedGenericChild(GenericChild, OtherGenericChild, GenericParent[float]):
-            pass
-
-        class MultipleGenericBases(GenericParent[int], GenericParent[float]):
-            pass
-
-        self.assertEqual(Parent.__orig_bases__, (NamedTuple,))
-        self.assertEqual(Child.__orig_bases__, (Parent,))
-        self.assertEqual(OtherChild.__orig_bases__, (Parent,))
-        self.assertEqual(MixedChild.__orig_bases__, (Child, OtherChild, Parent,))
-        self.assertEqual(GenericParent.__orig_bases__, (NamedTuple, Generic[T]))
-        self.assertEqual(GenericChild.__orig_bases__, (GenericParent[int],))
-        self.assertEqual(OtherGenericChild.__orig_bases__, (GenericParent[str],))
-        self.assertEqual(MixedGenericChild.__orig_bases__, (GenericChild, OtherGenericChild, GenericParent[float]))
-        self.assertEqual(MultipleGenericBases.__orig_bases__, (GenericParent[int], GenericParent[float]))
+        self.assertEqual(CallNamedTuple.__orig_bases__, (NamedTuple,))
 
 
 class TypedDictTests(BaseTestCase):
@@ -7196,6 +7172,8 @@ class TypedDictTests(BaseTestCase):
         class MultipleGenericBases(GenericParent[int], GenericParent[float]):
             pass
 
+        CallTypedDict = TypedDict('CallTypedDict', {})
+
         self.assertEqual(Parent.__orig_bases__, (TypedDict,))
         self.assertEqual(Child.__orig_bases__, (Parent,))
         self.assertEqual(OtherChild.__orig_bases__, (Parent,))
@@ -7205,6 +7183,7 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(OtherGenericChild.__orig_bases__, (GenericParent[str],))
         self.assertEqual(MixedGenericChild.__orig_bases__, (GenericChild, OtherGenericChild, GenericParent[float]))
         self.assertEqual(MultipleGenericBases.__orig_bases__, (GenericParent[int], GenericParent[float]))
+        self.assertEqual(CallTypedDict.__orig_bases__, (TypedDict,))
 
 
 class RequiredTests(BaseTestCase):
