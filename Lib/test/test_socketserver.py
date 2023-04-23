@@ -56,7 +56,7 @@ if HAVE_UNIX_SOCKETS and HAVE_FORKING:
                                     socketserver.UnixDatagramServer):
         pass
 
-
+@test.support.requires_fork()
 @contextlib.contextmanager
 def simple_subprocess(testcase):
     """Tests that a custom child process is not waited on (Issue 1540386)"""
