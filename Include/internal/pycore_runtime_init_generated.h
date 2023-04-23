@@ -546,11 +546,14 @@ extern "C" {
     INIT_STR(dbl_close_br, "}}"), \
     INIT_STR(dbl_open_br, "{{"), \
     INIT_STR(dbl_percent, "%%"), \
+    INIT_STR(defaults, ".defaults"), \
     INIT_STR(dot, "."), \
     INIT_STR(dot_locals, ".<locals>"), \
     INIT_STR(empty, ""), \
     INIT_STR(json_decoder, "json.decoder"), \
+    INIT_STR(kwdefaults, ".kwdefaults"), \
     INIT_STR(list_err, "list index out of range"), \
+    INIT_STR(namespace, ".namespace"), \
     INIT_STR(newline, "\n"), \
     INIT_STR(open_br, "{"), \
     INIT_STR(percent, "%"), \
@@ -1121,7 +1124,6 @@ extern "C" {
     INIT_ID(reducer_override), \
     INIT_ID(registry), \
     INIT_ID(rel_tol), \
-    INIT_ID(release), \
     INIT_ID(reload), \
     INIT_ID(repl), \
     INIT_ID(replace), \

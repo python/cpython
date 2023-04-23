@@ -1124,23 +1124,6 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag,
 }
 
 static int
-symtable_add_param(const char *name, struct symtable *st,
-                   int lineno, int col_offset, int end_lineno, int end_col_offset)
-{
-    PyObject *name_obj = PyUnicode_FromString(name);
-    if (name_obj == NULL) {
-        return 0;
-    }
-    if (!symtable_add_def(st, name_obj, DEF_PARAM,
-                          lineno, col_offset, end_lineno, end_col_offset)) {
-        Py_DECREF(name_obj);
-        return 0;
-    }
-    Py_DECREF(name_obj);
-    return 1;
-}
-
-static int
 symtable_enter_typeparam_block(struct symtable *st, identifier name,
                                void *ast, int has_defaults, int has_kwdefaults,
                                int lineno, int col_offset,
@@ -1153,20 +1136,23 @@ symtable_enter_typeparam_block(struct symtable *st, identifier name,
     }
     if (current_type == ClassBlock) {
         st->st_cur->ste_type_params_in_class = 1;
-        if (!symtable_add_param(".namespace", st,
-                                lineno, col_offset, end_lineno, end_col_offset)) {
+        _Py_DECLARE_STR(namespace, ".namespace");
+        if (!symtable_add_def(st, &_Py_STR(namespace), DEF_PARAM,
+                              lineno, col_offset, end_lineno, end_col_offset)) {
             return 0;
         }
     }
     if (has_defaults) {
-        if (!symtable_add_param(".defaults", st,
-                                lineno, col_offset, end_lineno, end_col_offset)) {
+        _Py_DECLARE_STR(defaults, ".defaults");
+        if (!symtable_add_def(st, &_Py_STR(defaults), DEF_PARAM,
+                              lineno, col_offset, end_lineno, end_col_offset)) {
             return 0;
         }
     }
     if (has_kwdefaults) {
-        if (!symtable_add_param(".kwdefaults", st,
-                                lineno, col_offset, end_lineno, end_col_offset)) {
+        _Py_DECLARE_STR(kwdefaults, ".kwdefaults");
+        if (!symtable_add_def(st, &_Py_STR(kwdefaults), DEF_PARAM,
+                              lineno, col_offset, end_lineno, end_col_offset)) {
             return 0;
         }
     }

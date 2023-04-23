@@ -557,11 +557,14 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(dbl_close_br));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(dbl_open_br));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(dbl_percent));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(defaults));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(dot));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(dot_locals));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(empty));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(json_decoder));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(kwdefaults));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(list_err));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(namespace));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(newline));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(open_br));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(percent));
@@ -1129,7 +1132,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(reducer_override));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(registry));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(rel_tol));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(release));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(reload));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(repl));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(replace));
