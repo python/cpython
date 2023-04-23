@@ -2125,8 +2125,9 @@ compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
     if (!typeparams) {
         return SUCCESS;
     }
+    Py_ssize_t n = asdl_seq_LEN(typeparams);
 
-    for (Py_ssize_t i = 0; i < asdl_seq_LEN(typeparams); i++) {
+    for (Py_ssize_t i = 0; i < n; i++) {
         typeparam_ty typeparam = asdl_seq_GET(typeparams, i);
         location loc = LOC(typeparam);
         switch(typeparam->kind) {
@@ -2139,20 +2140,24 @@ compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
             else {
                 ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVAR);
             }
+            ADDOP_I(c, loc, COPY, 1);
             compiler_nameop(c, loc, typeparam->v.TypeVar.name, Store);
             break;
         case TypeVarTuple_kind:
             ADDOP_LOAD_CONST(c, loc, typeparam->v.TypeVarTuple.name);
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVARTUPLE);
+            ADDOP_I(c, loc, COPY, 1);
             compiler_nameop(c, loc, typeparam->v.TypeVarTuple.name, Store);
             break;
         case ParamSpec_kind:
             ADDOP_LOAD_CONST(c, loc, typeparam->v.ParamSpec.name);
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PARAMSPEC);
+            ADDOP_I(c, loc, COPY, 1);
             compiler_nameop(c, loc, typeparam->v.ParamSpec.name, Store);
             break;
         }
     }
+    ADDOP_I(c, LOC(asdl_seq_GET(typeparams, 0)), BUILD_TUPLE, n);
     return SUCCESS;
 }
 
@@ -2231,6 +2236,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     int num_typeparam_args = 0;
 
     if (typeparams) {
+        funcflags |= 0x10;
         PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>", name);
         if (!typeparams_name) {
             return ERROR;
@@ -2355,6 +2361,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         Py_DECREF(typeparams_name);
         RETURN_IF_ERROR(compiler_type_params(c, typeparams));
+        ADDOP(c, loc, POP_TOP);
     }
 
     /* ultimately generate code for:

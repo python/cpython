@@ -1326,6 +1326,12 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_QUIT(st, 0);
         tmp = st->st_private;
         st->st_private = s->v.ClassDef.name;
+        if (s->v.ClassDef.typeparams) {
+            if (!symtable_add_def(st, &_Py_ID(__type_variables__),
+                                  DEF_LOCAL, LOCATION(s))) {
+                VISIT_QUIT(st, 0);
+            }
+        }
         VISIT_SEQ(st, stmt, s->v.ClassDef.body);
         st->st_private = tmp;
         if (!symtable_exit_block(st))
