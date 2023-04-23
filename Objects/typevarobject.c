@@ -250,6 +250,50 @@ static PyNumberMethods typevar_as_number = {
     .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
+PyDoc_STRVAR(typevar_doc,
+"Type variable.\n\
+\n\
+Usage::\n\
+\n\
+  T = TypeVar('T')  # Can be anything\n\
+  A = TypeVar('A', str, bytes)  # Must be str or bytes\n\
+\n\
+Type variables exist primarily for the benefit of static type\n\
+checkers.  They serve as the parameters for generic types as well\n\
+as for generic function definitions.  See class Generic for more\n\
+information on generic types.  Generic functions work as follows:\n\
+\n\
+  def repeat(x: T, n: int) -> List[T]:\n\
+      '''Return a list containing n references to x.'''\n\
+      return [x]*n\n\
+\n\
+  def longest(x: A, y: A) -> A:\n\
+      '''Return the longest of two strings.'''\n\
+      return x if len(x) >= len(y) else y\n\
+\n\
+The latter example's signature is essentially the overloading\n\
+of (str, str) -> str and (bytes, bytes) -> bytes.  Also note\n\
+that if the arguments are instances of some subclass of str,\n\
+the return type is still plain str.\n\
+\n\
+At runtime, isinstance(x, T) and issubclass(C, T) will raise TypeError.\n\
+\n\
+Type variables defined with covariant=True or contravariant=True\n\
+can be used to declare covariant or contravariant generic types.\n\
+See PEP 484 for more details. By default generic types are invariant\n\
+in all type variables.\n\
+\n\
+Type variables can be introspected. e.g.:\n\
+\n\
+  T.__name__ == 'T'\n\
+  T.__constraints__ == ()\n\
+  T.__covariant__ == False\n\
+  T.__contravariant__ = False\n\
+  A.__constraints__ == (str, bytes)\n\
+\n\
+Note that only type variables defined in global scope can be pickled.\n\
+");
+
 PyTypeObject _PyTypeVar_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "typing.TypeVar",
@@ -264,6 +308,7 @@ PyTypeObject _PyTypeVar_Type = {
     .tp_methods = typevar_methods,
     .tp_new = typevar_new,
     .tp_as_number = &typevar_as_number,
+    .tp_doc = typevar_doc,
 };
 
 typedef struct {
@@ -347,6 +392,19 @@ paramspecargs_new_impl(PyTypeObject *type, PyObject *origin)
     return (PyObject *)paramspecargsobject_new(origin);
 }
 
+PyDoc_STRVAR(paramspecargs_doc,
+"The args for a ParamSpec object.\n\
+\n\
+Given a ParamSpec object P, P.args is an instance of ParamSpecArgs.\n\
+\n\
+ParamSpecArgs objects have a reference back to their ParamSpec:\n\
+\n\
+    P.args.__origin__ is P\n\
+\n\
+This type is meant for runtime introspection and has no special meaning to\n\
+static type checkers.\n\
+");
+
 PyTypeObject _PyParamSpecArgs_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "typing.ParamSpecArgs",
@@ -360,6 +418,7 @@ PyTypeObject _PyParamSpecArgs_Type = {
     .tp_traverse = paramspecargsobject_traverse,
     .tp_members = paramspecargs_members,
     .tp_new = paramspecargs_new,
+    .tp_doc = paramspecargs_doc,
 };
 
 typedef struct {
@@ -443,6 +502,19 @@ paramspeckwargs_new_impl(PyTypeObject *type, PyObject *origin)
     return (PyObject *)paramspeckwargsobject_new(origin);
 }
 
+PyDoc_STRVAR(paramspeckwargs_doc,
+"The kwargs for a ParamSpec object.\n\
+\n\
+Given a ParamSpec object P, P.kwargs is an instance of ParamSpecKwargs.\n\
+\n\
+ParamSpecKwargs objects have a reference back to their ParamSpec:\n\
+\n\
+    P.kwargs.__origin__ is P\n\
+\n\
+This type is meant for runtime introspection and has no special meaning to\n\
+static type checkers.\n\
+");
+
 PyTypeObject _PyParamSpecKwargs_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "typing.ParamSpecKwargs",
@@ -456,6 +528,7 @@ PyTypeObject _PyParamSpecKwargs_Type = {
     .tp_traverse = paramspeckwargsobject_traverse,
     .tp_members = paramspeckwargs_members,
     .tp_new = paramspeckwargs_new,
+    .tp_doc = paramspeckwargs_doc,
 };
 
 static void paramspecobject_dealloc(PyObject *self)
@@ -635,8 +708,52 @@ static PyNumberMethods paramspec_as_number = {
     .nb_or = _Py_union_type_or, // Add __or__ function
 };
 
-// TODO:
-// - pickling
+PyDoc_STRVAR(paramspec_doc,
+"Parameter specification variable.\n\
+\n\
+Usage::\n\
+\n\
+    P = ParamSpec('P')\n\
+\n\
+Parameter specification variables exist primarily for the benefit of static\n\
+type checkers.  They are used to forward the parameter types of one\n\
+callable to another callable, a pattern commonly found in higher order\n\
+functions and decorators.  They are only valid when used in ``Concatenate``,\n\
+or as the first argument to ``Callable``, or as parameters for user-defined\n\
+Generics.  See class Generic for more information on generic types.  An\n\
+example for annotating a decorator::\n\
+\n\
+    T = TypeVar('T')\n\
+    P = ParamSpec('P')\n\
+\n\
+    def add_logging(f: Callable[P, T]) -> Callable[P, T]:\n\
+        '''A type-safe decorator to add logging to a function.'''\n\
+        def inner(*args: P.args, **kwargs: P.kwargs) -> T:\n\
+            logging.info(f'{f.__name__} was called')\n\
+            return f(*args, **kwargs)\n\
+        return inner\n\
+\n\
+    @add_logging\n\
+    def add_two(x: float, y: float) -> float:\n\
+        '''Add two numbers together.'''\n\
+        return x + y\n\
+\n\
+Parameter specification variables defined with covariant=True or\n\
+contravariant=True can be used to declare covariant or contravariant\n\
+generic types.  These keyword arguments are valid, but their actual semantics\n\
+are yet to be decided.  See PEP 612 for details.\n\
+\n\
+Parameter specification variables can be introspected. e.g.:\n\
+\n\
+    P.__name__ == 'P'\n\
+    P.__bound__ == None\n\
+    P.__covariant__ == False\n\
+    P.__contravariant__ == False\n\
+\n\
+Note that only parameter specification variables defined in global scope can\n\
+be pickled.\n\
+");
+
 PyTypeObject _PyParamSpec_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "typing.ParamSpec",
@@ -652,6 +769,7 @@ PyTypeObject _PyParamSpec_Type = {
     .tp_getset = paramspec_getset,
     .tp_new = paramspec_new,
     .tp_as_number = &paramspec_as_number,
+    .tp_doc = paramspec_doc,
 };
 
 static void typevartupleobject_dealloc(PyObject *self)
@@ -791,8 +909,31 @@ static PyMethodDef typevartuple_methods[] = {
     {0}
 };
 
-// TODO:
-// - Pickling
+PyDoc_STRVAR(typevartuple_doc,
+"Type variable tuple.\n\
+\n\
+Usage:\n\
+\n\
+  Ts = TypeVarTuple('Ts')  # Can be given any name\n\
+\n\
+Just as a TypeVar (type variable) is a placeholder for a single type,\n\
+a TypeVarTuple is a placeholder for an *arbitrary* number of types. For\n\
+example, if we define a generic class using a TypeVarTuple:\n\
+\n\
+  class C(Generic[*Ts]): ...\n\
+\n\
+Then we can parameterize that class with an arbitrary number of type\n\
+arguments:\n\
+\n\
+  C[int]       # Fine\n\
+  C[int, str]  # Also fine\n\
+  C[()]        # Even this is fine\n\
+\n\
+For more details, see PEP 646.\n\
+\n\
+Note that only TypeVarTuples defined in global scope can be pickled.\n\
+");
+
 PyTypeObject _PyTypeVarTuple_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "typing.TypeVarTuple",
@@ -805,6 +946,7 @@ PyTypeObject _PyTypeVarTuple_Type = {
     .tp_members = typevartuple_members,
     .tp_methods = typevartuple_methods,
     .tp_new = typevartuple,
+    .tp_doc = typevartuple_doc,
 };
 
 PyObject *_Py_make_typevar(const char *name, PyObject *bound_or_constraints) {
