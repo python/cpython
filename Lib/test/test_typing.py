@@ -8644,10 +8644,8 @@ class TestGenericAliasLike(BaseTestCase):
                     return False
                 return (
                     self.__args__ == other.__args__
-                    and
-                    self.__origin__ == other.__origin__
-                    and
-                    self.__parameters__ == other.__parameters__
+                    and self.__origin__ == other.__origin__
+                    and self.__parameters__ == other.__parameters__
                 )
 
             # __call__ needs to be implemented for this to be considered a type by typing.py
