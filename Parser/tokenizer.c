@@ -11,11 +11,6 @@
 #include "tokenizer.h"
 #include "errcode.h"
 
-#include "unicodeobject.h"
-#include "bytesobject.h"
-#include "fileobject.h"
-#include "abstract.h"
-
 /* Alternate tab spacing */
 #define ALTTABSIZE 1
 
@@ -42,6 +37,24 @@
 #define ADVANCE_LINENO() \
             tok->lineno++; \
             tok->col_offset = 0;
+
+#define INSIDE_FSTRING(tok) (tok->tok_mode_stack_index > 0)
+#define INSIDE_FSTRING_EXPR(tok) (tok->curly_bracket_expr_start_depth >= 0)
+#ifdef Py_DEBUG
+static inline tokenizer_mode* TOK_GET_MODE(struct tok_state* tok) {
+    assert(tok->tok_mode_stack_index >= 0);
+    assert(tok->tok_mode_stack_index < MAXLEVEL);
+    return &(tok->tok_mode_stack[tok->tok_mode_stack_index]);
+}
+static inline tokenizer_mode* TOK_NEXT_MODE(struct tok_state* tok) {
+    assert(tok->tok_mode_stack_index >= 0);
+    assert(tok->tok_mode_stack_index < MAXLEVEL);
+    return &(tok->tok_mode_stack[++tok->tok_mode_stack_index]);
+}
+#else
+#define TOK_GET_MODE(tok) (&(tok->tok_mode_stack[tok->tok_mode_stack_index]))
+#define TOK_NEXT_MODE(tok) (&(tok->tok_mode_stack[++tok->tok_mode_stack_index]))
+#endif
 
 /* Forward */
 static struct tok_state *tok_new(void);
@@ -98,6 +111,9 @@ tok_new(void)
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
     tok->report_warnings = 1;
+    tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0};
+    tok->tok_mode_stack_index = 0;
+    tok->tok_report_warnings = 1;
 #ifdef Py_DEBUG
     tok->debug = _Py_GetConfig()->parser_debug;
 #endif
@@ -346,6 +362,94 @@ tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {
 }
 
 
+/* Traverse and update all f-string buffers with the value */
+static void
+update_fstring_buffers(struct tok_state *tok, char value, int regular, int multiline)
+{
+    int index;
+    tokenizer_mode *mode;
+
+    for (index = tok->tok_mode_stack_index; index >= 0; --index) {
+        mode = &(tok->tok_mode_stack[index]);
+        if (regular && mode->f_string_start != NULL) {
+            mode->f_string_start += value;
+        }
+        if (multiline && mode->f_string_multi_line_start != NULL) {
+            mode->f_string_multi_line_start += value;
+        }
+    }
+}
+
+static int
+update_fstring_expr(struct tok_state *tok, char cur)
+{
+    assert(tok->cur != NULL);
+
+    Py_ssize_t size = strlen(tok->cur);
+    tokenizer_mode *tok_mode = TOK_GET_MODE(tok);
+
+    switch (cur) {
+       case 0:
+            if (!tok_mode->last_expr_buffer || tok_mode->last_expr_end >= 0) {
+                return 1;
+            }
+            char *new_buffer = PyMem_Realloc(
+                tok_mode->last_expr_buffer,
+                tok_mode->last_expr_size + size
+            );
+            if (new_buffer == NULL) {
+                PyMem_Free(tok_mode->last_expr_buffer);
+                goto error;
+            }
+            tok_mode->last_expr_buffer = new_buffer;
+            strncpy(tok_mode->last_expr_buffer + tok_mode->last_expr_size, tok->cur, size);
+            tok_mode->last_expr_size += size;
+            break;
+        case '{':
+            if (tok_mode->last_expr_buffer != NULL) {
+                PyMem_Free(tok_mode->last_expr_buffer);
+            }
+            tok_mode->last_expr_buffer = PyMem_Malloc(size);
+            if (tok_mode->last_expr_buffer == NULL) {
+                goto error;
+            }
+            tok_mode->last_expr_size = size;
+            tok_mode->last_expr_end = -1;
+            strncpy(tok_mode->last_expr_buffer, tok->cur, size);
+            break;
+        case '}':
+        case '!':
+        case ':':
+            if (tok_mode->last_expr_end == -1) {
+                tok_mode->last_expr_end = strlen(tok->start);
+            }
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
+    return 1;
+error:
+    tok->done = E_NOMEM;
+    return 0;
+}
+
+static void
+free_fstring_expressions(struct tok_state *tok)
+{
+    int index;
+    tokenizer_mode *mode;
+
+    for (index = tok->tok_mode_stack_index; index >= 0; --index) {
+        mode = &(tok->tok_mode_stack[index]);
+        if (mode->last_expr_buffer != NULL) {
+            PyMem_Free(mode->last_expr_buffer);
+            mode->last_expr_buffer = NULL;
+            mode->last_expr_size = 0;
+            mode->last_expr_end = -1;
+        }
+    }
+}
+
 /* Read a line of text from TOK into S, using the stream in TOK.
    Return NULL on failure, else S.
 
@@ -372,6 +476,7 @@ tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
         Py_ssize_t start = tok->start == NULL ? -1 : tok->start - tok->buf;
         Py_ssize_t line_start = tok->start == NULL ? -1 : tok->line_start - tok->buf;
         Py_ssize_t multi_line_start = tok->multi_line_start - tok->buf;
+        update_fstring_buffers(tok, -*tok->buf, /*regular=*/1, /*multiline=*/1);
         newbuf = (char *)PyMem_Realloc(newbuf, newsize);
         if (newbuf == NULL) {
             tok->done = E_NOMEM;
@@ -384,6 +489,7 @@ tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
         tok->start = start < 0 ? NULL : tok->buf + start;
         tok->line_start = line_start < 0 ? NULL : tok->buf + line_start;
         tok->multi_line_start = multi_line_start < 0 ? NULL : tok->buf + multi_line_start;
+        update_fstring_buffers(tok, *tok->buf, /*regular=*/1, /*multiline=*/1);
     }
     return 1;
 }
@@ -838,6 +944,7 @@ _PyTokenizer_Free(struct tok_state *tok)
     if (tok->interactive_src_start != NULL) {
         PyMem_Free(tok->interactive_src_start);
     }
+    free_fstring_expressions(tok);
     PyMem_Free(tok);
 }
 
@@ -853,6 +960,9 @@ tok_readline_raw(struct tok_state *tok)
         char *line = _Py_UniversalNewlineFgetsWithSize(tok->inp, n_chars, tok->fp, NULL, &line_size);
         if (line == NULL) {
             return 1;
+        }
+        if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
+            return 0;
         }
         if (tok->fp_interactive &&
             tok_concatenate_interactive_new_line(tok, line) == -1) {
@@ -941,6 +1051,7 @@ tok_underflow_interactive(struct tok_state *tok) {
     }
     else if (tok->start != NULL) {
         Py_ssize_t cur_multi_line_start = tok->multi_line_start - tok->buf;
+        update_fstring_buffers(tok, -*tok->buf, /*regular=*/0, /*multiline=*/1);
         size_t size = strlen(newtok);
         ADVANCE_LINENO();
         if (!tok_reserve_buf(tok, size + 1)) {
@@ -953,6 +1064,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         PyMem_Free(newtok);
         tok->inp += size;
         tok->multi_line_start = tok->buf + cur_multi_line_start;
+        update_fstring_buffers(tok, *tok->buf, /*regular=*/0, /*multiline=*/1);
     }
     else {
         ADVANCE_LINENO();
@@ -967,6 +1079,10 @@ tok_underflow_interactive(struct tok_state *tok) {
         if (tok->prompt != NULL) {
             PySys_WriteStderr("\n");
         }
+        return 0;
+    }
+
+    if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
         return 0;
     }
     return 1;
@@ -1073,7 +1189,7 @@ tok_nextc(struct tok_state *tok)
             return Py_CHARMASK(*tok->cur++); /* Fast path */
         }
         if (tok->done != E_OK) {
-           return EOF;
+            return EOF;
         }
         if (tok->fp == NULL) {
             rc = tok_underflow_string(tok);
@@ -1115,7 +1231,7 @@ tok_backup(struct tok_state *tok, int c)
         if (--tok->cur < tok->buf) {
             Py_FatalError("tokenizer beginning of buffer");
         }
-        if ((int)(unsigned char)*tok->cur != c) {
+        if ((int)(unsigned char)*tok->cur != Py_CHARMASK(c)) {
             Py_FatalError("tok_backup: wrong character");
         }
         tok->col_offset--;
@@ -1172,6 +1288,7 @@ error:
 static int
 syntaxerror(struct tok_state *tok, const char *format, ...)
 {
+    // This errors are cleaned on startup. Todo: Fix it.
     va_list vargs;
     va_start(vargs, format);
     int ret = _syntaxerror_range(tok, format, -1, -1, vargs);
@@ -1232,6 +1349,41 @@ error:
     Py_XDECREF(errmsg);
     tok->done = E_ERROR;
     return -1;
+}
+
+static int
+warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_char)
+{
+
+    if (!tok->tok_report_warnings) {
+        return 0;
+    }
+
+    PyObject *msg = PyUnicode_FromFormat(
+        "invalid escape sequence '\\%c'",
+        (char) first_invalid_escape_char
+    );
+
+    if (msg == NULL) {
+        return -1;
+    }
+
+    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg, tok->filename,
+                                 tok->lineno, NULL, NULL) < 0) {
+        Py_DECREF(msg);
+
+        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+            /* Replace the DeprecationWarning exception with a SyntaxError
+               to get a more accurate error report */
+            PyErr_Clear();
+            return syntaxerror(tok, "invalid escape sequence '\\%c'", (char) first_invalid_escape_char);
+        }
+
+        return -1;
+    }
+
+    Py_DECREF(msg);
+    return 0;
 }
 
 static int
@@ -1389,7 +1541,6 @@ tok_decimal_tail(struct tok_state *tok)
     return c;
 }
 
-/* Get next token, after space stripping etc. */
 
 static inline int
 tok_continuation_line(struct tok_state *tok) {
@@ -1427,7 +1578,12 @@ token_setup(struct tok_state *tok, struct token *token, int type, const char *st
 {
     assert((start == NULL && end == NULL) || (start != NULL && end != NULL));
     token->level = tok->level;
-    token->lineno = type == STRING ? tok->first_lineno : tok->lineno;
+    if (ISSTRINGLIT(type)) {
+        token->lineno = tok->first_lineno;
+    }
+    else {
+        token->lineno = tok->lineno;
+    }
     token->end_lineno = tok->lineno;
     token->col_offset = token->end_col_offset = -1;
     token->start = start;
@@ -1441,7 +1597,7 @@ token_setup(struct tok_state *tok, struct token *token, int type, const char *st
 }
 
 static int
-tok_get(struct tok_state *tok, struct token *token)
+tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct token *token)
 {
     int c;
     int blankline, nonascii;
@@ -1602,6 +1758,11 @@ tok_get(struct tok_state *tok, struct token *token)
 
     /* Skip comment, unless it's a type comment */
     if (c == '#') {
+
+        if (INSIDE_FSTRING(tok)) {
+            return MAKE_TOKEN(syntaxerror(tok, "f-string expression part cannot include '#'"));
+        }
+
         const char *prefix, *p, *type_start;
         int current_starting_col_offset;
 
@@ -1703,6 +1864,9 @@ tok_get(struct tok_state *tok, struct token *token)
             }
             c = tok_nextc(tok);
             if (c == '"' || c == '\'') {
+                if (saw_f) {
+                    goto f_string_quote;
+                }
                 goto letter_quote;
             }
         }
@@ -1748,7 +1912,9 @@ tok_get(struct tok_state *tok, struct token *token)
                 int ahead_tok_kind;
 
                 memcpy(&ahead_tok, tok, sizeof(ahead_tok));
-                ahead_tok_kind = tok_get(&ahead_tok, &ahead_token);
+                ahead_tok_kind = tok_get_normal_mode(&ahead_tok,
+                                                     current_tok,
+                                                     &ahead_token);
 
                 if (ahead_tok_kind == NAME
                     && ahead_tok.cur - ahead_tok.start == 3
@@ -2003,6 +2169,66 @@ tok_get(struct tok_state *tok, struct token *token)
         return MAKE_TOKEN(NUMBER);
     }
 
+  f_string_quote:
+    if (((tolower(*tok->start) == 'f' || tolower(*tok->start) == 'r') && (c == '\'' || c == '"'))) {
+        int quote = c;
+        int quote_size = 1;             /* 1 or 3 */
+
+        /* Nodes of type STRING, especially multi line strings
+           must be handled differently in order to get both
+           the starting line number and the column offset right.
+           (cf. issue 16806) */
+        tok->first_lineno = tok->lineno;
+        tok->multi_line_start = tok->line_start;
+
+        /* Find the quote size and start of string */
+        int after_quote = tok_nextc(tok);
+        if (after_quote == quote) {
+            int after_after_quote = tok_nextc(tok);
+            if (after_after_quote == quote) {
+                quote_size = 3;
+            }
+            else {
+                // TODO: Check this
+                tok_backup(tok, after_after_quote);
+                tok_backup(tok, after_quote);
+            }
+        }
+        if (after_quote != quote) {
+            tok_backup(tok, after_quote);
+        }
+
+
+        p_start = tok->start;
+        p_end = tok->cur;
+        tokenizer_mode *the_current_tok = TOK_NEXT_MODE(tok);
+        the_current_tok->kind = TOK_FSTRING_MODE;
+        the_current_tok->f_string_quote = quote;
+        the_current_tok->f_string_quote_size = quote_size;
+        the_current_tok->f_string_start = tok->start;
+        the_current_tok->f_string_multi_line_start = tok->line_start;
+        the_current_tok->last_expr_buffer = NULL;
+        the_current_tok->last_expr_size = 0;
+        the_current_tok->last_expr_end = -1;
+
+        switch (*tok->start) {
+            case 'F':
+            case 'f':
+                the_current_tok->f_string_raw = tolower(*(tok->start + 1)) == 'r';
+                break;
+            case 'R':
+            case 'r':
+                the_current_tok->f_string_raw = 1;
+                break;
+            default:
+                Py_UNREACHABLE();
+        }
+
+        the_current_tok->curly_bracket_depth = 0;
+        the_current_tok->curly_bracket_expr_start_depth = -1;
+        return MAKE_TOKEN(FSTRING_START);
+    }
+
   letter_quote:
     /* String */
     if (c == '\'' || c == '"') {
@@ -2047,6 +2273,20 @@ tok_get(struct tok_state *tok, struct token *token)
                 tok->line_start = tok->multi_line_start;
                 int start = tok->lineno;
                 tok->lineno = tok->first_lineno;
+
+                if (INSIDE_FSTRING(tok)) {
+                    /* When we are in an f-string, before raising the
+                     * unterminated string literal error, check whether
+                     * does the initial quote matches with f-strings quotes
+                     * and if it is, then this must be a missing '}' token
+                     * so raise the proper error */
+                    tokenizer_mode *the_current_tok = TOK_GET_MODE(tok);
+                    if (the_current_tok->f_string_quote == quote &&
+                        the_current_tok->f_string_quote_size == quote_size) {
+                        return MAKE_TOKEN(syntaxerror(tok, "f-string: expecting '}'", start));
+                    }
+                }
+
                 if (quote_size == 3) {
                     syntaxerror(tok, "unterminated triple-quoted string literal"
                                      " (detected at line %d)", start);
@@ -2089,6 +2329,26 @@ tok_get(struct tok_state *tok, struct token *token)
         goto again; /* Read next line */
     }
 
+    /* Punctuation character */
+    int is_punctuation = (c == ':' || c == '}' || c == '!' || c == '{');
+    if (is_punctuation && INSIDE_FSTRING(tok) && INSIDE_FSTRING_EXPR(current_tok)) {
+        /* This code block gets executed before the curly_bracket_depth is incremented
+         * by the `{` case, so for ensuring that we are on the 0th level, we need
+         * to adjust it manually */
+        int cursor = current_tok->curly_bracket_depth - (c != '{');
+
+        if (cursor == 0 && !update_fstring_expr(tok, c)) {
+            return MAKE_TOKEN(ENDMARKER);
+        }
+
+        if (c == ':' && cursor == current_tok->curly_bracket_expr_start_depth) {
+            current_tok->kind = TOK_FSTRING_MODE;
+            p_start = tok->start;
+            p_end = tok->cur;
+            return MAKE_TOKEN(_PyToken_OneChar(c));
+        }
+    }
+
     /* Check for two-character token */
     {
         int c2 = tok_nextc(tok);
@@ -2121,11 +2381,17 @@ tok_get(struct tok_state *tok, struct token *token)
         tok->parenlinenostack[tok->level] = tok->lineno;
         tok->parencolstack[tok->level] = (int)(tok->start - tok->line_start);
         tok->level++;
+        if (INSIDE_FSTRING(tok)) {
+            current_tok->curly_bracket_depth++;
+        }
         break;
     case ')':
     case ']':
     case '}':
         if (!tok->level) {
+            if (INSIDE_FSTRING(tok) && !current_tok->curly_bracket_depth && c == '}') {
+                return MAKE_TOKEN(syntaxerror(tok, "f-string: single '}' is not allowed"));
+            }
             return MAKE_TOKEN(syntaxerror(tok, "unmatched '%c'", c));
         }
         tok->level--;
@@ -2134,6 +2400,18 @@ tok_get(struct tok_state *tok, struct token *token)
               (opening == '[' && c == ']') ||
               (opening == '{' && c == '}')))
         {
+            /* If the opening bracket belongs to an f-string's expression
+               part (e.g. f"{)}") and the closing bracket is an arbitrary
+               nested expression, then instead of matching a different
+               syntactical construct with it; we'll throw an unmatched
+               parentheses error. */
+            if (INSIDE_FSTRING(tok) && opening == '{') {
+                assert(current_tok->curly_bracket_depth >= 0);
+                int previous_bracket = current_tok->curly_bracket_depth - 1;
+                if (previous_bracket == current_tok->curly_bracket_expr_start_depth) {
+                    return MAKE_TOKEN(syntaxerror(tok, "f-string: unmatched '%c'", c));
+                }
+            }
             if (tok->parenlinenostack[tok->level] != tok->lineno) {
                 return MAKE_TOKEN(syntaxerror(tok,
                         "closing parenthesis '%c' does not match "
@@ -2147,6 +2425,16 @@ tok_get(struct tok_state *tok, struct token *token)
                         c, opening));
             }
         }
+
+        if (INSIDE_FSTRING(tok)) {
+            current_tok->curly_bracket_depth--;
+            if (c == '}' && current_tok->curly_bracket_depth == current_tok->curly_bracket_expr_start_depth) {
+                current_tok->curly_bracket_expr_start_depth--;
+                current_tok->kind = TOK_FSTRING_MODE;
+            }
+        }
+        break;
+    default:
         break;
     }
 
@@ -2160,6 +2448,189 @@ tok_get(struct tok_state *tok, struct token *token)
     p_start = tok->start;
     p_end = tok->cur;
     return MAKE_TOKEN(_PyToken_OneChar(c));
+}
+
+static int
+tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct token *token)
+{
+    const char *p_start = NULL;
+    const char *p_end = NULL;
+    int end_quote_size = 0;
+    int unicode_escape = 0;
+
+    tok->start = tok->cur;
+    tok->first_lineno = tok->lineno;
+    tok->starting_col_offset = tok->col_offset;
+
+    // If we start with a bracket, we defer to the normal mode as there is nothing for us to tokenize
+    // before it.
+    int start_char = tok_nextc(tok);
+    int peek1 = tok_nextc(tok);
+    tok_backup(tok, peek1);
+    tok_backup(tok, start_char);
+
+    if ((start_char == '{' && peek1 != '{') || (start_char == '}' && peek1 != '}')) {
+        if (start_char == '{') {
+            current_tok->curly_bracket_expr_start_depth++;
+            if (current_tok->curly_bracket_expr_start_depth >= MAX_EXPR_NESTING) {
+                return MAKE_TOKEN(syntaxerror(tok, "f-string: expressions nested too deeply"));
+            }
+        }
+        TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
+        return tok_get_normal_mode(tok, current_tok, token);
+    }
+
+    // Check if we are at the end of the string
+    for (int i = 0; i < current_tok->f_string_quote_size; i++) {
+        int quote = tok_nextc(tok);
+        if (quote != current_tok->f_string_quote) {
+            tok_backup(tok, quote);
+            goto f_string_middle;
+        }
+    }
+
+    if (current_tok->last_expr_buffer != NULL) {
+        PyMem_Free(current_tok->last_expr_buffer);
+        current_tok->last_expr_buffer = NULL;
+        current_tok->last_expr_size = 0;
+        current_tok->last_expr_end = -1;
+    }
+
+    p_start = tok->start;
+    p_end = tok->cur;
+    tok->tok_mode_stack_index--;
+    return MAKE_TOKEN(FSTRING_END);
+
+f_string_middle:
+
+    while (end_quote_size != current_tok->f_string_quote_size) {
+        int c = tok_nextc(tok);
+        if (c == EOF || (current_tok->f_string_quote_size == 1 && c == '\n')) {
+            assert(tok->multi_line_start != NULL);
+            // shift the tok_state's location into
+            // the start of string, and report the error
+            // from the initial quote character
+            tok->cur = (char *)current_tok->f_string_start;
+            tok->cur++;
+            tok->line_start = current_tok->f_string_multi_line_start;
+            int start = tok->lineno;
+            tok->lineno = tok->first_lineno;
+
+            if (current_tok->f_string_quote_size == 3) {
+                return MAKE_TOKEN(syntaxerror(tok,
+                                    "unterminated triple-quoted f-string literal"
+                                    " (detected at line %d)", start));
+            }
+            else {
+                return MAKE_TOKEN(syntaxerror(tok,
+                                    "unterminated f-string literal (detected at"
+                                    " line %d)", start));
+            }
+        }
+
+        if (c == current_tok->f_string_quote) {
+            end_quote_size += 1;
+            continue;
+        } else {
+            end_quote_size = 0;
+        }
+
+        int in_format_spec = (
+                current_tok->last_expr_end != -1
+                &&
+                INSIDE_FSTRING_EXPR(current_tok)
+        );
+        if (c == '{') {
+            int peek = tok_nextc(tok);
+            if (peek != '{' || in_format_spec) {
+                tok_backup(tok, peek);
+                tok_backup(tok, c);
+                current_tok->curly_bracket_expr_start_depth++;
+                if (current_tok->curly_bracket_expr_start_depth >= MAX_EXPR_NESTING) {
+                    return MAKE_TOKEN(syntaxerror(tok, "f-string: expressions nested too deeply"));
+                }
+                TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
+                p_start = tok->start;
+                p_end = tok->cur;
+            } else {
+                p_start = tok->start;
+                p_end = tok->cur - 1;
+            }
+            return MAKE_TOKEN(FSTRING_MIDDLE);
+        } else if (c == '}') {
+            if (unicode_escape) {
+                p_start = tok->start;
+                p_end = tok->cur;
+                return MAKE_TOKEN(FSTRING_MIDDLE);
+            }
+            int peek = tok_nextc(tok);
+
+            // The tokenizer can only be in the format spec if we have already completed the expression
+            // scanning (indicated by the end of the expression being set) and we are not at the top level
+            // of the bracket stack (-1 is the top level). Since format specifiers can't legally use double
+            // brackets, we can bypass it here.
+            if (peek == '}' && !in_format_spec) {
+                p_start = tok->start;
+                p_end = tok->cur - 1;
+            } else {
+                tok_backup(tok, peek);
+                tok_backup(tok, c);
+                TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
+                p_start = tok->start;
+                p_end = tok->cur;
+            }
+            return MAKE_TOKEN(FSTRING_MIDDLE);
+        } else if (c == '\\') {
+            int peek = tok_nextc(tok);
+            // Special case when the backslash is right before a curly
+            // brace. We have to restore and return the control back
+            // to the loop for the next iteration.
+            if (peek == '{' || peek == '}') {
+                if (!current_tok->f_string_raw) {
+                    if (warn_invalid_escape_sequence(tok, peek)) {
+                        return MAKE_TOKEN(ERRORTOKEN);
+                    }
+                }
+                tok_backup(tok, peek);
+                continue;
+            }
+
+            if (!current_tok->f_string_raw) {
+                if (peek == 'N') {
+                    /* Handle named unicode escapes (\N{BULLET}) */
+                    peek = tok_nextc(tok);
+                    if (peek == '{') {
+                        unicode_escape = 1;
+                    } else {
+                        tok_backup(tok, peek);
+                    }
+                }
+            } /* else {
+                skip the escaped character
+            }*/
+        }
+    }
+
+    // Backup the f-string quotes to emit a final FSTRING_MIDDLE and
+    // add the quotes to the FSTRING_END in the next tokenizer iteration.
+    for (int i = 0; i < current_tok->f_string_quote_size; i++) {
+        tok_backup(tok, current_tok->f_string_quote);
+    }
+    p_start = tok->start;
+    p_end = tok->cur;
+    return MAKE_TOKEN(FSTRING_MIDDLE);
+}
+
+
+static int
+tok_get(struct tok_state *tok, struct token *token)
+{
+    tokenizer_mode *current_tok = TOK_GET_MODE(tok);
+    if (current_tok->kind == TOK_REGULAR_MODE) {
+        return tok_get_normal_mode(tok, current_tok, token);
+    } else {
+        return tok_get_fstring_mode(tok, current_tok, token);
+    }
 }
 
 int
