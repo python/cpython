@@ -652,6 +652,12 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(posixpath.relpath("/", "/"), '.')
             self.assertEqual(posixpath.relpath("/a", "/a"), '.')
             self.assertEqual(posixpath.relpath("/a/b", "/a/b"), '.')
+            self.assertRaises(ValueError, posixpath.relpath, "/foo/bar", "//foo")
+            self.assertRaises(ValueError, posixpath.relpath, "//foo/bar", "/foo")
+            self.assertRaises(ValueError, posixpath.relpath, "//foo/bar", "///foo")
+            self.assertEqual(posixpath.relpath("//foo/bar", "//foo"), "bar")
+            self.assertEqual(posixpath.relpath("///foo/bar", "/foo"), "bar")
+            self.assertEqual(posixpath.relpath("/foo/bar/baz", "///foo"), "bar/baz")
         finally:
             os.getcwd = real_getcwd
 
