@@ -2253,7 +2253,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
         the_current_tok->curly_bracket_depth = 0;
         the_current_tok->curly_bracket_expr_start_depth = -1;
-        return MAKE_TOKEN(FSTRING_START);
+        return in_tag_string ? MAKE_TOKEN(TAGSTRING_START) :  MAKE_TOKEN(FSTRING_START);
     }
 
   letter_quote:

@@ -65,14 +65,15 @@ TYPE_IGNORE = 58
 TYPE_COMMENT = 59
 SOFT_KEYWORD = 60
 FSTRING_START = 61
-FSTRING_MIDDLE = 62
-FSTRING_END = 63
+TAGSTRING_START = 62
+FSTRING_MIDDLE = 63
+FSTRING_END = 64
 # These aren't used by the C tokenizer but are needed for tokenize.py
-ERRORTOKEN = 64
-COMMENT = 65
-NL = 66
-ENCODING = 67
-N_TOKENS = 68
+ERRORTOKEN = 65
+COMMENT = 66
+NL = 67
+ENCODING = 68
+N_TOKENS = 69
 # Special definitions for cooperation with parser
 NT_OFFSET = 256
 

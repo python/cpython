@@ -219,6 +219,8 @@
 
 .. data:: FSTRING_START
 
+.. data:: TAGSTRING_START
+
 .. data:: FSTRING_MIDDLE
 
 .. data:: FSTRING_END

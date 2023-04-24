@@ -75,10 +75,11 @@ extern "C" {
 #define TYPE_COMMENT    59
 #define SOFT_KEYWORD    60
 #define FSTRING_START   61
-#define FSTRING_MIDDLE  62
-#define FSTRING_END     63
-#define ERRORTOKEN      64
-#define N_TOKENS        68
+#define TAGSTRING_START 62
+#define FSTRING_MIDDLE  63
+#define FSTRING_END     64
+#define ERRORTOKEN      65
+#define N_TOKENS        69
 #define NT_OFFSET       256
 
 /* Special definitions for cooperation with parser */
