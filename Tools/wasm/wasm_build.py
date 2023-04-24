@@ -73,7 +73,7 @@ Builds require a clean source directory. Please use a clean checkout or
 run "make clean -C '{SRCDIR}'".
 """
 
-INSTALL_NATIVE = f"""
+INSTALL_NATIVE = """
 Builds require a C compiler (gcc, clang), make, pkg-config, and development
 headers for dependencies like zlib.
 
