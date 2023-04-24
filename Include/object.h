@@ -128,17 +128,26 @@ check by comparing the reference count field to the immortality reference count.
 // Make all internal uses of PyObject_HEAD_INIT immortal while preserving the
 // C-API expectation that the refcnt will be set to 1.
 #ifdef Py_BUILD_CORE
-#define PyObject_HEAD_INIT(type)        \
-    { _PyObject_EXTRA_INIT              \
-    .ob_refcnt = _Py_IMMORTAL_REFCNT, .ob_type = (type) },
+#define PyObject_HEAD_INIT(type)    \
+    {                               \
+        _PyObject_EXTRA_INIT        \
+        { _Py_IMMORTAL_REFCNT },    \
+        (type)                      \
+    },
 #else
-#define PyObject_HEAD_INIT(type)        \
-    { _PyObject_EXTRA_INIT              \
-    .ob_refcnt = 1, .ob_type = (type) },
+#define PyObject_HEAD_INIT(type) \
+    {                            \
+        _PyObject_EXTRA_INIT     \
+        { 1 },                   \
+        (type)                   \
+    },
 #endif /* Py_BUILD_CORE */
 
-#define PyVarObject_HEAD_INIT(type, size)       \
-    { PyObject_HEAD_INIT(type) size },
+#define PyVarObject_HEAD_INIT(type, size) \
+    {                                     \
+        PyObject_HEAD_INIT(type)          \
+        (size)                            \
+    },
 
 /* PyObject_VAR_HEAD defines the initial segment of all variable-size
  * container objects.  These end with a declaration of an array with 1
@@ -212,7 +221,7 @@ static inline Py_ssize_t Py_SIZE(PyObject *ob) {
 #  define Py_SIZE(ob) Py_SIZE(_PyObject_CAST(ob))
 #endif
 
-static Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
+static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
 {
 #if SIZEOF_VOID_P > 4
     return _Py_CAST(PY_INT32_T, op->ob_refcnt) < 0;
@@ -221,14 +230,6 @@ static Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
 #endif
 }
 #define _Py_IsImmortal(op) _Py_IsImmortal(_PyObject_CAST(op))
-
-static inline void _Py_SetImmortal(PyObject *op)
-{
-    if (op) {
-        op->ob_refcnt = _Py_IMMORTAL_REFCNT;
-    }
-}
-#define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
 
 static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
     return Py_TYPE(ob) == type;
@@ -608,7 +609,7 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
-static Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
+static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
 #if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
     // Stable ABI for Python 3.10 built in debug mode.
@@ -668,7 +669,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 #define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
 
 #else
-static Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
+static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
 {
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.

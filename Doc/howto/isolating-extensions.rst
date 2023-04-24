@@ -372,7 +372,7 @@ To save a some tedious error-handling boilerplate code, you can combine
 these two steps with :c:func:`PyType_GetModuleState`, resulting in::
 
    my_struct *state = (my_struct*)PyType_GetModuleState(type);
-   if (state === NULL) {
+   if (state == NULL) {
        return NULL;
    }
 
@@ -435,7 +435,7 @@ For example::
            PyObject *kwnames)
    {
        my_struct *state = (my_struct*)PyType_GetModuleState(defining_class);
-       if (state === NULL) {
+       if (state == NULL) {
            return NULL;
        }
        ... // rest of logic
@@ -479,7 +479,7 @@ to get the state::
 
     PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &module_def);
     my_struct *state = (my_struct*)PyModule_GetState(module);
-    if (state === NULL) {
+    if (state == NULL) {
         return NULL;
     }
 

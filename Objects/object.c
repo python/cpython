@@ -1033,7 +1033,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
     }
     else {
         PyErr_Format(PyExc_AttributeError,
-                    "'%.50s' object has no attribute '%U'",
+                    "'%.100s' object has no attribute '%U'",
                     tp->tp_name, name);
     }
 
@@ -1353,7 +1353,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     }
 
     PyErr_Format(PyExc_AttributeError,
-                 "'%.50s' object has no attribute '%U'",
+                 "'%.100s' object has no attribute '%U'",
                  tp->tp_name, name);
 
     set_attribute_error_context(obj, name);
@@ -1474,7 +1474,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
 
     if (!suppress) {
         PyErr_Format(PyExc_AttributeError,
-                     "'%.50s' object has no attribute '%U'",
+                     "'%.100s' object has no attribute '%U'",
                      tp->tp_name, name);
 
         set_attribute_error_context(obj, name);
@@ -1545,7 +1545,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             }
             else {
                 PyErr_Format(PyExc_AttributeError,
-                            "'%.50s' object attribute '%U' is read-only",
+                            "'%.100s' object attribute '%U' is read-only",
                             tp->tp_name, name);
             }
             goto done;
@@ -1865,8 +1865,8 @@ PyTypeObject _PyNone_Type = {
 
 PyObject _Py_NoneStruct = {
     _PyObject_EXTRA_INIT
-    .ob_refcnt = _Py_IMMORTAL_REFCNT,
-    .ob_type = &_PyNone_Type
+    { _Py_IMMORTAL_REFCNT },
+    &_PyNone_Type
 };
 
 /* NotImplemented is an object that can be used to signal that an
@@ -1968,17 +1968,15 @@ PyTypeObject _PyNotImplemented_Type = {
 
 PyObject _Py_NotImplementedStruct = {
     _PyObject_EXTRA_INIT
-    .ob_refcnt = _Py_IMMORTAL_REFCNT,
-    .ob_type = &_PyNotImplemented_Type
+    { _Py_IMMORTAL_REFCNT },
+    &_PyNotImplemented_Type
 };
 
-#ifdef MS_WINDOWS
-extern PyTypeObject PyHKEY_Type;
-#endif
 extern PyTypeObject _Py_GenericAliasIterType;
 extern PyTypeObject _PyMemoryIter_Type;
 extern PyTypeObject _PyLineIterator;
 extern PyTypeObject _PyPositionsIterator;
+extern PyTypeObject _PyLegacyEventHandler_Type;
 
 static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
@@ -2024,9 +2022,6 @@ static PyTypeObject* static_types[] = {
     &PyFunction_Type,
     &PyGen_Type,
     &PyGetSetDescr_Type,
-#ifdef MS_WINDOWS
-    &PyHKEY_Type,
-#endif
     &PyInstanceMethod_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
@@ -2076,6 +2071,7 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_BitmapNode_Type,
     &_PyHamt_CollisionNode_Type,
     &_PyHamt_Type,
+    &_PyLegacyEventHandler_Type,
     &_PyInterpreterID_Type,
     &_PyLineIterator,
     &_PyManagedBuffer_Type,

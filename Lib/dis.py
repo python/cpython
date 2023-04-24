@@ -64,10 +64,10 @@ def _try_compile(source, name):
        expect code objects
     """
     try:
-        c = compile(source, name, 'eval')
+        return compile(source, name, 'eval')
     except SyntaxError:
-        c = compile(source, name, 'exec')
-    return c
+        pass
+    return compile(source, name, 'exec')
 
 def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False):
     """Disassemble classes, methods, functions, and other compiled objects.

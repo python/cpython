@@ -99,8 +99,8 @@ PyTypeObject PyEllipsis_Type = {
 
 PyObject _Py_EllipsisObject = {
     _PyObject_EXTRA_INIT
-    .ob_refcnt = _Py_IMMORTAL_REFCNT,
-    .ob_type = &PyEllipsis_Type
+    { _Py_IMMORTAL_REFCNT },
+    &PyEllipsis_Type
 };
 
 
