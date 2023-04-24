@@ -1,1 +1,2 @@
-Make tempfile.mkdtemp() return absolute paths when dir is relative
+Make :func:`tempfile.mkdtemp` return absolute paths when its *dir*
+parameter is relative.
