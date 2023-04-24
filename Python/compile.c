@@ -2269,6 +2269,8 @@ check_is_arg(expr_ty e)
          || value == Py_Ellipsis);
 }
 
+static PyTypeObject * infer_type(expr_ty e);
+
 /* Check operands of identity checks ("is" and "is not").
    Emit a warning if any operand is a constant except named singletons.
  */
@@ -2277,19 +2279,25 @@ check_compare(struct compiler *c, expr_ty e)
 {
     Py_ssize_t i, n;
     bool left = check_is_arg(e->v.Compare.left);
+    expr_ty left_expr = e->v.Compare.left;
     n = asdl_seq_LEN(e->v.Compare.ops);
     for (i = 0; i < n; i++) {
         cmpop_ty op = (cmpop_ty)asdl_seq_GET(e->v.Compare.ops, i);
-        bool right = check_is_arg((expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
+        expr_ty right_expr = (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i);
+        bool right = check_is_arg(right_expr);
         if (op == Is || op == IsNot) {
             if (!right || !left) {
                 const char *msg = (op == Is)
-                        ? "\"is\" with a literal. Did you mean \"==\"?"
-                        : "\"is not\" with a literal. Did you mean \"!=\"?";
-                return compiler_warn(c, LOC(e), msg);
+                        ? "\"is\" with '%.200s' literal. Did you mean \"==\"?"
+                        : "\"is not\" with '%.200s' literal. Did you mean \"!=\"?";
+                expr_ty literal = !left ? left_expr : right_expr;
+                return compiler_warn(
+                    c, LOC(e), msg, infer_type(literal)->tp_name
+                );
             }
         }
         left = right;
+        left_expr = right_expr;
     }
     return SUCCESS;
 }

@@ -1,0 +1,1 @@
+Clarify :exc:`SyntaxWarning` with literal ``is`` comparison by specifying which literal is problematic, since comparisons using ``is`` with e.g. None and bool literals are idiomatic.
