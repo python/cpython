@@ -1146,13 +1146,10 @@ type_get_annotations(PyTypeObject *type, void *context)
 static PyObject *
 type_get_type_variables(PyTypeObject *type, void *context)
 {
-    PyObject *params;
+    PyObject *params = PyDict_GetItem(type->tp_dict, &_Py_ID(__type_variables__));
 
-    params = PyDict_GetItem(type->tp_dict, &_Py_ID(__type_variables__));
-    
     if (params) {
-        Py_INCREF(params);
-        return params;
+        return Py_NewRef(params);
     }
 
     return PyTuple_New(0);

@@ -9,10 +9,10 @@ extern "C" {
 #endif
 
 extern PyObject *_Py_make_typevar(const char *, PyObject *);
-extern PyObject *_Py_make_paramspec(const char *);
-extern PyObject *_Py_make_typevartuple(const char *);
-extern PyObject *_Py_make_typealias(PyThreadState* unused, PyObject *);
-extern PyObject *_Py_subscript_generic(PyObject *);
+extern PyObject *_Py_make_paramspec(PyThreadState *, PyObject *);
+extern PyObject *_Py_make_typevartuple(PyThreadState *, PyObject *);
+extern PyObject *_Py_make_typealias(PyThreadState *, PyObject *);
+extern PyObject *_Py_subscript_generic(PyThreadState *, PyObject *);
 extern int _Py_initialize_generic(PyInterpreterState *);
 extern void _Py_clear_generic_types(PyInterpreterState *);
 

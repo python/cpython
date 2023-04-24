@@ -662,8 +662,7 @@ func_get_type_variables(PyFunctionObject *op, void *Py_UNUSED(ignored))
     }
 
     assert(PyTuple_Check(op->func_typevars));
-    Py_XINCREF(op->func_typevars);
-    return op->func_typevars;
+    return Py_NewRef(op->func_typevars);
 }
 
 static PyGetSetDef func_getsetlist[] = {

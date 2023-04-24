@@ -393,10 +393,7 @@ PySymtable_Lookup(struct symtable *st, void *key)
 long
 _PyST_GetSymbol(PySTEntryObject *ste, PyObject *name)
 {
-    PyObject *v = NULL;
-    if (v == NULL) {
-        v = PyDict_GetItemWithError(ste->ste_symbols, name);
-    }
+    PyObject *v = PyDict_GetItemWithError(ste->ste_symbols, name);
     if (!v)
         return 0;
     assert(PyLong_Check(v));
@@ -407,7 +404,6 @@ int
 _PyST_GetScope(PySTEntryObject *ste, PyObject *name)
 {
     long symbol = _PyST_GetSymbol(ste, name);
-    assert(!PyErr_Occurred());
     return (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
 }
 
@@ -847,7 +843,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         assert(c && PySTEntry_Check(c));
         entry = (PySTEntryObject*)c;
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
-                                allfree))
+                                 allfree))
             goto error;
         /* Check if any children have free variables */
         if (entry->ste_free || entry->ste_child_free)
@@ -1032,6 +1028,7 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
     PyObject *dict;
     long val;
     PyObject *mangled = _Py_Mangle(st->st_private, name);
+
 
     if (!mangled)
         return 0;
@@ -1276,7 +1273,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT_QUIT(st, 0);
     }
     switch (s->kind) {
-    case FunctionDef_kind: {
+    case FunctionDef_kind:
         if (!symtable_add_def(st, s->v.FunctionDef.name, DEF_LOCAL, LOCATION(s)))
             VISIT_QUIT(st, 0);
         if (s->v.FunctionDef.args->defaults)
@@ -1314,7 +1311,6 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                 VISIT_QUIT(st, 0);
         }
         break;
-    }
     case ClassDef_kind: {
         PyObject *tmp;
         if (!symtable_add_def(st, s->v.ClassDef.name, DEF_LOCAL, LOCATION(s)))

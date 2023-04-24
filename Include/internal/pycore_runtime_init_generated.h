@@ -789,7 +789,6 @@ extern "C" {
     INIT_ID(attribute), \
     INIT_ID(authorizer_callback), \
     INIT_ID(autocommit), \
-    INIT_ID(autovariance), \
     INIT_ID(b), \
     INIT_ID(backtick), \
     INIT_ID(base), \
@@ -966,6 +965,7 @@ extern "C" {
     INIT_ID(incoming), \
     INIT_ID(indexgroup), \
     INIT_ID(inf), \
+    INIT_ID(infer_variance), \
     INIT_ID(inheritable), \
     INIT_ID(initial), \
     INIT_ID(initial_bytes), \

@@ -10,7 +10,7 @@ preserve
 
 PyDoc_STRVAR(typevar_new__doc__,
 "typevar(name, *constraints, *, bound=None, covariant=False,\n"
-"        contravariant=False, autovariance=False)\n"
+"        contravariant=False, infer_variance=False)\n"
 "--\n"
 "\n"
 "Create a TypeVar.");
@@ -18,7 +18,7 @@ PyDoc_STRVAR(typevar_new__doc__,
 static PyObject *
 typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
                  PyObject *bound, int covariant, int contravariant,
-                 int autovariance);
+                 int infer_variance);
 
 static PyObject *
 typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -33,7 +33,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(name), &_Py_ID(bound), &_Py_ID(covariant), &_Py_ID(contravariant), &_Py_ID(autovariance), },
+        .ob_item = { &_Py_ID(name), &_Py_ID(bound), &_Py_ID(covariant), &_Py_ID(contravariant), &_Py_ID(infer_variance), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -42,7 +42,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"name", "bound", "covariant", "contravariant", "autovariance", NULL};
+    static const char * const _keywords[] = {"name", "bound", "covariant", "contravariant", "infer_variance", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "typevar",
@@ -58,7 +58,7 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *bound = Py_None;
     int covariant = 0;
     int contravariant = 0;
-    int autovariance = 0;
+    int infer_variance = 0;
 
     fastargs = _PyArg_UnpackKeywordsWithVararg(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, 1, argsbuf);
     if (!fastargs) {
@@ -105,12 +105,12 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto skip_optional_kwonly;
         }
     }
-    autovariance = PyObject_IsTrue(fastargs[5]);
-    if (autovariance < 0) {
+    infer_variance = PyObject_IsTrue(fastargs[5]);
+    if (infer_variance < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = typevar_new_impl(type, name, constraints, bound, covariant, contravariant, autovariance);
+    return_value = typevar_new_impl(type, name, constraints, bound, covariant, contravariant, infer_variance);
 
 exit:
     Py_XDECREF(constraints);
@@ -298,14 +298,14 @@ exit:
 
 PyDoc_STRVAR(paramspec_new__doc__,
 "paramspec(name, *, bound=None, covariant=False, contravariant=False,\n"
-"          autovariance=False)\n"
+"          infer_variance=False)\n"
 "--\n"
 "\n"
 "Create a ParamSpec object.");
 
 static PyObject *
 paramspec_new_impl(PyTypeObject *type, const char *name, PyObject *bound,
-                   int covariant, int contravariant, int autovariance);
+                   int covariant, int contravariant, int infer_variance);
 
 static PyObject *
 paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -320,7 +320,7 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(name), &_Py_ID(bound), &_Py_ID(covariant), &_Py_ID(contravariant), &_Py_ID(autovariance), },
+        .ob_item = { &_Py_ID(name), &_Py_ID(bound), &_Py_ID(covariant), &_Py_ID(contravariant), &_Py_ID(infer_variance), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -329,7 +329,7 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"name", "bound", "covariant", "contravariant", "autovariance", NULL};
+    static const char * const _keywords[] = {"name", "bound", "covariant", "contravariant", "infer_variance", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "paramspec",
@@ -344,7 +344,7 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *bound = Py_None;
     int covariant = 0;
     int contravariant = 0;
-    int autovariance = 0;
+    int infer_variance = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
     if (!fastargs) {
@@ -390,12 +390,12 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto skip_optional_kwonly;
         }
     }
-    autovariance = PyObject_IsTrue(fastargs[4]);
-    if (autovariance < 0) {
+    infer_variance = PyObject_IsTrue(fastargs[4]);
+    if (infer_variance < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = paramspec_new_impl(type, name, bound, covariant, contravariant, autovariance);
+    return_value = paramspec_new_impl(type, name, bound, covariant, contravariant, infer_variance);
 
 exit:
     return return_value;
@@ -739,4 +739,4 @@ typealias_reduce(typealiasobject *self, PyObject *Py_UNUSED(ignored))
 {
     return typealias_reduce_impl(self);
 }
-/*[clinic end generated code: output=92385d7cbb5c1b03 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=468f0011fd3e47d8 input=a9049054013a1b77]*/

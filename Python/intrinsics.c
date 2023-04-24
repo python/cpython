@@ -207,26 +207,6 @@ make_typevar(PyThreadState* unused, PyObject *v)
     return _Py_make_typevar(PyUnicode_AsUTF8(v), NULL);
 }
 
-static PyObject *
-make_paramspec(PyThreadState* unused, PyObject *v)
-{
-    assert(PyUnicode_Check(v));
-    return _Py_make_paramspec(PyUnicode_AsUTF8(v));
-}
-
-static PyObject *
-make_typevartuple(PyThreadState* unused, PyObject *v)
-{
-    assert(PyUnicode_Check(v));
-    return _Py_make_typevartuple(PyUnicode_AsUTF8(v));
-}
-
-static PyObject *
-subscript_generic(PyThreadState* unused, PyObject *v)
-{
-    return _Py_subscript_generic(v);
-}
-
 const instrinsic_func1
 _PyIntrinsics_UnaryFunctions[] = {
     [0] = no_intrinsic,
@@ -237,9 +217,9 @@ _PyIntrinsics_UnaryFunctions[] = {
     [INTRINSIC_UNARY_POSITIVE] = unary_pos,
     [INTRINSIC_LIST_TO_TUPLE] = list_to_tuple,
     [INTRINSIC_TYPEVAR] = make_typevar,
-    [INTRINSIC_PARAMSPEC] = make_paramspec,
-    [INTRINSIC_TYPEVARTUPLE] = make_typevartuple,
-    [INTRINSIC_SUBSCRIPT_GENERIC] = subscript_generic,
+    [INTRINSIC_PARAMSPEC] = _Py_make_paramspec,
+    [INTRINSIC_TYPEVARTUPLE] = _Py_make_typevartuple,
+    [INTRINSIC_SUBSCRIPT_GENERIC] = _Py_subscript_generic,
     [INTRINSIC_TYPEALIAS] = _Py_make_typealias,
 };
 

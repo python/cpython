@@ -23,7 +23,7 @@ typedef struct {
     PyObject *constraints;
     bool covariant;
     bool contravariant;
-    bool autovariance;
+    bool infer_variance;
 } typevarobject;
 
 typedef struct {
@@ -37,7 +37,7 @@ typedef struct {
     PyObject *bound;
     bool covariant;
     bool contravariant;
-    bool autovariance;
+    bool infer_variance;
 } paramspecobject;
 
 typedef struct {
@@ -50,7 +50,9 @@ typedef struct {
 
 #include "clinic/typevarobject.c.h"
 
-static PyObject *call_typing_func_object(const char *name, PyObject *args) {
+static PyObject *
+call_typing_func_object(const char *name, PyObject *args)
+{
     PyObject *typing = PyImport_ImportModule("typing");
     if (typing == NULL) {
         return NULL;
@@ -66,7 +68,9 @@ static PyObject *call_typing_func_object(const char *name, PyObject *args) {
     return result;
 }
 
-static PyObject *type_check(PyObject *arg) {
+static PyObject *
+type_check(PyObject *arg)
+{
     // Calling typing.py here leads to bootstrapping problems
     if (Py_IsNone(arg)) {
         return Py_NewRef(Py_TYPE(arg));
@@ -82,7 +86,8 @@ static PyObject *type_check(PyObject *arg) {
 }
 
 static PyObject *
-make_union(PyObject *self, PyObject *other) {
+make_union(PyObject *self, PyObject *other)
+{
     PyObject *args = PyTuple_Pack(2, self, other);
     if (args == NULL) {
         return NULL;
@@ -138,11 +143,12 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static PyObject *typevar_repr(PyObject *self)
+static PyObject *
+typevar_repr(PyObject *self)
 {
     typevarobject *tv = (typevarobject *)self;
 
-    if (tv->autovariance) {
+    if (tv->infer_variance) {
         return PyUnicode_FromFormat("%s", tv->name);
     }
 
@@ -156,14 +162,14 @@ static PyMemberDef typevar_members[] = {
     {"__constraints__", T_OBJECT, offsetof(typevarobject, constraints), READONLY},
     {"__covariant__", T_BOOL, offsetof(typevarobject, covariant), READONLY},
     {"__contravariant__", T_BOOL, offsetof(typevarobject, contravariant), READONLY},
-    {"__autovariance__", T_BOOL, offsetof(typevarobject, autovariance), READONLY},
+    {"__infer_variance__", T_BOOL, offsetof(typevarobject, infer_variance), READONLY},
     {0}
 };
 
-static typevarobject *typevar_alloc(const char *name, PyObject *bound,
-                                    PyObject *constraints,
-                                    bool covariant, bool contravariant,
-                                    bool autovariance, PyObject *module)
+static typevarobject *
+typevar_alloc(const char *name, PyObject *bound, PyObject *constraints,
+              bool covariant, bool contravariant, bool infer_variance,
+              PyObject *module)
 {
     PyObject *tp = PyInterpreterState_Get()->cached_objects.typevar_type;
     assert(tp != NULL);
@@ -183,7 +189,7 @@ static typevarobject *typevar_alloc(const char *name, PyObject *bound,
 
     tv->covariant = covariant;
     tv->contravariant = contravariant;
-    tv->autovariance = autovariance;
+    tv->infer_variance = infer_variance;
     if (module != NULL) {
         PyObject_SetAttrString((PyObject *)tv, "__module__", module);
     }
@@ -202,7 +208,7 @@ typevar.__new__ as typevar_new
     bound: object = None
     covariant: bool = False
     contravariant: bool = False
-    autovariance: bool = False
+    infer_variance: bool = False
 
 Create a TypeVar.
 [clinic start generated code]*/
@@ -210,8 +216,8 @@ Create a TypeVar.
 static PyObject *
 typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
                  PyObject *bound, int covariant, int contravariant,
-                 int autovariance)
-/*[clinic end generated code: output=e74ea8371ab8103a input=9d08a995b997a11b]*/
+                 int infer_variance)
+/*[clinic end generated code: output=463d42203b82ea59 input=55a3db20c1cf1450]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError,
@@ -219,9 +225,9 @@ typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
         return NULL;
     }
 
-    if (autovariance && (covariant || contravariant)) {
+    if (infer_variance && (covariant || contravariant)) {
         PyErr_SetString(PyExc_ValueError,
-                        "Variance cannot be specified with autovariance.");
+                        "Variance cannot be specified with infer_variance.");
         return NULL;
     }
 
@@ -262,7 +268,7 @@ typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
 
     PyObject *tv = (PyObject *)typevar_alloc(name, bound, constraints,
                                              covariant, contravariant,
-                                             autovariance, module);
+                                             infer_variance, module);
     Py_XDECREF(bound);
     Py_XDECREF(module);
     return tv;
@@ -516,7 +522,8 @@ PyType_Spec paramspecargs_spec = {
     .slots = paramspecargs_slots,
 };
 
-static PyObject *paramspeckwargs_repr(PyObject *self)
+static PyObject *
+paramspeckwargs_repr(PyObject *self)
 {
     paramspecattrobject *psk = (paramspecattrobject *)self;
 
@@ -622,7 +629,7 @@ paramspec_repr(PyObject *self)
 {
     paramspecobject *ps = (paramspecobject *)self;
 
-    if (ps->autovariance) {
+    if (ps->infer_variance) {
         return PyUnicode_FromFormat("%s", ps->name);
     }
 
@@ -635,7 +642,7 @@ static PyMemberDef paramspec_members[] = {
     {"__bound__", T_OBJECT, offsetof(paramspecobject, bound), READONLY},
     {"__covariant__", T_BOOL, offsetof(paramspecobject, covariant), READONLY},
     {"__contravariant__", T_BOOL, offsetof(paramspecobject, contravariant), READONLY},
-    {"__autovariance__", T_BOOL, offsetof(paramspecobject, autovariance), READONLY},
+    {"__infer_variance__", T_BOOL, offsetof(paramspecobject, infer_variance), READONLY},
     {0}
 };
 
@@ -661,7 +668,7 @@ static PyGetSetDef paramspec_getset[] = {
 
 static paramspecobject *
 paramspec_alloc(const char *name, PyObject *bound, bool covariant,
-                bool contravariant, bool autovariance, PyObject *module)
+                bool contravariant, bool infer_variance, PyObject *module)
 {
     PyObject *tp = _PyInterpreterState_Get()->cached_objects.paramspec_type;
     paramspecobject *ps = PyObject_GC_New(paramspecobject, (PyTypeObject *)tp);
@@ -676,7 +683,7 @@ paramspec_alloc(const char *name, PyObject *bound, bool covariant,
     ps->bound = Py_XNewRef(bound);
     ps->covariant = covariant;
     ps->contravariant = contravariant;
-    ps->autovariance = autovariance;
+    ps->infer_variance = infer_variance;
     if (module != NULL) {
         PyObject_SetAttrString((PyObject *)ps, "__module__", module);
     }
@@ -693,22 +700,22 @@ paramspec.__new__ as paramspec_new
     bound: object = None
     covariant: bool = False
     contravariant: bool = False
-    autovariance: bool = False
+    infer_variance: bool = False
 
 Create a ParamSpec object.
 [clinic start generated code]*/
 
 static PyObject *
 paramspec_new_impl(PyTypeObject *type, const char *name, PyObject *bound,
-                   int covariant, int contravariant, int autovariance)
-/*[clinic end generated code: output=d1693f0a5be7d69d input=09c84e07c5c0722e]*/
+                   int covariant, int contravariant, int infer_variance)
+/*[clinic end generated code: output=846484852fb0dda8 input=f83ea6382c481f21]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError, "Bivariant types are not supported.");
         return NULL;
     }
-    if (autovariance && (covariant || contravariant)) {
-        PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with autovariance.");
+    if (infer_variance && (covariant || contravariant)) {
+        PyErr_SetString(PyExc_ValueError, "Variance cannot be specified with infer_variance.");
         return NULL;
     }
     if (bound != NULL) {
@@ -723,7 +730,7 @@ paramspec_new_impl(PyTypeObject *type, const char *name, PyObject *bound,
         return NULL;
     }
     PyObject *ps = (PyObject *)paramspec_alloc(
-        name, bound, covariant, contravariant, autovariance, module);
+        name, bound, covariant, contravariant, infer_variance, module);
     Py_XDECREF(bound);
     Py_DECREF(module);
     return ps;
@@ -1095,7 +1102,8 @@ PyType_Spec typevartuple_spec = {
 };
 
 PyObject *
-_Py_make_typevar(const char *name, PyObject *bound_or_constraints) {
+_Py_make_typevar(const char *name, PyObject *bound_or_constraints)
+{
     if (bound_or_constraints != NULL && PyTuple_CheckExact(bound_or_constraints)) {
         return (PyObject *)typevar_alloc(name, NULL, bound_or_constraints, false, false, true, NULL);
     } else {
@@ -1104,13 +1112,17 @@ _Py_make_typevar(const char *name, PyObject *bound_or_constraints) {
 }
 
 PyObject *
-_Py_make_paramspec(const char *name) {
-    return (PyObject *)paramspec_alloc(name, NULL, false, false, true, NULL);
+_Py_make_paramspec(PyThreadState *unused, PyObject *v)
+{
+    assert(PyUnicode_Check(v));
+    return (PyObject *)paramspec_alloc(PyUnicode_AsUTF8(v), NULL, false, false, true, NULL);
 }
 
 PyObject *
-_Py_make_typevartuple(const char *name) {
-    return (PyObject *)typevartuple_alloc(name, NULL);
+_Py_make_typevartuple(PyThreadState *unused, PyObject *v)
+{
+    assert(PyUnicode_Check(v));
+    return (PyObject *)typevartuple_alloc(PyUnicode_AsUTF8(v), NULL);
 }
 
 static void
@@ -1321,7 +1333,7 @@ contains_typevartuple(PyTupleObject *params)
 }
 
 PyObject *
-_Py_subscript_generic(PyObject *params)
+_Py_subscript_generic(PyThreadState* unused, PyObject *params)
 {
     assert(PyTuple_Check(params));
     // TypeVarTuple must be unpacked when passed to Generic, so we do that here.
