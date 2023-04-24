@@ -532,10 +532,10 @@ Pure paths provide the following methods and properties:
    unintended effects.
 
 
-.. method:: PurePath.joinpath(*other)
+.. method:: PurePath.joinpath(*pathsegments)
 
    Calling this method is equivalent to combining the path with each of
-   the *other* arguments in turn::
+   the given *pathsegments* in turn::
 
       >>> PurePosixPath('/etc').joinpath('passwd')
       PurePosixPath('/etc/passwd')
@@ -547,10 +547,10 @@ Pure paths provide the following methods and properties:
       PureWindowsPath('c:/Program Files')
 
 
-.. method:: PurePath.makepath(*other)
+.. method:: PurePath.makepath(*pathsegments)
 
-   Create a new path object of the same type by combining the *other*
-   arguments. This method is called whenever a derivative path is created,
+   Create a new path object of the same type by combining the given
+   *pathsegments*. This method is called whenever a derivative path is created,
    such as from :attr:`parent` and :meth:`relative_to`. Subclasses may
    override this method to pass information to derivative paths, for example::
 
@@ -561,8 +561,8 @@ Pure paths provide the following methods and properties:
               super().__init__(*args)
               self.session_id = session_id
 
-          def makepath(self, *other):
-              return type(self)(*other, session_id=self.session_id)
+          def makepath(self, *pathsegments):
+              return type(self)(*pathsegments, session_id=self.session_id)
 
       etc = MyPath('/etc', session_id=42)
       hosts = etc / 'hosts'
