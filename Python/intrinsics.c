@@ -240,6 +240,7 @@ _PyIntrinsics_UnaryFunctions[] = {
     [INTRINSIC_PARAMSPEC] = make_paramspec,
     [INTRINSIC_TYPEVARTUPLE] = make_typevartuple,
     [INTRINSIC_SUBSCRIPT_GENERIC] = subscript_generic,
+    [INTRINSIC_TYPEALIAS] = _Py_make_typealias,
 };
 
 

@@ -1349,6 +1349,31 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         }
         break;
     }
+    case TypeAlias_kind:
+        VISIT(st, expr, s->v.TypeAlias.name);
+        assert(s->v.TypeAlias.name->kind == Name_kind);
+        PyObject *name = s->v.TypeAlias.name->v.Name.id;
+        if (s->v.TypeAlias.typeparams) {
+            if (!symtable_enter_typeparam_block(
+                    st, name,
+                    (void *)s->v.TypeAlias.typeparams,
+                    false, false, false,
+                    LOCATION(s))) {
+                VISIT_QUIT(st, 0);
+            }
+            VISIT_SEQ(st, typeparam, s->v.TypeAlias.typeparams);
+        }
+        if (!symtable_enter_block(st, name, FunctionBlock,
+                                  (void *)s, LOCATION(s)))
+            VISIT_QUIT(st, 0);
+        VISIT(st, expr, s->v.TypeAlias.value);
+        if (!symtable_exit_block(st))
+            VISIT_QUIT(st, 0);
+        if (s->v.TypeAlias.typeparams) {
+            if (!symtable_exit_block(st))
+                VISIT_QUIT(st, 0);
+        }
+        break;
     case Return_kind:
         if (s->v.Return.value) {
             VISIT(st, expr, s->v.Return.value);

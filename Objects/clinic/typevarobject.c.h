@@ -722,4 +722,21 @@ typevartuple_reduce(typevartupleobject *self, PyObject *Py_UNUSED(ignored))
 {
     return typevartuple_reduce_impl(self);
 }
-/*[clinic end generated code: output=ac9f83f64eee2f90 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(typealias_reduce__doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n");
+
+#define TYPEALIAS_REDUCE_METHODDEF    \
+    {"__reduce__", (PyCFunction)typealias_reduce, METH_NOARGS, typealias_reduce__doc__},
+
+static PyObject *
+typealias_reduce_impl(typealiasobject *self);
+
+static PyObject *
+typealias_reduce(typealiasobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return typealias_reduce_impl(self);
+}
+/*[clinic end generated code: output=92385d7cbb5c1b03 input=a9049054013a1b77]*/

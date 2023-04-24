@@ -11,9 +11,10 @@ class paramspec "paramspecobject *" "&_PyParamSpec_Type"
 class paramspecargs "paramspecargsobject *" "&_PyParamSpecArgs_Type"
 class paramspeckwargs "paramspeckwargsobject *" "&_PyParamSpecKwargs_Type"
 class typevartuple "typevartupleobject *" "&_PyTypeVarTuple_Type"
+class typealias "typealiasobject *" "&_PyTypeAlias_Type"
 class Generic "PyObject *" "&PyGeneric_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9b0f1a94d4a27c0c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a775b1d0f0b88d23]*/
 
 typedef struct {
     PyObject_HEAD
@@ -38,6 +39,14 @@ typedef struct {
     bool contravariant;
     bool autovariance;
 } paramspecobject;
+
+typedef struct {
+    PyObject_HEAD
+    const char *name;
+    PyObject *type_params;
+    PyObject *compute_value;
+    PyObject *value;
+} typealiasobject;
 
 #include "clinic/typevarobject.c.h"
 
@@ -1028,6 +1037,111 @@ PyObject *_Py_make_paramspec(const char *name) {
 
 PyObject *_Py_make_typevartuple(const char *name) {
     return (PyObject *)typevartupleobject_alloc(name);
+}
+
+static void
+typealias_dealloc(PyObject *self)
+{
+    typealiasobject *ta = (typealiasobject *)self;
+    free((void *)ta->name);
+    Py_XDECREF(ta->type_params);
+    Py_XDECREF(ta->compute_value);
+    Py_XDECREF(ta->value);
+    Py_TYPE(self)->tp_free(self);
+}
+
+static PyObject *
+typealias_repr(PyObject *self)
+{
+    typealiasobject *ta = (typealiasobject *)self;
+    return PyUnicode_FromFormat("%s", ta->name);
+}
+
+static PyMemberDef typealias_members[] = {
+    {"__name__", T_STRING, offsetof(typealiasobject, name), READONLY},
+    {"__type_params__", T_OBJECT, offsetof(typealiasobject, type_params), READONLY},
+    {0}
+};
+
+static typealiasobject *
+typealias_alloc(const char *name, PyObject *type_params, PyObject *compute_value)
+{
+    typealiasobject *ta = PyObject_GC_New(typealiasobject, &_PyTypeAlias_Type);
+    if (ta == NULL) {
+        return NULL;
+    }
+    ta->name = strdup(name);
+    if (ta->name == NULL) {
+        Py_DECREF(ta);
+        return NULL;
+    }
+    ta->type_params = Py_XNewRef(type_params);
+    ta->compute_value = Py_NewRef(compute_value);
+    ta->value = NULL;
+    PyObject_GC_Track(ta);
+    return ta;
+}
+
+static int typealias_traverse(typealiasobject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->type_params);
+    Py_VISIT(self->compute_value);
+    Py_VISIT(self->value);
+    return 0;
+}
+
+/*[clinic input]
+typealias.__reduce__ as typealias_reduce
+
+[clinic start generated code]*/
+
+static PyObject *
+typealias_reduce_impl(typealiasobject *self)
+/*[clinic end generated code: output=913724f92ad3b39b input=4f06fbd9472ec0f1]*/
+{
+    return PyUnicode_FromString(self->name);
+}
+
+static PyMethodDef typealias_methods[] = {
+    TYPEALIAS_REDUCE_METHODDEF
+    {0}
+};
+
+PyDoc_STRVAR(typealias_doc,
+"Type alias.\n\
+\n\
+Type aliases are created through the type statement:\n\
+\n\
+  type Alias = int\n\
+");
+
+PyTypeObject _PyTypeAlias_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "TypeAlias",
+    .tp_basicsize = sizeof(typealiasobject),
+    .tp_dealloc = typealias_dealloc,
+    .tp_repr = typealias_repr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .tp_members = typealias_members,
+    .tp_methods = typealias_methods,
+    .tp_doc = typealias_doc,
+    .tp_traverse = typealias_traverse,
+};
+
+PyObject *
+_Py_make_typealias(PyThreadState* unused, PyObject *args)
+{
+    assert(PyTuple_Check(args));
+    assert(PyTuple_GET_SIZE(args) == 3);
+    PyObject *name = PyTuple_GET_ITEM(args, 0);
+    assert(PyUnicode_Check(name));
+    const char *name_str = PyUnicode_AsUTF8(name);
+    if (name_str == NULL) {
+        return NULL;
+    }
+    PyObject *type_params = PyTuple_GET_ITEM(args, 1);
+    PyObject *compute_value = PyTuple_GET_ITEM(args, 2);
+    return (PyObject *)typealias_alloc(name_str, type_params, compute_value);
 }
 
 PyDoc_STRVAR(generic_doc,

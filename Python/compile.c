@@ -2522,6 +2522,73 @@ compiler_class(struct compiler *c, stmt_ty s)
     return SUCCESS;
 }
 
+static int
+compiler_typealias(struct compiler *c, stmt_ty s)
+{
+    location loc = LOC(s);
+    asdl_typeparam_seq *typeparams = s->v.TypeAlias.typeparams;
+    PyObject *name = s->v.TypeAlias.name->v.Name.id;
+    if (typeparams) {
+        ADDOP(c, loc, PUSH_NULL);
+        PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>",
+                                                         name);
+        if (!typeparams_name) {
+            return ERROR;
+        }
+        if (compiler_enter_scope(c, typeparams_name, COMPILER_SCOPE_TYPEPARAMS,
+                                 (void *)typeparams, loc.lineno) == -1) {
+            Py_DECREF(typeparams_name);
+            return ERROR;
+        }
+        Py_DECREF(typeparams_name);
+        ADDOP_LOAD_CONST(c, loc, name);
+        RETURN_IF_ERROR(compiler_type_params(c, typeparams));
+    }
+    else {
+        ADDOP_LOAD_CONST(c, loc, name);
+        ADDOP_LOAD_CONST(c, loc, Py_None);
+    }
+    RETURN_IF_ERROR(
+        compiler_enter_scope(c, name, COMPILER_SCOPE_FUNCTION, s, loc.lineno));
+    /* Make None the first constant, so the evaluate function can't have a
+        docstring. */
+    RETURN_IF_ERROR(compiler_add_const(c->c_const_cache, c->u, Py_None));
+    VISIT_IN_SCOPE(c, expr, s->v.TypeAlias.value);
+    ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
+    PyCodeObject *co = assemble(c, 1);
+    compiler_exit_scope(c);
+    if (co == NULL) {
+        return ERROR;
+    }
+    if (compiler_make_closure(c, loc, co, 0) < 0) {
+        Py_DECREF(co);
+        return ERROR;
+    }
+    Py_DECREF(co);
+    ADDOP_I(c, loc, BUILD_TUPLE, 3);
+    ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEALIAS);
+    if (typeparams) {
+        int is_in_class = c->u->u_ste->ste_type_params_in_class;
+        c->u->u_argcount = is_in_class;
+        PyCodeObject *co = assemble(c, 0);
+        compiler_exit_scope(c);
+        if (co == NULL) {
+            return ERROR;
+        }
+        if (compiler_make_closure(c, loc, co, 0) < 0) {
+            Py_DECREF(co);
+            return ERROR;
+        }
+        Py_DECREF(co);
+        if (is_in_class) {
+            ADDOP(c, loc, LOAD_LOCALS);
+        }
+        ADDOP_I(c, loc, CALL, is_in_class);
+    }
+    RETURN_IF_ERROR(compiler_nameop(c, loc, name, Store));
+    return SUCCESS;
+}
+
 /* Return false if the expression is a constant value except named singletons.
    Return true otherwise. */
 static bool
@@ -3732,6 +3799,8 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
         return compiler_function(c, s, 0);
     case ClassDef_kind:
         return compiler_class(c, s);
+    case TypeAlias_kind:
+        return compiler_typealias(c, s);
     case Return_kind:
         return compiler_return(c, s);
     case Delete_kind:
