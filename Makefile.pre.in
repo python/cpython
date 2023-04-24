@@ -1194,7 +1194,7 @@ Tools/build/freeze_modules.py: $(FREEZE_MODULE)
 
 .PHONY: regen-frozen
 regen-frozen: Tools/build/freeze_modules.py $(FROZEN_FILES_IN)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/freeze_modules.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/freeze_modules.py --frozen-modules
 	@echo "The Makefile was updated, you may need to re-run make."
 
 ############################################################################
