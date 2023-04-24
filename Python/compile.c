@@ -6810,7 +6810,10 @@ insert_prefix_instructions(struct compiler_unit *u, basicblock *entryblock,
                 .i_loc = NO_LOCATION,
                 .i_target = NULL,
             };
-            RETURN_IF_ERROR(_PyBasicblock_InsertInstruction(entryblock, ncellsused, &make_cell));
+            if (_PyBasicblock_InsertInstruction(entryblock, ncellsused, &make_cell) < 0) {
+                PyMem_RawFree(sorted);
+                return ERROR;
+            }
             ncellsused += 1;
         }
         PyMem_RawFree(sorted);
@@ -6982,7 +6985,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
                                     maxdepth, g.g_entryblock, nlocalsplus,
                                     code_flags, filename);
 
- error:
+error:
     Py_XDECREF(consts);
     instr_sequence_fini(&optimized_instrs);
     _PyCfgBuilder_Fini(&g);
@@ -7080,7 +7083,9 @@ instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
 
     for (int i = 0; i < num_insts; i++) {
         if (is_target[i]) {
-            RETURN_IF_ERROR(instr_sequence_use_label(seq, i));
+            if (instr_sequence_use_label(seq, i) < 0) {
+                goto error;
+            }
         }
         PyObject *item = PyList_GET_ITEM(instructions, i);
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 6) {
@@ -7118,10 +7123,14 @@ instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
         if (PyErr_Occurred()) {
             goto error;
         }
-        RETURN_IF_ERROR(instr_sequence_addop(seq, opcode, oparg, loc));
+        if (instr_sequence_addop(seq, opcode, oparg, loc) < 0) {
+            goto error;
+        }
     }
     if (seq->s_used && !IS_TERMINATOR_OPCODE(seq->s_instrs[seq->s_used-1].i_opcode)) {
-        RETURN_IF_ERROR(instr_sequence_addop(seq, RETURN_VALUE, 0, NO_LOCATION));
+        if (instr_sequence_addop(seq, RETURN_VALUE, 0, NO_LOCATION) < 0) {
+            goto error;
+        }
     }
     PyMem_Free(is_target);
     return SUCCESS;
@@ -7136,12 +7145,17 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
     instr_sequence seq;
     memset(&seq, 0, sizeof(instr_sequence));
 
-    RETURN_IF_ERROR(
-        instructions_to_instr_sequence(instructions, &seq));
-
-    RETURN_IF_ERROR(instr_sequence_to_cfg(&seq, g));
+    if (instructions_to_instr_sequence(instructions, &seq) < 0) {
+        goto error;
+    }
+    if (instr_sequence_to_cfg(&seq, g) < 0) {
+        goto error;
+    }
     instr_sequence_fini(&seq);
     return SUCCESS;
+error:
+    instr_sequence_fini(&seq);
+    return ERROR;
 }
 
 static PyObject *

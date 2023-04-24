@@ -392,7 +392,7 @@ The distutils ``bdist_msi`` command is deprecated in Python 3.9, use
 Improved performance of zipfile.Path for files with a large number of
 entries. Also improved performance and fixed minor issue as published with
 `importlib_metadata 1.5
-<https://importlib-metadata.readthedocs.io/en/latest/changelog%20(links).html#v1-5-0>`_.
+<https://importlib-metadata.readthedocs.io/en/latest/history.html#v1-5-0>`_.
 
 ..
 
