@@ -47,15 +47,6 @@ def receive(sock, n, timeout=test.support.SHORT_TIMEOUT):
     else:
         raise RuntimeError("timed out on %r" % (sock,))
 
-if HAVE_UNIX_SOCKETS and HAVE_FORKING:
-    class ForkingUnixStreamServer(socketserver.ForkingMixIn,
-                                  socketserver.UnixStreamServer):
-        pass
-
-    class ForkingUnixDatagramServer(socketserver.ForkingMixIn,
-                                    socketserver.UnixDatagramServer):
-        pass
-
 
 @contextlib.contextmanager
 def simple_subprocess(testcase):
@@ -211,7 +202,7 @@ class SocketServerTest(unittest.TestCase):
     @requires_forking
     def test_ForkingUnixStreamServer(self):
         with simple_subprocess(self):
-            self.run_server(ForkingUnixStreamServer,
+            self.run_server(socketserver.ForkingUnixStreamServer,
                             socketserver.StreamRequestHandler,
                             self.stream_examine)
 
@@ -247,7 +238,7 @@ class SocketServerTest(unittest.TestCase):
     @requires_unix_sockets
     @requires_forking
     def test_ForkingUnixDatagramServer(self):
-        self.run_server(ForkingUnixDatagramServer,
+        self.run_server(socketserver.ForkingUnixDatagramServer,
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
