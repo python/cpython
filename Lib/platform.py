@@ -118,6 +118,7 @@ import re
 import sys
 import functools
 import itertools
+from typing import NamedTuple, Optional
 
 ### Globals & Constants
 
@@ -199,6 +200,10 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         binary = f.read(chunksize)
         pos = 0
         while pos < len(binary):
+            if b'musl' in binary:
+                mv = _get_musl_version(executable)
+                return "musl", f"{mv.major}.{mv.minor}"
+
             if b'libc' in binary or b'GLIBC' in binary:
                 m = _libc_search.search(binary, pos)
             else:
@@ -1373,6 +1378,50 @@ def freedesktop_os_release():
             )
 
     return _os_release_cache.copy()
+
+
+### musl libc version support
+# These functions were copied from the packaging module:
+# https://github.com/pypa/packaging/blob/main/src/packaging/_musllinux.py
+
+class _MuslVersion(NamedTuple):
+    major: int
+    minor: int
+
+
+def _parse_musl_version(output: str) -> Optional[_MuslVersion]:
+    lines = [n for n in (n.strip() for n in output.splitlines()) if n]
+    if len(lines) < 2 or lines[0][:4] != "musl":
+        return None
+    m = re.match(r"Version (\d+)\.(\d+)", lines[1])
+    if not m:
+        return None
+    return _MuslVersion(major=int(m.group(1)), minor=int(m.group(2)))
+
+
+@functools.lru_cache()
+def _get_musl_version(executable: str) -> Optional[_MuslVersion]:
+    from ._elffile import ELFFile
+    import subprocess
+    """Detect currently-running musl runtime version.
+
+    This is done by checking the specified executable's dynamic linking
+    information, and invoking the loader to parse its output for a version
+    string. If the loader is musl, the output would be something like::
+
+        musl libc (x86_64)
+        Version 1.2.2
+        Dynamic Program Loader
+    """
+    try:
+        with open(executable, "rb") as f:
+            ld = ELFFile(f).interpreter
+    except (OSError, TypeError, ValueError):
+        return None
+    if ld is None or "musl" not in ld:
+        return None
+    proc = subprocess.run([ld], stderr=subprocess.PIPE, universal_newlines=True)
+    return _parse_musl_version(proc.stderr)
 
 
 ### Command line interface
