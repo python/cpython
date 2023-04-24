@@ -3343,7 +3343,7 @@ test_gc_visit_objects_basic(PyObject *Py_UNUSED(self),
     }
     state.target = obj;
     state.found = 0;
-    
+
     PyUnstable_GC_VisitObjects(gc_visit_callback_basic, &state);
     Py_DECREF(obj);
     if (!state.found) {
@@ -3380,6 +3380,95 @@ test_gc_visit_objects_exit_early(PyObject *Py_UNUSED(self),
     Py_RETURN_NONE;
 }
 
+typedef struct {
+    PyObject_HEAD
+} ObjExtraData;
+
+static PyObject *
+obj_extra_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    size_t extra_size = sizeof(PyObject *);
+    PyObject *obj = PyUnstable_Object_GC_NewWithExtraData(type, extra_size);
+    if (obj == NULL)
+        return PyErr_NoMemory();
+    memset(obj, '\0', type->tp_basicsize + extra_size);
+    PyObject_Init(obj, type);
+    PyObject_GC_Track(obj);
+    return obj;
+}
+
+static PyObject **
+obj_extra_data_get_extra_storage(PyObject *self)
+{
+    return (PyObject **)((char *)self + Py_TYPE(self)->tp_basicsize);
+}
+
+static PyObject *
+obj_extra_data_get(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyObject **extra_storage = obj_extra_data_get_extra_storage(self);
+    PyObject *value = *extra_storage;
+    if (!value)
+        Py_RETURN_NONE;
+    Py_INCREF(value);
+    return value;
+}
+
+static int
+obj_extra_data_set(PyObject *self, PyObject *newval, void *Py_UNUSED(ignored))
+{
+    PyObject **extra_storage = obj_extra_data_get_extra_storage(self);
+    Py_CLEAR(*extra_storage);
+    if (newval) {
+        Py_INCREF(newval);
+        *extra_storage = newval;
+    }
+    return 0;
+}
+
+static PyGetSetDef obj_extra_data_getset[] = {
+    {"extra", (getter)obj_extra_data_get, (setter)obj_extra_data_set, NULL},
+    {NULL}
+};
+
+static int
+obj_extra_data_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    PyObject **extra_storage = obj_extra_data_get_extra_storage(self);
+    PyObject *value = *extra_storage;
+    Py_VISIT(value);
+    return 0;
+}
+
+static int
+obj_extra_data_clear(PyObject *self)
+{
+    PyObject **extra_storage = obj_extra_data_get_extra_storage(self);
+    Py_CLEAR(*extra_storage);
+    return 0;
+}
+
+static void
+obj_extra_data_dealloc(PyObject *self)
+{
+    PyObject_GC_UnTrack(self);
+    obj_extra_data_clear(self);
+    Py_TYPE(self)->tp_free(self);
+}
+
+static PyTypeObject ObjExtraData_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "obj_with_extra_data",
+    sizeof(ObjExtraData),
+    0,
+    .tp_getset = obj_extra_data_getset,
+    .tp_dealloc = obj_extra_data_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = (traverseproc)obj_extra_data_traverse,
+    .tp_clear = (inquiry)obj_extra_data_clear,
+    .tp_new = obj_extra_data_new,
+    .tp_free = PyObject_GC_Del,
+};
 
 struct atexit_data {
     int called;
@@ -4102,6 +4191,11 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&MethStatic_Type);
     PyModule_AddObject(m, "MethStatic", (PyObject *)&MethStatic_Type);
+
+    if (PyType_Ready(&ObjExtraData_Type) < 0)
+        return NULL;
+    Py_INCREF(&ObjExtraData_Type);
+    PyModule_AddObject(m, "ObjExtraData", (PyObject *)&ObjExtraData_Type);
 
     PyModule_AddObject(m, "CHAR_MAX", PyLong_FromLong(CHAR_MAX));
     PyModule_AddObject(m, "CHAR_MIN", PyLong_FromLong(CHAR_MIN));

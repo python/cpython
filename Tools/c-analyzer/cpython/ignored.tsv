@@ -508,6 +508,7 @@ Modules/_testcapimodule.c	-	g_dict_watch_events	-
 Modules/_testcapimodule.c	-	g_dict_watchers_installed	-
 Modules/_testcapimodule.c	-	g_type_modified_events	-
 Modules/_testcapimodule.c	-	g_type_watchers_installed	-
+Modules/_testcapimodule.c	-	ObjExtraData_Type	-
 Modules/_testimportmultiple.c	-	_barmodule	-
 Modules/_testimportmultiple.c	-	_foomodule	-
 Modules/_testimportmultiple.c	-	_testimportmultiple	-

@@ -65,6 +65,19 @@ rules:
    Analogous to :c:func:`PyObject_NewVar` but for container objects with the
    :const:`Py_TPFLAGS_HAVE_GC` flag set.
 
+.. c:function:: PyObject* PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *type, size_t extra_size)
+
+   Analogous to :c:func:`PyObject_GC_New` but for container objects that
+   have additional data at the end of the object not managed by Python.
+
+   .. warning::
+       The function is marked as unstable because the final mechanism
+       for reserving extra data after an instance is not yet decided.
+       Once :pep:`697` is implemented, the mechanism described there can
+       be used to reserve the extra data.
+
+   .. versionadded:: 3.12
+
 
 .. c:function:: TYPE* PyObject_GC_Resize(TYPE, PyVarObject *op, Py_ssize_t newsize)
 
