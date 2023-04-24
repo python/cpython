@@ -592,6 +592,11 @@ assign_version_tag(PyTypeObject *type)
     return 1;
 }
 
+int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
+{
+    return assign_version_tag(type);
+}
+
 
 static PyMemberDef type_members[] = {
     {"__basicsize__", T_PYSSIZET, offsetof(PyTypeObject,tp_basicsize),READONLY},
