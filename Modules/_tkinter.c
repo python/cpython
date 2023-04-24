@@ -310,7 +310,6 @@ typedef struct {
     const Tcl_ObjType *WideIntType;
     const Tcl_ObjType *BignumType;
     const Tcl_ObjType *ListType;
-    const Tcl_ObjType *ProcBodyType;
     const Tcl_ObjType *StringType;
 } TkappObject;
 
@@ -588,7 +587,6 @@ Tkapp_New(const char *screenName, const char *className,
     v->WideIntType = Tcl_GetObjType("wideInt");
     v->BignumType = Tcl_GetObjType("bignum");
     v->ListType = Tcl_GetObjType("list");
-    v->ProcBodyType = Tcl_GetObjType("procbody");
     v->StringType = Tcl_GetObjType("string");
 
     /* Delete the 'exit' command, which can screw things up */
@@ -1155,10 +1153,6 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
             PyTuple_SET_ITEM(result, i, elem);
         }
         return result;
-    }
-
-    if (value->typePtr == tkapp->ProcBodyType) {
-      /* fall through: return tcl object. */
     }
 
     if (value->typePtr == tkapp->StringType) {
