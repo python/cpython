@@ -1,0 +1,2 @@
+Avoid WSL access issues by adding errno.EACCES to list of ignored errors in
+shutil._copyxattr
