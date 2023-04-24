@@ -945,5 +945,27 @@ class TestFunctionWithManyArgs(unittest.TestCase):
                 self.assertEqual(l['f'](*range(N)), N//2)
 
 
+class TestPEP590(unittest.TestCase):
+    def test_sys_not_callable(self):
+        import sys
+
+        self.assertFalse(callable(sys))
+        self.assertRaisesRegex(TypeError, "'module' object is not callable", sys)
+
+    def test_sys_add_callable(self):
+        try:
+            def exponent(value=42, *, power=1):
+                return value ** power
+
+            sys.__call__ = exponent
+
+            self.assertEqual(sys(), 42)
+            self.assertEqual(sys(3), 3)
+            self.assertEqual(sys(power=2), 1764)
+
+        finally:
+            if hasattr(sys, "__call__"):
+                del sys.__call__
+
 if __name__ == "__main__":
     unittest.main()
