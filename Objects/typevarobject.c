@@ -1042,6 +1042,7 @@ PyObject *_Py_make_typevartuple(const char *name) {
 static void
 typealias_dealloc(PyObject *self)
 {
+    _PyObject_GC_UNTRACK(self);
     typealiasobject *ta = (typealiasobject *)self;
     free((void *)ta->name);
     Py_XDECREF(ta->type_params);
@@ -1066,7 +1067,7 @@ static PyMemberDef typealias_members[] = {
 static typealiasobject *
 typealias_alloc(const char *name, PyObject *type_params, PyObject *compute_value)
 {
-    typealiasobject *ta = PyObject_GC_New(typealiasobject, &_PyTypeAlias_Type);
+    typealiasobject *ta = _PyTypeAlias_Type.tp_alloc(&_PyTypeAlias_Type, 0);
     if (ta == NULL) {
         return NULL;
     }
@@ -1078,11 +1079,11 @@ typealias_alloc(const char *name, PyObject *type_params, PyObject *compute_value
     ta->type_params = Py_XNewRef(type_params);
     ta->compute_value = Py_NewRef(compute_value);
     ta->value = NULL;
-    PyObject_GC_Track(ta);
     return ta;
 }
 
-static int typealias_traverse(typealiasobject *self, visitproc visit, void *arg)
+static int
+typealias_traverse(typealiasobject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->type_params);
     Py_VISIT(self->compute_value);
@@ -1120,8 +1121,10 @@ PyTypeObject _PyTypeAlias_Type = {
     .tp_name = "TypeAlias",
     .tp_basicsize = sizeof(typealiasobject),
     .tp_dealloc = typealias_dealloc,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_free = PyObject_GC_Del,
     .tp_repr = typealias_repr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC,
     .tp_members = typealias_members,
     .tp_methods = typealias_methods,
     .tp_doc = typealias_doc,
