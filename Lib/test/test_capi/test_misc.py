@@ -1400,7 +1400,7 @@ class TestThreadState(unittest.TestCase):
     @threading_helper.requires_working_threading()
     def test_gilstate_ensure_no_deadlock(self):
         # See https://github.com/python/cpython/issues/96071
-        code = textwrap.dedent(f"""
+        code = textwrap.dedent("""
             import _testcapi
 
             def callback():
