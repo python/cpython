@@ -923,8 +923,7 @@ def _is_unpacked_typevartuple(x: Any) -> bool:
 
 
 def _is_typevar_like(x: Any) -> bool:
-    # TODO(PEP 695): remove TypeVarTuple here
-    return isinstance(x, (TypeVar, ParamSpec, TypeVarTuple)) or _is_unpacked_typevartuple(x)
+    return isinstance(x, (TypeVar, ParamSpec)) or _is_unpacked_typevartuple(x)
 
 
 class _PickleUsingNameMixin:
@@ -1777,27 +1776,12 @@ def _lazy_load_getattr_static():
 
 _cleanups.append(_lazy_load_getattr_static.cache_clear)
 
-class _Dummy[T, *Ts, **P]():
+class _Dummy1[T]:
     pass
 
-TypeVar = type(_Dummy.__type_variables__[0])
-TypeVarTuple = type(_Dummy.__type_variables__[1])
-ParamSpec = type(_Dummy.__type_variables__[2])
-ParamSpecArgs = type(ParamSpec("P").args)
-ParamSpecKwargs = type(ParamSpec("P").kwargs)
-Generic = _Dummy.__mro__[1]
-
-def _pickle_psargs(psargs):
-    return ParamSpecArgs, (psargs.__origin__,)
-
-copyreg.pickle(ParamSpecArgs, _pickle_psargs)
-
-def _pickle_pskwargs(pskwargs):
-    return ParamSpecKwargs, (pskwargs.__origin__,)
-
-copyreg.pickle(ParamSpecKwargs, _pickle_pskwargs)
-
-del _Dummy, _pickle_psargs, _pickle_pskwargs
+TypeVar = type(_Dummy1.__type_variables__[0])
+# Generic and Protocol must be defined before we can use a TypeVarTuple
+Generic = _Dummy1.__mro__[1]
 
 
 class _ProtocolMeta(ABCMeta):
@@ -1941,6 +1925,26 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         if cls.__init__ is Protocol.__init__:
             cls.__init__ = _no_init_or_replace_init
 
+
+class _Dummy2[*Ts, **P]():
+    pass
+
+TypeVarTuple = type(_Dummy2.__type_variables__[0])
+ParamSpec = type(_Dummy2.__type_variables__[1])
+ParamSpecArgs = type(ParamSpec("P").args)
+ParamSpecKwargs = type(ParamSpec("P").kwargs)
+
+def _pickle_psargs(psargs):
+    return ParamSpecArgs, (psargs.__origin__,)
+
+copyreg.pickle(ParamSpecArgs, _pickle_psargs)
+
+def _pickle_pskwargs(pskwargs):
+    return ParamSpecKwargs, (pskwargs.__origin__,)
+
+copyreg.pickle(ParamSpecKwargs, _pickle_pskwargs)
+
+del _Dummy1, _Dummy2, _pickle_psargs, _pickle_pskwargs
 
 
 class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):

@@ -835,36 +835,37 @@ static void typevartupleobject_dealloc(PyObject *self)
     Py_TYPE(self)->tp_free(self);
 }
 
+static PyObject *typevartuple_unpack(PyObject *tvt)
+{
+    PyObject *typing = PyImport_ImportModule("typing");
+    if (typing == NULL) {
+        return NULL;
+    }
+    PyObject *unpack = PyObject_GetAttrString(typing, "Unpack");
+    if (unpack == NULL) {
+        Py_DECREF(typing);
+        return NULL;
+    }
+    PyObject *unpacked = PyObject_GetItem(unpack, tvt);
+    Py_DECREF(typing);
+    Py_DECREF(unpack);
+    return unpacked;
+}
+
 static PyObject *typevartupleobject_iter(PyObject *self)
 {
-    PyObject *typing = NULL;
-    PyObject *unpack = NULL;
-    PyObject *unpacked = NULL;
-    PyObject *tuple = NULL;
-    PyObject *result = NULL;
-
-    typing = PyImport_ImportModule("typing");
-    if (typing == NULL) {
-        goto exit;
-    }
-    unpack = PyObject_GetAttrString(typing, "Unpack");
-    if (unpack == NULL) {
-        goto exit;
-    }
-    unpacked = PyObject_GetItem(unpack, self);
+    PyObject *unpacked = typevartuple_unpack(self);
     if (unpacked == NULL) {
-        goto exit;
+        return NULL;
     }
-    tuple = PyTuple_Pack(1, unpacked);
+    PyObject *tuple = PyTuple_Pack(1, unpacked);
     if (tuple == NULL) {
-        goto exit;
+        Py_DECREF(unpacked);
+        return NULL;
     }
-    result = PyObject_GetIter(tuple);
-exit:
-    Py_XDECREF(typing);
-    Py_XDECREF(unpack);
-    Py_XDECREF(unpacked);
-    Py_XDECREF(tuple);
+    PyObject *result = PyObject_GetIter(tuple);
+    Py_DECREF(unpacked);
+    Py_DECREF(tuple);
     return result;
 }
 
@@ -1108,9 +1109,47 @@ generic_class_getitem(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
     return call_typing_args_kwargs("_generic_class_getitem", cls, args, kwargs);
 }
 
+static int
+contains_typevartuple(PyTupleObject *params)
+{
+    Py_ssize_t n = PyTuple_GET_SIZE(params);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *param = PyTuple_GET_ITEM(params, i);
+        if (Py_TYPE(param) == &_PyTypeVarTuple_Type) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 PyObject *
 _Py_subscript_generic(PyObject *params)
 {
+    assert(PyTuple_Check(params));
+    // TypeVarTuple must be unpacked when passed to Generic, so we do that here.
+    if (contains_typevartuple((PyTupleObject *)params)) {
+        Py_ssize_t n = PyTuple_GET_SIZE(params);
+        PyObject *new_params = PyTuple_New(n);
+        for (Py_ssize_t i = 0; i < n; i++) {
+            PyObject *param = PyTuple_GET_ITEM(params, i);
+            if (Py_TYPE(param) == &_PyTypeVarTuple_Type) {
+                PyObject *unpacked = typevartuple_unpack(param);
+                if (unpacked == NULL) {
+                    Py_DECREF(new_params);
+                    return NULL;
+                }
+                PyTuple_SET_ITEM(new_params, i, unpacked);
+            }
+            else {
+                PyTuple_SET_ITEM(new_params, i, Py_NewRef(param));
+            }
+        }
+        params = new_params;
+    }
+    else {
+        Py_INCREF(params);
+    }
+
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (interp->types.generic_type == NULL) {
         PyErr_SetString(PyExc_SystemError, "Cannot find Generic type");
@@ -1120,7 +1159,10 @@ _Py_subscript_generic(PyObject *params)
     if (args == NULL) {
         return NULL;
     }
-    return call_typing_func_object("_generic_class_getitem", args);
+    PyObject *result = call_typing_func_object("_generic_class_getitem", args);
+    Py_DECREF(args);
+    Py_DECREF(params);
+    return result;
 }
 
 static PyMethodDef generic_methods[] = {
