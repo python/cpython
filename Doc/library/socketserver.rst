@@ -147,6 +147,9 @@ server is the address family.
 
    These classes are pre-defined using the mix-in classes.
 
+.. versionadded:: 3.12
+   The ``ForkingUnixStreamServer`` and ``ForkingUnixDatagramServer`` classes
+   were added.
 
 To implement a service, you must derive a class from :class:`BaseRequestHandler`
 and redefine its :meth:`~BaseRequestHandler.handle` method.
