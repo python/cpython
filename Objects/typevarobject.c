@@ -410,6 +410,19 @@ paramspecargs_new_impl(PyTypeObject *type, PyObject *origin)
     return (PyObject *)paramspecargsobject_new(origin);
 }
 
+static PyObject *
+paramspecargs_mro_entries(PyObject *self, PyObject *args)
+{
+    PyErr_SetString(PyExc_TypeError,
+                    "Cannot subclass an instance of ParamSpecArgs");
+    return NULL;
+}
+
+static PyMethodDef paramspecargs_methods[] = {
+    {"__mro_entries__", paramspecargs_mro_entries, METH_O},
+    {0}
+};
+
 PyDoc_STRVAR(paramspecargs_doc,
 "The args for a ParamSpec object.\n\
 \n\
@@ -435,6 +448,7 @@ PyTypeObject _PyParamSpecArgs_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
     .tp_traverse = paramspecargsobject_traverse,
     .tp_members = paramspecargs_members,
+    .tp_methods = paramspecargs_methods,
     .tp_new = paramspecargs_new,
     .tp_doc = paramspecargs_doc,
 };
@@ -520,6 +534,19 @@ paramspeckwargs_new_impl(PyTypeObject *type, PyObject *origin)
     return (PyObject *)paramspeckwargsobject_new(origin);
 }
 
+static PyObject *
+paramspeckwargs_mro_entries(PyObject *self, PyObject *args)
+{
+    PyErr_SetString(PyExc_TypeError,
+                    "Cannot subclass an instance of ParamSpecKwargs");
+    return NULL;
+}
+
+static PyMethodDef paramspeckwargs_methods[] = {
+    {"__mro_entries__", paramspeckwargs_mro_entries, METH_O},
+    {0}
+};
+
 PyDoc_STRVAR(paramspeckwargs_doc,
 "The kwargs for a ParamSpec object.\n\
 \n\
@@ -545,6 +572,7 @@ PyTypeObject _PyParamSpecKwargs_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
     .tp_traverse = paramspeckwargsobject_traverse,
     .tp_members = paramspeckwargs_members,
+    .tp_methods = paramspeckwargs_methods,
     .tp_new = paramspeckwargs_new,
     .tp_doc = paramspeckwargs_doc,
 };
