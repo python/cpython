@@ -306,8 +306,7 @@ Functions and classes provided:
 
    If the code within the :keyword:`!with` block raises an
    :exc:`ExceptionGroup`, suppressed exceptions are removed from the
-   group.  If any others are left, the modified group is re-raised.
-   Otherwise, the exception group is empty and so nothing is raised.
+   group.  If any exceptions in the group are not suppressed, a group containing them is re-raised.
 
    .. versionadded:: 3.4
 
