@@ -13,12 +13,12 @@ extern PyTypeObject _PyTypeVarTuple_Type;
 extern PyTypeObject _PyParamSpec_Type;
 extern PyTypeObject _PyParamSpecArgs_Type;
 extern PyTypeObject _PyParamSpecKwargs_Type;
-extern PyTypeObject _PyGeneric_Type;
 
 extern PyObject *_Py_make_typevar(const char *, PyObject *);
 extern PyObject *_Py_make_paramspec(const char *);
 extern PyObject *_Py_make_typevartuple(const char *);
 extern PyObject *_Py_subscript_generic(PyObject *);
+extern int _Py_initialize_generic(PyInterpreterState *);
 
 #ifdef __cplusplus
 }

@@ -1045,7 +1045,12 @@ def _generic_class_getitem(cls, params):
         params = (params,)
 
     params = tuple(_type_convert(p) for p in params)
-    if cls in (Generic, Protocol):
+    try:
+        is_generic_or_protocol = cls in (Generic, Protocol)
+    except NameError:
+        # Happens during interpreter startup
+        is_generic_or_protocol = True
+    if is_generic_or_protocol:
         # Generic and Protocol can only be subscripted with unique type variables.
         if not params:
             raise TypeError(
@@ -1079,12 +1084,18 @@ def _generic_class_getitem(cls, params):
 
 
 def _generic_init_subclass(cls, *args, **kwargs):
-    super(Generic, cls).__init_subclass__(*args, **kwargs)
+    try:
+        generic_cls = Generic
+    except NameError:
+        # Happens during interpreter startup. We are creating
+        # the _Dummy class.
+        generic_cls = cls.__mro__[1]
+    super(generic_cls, cls).__init_subclass__(*args, **kwargs)
     tvars = []
     if '__orig_bases__' in cls.__dict__:
-        error = Generic in cls.__orig_bases__
+        error = generic_cls in cls.__orig_bases__
     else:
-        error = (Generic in cls.__bases__ and
+        error = (generic_cls in cls.__bases__ and
                     cls.__name__ != 'Protocol' and
                     type(cls) != _TypedDictMeta)
     if error:
@@ -1099,7 +1110,7 @@ def _generic_init_subclass(cls, *args, **kwargs):
         gvars = None
         for base in cls.__orig_bases__:
             if (isinstance(base, _GenericAlias) and
-                    base.__origin__ is Generic):
+                    base.__origin__ is generic_cls):
                 if gvars is not None:
                     raise TypeError(
                         "Cannot inherit from Generic[...] multiple types.")
@@ -1405,7 +1416,12 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 
         if self._name:  # generic version of an ABC or built-in class
             return super().__mro_entries__(bases)
-        if self.__origin__ is Generic:
+        try:
+            is_Generic = self.__origin__ is Generic
+        except NameError:
+            # Happens during interpreter startup
+            return (self.__origin__,)
+        if is_Generic:
             if Protocol in bases:
                 return ()
             i = bases.index(self)
@@ -1757,6 +1773,28 @@ def _lazy_load_getattr_static():
 
 _cleanups.append(_lazy_load_getattr_static.cache_clear)
 
+class _Dummy[T, *Ts, **P]():
+    pass
+
+TypeVar = type(_Dummy.__type_variables__[0])
+TypeVarTuple = type(_Dummy.__type_variables__[1])
+ParamSpec = type(_Dummy.__type_variables__[2])
+ParamSpecArgs = type(ParamSpec("P").args)
+ParamSpecKwargs = type(ParamSpec("P").kwargs)
+Generic = _Dummy.__mro__[1]
+
+def _pickle_psargs(psargs):
+    return ParamSpecArgs, (psargs.__origin__,)
+
+copyreg.pickle(ParamSpecArgs, _pickle_psargs)
+
+def _pickle_pskwargs(pskwargs):
+    return ParamSpecKwargs, (pskwargs.__origin__,)
+
+copyreg.pickle(ParamSpecKwargs, _pickle_pskwargs)
+
+del _Dummy, _pickle_psargs, _pickle_pskwargs
+
 
 class _ProtocolMeta(ABCMeta):
     # This metaclass is really unfortunate and exists only because of
@@ -1899,27 +1937,6 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         if cls.__init__ is Protocol.__init__:
             cls.__init__ = _no_init_or_replace_init
 
-class _Dummy[T, *Ts, **P]():
-    pass
-
-TypeVar = type(_Dummy.__type_variables__[0])
-TypeVarTuple = type(_Dummy.__type_variables__[1])
-ParamSpec = type(_Dummy.__type_variables__[2])
-ParamSpecArgs = type(ParamSpec("P").args)
-ParamSpecKwargs = type(ParamSpec("P").kwargs)
-Generic = _Dummy.__mro__[1]
-
-del _Dummy
-
-def _pickle_psargs(psargs):
-    return ParamSpecArgs, (psargs.__origin__,)
-
-copyreg.pickle(ParamSpecArgs, _pickle_psargs)
-
-def _pickle_pskwargs(pskwargs):
-    return ParamSpecKwargs, (pskwargs.__origin__,)
-
-copyreg.pickle(ParamSpecKwargs, _pickle_pskwargs)
 
 
 class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):

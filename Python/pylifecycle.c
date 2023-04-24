@@ -1702,6 +1702,7 @@ finalize_interp_clear(PyThreadState *tstate)
     int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
 
     _PyExc_ClearExceptionGroupType(tstate->interp);
+    Py_CLEAR(tstate->interp->types.generic_type);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);

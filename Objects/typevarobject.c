@@ -1074,7 +1074,12 @@ generic_class_getitem(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
 PyObject *
 _Py_subscript_generic(PyObject *params)
 {
-    PyObject *args = PyTuple_Pack(2, &_PyGeneric_Type, params);
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    if (interp->types.generic_type == NULL) {
+        PyErr_SetString(PyExc_SystemError, "Cannot find Generic type");
+        return NULL;
+    }
+    PyObject *args = PyTuple_Pack(2, interp->types.generic_type, params);
     if (args == NULL) {
         return NULL;
     }
@@ -1091,12 +1096,25 @@ static PyMethodDef generic_methods[] = {
     {NULL} /* Sentinel */
 };
 
-PyTypeObject _PyGeneric_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "typing.Generic",
-    .tp_basicsize = sizeof(PyObject),
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_doc = generic_doc,
-    .tp_methods = generic_methods,
-    .tp_new = PyType_GenericNew,
+static PyType_Slot generic_slots[] = {
+    {Py_tp_doc, (void *)generic_doc},
+    {Py_tp_methods, generic_methods},
+    {0, NULL},
 };
+
+PyType_Spec generic_spec = {
+    .name = "typing.Generic",
+    .basicsize = sizeof(PyObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .slots = generic_slots,
+};
+
+int _Py_initialize_generic(PyInterpreterState *interp)
+{
+    PyObject *type = PyType_FromSpec(&generic_spec);
+    if (type == NULL) {
+        return -1;
+    }
+    interp->types.generic_type = type;
+    return 0;
+}

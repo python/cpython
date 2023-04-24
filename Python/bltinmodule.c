@@ -3096,7 +3096,6 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("TypeVar",               &_PyTypeVar_Type);
     SETBUILTIN("TypeVarTuple",          &_PyTypeVarTuple_Type);
     SETBUILTIN("ParamSpec",             &_PyParamSpec_Type);
-    SETBUILTIN("Generic",               &_PyGeneric_Type);
     debug = PyBool_FromLong(config->optimization_level == 0);
     if (PyDict_SetItemString(dict, "__debug__", debug) < 0) {
         Py_DECREF(debug);
