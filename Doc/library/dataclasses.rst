@@ -710,7 +710,7 @@ Using dataclasses, *if* this code was valid::
 
   @dataclass
   class D:
-      x: List = []
+      x: list = []      # This code raises ValueError
       def add(self, element):
           self.x += element
 
