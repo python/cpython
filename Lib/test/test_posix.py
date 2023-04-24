@@ -296,7 +296,7 @@ class PosixTester(unittest.TestCase):
                 os.register_at_fork(before=lambda: os.write(w, b'D'))
                 os.register_at_fork(after_in_parent=lambda: os.write(w, b'E'))
                 os.register_at_fork(after_in_child=lambda: os.write(w, b'F'))
-                child_pid =  os.fork()
+                child_pid = os.fork()
                 if child_pid == 0:
                     os.close(w)
                     os.read(fin_r, 1)
