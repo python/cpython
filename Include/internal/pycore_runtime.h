@@ -119,9 +119,6 @@ typedef struct pyruntimestate {
 
     unsigned long main_thread;
 
-    /* Assuming the current thread holds the GIL, this is the
-       PyThreadState for the current thread. */
-    _Py_atomic_address tstate_current;
     /* Used for the thread state bound to the current thread. */
     Py_tss_t autoTSSkey;
 
