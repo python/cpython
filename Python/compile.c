@@ -467,8 +467,7 @@ static int compiler_call_simple_kw_helper(struct compiler *c,
                                           Py_ssize_t nkwelts);
 static int compiler_call_helper(struct compiler *c, location loc,
                                 int n, asdl_expr_seq *args,
-                                asdl_keyword_seq *keywords,
-                                PyObject *extra_positional_arg);
+                                asdl_keyword_seq *keywords);
 static int compiler_try_except(struct compiler *, stmt_ty);
 static int compiler_try_star_except(struct compiler *, stmt_ty);
 static int compiler_set_qualname(struct compiler *);
@@ -2410,10 +2409,28 @@ compiler_class(struct compiler *c, stmt_ty s)
 
     if (typeparams) {
         _Py_DECLARE_STR(type_params, ".type_params");
+        _Py_DECLARE_STR(generic_base, ".generic_base");
+        RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Load));
+        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_SUBSCRIPT_GENERIC);
+        RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(generic_base), Store));
+
+        Py_ssize_t original_len = asdl_seq_LEN(s->v.ClassDef.bases);
+        asdl_expr_seq *bases = _Py_asdl_expr_seq_new(
+            original_len + 1, c->c_arena);
+        for (Py_ssize_t i = 0; i < original_len; i++) {
+            asdl_seq_SET(bases, i, asdl_seq_GET(s->v.ClassDef.bases, i));
+        }
+        expr_ty name_node = _PyAST_Name(
+            &_Py_STR(generic_base), Load,
+            loc.lineno, loc.col_offset, loc.end_lineno, loc.end_col_offset, c->c_arena
+        );
+        if (name_node == NULL) {
+            return ERROR;
+        }
+        asdl_seq_SET(bases, original_len, name_node);
         RETURN_IF_ERROR(compiler_call_helper(c, loc, 2,
-                                            s->v.ClassDef.bases,
-                                            s->v.ClassDef.keywords,
-                                            &_Py_STR(type_params)));
+                                             bases,
+                                             s->v.ClassDef.keywords));
 
         int is_in_class = c->u->u_ste->ste_type_params_in_class;
         c->u->u_metadata.u_argcount = is_in_class;
@@ -2434,8 +2451,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     } else {
         RETURN_IF_ERROR(compiler_call_helper(c, loc, 2,
                                             s->v.ClassDef.bases,
-                                            s->v.ClassDef.keywords,
-                                            NULL));
+                                            s->v.ClassDef.keywords));
     }
 
     /* 6. apply decorators */
@@ -4607,8 +4623,7 @@ compiler_call(struct compiler *c, expr_ty e)
     loc = LOC(e);
     return compiler_call_helper(c, loc, 0,
                                 e->v.Call.args,
-                                e->v.Call.keywords,
-                                NULL);
+                                e->v.Call.keywords);
 }
 
 static int
@@ -4758,18 +4773,16 @@ static int
 compiler_call_helper(struct compiler *c, location loc,
                      int n, /* Args already pushed */
                      asdl_expr_seq *args,
-                     asdl_keyword_seq *keywords,
-                     PyObject *extra_positional_arg)
+                     asdl_keyword_seq *keywords)
 {
-    Py_ssize_t i, nseen, nelts, nkwelts, real_nelts;
+    Py_ssize_t i, nseen, nelts, nkwelts;
 
     RETURN_IF_ERROR(validate_keywords(c, keywords));
 
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);
-    real_nelts = extra_positional_arg == NULL ? nelts : nelts + 1;
 
-    if (real_nelts + nkwelts*2 > STACK_USE_GUIDELINE) {
+    if (nelts + nkwelts*2 > STACK_USE_GUIDELINE) {
          goto ex_call;
     }
     for (i = 0; i < nelts; i++) {
@@ -4791,21 +4804,15 @@ compiler_call_helper(struct compiler *c, location loc,
         assert(elt->kind != Starred_kind);
         VISIT(c, expr, elt);
     }
-    if (extra_positional_arg != NULL) {
-        RETURN_IF_ERROR(compiler_nameop(c, loc, extra_positional_arg, Load));
-        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_SUBSCRIPT_GENERIC);
-    }
     if (nkwelts) {
         VISIT_SEQ(c, keyword, keywords);
         RETURN_IF_ERROR(
             compiler_call_simple_kw_helper(c, loc, keywords, nkwelts));
     }
-    ADDOP_I(c, loc, CALL, n + real_nelts + nkwelts);
+    ADDOP_I(c, loc, CALL, n + nelts + nkwelts);
     return SUCCESS;
 
 ex_call:
-
-    assert(extra_positional_arg == NULL); // TODO(PEP 695)
 
     /* Do positional arguments. */
     if (n ==0 && nelts == 1 && ((expr_ty)asdl_seq_GET(args, 0))->kind == Starred_kind) {

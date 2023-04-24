@@ -44,6 +44,7 @@ struct _Py_global_strings {
         STRUCT_FOR_STR(dot, ".")
         STRUCT_FOR_STR(dot_locals, ".<locals>")
         STRUCT_FOR_STR(empty, "")
+        STRUCT_FOR_STR(generic_base, ".generic_base")
         STRUCT_FOR_STR(json_decoder, "json.decoder")
         STRUCT_FOR_STR(kwdefaults, ".kwdefaults")
         STRUCT_FOR_STR(list_err, "list index out of range")

@@ -1156,6 +1156,16 @@ symtable_enter_typeparam_block(struct symtable *st, identifier name,
                               lineno, col_offset, end_lineno, end_col_offset)) {
             return 0;
         }
+        // This is used for setting the generic base
+        _Py_DECLARE_STR(generic_base, ".generic_base");
+        if (!symtable_add_def(st, &_Py_STR(generic_base), DEF_LOCAL,
+                              lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
+        if (!symtable_add_def(st, &_Py_STR(generic_base), USE,
+                              lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
     }
     if (has_defaults) {
         _Py_DECLARE_STR(defaults, ".defaults");
