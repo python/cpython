@@ -595,6 +595,9 @@ Module constants
    These constants are used for the :meth:`Connection.setconfig`
    and :meth:`~Connection.getconfig` methods.
 
+   The availability of these constants vary depending on the version of SQLite
+   Python was compiled with.
+
    ..versionadded:: 3.12
 
    ..seealso::
