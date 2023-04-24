@@ -76,7 +76,9 @@ static PyObject *type_check(PyObject *arg) {
     if (args == NULL) {
         return NULL;
     }
-    return call_typing_func_object("_type_check", args);
+    PyObject *result = call_typing_func_object("_type_check", args);
+    Py_DECREF(args);
+    return result;
 }
 
 static PyObject *
@@ -85,7 +87,9 @@ make_union(PyObject *self, PyObject *other) {
     if (args == NULL) {
         return NULL;
     }
-    return call_typing_func_object("_make_union", args);
+    PyObject *result = call_typing_func_object("_make_union", args);
+    Py_DECREF(args);
+    return result;
 }
 
 static PyObject *
@@ -109,6 +113,7 @@ caller(void)
 static void
 typevar_dealloc(PyObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     typevarobject *tv = (typevarobject *)self;
 
     _PyObject_GC_UNTRACK(self);
@@ -116,16 +121,20 @@ typevar_dealloc(PyObject *self)
     free((void *)tv->name);
     Py_XDECREF(tv->bound);
     Py_XDECREF(tv->constraints);
+    _PyObject_ClearManagedDict(self);
 
     Py_TYPE(self)->tp_free(self);
+    Py_DecRef(tp);
 }
 
 static int
 typevar_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     typevarobject *tv = (typevarobject *)self;
     Py_VISIT(tv->bound);
     Py_VISIT(tv->constraints);
+    _PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
@@ -255,6 +264,7 @@ typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
                                              covariant, contravariant,
                                              autovariance, module);
     Py_XDECREF(bound);
+    Py_XDECREF(module);
     return tv;
 }
 
@@ -273,7 +283,9 @@ typevar_typing_subst_impl(typevarobject *self, PyObject *arg)
     if (args == NULL) {
         return NULL;
     }
-    return call_typing_func_object("_typevar_subst", args);
+    PyObject *result = call_typing_func_object("_typevar_subst", args);
+    Py_DECREF(args);
+    return result;
 }
 
 /*[clinic input]
@@ -374,7 +386,8 @@ typedef struct {
     PyObject *__origin__;
 } paramspecattrobject;
 
-static void paramspecattr_dealloc(PyObject *self)
+static void
+paramspecattr_dealloc(PyObject *self)
 {
     paramspecattrobject *psa = (paramspecattrobject *)self;
 
@@ -385,14 +398,16 @@ static void paramspecattr_dealloc(PyObject *self)
     Py_TYPE(self)->tp_free(self);
 }
 
-static int paramspecattr_traverse(PyObject *self, visitproc visit, void *arg)
+static int
+paramspecattr_traverse(PyObject *self, visitproc visit, void *arg)
 {
     paramspecattrobject *psa = (paramspecattrobject *)self;
     Py_VISIT(psa->__origin__);
     return 0;
 }
 
-static PyObject *paramspecattr_richcompare(PyObject *a, PyObject *b, int op)
+static PyObject *
+paramspecattr_richcompare(PyObject *a, PyObject *b, int op)
 {
     if (!Py_IS_TYPE(a, Py_TYPE(b))) {
         Py_RETURN_NOTIMPLEMENTED;
@@ -412,7 +427,8 @@ static PyMemberDef paramspecattr_members[] = {
     {0}
 };
 
-static paramspecattrobject *paramspecattr_new(PyTypeObject *tp, PyObject *origin)
+static paramspecattrobject *
+paramspecattr_new(PyTypeObject *tp, PyObject *origin)
 {
     paramspecattrobject *psa = PyObject_GC_New(paramspecattrobject, tp);
     if (psa == NULL) {
@@ -423,7 +439,8 @@ static paramspecattrobject *paramspecattr_new(PyTypeObject *tp, PyObject *origin
     return psa;
 }
 
-static PyObject *paramspecargs_repr(PyObject *self)
+static PyObject *
+paramspecargs_repr(PyObject *self)
 {
     paramspecattrobject *psa = (paramspecattrobject *)self;
 
@@ -577,21 +594,26 @@ PyType_Spec paramspeckwargs_spec = {
 static void
 paramspec_dealloc(PyObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     paramspecobject *ps = (paramspecobject *)self;
 
     _PyObject_GC_UNTRACK(self);
 
     free((void *)ps->name);
     Py_XDECREF(ps->bound);
+    _PyObject_ClearManagedDict(self);
 
     Py_TYPE(self)->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static int
 paramspec_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     paramspecobject *ps = (paramspecobject *)self;
     Py_VISIT(ps->bound);
+    _PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
@@ -703,6 +725,7 @@ paramspec_new_impl(PyTypeObject *type, const char *name, PyObject *bound,
     PyObject *ps = (PyObject *)paramspec_alloc(
         name, bound, covariant, contravariant, autovariance, module);
     Py_XDECREF(bound);
+    Py_DECREF(module);
     return ps;
 }
 
@@ -722,7 +745,9 @@ paramspec_typing_subst_impl(paramspecobject *self, PyObject *arg)
     if (args == NULL) {
         return NULL;
     }
-    return call_typing_func_object("_paramspec_subst", args);
+    PyObject *result = call_typing_func_object("_paramspec_subst", args);
+    Py_DECREF(args);
+    return result;
 }
 
 /*[clinic input]
@@ -742,7 +767,9 @@ paramspec_typing_prepare_subst_impl(paramspecobject *self, PyObject *alias,
     if (args_tuple == NULL) {
         return NULL;
     }
-    return call_typing_func_object("_paramspec_prepare_subst", args_tuple);
+    PyObject *result = call_typing_func_object("_paramspec_prepare_subst", args_tuple);
+    Py_DECREF(args_tuple);
+    return result;
 }
 
 /*[clinic input]
@@ -842,16 +869,22 @@ PyType_Spec paramspec_spec = {
     .slots = paramspec_slots,
 };
 
-static void typevartuple_dealloc(PyObject *self)
+static void
+typevartuple_dealloc(PyObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     typevartupleobject *tvt = (typevartupleobject *)self;
 
     free((void *)tvt->name);
+    _PyObject_ClearManagedDict(self);
+
     Py_TYPE(self)->tp_free(self);
+    Py_DECREF(tp);
 }
 
-static PyObject *typevartuple_unpack(PyObject *tvt)
+static PyObject *
+typevartuple_unpack(PyObject *tvt)
 {
     PyObject *typing = PyImport_ImportModule("typing");
     if (typing == NULL) {
@@ -868,7 +901,8 @@ static PyObject *typevartuple_unpack(PyObject *tvt)
     return unpacked;
 }
 
-static PyObject *typevartuple_iter(PyObject *self)
+static PyObject *
+typevartuple_iter(PyObject *self)
 {
     PyObject *unpacked = typevartuple_unpack(self);
     if (unpacked == NULL) {
@@ -885,7 +919,8 @@ static PyObject *typevartuple_iter(PyObject *self)
     return result;
 }
 
-static PyObject *typevartuple_repr(PyObject *self)
+static PyObject *
+typevartuple_repr(PyObject *self)
 {
     typevartupleobject *tvt = (typevartupleobject *)self;
 
@@ -897,7 +932,8 @@ static PyMemberDef typevartuple_members[] = {
     {0}
 };
 
-static typevartupleobject *typevartuple_alloc(const char *name, PyObject *module)
+static typevartupleobject *
+typevartuple_alloc(const char *name, PyObject *module)
 {
     PyObject *tp = _PyInterpreterState_Get()->types.typevartuple_type;
     typevartupleobject *tvt = PyObject_GC_New(typevartupleobject, (PyTypeObject *)tp);
@@ -933,7 +969,9 @@ typevartuple_impl(PyTypeObject *type, const char *name)
     if (module == NULL) {
         return NULL;
     }
-    return (PyObject *)typevartuple_alloc(name, module);
+    PyObject *result = (PyObject *)typevartuple_alloc(name, module);
+    Py_DECREF(module);
+    return result;
 }
 
 /*[clinic input]
@@ -968,7 +1006,9 @@ typevartuple_typing_prepare_subst_impl(typevartupleobject *self,
     if (args_tuple == NULL) {
         return NULL;
     }
-    return call_typing_func_object("_typevartuple_prepare_subst", args_tuple);
+    PyObject *result = call_typing_func_object("_typevartuple_prepare_subst", args_tuple);
+    Py_DECREF(args_tuple);
+    return result;
 }
 
 /*[clinic input]
@@ -992,8 +1032,10 @@ typevartuple_mro_entries(PyObject *self, PyObject *args)
 }
 
 static int
-typevartuple_traverse(typevartupleobject *o, visitproc visit, void *arg)
+typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
+    _PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
