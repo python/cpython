@@ -709,7 +709,7 @@ compiler_set_qualname(struct compiler *c)
             if (stack_size == 2) {
                 // If we're immediately within the module, we can skip
                 // the rest and just set the qualname to be the same as name.
-                u->u_qualname = Py_NewRef(u->u_name);
+                u->u_metadata.u_qualname = Py_NewRef(u->u_metadata.u_name);
                 return SUCCESS;
             }
             capsule = PyList_GET_ITEM(c->c_stack, stack_size - 2);
@@ -2243,15 +2243,15 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     Py_DECREF(co);
     if (typeparams) {
         if (is_typeparams_in_class) {
-            c->u->u_argcount += 1;
+            c->u->u_metadata.u_argcount += 1;
         }
         if (funcflags & 0x02) {
-            c->u->u_argcount += 1;
+            c->u->u_metadata.u_argcount += 1;
         }
         if (funcflags & 0x01) {
-            c->u->u_argcount += 1;
+            c->u->u_metadata.u_argcount += 1;
         }
-        PyCodeObject *co = assemble(c, 0);
+        PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
             return ERROR;
@@ -2416,8 +2416,8 @@ compiler_class(struct compiler *c, stmt_ty s)
                                             &_Py_STR(type_params)));
 
         int is_in_class = c->u->u_ste->ste_type_params_in_class;
-        c->u->u_argcount = is_in_class;
-        PyCodeObject *co = assemble(c, 0);
+        c->u->u_metadata.u_argcount = is_in_class;
+        PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
             return ERROR;
@@ -2479,7 +2479,7 @@ compiler_typealias(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(compiler_add_const(c->c_const_cache, c->u, Py_None));
     VISIT_IN_SCOPE(c, expr, s->v.TypeAlias.value);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
-    PyCodeObject *co = assemble(c, 1);
+    PyCodeObject *co = optimize_and_assemble(c, 1);
     compiler_exit_scope(c);
     if (co == NULL) {
         return ERROR;
@@ -2493,8 +2493,8 @@ compiler_typealias(struct compiler *c, stmt_ty s)
     ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEALIAS);
     if (typeparams) {
         int is_in_class = c->u->u_ste->ste_type_params_in_class;
-        c->u->u_argcount = is_in_class;
-        PyCodeObject *co = assemble(c, 0);
+        c->u->u_metadata.u_argcount = is_in_class;
+        PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
             return ERROR;
