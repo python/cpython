@@ -1265,8 +1265,6 @@ class Mock(CallableMixin, NonCallableMock):
       mock. This can be useful for debugging. The name is propagated to child
       mocks.
 
-    * `parent`: Explicit parent mock instance.
-
     Mocks can also be called with arbitrary keyword arguments. These will be
     used to set attributes on the mock after it is created.
     """

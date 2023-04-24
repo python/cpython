@@ -245,8 +245,6 @@ the *new_callable* argument to :func:`patch`.
       or get an attribute on the mock that isn't on the object passed as
       *spec_set* will raise an :exc:`AttributeError`.
 
-    * *parent*: Explicit parent mock instance.
-
     * *side_effect*: A function to be called whenever the Mock is called. See
       the :attr:`~Mock.side_effect` attribute. Useful for raising exceptions or
       dynamically changing return values. The function is called with the same
