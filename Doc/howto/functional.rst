@@ -1208,8 +1208,8 @@ General
 -------
 
 **Structure and Interpretation of Computer Programs**, by Harold Abelson and
-Gerald Jay Sussman with Julie Sussman.  Full text at
-https://mitpress.mit.edu/sicp/.  In this classic textbook of computer science,
+Gerald Jay Sussman with Julie Sussman.  The book can be found at
+https://mitpress.mit.edu/sicp.  In this classic textbook of computer science,
 chapters 2 and 3 discuss the use of sequences and streams to organize the data
 flow inside a program.  The book uses Scheme for its examples, but many of the
 design approaches described in these chapters are applicable to functional-style

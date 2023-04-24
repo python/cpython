@@ -1820,8 +1820,7 @@ class TestGetcallargsFunctions(unittest.TestCase):
             self.assertEqualException(f, '2, 3, 4')
             self.assertEqualException(f, '1, 2, 3, a=1')
             self.assertEqualException(f, '2, 3, 4, c=5')
-            # XXX: success of this one depends on dict order
-            ## self.assertEqualException(f, '2, 3, 4, a=1, c=5')
+            self.assertEqualException(f, '2, 3, 4, a=1, c=5')
             # f got an unexpected keyword argument
             self.assertEqualException(f, 'c=2')
             self.assertEqualException(f, '2, c=3')
@@ -1832,17 +1831,19 @@ class TestGetcallargsFunctions(unittest.TestCase):
             self.assertEqualException(f, '1, a=2')
             self.assertEqualException(f, '1, **{"a":2}')
             self.assertEqualException(f, '1, 2, b=3')
-            # XXX: Python inconsistency
-            # - for functions and bound methods: unexpected keyword 'c'
-            # - for unbound methods: multiple values for keyword 'a'
-            #self.assertEqualException(f, '1, c=3, a=2')
+            self.assertEqualException(f, '1, c=3, a=2')
         # issue11256:
         f3 = self.makeCallable('**c')
         self.assertEqualException(f3, '1, 2')
         self.assertEqualException(f3, '1, 2, a=1, b=2')
         f4 = self.makeCallable('*, a, b=0')
-        self.assertEqualException(f3, '1, 2')
-        self.assertEqualException(f3, '1, 2, a=1, b=2')
+        self.assertEqualException(f4, '1, 2')
+        self.assertEqualException(f4, '1, 2, a=1, b=2')
+        self.assertEqualException(f4, 'a=1, a=3')
+        self.assertEqualException(f4, 'a=1, c=3')
+        self.assertEqualException(f4, 'a=1, a=3, b=4')
+        self.assertEqualException(f4, 'a=1, b=2, a=3, b=4')
+        self.assertEqualException(f4, 'a=1, a=2, a=3, b=4')
 
         # issue #20816: getcallargs() fails to iterate over non-existent
         # kwonlydefaults and raises a wrong TypeError
@@ -2462,18 +2463,43 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(str(S()), '()')
         self.assertEqual(repr(S().parameters), 'mappingproxy(OrderedDict())')
 
-        def test(po, pk, pod=42, pkd=100, *args, ko, **kwargs):
+        def test(po, /, pk, pkd=100, *args, ko, kod=10, **kwargs):
             pass
+
         sig = inspect.signature(test)
-        po = sig.parameters['po'].replace(kind=P.POSITIONAL_ONLY)
-        pod = sig.parameters['pod'].replace(kind=P.POSITIONAL_ONLY)
+        self.assertTrue(repr(sig).startswith('<Signature'))
+        self.assertTrue('(po, /, pk' in repr(sig))
+
+        # We need two functions, because it is impossible to represent
+        # all param kinds in a single one.
+        def test2(pod=42, /):
+            pass
+
+        sig2 = inspect.signature(test2)
+        self.assertTrue(repr(sig2).startswith('<Signature'))
+        self.assertTrue('(pod=42, /)' in repr(sig2))
+
+        po = sig.parameters['po']
+        pod = sig2.parameters['pod']
         pk = sig.parameters['pk']
         pkd = sig.parameters['pkd']
         args = sig.parameters['args']
         ko = sig.parameters['ko']
+        kod = sig.parameters['kod']
         kwargs = sig.parameters['kwargs']
 
         S((po, pk, args, ko, kwargs))
+        S((po, pk, ko, kod))
+        S((po, pod, ko))
+        S((po, pod, kod))
+        S((pod, ko, kod))
+        S((pod, kod))
+        S((pod, args, kod, kwargs))
+        # keyword-only parameters without default values
+        # can follow keyword-only parameters with default values:
+        S((kod, ko))
+        S((kod, ko, kwargs))
+        S((args, kod, ko))
 
         with self.assertRaisesRegex(ValueError, 'wrong parameter order'):
             S((pk, po, args, ko, kwargs))
@@ -2495,13 +2521,16 @@ class TestSignatureObject(unittest.TestCase):
             S((pod, po))
 
         with self.assertRaisesRegex(ValueError, 'follows default argument'):
+            S((pod, pk))
+
+        with self.assertRaisesRegex(ValueError, 'follows default argument'):
+            S((po, pod, pk))
+
+        with self.assertRaisesRegex(ValueError, 'follows default argument'):
             S((po, pkd, pk))
 
         with self.assertRaisesRegex(ValueError, 'follows default argument'):
             S((pkd, pk))
-
-        self.assertTrue(repr(sig).startswith('<Signature'))
-        self.assertTrue('(po, pk' in repr(sig))
 
     def test_signature_object_pickle(self):
         def foo(a, b, *, c:1={}, **kw) -> {42:'ham'}: pass
@@ -2872,8 +2901,6 @@ class TestSignatureObject(unittest.TestCase):
     def test_signature_on_partial(self):
         from functools import partial
 
-        Parameter = inspect.Parameter
-
         def test():
             pass
 
@@ -2988,8 +3015,6 @@ class TestSignatureObject(unittest.TestCase):
                          ((('c', ..., int, "positional_or_keyword"),),
                           42))
 
-        psig = inspect.signature(partial(partial(test, 1), 2))
-
         def foo(a):
             return a
         _foo = partial(partial(foo, a=10), a=20)
@@ -3044,13 +3069,8 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(_foo(*ba.args, **ba.kwargs), (12, 10, 20))
 
 
-        def foo(a, b, c, d, **kwargs):
+        def foo(a, b, /, c, d, **kwargs):
             pass
-        sig = inspect.signature(foo)
-        params = sig.parameters.copy()
-        params['a'] = params['a'].replace(kind=Parameter.POSITIONAL_ONLY)
-        params['b'] = params['b'].replace(kind=Parameter.POSITIONAL_ONLY)
-        foo.__signature__ = inspect.Signature(params.values())
         sig = inspect.signature(foo)
         self.assertEqual(str(sig), '(a, b, /, c, d, **kwargs)')
 
@@ -3556,13 +3576,8 @@ class TestSignatureObject(unittest.TestCase):
         P = inspect.Parameter
         S = inspect.Signature
 
-        def test(a_po, *, b, **kwargs):
+        def test(a_po, /, *, b, **kwargs):
             return a_po, kwargs
-
-        sig = inspect.signature(test)
-        new_params = list(sig.parameters.values())
-        new_params[0] = new_params[0].replace(kind=P.POSITIONAL_ONLY)
-        test.__signature__ = sig.replace(parameters=new_params)
 
         self.assertEqual(str(inspect.signature(test)),
                          '(a_po, /, *, b, **kwargs)')
@@ -3591,6 +3606,14 @@ class TestSignatureObject(unittest.TestCase):
         self.assertIs(sig.return_annotation, sig.empty)
         sig = sig.replace(return_annotation=42)
         self.assertEqual(sig.return_annotation, 42)
+        self.assertEqual(sig, inspect.signature(test))
+
+    def test_signature_replaced(self):
+        def test():
+            pass
+
+        spam_param = inspect.Parameter('spam', inspect.Parameter.POSITIONAL_ONLY)
+        sig = test.__signature__ = inspect.Signature(parameters=(spam_param,))
         self.assertEqual(sig, inspect.signature(test))
 
     def test_signature_on_mangled_parameters(self):
@@ -4155,17 +4178,8 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(ba.args, (10, 20))
 
     def test_signature_bind_positional_only(self):
-        P = inspect.Parameter
-
-        def test(a_po, b_po, c_po=3, foo=42, *, bar=50, **kwargs):
+        def test(a_po, b_po, c_po=3, /, foo=42, *, bar=50, **kwargs):
             return a_po, b_po, c_po, foo, bar, kwargs
-
-        sig = inspect.signature(test)
-        new_params = collections.OrderedDict(tuple(sig.parameters.items()))
-        for name in ('a_po', 'b_po', 'c_po'):
-            new_params[name] = new_params[name].replace(kind=P.POSITIONAL_ONLY)
-        new_sig = sig.replace(parameters=new_params.values())
-        test.__signature__ = new_sig
 
         self.assertEqual(self.call(test, 1, 2, 4, 5, bar=6),
                          (1, 2, 4, 5, 6, {}))
@@ -4587,7 +4601,6 @@ class TestMain(unittest.TestCase):
         self.assertEqual(err, b'')
 
     def test_builtins(self):
-        module = importlib.import_module('unittest')
         _, out, err = assert_python_failure('-m', 'inspect',
                                             'sys')
         lines = err.decode().splitlines()
