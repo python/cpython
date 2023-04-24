@@ -226,7 +226,7 @@ a :class:`MagicMock` for you. You can specify an alternative class of :class:`Mo
 the *new_callable* argument to :func:`patch`.
 
 
-.. class:: Mock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, parent=None, unsafe=False, **kwargs)
+.. class:: Mock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, **kwargs)
 
     Create a new :class:`Mock` object. :class:`Mock` takes several optional arguments
     that specify the behaviour of the Mock object:
