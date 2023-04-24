@@ -137,6 +137,13 @@ New Features
   (Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
   with contributions from Gregory P. Smith [Google] and Mark Shannon
   in :gh:`96123`.)
+* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+  have a new a *filter* argument that allows limiting tar features than may be
+  surprising or dangerous, such as creating files outside the destination
+  directory.
+  See :ref:`tarfile-extraction-filter` for details.
+  In Python 3.14, the default will switch to ``'data'``.
+  (Contributed by Petr Viktorin in :pep:`706`.)
 
 
 Other Language Changes
@@ -630,6 +637,10 @@ Deprecated
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated as will be removed
   in Python 3.14. Use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
 
+* Extracting tar archives without specifying *filter* is deprecated until
+  Python 3.14, when ``'data'`` filter will become the default.
+  See :ref:`tarfile-extraction-filter` for details.
+
 
 Pending Removal in Python 3.13
 ------------------------------
@@ -992,6 +1003,10 @@ Changes in the Python API
   exception instance, rather than to a ``(typ, exc, tb)`` tuple.
   (Contributed by Irit Katriel in :gh:`103176`.)
 
+* When extracting tar files using :mod:`tarfile` or
+  :func:`shutil.unpack_archive`, pass the *filter* argument to limit features
+  that may be surprising or dangerous.
+  See :ref:`tarfile-extraction-filter` for details.
 
 Build Changes
 =============
