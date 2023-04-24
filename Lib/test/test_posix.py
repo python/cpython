@@ -303,6 +303,7 @@ class PosixTester(unittest.TestCase):
                     os._exit(0)
                 os.close(w)
                 os.read(fin_r, 1)
+                os.write(fin_w, b'!')
                 os._exit(0)
             else:
                 os.close(w)
