@@ -25,6 +25,7 @@ extern "C" {
 #include "pycore_signal.h"          // struct _signals_runtime_state
 #include "pycore_time.h"            // struct _time_runtime_state
 #include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
+#include "pycore_typeobject.h"      // struct types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
 struct _getargs_runtime_state {
@@ -150,13 +151,7 @@ typedef struct pyruntimestate {
     struct _py_object_runtime_state object_state;
     struct _Py_float_runtime_state float_state;
     struct _Py_unicode_runtime_state unicode_state;
-
-    struct {
-        /* Used to set PyTypeObject.tp_version_tag */
-        // bpo-42745: next_version_tag remains shared by all interpreters
-        // because of static types.
-        unsigned int next_version_tag;
-    } types;
+    struct _types_runtime_state types;
 
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_static_objects static_objects;
