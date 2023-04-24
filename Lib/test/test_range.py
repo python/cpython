@@ -648,6 +648,11 @@ class RangeTest(unittest.TestCase):
                          hash(range(2**200, 2**201, 2**100)))
         self.assertNotEqual(range(2**200, 2**201, 2**100),
                             range(2**200, 2**201 + 1, 2**100))
+        # Empty ranges
+        self.assertEqual(range(32, 16), range(0))
+        self.assertEqual(hash(range(32, 16)), hash(range(0)))
+        self.assertEqual(range(2, 1, 3), range(0))
+        self.assertEqual(hash(range(2, 1, 3)), hash(range(0)))
 
         # Order comparisons are not implemented for ranges.
         with self.assertRaises(TypeError):
