@@ -29,6 +29,12 @@ class _FailedTest(case.TestCase):
         return testFailure
 
 
+def _is_valid_module_filename(module_filename):
+    root, ext = os.path.splitext(module_filename)
+    if not (ext == '.py' and root.isidentifier()):
+        return False
+    return True
+
 def _make_failed_import_test(name, suiteClass):
     message = 'Failed to import test module: %s\n%s' % (
         name, traceback.format_exc())
@@ -366,8 +372,7 @@ class TestLoader(object):
         """
         basename = os.path.basename(full_path)
         if os.path.isfile(full_path):
-            root, ext = os.path.splitext(basename)
-            if not (ext == '.py' and root.isidentifier()):
+            if not _is_valid_module_filename(basename):
                 # valid Python identifiers only
                 return None, False
             if not self._match_path(basename, full_path, pattern):
