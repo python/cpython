@@ -2347,26 +2347,10 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 }
 
 static int
-compiler_set_type_params_in_class(struct compiler *c, location loc, asdl_typeparam_seq *typeparams)
+compiler_set_type_params_in_class(struct compiler *c, location loc)
 {
-    Py_ssize_t count = asdl_seq_LEN(typeparams);
-    for (Py_ssize_t i = 0; i < count; i++) {
-        typeparam_ty typeparam = asdl_seq_GET(typeparams, i);
-        PyObject *name;
-        switch(typeparam->kind) {
-        case TypeVar_kind:
-            name = typeparam->v.TypeVar.name;
-            break;
-        case TypeVarTuple_kind:
-            name = typeparam->v.TypeVarTuple.name;
-            break;
-        case ParamSpec_kind:
-            name = typeparam->v.ParamSpec.name;
-            break;
-        }
-        RETURN_IF_ERROR(compiler_nameop(c, loc, name, Load));
-    }
-    ADDOP_I(c, loc, BUILD_TUPLE, count);
+    _Py_DECLARE_STR(type_params, ".type_params");
+    RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Load));
     RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_ID(__type_variables__), Store));
     return 1;
 }
@@ -2442,7 +2426,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         if (typeparams) {
-            if (!compiler_set_type_params_in_class(c, loc, typeparams)) {
+            if (!compiler_set_type_params_in_class(c, loc)) {
                 compiler_exit_scope(c);
                 return ERROR;
             }
