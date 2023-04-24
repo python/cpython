@@ -556,7 +556,7 @@ Optimizations
 * Added :func:`asyncio.eager_task_factory` and :func:`asyncio.create_eager_task_factory`
   functions to allow opting an event loop in to eager task execution,
   speeding up some use-cases by up to 50%.
-  (Contributed by Itamar O in :gh:`102853`)
+  (Contributed by Jacob Bower & Itamar O in :gh:`102853`)
 
 
 CPython bytecode changes
