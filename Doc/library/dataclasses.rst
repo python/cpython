@@ -14,7 +14,7 @@
 This module provides a decorator and functions for automatically
 adding generated :term:`special method`\s such as :meth:`~object.__init__` and
 :meth:`~object.__repr__` to user-defined classes.  It was originally described
-in :pep:`557`..
+in :pep:`557`.
 
 The member variables to use in these generated methods are defined
 using :pep:`526` type annotations.  For example, this code::
