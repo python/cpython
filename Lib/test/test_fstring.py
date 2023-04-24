@@ -963,11 +963,11 @@ x = (
         self.assertEqual(fr'\"\'\"\'', '\\"\\\'\\"\\\'')
 
     def test_fstring_backslash_before_double_bracket(self):
-        self.assertEqual(f'\{{\}}', '\\{\\}')
-        self.assertEqual(f'\{{', '\\{')
-        self.assertEqual(f'\{{{1+1}', '\\{2')
-        self.assertEqual(f'\}}{1+1}', '\\}2')
-        self.assertEqual(f'{1+1}\}}', '2\\}')
+        self.assertEqual(fr'\{{\}}', '\\{\\}')
+        self.assertEqual(fr'\{{', '\\{')
+        self.assertEqual(fr'\{{{1+1}', '\\{2')
+        self.assertEqual(fr'\}}{1+1}', '\\}2')
+        self.assertEqual(fr'{1+1}\}}', '2\\}')
         self.assertEqual(fr'\{{\}}', '\\{\\}')
         self.assertEqual(fr'\{{', '\\{')
         self.assertEqual(fr'\{{{1+1}', '\\{2')
