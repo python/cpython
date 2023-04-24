@@ -70,6 +70,15 @@ static PyObject *type_check(PyObject *arg) {
     return call_typing_func_object("_type_check", args);
 }
 
+static PyObject *
+make_union(PyObject *self, PyObject *other) {
+    PyObject *args = PyTuple_Pack(2, self, other);
+    if (args == NULL) {
+        return NULL;
+    }
+    return call_typing_func_object("_make_union", args);
+}
+
 static void typevarobject_dealloc(PyObject *self)
 {
     typevarobject *tv = (typevarobject *)self;
@@ -256,7 +265,7 @@ static PyMethodDef typevar_methods[] = {
 };
 
 static PyNumberMethods typevar_as_number = {
-    .nb_or = _Py_union_type_or, // Add __or__ function
+    .nb_or = make_union,
 };
 
 PyDoc_STRVAR(typevar_doc,
@@ -723,7 +732,7 @@ static PyMethodDef paramspec_methods[] = {
 };
 
 static PyNumberMethods paramspec_as_number = {
-    .nb_or = _Py_union_type_or, // Add __or__ function
+    .nb_or = make_union,
 };
 
 PyDoc_STRVAR(paramspec_doc,

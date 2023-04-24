@@ -697,6 +697,10 @@ def Union(self, parameters):
         return _UnionGenericAlias(self, parameters, name="Optional")
     return _UnionGenericAlias(self, parameters)
 
+def _make_union(left, right):
+    """Used from the C implementation of TypeVar."""
+    return Union[left, right]
+
 @_SpecialForm
 def Optional(self, parameters):
     """Optional type.
