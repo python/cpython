@@ -1,1 +1,0 @@
-This PR makes some minor linting adjustments to the Lib/test module caught by ruff. The adjustments are all related to the F541 f-string without any placeholders issue.
