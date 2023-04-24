@@ -318,25 +318,9 @@ _PyType_InitCache(PyInterpreterState *interp)
         entry->version = 0;
         // Set to None so _PyType_Lookup() can use Py_SETREF(),
         // rather than using slower Py_XSETREF().
-        // (See _PyType_FixCacheRefcounts() about the refcount.)
         entry->name = Py_None;
         entry->value = NULL;
     }
-}
-
-// This is the temporary fix used by pycore_create_interpreter(),
-// in pylifecycle.c.  _PyType_InitCache() is called before the GIL
-// has been created (for the main interpreter) and without the
-// "current" thread state set.  This causes crashes when the
-// reftotal is updated, so we don't modify the refcount in
-// _PyType_InitCache(), and instead do it later by calling
-// _PyType_FixCacheRefcounts().
-// XXX This workaround should be removed once we have immortal
-// objects (PEP 683).
-void
-_PyType_FixCacheRefcounts(void)
-{
-    _Py_RefcntAdd(Py_None, (1 << MCACHE_SIZE_EXP));
 }
 
 
@@ -606,6 +590,11 @@ assign_version_tag(PyTypeObject *type)
     }
     type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
     return 1;
+}
+
+int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
+{
+    return assign_version_tag(type);
 }
 
 
@@ -4344,7 +4333,7 @@ _Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int * suppress_missin
     /* Give up */
     if (suppress_missing_attribute == NULL) {
         PyErr_Format(PyExc_AttributeError,
-                        "type object '%.50s' has no attribute '%U'",
+                        "type object '%.100s' has no attribute '%U'",
                         type->tp_name, name);
     } else {
         // signal the caller we have not set an PyExc_AttributeError and gave up
@@ -8274,17 +8263,14 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
         (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
          (void *)PyObject_GenericGetAttr))
-        /* finding nothing is reasonable when __getattr__ is defined */
-        res = _PyObject_GenericTryGetAttr(self, name);
+        res = PyObject_GenericGetAttr(self, name);
     else {
         Py_INCREF(getattribute);
         res = call_attribute(self, getattribute, name);
         Py_DECREF(getattribute);
     }
-    if (res == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            PyErr_Clear();
-        }
+    if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        PyErr_Clear();
         res = call_attribute(self, getattr, name);
     }
     Py_DECREF(getattr);
@@ -9140,13 +9126,15 @@ type_new_set_names(PyTypeObject *type)
         Py_DECREF(set_name);
 
         if (res == NULL) {
-            _PyErr_FormatFromCause(PyExc_RuntimeError,
+            _PyErr_FormatNote(
                 "Error calling __set_name__ on '%.100s' instance %R "
                 "in '%.100s'",
                 Py_TYPE(value)->tp_name, key, type->tp_name);
             goto error;
         }
-        Py_DECREF(res);
+        else {
+            Py_DECREF(res);
+        }
     }
 
     Py_DECREF(names_to_set);

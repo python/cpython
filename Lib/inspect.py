@@ -1787,27 +1787,15 @@ def _check_instance(obj, attr):
 
 def _check_class(klass, attr):
     for entry in _static_getmro(klass):
-        if _shadowed_dict(type(entry)) is _sentinel:
-            try:
-                return entry.__dict__[attr]
-            except KeyError:
-                pass
+        if _shadowed_dict(type(entry)) is _sentinel and attr in entry.__dict__:
+            return entry.__dict__[attr]
     return _sentinel
-
-def _is_type(obj):
-    try:
-        _static_getmro(obj)
-    except TypeError:
-        return False
-    return True
 
 def _shadowed_dict(klass):
     for entry in _static_getmro(klass):
-        try:
-            class_dict = _get_dunder_dict_of_class(entry)["__dict__"]
-        except KeyError:
-            pass
-        else:
+        dunder_dict = _get_dunder_dict_of_class(entry)
+        if '__dict__' in dunder_dict:
+            class_dict = dunder_dict['__dict__']
             if not (type(class_dict) is types.GetSetDescriptorType and
                     class_dict.__name__ == "__dict__" and
                     class_dict.__objclass__ is entry):
@@ -1826,8 +1814,10 @@ def getattr_static(obj, attr, default=_sentinel):
        documentation for details.
     """
     instance_result = _sentinel
-    if not _is_type(obj):
-        klass = type(obj)
+
+    objtype = type(obj)
+    if type not in _static_getmro(objtype):
+        klass = objtype
         dict_attr = _shadowed_dict(klass)
         if (dict_attr is _sentinel or
             type(dict_attr) is types.MemberDescriptorType):
@@ -1850,11 +1840,11 @@ def getattr_static(obj, attr, default=_sentinel):
     if obj is klass:
         # for types we check the metaclass too
         for entry in _static_getmro(type(klass)):
-            if _shadowed_dict(type(entry)) is _sentinel:
-                try:
-                    return entry.__dict__[attr]
-                except KeyError:
-                    pass
+            if (
+                _shadowed_dict(type(entry)) is _sentinel
+                and attr in entry.__dict__
+            ):
+                return entry.__dict__[attr]
     if default is not _sentinel:
         return default
     raise AttributeError(attr)
@@ -3016,7 +3006,7 @@ class Signature:
             if __validate_parameters__:
                 params = OrderedDict()
                 top_kind = _POSITIONAL_ONLY
-                kind_defaults = False
+                seen_default = False
 
                 for param in parameters:
                     kind = param.kind
@@ -3031,21 +3021,19 @@ class Signature:
                                          kind.description)
                         raise ValueError(msg)
                     elif kind > top_kind:
-                        kind_defaults = False
                         top_kind = kind
 
                     if kind in (_POSITIONAL_ONLY, _POSITIONAL_OR_KEYWORD):
                         if param.default is _empty:
-                            if kind_defaults:
+                            if seen_default:
                                 # No default for this parameter, but the
-                                # previous parameter of the same kind had
-                                # a default
+                                # previous parameter of had a default
                                 msg = 'non-default argument follows default ' \
                                       'argument'
                                 raise ValueError(msg)
                         else:
                             # There is a default for this parameter.
-                            kind_defaults = True
+                            seen_default = True
 
                     if name in params:
                         msg = 'duplicate parameter name: {!r}'.format(name)
