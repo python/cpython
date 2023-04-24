@@ -205,6 +205,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case MAP_ADD:
             return 2;
+        case LOAD_SUPER_ATTR:
+            return 3;
         case LOAD_ATTR:
             return 1;
         case LOAD_ATTR_INSTANCE_VALUE:
@@ -589,6 +591,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case MAP_ADD:
             return 0;
+        case LOAD_SUPER_ATTR:
+            return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_INSTANCE_VALUE:
@@ -879,6 +883,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [DICT_UPDATE] = { true, INSTR_FMT_IB },
     [DICT_MERGE] = { true, INSTR_FMT_IB },
     [MAP_ADD] = { true, INSTR_FMT_IB },
+    [LOAD_SUPER_ATTR] = { true, INSTR_FMT_IB },
     [LOAD_ATTR] = { true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_INSTANCE_VALUE] = { true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_MODULE] = { true, INSTR_FMT_IBC00000000 },
