@@ -89,6 +89,12 @@ Objects/tupleobject.c	-	PyTuple_Type	-
 Objects/typeobject.c	-	PyBaseObject_Type	-
 Objects/typeobject.c	-	PySuper_Type	-
 Objects/typeobject.c	-	PyType_Type	-
+Objects/typevarobject.c	-	_PyTypeVar_Type	-
+Objects/typevarobject.c	-	_PyParamSpecArgs_Type	-
+Objects/typevarobject.c	-	_PyParamSpecKwargs_Type	-
+Objects/typevarobject.c	-	_PyParamSpec_Type	-
+Objects/typevarobject.c	-	_PyTypeVarTuple_Type	-
+Objects/typevarobject.c-	_PyTypeAlias_Type	-
 Objects/unicodeobject.c	-	PyUnicodeIter_Type	-
 Objects/unicodeobject.c	-	PyUnicode_Type	-
 Objects/weakrefobject.c	-	_PyWeakref_CallableProxyType	-
