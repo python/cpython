@@ -691,7 +691,7 @@ class ShellSidebarTest(unittest.TestCase):
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
         # Scroll up using the <MouseWheel> event.
-        # The meaning delta is platform-dependent.
+        # The meaning of delta is platform-dependent.
         delta = -1 if sys.platform == 'darwin' else 120
         sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
         yield
