@@ -2027,7 +2027,7 @@ Features of note:
      values.ensure_value(attr, value)
 
   If the ``attr`` attribute of ``values`` doesn't exist or is ``None``, then
-  ensure_value() first sets it to ``value``, and then returns 'value. This is
+  ensure_value() first sets it to ``value``, and then returns ``value``. This is
   very handy for actions like ``"extend"``, ``"append"``, and ``"count"``, all
   of which accumulate data in a variable and expect that variable to be of a
   certain type (a list for the first two, an integer for the latter).  Using

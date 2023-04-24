@@ -318,25 +318,9 @@ _PyType_InitCache(PyInterpreterState *interp)
         entry->version = 0;
         // Set to None so _PyType_Lookup() can use Py_SETREF(),
         // rather than using slower Py_XSETREF().
-        // (See _PyType_FixCacheRefcounts() about the refcount.)
         entry->name = Py_None;
         entry->value = NULL;
     }
-}
-
-// This is the temporary fix used by pycore_create_interpreter(),
-// in pylifecycle.c.  _PyType_InitCache() is called before the GIL
-// has been created (for the main interpreter) and without the
-// "current" thread state set.  This causes crashes when the
-// reftotal is updated, so we don't modify the refcount in
-// _PyType_InitCache(), and instead do it later by calling
-// _PyType_FixCacheRefcounts().
-// XXX This workaround should be removed once we have immortal
-// objects (PEP 683).
-void
-_PyType_FixCacheRefcounts(void)
-{
-    _Py_RefcntAdd(Py_None, (1 << MCACHE_SIZE_EXP));
 }
 
 
@@ -606,6 +590,11 @@ assign_version_tag(PyTypeObject *type)
     }
     type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
     return 1;
+}
+
+int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
+{
+    return assign_version_tag(type);
 }
 
 
@@ -4344,7 +4333,7 @@ _Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int * suppress_missin
     /* Give up */
     if (suppress_missing_attribute == NULL) {
         PyErr_Format(PyExc_AttributeError,
-                        "type object '%.50s' has no attribute '%U'",
+                        "type object '%.100s' has no attribute '%U'",
                         type->tp_name, name);
     } else {
         // signal the caller we have not set an PyExc_AttributeError and gave up
@@ -9367,13 +9356,6 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
     PyObject *mro, *res;
     Py_ssize_t i, n;
 
-    /* We want __class__ to return the class of the super object
-       (i.e. super, or a subclass), not the class of su->obj. */
-    if (PyUnicode_Check(name) &&
-        PyUnicode_GET_LENGTH(name) == 9 &&
-        _PyUnicode_Equal(name, &_Py_ID(__class__)))
-        return NULL;
-
     mro = su_obj_type->tp_mro;
     if (mro == NULL)
         return NULL;
@@ -9417,7 +9399,7 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
 
 static PyObject *
 do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
-                PyTypeObject *su_obj_type, PyObject *name, int *meth_found)
+                PyTypeObject *su_obj_type, PyObject *name, int *method)
 {
     PyObject *res;
     int temp_su = 0;
@@ -9428,8 +9410,8 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
 
     res = _super_lookup_descr(su_type, su_obj_type, name);
     if (res != NULL) {
-        if (meth_found && _PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
-            *meth_found = 1;
+        if (method && _PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+            *method = 1;
         }
         else {
             descrgetfunc f = Py_TYPE(res)->tp_descr_get;
@@ -9470,6 +9452,14 @@ static PyObject *
 super_getattro(PyObject *self, PyObject *name)
 {
     superobject *su = (superobject *)self;
+
+    /* We want __class__ to return the class of the super object
+       (i.e. super, or a subclass), not the class of su->obj. */
+    if (PyUnicode_Check(name) &&
+        PyUnicode_GET_LENGTH(name) == 9 &&
+        _PyUnicode_Equal(name, &_Py_ID(__class__)))
+        return PyObject_GenericGetAttr(self, name);
+
     return do_super_lookup(su, su->type, su->obj, su->obj_type, name, NULL);
 }
 
@@ -9527,13 +9517,13 @@ supercheck(PyTypeObject *type, PyObject *obj)
 }
 
 PyObject *
-_PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *meth_found)
+_PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *method)
 {
     PyTypeObject *su_obj_type = supercheck(su_type, su_obj);
     if (su_obj_type == NULL) {
         return NULL;
     }
-    PyObject *res = do_super_lookup(NULL, su_type, su_obj, su_obj_type, name, meth_found);
+    PyObject *res = do_super_lookup(NULL, su_type, su_obj, su_obj_type, name, method);
     Py_DECREF(su_obj_type);
     return res;
 }

@@ -393,6 +393,23 @@ class TestSuper(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "argument 1 must be a type"):
             C().method()
 
+    def test_super___class__(self):
+        class C:
+            def method(self):
+                return super().__class__
+
+        self.assertEqual(C().method(), super)
+
+    def test_super_subclass___class__(self):
+        class mysuper(super):
+            pass
+
+        class C:
+            def method(self):
+                return mysuper(C, self).__class__
+
+        self.assertEqual(C().method(), mysuper)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1048,8 +1048,8 @@ iterations of the loop.
    The low bit of ``namei`` signals to attempt a method load, as with
    :opcode:`LOAD_ATTR`.
 
-   The second-low bit of ``namei``, if set, means that this was a zero-argument
-   call to :func:`super`.
+   The second-low bit of ``namei``, if set, means that this was a two-argument
+   call to :func:`super` (unset means zero-argument).
 
    .. versionadded:: 3.12
 

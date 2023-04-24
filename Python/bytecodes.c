@@ -1573,16 +1573,16 @@ dummy_func(
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
             if (global_super == (PyObject *)&PySuper_Type && PyType_Check(class)) {
-                int meth_found = 0;
+                int method = 0;
                 Py_DECREF(global_super);
-                res = _PySuper_Lookup((PyTypeObject *)class, self, name, load_method ? &meth_found : NULL);
+                res = _PySuper_Lookup((PyTypeObject *)class, self, name, load_method ? &method : NULL);
                 Py_DECREF(class);
                 if (res == NULL) {
                     Py_DECREF(self);
                     ERROR_IF(true, error);
                 }
                 // Works with CALL, pushes two values: either `meth | self` or `NULL | meth`.
-                if (meth_found) {
+                if (method) {
                     res2 = res;
                     res = self;  // transfer ownership
                 } else {
@@ -1590,13 +1590,8 @@ dummy_func(
                     Py_DECREF(self);
                 }
             } else {
-                PyObject *super;
-                if (oparg & 2) {
-                    super = PyObject_CallNoArgs(global_super);
-                } else {
-                    PyObject *stack[] = {class, self};
-                    super = PyObject_Vectorcall(global_super, stack, 2, NULL);
-                }
+                PyObject *stack[] = {class, self};
+                PyObject *super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
                 DECREF_INPUTS();
                 ERROR_IF(super == NULL, error);
                 res = PyObject_GetAttr(super, name);
