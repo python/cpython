@@ -4,7 +4,7 @@ class ExceptionIsLikeMixin:
         Passes when the provided `exc` matches the structure of `template`.
         Individual exceptions don't have to be the same objects or even pass
         an equality test: they only need to be the same type and contain equal
-        `exc_obj.args`.}
+        `exc_obj.args`.
         """
         if exc is None and template is None:
             return
