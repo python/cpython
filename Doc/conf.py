@@ -76,6 +76,13 @@ venvdir = os.getenv('VENVDIR')
 if venvdir is not None:
     exclude_patterns.append(venvdir + '/*')
 
+nitpick_ignore = [
+    # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
+    # be resolved, as the method is currently undocumented. For context, see
+    # https://github.com/python/cpython/pull/103289.
+    ('py:meth', '_SubParsersAction.add_parser'),
+]
+
 # Disable Docutils smartquotes for several translations
 smartquotes_excludes = {
     'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
