@@ -1285,7 +1285,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_SEQ_WITH_NULL(st, expr, s->v.FunctionDef.args->kw_defaults);
         if (s->v.FunctionDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
-        if (s->v.FunctionDef.typeparams) {
+        if (asdl_seq_LEN(s->v.AsyncFunctionDef.typeparams) > 0) {
             if (!symtable_enter_typeparam_block(
                     st, s->v.FunctionDef.name,
                     (void *)s->v.FunctionDef.typeparams,
@@ -1309,7 +1309,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT_SEQ(st, stmt, s->v.FunctionDef.body);
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
-        if (s->v.FunctionDef.typeparams) {
+        if (asdl_seq_LEN(s->v.FunctionDef.typeparams) > 0) {
             if (!symtable_exit_block(st))
                 VISIT_QUIT(st, 0);
         }
@@ -1321,7 +1321,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_QUIT(st, 0);
         if (s->v.ClassDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.ClassDef.decorator_list);
-        if (s->v.ClassDef.typeparams) {
+        if (asdl_seq_LEN(s->v.ClassDef.typeparams) > 0) {
             if (!symtable_enter_typeparam_block(st, s->v.ClassDef.name,
                                                 (void *)s->v.ClassDef.typeparams,
                                                 false, false, true,
@@ -1338,7 +1338,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_QUIT(st, 0);
         tmp = st->st_private;
         st->st_private = s->v.ClassDef.name;
-        if (s->v.ClassDef.typeparams) {
+        if (asdl_seq_LEN(s->v.ClassDef.typeparams) > 0) {
             if (!symtable_add_def(st, &_Py_ID(__type_variables__),
                                   DEF_LOCAL, LOCATION(s))) {
                 VISIT_QUIT(st, 0);
@@ -1353,7 +1353,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         st->st_private = tmp;
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
-        if (s->v.ClassDef.typeparams) {
+        if (asdl_seq_LEN(s->v.ClassDef.typeparams) > 0) {
             if (!symtable_exit_block(st))
                 VISIT_QUIT(st, 0);
         }
@@ -1363,7 +1363,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT(st, expr, s->v.TypeAlias.name);
         assert(s->v.TypeAlias.name->kind == Name_kind);
         PyObject *name = s->v.TypeAlias.name->v.Name.id;
-        if (s->v.TypeAlias.typeparams) {
+        if (asdl_seq_LEN(s->v.TypeAlias.typeparams) > 0) {
             if (!symtable_enter_typeparam_block(
                     st, name,
                     (void *)s->v.TypeAlias.typeparams,
@@ -1379,7 +1379,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT(st, expr, s->v.TypeAlias.value);
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
-        if (s->v.TypeAlias.typeparams) {
+        if (asdl_seq_LEN(s->v.TypeAlias.typeparams) > 0) {
             if (!symtable_exit_block(st))
                 VISIT_QUIT(st, 0);
         }
@@ -1592,7 +1592,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                 s->v.AsyncFunctionDef.args->kw_defaults);
         if (s->v.AsyncFunctionDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.AsyncFunctionDef.decorator_list);
-        if (s->v.AsyncFunctionDef.typeparams) {
+        if (asdl_seq_LEN(s->v.AsyncFunctionDef.typeparams) > 0) {
             if (!symtable_enter_typeparam_block(
                     st, s->v.AsyncFunctionDef.name,
                     (void *)s->v.AsyncFunctionDef.typeparams,
@@ -1618,7 +1618,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT_SEQ(st, stmt, s->v.AsyncFunctionDef.body);
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
-        if (s->v.AsyncFunctionDef.typeparams) {
+        if (asdl_seq_LEN(s->v.AsyncFunctionDef.typeparams) > 0) {
             if (!symtable_exit_block(st))
                 VISIT_QUIT(st, 0);
         }
