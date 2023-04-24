@@ -14,7 +14,7 @@ class typevartuple "typevartupleobject *" "&_PyTypeVarTuple_Type"
 class typealias "typealiasobject *" "&_PyTypeAlias_Type"
 class Generic "PyObject *" "&PyGeneric_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a775b1d0f0b88d23]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=aa86741931a0f55c]*/
 
 typedef struct {
     PyObject_HEAD
@@ -124,7 +124,7 @@ typevar_dealloc(PyObject *self)
     _PyObject_ClearManagedDict(self);
 
     Py_TYPE(self)->tp_free(self);
-    Py_DecRef(tp);
+    Py_DECREF(tp);
 }
 
 static int
@@ -165,7 +165,7 @@ static typevarobject *typevar_alloc(const char *name, PyObject *bound,
                                     bool covariant, bool contravariant,
                                     bool autovariance, PyObject *module)
 {
-    PyObject *tp = PyInterpreterState_Get()->types.typevar_type;
+    PyObject *tp = PyInterpreterState_Get()->cached_objects.typevar_type;
     assert(tp != NULL);
     typevarobject *tv = PyObject_GC_New(typevarobject, (PyTypeObject *)tp);
     if (tv == NULL) {
@@ -444,7 +444,7 @@ paramspecargs_repr(PyObject *self)
 {
     paramspecattrobject *psa = (paramspecattrobject *)self;
 
-    PyObject *tp = _PyInterpreterState_Get()->types.paramspec_type;
+    PyObject *tp = _PyInterpreterState_Get()->cached_objects.paramspec_type;
     if (Py_IS_TYPE(psa->__origin__, (PyTypeObject *)tp)) {
         return PyUnicode_FromFormat("%s.args",
             ((paramspecobject *)psa->__origin__)->name);
@@ -520,7 +520,7 @@ static PyObject *paramspeckwargs_repr(PyObject *self)
 {
     paramspecattrobject *psk = (paramspecattrobject *)self;
 
-    PyObject *tp = _PyInterpreterState_Get()->types.paramspec_type;
+    PyObject *tp = _PyInterpreterState_Get()->cached_objects.paramspec_type;
     if (Py_IS_TYPE(psk->__origin__, (PyTypeObject *)tp)) {
         return PyUnicode_FromFormat("%s.kwargs",
             ((paramspecobject *)psk->__origin__)->name);
@@ -642,14 +642,14 @@ static PyMemberDef paramspec_members[] = {
 static PyObject *
 paramspec_args(PyObject *self, void *unused)
 {
-    PyObject *tp = PyInterpreterState_Get()->types.paramspecargs_type;
+    PyObject *tp = PyInterpreterState_Get()->cached_objects.paramspecargs_type;
     return (PyObject *)paramspecattr_new((PyTypeObject *)tp, self);
 }
 
 static PyObject *
 paramspec_kwargs(PyObject *self, void *unused)
 {
-    PyObject *tp = PyInterpreterState_Get()->types.paramspeckwargs_type;
+    PyObject *tp = PyInterpreterState_Get()->cached_objects.paramspeckwargs_type;
     return (PyObject *)paramspecattr_new((PyTypeObject *)tp, self);
 }
 
@@ -663,7 +663,7 @@ static paramspecobject *
 paramspec_alloc(const char *name, PyObject *bound, bool covariant,
                 bool contravariant, bool autovariance, PyObject *module)
 {
-    PyObject *tp = _PyInterpreterState_Get()->types.paramspec_type;
+    PyObject *tp = _PyInterpreterState_Get()->cached_objects.paramspec_type;
     paramspecobject *ps = PyObject_GC_New(paramspecobject, (PyTypeObject *)tp);
     if (ps == NULL) {
         return NULL;
@@ -935,7 +935,7 @@ static PyMemberDef typevartuple_members[] = {
 static typevartupleobject *
 typevartuple_alloc(const char *name, PyObject *module)
 {
-    PyObject *tp = _PyInterpreterState_Get()->types.typevartuple_type;
+    PyObject *tp = _PyInterpreterState_Get()->cached_objects.typevartuple_type;
     typevartupleobject *tvt = PyObject_GC_New(typevartupleobject, (PyTypeObject *)tp);
     if (tvt == NULL) {
         return NULL;
@@ -1141,7 +1141,7 @@ static PyMemberDef typealias_members[] = {
 static typealiasobject *
 typealias_alloc(const char *name, PyObject *type_params, PyObject *compute_value)
 {
-    PyObject *tp = PyInterpreterState_Get()->types.typealias_type;
+    PyObject *tp = PyInterpreterState_Get()->cached_objects.typealias_type;
     typealiasobject *ta = PyObject_GC_New(typealiasobject, (PyTypeObject *)tp);
     if (ta == NULL) {
         return NULL;
@@ -1310,7 +1310,7 @@ static int
 contains_typevartuple(PyTupleObject *params)
 {
     Py_ssize_t n = PyTuple_GET_SIZE(params);
-    PyObject *tp = PyInterpreterState_Get()->types.typevartuple_type;
+    PyObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *param = PyTuple_GET_ITEM(params, i);
         if (Py_IS_TYPE(param, (PyTypeObject *)tp)) {
@@ -1328,7 +1328,7 @@ _Py_subscript_generic(PyObject *params)
     if (contains_typevartuple((PyTupleObject *)params)) {
         Py_ssize_t n = PyTuple_GET_SIZE(params);
         PyObject *new_params = PyTuple_New(n);
-        PyObject *tp = PyInterpreterState_Get()->types.typevartuple_type;
+        PyObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
         for (Py_ssize_t i = 0; i < n; i++) {
             PyObject *param = PyTuple_GET_ITEM(params, i);
             if (Py_IS_TYPE(param, (PyTypeObject *)tp)) {
@@ -1350,11 +1350,11 @@ _Py_subscript_generic(PyObject *params)
     }
 
     PyInterpreterState *interp = PyInterpreterState_Get();
-    if (interp->types.generic_type == NULL) {
+    if (interp->cached_objects.generic_type == NULL) {
         PyErr_SetString(PyExc_SystemError, "Cannot find Generic type");
         return NULL;
     }
-    PyObject *args = PyTuple_Pack(2, interp->types.generic_type, params);
+    PyObject *args = PyTuple_Pack(2, interp->cached_objects.generic_type, params);
     if (args == NULL) {
         return NULL;
     }
@@ -1395,7 +1395,7 @@ int _Py_initialize_generic(PyInterpreterState *interp)
         if (name ## _type == NULL) { \
             return -1; \
         } \
-        interp->types.name ## _type = name ## _type; \
+        interp->cached_objects.name ## _type = name ## _type; \
     } while(0)
 
     MAKE_TYPE(generic);
@@ -1411,11 +1411,11 @@ int _Py_initialize_generic(PyInterpreterState *interp)
 
 void _Py_clear_generic_types(PyInterpreterState *interp)
 {
-    Py_CLEAR(interp->types.generic_type);
-    Py_CLEAR(interp->types.typevar_type);
-    Py_CLEAR(interp->types.typevartuple_type);
-    Py_CLEAR(interp->types.paramspec_type);
-    Py_CLEAR(interp->types.paramspecargs_type);
-    Py_CLEAR(interp->types.paramspeckwargs_type);
-    Py_CLEAR(interp->types.typealias_type);
+    Py_CLEAR(interp->cached_objects.generic_type);
+    Py_CLEAR(interp->cached_objects.typevar_type);
+    Py_CLEAR(interp->cached_objects.typevartuple_type);
+    Py_CLEAR(interp->cached_objects.paramspec_type);
+    Py_CLEAR(interp->cached_objects.paramspecargs_type);
+    Py_CLEAR(interp->cached_objects.paramspeckwargs_type);
+    Py_CLEAR(interp->cached_objects.typealias_type);
 }
