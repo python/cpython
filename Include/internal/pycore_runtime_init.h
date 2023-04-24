@@ -113,6 +113,9 @@ extern PyTypeObject _PyExc_MemoryError;
         .func_state = { \
             .next_version = 1, \
         }, \
+        .types = { \
+            .next_version_tag = _Py_TYPE_BASE_VERSION_TAG, \
+        }, \
         .static_objects = { \
             .singletons = { \
                 ._not_used = 1, \
