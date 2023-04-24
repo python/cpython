@@ -576,12 +576,12 @@ class PurePath(object):
         else:
             return tuple(self._tail)
 
-    def makepath(self, *args):
+    def makepath(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.
         Subclasses may override this method to customize how new path objects
         are created from methods like `iterdir()`.
         """
-        return type(self)(*args)
+        return type(self)(*pathsegments)
 
     def joinpath(self, *args):
         """Combine this path with one or several arguments, and return a
