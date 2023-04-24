@@ -311,7 +311,7 @@ class PosixTester(unittest.TestCase):
                     with open(r, "rb") as f:
                         data = f.read()
                         assert len(data) == 9, data
-                        # Check before-fork callbacks
+                        # Check return values of all callbacks
                         assert data == b'ABCDABECF', data
                 finally:
                     os.write(fin_w, b'!')
