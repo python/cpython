@@ -1605,8 +1605,8 @@ expression support in the :mod:`re` module).
    converts it to ``"ss"``.
 
    The casefolding algorithm is
-   `described in section 3.13 of the Unicode Standard
-   <http://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G53253>`__.
+   `described in section 3.13 'Default Case Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
 
    .. versionadded:: 3.3
 
@@ -1768,8 +1768,9 @@ expression support in the :mod:`re` module).
    one character, ``False`` otherwise.  Alphabetic characters are those characters defined
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
-   from the `Alphabetic property defined in the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G91002>`_.
+   from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
+   Ideographic' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf>`_.
 
 
 .. method:: str.isascii()
@@ -1904,8 +1905,8 @@ expression support in the :mod:`re` module).
    lowercase.
 
    The lowercasing algorithm used is
-   `described in section 3.13 of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
+   `described in section 3.13 'Default Case Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
 
 
 .. method:: str.lstrip([chars])
@@ -2250,8 +2251,8 @@ expression support in the :mod:`re` module).
    titlecase).
 
    The uppercasing algorithm used is
-   `described in section 3.13 of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
+   `described in section 3.13 'Default Case Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
 
 
 .. method:: str.zfill(width)
@@ -3714,12 +3715,15 @@ copying.
    types such as :class:`bytes` and :class:`bytearray`, an element is a single
    byte, but other types such as :class:`array.array` may have bigger elements.
 
-   ``len(view)`` is equal to the length of :class:`~memoryview.tolist`.
-   If ``view.ndim = 0``, the length is 1. If ``view.ndim = 1``, the length
-   is equal to the number of elements in the view. For higher dimensions,
-   the length is equal to the length of the nested list representation of
-   the view. The :class:`~memoryview.itemsize` attribute will give you the
-   number of bytes in a single element.
+   ``len(view)`` is equal to the length of :class:`~memoryview.tolist`, which
+   is the nested list representation of the view. If ``view.ndim = 1``,
+   this is equal to the number of elements in the view.
+
+   .. versionchanged:: 3.12
+      If ``view.ndim == 0``, ``len(view)`` now raises :exc:`TypeError` instead of returning 1.
+
+   The :class:`~memoryview.itemsize` attribute will give you the number of
+   bytes in a single element.
 
    A :class:`memoryview` supports slicing and indexing to expose its data.
    One-dimensional slicing will result in a subview::

@@ -48,6 +48,7 @@ def receive(sock, n, timeout=test.support.SHORT_TIMEOUT):
         raise RuntimeError("timed out on %r" % (sock,))
 
 
+@test.support.requires_fork()
 @contextlib.contextmanager
 def simple_subprocess(testcase):
     """Tests that a custom child process is not waited on (Issue 1540386)"""
