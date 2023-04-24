@@ -2496,7 +2496,8 @@ Notes:
 (1)
    Because the format depends on the current locale, care should be taken when
    making assumptions about the output value. Field orderings will vary (for
-   example, "month/day/year" versus "day/month/year").
+   example, "month/day/year" versus "day/month/year"), and the output may
+   contain non-ASCII characters.
 
 (2)
    The :meth:`strptime` method can parse years in the full [1, 9999] range, but
