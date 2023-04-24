@@ -1,0 +1,3 @@
+:class:`contextlib.suppress` now supports suppressing exceptions raised as
+part of an :exc:`ExceptionGroup`. If other exceptions exist on the group, it
+is now re-raised without the suppressed ones.
