@@ -259,7 +259,7 @@ one mentioned below are preferred.
 
    See :mod:`venv` for an example of a package with a minimal ``__main__.py``
    in the standard library. It doesn't contain a ``if __name__ == '__main__'``
-   block. You can invoke it with ``python3 -m venv [directory]``.
+   block. You can invoke it with ``python -m venv [directory]``.
 
    See :mod:`runpy` for more details on the :option:`-m` flag to the
    interpreter executable.

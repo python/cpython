@@ -11,9 +11,24 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
 
+static PyObject* code_repr(PyCodeObject *co);
+
+static const char *
+code_event_name(PyCodeEvent event) {
+    switch (event) {
+        #define CASE(op)                \
+        case PY_CODE_EVENT_##op:         \
+            return "PY_CODE_EVENT_" #op;
+        PY_FOREACH_CODE_EVENT(CASE)
+        #undef CASE
+    }
+    Py_UNREACHABLE();
+}
+
 static void
 notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
 {
+    assert(Py_REFCNT(co) > 0);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp->_initialized);
     uint8_t bits = interp->active_code_watchers;
@@ -25,7 +40,21 @@ notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, co) < 0) {
-                PyErr_WriteUnraisable((PyObject *) co);
+                // Don't risk resurrecting the object if an unraisablehook keeps
+                // a reference; pass a string as context.
+                PyObject *context = NULL;
+                PyObject *repr = code_repr(co);
+                if (repr) {
+                    context = PyUnicode_FromFormat(
+                        "%s watcher callback for %U",
+                        code_event_name(event), repr);
+                    Py_DECREF(repr);
+                }
+                if (context == NULL) {
+                    context = Py_NewRef(Py_None);
+                }
+                PyErr_WriteUnraisable(context);
+                Py_DECREF(context);
             }
         }
         i++;
@@ -402,13 +431,13 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     if (_Py_next_func_version != 0) {
         _Py_next_func_version++;
     }
+    co->_co_monitoring = NULL;
+    co->_co_instrumentation_version = 0;
     /* not set */
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
     co->_co_cached = NULL;
 
-    co->_co_linearray_entry_size = 0;
-    co->_co_linearray = NULL;
     memcpy(_PyCode_CODE(co), PyBytes_AS_STRING(con->code),
            PyBytes_GET_SIZE(con->code));
     int entry_point = 0;
@@ -787,54 +816,6 @@ failed:
  * source location tracking (co_lines/co_positions)
  ******************/
 
-/* Use co_linetable to compute the line number from a bytecode index, addrq.  See
-   lnotab_notes.txt for the details of the lnotab representation.
-*/
-
-int
-_PyCode_CreateLineArray(PyCodeObject *co)
-{
-    assert(co->_co_linearray == NULL);
-    PyCodeAddressRange bounds;
-    int size;
-    int max_line = 0;
-    _PyCode_InitAddressRange(co, &bounds);
-    while(_PyLineTable_NextAddressRange(&bounds)) {
-        if (bounds.ar_line > max_line) {
-            max_line = bounds.ar_line;
-        }
-    }
-    if (max_line < (1 << 15)) {
-        size = 2;
-    }
-    else {
-        size = 4;
-    }
-    co->_co_linearray = PyMem_Malloc(Py_SIZE(co)*size);
-    if (co->_co_linearray == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    co->_co_linearray_entry_size = size;
-    _PyCode_InitAddressRange(co, &bounds);
-    while(_PyLineTable_NextAddressRange(&bounds)) {
-        int start = bounds.ar_start / sizeof(_Py_CODEUNIT);
-        int end = bounds.ar_end / sizeof(_Py_CODEUNIT);
-        for (int index = start; index < end; index++) {
-            assert(index < (int)Py_SIZE(co));
-            if (size == 2) {
-                assert(((int16_t)bounds.ar_line) == bounds.ar_line);
-                ((int16_t *)co->_co_linearray)[index] = bounds.ar_line;
-            }
-            else {
-                assert(size == 4);
-                ((int32_t *)co->_co_linearray)[index] = bounds.ar_line;
-            }
-        }
-    }
-    return 0;
-}
-
 int
 PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
@@ -842,9 +823,6 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
         return co->co_firstlineno;
     }
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
-    if (co->_co_linearray) {
-        return _PyCode_LineNumberFromArray(co, addrq / sizeof(_Py_CODEUNIT));
-    }
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
@@ -1502,17 +1480,17 @@ PyCode_GetFreevars(PyCodeObject *code)
 }
 
 static void
-deopt_code(_Py_CODEUNIT *instructions, Py_ssize_t len)
+deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
 {
+    Py_ssize_t len = Py_SIZE(code);
     for (int i = 0; i < len; i++) {
-        _Py_CODEUNIT instruction = instructions[i];
-        int opcode = _PyOpcode_Deopt[instruction.op.code];
+        int opcode = _Py_GetBaseOpcode(code, i);
         int caches = _PyOpcode_Caches[opcode];
         instructions[i].op.code = opcode;
-        while (caches--) {
-            instructions[++i].op.code = CACHE;
-            instructions[i].op.arg = 0;
+        for (int j = 1; j <= caches; j++) {
+            instructions[i+j].cache = 0;
         }
+        i += caches;
     }
 }
 
@@ -1530,7 +1508,7 @@ _PyCode_GetCode(PyCodeObject *co)
     if (code == NULL) {
         return NULL;
     }
-    deopt_code((_Py_CODEUNIT *)PyBytes_AS_STRING(code), Py_SIZE(co));
+    deopt_code(co, (_Py_CODEUNIT *)PyBytes_AS_STRING(code));
     assert(co->_co_cached->_co_code == NULL);
     co->_co_cached->_co_code = Py_NewRef(code);
     return code;
@@ -1665,9 +1643,40 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
 }
 
 static void
+free_monitoring_data(_PyCoMonitoringData *data)
+{
+    if (data == NULL) {
+        return;
+    }
+    if (data->tools) {
+        PyMem_Free(data->tools);
+    }
+    if (data->lines) {
+        PyMem_Free(data->lines);
+    }
+    if (data->line_tools) {
+        PyMem_Free(data->line_tools);
+    }
+    if (data->per_instruction_opcodes) {
+        PyMem_Free(data->per_instruction_opcodes);
+    }
+    if (data->per_instruction_tools) {
+        PyMem_Free(data->per_instruction_tools);
+    }
+    PyMem_Free(data);
+}
+
+static void
 code_dealloc(PyCodeObject *co)
 {
+    assert(Py_REFCNT(co) == 0);
+    Py_SET_REFCNT(co, 1);
     notify_code_watchers(PY_CODE_EVENT_DESTROY, co);
+    if (Py_REFCNT(co) > 1) {
+        Py_SET_REFCNT(co, Py_REFCNT(co) - 1);
+        return;
+    }
+    Py_SET_REFCNT(co, 0);
 
     if (co->co_extra != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -1703,9 +1712,7 @@ code_dealloc(PyCodeObject *co)
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)co);
     }
-    if (co->_co_linearray) {
-        PyMem_Free(co->_co_linearray);
-    }
+    free_monitoring_data(co->_co_monitoring);
     PyObject_Free(co);
 }
 
@@ -1849,7 +1856,7 @@ code_hash(PyCodeObject *co)
     SCRAMBLE_IN(co->co_firstlineno);
     SCRAMBLE_IN(Py_SIZE(co));
     for (int i = 0; i < Py_SIZE(co); i++) {
-        int deop = _PyOpcode_Deopt[_PyCode_CODE(co)[i].op.code];
+        int deop = _Py_GetBaseOpcode(co, i);
         SCRAMBLE_IN(deop);
         SCRAMBLE_IN(_PyCode_CODE(co)[i].op.arg);
         i += _PyOpcode_Caches[deop];
@@ -1885,6 +1892,11 @@ static PyMemberDef code_memberlist[] = {
 static PyObject *
 code_getlnotab(PyCodeObject *code, void *closure)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "co_lnotab is deprecated, use co_lines instead.",
+                     1) < 0) {
+        return NULL;
+    }
     return decode_linetable(code);
 }
 
@@ -2273,7 +2285,7 @@ _PyCode_ConstantKey(PyObject *op)
 void
 _PyStaticCode_Fini(PyCodeObject *co)
 {
-    deopt_code(_PyCode_CODE(co), Py_SIZE(co));
+    deopt_code(co, _PyCode_CODE(co));
     PyMem_Free(co->co_extra);
     if (co->_co_cached != NULL) {
         Py_CLEAR(co->_co_cached->_co_code);
@@ -2288,10 +2300,8 @@ _PyStaticCode_Fini(PyCodeObject *co)
         PyObject_ClearWeakRefs((PyObject *)co);
         co->co_weakreflist = NULL;
     }
-    if (co->_co_linearray) {
-        PyMem_Free(co->_co_linearray);
-        co->_co_linearray = NULL;
-    }
+    free_monitoring_data(co->_co_monitoring);
+    co->_co_monitoring = NULL;
 }
 
 int

@@ -317,6 +317,13 @@ noop_code_event_handler(PyCodeEvent event, PyCodeObject *co)
     return 0;
 }
 
+static int
+error_code_event_handler(PyCodeEvent event, PyCodeObject *co)
+{
+    PyErr_SetString(PyExc_RuntimeError, "boom!");
+    return -1;
+}
+
 static PyObject *
 add_code_watcher(PyObject *self, PyObject *which_watcher)
 {
@@ -333,7 +340,11 @@ add_code_watcher(PyObject *self, PyObject *which_watcher)
         num_code_object_created_events[1] = 0;
         num_code_object_destroyed_events[1] = 0;
     }
+    else if (which_l == 2) {
+        watcher_id = PyCode_AddWatcher(error_code_event_handler);
+    }
     else {
+        PyErr_Format(PyExc_ValueError, "invalid watcher %d", which_l);
         return NULL;
     }
     if (watcher_id < 0) {
@@ -672,7 +683,7 @@ _PyTestCapi_Init_Watchers(PyObject *mod)
                        PyFunction_EVENT_##event)) {   \
         return -1;                                    \
     }
-    FOREACH_FUNC_EVENT(ADD_EVENT);
+    PY_FOREACH_FUNC_EVENT(ADD_EVENT);
 #undef ADD_EVENT
 
     return 0;

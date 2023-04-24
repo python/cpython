@@ -2642,7 +2642,11 @@ static Py_ssize_t
 memory_length(PyMemoryViewObject *self)
 {
     CHECK_RELEASED_INT(self);
-    return self->view.ndim == 0 ? 1 : self->view.shape[0];
+    if (self->view.ndim == 0) {
+        PyErr_SetString(PyExc_TypeError, "0-dim memory has no length");
+        return -1;
+    }
+    return self->view.shape[0];
 }
 
 /* As mapping */

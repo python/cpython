@@ -8,10 +8,14 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_long.h"
 #include "pycore_object.h"
 #include "pycore_parser.h"
 #include "pycore_pymem_init.h"
 #include "pycore_obmalloc_init.h"
+
+
+extern PyTypeObject _PyExc_MemoryError;
 
 
 /* The static initializers defined here should only be used
@@ -38,13 +42,8 @@ extern "C" {
         .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
         .imports = { \
-            .lock = { \
-                .mutex = NULL, \
-                .thread = PYTHREAD_INVALID_THREAD_ID, \
-                .level = 0, \
-            }, \
-            .find_and_load = { \
-                .header = 1, \
+            .extensions = { \
+                .main_tstate = _PyThreadState_INIT, \
             }, \
         }, \
         .ceval = { \
@@ -62,12 +61,6 @@ extern "C" {
             .float_format = _py_float_format_unknown, \
             .double_format = _py_float_format_unknown, \
         }, \
-        .dict_state = { \
-            .next_keys_version = 2, \
-        }, \
-        .func_state = { \
-            .next_version = 1, \
-        }, \
         .types = { \
             .next_version_tag = 1, \
         }, \
@@ -83,13 +76,13 @@ extern "C" {
                     .latin1 = _Py_str_latin1_INIT, \
                 }, \
                 .tuple_empty = { \
-                    .ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0) \
+                    .ob_base = _PyVarObject_HEAD_INIT(&PyTuple_Type, 0) \
                 }, \
                 .hamt_bitmap_node_empty = { \
-                    .ob_base = _PyVarObject_IMMORTAL_INIT(&_PyHamt_BitmapNode_Type, 0) \
+                    .ob_base = _PyVarObject_HEAD_INIT(&_PyHamt_BitmapNode_Type, 0) \
                 }, \
                 .context_token_missing = { \
-                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyContextTokenMissing_Type), \
+                    .ob_base = _PyObject_HEAD_INIT(&_PyContextTokenMissing_Type) \
                 }, \
             }, \
         }, \
@@ -113,6 +106,12 @@ extern "C" {
             }, \
         }, \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
+        .dict_state = { \
+            .next_keys_version = 2, \
+        }, \
+        .func_state = { \
+            .next_version = 1, \
+        }, \
         .types = { \
             .next_version_tag = _Py_TYPE_BASE_VERSION_TAG, \
         }, \
@@ -120,8 +119,11 @@ extern "C" {
             .singletons = { \
                 ._not_used = 1, \
                 .hamt_empty = { \
-                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyHamt_Type), \
+                    .ob_base = _PyObject_HEAD_INIT(&_PyHamt_Type) \
                     .h_root = (PyHamtNode*)&_Py_SINGLETON(hamt_bitmap_node_empty), \
+                }, \
+                .last_resort_memory_error = { \
+                    _PyObject_HEAD_INIT(&_PyExc_MemoryError) \
                 }, \
             }, \
         }, \
@@ -137,18 +139,9 @@ extern "C" {
 
 // global objects
 
-#define _PyLong_DIGIT_INIT(val) \
-    { \
-        .ob_base = _PyObject_IMMORTAL_INIT(&PyLong_Type), \
-        .long_value  = { \
-            ((val) == 0 ? 0 : ((val) > 0 ? 1 : -1)), \
-            { ((val) >= 0 ? (val) : -(val)) }, \
-        } \
-    }
-
 #define _PyBytes_SIMPLE_INIT(CH, LEN) \
     { \
-        _PyVarObject_IMMORTAL_INIT(&PyBytes_Type, (LEN)), \
+        _PyVarObject_HEAD_INIT(&PyBytes_Type, (LEN)) \
         .ob_shash = -1, \
         .ob_sval = { (CH) }, \
     }
@@ -159,7 +152,7 @@ extern "C" {
 
 #define _PyUnicode_ASCII_BASE_INIT(LITERAL, ASCII) \
     { \
-        .ob_base = _PyObject_IMMORTAL_INIT(&PyUnicode_Type), \
+        .ob_base = _PyObject_HEAD_INIT(&PyUnicode_Type) \
         .length = sizeof(LITERAL) - 1, \
         .hash = -1, \
         .state = { \
