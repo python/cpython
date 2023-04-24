@@ -785,18 +785,13 @@ async def awaitable_chain(depth):
 
 async def recursive_taskgroups(width, depth):
     if depth == 0:
-        return 0
+        return
 
     async with asyncio.TaskGroup() as tg:
         futures = [
             tg.create_task(recursive_taskgroups(width, depth - 1))
             for _ in range(width)
         ]
-    return sum(
-        (1 if isinstance(fut, (asyncio.Task, tasks._CTask, tasks._PyTask)) else 0)
-        + fut.result()
-        for fut in futures
-    )
 
 
 async def recursive_gather(width, depth):
@@ -827,7 +822,6 @@ class BaseTaskCountingTests:
 
     def test_recursive_taskgroups(self):
         num_tasks = self.loop.run_until_complete(recursive_taskgroups(5, 4))
-        # self.assertEqual(num_tasks, self.expected_task_count - 1)
         self.assertEqual(self.counter.get(), self.expected_task_count)
 
     def test_recursive_gather(self):
