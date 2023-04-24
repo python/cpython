@@ -757,7 +757,7 @@ Waiting Primitives
    iterable concurrently and block until the condition specified
    by *return_when*.
 
-   The *aws* iterable must not be empty.
+   The *aws* iterable must not be empty and generators yielding tasks are not accepted.
 
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
@@ -805,7 +805,8 @@ Waiting Primitives
 .. function:: as_completed(aws, *, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   iterable concurrently.  Return an iterator of coroutines.
+   iterable concurrently. Generators yielding tasks are not accepted
+   as *aws* iterable. Return an iterator of coroutines.
    Each coroutine returned can be awaited to get the earliest next
    result from the iterable of the remaining awaitables.
 
