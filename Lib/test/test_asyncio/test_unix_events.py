@@ -1712,30 +1712,29 @@ class PolicyTests(unittest.TestCase):
     def create_policy(self):
         return asyncio.DefaultEventLoopPolicy()
 
-    def test_get_default_child_watcher(self):
-        with mock.patch('asyncio.unix_events.can_use_pidfd',
-                        return_value=False):
-            policy = self.create_policy()
-            self.assertIsNone(policy._watcher)
-            with self.assertWarns(DeprecationWarning):
-                watcher = policy.get_child_watcher()
-            self.assertIsInstance(watcher, asyncio.ThreadedChildWatcher)
+    @mock.patch('asyncio.unix_events.can_use_pidfd')
+    def test_get_default_child_watcher(self, m_can_use_pidfd):
+        m_can_use_pidfd.return_value = False
+        policy = self.create_policy()
+        self.assertIsNone(policy._watcher)
+        with self.assertWarns(DeprecationWarning):
+            watcher = policy.get_child_watcher()
+        self.assertIsInstance(watcher, asyncio.ThreadedChildWatcher)
 
-            self.assertIs(policy._watcher, watcher)
-            with self.assertWarns(DeprecationWarning):
-                self.assertIs(watcher, policy.get_child_watcher())
+        self.assertIs(policy._watcher, watcher)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(watcher, policy.get_child_watcher())
 
-        with mock.patch('asyncio.unix_events.can_use_pidfd',
-                        return_value=True):
-            policy = self.create_policy()
-            self.assertIsNone(policy._watcher)
-            with self.assertWarns(DeprecationWarning):
-                watcher = policy.get_child_watcher()
-            self.assertIsInstance(watcher, asyncio.PidfdChildWatcher)
+        m_can_use_pidfd.return_value = True
+        policy = self.create_policy()
+        self.assertIsNone(policy._watcher)
+        with self.assertWarns(DeprecationWarning):
+            watcher = policy.get_child_watcher()
+        self.assertIsInstance(watcher, asyncio.PidfdChildWatcher)
 
-            self.assertIs(policy._watcher, watcher)
-            with self.assertWarns(DeprecationWarning):
-                self.assertIs(watcher, policy.get_child_watcher())
+        self.assertIs(policy._watcher, watcher)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(watcher, policy.get_child_watcher())
 
     def test_get_child_watcher_after_set(self):
         policy = self.create_policy()
