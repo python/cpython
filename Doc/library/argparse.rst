@@ -34,9 +34,9 @@ around an instance of :class:`argparse.ArgumentParser`.  It is a container for
 argument specifications and has options that apply to the parser as whole::
 
    parser = argparse.ArgumentParser(
-                       prog = 'ProgramName',
-                       description = 'What the program does',
-                       epilog = 'Text at the bottom of help')
+                       prog='ProgramName',
+                       description='What the program does',
+                       epilog='Text at the bottom of help')
 
 The :meth:`ArgumentParser.add_argument` method attaches individual argument
 specifications to the parser.  It supports positional arguments, options that
@@ -67,7 +67,7 @@ default_               Default value used when an argument is not provided      
 dest_                  Specify the attribute name used in the result namespace
 help_                  Help message for an argument
 metavar_               Alternate display name for the argument as shown in help
-nargs_                 Number of times the argument can be used                    :class:`int`, ``'?'``, ``'*'``, ``'+'``, or ``argparse.REMAINDER``
+nargs_                 Number of times the argument can be used                    :class:`int`, ``'?'``, ``'*'``, or ``'+'``
 required_              Indicate whether an argument is required or optional        ``True`` or ``False``
 type_                  Automatically convert an argument to the given type         :class:`int`, :class:`float`, ``argparse.FileType('w')``, or callable function
 ====================== =========================================================== ==========================================================================================================================
@@ -2218,7 +2218,7 @@ support this parsing style.
 
 These parsers do not support all the argparse features, and will raise
 exceptions if unsupported features are used.  In particular, subparsers,
-``argparse.REMAINDER``, and mutually exclusive groups that include both
+and mutually exclusive groups that include both
 optionals and positionals are not supported.
 
 The following example shows the difference between

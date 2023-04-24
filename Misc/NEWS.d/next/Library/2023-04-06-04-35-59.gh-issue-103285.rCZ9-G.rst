@@ -1,0 +1,1 @@
+Improve performance of :func:`ast.get_source_segment`.

@@ -1,4 +1,3 @@
-from collections import namedtuple
 import contextlib
 import itertools
 import os
@@ -6,7 +5,6 @@ import pickle
 import sys
 from textwrap import dedent
 import threading
-import time
 import unittest
 
 import _testcapi

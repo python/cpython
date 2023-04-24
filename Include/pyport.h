@@ -184,7 +184,6 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #  define Py_LOCAL_INLINE(type) static inline type
 #endif
 
-// bpo-28126: Py_MEMCPY is kept for backwards compatibility,
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_MEMCPY memcpy
 #endif
@@ -322,6 +321,15 @@ extern "C" {
 #else
 #define Py_DEPRECATED(VERSION_UNUSED)
 #endif
+
+// _Py_DEPRECATED_EXTERNALLY(version)
+// Deprecated outside CPython core.
+#ifdef Py_BUILD_CORE
+#define _Py_DEPRECATED_EXTERNALLY(VERSION_UNUSED)
+#else
+#define _Py_DEPRECATED_EXTERNALLY(version) Py_DEPRECATED(version)
+#endif
+
 
 #if defined(__clang__)
 #define _Py_COMP_DIAG_PUSH _Pragma("clang diagnostic push")

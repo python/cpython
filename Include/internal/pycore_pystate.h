@@ -127,15 +127,10 @@ PyAPI_FUNC(void) _PyThreadState_Init(
     PyThreadState *tstate);
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
 
-
-static inline void
-_PyThreadState_UpdateTracingState(PyThreadState *tstate)
-{
-    bool use_tracing =
-        (tstate->tracing == 0) &&
-        (tstate->c_tracefunc != NULL || tstate->c_profilefunc != NULL);
-    tstate->cframe->use_tracing = (use_tracing ? 255 : 0);
-}
+extern void _PyThreadState_InitDetached(PyThreadState *, PyInterpreterState *);
+extern void _PyThreadState_ClearDetached(PyThreadState *);
+extern void _PyThreadState_BindDetached(PyThreadState *);
+extern void _PyThreadState_UnbindDetached(PyThreadState *);
 
 
 /* Other */
