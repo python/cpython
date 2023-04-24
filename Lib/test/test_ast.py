@@ -774,11 +774,6 @@ class AST_Tests(unittest.TestCase):
             ast.parse('with (CtxManager() as example): ...', feature_version=(3, 8))
         ast.parse('with CtxManager() as example: ...', feature_version=(3, 8))
 
-    def test_debug_f_string_feature_version(self):
-        ast.parse('f"{x=}"', feature_version=(3, 8))
-        with self.assertRaises(SyntaxError):
-            ast.parse('f"{x=}"', feature_version=(3, 7))
-
     def test_assignment_expression_feature_version(self):
         ast.parse('(x := 0)', feature_version=(3, 8))
         with self.assertRaises(SyntaxError):
@@ -2297,6 +2292,17 @@ class EndPositionTests(unittest.TestCase):
 
         cdef = ast.parse(s).body[0]
         self.assertEqual(ast.get_source_segment(s, cdef.body[0], padded=True), s_method)
+
+    def test_source_segment_newlines(self):
+        s = 'def f():\n  pass\ndef g():\r  pass\r\ndef h():\r\n  pass\r\n'
+        f, g, h = ast.parse(s).body
+        self._check_content(s, f, 'def f():\n  pass')
+        self._check_content(s, g, 'def g():\r  pass')
+        self._check_content(s, h, 'def h():\r\n  pass')
+
+        s = 'def f():\n  a = 1\r  b = 2\r\n  c = 3\n'
+        f = ast.parse(s).body[0]
+        self._check_content(s, f, s.rstrip())
 
     def test_source_segment_missing_info(self):
         s = 'v = 1\r\nw = 1\nx = 1\n\ry = 1\r\n'

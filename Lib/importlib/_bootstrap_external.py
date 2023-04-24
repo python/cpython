@@ -439,7 +439,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a7 3523 (Convert COMPARE_AND_BRANCH back to COMPARE_OP)
 #     Python 3.12a7 3524 (Shrink the BINARY_SUBSCR caches)
 #     Python 3.12b1 3525 (Shrink the CALL caches)
-#     Python 3.12b1 3526 (Add new instructions for PEP 695)
+#     Python 3.12a7 3526 (Add instrumentation support)
 
 #     Python 3.13 will start with 3550
 

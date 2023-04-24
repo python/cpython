@@ -1954,6 +1954,8 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
     with extra annotations. The alias behaves like a normal typing alias,
     instantiating is the same as instantiating the underlying type, binding
     it to types is also the same.
+
+    The metadata itself is stored in a '__metadata__' attribute as a tuple.
     """
     def __init__(self, origin, metadata):
         if isinstance(origin, _AnnotatedAlias):
@@ -2009,6 +2011,10 @@ class Annotated:
     Details:
 
     - It's an error to call `Annotated` with less than two arguments.
+    - Access the metadata via the ``__metadata__`` attribute::
+
+        Annotated[int, '$'].__metadata__ == ('$',)
+
     - Nested Annotated are flattened::
 
         Annotated[Annotated[T, Ann1, Ann2], Ann3] == Annotated[T, Ann1, Ann2, Ann3]
@@ -2756,7 +2762,9 @@ def NamedTuple(typename, fields=None, /, **kwargs):
     elif kwargs:
         raise TypeError("Either list of fields or keywords"
                         " can be provided to NamedTuple, not both")
-    return _make_nmtuple(typename, fields, module=_caller())
+    nt = _make_nmtuple(typename, fields, module=_caller())
+    nt.__orig_bases__ = (NamedTuple,)
+    return nt
 
 _NamedTuple = type.__new__(NamedTupleMeta, 'NamedTuple', (), {})
 
@@ -2787,6 +2795,9 @@ class _TypedDictMeta(type):
             generic_base = ()
 
         tp_dict = type.__new__(_TypedDictMeta, name, (*generic_base, dict), ns)
+
+        if not hasattr(tp_dict, '__orig_bases__'):
+            tp_dict.__orig_bases__ = bases
 
         annotations = {}
         own_annotations = ns.get('__annotations__', {})
@@ -2898,7 +2909,9 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
         # Setting correct module is necessary to make typed dict classes pickleable.
         ns['__module__'] = module
 
-    return _TypedDictMeta(typename, (), ns, total=total)
+    td = _TypedDictMeta(typename, (), ns, total=total)
+    td.__orig_bases__ = (TypedDict,)
+    return td
 
 _TypedDict = type.__new__(_TypedDictMeta, 'TypedDict', (), {})
 TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)

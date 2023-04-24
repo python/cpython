@@ -808,11 +808,6 @@ pycore_interp_init(PyThreadState *tstate)
     PyStatus status;
     PyObject *sysmod = NULL;
 
-    // This is a temporary fix until we have immortal objects.
-    // (See _PyType_InitCache() in typeobject.c.)
-    extern void _PyType_FixCacheRefcounts(void);
-    _PyType_FixCacheRefcounts();
-
     // Create singletons before the first PyType_Ready() call, since
     // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)
     // and the empty tuple singletons (tp_bases).

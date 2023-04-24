@@ -959,7 +959,7 @@ functools_wraps(PyObject *wrapper, PyObject *wrapped)
 
      class C:
          @classmethod
-         def f(cls, arg1, arg2, ...):
+         def f(cls, arg1, arg2, argN):
              ...
 
    It can be called either on the class (e.g. C.f()) or on an instance
@@ -1083,7 +1083,7 @@ To declare a class method, use this idiom:\n\
 \n\
   class C:\n\
       @classmethod\n\
-      def f(cls, arg1, arg2, ...):\n\
+      def f(cls, arg1, arg2, argN):\n\
           ...\n\
 \n\
 It can be called either on the class (e.g. C.f()) or on an instance\n\
@@ -1155,7 +1155,7 @@ PyClassMethod_New(PyObject *callable)
 
      class C:
          @staticmethod
-         def f(arg1, arg2, ...):
+         def f(arg1, arg2, argN):
              ...
 
    It can be called either on the class (e.g. C.f()) or on an instance
@@ -1277,7 +1277,7 @@ To declare a static method, use this idiom:\n\
 \n\
      class C:\n\
          @staticmethod\n\
-         def f(arg1, arg2, ...):\n\
+         def f(arg1, arg2, argN):\n\
              ...\n\
 \n\
 It can be called either on the class (e.g. C.f()) or on an instance\n\
