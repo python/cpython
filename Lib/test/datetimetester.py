@@ -3390,6 +3390,17 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             self.assertRaises(TypeError, lambda: badarg > t1)
             self.assertRaises(TypeError, lambda: badarg >= t1)
 
+    def test_comparing_with_timezone(self):
+        t1 = self.theclass(20, 0, 0, 0, timezone(timedelta(hours=8)))
+        t2 = self.theclass(4, 0, 0, 0, timezone(timedelta(hours=-8)))
+        self.assertTrue(t1 == t2)
+        t1 = self.theclass(20, 0, 0, 0, timezone(timedelta(hours=0)))
+        t2 = self.theclass(4, 0, 0, 0, timezone(timedelta(hours=8)))
+        self.assertTrue(t1 == t2)
+        t1 = self.theclass(20, 0, 0, 0, timezone(timedelta(hours=-8)))
+        t2 = self.theclass(4, 0, 0, 0, timezone(timedelta(hours=0)))
+        self.assertTrue(t1 == t2)
+
     def test_bad_constructor_arguments(self):
         # bad hours
         self.theclass(0, 0)    # no exception

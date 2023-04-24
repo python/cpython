@@ -1471,6 +1471,8 @@ class time:
                 raise TypeError("cannot compare naive and aware times")
         myhhmm = self._hour * 60 + self._minute - myoff//timedelta(minutes=1)
         othhmm = other._hour * 60 + other._minute - otoff//timedelta(minutes=1)
+        myhhmm %= (24 * 60)
+        othhmm %= (24 * 60)
         return _cmp((myhhmm, self._second, self._microsecond),
                     (othhmm, other._second, other._microsecond))
 

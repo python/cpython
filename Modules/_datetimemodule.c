@@ -4480,11 +4480,17 @@ time_richcompare(PyObject *self, PyObject *other, int op)
                    TIME_GET_SECOND(self) -
                    GET_TD_DAYS(offset1) * 86400 -
                    GET_TD_SECONDS(offset1);
+        offsecs1 %= 86400;
+        if (offsecs1 < 0) 
+            offsecs1 += 86400;
         offsecs2 = TIME_GET_HOUR(other) * 3600 +
                    TIME_GET_MINUTE(other) * 60 +
                    TIME_GET_SECOND(other) -
                    GET_TD_DAYS(offset2) * 86400 -
                    GET_TD_SECONDS(offset2);
+        offsecs2 %= 86400;
+        if (offsecs2 < 0) 
+            offsecs2 += 86400;
         diff = offsecs1 - offsecs2;
         if (diff == 0)
             diff = TIME_GET_MICROSECOND(self) -
