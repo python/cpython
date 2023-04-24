@@ -111,7 +111,6 @@ Doc/library/csv.rst
 Doc/library/ctypes.rst
 Doc/library/curses.ascii.rst
 Doc/library/curses.rst
-Doc/library/dataclasses.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst
