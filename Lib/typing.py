@@ -180,7 +180,11 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
 
     We append the repr() of the actual value (truncated to 100 chars).
     """
-    invalid_generic_forms = (Generic, Protocol)
+    try:
+        invalid_generic_forms = (Generic, Protocol)
+    except NameError:
+        # Run during interpreter startup
+        return arg
     if not allow_special_forms:
         invalid_generic_forms += (ClassVar,)
         if is_argument:
@@ -1052,7 +1056,8 @@ def _generic_class_getitem(cls, params):
         is_generic_or_protocol = cls in (Generic, Protocol)
     except NameError:
         # Happens during interpreter startup
-        is_generic_or_protocol = True
+        return _GenericAlias(cls, params, _paramspec_tvars=True)
+
     if is_generic_or_protocol:
         # Generic and Protocol can only be subscripted with unique type variables.
         if not params:
@@ -1776,12 +1781,27 @@ def _lazy_load_getattr_static():
 
 _cleanups.append(_lazy_load_getattr_static.cache_clear)
 
-class _Dummy1[T]:
+class _Dummy[T, *Ts, **P]:
     pass
 
-TypeVar = type(_Dummy1.__type_variables__[0])
-# Generic and Protocol must be defined before we can use a TypeVarTuple
-Generic = _Dummy1.__mro__[1]
+TypeVar = type(_Dummy.__type_variables__[0])
+TypeVarTuple = type(_Dummy.__type_variables__[1])
+ParamSpec = type(_Dummy.__type_variables__[2])
+ParamSpecArgs = type(ParamSpec("P").args)
+ParamSpecKwargs = type(ParamSpec("P").kwargs)
+Generic = _Dummy.__mro__[1]
+
+def _pickle_psargs(psargs):
+    return ParamSpecArgs, (psargs.__origin__,)
+
+copyreg.pickle(ParamSpecArgs, _pickle_psargs)
+
+def _pickle_pskwargs(pskwargs):
+    return ParamSpecKwargs, (pskwargs.__origin__,)
+
+copyreg.pickle(ParamSpecKwargs, _pickle_pskwargs)
+
+del _Dummy, _pickle_psargs, _pickle_pskwargs
 
 
 class _ProtocolMeta(ABCMeta):
@@ -1924,27 +1944,6 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                                 ' protocols, got %r' % base)
         if cls.__init__ is Protocol.__init__:
             cls.__init__ = _no_init_or_replace_init
-
-
-class _Dummy2[*Ts, **P]():
-    pass
-
-TypeVarTuple = type(_Dummy2.__type_variables__[0])
-ParamSpec = type(_Dummy2.__type_variables__[1])
-ParamSpecArgs = type(ParamSpec("P").args)
-ParamSpecKwargs = type(ParamSpec("P").kwargs)
-
-def _pickle_psargs(psargs):
-    return ParamSpecArgs, (psargs.__origin__,)
-
-copyreg.pickle(ParamSpecArgs, _pickle_psargs)
-
-def _pickle_pskwargs(pskwargs):
-    return ParamSpecKwargs, (pskwargs.__origin__,)
-
-copyreg.pickle(ParamSpecKwargs, _pickle_pskwargs)
-
-del _Dummy1, _Dummy2, _pickle_psargs, _pickle_pskwargs
 
 
 class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):

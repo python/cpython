@@ -83,6 +83,12 @@ struct types_state {
     size_t num_builtins_initialized;
     static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
     PyObject *generic_type;
+    PyObject *typevar_type;
+    PyObject *typevartuple_type;
+    PyObject *paramspec_type;
+    PyObject *paramspecargs_type;
+    PyObject *paramspeckwargs_type;
+    PyObject *typealias_type;
 };
 
 

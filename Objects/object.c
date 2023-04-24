@@ -2087,11 +2087,6 @@ static PyTypeObject* static_types[] = {
     &_PyWeakref_CallableProxyType,
     &_PyWeakref_ProxyType,
     &_PyWeakref_RefType,
-    &_PyTypeVar_Type,
-    &_PyTypeVarTuple_Type,
-    &_PyParamSpec_Type,
-    &_PyParamSpecArgs_Type,
-    &_PyParamSpecKwargs_Type,
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class

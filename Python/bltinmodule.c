@@ -3092,10 +3092,6 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("tuple",                 &PyTuple_Type);
     SETBUILTIN("type",                  &PyType_Type);
     SETBUILTIN("zip",                   &PyZip_Type);
-    // TODO these shouldn't be builtins, remove when PEP 695 is fully implemented
-    SETBUILTIN("TypeVar",               &_PyTypeVar_Type);
-    SETBUILTIN("TypeVarTuple",          &_PyTypeVarTuple_Type);
-    SETBUILTIN("ParamSpec",             &_PyParamSpec_Type);
     debug = PyBool_FromLong(config->optimization_level == 0);
     if (PyDict_SetItemString(dict, "__debug__", debug) < 0) {
         Py_DECREF(debug);

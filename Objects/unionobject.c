@@ -151,9 +151,7 @@ is_unionable(PyObject *obj)
     return (obj == Py_None ||
         PyType_Check(obj) ||
         _PyGenericAlias_Check(obj) ||
-        _PyUnion_Check(obj) ||
-        Py_IS_TYPE(obj, &_PyTypeVar_Type) ||
-        Py_IS_TYPE(obj, &_PyParamSpec_Type));
+        _PyUnion_Check(obj));
 }
 
 PyObject *
