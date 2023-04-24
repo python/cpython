@@ -1360,6 +1360,67 @@ class ClassCreationTests(unittest.TestCase):
         D = types.new_class('D', (A(), C, B()), {})
         self.assertEqual(D.__bases__, (A1, A2, A3, C, B1, B2))
 
+    def test_get_original_bases(self):
+        T = typing.TypeVar('T')
+        class A: pass
+        class B(typing.Generic[T]): pass
+        class C(B[int]): pass
+        class D(B[str], float): pass
+        self.assertEqual(types.get_original_bases(A), (object,))
+        self.assertEqual(types.get_original_bases(B), (typing.Generic[T],))
+        self.assertEqual(types.get_original_bases(C), (B[int],))
+        self.assertEqual(types.get_original_bases(int), (object,))
+        self.assertEqual(types.get_original_bases(D), (B[str], float))
+
+        class E(list[T]): pass
+        class F(list[int]): pass
+
+        self.assertEqual(types.get_original_bases(E), (list[T],))
+        self.assertEqual(types.get_original_bases(F), (list[int],))
+
+        class ClassBasedNamedTuple(typing.NamedTuple):
+            x: int
+
+        class GenericNamedTuple(typing.NamedTuple, typing.Generic[T]):
+            x: T
+
+        CallBasedNamedTuple = typing.NamedTuple("CallBasedNamedTuple", [("x", int)])
+
+        self.assertIs(
+            types.get_original_bases(ClassBasedNamedTuple)[0], typing.NamedTuple
+        )
+        self.assertEqual(
+            types.get_original_bases(GenericNamedTuple),
+            (typing.NamedTuple, typing.Generic[T])
+        )
+        self.assertIs(
+            types.get_original_bases(CallBasedNamedTuple)[0], typing.NamedTuple
+        )
+
+        class ClassBasedTypedDict(typing.TypedDict):
+            x: int
+
+        class GenericTypedDict(typing.TypedDict, typing.Generic[T]):
+            x: T
+
+        CallBasedTypedDict = typing.TypedDict("CallBasedTypedDict", {"x": int})
+
+        self.assertIs(
+            types.get_original_bases(ClassBasedTypedDict)[0],
+            typing.TypedDict
+        )
+        self.assertEqual(
+            types.get_original_bases(GenericTypedDict),
+            (typing.TypedDict, typing.Generic[T])
+        )
+        self.assertIs(
+            types.get_original_bases(CallBasedTypedDict)[0],
+            typing.TypedDict
+        )
+
+        with self.assertRaisesRegex(TypeError, "Expected an instance of type"):
+            types.get_original_bases(object())
+
     # Many of the following tests are derived from test_descr.py
     def test_prepare_class(self):
         # Basic test of metaclass derivation
