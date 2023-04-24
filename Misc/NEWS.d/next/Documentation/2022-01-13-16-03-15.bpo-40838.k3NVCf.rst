@@ -1,2 +1,0 @@
-Document that :func:`inspect.getdoc`, :func:`inspect.getmodule`, and
-:func:`inspect.getsourcefile` might return ``None``.

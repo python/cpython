@@ -25,6 +25,7 @@
     :license: Python License.
 """
 import sys
+import re
 from _ast import *
 from contextlib import contextmanager, nullcontext
 from enum import IntEnum, auto, _simple_enum
@@ -40,12 +41,13 @@ def parse(source, filename='<unknown>', mode='exec', *,
     flags = PyCF_ONLY_AST
     if type_comments:
         flags |= PyCF_TYPE_COMMENTS
-    if isinstance(feature_version, tuple):
-        major, minor = feature_version  # Should be a 2-tuple.
-        assert major == 3
-        feature_version = minor
-    elif feature_version is None:
+    if feature_version is None:
         feature_version = -1
+    elif isinstance(feature_version, tuple):
+        major, minor = feature_version  # Should be a 2-tuple.
+        if major != 3:
+            raise ValueError(f"Unsupported major version: {major}")
+        feature_version = minor
     # Else it should be an int giving the minor version for 3.x.
     return compile(source, filename, mode, flags,
                    _feature_version=feature_version)
@@ -53,10 +55,12 @@ def parse(source, filename='<unknown>', mode='exec', *,
 
 def literal_eval(node_or_string):
     """
-    Safely evaluate an expression node or a string containing a Python
+    Evaluate an expression node or a string containing only a Python
     expression.  The string or node provided may only consist of the following
     Python literal structures: strings, bytes, numbers, tuples, lists, dicts,
     sets, booleans, and None.
+
+    Caution: A complex expression can overflow the C stack and cause a crash.
     """
     if isinstance(node_or_string, str):
         node_or_string = parse(node_or_string.lstrip(" \t"), mode='eval')
@@ -234,6 +238,12 @@ def increment_lineno(node, n=1):
     location in a file.
     """
     for child in walk(node):
+        # TypeIgnore is a special case where lineno is not an attribute
+        # but rather a field of the node itself.
+        if isinstance(child, TypeIgnore):
+            child.lineno = getattr(child, 'lineno', 0) + n
+            continue
+
         if 'lineno' in child._attributes:
             child.lineno = getattr(child, 'lineno', 0) + n
         if (
@@ -296,28 +306,17 @@ def get_docstring(node, clean=True):
     return text
 
 
-def _splitlines_no_ff(source):
+_line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
+def _splitlines_no_ff(source, maxlines=None):
     """Split a string into lines ignoring form feed and other chars.
 
     This mimics how the Python parser splits source code.
     """
-    idx = 0
     lines = []
-    next_line = ''
-    while idx < len(source):
-        c = source[idx]
-        next_line += c
-        idx += 1
-        # Keep \r\n together
-        if c == '\r' and idx < len(source) and source[idx] == '\n':
-            next_line += '\n'
-            idx += 1
-        if c in '\r\n':
-            lines.append(next_line)
-            next_line = ''
-
-    if next_line:
-        lines.append(next_line)
+    for lineno, match in enumerate(_line_pattern.finditer(source), 1):
+        if maxlines is not None and lineno > maxlines:
+            break
+        lines.append(match[0])
     return lines
 
 
@@ -351,7 +350,7 @@ def get_source_segment(source, node, *, padded=False):
     except AttributeError:
         return None
 
-    lines = _splitlines_no_ff(source)
+    lines = _splitlines_no_ff(source, maxlines=end_lineno+1)
     if end_lineno == lineno:
         return lines[lineno].encode()[col_offset:end_col_offset].decode()
 
@@ -852,7 +851,7 @@ class _Unparser(NodeVisitor):
 
     def visit_ImportFrom(self, node):
         self.fill("from ")
-        self.write("." * node.level)
+        self.write("." * (node.level or 0))
         if node.module:
             self.write(node.module)
         self.write(" import ")

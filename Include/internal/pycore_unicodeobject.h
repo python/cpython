@@ -9,8 +9,10 @@ extern "C" {
 #endif
 
 #include "pycore_fileutils.h"     // _Py_error_handler
+#include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
 void _PyUnicode_ExactDealloc(PyObject *op);
+Py_ssize_t _PyUnicode_InternedSize(void);
 
 /* runtime lifecycle */
 
@@ -19,7 +21,6 @@ extern PyStatus _PyUnicode_InitGlobalObjects(PyInterpreterState *);
 extern PyStatus _PyUnicode_InitTypes(PyInterpreterState *);
 extern void _PyUnicode_Fini(PyInterpreterState *);
 extern void _PyUnicode_FiniTypes(PyInterpreterState *);
-extern void _PyStaticUnicode_Dealloc(PyObject *);
 
 extern PyTypeObject _PyUnicodeASCIIIter_Type;
 
@@ -30,6 +31,10 @@ struct _Py_unicode_runtime_ids {
     // next_index value must be preserved when Py_Initialize()/Py_Finalize()
     // is called multiple times: see _PyUnicode_FromId() implementation.
     Py_ssize_t next_index;
+};
+
+struct _Py_unicode_runtime_state {
+    struct _Py_unicode_runtime_ids ids;
 };
 
 /* fs_codec.encoding is initialized to NULL.
@@ -49,10 +54,13 @@ struct _Py_unicode_ids {
 struct _Py_unicode_state {
     struct _Py_unicode_fs_codec fs_codec;
 
+    _PyUnicode_Name_CAPI *ucnhash_capi;
+
     // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()
     struct _Py_unicode_ids ids;
 };
 
+extern void _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p);
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
 

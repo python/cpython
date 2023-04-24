@@ -1,6 +1,7 @@
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
-                          check_disallow_instantiation, is_emscripten, is_wasi)
+                          check_disallow_instantiation, is_emscripten, is_wasi,
+                          SHORT_TIMEOUT)
 import locale
 import re
 import string
@@ -10,6 +11,14 @@ import unittest
 import warnings
 from re import Scanner
 from weakref import proxy
+
+# some platforms lack working multiprocessing
+try:
+    import _multiprocessing
+except ImportError:
+    multiprocessing = None
+else:
+    import multiprocessing
 
 # Misc tests from Tim Peters' re.doc
 
@@ -620,6 +629,11 @@ class ReTests(unittest.TestCase):
                                'two branches', 10)
         self.checkPatternError(r'()(?(2)a)',
                                "invalid group reference 2", 5)
+
+    def test_re_groupref_exists_validation_bug(self):
+        for i in range(256):
+            with self.subTest(code=i):
+                re.compile(r'()(?(1)\x%02x?)' % i)
 
     def test_re_groupref_overflow(self):
         from re._constants import MAXGROUPS
@@ -1765,12 +1779,9 @@ class ReTests(unittest.TestCase):
         long_overflow = 2**128
         self.assertRaises(TypeError, re.finditer, "a", {})
         with self.assertRaises(OverflowError):
-            _sre.compile("abc", 0, [long_overflow], 0, {}, (), 0)
+            _sre.compile("abc", 0, [long_overflow], 0, {}, ())
         with self.assertRaises(TypeError):
-            _sre.compile({}, 0, [], 0, [], [], 0)
-        with self.assertRaises(RuntimeError):
-            # invalid repeat_count -1
-            _sre.compile("abc", 0, [1], 0, {}, (), -1)
+            _sre.compile({}, 0, [], 0, [], [])
 
     def test_search_dot_unicode(self):
         self.assertTrue(re.search("123.*-", '123abc-'))
@@ -2410,6 +2421,26 @@ class ReTests(unittest.TestCase):
         self.assertTrue(template_re1.match('ahoy'))
         self.assertFalse(template_re1.match('nope'))
 
+    @unittest.skipIf(multiprocessing is None, 'test requires multiprocessing')
+    def test_regression_gh94675(self):
+        pattern = re.compile(r'(?<=[({}])(((//[^\n]*)?[\n])([\000-\040])*)*'
+                             r'((/[^/\[\n]*(([^\n]|(\[\n]*(]*)*\]))'
+                             r'[^/\[]*)*/))((((//[^\n]*)?[\n])'
+                             r'([\000-\040]|(/\*[^*]*\*+'
+                             r'([^/*]\*+)*/))*)+(?=[^\000-\040);\]}]))')
+        input_js = '''a(function() {
+            ///////////////////////////////////////////////////////////////////
+        });'''
+        p = multiprocessing.Process(target=pattern.sub, args=('', input_js))
+        p.start()
+        p.join(SHORT_TIMEOUT)
+        try:
+            self.assertFalse(p.is_alive(), 'pattern.sub() timed out')
+        finally:
+            if p.is_alive():
+                p.terminate()
+                p.join()
+
 
 def get_debug_out(pat):
     with captured_stdout() as out:
@@ -2507,27 +2538,6 @@ POSSESSIVE_REPEAT 0 1
 11.   LITERAL 0x62 ('b')
 13: SUCCESS
 14. SUCCESS
-''')
-
-    def test_repeat_index(self):
-        self.assertEqual(get_debug_out(r'(?:ab)*?(?:cd)*'), '''\
-MIN_REPEAT 0 MAXREPEAT
-  LITERAL 97
-  LITERAL 98
-MAX_REPEAT 0 MAXREPEAT
-  LITERAL 99
-  LITERAL 100
-
- 0. INFO 4 0b0 0 MAXREPEAT (to 5)
- 5: REPEAT 8 0 MAXREPEAT 0 (to 14)
-10.   LITERAL 0x61 ('a')
-12.   LITERAL 0x62 ('b')
-14: MIN_UNTIL
-15. REPEAT 8 0 MAXREPEAT 1 (to 24)
-20.   LITERAL 0x63 ('c')
-22.   LITERAL 0x64 ('d')
-24: MAX_UNTIL
-25. SUCCESS
 ''')
 
 

@@ -15,6 +15,8 @@
 This module provides access to the Unix shadow password database. It is
 available on various Unix versions.
 
+.. include:: ../includes/wasm-notavail.rst
+
 You must have enough privileges to access the shadow password database (this
 usually means you have to be root).
 

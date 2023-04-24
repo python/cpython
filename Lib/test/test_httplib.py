@@ -8,7 +8,6 @@ import array
 import re
 import socket
 import threading
-import warnings
 
 import unittest
 from unittest import mock
@@ -17,7 +16,6 @@ TestCase = unittest.TestCase
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
-from test.support import warnings_helper
 
 support.requires_working_socket(module=True)
 
@@ -553,6 +551,27 @@ class BasicTest(TestCase):
                 obj.phrase = phrase
                 obj.description = description
                 return obj
+
+            @property
+            def is_informational(self):
+                return 100 <= self <= 199
+
+            @property
+            def is_success(self):
+                return 200 <= self <= 299
+
+            @property
+            def is_redirection(self):
+                return 300 <= self <= 399
+
+            @property
+            def is_client_error(self):
+                return 400 <= self <= 499
+
+            @property
+            def is_server_error(self):
+                return 500 <= self <= 599
+
             # informational
             CONTINUE = 100, 'Continue', 'Request received, please continue'
             SWITCHING_PROTOCOLS = (101, 'Switching Protocols',
@@ -669,6 +688,30 @@ class BasicTest(TestCase):
                 'The client needs to authenticate to gain network access')
         enum._test_simple_enum(CheckedHTTPStatus, HTTPStatus)
 
+    def test_httpstatus_range(self):
+        """Checks that the statuses are in the 100-599 range"""
+
+        for member in HTTPStatus.__members__.values():
+            self.assertGreaterEqual(member, 100)
+            self.assertLessEqual(member, 599)
+
+    def test_httpstatus_category(self):
+        """Checks that the statuses belong to the standard categories"""
+
+        categories = (
+            ((100, 199), "is_informational"),
+            ((200, 299), "is_success"),
+            ((300, 399), "is_redirection"),
+            ((400, 499), "is_client_error"),
+            ((500, 599), "is_server_error"),
+        )
+        for member in HTTPStatus.__members__.values():
+            for (lower, upper), category in categories:
+                category_indicator = getattr(member, category)
+                if lower <= member <= upper:
+                    self.assertTrue(category_indicator)
+                else:
+                    self.assertFalse(category_indicator)
 
     def test_status_lines(self):
         # Test HTTP status lines
@@ -1933,7 +1976,7 @@ class HTTPSTest(TestCase):
         self.assertEqual(exc_info.exception.reason, 'CERTIFICATE_VERIFY_FAILED')
 
     def test_local_good_hostname(self):
-        # The (valid) cert validates the HTTP hostname
+        # The (valid) cert validates the HTTPS hostname
         import ssl
         server = self.make_server(CERT_localhost)
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -1946,7 +1989,7 @@ class HTTPSTest(TestCase):
         self.assertEqual(resp.status, 404)
 
     def test_local_bad_hostname(self):
-        # The (valid) cert doesn't validate the HTTP hostname
+        # The (valid) cert doesn't validate the HTTPS hostname
         import ssl
         server = self.make_server(CERT_fakehostname)
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -1954,38 +1997,21 @@ class HTTPSTest(TestCase):
         h = client.HTTPSConnection('localhost', server.port, context=context)
         with self.assertRaises(ssl.CertificateError):
             h.request('GET', '/')
-        # Same with explicit check_hostname=True
-        with warnings_helper.check_warnings(('', DeprecationWarning)):
-            h = client.HTTPSConnection('localhost', server.port,
-                                       context=context, check_hostname=True)
+
+        # Same with explicit context.check_hostname=True
+        context.check_hostname = True
+        h = client.HTTPSConnection('localhost', server.port, context=context)
         with self.assertRaises(ssl.CertificateError):
             h.request('GET', '/')
-        # With check_hostname=False, the mismatching is ignored
-        context.check_hostname = False
-        with warnings_helper.check_warnings(('', DeprecationWarning)):
-            h = client.HTTPSConnection('localhost', server.port,
-                                       context=context, check_hostname=False)
-        h.request('GET', '/nonexistent')
-        resp = h.getresponse()
-        resp.close()
-        h.close()
-        self.assertEqual(resp.status, 404)
-        # The context's check_hostname setting is used if one isn't passed to
-        # HTTPSConnection.
+
+        # With context.check_hostname=False, the mismatching is ignored
         context.check_hostname = False
         h = client.HTTPSConnection('localhost', server.port, context=context)
         h.request('GET', '/nonexistent')
         resp = h.getresponse()
-        self.assertEqual(resp.status, 404)
         resp.close()
         h.close()
-        # Passing check_hostname to HTTPSConnection should override the
-        # context's setting.
-        with warnings_helper.check_warnings(('', DeprecationWarning)):
-            h = client.HTTPSConnection('localhost', server.port,
-                                       context=context, check_hostname=True)
-        with self.assertRaises(ssl.CertificateError):
-            h.request('GET', '/')
+        self.assertEqual(resp.status, 404)
 
     @unittest.skipIf(not hasattr(client, 'HTTPSConnection'),
                      'http.client.HTTPSConnection not available')
@@ -2021,11 +2047,9 @@ class HTTPSTest(TestCase):
         self.assertIs(h._context, context)
         self.assertFalse(h._context.post_handshake_auth)
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', 'key_file, cert_file and check_hostname are deprecated',
-                                    DeprecationWarning)
-            h = client.HTTPSConnection('localhost', 443, context=context,
-                                       cert_file=CERT_localhost)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT, cert_file=CERT_localhost)
+        context.post_handshake_auth = True
+        h = client.HTTPSConnection('localhost', 443, context=context)
         self.assertTrue(h._context.post_handshake_auth)
 
 
@@ -2163,11 +2187,12 @@ class HTTPResponseTest(TestCase):
 class TunnelTests(TestCase):
     def setUp(self):
         response_text = (
-            'HTTP/1.0 200 OK\r\n\r\n' # Reply to CONNECT
+            'HTTP/1.1 200 OK\r\n\r\n' # Reply to CONNECT
             'HTTP/1.1 200 OK\r\n' # Reply to HEAD
             'Content-Length: 42\r\n\r\n'
         )
         self.host = 'proxy.com'
+        self.port = client.HTTP_PORT
         self.conn = client.HTTPConnection(self.host)
         self.conn._create_connection = self._create_connection(response_text)
 
@@ -2179,15 +2204,45 @@ class TunnelTests(TestCase):
             return FakeSocket(response_text, host=address[0], port=address[1])
         return create_connection
 
-    def test_set_tunnel_host_port_headers(self):
+    def test_set_tunnel_host_port_headers_add_host_missing(self):
         tunnel_host = 'destination.com'
         tunnel_port = 8888
         tunnel_headers = {'User-Agent': 'Mozilla/5.0 (compatible, MSIE 11)'}
+        tunnel_headers_after = tunnel_headers.copy()
+        tunnel_headers_after['Host'] = '%s:%d' % (tunnel_host, tunnel_port)
         self.conn.set_tunnel(tunnel_host, port=tunnel_port,
                              headers=tunnel_headers)
         self.conn.request('HEAD', '/', '')
         self.assertEqual(self.conn.sock.host, self.host)
-        self.assertEqual(self.conn.sock.port, client.HTTP_PORT)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertEqual(self.conn._tunnel_host, tunnel_host)
+        self.assertEqual(self.conn._tunnel_port, tunnel_port)
+        self.assertEqual(self.conn._tunnel_headers, tunnel_headers_after)
+
+    def test_set_tunnel_host_port_headers_set_host_identical(self):
+        tunnel_host = 'destination.com'
+        tunnel_port = 8888
+        tunnel_headers = {'User-Agent': 'Mozilla/5.0 (compatible, MSIE 11)',
+                          'Host': '%s:%d' % (tunnel_host, tunnel_port)}
+        self.conn.set_tunnel(tunnel_host, port=tunnel_port,
+                             headers=tunnel_headers)
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertEqual(self.conn._tunnel_host, tunnel_host)
+        self.assertEqual(self.conn._tunnel_port, tunnel_port)
+        self.assertEqual(self.conn._tunnel_headers, tunnel_headers)
+
+    def test_set_tunnel_host_port_headers_set_host_different(self):
+        tunnel_host = 'destination.com'
+        tunnel_port = 8888
+        tunnel_headers = {'User-Agent': 'Mozilla/5.0 (compatible, MSIE 11)',
+                          'Host': '%s:%d' % ('example.com', 4200)}
+        self.conn.set_tunnel(tunnel_host, port=tunnel_port,
+                             headers=tunnel_headers)
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, self.port)
         self.assertEqual(self.conn._tunnel_host, tunnel_host)
         self.assertEqual(self.conn._tunnel_port, tunnel_port)
         self.assertEqual(self.conn._tunnel_headers, tunnel_headers)
@@ -2199,17 +2254,96 @@ class TunnelTests(TestCase):
                           'destination.com')
 
     def test_connect_with_tunnel(self):
-        self.conn.set_tunnel('destination.com')
+        d = {
+            b'host': b'destination.com',
+            b'port': client.HTTP_PORT,
+        }
+        self.conn.set_tunnel(d[b'host'].decode('ascii'))
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\n'
+                      b'Host: %(host)s:%(port)d\r\n\r\n' % d,
+                      self.conn.sock.data)
+        self.assertIn(b'HEAD / HTTP/1.1\r\nHost: %(host)s\r\n' % d,
+                      self.conn.sock.data)
+
+    def test_connect_with_tunnel_with_default_port(self):
+        d = {
+            b'host': b'destination.com',
+            b'port': client.HTTP_PORT,
+        }
+        self.conn.set_tunnel(d[b'host'].decode('ascii'), port=d[b'port'])
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\n'
+                      b'Host: %(host)s:%(port)d\r\n\r\n' % d,
+                      self.conn.sock.data)
+        self.assertIn(b'HEAD / HTTP/1.1\r\nHost: %(host)s\r\n' % d,
+                      self.conn.sock.data)
+
+    def test_connect_with_tunnel_with_nonstandard_port(self):
+        d = {
+            b'host': b'destination.com',
+            b'port': 8888,
+        }
+        self.conn.set_tunnel(d[b'host'].decode('ascii'), port=d[b'port'])
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\n'
+                      b'Host: %(host)s:%(port)d\r\n\r\n' % d,
+                      self.conn.sock.data)
+        self.assertIn(b'HEAD / HTTP/1.1\r\nHost: %(host)s:%(port)d\r\n' % d,
+                      self.conn.sock.data)
+
+    # This request is not RFC-valid, but it's been possible with the library
+    # for years, so don't break it unexpectedly... This also tests
+    # case-insensitivity when injecting Host: headers if they're missing.
+    def test_connect_with_tunnel_with_different_host_header(self):
+        d = {
+            b'host': b'destination.com',
+            b'tunnel_host_header': b'example.com:9876',
+            b'port': client.HTTP_PORT,
+        }
+        self.conn.set_tunnel(
+            d[b'host'].decode('ascii'),
+            headers={'HOST': d[b'tunnel_host_header'].decode('ascii')})
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\n'
+                      b'HOST: %(tunnel_host_header)s\r\n\r\n' % d,
+                      self.conn.sock.data)
+        self.assertIn(b'HEAD / HTTP/1.1\r\nHost: %(host)s\r\n' % d,
+                      self.conn.sock.data)
+
+    def test_connect_with_tunnel_different_host(self):
+        d = {
+            b'host': b'destination.com',
+            b'port': client.HTTP_PORT,
+        }
+        self.conn.set_tunnel(d[b'host'].decode('ascii'))
+        self.conn.request('HEAD', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\n'
+                      b'Host: %(host)s:%(port)d\r\n\r\n' % d,
+                      self.conn.sock.data)
+        self.assertIn(b'HEAD / HTTP/1.1\r\nHost: %(host)s\r\n' % d,
+                      self.conn.sock.data)
+
+    def test_connect_with_tunnel_idna(self):
+        dest = '\u03b4\u03c0\u03b8.gr'
+        dest_port = b'%s:%d' % (dest.encode('idna'), client.HTTP_PORT)
+        expected = b'CONNECT %s HTTP/1.1\r\nHost: %s\r\n\r\n' % (
+            dest_port, dest_port)
+        self.conn.set_tunnel(dest)
         self.conn.request('HEAD', '/', '')
         self.assertEqual(self.conn.sock.host, self.host)
         self.assertEqual(self.conn.sock.port, client.HTTP_PORT)
-        self.assertIn(b'CONNECT destination.com', self.conn.sock.data)
-        # issue22095
-        self.assertNotIn(b'Host: destination.com:None', self.conn.sock.data)
-        self.assertIn(b'Host: destination.com', self.conn.sock.data)
-
-        # This test should be removed when CONNECT gets the HTTP/1.1 blessing
-        self.assertNotIn(b'Host: proxy.com', self.conn.sock.data)
+        self.assertIn(expected, self.conn.sock.data)
 
     def test_tunnel_connect_single_send_connection_setup(self):
         """Regresstion test for https://bugs.python.org/issue43332."""
@@ -2229,12 +2363,19 @@ class TunnelTests(TestCase):
                 msg=f'unexpected proxy data sent {proxy_setup_data_sent!r}')
 
     def test_connect_put_request(self):
-        self.conn.set_tunnel('destination.com')
+        d = {
+            b'host': b'destination.com',
+            b'port': client.HTTP_PORT,
+        }
+        self.conn.set_tunnel(d[b'host'].decode('ascii'))
         self.conn.request('PUT', '/', '')
         self.assertEqual(self.conn.sock.host, self.host)
-        self.assertEqual(self.conn.sock.port, client.HTTP_PORT)
-        self.assertIn(b'CONNECT destination.com', self.conn.sock.data)
-        self.assertIn(b'Host: destination.com', self.conn.sock.data)
+        self.assertEqual(self.conn.sock.port, self.port)
+        self.assertIn(b'CONNECT %(host)s:%(port)d HTTP/1.1\r\n'
+                      b'Host: %(host)s:%(port)d\r\n\r\n' % d,
+                      self.conn.sock.data)
+        self.assertIn(b'PUT / HTTP/1.1\r\nHost: %(host)s\r\n' % d,
+                      self.conn.sock.data)
 
     def test_tunnel_debuglog(self):
         expected_header = 'X-Dummy: 1'

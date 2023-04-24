@@ -378,11 +378,7 @@ containing information about the match: where it starts and ends, the substring
 it matched, and more.
 
 You can learn about this by interactively experimenting with the :mod:`re`
-module.  If you have :mod:`tkinter` available, you may also want to look at
-:source:`Tools/demo/redemo.py`, a demonstration program included with the
-Python distribution.  It allows you to enter REs and strings, and displays
-whether the RE matches or fails. :file:`redemo.py` can be quite useful when
-trying to debug a complicated RE.
+module.
 
 This HOWTO uses the standard Python interpreter for its examples. First, run the
 Python interpreter, import the :mod:`re` module, and compile a RE::
@@ -949,7 +945,7 @@ Additionally, you can retrieve named groups as a dictionary with
    >>> m.groupdict()
    {'first': 'Jane', 'last': 'Doe'}
 
-Named groups are handy because they let you use easily-remembered names, instead
+Named groups are handy because they let you use easily remembered names, instead
 of having to remember numbers.  Here's an example RE from the :mod:`imaplib`
 module::
 

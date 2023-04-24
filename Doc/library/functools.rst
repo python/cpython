@@ -49,6 +49,14 @@ The :mod:`functools` module defines the following functions:
         >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
         479001600
 
+   The cache is threadsafe so that the wrapped function can be used in
+   multiple threads.  This means that the underlying data structure will
+   remain coherent during concurrent updates.
+
+   It is possible for the wrapped function to be called more than once if
+   another thread makes an additional call before the initial call has been
+   completed and cached.
+
    .. versionadded:: 3.9
 
 
@@ -83,6 +91,14 @@ The :mod:`functools` module defines the following functions:
    The cached value can be cleared by deleting the attribute.  This
    allows the *cached_property* method to run again.
 
+   The *cached_property* does not prevent a possible race condition in
+   multi-threaded usage. The getter function could run more than once on the
+   same instance, with the latest run setting the cached value. If the cached
+   property is idempotent or otherwise not harmful to run more than once on an
+   instance, this is fine. If synchronization is needed, implement the necessary
+   locking inside the decorated getter function or around the cached property
+   access.
+
    Note, this decorator interferes with the operation of :pep:`412`
    key-sharing dictionaries.  This means that instance dictionaries
    can take more space than usual.
@@ -109,6 +125,13 @@ The :mod:`functools` module defines the following functions:
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.12
+      Prior to Python 3.12, ``cached_property`` included an undocumented lock to
+      ensure that in multi-threaded usage the getter function was guaranteed to
+      run only once per instance. However, the lock was per-property, not
+      per-instance, which could result in unacceptably high lock contention. In
+      Python 3.12+ this locking is removed.
+
 
 .. function:: cmp_to_key(func)
 
@@ -119,7 +142,7 @@ The :mod:`functools` module defines the following functions:
    tool for programs being converted from Python 2 which supported the use of
    comparison functions.
 
-   A comparison function is any callable that accept two arguments, compares them,
+   A comparison function is any callable that accepts two arguments, compares them,
    and returns a negative number for less-than, zero for equality, or a positive
    number for greater-than.  A key function is a callable that accepts one
    argument and returns another value to be used as the sort key.
@@ -140,11 +163,19 @@ The :mod:`functools` module defines the following functions:
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
    function is periodically called with the same arguments.
 
+   The cache is threadsafe so that the wrapped function can be used in
+   multiple threads.  This means that the underlying data structure will
+   remain coherent during concurrent updates.
+
+   It is possible for the wrapped function to be called more than once if
+   another thread makes an additional call before the initial call has been
+   completed and cached.
+
    Since a dictionary is used to cache results, the positional and keyword
-   arguments to the function must be hashable.
+   arguments to the function must be :term:`hashable`.
 
    Distinct argument patterns may be considered to be distinct calls with
-   separate cache entries.  For example, `f(a=1, b=2)` and `f(b=2, a=1)`
+   separate cache entries.  For example, ``f(a=1, b=2)`` and ``f(b=2, a=1)``
    differ in their keyword argument order and may have two separate cache
    entries.
 
@@ -191,6 +222,9 @@ The :mod:`functools` module defines the following functions:
    The cache keeps references to the arguments and return values until they age
    out of the cache or until the cache is cleared.
 
+   If a method is cached, the ``self`` instance argument is included in the
+   cache.  See :ref:`faq-cache-method-calls`
+
    An `LRU (least recently used) cache
    <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)>`_
    works best when the most recent calls are the best predictors of upcoming
@@ -208,7 +242,7 @@ The :mod:`functools` module defines the following functions:
         @lru_cache(maxsize=32)
         def get_pep(num):
             'Retrieve text of a Python Enhancement Proposal'
-            resource = 'https://peps.python.org/pep-%04d/' % num
+            resource = f'https://peps.python.org/pep-{num:04d}'
             try:
                 with urllib.request.urlopen(resource) as s:
                     return s.read()
