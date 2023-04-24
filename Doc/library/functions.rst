@@ -789,7 +789,6 @@ are always available.  They are listed here in alphabetical order.
       truncates the return value based on the bit width of the host machine.
       See :meth:`__hash__` for details.
 
-.. _func-help:
 .. function:: help()
               help(request)
 

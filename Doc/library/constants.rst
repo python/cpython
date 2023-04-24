@@ -97,10 +97,11 @@ should not be used in programs.
    specified exit code.
 
 .. data:: help
+   :noindex:
 
    Object that when printed, prints the message "Type help() for interactive
    help, or help(object) for help about object.", and when called, invokes the
-   built-in :ref:`help <func-help>` function.
+   built-in :func:`help` function.
 
 .. data:: copyright
           credits
