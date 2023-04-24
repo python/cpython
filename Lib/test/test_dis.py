@@ -1935,6 +1935,15 @@ class TestFinderMethods(unittest.TestCase):
 
         self.assertEqual(sorted(labels), sorted(jumps))
 
+    def test_findlinestarts(self):
+        def func():
+            pass
+        code = func.__code__
+        linestarts = list(dis.findlinestarts(code))
+        offsets = [linestart[0] for linestart in linestarts]
+        true_offsets = [0, 2]
+        self.assertEqual(offsets, true_offsets)
+
 
 class TestDisTraceback(DisTestBase):
     def setUp(self) -> None:
