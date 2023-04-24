@@ -1043,7 +1043,7 @@ Other constructors, all class methods:
    Return a :class:`.datetime` corresponding to *date_string*, parsed according to
    *format*.
 
-   This is equivalent to::
+   If *format* does not contain microseconds or timezone information, this is equivalent to::
 
      datetime(*(time.strptime(date_string, format)[0:6]))
 
