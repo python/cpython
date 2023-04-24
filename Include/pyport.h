@@ -14,62 +14,14 @@
 #endif
 
 
-// Macro to use C++ static_cast<>, reinterpret_cast<> and const_cast<>
-// in the Python C API.
-//
-// In C++, _Py_CAST(type, expr) converts a constant expression to a
-// non constant type using const_cast<type>. For example,
-// _Py_CAST(PyObject*, op) can convert a "const PyObject*" to
-// "PyObject*".
-//
-// The type argument must not be a constant type.
+// Macro to use C++ static_cast<> in the Python C API.
 #ifdef __cplusplus
-#include <cstddef>
 #  define _Py_STATIC_CAST(type, expr) static_cast<type>(expr)
-extern "C++" {
-    namespace {
-        template <typename type>
-        inline type _Py_CAST_impl(long int ptr) {
-            return reinterpret_cast<type>(ptr);
-        }
-        template <typename type>
-        inline type _Py_CAST_impl(int ptr) {
-            return reinterpret_cast<type>(ptr);
-        }
-#if __cplusplus >= 201103
-        template <typename type>
-        inline type _Py_CAST_impl(std::nullptr_t) {
-            return static_cast<type>(nullptr);
-        }
-#endif
-
-        template <typename type, typename expr_type>
-            inline type _Py_CAST_impl(expr_type *expr) {
-                return reinterpret_cast<type>(expr);
-            }
-
-        template <typename type, typename expr_type>
-            inline type _Py_CAST_impl(expr_type const *expr) {
-                return reinterpret_cast<type>(const_cast<expr_type *>(expr));
-            }
-
-        template <typename type, typename expr_type>
-            inline type _Py_CAST_impl(expr_type &expr) {
-                return static_cast<type>(expr);
-            }
-
-        template <typename type, typename expr_type>
-            inline type _Py_CAST_impl(expr_type const &expr) {
-                return static_cast<type>(const_cast<expr_type &>(expr));
-            }
-    }
-}
-#  define _Py_CAST(type, expr) _Py_CAST_impl<type>(expr)
-
 #else
 #  define _Py_STATIC_CAST(type, expr) ((type)(expr))
-#  define _Py_CAST(type, expr) ((type)(expr))
 #endif
+// Macro to use the more powerful/dangerous C-style cast even in C++.
+#define _Py_CAST(type, expr) ((type)(expr))
 
 // Static inline functions should use _Py_NULL rather than using directly NULL
 // to prevent C++ compiler warnings. On C++11 and newer, _Py_NULL is defined as
@@ -232,7 +184,6 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #  define Py_LOCAL_INLINE(type) static inline type
 #endif
 
-// bpo-28126: Py_MEMCPY is kept for backwards compatibility,
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_MEMCPY memcpy
 #endif
@@ -293,6 +244,10 @@ typedef Py_ssize_t Py_ssize_clean_t;
 
 #ifndef S_ISCHR
 #define S_ISCHR(x) (((x) & S_IFMT) == S_IFCHR)
+#endif
+
+#ifndef S_ISLNK
+#define S_ISLNK(x) (((x) & S_IFMT) == S_IFLNK)
 #endif
 
 #ifdef __cplusplus
@@ -366,6 +321,15 @@ extern "C" {
 #else
 #define Py_DEPRECATED(VERSION_UNUSED)
 #endif
+
+// _Py_DEPRECATED_EXTERNALLY(version)
+// Deprecated outside CPython core.
+#ifdef Py_BUILD_CORE
+#define _Py_DEPRECATED_EXTERNALLY(VERSION_UNUSED)
+#else
+#define _Py_DEPRECATED_EXTERNALLY(version) Py_DEPRECATED(version)
+#endif
+
 
 #if defined(__clang__)
 #define _Py_COMP_DIAG_PUSH _Pragma("clang diagnostic push")
@@ -746,6 +710,15 @@ extern char * _getpty(int *, int, mode_t, int);
 #  define _Py__has_builtin(x) 0
 #endif
 
+// _Py_TYPEOF(expr) gets the type of an expression.
+//
+// Example: _Py_TYPEOF(x) x_copy = (x);
+//
+// The macro is only defined if GCC or clang compiler is used.
+#if defined(__GNUC__) || defined(__clang__)
+#  define _Py_TYPEOF(expr) __typeof__(expr)
+#endif
+
 
 /* A convenient way for code to know if sanitizers are enabled. */
 #if defined(__has_feature)
@@ -763,6 +736,12 @@ extern char * _getpty(int *, int, mode_t, int);
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
 #  endif
+#endif
+
+
+/* AIX has __bool__ redefined in it's system header file. */
+#if defined(_AIX) && defined(__bool__)
+#undef __bool__
 #endif
 
 #endif /* Py_PYPORT_H */

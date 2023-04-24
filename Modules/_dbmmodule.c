@@ -130,6 +130,37 @@ dbm_length(dbmobject *dp)
     return dp->di_size;
 }
 
+static int
+dbm_bool(dbmobject *dp)
+{
+    _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
+    assert(state != NULL);
+
+    if (dp->di_dbm == NULL) {
+        PyErr_SetString(state->dbm_error, "DBM object has already been closed");
+        return -1;
+    }
+
+    if (dp->di_size > 0) {
+        /* Known non-zero size. */
+        return 1;
+    }
+    if (dp->di_size == 0) {
+        /* Known zero size. */
+        return 0;
+    }
+
+    /* Unknown size.  Ensure DBM object has an entry. */
+    datum key = dbm_firstkey(dp->di_dbm);
+    if (key.dptr == NULL) {
+        /* Empty. Cache this fact. */
+        dp->di_size = 0;
+        return 0;
+    }
+    /* Non-empty. Don't cache the length since we don't know. */
+    return 1;
+}
+
 static PyObject *
 dbm_subscript(dbmobject *dp, PyObject *key)
 {
@@ -327,8 +358,7 @@ _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
         return PyBytes_FromStringAndSize(val.dptr, val.dsize);
     }
 
-    Py_INCREF(default_value);
-    return default_value;
+    return Py_NewRef(default_value);
 }
 
 /*[clinic input]
@@ -388,8 +418,7 @@ _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
 static PyObject *
 dbm__enter__(PyObject *self, PyObject *args)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
@@ -416,6 +445,7 @@ static PyType_Slot dbmtype_spec_slots[] = {
     {Py_mp_length, dbm_length},
     {Py_mp_subscript, dbm_subscript},
     {Py_mp_ass_subscript, dbm_ass_sub},
+    {Py_nb_bool, dbm_bool},
     {0, 0}
 };
 

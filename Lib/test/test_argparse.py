@@ -296,7 +296,7 @@ class TestOptionalsSingleDashCombined(ParserTestCase):
         Sig('-z'),
     ]
     failures = ['a', '--foo', '-xa', '-x --foo', '-x -z', '-z -x',
-                '-yx', '-yz a', '-yyyx', '-yyyza', '-xyza']
+                '-yx', '-yz a', '-yyyx', '-yyyza', '-xyza', '-x=']
     successes = [
         ('', NS(x=False, yyy=None, z=None)),
         ('-x', NS(x=True, yyy=None, z=None)),
@@ -3764,6 +3764,28 @@ class TestHelpUsage(HelpTestCase):
     version = ''
 
 
+class TestHelpUsageWithParentheses(HelpTestCase):
+    parser_signature = Sig(prog='PROG')
+    argument_signatures = [
+        Sig('positional', metavar='(example) positional'),
+        Sig('-p', '--optional', metavar='{1 (option A), 2 (option B)}'),
+    ]
+
+    usage = '''\
+        usage: PROG [-h] [-p {1 (option A), 2 (option B)}] (example) positional
+        '''
+    help = usage + '''\
+
+        positional arguments:
+          (example) positional
+
+        options:
+          -h, --help            show this help message and exit
+          -p {1 (option A), 2 (option B)}, --optional {1 (option A), 2 (option B)}
+        '''
+    version = ''
+
+
 class TestHelpOnlyUserGroups(HelpTestCase):
     """Test basic usage messages"""
 
@@ -5229,6 +5251,13 @@ class TestParseKnownArgs(TestCase):
         args, extras = parser.parse_known_args(argv)
         self.assertEqual(NS(v=3, spam=True, badger="B"), args)
         self.assertEqual(["C", "--foo", "4"], extras)
+
+    def test_zero_or_more_optional(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('x', nargs='*', choices=('x', 'y'))
+        args = parser.parse_args([])
+        self.assertEqual(NS(x=[]), args)
+
 
 # ===========================
 # parse_intermixed_args tests

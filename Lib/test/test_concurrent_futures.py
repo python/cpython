@@ -14,6 +14,7 @@ import logging
 from logging.handlers import QueueHandler
 import os
 import queue
+import signal
 import sys
 import threading
 import time
@@ -397,6 +398,33 @@ class ExecutorShutdownTest:
         self.assertFalse(err)
         self.assertEqual(out.strip(), b"apple")
 
+    def test_hang_gh94440(self):
+        """shutdown(wait=True) doesn't hang when a future was submitted and
+        quickly canceled right before shutdown.
+
+        See https://github.com/python/cpython/issues/94440.
+        """
+        if not hasattr(signal, 'alarm'):
+            raise unittest.SkipTest(
+                "Tested platform does not support the alarm signal")
+
+        def timeout(_signum, _frame):
+            raise RuntimeError("timed out waiting for shutdown")
+
+        kwargs = {}
+        if getattr(self, 'ctx', None):
+            kwargs['mp_context'] = self.get_context()
+        executor = self.executor_type(max_workers=1, **kwargs)
+        executor.submit(int).result()
+        old_handler = signal.signal(signal.SIGALRM, timeout)
+        try:
+            signal.alarm(5)
+            executor.submit(int).cancel()
+            executor.shutdown(wait=True)
+        finally:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_handler)
+
 
 class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase):
     def test_threads_terminate(self):
@@ -485,7 +513,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
                 t = ThreadPoolExecutor()
                 t.submit(sleep_and_print, .1, "apple")
                 t.shutdown(wait=False, cancel_futures=True)
-            """.format(executor_type=self.executor_type.__name__))
+            """)
         # Errors in atexit hooks don't change the process exit code, check
         # stderr manually.
         self.assertFalse(err)
@@ -711,7 +739,6 @@ create_executor_tests(WaitTests,
 
 
 class AsCompletedTests:
-    # TODO(brian@sweetapp.com): Should have a test with a non-zero timeout.
     def test_no_timeout(self):
         future1 = self.executor.submit(mul, 2, 21)
         future2 = self.executor.submit(mul, 7, 6)
@@ -728,24 +755,29 @@ class AsCompletedTests:
                  future1, future2]),
                 completed)
 
-    def test_zero_timeout(self):
-        future1 = self.executor.submit(time.sleep, 2)
-        completed_futures = set()
-        try:
-            for future in futures.as_completed(
-                    [CANCELLED_AND_NOTIFIED_FUTURE,
-                     EXCEPTION_FUTURE,
-                     SUCCESSFUL_FUTURE,
-                     future1],
-                    timeout=0):
-                completed_futures.add(future)
-        except futures.TimeoutError:
-            pass
+    def test_future_times_out(self):
+        """Test ``futures.as_completed`` timing out before
+        completing it's final future."""
+        already_completed = {CANCELLED_AND_NOTIFIED_FUTURE,
+                             EXCEPTION_FUTURE,
+                             SUCCESSFUL_FUTURE}
 
-        self.assertEqual(set([CANCELLED_AND_NOTIFIED_FUTURE,
-                              EXCEPTION_FUTURE,
-                              SUCCESSFUL_FUTURE]),
-                         completed_futures)
+        for timeout in (0, 0.01):
+            with self.subTest(timeout):
+
+                future = self.executor.submit(time.sleep, 0.1)
+                completed_futures = set()
+                try:
+                    for f in futures.as_completed(
+                        already_completed | {future},
+                        timeout
+                    ):
+                        completed_futures.add(f)
+                except futures.TimeoutError:
+                    pass
+
+                # Check that ``future`` wasn't completed.
+                self.assertEqual(completed_futures, already_completed)
 
     def test_duplicate_futures(self):
         # Issue 20367. Duplicate futures should not raise exceptions or give
@@ -931,6 +963,33 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
             for _ in range(50):
                 with futures.ProcessPoolExecutor(1, mp_context=mp.get_context('fork')) as workers:
                     workers.submit(tuple)
+
+    def test_executor_map_current_future_cancel(self):
+        stop_event = threading.Event()
+        log = []
+
+        def log_n_wait(ident):
+            log.append(f"{ident=} started")
+            try:
+                stop_event.wait()
+            finally:
+                log.append(f"{ident=} stopped")
+
+        with self.executor_type(max_workers=1) as pool:
+            # submit work to saturate the pool
+            fut = pool.submit(log_n_wait, ident="first")
+            try:
+                with contextlib.closing(
+                    pool.map(log_n_wait, ["second", "third"], timeout=0)
+                ) as gen:
+                    with self.assertRaises(TimeoutError):
+                        next(gen)
+            finally:
+                stop_event.set()
+            fut.result()
+        # ident='second' is cancelled as a result of raising a TimeoutError
+        # ident='third' is cancelled because it remained in the collection of futures
+        self.assertListEqual(log, ["ident='first' started", "ident='first' stopped"])
 
 
 class ProcessPoolExecutorTest(ExecutorTest):

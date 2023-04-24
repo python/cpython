@@ -3047,32 +3047,42 @@ class TestMiscellaneous(TestEmailBase):
 
     # parsedate and parsedate_tz will become deprecated interfaces someday
     def test_parsedate_returns_None_for_invalid_strings(self):
-        self.assertIsNone(utils.parsedate(''))
-        self.assertIsNone(utils.parsedate_tz(''))
-        self.assertIsNone(utils.parsedate(' '))
-        self.assertIsNone(utils.parsedate_tz(' '))
-        self.assertIsNone(utils.parsedate('0'))
-        self.assertIsNone(utils.parsedate_tz('0'))
-        self.assertIsNone(utils.parsedate('A Complete Waste of Time'))
-        self.assertIsNone(utils.parsedate_tz('A Complete Waste of Time'))
-        self.assertIsNone(utils.parsedate_tz('Wed, 3 Apr 2002 12.34.56.78+0800'))
+        # See also test_parsedate_to_datetime_with_invalid_raises_valueerror
+        # in test_utils.
+        invalid_dates = [
+            '',
+            ' ',
+            '0',
+            'A Complete Waste of Time',
+            'Wed, 3 Apr 2002 12.34.56.78+0800',
+            '17 June , 2022',
+            'Friday, -Nov-82 16:14:55 EST',
+            'Friday, Nov--82 16:14:55 EST',
+            'Friday, 19-Nov- 16:14:55 EST',
+        ]
+        for dtstr in invalid_dates:
+            with self.subTest(dtstr=dtstr):
+                self.assertIsNone(utils.parsedate(dtstr))
+                self.assertIsNone(utils.parsedate_tz(dtstr))
         # Not a part of the spec but, but this has historically worked:
         self.assertIsNone(utils.parsedate(None))
         self.assertIsNone(utils.parsedate_tz(None))
 
     def test_parsedate_compact(self):
+        self.assertEqual(utils.parsedate_tz('Wed, 3 Apr 2002 14:58:26 +0800'),
+                         (2002, 4, 3, 14, 58, 26, 0, 1, -1, 28800))
         # The FWS after the comma is optional
-        self.assertEqual(utils.parsedate('Wed,3 Apr 2002 14:58:26 +0800'),
-                         utils.parsedate('Wed, 3 Apr 2002 14:58:26 +0800'))
+        self.assertEqual(utils.parsedate_tz('Wed,3 Apr 2002 14:58:26 +0800'),
+                         (2002, 4, 3, 14, 58, 26, 0, 1, -1, 28800))
+        # The comma is optional
+        self.assertEqual(utils.parsedate_tz('Wed 3 Apr 2002 14:58:26 +0800'),
+                         (2002, 4, 3, 14, 58, 26, 0, 1, -1, 28800))
 
     def test_parsedate_no_dayofweek(self):
         eq = self.assertEqual
-        eq(utils.parsedate_tz('25 Feb 2003 13:47:26 -0800'),
-           (2003, 2, 25, 13, 47, 26, 0, 1, -1, -28800))
-
-    def test_parsedate_compact_no_dayofweek(self):
-        eq = self.assertEqual
         eq(utils.parsedate_tz('5 Feb 2003 13:47:26 -0800'),
+           (2003, 2, 5, 13, 47, 26, 0, 1, -1, -28800))
+        eq(utils.parsedate_tz('February 5, 2003 13:47:26 -0800'),
            (2003, 2, 5, 13, 47, 26, 0, 1, -1, -28800))
 
     def test_parsedate_no_space_before_positive_offset(self):
@@ -3084,13 +3094,26 @@ class TestMiscellaneous(TestEmailBase):
         self.assertEqual(utils.parsedate_tz('Wed, 3 Apr 2002 14:58:26-0800'),
            (2002, 4, 3, 14, 58, 26, 0, 1, -1, -28800))
 
-
     def test_parsedate_accepts_time_with_dots(self):
         eq = self.assertEqual
         eq(utils.parsedate_tz('5 Feb 2003 13.47.26 -0800'),
            (2003, 2, 5, 13, 47, 26, 0, 1, -1, -28800))
         eq(utils.parsedate_tz('5 Feb 2003 13.47 -0800'),
            (2003, 2, 5, 13, 47, 0, 0, 1, -1, -28800))
+
+    def test_parsedate_rfc_850(self):
+        self.assertEqual(utils.parsedate_tz('Friday, 19-Nov-82 16:14:55 EST'),
+           (1982, 11, 19, 16, 14, 55, 0, 1, -1, -18000))
+
+    def test_parsedate_no_seconds(self):
+        self.assertEqual(utils.parsedate_tz('Wed, 3 Apr 2002 14:58 +0800'),
+                         (2002, 4, 3, 14, 58, 0, 0, 1, -1, 28800))
+
+    def test_parsedate_dot_time_delimiter(self):
+        self.assertEqual(utils.parsedate_tz('Wed, 3 Apr 2002 14.58.26 +0800'),
+                         (2002, 4, 3, 14, 58, 26, 0, 1, -1, 28800))
+        self.assertEqual(utils.parsedate_tz('Wed, 3 Apr 2002 14.58 +0800'),
+                         (2002, 4, 3, 14, 58, 0, 0, 1, -1, 28800))
 
     def test_parsedate_acceptable_to_time_functions(self):
         eq = self.assertEqual

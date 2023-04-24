@@ -438,6 +438,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(my_platform, test_platform)
 
+    @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     def test_srcdir(self):
         # See Issues #15322, #15364.
         srcdir = sysconfig.get_config_var('srcdir')

@@ -1,2 +1,0 @@
-Ensure that custom :mod:`ast` nodes without explicit end positions can be
-compiled. Patch by Pablo Galindo.
