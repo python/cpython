@@ -96,6 +96,12 @@ should not be used in programs.
    (i.e. EOF) to exit", and when called, raise :exc:`SystemExit` with the
    specified exit code.
 
+.. data:: help
+
+   Object that when printed, prints the message "Type help() for interactive
+   help, or help(object) for help about object.", and when called, invokes the
+   built-in :ref:`help <func-help>` function.
+
 .. data:: copyright
           credits
 
