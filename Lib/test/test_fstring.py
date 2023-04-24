@@ -940,15 +940,13 @@ x = (
                              "f'{lambda :x}'",
                              "f'{lambda *arg, :x}'",
                              "f'{1, lambda:x}'",
+                             "f'{lambda x:}'",
+                             "f'{lambda :}'",
                              ])
 
         # but don't emit the paren warning in general cases
-        self.assertAllRaise(SyntaxError,
-                            "f-string: expecting a valid expression after '{'",
-                            ["f'{lambda x:}'",
-                             "f'{lambda :}'",
-                             "f'{+ lambda:None}'",
-                             ])
+        with self.assertRaisesRegex(SyntaxError, "f-string: expecting a valid expression after '{'"):
+            eval("f'{+ lambda:None}'")
 
     def test_valid_prefixes(self):
         self.assertEqual(F'{1}', "1")

@@ -2481,19 +2481,21 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
     // If we start with a bracket, we defer to the normal mode as there is nothing for us to tokenize
     // before it.
     int start_char = tok_nextc(tok);
-    int peek1 = tok_nextc(tok);
-    tok_backup(tok, peek1);
-    tok_backup(tok, start_char);
-
-    if ((start_char == '{' && peek1 != '{') || (start_char == '}' && peek1 != '}')) {
-        if (start_char == '{') {
+    if (start_char == '{') {
+        int peek1 = tok_nextc(tok);
+        tok_backup(tok, peek1);
+        tok_backup(tok, start_char);
+        if (peek1 != '{') {
             current_tok->curly_bracket_expr_start_depth++;
             if (current_tok->curly_bracket_expr_start_depth >= MAX_EXPR_NESTING) {
                 return MAKE_TOKEN(syntaxerror(tok, "f-string: expressions nested too deeply"));
             }
+            TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
+            return tok_get_normal_mode(tok, current_tok, token);
         }
-        TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
-        return tok_get_normal_mode(tok, current_tok, token);
+    }
+    else {
+        tok_backup(tok, start_char);
     }
 
     // Check if we are at the end of the string
