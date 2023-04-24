@@ -1532,5 +1532,10 @@ x = (
                                     "f-string: expecting a valid expression after '{'"):
             compile("f'{**a}'", "?", "exec")
 
+    def test_not_closing_quotes(self):
+        self.assertAllRaise(SyntaxError, "unterminated f-string literal", ['f"', "f'"])
+        self.assertAllRaise(SyntaxError, "unterminated triple-quoted f-string literal",
+                            ['f"""', "f'''"])
+
 if __name__ == '__main__':
     unittest.main()
