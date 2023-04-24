@@ -449,7 +449,7 @@ class suppress(AbstractContextManager):
             match, rest = excinst.split(self._exceptions)
             if rest is None:
                 return True
-            raise rest from excinst
+            raise rest
         return False
 
 
