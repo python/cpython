@@ -1,1 +1,0 @@
-Here we make it explicit that the returncode attribute can be outdated and then that the returncode is most reliability found by using poll().
