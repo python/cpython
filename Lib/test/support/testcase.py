@@ -20,8 +20,6 @@ class ExceptionIsLikeMixin:
             self.assertEqual(exc.args[0], template.args[0])
         else:
             self.assertEqual(exc.message, template.message)
-            print("E", exc.exceptions)
-            print("T", template.exceptions)
             self.assertEqual(len(exc.exceptions), len(template.exceptions))
             for e, t in zip(exc.exceptions, template.exceptions):
                 self.assertExceptionIsLike(e, t)
