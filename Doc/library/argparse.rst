@@ -1723,7 +1723,7 @@ Sub-commands
    :class:`ArgumentParser` supports the creation of such sub-commands with the
    :meth:`add_subparsers` method.  The :meth:`add_subparsers` method is normally
    called with no arguments and returns a special action object.  This object
-   has a single method, :meth:`!add_parser`, which takes a
+   has a single method, :meth:`~_SubParsersAction.add_parser`, which takes a
    command name and any :class:`ArgumentParser` constructor arguments, and
    returns an :class:`ArgumentParser` object that can be modified as usual.
 
@@ -1789,7 +1789,7 @@ Sub-commands
    for that particular parser will be printed.  The help message will not
    include parent parser or sibling parser messages.  (A help message for each
    subparser command, however, can be given by supplying the ``help=`` argument
-   to :meth:`!add_parser` as above.)
+   to :meth:`~_SubParsersAction.add_parser` as above.)
 
    ::
 
