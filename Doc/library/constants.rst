@@ -79,6 +79,8 @@ A small number of constants live in the built-in namespace.  They are:
    :exc:`SyntaxError`), so they can be considered "true" constants.
 
 
+.. _site-consts:
+
 Constants added by the :mod:`site` module
 -----------------------------------------
 
