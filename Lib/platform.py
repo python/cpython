@@ -118,7 +118,6 @@ import re
 import sys
 import functools
 import itertools
-from typing import NamedTuple, Optional
 
 ### Globals & Constants
 
@@ -202,7 +201,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         while pos < len(binary):
             if b'musl' in binary:
                 mv = _get_musl_version(executable)
-                return "musl", f"{mv.major}.{mv.minor}"
+                return "musl", mv
 
             if b'libc' in binary or b'GLIBC' in binary:
                 m = _libc_search.search(binary, pos)
@@ -1384,25 +1383,19 @@ def freedesktop_os_release():
 # These functions were copied from the packaging module:
 # https://github.com/pypa/packaging/blob/main/src/packaging/_musllinux.py
 
-class _MuslVersion(NamedTuple):
-    major: int
-    minor: int
 
-
-def _parse_musl_version(output: str) -> Optional[_MuslVersion]:
+def _parse_musl_version(output):
     lines = [n for n in (n.strip() for n in output.splitlines()) if n]
     if len(lines) < 2 or lines[0][:4] != "musl":
         return None
     m = re.match(r"Version (\d+)\.(\d+)", lines[1])
     if not m:
         return None
-    return _MuslVersion(major=int(m.group(1)), minor=int(m.group(2)))
+    return f"{m.group(1)}.{m.group(2)}"
 
 
 @functools.lru_cache()
-def _get_musl_version(executable: str) -> Optional[_MuslVersion]:
-    from ._elffile import ELFFile
-    import subprocess
+def _get_musl_version(executable):
     """Detect currently-running musl runtime version.
 
     This is done by checking the specified executable's dynamic linking
@@ -1413,6 +1406,10 @@ def _get_musl_version(executable: str) -> Optional[_MuslVersion]:
         Version 1.2.2
         Dynamic Program Loader
     """
+
+    from ._elffile import ELFFile
+    import subprocess
+
     try:
         with open(executable, "rb") as f:
             ld = ELFFile(f).interpreter

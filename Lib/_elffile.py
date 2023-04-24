@@ -9,6 +9,9 @@ Taken from the packaging module without modification.
 Based on: https://gist.github.com/lyssdod/f51579ae8d93c8657a5564aefc2ffbca
 ELF header: https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.eheader.html
 
+This module is used to get the proper musl libc information for
+platform.libc_ver.
+It has no documented public API and should not be used directly.
 """
 
 import enum
