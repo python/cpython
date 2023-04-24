@@ -1067,7 +1067,8 @@ static PyMemberDef typealias_members[] = {
 static typealiasobject *
 typealias_alloc(const char *name, PyObject *type_params, PyObject *compute_value)
 {
-    typealiasobject *ta = _PyTypeAlias_Type.tp_alloc(&_PyTypeAlias_Type, 0);
+    typealiasobject *ta = (typealiasobject *)_PyTypeAlias_Type.tp_alloc(
+        &_PyTypeAlias_Type, 0);
     if (ta == NULL) {
         return NULL;
     }
@@ -1128,7 +1129,7 @@ PyTypeObject _PyTypeAlias_Type = {
     .tp_members = typealias_members,
     .tp_methods = typealias_methods,
     .tp_doc = typealias_doc,
-    .tp_traverse = typealias_traverse,
+    .tp_traverse = (traverseproc)typealias_traverse,
 };
 
 PyObject *
