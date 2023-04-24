@@ -1377,6 +1377,11 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
     def create(self, **kwargs):
         return tkinter.Menu(self.root, **kwargs)
 
+    def test_indexcommand_none(self):
+        widget = self.create()
+        i = widget.index('none')
+        self.assertIsNone(i)
+
     def test_configure_postcommand(self):
         widget = self.create()
         self.checkCommandParam(widget, 'postcommand')
