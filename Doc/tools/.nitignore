@@ -178,7 +178,6 @@ Doc/library/os.rst
 Doc/library/ossaudiodev.rst
 Doc/library/pickle.rst
 Doc/library/pickletools.rst
-Doc/library/pkgutil.rst
 Doc/library/platform.rst
 Doc/library/plistlib.rst
 Doc/library/poplib.rst
