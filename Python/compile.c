@@ -2277,6 +2277,7 @@ check_compare(struct compiler *c, expr_ty e)
 {
     Py_ssize_t i, n;
     bool left = check_is_arg(e->v.Compare.left);
+    expr_ty left_expr = e->v.Compare.left;
     n = asdl_seq_LEN(e->v.Compare.ops);
     for (i = 0; i < n; i++) {
         cmpop_ty op = (cmpop_ty)asdl_seq_GET(e->v.Compare.ops, i);
@@ -2287,13 +2288,14 @@ check_compare(struct compiler *c, expr_ty e)
                 const char *msg = (op == Is)
                         ? "\"is\" with '%.200s' literal. Did you mean \"==\"?"
                         : "\"is not\" with '%.200s' literal. Did you mean \"!=\"?";
-                expr_ty literal = !left ? e->v.Compare.left : right_expr;
+                expr_ty literal = !left ? left_expr : right_expr;
                 return compiler_warn(
                     c, LOC(e), msg, Py_TYPE(literal->v.Constant.value)->tp_name
                 );
             }
         }
         left = right;
+        left_expr = right_expr;
     }
     return SUCCESS;
 }

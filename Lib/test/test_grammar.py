@@ -1478,6 +1478,9 @@ class GrammarTests(unittest.TestCase):
         check('None is 1', '"is" with \'int\' literal')
         check('1 is None', '"is" with \'int\' literal')
 
+        check('x == 3 is y', '"is" with \'int\' literal')
+        check('x == "thing" is y', '"is" with \'str\' literal')
+
         with warnings.catch_warnings():
             warnings.simplefilter('error', SyntaxWarning)
             compile('x is None', '<testcase>', 'exec')
