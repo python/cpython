@@ -583,13 +583,13 @@ class PurePath(object):
         """
         return type(self)(*pathsegments)
 
-    def joinpath(self, *args):
+    def joinpath(self, *pathsegments):
         """Combine this path with one or several arguments, and return a
         new path representing either a subpath (if all arguments are relative
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self.makepath(self._raw_path, *args)
+        return self.makepath(self._raw_path, *pathsegments)
 
     def __truediv__(self, key):
         try:
