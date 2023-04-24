@@ -14,16 +14,25 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 
-#define _PyObject_IMMORTAL_INIT(type) \
-    { \
-        .ob_refcnt = 999999999, \
-        .ob_type = (type), \
-    }
-#define _PyVarObject_IMMORTAL_INIT(type, size) \
-    { \
-        .ob_base = _PyObject_IMMORTAL_INIT(type), \
-        .ob_size = size, \
-    }
+/* We need to maintain an internal copy of Py{Var}Object_HEAD_INIT to avoid
+   designated initializer conflicts in C++20. If we use the deinition in
+   object.h, we will be mixing designated and non-designated initializers in
+   pycore objects which is forbiddent in C++20. However, if we then use
+   designated initializers in object.h then Extensions without designated break.
+   Furthermore, we can't use designated initializers in Extensions since these
+   are not supported pre-C++20. Thus, keeping an internal copy here is the most
+   backwards compatible solution */
+#define _PyObject_HEAD_INIT(type)         \
+    {                                     \
+        _PyObject_EXTRA_INIT              \
+        .ob_refcnt = _Py_IMMORTAL_REFCNT, \
+        .ob_type = (type)                 \
+    },
+#define _PyVarObject_HEAD_INIT(type, size)    \
+    {                                         \
+        .ob_base = _PyObject_HEAD_INIT(type)  \
+        .ob_size = size                       \
+    },
 
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     const char *func,
@@ -32,12 +41,47 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 #define _Py_FatalRefcountError(message) \
     _Py_FatalRefcountErrorFunc(__func__, (message))
 
+
+#ifdef Py_REF_DEBUG
+/* The symbol is only exposed in the API for the sake of extensions
+   built against the pre-3.12 stable ABI. */
+PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
+
+extern void _Py_AddRefTotal(PyInterpreterState *, Py_ssize_t);
+extern void _Py_IncRefTotal(PyInterpreterState *);
+extern void _Py_DecRefTotal(PyInterpreterState *);
+
+#  define _Py_DEC_REFTOTAL(interp) \
+    interp->object_state.reftotal--
+#endif
+
+// Increment reference count by n
+static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
+{
+#ifdef Py_REF_DEBUG
+    _Py_AddRefTotal(_PyInterpreterState_GET(), n);
+#endif
+    op->ob_refcnt += n;
+}
+#define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
+
+static inline void _Py_SetImmortal(PyObject *op)
+{
+    if (op) {
+        op->ob_refcnt = _Py_IMMORTAL_REFCNT;
+    }
+}
+#define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
+
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
     _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
+    _Py_DEC_REFTOTAL(_PyInterpreterState_GET());
 #endif
     if (--op->ob_refcnt != 0) {
         assert(op->ob_refcnt > 0);
@@ -53,9 +97,12 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 static inline void
 _Py_DECREF_NO_DEALLOC(PyObject *op)
 {
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
     _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
+    _Py_DEC_REFTOTAL(_PyInterpreterState_GET());
 #endif
     op->ob_refcnt--;
 #ifdef Py_DEBUG
@@ -64,6 +111,11 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
     }
 #endif
 }
+
+#ifdef Py_REF_DEBUG
+#  undef _Py_DEC_REFTOTAL
+#endif
+
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
@@ -103,8 +155,9 @@ static inline void
 _PyObject_InitVar(PyVarObject *op, PyTypeObject *typeobj, Py_ssize_t size)
 {
     assert(op != NULL);
-    Py_SET_SIZE(op, size);
+    assert(typeobj != &PyLong_Type);
     _PyObject_Init((PyObject *)op, typeobj);
+    Py_SET_SIZE(op, size);
 }
 
 
@@ -193,6 +246,8 @@ static inline void _PyObject_GC_UNTRACK(
 #endif
 
 #ifdef Py_REF_DEBUG
+extern void _PyInterpreterState_FinalizeRefTotal(PyInterpreterState *);
+extern void _Py_FinalizeRefTotal(_PyRuntimeState *);
 extern void _PyDebug_PrintTotalRefs(void);
 #endif
 
@@ -202,12 +257,51 @@ extern void _Py_PrintReferences(FILE *);
 extern void _Py_PrintReferenceAddresses(FILE *);
 #endif
 
+
+/* Return the *address* of the object's weaklist.  The address may be
+ * dereferenced to get the current head of the weaklist.  This is useful
+ * for iterating over the linked list of weakrefs, especially when the
+ * list is being modified externally (e.g. refs getting removed).
+ *
+ * The returned pointer should not be used to change the head of the list
+ * nor should it be used to add, remove, or swap any refs in the list.
+ * That is the sole responsibility of the code in weakrefobject.c.
+ */
 static inline PyObject **
 _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
 {
+    if (PyType_Check(op) &&
+            ((PyTypeObject *)op)->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        static_builtin_state *state = _PyStaticType_GetState(
+                                                        (PyTypeObject *)op);
+        return _PyStaticType_GET_WEAKREFS_LISTPTR(state);
+    }
+    // Essentially _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET():
     Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
     return (PyObject **)((char *)op + offset);
 }
+
+/* This is a special case of _PyObject_GET_WEAKREFS_LISTPTR().
+ * Only the most fundamental lookup path is used.
+ * Consequently, static types should not be used.
+ *
+ * For static builtin types the returned pointer will always point
+ * to a NULL tp_weaklist.  This is fine for any deallocation cases,
+ * since static types are never deallocated and static builtin types
+ * are only finalized at the end of runtime finalization.
+ *
+ * If the weaklist for static types is actually needed then use
+ * _PyObject_GET_WEAKREFS_LISTPTR().
+ */
+static inline PyWeakReference **
+_PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(PyObject *op)
+{
+    assert(!PyType_Check(op) ||
+            ((PyTypeObject *)op)->tp_flags & Py_TPFLAGS_HEAPTYPE);
+    Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
+    return (PyWeakReference **)((char *)op + offset);
+}
+
 
 // Fast inlined version of PyObject_IS_GC()
 static inline int
@@ -225,7 +319,7 @@ static inline size_t
 _PyType_PreHeaderSize(PyTypeObject *tp)
 {
     return _PyType_IS_GC(tp) * sizeof(PyGC_Head) +
-        _PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT) * 2 * sizeof(PyObject *);
+        _PyType_HasFeature(tp, Py_TPFLAGS_PREHEADER) * 2 * sizeof(PyObject *);
 }
 
 void _PyObject_GC_Link(PyObject *op);
@@ -242,7 +336,7 @@ extern int _Py_CheckSlotResult(
 
 // Test if a type supports weak references
 static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
-    return (type->tp_weaklistoffset > 0);
+    return (type->tp_weaklistoffset != 0);
 }
 
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
@@ -253,30 +347,57 @@ extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
 PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
                                         PyObject *name);
 
-static inline PyDictValues **_PyObject_ValuesPointer(PyObject *obj)
+typedef union {
+    PyObject *dict;
+    /* Use a char* to generate a warning if directly assigning a PyDictValues */
+    char *values;
+} PyDictOrValues;
+
+static inline PyDictOrValues *
+_PyObject_DictOrValuesPointer(PyObject *obj)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    return ((PyDictValues **)obj)-4;
+    return ((PyDictOrValues *)obj)-3;
 }
 
-static inline PyObject **_PyObject_ManagedDictPointer(PyObject *obj)
+static inline int
+_PyDictOrValues_IsValues(PyDictOrValues dorv)
 {
-    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    return ((PyObject **)obj)-3;
+    return ((uintptr_t)dorv.values) & 1;
 }
 
-#define MANAGED_DICT_OFFSET (((int)sizeof(PyObject *))*-3)
+static inline PyDictValues *
+_PyDictOrValues_GetValues(PyDictOrValues dorv)
+{
+    assert(_PyDictOrValues_IsValues(dorv));
+    return (PyDictValues *)(dorv.values + 1);
+}
 
-extern PyObject ** _PyObject_DictPointer(PyObject *);
-extern int _PyObject_VisitInstanceAttributes(PyObject *self, visitproc visit, void *arg);
-extern void _PyObject_ClearInstanceAttributes(PyObject *self);
-extern void _PyObject_FreeInstanceAttributes(PyObject *self);
+static inline PyObject *
+_PyDictOrValues_GetDict(PyDictOrValues dorv)
+{
+    assert(!_PyDictOrValues_IsValues(dorv));
+    return dorv.dict;
+}
+
+static inline void
+_PyDictOrValues_SetValues(PyDictOrValues *ptr, PyDictValues *values)
+{
+    ptr->values = ((char *)values) - 1;
+}
+
+#define MANAGED_WEAKREF_OFFSET (((Py_ssize_t)sizeof(PyObject *))*-4)
+
+extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
+extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
+extern int _PyType_HasSubclasses(PyTypeObject *);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 
 // Access macro to the members which are floating "behind" the object
-#define _PyHeapType_GET_MEMBERS(etype) \
-    ((PyMemberDef *)(((char *)(etype)) + Py_TYPE(etype)->tp_basicsize))
+static inline PyMemberDef* _PyHeapType_GET_MEMBERS(PyHeapTypeObject *etype) {
+    return (PyMemberDef*)((char*)etype + Py_TYPE(etype)->tp_basicsize);
+}
 
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
 
@@ -292,7 +413,7 @@ PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
  * match.
  *
  * Third party code unintentionally rely on problematic fpcasts. The call
- * trampoline mitigates common occurences of bad fpcasts on Emscripten.
+ * trampoline mitigates common occurrences of bad fpcasts on Emscripten.
  */
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 #define _PyCFunction_TrampolineCall(meth, self, args) \

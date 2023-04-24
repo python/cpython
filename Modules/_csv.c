@@ -82,7 +82,8 @@ typedef enum {
 } ParserState;
 
 typedef enum {
-    QUOTE_MINIMAL, QUOTE_ALL, QUOTE_NONNUMERIC, QUOTE_NONE
+    QUOTE_MINIMAL, QUOTE_ALL, QUOTE_NONNUMERIC, QUOTE_NONE,
+    QUOTE_STRINGS, QUOTE_NOTNULL
 } QuoteStyle;
 
 typedef struct {
@@ -95,6 +96,8 @@ static const StyleDesc quote_styles[] = {
     { QUOTE_ALL,        "QUOTE_ALL" },
     { QUOTE_NONNUMERIC, "QUOTE_NONNUMERIC" },
     { QUOTE_NONE,       "QUOTE_NONE" },
+    { QUOTE_STRINGS,    "QUOTE_STRINGS" },
+    { QUOTE_NOTNULL,    "QUOTE_NOTNULL" },
     { 0 }
 };
 
@@ -176,8 +179,7 @@ get_char_or_None(Py_UCS4 c)
 static PyObject *
 Dialect_get_lineterminator(DialectObj *self, void *Py_UNUSED(ignored))
 {
-    Py_XINCREF(self->lineterminator);
-    return self->lineterminator;
+    return Py_XNewRef(self->lineterminator);
 }
 
 static PyObject *
@@ -316,8 +318,7 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
         else {
             if (PyUnicode_READY(src) == -1)
                 return -1;
-            Py_INCREF(src);
-            Py_XSETREF(*target, src);
+            Py_XSETREF(*target, Py_NewRef(src));
         }
     }
     return 0;
@@ -514,8 +515,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto err;
     }
 
-    ret = (PyObject *)self;
-    Py_INCREF(self);
+    ret = Py_NewRef(self);
 err:
     Py_CLEAR(self);
     Py_CLEAR(dialect);
@@ -704,7 +704,7 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
             self->state = ESCAPED_CHAR;
         }
         else if (c == ' ' && dialect->skipinitialspace)
-            /* ignore space at start of field */
+            /* ignore spaces at start of field */
             ;
         else if (c == dialect->delimiter) {
             /* save empty field */
@@ -1267,6 +1267,12 @@ csv_writerow(WriterObj *self, PyObject *seq)
         case QUOTE_ALL:
             quoted = 1;
             break;
+        case QUOTE_STRINGS:
+            quoted = PyUnicode_Check(field);
+            break;
+        case QUOTE_NOTNULL:
+            quoted = field != Py_None;
+            break;
         default:
             quoted = 0;
             break;
@@ -1647,9 +1653,9 @@ PyDoc_STRVAR(csv_module_doc,
 "        quoting character.  It defaults to '\"'.\n"
 "    * delimiter - specifies a one-character string to use as the\n"
 "        field separator.  It defaults to ','.\n"
-"    * skipinitialspace - specifies how to interpret whitespace which\n"
-"        immediately follows a delimiter.  It defaults to False, which\n"
-"        means that whitespace immediately following a delimiter is part\n"
+"    * skipinitialspace - specifies how to interpret spaces which\n"
+"        immediately follow a delimiter.  It defaults to False, which\n"
+"        means that spaces immediately following a delimiter is part\n"
 "        of the following field.\n"
 "    * lineterminator -  specifies the character sequence which should\n"
 "        terminate rows.\n"
@@ -1662,6 +1668,11 @@ PyDoc_STRVAR(csv_module_doc,
 "        csv.QUOTE_NONNUMERIC means that quotes are always placed around\n"
 "            fields which do not parse as integers or floating point\n"
 "            numbers.\n"
+"        csv.QUOTE_STRINGS means that quotes are always placed around\n"
+"            fields which are strings.  Note that the Python value None\n"
+"            is not a string.\n"
+"        csv.QUOTE_NOTNULL means that quotes are only placed around fields\n"
+"            that are not the Python value None.\n"
 "        csv.QUOTE_NONE means that quotes are never placed around fields.\n"
 "    * escapechar - specifies a one-character string used to escape\n"
 "        the delimiter when quoting is set to QUOTE_NONE.\n"

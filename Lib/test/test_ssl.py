@@ -9,6 +9,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
+from test.support import asyncore
 import socket
 import select
 import time
@@ -30,9 +31,6 @@ except ImportError:
     ctypes = None
 
 
-asyncore = warnings_helper.import_deprecated('asyncore')
-
-
 ssl = import_helper.import_module("ssl")
 import _ssl
 
@@ -47,7 +45,7 @@ PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
 PROTOCOL_TO_TLS_VERSION = {}
 for proto, ver in (
-    ("PROTOCOL_SSLv23", "SSLv3"),
+    ("PROTOCOL_SSLv3", "SSLv3"),
     ("PROTOCOL_TLSv1", "TLSv1"),
     ("PROTOCOL_TLSv1_1", "TLSv1_1"),
 ):
@@ -153,7 +151,6 @@ OP_SINGLE_DH_USE = getattr(ssl, "OP_SINGLE_DH_USE", 0)
 OP_SINGLE_ECDH_USE = getattr(ssl, "OP_SINGLE_ECDH_USE", 0)
 OP_CIPHER_SERVER_PREFERENCE = getattr(ssl, "OP_CIPHER_SERVER_PREFERENCE", 0)
 OP_ENABLE_MIDDLEBOX_COMPAT = getattr(ssl, "OP_ENABLE_MIDDLEBOX_COMPAT", 0)
-OP_IGNORE_UNEXPECTED_EOF = getattr(ssl, "OP_IGNORE_UNEXPECTED_EOF", 0)
 
 # Ubuntu has patched OpenSSL and changed behavior of security level 2
 # see https://bugs.python.org/issue41561#msg389003
@@ -256,7 +253,7 @@ def requires_tls_version(version):
 
 
 def handle_error(prefix):
-    exc_format = ' '.join(traceback.format_exception(*sys.exc_info()))
+    exc_format = ' '.join(traceback.format_exception(sys.exception()))
     if support.verbose:
         sys.stdout.write(prefix + exc_format)
 
@@ -629,36 +626,6 @@ class BasicSocketTests(unittest.TestCase):
                     str(cm.warning)
                 )
 
-    @ignore_deprecation
-    def test_errors_sslwrap(self):
-        sock = socket.socket()
-        self.assertRaisesRegex(ValueError,
-                        "certfile must be specified",
-                        ssl.wrap_socket, sock, keyfile=CERTFILE)
-        self.assertRaisesRegex(ValueError,
-                        "certfile must be specified for server-side operations",
-                        ssl.wrap_socket, sock, server_side=True)
-        self.assertRaisesRegex(ValueError,
-                        "certfile must be specified for server-side operations",
-                         ssl.wrap_socket, sock, server_side=True, certfile="")
-        with ssl.wrap_socket(sock, server_side=True, certfile=CERTFILE) as s:
-            self.assertRaisesRegex(ValueError, "can't connect in server-side mode",
-                                     s.connect, (HOST, 8080))
-        with self.assertRaises(OSError) as cm:
-            with socket.socket() as sock:
-                ssl.wrap_socket(sock, certfile=NONEXISTINGCERT)
-        self.assertEqual(cm.exception.errno, errno.ENOENT)
-        with self.assertRaises(OSError) as cm:
-            with socket.socket() as sock:
-                ssl.wrap_socket(sock,
-                    certfile=CERTFILE, keyfile=NONEXISTINGCERT)
-        self.assertEqual(cm.exception.errno, errno.ENOENT)
-        with self.assertRaises(OSError) as cm:
-            with socket.socket() as sock:
-                ssl.wrap_socket(sock,
-                    certfile=NONEXISTINGCERT, keyfile=NONEXISTINGCERT)
-        self.assertEqual(cm.exception.errno, errno.ENOENT)
-
     def bad_cert_test(self, certfile):
         """Check that trying to use the given client certificate fails"""
         certfile = os.path.join(os.path.dirname(__file__) or os.curdir,
@@ -968,8 +935,20 @@ class ContextTests(unittest.TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ctx.set_ciphers('AESGCM')
         names = set(d['name'] for d in ctx.get_ciphers())
-        self.assertIn('AES256-GCM-SHA384', names)
-        self.assertIn('AES128-GCM-SHA256', names)
+        expected = {
+            'AES128-GCM-SHA256',
+            'ECDHE-ECDSA-AES128-GCM-SHA256',
+            'ECDHE-RSA-AES128-GCM-SHA256',
+            'DHE-RSA-AES128-GCM-SHA256',
+            'AES256-GCM-SHA384',
+            'ECDHE-ECDSA-AES256-GCM-SHA384',
+            'ECDHE-RSA-AES256-GCM-SHA384',
+            'DHE-RSA-AES256-GCM-SHA384',
+        }
+        intersection = names.intersection(expected)
+        self.assertGreaterEqual(
+            len(intersection), 2, f"\ngot: {sorted(names)}\nexpected: {sorted(expected)}"
+        )
 
     def test_options(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -978,8 +957,7 @@ class ContextTests(unittest.TestCase):
         # SSLContext also enables these by default
         default |= (OP_NO_COMPRESSION | OP_CIPHER_SERVER_PREFERENCE |
                     OP_SINGLE_DH_USE | OP_SINGLE_ECDH_USE |
-                    OP_ENABLE_MIDDLEBOX_COMPAT |
-                    OP_IGNORE_UNEXPECTED_EOF)
+                    OP_ENABLE_MIDDLEBOX_COMPAT)
         self.assertEqual(default, ctx.options)
         with warnings_helper.check_warnings():
             ctx.options |= ssl.OP_NO_TLSv1
@@ -1311,6 +1289,8 @@ class ContextTests(unittest.TestCase):
             "not enough data: cadata does not contain a certificate"
         ):
             ctx.load_verify_locations(cadata=b"broken")
+        with self.assertRaises(ssl.SSLError):
+            ctx.load_verify_locations(cadata=cacert_der + b"A")
 
     @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_load_dh_params(self):
@@ -1481,6 +1461,8 @@ class ContextTests(unittest.TestCase):
         if OP_CIPHER_SERVER_PREFERENCE != 0:
             self.assertEqual(ctx.options & OP_CIPHER_SERVER_PREFERENCE,
                              OP_CIPHER_SERVER_PREFERENCE)
+        self.assertEqual(ctx.options & ssl.OP_LEGACY_SERVER_CONNECT,
+                         0 if IS_OPENSSL_3_0_0 else ssl.OP_LEGACY_SERVER_CONNECT)
 
     def test_create_default_context(self):
         ctx = ssl.create_default_context()
@@ -2102,13 +2084,13 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.assertIs(sslobj._sslobj.owner, sslobj)
         self.assertIsNone(sslobj.cipher())
         self.assertIsNone(sslobj.version())
-        self.assertIsNotNone(sslobj.shared_ciphers())
+        self.assertIsNone(sslobj.shared_ciphers())
         self.assertRaises(ValueError, sslobj.getpeercert)
         if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES:
             self.assertIsNone(sslobj.get_channel_binding('tls-unique'))
         self.ssl_io_loop(sock, incoming, outgoing, sslobj.do_handshake)
         self.assertTrue(sslobj.cipher())
-        self.assertIsNotNone(sslobj.shared_ciphers())
+        self.assertIsNone(sslobj.shared_ciphers())
         self.assertIsNotNone(sslobj.version())
         self.assertTrue(sslobj.getpeercert())
         if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES:
@@ -2137,6 +2119,20 @@ class SimpleBackgroundTests(unittest.TestCase):
         buf = self.ssl_io_loop(sock, incoming, outgoing, sslobj.read, 1024)
         self.assertEqual(buf, b'foo\n')
         self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
+
+    def test_transport_eof(self):
+        client_context, server_context, hostname = testing_context()
+        with socket.socket(socket.AF_INET) as sock:
+            sock.connect(self.server_addr)
+            incoming = ssl.MemoryBIO()
+            outgoing = ssl.MemoryBIO()
+            sslobj = client_context.wrap_bio(incoming, outgoing,
+                                             server_hostname=hostname)
+            self.ssl_io_loop(sock, incoming, outgoing, sslobj.do_handshake)
+
+            # Simulate EOF from the transport.
+            incoming.write_eof()
+            self.assertRaises(ssl.SSLEOFError, sslobj.read)
 
 
 @support.requires_resource('network')
@@ -3835,6 +3831,20 @@ class ThreadedTests(unittest.TestCase):
                                    sni_name=hostname)
         self.assertIs(stats['compression'], None)
 
+    def test_legacy_server_connect(self):
+        client_context, server_context, hostname = testing_context()
+        client_context.options |= ssl.OP_LEGACY_SERVER_CONNECT
+        server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
+
+    def test_no_legacy_server_connect(self):
+        client_context, server_context, hostname = testing_context()
+        client_context.options &= ~ssl.OP_LEGACY_SERVER_CONNECT
+        server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
+
     @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_dh_params(self):
         # Check we can get a connection with ephemeral Diffie-Hellman
@@ -4043,7 +4053,7 @@ class ThreadedTests(unittest.TestCase):
     def test_shared_ciphers(self):
         client_context, server_context, hostname = testing_context()
         client_context.set_ciphers("AES128:AES256")
-        server_context.set_ciphers("AES256")
+        server_context.set_ciphers("AES256:eNULL")
         expected_algs = [
             "AES256", "AES-256",
             # TLS 1.3 ciphers are always enabled

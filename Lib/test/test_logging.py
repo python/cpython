@@ -47,6 +47,7 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
+from test.support import asyncore
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
@@ -61,10 +62,8 @@ from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
 
-
-asyncore = warnings_helper.import_deprecated('asyncore')
-smtpd = warnings_helper.import_deprecated('smtpd')
-
+with warnings.catch_warnings():
+    from . import smtpd
 
 try:
     import win32evtlog, win32evtlogutil, pywintypes
@@ -1224,6 +1223,35 @@ class MemoryHandlerTest(BaseTest):
         # assert that no new lines have been added
         self.assert_log_lines(lines)  # no change
 
+    def test_shutdown_flush_on_close(self):
+        """
+        Test that the flush-on-close configuration is respected by the
+        shutdown method.
+        """
+        self.mem_logger.debug(self.next_message())
+        self.assert_log_lines([])
+        self.mem_logger.info(self.next_message())
+        self.assert_log_lines([])
+        # Default behaviour is to flush on close. Check that it happens.
+        logging.shutdown(handlerList=[logging.weakref.ref(self.mem_hdlr)])
+        lines = [
+            ('DEBUG', '1'),
+            ('INFO', '2'),
+        ]
+        self.assert_log_lines(lines)
+        # Now configure for flushing not to be done on close.
+        self.mem_hdlr = logging.handlers.MemoryHandler(10, logging.WARNING,
+                                                       self.root_hdlr,
+                                                       False)
+        self.mem_logger.addHandler(self.mem_hdlr)
+        self.mem_logger.debug(self.next_message())
+        self.assert_log_lines(lines)  # no change
+        self.mem_logger.info(self.next_message())
+        self.assert_log_lines(lines)  # no change
+        # assert that no new lines have been added after shutdown
+        logging.shutdown(handlerList=[logging.weakref.ref(self.mem_hdlr)])
+        self.assert_log_lines(lines) # no change
+
     @threading_helper.requires_working_threading()
     def test_race_between_set_target_and_flush(self):
         class MockRaceConditionHandler:
@@ -1496,6 +1524,32 @@ class ConfigFileTest(BaseTest):
     kwargs={{"encoding": "utf-8"}}
     """
 
+
+    config9 = """
+    [loggers]
+    keys=root
+
+    [handlers]
+    keys=hand1
+
+    [formatters]
+    keys=form1
+
+    [logger_root]
+    level=WARNING
+    handlers=hand1
+
+    [handler_hand1]
+    class=StreamHandler
+    level=NOTSET
+    formatter=form1
+    args=(sys.stdout,)
+
+    [formatter_form1]
+    format=%(message)s ++ %(customfield)s
+    defaults={"customfield": "defaultvalue"}
+    """
+
     disable_test = """
     [loggers]
     keys=root
@@ -1658,6 +1712,16 @@ class ConfigFileTest(BaseTest):
 
         handler = logging.root.handlers[0]
         self.addCleanup(closeFileHandler, handler, fn)
+
+    def test_config9_ok(self):
+        self.apply_config(self.config9)
+        formatter = logging.root.handlers[0].formatter
+        result = formatter.format(logging.makeLogRecord({'msg': 'test'}))
+        self.assertEqual(result, 'test ++ defaultvalue')
+        result = formatter.format(logging.makeLogRecord(
+            {'msg': 'test', 'customfield': "customvalue"}))
+        self.assertEqual(result, 'test ++ customvalue')
+
 
     def test_logger_disabling(self):
         self.apply_config(self.disable_test)
@@ -2881,6 +2945,30 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    # config0 but with default values for formatter. Skipped 15, it is defined
+    # in the test code.
+    config16 = {
+        'version': 1,
+        'formatters': {
+            'form1' : {
+                'format' : '%(message)s ++ %(customfield)s',
+                'defaults': {"customfield": "defaultvalue"}
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'form1',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+            'handlers' : ['hand1'],
+        },
+    }
+
     bad_format = {
         "version": 1,
         "formatters": {
@@ -2993,7 +3081,7 @@ class ConfigDictTest(BaseTest):
         }
     }
 
-    # Configuration with custom function and 'validate' set to False
+    # Configuration with custom function, 'validate' set to False and no defaults
     custom_formatter_with_function = {
         'version': 1,
         'formatters': {
@@ -3001,6 +3089,33 @@ class ConfigDictTest(BaseTest):
                 '()': formatFunc,
                 'format': '%(levelname)s:%(name)s:%(message)s',
                 'validate': False,
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class': 'logging.StreamHandler',
+                'formatter': 'form1',
+                'level': 'NOTSET',
+                'stream': 'ext://sys.stdout',
+            },
+        },
+        "loggers": {
+            "my_test_logger_custom_formatter": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+                "propagate": "true"
+            }
+        }
+    }
+
+    # Configuration with custom function, and defaults
+    custom_formatter_with_defaults = {
+        'version': 1,
+        'formatters': {
+            'form1': {
+                '()': formatFunc,
+                'format': '%(levelname)s:%(name)s:%(message)s:%(customfield)s',
+                'defaults': {"customfield": "myvalue"}
             },
         },
         'handlers' : {
@@ -3321,6 +3436,22 @@ class ConfigDictTest(BaseTest):
         handler = logging.root.handlers[0]
         self.addCleanup(closeFileHandler, handler, fn)
 
+    def test_config16_ok(self):
+        self.apply_config(self.config16)
+        h = logging._handlers['hand1']
+
+        # Custom value
+        result = h.formatter.format(logging.makeLogRecord(
+            {'msg': 'Hello', 'customfield': 'customvalue'}))
+        self.assertEqual(result, 'Hello ++ customvalue')
+
+        # Default value
+        result = h.formatter.format(logging.makeLogRecord(
+            {'msg': 'Hello'}))
+        self.assertEqual(result, 'Hello ++ defaultvalue')
+
+
+
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
         # Ask for a randomly assigned port (by using port 0)
@@ -3488,6 +3619,9 @@ class ConfigDictTest(BaseTest):
     def test_custom_formatter_function_with_validate(self):
         self.assertRaises(ValueError, self.apply_config, self.custom_formatter_with_function)
 
+    def test_custom_formatter_function_with_defaults(self):
+        self.assertRaises(ValueError, self.apply_config, self.custom_formatter_with_defaults)
+
     def test_baseconfig(self):
         d = {
             'atuple': (1, 2, 3),
@@ -3647,6 +3781,35 @@ class ConfigDictTest(BaseTest):
             msg = str(ctx.exception)
             self.assertEqual(msg, "Unable to configure handler 'ah'")
 
+    def test_90195(self):
+        # See gh-90195
+        config = {
+            'version': 1,
+            'disable_existing_loggers': False,
+            'handlers': {
+                'console': {
+                    'level': 'DEBUG',
+                    'class': 'logging.StreamHandler',
+                },
+            },
+            'loggers': {
+                'a': {
+                    'level': 'DEBUG',
+                    'handlers': ['console']
+                }
+            }
+        }
+        logger = logging.getLogger('a')
+        self.assertFalse(logger.disabled)
+        self.apply_config(config)
+        self.assertFalse(logger.disabled)
+        # Should disable all loggers ...
+        self.apply_config({'version': 1})
+        self.assertTrue(logger.disabled)
+        del config['disable_existing_loggers']
+        self.apply_config(config)
+        # Logger should be enabled, since explicitly mentioned
+        self.assertFalse(logger.disabled)
 
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
@@ -3687,6 +3850,20 @@ class ChildLoggerTest(BaseTest):
         self.assertIs(c2, logging.getLogger('abc.def.ghi'))
         self.assertIs(c2, c3)
 
+    def test_get_children(self):
+        r = logging.getLogger()
+        l1 = logging.getLogger('foo')
+        l2 = logging.getLogger('foo.bar')
+        l3 = logging.getLogger('foo.bar.baz.bozz')
+        l4 = logging.getLogger('bar')
+        kids = r.getChildren()
+        expected = {l1, l4}
+        self.assertEqual(expected, kids & expected)  # might be other kids for root
+        self.assertNotIn(l2, expected)
+        kids = l1.getChildren()
+        self.assertEqual({l2}, kids)
+        kids = l2.getChildren()
+        self.assertEqual(set(), kids)
 
 class DerivedLogRecord(logging.LogRecord):
     pass
@@ -4230,6 +4407,14 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
         f = NoMsecFormatter()
         f.converter = time.gmtime
         self.assertEqual(f.formatTime(r), '21/04/1993 08:03:00')
+
+    def test_issue_89047(self):
+        f = logging.Formatter(fmt='{asctime}.{msecs:03.0f} {message}', style='{', datefmt="%Y-%m-%d %H:%M:%S")
+        for i in range(2500):
+            time.sleep(0.0004)
+            r = logging.makeLogRecord({'msg': 'Message %d' % (i + 1)})
+            s = f.format(r)
+            self.assertNotIn('.1000', s)
 
 
 class TestBufferingFormatter(logging.BufferingFormatter):
@@ -5018,8 +5203,7 @@ class BasicConfigTest(unittest.TestCase):
             message = []
 
             def dummy_handle_error(record):
-                _, v, _ = sys.exc_info()
-                message.append(str(v))
+                message.append(str(sys.exception()))
 
             handler.handleError = dummy_handle_error
             logging.debug('The Øresund Bridge joins Copenhagen to Malmö')

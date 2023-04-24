@@ -18,7 +18,8 @@
    algorithm, which has worst-case O(n) runtime and best-case O(n/k).
    Also compute a table of shifts to achieve O(n/k) in more cases,
    and often (data dependent) deduce larger shifts than pure C&P can
-   deduce. */
+   deduce. See stringlib_find_two_way_notes.txt in this folder for a
+   detailed explanation. */
 
 #define FAST_COUNT 0
 #define FAST_SEARCH 1
@@ -398,7 +399,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 if (window_last >= haystack_end) {
                     return -1;
                 }
-                LOG("Horspool skip");
+                LOG("Horspool skip\n");
             }
           no_shift:
             window = window_last - len_needle + 1;
@@ -457,7 +458,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 if (window_last >= haystack_end) {
                     return -1;
                 }
-                LOG("Horspool skip");
+                LOG("Horspool skip\n");
             }
             window = window_last - len_needle + 1;
             assert((window[len_needle - 1] & TABLE_MASK) ==
