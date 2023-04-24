@@ -982,7 +982,7 @@ Makefile Modules/config.c: Makefile.pre \
 				Modules/Setup.local \
 				Modules/Setup.bootstrap \
 				Modules/Setup.stdlib
-	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
+	$(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
 				Modules/Setup.local \
 				Modules/Setup.stdlib \
@@ -1194,7 +1194,7 @@ Tools/build/freeze_modules.py: $(FREEZE_MODULE)
 
 .PHONY: regen-frozen
 regen-frozen: Tools/build/freeze_modules.py $(FROZEN_FILES_IN)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/freeze_modules.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/freeze_modules.py --frozen-modules
 	@echo "The Makefile was updated, you may need to re-run make."
 
 ############################################################################
@@ -2423,12 +2423,12 @@ frameworkinstallextras:
 
 # Build the toplevel Makefile
 Makefile.pre: $(srcdir)/Makefile.pre.in config.status
-	CONFIG_FILES=Makefile.pre CONFIG_HEADERS= $(SHELL) config.status
+	CONFIG_FILES=Makefile.pre CONFIG_HEADERS= ./config.status
 	$(MAKE) -f Makefile.pre Makefile
 
 # Run the configure script.
 config.status:	$(srcdir)/configure
-	$(SHELL) $(srcdir)/configure $(CONFIG_ARGS)
+	$(srcdir)/configure $(CONFIG_ARGS)
 
 .PRECIOUS: config.status $(BUILDPYTHON) Makefile Makefile.pre
 
@@ -2453,8 +2453,8 @@ reindent:
 # Rerun configure with the same options as it was run last time,
 # provided the config.status script exists
 recheck:
-	$(SHELL) config.status --recheck
-	$(SHELL) config.status
+	./config.status --recheck
+	./config.status
 
 # Regenerate configure and pyconfig.h.in
 .PHONY: autoconf

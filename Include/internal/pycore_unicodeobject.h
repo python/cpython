@@ -12,6 +12,7 @@ extern "C" {
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
 void _PyUnicode_ExactDealloc(PyObject *op);
+Py_ssize_t _PyUnicode_InternedSize(void);
 
 /* runtime lifecycle */
 
