@@ -9397,6 +9397,8 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
     return NULL;
 }
 
+// if `method` is non-NULL, we are looking for a method descriptor,
+// and setting `*method = 1` means we found one.
 static PyObject *
 do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
                 PyTypeObject *su_obj_type, PyObject *name, int *method)
