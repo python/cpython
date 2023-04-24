@@ -895,10 +895,11 @@ The following attributes are also available:
 .. attribute:: Popen.returncode
 
    The child return code. Initially ``None``, :attr:`returncode` is set by
-   :meth:`poll` and :meth:`wait` after process termination is observed.
-
-   A ``None`` value indicates that the process
-   hasn't terminated yet.
+   a call to the :meth:`poll`, :meth:`wait`, or :meth:`communicate` methods
+   if they detect that the process has terminated.
+   
+   A ``None`` value indicates that the process hadn't yet terminated at the
+   time of the last method call.
 
    A negative value ``-N`` indicates that the child was terminated by signal
    ``N`` (POSIX only).
