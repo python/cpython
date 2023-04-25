@@ -655,7 +655,7 @@ release as many times the lock has required will lead to deadlock.
       is reached timeout) return ``False``.
 
       If called multiple times, failing to call :meth:`~RLock.release` as many times
-      may lead to deadlock. Consider using ``RLock`` as a context manager rather than
+      may lead to deadlock. Consider using :class:`!RLock` as a context manager rather than
       calling acquire/release directly.
 
       .. versionchanged:: 3.2
