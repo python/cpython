@@ -294,7 +294,10 @@ typevar_alloc(const char *name, PyObject *bound, PyObject *evaluate_bound,
     tv->contravariant = contravariant;
     tv->infer_variance = infer_variance;
     if (module != NULL) {
-        PyObject_SetAttrString((PyObject *)tv, "__module__", module);
+        if (PyObject_SetAttrString((PyObject *)tv, "__module__", module) < 0) {
+            Py_DECREF(tv);
+            return NULL;
+        }
     }
 
     PyObject_GC_Track(tv);
@@ -555,7 +558,7 @@ paramspecargs_repr(PyObject *self)
 {
     paramspecattrobject *psa = (paramspecattrobject *)self;
 
-    PyTypeObject *tp = _PyInterpreterState_Get()->cached_objects.paramspec_type;
+    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspec_type;
     if (Py_IS_TYPE(psa->__origin__, tp)) {
         return PyUnicode_FromFormat("%s.args",
             ((paramspecobject *)psa->__origin__)->name);
@@ -632,7 +635,7 @@ paramspeckwargs_repr(PyObject *self)
 {
     paramspecattrobject *psk = (paramspecattrobject *)self;
 
-    PyTypeObject *tp = _PyInterpreterState_Get()->cached_objects.paramspec_type;
+    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspec_type;
     if (Py_IS_TYPE(psk->__origin__, tp)) {
         return PyUnicode_FromFormat("%s.kwargs",
             ((paramspecobject *)psk->__origin__)->name);
@@ -775,7 +778,7 @@ static paramspecobject *
 paramspec_alloc(const char *name, PyObject *bound, bool covariant,
                 bool contravariant, bool infer_variance, PyObject *module)
 {
-    PyTypeObject *tp = _PyInterpreterState_Get()->cached_objects.paramspec_type;
+    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspec_type;
     paramspecobject *ps = PyObject_GC_New(paramspecobject, tp);
     if (ps == NULL) {
         return NULL;
@@ -790,7 +793,10 @@ paramspec_alloc(const char *name, PyObject *bound, bool covariant,
     ps->contravariant = contravariant;
     ps->infer_variance = infer_variance;
     if (module != NULL) {
-        PyObject_SetAttrString((PyObject *)ps, "__module__", module);
+        if (PyObject_SetAttrString((PyObject *)ps, "__module__", module) < 0) {
+            Py_DECREF(ps);
+            return NULL;
+        }
     }
     _PyObject_GC_TRACK(ps);
     return ps;
@@ -1029,7 +1035,7 @@ static PyMemberDef typevartuple_members[] = {
 static typevartupleobject *
 typevartuple_alloc(const char *name, PyObject *module)
 {
-    PyTypeObject *tp = _PyInterpreterState_Get()->cached_objects.typevartuple_type;
+    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
     typevartupleobject *tvt = PyObject_GC_New(typevartupleobject, tp);
     if (tvt == NULL) {
         return NULL;
@@ -1040,7 +1046,10 @@ typevartuple_alloc(const char *name, PyObject *module)
         return NULL;
     }
     if (module != NULL) {
-        PyObject_SetAttrString((PyObject *)tvt, "__module__", module);
+        if (PyObject_SetAttrString((PyObject *)tvt, "__module__", module) < 0) {
+            Py_DECREF(tvt);
+            return NULL;
+        }
     }
     _PyObject_GC_TRACK(tvt);
     return tvt;
@@ -1511,9 +1520,9 @@ call_typing_args_kwargs(const char *name, PyTypeObject *cls, PyObject *args, PyO
         PyTuple_SET_ITEM(new_args, i + 1, Py_NewRef(arg));
     }
     PyObject *result = PyObject_Call(func, new_args, kwargs);
-    Py_DECREF(func);
     Py_DECREF(typing);
-    Py_DecRef(new_args);
+    Py_DECREF(func);
+    Py_DECREF(new_args);
     return result;
 error:
     Py_XDECREF(typing);
