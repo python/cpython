@@ -2296,7 +2296,7 @@ compiler_set_type_params_in_class(struct compiler *c, location loc)
 {
     _Py_DECLARE_STR(type_params, ".type_params");
     RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Load));
-    RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_ID(__type_variables__), Store));
+    RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_ID(__type_params__), Store));
     return 1;
 }
 

@@ -238,7 +238,6 @@ class TypeParamsAccessTest(unittest.TestCase):
             exec(code, {})
 
 
-
 class TypeParamsTraditionalTypeVars(unittest.TestCase):
     def test_traditional_01(self):
         code = textwrap.dedent("""\
@@ -379,8 +378,8 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
                     return A, B, C, D
 
         a, b, c, d = Outer.Inner.get_typeparams()
-        self.assertEqual(Outer.__type_variables__, (a, b))
-        self.assertEqual(Outer.Inner.__type_variables__, (c, d))
+        self.assertEqual(Outer.__type_params__, (a, b))
+        self.assertEqual(Outer.Inner.__type_params__, (c, d))
 
         self.assertEqual(Outer.__parameters__, (a, b))
         self.assertEqual(Outer.Inner.__parameters__, (c, d))
@@ -389,17 +388,17 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
         class ClassA:
             pass
 
-        self.assertEqual(ClassA.__type_variables__, ())
+        self.assertEqual(ClassA.__type_params__, ())
 
     def test_typeparams_dunder_class_03(self):
         code = textwrap.dedent("""\
             class ClassA[A]():
                 pass
-            ClassA.__type_variables__ = ()
+            ClassA.__type_params__ = ()
             """
         )
 
-        with self.assertRaisesRegex(AttributeError, "attribute '__type_variables__' of 'type' objects is not writable"):
+        with self.assertRaisesRegex(AttributeError, "attribute '__type_params__' of 'type' objects is not writable"):
             exec(code, {})
 
     def test_typeparams_dunder_function_01(self):
@@ -411,22 +410,22 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
 
         inner = outer()
         a, b, c, d = inner()
-        self.assertEqual(outer.__type_variables__, (a, b))
-        self.assertEqual(inner.__type_variables__, (c, d))
+        self.assertEqual(outer.__type_params__, (a, b))
+        self.assertEqual(inner.__type_params__, (c, d))
 
     def test_typeparams_dunder_function_02(self):
         def func1():
             pass
 
-        self.assertEqual(func1.__type_variables__, ())
+        self.assertEqual(func1.__type_params__, ())
 
     def test_typeparams_dunder_function_03(self):
         code = textwrap.dedent("""\
             def func[A]():
                 pass
-            func.__type_variables__ = ()
+            func.__type_params__ = ()
             """
         )
 
-        with self.assertRaisesRegex(AttributeError, "attribute '__type_variables__' of 'function' objects is not writable"):
+        with self.assertRaisesRegex(AttributeError, "attribute '__type_params__' of 'function' objects is not writable"):
             exec(code, {})

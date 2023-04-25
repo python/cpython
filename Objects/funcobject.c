@@ -655,7 +655,7 @@ func_set_annotations(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(igno
 }
 
 static PyObject *
-func_get_type_variables(PyFunctionObject *op, void *Py_UNUSED(ignored))
+func_get_type_params(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
     if (op->func_typevars == NULL) {
         return PyTuple_New(0);
@@ -676,7 +676,7 @@ static PyGetSetDef func_getsetlist[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"__name__", (getter)func_get_name, (setter)func_set_name},
     {"__qualname__", (getter)func_get_qualname, (setter)func_set_qualname},
-    {"__type_variables__", (getter)func_get_type_variables, NULL},
+    {"__type_params__", (getter)func_get_type_params, NULL},
     {NULL} /* Sentinel */
 };
 

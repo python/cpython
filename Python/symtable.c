@@ -1354,7 +1354,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         tmp = st->st_private;
         st->st_private = s->v.ClassDef.name;
         if (asdl_seq_LEN(s->v.ClassDef.typeparams) > 0) {
-            if (!symtable_add_def(st, &_Py_ID(__type_variables__),
+            if (!symtable_add_def(st, &_Py_ID(__type_params__),
                                   DEF_LOCAL, LOCATION(s))) {
                 VISIT_QUIT(st, 0);
             }

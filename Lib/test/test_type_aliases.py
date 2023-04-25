@@ -86,7 +86,7 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         o = outer()
         self.assertIsInstance(o, TypeAliasType)
         self.assertEqual(len(o.__parameters__), 1)
-        self.assertEqual(len(outer.__type_variables__), 1)
+        self.assertEqual(len(outer.__type_params__), 1)
         b = o.__parameters__[0]
         self.assertEqual(o.__type_params__, (b,))
 

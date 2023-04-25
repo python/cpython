@@ -1754,9 +1754,9 @@ _cleanups.append(_lazy_load_getattr_static.cache_clear)
 class _Dummy[T, *Ts, **P]:
     pass
 
-TypeVar = type(_Dummy.__type_variables__[0])
-TypeVarTuple = type(_Dummy.__type_variables__[1])
-ParamSpec = type(_Dummy.__type_variables__[2])
+TypeVar = type(_Dummy.__type_params__[0])
+TypeVarTuple = type(_Dummy.__type_params__[1])
+ParamSpec = type(_Dummy.__type_params__[2])
 ParamSpecArgs = type(ParamSpec("P").args)
 ParamSpecKwargs = type(ParamSpec("P").kwargs)
 Generic = _Dummy.__mro__[1]

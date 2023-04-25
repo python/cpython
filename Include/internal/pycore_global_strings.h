@@ -215,7 +215,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__subclasshook__)
         STRUCT_FOR_ID(__truediv__)
         STRUCT_FOR_ID(__trunc__)
-        STRUCT_FOR_ID(__type_variables__)
+        STRUCT_FOR_ID(__type_params__)
         STRUCT_FOR_ID(__typing_is_unpacked_typevartuple__)
         STRUCT_FOR_ID(__typing_prepare_subst__)
         STRUCT_FOR_ID(__typing_subst__)
