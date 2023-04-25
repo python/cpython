@@ -1344,6 +1344,47 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b
                             p->arena);
 }
 
+static expr_ty
+_PyPegen_name_from_f_string_start(Parser *p, Token* t)
+{
+    if (t == NULL) {
+        return NULL;
+    }
+    const char *s = PyBytes_AsString(t->bytes);
+    if (!s) {
+        p->error_indicator = 1;
+        return NULL;
+    }
+    int size = strlen(s);
+    assert(size == PyBytes_Size(t->bytes));
+    while (size > 0 && (s[size-1] == '"' || s[size-1] == '\'')) {
+        size--;
+    }
+    char *snew = _PyArena_Malloc(p->arena, size+1);
+    if (snew == NULL) {
+        p->error_indicator = 1;
+        return NULL;
+    }
+    strncpy(snew, s, size);
+    snew[size] = '\0';
+    PyObject *id = _PyPegen_new_identifier(p, snew);
+    if (id == NULL) {
+        p->error_indicator = 1;
+        return NULL;
+    }
+    return _PyAST_Name(id, Load, t->lineno, t->col_offset, t->end_lineno,
+                       t->end_col_offset, p->arena);
+}
+
+expr_ty
+_PyPegen_tag_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b) {
+    expr_ty tag = _PyPegen_name_from_f_string_start(p, a);
+    expr_ty joined_str = _PyPegen_joined_str(p, a, raw_expressions, b);
+    return _PyAST_TagString(tag, joined_str, a->lineno, a->col_offset,
+                            b->end_lineno, b->end_col_offset,
+                            p->arena);
+}
+
 expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {
     char* bstr = PyBytes_AsString(tok->bytes);
     if (bstr == NULL) {
@@ -1457,6 +1498,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     assert(len > 0);
 
     int f_string_found = 0;
+    int tag_string_found = 0;
     int unicode_string_found = 0;
     int bytes_found = 0;
 
@@ -1471,7 +1513,10 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
                 unicode_string_found = 1;
             }
             n_flattened_elements++;
+        } else if (elem->kind == TagString_kind) {
+            tag_string_found = 1;
         } else {
+            assert(elem->kind == JoinedStr_kind);
             n_flattened_elements += asdl_seq_LEN(elem->v.JoinedStr.values);
             f_string_found = 1;
         }
@@ -1479,6 +1524,11 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
 
     if ((unicode_string_found || f_string_found) && bytes_found) {
         RAISE_SYNTAX_ERROR("cannot mix bytes and nonbytes literals");
+        return NULL;
+    }
+
+    if (tag_string_found && len > 1) {
+        RAISE_SYNTAX_ERROR("tag string cannot be joined");
         return NULL;
     }
 

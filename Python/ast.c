@@ -344,6 +344,9 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
     case JoinedStr_kind:
         ret = validate_exprs(state, exp->v.JoinedStr.values, Load, 0);
         break;
+    case TagString_kind:
+        ret = validate_expr(state, exp->v.TagString.str, Load);
+        break;
     case FormattedValue_kind:
         if (validate_expr(state, exp->v.FormattedValue.value, Load) == 0)
             return 0;

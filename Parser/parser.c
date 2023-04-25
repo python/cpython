@@ -15916,7 +15916,7 @@ tagstring_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ tagstring[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "TAGSTRING_START fstring_middle* FSTRING_END"));
-            _res = _PyPegen_joined_str ( p , a , ( asdl_expr_seq* ) b , c );
+            _res = _PyPegen_tag_str ( p , a , ( asdl_expr_seq* ) b , c );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

@@ -347,6 +347,7 @@ asdl_stmt_seq *_PyPegen_interactive_exit(Parser *);
 
 // TODO: move to the correct place in this file
 expr_ty _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* expr, Token*b);
+expr_ty _PyPegen_tag_str(Parser *p, Token* a, asdl_expr_seq* expr, Token*b);
 
 // Generated function in parse.c - function definition in python.gram
 void *_PyPegen_parse(Parser *);
