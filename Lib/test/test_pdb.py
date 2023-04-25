@@ -1715,8 +1715,8 @@ def test_pdb_issue_gh_101517():
     ...     'continue'
     ... ]):
     ...    test_function()
-    --Return--
-    > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(None)test_function()->None
+    > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(5)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) continue
     """
 

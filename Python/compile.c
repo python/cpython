@@ -829,6 +829,10 @@ stack_effect(int opcode, int oparg, int jump)
 
         case LOAD_METHOD:
             return 1;
+        case LOAD_SUPER_METHOD:
+        case LOAD_ZERO_SUPER_METHOD:
+        case LOAD_ZERO_SUPER_ATTR:
+            return -1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -1045,6 +1049,24 @@ compiler_addop_name(struct compiler_unit *u, location loc,
     if (opcode == LOAD_METHOD) {
         opcode = LOAD_ATTR;
         arg <<= 1;
+        arg |= 1;
+    }
+    if (opcode == LOAD_SUPER_ATTR) {
+        arg <<= 2;
+        arg |= 2;
+    }
+    if (opcode == LOAD_SUPER_METHOD) {
+        opcode = LOAD_SUPER_ATTR;
+        arg <<= 2;
+        arg |= 3;
+    }
+    if (opcode == LOAD_ZERO_SUPER_ATTR) {
+        opcode = LOAD_SUPER_ATTR;
+        arg <<= 2;
+    }
+    if (opcode == LOAD_ZERO_SUPER_METHOD) {
+        opcode = LOAD_SUPER_ATTR;
+        arg <<= 2;
         arg |= 1;
     }
     return codegen_addop_i(&u->u_instr_sequence, opcode, arg, loc);
@@ -2269,6 +2291,8 @@ check_is_arg(expr_ty e)
          || value == Py_Ellipsis);
 }
 
+static PyTypeObject * infer_type(expr_ty e);
+
 /* Check operands of identity checks ("is" and "is not").
    Emit a warning if any operand is a constant except named singletons.
  */
@@ -2277,19 +2301,25 @@ check_compare(struct compiler *c, expr_ty e)
 {
     Py_ssize_t i, n;
     bool left = check_is_arg(e->v.Compare.left);
+    expr_ty left_expr = e->v.Compare.left;
     n = asdl_seq_LEN(e->v.Compare.ops);
     for (i = 0; i < n; i++) {
         cmpop_ty op = (cmpop_ty)asdl_seq_GET(e->v.Compare.ops, i);
-        bool right = check_is_arg((expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
+        expr_ty right_expr = (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i);
+        bool right = check_is_arg(right_expr);
         if (op == Is || op == IsNot) {
             if (!right || !left) {
                 const char *msg = (op == Is)
-                        ? "\"is\" with a literal. Did you mean \"==\"?"
-                        : "\"is not\" with a literal. Did you mean \"!=\"?";
-                return compiler_warn(c, LOC(e), msg);
+                        ? "\"is\" with '%.200s' literal. Did you mean \"==\"?"
+                        : "\"is not\" with '%.200s' literal. Did you mean \"!=\"?";
+                expr_ty literal = !left ? left_expr : right_expr;
+                return compiler_warn(
+                    c, LOC(e), msg, infer_type(literal)->tp_name
+                );
             }
         }
         left = right;
+        left_expr = right_expr;
     }
     return SUCCESS;
 }
@@ -3045,11 +3075,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
    [orig, res, exc]                           <evaluate E1>
    [orig, res, exc, E1]                       CHECK_EG_MATCH
    [orig, res, rest/exc, match?]              COPY 1
-   [orig, res, rest/exc, match?, match?]      POP_JUMP_IF_NOT_NONE  H1
-   [orig, res, exc, None]                     POP_TOP
-   [orig, res, exc]                           JUMP L2
+   [orig, res, rest/exc, match?, match?]      POP_JUMP_IF_NONE      C1
 
-   [orig, res, rest, match]         H1:       <assign to V1>  (or POP if no V1)
+   [orig, res, rest, match]                   <assign to V1>  (or POP if no V1)
 
    [orig, res, rest]                          SETUP_FINALLY         R1
    [orig, res, rest]                          <code for S1>
@@ -3057,8 +3085,14 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
    [orig, res, rest, i, v]          R1:       LIST_APPEND   3 ) exc raised in except* body - add to res
    [orig, res, rest, i]                       POP
+   [orig, res, rest]                          JUMP                  LE2
 
-   [orig, res, rest]                L2:       <evaluate E2>
+   [orig, res, rest]                L2:       NOP  ) for lineno
+   [orig, res, rest]                          JUMP                  LE2
+
+   [orig, res, rest/exc, None]      C1:       POP
+
+   [orig, res, rest]               LE2:       <evaluate E2>
    .............................etc.......................
 
    [orig, res, rest]                Ln+1:     LIST_APPEND 1  ) add unhandled exc to res (could be None)
@@ -3114,7 +3148,8 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         location loc = LOC(handler);
         NEW_JUMP_TARGET_LABEL(c, next_except);
         except = next_except;
-        NEW_JUMP_TARGET_LABEL(c, handle_match);
+        NEW_JUMP_TARGET_LABEL(c, except_with_error);
+        NEW_JUMP_TARGET_LABEL(c, no_match);
         if (i == 0) {
             /* create empty list for exceptions raised/reraise in the except* blocks */
             /*
@@ -3132,12 +3167,8 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             VISIT(c, expr, handler->v.ExceptHandler.type);
             ADDOP(c, loc, CHECK_EG_MATCH);
             ADDOP_I(c, loc, COPY, 1);
-            ADDOP_JUMP(c, loc, POP_JUMP_IF_NOT_NONE, handle_match);
-            ADDOP(c, loc, POP_TOP);  // match
-            ADDOP_JUMP(c, loc, JUMP, except);
+            ADDOP_JUMP(c, loc, POP_JUMP_IF_NONE, no_match);
         }
-
-        USE_LABEL(c, handle_match);
 
         NEW_JUMP_TARGET_LABEL(c, cleanup_end);
         NEW_JUMP_TARGET_LABEL(c, cleanup_body);
@@ -3197,9 +3228,16 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         /* add exception raised to the res list */
         ADDOP_I(c, NO_LOCATION, LIST_APPEND, 3); // exc
         ADDOP(c, NO_LOCATION, POP_TOP); // lasti
-        ADDOP_JUMP(c, NO_LOCATION, JUMP, except);
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, except_with_error);
 
         USE_LABEL(c, except);
+        ADDOP(c, NO_LOCATION, NOP);  // to hold a propagated location info
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, except_with_error);
+
+        USE_LABEL(c, no_match);
+        ADDOP(c, loc, POP_TOP);  // match (None)
+
+        USE_LABEL(c, except_with_error);
 
         if (i == n - 1) {
             /* Add exc to the list (if not None it's the unhandled part of the EG) */
@@ -4214,6 +4252,89 @@ is_import_originated(struct compiler *c, expr_ty e)
     return flags & DEF_IMPORT;
 }
 
+static int
+can_optimize_super_call(struct compiler *c, expr_ty attr)
+{
+    expr_ty e = attr->v.Attribute.value;
+    if (e->kind != Call_kind ||
+        e->v.Call.func->kind != Name_kind ||
+        !_PyUnicode_EqualToASCIIString(e->v.Call.func->v.Name.id, "super") ||
+        _PyUnicode_EqualToASCIIString(attr->v.Attribute.attr, "__class__") ||
+        asdl_seq_LEN(e->v.Call.keywords) != 0) {
+        return 0;
+    }
+    Py_ssize_t num_args = asdl_seq_LEN(e->v.Call.args);
+
+    PyObject *super_name = e->v.Call.func->v.Name.id;
+    // detect statically-visible shadowing of 'super' name
+    int scope = _PyST_GetScope(c->u->u_ste, super_name);
+    if (scope != GLOBAL_IMPLICIT) {
+        return 0;
+    }
+    scope = _PyST_GetScope(c->c_st->st_top, super_name);
+    if (scope != 0) {
+        return 0;
+    }
+
+    if (num_args == 2) {
+        for (Py_ssize_t i = 0; i < num_args; i++) {
+            expr_ty elt = asdl_seq_GET(e->v.Call.args, i);
+            if (elt->kind == Starred_kind) {
+                return 0;
+            }
+        }
+        // exactly two non-starred args; we can just load
+        // the provided args
+        return 1;
+    }
+
+    if (num_args != 0) {
+        return 0;
+    }
+    // we need the following for zero-arg super():
+
+    // enclosing function should have at least one argument
+    if (c->u->u_metadata.u_argcount == 0 &&
+        c->u->u_metadata.u_posonlyargcount == 0) {
+        return 0;
+    }
+    // __class__ cell should be available
+    if (get_ref_type(c, &_Py_ID(__class__)) == FREE) {
+        return 1;
+    }
+    return 0;
+}
+
+static int
+load_args_for_super(struct compiler *c, expr_ty e) {
+    location loc = LOC(e);
+
+    // load super() global
+    PyObject *super_name = e->v.Call.func->v.Name.id;
+    RETURN_IF_ERROR(compiler_nameop(c, loc, super_name, Load));
+
+    if (asdl_seq_LEN(e->v.Call.args) == 2) {
+        VISIT(c, expr, asdl_seq_GET(e->v.Call.args, 0));
+        VISIT(c, expr, asdl_seq_GET(e->v.Call.args, 1));
+        return SUCCESS;
+    }
+
+    // load __class__ cell
+    PyObject *name = &_Py_ID(__class__);
+    assert(get_ref_type(c, name) == FREE);
+    RETURN_IF_ERROR(compiler_nameop(c, loc, name, Load));
+
+    // load self (first argument)
+    Py_ssize_t i = 0;
+    PyObject *key, *value;
+    if (!PyDict_Next(c->u->u_metadata.u_varnames, &i, &key, &value)) {
+        return ERROR;
+    }
+    RETURN_IF_ERROR(compiler_nameop(c, loc, key, Load));
+
+    return SUCCESS;
+}
+
 // If an attribute access spans multiple lines, update the current start
 // location to point to the attribute name.
 static location
@@ -4281,11 +4402,21 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
             return 0;
         }
     }
+
     /* Alright, we can optimize the code. */
-    VISIT(c, expr, meth->v.Attribute.value);
     location loc = LOC(meth);
-    loc = update_start_location_to_match_attr(c, loc, meth);
-    ADDOP_NAME(c, loc, LOAD_METHOD, meth->v.Attribute.attr, names);
+
+    if (can_optimize_super_call(c, meth)) {
+        RETURN_IF_ERROR(load_args_for_super(c, meth->v.Attribute.value));
+        int opcode = asdl_seq_LEN(meth->v.Attribute.value->v.Call.args) ?
+            LOAD_SUPER_METHOD : LOAD_ZERO_SUPER_METHOD;
+        ADDOP_NAME(c, loc, opcode, meth->v.Attribute.attr, names);
+    } else {
+        VISIT(c, expr, meth->v.Attribute.value);
+        loc = update_start_location_to_match_attr(c, loc, meth);
+        ADDOP_NAME(c, loc, LOAD_METHOD, meth->v.Attribute.attr, names);
+    }
+
     VISIT_SEQ(c, expr, e->v.Call.args);
 
     if (kwdsl) {
@@ -5293,6 +5424,13 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_formatted_value(c, e);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
+        if (e->v.Attribute.ctx == Load && can_optimize_super_call(c, e)) {
+            RETURN_IF_ERROR(load_args_for_super(c, e->v.Attribute.value));
+            int opcode = asdl_seq_LEN(e->v.Attribute.value->v.Call.args) ?
+                LOAD_SUPER_ATTR : LOAD_ZERO_SUPER_ATTR;
+            ADDOP_NAME(c, loc, opcode, e->v.Attribute.attr, names);
+            return SUCCESS;
+        }
         VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);
@@ -6688,7 +6826,10 @@ insert_prefix_instructions(struct compiler_unit *u, basicblock *entryblock,
                 .i_loc = NO_LOCATION,
                 .i_target = NULL,
             };
-            RETURN_IF_ERROR(_PyBasicblock_InsertInstruction(entryblock, ncellsused, &make_cell));
+            if (_PyBasicblock_InsertInstruction(entryblock, ncellsused, &make_cell) < 0) {
+                PyMem_RawFree(sorted);
+                return ERROR;
+            }
             ncellsused += 1;
         }
         PyMem_RawFree(sorted);
@@ -6860,7 +7001,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
                                     maxdepth, g.g_entryblock, nlocalsplus,
                                     code_flags, filename);
 
- error:
+error:
     Py_XDECREF(consts);
     instr_sequence_fini(&optimized_instrs);
     _PyCfgBuilder_Fini(&g);
@@ -6958,7 +7099,9 @@ instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
 
     for (int i = 0; i < num_insts; i++) {
         if (is_target[i]) {
-            RETURN_IF_ERROR(instr_sequence_use_label(seq, i));
+            if (instr_sequence_use_label(seq, i) < 0) {
+                goto error;
+            }
         }
         PyObject *item = PyList_GET_ITEM(instructions, i);
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 6) {
@@ -6996,10 +7139,14 @@ instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
         if (PyErr_Occurred()) {
             goto error;
         }
-        RETURN_IF_ERROR(instr_sequence_addop(seq, opcode, oparg, loc));
+        if (instr_sequence_addop(seq, opcode, oparg, loc) < 0) {
+            goto error;
+        }
     }
     if (seq->s_used && !IS_TERMINATOR_OPCODE(seq->s_instrs[seq->s_used-1].i_opcode)) {
-        RETURN_IF_ERROR(instr_sequence_addop(seq, RETURN_VALUE, 0, NO_LOCATION));
+        if (instr_sequence_addop(seq, RETURN_VALUE, 0, NO_LOCATION) < 0) {
+            goto error;
+        }
     }
     PyMem_Free(is_target);
     return SUCCESS;
@@ -7014,12 +7161,17 @@ instructions_to_cfg(PyObject *instructions, cfg_builder *g)
     instr_sequence seq;
     memset(&seq, 0, sizeof(instr_sequence));
 
-    RETURN_IF_ERROR(
-        instructions_to_instr_sequence(instructions, &seq));
-
-    RETURN_IF_ERROR(instr_sequence_to_cfg(&seq, g));
+    if (instructions_to_instr_sequence(instructions, &seq) < 0) {
+        goto error;
+    }
+    if (instr_sequence_to_cfg(&seq, g) < 0) {
+        goto error;
+    }
     instr_sequence_fini(&seq);
     return SUCCESS;
+error:
+    instr_sequence_fini(&seq);
+    return ERROR;
 }
 
 static PyObject *
