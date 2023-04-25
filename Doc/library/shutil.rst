@@ -640,8 +640,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    registered for that extension.  In case none is found,
    a :exc:`ValueError` is raised.
 
-   The keyword-only *filter* argument is passed to the underlying unpacking
-   function. For zip files, *filter* is not accepted.
+   The keyword-only *filter* argument, which was added in Python 3.11.4,
+   is passed to the underlying unpacking function.
+   For zip files, *filter* is not accepted.
    For tar files, it is recommended to set it to ``'data'``,
    unless using features specific to tar and UNIX-like filesystems.
    (See :ref:`tarfile-extraction-filter` for details.)
@@ -660,7 +661,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    .. versionchanged:: 3.7
       Accepts a :term:`path-like object` for *filename* and *extract_dir*.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.11.4
       Added the *filter* argument.
 
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
