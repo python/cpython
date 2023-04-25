@@ -5,7 +5,7 @@ import _xxsubinterpreters as _interpreters
 import _xxinterpchannels as _channels
 
 # aliases:
-from _xxsubinterpreters import is_shareable
+from _xxsubinterpreters import is_shareable, RunFailedError
 from _xxinterpchannels import (
     ChannelError, ChannelNotFoundError, ChannelEmptyError,
 )
