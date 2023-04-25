@@ -17,7 +17,6 @@ It has no documented public API and should not be used directly.
 import enum
 import os
 import struct
-from typing import IO, Optional, Tuple
 
 
 class ELFInvalid(ValueError):
@@ -47,7 +46,7 @@ class ELFFile:
     Representation of an ELF executable.
     """
 
-    def __init__(self, f: IO[bytes]) -> None:
+    def __init__(self, f):
         self._f = f
 
         try:
@@ -93,11 +92,11 @@ class ELFFile:
         except struct.error as e:
             raise ELFInvalid("unable to parse machine and section information") from e
 
-    def _read(self, fmt: str) -> Tuple[int, ...]:
+    def _read(self, fmt):
         return struct.unpack(fmt, self._f.read(struct.calcsize(fmt)))
 
     @property
-    def interpreter(self) -> Optional[str]:
+    def interpreter(self):
         """
         The path recorded in the ``PT_INTERP`` section header.
         """
