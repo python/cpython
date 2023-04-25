@@ -371,10 +371,8 @@ remember_fstring_buffers(struct tok_state *tok)
 
     for (index = tok->tok_mode_stack_index; index >= 0; --index) {
         mode = &(tok->tok_mode_stack[index]);
-        if (mode->kind == TOK_FSTRING_MODE) {
-            mode->f_string_start_offset = mode->f_string_start - tok->buf;
-            mode->f_string_multi_line_start_offset = mode->f_string_multi_line_start - tok->buf;
-        }
+        mode->f_string_start_offset = mode->f_string_start - tok->buf;
+        mode->f_string_multi_line_start_offset = mode->f_string_multi_line_start - tok->buf;
     }
 }
 
@@ -387,10 +385,8 @@ restore_fstring_buffers(struct tok_state *tok)
 
     for (index = tok->tok_mode_stack_index; index >= 0; --index) {
         mode = &(tok->tok_mode_stack[index]);
-        if (mode->kind == TOK_FSTRING_MODE) {
-            mode->f_string_start = tok->buf + mode->f_string_start_offset;
-            mode->f_string_multi_line_start = tok->buf + mode->f_string_multi_line_start_offset;
-        }
+        mode->f_string_start = tok->buf + mode->f_string_start_offset;
+        mode->f_string_multi_line_start = tok->buf + mode->f_string_multi_line_start_offset;
     }
 }
 
@@ -1081,6 +1077,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         restore_fstring_buffers(tok);
     }
     else {
+        remember_fstring_buffers(tok);
         ADVANCE_LINENO();
         PyMem_Free(tok->buf);
         tok->buf = newtok;
@@ -1088,6 +1085,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         tok->line_start = tok->buf;
         tok->inp = strchr(tok->buf, '\0');
         tok->end = tok->inp + 1;
+        restore_fstring_buffers(tok);
     }
     if (tok->done != E_OK) {
         if (tok->prompt != NULL) {
