@@ -671,6 +671,14 @@ init_interpreter(PyInterpreterState *interp,
     assert(next != NULL || (interp == runtime->interpreters.main));
     interp->next = next;
 
+    /* Initialize obmalloc, but only for subinterpreters,
+       since the main interpreter is initialized statically. */
+    if (interp != &runtime->_main_interpreter) {
+        poolp temp[OBMALLOC_USED_POOLS_SIZE] = \
+                _obmalloc_pools_INIT(interp->obmalloc.pools);
+        memcpy(&interp->obmalloc.pools.used, temp, sizeof(temp));
+    }
+
     _PyEval_InitState(&interp->ceval, pending_lock);
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
@@ -941,11 +949,12 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 
     _PyEval_FiniState(&interp->ceval);
 
-#ifdef Py_REF_DEBUG
-    // XXX This call should be done at the end of clear_interpreter(),
+    // XXX These two calls should be done at the end of clear_interpreter(),
     // but currently some objects get decref'ed after that.
+#ifdef Py_REF_DEBUG
     _PyInterpreterState_FinalizeRefTotal(interp);
 #endif
+    _PyInterpreterState_FinalizeAllocatedBlocks(interp);
 
     HEAD_LOCK(runtime);
     PyInterpreterState **p;
@@ -2320,11 +2329,11 @@ _PyCrossInterpreterData_InitWithSize(_PyCrossInterpreterData *data,
     // where it was allocated, so the interpreter is required.
     assert(interp != NULL);
     _PyCrossInterpreterData_Init(data, interp, NULL, obj, new_object);
-    data->data = PyMem_Malloc(size);
+    data->data = PyMem_RawMalloc(size);
     if (data->data == NULL) {
         return -1;
     }
-    data->free = PyMem_Free;
+    data->free = PyMem_RawFree;
     return 0;
 }
 
