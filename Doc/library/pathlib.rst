@@ -359,7 +359,8 @@ Pure paths provide the following methods and properties:
 
 .. attribute:: PurePath.parents
 
-   A tuple providing access to the logical ancestors of the path::
+   An immutable sequence providing access to the logical ancestors of
+   the path::
 
       >>> p = PureWindowsPath('c:/foo/bar/setup.py')
       >>> p.parents[0]
@@ -371,9 +372,6 @@ Pure paths provide the following methods and properties:
 
    .. versionchanged:: 3.10
       The parents sequence now supports :term:`slices <slice>` and negative index values.
-
-   .. versionchanged:: 3.12
-      Type changed from a tuple-like immutable sequence to a true tuple.
 
 .. attribute:: PurePath.parent
 

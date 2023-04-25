@@ -14,6 +14,7 @@ import posixpath
 import re
 import sys
 import warnings
+from _collections_abc import Sequence
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
@@ -205,6 +206,35 @@ class _RecursiveWildcardSelector(_Selector):
 #
 # Public API
 #
+
+class _PathParents(Sequence):
+    """This object provides sequence-like access to the logical ancestors
+    of a path.  Don't try to construct it yourself."""
+    __slots__ = ('_path', '_drv', '_root', '_tail')
+
+    def __init__(self, path):
+        self._path = path
+        self._drv = path.drive
+        self._root = path.root
+        self._tail = path._tail
+
+    def __len__(self):
+        return len(self._tail)
+
+    def __getitem__(self, idx):
+        if isinstance(idx, slice):
+            return tuple(self[i] for i in range(*idx.indices(len(self))))
+
+        if idx >= len(self) or idx < -len(self):
+            raise IndexError(idx)
+        if idx < 0:
+            idx += len(self)
+        return self._path._from_parsed_parts(self._drv, self._root,
+                                             self._tail[:-idx - 1])
+
+    def __repr__(self):
+        return "<{}.parents>".format(type(self._path).__name__)
+
 
 class PurePath(object):
     """Base class for manipulating paths without I/O.
@@ -615,13 +645,8 @@ class PurePath(object):
 
     @property
     def parents(self):
-        """A tuple of this path's logical parents."""
-        drv = self.drive
-        root = self.root
-        tail = self._tail
-        return tuple(
-            self._from_parsed_parts(drv, root, tail[:idx])
-            for idx in reversed(range(len(tail))))
+        """A sequence of this path's logical parents."""
+        return _PathParents(self)
 
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
