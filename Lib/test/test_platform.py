@@ -552,19 +552,18 @@ Usage: /lib/ld-musl-x86_64.so.1 [options] [--] pathname [args]
         self.assertEqual(platform._parse_musl_version(output), "1.2")
 
     @support.requires_subprocess()
-    # TODO: how should we write this test to only execute on systems with musl?
-    # @support.requires_musl()
+    @support.requires_musl()
     def test_libc_ver_musl(self):
         self.assertEqual(platform.libc_ver(), ("musl", "1.2"))
 
 
+@support.requires_musl()
 class ELFFileTest(unittest.TestCase):
 
-    # FIXME: make this test correct and passing
-    # def test_get_interpreter(self):
-    #     f = io.BytesIO(ELFFILE_HEADER)
-    #     elffile = platform.ELFFile(f)
-    #     self.assertEqual(elffile.interpreter, "")
+    def test_get_interpreter(self):
+        with open(sys.executable, "rb") as f:
+            elffile = platform.ELFFile(f)
+            self.assertEqual(elffile.interpreter, "/lib/ld-musl-x86_64.so.1")
 
     def test_init_invalid_magic(self):
         BAD_ELFFILE_HEADER = b"\x7fBAD\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"
