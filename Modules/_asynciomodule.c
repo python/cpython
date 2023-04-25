@@ -3150,6 +3150,7 @@ task_step(asyncio_state *state, TaskObj *task, PyObject *exc)
 static int
 task_eager_start(asyncio_state *state, TaskObj *task)
 {
+    assert(task != NULL);
     PyObject *prevtask = swap_current_task(state, task->task_loop, (PyObject *)task);
     if (prevtask == NULL) {
         return -1;
