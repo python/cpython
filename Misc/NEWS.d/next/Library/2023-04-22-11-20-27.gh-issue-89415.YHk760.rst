@@ -1,1 +1,1 @@
-Add socket module constants for source-specific multicast
+Add :mod:socket constants for source-specific multicast
