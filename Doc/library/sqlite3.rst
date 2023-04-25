@@ -1053,8 +1053,8 @@ Connection objects
 
       :param entrypoint:
 
-         Optional entry point name.
-         If ``None`` (default),
+         Entry point name.
+         If ``None`` (the default),
          SQLite will try to come up with an entry point name of its own.
 
       :type entrypoint: str | None
@@ -1066,7 +1066,7 @@ Connection objects
       .. versionchanged:: 3.10
          Added the ``sqlite3.load_extension`` auditing event.
 
-      .. versionchanged:: 3.12
+      .. versionadded:: 3.12
          The *entrypoint* parameter.
 
    .. method:: iterdump
