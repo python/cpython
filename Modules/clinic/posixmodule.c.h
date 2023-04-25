@@ -1601,6 +1601,120 @@ exit:
 
 #if defined(MS_WINDOWS)
 
+PyDoc_STRVAR(os_listdrives__doc__,
+"listdrives($module, /)\n"
+"--\n"
+"\n"
+"Return a list containing the names of drives in the system.\n"
+"\n"
+"A drive name typically looks like \'C:\\\\\'.");
+
+#define OS_LISTDRIVES_METHODDEF    \
+    {"listdrives", (PyCFunction)os_listdrives, METH_NOARGS, os_listdrives__doc__},
+
+static PyObject *
+os_listdrives_impl(PyObject *module);
+
+static PyObject *
+os_listdrives(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os_listdrives_impl(module);
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_listvolumes__doc__,
+"listvolumes($module, /)\n"
+"--\n"
+"\n"
+"Return a list containing the volumes in the system.\n"
+"\n"
+"Volumes are typically represented as a GUID path.");
+
+#define OS_LISTVOLUMES_METHODDEF    \
+    {"listvolumes", (PyCFunction)os_listvolumes, METH_NOARGS, os_listvolumes__doc__},
+
+static PyObject *
+os_listvolumes_impl(PyObject *module);
+
+static PyObject *
+os_listvolumes(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os_listvolumes_impl(module);
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_listmounts__doc__,
+"listmounts($module, /, volume)\n"
+"--\n"
+"\n"
+"Return a list containing mount points for a particular volume.\n"
+"\n"
+"\'volume\' should be a GUID path as returned from os.listvolumes.");
+
+#define OS_LISTMOUNTS_METHODDEF    \
+    {"listmounts", _PyCFunction_CAST(os_listmounts), METH_FASTCALL|METH_KEYWORDS, os_listmounts__doc__},
+
+static PyObject *
+os_listmounts_impl(PyObject *module, path_t *volume);
+
+static PyObject *
+os_listmounts(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(volume), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"volume", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "listmounts",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    path_t volume = PATH_T_INITIALIZE("listmounts", "volume", 0, 0);
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &volume)) {
+        goto exit;
+    }
+    return_value = os_listmounts_impl(module, &volume);
+
+exit:
+    /* Cleanup for volume */
+    path_cleanup(&volume);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
 PyDoc_STRVAR(os__getfullpathname__doc__,
 "_getfullpathname($module, path, /)\n"
 "--\n"
@@ -11253,6 +11367,18 @@ exit:
     #define OS_LINK_METHODDEF
 #endif /* !defined(OS_LINK_METHODDEF) */
 
+#ifndef OS_LISTDRIVES_METHODDEF
+    #define OS_LISTDRIVES_METHODDEF
+#endif /* !defined(OS_LISTDRIVES_METHODDEF) */
+
+#ifndef OS_LISTVOLUMES_METHODDEF
+    #define OS_LISTVOLUMES_METHODDEF
+#endif /* !defined(OS_LISTVOLUMES_METHODDEF) */
+
+#ifndef OS_LISTMOUNTS_METHODDEF
+    #define OS_LISTMOUNTS_METHODDEF
+#endif /* !defined(OS_LISTMOUNTS_METHODDEF) */
+
 #ifndef OS__GETFULLPATHNAME_METHODDEF
     #define OS__GETFULLPATHNAME_METHODDEF
 #endif /* !defined(OS__GETFULLPATHNAME_METHODDEF) */
@@ -11796,4 +11922,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=9495478e51701b8a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=47750e0e29c8d707 input=a9049054013a1b77]*/

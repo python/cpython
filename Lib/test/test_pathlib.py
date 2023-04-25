@@ -13,6 +13,7 @@ import unittest
 from unittest import mock
 
 from test.support import import_helper
+from test.support import set_recursion_limit
 from test.support import is_emscripten, is_wasi
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
@@ -23,110 +24,17 @@ except ImportError:
     grp = pwd = None
 
 
-class _BaseFlavourTest(object):
-
-    def _check_parse_parts(self, arg, expected):
-        f = self.cls._parse_parts
-        sep = self.flavour.sep
-        altsep = self.flavour.altsep
-        actual = f([x.replace('/', sep) for x in arg])
-        self.assertEqual(actual, expected)
-        if altsep:
-            actual = f([x.replace('/', altsep) for x in arg])
-            self.assertEqual(actual, expected)
-
-    def test_parse_parts_common(self):
-        check = self._check_parse_parts
-        sep = self.flavour.sep
-        # Unanchored parts.
-        check([],                   ('', '', []))
-        check(['a'],                ('', '', ['a']))
-        check(['a/'],               ('', '', ['a']))
-        check(['a', 'b'],           ('', '', ['a', 'b']))
-        # Expansion.
-        check(['a/b'],              ('', '', ['a', 'b']))
-        check(['a/b/'],             ('', '', ['a', 'b']))
-        check(['a', 'b/c', 'd'],    ('', '', ['a', 'b', 'c', 'd']))
-        # Collapsing and stripping excess slashes.
-        check(['a', 'b//c', 'd'],   ('', '', ['a', 'b', 'c', 'd']))
-        check(['a', 'b/c/', 'd'],   ('', '', ['a', 'b', 'c', 'd']))
-        # Eliminating standalone dots.
-        check(['.'],                ('', '', []))
-        check(['.', '.', 'b'],      ('', '', ['b']))
-        check(['a', '.', 'b'],      ('', '', ['a', 'b']))
-        check(['a', '.', '.'],      ('', '', ['a']))
-        # The first part is anchored.
-        check(['/a/b'],             ('', sep, [sep, 'a', 'b']))
-        check(['/a', 'b'],          ('', sep, [sep, 'a', 'b']))
-        check(['/a/', 'b'],         ('', sep, [sep, 'a', 'b']))
-        # Ignoring parts before an anchored part.
-        check(['a', '/b', 'c'],     ('', sep, [sep, 'b', 'c']))
-        check(['a', '/b', '/c'],    ('', sep, [sep, 'c']))
-
-
-class PosixFlavourTest(_BaseFlavourTest, unittest.TestCase):
-    cls = pathlib.PurePosixPath
-    flavour = pathlib.PurePosixPath._flavour
-
-    def test_parse_parts(self):
-        check = self._check_parse_parts
-        # Collapsing of excess leading slashes, except for the double-slash
-        # special case.
-        check(['//a', 'b'],             ('', '//', ['//', 'a', 'b']))
-        check(['///a', 'b'],            ('', '/', ['/', 'a', 'b']))
-        check(['////a', 'b'],           ('', '/', ['/', 'a', 'b']))
-        # Paths which look like NT paths aren't treated specially.
-        check(['c:a'],                  ('', '', ['c:a']))
-        check(['c:\\a'],                ('', '', ['c:\\a']))
-        check(['\\a'],                  ('', '', ['\\a']))
-
-
-class NTFlavourTest(_BaseFlavourTest, unittest.TestCase):
-    cls = pathlib.PureWindowsPath
-    flavour = pathlib.PureWindowsPath._flavour
-
-    def test_parse_parts(self):
-        check = self._check_parse_parts
-        # First part is anchored.
-        check(['c:'],                   ('c:', '', ['c:']))
-        check(['c:/'],                  ('c:', '\\', ['c:\\']))
-        check(['/'],                    ('', '\\', ['\\']))
-        check(['c:a'],                  ('c:', '', ['c:', 'a']))
-        check(['c:/a'],                 ('c:', '\\', ['c:\\', 'a']))
-        check(['/a'],                   ('', '\\', ['\\', 'a']))
-        # UNC paths.
-        check(['//a/b'],                ('\\\\a\\b', '\\', ['\\\\a\\b\\']))
-        check(['//a/b/'],               ('\\\\a\\b', '\\', ['\\\\a\\b\\']))
-        check(['//a/b/c'],              ('\\\\a\\b', '\\', ['\\\\a\\b\\', 'c']))
-        # Second part is anchored, so that the first part is ignored.
-        check(['a', 'Z:b', 'c'],        ('Z:', '', ['Z:', 'b', 'c']))
-        check(['a', 'Z:/b', 'c'],       ('Z:', '\\', ['Z:\\', 'b', 'c']))
-        # UNC paths.
-        check(['a', '//b/c', 'd'],      ('\\\\b\\c', '\\', ['\\\\b\\c\\', 'd']))
-        # Collapsing and stripping excess slashes.
-        check(['a', 'Z://b//c/', 'd/'], ('Z:', '\\', ['Z:\\', 'b', 'c', 'd']))
-        # UNC paths.
-        check(['a', '//b/c//', 'd'],    ('\\\\b\\c', '\\', ['\\\\b\\c\\', 'd']))
-        # Extended paths.
-        check(['//?/c:/'],              ('\\\\?\\c:', '\\', ['\\\\?\\c:\\']))
-        check(['//?/c:/a'],             ('\\\\?\\c:', '\\', ['\\\\?\\c:\\', 'a']))
-        check(['//?/c:/a', '/b'],       ('\\\\?\\c:', '\\', ['\\\\?\\c:\\', 'b']))
-        # Extended UNC paths (format is "\\?\UNC\server\share").
-        check(['//?/UNC/b/c'],          ('\\\\?\\UNC\\b\\c', '\\', ['\\\\?\\UNC\\b\\c\\']))
-        check(['//?/UNC/b/c/d'],        ('\\\\?\\UNC\\b\\c', '\\', ['\\\\?\\UNC\\b\\c\\', 'd']))
-        # Second part has a root but not drive.
-        check(['a', '/b', 'c'],         ('', '\\', ['\\', 'b', 'c']))
-        check(['Z:/a', '/b', 'c'],      ('Z:', '\\', ['Z:\\', 'b', 'c']))
-        check(['//?/Z:/a', '/b', 'c'],  ('\\\\?\\Z:', '\\', ['\\\\?\\Z:\\', 'b', 'c']))
-        # Joining with the same drive => the first path is appended to if
-        # the second path is relative.
-        check(['c:/a/b', 'c:x/y'], ('c:', '\\', ['c:\\', 'a', 'b', 'x', 'y']))
-        check(['c:/a/b', 'c:/x/y'], ('c:', '\\', ['c:\\', 'x', 'y']))
-
-
 #
 # Tests for the pure classes.
 #
+
+class _BasePurePathSubclass(object):
+    init_called = False
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.init_called = True
+
 
 class _BasePurePathTest(object):
 
@@ -165,6 +73,7 @@ class _BasePurePathTest(object):
         self.assertEqual(P(P('a'), 'b'), P('a/b'))
         self.assertEqual(P(P('a'), P('b')), P('a/b'))
         self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
+        self.assertEqual(P(P('./a:b')), P('./a:b'))
 
     def test_bytes(self):
         P = self.cls
@@ -211,6 +120,61 @@ class _BasePurePathTest(object):
         self._check_str_subclass('a')
         self._check_str_subclass('a/b.txt')
         self._check_str_subclass('/a/b.txt')
+
+    def test_init_called_common(self):
+        class P(_BasePurePathSubclass, self.cls):
+            pass
+        p = P('foo', 'bar')
+        self.assertTrue((p / 'foo').init_called)
+        self.assertTrue(('foo' / p).init_called)
+        self.assertTrue(p.joinpath('foo').init_called)
+        self.assertTrue(p.with_name('foo').init_called)
+        self.assertTrue(p.with_stem('foo').init_called)
+        self.assertTrue(p.with_suffix('.foo').init_called)
+        self.assertTrue(p.relative_to('foo').init_called)
+        self.assertTrue(p.parent.init_called)
+        for parent in p.parents:
+            self.assertTrue(parent.init_called)
+
+    def _get_drive_root_parts(self, parts):
+        path = self.cls(*parts)
+        return path.drive, path.root, path.parts
+
+    def _check_drive_root_parts(self, arg, *expected):
+        sep = self.flavour.sep
+        actual = self._get_drive_root_parts([x.replace('/', sep) for x in arg])
+        self.assertEqual(actual, expected)
+        if altsep := self.flavour.altsep:
+            actual = self._get_drive_root_parts([x.replace('/', altsep) for x in arg])
+            self.assertEqual(actual, expected)
+
+    def test_drive_root_parts_common(self):
+        check = self._check_drive_root_parts
+        sep = self.flavour.sep
+        # Unanchored parts.
+        check((),                   '', '', ())
+        check(('a',),               '', '', ('a',))
+        check(('a/',),              '', '', ('a',))
+        check(('a', 'b'),           '', '', ('a', 'b'))
+        # Expansion.
+        check(('a/b',),             '', '', ('a', 'b'))
+        check(('a/b/',),            '', '', ('a', 'b'))
+        check(('a', 'b/c', 'd'),    '', '', ('a', 'b', 'c', 'd'))
+        # Collapsing and stripping excess slashes.
+        check(('a', 'b//c', 'd'),   '', '', ('a', 'b', 'c', 'd'))
+        check(('a', 'b/c/', 'd'),   '', '', ('a', 'b', 'c', 'd'))
+        # Eliminating standalone dots.
+        check(('.',),               '', '', ())
+        check(('.', '.', 'b'),      '', '', ('b',))
+        check(('a', '.', 'b'),      '', '', ('a', 'b'))
+        check(('a', '.', '.'),      '', '', ('a',))
+        # The first part is anchored.
+        check(('/a/b',),            '', sep, (sep, 'a', 'b'))
+        check(('/a', 'b'),          '', sep, (sep, 'a', 'b'))
+        check(('/a/', 'b'),         '', sep, (sep, 'a', 'b'))
+        # Ignoring parts before an anchored part.
+        check(('a', '/b', 'c'),     '', sep, (sep, 'b', 'c'))
+        check(('a', '/b', '/c'),    '', sep, (sep, 'c'))
 
     def test_join_common(self):
         P = self.cls
@@ -382,8 +346,6 @@ class _BasePurePathTest(object):
         p = P('a/b')
         parts = p.parts
         self.assertEqual(parts, ('a', 'b'))
-        # The object gets reused.
-        self.assertIs(parts, p.parts)
         # When the path is absolute, the anchor is a separate part.
         p = P('/a/b')
         parts = p.parts
@@ -736,6 +698,18 @@ class _BasePurePathTest(object):
 class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
     cls = pathlib.PurePosixPath
 
+    def test_drive_root_parts(self):
+        check = self._check_drive_root_parts
+        # Collapsing of excess leading slashes, except for the double-slash
+        # special case.
+        check(('//a', 'b'),             '', '//', ('//', 'a', 'b'))
+        check(('///a', 'b'),            '', '/', ('/', 'a', 'b'))
+        check(('////a', 'b'),           '', '/', ('/', 'a', 'b'))
+        # Paths which look like NT paths aren't treated specially.
+        check(('c:a',),                 '', '', ('c:a',))
+        check(('c:\\a',),               '', '', ('c:\\a',))
+        check(('\\a',),                 '', '', ('\\a',))
+
     def test_root(self):
         P = self.cls
         self.assertEqual(P('/a/b').root, '/')
@@ -814,7 +788,8 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
 
     equivalences = _BasePurePathTest.equivalences.copy()
     equivalences.update({
-        'c:a': [ ('c:', 'a'), ('c:', 'a/'), ('/', 'c:', 'a') ],
+        './a:b': [ ('./a:b',) ],
+        'c:a': [ ('c:', 'a'), ('c:', 'a/'), ('.', 'c:', 'a') ],
         'c:/a': [
             ('c:/', 'a'), ('c:', '/', 'a'), ('c:', '/a'),
             ('/z', 'c:/', 'a'), ('//x/y', 'c:/', 'a'),
@@ -824,6 +799,68 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
             ('//a/b', 'c'), ('//a/b/', 'c'),
             ],
     })
+
+    def test_drive_root_parts(self):
+        check = self._check_drive_root_parts
+        # First part is anchored.
+        check(('c:',),                  'c:', '', ('c:',))
+        check(('c:/',),                 'c:', '\\', ('c:\\',))
+        check(('/',),                   '', '\\', ('\\',))
+        check(('c:a',),                 'c:', '', ('c:', 'a'))
+        check(('c:/a',),                'c:', '\\', ('c:\\', 'a'))
+        check(('/a',),                  '', '\\', ('\\', 'a'))
+        # UNC paths.
+        check(('//',),                  '\\\\', '', ('\\\\',))
+        check(('//a',),                 '\\\\a', '', ('\\\\a',))
+        check(('//a/',),                '\\\\a\\', '', ('\\\\a\\',))
+        check(('//a/b',),               '\\\\a\\b', '\\', ('\\\\a\\b\\',))
+        check(('//a/b/',),              '\\\\a\\b', '\\', ('\\\\a\\b\\',))
+        check(('//a/b/c',),             '\\\\a\\b', '\\', ('\\\\a\\b\\', 'c'))
+        # Second part is anchored, so that the first part is ignored.
+        check(('a', 'Z:b', 'c'),        'Z:', '', ('Z:', 'b', 'c'))
+        check(('a', 'Z:/b', 'c'),       'Z:', '\\', ('Z:\\', 'b', 'c'))
+        # UNC paths.
+        check(('a', '//b/c', 'd'),      '\\\\b\\c', '\\', ('\\\\b\\c\\', 'd'))
+        # Collapsing and stripping excess slashes.
+        check(('a', 'Z://b//c/', 'd/'), 'Z:', '\\', ('Z:\\', 'b', 'c', 'd'))
+        # UNC paths.
+        check(('a', '//b/c//', 'd'),    '\\\\b\\c', '\\', ('\\\\b\\c\\', 'd'))
+        # Extended paths.
+        check(('//./c:',),              '\\\\.\\c:', '', ('\\\\.\\c:',))
+        check(('//?/c:/',),             '\\\\?\\c:', '\\', ('\\\\?\\c:\\',))
+        check(('//?/c:/a',),            '\\\\?\\c:', '\\', ('\\\\?\\c:\\', 'a'))
+        check(('//?/c:/a', '/b'),       '\\\\?\\c:', '\\', ('\\\\?\\c:\\', 'b'))
+        # Extended UNC paths (format is "\\?\UNC\server\share").
+        check(('//?',),                 '\\\\?', '', ('\\\\?',))
+        check(('//?/',),                '\\\\?\\', '', ('\\\\?\\',))
+        check(('//?/UNC',),             '\\\\?\\UNC', '', ('\\\\?\\UNC',))
+        check(('//?/UNC/',),            '\\\\?\\UNC\\', '', ('\\\\?\\UNC\\',))
+        check(('//?/UNC/b',),           '\\\\?\\UNC\\b', '', ('\\\\?\\UNC\\b',))
+        check(('//?/UNC/b/',),          '\\\\?\\UNC\\b\\', '', ('\\\\?\\UNC\\b\\',))
+        check(('//?/UNC/b/c',),         '\\\\?\\UNC\\b\\c', '\\', ('\\\\?\\UNC\\b\\c\\',))
+        check(('//?/UNC/b/c/',),        '\\\\?\\UNC\\b\\c', '\\', ('\\\\?\\UNC\\b\\c\\',))
+        check(('//?/UNC/b/c/d',),       '\\\\?\\UNC\\b\\c', '\\', ('\\\\?\\UNC\\b\\c\\', 'd'))
+        # UNC device paths
+        check(('//./BootPartition/',),   '\\\\.\\BootPartition', '\\', ('\\\\.\\BootPartition\\',))
+        check(('//?/BootPartition/',),   '\\\\?\\BootPartition', '\\', ('\\\\?\\BootPartition\\',))
+        check(('//./PhysicalDrive0',),   '\\\\.\\PhysicalDrive0', '', ('\\\\.\\PhysicalDrive0',))
+        check(('//?/Volume{}/',),        '\\\\?\\Volume{}', '\\', ('\\\\?\\Volume{}\\',))
+        check(('//./nul',),              '\\\\.\\nul', '', ('\\\\.\\nul',))
+        # Second part has a root but not drive.
+        check(('a', '/b', 'c'),         '', '\\', ('\\', 'b', 'c'))
+        check(('Z:/a', '/b', 'c'),      'Z:', '\\', ('Z:\\', 'b', 'c'))
+        check(('//?/Z:/a', '/b', 'c'),  '\\\\?\\Z:', '\\', ('\\\\?\\Z:\\', 'b', 'c'))
+        # Joining with the same drive => the first path is appended to if
+        # the second path is relative.
+        check(('c:/a/b', 'c:x/y'),      'c:', '\\', ('c:\\', 'a', 'b', 'x', 'y'))
+        check(('c:/a/b', 'c:/x/y'),     'c:', '\\', ('c:\\', 'x', 'y'))
+        # Paths to files with NTFS alternate data streams
+        check(('./c:s',),               '', '', ('c:s',))
+        check(('cc:s',),                '', '', ('cc:s',))
+        check(('C:c:s',),               'C:', '', ('C:', 'c:s'))
+        check(('C:/c:s',),              'C:', '\\', ('C:\\', 'c:s'))
+        check(('D:a', './c:b'),         'D:', '', ('D:', 'a', 'c:b'))
+        check(('D:/a', './c:b'),        'D:', '\\', ('D:\\', 'a', 'c:b'))
 
     def test_str(self):
         p = self.cls('a/b/c')
@@ -838,6 +875,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(str(p), '\\\\a\\b\\c\\d')
 
     def test_str_subclass(self):
+        self._check_str_subclass('.\\a:b')
         self._check_str_subclass('c:')
         self._check_str_subclass('c:a')
         self._check_str_subclass('c:a\\b.txt')
@@ -1005,6 +1043,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(P('//a/b').drive, '\\\\a\\b')
         self.assertEqual(P('//a/b/').drive, '\\\\a\\b')
         self.assertEqual(P('//a/b/c/d').drive, '\\\\a\\b')
+        self.assertEqual(P('./c:a').drive, '')
 
     def test_root(self):
         P = self.cls
@@ -1341,6 +1380,21 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(pp, P('C:/a/b/x/y'))
         pp = p.joinpath('c:/x/y')
         self.assertEqual(pp, P('C:/x/y'))
+        # Joining with files with NTFS data streams => the filename should
+        # not be parsed as a drive letter
+        pp = p.joinpath(P('./d:s'))
+        self.assertEqual(pp, P('C:/a/b/d:s'))
+        pp = p.joinpath(P('./dd:s'))
+        self.assertEqual(pp, P('C:/a/b/dd:s'))
+        pp = p.joinpath(P('E:d:s'))
+        self.assertEqual(pp, P('E:d:s'))
+        # Joining onto a UNC path with no root
+        pp = P('//').joinpath('server')
+        self.assertEqual(pp, P('//server'))
+        pp = P('//server').joinpath('share')
+        self.assertEqual(pp, P('//server/share'))
+        pp = P('//./BootPartition').joinpath('Windows')
+        self.assertEqual(pp, P('//./BootPartition/Windows'))
 
     def test_div(self):
         # Basically the same as joinpath().
@@ -1361,6 +1415,11 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         # the second path is relative.
         self.assertEqual(p / 'c:x/y', P('C:/a/b/x/y'))
         self.assertEqual(p / 'c:/x/y', P('C:/x/y'))
+        # Joining with files with NTFS data streams => the filename should
+        # not be parsed as a drive letter
+        self.assertEqual(p / P('./d:s'), P('C:/a/b/d:s'))
+        self.assertEqual(p / P('./dd:s'), P('C:/a/b/dd:s'))
+        self.assertEqual(p / P('E:d:s'), P('E:d:s'))
 
     def test_is_reserved(self):
         P = self.cls
@@ -1626,6 +1685,8 @@ class _BasePathTest(object):
         self.assertEqual(p.expanduser(), p)
         p = P(P('').absolute().anchor) / '~'
         self.assertEqual(p.expanduser(), p)
+        p = P('~/a:b')
+        self.assertEqual(p.expanduser(), P(os.path.expanduser('~'), './a:b'))
 
     def test_exists(self):
         P = self.cls
@@ -2641,20 +2702,20 @@ class WalkTests(unittest.TestCase):
             del self.sub2_tree[1][:1]
 
     def test_walk_topdown(self):
-        all = list(self.walk_path.walk())
-
-        self.assertEqual(len(all), 4)
-        # We can't know which order SUB1 and SUB2 will appear in.
-        # Not flipped:  TESTFN, SUB1, SUB11, SUB2
-        #     flipped:  TESTFN, SUB2, SUB1, SUB11
-        flipped = all[0][1][0] != "SUB1"
-        all[0][1].sort()
-        all[3 - 2 * flipped][-1].sort()
-        all[3 - 2 * flipped][1].sort()
-        self.assertEqual(all[0], (self.walk_path, ["SUB1", "SUB2"], ["tmp1"]))
-        self.assertEqual(all[1 + flipped], (self.sub1_path, ["SUB11"], ["tmp2"]))
-        self.assertEqual(all[2 + flipped], (self.sub11_path, [], []))
-        self.assertEqual(all[3 - 2 * flipped], self.sub2_tree)
+        walker = self.walk_path.walk()
+        entry = next(walker)
+        entry[1].sort()  # Ensure we visit SUB1 before SUB2
+        self.assertEqual(entry, (self.walk_path, ["SUB1", "SUB2"], ["tmp1"]))
+        entry = next(walker)
+        self.assertEqual(entry, (self.sub1_path, ["SUB11"], ["tmp2"]))
+        entry = next(walker)
+        self.assertEqual(entry, (self.sub11_path, [], []))
+        entry = next(walker)
+        entry[1].sort()
+        entry[2].sort()
+        self.assertEqual(entry, self.sub2_tree)
+        with self.assertRaises(StopIteration):
+            next(walker)
 
     def test_walk_prune(self, walk_path=None):
         if walk_path is None:
@@ -2678,24 +2739,37 @@ class WalkTests(unittest.TestCase):
         self.test_walk_prune(FakePath(self.walk_path).__fspath__())
 
     def test_walk_bottom_up(self):
-        all = list(self.walk_path.walk( top_down=False))
-
-        self.assertEqual(len(all), 4, all)
-        # We can't know which order SUB1 and SUB2 will appear in.
-        # Not flipped:  SUB11, SUB1, SUB2, TESTFN
-        #     flipped:  SUB2, SUB11, SUB1, TESTFN
-        flipped = all[3][1][0] != "SUB1"
-        all[3][1].sort()
-        all[2 - 2 * flipped][-1].sort()
-        all[2 - 2 * flipped][1].sort()
-        self.assertEqual(all[3],
-                         (self.walk_path, ["SUB1", "SUB2"], ["tmp1"]))
-        self.assertEqual(all[flipped],
-                         (self.sub11_path, [], []))
-        self.assertEqual(all[flipped + 1],
-                         (self.sub1_path, ["SUB11"], ["tmp2"]))
-        self.assertEqual(all[2 - 2 * flipped],
-                         self.sub2_tree)
+        seen_testfn = seen_sub1 = seen_sub11 = seen_sub2 = False
+        for path, dirnames, filenames in self.walk_path.walk(top_down=False):
+            if path == self.walk_path:
+                self.assertFalse(seen_testfn)
+                self.assertTrue(seen_sub1)
+                self.assertTrue(seen_sub2)
+                self.assertEqual(sorted(dirnames), ["SUB1", "SUB2"])
+                self.assertEqual(filenames, ["tmp1"])
+                seen_testfn = True
+            elif path == self.sub1_path:
+                self.assertFalse(seen_testfn)
+                self.assertFalse(seen_sub1)
+                self.assertTrue(seen_sub11)
+                self.assertEqual(dirnames, ["SUB11"])
+                self.assertEqual(filenames, ["tmp2"])
+                seen_sub1 = True
+            elif path == self.sub11_path:
+                self.assertFalse(seen_sub1)
+                self.assertFalse(seen_sub11)
+                self.assertEqual(dirnames, [])
+                self.assertEqual(filenames, [])
+                seen_sub11 = True
+            elif path == self.sub2_path:
+                self.assertFalse(seen_testfn)
+                self.assertFalse(seen_sub2)
+                self.assertEqual(sorted(dirnames), sorted(self.sub2_tree[1]))
+                self.assertEqual(sorted(filenames), sorted(self.sub2_tree[2]))
+                seen_sub2 = True
+            else:
+                raise AssertionError(f"Unexpected path: {path}")
+        self.assertTrue(seen_testfn)
 
     @os_helper.skip_unless_symlink
     def test_walk_follow_symlinks(self):
@@ -2766,6 +2840,18 @@ class WalkTests(unittest.TestCase):
             for it in iters:
                 self.assertEqual(next(it), expected)
             path = path / 'd'
+
+    def test_walk_above_recursion_limit(self):
+        recursion_limit = 40
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = pathlib.Path(os_helper.TESTFN, 'deep')
+        path = pathlib.Path(base, *(['d'] * directory_depth))
+        path.mkdir(parents=True)
+
+        with set_recursion_limit(recursion_limit):
+            list(base.walk())
+            list(base.walk(top_down=False))
 
 
 class PathTest(_BasePathTest, unittest.TestCase):

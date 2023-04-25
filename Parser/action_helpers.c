@@ -1,6 +1,7 @@
 #include <Python.h>
 
 #include "pegen.h"
+#include "tokenizer.h"
 #include "string_parser.h"
 #include "pycore_runtime.h"         // _PyRuntime
 
@@ -854,96 +855,6 @@ _PyPegen_seq_delete_starred_exprs(Parser *p, asdl_seq *kwargs)
 }
 
 expr_ty
-_PyPegen_concatenate_strings(Parser *p, asdl_seq *strings)
-{
-    Py_ssize_t len = asdl_seq_LEN(strings);
-    assert(len > 0);
-
-    Token *first = asdl_seq_GET_UNTYPED(strings, 0);
-    Token *last = asdl_seq_GET_UNTYPED(strings, len - 1);
-
-    int bytesmode = 0;
-    PyObject *bytes_str = NULL;
-
-    FstringParser state;
-    _PyPegen_FstringParser_Init(&state);
-
-    for (Py_ssize_t i = 0; i < len; i++) {
-        Token *t = asdl_seq_GET_UNTYPED(strings, i);
-
-        int this_bytesmode;
-        int this_rawmode;
-        PyObject *s;
-        const char *fstr;
-        Py_ssize_t fstrlen = -1;
-
-        if (_PyPegen_parsestr(p, &this_bytesmode, &this_rawmode, &s, &fstr, &fstrlen, t) != 0) {
-            goto error;
-        }
-
-        /* Check that we are not mixing bytes with unicode. */
-        if (i != 0 && bytesmode != this_bytesmode) {
-            RAISE_SYNTAX_ERROR("cannot mix bytes and nonbytes literals");
-            Py_XDECREF(s);
-            goto error;
-        }
-        bytesmode = this_bytesmode;
-
-        if (fstr != NULL) {
-            assert(s == NULL && !bytesmode);
-
-            int result = _PyPegen_FstringParser_ConcatFstring(p, &state, &fstr, fstr + fstrlen,
-                                                     this_rawmode, 0, first, t, last);
-            if (result < 0) {
-                goto error;
-            }
-        }
-        else {
-            /* String or byte string. */
-            assert(s != NULL && fstr == NULL);
-            assert(bytesmode ? PyBytes_CheckExact(s) : PyUnicode_CheckExact(s));
-
-            if (bytesmode) {
-                if (i == 0) {
-                    bytes_str = s;
-                }
-                else {
-                    PyBytes_ConcatAndDel(&bytes_str, s);
-                    if (!bytes_str) {
-                        goto error;
-                    }
-                }
-            }
-            else {
-                /* This is a regular string. Concatenate it. */
-                if (_PyPegen_FstringParser_ConcatAndDel(&state, s) < 0) {
-                    goto error;
-                }
-            }
-        }
-    }
-
-    if (bytesmode) {
-        if (_PyArena_AddPyObject(p->arena, bytes_str) < 0) {
-            goto error;
-        }
-        return _PyAST_Constant(bytes_str, NULL, first->lineno,
-                               first->col_offset, last->end_lineno,
-                               last->end_col_offset, p->arena);
-    }
-
-    return _PyPegen_FstringParser_Finish(p, &state, first, last);
-
-error:
-    Py_XDECREF(bytes_str);
-    _PyPegen_FstringParser_Dealloc(&state);
-    if (PyErr_Occurred()) {
-        _Pypegen_raise_decode_error(p);
-    }
-    return NULL;
-}
-
-expr_ty
 _PyPegen_ensure_imaginary(Parser *p, expr_ty exp)
 {
     if (exp->kind != Constant_kind || !PyComplex_CheckExact(exp->v.Constant.value)) {
@@ -1053,6 +964,18 @@ _PyPegen_check_legacy_stmt(Parser *p, expr_ty name) {
     }
     return 0;
 }
+
+expr_ty
+_PyPegen_check_fstring_conversion(Parser *p, Token* symbol, expr_ty conv) {
+    if (symbol->lineno != conv->lineno || symbol->end_col_offset != conv->col_offset) {
+        return RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            symbol, conv,
+            "f-string: conversion type must come right after the exclamanation mark"
+        );
+    }
+    return conv;
+}
+
 
 const char *
 _PyPegen_get_expr_name(expr_ty e)
@@ -1270,4 +1193,440 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq
         _PyPegen_get_last_comprehension_item(last_comprehension),
         "Generator expression must be parenthesized"
     );
+}
+
+// Fstring stuff
+
+static expr_ty
+decode_fstring_buffer(Parser *p, int lineno, int col_offset, int end_lineno,
+                      int end_col_offset)
+{
+    tokenizer_mode *tok_mode = &(p->tok->tok_mode_stack[p->tok->tok_mode_stack_index]);
+    assert(tok_mode->last_expr_buffer != NULL);
+    assert(tok_mode->last_expr_size >= 0 && tok_mode->last_expr_end >= 0);
+
+    PyObject *res = PyUnicode_DecodeUTF8(
+        tok_mode->last_expr_buffer,
+        tok_mode->last_expr_size - tok_mode->last_expr_end,
+        NULL
+    );
+    if (!res || _PyArena_AddPyObject(p->arena, res) < 0) {
+        Py_XDECREF(res);
+        return NULL;
+    }
+
+    return _PyAST_Constant(res, NULL, lineno, col_offset, end_lineno, end_col_offset, p->arena);
+}
+
+static expr_ty
+_PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant) {
+    assert(PyUnicode_CheckExact(constant->v.Constant.value));
+
+    const char* bstr = PyUnicode_AsUTF8(constant->v.Constant.value);
+    if (bstr == NULL) {
+        return NULL;
+    }
+
+    size_t len;
+    if (strcmp(bstr, "{{") == 0 || strcmp(bstr, "}}") == 0) {
+        len = 1;
+    } else {
+        len = strlen(bstr);
+    }
+
+    is_raw = is_raw || strchr(bstr, '\\') == NULL;
+    PyObject *str = _PyPegen_decode_string(p, is_raw, bstr, len, NULL);
+    if (str == NULL) {
+        _Pypegen_raise_decode_error(p);
+        return NULL;
+    }
+    if (_PyArena_AddPyObject(p->arena, str) < 0) {
+        Py_DECREF(str);
+        return NULL;
+    }
+    return _PyAST_Constant(str, NULL, constant->lineno, constant->col_offset,
+                           constant->end_lineno, constant->end_col_offset,
+                           p->arena);
+}
+
+static asdl_expr_seq *
+unpack_top_level_joined_strs(Parser *p, asdl_expr_seq *raw_expressions)
+{
+    /* The parser might put multiple f-string values into an individual
+     * JoinedStr node at the top level due to stuff like f-string debugging
+     * expressions. This function flattens those and promotes them to the
+     * upper level. Only simplifies AST, but the compiler already takes care
+     * of the regular output, so this is not necessary if you are not going
+     * to expose the output AST to Python level. */
+
+    Py_ssize_t i, req_size, raw_size;
+
+    req_size = raw_size = asdl_seq_LEN(raw_expressions);
+    expr_ty expr;
+    for (i = 0; i < raw_size; i++) {
+        expr = asdl_seq_GET(raw_expressions, i);
+        if (expr->kind == JoinedStr_kind) {
+            req_size += asdl_seq_LEN(expr->v.JoinedStr.values) - 1;
+        }
+    }
+
+    asdl_expr_seq *expressions = _Py_asdl_expr_seq_new(req_size, p->arena);
+
+    Py_ssize_t raw_index, req_index = 0;
+    for (raw_index = 0; raw_index < raw_size; raw_index++) {
+        expr = asdl_seq_GET(raw_expressions, raw_index);
+        if (expr->kind == JoinedStr_kind) {
+            asdl_expr_seq *values = expr->v.JoinedStr.values;
+            for (Py_ssize_t n = 0; n < asdl_seq_LEN(values); n++) {
+                asdl_seq_SET(expressions, req_index, asdl_seq_GET(values, n));
+                req_index++;
+            }
+        } else {
+            asdl_seq_SET(expressions, req_index, expr);
+            req_index++;
+        }
+    }
+    return expressions;
+}
+
+expr_ty
+_PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b) {
+    asdl_expr_seq *expr = unpack_top_level_joined_strs(p, raw_expressions);
+    Py_ssize_t n_items = asdl_seq_LEN(expr);
+
+    const char* quote_str = PyBytes_AsString(a->bytes);
+    if (quote_str == NULL) {
+        return NULL;
+    }
+    int is_raw = strpbrk(quote_str, "rR") != NULL;
+
+    asdl_expr_seq *seq = _Py_asdl_expr_seq_new(n_items, p->arena);
+    if (seq == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t index = 0;
+    for (Py_ssize_t i = 0; i < n_items; i++) {
+        expr_ty item = asdl_seq_GET(expr, i);
+        if (item->kind == Constant_kind) {
+            item = _PyPegen_decode_fstring_part(p, is_raw, item);
+            if (item == NULL) {
+                return NULL;
+            }
+
+            /* Tokenizer emits string parts even when the underlying string
+            might become an empty value (e.g. FSTRING_MIDDLE with the value \\n)
+            so we need to check for them and simplify it here. */
+            if (PyUnicode_CheckExact(item->v.Constant.value)
+                && PyUnicode_GET_LENGTH(item->v.Constant.value) == 0) {
+                continue;
+            }
+        }
+        asdl_seq_SET(seq, index++, item);
+    }
+
+    asdl_expr_seq *resized_exprs;
+    if (index != n_items) {
+        resized_exprs = _Py_asdl_expr_seq_new(index, p->arena);
+        if (resized_exprs == NULL) {
+            return NULL;
+        }
+        for (Py_ssize_t i = 0; i < index; i++) {
+            asdl_seq_SET(resized_exprs, i, asdl_seq_GET(seq, i));
+        }
+    }
+    else {
+        resized_exprs = seq;
+    }
+
+    return _PyAST_JoinedStr(resized_exprs, a->lineno, a->col_offset,
+                            b->end_lineno, b->end_col_offset,
+                            p->arena);
+}
+
+expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {
+    char* bstr = PyBytes_AsString(tok->bytes);
+    if (bstr == NULL) {
+        return NULL;
+    }
+    PyObject* str = PyUnicode_FromString(bstr);
+    if (str == NULL) {
+        return NULL;
+    }
+    if (_PyArena_AddPyObject(p->arena, str) < 0) {
+        Py_DECREF(str);
+        return NULL;
+    }
+    return _PyAST_Constant(str, NULL, tok->lineno, tok->col_offset,
+                           tok->end_lineno, tok->end_col_offset,
+                           p->arena);
+}
+
+expr_ty _PyPegen_constant_from_string(Parser* p, Token* tok) {
+    char* the_str = PyBytes_AsString(tok->bytes);
+    if (the_str == NULL) {
+        return NULL;
+    }
+    PyObject *s = _PyPegen_parse_string(p, tok);
+    if (s == NULL) {
+        _Pypegen_raise_decode_error(p);
+        return NULL;
+    }
+    if (_PyArena_AddPyObject(p->arena, s) < 0) {
+        Py_DECREF(s);
+        return NULL;
+    }
+    PyObject *kind = NULL;
+    if (the_str && the_str[0] == 'u') {
+        kind = _PyPegen_new_identifier(p, "u");
+        if (kind == NULL) {
+            return NULL;
+        }
+    }
+    return _PyAST_Constant(s, kind, tok->lineno, tok->col_offset, tok->end_lineno, tok->end_col_offset, p->arena);
+}
+
+expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, expr_ty conversion,
+                                 expr_ty format, int lineno, int col_offset, int end_lineno, int end_col_offset,
+                                 PyArena *arena) {
+    int conversion_val = -1;
+    if (conversion != NULL) {
+        assert(conversion->kind == Name_kind);
+        Py_UCS4 first = PyUnicode_READ_CHAR(conversion->v.Name.id, 0);
+
+        if (PyUnicode_GET_LENGTH(conversion->v.Name.id) > 1 ||
+            !(first == 's' || first == 'r' || first == 'a')) {
+            RAISE_SYNTAX_ERROR_KNOWN_LOCATION(conversion,
+                                              "f-string: invalid conversion character %R: expected 's', 'r', or 'a'",
+                                              conversion->v.Name.id);
+            return NULL;
+        }
+
+        conversion_val = Py_SAFE_DOWNCAST(first, Py_UCS4, int);
+    }
+    else if (debug && !format) {
+        /* If no conversion is specified, use !r for debug expressions */
+        conversion_val = (int)'r';
+    }
+
+    expr_ty formatted_value = _PyAST_FormattedValue(
+        expression, conversion_val, format,
+        lineno, col_offset, end_lineno,
+        end_col_offset, arena
+    );
+
+    if (debug) {
+        /* Find the non whitespace token after the "=" */
+        int debug_end_line, debug_end_offset;
+
+        if (conversion) {
+            debug_end_line = conversion->lineno;
+            debug_end_offset = conversion->col_offset;
+        }
+        else if (format) {
+            debug_end_line = format->lineno;
+            debug_end_offset = format->col_offset + 1; // HACK: ??
+        }
+        else {
+            debug_end_line = end_lineno;
+            debug_end_offset = end_col_offset;
+        }
+
+        expr_ty debug_text = decode_fstring_buffer(p, lineno, col_offset + 1,
+                                                   debug_end_line, debug_end_offset - 1);
+        if (!debug_text) {
+            return NULL;
+        }
+
+        asdl_expr_seq *values = _Py_asdl_expr_seq_new(2, arena);
+        asdl_seq_SET(values, 0, debug_text);
+        asdl_seq_SET(values, 1, formatted_value);
+        return _PyAST_JoinedStr(values, lineno, col_offset, debug_end_line, debug_end_offset, p->arena);
+    }
+    else {
+        return formatted_value;
+    }
+}
+
+expr_ty
+_PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
+                             int lineno, int col_offset, int end_lineno,
+                             int end_col_offset, PyArena *arena)
+{
+    Py_ssize_t len = asdl_seq_LEN(strings);
+    assert(len > 0);
+
+    int f_string_found = 0;
+    int unicode_string_found = 0;
+    int bytes_found = 0;
+
+    Py_ssize_t i = 0;
+    Py_ssize_t n_flattened_elements = 0;
+    for (i = 0; i < len; i++) {
+        expr_ty elem = asdl_seq_GET(strings, i);
+        if (elem->kind == Constant_kind) {
+            if (PyBytes_CheckExact(elem->v.Constant.value)) {
+                bytes_found = 1;
+            } else {
+                unicode_string_found = 1;
+            }
+            n_flattened_elements++;
+        } else {
+            n_flattened_elements += asdl_seq_LEN(elem->v.JoinedStr.values);
+            f_string_found = 1;
+        }
+    }
+
+    if ((unicode_string_found || f_string_found) && bytes_found) {
+        RAISE_SYNTAX_ERROR("cannot mix bytes and nonbytes literals");
+        return NULL;
+    }
+
+    if (bytes_found) {
+        PyObject* res = PyBytes_FromString("");
+
+        /* Bytes literals never get a kind, but just for consistency
+           since they are represented as Constant nodes, we'll mirror
+           the same behavior as unicode strings for determining the
+           kind. */
+        PyObject* kind = asdl_seq_GET(strings, 0)->v.Constant.kind;
+        for (i = 0; i < len; i++) {
+            expr_ty elem = asdl_seq_GET(strings, i);
+            PyBytes_Concat(&res, elem->v.Constant.value);
+        }
+        if (!res || _PyArena_AddPyObject(arena, res) < 0) {
+            Py_XDECREF(res);
+            return NULL;
+        }
+        return _PyAST_Constant(res, kind, lineno, col_offset, end_lineno, end_col_offset, p->arena);
+    }
+
+    if (!f_string_found && len == 1) {
+        return asdl_seq_GET(strings, 0);
+    }
+
+    asdl_expr_seq* flattened = _Py_asdl_expr_seq_new(n_flattened_elements, p->arena);
+    if (flattened == NULL) {
+        return NULL;
+    }
+
+    /* build flattened list */
+    Py_ssize_t current_pos = 0;
+    Py_ssize_t j = 0;
+    for (i = 0; i < len; i++) {
+        expr_ty elem = asdl_seq_GET(strings, i);
+        if (elem->kind == Constant_kind) {
+            asdl_seq_SET(flattened, current_pos++, elem);
+        } else {
+            for (j = 0; j < asdl_seq_LEN(elem->v.JoinedStr.values); j++) {
+                expr_ty subvalue = asdl_seq_GET(elem->v.JoinedStr.values, j);
+                if (subvalue == NULL) {
+                    return NULL;
+                }
+                asdl_seq_SET(flattened, current_pos++, subvalue);
+            }
+        }
+    }
+
+    /* calculate folded element count */
+    Py_ssize_t n_elements = 0;
+    int prev_is_constant = 0;
+    for (i = 0; i < n_flattened_elements; i++) {
+        expr_ty elem = asdl_seq_GET(flattened, i);
+
+        /* The concatenation of a FormattedValue and an empty Contant should
+           lead to the FormattedValue itself. Thus, we will not take any empty
+           constants into account, just as in `_PyPegen_joined_str` */
+        if (f_string_found && elem->kind == Constant_kind &&
+            PyUnicode_CheckExact(elem->v.Constant.value) &&
+            PyUnicode_GET_LENGTH(elem->v.Constant.value) == 0)
+            continue;
+
+        if (!prev_is_constant || elem->kind != Constant_kind) {
+            n_elements++;
+        }
+        prev_is_constant = elem->kind == Constant_kind;
+    }
+
+    asdl_expr_seq* values = _Py_asdl_expr_seq_new(n_elements, p->arena);
+    if (values == NULL) {
+        return NULL;
+    }
+
+    /* build folded list */
+    _PyUnicodeWriter writer;
+    current_pos = 0;
+    for (i = 0; i < n_flattened_elements; i++) {
+        expr_ty elem = asdl_seq_GET(flattened, i);
+
+        /* if the current elem and the following are constants,
+           fold them and all consequent constants */
+        if (elem->kind == Constant_kind) {
+            if (i + 1 < n_flattened_elements &&
+                asdl_seq_GET(flattened, i + 1)->kind == Constant_kind) {
+                expr_ty first_elem = elem;
+
+                /* When a string is getting concatenated, the kind of the string
+                   is determined by the first string in the concatenation
+                   sequence.
+
+                   u"abc" "def" -> u"abcdef"
+                   "abc" u"abc" ->  "abcabc" */
+                PyObject *kind = elem->v.Constant.kind;
+
+                _PyUnicodeWriter_Init(&writer);
+                expr_ty last_elem = elem;
+                for (j = i; j < n_flattened_elements; j++) {
+                    expr_ty current_elem = asdl_seq_GET(flattened, j);
+                    if (current_elem->kind == Constant_kind) {
+                        if (_PyUnicodeWriter_WriteStr(
+                                &writer, current_elem->v.Constant.value)) {
+                            _PyUnicodeWriter_Dealloc(&writer);
+                            return NULL;
+                        }
+                        last_elem = current_elem;
+                    } else {
+                        break;
+                    }
+                }
+                i = j - 1;
+
+                PyObject *concat_str = _PyUnicodeWriter_Finish(&writer);
+                if (concat_str == NULL) {
+                    _PyUnicodeWriter_Dealloc(&writer);
+                    return NULL;
+                }
+                if (_PyArena_AddPyObject(p->arena, concat_str) < 0) {
+                    Py_DECREF(concat_str);
+                    return NULL;
+                }
+                elem = _PyAST_Constant(concat_str, kind, first_elem->lineno,
+                                       first_elem->col_offset,
+                                       last_elem->end_lineno,
+                                       last_elem->end_col_offset, p->arena);
+                if (elem == NULL) {
+                    return NULL;
+                }
+            }
+
+            /* Drop all empty contanst strings */
+            if (f_string_found &&
+                PyUnicode_CheckExact(elem->v.Constant.value) &&
+                PyUnicode_GET_LENGTH(elem->v.Constant.value) == 0) {
+                continue;
+            }
+        }
+
+        asdl_seq_SET(values, current_pos++, elem);
+    }
+
+    if (!f_string_found) {
+        assert(n_elements == 1);
+        expr_ty elem = asdl_seq_GET(values, 0);
+        assert(elem->kind == Constant_kind);
+        return elem;
+    }
+
+    assert(current_pos == n_elements);
+    return _PyAST_JoinedStr(values, lineno, col_offset, end_lineno, end_col_offset, p->arena);
 }

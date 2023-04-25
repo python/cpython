@@ -748,6 +748,48 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertEqual(list_to_buffer([b'data']), transport._buffer)
 
     @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
+    def test_writelines_sendmsg_full(self):
+        data = memoryview(b'data')
+        self.sock.sendmsg = mock.Mock()
+        self.sock.sendmsg.return_value = len(data)
+
+        transport = self.socket_transport(sendmsg=True)
+        transport.writelines([data])
+        self.assertTrue(self.sock.sendmsg.called)
+        self.assertFalse(self.loop.writers)
+
+    @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
+    def test_writelines_sendmsg_partial(self):
+        data = memoryview(b'data')
+        self.sock.sendmsg = mock.Mock()
+        self.sock.sendmsg.return_value = 2
+
+        transport = self.socket_transport(sendmsg=True)
+        transport.writelines([data])
+        self.assertTrue(self.sock.sendmsg.called)
+        self.assertTrue(self.loop.writers)
+
+    def test_writelines_send_full(self):
+        data = memoryview(b'data')
+        self.sock.send.return_value = len(data)
+        self.sock.send.fileno.return_value = 7
+
+        transport = self.socket_transport()
+        transport.writelines([data])
+        self.assertTrue(self.sock.send.called)
+        self.assertFalse(self.loop.writers)
+
+    def test_writelines_send_partial(self):
+        data = memoryview(b'data')
+        self.sock.send.return_value = 2
+        self.sock.send.fileno.return_value = 7
+
+        transport = self.socket_transport()
+        transport.writelines([data])
+        self.assertTrue(self.sock.send.called)
+        self.assertTrue(self.loop.writers)
+
+    @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
     def test_write_sendmsg_full(self):
         data = memoryview(b'data')
         self.sock.sendmsg = mock.Mock()

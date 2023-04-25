@@ -38,6 +38,7 @@ CC=		@CC@
 CXX=		@CXX@
 LINKCC=		@LINKCC@
 AR=		@AR@
+READELF=	@READELF@
 SOABI=		@SOABI@
 LDVERSION=	@LDVERSION@
 LIBPYTHON=	@LIBPYTHON@
@@ -59,7 +60,7 @@ DSYMUTIL_PATH=  @DSYMUTIL_PATH@
 GNULD=		@GNULD@
 
 # Shell used by make (some versions default to the login shell, which is bad)
-SHELL=		/bin/sh
+SHELL=		/bin/sh -e
 
 # Use this to make a link between python$(VERSION) and python in $(BINDIR)
 LN=		@LN@
@@ -369,6 +370,7 @@ PYTHON_OBJS=	\
 		Python/Python-ast.o \
 		Python/Python-tokenize.o \
 		Python/asdl.o \
+		Python/assemble.o \
 		Python/ast.o \
 		Python/ast_opt.o \
 		Python/ast_unparse.o \
@@ -379,6 +381,7 @@ PYTHON_OBJS=	\
 		Python/context.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
+		Python/flowgraph.o \
 		Python/frame.o \
 		Python/frozenmain.o \
 		Python/future.o \
@@ -393,7 +396,9 @@ PYTHON_OBJS=	\
 		Python/import.o \
 		Python/importdl.o \
 		Python/initconfig.o \
+		Python/instrumentation.o \
 		Python/intrinsics.o \
+		Python/legacy_tracing.o \
 		Python/marshal.o \
 		Python/modsupport.o \
 		Python/mysnprintf.o \
@@ -666,13 +671,18 @@ profile-opt: profile-run-stamp
 
 bolt-opt: @PREBOLT_RULE@
 	rm -f *.fdata
-	@LLVM_BOLT@ ./$(BUILDPYTHON) -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $(BUILDPYTHON).bolt) -o $(BUILDPYTHON).bolt_inst
-	./$(BUILDPYTHON).bolt_inst $(PROFILE_TASK) || true
-	@MERGE_FDATA@ $(BUILDPYTHON).*.fdata > $(BUILDPYTHON).fdata
-	@LLVM_BOLT@ ./$(BUILDPYTHON) -o $(BUILDPYTHON).bolt -data=$(BUILDPYTHON).fdata -update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=all -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot
-	rm -f *.fdata
-	rm -f $(BUILDPYTHON).bolt_inst
-	mv $(BUILDPYTHON).bolt $(BUILDPYTHON)
+	@if $(READELF) -p .note.bolt_info $(BUILDPYTHON) | grep BOLT > /dev/null; then\
+		echo "skip: $(BUILDPYTHON) is already BOLTed."; \
+	else \
+		@LLVM_BOLT@ ./$(BUILDPYTHON) -instrument -instrumentation-file-append-pid -instrumentation-file=$(abspath $(BUILDPYTHON).bolt) -o $(BUILDPYTHON).bolt_inst; \
+		./$(BUILDPYTHON).bolt_inst $(PROFILE_TASK) || true; \
+		@MERGE_FDATA@ $(BUILDPYTHON).*.fdata > $(BUILDPYTHON).fdata; \
+		@LLVM_BOLT@ ./$(BUILDPYTHON) -o $(BUILDPYTHON).bolt -data=$(BUILDPYTHON).fdata -update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot; \
+		rm -f *.fdata; \
+		rm -f $(BUILDPYTHON).bolt_inst; \
+		mv $(BUILDPYTHON).bolt $(BUILDPYTHON); \
+	fi
+
 
 # Compile and run with gcov
 .PHONY=coverage coverage-lcov coverage-report
@@ -972,7 +982,7 @@ Makefile Modules/config.c: Makefile.pre \
 				Modules/Setup.local \
 				Modules/Setup.bootstrap \
 				Modules/Setup.stdlib
-	$(SHELL) $(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
+	$(MAKESETUP) -c $(srcdir)/Modules/config.c.in \
 				-s Modules \
 				Modules/Setup.local \
 				Modules/Setup.stdlib \
@@ -1184,7 +1194,7 @@ Tools/build/freeze_modules.py: $(FREEZE_MODULE)
 
 .PHONY: regen-frozen
 regen-frozen: Tools/build/freeze_modules.py $(FROZEN_FILES_IN)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/freeze_modules.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/freeze_modules.py --frozen-modules
 	@echo "The Makefile was updated, you may need to re-run make."
 
 ############################################################################
@@ -1485,6 +1495,7 @@ regen-cases:
 	PYTHONPATH=$(srcdir)/Tools/cases_generator \
 	$(PYTHON_FOR_REGEN) \
 	    $(srcdir)/Tools/cases_generator/generate_cases.py \
+		--emit-line-directives \
 		-o $(srcdir)/Python/generated_cases.c.h.new \
 		-m $(srcdir)/Python/opcode_metadata.h.new \
 		$(srcdir)/Python/bytecodes.c
@@ -1658,6 +1669,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_asdl.h \
 		$(srcdir)/Include/internal/pycore_ast.h \
 		$(srcdir)/Include/internal/pycore_ast_state.h \
+		$(srcdir)/Include/internal/pycore_atexit.h \
 		$(srcdir)/Include/internal/pycore_atomic.h \
 		$(srcdir)/Include/internal/pycore_atomic_funcs.h \
 		$(srcdir)/Include/internal/pycore_bitutils.h \
@@ -1698,8 +1710,11 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_moduleobject.h \
 		$(srcdir)/Include/internal/pycore_namespace.h \
 		$(srcdir)/Include/internal/pycore_object.h \
+		$(srcdir)/Include/internal/pycore_object_state.h \
 		$(srcdir)/Include/internal/pycore_obmalloc.h \
 		$(srcdir)/Include/internal/pycore_obmalloc_init.h \
+		$(srcdir)/Include/internal/pycore_opcode.h \
+		$(srcdir)/Include/internal/pycore_opcode_utils.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyarena.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \
@@ -2408,12 +2423,12 @@ frameworkinstallextras:
 
 # Build the toplevel Makefile
 Makefile.pre: $(srcdir)/Makefile.pre.in config.status
-	CONFIG_FILES=Makefile.pre CONFIG_HEADERS= $(SHELL) config.status
+	CONFIG_FILES=Makefile.pre CONFIG_HEADERS= ./config.status
 	$(MAKE) -f Makefile.pre Makefile
 
 # Run the configure script.
 config.status:	$(srcdir)/configure
-	$(SHELL) $(srcdir)/configure $(CONFIG_ARGS)
+	$(srcdir)/configure $(CONFIG_ARGS)
 
 .PRECIOUS: config.status $(BUILDPYTHON) Makefile Makefile.pre
 
@@ -2438,8 +2453,8 @@ reindent:
 # Rerun configure with the same options as it was run last time,
 # provided the config.status script exists
 recheck:
-	$(SHELL) config.status --recheck
-	$(SHELL) config.status
+	./config.status --recheck
+	./config.status
 
 # Regenerate configure and pyconfig.h.in
 .PHONY: autoconf
@@ -2560,6 +2575,12 @@ distclean: clobber docclean
 smelly: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/smelly.py
 
+# Check if any unsupported C global variables have been added.
+check-c-globals:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/c-analyzer/check-c-globals.py \
+		--format summary \
+		--traceback
+
 # Find files with funny names
 funny:
 	find $(SUBDIRS) $(SUBDIRSTOO) \
@@ -2647,6 +2668,15 @@ MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data.h $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/testcapi_long.h $(srcdir)/Modules/_testcapi/parts.h
 MODULE__SQLITE3_DEPS=$(srcdir)/Modules/_sqlite/connection.h $(srcdir)/Modules/_sqlite/cursor.h $(srcdir)/Modules/_sqlite/microprotocols.h $(srcdir)/Modules/_sqlite/module.h $(srcdir)/Modules/_sqlite/prepare_protocol.h $(srcdir)/Modules/_sqlite/row.h $(srcdir)/Modules/_sqlite/util.h
+
+CODECS_COMMON_HEADERS=$(srcdir)/Modules/cjkcodecs/multibytecodec.h $(srcdir)/Modules/cjkcodecs/cjkcodecs.h
+MODULE__CODECS_CN_DEPS=$(srcdir)/Modules/cjkcodecs/mappings_cn.h $(CODECS_COMMON_HEADERS)
+MODULE__CODECS_HK_DEPS=$(srcdir)/Modules/cjkcodecs/mappings_hk.h  $(CODECS_COMMON_HEADERS)
+MODULE__CODECS_ISO2022_DEPS=$(srcdir)/Modules/cjkcodecs/mappings_jisx0213_pair.h $(srcdir)/Modules/cjkcodecs/alg_jisx0201.h $(srcdir)/Modules/cjkcodecs/emu_jisx0213_2000.h $(CODECS_COMMON_HEADERS)
+MODULE__CODECS_JP_DEPS=$(srcdir)/Modules/cjkcodecs/mappings_jisx0213_pair.h $(srcdir)/Modules/cjkcodecs/alg_jisx0201.h $(srcdir)/Modules/cjkcodecs/emu_jisx0213_2000.h $(srcdir)/Modules/cjkcodecs/mappings_jp.h $(CODECS_COMMON_HEADERS)
+MODULE__CODECS_KR_DEPS=$(srcdir)/Modules/cjkcodecs/mappings_kr.h $(CODECS_COMMON_HEADERS)
+MODULE__CODECS_TW_DEPS=$(srcdir)/Modules/cjkcodecs/mappings_tw.h $(CODECS_COMMON_HEADERS)
+MODULE__MULTIBYTECODEC_DEPS=$(srcdir)/Modules/cjkcodecs/multibytecodec.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
 # Local Variables:

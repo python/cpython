@@ -61,7 +61,7 @@ running from a virtual environment.
 A virtual environment may be "activated" using a script in its binary directory
 (``bin`` on POSIX; ``Scripts`` on Windows).
 This will prepend that directory to your :envvar:`!PATH`, so that running
-:program:`!python` will invoke the environment's Python interpreter
+:program:`python` will invoke the environment's Python interpreter
 and you can run installed scripts without having to use their full path.
 The invocation of the activation script is platform-specific
 (:samp:`{<venv>}` must be replaced by the path to the directory
@@ -84,7 +84,7 @@ containing the virtual environment):
 +-------------+------------+--------------------------------------------------+
 
 .. versionadded:: 3.4
-   :program:`!fish` and :program:`!csh` activation scripts.
+   :program:`fish` and :program:`csh` activation scripts.
 
 .. versionadded:: 3.8
    PowerShell activation scripts installed under POSIX for PowerShell Core
@@ -284,11 +284,14 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. method:: upgrade_dependencies(context)
 
-       Upgrades the core venv dependency packages (currently ``pip`` and
-       ``setuptools``) in the environment. This is done by shelling out to the
+       Upgrades the core venv dependency packages (currently ``pip``)
+       in the environment. This is done by shelling out to the
        ``pip`` executable in the environment.
 
        .. versionadded:: 3.9
+       .. versionchanged:: 3.12
+
+          ``setuptools`` is no longer a core venv dependency.
 
     .. method:: post_setup(context)
 
