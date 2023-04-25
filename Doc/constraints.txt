@@ -1,0 +1,17 @@
+babel<3
+colorama<0.5
+imagesize<1.5
+Jinja2<3.2
+MarkupSafe<2.2
+packaging<24
+polib<1.3
+Pygments<2.16,!=2.15.0  # Pygments==2.15.0 breaks CI
+regex<2024
+requests<3
+snowballstemmer<3
+sphinxcontrib-applehelp<1.1
+sphinxcontrib-devhelp<1.1
+sphinxcontrib-htmlhelp<2.1
+sphinxcontrib-jsmath<1.1
+sphinxcontrib-qthelp<1.1
+sphinxcontrib-serializinghtml<1.2

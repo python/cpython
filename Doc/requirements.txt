@@ -13,3 +13,7 @@ sphinxext-opengraph==0.7.5
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.
 python-docs-theme>=2022.1
+
+# We have upper bounds on our transitive dependencies in constraints.txt
+# To avoid new releases unexpectedly breaking our build
+-c constraints.txt
