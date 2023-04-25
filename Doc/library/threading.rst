@@ -596,7 +596,7 @@ no thread owns it.
 
 To lock the lock, a thread calls its :meth:`~RLock.acquire` method.  To unlock
 the lock, a thread calls its :meth:`~Lock.release` method. Reentrant locks
-support the :ref:`context management protocol <with-locks>` so `with` can be used.
+support the :ref:`context management protocol <with-locks>` so ```with``` can be used.
 
 RLock's :meth:`~RLock.acquire`/:meth:`~RLock.release` call pairs may be nested,
 unlike Lock's :meth:`~Lock.acquire`/:meth:`~Lock.release`. Only the final
