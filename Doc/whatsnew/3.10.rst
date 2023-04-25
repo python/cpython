@@ -2332,3 +2332,19 @@ The deprecated :mod:`mailcap` module now refuses to inject unsafe text
 text, it will warn and act as if a match was not found (or for test commands,
 as if the test failed).
 (Contributed by Petr Viktorin in :gh:`98966`.)
+
+Notable Changes in 3.10.12
+==========================
+
+tarfile
+-------
+
+* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+  have a new a *filter* argument that allows limiting tar features than may be
+  surprising or dangerous, such as creating files outside the destination
+  directory.
+  See :ref:`tarfile-extraction-filter` for details.
+  In Python 3.12, use without the *filter* argument will show a
+  :exc:`DeprecationWarning`.
+  In Python 3.14, the default will switch to ``'data'``.
+  (Contributed by Petr Viktorin in :pep:`706`.)
