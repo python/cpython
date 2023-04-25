@@ -1315,6 +1315,7 @@ typealias_repr(PyObject *self)
             goto error;
         }
         result = PyUnicode_FromFormat("<type alias %s[%U]: %U>", ta->name, params_repr, value_repr);
+        Py_DECREF(params_repr);
     }
     else {
         result = PyUnicode_FromFormat("<type alias %s: %U>", ta->name, value_repr);
