@@ -147,10 +147,14 @@ get_types(PyObject **obj, Py_ssize_t *size)
 static int
 is_unionable(PyObject *obj)
 {
-    return (obj == Py_None ||
+    if (obj == Py_None ||
         PyType_Check(obj) ||
         _PyGenericAlias_Check(obj) ||
-        _PyUnion_Check(obj));
+        _PyUnion_Check(obj)) {
+        return 1;
+    }
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    return Py_IS_TYPE(obj, interp->cached_objects.typealias_type);
 }
 
 PyObject *

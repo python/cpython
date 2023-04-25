@@ -1289,6 +1289,7 @@ static PyType_Slot typealias_slots[] = {
     {Py_tp_free, PyObject_GC_Del},
     {Py_tp_traverse, (traverseproc)typealias_traverse},
     {Py_tp_repr, typealias_repr},
+    {Py_nb_or, _Py_union_type_or},
     {0, 0},
 };
 
