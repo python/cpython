@@ -99,6 +99,26 @@ class TypeParamsInvalidTest(unittest.TestCase):
         )
         exec(code, {})
 
+    def test_disallowed_expressions(self):
+        with self.assertRaises(SyntaxError):
+            exec("type X = (yield)", {})
+        with self.assertRaises(SyntaxError):
+            exec("type X = (yield from x)", {})
+        with self.assertRaises(SyntaxError):
+            exec("type X = (await 42)", {})
+        with self.assertRaises(SyntaxError):
+            exec("async def f(): type X = (yield)", {})
+        with self.assertRaises(SyntaxError):
+            exec("type X = (y := 3)", {})
+        with self.assertRaises(SyntaxError):
+            exec("class X[T: (yield)]: pass", {})
+        with self.assertRaises(SyntaxError):
+            exec("class X[T: (yield from x)]: pass", {})
+        with self.assertRaises(SyntaxError):
+            exec("class X[T: (await 42)]: pass", {})
+        with self.assertRaises(SyntaxError):
+            exec("class X[T: (y := 3)]: pass", {})
+
 
 class TypeParamsAccessTest(unittest.TestCase):
     def test_class_access_01(self):

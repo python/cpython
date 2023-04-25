@@ -2983,7 +2983,7 @@ compiler_return(struct compiler *c, stmt_ty s)
     location loc = LOC(s);
     int preserve_tos = ((s->v.Return.value != NULL) &&
                         (s->v.Return.value->kind != Constant_kind));
-    if (c->u->u_ste->ste_type != FunctionBlock) {
+    if (!_PyST_IsFunctionLike(c->u->u_ste)) {
         return compiler_error(c, loc, "'return' outside function");
     }
     if (s->v.Return.value != NULL &&
@@ -4005,11 +4005,11 @@ compiler_nameop(struct compiler *c, location loc,
         optype = OP_DEREF;
         break;
     case LOCAL:
-        if (c->u->u_ste->ste_type == FunctionBlock)
+        if (_PyST_IsFunctionLike(c->u->u_ste))
             optype = OP_FAST;
         break;
     case GLOBAL_IMPLICIT:
-        if (c->u->u_ste->ste_type == FunctionBlock)
+        if (_PyST_IsFunctionLike(c->u->u_ste))
             optype = OP_GLOBAL;
         break;
     case GLOBAL_EXPLICIT:
@@ -5674,7 +5674,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case DictComp_kind:
         return compiler_dictcomp(c, e);
     case Yield_kind:
-        if (c->u->u_ste->ste_type != FunctionBlock) {
+        if (!_PyST_IsFunctionLike(c->u->u_ste)) {
             return compiler_error(c, loc, "'yield' outside function");
         }
         if (e->v.Yield.value) {
@@ -5686,7 +5686,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         ADDOP_YIELD(c, loc);
         break;
     case YieldFrom_kind:
-        if (c->u->u_ste->ste_type != FunctionBlock) {
+        if (!_PyST_IsFunctionLike(c->u->u_ste)) {
             return compiler_error(c, loc, "'yield' outside function");
         }
         if (c->u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION) {
@@ -5699,7 +5699,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     case Await_kind:
         if (!IS_TOP_LEVEL_AWAIT(c)){
-            if (c->u->u_ste->ste_type != FunctionBlock){
+            if (!_PyST_IsFunctionLike(c->u->u_ste)) {
                 return compiler_error(c, loc, "'await' outside function");
             }
 
@@ -6986,7 +6986,7 @@ compute_code_flags(struct compiler *c)
 {
     PySTEntryObject *ste = c->u->u_ste;
     int flags = 0;
-    if (ste->ste_type == FunctionBlock) {
+    if (_PyST_IsFunctionLike(c->u->u_ste)) {
         flags |= CO_NEWLOCALS | CO_OPTIMIZED;
         if (ste->ste_nested)
             flags |= CO_NESTED;

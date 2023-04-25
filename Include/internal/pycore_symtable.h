@@ -10,7 +10,8 @@ extern "C" {
 
 struct _mod;   // Type defined in pycore_ast.h
 
-typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock, AnnotationBlock }
+typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock,
+                           AnnotationBlock, TypeVarBoundBlock, TypeAliasBlock }
     _Py_block_ty;
 
 typedef enum _comprehension_type {
@@ -83,6 +84,7 @@ extern PyTypeObject PySTEntry_Type;
 
 extern long _PyST_GetSymbol(PySTEntryObject *, PyObject *);
 extern int _PyST_GetScope(PySTEntryObject *, PyObject *);
+extern int _PyST_IsFunctionLike(PySTEntryObject *);
 
 extern struct symtable* _PySymtable_Build(
     struct _mod *mod,

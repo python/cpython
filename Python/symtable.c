@@ -47,6 +47,12 @@
 #define ANNOTATION_NOT_ALLOWED \
 "'%s' can not be used within an annotation"
 
+#define TYPEVAR_BOUND_NOT_ALLOWED \
+"'%s' can not be used within a TypeVar bound"
+
+#define TYPEALIAS_NOT_ALLOWED \
+"'%s' can not be used within a type alias"
+
 #define DUPLICATE_TYPE_PARAM \
 "duplicate type parameter '%U'"
 
@@ -98,7 +104,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 
     if (st->st_cur != NULL &&
         (st->st_cur->ste_nested ||
-         st->st_cur->ste_type == FunctionBlock))
+         _PyST_IsFunctionLike(st->st_cur)))
         ste->ste_nested = 1;
     ste->ste_child_free = 0;
     ste->ste_generator = 0;
@@ -405,6 +411,14 @@ _PyST_GetScope(PySTEntryObject *ste, PyObject *name)
 {
     long symbol = _PyST_GetSymbol(ste, name);
     return (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
+}
+
+int
+_PyST_IsFunctionLike(PySTEntryObject *ste)
+{
+    return ste->ste_type == FunctionBlock
+        || ste->ste_type == TypeVarBoundBlock
+        || ste->ste_type == TypeAliasBlock;
 }
 
 static int
@@ -818,7 +832,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     /* Populate global and bound sets to be passed to children. */
     if (ste->ste_type != ClassBlock) {
         /* Add function locals to bound set */
-        if (ste->ste_type == FunctionBlock) {
+        if (_PyST_IsFunctionLike(ste)) {
             if (PyDict_Update(newbound, local) < 0) {
                 goto error;
             }
@@ -876,7 +890,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     Py_DECREF(temp);
 
     /* Check if any local variables must be converted to cell variables */
-    if (ste->ste_type == FunctionBlock && !analyze_cells(scopes, newfree))
+    if (_PyST_IsFunctionLike(ste) && !analyze_cells(scopes, newfree))
         goto error;
     else if (ste->ste_type == ClassBlock && !drop_class_free(ste, newfree))
         goto error;
@@ -1388,7 +1402,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             }
             VISIT_SEQ(st, typeparam, s->v.TypeAlias.typeparams);
         }
-        if (!symtable_enter_block(st, name, FunctionBlock,
+        if (!symtable_enter_block(st, name, TypeAliasBlock,
                                   (void *)s, LOCATION(s)))
             VISIT_QUIT(st, 0);
         VISIT(st, expr, s->v.TypeAlias.value);
@@ -1688,7 +1702,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         }
 
         /* If we find a FunctionBlock entry, add as GLOBAL/LOCAL or NONLOCAL/LOCAL */
-        if (ste->ste_type == FunctionBlock) {
+        if (_PyST_IsFunctionLike(ste)) {
             long target_in_scope = _PyST_GetSymbol(ste, target_name);
             if (target_in_scope & DEF_GLOBAL) {
                 if (!symtable_add_def(st, target_name, DEF_GLOBAL, LOCATION(e)))
@@ -1723,7 +1737,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         }
     }
 
-    /* We should always find either a FunctionBlock, ModuleBlock or ClassBlock
+    /* We should always find either a function-like block, ModuleBlock or ClassBlock
        and should never fall to this case
     */
     Py_UNREACHABLE();
@@ -1896,7 +1910,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT_QUIT(st, 0);
         /* Special-case super: it counts as a use of __class__ */
         if (e->v.Name.ctx == Load &&
-            st->st_cur->ste_type == FunctionBlock &&
+            _PyST_IsFunctionLike(st->st_cur) &&
             _PyUnicode_EqualToASCIIString(e->v.Name.id, "super")) {
             if (!symtable_add_def(st, &_Py_ID(__class__), USE, LOCATION(e)))
                 VISIT_QUIT(st, 0);
@@ -1927,8 +1941,8 @@ symtable_visit_typeparam(struct symtable *st, typeparam_ty tp)
             VISIT_QUIT(st, 0);
         if (tp->v.TypeVar.bound) {
             if (!symtable_enter_block(st, tp->v.TypeVar.name,
-                                    FunctionBlock, (void *)tp,
-                                    LOCATION(tp)))
+                                      TypeVarBoundBlock, (void *)tp,
+                                      LOCATION(tp)))
                 VISIT_QUIT(st, 0);
             VISIT(st, expr, tp->v.TypeVar.bound);
             if (!symtable_exit_block(st))
@@ -2318,11 +2332,16 @@ symtable_visit_dictcomp(struct symtable *st, expr_ty e)
 static int
 symtable_raise_if_annotation_block(struct symtable *st, const char *name, expr_ty e)
 {
-    if (st->st_cur->ste_type != AnnotationBlock) {
+    enum _block_type type = st->st_cur->ste_type;
+    if (type == AnnotationBlock)
+        PyErr_Format(PyExc_SyntaxError, ANNOTATION_NOT_ALLOWED, name);
+    else if (type == TypeVarBoundBlock)
+        PyErr_Format(PyExc_SyntaxError, TYPEVAR_BOUND_NOT_ALLOWED, name);
+    else if (type == TypeAliasBlock)
+        PyErr_Format(PyExc_SyntaxError, TYPEALIAS_NOT_ALLOWED, name);
+    else
         return 1;
-    }
 
-    PyErr_Format(PyExc_SyntaxError, ANNOTATION_NOT_ALLOWED, name);
     PyErr_RangedSyntaxLocationObject(st->st_filename,
                                      e->lineno,
                                      e->col_offset + 1,
