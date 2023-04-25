@@ -1,6 +1,7 @@
 import sys
 import unittest
 import textwrap
+from test.support.testcase import ExceptionIsLikeMixin
 
 class TestInvalidExceptStar(unittest.TestCase):
     def test_mixed_except_and_except_star_is_syntax_error(self):
@@ -169,26 +170,7 @@ class TestBreakContinueReturnInExceptStarBlock(unittest.TestCase):
         self.assertIsInstance(exc, ExceptionGroup)
 
 
-class ExceptStarTest(unittest.TestCase):
-    def assertExceptionIsLike(self, exc, template):
-        if exc is None and template is None:
-            return
-
-        if template is None:
-            self.fail(f"unexpected exception: {exc}")
-
-        if exc is None:
-            self.fail(f"expected an exception like {template!r}, got None")
-
-        if not isinstance(exc, ExceptionGroup):
-            self.assertEqual(exc.__class__, template.__class__)
-            self.assertEqual(exc.args[0], template.args[0])
-        else:
-            self.assertEqual(exc.message, template.message)
-            self.assertEqual(len(exc.exceptions), len(template.exceptions))
-            for e, t in zip(exc.exceptions, template.exceptions):
-                self.assertExceptionIsLike(e, t)
-
+class ExceptStarTest(ExceptionIsLikeMixin, unittest.TestCase):
     def assertMetadataEqual(self, e1, e2):
         if e1 is None or e2 is None:
             self.assertTrue(e1 is None and e2 is None)
