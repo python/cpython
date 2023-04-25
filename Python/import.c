@@ -983,13 +983,13 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
     res = 0;
 
 finally:
+    Py_XDECREF(key);
     if (oldts != NULL) {
         _PyThreadState_Swap(interp->runtime, oldts);
         _PyThreadState_UnbindDetached(main_tstate);
         Py_DECREF(name);
         Py_DECREF(filename);
     }
-    Py_XDECREF(key);
     extensions_lock_release();
     return res;
 }
@@ -1110,7 +1110,17 @@ get_core_module_dict(PyInterpreterState *interp,
 static inline int
 is_core_module(PyInterpreterState *interp, PyObject *name, PyObject *filename)
 {
-    return get_core_module_dict(interp, name, filename) != NULL;
+    /* This might be called before the core dict copies are in place,
+       so we can't rely on get_core_module_dict() here. */
+    if (filename == name) {
+        if (PyUnicode_CompareWithASCIIString(name, "sys") == 0) {
+            return 1;
+        }
+        if (PyUnicode_CompareWithASCIIString(name, "builtins") == 0) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 static int
@@ -1136,6 +1146,8 @@ fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
     // when the extension module doesn't support sub-interpreters.
     if (def->m_size == -1) {
         if (!is_core_module(tstate->interp, name, filename)) {
+            assert(PyUnicode_CompareWithASCIIString(name, "sys") != 0);
+            assert(PyUnicode_CompareWithASCIIString(name, "builtins") != 0);
             if (def->m_base.m_copy) {
                 /* Somebody already imported the module,
                    likely under a different name.
@@ -2009,9 +2021,9 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
 }
 
 static PyObject *
-unmarshal_frozen_code(struct frozen_info *info)
+unmarshal_frozen_code(PyInterpreterState *interp, struct frozen_info *info)
 {
-    if (info->get_code) {
+    if (info->get_code && _Py_IsMainInterpreter(interp)) {
         PyObject *code = info->get_code();
         assert(code != NULL);
         return code;
@@ -2058,7 +2070,7 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
         set_frozen_error(status, name);
         return -1;
     }
-    co = unmarshal_frozen_code(&info);
+    co = unmarshal_frozen_code(tstate->interp, &info);
     if (co == NULL) {
         return -1;
     }
@@ -3516,7 +3528,8 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
         return NULL;
     }
 
-    PyObject *codeobj = unmarshal_frozen_code(&info);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *codeobj = unmarshal_frozen_code(interp, &info);
     if (dataobj != Py_None) {
         PyBuffer_Release(&buf);
     }
