@@ -1161,7 +1161,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag,
 static int
 symtable_enter_typeparam_block(struct symtable *st, identifier name,
                                void *ast, int has_defaults, int has_kwdefaults,
-                               int is_class,
+                               enum _stmt_kind kind,
                                int lineno, int col_offset,
                                int end_lineno, int end_col_offset)
 {
@@ -1178,10 +1178,11 @@ symtable_enter_typeparam_block(struct symtable *st, identifier name,
             return 0;
         }
     }
-    if (is_class) {
+    if (kind == AsyncFunctionDef_kind || kind == FunctionDef_kind || kind == ClassDef_kind) {
         _Py_DECLARE_STR(type_params, ".type_params");
         // It gets "set" when we create the type params tuple and
-        // "used" when we build up the bases.
+        // "used" when we build up the bases (for classes) or set the
+        // type_params attribute (for functions).
         if (!symtable_add_def(st, &_Py_STR(type_params), DEF_LOCAL,
                               lineno, col_offset, end_lineno, end_col_offset)) {
             return 0;
@@ -1190,6 +1191,8 @@ symtable_enter_typeparam_block(struct symtable *st, identifier name,
                               lineno, col_offset, end_lineno, end_col_offset)) {
             return 0;
         }
+    }
+    if (kind == ClassDef_kind) {
         // This is used for setting the generic base
         _Py_DECLARE_STR(generic_base, ".generic_base");
         if (!symtable_add_def(st, &_Py_STR(generic_base), DEF_LOCAL,
@@ -1319,14 +1322,14 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_SEQ_WITH_NULL(st, expr, s->v.FunctionDef.args->kw_defaults);
         if (s->v.FunctionDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
-        if (asdl_seq_LEN(s->v.AsyncFunctionDef.typeparams) > 0) {
+        if (asdl_seq_LEN(s->v.FunctionDef.typeparams) > 0) {
             if (!symtable_enter_typeparam_block(
                     st, s->v.FunctionDef.name,
                     (void *)s->v.FunctionDef.typeparams,
                     s->v.FunctionDef.args->defaults != NULL,
                     has_kwonlydefaults(s->v.FunctionDef.args->kwonlyargs,
                                        s->v.FunctionDef.args->kw_defaults),
-                    false,
+                    s->kind,
                     LOCATION(s))) {
                 VISIT_QUIT(st, 0);
             }
@@ -1357,7 +1360,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (asdl_seq_LEN(s->v.ClassDef.typeparams) > 0) {
             if (!symtable_enter_typeparam_block(st, s->v.ClassDef.name,
                                                 (void *)s->v.ClassDef.typeparams,
-                                                false, false, true,
+                                                false, false, s->kind,
                                                 LOCATION(s))) {
                 VISIT_QUIT(st, 0);
             }
@@ -1400,7 +1403,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             if (!symtable_enter_typeparam_block(
                     st, name,
                     (void *)s->v.TypeAlias.typeparams,
-                    false, false, false,
+                    false, false, s->kind,
                     LOCATION(s))) {
                 VISIT_QUIT(st, 0);
             }
@@ -1630,9 +1633,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                     st, s->v.AsyncFunctionDef.name,
                     (void *)s->v.AsyncFunctionDef.typeparams,
                     s->v.AsyncFunctionDef.args->defaults != NULL,
-                    false,
                     has_kwonlydefaults(s->v.AsyncFunctionDef.args->kwonlyargs,
                                        s->v.AsyncFunctionDef.args->kw_defaults),
+                    s->kind,
                     LOCATION(s))) {
                 VISIT_QUIT(st, 0);
             }

@@ -255,4 +255,5 @@ _PyIntrinsics_BinaryFunctions[] = {
     [INTRINSIC_PREP_RERAISE_STAR] = prep_reraise_star,
     [INTRINSIC_TYPEVAR_WITH_BOUND] = make_typevar_with_bound,
     [INTRINSIC_TYPEVAR_WITH_CONSTRAINTS] = make_typevar_with_constraints,
+    [INTRINSIC_SET_FUNCTION_TYPE_PARAMS] = _Py_set_function_type_params,
 };

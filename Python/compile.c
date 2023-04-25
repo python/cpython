@@ -2214,9 +2214,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     int num_typeparam_args = 0;
+    _Py_DECLARE_STR(type_params, ".type_params");
 
     if (asdl_seq_LEN(typeparams) > 0) {
-        funcflags |= 0x10;
         PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>", name);
         if (!typeparams_name) {
             return ERROR;
@@ -2239,6 +2239,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             num_typeparam_args += 1;
         }
         RETURN_IF_ERROR(compiler_type_params(c, typeparams));
+        RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Store));
     }
 
     annotations = compiler_visit_annotations(c, loc, args, returns);
@@ -2283,6 +2284,11 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
     Py_DECREF(co);
     if (asdl_seq_LEN(typeparams) > 0) {
+        ADDOP_I(c, loc, COPY, 1);
+        RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Load));
+        ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS);
+        ADDOP(c, loc, POP_TOP);
+
         if (is_typeparams_in_class) {
             c->u->u_metadata.u_argcount += 1;
         }

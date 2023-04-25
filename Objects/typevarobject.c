@@ -1580,8 +1580,8 @@ static void
 generic_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    Py_TYPE(self)->tp_free(self);
     _PyObject_GC_UNTRACK(self);
+    Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
 }
 

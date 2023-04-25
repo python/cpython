@@ -3185,7 +3185,6 @@ dummy_func(
 
         inst(MAKE_FUNCTION, (defaults    if (oparg & 0x01),
                              kwdefaults  if (oparg & 0x02),
-                             typevars    if (oparg & 0x10),
                              annotations if (oparg & 0x04),
                              closure     if (oparg & 0x08),
                              codeobj -- func)) {
@@ -3198,10 +3197,6 @@ dummy_func(
                 goto error;
             }
 
-            if (oparg & 0x10) {
-                assert(PyTuple_CheckExact(typevars));
-                func_obj->func_typevars = typevars;
-            }
             if (oparg & 0x08) {
                 assert(PyTuple_CheckExact(closure));
                 func_obj->func_closure = closure;
