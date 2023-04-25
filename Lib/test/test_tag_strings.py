@@ -35,6 +35,19 @@ class TagStringTests(unittest.TestCase):
         self.assertEqual(conv, "r")
         self.assertEqual(spec, "spec")
 
+    def test_disallow_joins(self):
+        examples = [
+            "tag'foo' tag'bar'",
+            "tag'foo' 'bar'",
+            "tag'foo' f'bar'",
+            "'foo' tag'bar'",
+            "b'foo' tag'bar'",
+            "r'foo' tag'bar' rb'baz'",
+        ]
+        for ex in examples:
+            with self.assertRaises(SyntaxError):
+                compile(ex, ex, "eval")
+
 
 if __name__ == "__main__":
     unittest.main()
