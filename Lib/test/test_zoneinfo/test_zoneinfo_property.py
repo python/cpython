@@ -70,15 +70,38 @@ def valid_keys():
     return hypothesis.strategies.sampled_from(VALID_KEYS)
 
 
+KEY_EXAMPLES = [
+    "Africa/Abidjan",
+    "Africa/Casablanca",
+    "America/Los_Angeles",
+    "America/Santiago",
+    "Asia/Tokyo",
+    "Australia/Sydney",
+    "Europe/Dublin",
+    "Europe/Lisbon",
+    "Europe/London",
+    "Pacific/Kiritimati",
+    "UTC",
+]
+
+
+def add_key_examples(f):
+    for key in KEY_EXAMPLES:
+        f = hypothesis.example(key)(f)
+    return f
+
+
 class ZoneInfoTest(ZoneInfoTestBase):
     module = py_zoneinfo
 
     @hypothesis.given(key=valid_keys())
+    @add_key_examples
     def test_str(self, key):
         zi = self.klass(key)
         self.assertEqual(str(zi), key)
 
     @hypothesis.given(key=valid_keys())
+    @add_key_examples
     def test_key(self, key):
         zi = self.klass(key)
 
@@ -89,6 +112,13 @@ class ZoneInfoTest(ZoneInfoTestBase):
             hypothesis.strategies.datetimes(), hypothesis.strategies.times()
         )
     )
+    @hypothesis.example(dt=datetime.datetime.min)
+    @hypothesis.example(dt=datetime.datetime.max)
+    @hypothesis.example(dt=datetime.datetime(1970, 1, 1))
+    @hypothesis.example(dt=datetime.datetime(2039, 1, 1))
+    @hypothesis.example(dt=datetime.time(0))
+    @hypothesis.example(dt=datetime.time(12, 0))
+    @hypothesis.example(dt=datetime.time(23, 59, 59, 999999))
     def test_utc(self, dt):
         zi = self.klass("UTC")
         dt_zi = dt.replace(tzinfo=zi)
@@ -113,6 +143,7 @@ class ZoneInfoPickleTest(ZoneInfoTestBase):
         super().setUp()
 
     @hypothesis.given(key=valid_keys())
+    @add_key_examples
     def test_pickle_unpickle_cache(self, key):
         zi = self.klass(key)
         pkl_str = pickle.dumps(zi)
@@ -121,6 +152,7 @@ class ZoneInfoPickleTest(ZoneInfoTestBase):
         self.assertIs(zi, zi_rt)
 
     @hypothesis.given(key=valid_keys())
+    @add_key_examples
     def test_pickle_unpickle_no_cache(self, key):
         zi = self.klass.no_cache(key)
         pkl_str = pickle.dumps(zi)
@@ -130,6 +162,7 @@ class ZoneInfoPickleTest(ZoneInfoTestBase):
         self.assertEqual(str(zi), str(zi_rt))
 
     @hypothesis.given(key=valid_keys())
+    @add_key_examples
     def test_pickle_unpickle_cache_multiple_rounds(self, key):
         """Test that pickle/unpickle is idempotent."""
         zi_0 = self.klass(key)
@@ -147,6 +180,7 @@ class ZoneInfoPickleTest(ZoneInfoTestBase):
         self.assertIs(zi_1, zi_2)
 
     @hypothesis.given(key=valid_keys())
+    @add_key_examples
     def test_pickle_unpickle_no_cache_multiple_rounds(self, key):
         """Test that pickle/unpickle is idempotent."""
         zi_cache = self.klass(key)
@@ -178,6 +212,7 @@ class ZoneInfoCacheTest(ZoneInfoTestBase):
     module = py_zoneinfo
 
     @hypothesis.given(key=valid_keys())
+    @add_key_examples
     def test_cache(self, key):
         zi_0 = self.klass(key)
         zi_1 = self.klass(key)
@@ -185,6 +220,7 @@ class ZoneInfoCacheTest(ZoneInfoTestBase):
         self.assertIs(zi_0, zi_1)
 
     @hypothesis.given(key=valid_keys())
+    @add_key_examples
     def test_no_cache(self, key):
         zi_0 = self.klass.no_cache(key)
         zi_1 = self.klass.no_cache(key)
@@ -203,6 +239,11 @@ class PythonCConsistencyTest(unittest.TestCase):
         return dt.replace(fold=not dt.fold).utcoffset() == dt.utcoffset()
 
     @hypothesis.given(dt=hypothesis.strategies.datetimes(), key=valid_keys())
+    @hypothesis.example(dt=datetime.datetime.min, key="America/New_York")
+    @hypothesis.example(dt=datetime.datetime.max, key="America/New_York")
+    @hypothesis.example(dt=datetime.datetime(1970, 1, 1), key="America/New_York")
+    @hypothesis.example(dt=datetime.datetime(2020, 1, 1), key="Europe/Paris")
+    @hypothesis.example(dt=datetime.datetime(2020, 6, 1), key="Europe/Paris")
     def test_same_str(self, dt, key):
         py_dt = dt.replace(tzinfo=py_zoneinfo.ZoneInfo(key))
         c_dt = dt.replace(tzinfo=c_zoneinfo.ZoneInfo(key))
@@ -210,6 +251,14 @@ class PythonCConsistencyTest(unittest.TestCase):
         self.assertEqual(str(py_dt), str(c_dt))
 
     @hypothesis.given(dt=hypothesis.strategies.datetimes(), key=valid_keys())
+    @hypothesis.example(dt=datetime.datetime(1970, 1, 1), key="America/New_York")
+    @hypothesis.example(dt=datetime.datetime(2020, 2, 5), key="America/New_York")
+    @hypothesis.example(dt=datetime.datetime(2020, 8, 12), key="America/New_York")
+    @hypothesis.example(dt=datetime.datetime(2040, 1, 1), key="Africa/Casablanca")
+    @hypothesis.example(dt=datetime.datetime(1970, 1, 1), key="Europe/Paris")
+    @hypothesis.example(dt=datetime.datetime(2040, 1, 1), key="Europe/Paris")
+    @hypothesis.example(dt=datetime.datetime.min, key="Asia/Tokyo")
+    @hypothesis.example(dt=datetime.datetime.max, key="Asia/Tokyo")
     def test_same_offsets_and_names(self, dt, key):
         py_dt = dt.replace(tzinfo=py_zoneinfo.ZoneInfo(key))
         c_dt = dt.replace(tzinfo=c_zoneinfo.ZoneInfo(key))
@@ -297,6 +346,7 @@ class PythonCConsistencyTest(unittest.TestCase):
         self.assertEqual(py_utc, c_utc)
 
     @hypothesis.given(key=valid_keys())
+    @add_key_examples
     def test_cross_module_pickle(self, key):
         py_zi = py_zoneinfo.ZoneInfo(key)
         c_zi = c_zoneinfo.ZoneInfo(key)
