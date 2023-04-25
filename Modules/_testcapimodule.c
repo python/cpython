@@ -1482,6 +1482,7 @@ static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     const char *code;
+    int use_main_obmalloc = -1;
     int allow_fork = -1;
     int allow_exec = -1;
     int allow_threads = -1;
@@ -1493,6 +1494,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     PyCompilerFlags cflags = {0};
 
     static char *kwlist[] = {"code",
+                             "use_main_obmalloc",
                              "allow_fork",
                              "allow_exec",
                              "allow_threads",
@@ -1500,10 +1502,15 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
                              "check_multi_interp_extensions",
                              NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppppp:run_in_subinterp_with_config", kwlist,
-                    &code, &allow_fork, &allow_exec,
+                    "s$pppppp:run_in_subinterp_with_config", kwlist,
+                    &code, &use_main_obmalloc,
+                    &allow_fork, &allow_exec,
                     &allow_threads, &allow_daemon_threads,
                     &check_multi_interp_extensions)) {
+        return NULL;
+    }
+    if (use_main_obmalloc < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing use_main_obmalloc");
         return NULL;
     }
     if (allow_fork < 0) {
@@ -1532,6 +1539,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     PyThreadState_Swap(NULL);
 
     const _PyInterpreterConfig config = {
+        .use_main_obmalloc = use_main_obmalloc,
         .allow_fork = allow_fork,
         .allow_exec = allow_exec,
         .allow_threads = allow_threads,
@@ -2733,6 +2741,18 @@ type_get_version(PyObject *self, PyObject *type)
 }
 
 
+static PyObject *
+type_assign_version(PyObject *self, PyObject *type)
+{
+    if (!PyType_Check(type)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a type");
+        return NULL;
+    }
+    int res = PyUnstable_Type_AssignVersionTag((PyTypeObject *)type);
+    return PyLong_FromLong(res);
+}
+
+
 // Test PyThreadState C API
 static PyObject *
 test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
@@ -3530,6 +3550,7 @@ static PyMethodDef TestMethods[] = {
     {"test_py_is_macros", test_py_is_macros, METH_NOARGS},
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"type_get_version", type_get_version, METH_O, PyDoc_STR("type->tp_version_tag")},
+    {"type_assign_version", type_assign_version, METH_O, PyDoc_STR("PyUnstable_Type_AssignVersionTag")},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"frame_getlocals", frame_getlocals, METH_O, NULL},
     {"frame_getglobals", frame_getglobals, METH_O, NULL},
