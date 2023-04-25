@@ -2455,7 +2455,6 @@ _asyncio_Task_get_name_impl(TaskObj *self)
             PyObject *name = PyUnicode_FromFormat(
                 "Task-%" PRIu64, ++state->task_name_counter);
             Py_XSETREF(self->task_name, name);
-            return Py_NewRef(self->task_name);
         }
         return Py_NewRef(self->task_name);
     }
