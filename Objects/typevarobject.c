@@ -1576,16 +1576,36 @@ static PyMethodDef generic_methods[] = {
     {NULL} /* Sentinel */
 };
 
+static void
+generic_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    Py_TYPE(self)->tp_free(self);
+    _PyObject_GC_UNTRACK(self);
+    Py_DECREF(tp);
+}
+
+static int
+generic_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static PyType_Slot generic_slots[] = {
     {Py_tp_doc, (void *)generic_doc},
     {Py_tp_methods, generic_methods},
+    {Py_tp_dealloc, generic_dealloc},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_free, PyObject_GC_Del},
+    {Py_tp_traverse, generic_traverse},
     {0, NULL},
 };
 
 PyType_Spec generic_spec = {
     .name = "typing.Generic",
     .basicsize = sizeof(PyObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = generic_slots,
 };
 
