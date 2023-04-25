@@ -53,6 +53,9 @@
 #define TYPEALIAS_NOT_ALLOWED \
 "'%s' can not be used within a type alias"
 
+#define TYPEPARAM_NOT_ALLOWED \
+"'%s' can not be used within the definition of a generic"
+
 #define DUPLICATE_TYPE_PARAM \
 "duplicate type parameter '%U'"
 
@@ -418,7 +421,8 @@ _PyST_IsFunctionLike(PySTEntryObject *ste)
 {
     return ste->ste_type == FunctionBlock
         || ste->ste_type == TypeVarBoundBlock
-        || ste->ste_type == TypeAliasBlock;
+        || ste->ste_type == TypeAliasBlock
+        || ste->ste_type == TypeParamBlock;
 }
 
 static int
@@ -1162,7 +1166,7 @@ symtable_enter_typeparam_block(struct symtable *st, identifier name,
                                int end_lineno, int end_col_offset)
 {
     _Py_block_ty current_type = st->st_cur->ste_type;
-    if(!symtable_enter_block(st, name, FunctionBlock, ast, lineno,
+    if(!symtable_enter_block(st, name, TypeParamBlock, ast, lineno,
                              col_offset, end_lineno, end_col_offset)) {
         return 0;
     }
@@ -2339,6 +2343,8 @@ symtable_raise_if_annotation_block(struct symtable *st, const char *name, expr_t
         PyErr_Format(PyExc_SyntaxError, TYPEVAR_BOUND_NOT_ALLOWED, name);
     else if (type == TypeAliasBlock)
         PyErr_Format(PyExc_SyntaxError, TYPEALIAS_NOT_ALLOWED, name);
+    else if (type == TypeParamBlock)
+        PyErr_Format(PyExc_SyntaxError, TYPEPARAM_NOT_ALLOWED, name);
     else
         return 1;
 

@@ -2,7 +2,7 @@ import asyncio
 import textwrap
 import unittest
 
-from typing import TypeVar, TypeVarTuple, ParamSpec
+from typing import Sequence, TypeVar, TypeVarTuple, ParamSpec
 
 
 class TypeParamsInvalidTest(unittest.TestCase):
@@ -118,6 +118,10 @@ class TypeParamsInvalidTest(unittest.TestCase):
             exec("class X[T: (await 42)]: pass", {})
         with self.assertRaises(SyntaxError):
             exec("class X[T: (y := 3)]: pass", {})
+        with self.assertRaises(SyntaxError):
+            exec("class X[T](y := Sequence[T]): pass", {})
+        with self.assertRaises(SyntaxError):
+            exec("def f[T](y: (x := Sequence[T])): pass", {})
 
 
 class TypeParamsAccessTest(unittest.TestCase):
@@ -257,6 +261,13 @@ class TypeParamsAccessTest(unittest.TestCase):
         """)
         with self.assertRaisesRegex(SyntaxError, "nonlocal binding not allowed for type parameter 'T'"):
             exec(code, {})
+
+    def test_reference_previous_typevar(self):
+        def func[S, T: Sequence[S]]():
+            pass
+
+        S, T = func.__type_params__
+        self.assertEqual(T.__bound__, Sequence[S])
 
 
 class TypeParamsLazyEvaluationTest(unittest.TestCase):

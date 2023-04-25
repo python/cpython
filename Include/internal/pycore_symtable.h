@@ -11,7 +11,8 @@ extern "C" {
 struct _mod;   // Type defined in pycore_ast.h
 
 typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock,
-                           AnnotationBlock, TypeVarBoundBlock, TypeAliasBlock }
+                           AnnotationBlock, TypeVarBoundBlock, TypeAliasBlock,
+                           TypeParamBlock }
     _Py_block_ty;
 
 typedef enum _comprehension_type {
