@@ -1613,8 +1613,7 @@ class TestArchives(BaseTest, unittest.TestCase):
     def check_unpack_tarball(self, format):
         self.check_unpack_archive(format, filter='fully_trusted')
         self.check_unpack_archive(format, filter='data')
-        with warnings_helper.check_warnings(
-                ('The default', RuntimeWarning)):
+        with warnings_helper.check_no_warnings(self):
             self.check_unpack_archive(format)
 
     def test_unpack_archive_tar(self):
