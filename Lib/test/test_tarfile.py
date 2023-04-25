@@ -2414,7 +2414,12 @@ class MiscTest(unittest.TestCase):
             'PAX_NUMBER_FIELDS', 'stn', 'nts', 'nti', 'itn', 'calc_chksums',
             'copyfileobj', 'filemode', 'EmptyHeaderError',
             'TruncatedHeaderError', 'EOFHeaderError', 'InvalidHeaderError',
-            'SubsequentHeaderError', 'ExFileObject', 'main'}
+            'SubsequentHeaderError', 'ExFileObject', 'main',
+            "fully_trusted_filter", "data_filter",
+            "tar_filter", "FilterError", "AbsoluteLinkError",
+            "OutsideDestinationError", "SpecialFileError", "AbsolutePathError",
+            "LinkOutsideDestinationError",
+            }
         support.check__all__(self, tarfile, not_exported=not_exported)
 
     def test_useful_error_message_when_modules_missing(self):
