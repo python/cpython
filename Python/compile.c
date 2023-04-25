@@ -2176,7 +2176,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     if (asdl_seq_LEN(typeparams) > 0) {
         ADDOP(c, loc, PUSH_NULL);
         // We'll swap in the callable here later.
-        ADDOP(c, loc, PUSH_NULL);
+        ADDOP_LOAD_CONST(c, loc, Py_None);
         PySTEntryObject *ste = PySymtable_Lookup(c->c_st, (void *)typeparams);
         if (ste == NULL) {
             return ERROR;
@@ -2283,7 +2283,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         }
         Py_DECREF(co);
         ADDOP_I(c, loc, SWAP, num_typeparam_args + 2);
-        ADDOP(c, loc, POP_NULL);
+        ADDOP(c, loc, POP_TOP);
         ADDOP_I(c, loc, CALL, num_typeparam_args);
     }
 

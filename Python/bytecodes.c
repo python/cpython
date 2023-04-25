@@ -218,10 +218,6 @@ dummy_func(
             res = NULL;
         }
 
-        inst(POP_NULL, (value --)) {
-            assert(value == NULL);
-        }
-
         macro(END_FOR) = POP_TOP + POP_TOP;
 
         inst(INSTRUMENTED_END_FOR, (receiver, value --)) {

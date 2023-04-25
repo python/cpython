@@ -131,7 +131,6 @@ def_op('RETURN_GENERATOR', 75)
 def_op('RETURN_VALUE', 83)
 
 def_op('SETUP_ANNOTATIONS', 85)
-def_op('POP_NULL', 86)
 def_op('LOAD_LOCALS', 87)
 
 def_op('POP_EXCEPT', 89)

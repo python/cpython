@@ -39,8 +39,6 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case PUSH_NULL:
             return 0;
-        case POP_NULL:
-            return 1;
         case END_FOR:
             return 1+1;
         case INSTRUMENTED_END_FOR:
@@ -431,8 +429,6 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case PUSH_NULL:
             return 1;
-        case POP_NULL:
-            return 0;
         case END_FOR:
             return 0+0;
         case INSTRUMENTED_END_FOR:
@@ -812,7 +808,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [LOAD_CONST__LOAD_FAST] = { true, INSTR_FMT_IBIB },
     [POP_TOP] = { true, INSTR_FMT_IX },
     [PUSH_NULL] = { true, INSTR_FMT_IX },
-    [POP_NULL] = { true, INSTR_FMT_IX },
     [END_FOR] = { true, INSTR_FMT_IB },
     [INSTRUMENTED_END_FOR] = { true, INSTR_FMT_IX },
     [END_SEND] = { true, INSTR_FMT_IX },
