@@ -110,7 +110,7 @@ class EmbeddingTestsMixin:
             print(f"--- {cmd} failed ---")
             print(f"stdout:\n{out}")
             print(f"stderr:\n{err}")
-            print(f"------")
+            print("------")
 
         self.assertEqual(p.returncode, returncode,
                          "bad returncode %d, stderr is %r" %

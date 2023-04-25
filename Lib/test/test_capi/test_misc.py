@@ -1224,6 +1224,7 @@ class SubinterpreterTest(unittest.TestCase):
         kwlist[0] = 'use_main_obmalloc'
         kwlist[-2] = 'check_multi_interp_extensions'
         kwlist[-1] = 'own_gil'
+        # expected to work
         for config, expected in {
             (True, True, True, True, True, True, True):
                 (OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS, True),
@@ -1426,7 +1427,7 @@ class TestThreadState(unittest.TestCase):
     @threading_helper.requires_working_threading()
     def test_gilstate_ensure_no_deadlock(self):
         # See https://github.com/python/cpython/issues/96071
-        code = textwrap.dedent(f"""
+        code = textwrap.dedent("""
             import _testcapi
 
             def callback():

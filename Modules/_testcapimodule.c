@@ -1516,6 +1516,10 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_ValueError, "missing use_main_obmalloc");
         return NULL;
     }
+    if (use_main_obmalloc < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing use_main_obmalloc");
+        return NULL;
+    }
     if (allow_fork < 0) {
         PyErr_SetString(PyExc_ValueError, "missing allow_fork");
         return NULL;

@@ -1888,7 +1888,7 @@ class TestSinglePhaseSnapshot(ModuleSnapshot):
             self.init_count = mod.initialized_count()
         return self
 
-    SCRIPT_BODY = ModuleSnapshot.SCRIPT_BODY + textwrap.dedent(f'''
+    SCRIPT_BODY = ModuleSnapshot.SCRIPT_BODY + textwrap.dedent('''
         snapshot['module'].update(dict(
             int_const=mod.int_const,
             str_const=mod.str_const,
