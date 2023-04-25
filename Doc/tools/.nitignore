@@ -111,7 +111,6 @@ Doc/library/csv.rst
 Doc/library/ctypes.rst
 Doc/library/curses.ascii.rst
 Doc/library/curses.rst
-Doc/library/dataclasses.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst
@@ -178,7 +177,6 @@ Doc/library/os.rst
 Doc/library/ossaudiodev.rst
 Doc/library/pickle.rst
 Doc/library/pickletools.rst
-Doc/library/pkgutil.rst
 Doc/library/platform.rst
 Doc/library/plistlib.rst
 Doc/library/poplib.rst
