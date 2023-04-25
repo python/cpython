@@ -26,6 +26,7 @@ jobs:
   build:
     name: Windows Installer
     runs-on: windows-latest
+    timeout-minutes: 60
     strategy:
       matrix:
         type: [x86, x64, arm64]

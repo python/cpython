@@ -173,7 +173,7 @@ The module defines the following user-callable items:
       or text *mode* was specified).
 
 
-.. class:: TemporaryDirectory(suffix=None, prefix=None, dir=None, ignore_cleanup_errors=False)
+.. class:: TemporaryDirectory(suffix=None, prefix=None, dir=None, ignore_cleanup_errors=False, *, delete=True)
 
    This class securely creates a temporary directory using the same rules as :func:`mkdtemp`.
    The resulting object can be used as a context manager (see
@@ -195,12 +195,21 @@ The module defines the following user-callable items:
    (the :func:`cleanup` call, exiting the context manager, when the object
    is garbage-collected or during interpreter shutdown).
 
+   The *delete* parameter can be used to disable cleanup of the directory tree
+   upon exiting the context.  While it may seem unusual for a context manager
+   to disable the action taken when exiting the context, it can be useful during
+   debugging or when you need your cleanup behavior to be conditional based on
+   other logic.
+
    .. audit-event:: tempfile.mkdtemp fullpath tempfile.TemporaryDirectory
 
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.10
       Added *ignore_cleanup_errors* parameter.
+
+   .. versionchanged:: 3.12
+      Added the *delete* parameter.
 
 
 .. function:: mkstemp(suffix=None, prefix=None, dir=None, text=False)

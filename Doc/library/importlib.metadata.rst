@@ -73,7 +73,7 @@ something into it:
 
 .. code-block:: shell-session
 
-    $ python3 -m venv example
+    $ python -m venv example
     $ source example/bin/activate
     (example) $ python -m pip install wheel
 
@@ -307,6 +307,10 @@ Python module or `Import Package <https://packaging.python.org/en/latest/glossar
 
     >>> packages_distributions()
     {'importlib_metadata': ['importlib-metadata'], 'yaml': ['PyYAML'], 'jaraco': ['jaraco.classes', 'jaraco.functools'], ...}
+
+Some editable installs, `do not supply top-level names
+<https://github.com/pypa/packaging-problems/issues/609>`_, and thus this
+function is not reliable with such installs.
 
 .. versionadded:: 3.10
 
