@@ -104,8 +104,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             raise TypeError(f"a coroutine was expected, got {coro!r}")
 
         if name is None:
-            # optimization: defer task name formatting to first get_name
-            self._name = None
+            self._name = f'Task-{_task_name_counter()}'
         else:
             self._name = str(name)
 
@@ -144,8 +143,6 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         return self._context
 
     def get_name(self):
-        if self._name is None:
-            self._name = f'Task-{_task_name_counter()}'
         return self._name
 
     def set_name(self, value):
