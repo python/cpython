@@ -524,6 +524,7 @@ class MockHTTPHandlerRedirect(urllib.request.BaseHandler):
             return MockResponse(200, "OK", msg, "", req.get_full_url())
 
 
+@unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
 class MockHTTPSHandler(urllib.request.HTTPSHandler):
     # Useful for testing the Proxy-Authorization request by verifying the
     # properties of httpcon
@@ -1075,6 +1076,7 @@ class HandlerTests(unittest.TestCase):
         o.open("http://www.example.com")
         self.assertEqual(h._debuglevel, 5)
 
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
     def test_https_handler_global_debuglevel(self):
         with mock.patch.object(http.client.HTTPSConnection, 'debuglevel', 7):
             o = OpenerDirector()
@@ -1083,6 +1085,7 @@ class HandlerTests(unittest.TestCase):
             o.open("https://www.example.com")
             self.assertEqual(h._debuglevel, 7)
 
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
     def test_https_handler_local_debuglevel(self):
         o = OpenerDirector()
         h = MockHTTPSHandler(debuglevel=4)
