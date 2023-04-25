@@ -932,7 +932,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_test(bug46724, dis_bug46724)
 
     def test_kw_names(self):
-        # Test that information is populated for KW_NAMES
+        # Test that value is displayed for KW_NAMES
         self.do_disassembly_test(wrap_func_w_kwargs, dis_kw_names)
 
     def test_big_linenos(self):
