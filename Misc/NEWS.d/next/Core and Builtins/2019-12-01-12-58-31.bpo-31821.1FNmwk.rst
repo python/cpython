@@ -1,1 +1,1 @@
-Fix :func:`_UnixReadPipeTransport.pause_reading` to make it work when called from :func:`connection_made`.
+Fix :func:`!pause_reading` to work when called from :func:`!connection_made` in :mod:`asyncio`.
