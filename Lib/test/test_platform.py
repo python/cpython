@@ -1,3 +1,4 @@
+import io
 import os
 import copy
 import pickle
@@ -66,6 +67,9 @@ INVALID
 IN-VALID=value
 IN VALID=value
 """
+
+
+ELFFILE_HEADER = b"\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
 
 class PlatformTest(unittest.TestCase):
@@ -537,6 +541,50 @@ class PlatformTest(unittest.TestCase):
         }
         self.assertEqual(info, expected)
         self.assertEqual(len(info["SPECIALS"]), 5)
+
+    def test_parse_musl_version(self):
+        output = """\
+musl libc (x86_64)
+Version 1.2.3
+Dynamic Program Loader
+Usage: /lib/ld-musl-x86_64.so.1 [options] [--] pathname [args]
+        """
+        self.assertEqual(platform._parse_musl_version(output), "1.2")
+
+    @support.requires_subprocess()
+    # TODO: how should we write this test to only execute on systems with musl?
+    # @support.requires_musl()
+    def test_libc_ver_musl(self):
+        self.assertEqual(platform.libc_ver(), ("musl", "1.2"))
+
+
+class ELFFileTest(unittest.TestCase):
+
+    # FIXME: make this test correct and passing
+    # def test_get_interpreter(self):
+    #     f = io.BytesIO(ELFFILE_HEADER)
+    #     elffile = platform.ELFFile(f)
+    #     self.assertEqual(elffile.interpreter, "")
+
+    def test_init_invalid_magic(self):
+        BAD_ELFFILE_HEADER = b"\x7fBAD\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        f = io.BytesIO(BAD_ELFFILE_HEADER)
+        self.assertRaisesRegex(
+            platform.ELFInvalid,
+            "invalid magic:",
+            platform.ELFFile,
+            f,
+        )
+
+    def test_init_parse_error(self):
+        EMPTY_ELF_HEADER = b"\x00"
+        f = io.BytesIO(EMPTY_ELF_HEADER)
+        self.assertRaisesRegex(
+            platform.ELFInvalid,
+            "unable to parse identification",
+            platform.ELFFile,
+            f,
+        )
 
 
 if __name__ == '__main__':
