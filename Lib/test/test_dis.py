@@ -1938,11 +1938,10 @@ class TestFinderMethods(unittest.TestCase):
     def test_findlinestarts(self):
         def func():
             pass
+            
         code = func.__code__
-        linestarts = list(dis.findlinestarts(code))
-        offsets = [linestart[0] for linestart in linestarts]
-        true_offsets = [0, 2]
-        self.assertEqual(offsets, true_offsets)
+        offsets = [linestart[0] for linestart in dis.findlinestarts(code)]
+        self.assertEqual(offsets, [0, 2])
 
 
 class TestDisTraceback(DisTestBase):
