@@ -2214,11 +2214,6 @@ class TarFile(object):
         if filter is None:
             filter = self.extraction_filter
             if filter is None:
-                warnings.warn(
-                    'Python 3.14 will, by default, filter extracted tar '
-                    + 'archives and reject files or modify their metadata. '
-                    + 'Use the filter argument to control this behavior.',
-                    DeprecationWarning)
                 return fully_trusted_filter
             if isinstance(filter, str):
                 raise TypeError(

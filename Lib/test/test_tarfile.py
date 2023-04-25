@@ -2,7 +2,7 @@ import sys
 import os
 import io
 from hashlib import sha256
-from contextlib import contextmanager, ExitStack
+from contextlib import contextmanager
 from random import Random
 import pathlib
 import shutil
@@ -2964,11 +2964,7 @@ class NoneInfoExtractTests(ReadTest):
         tar = tarfile.open(tarname, mode='r', encoding="iso8859-1")
         cls.control_dir = pathlib.Path(TEMPDIR) / "extractall_ctrl"
         tar.errorlevel = 0
-        with ExitStack() as cm:
-            if cls.extraction_filter is None:
-                cm.enter_context(warnings.catch_warnings(
-                    action="ignore", category=DeprecationWarning))
-            tar.extractall(cls.control_dir, filter=cls.extraction_filter)
+        tar.extractall(cls.control_dir, filter=cls.extraction_filter)
         tar.close()
         cls.control_paths = set(
             p.relative_to(cls.control_dir)
@@ -3602,12 +3598,11 @@ class TestExtractionFilters(unittest.TestCase):
                 self.assertIs(filtered.name, tarinfo.name)
                 self.assertIs(filtered.type, tarinfo.type)
 
-    def test_default_filter_warns(self):
-        """Ensure the default filter warns"""
+    def test_default_filter_warns_not(self):
+        """Ensure the default filter does not warn (like in 3.12)"""
         with ArchiveMaker() as arc:
             arc.add('foo')
-        with warnings_helper.check_warnings(
-                ('Python 3.14', DeprecationWarning)):
+        with warnings_helper.check_no_warnings(self):
             with self.check_context(arc.open(), None):
                 self.expect_file('foo')
 
