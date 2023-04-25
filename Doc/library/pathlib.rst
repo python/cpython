@@ -182,7 +182,7 @@ we also call *flavours*:
    .. versionchanged:: 3.6
       Added support for the :class:`os.PathLike` interface.
 
-.. class:: PurePosixPath(*pathsegments)
+.. class:: PurePosixPath(*pathsegments, template=None)
 
    A subclass of :class:`PurePath`, this path flavour represents non-Windows
    filesystem paths::
@@ -190,9 +190,9 @@ we also call *flavours*:
       >>> PurePosixPath('/etc')
       PurePosixPath('/etc')
 
-   *pathsegments* is specified similarly to :class:`PurePath`.
+   *pathsegments* and *template* are specified similarly to :class:`PurePath`.
 
-.. class:: PureWindowsPath(*pathsegments)
+.. class:: PureWindowsPath(*pathsegments, template=None)
 
    A subclass of :class:`PurePath`, this path flavour represents Windows
    filesystem paths, including `UNC paths`_::
@@ -202,7 +202,7 @@ we also call *flavours*:
       >>> PureWindowsPath('//server/share/file')
       PureWindowsPath('//server/share/file')
 
-   *pathsegments* is specified similarly to :class:`PurePath`.
+   *pathsegments* and *template* are specified similarly to :class:`PurePath`.
 
    .. _unc paths: https://en.wikipedia.org/wiki/Path_(computing)#UNC
 
@@ -716,7 +716,7 @@ Concrete paths are subclasses of the pure path classes.  In addition to
 operations provided by the latter, they also provide methods to do system
 calls on path objects.  There are three ways to instantiate concrete paths:
 
-.. class:: Path(*pathsegments)
+.. class:: Path(*pathsegments, template=None)
 
    A subclass of :class:`PurePath`, this class represents concrete paths of
    the system's path flavour (instantiating it creates either a
@@ -725,9 +725,9 @@ calls on path objects.  There are three ways to instantiate concrete paths:
       >>> Path('setup.py')
       PosixPath('setup.py')
 
-   *pathsegments* is specified similarly to :class:`PurePath`.
+   *pathsegments* and *template* are specified similarly to :class:`PurePath`.
 
-.. class:: PosixPath(*pathsegments)
+.. class:: PosixPath(*pathsegments, template=None)
 
    A subclass of :class:`Path` and :class:`PurePosixPath`, this class
    represents concrete non-Windows filesystem paths::
@@ -735,9 +735,9 @@ calls on path objects.  There are three ways to instantiate concrete paths:
       >>> PosixPath('/etc')
       PosixPath('/etc')
 
-   *pathsegments* is specified similarly to :class:`PurePath`.
+   *pathsegments* and *template* are specified similarly to :class:`PurePath`.
 
-.. class:: WindowsPath(*pathsegments)
+.. class:: WindowsPath(*pathsegments, template=None)
 
    A subclass of :class:`Path` and :class:`PureWindowsPath`, this class
    represents concrete Windows filesystem paths::
@@ -745,7 +745,7 @@ calls on path objects.  There are three ways to instantiate concrete paths:
       >>> WindowsPath('c:/Program Files/')
       WindowsPath('c:/Program Files')
 
-   *pathsegments* is specified similarly to :class:`PurePath`.
+   *pathsegments* and *template* are specified similarly to :class:`PurePath`.
 
 You can only instantiate the class flavour that corresponds to your system
 (allowing system calls on non-compatible path flavours could lead to
