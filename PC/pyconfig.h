@@ -352,7 +352,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       else
 #       define SIZEOF_TIME_T 4
 #       endif
-#       define ALIGNOF_MAX_ALIGN_T 4
+#       define ALIGNOF_MAX_ALIGN_T 8
 #endif
 
 #ifdef _DEBUG
