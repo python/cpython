@@ -11,22 +11,17 @@ extern "C" {
 #endif
 
 
-/* runtime lifecycle */
+/* state */
 
-extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
-extern void _PyTypes_FiniTypes(PyInterpreterState *);
-extern void _PyTypes_Fini(PyInterpreterState *);
+#define _Py_TYPE_BASE_VERSION_TAG (2<<16)
+#define _Py_MAX_GLOBAL_TYPE_VERSION_TAG (_Py_TYPE_BASE_VERSION_TAG - 1)
 
-
-/* other API */
-
-/* Length of array of slotdef pointers used to store slots with the
-   same __name__.  There should be at most MAX_EQUIV-1 slotdef entries with
-   the same __name__, for any __name__. Since that's a static property, it is
-   appropriate to declare fixed-size arrays for this. */
-#define MAX_EQUIV 10
-
-typedef struct wrapperbase pytype_slotdef;
+struct _types_runtime_state {
+    /* Used to set PyTypeObject.tp_version_tag for core static types. */
+    // bpo-42745: next_version_tag remains shared by all interpreters
+    // because of static types.
+    unsigned int next_version_tag;
+};
 
 
 // Type attribute lookup cache: speed up attribute and method lookups,
@@ -57,6 +52,36 @@ typedef struct {
     PyObject *tp_weaklist;
 } static_builtin_state;
 
+struct types_state {
+    /* Used to set PyTypeObject.tp_version_tag.
+       It starts at _Py_MAX_GLOBAL_TYPE_VERSION_TAG + 1,
+       where all those lower numbers are used for core static types. */
+    unsigned int next_version_tag;
+
+    struct type_cache type_cache;
+    size_t num_builtins_initialized;
+    static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
+};
+
+
+/* runtime lifecycle */
+
+extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
+extern void _PyTypes_FiniTypes(PyInterpreterState *);
+extern void _PyTypes_Fini(PyInterpreterState *);
+
+
+/* other API */
+
+/* Length of array of slotdef pointers used to store slots with the
+   same __name__.  There should be at most MAX_EQUIV-1 slotdef entries with
+   the same __name__, for any __name__. Since that's a static property, it is
+   appropriate to declare fixed-size arrays for this. */
+#define MAX_EQUIV 10
+
+typedef struct wrapperbase pytype_slotdef;
+
+
 static inline PyObject **
 _PyStaticType_GET_WEAKREFS_LISTPTR(static_builtin_state *state)
 {
@@ -78,12 +103,6 @@ _PyType_GetModuleState(PyTypeObject *type)
     return mod->md_state;
 }
 
-struct types_state {
-    struct type_cache type_cache;
-    size_t num_builtins_initialized;
-    static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
-};
-
 
 extern int _PyStaticType_InitBuiltin(PyTypeObject *type);
 extern static_builtin_state * _PyStaticType_GetState(PyTypeObject *);
@@ -97,6 +116,9 @@ _Py_type_getattro(PyTypeObject *type, PyObject *name);
 
 PyObject *_Py_slot_tp_getattro(PyObject *self, PyObject *name);
 PyObject *_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
+
+PyObject *
+_PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *meth_found);
 
 #ifdef __cplusplus
 }
