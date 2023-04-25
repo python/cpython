@@ -512,6 +512,10 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
 
     int initialized = 1;
     if ((type->tp_flags & Py_TPFLAGS_READY) == 0) {
+        assert(type->tp_name == NULL);
+        assert(type->tp_members == NULL);
+        assert(type->tp_base == NULL);
+
         members = initialize_members(desc, n_members, n_unnamed_members);
         if (members == NULL) {
             goto error;
@@ -523,6 +527,10 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
     }
 #ifndef NDEBUG
     else {
+        // Ensure that the type was initialized.
+        assert(type->tp_name != NULL);
+        assert(type->tp_members != NULL);
+        assert(type->tp_base == &PyTuple_Type);
         assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
     }
 #endif
@@ -613,18 +621,19 @@ _PyStructSequence_FiniBuiltin(PyTypeObject *type)
     // Undo _PyStructSequence_InitBuiltinWithFlags().
     type->tp_name = NULL;
     PyMem_Free(type->tp_members);
+    type->tp_members = NULL;
 
     _PyStaticType_Dealloc(type);
     assert(Py_REFCNT(type) == 1);
-    // Undo Py_INCREF(type) of _PyStructSequence_InitType().
+    // Undo Py_INCREF(type) of _PyStructSequence_InitBuiltinWithFlags().
     // Don't use Py_DECREF(): static type must not be deallocated
     Py_SET_REFCNT(type, 0);
 #ifdef Py_REF_DEBUG
     _Py_DecRefTotal(_PyInterpreterState_GET());
 #endif
 
-    // Make sure that _PyStructSequence_InitType() will initialize
-    // the type again
+    // Make sure that _PyStructSequence_InitBuiltinWithFlags()
+    // will initialize the type again.
     assert(Py_REFCNT(type) == 0);
     assert(type->tp_name == NULL);
 }
