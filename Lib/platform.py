@@ -1376,7 +1376,7 @@ def _get_musl_version(executable):
         Dynamic Program Loader
     """
 
-    from ._elffile import ELFFile
+    from _elffile import ELFFile
     import subprocess
 
     try:
