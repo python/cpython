@@ -227,6 +227,13 @@ class TypeParamsAccessTest(unittest.TestCase):
         """)
         exec(code, {})
 
+    def test_nonlocal(self):
+        def outer2[T]():
+
+            def inner1():
+                nonlocal T  # Syntax error: nonlocal binding not allowed for type parameter
+
+
 
 class TypeParamsTraditionalTypeVars(unittest.TestCase):
     def test_traditional_01(self):
@@ -263,20 +270,20 @@ class TypeParamsTypeVarTest(unittest.TestCase):
 
         self.assertIsInstance(a, TypeVar)
         self.assertEqual(a.__bound__, str)
-        self.assertTrue(a.__autovariance__)
+        self.assertTrue(a.__infer_variance__)
         self.assertFalse(a.__covariant__)
         self.assertFalse(a.__contravariant__)
 
         self.assertIsInstance(b, TypeVar)
         self.assertEqual(b.__bound__, str | int)
-        self.assertTrue(b.__autovariance__)
+        self.assertTrue(b.__infer_variance__)
         self.assertFalse(b.__covariant__)
         self.assertFalse(b.__contravariant__)
 
         self.assertIsInstance(c, TypeVar)
         self.assertEqual(c.__bound__, None)
         self.assertEqual(c.__constraints__, (int, str))
-        self.assertTrue(c.__autovariance__)
+        self.assertTrue(c.__infer_variance__)
         self.assertFalse(c.__covariant__)
         self.assertFalse(c.__contravariant__)
 
@@ -354,7 +361,7 @@ class TypeParamsTypeVarParamSpec(unittest.TestCase):
 
         a = func1()
         self.assertIsInstance(a, ParamSpec)
-        self.assertTrue(a.__autovariance__)
+        self.assertTrue(a.__infer_variance__)
         self.assertFalse(a.__covariant__)
         self.assertFalse(a.__contravariant__)
 
