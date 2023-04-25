@@ -2045,6 +2045,9 @@ swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
 
     prev_task = _PyDict_GetItem_KnownHash(state->current_tasks, loop, hash);
     if (prev_task == NULL) {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
         prev_task = Py_None;
     }
 
