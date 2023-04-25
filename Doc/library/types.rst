@@ -75,12 +75,52 @@ Dynamic Type Creation
 
    This function looks for items in *bases* that are not instances of
    :class:`type`, and returns a tuple where each such object that has
-   an ``__mro_entries__`` method is replaced with an unpacked result of
+   an :meth:`~object.__mro_entries__` method is replaced with an unpacked result of
    calling this method.  If a *bases* item is an instance of :class:`type`,
-   or it doesn't have an ``__mro_entries__`` method, then it is included in
+   or it doesn't have an :meth:`!__mro_entries__` method, then it is included in
    the return tuple unchanged.
 
    .. versionadded:: 3.7
+
+.. function:: get_original_bases(cls, /)
+
+    Return the tuple of objects originally given as the bases of *cls* before
+    the :meth:`~object.__mro_entries__` method has been called on any bases
+    (following the mechanisms laid out in :pep:`560`). This is useful for
+    introspecting :ref:`Generics <user-defined-generics>`.
+
+    For classes that have an ``__orig_bases__`` attribute, this
+    function returns the value of ``cls.__orig_bases__``.
+    For classes without the ``__orig_bases__`` attribute, ``cls.__bases__`` is
+    returned.
+
+    Examples::
+
+        from typing import TypeVar, Generic, NamedTuple, TypedDict
+
+        T = TypeVar("T")
+        class Foo(Generic[T]): ...
+        class Bar(Foo[int], float): ...
+        class Baz(list[str]): ...
+        Eggs = NamedTuple("Eggs", [("a", int), ("b", str)])
+        Spam = TypedDict("Spam", {"a": int, "b": str})
+
+        assert Bar.__bases__ == (Foo, float)
+        assert get_original_bases(Bar) == (Foo[int], float)
+
+        assert Baz.__bases__ == (list,)
+        assert get_original_bases(Baz) == (list[str],)
+
+        assert Eggs.__bases__ == (tuple,)
+        assert get_original_bases(Eggs) == (NamedTuple,)
+
+        assert Spam.__bases__ == (dict,)
+        assert get_original_bases(Spam) == (TypedDict,)
+
+        assert int.__bases__ == (object,)
+        assert get_original_bases(int) == (object,)
+
+    .. versionadded:: 3.12
 
 .. seealso::
 
@@ -486,7 +526,7 @@ Coroutine Utility Functions
    The generator-based coroutine is still a :term:`generator iterator`,
    but is also considered to be a :term:`coroutine` object and is
    :term:`awaitable`.  However, it may not necessarily implement
-   the :meth:`__await__` method.
+   the :meth:`~object.__await__` method.
 
    If *gen_func* is a generator function, it will be modified in-place.
 

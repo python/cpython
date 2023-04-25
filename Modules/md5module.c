@@ -22,6 +22,7 @@
 #include "Python.h"
 #include "hashlib.h"
 #include "pycore_strhex.h"        // _Py_strhex()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
 /*[clinic input]
 module _md5
@@ -108,7 +109,7 @@ static PyObject *
 MD5Type_copy_impl(MD5object *self, PyTypeObject *cls)
 /*[clinic end generated code: output=bf055e08244bf5ee input=d89087dcfb2a8620]*/
 {
-    MD5State *st = PyType_GetModuleState(cls);
+    MD5State *st = _PyType_GetModuleState(cls);
 
     MD5object *newobj;
     if ((newobj = newMD5object(st))==NULL)

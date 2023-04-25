@@ -11,6 +11,7 @@ import weakref
 from textwrap import dedent
 
 from test import support
+from test.support import os_helper, script_helper
 from test.support.ast_helper import ASTTestMixin
 
 def to_tuple(t):
@@ -772,11 +773,6 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('with (CtxManager() as example): ...', feature_version=(3, 8))
         ast.parse('with CtxManager() as example: ...', feature_version=(3, 8))
-
-    def test_debug_f_string_feature_version(self):
-        ast.parse('f"{x=}"', feature_version=(3, 8))
-        with self.assertRaises(SyntaxError):
-            ast.parse('f"{x=}"', feature_version=(3, 7))
 
     def test_assignment_expression_feature_version(self):
         ast.parse('(x := 0)', feature_version=(3, 8))
@@ -2297,6 +2293,17 @@ class EndPositionTests(unittest.TestCase):
         cdef = ast.parse(s).body[0]
         self.assertEqual(ast.get_source_segment(s, cdef.body[0], padded=True), s_method)
 
+    def test_source_segment_newlines(self):
+        s = 'def f():\n  pass\ndef g():\r  pass\r\ndef h():\r\n  pass\r\n'
+        f, g, h = ast.parse(s).body
+        self._check_content(s, f, 'def f():\n  pass')
+        self._check_content(s, g, 'def g():\r  pass')
+        self._check_content(s, h, 'def h():\r\n  pass')
+
+        s = 'def f():\n  a = 1\r  b = 2\r\n  c = 3\n'
+        f = ast.parse(s).body[0]
+        self._check_content(s, f, s.rstrip())
+
     def test_source_segment_missing_info(self):
         s = 'v = 1\r\nw = 1\nx = 1\n\ry = 1\r\n'
         v, w, x, y = ast.parse(s).body
@@ -2562,6 +2569,25 @@ class ModuleStateTests(unittest.TestCase):
         ''')
         res = support.run_in_subinterp(code)
         self.assertEqual(res, 0)
+
+
+class ASTMainTests(unittest.TestCase):
+    # Tests `ast.main()` function.
+
+    def test_cli_file_input(self):
+        code = "print(1, 2, 3)"
+        expected = ast.dump(ast.parse(code), indent=3)
+
+        with os_helper.temp_dir() as tmp_dir:
+            filename = os.path.join(tmp_dir, "test_module.py")
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(code)
+            res, _ = script_helper.run_python_until_end("-m", "ast", filename)
+
+        self.assertEqual(res.err, b"")
+        self.assertEqual(expected.splitlines(),
+                         res.out.decode("utf8").splitlines())
+        self.assertEqual(res.rc, 0)
 
 
 def main():

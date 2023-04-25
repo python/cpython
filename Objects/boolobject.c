@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"      // _Py_FatalRefcountError()
+#include "pycore_long.h"        // FALSE_TAG TRUE_TAG
 #include "pycore_runtime.h"       // _Py_ID()
 
 #include <stddef.h>
@@ -144,10 +145,14 @@ static PyNumberMethods bool_as_number = {
     0,                          /* nb_index */
 };
 
-static void _Py_NO_RETURN
-bool_dealloc(PyObject* Py_UNUSED(ignore))
+static void
+bool_dealloc(PyObject *boolean)
 {
-    _Py_FatalRefcountError("deallocating True or False");
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref Booleans out of existence. Instead,
+     * since bools are immortal, re-set the reference count.
+     */
+    _Py_SetImmortal(boolean);
 }
 
 /* The type object for bool.  Note that this cannot be subclassed! */
@@ -198,10 +203,14 @@ PyTypeObject PyBool_Type = {
 
 struct _longobject _Py_FalseStruct = {
     PyObject_HEAD_INIT(&PyBool_Type)
-    { 0, { 0 } }
+    { .lv_tag = _PyLong_FALSE_TAG,
+        { 0 }
+    }
 };
 
 struct _longobject _Py_TrueStruct = {
     PyObject_HEAD_INIT(&PyBool_Type)
-    { 1, { 1 } }
+    { .lv_tag = _PyLong_TRUE_TAG,
+        { 1 }
+    }
 };
