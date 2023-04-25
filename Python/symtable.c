@@ -1681,6 +1681,10 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     case JoinedStr_kind:
         VISIT_SEQ(st, expr, e->v.JoinedStr.values);
         break;
+    case TagString_kind:
+        VISIT(st, expr, e->v.TagString.tag);
+        VISIT(st, expr, e->v.TagString.str);
+        break;
     case Constant_kind:
         /* Nothing to do here. */
         break;
