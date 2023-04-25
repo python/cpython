@@ -1572,32 +1572,16 @@ dummy_func(
             STAT_INC(LOAD_SUPER_ATTR, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-            if (global_super == (PyObject *)&PySuper_Type && PyType_Check(class)) {
-                int method = 0;
-                Py_DECREF(global_super);
-                res = _PySuper_Lookup((PyTypeObject *)class, self, name, load_method ? &method : NULL);
-                Py_DECREF(class);
-                if (res == NULL) {
-                    Py_DECREF(self);
-                    ERROR_IF(true, error);
-                }
-                // Works with CALL, pushes two values: either `meth | self` or `NULL | meth`.
-                if (method) {
-                    res2 = res;
-                    res = self;  // transfer ownership
-                } else {
-                    res2 = NULL;
-                    Py_DECREF(self);
-                }
-            } else {
-                PyObject *stack[] = {class, self};
-                PyObject *super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
-                DECREF_INPUTS();
-                ERROR_IF(super == NULL, error);
-                res = PyObject_GetAttr(super, name);
-                Py_DECREF(super);
-                ERROR_IF(res == NULL, error);
-            }
+
+            // we make no attempt to optimize here; specializations should
+            // handle any case whose performance we care about
+            PyObject *stack[] = {class, self};
+            PyObject *super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
+            DECREF_INPUTS();
+            ERROR_IF(super == NULL, error);
+            res = PyObject_GetAttr(super, name);
+            Py_DECREF(super);
+            ERROR_IF(res == NULL, error);
         }
 
         inst(LOAD_SUPER_ATTR_METHOD, (unused/1, class_version/2, self_type_version/2, method/4, global_super, class, self -- res2, res)) {
