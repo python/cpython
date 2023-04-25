@@ -1,4 +1,5 @@
 import textwrap
+import types
 import unittest
 
 from typing import TypeAliasType
@@ -86,7 +87,13 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         self.assertIsInstance(o, TypeAliasType)
         self.assertEqual(len(o.__parameters__), 1)
         self.assertEqual(len(outer.__type_variables__), 1)
-        a = outer.__type_variables__[0]
         b = o.__parameters__[0]
         self.assertEqual(o.__type_params__, (b,))
 
+    def test_subscripting(self):
+        type NonGeneric = int
+        type Generic[A] = dict[A, A]
+
+        with self.assertRaises(TypeError):
+            NonGeneric[int]
+        self.assertIsInstance(Generic[int], types.GenericAlias)

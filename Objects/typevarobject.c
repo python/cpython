@@ -1190,7 +1190,6 @@ typealias_repr(PyObject *self)
 
 static PyMemberDef typealias_members[] = {
     {"__name__", T_STRING, offsetof(typealiasobject, name), READONLY},
-    {"__type_params__", T_OBJECT, offsetof(typealiasobject, type_params), READONLY},
     {0}
 };
 
@@ -1213,14 +1212,25 @@ static PyObject *
 typealias_parameters(PyObject *self, void *unused)
 {
     typealiasobject *ta = (typealiasobject *)self;
-    if (ta->type_params == NULL || Py_IsNone(ta->type_params)) {
+    if (ta->type_params == NULL) {
         return PyTuple_New(0);
     }
     return unpack_typevartuples(ta->type_params);
 }
 
+static PyObject *
+typealias_type_params(PyObject *self, void *unused)
+{
+    typealiasobject *ta = (typealiasobject *)self;
+    if (ta->type_params == NULL) {
+        return PyTuple_New(0);
+    }
+    return ta->type_params;
+}
+
 static PyGetSetDef typealias_getset[] = {
     {"__parameters__", typealias_parameters, (setter)NULL, NULL, NULL},
+    {"__type_params__", typealias_type_params, (setter)NULL, NULL, NULL},
     {"__value__", typealias_value, (setter)NULL, NULL, NULL},
     {0}
 };
@@ -1238,7 +1248,7 @@ typealias_alloc(const char *name, PyObject *type_params, PyObject *compute_value
         Py_DECREF(ta);
         return NULL;
     }
-    ta->type_params = Py_IsNone(type_params) ? PyTuple_New(0) : Py_XNewRef(type_params);
+    ta->type_params = Py_IsNone(type_params) ? NULL : Py_XNewRef(type_params);
     ta->compute_value = Py_NewRef(compute_value);
     ta->value = NULL;
     _PyObject_GC_TRACK(ta);
@@ -1266,6 +1276,17 @@ typealias_reduce_impl(typealiasobject *self)
     return PyUnicode_FromString(self->name);
 }
 
+static PyObject *
+typealias_subscript(PyObject *self, PyObject *args)
+{
+    if (((typealiasobject *)self)->type_params == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Only generic type aliases are subscriptable");
+        return NULL;
+    }
+    return Py_GenericAlias(self, args);
+}
+
 static PyMethodDef typealias_methods[] = {
     TYPEALIAS_REDUCE_METHODDEF
     {0}
@@ -1284,6 +1305,7 @@ static PyType_Slot typealias_slots[] = {
     {Py_tp_members, typealias_members},
     {Py_tp_methods, typealias_methods},
     {Py_tp_getset, typealias_getset},
+    {Py_mp_subscript, typealias_subscript},
     {Py_tp_dealloc, typealias_dealloc},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
