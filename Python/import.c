@@ -2021,9 +2021,9 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
 }
 
 static PyObject *
-unmarshal_frozen_code(struct frozen_info *info)
+unmarshal_frozen_code(PyInterpreterState *interp, struct frozen_info *info)
 {
-    if (info->get_code) {
+    if (info->get_code && _Py_IsMainInterpreter(interp)) {
         PyObject *code = info->get_code();
         assert(code != NULL);
         return code;
@@ -2070,7 +2070,7 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
         set_frozen_error(status, name);
         return -1;
     }
-    co = unmarshal_frozen_code(&info);
+    co = unmarshal_frozen_code(tstate->interp, &info);
     if (co == NULL) {
         return -1;
     }
@@ -3528,7 +3528,8 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
         return NULL;
     }
 
-    PyObject *codeobj = unmarshal_frozen_code(&info);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *codeobj = unmarshal_frozen_code(interp, &info);
     if (dataobj != Py_None) {
         PyBuffer_Release(&buf);
     }
