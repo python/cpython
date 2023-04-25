@@ -4499,6 +4499,30 @@ compiler_joined_str(struct compiler *c, expr_ty e)
     return SUCCESS;
 }
 
+/* Used to implement tag strings */
+static int
+compiler_tag_string(struct compiler *c, expr_ty e)
+{
+    location loc = LOC(e);
+    if (e->kind == TagString_kind) {
+        expr_ty tag = e->v.TagString.tag;
+        expr_ty str = e->v.TagString.str;
+        if (tag->kind == Name_kind) {
+            if (str->kind == JoinedStr_kind) {
+                // Generate code for tag(str1, str2, ...)
+                asdl_keyword_seq *keywords =
+                    _Py_asdl_keyword_seq_new(0, c->c_arena);
+                if (keywords == NULL)
+                    return 0;
+                ADDOP(c, loc, PUSH_NULL);
+                VISIT(c, expr, tag);
+                return compiler_call_helper(c, loc, 0, str->v.JoinedStr.values, keywords);
+            }
+        }
+    }
+    return compiler_error(c, loc, "More complicated tag-string not yet supported");
+}
+
 /* Used to implement f-strings. Format a single value. */
 static int
 compiler_formatted_value(struct compiler *c, expr_ty e)
@@ -5420,6 +5444,8 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     case JoinedStr_kind:
         return compiler_joined_str(c, e);
+    case TagString_kind:
+        return compiler_tag_string(c, e);
     case FormattedValue_kind:
         return compiler_formatted_value(c, e);
     /* The following exprs can be assignment targets. */
