@@ -29,12 +29,12 @@ except ImportError:
 #
 
 class _BasePurePathSubclass(object):
-    def __init__(self, *args, session_id):
+    def __init__(self, *args, template=None, session_id=None):
         super().__init__(*args)
-        self.session_id = session_id
-
-    def makepath(self, *args):
-        return type(self)(*args, session_id=self.session_id)
+        if template:
+            self.session_id = template.session_id
+        else:
+            self.session_id = session_id
 
 
 class _BasePurePathTest(object):
@@ -122,13 +122,13 @@ class _BasePurePathTest(object):
         self._check_str_subclass('a/b.txt')
         self._check_str_subclass('/a/b.txt')
 
-    def test_makepath_common(self):
+    def test_template_common(self):
         class P(_BasePurePathSubclass, self.cls):
             pass
         p = P('foo', 'bar', session_id=42)
+        self.assertEqual(42, P(template=p).session_id)
         self.assertEqual(42, (p / 'foo').session_id)
         self.assertEqual(42, ('foo' / p).session_id)
-        self.assertEqual(42, p.makepath('foo').session_id)
         self.assertEqual(42, p.joinpath('foo').session_id)
         self.assertEqual(42, p.with_name('foo').session_id)
         self.assertEqual(42, p.with_stem('foo').session_id)
@@ -1625,13 +1625,14 @@ class _BasePathTest(object):
             env['HOME'] = os.path.join(BASE, 'home')
             self._test_home(self.cls.home())
 
-    def test_makepath(self):
+    def test_template(self):
         class P(_BasePurePathSubclass, self.cls):
             pass
         p = P(BASE, session_id=42)
+        self.assertEqual(42, P(template=p).session_id)
         self.assertEqual(42, p.absolute().session_id)
         self.assertEqual(42, p.resolve().session_id)
-        self.assertEqual(42, p.makepath('~').expanduser().session_id)
+        self.assertEqual(42, P('~', template=p).expanduser().session_id)
         self.assertEqual(42, (p / 'fileA').rename(p / 'fileB').session_id)
         self.assertEqual(42, (p / 'fileB').replace(p / 'fileA').session_id)
         if os_helper.can_symlink():

@@ -1,4 +1,4 @@
-Add :meth:`pathlib.PurePath.makepath`, which creates a path object from
-arguments. This method is called whenever a derivative path is created, such
-as from :attr:`pathlib.PurePath.parent`. Subclasses may override this method
+Add optional *template* argument to :class:`pathlib.PurePath` and
+:class:`~pathlib.Path`. This argument is supplied whenever a derivative path
+is created, such as from :attr:`pathlib.PurePath.parent`. Subclasses may use
 to pass information to derivative paths.

@@ -96,7 +96,7 @@ Pure path objects provide path-handling operations which don't actually
 access a filesystem.  There are three ways to access these classes, which
 we also call *flavours*:
 
-.. class:: PurePath(*pathsegments)
+.. class:: PurePath(*pathsegments, template=None)
 
    A generic class that represents the system's path flavour (instantiating
    it creates either a :class:`PurePosixPath` or a :class:`PureWindowsPath`)::
@@ -149,6 +149,31 @@ we also call *flavours*:
    (a naïve approach would make ``PurePosixPath('foo/../bar')`` equivalent
    to ``PurePosixPath('bar')``, which is wrong if ``foo`` is a symbolic link
    to another directory)
+
+   The optional *template* argument may provide another path object. It is
+   supplied whenever a new path object is created from an existing one, such
+   as in :attr:`parent` or :meth:`relative_to`. Subclasses may use this to
+   pass information between path objects. For example::
+
+      from pathlib import PurePosixPath
+
+      class MyPath(PurePosixPath):
+          def __init__(self, *pathsegments, template=None, session_id=None):
+              super().__init__(*pathsegments)
+              if template:
+                  self.session_id = template.session_id
+              else:
+                  self.session_id = session_id
+
+      etc = MyPath('/etc', session_id=42)
+      hosts = etc / 'hosts'
+      print(hosts.session_id)  # 42
+
+   .. note::
+      The classes provided in this module ignore the *template* argument.
+
+   .. versionadded:: 3.12
+      The *template* argument.
 
    Pure path objects implement the :class:`os.PathLike` interface, allowing them
    to be used anywhere the interface is accepted.
@@ -543,30 +568,6 @@ Pure paths provide the following methods and properties:
       PurePosixPath('/etc/init.d/apache2')
       >>> PureWindowsPath('c:').joinpath('/Program Files')
       PureWindowsPath('c:/Program Files')
-
-
-.. method:: PurePath.makepath(*pathsegments)
-
-   Create a new path object of the same type by combining the given
-   *pathsegments*. This method is called whenever a derivative path is created,
-   such as from :attr:`parent` and :meth:`relative_to`. Subclasses may
-   override this method to pass information to derivative paths, for example::
-
-      from pathlib import PurePosixPath
-
-      class MyPath(PurePosixPath):
-          def __init__(self, *args, session_id):
-              super().__init__(*args)
-              self.session_id = session_id
-
-          def makepath(self, *pathsegments):
-              return type(self)(*pathsegments, session_id=self.session_id)
-
-      etc = MyPath('/etc', session_id=42)
-      hosts = etc / 'hosts'
-      print(hosts.session_id)  # 42
-
-   .. versionadded:: 3.12
 
 
 .. method:: PurePath.match(pattern)
