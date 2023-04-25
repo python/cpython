@@ -3919,7 +3919,8 @@ to be ignored.
    the :envvar:`PATH` variable. The other variants, :func:`execl`, :func:`execle`,
    :func:`execv`, and :func:`execve`, will not use the :envvar:`PATH` variable to
    locate the executable; *path* must contain an appropriate absolute or relative
-   path.
+   path. Relative paths must include at least one slash, even on Windows, as
+   plain names will not be resolved.
 
    For :func:`execle`, :func:`execlpe`, :func:`execve`, and :func:`execvpe` (note
    that these all end in "e"), the *env* parameter must be a mapping which is
@@ -3951,7 +3952,7 @@ to be ignored.
 
    .. note::
 
-      The standard way to exit is ``sys.exit(n)``.  :func:`_exit` should
+      The standard way to exit is :func:`sys.exit(n) <sys.exit>`.  :func:`!_exit` should
       normally only be used in the child process after a :func:`fork`.
 
 The following exit codes are defined and can be used with :func:`_exit`,
