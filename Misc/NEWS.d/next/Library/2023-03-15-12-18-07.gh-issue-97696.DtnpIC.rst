@@ -1,4 +1,6 @@
-Implemented an eager task factory in asyncio. When set as a task factory on
-an event loop, it performs eager execution of coroutines and returns a
-completed future instead of scheduling a task to the event loop if the
-coroutine can complete without suspending.
+Implemented an eager task factory in asyncio.
+When used as a task factory on an event loop, it performs eager execution of
+coroutines. coroutines that are able to complete synchronously (e.g. return or
+raise without blocking) are returned immediately as a finished task, and the
+task is never scheduled to the event loop. If the coroutine blocks, the
+(pending) is scheduled and returned.
