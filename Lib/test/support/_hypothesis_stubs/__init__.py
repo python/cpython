@@ -100,3 +100,12 @@ class Verbosity(Enum):
     normal = 1
     verbose = 2
     debug = 3
+
+
+class Phase(Enum):
+    explicit = 0
+    reuse = 1
+    generate = 2
+    target = 3
+    shrink = 4
+    explain = 5
