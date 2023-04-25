@@ -1055,7 +1055,8 @@ Connection objects
 
          Entry point name.
          If ``None`` (the default),
-         SQLite will try to come up with an entry point name of its own.
+         SQLite will come up with an entry point name of its own;
+         see the SQLite docs `Loading an Extension`_ for details.
 
       :type entrypoint: str | None
 
@@ -1068,6 +1069,8 @@ Connection objects
 
       .. versionadded:: 3.12
          The *entrypoint* parameter.
+
+   .. _Loading an Extension: https://www.sqlite.org/loadext.html#loading_an_extension_
 
    .. method:: iterdump
 
