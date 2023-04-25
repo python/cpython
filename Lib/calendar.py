@@ -23,7 +23,7 @@ __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY",
            "SATURDAY", "SUNDAY"]
 
-# Exception raised for bad input (with string parameter for details)
+
 error = ValueError
 
 # Exceptions raised for bad input
@@ -41,7 +41,7 @@ class IllegalWeekdayError(ValueError):
         return "bad weekday number %r; must be 0 (Monday) to 6 (Sunday)" % self.weekday
 
 
-# Constants for months referenced later
+# Constants for months
 @global_enum
 class Month(IntEnum):
     JANUARY = 1
@@ -70,9 +70,6 @@ class Day(IntEnum):
     SUNDAY = 6
 
 
-# Constants for months referenced later
-January = 1
-February = 2
 
 # Number of days per month (except for February in leap years)
 mdays = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -155,12 +152,12 @@ def monthrange(year, month):
     if not 1 <= month <= 12:
         raise IllegalMonthError(month)
     day1 = weekday(year, month, 1)
-    ndays = mdays[month] + (month == February and isleap(year))
+    ndays = mdays[month] + (month == FEBRUARY and isleap(year))
     return day1, ndays
 
 
 def _monthlen(year, month):
-    return mdays[month] + (month == February and isleap(year))
+    return mdays[month] + (month == FEBRUARY and isleap(year))
 
 
 def _prevmonth(year, month):
@@ -530,7 +527,7 @@ class HTMLCalendar(Calendar):
         a('\n')
         a('<tr><th colspan="%d" class="%s">%s</th></tr>' % (
             width, self.cssclass_year_head, theyear))
-        for i in range(January, January+12, width):
+        for i in range(JANUARY, JANUARY+12, width):
             # months in this row
             months = range(i, min(i+width, 13))
             a('<tr>')
