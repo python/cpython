@@ -228,10 +228,14 @@ class TypeParamsAccessTest(unittest.TestCase):
         exec(code, {})
 
     def test_nonlocal(self):
-        def outer2[T]():
+        code = textwrap.dedent("""\
+            def outer2[T]():
 
-            def inner1():
-                nonlocal T  # Syntax error: nonlocal binding not allowed for type parameter
+                def inner1():
+                    nonlocal T  # Syntax error: nonlocal binding not allowed for type parameter
+        """)
+        with self.assertRaisesRegex(SyntaxError, "nonlocal binding not allowed for type parameter 'T'"):
+            exec(code, {})
 
 
 
