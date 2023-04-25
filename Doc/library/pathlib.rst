@@ -171,6 +171,7 @@ we also call *flavours*:
 
    .. note::
       The classes provided in this module ignore the *template* argument.
+      It is there purely as a hook for user-defined subclasses.
 
    .. versionadded:: 3.12
       The *template* argument.
