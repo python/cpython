@@ -512,6 +512,8 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
     PyMemberDef *members;
     Py_ssize_t n_members, n_unnamed_members;
 
+    assert(type->tp_name == NULL);
+    assert(type->tp_members == NULL);
     members = initialize_members(desc, &n_members, &n_unnamed_members);
     if (members == NULL) {
         return -1;
@@ -603,8 +605,12 @@ _PyStructSequence_FiniType(PyTypeObject *type)
 
     // Undo _PyStructSequence_InitBuiltinWithFlags()
     PyMem_Free(type->tp_members);
+    type->tp_members = NULL;
 
     _PyStaticType_Dealloc(type);
+
+    // Mark the type as un-initialized.
+    type->tp_name = NULL;
 }
 
 
