@@ -1938,7 +1938,7 @@ class TestFinderMethods(unittest.TestCase):
     def test_findlinestarts(self):
         def func():
             pass
-            
+
         code = func.__code__
         offsets = [linestart[0] for linestart in dis.findlinestarts(code)]
         self.assertEqual(offsets, [0, 2])
