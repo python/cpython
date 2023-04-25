@@ -536,6 +536,13 @@ The :mod:`test.support` module defines the following functions:
    :func:`doctest.testmod`.
 
 
+.. function:: get_pagesize()
+
+   Get size of a page in bytes.
+
+   .. versionadded:: 3.12
+
+
 .. function:: setswitchinterval(interval)
 
    Set the :func:`sys.setswitchinterval` to the given *interval*.  Defines
@@ -1011,6 +1018,16 @@ The :mod:`test.support` module defines the following functions:
    .. versionadded:: 3.10
 
 
+.. function:: adjust_int_max_str_digits(max_digits)
+
+   This function returns a context manager that will change the global
+   :func:`sys.set_int_max_str_digits` setting for the duration of the
+   context to allow execution of test code that needs a different limit
+   on the number of digits when converting between an integer and string.
+
+   .. versionadded:: 3.11
+
+
 The :mod:`test.support` module defines the following classes:
 
 
@@ -1118,7 +1135,7 @@ The :mod:`test.support.socket_helper` module provides support for socket tests.
 
 .. function:: bind_unix_socket(sock, addr)
 
-   Bind a unix socket, raising :exc:`unittest.SkipTest` if
+   Bind a Unix socket, raising :exc:`unittest.SkipTest` if
    :exc:`PermissionError` is raised.
 
 
@@ -1672,6 +1689,21 @@ The :mod:`test.support.import_helper` module provides support for import tests.
 The :mod:`test.support.warnings_helper` module provides support for warnings tests.
 
 .. versionadded:: 3.10
+
+
+.. function:: ignore_warnings(*, category)
+
+   Suppress warnings that are instances of *category*,
+   which must be :exc:`Warning` or a subclass.
+   Roughly equivalent to :func:`warnings.catch_warnings`
+   with :meth:`warnings.simplefilter('ignore', category=category) <warnings.simplefilter>`.
+   For example::
+
+      @warning_helper.ignore_warnings(category=DeprecationWarning)
+      def test_suppress_warning():
+          # do something
+
+   .. versionadded:: 3.8
 
 
 .. function:: check_no_resource_warning(testcase)

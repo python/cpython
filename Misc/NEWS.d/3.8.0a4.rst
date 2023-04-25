@@ -1354,7 +1354,7 @@ the function is called twice.
 .. nonce: pz-DIR
 .. section: C API
 
-:c:macro:`PyDoc_VAR(name)` and :c:macro:`PyDoc_STRVAR(name,str)` now create
+:c:expr:`PyDoc_VAR(name)` and :c:expr:`PyDoc_STRVAR(name,str)` now create
 ``static const char name[]`` instead of ``static char name[]``.  Patch by
 Inada Naoki.
 

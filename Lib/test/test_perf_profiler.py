@@ -108,7 +108,7 @@ class TestPerfTrampoline(unittest.TestCase):
             script = make_script(script_dir, "perftest", code)
             with subprocess.Popen(
                 [sys.executable, "-Xperf", script],
-                universal_newlines=True,
+                text=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
             ) as process:
@@ -157,7 +157,7 @@ class TestPerfTrampoline(unittest.TestCase):
             script = make_script(script_dir, "perftest", code)
             with subprocess.Popen(
                 [sys.executable, script],
-                universal_newlines=True,
+                text=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
             ) as process:
@@ -211,7 +211,7 @@ def is_unwinding_reliable():
 def perf_command_works():
     try:
         cmd = ["perf", "--help"]
-        stdout = subprocess.check_output(cmd, universal_newlines=True)
+        stdout = subprocess.check_output(cmd, text=True)
     except (subprocess.SubprocessError, OSError):
         return False
 
@@ -237,7 +237,7 @@ def perf_command_works():
                 'print("hello")',
             )
             stdout = subprocess.check_output(
-                cmd, cwd=script_dir, universal_newlines=True, stderr=subprocess.STDOUT
+                cmd, cwd=script_dir, text=True, stderr=subprocess.STDOUT
             )
         except (subprocess.SubprocessError, OSError):
             return False

@@ -449,7 +449,7 @@ When run, this outputs:
 
 .. code-block:: shell-session
 
-    $ python3 compare-strs.py
+    $ python compare-strs.py
     length of first string= 1
     length of second string= 2
     True
@@ -517,7 +517,7 @@ References
 
 Some good alternative discussions of Python's Unicode support are:
 
-* `Processing Text Files in Python 3 <http://python-notes.curiousefficiency.org/en/latest/python3/text_file_processing.html>`_, by Nick Coghlan.
+* `Processing Text Files in Python 3 <https://python-notes.curiousefficiency.org/en/latest/python3/text_file_processing.html>`_, by Nick Coghlan.
 * `Pragmatic Unicode <https://nedbatchelder.com/text/unipain.html>`_, a PyCon 2012 presentation by Ned Batchelder.
 
 The :class:`str` type is described in the Python library reference at

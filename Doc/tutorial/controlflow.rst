@@ -840,8 +840,9 @@ will always bind to the first parameter. For example::
 
 But using ``/`` (positional only arguments), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments::
 
-    def foo(name, /, **kwds):
-        return 'name' in kwds
+    >>> def foo(name, /, **kwds):
+    ...     return 'name' in kwds
+    ...
     >>> foo(1, **{'name': 2})
     True
 

@@ -140,7 +140,7 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 HTTP status category
 --------------------
 
-.. versionadded:: 3.11
+.. versionadded:: 3.12
 
 The enum values have several properties to indicate the HTTP status category:
 
@@ -171,16 +171,25 @@ Property             Indicates that           Details
    Usage::
 
       >>> from http import HTTPMethod
-      >>> HTTMethod.GET
-      HTTMethod.GET
-      >>> HTTMethod.GET == 'GET'
+      >>>
+      >>> HTTPMethod.GET
+      <HTTPMethod.GET>
+      >>> HTTPMethod.GET == 'GET'
       True
-      >>> HTTMethod.GET.value
+      >>> HTTPMethod.GET.value
       'GET'
-      >>> HTTMethod.GET.description
-      'Transfer a current representation of the target resource.'
+      >>> HTTPMethod.GET.description
+      'Retrieve the target.'
       >>> list(HTTPMethod)
-      [HTTPMethod.GET, HTTPMethod.HEAD, ...]
+      [<HTTPMethod.CONNECT>,
+       <HTTPMethod.DELETE>,
+       <HTTPMethod.GET>,
+       <HTTPMethod.HEAD>,
+       <HTTPMethod.OPTIONS>,
+       <HTTPMethod.PATCH>,
+       <HTTPMethod.POST>,
+       <HTTPMethod.PUT>,
+       <HTTPMethod.TRACE>]
 
 .. _http-methods:
 
