@@ -4,17 +4,22 @@ from ._helpers import StubClass, stub_factory
 
 
 class StubStrategy(StubClass):
+    def __make_trailing_repr(self, transformation_name, func):
+        func_name = func.__name__ or repr(func)
+        return f"{self!r}.{transformation_name}({func_name})"
+
     def map(self, pack):
-        return self
+        return self._with_repr(self.__make_trailing_repr("map", pack))
 
     def flatmap(self, expand):
-        return self
+        return self._with_repr(self.__make_trailing_repr("flatmap", expand))
 
     def filter(self, condition):
-        return self
+        return self._with_repr(self.__make_trailing_repr("filter", condition))
 
     def __or__(self, other):
-        return self
+        new_repr = f"one_of({self!r}, {other!r})"
+        return self._with_repr(new_repr)
 
 
 _STRATEGIES = {
@@ -37,7 +42,8 @@ _STRATEGIES = {
     "from_regex",
     "from_type",
     "frozensets",
-    "functions" "integers",
+    "functions",
+    "integers",
     "iterables",
     "just",
     "lists",
