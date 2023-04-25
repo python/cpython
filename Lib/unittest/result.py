@@ -159,7 +159,11 @@ class TestResult(object):
         self.unexpectedSuccesses.append(test)
 
     def addDuration(self, test, elapsed):
-        """Called when a test finished to run, regardless of its outcome."""
+        """Called when a test finished to run, regardless of its outcome.
+        *test* is the test case corresponding to the test method.
+        *elapsed* is the time represented in seconds, and it includes the
+        execution of cleanup functions.
+        """
         # support for a TextTestRunner using an old TestResult class
         if hasattr(self, "collectedDurations"):
             self.collectedDurations.append((test, elapsed))
