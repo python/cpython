@@ -127,3 +127,11 @@ class TypeParamsAliasValueTest(unittest.TestCase):
 
         type Generic[T, *Ts, **P] = int
         self.assertEqual(repr(Generic), "<type alias Generic[T, *Ts, **P]: int>")
+
+    def test_recursive_repr(self):
+        type Recursive = Recursive
+        self.assertEqual(repr(Recursive), "<type alias Recursive: ...>")
+
+        type X = list[Y]
+        type Y = list[X]
+        self.assertEqual(repr(X), "<type alias X: list[<type alias Y: list[...]>]>")

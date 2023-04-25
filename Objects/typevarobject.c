@@ -1249,6 +1249,14 @@ typealias_evaluate(typealiasobject *ta)
 static PyObject *
 typealias_repr(PyObject *self)
 {
+    Py_ssize_t res = Py_ReprEnter(self);
+    if (res > 0) {
+        return PyUnicode_FromString("...");
+    }
+    else if (res < 0) {
+        return NULL;
+    }
+
     typealiasobject *ta = (typealiasobject *)self;
     PyObject *value_repr = NULL;
     PyObject *value = typealias_evaluate(ta);
@@ -1271,6 +1279,7 @@ typealias_repr(PyObject *self)
     }
     if (value_repr == NULL) {
         // PyUnicode_FromString failed
+        Py_ReprLeave(self);
         return NULL;
     }
     PyObject *result = NULL;
@@ -1321,6 +1330,7 @@ typealias_repr(PyObject *self)
         result = PyUnicode_FromFormat("<type alias %s: %U>", ta->name, value_repr);
     }
 error:
+    Py_ReprLeave(self);
     Py_DECREF(value_repr);
     return result;
 }
