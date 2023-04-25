@@ -167,7 +167,7 @@ def findtestdir(path=None):
 
 
 
- def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS, splittestdirs=SPLITTESTDIRS, base_mod=""):
+def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS, splittestdirs=SPLITTESTDIRS, base_mod=""):
      """Return a list of all applicable test modules."""
      testdir = findtestdir(testdir)
      names = os.listdir(testdir)
