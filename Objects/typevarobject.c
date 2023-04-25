@@ -1221,6 +1221,7 @@ _Py_make_typevartuple(PyThreadState *unused, PyObject *v)
 static void
 typealias_dealloc(PyObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     typealiasobject *ta = (typealiasobject *)self;
     free((void *)ta->name);
@@ -1228,6 +1229,7 @@ typealias_dealloc(PyObject *self)
     Py_XDECREF(ta->compute_value);
     Py_XDECREF(ta->value);
     Py_TYPE(self)->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
