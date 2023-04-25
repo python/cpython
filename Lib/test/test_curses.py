@@ -1323,9 +1323,6 @@ def lorem_ipsum(win):
 
 class TextboxTest(unittest.TestCase):
     def setUp(self):
-        import curses
-        import curses.textpad
-
         self.mock_win = unittest.mock.MagicMock(spec=curses.window)
         self.mock_win.getyx.return_value = (1, 1)
         self.mock_win.getmaxyx.return_value = (10, 20)
