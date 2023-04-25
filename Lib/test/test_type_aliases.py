@@ -55,7 +55,7 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         self.assertIsInstance(TA1, TypeAliasType)
         self.assertEqual(TA1.__value__, int)
         self.assertEqual(TA1.__parameters__, ())
-        self.assertEqual(TA1.__type_variables__, ())
+        self.assertEqual(TA1.__type_params__, ())
 
         type TA2 = TA1 | str
 
@@ -64,7 +64,7 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         self.assertEqual(a, TA1)
         self.assertEqual(b, str)
         self.assertEqual(TA2.__parameters__, ())
-        self.assertEqual(TA2.__type_variables__, ())
+        self.assertEqual(TA2.__type_params__, ())
 
     def test_alias_access_02(self):
         class Parent[A]:
@@ -75,7 +75,7 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         self.assertEqual(len(Parent.__parameters__), 1)
         a = Parent.__parameters__[0]
         b = Parent.TA1.__parameters__[0]
-        self.assertEqual(Parent.TA1.__type_variables__, (a, b))
+        self.assertEqual(Parent.TA1.__type_params__, (a, b))
 
     def test_alias_access_02(self):
         def outer[A]():
@@ -88,5 +88,5 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         self.assertEqual(len(outer.__type_variables__), 1)
         a = outer.__type_variables__[0]
         b = o.__parameters__[0]
-        self.assertEqual(o.__type_variables__, (a, b))
+        self.assertEqual(o.__type_params__, (b,))
 

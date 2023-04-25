@@ -115,6 +115,68 @@ caller(void)
     return Py_NewRef(r);
 }
 
+static PyObject *
+typevartuple_unpack(PyObject *tvt)
+{
+    PyObject *typing = PyImport_ImportModule("typing");
+    if (typing == NULL) {
+        return NULL;
+    }
+    PyObject *unpack = PyObject_GetAttrString(typing, "Unpack");
+    if (unpack == NULL) {
+        Py_DECREF(typing);
+        return NULL;
+    }
+    PyObject *unpacked = PyObject_GetItem(unpack, tvt);
+    Py_DECREF(typing);
+    Py_DECREF(unpack);
+    return unpacked;
+}
+
+static int
+contains_typevartuple(PyTupleObject *params)
+{
+    Py_ssize_t n = PyTuple_GET_SIZE(params);
+    PyObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *param = PyTuple_GET_ITEM(params, i);
+        if (Py_IS_TYPE(param, (PyTypeObject *)tp)) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static PyObject *
+unpack_typevartuples(PyObject *params)
+{
+    assert(PyTuple_Check(params));
+    // TypeVarTuple must be unpacked when passed to Generic, so we do that here.
+    if (contains_typevartuple((PyTupleObject *)params)) {
+        Py_ssize_t n = PyTuple_GET_SIZE(params);
+        PyObject *new_params = PyTuple_New(n);
+        PyObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
+        for (Py_ssize_t i = 0; i < n; i++) {
+            PyObject *param = PyTuple_GET_ITEM(params, i);
+            if (Py_IS_TYPE(param, (PyTypeObject *)tp)) {
+                PyObject *unpacked = typevartuple_unpack(param);
+                if (unpacked == NULL) {
+                    Py_DECREF(new_params);
+                    return NULL;
+                }
+                PyTuple_SET_ITEM(new_params, i, unpacked);
+            }
+            else {
+                PyTuple_SET_ITEM(new_params, i, Py_NewRef(param));
+            }
+        }
+        return new_params;
+    }
+    else {
+        return Py_NewRef(params);
+    }
+}
+
 static void
 typevar_dealloc(PyObject *self)
 {
@@ -891,24 +953,6 @@ typevartuple_dealloc(PyObject *self)
 }
 
 static PyObject *
-typevartuple_unpack(PyObject *tvt)
-{
-    PyObject *typing = PyImport_ImportModule("typing");
-    if (typing == NULL) {
-        return NULL;
-    }
-    PyObject *unpack = PyObject_GetAttrString(typing, "Unpack");
-    if (unpack == NULL) {
-        Py_DECREF(typing);
-        return NULL;
-    }
-    PyObject *unpacked = PyObject_GetItem(unpack, tvt);
-    Py_DECREF(typing);
-    Py_DECREF(unpack);
-    return unpacked;
-}
-
-static PyObject *
 typevartuple_iter(PyObject *self)
 {
     PyObject *unpacked = typevartuple_unpack(self);
@@ -1150,6 +1194,37 @@ static PyMemberDef typealias_members[] = {
     {0}
 };
 
+static PyObject *
+typealias_value(PyObject *self, void *unused)
+{
+    typealiasobject *ta = (typealiasobject *)self;
+    if (ta->value != NULL) {
+        return Py_NewRef(ta->value);
+    }
+    PyObject *result = PyObject_CallNoArgs(ta->compute_value);
+    if (result == NULL) {
+        return NULL;
+    }
+    ta->value = Py_NewRef(result);
+    return result;
+}
+
+static PyObject *
+typealias_parameters(PyObject *self, void *unused)
+{
+    typealiasobject *ta = (typealiasobject *)self;
+    if (ta->type_params == NULL || Py_IsNone(ta->type_params)) {
+        return PyTuple_New(0);
+    }
+    return unpack_typevartuples(ta->type_params);
+}
+
+static PyGetSetDef typealias_getset[] = {
+    {"__parameters__", typealias_parameters, (setter)NULL, NULL, NULL},
+    {"__value__", typealias_value, (setter)NULL, NULL, NULL},
+    {0}
+};
+
 static typealiasobject *
 typealias_alloc(const char *name, PyObject *type_params, PyObject *compute_value)
 {
@@ -1163,7 +1238,7 @@ typealias_alloc(const char *name, PyObject *type_params, PyObject *compute_value
         Py_DECREF(ta);
         return NULL;
     }
-    ta->type_params = Py_XNewRef(type_params);
+    ta->type_params = Py_IsNone(type_params) ? PyTuple_New(0) : Py_XNewRef(type_params);
     ta->compute_value = Py_NewRef(compute_value);
     ta->value = NULL;
     _PyObject_GC_TRACK(ta);
@@ -1208,6 +1283,7 @@ static PyType_Slot typealias_slots[] = {
     {Py_tp_doc, (void *)typealias_doc},
     {Py_tp_members, typealias_members},
     {Py_tp_methods, typealias_methods},
+    {Py_tp_getset, typealias_getset},
     {Py_tp_dealloc, typealias_dealloc},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
@@ -1318,48 +1394,10 @@ generic_class_getitem(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
     return call_typing_args_kwargs("_generic_class_getitem", cls, args, kwargs);
 }
 
-static int
-contains_typevartuple(PyTupleObject *params)
-{
-    Py_ssize_t n = PyTuple_GET_SIZE(params);
-    PyObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
-    for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *param = PyTuple_GET_ITEM(params, i);
-        if (Py_IS_TYPE(param, (PyTypeObject *)tp)) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
 PyObject *
 _Py_subscript_generic(PyThreadState* unused, PyObject *params)
 {
-    assert(PyTuple_Check(params));
-    // TypeVarTuple must be unpacked when passed to Generic, so we do that here.
-    if (contains_typevartuple((PyTupleObject *)params)) {
-        Py_ssize_t n = PyTuple_GET_SIZE(params);
-        PyObject *new_params = PyTuple_New(n);
-        PyObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyObject *param = PyTuple_GET_ITEM(params, i);
-            if (Py_IS_TYPE(param, (PyTypeObject *)tp)) {
-                PyObject *unpacked = typevartuple_unpack(param);
-                if (unpacked == NULL) {
-                    Py_DECREF(new_params);
-                    return NULL;
-                }
-                PyTuple_SET_ITEM(new_params, i, unpacked);
-            }
-            else {
-                PyTuple_SET_ITEM(new_params, i, Py_NewRef(param));
-            }
-        }
-        params = new_params;
-    }
-    else {
-        Py_INCREF(params);
-    }
+    params = unpack_typevartuples(params);
 
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (interp->cached_objects.generic_type == NULL) {
