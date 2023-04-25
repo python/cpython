@@ -457,8 +457,10 @@ uuid
 tempfile
 --------
 
-The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
-*delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
+* The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
+  *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
+* :func:`tempfile.mkdtemp` now always returns an absolute path, even if the
+  argument provided to the *dir* parameter is a relative path.
 
 .. _whatsnew-typing-py312:
 
