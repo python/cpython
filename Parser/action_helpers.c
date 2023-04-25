@@ -1376,11 +1376,93 @@ _PyPegen_name_from_f_string_start(Parser *p, Token* t)
                        t->end_col_offset, p->arena);
 }
 
+static expr_ty
+lambdafy(Parser *p, expr_ty arg)
+{
+    arguments_ty args = _PyPegen_empty_arguments(p);
+    if (args == NULL)
+        return NULL;
+    return _PyAST_Lambda(args, arg,
+            arg->lineno, arg->col_offset, arg->end_lineno, arg->end_col_offset,
+            p->arena);
+}
+
 expr_ty
 _PyPegen_tag_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b) {
     expr_ty tag = _PyPegen_name_from_f_string_start(p, a);
-    expr_ty joined_str = _PyPegen_joined_str(p, a, raw_expressions, b);
-    return _PyAST_TagString(tag, joined_str, a->lineno, a->col_offset,
+    if (tag == NULL) {
+        return NULL;
+    }
+    expr_ty str = _PyPegen_joined_str(p, a, raw_expressions, b);
+    if (str == NULL) {
+        return NULL;
+    }
+    if (str->kind == JoinedStr_kind) {
+        // Transform FormattedValue items into thunks (for now, tuples)
+        asdl_expr_seq *values = str->v.JoinedStr.values;
+        int nvalues = asdl_seq_LEN(values);
+        expr_ty none = NULL;
+        for (int i = 0; i < nvalues; i++) {
+            expr_ty value = asdl_seq_GET(values, i);
+            if (value->kind == FormattedValue_kind) {
+                if (none == NULL) {
+                    none = _PyAST_Constant(Py_None, NULL,
+                            str->lineno, str->col_offset,
+                            str->end_lineno, str->end_col_offset,
+                            p->arena);
+                    if (none == NULL)
+                        return NULL;
+                }
+                expr_ty expr = value->v.FormattedValue.value;
+                expr_ty lambda = lambdafy(p, expr);
+                if (lambda == NULL)
+                    return NULL;
+                constant rawstr = _PyAST_ExprAsUnicode(expr);
+                if (rawstr == NULL)
+                    return NULL;
+                expr_ty raw = _PyAST_Constant(rawstr, NULL,
+                        expr->lineno, expr->col_offset,
+                        expr->end_lineno, expr->end_col_offset,
+                        p->arena);
+                if (raw == NULL)
+                    return NULL;
+                expr_ty conv = none;
+                int conversion = value->v.FormattedValue.conversion;
+                if (conversion >= 0) {
+                    char buf[1];
+                    buf[0] = conversion;
+                    constant uconv = _PyUnicode_FromASCII(buf, 1);
+                    if (uconv == NULL)
+                        return NULL;
+                    conv = _PyAST_Constant(uconv, NULL,
+                            expr->lineno, expr->col_offset,
+                            expr->end_lineno, expr->end_col_offset,
+                            p->arena);
+                    if (conv == NULL)
+                        return NULL;
+                }
+                expr_ty spec = value->v.FormattedValue.format_spec;
+                if (spec == NULL) {
+                    spec = none;
+                }
+                asdl_expr_seq *elts = _Py_asdl_expr_seq_new(4, p->arena);
+                if (elts == NULL)
+                    return NULL;
+                asdl_seq_SET(elts, 0, lambda);
+                asdl_seq_SET(elts, 1, raw);
+                asdl_seq_SET(elts, 2, conv);
+                asdl_seq_SET(elts, 3, spec);
+                expr_ty tuple = _PyAST_Tuple(elts, Load,
+                        value->lineno, value->col_offset,
+                        value->end_lineno, value->end_col_offset,
+                        p->arena);
+                if (tuple == NULL)
+                    return NULL;
+                asdl_seq_SET(values, i, tuple);
+            }
+        }
+    }
+    return _PyAST_TagString(tag, str, a->lineno, a->col_offset,
                             b->end_lineno, b->end_col_offset,
                             p->arena);
 }
