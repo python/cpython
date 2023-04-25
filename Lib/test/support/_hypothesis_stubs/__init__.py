@@ -79,7 +79,7 @@ def register_random(*args, **kwargs):
 
 
 def settings(*args, **kwargs):
-    pass  # pragma: nocover
+    return lambda f: f  # pragma: nocover
 
 
 class HealthCheck(Enum):
