@@ -1668,8 +1668,8 @@ def test_pdb_issue_gh_101517():
     ...     'continue'
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(5)test_function()
-    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(4)test_function()
+    -> except* Exception as e:
     (Pdb) continue
     """
 
