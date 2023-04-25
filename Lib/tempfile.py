@@ -362,7 +362,7 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
 
     for seq in range(TMP_MAX):
         name = next(names)
-        file = _os.path.abspath(_os.path.join(dir, prefix + name + suffix))
+        file = _os.path.join(dir, prefix + name + suffix)
         _sys.audit("tempfile.mkdtemp", file)
         try:
             _os.mkdir(file, 0o700)
@@ -376,7 +376,7 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
                 continue
             else:
                 raise
-        return file
+        return _os.path.abspath(file)
 
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary directory name found")
