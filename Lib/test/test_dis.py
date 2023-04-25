@@ -234,16 +234,18 @@ def wrap_func_w_kwargs():
     func_w_kwargs(1, 2, c=5)
 
 dis_kw_names = """\
-%3d           0 RESUME                   0
-              2 LOAD_GLOBAL              1 (NULL + f)
-             12 LOAD_CONST               1 (1)
-             14 LOAD_CONST               2 (2)
-             16 LOAD_CONST               3 (5)
-             18 KW_NAMES                 4 (('c',))
-             20 CALL                     3
-             28 POP_TOP
-             30 RETURN_CONST             0 (None)
-""" % (wrap_func_w_kwargs.__code__.co_firstlineno)
+%3d        RESUME                   0
+
+%3d        LOAD_GLOBAL              1 (NULL + func_w_kwargs)
+           LOAD_CONST               1 (1)
+           LOAD_CONST               2 (2)
+           LOAD_CONST               3 (5)
+           KW_NAMES                 4 (('c',))
+           CALL                     3
+           POP_TOP
+           RETURN_CONST             0 (None)
+""" % (wrap_func_w_kwargs.__code__.co_firstlineno,
+       wrap_func_w_kwargs.__code__.co_firstlineno + 1)
 
 _BIG_LINENO_FORMAT = """\
   1        RESUME                   0
