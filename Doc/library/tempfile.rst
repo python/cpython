@@ -226,7 +226,10 @@ The module defines the following user-callable items:
    The *prefix*, *suffix*, and *dir* arguments are the same as for
    :func:`mkstemp`.
 
-   :func:`mkdtemp` returns the absolute pathname of the new directory.
+   :func:`mkdtemp` returns the absolute pathname of the new directory if *dir*
+   is ``None`` or is an absolute path. If *dir* is a relative path,
+   :func:`mkdtemp` returns a relative path on Python 3.11 and lower. However,
+   on 3.12 it will return an absolute path in all situations.
 
    .. audit-event:: tempfile.mkdtemp fullpath tempfile.mkdtemp
 
