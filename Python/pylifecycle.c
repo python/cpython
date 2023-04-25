@@ -547,10 +547,20 @@ pycore_init_runtime(_PyRuntimeState *runtime,
 }
 
 
-static void
+static PyStatus
 init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *config)
 {
     assert(interp->feature_flags == 0);
+
+    if (config->use_main_obmalloc) {
+        interp->feature_flags |= Py_RTFLAGS_USE_MAIN_OBMALLOC;
+    }
+    else if (!config->check_multi_interp_extensions) {
+        /* The reason: PyModuleDef.m_base.m_copy leaks objects between
+           interpreters. */
+        return _PyStatus_ERR("per-interpreter obmalloc does not support "
+                             "single-phase init extension modules");
+    }
 
     if (config->allow_fork) {
         interp->feature_flags |= Py_RTFLAGS_FORK;
@@ -570,6 +580,8 @@ init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *con
     if (config->check_multi_interp_extensions) {
         interp->feature_flags |= Py_RTFLAGS_MULTI_INTERP_EXTENSIONS;
     }
+
+    return _PyStatus_OK();
 }
 
 
@@ -622,7 +634,10 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
 
     const _PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
-    init_interp_settings(interp, &config);
+    status = init_interp_settings(interp, &config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     PyThreadState *tstate = _PyThreadState_New(interp);
     if (tstate == NULL) {
@@ -1668,6 +1683,8 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyFloat_FiniType(interp);
     _PyLong_FiniTypes(interp);
     _PyThread_FiniType(interp);
+    // XXX fini collections module static types (_PyStaticType_Dealloc())
+    // XXX fini IO module static types (_PyStaticType_Dealloc())
     _PyErr_FiniTypes(interp);
     _PyTypes_FiniTypes(interp);
 
@@ -1936,6 +1953,7 @@ Py_FinalizeEx(void)
     }
     _Py_FinalizeRefTotal(runtime);
 #endif
+    _Py_FinalizeAllocatedBlocks(runtime);
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -2036,7 +2054,10 @@ new_interpreter(PyThreadState **tstate_p, const _PyInterpreterConfig *config)
         goto error;
     }
 
-    init_interp_settings(interp, config);
+    status = init_interp_settings(interp, config);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto error;
+    }
 
     status = init_interp_create_gil(tstate);
     if (_PyStatus_EXCEPTION(status)) {
