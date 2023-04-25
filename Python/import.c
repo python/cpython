@@ -413,8 +413,11 @@ remove_module(PyThreadState *tstate, PyObject *name)
 Py_ssize_t
 _PyImport_GetNextModuleIndex(void)
 {
+    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
     LAST_MODULE_INDEX++;
-    return LAST_MODULE_INDEX;
+    Py_ssize_t index = LAST_MODULE_INDEX;
+    PyThread_release_lock(EXTENSIONS.mutex);
+    return index;
 }
 
 static const char *
@@ -703,6 +706,7 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 const char *
 _PyImport_ResolveNameWithPackageContext(const char *name)
 {
+    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
     if (PKGCONTEXT != NULL) {
         const char *p = strrchr(PKGCONTEXT, '.');
         if (p != NULL && strcmp(name, p+1) == 0) {
@@ -710,14 +714,17 @@ _PyImport_ResolveNameWithPackageContext(const char *name)
             PKGCONTEXT = NULL;
         }
     }
+    PyThread_release_lock(EXTENSIONS.mutex);
     return name;
 }
 
 const char *
 _PyImport_SwapPackageContext(const char *newcontext)
 {
+    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
     const char *oldcontext = PKGCONTEXT;
     PKGCONTEXT = newcontext;
+    PyThread_release_lock(EXTENSIONS.mutex);
     return oldcontext;
 }
 
@@ -865,13 +872,13 @@ gets even messier.
 static inline void
 extensions_lock_acquire(void)
 {
-    // XXX For now the GIL is sufficient.
+    PyThread_acquire_lock(_PyRuntime.imports.extensions.mutex, WAIT_LOCK);
 }
 
 static inline void
 extensions_lock_release(void)
 {
-    // XXX For now the GIL is sufficient.
+    PyThread_release_lock(_PyRuntime.imports.extensions.mutex);
 }
 
 /* Magic for extension modules (built-in as well as dynamically
