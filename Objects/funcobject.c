@@ -666,7 +666,7 @@ func_get_type_params(PyFunctionObject *op, void *Py_UNUSED(ignored))
 }
 
 PyObject *
-_Py_set_function_type_params(PyThreadState* unused, PyObject *func,
+_Py_set_function_type_params(PyThreadState *unused, PyObject *func,
                              PyObject *type_params)
 {
     PyFunctionObject *f = (PyFunctionObject *)func;
@@ -676,7 +676,7 @@ _Py_set_function_type_params(PyThreadState* unused, PyObject *func,
         return NULL;
     }
     Py_XSETREF(f->func_typeparams, Py_NewRef(type_params));
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 
