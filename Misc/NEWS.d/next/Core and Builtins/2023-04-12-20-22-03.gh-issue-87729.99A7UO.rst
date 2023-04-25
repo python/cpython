@@ -1,0 +1,1 @@
+Add :opcode:`LOAD_SUPER_ATTR` to speed up ``super().meth()`` and ``super().attr`` calls.

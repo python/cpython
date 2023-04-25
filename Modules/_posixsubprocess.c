@@ -75,6 +75,28 @@
 
 static struct PyModuleDef _posixsubprocessmodule;
 
+/*[clinic input]
+module _posixsubprocess
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c62211df27cf7334]*/
+
+/*[python input]
+class pid_t_converter(CConverter):
+    type = 'pid_t'
+    format_unit = '" _Py_PARSE_PID "'
+
+    def parse_arg(self, argname, displayname):
+        return """
+            {paramname} = PyLong_AsPid({argname});
+            if ({paramname} == -1 && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.parser_name)
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=5af1c116d56cbb5a]*/
+
+#include "clinic/_posixsubprocess.c.h"
+
 /* Convert ASCII to a positive int, no libc call. no overflow. -1 on error. */
 static int
 _pos_int_from_ascii(const char *name)
@@ -744,7 +766,7 @@ do_fork_exec(char *const exec_array[],
         assert(preexec_fn == Py_None);
 
         pid = vfork();
-        if (pid == -1) {
+        if (pid == (pid_t)-1) {
             /* If vfork() fails, fall back to using fork(). When it isn't
              * allowed in a process by the kernel, vfork can return -1
              * with errno EINVAL. https://bugs.python.org/issue47151. */
@@ -784,44 +806,81 @@ do_fork_exec(char *const exec_array[],
     return 0;  /* Dead code to avoid a potential compiler warning. */
 }
 
+/*[clinic input]
+_posixsubprocess.fork_exec as subprocess_fork_exec
+    args as process_args: object
+    executable_list: object
+    close_fds: bool
+    pass_fds as py_fds_to_keep: object(subclass_of='&PyTuple_Type')
+    cwd as cwd_obj: object
+    env as env_list: object
+    p2cread: int
+    p2cwrite: int
+    c2pread: int
+    c2pwrite: int
+    errread: int
+    errwrite: int
+    errpipe_read: int
+    errpipe_write: int
+    restore_signals: bool
+    call_setsid: bool
+    pgid_to_set: pid_t
+    gid as gid_object: object
+    extra_groups as extra_groups_packed: object
+    uid as uid_object: object
+    child_umask: int
+    preexec_fn: object
+    allow_vfork: bool
+    /
+
+Spawn a fresh new child process.
+
+Fork a child process, close parent file descriptors as appropriate in the
+child and duplicate the few that are needed before calling exec() in the
+child process.
+
+If close_fds is True, close file descriptors 3 and higher, except those listed
+in the sorted tuple pass_fds.
+
+The preexec_fn, if supplied, will be called immediately before closing file
+descriptors and exec.
+
+WARNING: preexec_fn is NOT SAFE if your application uses threads.
+         It may trigger infrequent, difficult to debug deadlocks.
+
+If an error occurs in the child process before the exec, it is
+serialized and written to the errpipe_write fd per subprocess.py.
+
+Returns: the child process's PID.
+
+Raises: Only on an error in the parent process.
+[clinic start generated code]*/
 
 static PyObject *
-subprocess_fork_exec(PyObject *module, PyObject *args)
+subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
+                          PyObject *executable_list, int close_fds,
+                          PyObject *py_fds_to_keep, PyObject *cwd_obj,
+                          PyObject *env_list, int p2cread, int p2cwrite,
+                          int c2pread, int c2pwrite, int errread,
+                          int errwrite, int errpipe_read, int errpipe_write,
+                          int restore_signals, int call_setsid,
+                          pid_t pgid_to_set, PyObject *gid_object,
+                          PyObject *extra_groups_packed,
+                          PyObject *uid_object, int child_umask,
+                          PyObject *preexec_fn, int allow_vfork)
+/*[clinic end generated code: output=7ee4f6ee5cf22b5b input=51757287ef266ffa]*/
 {
-    PyObject *gc_module = NULL;
-    PyObject *executable_list, *py_fds_to_keep;
-    PyObject *env_list, *preexec_fn;
-    PyObject *process_args, *converted_args = NULL, *fast_args = NULL;
+    PyObject *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
-    PyObject *extra_groups_packed;
-    PyObject *uid_object, *gid_object;
-    int p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite;
-    int errpipe_read, errpipe_write, close_fds, restore_signals;
-    int call_setsid;
-    pid_t pgid_to_set = -1;
     gid_t *extra_groups = NULL;
-    int child_umask;
-    PyObject *cwd_obj, *cwd_obj2 = NULL;
-    const char *cwd;
+    PyObject *cwd_obj2 = NULL;
+    const char *cwd = NULL;
     pid_t pid = -1;
     int need_to_reenable_gc = 0;
-    char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
-    Py_ssize_t arg_num, extra_group_size = 0;
+    char *const *argv = NULL, *const *envp = NULL;
+    Py_ssize_t extra_group_size = 0;
     int need_after_fork = 0;
     int saved_errno = 0;
-    int allow_vfork;
-
-    if (!PyArg_ParseTuple(
-            args, "OOpO!OOiiiiiiiipp" _Py_PARSE_PID "OOOiOp:fork_exec",
-            &process_args, &executable_list,
-            &close_fds, &PyTuple_Type, &py_fds_to_keep,
-            &cwd_obj, &env_list,
-            &p2cread, &p2cwrite, &c2pread, &c2pwrite,
-            &errread, &errwrite, &errpipe_read, &errpipe_write,
-            &restore_signals, &call_setsid, &pgid_to_set,
-            &gid_object, &extra_groups_packed, &uid_object, &child_umask,
-            &preexec_fn, &allow_vfork))
-        return NULL;
 
     PyInterpreterState *interp = PyInterpreterState_Get();
     if ((preexec_fn != Py_None) && (interp != PyInterpreterState_Main())) {
@@ -844,7 +903,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
         need_to_reenable_gc = PyGC_Disable();
     }
 
-    exec_array = _PySequence_BytesToCharpArray(executable_list);
+    char *const *exec_array = _PySequence_BytesToCharpArray(executable_list);
     if (!exec_array)
         goto cleanup;
 
@@ -862,7 +921,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
         converted_args = PyTuple_New(num_args);
         if (converted_args == NULL)
             goto cleanup;
-        for (arg_num = 0; arg_num < num_args; ++arg_num) {
+        for (Py_ssize_t arg_num = 0; arg_num < num_args; ++arg_num) {
             PyObject *borrowed_arg, *converted_arg;
             if (PySequence_Fast_GET_SIZE(fast_args) != num_args) {
                 PyErr_SetString(PyExc_RuntimeError, "args changed during iteration");
@@ -891,8 +950,6 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
         if (PyUnicode_FSConverter(cwd_obj, &cwd_obj2) == 0)
             goto cleanup;
         cwd = PyBytes_AsString(cwd_obj2);
-    } else {
-        cwd = NULL;
     }
 
     if (extra_groups_packed != Py_None) {
@@ -1019,7 +1076,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
                        py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
 
     /* Parent (original) process */
-    if (pid == -1) {
+    if (pid == (pid_t)-1) {
         /* Capture errno for the exception. */
         saved_errno = errno;
     }
@@ -1068,39 +1125,9 @@ cleanup:
     if (need_to_reenable_gc) {
         PyGC_Enable();
     }
-    Py_XDECREF(gc_module);
 
     return pid == -1 ? NULL : PyLong_FromPid(pid);
 }
-
-
-PyDoc_STRVAR(subprocess_fork_exec_doc,
-"fork_exec(args, executable_list, close_fds, pass_fds, cwd, env,\n\
-          p2cread, p2cwrite, c2pread, c2pwrite,\n\
-          errread, errwrite, errpipe_read, errpipe_write,\n\
-          restore_signals, call_setsid, pgid_to_set,\n\
-          gid, extra_groups, uid,\n\
-          preexec_fn)\n\
-\n\
-Forks a child process, closes parent file descriptors as appropriate in the\n\
-child and dups the few that are needed before calling exec() in the child\n\
-process.\n\
-\n\
-If close_fds is true, close file descriptors 3 and higher, except those listed\n\
-in the sorted tuple pass_fds.\n\
-\n\
-The preexec_fn, if supplied, will be called immediately before closing file\n\
-descriptors and exec.\n\
-WARNING: preexec_fn is NOT SAFE if your application uses threads.\n\
-         It may trigger infrequent, difficult to debug deadlocks.\n\
-\n\
-If an error occurs in the child process before the exec, it is\n\
-serialized and written to the errpipe_write fd per subprocess.py.\n\
-\n\
-Returns: the child process's PID.\n\
-\n\
-Raises: Only on an error in the parent process.\n\
-");
 
 /* module level code ********************************************************/
 
@@ -1108,7 +1135,7 @@ PyDoc_STRVAR(module_doc,
 "A POSIX helper for the subprocess module.");
 
 static PyMethodDef module_methods[] = {
-    {"fork_exec", subprocess_fork_exec, METH_VARARGS, subprocess_fork_exec_doc},
+    SUBPROCESS_FORK_EXEC_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 
