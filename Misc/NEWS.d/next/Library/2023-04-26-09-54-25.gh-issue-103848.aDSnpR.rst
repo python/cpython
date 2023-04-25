@@ -1,0 +1,2 @@
+Add checks to ensure that bracketed hosts found by urlsplit are of IPv6 or
+IPvFuture format

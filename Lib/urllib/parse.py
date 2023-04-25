@@ -33,6 +33,7 @@ import math
 import re
 import types
 import warnings
+import ipaddress
 
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "urlsplit", "urlunsplit", "urlencode", "parse_qs",
@@ -199,7 +200,7 @@ class _NetlocResultMixinStr(_NetlocResultMixinBase, _ResultMixinStr):
         _, _, hostinfo = netloc.rpartition('@')
         _, have_open_br, bracketed = hostinfo.partition('[')
         if have_open_br:
-            hostname, _, port = bracketed.partition(']')
+            hostname, _, port = bracketed.rpartition(']')
             _, _, port = port.partition(':')
         else:
             hostname, _, port = hostinfo.partition(':')
@@ -229,7 +230,7 @@ class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
         _, _, hostinfo = netloc.rpartition(b'@')
         _, have_open_br, bracketed = hostinfo.partition(b'[')
         if have_open_br:
-            hostname, _, port = bracketed.partition(b']')
+            hostname, _, port = bracketed.rpartition(b']')
             _, _, port = port.partition(b':')
         else:
             hostname, _, port = hostinfo.partition(b':')
@@ -426,6 +427,15 @@ def _checknetloc(netloc):
         if c in netloc2:
             raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
+        
+def _check_bracketed_host(hostname):
+    if hostname.startswith('v'):
+        if not re.match(r"\Av[a-fA-F0-9]+\..+\Z", hostname):
+            raise ValueError(f"IPvFuture address is invalid")
+    else:
+        ip = ipaddress.ip_address(hostname) # Throws Value Error if not IPv6 or IPv4
+        if isinstance(ip, ipaddress.IPv4Address):
+            raise ValueError(f"An IPv4 address cannot be in brackets")
 
 # typed=True avoids BytesWarnings being emitted during cache key
 # comparison since this API supports both bytes and str input.
@@ -466,12 +476,14 @@ def urlsplit(url, scheme='', allow_fragments=True):
                 break
         else:
             scheme, url = url[:i].lower(), url[i+1:]
-
     if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)
         if (('[' in netloc and ']' not in netloc) or
                 (']' in netloc and '[' not in netloc)):
             raise ValueError("Invalid IPv6 URL")
+        if '[' in netloc and ']' in netloc:
+            bracketed_host = netloc.partition('[')[2].rpartition(']')[0]
+            _check_bracketed_host(bracketed_host)
     if allow_fragments and '#' in url:
         url, fragment = url.split('#', 1)
     if '?' in url:

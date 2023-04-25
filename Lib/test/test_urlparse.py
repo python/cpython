@@ -1037,6 +1037,29 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p2.scheme, 'tel')
         self.assertEqual(p2.path, '+31641044153')
 
+    def test_splitting_bracketed_hosts(self):
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[192.0.2.146]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[important.com:8000]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v123r.IP]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v12ae]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v.IP]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v123.]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[v]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[0439:23af::2309::fae7:1234]/Path?Query')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[0439:23af:2309::fae7:1234:2342:438e:192.0.2.146]/Path?Query')
+        p1 = urllib.parse.urlsplit('scheme://user@[v6a.ip]/path?query')
+        self.assertEqual(p1.hostname, 'v6a.ip')
+        self.assertEqual(p1.username, 'user')
+        self.assertEqual(p1.path, '/path')
+        p2 = urllib.parse.urlsplit('scheme://user@[0439:23af:2309::fae7%test]/path?query')
+        self.assertEqual(p2.hostname, '0439:23af:2309::fae7%test')
+        self.assertEqual(p2.username, 'user')
+        self.assertEqual(p2.path, '/path')
+        p3 = urllib.parse.urlsplit('scheme://user@[0439:23af:2309::fae7:1234:192.0.2.146%test]/path?query')
+        self.assertEqual(p3.hostname, '0439:23af:2309::fae7:1234:192.0.2.146%test')
+        self.assertEqual(p3.username, 'user')
+        self.assertEqual(p3.path, '/path')
+
     def test_port_casting_failure_message(self):
         message = "Port could not be cast to integer value as 'oracle'"
         p1 = urllib.parse.urlparse('http://Server=sde; Service=sde:oracle')
