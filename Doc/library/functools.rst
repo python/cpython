@@ -49,8 +49,13 @@ The :mod:`functools` module defines the following functions:
         >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
         479001600
 
-   The cache is threadsafe so the wrapped function can be used in multiple
-   threads.
+   The cache is threadsafe so that the wrapped function can be used in
+   multiple threads.  This means that the underlying data structure will
+   remain coherent during concurrent updates.
+
+   It is possible for the wrapped function to be called more than once if
+   another thread makes an additional call before the initial call has been
+   completed and cached.
 
    .. versionadded:: 3.9
 
@@ -118,6 +123,7 @@ The :mod:`functools` module defines the following functions:
            def stdev(self):
                return statistics.stdev(self._data)
 
+   .. versionadded:: 3.8
 
    .. versionchanged:: 3.12
       Prior to Python 3.12, ``cached_property`` included an undocumented lock to
@@ -125,8 +131,6 @@ The :mod:`functools` module defines the following functions:
       run only once per instance. However, the lock was per-property, not
       per-instance, which could result in unacceptably high lock contention. In
       Python 3.12+ this locking is removed.
-
-   .. versionadded:: 3.8
 
 
 .. function:: cmp_to_key(func)
@@ -159,8 +163,13 @@ The :mod:`functools` module defines the following functions:
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
    function is periodically called with the same arguments.
 
-   The cache is threadsafe so the wrapped function can be used in multiple
-   threads.
+   The cache is threadsafe so that the wrapped function can be used in
+   multiple threads.  This means that the underlying data structure will
+   remain coherent during concurrent updates.
+
+   It is possible for the wrapped function to be called more than once if
+   another thread makes an additional call before the initial call has been
+   completed and cached.
 
    Since a dictionary is used to cache results, the positional and keyword
    arguments to the function must be :term:`hashable`.
@@ -233,7 +242,7 @@ The :mod:`functools` module defines the following functions:
         @lru_cache(maxsize=32)
         def get_pep(num):
             'Retrieve text of a Python Enhancement Proposal'
-            resource = 'https://peps.python.org/pep-%04d/' % num
+            resource = f'https://peps.python.org/pep-{num:04d}'
             try:
                 with urllib.request.urlopen(resource) as s:
                     return s.read()

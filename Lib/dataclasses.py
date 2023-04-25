@@ -222,6 +222,29 @@ _POST_INIT_NAME = '__post_init__'
 # https://bugs.python.org/issue33453 for details.
 _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
+# Atomic immutable types which don't require any recursive handling and for which deepcopy
+# returns the same object. We can provide a fast-path for these types in asdict and astuple.
+_ATOMIC_TYPES = frozenset({
+    # Common JSON Serializable types
+    types.NoneType,
+    bool,
+    int,
+    float,
+    str,
+    # Other common types
+    complex,
+    bytes,
+    # Other types that are also unaffected by deepcopy
+    types.EllipsisType,
+    types.NotImplementedType,
+    types.CodeType,
+    types.BuiltinFunctionType,
+    types.FunctionType,
+    type,
+    range,
+    property,
+})
+
 # This function's logic is copied from "recursive_repr" function in
 # reprlib module to avoid dependency.
 def _recursive_repr(user_function):
@@ -432,8 +455,8 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
         locals = {}
     return_annotation = ''
     if return_type is not MISSING:
-        locals['_return_type'] = return_type
-        return_annotation = '->_return_type'
+        locals['__dataclass_return_type__'] = return_type
+        return_annotation = '->__dataclass_return_type__'
     args = ','.join(args)
     body = '\n'.join(f'  {b}' for b in body)
 
@@ -467,14 +490,14 @@ def _field_init(f, frozen, globals, self_name, slots):
     # Return the text of the line in the body of __init__ that will
     # initialize this field.
 
-    default_name = f'_dflt_{f.name}'
+    default_name = f'__dataclass_dflt_{f.name}__'
     if f.default_factory is not MISSING:
         if f.init:
             # This field has a default factory.  If a parameter is
             # given, use it.  If not, call the factory.
             globals[default_name] = f.default_factory
             value = (f'{default_name}() '
-                     f'if {f.name} is _HAS_DEFAULT_FACTORY '
+                     f'if {f.name} is __dataclass_HAS_DEFAULT_FACTORY__ '
                      f'else {f.name}')
         else:
             # This is a field that's not in the __init__ params, but
@@ -535,11 +558,11 @@ def _init_param(f):
     elif f.default is not MISSING:
         # There's a default, this will be the name that's used to look
         # it up.
-        default = f'=_dflt_{f.name}'
+        default = f'=__dataclass_dflt_{f.name}__'
     elif f.default_factory is not MISSING:
         # There's a factory function.  Set a marker.
-        default = '=_HAS_DEFAULT_FACTORY'
-    return f'{f.name}:_type_{f.name}{default}'
+        default = '=__dataclass_HAS_DEFAULT_FACTORY__'
+    return f'{f.name}:__dataclass_type_{f.name}__{default}'
 
 
 def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
@@ -562,10 +585,9 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                 raise TypeError(f'non-default argument {f.name!r} '
                                 'follows default argument')
 
-    locals = {f'_type_{f.name}': f.type for f in fields}
+    locals = {f'__dataclass_type_{f.name}__': f.type for f in fields}
     locals.update({
-        'MISSING': MISSING,
-        '_HAS_DEFAULT_FACTORY': _HAS_DEFAULT_FACTORY,
+        '__dataclass_HAS_DEFAULT_FACTORY__': _HAS_DEFAULT_FACTORY,
         '__dataclass_builtins_object__': object,
     })
 
@@ -1106,8 +1128,13 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
-        cls.__doc__ = (cls.__name__ +
-                       str(inspect.signature(cls)).replace(' -> None', ''))
+        try:
+            # In some cases fetching a signature is not possible.
+            # But, we surely should not fail in this case.
+            text_sig = str(inspect.signature(cls)).replace(' -> None', '')
+        except (TypeError, ValueError):
+            text_sig = ''
+        cls.__doc__ = (cls.__name__ + text_sig)
 
     if match_args:
         # I could probably compute this once
@@ -1292,7 +1319,9 @@ def asdict(obj, *, dict_factory=dict):
 
 
 def _asdict_inner(obj, dict_factory):
-    if _is_dataclass_instance(obj):
+    if type(obj) in _ATOMIC_TYPES:
+        return obj
+    elif _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):
             value = _asdict_inner(getattr(obj, f.name), dict_factory)
@@ -1364,7 +1393,9 @@ def astuple(obj, *, tuple_factory=tuple):
 
 
 def _astuple_inner(obj, tuple_factory):
-    if _is_dataclass_instance(obj):
+    if type(obj) in _ATOMIC_TYPES:
+        return obj
+    elif _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):
             value = _astuple_inner(getattr(obj, f.name), tuple_factory)
@@ -1421,8 +1452,11 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
 
     For the bases and namespace parameters, see the builtin type() function.
 
-    The parameters init, repr, eq, order, unsafe_hash, and frozen are passed to
-    dataclass().
+    The parameters init, repr, eq, order, unsafe_hash, frozen, match_args, kw_only,
+    slots, and weakref_slot are passed to dataclass().
+
+    If module parameter is defined, the '__module__' attribute of the dataclass is
+    set to that value.
     """
 
     if namespace is None:

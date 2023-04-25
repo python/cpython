@@ -156,6 +156,9 @@ Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
 
+# explicitly protected, internal-only
+Modules/_xxinterpchannelsmodule.c	-	_globals	-
+
 
 ##################################
 ## not significant
@@ -306,6 +309,7 @@ Objects/obmalloc.c	-	_PyMem	-
 Objects/obmalloc.c	-	_PyMem_Debug	-
 Objects/obmalloc.c	-	_PyMem_Raw	-
 Objects/obmalloc.c	-	_PyObject	-
+Objects/obmalloc.c	-	last_final_leaks	-
 Objects/obmalloc.c	-	usedpools	-
 Objects/typeobject.c	-	name_op	-
 Objects/typeobject.c	-	slotdefs	-

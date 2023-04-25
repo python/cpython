@@ -41,6 +41,7 @@ JUMP_BACKWARD = opmap['JUMP_BACKWARD']
 FOR_ITER = opmap['FOR_ITER']
 SEND = opmap['SEND']
 LOAD_ATTR = opmap['LOAD_ATTR']
+LOAD_SUPER_ATTR = opmap['LOAD_SUPER_ATTR']
 
 CACHE = opmap["CACHE"]
 
@@ -64,10 +65,10 @@ def _try_compile(source, name):
        expect code objects
     """
     try:
-        c = compile(source, name, 'eval')
+        return compile(source, name, 'eval')
     except SyntaxError:
-        c = compile(source, name, 'exec')
-    return c
+        pass
+    return compile(source, name, 'exec')
 
 def dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False):
     """Disassemble classes, methods, functions, and other compiled objects.
@@ -475,6 +476,10 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                     argval, argrepr = _get_name_info(arg//2, get_name)
                     if (arg & 1) and argrepr:
                         argrepr = "NULL|self + " + argrepr
+                elif deop == LOAD_SUPER_ATTR:
+                    argval, argrepr = _get_name_info(arg//4, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = "NULL|self + " + argrepr
                 else:
                     argval, argrepr = _get_name_info(arg, get_name)
             elif deop in hasjabs:
@@ -581,7 +586,12 @@ def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                            instr.offset > 0)
         if new_source_line:
             print(file=file)
-        is_current_instr = instr.offset == lasti
+        if show_caches:
+            is_current_instr = instr.offset == lasti
+        else:
+            # Each CACHE takes 2 bytes
+            is_current_instr = instr.offset <= lasti \
+                <= instr.offset + 2 * _inline_cache_entries[_deoptop(instr.opcode)]
         print(instr._disassemble(lineno_width, is_current_instr, offset_width),
               file=file)
     if exception_entries:
