@@ -25,6 +25,7 @@
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
 #include "pycore_dict.h"
@@ -1551,6 +1552,36 @@ dummy_func(
             // Do not DECREF INPUTS because the function steals the references
             ERROR_IF(_PyDict_SetItem_Take2((PyDictObject *)dict, key, value) != 0, error);
             PREDICT(JUMP_BACKWARD);
+        }
+
+        inst(LOAD_SUPER_ATTR, (global_super, class, self -- res2 if (oparg & 1), res)) {
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg >> 2);
+            if (global_super == (PyObject *)&PySuper_Type && PyType_Check(class)) {
+                int method = 0;
+                Py_DECREF(global_super);
+                res = _PySuper_Lookup((PyTypeObject *)class, self, name, oparg & 1 ? &method : NULL);
+                Py_DECREF(class);
+                if (res == NULL) {
+                    Py_DECREF(self);
+                    ERROR_IF(true, error);
+                }
+                // Works with CALL, pushes two values: either `meth | self` or `NULL | meth`.
+                if (method) {
+                    res2 = res;
+                    res = self;  // transfer ownership
+                } else {
+                    res2 = NULL;
+                    Py_DECREF(self);
+                }
+            } else {
+                PyObject *stack[] = {class, self};
+                PyObject *super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
+                DECREF_INPUTS();
+                ERROR_IF(super == NULL, error);
+                res = PyObject_GetAttr(super, name);
+                Py_DECREF(super);
+                ERROR_IF(res == NULL, error);
+            }
         }
 
         family(load_attr, INLINE_CACHE_ENTRIES_LOAD_ATTR) = {
