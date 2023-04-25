@@ -1319,5 +1319,81 @@ def lorem_ipsum(win):
     for y, line in enumerate(text[:maxy]):
         win.addstr(y, 0, line[:maxx - (y == maxy - 1)])
 
+ from curses.textpad import Textbox
+from unittest.mock import MagicMock, call
+import curses
+import curses.ascii
+import unittest
+
+class TextboxTest(unittest.TestCase):
+    def setUp(self):
+        self.mock_win = MagicMock(spec=curses.window)
+        self.mock_win.getyx.return_value = (1, 1)
+        self.mock_win.getmaxyx.return_value = (10, 20)
+        self.textbox = Textbox(self.mock_win)
+
+    def test_init(self):
+        """Test textbox initialization."""
+        self.mock_win.reset_mock()
+        tb = Textbox(self.mock_win)
+        self.mock_win.assert_has_calls([call.getmaxyx(), call.keypad(1)])
+        self.assertEqual(tb.insert_mode, False)
+        self.assertEqual(tb.stripspaces, 1)
+        self.assertIsNone(tb.lastcmd)
+        self.mock_win.reset_mock()
+
+    def test_do_command_insert(self):
+        """Test inserting a printable character."""
+        self.mock_win.reset_mock()
+        self.textbox.do_command(ord('a'))
+        self.mock_win.addch.assert_called_with(ord('a'))
+        self.textbox.do_command(ord('b'))
+        self.mock_win.addch.assert_called_with(ord('b'))
+        self.textbox.do_command(ord('c'))
+        self.mock_win.addch.assert_called_with(ord('c'))
+        self.mock_win.reset_mock()
+
+    def test_do_command_delete(self):
+        """Test deleting a character."""
+        self.mock_win.reset_mock()
+        self.textbox.do_command(curses.ascii.BS)
+        self.textbox.do_command(curses.KEY_BACKSPACE)
+        self.textbox.do_command(curses.ascii.DEL)
+        assert self.mock_win.delch.call_count == 3
+        self.mock_win.reset_mock()
+
+    def test_do_command_move_left(self):
+        """Test moving the cursor left."""
+        self.mock_win.reset_mock()
+        self.textbox.do_command(curses.KEY_LEFT)
+        self.mock_win.move.assert_called_with(1, 0)
+        self.textbox.do_command(curses.KEY_RIGHT)
+        self.mock_win.move.assert_called_with(1, 2)
+        self.mock_win.reset_mock()
+    
+    def test_do_command_left(self):
+        """Test moving the cursor left."""
+        self.mock_win.reset_mock()
+        self.textbox.do_command(curses.KEY_RIGHT)
+        self.mock_win.move.assert_called_with(1, 2)
+        self.mock_win.reset_mock()
+
+    def test_do_command_move_up(self):
+        """Test moving the cursor left."""
+        self.mock_win.reset_mock()
+        self.textbox.do_command(curses.KEY_UP)
+        self.mock_win.move.assert_called_with(0, 1)
+        self.mock_win.reset_mock()
+
+    def test_do_command_move_down(self):
+        """Test moving the cursor left."""
+        self.mock_win.reset_mock()
+        self.textbox.do_command(curses.KEY_DOWN)
+        self.mock_win.move.assert_called_with(2, 1)
+        self.mock_win.reset_mock()
+
+if __name__ == '__main__':
+    unittest.main()
+
 if __name__ == '__main__':
     unittest.main()
