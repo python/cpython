@@ -82,7 +82,7 @@ support.
    This is a backwards compatibility wrapper around
    :func:`importlib.util.find_spec` that converts most failures to
    :exc:`ImportError` and only returns the loader rather than the full
-   :class:`ModuleSpec`.
+   :class:`importlib.machinery.ModuleSpec`.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
