@@ -227,6 +227,24 @@ dis_bug46724 = """\
        JUMP_FORWARD            -4 (to 0)
 """
 
+def func_w_kwargs(a, b, **c):
+    pass
+
+def wrap_func_w_kwargs():
+    func_w_kwargs(1, 2, c=5)
+
+dis_kw_names = """\
+%3d           0 RESUME                   0
+              2 LOAD_GLOBAL              1 (NULL + f)
+             12 LOAD_CONST               1 (1)
+             14 LOAD_CONST               2 (2)
+             16 LOAD_CONST               3 (5)
+             18 KW_NAMES                 4 (('c',))
+             20 CALL                     3
+             28 POP_TOP
+             30 RETURN_CONST             0 (None)
+""" % (wrap_func_w_kwargs.__code__.co_firstlineno)
+
 _BIG_LINENO_FORMAT = """\
   1        RESUME                   0
 
@@ -910,6 +928,10 @@ class DisTests(DisTestBase):
     def test_bug_46724(self):
         # Test that negative operargs are handled properly
         self.do_disassembly_test(bug46724, dis_bug46724)
+
+    def test_kw_names(self):
+        # Test that information is populated for KW_NAMES
+        self.do_disassembly_test(wrap_func_w_kwargs, dis_kw_names)
 
     def test_big_linenos(self):
         def func(count):
