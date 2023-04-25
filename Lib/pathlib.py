@@ -646,6 +646,8 @@ class PurePath(object):
     @property
     def parents(self):
         """A sequence of this path's logical parents."""
+        # The value of this property should not be cached on the path object,
+        # as doing so would introduce a reference cycle.
         return _PathParents(self)
 
     def is_absolute(self):
