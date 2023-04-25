@@ -2094,8 +2094,28 @@ compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
         case TypeVar_kind:
             ADDOP_LOAD_CONST(c, loc, typeparam->v.TypeVar.name);
             if (typeparam->v.TypeVar.bound) {
-                VISIT(c, expr, typeparam->v.TypeVar.bound);
-                ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_TYPEVAR_WITH_BOUND);
+                expr_ty bound = typeparam->v.TypeVar.bound;
+                if (compiler_enter_scope(c, typeparam->v.TypeVar.name, COMPILER_SCOPE_TYPEPARAMS,
+                                        (void *)typeparam, bound->lineno) == -1) {
+                    return ERROR;
+                }
+                VISIT(c, expr, bound);
+                ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
+                PyCodeObject *co = optimize_and_assemble(c, 1);
+                compiler_exit_scope(c);
+                if (co == NULL) {
+                    return ERROR;
+                }
+                if (compiler_make_closure(c, loc, co, 0) < 0) {
+                    Py_DECREF(co);
+                    return ERROR;
+                }
+                Py_DECREF(co);
+
+                int intrinsic = bound->kind == Tuple_kind
+                    ? INTRINSIC_TYPEVAR_WITH_CONSTRAINTS
+                    : INTRINSIC_TYPEVAR_WITH_BOUND;
+                ADDOP_I(c, loc, CALL_INTRINSIC_2, intrinsic);
             }
             else {
                 ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVAR);

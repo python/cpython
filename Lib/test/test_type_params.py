@@ -4,6 +4,7 @@ import unittest
 
 from typing import TypeVar, TypeVarTuple, ParamSpec
 
+
 class TypeParamsInvalidTest(unittest.TestCase):
     def test_name_collision_01(self):
         code = """def func[**A, A](): ..."""
@@ -236,6 +237,41 @@ class TypeParamsAccessTest(unittest.TestCase):
         """)
         with self.assertRaisesRegex(SyntaxError, "nonlocal binding not allowed for type parameter 'T'"):
             exec(code, {})
+
+
+class TypeParamsLazyEvaluationTest(unittest.TestCase):
+    def test_recursive_class(self):
+        class Foo[T: Foo, U: (Foo, Foo)]:
+            pass
+
+        type_params = Foo.__type_params__
+        self.assertEqual(len(type_params), 2)
+        self.assertEqual(type_params[0].__name__, "T")
+        self.assertEqual(type_params[0].__bound__, Foo)
+        self.assertEqual(type_params[0].__constraints__, None)
+
+        self.assertEqual(type_params[1].__name__, "U")
+        self.assertEqual(type_params[1].__bound__, None)
+        self.assertEqual(type_params[1].__constraints__, (Foo, Foo))
+
+    def test_evaluation_error(self):
+        class Foo[T: Undefined, U: (Undefined,)]:
+            pass
+
+        type_params = Foo.__type_params__
+        with self.assertRaises(NameError):
+            type_params[0].__bound__
+        self.assertEqual(type_params[0].__constraints__, None)
+        self.assertEqual(type_params[1].__bound__, None)
+        with self.assertRaises(NameError):
+            type_params[1].__constraints__
+
+        Undefined = "defined"
+        self.assertEqual(type_params[0].__bound__, "defined")
+        self.assertEqual(type_params[0].__constraints__, None)
+
+        self.assertEqual(type_params[1].__bound__, None)
+        self.assertEqual(type_params[1].__constraints__, ("defined",))
 
 
 class TypeParamsTraditionalTypeVars(unittest.TestCase):

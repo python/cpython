@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-extern PyObject *_Py_make_typevar(const char *, PyObject *);
+extern PyObject *_Py_make_typevar(const char *, PyObject *, PyObject *);
 extern PyObject *_Py_make_paramspec(PyThreadState *, PyObject *);
 extern PyObject *_Py_make_typevartuple(PyThreadState *, PyObject *);
 extern PyObject *_Py_make_typealias(PyThreadState *, PyObject *);

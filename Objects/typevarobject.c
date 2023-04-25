@@ -20,7 +20,9 @@ typedef struct {
     PyObject_HEAD
     const char *name;
     PyObject *bound;
+    PyObject *evaluate_bound;
     PyObject *constraints;
+    PyObject *evaluate_constraints;
     bool covariant;
     bool contravariant;
     bool infer_variance;
@@ -187,7 +189,9 @@ typevar_dealloc(PyObject *self)
 
     free((void *)tv->name);
     Py_XDECREF(tv->bound);
+    Py_XDECREF(tv->evaluate_bound);
     Py_XDECREF(tv->constraints);
+    Py_XDECREF(tv->evaluate_constraints);
     _PyObject_ClearManagedDict(self);
 
     Py_TYPE(self)->tp_free(self);
@@ -200,7 +204,9 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     typevarobject *tv = (typevarobject *)self;
     Py_VISIT(tv->bound);
+    Py_VISIT(tv->evaluate_bound);
     Py_VISIT(tv->constraints);
+    Py_VISIT(tv->evaluate_constraints);
     _PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
@@ -220,16 +226,49 @@ typevar_repr(PyObject *self)
 
 static PyMemberDef typevar_members[] = {
     {"__name__", T_STRING, offsetof(typevarobject, name), READONLY},
-    {"__bound__", T_OBJECT, offsetof(typevarobject, bound), READONLY},
-    {"__constraints__", T_OBJECT, offsetof(typevarobject, constraints), READONLY},
     {"__covariant__", T_BOOL, offsetof(typevarobject, covariant), READONLY},
     {"__contravariant__", T_BOOL, offsetof(typevarobject, contravariant), READONLY},
     {"__infer_variance__", T_BOOL, offsetof(typevarobject, infer_variance), READONLY},
     {0}
 };
 
+static PyObject *
+typevar_bound(typevarobject *self, void *unused)
+{
+    if (self->bound != NULL) {
+        return Py_NewRef(self->bound);
+    }
+    if (self->evaluate_bound == NULL) {
+        Py_RETURN_NONE;
+    }
+    PyObject *bound = PyObject_CallNoArgs(self->evaluate_bound);
+    self->bound = Py_XNewRef(bound);
+    return bound;
+}
+
+static PyObject *
+typevar_constraints(typevarobject *self, void *unused)
+{
+    if (self->constraints != NULL) {
+        return Py_NewRef(self->constraints);
+    }
+    if (self->evaluate_constraints == NULL) {
+        Py_RETURN_NONE;
+    }
+    PyObject *constraints = PyObject_CallNoArgs(self->evaluate_constraints);
+    self->constraints = Py_XNewRef(constraints);
+    return constraints;
+}
+
+static PyGetSetDef typevar_getset[] = {
+    {"__bound__", (getter)typevar_bound, NULL, NULL, NULL},
+    {"__constraints__", (getter)typevar_constraints, NULL, NULL, NULL},
+    {0}
+};
+
 static typevarobject *
-typevar_alloc(const char *name, PyObject *bound, PyObject *constraints,
+typevar_alloc(const char *name, PyObject *bound, PyObject *evaluate_bound,
+              PyObject *constraints, PyObject *evaluate_constraints,
               bool covariant, bool contravariant, bool infer_variance,
               PyObject *module)
 {
@@ -247,7 +286,9 @@ typevar_alloc(const char *name, PyObject *bound, PyObject *constraints,
     }
 
     tv->bound = Py_XNewRef(bound);
+    tv->evaluate_bound = Py_XNewRef(evaluate_bound);
     tv->constraints = Py_XNewRef(constraints);
+    tv->evaluate_constraints = Py_XNewRef(evaluate_constraints);
 
     tv->covariant = covariant;
     tv->contravariant = contravariant;
@@ -328,7 +369,8 @@ typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
         return NULL;
     }
 
-    PyObject *tv = (PyObject *)typevar_alloc(name, bound, constraints,
+    PyObject *tv = (PyObject *)typevar_alloc(name, bound, NULL,
+                                             constraints, NULL,
                                              covariant, contravariant,
                                              infer_variance, module);
     Py_XDECREF(bound);
@@ -438,6 +480,7 @@ static PyType_Slot typevar_slots[] = {
     {Py_tp_traverse, typevar_traverse},
     {Py_tp_repr, typevar_repr},
     {Py_tp_members, typevar_members},
+    {Py_tp_getset, typevar_getset},
     {0, NULL},
 };
 
@@ -1146,13 +1189,10 @@ PyType_Spec typevartuple_spec = {
 };
 
 PyObject *
-_Py_make_typevar(const char *name, PyObject *bound_or_constraints)
+_Py_make_typevar(const char *name, PyObject *evaluate_bound, PyObject *evaluate_constraints)
 {
-    if (bound_or_constraints != NULL && PyTuple_CheckExact(bound_or_constraints)) {
-        return (PyObject *)typevar_alloc(name, NULL, bound_or_constraints, false, false, true, NULL);
-    } else {
-        return (PyObject *)typevar_alloc(name, bound_or_constraints, NULL, false, false, true, NULL);
-    }
+    return (PyObject *)typevar_alloc(name, NULL, evaluate_bound, NULL, evaluate_constraints,
+                                     false, false, true, NULL);
 }
 
 PyObject *

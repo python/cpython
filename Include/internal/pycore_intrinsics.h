@@ -20,8 +20,9 @@
 
 #define INTRINSIC_PREP_RERAISE_STAR 1
 #define INTRINSIC_TYPEVAR_WITH_BOUND 2
+#define INTRINSIC_TYPEVAR_WITH_CONSTRAINTS 3
 
-#define MAX_INTRINSIC_2 2
+#define MAX_INTRINSIC_2 3
 
 
 typedef PyObject *(*instrinsic_func1)(PyThreadState* tstate, PyObject *value);

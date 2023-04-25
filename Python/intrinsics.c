@@ -204,7 +204,7 @@ static PyObject *
 make_typevar(PyThreadState* unused, PyObject *v)
 {
     assert(PyUnicode_Check(v));
-    return _Py_make_typevar(PyUnicode_AsUTF8(v), NULL);
+    return _Py_make_typevar(PyUnicode_AsUTF8(v), NULL, NULL);
 }
 
 const instrinsic_func1
@@ -235,14 +235,24 @@ prep_reraise_star(PyThreadState* unused, PyObject *orig, PyObject *excs)
 }
 
 static PyObject *
-make_typevar_with_bound(PyThreadState* unused, PyObject *name, PyObject *bound)
+make_typevar_with_bound(PyThreadState* unused, PyObject *name,
+                        PyObject *evaluate_bound)
 {
     assert(PyUnicode_Check(name));
-    return _Py_make_typevar(PyUnicode_AsUTF8(name), bound);
+    return _Py_make_typevar(PyUnicode_AsUTF8(name), evaluate_bound, NULL);
 }
 
+static PyObject *
+make_typevar_with_constraints(PyThreadState* unused, PyObject *name,
+                              PyObject *evaluate_constraints)
+{
+    assert(PyUnicode_Check(name));
+    return _Py_make_typevar(PyUnicode_AsUTF8(name), NULL,
+                            evaluate_constraints);
+}
 const instrinsic_func2
 _PyIntrinsics_BinaryFunctions[] = {
     [INTRINSIC_PREP_RERAISE_STAR] = prep_reraise_star,
     [INTRINSIC_TYPEVAR_WITH_BOUND] = make_typevar_with_bound,
+    [INTRINSIC_TYPEVAR_WITH_CONSTRAINTS] = make_typevar_with_constraints,
 };
