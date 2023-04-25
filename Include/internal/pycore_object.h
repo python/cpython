@@ -14,21 +14,25 @@ extern "C" {
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 
-/* This value provides *effective* immortality, meaning the object should never
-    be deallocated (until runtime finalization).  See PEP 683 for more details about
-    immortality, as well as a proposed mechanism for proper immortality. */
-#define _PyObject_IMMORTAL_REFCNT 999999999
-
-#define _PyObject_IMMORTAL_INIT(type) \
-    { \
-        .ob_refcnt = _PyObject_IMMORTAL_REFCNT, \
-        .ob_type = (type), \
-    }
-#define _PyVarObject_IMMORTAL_INIT(type, size) \
-    { \
-        .ob_base = _PyObject_IMMORTAL_INIT(type), \
-        .ob_size = size, \
-    }
+/* We need to maintain an internal copy of Py{Var}Object_HEAD_INIT to avoid
+   designated initializer conflicts in C++20. If we use the deinition in
+   object.h, we will be mixing designated and non-designated initializers in
+   pycore objects which is forbiddent in C++20. However, if we then use
+   designated initializers in object.h then Extensions without designated break.
+   Furthermore, we can't use designated initializers in Extensions since these
+   are not supported pre-C++20. Thus, keeping an internal copy here is the most
+   backwards compatible solution */
+#define _PyObject_HEAD_INIT(type)         \
+    {                                     \
+        _PyObject_EXTRA_INIT              \
+        .ob_refcnt = _Py_IMMORTAL_REFCNT, \
+        .ob_type = (type)                 \
+    },
+#define _PyVarObject_HEAD_INIT(type, size)    \
+    {                                         \
+        .ob_base = _PyObject_HEAD_INIT(type)  \
+        .ob_size = size                       \
+    },
 
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     const char *func,
@@ -61,9 +65,20 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
+static inline void _Py_SetImmortal(PyObject *op)
+{
+    if (op) {
+        op->ob_refcnt = _Py_IMMORTAL_REFCNT;
+    }
+}
+#define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
+
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
     _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
     _Py_DEC_REFTOTAL(_PyInterpreterState_GET());
@@ -82,6 +97,9 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 static inline void
 _Py_DECREF_NO_DEALLOC(PyObject *op)
 {
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
     _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
     _Py_DEC_REFTOTAL(_PyInterpreterState_GET());

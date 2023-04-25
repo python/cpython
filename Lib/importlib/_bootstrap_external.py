@@ -439,7 +439,9 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a7 3523 (Convert COMPARE_AND_BRANCH back to COMPARE_OP)
 #     Python 3.12a7 3524 (Shrink the BINARY_SUBSCR caches)
 #     Python 3.12b1 3525 (Shrink the CALL caches)
-#     Python 3.12a7 3526 (Add instrumentation support)
+#     Python 3.12b1 3526 (Add instrumentation support)
+#     Python 3.12b1 3527 (Add LOAD_SUPER_ATTR)
+#     Python 3.12b1 3528 (Add LOAD_SUPER_ATTR_METHOD specialization)
 
 #     Python 3.13 will start with 3550
 
@@ -456,7 +458,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3526).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3528).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
