@@ -59,7 +59,6 @@ Doc/faq/gui.rst
 Doc/faq/library.rst
 Doc/faq/programming.rst
 Doc/glossary.rst
-Doc/howto/argparse.rst
 Doc/howto/curses.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
@@ -78,7 +77,6 @@ Doc/library/__future__.rst
 Doc/library/_thread.rst
 Doc/library/abc.rst
 Doc/library/aifc.rst
-Doc/library/argparse.rst
 Doc/library/ast.rst
 Doc/library/asyncio-dev.rst
 Doc/library/asyncio-eventloop.rst
@@ -113,7 +111,6 @@ Doc/library/csv.rst
 Doc/library/ctypes.rst
 Doc/library/curses.ascii.rst
 Doc/library/curses.rst
-Doc/library/dataclasses.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst
@@ -180,7 +177,6 @@ Doc/library/os.rst
 Doc/library/ossaudiodev.rst
 Doc/library/pickle.rst
 Doc/library/pickletools.rst
-Doc/library/pkgutil.rst
 Doc/library/platform.rst
 Doc/library/plistlib.rst
 Doc/library/poplib.rst
