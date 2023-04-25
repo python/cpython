@@ -12,8 +12,8 @@ import unittest
 def get_tb():
     try:
         raise OSError()
-    except:
-        return sys.exc_info()[2]
+    except OSError as e:
+        return e.__traceback__
 
 
 class Context:
@@ -303,7 +303,7 @@ class TestContext(unittest.TestCase):
             except:
                 raise OSError()
         except OSError as e:
-            self.assertEqual(e.__context__, context)
+            self.assertIs(e.__context__, context)
         else:
             self.fail("No exception raised")
 
@@ -315,7 +315,7 @@ class TestContext(unittest.TestCase):
             except:
                 raise OSError()
         except OSError as e:
-            self.assertNotEqual(e.__context__, context)
+            self.assertIsNot(e.__context__, context)
             self.assertIsInstance(e.__context__, context)
         else:
             self.fail("No exception raised")
@@ -328,7 +328,7 @@ class TestContext(unittest.TestCase):
             except:
                 raise OSError
         except OSError as e:
-            self.assertNotEqual(e.__context__, context)
+            self.assertIsNot(e.__context__, context)
             self.assertIsInstance(e.__context__, context)
         else:
             self.fail("No exception raised")
@@ -415,6 +415,22 @@ class TestContext(unittest.TestCase):
         except NameError as e:
             self.assertIsNone(e.__context__.__context__)
 
+    def test_not_last(self):
+        # Context is not necessarily the last exception
+        context = Exception("context")
+        try:
+            raise context
+        except Exception:
+            try:
+                raise Exception("caught")
+            except Exception:
+                pass
+            try:
+                raise Exception("new")
+            except Exception as exc:
+                raised = exc
+        self.assertIs(raised.__context__, context)
+
     def test_3118(self):
         # deleting the generator caused the __context__ to be cleared
         def gen():
@@ -438,6 +454,7 @@ class TestContext(unittest.TestCase):
         f()
 
     def test_3611(self):
+        import gc
         # A re-raised exception in a __del__ caused the __context__
         # to be cleared
         class C:
@@ -451,16 +468,21 @@ class TestContext(unittest.TestCase):
             x = C()
             try:
                 try:
-                    x.x
+                    f.x
                 except AttributeError:
+                    # make x.__del__ trigger
                     del x
+                    gc.collect()  # For PyPy or other GCs.
                     raise TypeError
             except Exception as e:
                 self.assertNotEqual(e.__context__, None)
                 self.assertIsInstance(e.__context__, AttributeError)
 
-        with support.captured_output("stderr"):
+        with support.catch_unraisable_exception() as cm:
             f()
+
+            self.assertEqual(ZeroDivisionError, cm.unraisable.exc_type)
+
 
 class TestRemovedFunctionality(unittest.TestCase):
     def test_tuples(self):

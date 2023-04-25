@@ -1,2 +1,0 @@
-Allow same right hand side expressions in annotated assignments as in normal ones.
-In particular, ``x: Tuple[int, int] = 1, 2`` (without parentheses on the right) is now allowed.

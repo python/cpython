@@ -1,2 +1,0 @@
-Fix KeyError exception raised when using enums and compile. Patch
-contributed by Rémi Lapeyre.

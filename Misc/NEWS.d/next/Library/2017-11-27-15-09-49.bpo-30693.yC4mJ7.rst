@@ -1,1 +1,0 @@
-The ZipFile class now recurses directories in a reproducible way.

@@ -1,1 +1,0 @@
-Explicitly set master_doc variable in conf.py for compliance with Sphinx 2.0

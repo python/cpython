@@ -1,3 +1,0 @@
-``make profile-opt`` no longer replaces ``CFLAGS_NODIST`` with ``CFLAGS``. It
-now adds profile-guided optimization (PGO) flags to ``CFLAGS_NODIST``: existing
-``CFLAGS_NODIST`` flags are kept.

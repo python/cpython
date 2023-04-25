@@ -1,4 +1,0 @@
-Internal attributes' names of unittest.mock._Call and
-unittest.mock.MagicProxy (name, parent & from_kall) are now prefixed with
-_mock_ in order to prevent clashes with widely used object attributes.
-Fixed minor typo in test function name.

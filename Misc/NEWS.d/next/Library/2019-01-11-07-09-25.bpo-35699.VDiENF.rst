@@ -1,1 +1,0 @@
-Fixed detection of Visual Studio Build Tools 2017 in distutils

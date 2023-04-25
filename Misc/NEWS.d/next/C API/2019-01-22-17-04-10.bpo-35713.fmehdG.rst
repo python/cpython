@@ -1,3 +1,0 @@
-The :c:func:`PyByteArray_Init` and :c:func:`PyByteArray_Fini` functions have
-been removed. They did nothing since Python 2.7.4 and Python 3.2.0, were
-excluded from the limited API (stable ABI), and were not documented.

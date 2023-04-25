@@ -53,8 +53,17 @@ ATEQUAL                 '@='
 RARROW                  '->'
 ELLIPSIS                '...'
 COLONEQUAL              ':='
+EXCLAMATION             '!'
 
 OP
+AWAIT
+ASYNC
+TYPE_IGNORE
+TYPE_COMMENT
+SOFT_KEYWORD
+FSTRING_START
+FSTRING_MIDDLE
+FSTRING_END
 ERRORTOKEN
 
 # These aren't used by the C tokenizer but are needed for tokenize.py

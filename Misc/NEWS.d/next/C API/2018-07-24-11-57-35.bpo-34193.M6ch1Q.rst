@@ -1,2 +1,0 @@
-Fix pluralization in TypeError messages in getargs.c and typeobject.c:
-'1 argument' instead of '1 arguments' and '1 element' instead of '1 elements'.

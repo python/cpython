@@ -2,7 +2,7 @@ import string
 
 from idlelib.delegator import Delegator
 
-# tkintter import not needed because module does not create widgets,
+# tkinter import not needed because module does not create widgets,
 # although many methods operate on text widget arguments.
 
 #$ event <<redo>>
@@ -309,7 +309,7 @@ class CommandSequence(Command):
         s = self.__class__.__name__
         strs = []
         for cmd in self.cmds:
-            strs.append("    %r" % (cmd,))
+            strs.append(f"    {cmd!r}")
         return s + "(\n" + ",\n".join(strs) + "\n)"
 
     def __len__(self):

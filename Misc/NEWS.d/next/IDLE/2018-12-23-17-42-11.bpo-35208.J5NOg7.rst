@@ -1,1 +1,0 @@
-Squeezer now properly counts wrapped lines before newlines.

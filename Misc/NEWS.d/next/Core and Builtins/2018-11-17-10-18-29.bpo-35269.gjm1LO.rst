@@ -1,2 +1,0 @@
-Fix a possible segfault involving a newly-created coroutine.  Patch by
-Zackery Spytz.

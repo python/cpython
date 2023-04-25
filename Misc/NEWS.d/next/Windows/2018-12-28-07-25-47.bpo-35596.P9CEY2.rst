@@ -1,1 +1,0 @@
-Fix vcruntime140.dll being added to embeddable distro multiple times.

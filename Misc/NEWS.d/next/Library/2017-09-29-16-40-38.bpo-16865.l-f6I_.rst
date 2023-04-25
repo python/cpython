@@ -1,1 +1,0 @@
-Support arrays >=2GiB in :mod:`ctypes`.  Patch by Segev Finer.

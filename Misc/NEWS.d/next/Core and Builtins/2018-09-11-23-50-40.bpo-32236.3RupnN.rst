@@ -1,2 +1,0 @@
-Warn that line buffering is not supported if :func:`open` is called with
-binary mode and ``buffering=1``.

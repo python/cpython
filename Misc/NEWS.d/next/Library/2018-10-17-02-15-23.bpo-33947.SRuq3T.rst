@@ -1,1 +1,0 @@
-dataclasses now handle recursive reprs without raising RecursionError.

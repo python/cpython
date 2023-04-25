@@ -1,4 +1,0 @@
-:mod:`multiprocessing`: Add ``Pool.__repr__()`` and enhance
-``BaseProcess.__repr__()`` (add pid and parent pid) to ease debugging. Pool
-state constant values are now strings instead of integers, for example ``RUN``
-value becomes ``'RUN'`` instead of ``0``.

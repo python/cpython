@@ -1,1 +1,0 @@
-Protect tasks weak set manipulation in ``asyncio.all_tasks()``

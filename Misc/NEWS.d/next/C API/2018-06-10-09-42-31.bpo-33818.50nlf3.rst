@@ -1,2 +1,0 @@
-:c:func:`PyExceptionClass_Name` will now return ``const char *`` instead of
-``char *``.

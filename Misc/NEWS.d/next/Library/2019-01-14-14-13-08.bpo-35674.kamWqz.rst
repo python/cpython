@@ -1,2 +1,0 @@
-Add a new :func:`os.posix_spawnp` function.
-Patch by Joannah Nanjekye.

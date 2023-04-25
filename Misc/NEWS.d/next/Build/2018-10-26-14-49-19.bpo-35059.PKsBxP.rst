@@ -1,4 +1,0 @@
-PCbuild: Set InlineFunctionExpansion to OnlyExplicitInline ("/Ob1" option)
-in pyproject.props in Debug mode to expand functions marked as inline. This
-change should make Python compiled in Debug mode a little bit faster on
-Windows.

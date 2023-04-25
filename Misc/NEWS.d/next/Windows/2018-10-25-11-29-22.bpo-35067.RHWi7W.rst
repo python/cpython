@@ -1,1 +1,0 @@
-Remove _distutils_findvs module and use vswhere.exe instead.

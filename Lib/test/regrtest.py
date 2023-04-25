@@ -6,9 +6,6 @@ Script to run Python regression tests.
 Run this script with -h or --help for documentation.
 """
 
-# We import importlib *ASAP* in order to test #15386
-import importlib
-
 import os
 import sys
 from test.libregrtest import main

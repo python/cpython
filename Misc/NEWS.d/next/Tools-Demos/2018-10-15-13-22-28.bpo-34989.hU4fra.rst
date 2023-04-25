@@ -1,2 +1,0 @@
-python-gdb.py now handles errors on computing the line number of a Python
-frame.

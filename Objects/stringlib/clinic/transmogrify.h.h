@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"            // PyGC_Head
+#  include "pycore_runtime.h"       // _Py_ID()
+#endif
+
+
 PyDoc_STRVAR(stringlib_expandtabs__doc__,
 "expandtabs($self, /, tabsize=8)\n"
 "--\n"
@@ -11,7 +17,7 @@ PyDoc_STRVAR(stringlib_expandtabs__doc__,
 "If tabsize is not given, a tab size of 8 characters is assumed.");
 
 #define STRINGLIB_EXPANDTABS_METHODDEF    \
-    {"expandtabs", (PyCFunction)(void(*)(void))stringlib_expandtabs, METH_FASTCALL|METH_KEYWORDS, stringlib_expandtabs__doc__},
+    {"expandtabs", _PyCFunction_CAST(stringlib_expandtabs), METH_FASTCALL|METH_KEYWORDS, stringlib_expandtabs__doc__},
 
 static PyObject *
 stringlib_expandtabs_impl(PyObject *self, int tabsize);
@@ -20,14 +26,47 @@ static PyObject *
 stringlib_expandtabs(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(tabsize), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"tabsize", NULL};
-    static _PyArg_Parser _parser = {"|i:expandtabs", _keywords, 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "expandtabs",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int tabsize = 8;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &tabsize)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    tabsize = _PyLong_AsInt(args[0]);
+    if (tabsize == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = stringlib_expandtabs_impl(self, tabsize);
 
 exit:
@@ -43,7 +82,7 @@ PyDoc_STRVAR(stringlib_ljust__doc__,
 "Padding is done using the specified fill character.");
 
 #define STRINGLIB_LJUST_METHODDEF    \
-    {"ljust", (PyCFunction)(void(*)(void))stringlib_ljust, METH_FASTCALL, stringlib_ljust__doc__},
+    {"ljust", _PyCFunction_CAST(stringlib_ljust), METH_FASTCALL, stringlib_ljust__doc__},
 
 static PyObject *
 stringlib_ljust_impl(PyObject *self, Py_ssize_t width, char fillchar);
@@ -58,14 +97,9 @@ stringlib_ljust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("ljust", nargs, 1, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -85,7 +119,7 @@ stringlib_ljust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         fillchar = PyByteArray_AS_STRING(args[1])[0];
     }
     else {
-        _PyArg_BadArgument("ljust", 2, "a byte string of length 1", args[1]);
+        _PyArg_BadArgument("ljust", "argument 2", "a byte string of length 1", args[1]);
         goto exit;
     }
 skip_optional:
@@ -104,7 +138,7 @@ PyDoc_STRVAR(stringlib_rjust__doc__,
 "Padding is done using the specified fill character.");
 
 #define STRINGLIB_RJUST_METHODDEF    \
-    {"rjust", (PyCFunction)(void(*)(void))stringlib_rjust, METH_FASTCALL, stringlib_rjust__doc__},
+    {"rjust", _PyCFunction_CAST(stringlib_rjust), METH_FASTCALL, stringlib_rjust__doc__},
 
 static PyObject *
 stringlib_rjust_impl(PyObject *self, Py_ssize_t width, char fillchar);
@@ -119,14 +153,9 @@ stringlib_rjust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("rjust", nargs, 1, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -146,7 +175,7 @@ stringlib_rjust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         fillchar = PyByteArray_AS_STRING(args[1])[0];
     }
     else {
-        _PyArg_BadArgument("rjust", 2, "a byte string of length 1", args[1]);
+        _PyArg_BadArgument("rjust", "argument 2", "a byte string of length 1", args[1]);
         goto exit;
     }
 skip_optional:
@@ -165,7 +194,7 @@ PyDoc_STRVAR(stringlib_center__doc__,
 "Padding is done using the specified fill character.");
 
 #define STRINGLIB_CENTER_METHODDEF    \
-    {"center", (PyCFunction)(void(*)(void))stringlib_center, METH_FASTCALL, stringlib_center__doc__},
+    {"center", _PyCFunction_CAST(stringlib_center), METH_FASTCALL, stringlib_center__doc__},
 
 static PyObject *
 stringlib_center_impl(PyObject *self, Py_ssize_t width, char fillchar);
@@ -180,14 +209,9 @@ stringlib_center(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("center", nargs, 1, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -207,7 +231,7 @@ stringlib_center(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         fillchar = PyByteArray_AS_STRING(args[1])[0];
     }
     else {
-        _PyArg_BadArgument("center", 2, "a byte string of length 1", args[1]);
+        _PyArg_BadArgument("center", "argument 2", "a byte string of length 1", args[1]);
         goto exit;
     }
 skip_optional:
@@ -237,14 +261,9 @@ stringlib_zfill(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t width;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(arg);
+        PyObject *iobj = _PyNumber_Index(arg);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -259,4 +278,4 @@ stringlib_zfill(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=787248a980f6a00e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d44a269805f6739e input=a9049054013a1b77]*/
