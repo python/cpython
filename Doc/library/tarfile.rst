@@ -36,13 +36,6 @@ Some facts and figures:
 .. versionchanged:: 3.3
    Added support for :mod:`lzma` compression.
 
-.. versionchanged:: 3.12
-   Archives are extracted using a :ref:`filter <tarfile-extraction-filter>`,
-   which makes it possible to either limit surprising/dangerous features,
-   or to acknowledge that they are expected and the archive is fully trusted.
-   By default, archives are fully trusted, but this default is deprecated
-   and slated to change in Python 3.14.
-
 
 .. function:: open(name=None, mode='r', fileobj=None, bufsize=10240, \*\*kwargs)
 
@@ -425,8 +418,8 @@ be finalized; only the internally used file object will be closed. See the
    are used to set the owner/group for the extracted files. Otherwise, the named
    values from the tarfile are used.
 
-   The *filter* argument specifies how ``members`` are modified or rejected
-   before extraction.
+   The *filter* argument, which was added in Python 3.7.17, specifies how
+   ``members`` are modified or rejected before extraction.
    See :ref:`tarfile-extraction-filter` for details.
    It is recommended to set this explicitly depending on which *tar* features
    you need to support.
@@ -447,7 +440,7 @@ be finalized; only the internally used file object will be closed. See the
    .. versionchanged:: 3.6
       The *path* parameter accepts a :term:`path-like object`.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.7.17
       Added the *filter* parameter.
 
 
@@ -483,7 +476,7 @@ be finalized; only the internally used file object will be closed. See the
    .. versionchanged:: 3.6
       The *path* parameter accepts a :term:`path-like object`.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.7.17
       Added the *filter* parameter.
 
 
@@ -498,7 +491,6 @@ be finalized; only the internally used file object will be closed. See the
       Return an :class:`io.BufferedReader` object.
 
 .. attribute:: TarFile.errorlevel
-   :type: int
 
    If *errorlevel* is ``0``, errors are ignored when using :meth:`TarFile.extract`
    and :meth:`TarFile.extractall`.
@@ -520,7 +512,7 @@ be finalized; only the internally used file object will be closed. See the
 
 .. attribute:: TarFile.extraction_filter
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.7.17
 
    The :ref:`extraction filter <tarfile-extraction-filter>` used
    as a default for the *filter* argument of :meth:`~TarFile.extract`
@@ -531,10 +523,12 @@ be finalized; only the internally used file object will be closed. See the
    argument to :meth:`~TarFile.extract`.
 
    If ``extraction_filter`` is ``None`` (the default),
-   calling an extraction method without a *filter* argument will raise a
-   ``DeprecationWarning``,
-   and fall back to the :func:`fully_trusted <fully_trusted_filter>` filter,
-   whose dangerous behavior matches previous versions of Python.
+   calling an extraction method without a *filter* argument will
+   use the :func:`fully_trusted <fully_trusted_filter>` filter for
+   compatibility with previous Python versions.
+
+   In Python 3.12+, leaving ``extraction_filter=None`` will emit a
+   ``DeprecationWarning``.
 
    In Python 3.14+, leaving ``extraction_filter=None`` will cause
    extraction methods to use the :func:`data <data_filter>` filter by default.
@@ -639,6 +633,11 @@ Different :class:`TarInfo` methods handle ``None`` differently:
 - :meth:`~TarFile.addfile` will fail.
 - :meth:`~TarFile.list` will print a placeholder string.
 
+
+.. versionchanged:: 3.7.17
+   Added :meth:`~TarInfo.replace` and handling of ``None``.
+
+
 .. class:: TarInfo(name="")
 
    Create a :class:`TarInfo` object.
@@ -670,35 +669,31 @@ A ``TarInfo`` object has the following public data attributes:
 
 
 .. attribute:: TarInfo.name
-   :type: str
 
    Name of the archive member.
 
 
 .. attribute:: TarInfo.size
-   :type: int
 
    Size in bytes.
 
 
 .. attribute:: TarInfo.mtime
-   :type: int | float
 
    Time of last modification in seconds since the :ref:`epoch <epoch>`,
    as in :attr:`os.stat_result.st_mtime`.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.7.17
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
       attribute.
 
 .. attribute:: TarInfo.mode
-   :type: int
 
    Permission bits, as for :func:`os.chmod`.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.7.17
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
@@ -714,58 +709,52 @@ A ``TarInfo`` object has the following public data attributes:
 
 
 .. attribute:: TarInfo.linkname
-   :type: str
 
    Name of the target file name, which is only present in :class:`TarInfo` objects
    of type :const:`LNKTYPE` and :const:`SYMTYPE`.
 
 
 .. attribute:: TarInfo.uid
-   :type: int
 
    User ID of the user who originally stored this member.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.7.17
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
       attribute.
 
 .. attribute:: TarInfo.gid
-   :type: int
 
    Group ID of the user who originally stored this member.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.7.17
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
       attribute.
 
 .. attribute:: TarInfo.uname
-   :type: str
 
    User name.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.7.17
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
       attribute.
 
 .. attribute:: TarInfo.gname
-   :type: str
 
    Group name.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.7.17
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
       attribute.
 
 .. attribute:: TarInfo.pax_headers
-   :type: dict
 
    A dictionary containing key-value pairs of an associated pax extended header.
 
@@ -773,7 +762,7 @@ A ``TarInfo`` object has the following public data attributes:
                             uid=..., gid=..., uname=..., gname=...,
                             deep=True)
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.7.17
 
    Return a *new* copy of the :class:`!TarInfo` object with the given attributes
    changed. For example, to return a ``TarInfo`` with the group name set to
@@ -838,7 +827,7 @@ A :class:`TarInfo` object also provides some convenient query methods:
 Extraction filters
 ------------------
 
-.. versionadded:: 3.12
+.. versionadded:: 3.7.17
 
 The *tar* format is designed to capture all details of a UNIX-like filesystem,
 which makes it very powerful.
@@ -875,9 +864,10 @@ can be:
 
 * ``None`` (default): Use :attr:`TarFile.extraction_filter`.
 
-  If that is also ``None`` (the default), raise a ``DeprecationWarning``,
-  and fall back to the ``'fully_trusted'`` filter, whose dangerous behavior
-  matches previous versions of Python.
+  If that is also ``None`` (the default), the ``'fully_trusted'``
+  filter will be used (for compatibility with earlier versions of Python).
+
+  In Python 3.12, the default will emit a ``DeprecationWarning``.
 
   In Python 3.14, the ``'data'`` filter will become the default instead.
   It's possible to switch earlier; see :attr:`TarFile.extraction_filter`.
@@ -1014,7 +1004,7 @@ Also note that:
 Supporting older Python versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Extraction filters were added to Python 3.12, but may be backported to older
+Extraction filters were added to Python 3.12, and are backported to older
 versions as security updates.
 To check whether the feature is available, use e.g.
 ``hasattr(tarfile, 'data_filter')`` rather than checking the Python version.
@@ -1161,6 +1151,8 @@ Command-line options
    Only string names are accepted (that is, ``fully_trusted``, ``tar``,
    and ``data``).
 
+   .. versionadded:: 3.7.17
+
 .. _tar-examples:
 
 Examples
@@ -1170,7 +1162,7 @@ How to extract an entire tar archive to the current working directory::
 
    import tarfile
    tar = tarfile.open("sample.tar.gz")
-   tar.extractall(filter='data')
+   tar.extractall()
    tar.close()
 
 How to extract a subset of a tar archive with :meth:`TarFile.extractall` using
