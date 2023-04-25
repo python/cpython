@@ -179,6 +179,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [LOAD_GLOBAL_BUILTIN] = LOAD_GLOBAL,
     [LOAD_GLOBAL_MODULE] = LOAD_GLOBAL,
     [LOAD_NAME] = LOAD_NAME,
+    [LOAD_SUPER_ATTR] = LOAD_SUPER_ATTR,
     [MAKE_CELL] = MAKE_CELL,
     [MAKE_FUNCTION] = MAKE_FUNCTION,
     [MAP_ADD] = MAP_ADD,
@@ -236,7 +237,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif   // NEED_OPCODE_TABLES
 
 #ifdef Py_DEBUG
-static const char *const _PyOpcode_OpName[263] = {
+static const char *const _PyOpcode_OpName[266] = {
     [CACHE] = "CACHE",
     [POP_TOP] = "POP_TOP",
     [PUSH_NULL] = "PUSH_NULL",
@@ -378,9 +379,9 @@ static const char *const _PyOpcode_OpName[263] = {
     [STORE_DEREF] = "STORE_DEREF",
     [DELETE_DEREF] = "DELETE_DEREF",
     [JUMP_BACKWARD] = "JUMP_BACKWARD",
-    [STORE_FAST__STORE_FAST] = "STORE_FAST__STORE_FAST",
+    [LOAD_SUPER_ATTR] = "LOAD_SUPER_ATTR",
     [CALL_FUNCTION_EX] = "CALL_FUNCTION_EX",
-    [STORE_SUBSCR_DICT] = "STORE_SUBSCR_DICT",
+    [STORE_FAST__STORE_FAST] = "STORE_FAST__STORE_FAST",
     [EXTENDED_ARG] = "EXTENDED_ARG",
     [LIST_APPEND] = "LIST_APPEND",
     [SET_ADD] = "SET_ADD",
@@ -390,15 +391,15 @@ static const char *const _PyOpcode_OpName[263] = {
     [YIELD_VALUE] = "YIELD_VALUE",
     [RESUME] = "RESUME",
     [MATCH_CLASS] = "MATCH_CLASS",
+    [STORE_SUBSCR_DICT] = "STORE_SUBSCR_DICT",
     [STORE_SUBSCR_LIST_INT] = "STORE_SUBSCR_LIST_INT",
-    [UNPACK_SEQUENCE_LIST] = "UNPACK_SEQUENCE_LIST",
     [FORMAT_VALUE] = "FORMAT_VALUE",
     [BUILD_CONST_KEY_MAP] = "BUILD_CONST_KEY_MAP",
     [BUILD_STRING] = "BUILD_STRING",
+    [UNPACK_SEQUENCE_LIST] = "UNPACK_SEQUENCE_LIST",
     [UNPACK_SEQUENCE_TUPLE] = "UNPACK_SEQUENCE_TUPLE",
     [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
     [SEND_GEN] = "SEND_GEN",
-    [161] = "<161>",
     [LIST_EXTEND] = "LIST_EXTEND",
     [SET_UPDATE] = "SET_UPDATE",
     [DICT_MERGE] = "DICT_MERGE",
@@ -500,11 +501,13 @@ static const char *const _PyOpcode_OpName[263] = {
     [JUMP] = "JUMP",
     [JUMP_NO_INTERRUPT] = "JUMP_NO_INTERRUPT",
     [LOAD_METHOD] = "LOAD_METHOD",
+    [LOAD_SUPER_METHOD] = "LOAD_SUPER_METHOD",
+    [LOAD_ZERO_SUPER_METHOD] = "LOAD_ZERO_SUPER_METHOD",
+    [LOAD_ZERO_SUPER_ATTR] = "LOAD_ZERO_SUPER_ATTR",
 };
 #endif
 
 #define EXTRA_CASES \
-    case 161: \
     case 166: \
     case 167: \
     case 168: \

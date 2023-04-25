@@ -29,7 +29,7 @@ extern PyTypeObject _PyExc_MemoryError;
             _pymem_allocators_debug_INIT, \
             _pymem_allocators_obj_arena_INIT, \
         }, \
-        .obmalloc = _obmalloc_state_INIT(runtime.obmalloc), \
+        .obmalloc = _obmalloc_global_state_INIT, \
         .pyhash_state = pyhash_state_INIT, \
         .signals = _signals_RUNTIME_INIT, \
         .interpreters = { \
@@ -93,6 +93,7 @@ extern PyTypeObject _PyExc_MemoryError;
     { \
         .id_refcount = -1, \
         .imports = IMPORTS_INIT, \
+        .obmalloc = _obmalloc_state_INIT(INTERP.obmalloc), \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         }, \
@@ -111,6 +112,9 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .func_state = { \
             .next_version = 1, \
+        }, \
+        .types = { \
+            .next_version_tag = _Py_TYPE_BASE_VERSION_TAG, \
         }, \
         .static_objects = { \
             .singletons = { \
