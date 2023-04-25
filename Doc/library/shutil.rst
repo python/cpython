@@ -654,8 +654,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    registered for that extension.  In case none is found,
    a :exc:`ValueError` is raised.
 
-   The keyword-only *filter* argument is passed to the underlying unpacking
-   function. For zip files, *filter* is not accepted.
+   The keyword-only *filter* argument, which was added in Python 3.8.17,
+   is passed to the underlying unpacking function.
+   For zip files, *filter* is not accepted.
    For tar files, it is recommended to set it to ``'data'``,
    unless using features specific to tar and UNIX-like filesystems.
    (See :ref:`tarfile-extraction-filter` for details.)
