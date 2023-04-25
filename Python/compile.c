@@ -3613,12 +3613,10 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
    [orig, res, exc]                           <evaluate E1>
    [orig, res, exc, E1]                       CHECK_EG_MATCH
-   [orig, red, rest/exc, match?]              COPY 1
-   [orig, red, rest/exc, match?, match?]      POP_JUMP_IF_NOT_NONE  H1
-   [orig, red, exc, None]                     POP_TOP
-   [orig, red, exc]                           JUMP L2
+   [orig, res, rest/exc, match?]              COPY 1
+   [orig, res, rest/exc, match?, match?]      POP_JUMP_IF_NONE      C1
 
-   [orig, res, rest, match]         H1:       <assign to V1>  (or POP if no V1)
+   [orig, res, rest, match]                   <assign to V1>  (or POP if no V1)
 
    [orig, res, rest]                          SETUP_FINALLY         R1
    [orig, res, rest]                          <code for S1>
@@ -3626,8 +3624,14 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
    [orig, res, rest, i, v]          R1:       LIST_APPEND   3 ) exc raised in except* body - add to res
    [orig, res, rest, i]                       POP
+   [orig, res, rest]                          JUMP                  LE2
 
-   [orig, res, rest]                L2:       <evaluate E2>
+   [orig, res, rest]                L2:       NOP  ) for lineno
+   [orig, res, rest]                          JUMP                  LE2
+
+   [orig, res, rest/exc, None]      C1:       POP
+
+   [orig, res, rest]               LE2:       <evaluate E2>
    .............................etc.......................
 
    [orig, res, rest]                Ln+1:     LIST_APPEND 1  ) add unhandled exc to res (could be None)
@@ -3700,8 +3704,12 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         if (except == NULL) {
             return 0;
         }
-        basicblock *handle_match = compiler_new_block(c);
-        if (handle_match == NULL) {
+        basicblock *except_with_error = compiler_new_block(c);
+        if (except_with_error == NULL) {
+            return 0;
+        }
+        basicblock *no_match = compiler_new_block(c);
+        if (no_match == NULL) {
             return 0;
         }
         if (i == 0) {
@@ -3725,12 +3733,8 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
             VISIT(c, expr, handler->v.ExceptHandler.type);
             ADDOP(c, CHECK_EG_MATCH);
             ADDOP_I(c, COPY, 1);
-            ADDOP_JUMP(c, POP_JUMP_IF_NOT_NONE, handle_match);
-            ADDOP(c, POP_TOP);  // match
-            ADDOP_JUMP(c, JUMP, except);
+            ADDOP_JUMP(c, POP_JUMP_IF_NONE, no_match);
         }
-
-        compiler_use_next_block(c, handle_match);
 
         basicblock *cleanup_end = compiler_new_block(c);
         if (cleanup_end == NULL) {
@@ -3793,8 +3797,14 @@ compiler_try_star_except(struct compiler *c, stmt_ty s)
         ADDOP_I(c, LIST_APPEND, 3); // exc
         ADDOP(c, POP_TOP); // lasti
 
-        ADDOP_JUMP(c, JUMP, except);
+        ADDOP_JUMP(c, JUMP, except_with_error);
         compiler_use_next_block(c, except);
+        ADDOP(c, NOP);  // to hold a propagated location info
+        ADDOP_JUMP(c, JUMP, except_with_error);
+        compiler_use_next_block(c, no_match);
+        ADDOP(c, POP_TOP);  // match (None)
+
+        compiler_use_next_block(c, except_with_error);
 
         if (i == n - 1) {
             /* Add exc to the list (if not None it's the unhandled part of the EG) */
