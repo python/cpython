@@ -60,29 +60,55 @@ extern "C" {
    For each of these functions, the GIL must be held by the current thread.
  */
 
+
+#ifdef HAVE_THREAD_LOCAL
+_Py_thread_local PyThreadState *_Py_tss_tstate = NULL;
+#endif
+
 static inline PyThreadState *
-current_fast_get(_PyRuntimeState *runtime)
+current_fast_get(_PyRuntimeState *Py_UNUSED(runtime))
 {
-    return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->tstate_current);
+#ifdef HAVE_THREAD_LOCAL
+    return _Py_tss_tstate;
+#else
+    // XXX Fall back to the PyThread_tss_*() API.
+#  error "no supported thread-local variable storage classifier"
+#endif
 }
 
 static inline void
-current_fast_set(_PyRuntimeState *runtime, PyThreadState *tstate)
+current_fast_set(_PyRuntimeState *Py_UNUSED(runtime), PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    _Py_atomic_store_relaxed(&runtime->tstate_current, (uintptr_t)tstate);
+#ifdef HAVE_THREAD_LOCAL
+    _Py_tss_tstate = tstate;
+#else
+    // XXX Fall back to the PyThread_tss_*() API.
+#  error "no supported thread-local variable storage classifier"
+#endif
 }
 
 static inline void
-current_fast_clear(_PyRuntimeState *runtime)
+current_fast_clear(_PyRuntimeState *Py_UNUSED(runtime))
 {
-    _Py_atomic_store_relaxed(&runtime->tstate_current, (uintptr_t)NULL);
+#ifdef HAVE_THREAD_LOCAL
+    _Py_tss_tstate = NULL;
+#else
+    // XXX Fall back to the PyThread_tss_*() API.
+#  error "no supported thread-local variable storage classifier"
+#endif
 }
 
 #define tstate_verify_not_active(tstate) \
     if (tstate == current_fast_get((tstate)->interp->runtime)) { \
         _Py_FatalErrorFormat(__func__, "tstate %p is still current", tstate); \
     }
+
+PyThreadState *
+_PyThreadState_GetCurrent(void)
+{
+    return current_fast_get(&_PyRuntime);
+}
 
 
 //------------------------------------------------
@@ -645,6 +671,14 @@ init_interpreter(PyInterpreterState *interp,
     assert(next != NULL || (interp == runtime->interpreters.main));
     interp->next = next;
 
+    /* Initialize obmalloc, but only for subinterpreters,
+       since the main interpreter is initialized statically. */
+    if (interp != &runtime->_main_interpreter) {
+        poolp temp[OBMALLOC_USED_POOLS_SIZE] = \
+                _obmalloc_pools_INIT(interp->obmalloc.pools);
+        memcpy(&interp->obmalloc.pools.used, temp, sizeof(temp));
+    }
+
     _PyEval_InitState(&interp->ceval, pending_lock);
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
@@ -915,11 +949,12 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 
     _PyEval_FiniState(&interp->ceval);
 
-#ifdef Py_REF_DEBUG
-    // XXX This call should be done at the end of clear_interpreter(),
+    // XXX These two calls should be done at the end of clear_interpreter(),
     // but currently some objects get decref'ed after that.
+#ifdef Py_REF_DEBUG
     _PyInterpreterState_FinalizeRefTotal(interp);
 #endif
+    _PyInterpreterState_FinalizeAllocatedBlocks(interp);
 
     HEAD_LOCK(runtime);
     PyInterpreterState **p;
@@ -2294,11 +2329,11 @@ _PyCrossInterpreterData_InitWithSize(_PyCrossInterpreterData *data,
     // where it was allocated, so the interpreter is required.
     assert(interp != NULL);
     _PyCrossInterpreterData_Init(data, interp, NULL, obj, new_object);
-    data->data = PyMem_Malloc(size);
+    data->data = PyMem_RawMalloc(size);
     if (data->data == NULL) {
         return -1;
     }
-    data->free = PyMem_Free;
+    data->free = PyMem_RawFree;
     return 0;
 }
 

@@ -110,7 +110,7 @@ class EmbeddingTestsMixin:
             print(f"--- {cmd} failed ---")
             print(f"stdout:\n{out}")
             print(f"stderr:\n{err}")
-            print(f"------")
+            print("------")
 
         self.assertEqual(p.returncode, returncode,
                          "bad returncode %d, stderr is %r" %
@@ -1656,6 +1656,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                        api=API_PYTHON, env=env)
 
     def test_init_main_interpreter_settings(self):
+        OBMALLOC = 1<<5
         EXTENSIONS = 1<<8
         THREADS = 1<<10
         DAEMON_THREADS = 1<<11
@@ -1664,7 +1665,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         expected = {
             # All optional features should be enabled.
             'feature_flags':
-                FORK | EXEC | THREADS | DAEMON_THREADS,
+                OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS,
         }
         out, err = self.run_embedded_interpreter(
             'test_init_main_interpreter_settings',

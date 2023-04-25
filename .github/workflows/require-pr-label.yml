@@ -6,7 +6,7 @@ on:
 
 jobs:
   label:
-    name: DO-NOT-MERGE
+    name: DO-NOT-MERGE / unresolved review
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -15,4 +15,4 @@ jobs:
         with:
           mode: exactly
           count: 0
-          labels: "DO-NOT-MERGE"
+          labels: "DO-NOT-MERGE, awaiting changes, awaiting change review"
