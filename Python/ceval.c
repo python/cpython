@@ -21,6 +21,7 @@
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
 #include "pycore_dict.h"
@@ -53,8 +54,11 @@
 #undef Py_DECREF
 #define Py_DECREF(arg) \
     do { \
-        _Py_DECREF_STAT_INC(); \
         PyObject *op = _PyObject_CAST(arg); \
+        if (_Py_IsImmortal(op)) { \
+            break; \
+        } \
+        _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
             destructor dealloc = Py_TYPE(op)->tp_dealloc; \
             (*dealloc)(op); \
@@ -77,8 +81,11 @@
 #undef _Py_DECREF_SPECIALIZED
 #define _Py_DECREF_SPECIALIZED(arg, dealloc) \
     do { \
-        _Py_DECREF_STAT_INC(); \
         PyObject *op = _PyObject_CAST(arg); \
+        if (_Py_IsImmortal(op)) { \
+            break; \
+        } \
+        _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
             destructor d = (destructor)(dealloc); \
             d(op); \
@@ -416,7 +423,7 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
             Py_ssize_t nargs, PyObject *kwargs)
 {
     if (!PyType_Check(type)) {
-        const char *e = "called match pattern must be a type";
+        const char *e = "called match pattern must be a class";
         _PyErr_Format(tstate, PyExc_TypeError, e);
         return NULL;
     }
@@ -672,7 +679,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         _PyCode_CODE(tstate->interp->interpreter_trampoline);
     entry_frame.stacktop = 0;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
-    entry_frame.yield_offset = 0;
+    entry_frame.return_offset = 0;
     /* Push frame */
     entry_frame.previous = prev_cframe->current_frame;
     frame->previous = &entry_frame;
@@ -881,6 +888,7 @@ exit_unwind:
     _PyInterpreterFrame *dying = frame;
     frame = cframe.current_frame = dying->previous;
     _PyEvalFrameClearAndPop(tstate, dying);
+    frame->return_offset = 0;
     if (frame == &entry_frame) {
         /* Restore previous cframe and exit */
         tstate->cframe = cframe.previous;

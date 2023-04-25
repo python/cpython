@@ -1067,6 +1067,13 @@ class DisTests(DisTestBase):
         check(dis_nested_2, depth=None)
         check(dis_nested_2)
 
+    def test__try_compile_no_context_exc_on_error(self):
+        # see gh-102114
+        try:
+            dis._try_compile(")", "")
+        except Exception as e:
+            self.assertIsNone(e.__context__)
+
     @staticmethod
     def code_quicken(f, times=ADAPTIVE_WARMUP_DELAY):
         for _ in range(times):
@@ -1927,6 +1934,14 @@ class TestFinderMethods(unittest.TestCase):
         ]
 
         self.assertEqual(sorted(labels), sorted(jumps))
+
+    def test_findlinestarts(self):
+        def func():
+            pass
+
+        code = func.__code__
+        offsets = [linestart[0] for linestart in dis.findlinestarts(code)]
+        self.assertEqual(offsets, [0, 2])
 
 
 class TestDisTraceback(DisTestBase):

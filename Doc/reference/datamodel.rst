@@ -2102,6 +2102,10 @@ Resolving MRO entries
    :func:`types.resolve_bases`
       Dynamically resolve bases that are not instances of :class:`type`.
 
+   :func:`types.get_original_bases`
+      Retrieve a class's "original bases" prior to modifications by
+      :meth:`~object.__mro_entries__`.
+
    :pep:`560`
       Core support for typing module and generic types.
 
