@@ -359,7 +359,7 @@ _PyPegen_expect_token(Parser *p, int type)
     }
     Token *t = p->tokens[p->mark];
     if (t->type != type) {
-        return NULL;
+       return NULL;
     }
     p->mark += 1;
     return t;

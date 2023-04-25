@@ -1043,7 +1043,7 @@ Other constructors, all class methods:
    Return a :class:`.datetime` corresponding to *date_string*, parsed according to
    *format*.
 
-   This is equivalent to::
+   If *format* does not contain microseconds or timezone information, this is equivalent to::
 
      datetime(*(time.strptime(date_string, format)[0:6]))
 
@@ -2510,10 +2510,7 @@ Notes:
    Because the format depends on the current locale, care should be taken when
    making assumptions about the output value. Field orderings will vary (for
    example, "month/day/year" versus "day/month/year"), and the output may
-   contain Unicode characters encoded using the locale's default encoding (for
-   example, if the current locale is ``ja_JP``, the default encoding could be
-   any one of ``eucJP``, ``SJIS``, or ``utf-8``; use :meth:`locale.getlocale`
-   to determine the current locale's encoding).
+   contain non-ASCII characters.
 
 (2)
    The :meth:`strptime` method can parse years in the full [1, 9999] range, but

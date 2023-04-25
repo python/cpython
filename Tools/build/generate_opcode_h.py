@@ -89,6 +89,7 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
     HAVE_ARGUMENT = opcode["HAVE_ARGUMENT"]
     MIN_PSEUDO_OPCODE = opcode["MIN_PSEUDO_OPCODE"]
     MAX_PSEUDO_OPCODE = opcode["MAX_PSEUDO_OPCODE"]
+    MIN_INSTRUMENTED_OPCODE = opcode["MIN_INSTRUMENTED_OPCODE"]
 
     NUM_OPCODES = len(opname)
     used = [ False ] * len(opname)
@@ -105,9 +106,6 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
         specialized_opmap[name] = next_op
         opname_including_specialized[next_op] = name
         used[next_op] = True
-    specialized_opmap['DO_TRACING'] = 255
-    opname_including_specialized[255] = 'DO_TRACING'
-    used[255] = True
 
     with open(outfile, 'w') as fobj, open(internaloutfile, 'w') as iobj:
         fobj.write(header)
@@ -120,6 +118,8 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
                     fobj.write(DEFINE.format("HAVE_ARGUMENT", HAVE_ARGUMENT))
                 if op == MIN_PSEUDO_OPCODE:
                     fobj.write(DEFINE.format("MIN_PSEUDO_OPCODE", MIN_PSEUDO_OPCODE))
+                if op == MIN_INSTRUMENTED_OPCODE:
+                    fobj.write(DEFINE.format("MIN_INSTRUMENTED_OPCODE", MIN_INSTRUMENTED_OPCODE))
 
                 fobj.write(DEFINE.format(name, op))
 
