@@ -23,7 +23,7 @@ __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY",
            "SATURDAY", "SUNDAY"]
 
-
+# Exception raised for bad input (with string parameter for details)
 error = ValueError
 
 # Exceptions raised for bad input
