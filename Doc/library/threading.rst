@@ -594,14 +594,19 @@ and "recursion level" in addition to the locked/unlocked state used by primitive
 locks.  In the locked state, some thread owns the lock; in the unlocked state,
 no thread owns it.
 
-To lock the lock, a thread calls its :meth:`~RLock.acquire` method; this
-returns once the thread owns the lock.  To unlock the lock, a thread calls
-its :meth:`~Lock.release` method. :meth:`~Lock.acquire`/:meth:`~Lock.release`
-call pairs may be nested; only the final :meth:`~Lock.release` (the
-:meth:`~Lock.release` of the outermost pair) resets the lock to unlocked and
-allows another thread blocked in :meth:`~Lock.acquire` to proceed.
+To lock the lock, a thread calls its :meth:`~RLock.acquire` method.  To unlock
+the lock, a thread calls its :meth:`~Lock.release` method. Reentrant locks
+support the :ref:`context management protocol <with-locks>` so `with` can be used.
 
-Reentrant locks also support the :ref:`context management protocol <with-locks>`.
+RLock's :meth:`~RLock.acquire`/:meth:`~RLock.release` call pairs may be nested,
+unlike Lock's :meth:`~Lock.acquire`/:meth:`~Lock.release`. Only the final
+:meth:`~RLock.release` (the :meth:`~Lock.release` of the outermost pair) resets
+the lock to an unlocked state and allows another thread blocked in
+:meth:`~RLock.acquire` to proceed.
+
+:meth:`~RLock.acquire`/:meth:`~RLock.release` must be in pairs: each acquire
+must have a release in the thread that has acquired the lock. Failing to
+release as many times the lock has required will lead to deadlock.
 
 
 .. class:: RLock()
@@ -620,25 +625,38 @@ Reentrant locks also support the :ref:`context management protocol <with-locks>`
 
       Acquire a lock, blocking or non-blocking.
 
-      When invoked without arguments: if this thread already owns the lock, increment
-      the recursion level by one, and return immediately.  Otherwise, if another
-      thread owns the lock, block until the lock is unlocked.  Once the lock is
-      unlocked (not owned by any thread), then grab ownership, set the recursion level
-      to one, and return.  If more than one thread is blocked waiting until the lock
-      is unlocked, only one at a time will be able to grab ownership of the lock.
-      There is no return value in this case.
+      When invoked with the *blocking* argument set to ``True`` (the default):
 
-      When invoked with the *blocking* argument set to ``True``, do the same thing as when
-      called without arguments, and return ``True``.
+         1. If another thread owns the lock, block until we are able to acquire
+            lock, or *timeout*, if set.
 
-      When invoked with the *blocking* argument set to ``False``, do not block.  If a call
-      without an argument would block, return ``False`` immediately; otherwise, do the
-      same thing as when called without arguments, and return ``True``.
+         2. If no thread owns the lock, acquire the lock and return immediately.
+
+         3. If the same thread owns the lock, acquire the lock again, and
+            return immediately. This is the difference between ``Lock`` and
+            ``RLock``. Internally, the "recursion level" is atomically
+            incremented to allow this.
+
+      When invoked with the *blocking* argument set to ``False``, do not block.
+      Without blocking:
+
+         1. If another thread owns the lock, return immediately.
+
+         2. If no thread owns the lock, acquire the lock and return immediately.
+
+         3. If the same thread owns the lock. acquire the lock again and return
+            immediately.
 
       When invoked with the floating-point *timeout* argument set to a positive
-      value, block for at most the number of seconds specified by *timeout*
-      and as long as the lock cannot be acquired.  Return ``True`` if the lock has
-      been acquired, ``False`` if the timeout has elapsed.
+      value, block for at most the number of seconds specified by *timeout*.
+
+      In all cases, if the thread was able to acquire the lock, return ``True``.
+      If the thread was unable to acquire the lock (i.e. if *blocking* is False, or
+      is reached timeout) return ``False``.
+
+      If called multiple times, failing to call :meth:`~RLock.release` as many times
+      may lead to deadlock. Consider using ``RLock`` as a context manager rather than
+      calling acquire/release directly.
 
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
@@ -654,7 +672,7 @@ Reentrant locks also support the :ref:`context management protocol <with-locks>`
 
       Only call this method when the calling thread owns the lock. A
       :exc:`RuntimeError` is raised if this method is called when the lock is
-      unlocked.
+      un-acquired.
 
       There is no return value.
 
