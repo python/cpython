@@ -1,0 +1,2 @@
+Implement :pep:`695`, adding syntactic support for generic classes, generic
+functions, and type aliases. Patch by Eric Traut and Jelle Zijlstra.
