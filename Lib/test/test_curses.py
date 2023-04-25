@@ -1370,7 +1370,7 @@ class TextboxTest(unittest.TestCase):
         self.textbox.do_command(curses.KEY_RIGHT)
         self.mock_win.move.assert_called_with(1, 2)
         self.mock_win.reset_mock()
-    
+
     def test_move_left(self):
         """Test moving the cursor left."""
         self.mock_win.reset_mock()
@@ -1392,6 +1392,6 @@ class TextboxTest(unittest.TestCase):
         self.mock_win.move.assert_called_with(2, 1)
         self.mock_win.reset_mock()
 
-        
+
 if __name__ == '__main__':
     unittest.main()
