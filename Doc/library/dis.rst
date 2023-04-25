@@ -1036,6 +1036,24 @@ iterations of the loop.
       pushed to the stack before the attribute or unbound method respectively.
 
 
+.. opcode:: LOAD_SUPER_ATTR (namei)
+
+   This opcode implements :func:`super` (e.g. ``super().method()`` and
+   ``super().attr``). It works the same as :opcode:`LOAD_ATTR`, except that
+   ``namei`` is shifted left by 2 bits instead of 1, and instead of expecting a
+   single receiver on the stack, it expects three objects (from top of stack
+   down): ``self`` (the first argument to the current method), ``cls`` (the
+   class within which the current method was defined), and the global ``super``.
+
+   The low bit of ``namei`` signals to attempt a method load, as with
+   :opcode:`LOAD_ATTR`.
+
+   The second-low bit of ``namei``, if set, means that this was a two-argument
+   call to :func:`super` (unset means zero-argument).
+
+   .. versionadded:: 3.12
+
+
 .. opcode:: COMPARE_OP (opname)
 
    Performs a Boolean operation.  The operation name can be found in

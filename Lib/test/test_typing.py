@@ -1805,6 +1805,11 @@ class UnionTests(BaseTestCase):
             A = 0
             B = 1
 
+        self.assertEqual(Union[Literal[Ints.A], Literal[Ints.A]],
+                         Literal[Ints.A])
+        self.assertEqual(Union[Literal[Ints.B], Literal[Ints.B]],
+                         Literal[Ints.B])
+
         self.assertEqual(Union[Literal[Ints.A], Literal[Ints.B]].__args__,
                          (Literal[Ints.A], Literal[Ints.B]))
 

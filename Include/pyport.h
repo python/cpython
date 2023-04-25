@@ -662,6 +662,27 @@ extern char * _getpty(int *, int, mode_t, int);
 #  define WITH_THREAD
 #endif
 
+#ifdef WITH_THREAD
+#  ifdef Py_BUILD_CORE
+#    ifdef HAVE_THREAD_LOCAL
+#      error "HAVE_THREAD_LOCAL is already defined"
+#    endif
+#    define HAVE_THREAD_LOCAL 1
+#    ifdef thread_local
+#      define _Py_thread_local thread_local
+#    elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
+#      define _Py_thread_local _Thread_local
+#    elif defined(_MSC_VER)  /* AKA NT_THREADS */
+#      define _Py_thread_local __declspec(thread)
+#    elif defined(__GNUC__)  /* includes clang */
+#      define _Py_thread_local __thread
+#    else
+       // fall back to the PyThread_tss_*() API, or ignore.
+#      undef HAVE_THREAD_LOCAL
+#    endif
+#  endif
+#endif
+
 /* Check that ALT_SOABI is consistent with Py_TRACE_REFS:
    ./configure --with-trace-refs should must be used to define Py_TRACE_REFS */
 #if defined(ALT_SOABI) && defined(Py_TRACE_REFS)
