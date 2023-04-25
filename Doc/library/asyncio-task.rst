@@ -536,19 +536,20 @@ Eager Task Factory
 
     When using this factory (via ``loop.set_task_factory(asyncio.eager_task_factory)``),
     coroutines that are able to complete synchronously (without blocking)
-    are returned immediately as a completed :class:`Future`.
+    are returned immediately as a finished :class:`Task`.
 
-    This task factory tries to execute the coroutine ``coro`` immediately
-    (before creating and scheduling a task to the event loop), until it either
-    blocks, returns, or raises.
-    If the coroutine returns or raises, a :class:`Future` is returned, and no
-    task is created or scheduled to the event loop. If the coroutine blocks,
-    a :class:`Task` is constructed and returned at that point.
+    This task factory attempts to execute the coroutine ``coro`` immediately
+    (before scheduling the task to the event loop), until it either blocks,
+    returns, or raises.
+    If the coroutine returns or raises, a finished :class:`Task` is returned,
+    and the task is never scheduled to the event loop. If the coroutine blocks,
+    the (pending) :class:`Task` is scheduled and returned.
 
     .. note::
 
         The fact that the coroutine starts execution immediately is a semantic change,
         and might lead to application behavior changes, depending on the application.
+        For example, the order of execution of tasks is likely to change.
 
     .. versionadded:: 3.12
 
