@@ -807,7 +807,8 @@ atom[expr_ty]:
     | 'True' { _PyAST_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
     | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
-    | &(STRING|FSTRING_START|TAGSTRING_START) strings
+    | &(STRING|FSTRING_START) strings
+    | &TAGSTRING_START tagstring
     | NUMBER
     | &'(' (tuple | group | genexp)
     | &'[' (list | listcomp)
@@ -898,7 +899,7 @@ tagstring[expr_ty]:
     | a=TAGSTRING_START b=fstring_middle* c=FSTRING_END { _PyPegen_tag_str(p, a, (asdl_expr_seq*)b, c) }
 
 string[expr_ty]: s[Token*]=STRING { _PyPegen_constant_from_string(p, s) }
-strings[expr_ty] (memo): a[asdl_expr_seq*]=(fstring|tagstring|string)+ { _PyPegen_concatenate_strings(p, a, EXTRA) }
+strings[expr_ty] (memo): a[asdl_expr_seq*]=(fstring|string)+ { _PyPegen_concatenate_strings(p, a, EXTRA) }
 
 list[expr_ty]:
     | '[' a=[star_named_expressions] ']' { _PyAST_List(a, Load, EXTRA) }
