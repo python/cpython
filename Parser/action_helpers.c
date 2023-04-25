@@ -1580,7 +1580,7 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     assert(len > 0);
 
     int f_string_found = 0;
-    int tag_string_found = 0;
+    int tag_string_found = 0;  // TODO: Do this in the grammar instead
     int unicode_string_found = 0;
     int bytes_found = 0;
 
