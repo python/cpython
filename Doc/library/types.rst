@@ -351,6 +351,13 @@ Standard names are defined for the following types:
    .. versionchanged:: 3.9.2
       This type can now be subclassed.
 
+   .. seealso::
+
+      :ref:`Generic Alias Types<types-genericalias>`
+         In-depth documentation on instances of :class:`!types.GenericAlias`
+
+      :pep:`585` - Type Hinting Generics In Standard Collections
+         Introducing the :class:`!types.GenericAlias` class
 
 .. class:: UnionType
 
