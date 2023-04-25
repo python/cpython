@@ -25,7 +25,7 @@ expr_as_unicode(expr_ty e, int level);
 static int
 append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level);
 static int
-append_joinedstr(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec);
+append_joinedstr(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec, bool is_tag_str);
 static int
 append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e);
 static int
@@ -603,15 +603,52 @@ append_fstring_unicode(_PyUnicodeWriter *writer, PyObject *unicode)
 }
 
 static int
+append_interpolation(_PyUnicodeWriter *writer, expr_ty e)
+{
+    APPEND_STR("{");
+    if (e->kind == Tuple_kind) {
+        asdl_expr_seq *elts = e->v.Tuple.elts;
+        if (asdl_seq_LEN(elts) == 4) {
+            expr_ty raw = asdl_seq_GET(elts, 1);
+            if (raw->kind == Constant_kind) {
+                constant c = raw->v.Constant.value;
+                if (PyUnicode_CheckExact(c)) {
+                    if (-1 == _PyUnicodeWriter_WriteStr(writer, c))
+                        return -1;
+                }
+            }
+            expr_ty conv = asdl_seq_GET(elts, 2);
+            if (conv->kind == Constant_kind) {
+                constant c = conv->v.Constant.value;
+                if (PyUnicode_CheckExact(c)) {
+                    APPEND_STR("!");
+                    if (-1 == _PyUnicodeWriter_WriteStr(writer, c))
+                        return -1;
+                }
+            }
+            expr_ty spec = asdl_seq_GET(elts, 3);
+            if (spec->kind == JoinedStr_kind) {
+                APPEND_STR(":");
+                if (-1 == append_joinedstr(writer, spec, true, false))
+                    return -1;
+            }
+        }
+    }
+    APPEND_STR_FINISH("}");
+}
+
+static int
 append_fstring_element(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 {
     switch (e->kind) {
     case Constant_kind:
         return append_fstring_unicode(writer, e->v.Constant.value);
     case JoinedStr_kind:
-        return append_joinedstr(writer, e, is_format_spec);
+        return append_joinedstr(writer, e, is_format_spec, false);
     case FormattedValue_kind:
         return append_formattedvalue(writer, e);
+    case Tuple_kind:
+        return append_interpolation(writer, e);
     default:
         PyErr_SetString(PyExc_SystemError,
                         "unknown expression kind inside f-string");
@@ -645,16 +682,19 @@ build_fstring_body(asdl_expr_seq *values, bool is_format_spec)
 }
 
 static int
-append_joinedstr(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
+append_joinedstr(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec, bool is_tag_str)
 {
-    int result = -1;
     PyObject *body = build_fstring_body(e->v.JoinedStr.values, is_format_spec);
     if (!body) {
         return -1;
     }
 
+    int result = 0;
     if (!is_format_spec) {
-        if (-1 != append_charp(writer, "f") &&
+        if (!is_tag_str) {
+            result = append_charp(writer, "f");
+        }
+        if (-1 != result &&
             -1 != append_repr(writer, body))
         {
             result = 0;
@@ -665,6 +705,18 @@ append_joinedstr(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
     }
     Py_DECREF(body);
     return result;
+}
+
+static int
+append_tagstring(_PyUnicodeWriter *writer, expr_ty e)
+{
+    APPEND_EXPR(e->v.TagString.tag, 0);
+    expr_ty str = e->v.TagString.str;
+    if (str->kind == JoinedStr_kind) {
+        if (-1 == append_joinedstr(writer, str, false, true))
+            return -1;
+    }
+    return 0;
 }
 
 static int
@@ -891,7 +943,9 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
         }
         return append_ast_constant(writer, e->v.Constant.value);
     case JoinedStr_kind:
-        return append_joinedstr(writer, e, false);
+        return append_joinedstr(writer, e, false, false);
+    case TagString_kind:
+        return append_tagstring(writer, e);
     case FormattedValue_kind:
         return append_formattedvalue(writer, e);
     /* The following exprs can be assignment targets. */

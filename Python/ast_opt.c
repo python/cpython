@@ -788,6 +788,10 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case JoinedStr_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.JoinedStr.values);
         break;
+    case TagString_kind:
+        CALL(astfold_expr, expr_ty, node_->v.TagString.tag);
+        CALL(astfold_expr, expr_ty, node_->v.TagString.str);
+        break;
     case Attribute_kind:
         CALL(astfold_expr, expr_ty, node_->v.Attribute.value);
         break;
