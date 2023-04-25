@@ -245,6 +245,8 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
 /* --- PyInterpreterConfig ------------------------------------ */
 
 typedef struct {
+    // XXX "allow_object_sharing"?  "own_objects"?
+    int use_main_obmalloc;
     int allow_fork;
     int allow_exec;
     int allow_threads;
@@ -254,6 +256,7 @@ typedef struct {
 
 #define _PyInterpreterConfig_INIT \
     { \
+        .use_main_obmalloc = 0, \
         .allow_fork = 0, \
         .allow_exec = 0, \
         .allow_threads = 1, \
@@ -263,6 +266,7 @@ typedef struct {
 
 #define _PyInterpreterConfig_LEGACY_INIT \
     { \
+        .use_main_obmalloc = 1, \
         .allow_fork = 1, \
         .allow_exec = 1, \
         .allow_threads = 1, \
