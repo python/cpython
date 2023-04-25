@@ -1217,7 +1217,7 @@ static PyType_Slot typealias_slots[] = {
 };
 
 PyType_Spec typealias_spec = {
-    .name = "typing.TypeAlias",
+    .name = "typing.TypeAliasType",
     .basicsize = sizeof(typealiasobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = typealias_slots,

@@ -937,36 +937,6 @@ class _PickleUsingNameMixin:
         return self.__name__
 
 
-class TypeAliasType(_Final, _Immutable, _PickleUsingNameMixin, _root=True):
-    """Type alias allocated through the use of a "type" statement.
-    """
-    def __init__(self, name, parameters):
-        self.__value__ = None
-        self.__name__ = name
-        self.__parameters__ = parameters
-        self.__arguments__ = None
-
-    @_tp_cache
-    def __getitem__(self, args):
-        if len(self.__parameters__) == 0:
-            raise TypeError(f"Type alias is not generic")
-        if self.__arguments__:
-            raise TypeError(f"Cannot subscript already-subscripted type alias")
-        copy = TypeAliasType(self.__name__, self.__parameters__)
-        copy.__value__ = self.__value__
-        copy.__arguments__ = args
-        return copy
-
-    def __repr__(self):
-        return self.__name__
-
-    def __or__(self, right):
-        return Union[self, right]
-
-    def __ror__(self, left):
-        return Union[left, self]
-
-
 def _typevar_subst(self, arg):
     msg = "Parameters to generic types must be types."
     arg = _type_check(arg, msg, is_argument=True)
@@ -1801,7 +1771,10 @@ def _pickle_pskwargs(pskwargs):
 
 copyreg.pickle(ParamSpecKwargs, _pickle_pskwargs)
 
-del _Dummy, _pickle_psargs, _pickle_pskwargs
+type _Alias = int
+TypeAliasType = type(_Alias)
+
+del _Dummy, _pickle_psargs, _pickle_pskwargs, _Alias
 
 
 class _ProtocolMeta(ABCMeta):
