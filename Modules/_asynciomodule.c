@@ -76,7 +76,7 @@ get_asyncio_state(PyObject *mod)
 static inline asyncio_state *
 get_asyncio_state_by_cls(PyTypeObject *cls)
 {
-    asyncio_state *state = (asyncio_state *)PyType_GetModuleState(cls);
+    asyncio_state *state = (asyncio_state *)_PyType_GetModuleState(cls);
     assert(state != NULL);
     return state;
 }
@@ -355,33 +355,26 @@ call_soon(asyncio_state *state, PyObject *loop, PyObject *func, PyObject *arg,
           PyObject *ctx)
 {
     PyObject *handle;
-    PyObject *stack[3];
-    Py_ssize_t nargs;
 
     if (ctx == NULL) {
-        handle = PyObject_CallMethodObjArgs(
-            loop, &_Py_ID(call_soon), func, arg, NULL);
+        PyObject *stack[] = {loop, func, arg};
+        size_t nargsf = 3 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+        handle = PyObject_VectorcallMethod(&_Py_ID(call_soon), stack, nargsf, NULL);
     }
     else {
-        /* Use FASTCALL to pass a keyword-only argument to call_soon */
-
-        PyObject *callable = PyObject_GetAttr(loop, &_Py_ID(call_soon));
-        if (callable == NULL) {
-            return -1;
-        }
-
         /* All refs in 'stack' are borrowed. */
-        nargs = 1;
-        stack[0] = func;
+        PyObject *stack[4];
+        size_t nargs = 2;
+        stack[0] = loop;
+        stack[1] = func;
         if (arg != NULL) {
-            stack[1] = arg;
+            stack[2] = arg;
             nargs++;
         }
         stack[nargs] = (PyObject *)ctx;
-        EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, callable);
-        handle = PyObject_Vectorcall(callable, stack, nargs,
-                                     state->context_kwname);
-        Py_DECREF(callable);
+        size_t nargsf = nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
+        handle = PyObject_VectorcallMethod(&_Py_ID(call_soon), stack, nargsf,
+                                           state->context_kwname);
     }
 
     if (handle == NULL) {
@@ -1422,7 +1415,6 @@ _asyncio_Future__make_cancelled_error_impl(FutureObj *self)
 static void
 FutureObj_finalize(FutureObj *fut)
 {
-    PyObject *error_type, *error_value, *error_traceback;
     PyObject *context;
     PyObject *message = NULL;
     PyObject *func;
@@ -1434,7 +1426,7 @@ FutureObj_finalize(FutureObj *fut)
     fut->fut_log_tb = 0;
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     context = PyDict_New();
     if (context == NULL) {
@@ -1476,7 +1468,7 @@ finally:
     Py_XDECREF(message);
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 static PyMethodDef FutureType_methods[] = {
@@ -1694,7 +1686,12 @@ FutureIter_throw(futureiterobject *self, PyObject *const *args, Py_ssize_t nargs
         val = args[1];
     }
 
-    if (tb != NULL && !PyTraceBack_Check(tb)) {
+    if (val == Py_None) {
+        val = NULL;
+    }
+    if (tb == Py_None ) {
+        tb = NULL;
+    } else if (tb != NULL && !PyTraceBack_Check(tb)) {
         PyErr_SetString(PyExc_TypeError, "throw() third argument must be a traceback");
         return NULL;
     }
@@ -2355,8 +2352,9 @@ _asyncio_Task_get_stack_impl(TaskObj *self, PyTypeObject *cls,
 /*[clinic end generated code: output=6774dfc10d3857fa input=8e01c9b2618ae953]*/
 {
     asyncio_state *state = get_asyncio_state_by_cls(cls);
-    return PyObject_CallFunctionObjArgs(
-        state->asyncio_task_get_stack_func, self, limit, NULL);
+    PyObject *stack[] = {(PyObject *)self, limit};
+    return PyObject_Vectorcall(state->asyncio_task_get_stack_func,
+                               stack, 2, NULL);
 }
 
 /*[clinic input]
@@ -2383,8 +2381,9 @@ _asyncio_Task_print_stack_impl(TaskObj *self, PyTypeObject *cls,
 /*[clinic end generated code: output=b38affe9289ec826 input=150b35ba2d3a7dee]*/
 {
     asyncio_state *state = get_asyncio_state_by_cls(cls);
-    return PyObject_CallFunctionObjArgs(
-        state->asyncio_task_print_stack_func, self, limit, file, NULL);
+    PyObject *stack[] = {(PyObject *)self, limit, file};
+    return PyObject_Vectorcall(state->asyncio_task_print_stack_func,
+                               stack, 3, NULL);
 }
 
 /*[clinic input]
@@ -2486,14 +2485,13 @@ TaskObj_finalize(TaskObj *task)
     PyObject *context;
     PyObject *message = NULL;
     PyObject *func;
-    PyObject *error_type, *error_value, *error_traceback;
 
     if (task->task_state != STATE_PENDING || !task->task_log_destroy_pending) {
         goto done;
     }
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     context = PyDict_New();
     if (context == NULL) {
@@ -2536,7 +2534,7 @@ finally:
     Py_XDECREF(message);
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 
 done:
     FutureObj_finalize((FutureObj*)task);
@@ -2761,8 +2759,6 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
     }
 
     if (gen_status == PYGEN_RETURN || gen_status == PYGEN_ERROR) {
-        PyObject *et, *ev, *tb;
-
         if (result != NULL) {
             /* The error is StopIteration and that means that
                the underlying coroutine has resolved */
@@ -2789,52 +2785,39 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
 
         if (PyErr_ExceptionMatches(state->asyncio_CancelledError)) {
             /* CancelledError */
-            PyErr_Fetch(&et, &ev, &tb);
-            assert(et);
-            PyErr_NormalizeException(&et, &ev, &tb);
-            if (tb != NULL) {
-                PyException_SetTraceback(ev, tb);
-                Py_DECREF(tb);
-            }
-            Py_XDECREF(et);
+
+            PyObject *exc = PyErr_GetRaisedException();
+            assert(exc);
 
             FutureObj *fut = (FutureObj*)task;
             /* transfer ownership */
-            fut->fut_cancelled_exc = ev;
+            fut->fut_cancelled_exc = exc;
 
             return future_cancel(state, fut, NULL);
         }
 
         /* Some other exception; pop it and call Task.set_exception() */
-        PyErr_Fetch(&et, &ev, &tb);
-        assert(et);
-        PyErr_NormalizeException(&et, &ev, &tb);
-        if (tb != NULL) {
-            PyException_SetTraceback(ev, tb);
-        }
+        PyObject *exc = PyErr_GetRaisedException();
+        assert(exc);
 
-        o = future_set_exception(state, (FutureObj*)task, ev);
+        o = future_set_exception(state, (FutureObj*)task, exc);
         if (!o) {
             /* An exception in Task.set_exception() */
-            Py_DECREF(et);
-            Py_XDECREF(tb);
-            Py_XDECREF(ev);
+            Py_DECREF(exc);
             goto fail;
         }
         assert(o == Py_None);
         Py_DECREF(o);
 
-        if (PyErr_GivenExceptionMatches(et, PyExc_KeyboardInterrupt) ||
-            PyErr_GivenExceptionMatches(et, PyExc_SystemExit))
+        if (PyErr_GivenExceptionMatches(exc, PyExc_KeyboardInterrupt) ||
+            PyErr_GivenExceptionMatches(exc, PyExc_SystemExit))
         {
             /* We've got a KeyboardInterrupt or a SystemError; re-raise it */
-            PyErr_Restore(et, ev, tb);
+            PyErr_SetRaisedException(exc);
             goto fail;
         }
 
-        Py_DECREF(et);
-        Py_XDECREF(tb);
-        Py_XDECREF(ev);
+        Py_DECREF(exc);
 
         Py_RETURN_NONE;
     }
@@ -3054,10 +3037,9 @@ task_step(asyncio_state *state, TaskObj *task, PyObject *exc)
     res = task_step_impl(state, task, exc);
 
     if (res == NULL) {
-        PyObject *et, *ev, *tb;
-        PyErr_Fetch(&et, &ev, &tb);
+        PyObject *exc = PyErr_GetRaisedException();
         leave_task(state, task->task_loop, (PyObject*)task);
-        _PyErr_ChainExceptions(et, ev, tb); /* Normalizes (et, ev, tb) */
+        _PyErr_ChainExceptions1(exc);
         return NULL;
     }
     else {
@@ -3074,7 +3056,6 @@ task_step(asyncio_state *state, TaskObj *task, PyObject *exc)
 static PyObject *
 task_wakeup(TaskObj *task, PyObject *o)
 {
-    PyObject *et, *ev, *tb;
     PyObject *result;
     assert(o);
 
@@ -3106,18 +3087,12 @@ task_wakeup(TaskObj *task, PyObject *o)
         /* exception raised */
     }
 
-    PyErr_Fetch(&et, &ev, &tb);
-    assert(et);
-    PyErr_NormalizeException(&et, &ev, &tb);
-    if (tb != NULL) {
-        PyException_SetTraceback(ev, tb);
-    }
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(exc);
 
-    result = task_step(state, task, ev);
+    result = task_step(state, task, exc);
 
-    Py_DECREF(et);
-    Py_XDECREF(tb);
-    Py_XDECREF(ev);
+    Py_DECREF(exc);
 
     return result;
 }

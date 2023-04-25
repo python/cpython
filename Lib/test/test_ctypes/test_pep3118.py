@@ -28,7 +28,7 @@ class Test(unittest.TestCase):
                 if shape:
                     self.assertEqual(len(v), shape[0])
                 else:
-                    self.assertEqual(len(v) * sizeof(itemtp), sizeof(ob))
+                    self.assertRaises(TypeError, len, v)
                 self.assertEqual(v.itemsize, sizeof(itemtp))
                 self.assertEqual(v.shape, shape)
                 # XXX Issue #12851: PyCData_NewGetBuffer() must provide strides
@@ -39,11 +39,10 @@ class Test(unittest.TestCase):
                 # they are always read/write
                 self.assertFalse(v.readonly)
 
-                if v.shape:
-                    n = 1
-                    for dim in v.shape:
-                        n = n * dim
-                    self.assertEqual(n * v.itemsize, len(v.tobytes()))
+                n = 1
+                for dim in v.shape:
+                    n = n * dim
+                self.assertEqual(n * v.itemsize, len(v.tobytes()))
             except:
                 # so that we can see the failing type
                 print(tp)
@@ -58,7 +57,7 @@ class Test(unittest.TestCase):
                 if shape:
                     self.assertEqual(len(v), shape[0])
                 else:
-                    self.assertEqual(len(v) * sizeof(itemtp), sizeof(ob))
+                    self.assertRaises(TypeError, len, v)
                 self.assertEqual(v.itemsize, sizeof(itemtp))
                 self.assertEqual(v.shape, shape)
                 # XXX Issue #12851
@@ -67,11 +66,10 @@ class Test(unittest.TestCase):
                 # they are always read/write
                 self.assertFalse(v.readonly)
 
-                if v.shape:
-                    n = 1
-                    for dim in v.shape:
-                        n = n * dim
-                    self.assertEqual(n, len(v))
+                n = 1
+                for dim in v.shape:
+                    n = n * dim
+                self.assertEqual(n * v.itemsize, len(v.tobytes()))
             except:
                 # so that we can see the failing type
                 print(tp)
@@ -85,6 +83,20 @@ class Point(Structure):
 class PackedPoint(Structure):
     _pack_ = 2
     _fields_ = [("x", c_long), ("y", c_long)]
+
+class PointMidPad(Structure):
+    _fields_ = [("x", c_byte), ("y", c_uint)]
+
+class PackedPointMidPad(Structure):
+    _pack_ = 2
+    _fields_ = [("x", c_byte), ("y", c_uint64)]
+
+class PointEndPad(Structure):
+    _fields_ = [("x", c_uint), ("y", c_byte)]
+
+class PackedPointEndPad(Structure):
+    _pack_ = 2
+    _fields_ = [("x", c_uint64), ("y", c_byte)]
 
 class Point2(Structure):
     pass
@@ -185,11 +197,14 @@ native_types = [
 
     ## structures and unions
 
-    (Point,                     "T{<l:x:<l:y:}".replace('l', s_long),  (),  Point),
-    # packed structures do not implement the pep
-    (PackedPoint,               "B",                                   (),  PackedPoint),
-    (Point2,                    "T{<l:x:<l:y:}".replace('l', s_long),  (),  Point2),
-    (EmptyStruct,               "T{}",                                 (),  EmptyStruct),
+    (Point2,                    "T{<l:x:<l:y:}".replace('l', s_long),   (),  Point2),
+    (Point,                     "T{<l:x:<l:y:}".replace('l', s_long),   (),  Point),
+    (PackedPoint,               "T{<l:x:<l:y:}".replace('l', s_long),   (),  PackedPoint),
+    (PointMidPad,               "T{<b:x:3x<I:y:}".replace('I', s_uint), (),  PointMidPad),
+    (PackedPointMidPad,         "T{<b:x:x<Q:y:}",                       (),  PackedPointMidPad),
+    (PointEndPad,               "T{<I:x:<b:y:3x}".replace('I', s_uint), (),  PointEndPad),
+    (PackedPointEndPad,         "T{<Q:x:<b:y:x}",                       (),  PackedPointEndPad),
+    (EmptyStruct,               "T{}",                                  (),  EmptyStruct),
     # the pep doesn't support unions
     (aUnion,                    "B",                                   (),  aUnion),
     # structure with sub-arrays
@@ -226,7 +241,7 @@ class LEPoint(LittleEndianStructure):
 #
 endian_types = [
     (BEPoint, "T{>l:x:>l:y:}".replace('l', s_long), (), BEPoint),
-    (LEPoint, "T{<l:x:<l:y:}".replace('l', s_long), (), LEPoint),
+    (LEPoint * 1, "T{<l:x:<l:y:}".replace('l', s_long), (1,), LEPoint),
     (POINTER(BEPoint), "&T{>l:x:>l:y:}".replace('l', s_long), (), POINTER(BEPoint)),
     (POINTER(LEPoint), "&T{<l:x:<l:y:}".replace('l', s_long), (), POINTER(LEPoint)),
     ]

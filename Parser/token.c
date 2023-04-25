@@ -60,12 +60,16 @@ const char * const _PyParser_TokenNames[] = {
     "RARROW",
     "ELLIPSIS",
     "COLONEQUAL",
+    "EXCLAMATION",
     "OP",
     "AWAIT",
     "ASYNC",
     "TYPE_IGNORE",
     "TYPE_COMMENT",
     "SOFT_KEYWORD",
+    "FSTRING_START",
+    "FSTRING_MIDDLE",
+    "FSTRING_END",
     "<ERRORTOKEN>",
     "<COMMENT>",
     "<NL>",
@@ -79,6 +83,7 @@ int
 _PyToken_OneChar(int c1)
 {
     switch (c1) {
+    case '!': return EXCLAMATION;
     case '%': return PERCENT;
     case '&': return AMPER;
     case '(': return LPAR;

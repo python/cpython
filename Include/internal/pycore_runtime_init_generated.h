@@ -569,6 +569,7 @@ extern "C" {
     INIT_ID(True), \
     INIT_ID(WarningMessage), \
     INIT_ID(_), \
+    INIT_ID(_WindowsConsoleIO), \
     INIT_ID(__IOBase_closed), \
     INIT_ID(__abc_tpflags__), \
     INIT_ID(__abs__), \
@@ -744,6 +745,7 @@ extern "C" {
     INIT_ID(_get_sourcefile), \
     INIT_ID(_handle_fromlist), \
     INIT_ID(_initializing), \
+    INIT_ID(_io), \
     INIT_ID(_is_text_encoding), \
     INIT_ID(_length_), \
     INIT_ID(_limbo), \
@@ -985,6 +987,7 @@ extern "C" {
     INIT_ID(kw2), \
     INIT_ID(lambda), \
     INIT_ID(last), \
+    INIT_ID(last_exc), \
     INIT_ID(last_node), \
     INIT_ID(last_traceback), \
     INIT_ID(last_type), \
@@ -1143,6 +1146,7 @@ extern "C" {
     INIT_ID(signed), \
     INIT_ID(size), \
     INIT_ID(sizehint), \
+    INIT_ID(skip_file_prefixes), \
     INIT_ID(sleep), \
     INIT_ID(sock), \
     INIT_ID(sort), \
@@ -1205,6 +1209,7 @@ extern "C" {
     INIT_ID(value), \
     INIT_ID(values), \
     INIT_ID(version), \
+    INIT_ID(volume), \
     INIT_ID(warnings), \
     INIT_ID(warnoptions), \
     INIT_ID(wbits), \
