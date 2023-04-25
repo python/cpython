@@ -371,10 +371,8 @@ remember_fstring_buffers(struct tok_state *tok)
 
     for (index = tok->tok_mode_stack_index; index >= 0; --index) {
         mode = &(tok->tok_mode_stack[index]);
-        if (mode->kind == TOK_FSTRING_MODE) {
-            mode->f_string_start_offset = mode->f_string_start - tok->buf;
-            mode->f_string_multi_line_start_offset = mode->f_string_multi_line_start - tok->buf;
-        }
+        mode->f_string_start_offset = mode->f_string_start - tok->buf;
+        mode->f_string_multi_line_start_offset = mode->f_string_multi_line_start - tok->buf;
     }
 }
 
@@ -387,10 +385,8 @@ restore_fstring_buffers(struct tok_state *tok)
 
     for (index = tok->tok_mode_stack_index; index >= 0; --index) {
         mode = &(tok->tok_mode_stack[index]);
-        if (mode->kind == TOK_FSTRING_MODE) {
-            mode->f_string_start = tok->buf + mode->f_string_start_offset;
-            mode->f_string_multi_line_start = tok->buf + mode->f_string_multi_line_start_offset;
-        }
+        mode->f_string_start = tok->buf + mode->f_string_start_offset;
+        mode->f_string_multi_line_start = tok->buf + mode->f_string_multi_line_start_offset;
     }
 }
 
@@ -1081,6 +1077,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         restore_fstring_buffers(tok);
     }
     else {
+        remember_fstring_buffers(tok);
         ADVANCE_LINENO();
         PyMem_Free(tok->buf);
         tok->buf = newtok;
@@ -1088,6 +1085,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         tok->line_start = tok->buf;
         tok->inp = strchr(tok->buf, '\0');
         tok->end = tok->inp + 1;
+        restore_fstring_buffers(tok);
     }
     if (tok->done != E_OK) {
         if (tok->prompt != NULL) {
@@ -2481,19 +2479,21 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
     // If we start with a bracket, we defer to the normal mode as there is nothing for us to tokenize
     // before it.
     int start_char = tok_nextc(tok);
-    int peek1 = tok_nextc(tok);
-    tok_backup(tok, peek1);
-    tok_backup(tok, start_char);
-
-    if ((start_char == '{' && peek1 != '{') || (start_char == '}' && peek1 != '}')) {
-        if (start_char == '{') {
+    if (start_char == '{') {
+        int peek1 = tok_nextc(tok);
+        tok_backup(tok, peek1);
+        tok_backup(tok, start_char);
+        if (peek1 != '{') {
             current_tok->curly_bracket_expr_start_depth++;
             if (current_tok->curly_bracket_expr_start_depth >= MAX_EXPR_NESTING) {
                 return MAKE_TOKEN(syntaxerror(tok, "f-string: expressions nested too deeply"));
             }
+            TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
+            return tok_get_normal_mode(tok, current_tok, token);
         }
-        TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
-        return tok_get_normal_mode(tok, current_tok, token);
+    }
+    else {
+        tok_backup(tok, start_char);
     }
 
     // Check if we are at the end of the string
