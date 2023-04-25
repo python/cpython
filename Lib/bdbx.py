@@ -1,5 +1,7 @@
+import argparse
 import cmd
 import dis
+import io
 import linecache
 import os
 import re
@@ -253,6 +255,28 @@ class StopEvent:
     is_return: bool = False
 
 
+class _ExecuteTarget:
+    pass
+
+
+class _ScriptTarget(_ExecuteTarget):
+    def __init__(self, filename):
+        self.filename = filename
+        if not os.path.exists(filename):
+            raise FileNotFoundError(filename)
+        with io.open_code(filename) as f:
+            self.code = compile(f.read(), filename, "exec")
+
+    @property
+    def namespaces(self):
+        ns = {
+            '__name__': '__main__',
+            '__file__': self.filename,
+            '__builtins__': __builtins__,
+        }
+        return ns, ns
+
+
 class Bdbx:
     """Bdbx is a singleton class that implements the debugger logic"""
     _instance = None
@@ -383,6 +407,21 @@ class Bdbx:
     # ======================= Helper functions ===============================
     # ========================================================================
 
+    def _run_target(self, target:_ExecuteTarget):
+        """Debug the given code object in __main__"""
+        import __main__
+        main_dict = __main__.__dict__.copy()
+        globals, locals = target.namespaces
+        __main__.__dict__.clear()
+        __main__.__dict__.update(globals)
+        self.break_here()
+        try:
+            exec(target.code, globals, locals)
+        except BdbxQuit:
+            pass
+        __main__.__dict__.clear()
+        __main__.__dict__.update(main_dict)
+
     def _get_stack_from_frame(self, frame):
         """Get call stack from the latest frame, oldest frame at [0]"""
         stack = []
@@ -400,6 +439,11 @@ class Pdbx(Bdbx, cmd.Cmd):
         self.fncache = {}
         Bdbx.__init__(self)
         cmd.Cmd.__init__(self, 'tab', None, None)
+
+    # ========================================================================
+    # ============================ User APIs =================================
+    # ========================================================================
+
 
     # ========================================================================
     # ======================= Interface to Bdbx ==============================
@@ -703,3 +747,27 @@ class Pdbx(Bdbx, cmd.Cmd):
 def break_here():
     pdb = Pdbx()
     pdb.break_here(sys._getframe().f_back)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-m', nargs='?', default=None)
+    options, commands = parser.parse_known_args()
+
+    if options.m:
+        # Run module
+        pass
+    elif commands:
+        # Run scripts
+        target = _ScriptTarget(commands[0])
+    else:
+        # Show help message
+        parser.print_help()
+
+    pdbx = Pdbx()
+    pdbx._run_target(target)
+
+
+if __name__ == '__main__':
+    import bdbx
+    bdbx.main()
