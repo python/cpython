@@ -1871,7 +1871,9 @@ static Py_ssize_t
 sys_getallocatedblocks_impl(PyObject *module)
 /*[clinic end generated code: output=f0c4e873f0b6dcf7 input=dab13ee346a0673e]*/
 {
-    return _Py_GetAllocatedBlocks();
+    // It might make sense to return the count
+    // for just the current interpreter.
+    return _Py_GetGlobalAllocatedBlocks();
 }
 
 /*[clinic input]
