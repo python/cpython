@@ -586,40 +586,32 @@ Tkapp_New(const char *screenName, const char *className,
         Tcl_Obj *value;
         int boolValue;
 
-        /* Tcl 8.5 booleanString type is not registered
-           and is renamed to boolean in Tcl 9.0.
+        /* Tcl 8.5 "booleanString" type is not registered
+           and is renamed to "boolean" in Tcl 9.0.
            Based on approach suggested at
            https://core.tcl-lang.org/tcl/info/3bb3bcf2da5b */
         value = Tcl_NewStringObj("true", -1);
         Tcl_GetBooleanFromObj(NULL, value, &boolValue);
-        //fprintf(stderr, "%s %p\n", value->typePtr->name, value->typePtr);
         v->BooleanType = value->typePtr;
         Tcl_DecrRefCount(value);
 
-        // As suggested by TIP 484
-        value = Tcl_NewIntObj(0);
-        //fprintf(stderr, "%s %p\n", value->typePtr->name, value->typePtr);
-        v->IntType = value->typePtr;
-        Tcl_DecrRefCount(value);
-
-        /* Retrieve the 64-bit type, which is either "wideInt" or "int";
-        the "wideInt" type is only available when the "int" type is 32-bit. */
-        value = Tcl_NewWideIntObj(
-            /* Must use a value wider than 32-bit here, otherwise
-               Tcl_NewWideIntObj() could return a 32-bit "int". */
-            (Tcl_WideInt)(1) << 32
-        );
-        //fprintf(stderr, "%s %p\n", value->typePtr->name, value->typePtr);
-        v->WideIntType = value->typePtr;
-        Tcl_DecrRefCount(value);
-
-        // bytearray type is not registered in Tcl 9.0
+        // "bytearray" type is not registered in Tcl 9.0
         value = Tcl_NewByteArrayObj(NULL, 0);
-        //fprintf(stderr, "%s %p\n", value->typePtr->name, value->typePtr);
         v->ByteArrayType = value->typePtr;
         Tcl_DecrRefCount(value);
     }
     v->DoubleType = Tcl_GetObjType("double");
+    /* TIP 484 suggests retrieving the "int" type without Tcl_GetObjType("int")
+       since it is no longer registered in Tcl 9.0. But even though Tcl 8.7
+       only uses the "wideInt" type on platforms with 32-bit long, it still has
+       a registered "int" type, which FromObj() should recognize just in case. */
+    v->IntType = Tcl_GetObjType("int");
+    if (v->IntType == NULL) {
+        Tcl_Obj *value = Tcl_NewIntObj(0);
+        v->IntType = value->typePtr;
+        Tcl_DecrRefCount(value);
+    }
+    v->WideIntType = Tcl_GetObjType("wideInt");
     v->BignumType = Tcl_GetObjType("bignum");
     v->ListType = Tcl_GetObjType("list");
     v->ProcBodyType = Tcl_GetObjType("procbody");
@@ -1127,12 +1119,10 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
 
     if (value->typePtr == tkapp->BooleanType ||
         value->typePtr == tkapp->OldBooleanType) {
-        //fprintf(stderr, "fromBoolean\n");
         return fromBoolean(tkapp, value);
     }
 
     if (value->typePtr == tkapp->ByteArrayType) {
-        //fprintf(stderr, "got bytearray\n");
         int size;
         char *data = (char*)Tcl_GetByteArrayFromObj(value, &size);
         return PyBytes_FromStringAndSize(data, size);
@@ -1144,7 +1134,6 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
 
     if (value->typePtr == tkapp->IntType ||
         value->typePtr == tkapp->WideIntType) {
-        //fprintf(stderr, "fromWideIntObj\n");
         result = fromWideIntObj(tkapp, value);
         if (result != NULL || PyErr_Occurred())
             return result;
