@@ -7,6 +7,8 @@
 .. moduleauthor:: Eric S. Raymond <esr@thyrsus.com>
 .. sectionauthor:: Eric S. Raymond <esr@thyrsus.com>
 
+**Source code:** :source:`Lib/curses/ascii.py`
+
 --------------
 
 The :mod:`curses.ascii` module supplies name constants for ASCII characters and

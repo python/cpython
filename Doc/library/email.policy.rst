@@ -97,6 +97,7 @@ file on disk and pass it to the system ``sendmail`` program on a Unix system:
    >>> from subprocess import Popen, PIPE
    >>> with open('mymsg.txt', 'rb') as f:
    ...     msg = message_from_binary_file(f, policy=policy.default)
+   ...
    >>> p = Popen(['sendmail', msg['To'].addresses[0]], stdin=PIPE)
    >>> g = BytesGenerator(p.stdin, policy=msg.policy.clone(linesep='\r\n'))
    >>> g.flatten(msg)

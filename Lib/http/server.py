@@ -93,6 +93,7 @@ import email.utils
 import html
 import http.client
 import io
+import itertools
 import mimetypes
 import os
 import posixpath
@@ -562,6 +563,11 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
         self.log_message(format, *args)
 
+    # https://en.wikipedia.org/wiki/List_of_Unicode_characters#Control_codes
+    _control_char_table = str.maketrans(
+            {c: fr'\x{c:02x}' for c in itertools.chain(range(0x20), range(0x7f,0xa0))})
+    _control_char_table[ord('\\')] = r'\\'
+
     def log_message(self, format, *args):
         """Log an arbitrary message.
 
@@ -577,12 +583,16 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         The client ip and current date/time are prefixed to
         every message.
 
+        Unicode control characters are replaced with escaped hex
+        before writing the output to stderr.
+
         """
 
+        message = format % args
         sys.stderr.write("%s - - [%s] %s\n" %
                          (self.address_string(),
                           self.log_date_time_string(),
-                          format%args))
+                          message.translate(self._control_char_table)))
 
     def version_string(self):
         """Return the server software version string."""
@@ -642,8 +652,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     """
 
-    index_pages = ["index.html", "index.htm"]
     server_version = "SimpleHTTP/" + __version__
+    index_pages = ("index.html", "index.htm")
     extensions_map = _encodings_map_default = {
         '.gz': 'application/gzip',
         '.Z': 'application/octet-stream',
@@ -651,11 +661,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         '.xz': 'application/x-xz',
     }
 
-    def __init__(self, *args, directory=None, index_pages=None, **kwargs):
+    def __init__(self, *args, directory=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
-        if index_pages is not None:
-            self.index_pages = index_pages
         self.directory = os.fspath(directory)
         super().__init__(*args, **kwargs)
 
@@ -701,7 +709,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 return None
             for index in self.index_pages:
                 index = os.path.join(path, index)
-                if os.path.exists(index):
+                if os.path.isfile(index):
                     path = index
                     break
             else:

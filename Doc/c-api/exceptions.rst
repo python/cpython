@@ -86,6 +86,12 @@ Printing and clearing
 
    An exception must be set when calling this function.
 
+.. c:function:: void PyErr_DisplayException(PyObject *exc)
+
+   Print the standard traceback display of ``exc`` to ``sys.stderr``, including
+   chained exceptions and notes.
+
+   .. versionadded:: 3.12
 
 Raising exceptions
 ==================
@@ -403,7 +409,47 @@ Querying the error indicator
    recursively in subtuples) are searched for a match.
 
 
+.. c:function:: PyObject *PyErr_GetRaisedException(void)
+
+   Return the exception currently being raised, clearing the error indicator at
+   the same time.
+
+   This function is used by code that needs to catch exceptions,
+   or code that needs to save and restore the error indicator temporarily.
+
+   For example::
+
+      {
+         PyObject *exc = PyErr_GetRaisedException();
+
+         /* ... code that might produce other errors ... */
+
+         PyErr_SetRaisedException(exc);
+      }
+
+   .. seealso:: :c:func:`PyErr_GetHandledException`,
+                to save the exception currently being handled.
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: void PyErr_SetRaisedException(PyObject *exc)
+
+   Set *exc* as the exception currently being raised,
+   clearing the existing exception if one is set.
+
+   .. warning::
+
+      This call steals a reference to *exc*, which must be a valid exception.
+
+   .. versionadded:: 3.12
+
+
 .. c:function:: void PyErr_Fetch(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
+
+   .. deprecated:: 3.12
+
+      Use :c:func:`PyErr_GetRaisedException` instead.
 
    Retrieve the error indicator into three variables whose addresses are passed.
    If the error indicator is not set, set all three variables to ``NULL``.  If it is
@@ -412,8 +458,10 @@ Querying the error indicator
 
    .. note::
 
-      This function is normally only used by code that needs to catch exceptions or
-      by code that needs to save and restore the error indicator temporarily, e.g.::
+      This function is normally only used by legacy code that needs to catch
+      exceptions or save and restore the error indicator temporarily.
+
+      For example::
 
          {
             PyObject *type, *value, *traceback;
@@ -427,8 +475,14 @@ Querying the error indicator
 
 .. c:function:: void PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 
-   Set  the error indicator from the three objects.  If the error indicator is
-   already set, it is cleared first.  If the objects are ``NULL``, the error
+   .. deprecated:: 3.12
+
+      Use :c:func:`PyErr_SetRaisedException` instead.
+
+   Set the error indicator from the three objects,
+   *type*, *value*, and *traceback*,
+   clearing the existing exception if one is set.
+   If the objects are ``NULL``, the error
    indicator is cleared.  Do not pass a ``NULL`` type and non-``NULL`` value or
    traceback.  The exception type should be a class.  Do not pass an invalid
    exception type or value. (Violating these rules will cause subtle problems
@@ -439,12 +493,17 @@ Querying the error indicator
 
    .. note::
 
-      This function is normally only used by code that needs to save and restore the
-      error indicator temporarily.  Use :c:func:`PyErr_Fetch` to save the current
-      error indicator.
+      This function is normally only used by legacy code that needs to
+      save and restore the error indicator temporarily.
+      Use :c:func:`PyErr_Fetch` to save the current error indicator.
 
 
 .. c:function:: void PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
+
+   .. deprecated:: 3.12
+
+      Use :c:func:`PyErr_GetRaisedException` instead,
+      to avoid any possible de-normalization.
 
    Under certain circumstances, the values returned by :c:func:`PyErr_Fetch` below
    can be "unnormalized", meaning that ``*exc`` is a class object but ``*val`` is
@@ -705,6 +764,16 @@ Exception Objects
    instance or :const:`None`.  This steals a reference to *cause*.
 
    :attr:`__suppress_context__` is implicitly set to ``True`` by this function.
+
+
+.. c:function:: PyObject* PyException_GetArgs(PyObject *ex)
+
+   Return :attr:`~BaseException.args` of exception *ex*.
+
+
+.. c:function:: void PyException_SetArgs(PyObject *ex, PyObject *args)
+
+   Set :attr:`~BaseException.args` of exception *ex* to *args*.
 
 
 .. _unicodeexceptions:
