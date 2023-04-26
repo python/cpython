@@ -537,11 +537,8 @@ PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *locals_or_globals;
     if (locals == NULL) {
-        locals_or_globals = globals;
-    } else {
-        locals_or_globals = locals;
+        locals = globals;
     }
     PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
     if (builtins == NULL) {
@@ -562,7 +559,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
         return NULL;
     }
     EVAL_CALL_STAT_INC(EVAL_CALL_LEGACY);
-    PyObject *res = _PyEval_Vector(tstate, func, locals_or_globals, NULL, 0, NULL);
+    PyObject *res = _PyEval_Vector(tstate, func, locals, NULL, 0, NULL);
     Py_DECREF(func);
     return res;
 }
@@ -1550,11 +1547,8 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         Py_DECREF(defaults);
         return NULL;
     }
-    PyObject *locals_or_globals;
     if (locals == NULL) {
-        locals_or_globals = globals;
-    } else {
-        locals_or_globals = locals;
+        locals = globals;
     }
     PyObject *kwnames = NULL;
     PyObject *const *allargs;
@@ -1596,7 +1590,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         goto fail;
     }
     EVAL_CALL_STAT_INC(EVAL_CALL_LEGACY);
-    res = _PyEval_Vector(tstate, func, locals_or_globals,
+    res = _PyEval_Vector(tstate, func, locals,
                          allargs, argcount,
                          kwnames);
 fail:

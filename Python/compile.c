@@ -1753,7 +1753,6 @@ compiler_make_closure(struct compiler *c, location loc,
         flags |= 0x08;
         ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
     }
-
     ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
     ADDOP_I(c, loc, MAKE_FUNCTION, flags);
     return SUCCESS;
@@ -2233,9 +2232,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     ADDOP(c, loc, LOAD_BUILD_CLASS);
 
     /* 3. load a function (or closure) made from the code object */
-    Py_ssize_t funcflags = 0x20; /* locals */
-    // Py_ssize_t funcflags = 0;
-    if (compiler_make_closure(c, loc, co, funcflags) < 0) {
+    if (compiler_make_closure(c, loc, co, 0) < 0) {
         Py_DECREF(co);
         return ERROR;
     }
