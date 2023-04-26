@@ -595,13 +595,19 @@ locks.  In the locked state, some thread owns the lock; in the unlocked state,
 no thread owns it.
 
 Threads call a lock's :meth:`~RLock.acquire` method to lock it,
-and its :meth:`~Lock.release` method to unlock it. Reentrant locks
-support the :ref:`context management protocol <with-locks>` so :keyword:`with` can be used
-to acquire and release the lock automatically in a block of code.
+and its :meth:`~Lock.release` method to unlock it.
+
+.. note::
+
+  Reentrant locks support the :ref:`context management protocol <with-locks>`,
+  so it is recommended to use :keyword:`with` instead of manually calling
+  :meth:`~RLock.acquire` and :meth:`~RLock.release`
+  to handle acquiring and releasing the lock for a block of code.
 
 .. seealso::
 
-   :ref:`with-locks`.
+   :ref:`Using RLock as a context manager <with-locks>` is recommended
+   over manual :meth:`!acquire` and :meth:`release` calls whenever practical.
 
 RLock's :meth:`~RLock.acquire`/:meth:`~RLock.release` call pairs may be nested,
 unlike Lock's :meth:`~Lock.acquire`/:meth:`~Lock.release`. Only the final
