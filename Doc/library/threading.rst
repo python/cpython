@@ -632,10 +632,10 @@ call release as many times the lock has been acquired can lead to deadlock.
 
       When invoked with the *blocking* argument set to ``True`` (the default):
 
+         * If no thread owns the lock, acquire the lock and return immediately.
+
          * If another thread owns the lock, block until we are able to acquire
            lock, or *timeout*, if set to a positive float value.
-
-         * If no thread owns the lock, acquire the lock and return immediately.
 
          * If the same thread owns the lock, acquire the lock again, and
            return immediately. This is the difference between :class:`Lock` and
@@ -644,9 +644,9 @@ call release as many times the lock has been acquired can lead to deadlock.
 
       When invoked with the *blocking* argument set to ``False``:
 
-         * If another thread owns the lock, return immediately.
-
          * If no thread owns the lock, acquire the lock and return immediately.
+
+         * If another thread owns the lock, return immediately.
 
          * If the same thread owns the lock, acquire the lock again and return
            immediately.
