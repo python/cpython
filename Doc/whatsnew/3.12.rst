@@ -611,6 +611,8 @@ CPython bytecode changes
 * Removed the :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
   instructions. (Contributed by Irit Katriel in :gh:`102859`.)
 
+* Removed the :opcode:`PRECALL` instruction. (Contributed by Mark Shannon in 
+  :gh:`92925`)
 
 Demos and Tools
 ===============
