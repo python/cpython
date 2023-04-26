@@ -1238,14 +1238,52 @@ dummy_func(
                 if (v != NULL) {
                     Py_INCREF(v);
                 }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
             }
             else {
                 v = PyObject_GetItem(class_dict, name);
+                if (v == NULL) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
+                        goto error;
+                    _PyErr_Clear(tstate);
+                }
             }
-            if (_PyErr_Occurred(tstate)) {
-                goto error;
+            if (v == NULL) {
+                v = PyDict_GetItemWithError(GLOBALS(), name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+                else {
+                    if (PyDict_CheckExact(BUILTINS())) {
+                        v = PyDict_GetItemWithError(BUILTINS(), name);
+                        if (v == NULL) {
+                            if (!_PyErr_Occurred(tstate)) {
+                                format_exc_check_arg(
+                                        tstate, PyExc_NameError,
+                                        NAME_ERROR_MSG, name);
+                            }
+                            goto error;
+                        }
+                        Py_INCREF(v);
+                    }
+                    else {
+                        v = PyObject_GetItem(BUILTINS(), name);
+                        if (v == NULL) {
+                            if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                                format_exc_check_arg(
+                                            tstate, PyExc_NameError,
+                                            NAME_ERROR_MSG, name);
+                            }
+                            goto error;
+                        }
+                    }
+                }
             }
-            assert(v != NULL);
         }
 
         family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
