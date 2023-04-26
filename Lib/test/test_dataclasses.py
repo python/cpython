@@ -757,8 +757,8 @@ class TestCase(unittest.TestCase):
                 class Subclass(typ): pass
 
                 with self.assertRaisesRegex(ValueError,
-                                            f"mutable default .*Subclass'>"
-                                            ' for field z is not allowed'
+                                            "mutable default .*Subclass'>"
+                                            " for field z is not allowed"
                                             ):
                     @dataclass
                     class Point:

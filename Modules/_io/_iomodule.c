@@ -617,7 +617,7 @@ iomodule_clear(PyObject *mod)
 static void
 iomodule_free(void *mod)
 {
-    (void)iomodule_clear(mod);
+    (void)iomodule_clear((PyObject *)mod);
 }
 
 
