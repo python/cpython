@@ -632,24 +632,24 @@ call release as many times the lock has been acquired can lead to deadlock.
 
       When invoked with the *blocking* argument set to ``True`` (the default):
 
-         1. If another thread owns the lock, block until we are able to acquire
-            lock, or *timeout*, if set to a positive float value.
+         * If another thread owns the lock, block until we are able to acquire
+           lock, or *timeout*, if set to a positive float value.
 
-         2. If no thread owns the lock, acquire the lock and return immediately.
+         * If no thread owns the lock, acquire the lock and return immediately.
 
-         3. If the same thread owns the lock, acquire the lock again, and
-            return immediately. This is the difference between :class:`Lock` and
-            :class:`!RLock`; :class:`Lock` handles this case the same as the previous,
-            blocking until the lock can be acquired.
+         * If the same thread owns the lock, acquire the lock again, and
+           return immediately. This is the difference between :class:`Lock` and
+           :class:`!RLock`; :class:`Lock` handles this case the same as the previous,
+           blocking until the lock can be acquired.
 
       When invoked with the *blocking* argument set to ``False``:
 
-         1. If another thread owns the lock, return immediately.
+         * If another thread owns the lock, return immediately.
 
-         2. If no thread owns the lock, acquire the lock and return immediately.
+         * If no thread owns the lock, acquire the lock and return immediately.
 
-         3. If the same thread owns the lock, acquire the lock again and return
-            immediately.
+         * If the same thread owns the lock, acquire the lock again and return
+           immediately.
 
       In all cases, if the thread was able to acquire the lock, return ``True``.
       If the thread was unable to acquire the lock (i.e. if not blocking or
