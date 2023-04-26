@@ -524,16 +524,17 @@ class MockHTTPHandlerRedirect(urllib.request.BaseHandler):
             return MockResponse(200, "OK", msg, "", req.get_full_url())
 
 
-class MockHTTPSHandler(urllib.request.HTTPSHandler):
-    # Useful for testing the Proxy-Authorization request by verifying the
-    # properties of httpcon
+if hasattr(http.client, 'HTTPSConnection'):
+    class MockHTTPSHandler(urllib.request.HTTPSHandler):
+        # Useful for testing the Proxy-Authorization request by verifying the
+        # properties of httpcon
 
-    def __init__(self, debuglevel=None, context=None, check_hostname=None):
-        super(MockHTTPSHandler, self).__init__(debuglevel, context, check_hostname)
-        self.httpconn = MockHTTPClass()
+        def __init__(self, debuglevel=None, context=None, check_hostname=None):
+            super(MockHTTPSHandler, self).__init__(debuglevel, context, check_hostname)
+            self.httpconn = MockHTTPClass()
 
-    def https_open(self, req):
-        return self.do_open(self.httpconn, req)
+        def https_open(self, req):
+            return self.do_open(self.httpconn, req)
 
 
 class MockHTTPHandlerCheckAuth(urllib.request.BaseHandler):
@@ -1075,6 +1076,7 @@ class HandlerTests(unittest.TestCase):
         o.open("http://www.example.com")
         self.assertEqual(h._debuglevel, 5)
 
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
     def test_https_handler_global_debuglevel(self):
         with mock.patch.object(http.client.HTTPSConnection, 'debuglevel', 7):
             o = OpenerDirector()
@@ -1083,6 +1085,7 @@ class HandlerTests(unittest.TestCase):
             o.open("https://www.example.com")
             self.assertEqual(h._debuglevel, 7)
 
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
     def test_https_handler_local_debuglevel(self):
         o = OpenerDirector()
         h = MockHTTPSHandler(debuglevel=4)
@@ -1456,6 +1459,7 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual([(handlers[0], "https_open")],
                          [tup[0:2] for tup in o.calls])
 
+    @unittest.skipUnless(hasattr(http.client, 'HTTPSConnection'), 'HTTPSConnection required for HTTPS tests.')
     def test_proxy_https_proxy_authorization(self):
         o = OpenerDirector()
         ph = urllib.request.ProxyHandler(dict(https='proxy.example.com:3128'))
