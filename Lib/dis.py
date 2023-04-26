@@ -369,9 +369,8 @@ def _get_const_value(op, arg, co_consts):
     assert op in hasconst
 
     argval = UNKNOWN
-    if op == LOAD_CONST or op == RETURN_CONST:
-        if co_consts is not None:
-            argval = co_consts[arg]
+    if co_consts is not None:
+        argval = co_consts[arg]
     return argval
 
 def _get_const_info(op, arg, co_consts):
