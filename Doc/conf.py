@@ -118,7 +118,7 @@ html_short_title = '%s Documentation' % release
 # (See .readthedocs.yml and https://docs.readthedocs.io/en/stable/reference/environment-variables.html)
 repository_url = os.getenv("READTHEDOCS_GIT_CLONE_URL")
 html_context = {
-    "is_deployment_preview": os.getenv("READTHEDOCS"),
+    "is_deployment_preview": os.getenv("READTHEDOCS_VERSION_TYPE") == "external",
     "repository_url": repository_url.removesuffix(".git") if repository_url else None,
     "pr_id": os.getenv("READTHEDOCS_VERSION")
 }
