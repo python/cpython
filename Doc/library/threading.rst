@@ -594,9 +594,10 @@ and "recursion level" in addition to the locked/unlocked state used by primitive
 locks.  In the locked state, some thread owns the lock; in the unlocked state,
 no thread owns it.
 
-To lock the lock, a thread calls its :meth:`~RLock.acquire` method.  To unlock
-the lock, a thread calls its :meth:`~Lock.release` method. Reentrant locks
-support the :ref:`context management protocol <with-locks>` so ```with``` can be used.
+Threads call a lock's :meth:`~RLock.acquire` method to lock it,
+and its :meth:`~Lock.release` method to unlock it. Reentrant locks
+support the :ref:`context management protocol <with-locks>` so :keyword:`with` can be used
+to acquire and release the lock automatically in a block of code.
 
 RLock's :meth:`~RLock.acquire`/:meth:`~RLock.release` call pairs may be nested,
 unlike Lock's :meth:`~Lock.acquire`/:meth:`~Lock.release`. Only the final
@@ -604,9 +605,9 @@ unlike Lock's :meth:`~Lock.acquire`/:meth:`~Lock.release`. Only the final
 the lock to an unlocked state and allows another thread blocked in
 :meth:`~RLock.acquire` to proceed.
 
-:meth:`~RLock.acquire`/:meth:`~RLock.release` must be in pairs: each acquire
+:meth:`~RLock.acquire`/:meth:`~RLock.release` must be used in pairs: each acquire
 must have a release in the thread that has acquired the lock. Failing to
-release as many times the lock has required will lead to deadlock.
+call release as many times the lock has been acquired can lead to deadlock.
 
 
 .. class:: RLock()
@@ -628,27 +629,23 @@ release as many times the lock has required will lead to deadlock.
       When invoked with the *blocking* argument set to ``True`` (the default):
 
          1. If another thread owns the lock, block until we are able to acquire
-            lock, or *timeout*, if set.
+            lock, or *timeout*, if set to a positive float value.
 
          2. If no thread owns the lock, acquire the lock and return immediately.
 
          3. If the same thread owns the lock, acquire the lock again, and
-            return immediately. This is the difference between ``Lock`` and
-            ``RLock``. Internally, the "recursion level" is atomically
-            incremented to allow this.
+            return immediately. This is the difference between :class:`Lock` and
+            :class:`!RLock`; :class:`Lock` handles this case the same as the previous,
+            blocking until the lock can be acquired.
 
-      When invoked with the *blocking* argument set to ``False``, do not block.
-      Without blocking:
+      When invoked with the *blocking* argument set to ``False``:
 
          1. If another thread owns the lock, return immediately.
 
          2. If no thread owns the lock, acquire the lock and return immediately.
 
-         3. If the same thread owns the lock. acquire the lock again and return
+         3. If the same thread owns the lock, acquire the lock again and return
             immediately.
-
-      When invoked with the floating-point *timeout* argument set to a positive
-      value, block for at most the number of seconds specified by *timeout*.
 
       In all cases, if the thread was able to acquire the lock, return ``True``.
       If the thread was unable to acquire the lock (i.e. if *blocking* is False, or
@@ -672,7 +669,7 @@ release as many times the lock has required will lead to deadlock.
 
       Only call this method when the calling thread owns the lock. A
       :exc:`RuntimeError` is raised if this method is called when the lock is
-      un-acquired.
+      not acquired.
 
       There is no return value.
 
