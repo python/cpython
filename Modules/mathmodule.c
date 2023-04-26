@@ -3893,13 +3893,15 @@ math.nextafter
     x: double
     y: double
     /
+    *
+    steps: int = 1
 
-Return the next floating-point value after x towards y.
+Return the floating-point value the given number of steps after x towards y.
 [clinic start generated code]*/
 
 static PyObject *
-math_nextafter_impl(PyObject *module, double x, double y)
-/*[clinic end generated code: output=750c8266c1c540ce input=02b2d50cd1d9f9b6]*/
+math_nextafter_impl(PyObject *module, double x, double y, int steps)
+/*[clinic end generated code: output=14190eb869199e5a input=a794e7a79768ee25]*/
 {
 #if defined(_AIX)
     if (x == y) {
@@ -3914,7 +3916,65 @@ math_nextafter_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(y);
     }
 #endif
-    return PyFloat_FromDouble(nextafter(x, y));
+    // fast path:
+    if (steps == 1) {
+        return PyFloat_FromDouble(nextafter(x, y));
+    }
+    if (steps < 0) {
+        PyErr_SetString(PyExc_ValueError, "steps must be >= 0");
+        return NULL;
+    }
+    if (steps == 0)
+        return PyFloat_FromDouble(x);
+    if (Py_IS_NAN(x) || Py_IS_NAN(y))
+        return PyFloat_FromDouble(x+y);
+
+    uint64_t usteps = steps;
+
+    union pun {double f; uint64_t i;};
+    union pun ux = {x}, uy = {y};
+    if(ux.i == uy.i) {
+        return PyFloat_FromDouble(x);
+    }
+
+    const uint64_t sign_bit = 1ULL<<63;
+
+    uint64_t ax = ux.i & ~sign_bit;
+	uint64_t ay = uy.i & ~sign_bit;
+
+    // opposite signs
+    if (((ux.i ^ uy.i) & sign_bit)) {
+        if (ax + ay <= usteps) {
+            return PyFloat_FromDouble(uy.f);
+        // This comparison has to use <, because <= would get +0.0 vs -0.0
+        // wrong.
+        } else if (ax < usteps) {
+            union pun result = {.i = (uy.i & sign_bit) | (usteps - ax)};
+            return PyFloat_FromDouble(result.f);
+        } else {
+            ux.i -= usteps;
+            return PyFloat_FromDouble(ux.f);
+        }
+    // same sign
+    } else if (ax > ay) {
+        // the addition is not UB,
+        // because we have an extra bit at the top of ax and usteps.
+        if (ax >= ay + usteps) {
+            ux.i -= usteps;
+            return PyFloat_FromDouble(ux.f);
+        } else {
+            return PyFloat_FromDouble(uy.f);
+        }
+    } else {
+        // the addition is not UB,
+        // because we have an extra bit at the top of ax and usteps.
+        if (ax + usteps <= ay) {
+            ux.i += usteps;
+            return PyFloat_FromDouble(ux.f);
+        } else {
+            return PyFloat_FromDouble(uy.f);
+        }
+    }
 }
 
 
