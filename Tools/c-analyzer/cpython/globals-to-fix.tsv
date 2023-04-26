@@ -351,7 +351,6 @@ Modules/_ctypes/_ctypes.c	-	PyCPointer_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCSimpleType_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCStructType_Type	-
 Modules/_ctypes/_ctypes.c	-	Simple_Type	-
-Modules/_ctypes/_ctypes.c	-	StructParam_Type	-
 Modules/_ctypes/_ctypes.c	-	Struct_Type	-
 Modules/_ctypes/_ctypes.c	-	UnionType_Type	-
 Modules/_ctypes/_ctypes.c	-	Union_Type	-

@@ -37,6 +37,7 @@ typedef struct {
     PyTypeObject *PyCArg_Type;
     PyTypeObject *PyCField_Type;
     PyTypeObject *PyCThunk_Type;
+    PyTypeObject *StructParam_Type;
 } ctypes_state;
 
 extern ctypes_state global_state;

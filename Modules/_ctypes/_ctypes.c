@@ -413,23 +413,45 @@ typedef struct {
     PyObject *keep;  // If set, a reference to the original CDataObject.
 } StructParamObject;
 
+static int
+StructParam_traverse(StructParamObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+static int
+StructParam_clear(StructParamObject *self)
+{
+    Py_CLEAR(self->keep);
+    return 0;
+}
 
 static void
 StructParam_dealloc(PyObject *myself)
 {
     StructParamObject *self = (StructParamObject *)myself;
-    Py_XDECREF(self->keep);
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(myself);
+    (void)StructParam_clear(self);
     PyMem_Free(self->ptr);
-    Py_TYPE(self)->tp_free(myself);
+    tp->tp_free(myself);
+    Py_DECREF(tp);
 }
 
+static PyType_Slot structparam_slots[] = {
+    {Py_tp_traverse, StructParam_traverse},
+    {Py_tp_clear, StructParam_clear},
+    {Py_tp_dealloc, StructParam_dealloc},
+    {0, NULL},
+};
 
-static PyTypeObject StructParam_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "_ctypes.StructParam_Type",
-    .tp_basicsize = sizeof(StructParamObject),
-    .tp_dealloc = StructParam_dealloc,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
+static PyType_Spec structparam_spec = {
+    .name = "_ctypes.StructParam_Type",
+    .basicsize = sizeof(StructParamObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_DISALLOW_INSTANTIATION),
+    .slots = structparam_slots,
 };
 
 
@@ -458,7 +480,9 @@ StructUnionType_paramfunc(CDataObject *self)
         /* Create a Python object which calls PyMem_Free(ptr) in
            its deallocator. The object will be destroyed
            at _ctypes_callproc() cleanup. */
-        obj = (&StructParam_Type)->tp_alloc(&StructParam_Type, 0);
+        ctypes_state *st = GLOBAL_STATE();
+        PyTypeObject *tp = st->StructParam_Type;
+        obj = tp->tp_alloc(tp, 0);
         if (obj == NULL) {
             PyMem_Free(ptr);
             return NULL;
@@ -5694,7 +5718,7 @@ _ctypes_add_types(PyObject *mod)
      */
 
     CREATE_TYPE(mod, st->DictRemover_Type, &dictremover_spec);
-    TYPE_READY(&StructParam_Type);
+    CREATE_TYPE(mod, st->StructParam_Type, &structparam_spec);
 
 #ifdef MS_WIN32
     TYPE_READY_BASE(&PyComError_Type, (PyTypeObject*)PyExc_Exception);
