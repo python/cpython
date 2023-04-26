@@ -2398,11 +2398,12 @@ _sqlite3.Connection.setconfig as setconfig
     enable: bool = True
     /
 
+Set a boolean connection configuration option.
 [clinic start generated code]*/
 
 static PyObject *
 setconfig_impl(pysqlite_Connection *self, int op, int enable)
-/*[clinic end generated code: output=c60b13e618aff873 input=01d77271ea8ca45f]*/
+/*[clinic end generated code: output=c60b13e618aff873 input=a10f1539c2d7da6b]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -2431,11 +2432,12 @@ _sqlite3.Connection.getconfig as getconfig -> bool
         The configuration verb; one of the sqlite3.SQLITE_DBCONFIG codes.
     /
 
+Query a boolean connection configuration option.
 [clinic start generated code]*/
 
 static int
 getconfig_impl(pysqlite_Connection *self, int op)
-/*[clinic end generated code: output=25ac05044c7b78a3 input=667d2ef05fff2f61]*/
+/*[clinic end generated code: output=25ac05044c7b78a3 input=b0526d7e432e3f2f]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return -1;

@@ -1517,7 +1517,7 @@ PyDoc_STRVAR(setconfig__doc__,
 "setconfig($self, op, enable=True, /)\n"
 "--\n"
 "\n"
-"\n"
+"Set a boolean connection configuration option.\n"
 "\n"
 "  op\n"
 "    The configuration verb; one of the sqlite3.SQLITE_DBCONFIG codes.");
@@ -1560,7 +1560,7 @@ PyDoc_STRVAR(getconfig__doc__,
 "getconfig($self, op, /)\n"
 "--\n"
 "\n"
-"\n"
+"Query a boolean connection configuration option.\n"
 "\n"
 "  op\n"
 "    The configuration verb; one of the sqlite3.SQLITE_DBCONFIG codes.");
@@ -1611,4 +1611,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=84560376421204ce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=29c3ecac5add6857 input=a9049054013a1b77]*/
