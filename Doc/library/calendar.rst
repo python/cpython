@@ -29,7 +29,6 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
 
 .. enum:: Day
-   :type: IntEnum
 
    This enumeration defines the days of the week as integer constants.
 
@@ -63,7 +62,6 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
 
 .. enum:: Month
-   :type: IntEnum
 
    This enumeration defines the months of the year as integer constants.
 
