@@ -573,6 +573,38 @@ Module constants
       package, a third-party library which used to upstream changes to
       :mod:`!sqlite3`. Today, it carries no meaning or practical value.
 
+.. _sqlite3-dbconfig-constants:
+
+.. data:: SQLITE_DBCONFIG_DEFENSIVE
+          SQLITE_DBCONFIG_DQS_DDL
+          SQLITE_DBCONFIG_DQS_DML
+          SQLITE_DBCONFIG_ENABLE_FKEY
+          SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER
+          SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION
+          SQLITE_DBCONFIG_ENABLE_QPSG
+          SQLITE_DBCONFIG_ENABLE_TRIGGER
+          SQLITE_DBCONFIG_ENABLE_VIEW
+          SQLITE_DBCONFIG_LEGACY_ALTER_TABLE
+          SQLITE_DBCONFIG_LEGACY_FILE_FORMAT
+          SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE
+          SQLITE_DBCONFIG_RESET_DATABASE
+          SQLITE_DBCONFIG_TRIGGER_EQP
+          SQLITE_DBCONFIG_TRUSTED_SCHEMA
+          SQLITE_DBCONFIG_WRITABLE_SCHEMA
+
+   These constants are used for the :meth:`Connection.setconfig`
+   and :meth:`~Connection.getconfig` methods.
+
+   The availability of these constants varies depending on the version of SQLite
+   Python was compiled with.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+     https://www.sqlite.org/c3ref/c_dbconfig_defensive.html
+        SQLite docs: Database Connection Configuration Options
+
 
 .. _sqlite3-connection-objects:
 
@@ -1218,6 +1250,30 @@ Connection objects
 
    .. _SQLite limit category: https://www.sqlite.org/c3ref/c_limit_attached.html
 
+
+   .. method:: getconfig(op, /)
+
+      Query a boolean connection configuration option.
+
+      :param int op:
+         A :ref:`SQLITE_DBCONFIG code <sqlite3-dbconfig-constants>`.
+
+      :rtype: bool
+
+      .. versionadded:: 3.12
+
+   .. method:: setconfig(op, enable=True, /)
+
+      Set a boolean connection configuration option.
+
+      :param int op:
+         A :ref:`SQLITE_DBCONFIG code <sqlite3-dbconfig-constants>`.
+
+      :param bool enable:
+         ``True`` if the configuration option should be enabled (default);
+         ``False`` if it should be disabled.
+
+      .. versionadded:: 3.12
 
    .. method:: serialize(*, name="main")
 
