@@ -537,8 +537,11 @@ PyObject *
 PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *locals_or_globals;
     if (locals == NULL) {
-        locals = globals;
+        locals_or_globals = globals;
+    } else {
+        locals_or_globals = locals;
     }
     PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
     if (builtins == NULL) {
@@ -546,6 +549,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
     }
     PyFrameConstructor desc = {
         .fc_globals = globals,
+        .fc_locals = locals,
         .fc_builtins = builtins,
         .fc_name = ((PyCodeObject *)co)->co_name,
         .fc_qualname = ((PyCodeObject *)co)->co_name,
@@ -559,7 +563,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
         return NULL;
     }
     EVAL_CALL_STAT_INC(EVAL_CALL_LEGACY);
-    PyObject *res = _PyEval_Vector(tstate, func, locals, NULL, 0, NULL);
+    PyObject *res = _PyEval_Vector(tstate, func, locals_or_globals, NULL, 0, NULL);
     Py_DECREF(func);
     return res;
 }
@@ -1547,8 +1551,11 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         Py_DECREF(defaults);
         return NULL;
     }
+    PyObject *locals_or_globals;
     if (locals == NULL) {
-        locals = globals;
+        locals_or_globals = globals;
+    } else {
+        locals_or_globals = locals;
     }
     PyObject *kwnames = NULL;
     PyObject *const *allargs;
@@ -1577,6 +1584,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     }
     PyFrameConstructor constr = {
         .fc_globals = globals,
+        .fc_locals = locals,
         .fc_builtins = builtins,
         .fc_name = ((PyCodeObject *)_co)->co_name,
         .fc_qualname = ((PyCodeObject *)_co)->co_name,
@@ -1590,7 +1598,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         goto fail;
     }
     EVAL_CALL_STAT_INC(EVAL_CALL_LEGACY);
-    res = _PyEval_Vector(tstate, func, locals,
+    res = _PyEval_Vector(tstate, func, locals_or_globals,
                          allargs, argcount,
                          kwnames);
 fail:

@@ -45,6 +45,7 @@ extern "C" {
 #define RETURN_GENERATOR                        75
 #define RETURN_VALUE                            83
 #define SETUP_ANNOTATIONS                       85
+#define LOAD_LOCALS                             87
 #define POP_EXCEPT                              89
 #define HAVE_ARGUMENT                           90
 #define STORE_NAME                              90
@@ -193,18 +194,18 @@ extern "C" {
 #define LOAD_FAST__LOAD_CONST                   82
 #define LOAD_FAST__LOAD_FAST                    84
 #define LOAD_GLOBAL_BUILTIN                     86
-#define LOAD_GLOBAL_MODULE                      87
-#define STORE_ATTR_INSTANCE_VALUE               88
-#define STORE_ATTR_SLOT                        111
-#define STORE_ATTR_WITH_HINT                   112
-#define STORE_FAST__LOAD_FAST                  113
-#define STORE_FAST__STORE_FAST                 141
-#define STORE_SUBSCR_DICT                      143
-#define STORE_SUBSCR_LIST_INT                  153
-#define UNPACK_SEQUENCE_LIST                   154
-#define UNPACK_SEQUENCE_TUPLE                  158
-#define UNPACK_SEQUENCE_TWO_TUPLE              159
-#define SEND_GEN                               160
+#define LOAD_GLOBAL_MODULE                      88
+#define STORE_ATTR_INSTANCE_VALUE              111
+#define STORE_ATTR_SLOT                        112
+#define STORE_ATTR_WITH_HINT                   113
+#define STORE_FAST__LOAD_FAST                  141
+#define STORE_FAST__STORE_FAST                 143
+#define STORE_SUBSCR_DICT                      153
+#define STORE_SUBSCR_LIST_INT                  154
+#define UNPACK_SEQUENCE_LIST                   158
+#define UNPACK_SEQUENCE_TUPLE                  159
+#define UNPACK_SEQUENCE_TWO_TUPLE              160
+#define SEND_GEN                               161
 
 #define HAS_ARG(op) ((((op) >= HAVE_ARGUMENT) && (!IS_PSEUDO_OPCODE(op)))\
     || ((op) == JUMP) \

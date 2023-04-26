@@ -1071,6 +1071,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     }
     PyFrameConstructor desc = {
         .fc_globals = globals,
+        .fc_locals = NULL,
         .fc_builtins = builtins,
         .fc_name = code->co_name,
         .fc_qualname = code->co_name,

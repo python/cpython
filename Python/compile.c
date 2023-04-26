@@ -1753,6 +1753,15 @@ compiler_make_closure(struct compiler *c, location loc,
         flags |= 0x08;
         ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
     }
+
+    /* If flag 0x20 is set, we want to bind func_locals
+       to the current locals at runtime.
+       Push them on the stack in the right spot.
+    */
+    if (flags & 0x20) {
+        ADDOP(c, loc, LOAD_LOCALS);
+    }
+
     ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
     ADDOP_I(c, loc, MAKE_FUNCTION, flags);
     return SUCCESS;
@@ -2232,7 +2241,9 @@ compiler_class(struct compiler *c, stmt_ty s)
     ADDOP(c, loc, LOAD_BUILD_CLASS);
 
     /* 3. load a function (or closure) made from the code object */
-    if (compiler_make_closure(c, loc, co, 0) < 0) {
+    Py_ssize_t funcflags = 0x20; /* locals */
+    // Py_ssize_t funcflags = 0;
+    if (compiler_make_closure(c, loc, co, funcflags) < 0) {
         Py_DECREF(co);
         return ERROR;
     }

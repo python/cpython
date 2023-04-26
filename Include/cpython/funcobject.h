@@ -10,6 +10,7 @@ extern "C" {
 
 #define COMMON_FIELDS(PREFIX) \
     PyObject *PREFIX ## globals; \
+    PyObject *PREFIX ## locals; /* "slow" locals, not fast */ \
     PyObject *PREFIX ## builtins; \
     PyObject *PREFIX ## name; \
     PyObject *PREFIX ## qualname; \
@@ -67,6 +68,7 @@ PyAPI_FUNC(PyObject *) PyFunction_New(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_NewWithQualName(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetCode(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetGlobals(PyObject *);
+PyAPI_FUNC(PyObject *) PyFunction_GetLocals(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetModule(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetDefaults(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetDefaults(PyObject *, PyObject *);
@@ -98,6 +100,11 @@ static inline PyObject* PyFunction_GET_GLOBALS(PyObject *func) {
     return _PyFunction_CAST(func)->func_globals;
 }
 #define PyFunction_GET_GLOBALS(func) PyFunction_GET_GLOBALS(_PyObject_CAST(func))
+
+static inline PyObject* PyFunction_GET_LOCALS(PyObject *func) {
+    return _PyFunction_CAST(func)->func_locals;
+}
+#define PyFunction_GET_LOCALS(func) PyFunction_GET_LOCALS(_PyObject_CAST(func))
 
 static inline PyObject* PyFunction_GET_MODULE(PyObject *func) {
     return _PyFunction_CAST(func)->func_module;

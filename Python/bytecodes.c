@@ -992,6 +992,16 @@ dummy_func(
             }
         }
 
+        inst(LOAD_LOCALS, ( -- locals)) {
+            locals = LOCALS();
+            if (locals == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found when loading locals()");
+                ERROR_IF(true, error);
+            }
+            Py_INCREF(locals);
+        }
+
         inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             PyObject *ns = LOCALS();
@@ -3071,6 +3081,7 @@ dummy_func(
                              kwdefaults  if (oparg & 0x02),
                              annotations if (oparg & 0x04),
                              closure     if (oparg & 0x08),
+                             locals      if (oparg & 0x20),
                              codeobj -- func)) {
 
             PyFunctionObject *func_obj = (PyFunctionObject *)
@@ -3081,6 +3092,10 @@ dummy_func(
                 goto error;
             }
 
+            if (oparg & 0x20) {
+                assert(PyDict_CheckExact(locals));
+                func_obj->func_locals = locals;
+            }
             if (oparg & 0x08) {
                 assert(PyTuple_CheckExact(closure));
                 func_obj->func_closure = closure;

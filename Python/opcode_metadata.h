@@ -137,6 +137,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case LOAD_BUILD_CLASS:
             return 0;
+        case LOAD_LOCALS:
+            return 0;
         case STORE_NAME:
             return 1;
         case DELETE_NAME:
@@ -346,7 +348,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case CALL_FUNCTION_EX:
             return ((oparg & 1) ? 1 : 0) + 3;
         case MAKE_FUNCTION:
-            return ((oparg & 0x01) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x08) ? 1 : 0) + 1;
+            return ((oparg & 0x01) ? 1 : 0) + ((oparg & 0x02) ? 1 : 0) + ((oparg & 0x04) ? 1 : 0) + ((oparg & 0x08) ? 1 : 0) + ((oparg & 0x20) ? 1 : 0) + 1;
         case RETURN_GENERATOR:
             return 0;
         case BUILD_SLICE:
@@ -520,6 +522,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case LOAD_ASSERTION_ERROR:
             return 1;
         case LOAD_BUILD_CLASS:
+            return 1;
+        case LOAD_LOCALS:
             return 1;
         case STORE_NAME:
             return 0;
@@ -845,6 +849,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [CLEANUP_THROW] = { true, INSTR_FMT_IX },
     [LOAD_ASSERTION_ERROR] = { true, INSTR_FMT_IX },
     [LOAD_BUILD_CLASS] = { true, INSTR_FMT_IX },
+    [LOAD_LOCALS] = { true, INSTR_FMT_IX },
     [STORE_NAME] = { true, INSTR_FMT_IB },
     [DELETE_NAME] = { true, INSTR_FMT_IB },
     [UNPACK_SEQUENCE] = { true, INSTR_FMT_IBC },

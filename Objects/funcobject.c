@@ -112,6 +112,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
         return NULL;
     }
     op->func_globals = Py_NewRef(constr->fc_globals);
+    op->func_locals = Py_XNewRef(constr->fc_locals);
     op->func_builtins = Py_NewRef(constr->fc_builtins);
     op->func_name = Py_NewRef(constr->fc_name);
     op->func_qualname = Py_NewRef(constr->fc_qualname);
@@ -190,6 +191,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
        expect a partially-created object. */
 
     op->func_globals = globals;
+    op->func_locals = NULL;
     op->func_builtins = builtins;
     op->func_name = name;
     op->func_qualname = qualname;
@@ -260,6 +262,16 @@ PyFunction_GetGlobals(PyObject *op)
         return NULL;
     }
     return ((PyFunctionObject *) op) -> func_globals;
+}
+
+PyObject *
+PyFunction_GetLocals(PyObject *op)
+{
+    if (!PyFunction_Check(op)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    return ((PyFunctionObject *) op) -> func_locals;
 }
 
 PyObject *
@@ -450,6 +462,7 @@ static PyMemberDef func_memberlist[] = {
     {"__closure__",   T_OBJECT,     OFF(func_closure), READONLY},
     {"__doc__",       T_OBJECT,     OFF(func_doc), 0},
     {"__globals__",   T_OBJECT,     OFF(func_globals), READONLY},
+    {"__locals__",    T_OBJECT,     OFF(func_locals), 0},
     {"__module__",    T_OBJECT,     OFF(func_module), 0},
     {"__builtins__",  T_OBJECT,     OFF(func_builtins), READONLY},
     {NULL}  /* Sentinel */
@@ -775,6 +788,7 @@ func_clear(PyFunctionObject *op)
 {
     op->func_version = 0;
     Py_CLEAR(op->func_globals);
+    Py_CLEAR(op->func_locals);
     Py_CLEAR(op->func_builtins);
     Py_CLEAR(op->func_module);
     Py_CLEAR(op->func_defaults);
@@ -828,6 +842,7 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 {
     Py_VISIT(f->func_code);
     Py_VISIT(f->func_globals);
+    Py_VISIT(f->func_locals);
     Py_VISIT(f->func_builtins);
     Py_VISIT(f->func_module);
     Py_VISIT(f->func_defaults);
