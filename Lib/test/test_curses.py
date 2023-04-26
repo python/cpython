@@ -6,7 +6,6 @@ import sys
 import tempfile
 import unittest
 
-from unittest.mock import MagicMock
 from test.support import (requires, verbose, SaveSignals, cpython_only,
                           check_disallow_instantiation)
 from test.support.import_helper import import_module
