@@ -211,6 +211,17 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+typevar_clear(typevarobject *self)
+{
+    Py_CLEAR(self->bound);
+    Py_CLEAR(self->evaluate_bound);
+    Py_CLEAR(self->constraints);
+    Py_CLEAR(self->evaluate_constraints);
+    _PyObject_ClearManagedDict((PyObject *)self);
+    return 0;
+}
+
 static PyObject *
 typevar_repr(PyObject *self)
 {
@@ -481,6 +492,7 @@ static PyType_Slot typevar_slots[] = {
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
     {Py_tp_traverse, typevar_traverse},
+    {Py_tp_clear, typevar_clear},
     {Py_tp_repr, typevar_repr},
     {Py_tp_members, typevar_members},
     {Py_tp_getset, typevar_getset},
@@ -519,6 +531,13 @@ paramspecattr_traverse(PyObject *self, visitproc visit, void *arg)
 {
     paramspecattrobject *psa = (paramspecattrobject *)self;
     Py_VISIT(psa->__origin__);
+    return 0;
+}
+
+static int
+paramspecattr_clear(paramspecattrobject *self)
+{
+    Py_CLEAR(self->__origin__);
     return 0;
 }
 
@@ -619,6 +638,7 @@ static PyType_Slot paramspecargs_slots[] = {
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
     {Py_tp_traverse, paramspecattr_traverse},
+    {Py_tp_clear, (inquiry)paramspecattr_clear},
     {Py_tp_repr, paramspecargs_repr},
     {Py_tp_members, paramspecattr_members},
     {Py_tp_richcompare, paramspecattr_richcompare},
@@ -695,6 +715,7 @@ static PyType_Slot paramspeckwargs_slots[] = {
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
     {Py_tp_traverse, paramspecattr_traverse},
+    {Py_tp_clear, (inquiry)paramspecattr_clear},
     {Py_tp_repr, paramspeckwargs_repr},
     {Py_tp_members, paramspecattr_members},
     {Py_tp_richcompare, paramspecattr_richcompare},
@@ -731,6 +752,14 @@ paramspec_traverse(PyObject *self, visitproc visit, void *arg)
     paramspecobject *ps = (paramspecobject *)self;
     Py_VISIT(ps->bound);
     _PyObject_VisitManagedDict(self, visit, arg);
+    return 0;
+}
+
+static int
+paramspec_clear(paramspecobject *self)
+{
+    Py_CLEAR(self->bound);
+    _PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
 
@@ -977,6 +1006,7 @@ static PyType_Slot paramspec_slots[] = {
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
     {Py_tp_traverse, paramspec_traverse},
+    {Py_tp_clear, paramspec_clear},
     {Py_tp_repr, paramspec_repr},
     {0, 0},
 };
@@ -1144,6 +1174,13 @@ typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+typevartuple_clear(PyObject *self)
+{
+    _PyObject_ClearManagedDict(self);
+    return 0;
+}
+
 static PyMethodDef typevartuple_methods[] = {
     TYPEVARTUPLE_TYPING_SUBST_METHODDEF
     TYPEVARTUPLE_TYPING_PREPARE_SUBST_METHODDEF
@@ -1188,6 +1225,7 @@ PyType_Slot typevartuple_slots[] = {
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
     {Py_tp_traverse, typevartuple_traverse},
+    {Py_tp_clear, typevartuple_clear},
     {0, 0},
 };
 
@@ -1405,6 +1443,15 @@ typealias_traverse(typealiasobject *self, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+typealias_clear(typealiasobject *self)
+{
+    Py_CLEAR(self->type_params);
+    Py_CLEAR(self->compute_value);
+    Py_CLEAR(self->value);
+    return 0;
+}
+
 /*[clinic input]
 typealias.__reduce__ as typealias_reduce
 
@@ -1451,6 +1498,7 @@ static PyType_Slot typealias_slots[] = {
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
     {Py_tp_traverse, (traverseproc)typealias_traverse},
+    {Py_tp_clear, (inquiry)typealias_clear},
     {Py_tp_repr, typealias_repr},
     {Py_nb_or, _Py_union_type_or},
     {0, 0},
