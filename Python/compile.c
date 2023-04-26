@@ -4411,6 +4411,8 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         int opcode = asdl_seq_LEN(meth->v.Attribute.value->v.Call.args) ?
             LOAD_SUPER_METHOD : LOAD_ZERO_SUPER_METHOD;
         ADDOP_NAME(c, loc, opcode, meth->v.Attribute.attr, names);
+        loc = update_start_location_to_match_attr(c, loc, meth);
+        ADDOP(c, loc, NOP);
     } else {
         VISIT(c, expr, meth->v.Attribute.value);
         loc = update_start_location_to_match_attr(c, loc, meth);
@@ -5429,6 +5431,8 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             int opcode = asdl_seq_LEN(e->v.Attribute.value->v.Call.args) ?
                 LOAD_SUPER_ATTR : LOAD_ZERO_SUPER_ATTR;
             ADDOP_NAME(c, loc, opcode, e->v.Attribute.attr, names);
+            loc = update_start_location_to_match_attr(c, loc, e);
+            ADDOP(c, loc, NOP);
             return SUCCESS;
         }
         VISIT(c, expr, e->v.Attribute.value);

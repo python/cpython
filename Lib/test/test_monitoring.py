@@ -4,6 +4,7 @@ import collections
 import functools
 import operator
 import sys
+import textwrap
 import types
 import unittest
 
@@ -506,7 +507,7 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             start = LineMonitoringTest.test_lines_single.__code__.co_firstlineno
-            self.assertEqual(events, [start+7, 14, start+8])
+            self.assertEqual(events, [start+7, 15, start+8])
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
@@ -524,7 +525,7 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             start = LineMonitoringTest.test_lines_loop.__code__.co_firstlineno
-            self.assertEqual(events, [start+7, 21, 22, 22, 21, start+8])
+            self.assertEqual(events, [start+7, 22, 23, 23, 22, start+8])
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
@@ -546,7 +547,7 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             sys.monitoring.register_callback(TEST_TOOL2, E.LINE, None)
             start = LineMonitoringTest.test_lines_two.__code__.co_firstlineno
-            expected = [start+10, 14, start+11]
+            expected = [start+10, 15, start+11]
             self.assertEqual(events, expected)
             self.assertEqual(events2, expected)
         finally:
@@ -1080,6 +1081,99 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch', 'func', 2, 2),
             ('line', 'func', 2),
             ('line', 'check_events', 11)])
+
+
+class TestLoadSuperAttr(CheckEvents):
+    def _super_method_call(self, optimized=False):
+        assignment = "x = 1" if optimized else "super = super"
+        codestr = textwrap.dedent(f"""
+            {assignment}
+            class A:
+                def method(self, x):
+                    return x
+
+            class B(A):
+                def method(self, x):
+                    return super(
+                    ).method(
+                        x
+                    )
+
+            b = B()
+            def f():
+                return b.method(1)
+        """)
+        d = {}
+        exec(codestr, d, d)
+        expected = [
+            ('line', 'check_events', 10),
+            ('call', 'f', sys.monitoring.MISSING),
+            ('line', 'f', 1),
+            ('call', 'method', d["b"]),
+            ('line', 'method', 1),
+            ('call', 'super', sys.monitoring.MISSING),
+            ('C return', 'super', sys.monitoring.MISSING),
+            ('line', 'method', 2),
+            ('line', 'method', 3),
+            ('line', 'method', 2),
+            ('call', 'method', 1),
+            ('line', 'method', 1),
+            ('line', 'method', 1),
+            ('line', 'check_events', 11),
+            ('call', 'set_events', 2),
+        ]
+        return d["f"], expected
+
+    def test_method_call(self):
+        nonopt_func, nonopt_expected = self._super_method_call(optimized=False)
+        opt_func, opt_expected = self._super_method_call(optimized=True)
+
+        recorders = CallRecorder, LineRecorder, CRaiseRecorder, CReturnRecorder
+
+        self.check_events(nonopt_func, recorders=recorders, expected=nonopt_expected)
+        self.check_events(opt_func, recorders=recorders, expected=opt_expected)
+
+    def _super_attr(self, optimized=False):
+        assignment = "x = 1" if optimized else "super = super"
+        codestr = textwrap.dedent(f"""
+            {assignment}
+            class A:
+                x = 1
+
+            class B(A):
+                def method(self):
+                    return super(
+                    ).x
+
+            b = B()
+            def f():
+                return b.method()
+        """)
+        d = {}
+        exec(codestr, d, d)
+        expected = [
+            ('line', 'check_events', 10),
+            ('call', 'f', sys.monitoring.MISSING),
+            ('line', 'f', 1),
+            ('call', 'method', d["b"]),
+            ('line', 'method', 1),
+            ('call', 'super', sys.monitoring.MISSING),
+            ('C return', 'super', sys.monitoring.MISSING),
+            ('line', 'method', 2),
+            ('line', 'method', 1),
+            ('line', 'check_events', 11),
+            ('call', 'set_events', 2)
+        ]
+        return d["f"], expected
+
+    def test_attr(self):
+        nonopt_func, nonopt_expected = self._super_attr(optimized=False)
+        opt_func, opt_expected = self._super_attr(optimized=True)
+
+        recorders = CallRecorder, LineRecorder, CRaiseRecorder, CReturnRecorder
+
+        self.check_events(nonopt_func, recorders=recorders, expected=nonopt_expected)
+        self.check_events(opt_func, recorders=recorders, expected=opt_expected)
 
 
 class TestSetGetEvents(MonitoringTestBase, unittest.TestCase):

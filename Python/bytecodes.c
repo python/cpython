@@ -1554,6 +1554,14 @@ dummy_func(
             PREDICT(JUMP_BACKWARD);
         }
 
+        inst(INSTRUMENTED_LOAD_SUPER_ATTR, (unused/9, unused, unused, unused -- unused if (oparg & 1), unused)) {
+            _PySuperAttrCache *cache = (_PySuperAttrCache *)next_instr;
+            // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
+            // don't want to specialize instrumented instructions
+            INCREMENT_ADAPTIVE_COUNTER(cache->counter);
+            GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
+        }
+
         family(load_super_attr, INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR) = {
             LOAD_SUPER_ATTR,
             LOAD_SUPER_ATTR_METHOD,
@@ -1573,6 +1581,14 @@ dummy_func(
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
 
+            if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
+                PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
+                int err = _Py_call_instrumentation_2args(
+                        tstate, PY_MONITORING_EVENT_CALL,
+                        frame, next_instr-1, global_super, arg);
+                ERROR_IF(err, error);
+            }
+
             // we make no attempt to optimize here; specializations should
             // handle any case whose performance we care about
             PyObject *stack[] = {class, self};
@@ -1581,6 +1597,22 @@ dummy_func(
             ERROR_IF(super == NULL, error);
             res = PyObject_GetAttr(super, name);
             Py_DECREF(super);
+            if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
+                PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
+                if (res == NULL) {
+                    _Py_call_instrumentation_exc2(
+                        tstate, PY_MONITORING_EVENT_C_RAISE,
+                        frame, next_instr-1, global_super, arg);
+                }
+                else {
+                    int err = _Py_call_instrumentation_2args(
+                        tstate, PY_MONITORING_EVENT_C_RETURN,
+                        frame, next_instr-1, global_super, arg);
+                    if (err < 0) {
+                        Py_CLEAR(res);
+                    }
+                }
+            }
             ERROR_IF(res == NULL, error);
         }
 

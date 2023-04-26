@@ -236,7 +236,7 @@ static void *opcode_targets[256] = {
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
-    &&_unknown_opcode,
+    &&TARGET_INSTRUMENTED_LOAD_SUPER_ATTR,
     &&TARGET_INSTRUMENTED_POP_JUMP_IF_NONE,
     &&TARGET_INSTRUMENTED_POP_JUMP_IF_NOT_NONE,
     &&TARGET_INSTRUMENTED_RESUME,
