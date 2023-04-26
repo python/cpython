@@ -76,33 +76,33 @@ get_module_state(PyObject *mod)
 }
 
 #define CODEC_INIT(encoding)                                            \
-    static int encoding##_codec_init(const void *config)
+    static int encoding##_codec_init(const MultibyteCodec *codec)
 
 #define ENCODER_INIT(encoding)                                          \
     static int encoding##_encode_init(                                  \
-        MultibyteCodec_State *state, const void *config)
+        MultibyteCodec_State *state, const MultibyteCodec *codec)
 #define ENCODER(encoding)                                               \
     static Py_ssize_t encoding##_encode(                                \
-        MultibyteCodec_State *state, const void *config,                \
+        MultibyteCodec_State *state, const MultibyteCodec *codec,       \
         int kind, const void *data,                                     \
         Py_ssize_t *inpos, Py_ssize_t inlen,                            \
         unsigned char **outbuf, Py_ssize_t outleft, int flags)
 #define ENCODER_RESET(encoding)                                         \
     static Py_ssize_t encoding##_encode_reset(                          \
-        MultibyteCodec_State *state, const void *config,                \
+        MultibyteCodec_State *state, const MultibyteCodec *codec,       \
         unsigned char **outbuf, Py_ssize_t outleft)
 
 #define DECODER_INIT(encoding)                                          \
     static int encoding##_decode_init(                                  \
-        MultibyteCodec_State *state, const void *config)
+        MultibyteCodec_State *state, const MultibyteCodec *codec)
 #define DECODER(encoding)                                               \
     static Py_ssize_t encoding##_decode(                                \
-        MultibyteCodec_State *state, const void *config,                \
+        MultibyteCodec_State *state, const MultibyteCodec *codec,       \
         const unsigned char **inbuf, Py_ssize_t inleft,                 \
         _PyUnicodeWriter *writer)
 #define DECODER_RESET(encoding)                                         \
     static Py_ssize_t encoding##_decode_reset(                          \
-        MultibyteCodec_State *state, const void *config)
+        MultibyteCodec_State *state, const MultibyteCodec *codec)
 
 #define NEXT_IN(i)                              \
     do {                                        \

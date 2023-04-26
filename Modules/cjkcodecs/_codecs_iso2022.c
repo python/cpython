@@ -90,7 +90,7 @@
 #define STATE_CLEARFLAG(f)      do { ((state)->c[4]) &= ~(f); } while (0)
 #define STATE_CLEARFLAGS()      do { ((state)->c[4]) = 0; } while (0)
 
-#define ISO2022_CONFIG          ((const struct iso2022_config *)config)
+#define ISO2022_CONFIG          ((const struct iso2022_config *)(codec->config))
 #define CONFIG_ISSET(flag)      (ISO2022_CONFIG->flags & (flag))
 #define CONFIG_DESIGNATIONS     (ISO2022_CONFIG->designations)
 
@@ -288,7 +288,7 @@ DECODER_RESET(iso2022)
 }
 
 static Py_ssize_t
-iso2022processesc(const void *config, MultibyteCodec_State *state,
+iso2022processesc(const MultibyteCodec *codec, MultibyteCodec_State *state,
                   const unsigned char **inbuf, Py_ssize_t *inleft)
 {
     unsigned char charset, designation;
@@ -388,7 +388,7 @@ iso2022processesc(const void *config, MultibyteCodec_State *state,
     }
 
 static Py_ssize_t
-iso2022processg2(const void *config, MultibyteCodec_State *state,
+iso2022processg2(const MultibyteCodec *codec, MultibyteCodec_State *state,
                  const unsigned char **inbuf, Py_ssize_t *inleft,
                  _PyUnicodeWriter *writer)
 {
@@ -442,14 +442,14 @@ DECODER(iso2022)
         case ESC:
             REQUIRE_INBUF(2);
             if (IS_ISO2022ESC(INBYTE2)) {
-                err = iso2022processesc(config, state,
+                err = iso2022processesc(codec, state,
                                         inbuf, &inleft);
                 if (err != 0)
                     return err;
             }
             else if (CONFIG_ISSET(USE_G2) && INBYTE2 == 'N') {/* SS2 */
                 REQUIRE_INBUF(3);
-                err = iso2022processg2(config, state,
+                err = iso2022processg2(codec, state,
                                        inbuf, &inleft, writer);
                 if (err != 0)
                     return err;
@@ -712,7 +712,7 @@ static Py_UCS4
 jisx0213_2000_1_decoder(const unsigned char *data)
 {
     Py_UCS4 u;
-    EMULATE_JISX0213_2000_DECODE_PLANE1(u, data[0], data[1])
+    EMULATE_JISX0213_2000_DECODE_PLANE1(config, u, data[0], data[1])
     else if (data[0] == 0x21 && data[1] == 0x40) /* F/W REVERSE SOLIDUS */
         return 0xff3c;
     else if (TRYMAP_DEC(jisx0208, u, data[0], data[1]))
@@ -732,7 +732,7 @@ static Py_UCS4
 jisx0213_2000_2_decoder(const unsigned char *data)
 {
     Py_UCS4 u;
-    EMULATE_JISX0213_2000_DECODE_PLANE2_CHAR(u, data[0], data[1])
+    EMULATE_JISX0213_2000_DECODE_PLANE2_CHAR(config, u, data[0], data[1])
     if (TRYMAP_DEC(jisx0213_2_bmp, u, data[0], data[1]))
         ;
     else if (TRYMAP_DEC(jisx0213_2_emp, u, data[0], data[1]))
@@ -776,7 +776,8 @@ jisx0213_2004_2_decoder(const unsigned char *data)
 }
 
 static DBCHAR
-jisx0213_encoder(const Py_UCS4 *data, Py_ssize_t *length, void *config)
+jisx0213_encoder(const Py_UCS4 *data, Py_ssize_t *length,
+                 const void *config)
 {
     DBCHAR coded;
 
@@ -784,14 +785,14 @@ jisx0213_encoder(const Py_UCS4 *data, Py_ssize_t *length, void *config)
     case 1: /* first character */
         if (*data >= 0x10000) {
             if ((*data) >> 16 == 0x20000 >> 16) {
-                EMULATE_JISX0213_2000_ENCODE_EMP(coded, *data)
+                EMULATE_JISX0213_2000_ENCODE_EMP(config, coded, *data)
                 else if (TRYMAP_ENC(jisx0213_emp, coded, (*data) & 0xffff))
                     return coded;
             }
             return MAP_UNMAPPABLE;
         }
 
-        EMULATE_JISX0213_2000_ENCODE_BMP(coded, *data)
+        EMULATE_JISX0213_2000_ENCODE_BMP(config, coded, *data)
         else if (TRYMAP_ENC(jisx0213_bmp, coded, *data)) {
             if (coded == MULTIC)
                 return MAP_MULTIPLE_AVAIL;
