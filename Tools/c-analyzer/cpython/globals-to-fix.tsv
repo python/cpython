@@ -448,6 +448,8 @@ Modules/_decimal/_decimal.c	-	SignalTuple	-
 Modules/_asynciomodule.c	-	fi_freelist	-
 Modules/_asynciomodule.c	-	fi_freelist_len	-
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
+Modules/_ctypes/_ctypes.c	-	global_state	-
+Modules/_ctypes/ctypes.h	-	global_state	-
 Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
