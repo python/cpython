@@ -536,6 +536,11 @@ sys
   exception instance, rather than to a ``(typ, exc, tb)`` tuple.
   (Contributed by Irit Katriel in :gh:`103176`.)
 
+calendar
+--------
+
+* Added Enum for Month and Day 
+  (Contributed by Prince Roshan in :gh:`103636`.)
 
 Optimizations
 =============
@@ -641,6 +646,8 @@ Deprecated
   Python 3.14, when ``'data'`` filter will become the default.
   See :ref:`tarfile-extraction-filter` for details.
 
+* :data:`January` and :data:`February` is deprated from :mod:`calendar` 
+  use :data:`JANUARY` and :data:`FEBRUARY` instead
 
 Pending Removal in Python 3.13
 ------------------------------

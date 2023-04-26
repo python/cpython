@@ -43,16 +43,17 @@ class IllegalWeekdayError(ValueError):
 
 
 def __getattr__(name):
-    if name in ['January','February']:
-        warnings.warn(f"The '{name}' attribute is going to be deprecated use '{name.upper()}' instead",
+    if name in ('January','February'):
+        warnings.warn(f"The '{name}' attribute is deprecated, use '{name.upper()}' instead",
                         DeprecationWarning,
                         stacklevel=2)
         if name == 'January':
-            return JANUARY
+            return 1
         else:
-            return FEBRUARY
+            return 2
 
-    raise AttributeError(f"module {__name__} has no attribute {name}")
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
 
 # Constants for months
 @global_enum
@@ -81,8 +82,6 @@ class Day(IntEnum):
     FRIDAY = 4
     SATURDAY = 5
     SUNDAY = 6
-
-
 
 
 # Number of days per month (except for February in leap years)
