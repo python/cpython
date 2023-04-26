@@ -180,7 +180,7 @@ engine will try to repeat it as many times as possible. If later portions of the
 pattern don't match, the matching engine will then back up and try again with
 fewer repetitions.
 
-A step-by-step example will make this more obvious.  Let's consider the
+A step-by-step example will make this clearer.  Let's consider the
 expression ``a[bcd]*b``.  This matches the letter ``'a'``, zero or more letters
 from the class ``[bcd]``, and finally ends with a ``'b'``.  Now imagine matching
 this RE against the string ``'abcbd'``.
@@ -926,7 +926,7 @@ A more significant feature is named groups: instead of referring to them by
 numbers, groups can be referenced by a name.
 
 The syntax for a named group is one of the Python-specific extensions:
-``(?P<name>...)``.  *name* is, obviously, the name of the group.  Named groups
+``(?P<name>...)``.  *name* can be used to refer to the group in other contexts.  Named groups
 behave exactly like capturing groups, and additionally associate a name
 with a group.  The :ref:`match object <match-objects>` methods that deal with
 capturing groups all accept either integers that refer to the group by number
@@ -958,7 +958,7 @@ module::
            r' (?P<zonen>[-+])(?P<zoneh>[0-9][0-9])(?P<zonem>[0-9][0-9])'
            r'"')
 
-It's obviously much easier to retrieve ``m.group('zonem')``, instead of having
+It's much easier to write ``m.group('zonem')``, instead of having
 to remember to retrieve group 9.
 
 The syntax for backreferences in an expression such as ``(...)\1`` refers to the
