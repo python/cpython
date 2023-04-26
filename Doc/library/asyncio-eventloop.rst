@@ -1538,7 +1538,7 @@ Server objects are created by :meth:`loop.create_server`,
 :meth:`loop.create_unix_server`, :func:`start_server`,
 and :func:`start_unix_server` functions.
 
-Do not instantiate the class directly.
+Do not instantiate the :class:`Server` class directly.
 
 .. class:: Server
 
@@ -1629,7 +1629,8 @@ Do not instantiate the class directly.
 
    .. attribute:: sockets
 
-      List of :class:`socket.socket` objects the server is listening on.
+      List of socket-like objects, ``asyncio.trsock.TransportSocket``, which
+      the server is listening on.
 
       .. versionchanged:: 3.7
          Prior to Python 3.7 ``Server.sockets`` used to return an
