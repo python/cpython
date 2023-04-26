@@ -1,3 +1,9 @@
+# We have upper bounds on our transitive dependencies here
+# To avoid new releases unexpectedly breaking our build.
+# This file can be updated on an ad-hoc basis,
+# though it will probably have to be updated
+# whenever Doc/requirements.txt is updated.
+
 # Direct dependencies of Sphinx
 babel<3
 colorama<0.5

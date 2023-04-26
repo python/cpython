@@ -1,4 +1,7 @@
 # Requirements to build the Python documentation
+#
+# Note that when updating this file, you will likely also have to update
+# the Doc/constraints.txt file.
 
 # Sphinx version is pinned so that new versions that introduce new warnings
 # won't suddenly cause build failures. Updating the version is fine as long
@@ -14,6 +17,4 @@ sphinxext-opengraph==0.7.5
 # to install that as well.
 python-docs-theme>=2022.1
 
-# We have upper bounds on our transitive dependencies in constraints.txt
-# To avoid new releases unexpectedly breaking our build
 -c constraints.txt
