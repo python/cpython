@@ -890,6 +890,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(end_lineno));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(end_offset));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(endpos));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(entrypoint));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(env));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(errors));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(event));
