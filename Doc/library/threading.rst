@@ -648,8 +648,8 @@ call release as many times the lock has been acquired can lead to deadlock.
             immediately.
 
       In all cases, if the thread was able to acquire the lock, return ``True``.
-      If the thread was unable to acquire the lock (i.e. if *blocking* is False, or
-      *timeout* is reached or is non-positive) return ``False``.
+      If the thread was unable to acquire the lock (i.e. if not blocking or
+      the timeout was reached) return ``False``.
 
       If called multiple times, failing to call :meth:`~RLock.release` as many times
       may lead to deadlock. Consider using :class:`!RLock` as a context manager rather than
