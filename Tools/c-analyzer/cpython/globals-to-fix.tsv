@@ -485,9 +485,6 @@ Modules/_decimal/_decimal.c	-	_py_float_abs	-
 Modules/_decimal/_decimal.c	-	_py_long_bit_length	-
 Modules/_decimal/_decimal.c	-	_py_float_as_integer_ratio	-
 Modules/_elementtree.c	-	expat_capi	-
-Modules/cjkcodecs/_codecs_hk.c	-	big5_encmap	-
-Modules/cjkcodecs/_codecs_hk.c	-	big5_decmap	-
-Modules/cjkcodecs/_codecs_hk.c	big5hkscs_codec_init	initialized	-
 Modules/cjkcodecs/_codecs_iso2022.c	-	cp949_encmap	-
 Modules/cjkcodecs/_codecs_iso2022.c	-	ksx1001_decmap	-
 Modules/cjkcodecs/_codecs_iso2022.c	-	jisxcommon_encmap	-

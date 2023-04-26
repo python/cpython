@@ -211,6 +211,9 @@ get_module_state(PyObject *mod)
         (m)->bottom]) != NOCHAR)
 #define TRYMAP_ENC(charset, assi, uni)                     \
     _TRYMAP_ENC(&charset##_encmap[(uni) >> 8], assi, (uni) & 0xff)
+#define TRYMAP_ENC_ST(charset, assi, uni) \
+    _TRYMAP_ENC(&(codec->modstate->charset##_encmap)[(uni) >> 8], \
+                assi, (uni) & 0xff)
 
 #define _TRYMAP_DEC(m, assi, val)                             \
     ((m)->map != NULL &&                                        \
@@ -219,6 +222,8 @@ get_module_state(PyObject *mod)
      ((assi) = (m)->map[(val) - (m)->bottom]) != UNIINV)
 #define TRYMAP_DEC(charset, assi, c1, c2)                     \
     _TRYMAP_DEC(&charset##_decmap[c1], assi, c2)
+#define TRYMAP_DEC_ST(charset, assi, c1, c2) \
+    _TRYMAP_DEC(&(codec->modstate->charset##_decmap)[c1], assi, c2)
 
 #define BEGIN_MAPPINGS_LIST(NUM)                                    \
 static int                                                          \
