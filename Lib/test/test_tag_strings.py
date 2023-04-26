@@ -48,6 +48,19 @@ class TagStringTests(unittest.TestCase):
             with self.assertRaises(SyntaxError):
                 compile(ex, ex, "eval")
 
+    def test_debug_format(self):
+        def tag(*args):
+            return args
+        res = tag"{ham = }"
+        self.assertEqual(len(res), 2)
+        self.assertEqual(res[0], "ham = ")
+        func, string, conv, spec = res[1]
+        ham = 42
+        self.assertEqual(func(), 42)
+        self.assertEqual(string, "ham")
+        self.assertEqual(conv, "r")
+        self.assertEqual(spec, None)
+
 
 if __name__ == "__main__":
     unittest.main()
