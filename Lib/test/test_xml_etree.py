@@ -203,25 +203,6 @@ class ElementTreeTest(unittest.TestCase):
     def test_interface(self):
         # Test element tree interface.
 
-        def check_string(string):
-            len(string)
-            for char in string:
-                self.assertEqual(len(char), 1,
-                        msg="expected one-character string, got %r" % char)
-            new_string = string + ""
-            new_string = string + " "
-            string[:0]
-
-        def check_mapping(mapping):
-            len(mapping)
-            keys = mapping.keys()
-            items = mapping.items()
-            for key in keys:
-                item = mapping[key]
-            mapping["key"] = "value"
-            self.assertEqual(mapping["key"], "value",
-                    msg="expected value string, got %r" % mapping["key"])
-
         def check_element(element):
             self.assertTrue(ET.iselement(element), msg="not an element")
             direlem = dir(element)
@@ -231,12 +212,12 @@ class ElementTreeTest(unittest.TestCase):
                 self.assertIn(attr, direlem,
                         msg='no %s visible by dir' % attr)
 
-            check_string(element.tag)
-            check_mapping(element.attrib)
+            self.assertIsInstance(element.tag, str)
+            self.assertIsInstance(element.attrib, dict)
             if element.text is not None:
-                check_string(element.text)
+                self.assertIsInstance(element.text, str)
             if element.tail is not None:
-                check_string(element.tail)
+                self.assertIsInstance(element.tail, str)
             for elem in element:
                 check_element(elem)
 

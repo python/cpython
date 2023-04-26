@@ -7,7 +7,7 @@
 .. moduleauthor:: James C. Ahlstrom <jim@interet.com>
 .. sectionauthor:: James C. Ahlstrom <jim@interet.com>
 
-**Source code:** :source:`Lib/zipfile.py`
+**Source code:** :source:`Lib/zipfile/`
 
 --------------
 
@@ -55,8 +55,9 @@ The module defines the following items:
 .. class:: Path
    :noindex:
 
-   A pathlib-compatible wrapper for zip files. See section
-   :ref:`path-objects` for details.
+   Class that implements a subset of the interface provided by
+   :class:`pathlib.Path`, including the full
+   :class:`importlib.resources.abc.Traversable` interface.
 
    .. versionadded:: 3.8
 
@@ -287,7 +288,7 @@ ZipFile Objects
    (``ZipExtFile``) is read-only and provides the following methods:
    :meth:`~io.BufferedIOBase.read`, :meth:`~io.IOBase.readline`,
    :meth:`~io.IOBase.readlines`, :meth:`~io.IOBase.seek`,
-   :meth:`~io.IOBase.tell`, :meth:`__iter__`, :meth:`~iterator.__next__`.
+   :meth:`~io.IOBase.tell`, :meth:`~container.__iter__`, :meth:`~iterator.__next__`.
    These objects can operate independently of the ZipFile.
 
    With ``mode='w'``, a writable file handle is returned, which supports the

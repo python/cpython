@@ -62,14 +62,15 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-    MultibyteCodec *codec;
+    const MultibyteCodec *codec;
+    PyObject *cjk_module;
 } MultibyteCodecObject;
 
 #define MultibyteCodec_Check(state, op) Py_IS_TYPE((op), state->multibytecodec_type)
 
 #define _MultibyteStatefulCodec_HEAD            \
     PyObject_HEAD                               \
-    MultibyteCodec *codec;                      \
+    const MultibyteCodec *codec;                \
     MultibyteCodec_State state;                 \
     PyObject *errors;
 typedef struct {
@@ -130,7 +131,13 @@ typedef struct {
 #define MBENC_FLUSH             0x0001 /* encode all characters encodable */
 #define MBENC_MAX               MBENC_FLUSH
 
-#define PyMultibyteCodec_CAPSULE_NAME "multibytecodec.__map_*"
+typedef struct {
+    const MultibyteCodec *codec;
+    PyObject *cjk_module;
+} codec_capsule;
+
+#define MAP_CAPSULE "multibytecodec.map"
+#define CODEC_CAPSULE "multibytecodec.codec"
 
 
 #ifdef __cplusplus

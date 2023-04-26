@@ -587,9 +587,12 @@ class timedelta:
     returning a timedelta, and addition or subtraction of a datetime
     and a timedelta giving a datetime.
 
-    Representation: (days, seconds, microseconds).  Why?  Because I
-    felt like it.
+    Representation: (days, seconds, microseconds).
     """
+    # The representation of (days, seconds, microseconds) was chosen
+    # arbitrarily; the exact rationale originally specified in the docstring
+    # was "Because I felt like it."
+
     __slots__ = '_days', '_seconds', '_microseconds', '_hashcode'
 
     def __new__(cls, days=0, seconds=0, microseconds=0,
@@ -1962,6 +1965,11 @@ class datetime(date):
     def _local_timezone(self):
         if self.tzinfo is None:
             ts = self._mktime()
+            # Detect gap
+            ts2 = self.replace(fold=1-self.fold)._mktime()
+            if ts2 != ts: # This happens in a gap or a fold
+                if (ts2 > ts) == self.fold:
+                    ts = ts2
         else:
             ts = (self - _EPOCH) // timedelta(seconds=1)
         localtm = _time.localtime(ts)

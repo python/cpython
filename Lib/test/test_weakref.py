@@ -116,6 +116,17 @@ class ReferencesTestCase(TestBase):
         del o
         repr(wr)
 
+    def test_repr_failure_gh99184(self):
+        class MyConfig(dict):
+            def __getattr__(self, x):
+                return self[x]
+
+        obj = MyConfig(offset=5)
+        obj_weakref = weakref.ref(obj)
+
+        self.assertIn('MyConfig', repr(obj_weakref))
+        self.assertIn('MyConfig', str(obj_weakref))
+
     def test_basic_callback(self):
         self.check_basic_callback(C)
         self.check_basic_callback(create_function)
