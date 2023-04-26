@@ -7698,7 +7698,7 @@ wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
         return NULL;
     }
 
-    return PyMemoryView_FromObjectAndFlags(self, flags);
+    return PyMemoryView_FromObjectAndFlags(self, Py_SAFE_DOWNCAST(flags, Py_ssize_t, int));
 }
 
 static PyObject *
