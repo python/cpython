@@ -5,6 +5,7 @@ import string
 import sys
 import tempfile
 import unittest
+from unittest.mock import MagicMock
 
 from test.support import (requires, verbose, SaveSignals, cpython_only,
                           check_disallow_instantiation)
@@ -1322,7 +1323,7 @@ def lorem_ipsum(win):
 
 class TextboxTest(unittest.TestCase):
     def setUp(self):
-        self.mock_win = unittest.mock.MagicMock(spec=curses.window)
+        self.mock_win = MagicMock(spec=curses.window)
         self.mock_win.getyx.return_value = (1, 1)
         self.mock_win.getmaxyx.return_value = (10, 20)
         self.textbox = curses.textpad.Textbox(self.mock_win)
