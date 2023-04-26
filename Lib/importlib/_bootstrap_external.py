@@ -440,7 +440,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12a7 3524 (Shrink the BINARY_SUBSCR caches)
 #     Python 3.12b1 3525 (Shrink the CALL caches)
 #     Python 3.12a7 3526 (Add instrumentation support)
-#     Python 3.12b1 3527 (Add function.__locals__ with change to MAKE_FUNCTION)
+#     Python 3.12b1 3527 (Add function.__class_dict__, LOAD_CLASS_DICT, SET_CLASS_DICT)
 
 #     Python 3.13 will start with 3550
 
