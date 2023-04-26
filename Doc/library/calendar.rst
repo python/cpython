@@ -28,7 +28,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 2 BC, and so on.
 
 
-.. enum:: Day
+.. class:: Day
 
    This enumeration defines the days of the week as integer constants.
 
@@ -61,7 +61,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       The constant for Sunday, with a value of 6.
 
 
-.. enum:: Month
+.. class:: Month
 
    This enumeration defines the months of the year as integer constants.
 
