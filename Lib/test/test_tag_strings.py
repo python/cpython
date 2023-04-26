@@ -61,6 +61,19 @@ class TagStringTests(unittest.TestCase):
         self.assertEqual(conv, "r")
         self.assertEqual(spec, None)
 
+    def test_unicode_names(self):
+        def tag(*args):
+            return args
+        res = tag"\N{SPACE}"
+        self.assertEqual(len(res), 2)
+        self.assertEqual(res[0], r"\N")
+        func, string, conv, spec = res[1]
+        SPACE = 42
+        self.assertEqual(func(), 42)
+        self.assertEqual(string, "SPACE")
+        self.assertEqual(conv, None)
+        self.assertEqual(spec, None)
+
 
 if __name__ == "__main__":
     unittest.main()

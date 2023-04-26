@@ -1290,7 +1290,7 @@ unpack_top_level_joined_strs(Parser *p, asdl_expr_seq *raw_expressions)
 }
 
 expr_ty
-_PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b) {
+_PyPegen_joined_str(Parser *p, int is_raw, Token* a, asdl_expr_seq* raw_expressions, Token*b) {
     asdl_expr_seq *expr = unpack_top_level_joined_strs(p, raw_expressions);
     Py_ssize_t n_items = asdl_seq_LEN(expr);
 
@@ -1298,7 +1298,7 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b
     if (quote_str == NULL) {
         return NULL;
     }
-    int is_raw = strpbrk(quote_str, "rR") != NULL;
+    is_raw = is_raw || strpbrk(quote_str, "rR") != NULL;
 
     asdl_expr_seq *seq = _Py_asdl_expr_seq_new(n_items, p->arena);
     if (seq == NULL) {
@@ -1393,7 +1393,7 @@ _PyPegen_tag_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b) {
     if (tag == NULL) {
         return NULL;
     }
-    expr_ty str = _PyPegen_joined_str(p, a, raw_expressions, b);
+    expr_ty str = _PyPegen_joined_str(p, 1, a, raw_expressions, b);
     if (str == NULL) {
         return NULL;
     }

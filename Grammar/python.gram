@@ -894,7 +894,7 @@ fstring_format_spec[expr_ty]:
     | t=FSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
     | fstring_replacement_field
 fstring[expr_ty]:
-    | a=FSTRING_START b=fstring_middle* c=FSTRING_END { _PyPegen_joined_str(p, a, (asdl_expr_seq*)b, c) }
+    | a=FSTRING_START b=fstring_middle* c=FSTRING_END { _PyPegen_joined_str(p, 0, a, (asdl_expr_seq*)b, c) }
 tagstring[expr_ty] (memo):
     | a=TAGSTRING_START b=fstring_middle* c=FSTRING_END { _PyPegen_tag_str(p, a, (asdl_expr_seq*)b, c) }
 
