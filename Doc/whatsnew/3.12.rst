@@ -406,6 +406,16 @@ sqlite3
   :ref:`transaction handling <sqlite3-transaction-control-autocommit>`.
   (Contributed by Erlend E. Aasland in :gh:`83638`.)
 
+* Add *entrypoint* keyword-only parameter to
+  :meth:`~sqlite3.Connection.load_extension`,
+  for overriding the SQLite extension entry point.
+  (Contributed by Erlend E. Aasland in :gh:`103015`.)
+
+* Add :meth:`~sqlite3.Connection.getconfig` and
+  :meth:`~sqlite3.Connection.setconfig` to :class:`~sqlite3.Connection`
+  to make configuration changes to a database connection.
+  (Contributed by Erlend E. Aasland in :gh:`103489`.)
+
 threading
 ---------
 
@@ -457,8 +467,10 @@ uuid
 tempfile
 --------
 
-The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
-*delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
+* The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
+  *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
+* :func:`tempfile.mkdtemp` now always returns an absolute path, even if the
+  argument provided to the *dir* parameter is a relative path.
 
 .. _whatsnew-typing-py312:
 
