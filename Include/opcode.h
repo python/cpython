@@ -117,7 +117,7 @@ extern "C" {
 #define KW_NAMES                               172
 #define CALL_INTRINSIC_1                       173
 #define CALL_INTRINSIC_2                       174
-#define LOAD_CLASS_DICT                        175
+#define LOAD_CLASS_OR_GLOBAL                   175
 #define MIN_INSTRUMENTED_OPCODE                238
 #define INSTRUMENTED_POP_JUMP_IF_NONE          238
 #define INSTRUMENTED_POP_JUMP_IF_NOT_NONE      239

@@ -162,9 +162,9 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case DELETE_GLOBAL:
             return 0;
         case LOAD_NAME:
-            return 0;
-        case LOAD_CLASS_DICT:
-            return 0;
+            return 0+2;
+        case LOAD_CLASS_OR_GLOBAL:
+            return 0+2;
         case LOAD_GLOBAL:
             return 0;
         case LOAD_GLOBAL_MODULE:
@@ -550,9 +550,9 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case DELETE_GLOBAL:
             return 0;
         case LOAD_NAME:
-            return 1;
-        case LOAD_CLASS_DICT:
-            return 1;
+            return 2+1;
+        case LOAD_CLASS_OR_GLOBAL:
+            return 2+1;
         case LOAD_GLOBAL:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_GLOBAL_MODULE:
@@ -866,7 +866,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [STORE_GLOBAL] = { true, INSTR_FMT_IB },
     [DELETE_GLOBAL] = { true, INSTR_FMT_IB },
     [LOAD_NAME] = { true, INSTR_FMT_IB },
-    [LOAD_CLASS_DICT] = { true, INSTR_FMT_IB },
+    [LOAD_CLASS_OR_GLOBAL] = { true, INSTR_FMT_IB },
     [LOAD_GLOBAL] = { true, INSTR_FMT_IBC000 },
     [LOAD_GLOBAL_MODULE] = { true, INSTR_FMT_IBC000 },
     [LOAD_GLOBAL_BUILTIN] = { true, INSTR_FMT_IBC000 },
