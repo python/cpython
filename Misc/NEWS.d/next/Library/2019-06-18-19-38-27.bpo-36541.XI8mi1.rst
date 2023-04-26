@@ -1,2 +1,0 @@
-lib2to3 now recognizes named assignment expressions (the walrus operator,
-``:=``)

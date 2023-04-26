@@ -1,1 +1,0 @@
-Support unparsing of infinity numbers in postponed annotations. Patch by Batuhan Taşkaya.

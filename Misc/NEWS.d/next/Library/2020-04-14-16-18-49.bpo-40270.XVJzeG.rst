@@ -1,2 +1,0 @@
-The included copy of sqlite3 on Windows is now compiled with the json
-extension. This allows the use of functions such as ``json_object``.

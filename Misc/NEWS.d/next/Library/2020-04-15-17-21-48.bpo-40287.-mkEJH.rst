@@ -1,1 +1,0 @@
-Fixed ``SpooledTemporaryFile.seek()`` to return the position.

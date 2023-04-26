@@ -1,2 +1,0 @@
-Add column and line information to ``ast.keyword`` nodes. Patch by Pablo
-Galindo.

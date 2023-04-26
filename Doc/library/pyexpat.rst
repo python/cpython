@@ -665,14 +665,14 @@ The ``errors`` module has the following attributes:
 
 .. data:: codes
 
-   A dictionary mapping numeric error codes to their string descriptions.
+   A dictionary mapping string descriptions to their error codes.
 
    .. versionadded:: 3.2
 
 
 .. data:: messages
 
-   A dictionary mapping string descriptions to their error codes.
+   A dictionary mapping numeric error codes to their string descriptions.
 
    .. versionadded:: 3.2
 
@@ -865,6 +865,40 @@ The ``errors`` module has the following attributes:
 
 
 .. data:: XML_ERROR_SUSPEND_PE
+
+
+.. data:: XML_ERROR_RESERVED_PREFIX_XML
+
+   An attempt was made to
+   undeclare reserved namespace prefix ``xml``
+   or to bind it to another namespace URI.
+
+
+.. data:: XML_ERROR_RESERVED_PREFIX_XMLNS
+
+   An attempt was made to declare or undeclare reserved namespace prefix ``xmlns``.
+
+
+.. data:: XML_ERROR_RESERVED_NAMESPACE_URI
+
+   An attempt was made to bind the URI of one the reserved namespace
+   prefixes ``xml`` and ``xmlns`` to another namespace prefix.
+
+
+.. data:: XML_ERROR_INVALID_ARGUMENT
+
+   This should not be reported to Python applications.
+
+
+.. data:: XML_ERROR_NO_BUFFER
+
+   This should not be reported to Python applications.
+
+
+.. data:: XML_ERROR_AMPLIFICATION_LIMIT_BREACH
+
+   The limit on input amplification factor (from DTD and entities)
+   has been breached.
 
 
 .. rubric:: Footnotes

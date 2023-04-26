@@ -13,11 +13,12 @@ Exceptions
 
 .. exception:: TimeoutError
 
-   The operation has exceeded the given deadline.
+   A deprecated alias of :exc:`TimeoutError`,
+   raised when the operation has exceeded the given deadline.
 
-   .. important::
-      This exception is different from the builtin :exc:`TimeoutError`
-      exception.
+   .. versionchanged:: 3.11
+
+      This class was made an alias of :exc:`TimeoutError`.
 
 
 .. exception:: CancelledError

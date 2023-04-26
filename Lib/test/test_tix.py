@@ -1,14 +1,22 @@
+import sys
 import unittest
 from test import support
-import sys
+from test.support import import_helper
+from test.support import check_sanitizer
+
+if check_sanitizer(address=True, memory=True):
+    raise unittest.SkipTest("Tests involvin libX11 can SEGFAULT on ASAN/MSAN builds")
+
 
 # Skip this test if the _tkinter module wasn't built.
-_tkinter = support.import_module('_tkinter')
+_tkinter = import_helper.import_module('_tkinter')
 
 # Skip test if tk cannot be initialized.
 support.requires('gui')
 
-from tkinter import tix, TclError
+# Suppress the deprecation warning
+tix = import_helper.import_module('tkinter.tix', deprecated=True)
+from tkinter import TclError
 
 
 class TestTix(unittest.TestCase):

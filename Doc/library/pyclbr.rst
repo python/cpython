@@ -97,6 +97,13 @@ statements.  They have the following attributes:
    .. versionadded:: 3.7
 
 
+.. attribute:: Function.is_async
+
+   ``True`` for functions that are defined with the ``async`` prefix, ``False`` otherwise.
+
+   .. versionadded:: 3.10
+
+
 .. _pyclbr-class-objects:
 
 Class Objects
