@@ -113,6 +113,3 @@ class TestStaggered(unittest.IsolatedAsyncioTestCase):
             )
             self.assertEqual(winner_result, 0)
             self.assertEqual(winner_idx, 0)
-
-
-
