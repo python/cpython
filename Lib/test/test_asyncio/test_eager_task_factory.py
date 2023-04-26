@@ -28,6 +28,21 @@ class EagerTaskFactoryLoopTests(test_utils.TestCase):
     def new_future(self, loop):
         return asyncio.Future(loop=loop)
 
+    def run_coro(self, coro):
+        """
+        Helper method to run the `coro` coroutine in the test event loop.
+        It helps with making sure the event loop is running before starting
+        to execute `coro`. This is important for testing the eager step
+        functionality, since an eager step is taken only if the event loop
+        is already running.
+        """
+
+        async def coro_runner():
+            self.assertTrue(asyncio.get_event_loop().is_running())
+            return await coro
+
+        return self.loop.run_until_complete(coro)
+
     def setUp(self):
         super().setUp()
         self.loop = asyncio.new_event_loop()
@@ -49,8 +64,7 @@ class EagerTaskFactoryLoopTests(test_utils.TestCase):
             self.assertTrue(t.done())
             return await fut
 
-        result = self.loop.run_until_complete(run())
-        self.assertEqual(result,'my message')
+        self.assertEqual(self.run_coro(run()), 'my message')
 
     def test_eager_completion(self):
 
@@ -58,14 +72,12 @@ class EagerTaskFactoryLoopTests(test_utils.TestCase):
             return 'hello'
 
         async def run():
-            await asyncio.sleep(0.1)
             t = self.loop.create_task(coro())
             # assert the eager step completed the task
             self.assertTrue(t.done())
             return await t
 
-        result = self.loop.run_until_complete(run())
-        self.assertEqual(result, 'hello')
+        self.assertEqual(self.run_coro(run()), 'hello')
 
     def test_block_after_eager_step(self):
 
@@ -74,15 +86,13 @@ class EagerTaskFactoryLoopTests(test_utils.TestCase):
             return 'finished after blocking'
 
         async def run():
-            await asyncio.sleep(0.1)
             t = self.loop.create_task(coro())
             self.assertFalse(t.done())
             result = await t
             self.assertTrue(t.done())
             return result
 
-        result = self.loop.run_until_complete(run())
-        self.assertEqual(result, 'finished after blocking')
+        self.assertEqual(self.run_coro(run()), 'finished after blocking')
 
     def test_cancellation_after_eager_completion(self):
 
@@ -90,7 +100,6 @@ class EagerTaskFactoryLoopTests(test_utils.TestCase):
             return 'finished without blocking'
 
         async def run():
-            await asyncio.sleep(0.1)
             t = self.loop.create_task(coro())
             t.cancel()
             result = await t
@@ -98,8 +107,7 @@ class EagerTaskFactoryLoopTests(test_utils.TestCase):
             self.assertFalse(t.cancelled())
             return result
 
-        result = self.loop.run_until_complete(run())
-        self.assertEqual(result, 'finished without blocking')
+        self.assertEqual(self.run_coro(run()), 'finished without blocking')
 
     def test_cancellation_after_eager_step_blocks(self):
 
@@ -108,19 +116,13 @@ class EagerTaskFactoryLoopTests(test_utils.TestCase):
             return 'finished after blocking'
 
         async def run():
-            await asyncio.sleep(0.1)
             t = self.loop.create_task(coro())
             t.cancel('cancellation message')
             self.assertGreater(t.cancelling(), 0)
-            try:
-                result = await t
-            except asyncio.CancelledError:
-                # finished task can't be cancelled
-                self.assertTrue(t.cancelled())
-                raise
+            result = await t
 
         with self.assertRaises(asyncio.CancelledError) as cm:
-            self.loop.run_until_complete(run())
+            self.run_coro(run())
 
         self.assertEqual('cancellation message', cm.exception.args[0])
 
