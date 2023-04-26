@@ -30,7 +30,7 @@ except ImportError:
 
 class _BasePurePathSubclass(object):
     def __init__(self, *args, template=None, session_id=None):
-        super().__init__(*args)
+        super().__init__(*args, template=template)
         if template:
             self.session_id = template.session_id
         else:

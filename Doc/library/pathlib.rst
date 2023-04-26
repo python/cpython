@@ -159,7 +159,7 @@ we also call *flavours*:
 
       class MyPath(PurePosixPath):
           def __init__(self, *pathsegments, template=None, session_id=None):
-              super().__init__(*pathsegments)
+              super().__init__(*pathsegments, template=template)
               if template:
                   self.session_id = template.session_id
               else:
