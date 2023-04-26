@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_compile.h"       // _PyASTOptimizeState
+#include "pycore_long.h"           // _PyLong
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_format.h"        // F_LJUST
 
@@ -152,7 +153,9 @@ check_complexity(PyObject *obj, Py_ssize_t limit)
 static PyObject *
 safe_multiply(PyObject *v, PyObject *w)
 {
-    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w)) {
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
+    ) {
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = _PyLong_NumBits(w);
         if (vbits == (size_t)-1 || wbits == (size_t)-1) {
@@ -198,7 +201,9 @@ safe_multiply(PyObject *v, PyObject *w)
 static PyObject *
 safe_power(PyObject *v, PyObject *w)
 {
-    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w) > 0) {
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && _PyLong_IsPositive((PyLongObject *)w)
+    ) {
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
         if (vbits == (size_t)-1 || wbits == (size_t)-1) {
@@ -215,7 +220,9 @@ safe_power(PyObject *v, PyObject *w)
 static PyObject *
 safe_lshift(PyObject *v, PyObject *w)
 {
-    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w)) {
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
+    ) {
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
         if (vbits == (size_t)-1 || wbits == (size_t)-1) {
@@ -310,6 +317,7 @@ simple_format_arg_parse(PyObject *fmt, Py_ssize_t *ppos,
             case ' ': *flags |= F_BLANK; continue;
             case '#': *flags |= F_ALT; continue;
             case '0': *flags |= F_ZERO; continue;
+            case 'z': *flags |= F_NO_NEG_0; continue;
         }
         break;
     }
@@ -532,8 +540,7 @@ make_const_tuple(asdl_expr_seq *elts)
     for (int i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
         PyObject *v = e->v.Constant.value;
-        Py_INCREF(v);
-        PyTuple_SET_ITEM(newval, i, v);
+        PyTuple_SET_ITEM(newval, i, Py_NewRef(v));
     }
     return newval;
 }
@@ -1079,7 +1086,6 @@ int
 _PyAST_Optimize(mod_ty mod, PyArena *arena, _PyASTOptimizeState *state)
 {
     PyThreadState *tstate;
-    int recursion_limit = Py_GetRecursionLimit();
     int starting_recursion_depth;
 
     /* Setup recursion depth check counters */
@@ -1088,12 +1094,10 @@ _PyAST_Optimize(mod_ty mod, PyArena *arena, _PyASTOptimizeState *state)
         return 0;
     }
     /* Be careful here to prevent overflow. */
-    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
-    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
+    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
     state->recursion_depth = starting_recursion_depth;
-    state->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
+    state->recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
 
     int ret = astfold_mod(mod, arena, state);
     assert(ret || PyErr_Occurred());

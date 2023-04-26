@@ -1,7 +1,6 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 #include "Python.h"
 // windows.h must be included before pycore internal headers
@@ -9,8 +8,9 @@
 #  include <windows.h>
 #endif
 
-#include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "frameobject.h"
+#include "pycore_call.h"            // _PyObject_CallNoArgs()
+#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_global_objects.h"  // _Py_ID()
 
 #include <stdbool.h>
 
@@ -82,7 +82,7 @@ PyTypeObject PyCThunk_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,                            /* tp_flags */
-    "CThunkObject",                             /* tp_doc */
+    PyDoc_STR("CThunkObject"),                  /* tp_doc */
     CThunkObject_traverse,                      /* tp_traverse */
     CThunkObject_clear,                         /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -126,9 +126,7 @@ static void
 TryAddRef(StgDictObject *dict, CDataObject *obj)
 {
     IUnknown *punk;
-    _Py_IDENTIFIER(_needs_com_addref_);
-
-    int r = _PyDict_ContainsId((PyObject *)dict, &PyId__needs_com_addref_);
+    int r = PyDict_Contains((PyObject *)dict, &_Py_ID(_needs_com_addref_));
     if (r <= 0) {
         if (r < 0) {
             PrintError("getting _needs_com_addref_");
@@ -277,15 +275,14 @@ static void _CallPythonObject(void *mem,
                                       "of ctypes callback function",
                                       callable);
         }
-        else if (keep == Py_None) {
-            /* Nothing to keep */
-            Py_DECREF(keep);
-        }
         else if (setfunc != _ctypes_get_fielddesc("O")->setfunc) {
-            if (-1 == PyErr_WarnEx(PyExc_RuntimeWarning,
-                                   "memory leak in callback function.",
-                                   1))
-            {
+            if (keep == Py_None) {
+                /* Nothing to keep */
+                Py_DECREF(keep);
+            }
+            else if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                                  "memory leak in callback function.",
+                                  1) == -1) {
                 _PyErr_WriteUnraisableMsg("on converting result "
                                           "of ctypes callback function",
                                           callable);
@@ -376,8 +373,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     }
     p->atypes[i] = NULL;
 
-    Py_INCREF(restype);
-    p->restype = restype;
+    p->restype = Py_NewRef(restype);
     if (restype == Py_None) {
         p->setfunc = NULL;
         p->ffi_restype = &ffi_type_void;
@@ -399,16 +395,22 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 #endif
     result = ffi_prep_cif(&p->cif, cc,
                           Py_SAFE_DOWNCAST(nargs, Py_ssize_t, int),
-                          _ctypes_get_ffi_type(restype),
+                          p->ffi_restype,
                           &p->atypes[0]);
     if (result != FFI_OK) {
         PyErr_Format(PyExc_RuntimeError,
                      "ffi_prep_cif failed with %d", result);
         goto error;
     }
+
+
 #if HAVE_FFI_PREP_CLOSURE_LOC
 #   ifdef USING_APPLE_OS_LIBFFI
+#    ifdef HAVE_BUILTIN_AVAILABLE
 #      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
+#    else
+#      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME (ffi_prep_closure_loc != NULL)
+#    endif
 #   else
 #      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME 1
 #   endif
@@ -423,7 +425,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         PyErr_Format(PyExc_NotImplementedError, "ffi_prep_closure_loc() is missing");
         goto error;
 #else
-#if defined(__clang__) || defined(MACOSX)
+#if defined(__clang__)
         #pragma clang diagnostic push
         #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
@@ -433,7 +435,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 #endif
         result = ffi_prep_closure(p->pcl_write, &p->cif, closure_fcn, p);
 
-#if defined(__clang__) || defined(MACOSX)
+#if defined(__clang__)
         #pragma clang diagnostic pop
 #endif
 #if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
@@ -448,10 +450,8 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         goto error;
     }
 
-    Py_INCREF(converters);
-    p->converters = converters;
-    Py_INCREF(callable);
-    p->callable = callable;
+    p->converters = Py_NewRef(converters);
+    p->callable = Py_NewRef(callable);
     return p;
 
   error:
@@ -472,24 +472,17 @@ static void LoadPython(void)
 
 long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
-    PyObject *mod, *func, *result;
+    PyObject *func, *result;
     long retval;
     static PyObject *context;
 
     if (context == NULL)
         context = PyUnicode_InternFromString("_ctypes.DllGetClassObject");
 
-    mod = PyImport_ImportModule("ctypes");
-    if (!mod) {
-        PyErr_WriteUnraisable(context ? context : Py_None);
-        /* There has been a warning before about this already */
-        return E_FAIL;
-    }
-
-    func = PyObject_GetAttrString(mod, "DllGetClassObject");
-    Py_DECREF(mod);
+    func = _PyImport_GetModuleAttrString("ctypes", "DllGetClassObject");
     if (!func) {
         PyErr_WriteUnraisable(context ? context : Py_None);
+        /* There has been a warning before about this already */
         return E_FAIL;
     }
 

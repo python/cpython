@@ -18,7 +18,7 @@ def abstractmethod(funcobj):
 
         class C(metaclass=ABCMeta):
             @abstractmethod
-            def my_abstract_method(self, ...):
+            def my_abstract_method(self, arg1, arg2, argN):
                 ...
     """
     funcobj.__isabstractmethod__ = True
@@ -102,7 +102,7 @@ else:
         implementations defined by the registering ABC be callable (not
         even via super()).
         """
-        def __new__(mcls, name, bases, namespace, **kwargs):
+        def __new__(mcls, name, bases, namespace, /, **kwargs):
             cls = super().__new__(mcls, name, bases, namespace, **kwargs)
             _abc_init(cls)
             return cls

@@ -8,6 +8,9 @@
 #ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
 #endif
+#ifdef HAVE_LINUX_FS_H
+#include <linux/fs.h>
+#endif
 
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -571,6 +574,12 @@ all_ins(PyObject* m)
 #endif
 #ifdef F_GETPIPE_SZ
     if (PyModule_AddIntMacro(m, F_GETPIPE_SZ)) return -1;
+#endif
+#ifdef FICLONE
+    if (PyModule_AddIntMacro(m, FICLONE)) return -1;
+#endif
+#ifdef FICLONERANGE
+    if (PyModule_AddIntMacro(m, FICLONERANGE)) return -1;
 #endif
 
 /* OS X specifics */

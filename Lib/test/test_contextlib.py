@@ -5,10 +5,12 @@ import os
 import sys
 import tempfile
 import threading
+import traceback
 import unittest
 from contextlib import *  # Tests __all__
 from test import support
 from test.support import os_helper
+from test.support.testcase import ExceptionIsLikeMixin
 import weakref
 
 
@@ -86,6 +88,56 @@ class ContextManagerTestCase(unittest.TestCase):
                 state.append(x)
                 raise ZeroDivisionError()
         self.assertEqual(state, [1, 42, 999])
+
+    def test_contextmanager_traceback(self):
+        @contextmanager
+        def f():
+            yield
+
+        try:
+            with f():
+                1/0
+        except ZeroDivisionError as e:
+            frames = traceback.extract_tb(e.__traceback__)
+
+        self.assertEqual(len(frames), 1)
+        self.assertEqual(frames[0].name, 'test_contextmanager_traceback')
+        self.assertEqual(frames[0].line, '1/0')
+
+        # Repeat with RuntimeError (which goes through a different code path)
+        class RuntimeErrorSubclass(RuntimeError):
+            pass
+
+        try:
+            with f():
+                raise RuntimeErrorSubclass(42)
+        except RuntimeErrorSubclass as e:
+            frames = traceback.extract_tb(e.__traceback__)
+
+        self.assertEqual(len(frames), 1)
+        self.assertEqual(frames[0].name, 'test_contextmanager_traceback')
+        self.assertEqual(frames[0].line, 'raise RuntimeErrorSubclass(42)')
+
+        class StopIterationSubclass(StopIteration):
+            pass
+
+        for stop_exc in (
+            StopIteration('spam'),
+            StopIterationSubclass('spam'),
+        ):
+            with self.subTest(type=type(stop_exc)):
+                try:
+                    with f():
+                        raise stop_exc
+                except type(stop_exc) as e:
+                    self.assertIs(e, stop_exc)
+                    frames = traceback.extract_tb(e.__traceback__)
+                else:
+                    self.fail(f'{stop_exc} was suppressed')
+
+                self.assertEqual(len(frames), 1)
+                self.assertEqual(frames[0].name, 'test_contextmanager_traceback')
+                self.assertEqual(frames[0].line, 'raise stop_exc')
 
     def test_contextmanager_no_reraise(self):
         @contextmanager
@@ -721,6 +773,38 @@ class TestBaseExitStack:
             stack.push(lambda *exc: True)
             1/0
 
+    def test_exit_exception_traceback(self):
+        # This test captures the current behavior of ExitStack so that we know
+        # if we ever unintendedly change it. It is not a statement of what the
+        # desired behavior is (for instance, we may want to remove some of the
+        # internal contextlib frames).
+
+        def raise_exc(exc):
+            raise exc
+
+        try:
+            with self.exit_stack() as stack:
+                stack.callback(raise_exc, ValueError)
+                1/0
+        except ValueError as e:
+            exc = e
+
+        self.assertIsInstance(exc, ValueError)
+        ve_frames = traceback.extract_tb(exc.__traceback__)
+        expected = \
+            [('test_exit_exception_traceback', 'with self.exit_stack() as stack:')] + \
+            self.callback_error_internal_frames + \
+            [('_exit_wrapper', 'callback(*args, **kwds)'),
+             ('raise_exc', 'raise exc')]
+
+        self.assertEqual(
+            [(f.name, f.line) for f in ve_frames], expected)
+
+        self.assertIsInstance(exc.__context__, ZeroDivisionError)
+        zde_frames = traceback.extract_tb(exc.__context__.__traceback__)
+        self.assertEqual([(f.name, f.line) for f in zde_frames],
+                         [('test_exit_exception_traceback', '1/0')])
+
     def test_exit_exception_chaining_reference(self):
         # Sanity check to make sure that ExitStack chaining matches
         # actual nested with statements
@@ -990,6 +1074,10 @@ class TestBaseExitStack:
 
 class TestExitStack(TestBaseExitStack, unittest.TestCase):
     exit_stack = ExitStack
+    callback_error_internal_frames = [
+        ('__exit__', 'raise exc_details[1]'),
+        ('__exit__', 'if cb(*exc_details):'),
+    ]
 
 
 class TestRedirectStream:
@@ -1061,7 +1149,7 @@ class TestRedirectStderr(TestRedirectStream, unittest.TestCase):
     orig_stream = "stderr"
 
 
-class TestSuppress(unittest.TestCase):
+class TestSuppress(ExceptionIsLikeMixin, unittest.TestCase):
 
     @support.requires_docstrings
     def test_instance_docs(self):
@@ -1114,6 +1202,30 @@ class TestSuppress(unittest.TestCase):
             outer_continued = True
             1/0
         self.assertTrue(outer_continued)
+
+    def test_exception_groups(self):
+        eg_ve = lambda: ExceptionGroup(
+            "EG with ValueErrors only",
+            [ValueError("ve1"), ValueError("ve2"), ValueError("ve3")],
+        )
+        eg_all = lambda: ExceptionGroup(
+            "EG with many types of exceptions",
+            [ValueError("ve1"), KeyError("ke1"), ValueError("ve2"), KeyError("ke2")],
+        )
+        with suppress(ValueError):
+            raise eg_ve()
+        with suppress(ValueError, KeyError):
+            raise eg_all()
+        with self.assertRaises(ExceptionGroup) as eg1:
+            with suppress(ValueError):
+                raise eg_all()
+        self.assertExceptionIsLike(
+            eg1.exception,
+            ExceptionGroup(
+                "EG with many types of exceptions",
+                [KeyError("ke1"), KeyError("ke2")],
+            ),
+        )
 
 
 class TestChdir(unittest.TestCase):

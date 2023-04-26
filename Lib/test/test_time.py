@@ -489,6 +489,9 @@ class TimeTestCase(unittest.TestCase):
     def test_perf_counter(self):
         time.perf_counter()
 
+    @unittest.skipIf(
+        support.is_wasi, "process_time not available on WASI"
+    )
     def test_process_time(self):
         # process_time() should not include time spend during a sleep
         start = time.process_time()
@@ -845,7 +848,7 @@ class CPyTimeTestCase:
         # test rounding
         ns_timestamps = self._rounding_values(use_float)
         valid_values = convert_values(ns_timestamps)
-        for time_rnd, decimal_rnd in ROUNDING_MODES :
+        for time_rnd, decimal_rnd in ROUNDING_MODES:
             with decimal.localcontext() as context:
                 context.rounding = decimal_rnd
 

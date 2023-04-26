@@ -14,6 +14,25 @@
 #endif
 
 
+// Macro to use C++ static_cast<> in the Python C API.
+#ifdef __cplusplus
+#  define _Py_STATIC_CAST(type, expr) static_cast<type>(expr)
+#else
+#  define _Py_STATIC_CAST(type, expr) ((type)(expr))
+#endif
+// Macro to use the more powerful/dangerous C-style cast even in C++.
+#define _Py_CAST(type, expr) ((type)(expr))
+
+// Static inline functions should use _Py_NULL rather than using directly NULL
+// to prevent C++ compiler warnings. On C++11 and newer, _Py_NULL is defined as
+// nullptr.
+#if defined(__cplusplus) && __cplusplus >= 201103
+#  define _Py_NULL nullptr
+#else
+#  define _Py_NULL NULL
+#endif
+
+
 /* Defines to build Python and its standard library:
  *
  * - Py_BUILD_CORE: Build Python core. Give access to Python internals, but
@@ -104,16 +123,22 @@ typedef intptr_t        Py_intptr_t;
 /* Py_ssize_t is a signed integral type such that sizeof(Py_ssize_t) ==
  * sizeof(size_t).  C99 doesn't define such a thing directly (size_t is an
  * unsigned integral type).  See PEP 353 for details.
+ * PY_SSIZE_T_MAX is the largest positive value of type Py_ssize_t.
  */
 #ifdef HAVE_PY_SSIZE_T
 
 #elif HAVE_SSIZE_T
 typedef ssize_t         Py_ssize_t;
+#   define PY_SSIZE_T_MAX SSIZE_MAX
 #elif SIZEOF_VOID_P == SIZEOF_SIZE_T
 typedef Py_intptr_t     Py_ssize_t;
+#   define PY_SSIZE_T_MAX INTPTR_MAX
 #else
 #   error "Python needs a typedef for Py_ssize_t in pyport.h."
 #endif
+
+/* Smallest negative value of type Py_ssize_t. */
+#define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX-1)
 
 /* Py_hash_t is the same size as a pointer. */
 #define SIZEOF_PY_HASH_T SIZEOF_SIZE_T
@@ -128,37 +153,10 @@ typedef Py_ssize_t Py_ssize_clean_t;
 /* Largest possible value of size_t. */
 #define PY_SIZE_MAX SIZE_MAX
 
-/* Largest positive value of type Py_ssize_t. */
-#define PY_SSIZE_T_MAX ((Py_ssize_t)(((size_t)-1)>>1))
-/* Smallest negative value of type Py_ssize_t. */
-#define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX-1)
-
-/* Macro kept for backward compatibility: use "z" in new code.
+/* Macro kept for backward compatibility: use directly "z" in new code.
  *
- * PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
- * format to convert an argument with the width of a size_t or Py_ssize_t.
- * C99 introduced "z" for this purpose, but old MSVCs had not supported it.
- * Since MSVC supports "z" since (at least) 2015, we can just use "z"
- * for new code.
- *
- * These "high level" Python format functions interpret "z" correctly on
- * all platforms (Python interprets the format string itself, and does whatever
- * the platform C requires to convert a size_t/Py_ssize_t argument):
- *
- *     PyBytes_FromFormat
- *     PyErr_Format
- *     PyBytes_FromFormatV
- *     PyUnicode_FromFormatV
- *
- * Lower-level uses require that you interpolate the correct format modifier
- * yourself (e.g., calling printf, fprintf, sprintf, PyOS_snprintf); for
- * example,
- *
- *     Py_ssize_t index;
- *     fprintf(stderr, "index %" PY_FORMAT_SIZE_T "d sucks\n", index);
- *
- * That will expand to %zd or to something else correct for a Py_ssize_t on
- * the platform.
+ * PY_FORMAT_SIZE_T is a modifier for use in a printf format to convert an
+ * argument with the width of a size_t or Py_ssize_t: "z" (C99).
  */
 #ifndef PY_FORMAT_SIZE_T
 #   define PY_FORMAT_SIZE_T "z"
@@ -186,7 +184,6 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #  define Py_LOCAL_INLINE(type) static inline type
 #endif
 
-// bpo-28126: Py_MEMCPY is kept for backwards compatibility,
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_MEMCPY memcpy
 #endif
@@ -249,6 +246,10 @@ typedef Py_ssize_t Py_ssize_clean_t;
 #define S_ISCHR(x) (((x) & S_IFMT) == S_IFCHR)
 #endif
 
+#ifndef S_ISLNK
+#define S_ISLNK(x) (((x) & S_IFMT) == S_IFLNK)
+#endif
+
 #ifdef __cplusplus
 /* Move this down here since some C++ #include's don't like to be included
    inside an extern "C" */
@@ -295,10 +296,11 @@ extern "C" {
  *    VALUE may be evaluated more than once.
  */
 #ifdef Py_DEBUG
-#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
-    (assert((WIDE)(NARROW)(VALUE) == (VALUE)), (NARROW)(VALUE))
+#  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
+       (assert(_Py_STATIC_CAST(WIDE, _Py_STATIC_CAST(NARROW, (VALUE))) == (VALUE)), \
+        _Py_STATIC_CAST(NARROW, (VALUE)))
 #else
-#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
+#  define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) _Py_STATIC_CAST(NARROW, (VALUE))
 #endif
 
 
@@ -319,6 +321,15 @@ extern "C" {
 #else
 #define Py_DEPRECATED(VERSION_UNUSED)
 #endif
+
+// _Py_DEPRECATED_EXTERNALLY(version)
+// Deprecated outside CPython core.
+#ifdef Py_BUILD_CORE
+#define _Py_DEPRECATED_EXTERNALLY(VERSION_UNUSED)
+#else
+#define _Py_DEPRECATED_EXTERNALLY(version) Py_DEPRECATED(version)
+#endif
+
 
 #if defined(__clang__)
 #define _Py_COMP_DIAG_PUSH _Pragma("clang diagnostic push")
@@ -651,6 +662,27 @@ extern char * _getpty(int *, int, mode_t, int);
 #  define WITH_THREAD
 #endif
 
+#ifdef WITH_THREAD
+#  ifdef Py_BUILD_CORE
+#    ifdef HAVE_THREAD_LOCAL
+#      error "HAVE_THREAD_LOCAL is already defined"
+#    endif
+#    define HAVE_THREAD_LOCAL 1
+#    ifdef thread_local
+#      define _Py_thread_local thread_local
+#    elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
+#      define _Py_thread_local _Thread_local
+#    elif defined(_MSC_VER)  /* AKA NT_THREADS */
+#      define _Py_thread_local __declspec(thread)
+#    elif defined(__GNUC__)  /* includes clang */
+#      define _Py_thread_local __thread
+#    else
+       // fall back to the PyThread_tss_*() API, or ignore.
+#      undef HAVE_THREAD_LOCAL
+#    endif
+#  endif
+#endif
+
 /* Check that ALT_SOABI is consistent with Py_TRACE_REFS:
    ./configure --with-trace-refs should must be used to define Py_TRACE_REFS */
 #if defined(ALT_SOABI) && defined(Py_TRACE_REFS)
@@ -699,6 +731,15 @@ extern char * _getpty(int *, int, mode_t, int);
 #  define _Py__has_builtin(x) 0
 #endif
 
+// _Py_TYPEOF(expr) gets the type of an expression.
+//
+// Example: _Py_TYPEOF(x) x_copy = (x);
+//
+// The macro is only defined if GCC or clang compiler is used.
+#if defined(__GNUC__) || defined(__clang__)
+#  define _Py_TYPEOF(expr) __typeof__(expr)
+#endif
+
 
 /* A convenient way for code to know if sanitizers are enabled. */
 #if defined(__has_feature)
@@ -716,6 +757,12 @@ extern char * _getpty(int *, int, mode_t, int);
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
 #  endif
+#endif
+
+
+/* AIX has __bool__ redefined in it's system header file. */
+#if defined(_AIX) && defined(__bool__)
+#undef __bool__
 #endif
 
 #endif /* Py_PYPORT_H */

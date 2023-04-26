@@ -123,16 +123,23 @@ The following exceptions are used mostly as base classes for other exceptions.
          try:
              ...
          except SomeException:
-             tb = sys.exc_info()[2]
+             tb = sys.exception().__traceback__
              raise OtherException(...).with_traceback(tb)
 
-   .. attribute:: __note__
+   .. method:: add_note(note)
 
-      A mutable field which is :const:`None` by default and can be set to a string.
-      If it is not :const:`None`, it is included in the traceback. This field can
-      be used to enrich exceptions after they have been caught.
+      Add the string ``note`` to the exception's notes which appear in the standard
+      traceback after the exception string. A :exc:`TypeError` is raised if ``note``
+      is not a string.
 
-   .. versionadded:: 3.11
+      .. versionadded:: 3.11
+
+   .. attribute:: __notes__
+
+      A list of the notes of this exception, which were added with :meth:`add_note`.
+      This attribute is created when :meth:`add_note` is called.
+
+      .. versionadded:: 3.11
 
 
 .. exception:: Exception
@@ -739,7 +746,12 @@ depending on the system error code.
 
    Raised when trying to run an operation without the adequate access
    rights - for example filesystem permissions.
-   Corresponds to :c:data:`errno` :py:data:`~errno.EACCES` and :py:data:`~errno.EPERM`.
+   Corresponds to :c:data:`errno` :py:data:`~errno.EACCES`,
+   :py:data:`~errno.EPERM`, and :py:data:`~errno.ENOTCAPABLE`.
+
+   .. versionchanged:: 3.11.1
+      WASI's :py:data:`~errno.ENOTCAPABLE` is now mapped to
+      :exc:`PermissionError`.
 
 .. exception:: ProcessLookupError
 
@@ -907,7 +919,7 @@ their subgroups based on the types of the contained exceptions.
 
       The nesting structure of the current exception is preserved in the result,
       as are the values of its :attr:`message`, :attr:`__traceback__`,
-      :attr:`__cause__`, :attr:`__context__` and :attr:`__note__` fields.
+      :attr:`__cause__`, :attr:`__context__` and :attr:`__notes__` fields.
       Empty nested groups are omitted from the result.
 
       The condition is checked for all exceptions in the nested exception group,
@@ -922,21 +934,42 @@ their subgroups based on the types of the contained exceptions.
 
    .. method:: derive(excs)
 
-      Returns an exception group with the same :attr:`message`,
-      :attr:`__traceback__`, :attr:`__cause__`, :attr:`__context__`
-      and :attr:`__note__` but which wraps the exceptions in ``excs``.
+      Returns an exception group with the same :attr:`message`, but which
+      wraps the exceptions in ``excs``.
 
       This method is used by :meth:`subgroup` and :meth:`split`. A
       subclass needs to override it in order to make :meth:`subgroup`
       and :meth:`split` return instances of the subclass rather
-      than :exc:`ExceptionGroup`. ::
+      than :exc:`ExceptionGroup`.
+
+      :meth:`subgroup` and :meth:`split` copy the :attr:`__traceback__`,
+      :attr:`__cause__`, :attr:`__context__` and :attr:`__notes__` fields from
+      the original exception group to the one returned by :meth:`derive`, so
+      these fields do not need to be updated by :meth:`derive`. ::
 
          >>> class MyGroup(ExceptionGroup):
-         ...     def derive(self, exc):
-         ...         return MyGroup(self.message, exc)
+         ...     def derive(self, excs):
+         ...         return MyGroup(self.message, excs)
          ...
-         >>> MyGroup("eg", [ValueError(1), TypeError(2)]).split(TypeError)
-         (MyGroup('eg', [TypeError(2)]), MyGroup('eg', [ValueError(1)]))
+         >>> e = MyGroup("eg", [ValueError(1), TypeError(2)])
+         >>> e.add_note("a note")
+         >>> e.__context__ = Exception("context")
+         >>> e.__cause__ = Exception("cause")
+         >>> try:
+         ...    raise e
+         ... except Exception as e:
+         ...    exc = e
+         ...
+         >>> match, rest = exc.split(ValueError)
+         >>> exc, exc.__context__, exc.__cause__, exc.__notes__
+         (MyGroup('eg', [ValueError(1), TypeError(2)]), Exception('context'), Exception('cause'), ['a note'])
+         >>> match, match.__context__, match.__cause__, match.__notes__
+         (MyGroup('eg', [ValueError(1)]), Exception('context'), Exception('cause'), ['a note'])
+         >>> rest, rest.__context__, rest.__cause__, rest.__notes__
+         (MyGroup('eg', [TypeError(2)]), Exception('context'), Exception('cause'), ['a note'])
+         >>> exc.__traceback__ is match.__traceback__ is rest.__traceback__
+         True
+
 
    Note that :exc:`BaseExceptionGroup` defines :meth:`__new__`, so
    subclasses that need a different constructor signature need to
@@ -952,6 +985,10 @@ their subgroups based on the types of the contained exceptions.
 
          def derive(self, excs):
             return Errors(excs, self.exit_code)
+
+   Like :exc:`ExceptionGroup`, any subclass of :exc:`BaseExceptionGroup` which
+   is also a subclass of :exc:`Exception` can only wrap instances of
+   :exc:`Exception`.
 
    .. versionadded:: 3.11
 

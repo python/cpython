@@ -11,6 +11,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_code.h"          // _PyCode_New()
+#include "pycore_long.h"          // _PyLong_DigitCount
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "marshal.h"              // Py_MARSHAL_VERSION
 
@@ -34,6 +35,8 @@ module marshal
  */
 #if defined(MS_WINDOWS)
 #define MAX_MARSHAL_STACK_DEPTH 1000
+#elif defined(__wasi__)
+#define MAX_MARSHAL_STACK_DEPTH 1500
 #else
 #define MAX_MARSHAL_STACK_DEPTH 2000
 #endif
@@ -230,15 +233,15 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
     digit d;
 
     W_TYPE(TYPE_LONG, p);
-    if (Py_SIZE(ob) == 0) {
+    if (_PyLong_IsZero(ob)) {
         w_long((long)0, p);
         return;
     }
 
     /* set l to number of base PyLong_MARSHAL_BASE digits */
-    n = Py_ABS(Py_SIZE(ob));
+    n = _PyLong_DigitCount(ob);
     l = (n-1) * PyLong_MARSHAL_RATIO;
-    d = ob->ob_digit[n-1];
+    d = ob->long_value.ob_digit[n-1];
     assert(d != 0); /* a PyLong is always normalized */
     do {
         d >>= PyLong_MARSHAL_SHIFT;
@@ -249,17 +252,17 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
         p->error = WFERR_UNMARSHALLABLE;
         return;
     }
-    w_long((long)(Py_SIZE(ob) > 0 ? l : -l), p);
+    w_long((long)(_PyLong_IsNegative(ob) ? -l : l), p);
 
     for (i=0; i < n-1; i++) {
-        d = ob->ob_digit[i];
+        d = ob->long_value.ob_digit[i];
         for (j=0; j < PyLong_MARSHAL_RATIO; j++) {
             w_short(d & PyLong_MARSHAL_MASK, p);
             d >>= PyLong_MARSHAL_SHIFT;
         }
         assert (d == 0);
     }
-    d = ob->ob_digit[n-1];
+    d = ob->long_value.ob_digit[n-1];
     do {
         w_short(d & PyLong_MARSHAL_MASK, p);
         d >>= PyLong_MARSHAL_SHIFT;
@@ -298,9 +301,14 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     if (p->version < 3 || p->hashtable == NULL)
         return 0; /* not writing object references */
 
-    /* if it has only one reference, it definitely isn't shared */
-    if (Py_REFCNT(v) == 1)
+    /* If it has only one reference, it definitely isn't shared.
+     * But we use TYPE_REF always for interned string, to PYC file stable
+     * as possible.
+     */
+    if (Py_REFCNT(v) == 1 &&
+            !(PyUnicode_CheckExact(v) && PyUnicode_CHECK_INTERNED(v))) {
         return 0;
+    }
 
     entry = _Py_hashtable_get_entry(p->hashtable, v);
     if (entry != NULL) {
@@ -319,8 +327,8 @@ w_ref(PyObject *v, char *flag, WFILE *p)
             goto err;
         }
         w = (int)s;
-        Py_INCREF(v);
-        if (_Py_hashtable_set(p->hashtable, v, (void *)(uintptr_t)w) < 0) {
+        if (_Py_hashtable_set(p->hashtable, Py_NewRef(v),
+                              (void *)(uintptr_t)w) < 0) {
             Py_DECREF(v);
             goto err;
         }
@@ -564,8 +572,6 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_qualname, p);
         w_long(co->co_firstlineno, p);
         w_object(co->co_linetable, p);
-        w_object(co->co_endlinetable, p);
-        w_object(co->co_columntable, p);
         w_object(co->co_exceptiontable, p);
         Py_DECREF(co_code);
     }
@@ -834,7 +840,7 @@ r_PyLong(RFILE *p)
     if (ob == NULL)
         return NULL;
 
-    Py_SET_SIZE(ob, n > 0 ? size : -size);
+    _PyLong_SetSignAndDigitCount(ob, n < 0 ? -1 : 1, size);
 
     for (i = 0; i < size-1; i++) {
         d = 0;
@@ -848,7 +854,7 @@ r_PyLong(RFILE *p)
                 goto bad_digit;
             d += (digit)md << j*PyLong_MARSHAL_SHIFT;
         }
-        ob->ob_digit[i] = d;
+        ob->long_value.ob_digit[i] = d;
     }
 
     d = 0;
@@ -875,7 +881,7 @@ r_PyLong(RFILE *p)
     }
     /* top digit should be nonzero, else the resulting PyLong won't be
        normalized */
-    ob->ob_digit[size-1] = d;
+    ob->long_value.ob_digit[size-1] = d;
     return (PyObject *)ob;
   bad_digit:
     Py_DECREF(ob);
@@ -946,8 +952,7 @@ r_ref_insert(PyObject *o, Py_ssize_t idx, int flag, RFILE *p)
 {
     if (o != NULL && flag) { /* currently only FLAG_REF is defined */
         PyObject *tmp = PyList_GET_ITEM(p->refs, idx);
-        Py_INCREF(o);
-        PyList_SET_ITEM(p->refs, idx, o);
+        PyList_SET_ITEM(p->refs, idx, Py_NewRef(o));
         Py_DECREF(tmp);
     }
     return o;
@@ -1010,28 +1015,23 @@ r_object(RFILE *p)
         break;
 
     case TYPE_NONE:
-        Py_INCREF(Py_None);
-        retval = Py_None;
+        retval = Py_NewRef(Py_None);
         break;
 
     case TYPE_STOPITER:
-        Py_INCREF(PyExc_StopIteration);
-        retval = PyExc_StopIteration;
+        retval = Py_NewRef(PyExc_StopIteration);
         break;
 
     case TYPE_ELLIPSIS:
-        Py_INCREF(Py_Ellipsis);
-        retval = Py_Ellipsis;
+        retval = Py_NewRef(Py_Ellipsis);
         break;
 
     case TYPE_FALSE:
-        Py_INCREF(Py_False);
-        retval = Py_False;
+        retval = Py_NewRef(Py_False);
         break;
 
     case TYPE_TRUE:
-        Py_INCREF(Py_True);
-        retval = Py_True;
+        retval = Py_NewRef(Py_True);
         break;
 
     case TYPE_INT:
@@ -1218,8 +1218,7 @@ r_object(RFILE *p)
                 if (!PyErr_Occurred())
                     PyErr_SetString(PyExc_TypeError,
                         "NULL object in marshal data for tuple");
-                Py_DECREF(v);
-                v = NULL;
+                Py_SETREF(v, NULL);
                 break;
             }
             PyTuple_SET_ITEM(v, i, v2);
@@ -1245,8 +1244,7 @@ r_object(RFILE *p)
                 if (!PyErr_Occurred())
                     PyErr_SetString(PyExc_TypeError,
                         "NULL object in marshal data for list");
-                Py_DECREF(v);
-                v = NULL;
+                Py_SETREF(v, NULL);
                 break;
             }
             PyList_SET_ITEM(v, i, v2);
@@ -1278,8 +1276,7 @@ r_object(RFILE *p)
             Py_DECREF(val);
         }
         if (PyErr_Occurred()) {
-            Py_DECREF(v);
-            v = NULL;
+            Py_SETREF(v, NULL);
         }
         retval = v;
         break;
@@ -1323,8 +1320,7 @@ r_object(RFILE *p)
                     if (!PyErr_Occurred())
                         PyErr_SetString(PyExc_TypeError,
                             "NULL object in marshal data for set");
-                    Py_DECREF(v);
-                    v = NULL;
+                    Py_SETREF(v, NULL);
                     break;
                 }
                 if (PySet_Add(v, v2) == -1) {
@@ -1357,9 +1353,7 @@ r_object(RFILE *p)
             PyObject *name = NULL;
             PyObject *qualname = NULL;
             int firstlineno;
-            PyObject *linetable = NULL;
-            PyObject* endlinetable = NULL;
-            PyObject* columntable = NULL;
+            PyObject* linetable = NULL;
             PyObject *exceptiontable = NULL;
 
             idx = r_ref_reserve(flag, p);
@@ -1415,12 +1409,6 @@ r_object(RFILE *p)
             linetable = r_object(p);
             if (linetable == NULL)
                 goto code_error;
-            endlinetable = r_object(p);
-            if (endlinetable == NULL)
-                goto code_error;
-            columntable = r_object(p);
-            if (columntable == NULL)
-                goto code_error;
             exceptiontable = r_object(p);
             if (exceptiontable == NULL)
                 goto code_error;
@@ -1434,8 +1422,6 @@ r_object(RFILE *p)
                 .code = code,
                 .firstlineno = firstlineno,
                 .linetable = linetable,
-                .endlinetable = endlinetable,
-                .columntable = columntable,
 
                 .consts = consts,
                 .names = names,
@@ -1473,8 +1459,6 @@ r_object(RFILE *p)
             Py_XDECREF(name);
             Py_XDECREF(qualname);
             Py_XDECREF(linetable);
-            Py_XDECREF(endlinetable);
-            Py_XDECREF(columntable);
             Py_XDECREF(exceptiontable);
         }
         retval = v;
@@ -1493,8 +1477,7 @@ r_object(RFILE *p)
             PyErr_SetString(PyExc_ValueError, "bad marshal data (invalid reference)");
             break;
         }
-        Py_INCREF(v);
-        retval = v;
+        retval = Py_NewRef(v);
         break;
 
     default:

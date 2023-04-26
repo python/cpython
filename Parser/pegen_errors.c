@@ -164,12 +164,15 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
     Py_ssize_t current_err_line = current_token->lineno;
 
     int ret = 0;
+    struct token new_token;
 
     for (;;) {
-        const char *start;
-        const char *end;
-        switch (_PyTokenizer_Get(p->tok, &start, &end)) {
+        switch (_PyTokenizer_Get(p->tok, &new_token)) {
             case ERRORTOKEN:
+                if (PyErr_Occurred()) {
+                    ret = -1;
+                    goto exit;
+                }
                 if (p->tok->level != 0) {
                     int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
                     if (current_err_line > error_lineno) {
@@ -189,7 +192,10 @@ _PyPegen_tokenize_full_source_to_check_for_errors(Parser *p) {
 
 
 exit:
-    if (PyErr_Occurred()) {
+    // If we're in an f-string, we want the syntax error in the expression part
+    // to propagate, so that tokenizer errors (like expecting '}') that happen afterwards
+    // do not swallow it.
+    if (PyErr_Occurred() && p->tok->tok_mode_stack_index <= 0) {
         Py_XDECREF(value);
         Py_XDECREF(type);
         Py_XDECREF(traceback);
@@ -202,7 +208,7 @@ exit:
 // PARSER ERRORS
 
 void *
-_PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
+_PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...)
 {
     if (p->fill == 0) {
         va_list va;
@@ -211,8 +217,13 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
         va_end(va);
         return NULL;
     }
-
-    Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
+    if (use_mark && p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        return NULL;
+    }
+    Token *t = p->known_err_token != NULL
+                   ? p->known_err_token
+                   : p->tokens[use_mark ? p->mark : p->fill - 1];
     Py_ssize_t col_offset;
     Py_ssize_t end_col_offset = -1;
     if (t->col_offset == -1) {
@@ -245,7 +256,7 @@ get_error_line_from_tokenizer_buffers(Parser *p, Py_ssize_t lineno)
      * (multi-line) statement are stored in p->tok->interactive_src_start.
      * If not, we're parsing from a string, which means that the whole source
      * is stored in p->tok->str. */
-    assert((p->tok->fp == NULL && p->tok->str != NULL) || p->tok->fp == stdin);
+    assert((p->tok->fp == NULL && p->tok->str != NULL) || p->tok->fp != NULL);
 
     char *cur_line = p->tok->fp_interactive ? p->tok->interactive_src_start : p->tok->str;
     if (cur_line == NULL) {
@@ -259,15 +270,15 @@ get_error_line_from_tokenizer_buffers(Parser *p, Py_ssize_t lineno)
     const char* buf_end = p->tok->fp_interactive ? p->tok->interactive_src_end : p->tok->inp;
 
     for (int i = 0; i < relative_lineno - 1; i++) {
-        char *new_line = strchr(cur_line, '\n') + 1;
+        char *new_line = strchr(cur_line, '\n');
         // The assert is here for debug builds but the conditional that
         // follows is there so in release builds we do not crash at the cost
         // to report a potentially wrong line.
-        assert(new_line != NULL && new_line <= buf_end);
-        if (new_line == NULL || new_line > buf_end) {
+        assert(new_line != NULL && new_line + 1 < buf_end);
+        if (new_line == NULL || new_line + 1 > buf_end) {
             break;
         }
-        cur_line = new_line;
+        cur_line = new_line + 1;
     }
 
     char *next_newline;
@@ -371,7 +382,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
             }
         }
     }
-    tmp = Py_BuildValue("(OiiNii)", p->tok->filename, lineno, col_number, error_line, end_lineno, end_col_number);
+    tmp = Py_BuildValue("(OnnNnn)", p->tok->filename, lineno, col_number, error_line, end_lineno, end_col_number);
     if (!tmp) {
         goto error;
     }
