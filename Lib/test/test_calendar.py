@@ -496,7 +496,7 @@ class CalendarTestCase(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             # Access the deprecated attribute
             calendar.January
-            # Check that a DeprecationWarning was issued
+        # Check that a DeprecationWarning was issued
         self.assertEqual(len(w), 1)
         self.assertEqual(w[0].category, DeprecationWarning)
         self.assertIn("The 'January' attribute is deprecated, use 'JANUARY' instead", str(w[0].message))

@@ -647,7 +647,7 @@ Deprecated
   See :ref:`tarfile-extraction-filter` for details.
 
 * ``January`` and ``February`` is deprated from :mod:`calendar`
-  use `JANUARY and ``FEBRUARY`` instead
+  use ``JANUARY`` and ``FEBRUARY`` instead
 
 Pending Removal in Python 3.13
 ------------------------------
