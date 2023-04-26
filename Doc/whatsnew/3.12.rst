@@ -646,8 +646,8 @@ Deprecated
   Python 3.14, when ``'data'`` filter will become the default.
   See :ref:`tarfile-extraction-filter` for details.
 
-* :data:`January` and :data:`February` is deprated from :mod:`calendar`
-  use :data:`JANUARY` and :data:`FEBRUARY` instead
+* ``January`` and ``February`` is deprated from :mod:`calendar`
+  use `JANUARY and ``FEBRUARY`` instead
 
 Pending Removal in Python 3.13
 ------------------------------
