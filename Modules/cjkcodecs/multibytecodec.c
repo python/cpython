@@ -1,5 +1,4 @@
-/*
- * multibytecodec.c: Common Multibyte Codec Implementation
+/* * multibytecodec.c: Common Multibyte Codec Implementation
  *
  * Written by Hye-Shik Chang <perky@FreeBSD.org>
  */
@@ -39,6 +38,9 @@ find_state_by_def(PyTypeObject *type)
     return get_module_state(module);
 }
 
+#define CJK_MOD_STATE(OBJ) \
+    ((struct _cjk_mod_state *)PyModule_GetState((OBJ)->cjk_module))
+
 #define clinic_get_state() find_state_by_def(type)
 /*[clinic input]
 module _multibytecodec
@@ -68,6 +70,7 @@ static char *incnewkwarglist[] = {"errors", NULL};
 static char *streamkwarglist[] = {"stream", "errors", NULL};
 
 static PyObject *multibytecodec_encode(const MultibyteCodec *,
+                struct _cjk_mod_state *modst,
                 MultibyteCodec_State *, PyObject *, Py_ssize_t *,
                 PyObject *, int);
 
@@ -222,6 +225,7 @@ expand_encodebuffer(MultibyteEncodeBuffer *buf, Py_ssize_t esize)
 
 static int
 multibytecodec_encerror(const MultibyteCodec *codec,
+                        struct _cjk_mod_state *modst,
                         MultibyteCodec_State *state,
                         MultibyteEncodeBuffer *buf,
                         PyObject *errors, Py_ssize_t e)
@@ -272,7 +276,7 @@ multibytecodec_encerror(const MultibyteCodec *codec,
         for (;;) {
             Py_ssize_t outleft = (Py_ssize_t)(buf->outbuf_end - buf->outbuf);
 
-            r = codec->encode(state, codec->config,
+            r = codec->encode(state, modst, codec->config,
                               kind, data, &inpos, 1,
                               &buf->outbuf, outleft, 0);
             if (r == MBERR_TOOSMALL) {
@@ -334,7 +338,7 @@ multibytecodec_encerror(const MultibyteCodec *codec,
     if (PyUnicode_Check(tobj)) {
         Py_ssize_t inpos;
 
-        retstr = multibytecodec_encode(codec, state, tobj,
+        retstr = multibytecodec_encode(codec, modst, state, tobj,
                         &inpos, ERROR_STRICT,
                         MBENC_FLUSH);
         if (retstr == NULL)
@@ -480,6 +484,7 @@ errorexit:
 
 static PyObject *
 multibytecodec_encode(const MultibyteCodec *codec,
+                      struct _cjk_mod_state *modst,
                       MultibyteCodec_State *state,
                       PyObject *text, Py_ssize_t *inpos_t,
                       PyObject *errors, int flags)
@@ -521,13 +526,13 @@ multibytecodec_encode(const MultibyteCodec *codec,
          * error callbacks can relocate the cursor anywhere on buffer*/
         Py_ssize_t outleft = (Py_ssize_t)(buf.outbuf_end - buf.outbuf);
 
-        r = codec->encode(state, codec->config,
+        r = codec->encode(state, modst, codec->config,
                           kind, data,
                           &buf.inpos, buf.inlen,
                           &buf.outbuf, outleft, flags);
         if ((r == 0) || (r == MBERR_TOOFEW && !(flags & MBENC_FLUSH)))
             break;
-        else if (multibytecodec_encerror(codec, state, &buf, errors,r))
+        else if (multibytecodec_encerror(codec, modst, state, &buf, errors,r))
             goto errorexit;
         else if (r == MBERR_TOOFEW)
             break;
@@ -538,11 +543,11 @@ multibytecodec_encode(const MultibyteCodec *codec,
             Py_ssize_t outleft;
 
             outleft = (Py_ssize_t)(buf.outbuf_end - buf.outbuf);
-            r = codec->encreset(state, codec->config, &buf.outbuf,
+            r = codec->encreset(state, modst, codec->config, &buf.outbuf,
                                 outleft);
             if (r == 0)
                 break;
-            else if (multibytecodec_encerror(codec, state,
+            else if (multibytecodec_encerror(codec, modst, state,
                                              &buf, errors, r))
                 goto errorexit;
         }
@@ -615,10 +620,12 @@ _multibytecodec_MultibyteCodec_encode_impl(MultibyteCodecObject *self,
         return NULL;
     }
 
+    struct _cjk_mod_state *modst = CJK_MOD_STATE(self);
     if (self->codec->encinit != NULL &&
-        self->codec->encinit(&state, self->codec->config) != 0)
+        self->codec->encinit(&state, modst, self->codec->config) != 0) {
         goto errorexit;
-    r = multibytecodec_encode(self->codec, &state,
+    }
+    r = multibytecodec_encode(self->codec, modst, &state,
                     input, NULL, errorcb,
                     MBENC_FLUSH | MBENC_RESET);
     if (r == NULL)
@@ -679,16 +686,19 @@ _multibytecodec_MultibyteCodec_decode_impl(MultibyteCodecObject *self,
     buf.inbuf = buf.inbuf_top = (unsigned char *)data;
     buf.inbuf_end = buf.inbuf_top + datalen;
 
+    struct _cjk_mod_state *modst = CJK_MOD_STATE(self);
     if (self->codec->decinit != NULL &&
-        self->codec->decinit(&state, self->codec->config) != 0)
+        self->codec->decinit(&state, modst, self->codec->config) != 0)
+    {
         goto errorexit;
+    }
 
     while (buf.inbuf < buf.inbuf_end) {
         Py_ssize_t inleft, r;
 
         inleft = (Py_ssize_t)(buf.inbuf_end - buf.inbuf);
 
-        r = self->codec->decode(&state, self->codec->config,
+        r = self->codec->decode(&state, modst, self->codec->config,
                         &buf.inbuf, inleft, &buf.writer);
         if (r == 0)
             break;
@@ -771,6 +781,7 @@ static PyType_Spec multibytecodec_spec = {
 
 static PyObject *
 encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
+                        struct _cjk_mod_state *modst,
                         PyObject *unistr, int final)
 {
     PyObject *ucvt, *r = NULL;
@@ -814,7 +825,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     inpos = 0;
     datalen = PyUnicode_GET_LENGTH(inbuf);
 
-    r = multibytecodec_encode(ctx->codec, &ctx->state,
+    r = multibytecodec_encode(ctx->codec, modst, &ctx->state,
                               inbuf, &inpos,
                               ctx->errors, final ? MBENC_FLUSH | MBENC_RESET : 0);
     if (r == NULL) {
@@ -888,7 +899,7 @@ decoder_feed_buffer(MultibyteStatefulDecoderContext *ctx,
 
         inleft = (Py_ssize_t)(buf->inbuf_end - buf->inbuf);
 
-        r = ctx->codec->decode(&ctx->state, ctx->codec->config,
+        r = ctx->codec->decode(&ctx->state, modst, ctx->codec->config,
             &buf->inbuf, inleft, &buf->writer);
         if (r == 0 || r == MBERR_TOOFEW)
             break;
@@ -913,7 +924,7 @@ _multibytecodec_MultibyteIncrementalEncoder_encode_impl(MultibyteIncrementalEnco
                                                         int final)
 /*[clinic end generated code: output=123361b6c505e2c1 input=bd5f7d40d43e99b0]*/
 {
-    return encoder_encode_stateful(STATEFUL_ECTX(self), input, final);
+    return encoder_encode_stateful(STATEFUL_ECTX(self), CJK_MOD_STATE(self), input, final);
 }
 
 /*[clinic input]
@@ -1015,7 +1026,7 @@ _multibytecodec_MultibyteIncrementalEncoder_reset_impl(MultibyteIncrementalEncod
     Py_ssize_t r;
     if (self->codec->encreset != NULL) {
         outbuf = buffer;
-        r = self->codec->encreset(&self->state, self->codec->config,
+        r = self->codec->encreset(&self->state, modst, self->codec->config,
                                   &outbuf, sizeof(buffer));
         if (r != 0)
             return NULL;
@@ -1063,7 +1074,7 @@ mbiencoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (self->errors == NULL)
         goto errorexit;
     if (self->codec->encinit != NULL &&
-        self->codec->encinit(&self->state, self->codec->config) != 0)
+        self->codec->encinit(&self->state, modst, self->codec->config) != 0)
         goto errorexit;
 
     Py_DECREF(codec);
@@ -1292,7 +1303,7 @@ _multibytecodec_MultibyteIncrementalDecoder_reset_impl(MultibyteIncrementalDecod
 /*[clinic end generated code: output=da423b1782c23ed1 input=3b63b3be85b2fb45]*/
 {
     if (self->codec->decreset != NULL &&
-        self->codec->decreset(&self->state, self->codec->config) != 0)
+        self->codec->decreset(&self->state, modst, self->codec->config) != 0)
         return NULL;
     self->pendingsize = 0;
 
@@ -1338,7 +1349,7 @@ mbidecoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (self->errors == NULL)
         goto errorexit;
     if (self->codec->decinit != NULL &&
-        self->codec->decinit(&self->state, self->codec->config) != 0)
+        self->codec->decinit(&self->state, modst, self->codec->config) != 0)
         goto errorexit;
 
     Py_DECREF(codec);
@@ -1600,7 +1611,7 @@ _multibytecodec_MultibyteStreamReader_reset_impl(MultibyteStreamReaderObject *se
 /*[clinic end generated code: output=138490370a680abc input=5d4140db84b5e1e2]*/
 {
     if (self->codec->decreset != NULL &&
-        self->codec->decreset(&self->state, self->codec->config) != 0)
+        self->codec->decreset(&self->state, modst, self->codec->config) != 0)
         return NULL;
     self->pendingsize = 0;
 
@@ -1654,7 +1665,7 @@ mbstreamreader_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (self->errors == NULL)
         goto errorexit;
     if (self->codec->decinit != NULL &&
-        self->codec->decinit(&self->state, self->codec->config) != 0)
+        self->codec->decinit(&self->state, modst, self->codec->config) != 0)
         goto errorexit;
 
     Py_DECREF(codec);
@@ -1719,7 +1730,7 @@ mbstreamwriter_iwrite(MultibyteStreamWriterObject *self,
 {
     PyObject *str, *wr;
 
-    str = encoder_encode_stateful(STATEFUL_ECTX(self), unistr, 0);
+    str = encoder_encode_stateful(STATEFUL_ECTX(self), CJK_MOD_STATE(self), unistr, 0);
     if (str == NULL)
         return -1;
 
@@ -1815,7 +1826,7 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
     if (!self->pending)
         Py_RETURN_NONE;
 
-    pwrt = multibytecodec_encode(self->codec, &self->state,
+    pwrt = multibytecodec_encode(self->codec, CJK_MOD_STATE(self), &self->state,
                     self->pending, NULL, self->errors,
                     MBENC_FLUSH | MBENC_RESET);
     /* some pending buffer can be truncated when UnicodeEncodeError is
@@ -1876,8 +1887,9 @@ mbstreamwriter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->errors = internal_error_callback(errors);
     if (self->errors == NULL)
         goto errorexit;
+    struct _cjk_mod_state *modst = (struct _cjk_mod_state *)PyModule_GetModule(codec->cjk_module);
     if (self->codec->encinit != NULL &&
-        self->codec->encinit(&self->state, self->codec->config) != 0)
+        self->codec->encinit(&self->state, modst, self->codec->config) != 0)
         goto errorexit;
 
     Py_DECREF(codec);
@@ -1971,7 +1983,8 @@ _multibytecodec___create_codec(PyObject *module, PyObject *arg)
 
     codec_capsule *data = PyCapsule_GetPointer(arg, CODEC_CAPSULE);
     const MultibyteCodec *codec = data->codec;
-    if (codec->codecinit != NULL && codec->codecinit(codec->config) != 0)
+    struct _cjk_mod_state *modst = (struct _cjk_mod_state *)PyModule_GetModule(codec->cjk_module);
+    if (codec->codecinit != NULL && codec->codecinit(codec->config, modst) != 0)
         return NULL;
 
     module_state *state = get_module_state(module);
