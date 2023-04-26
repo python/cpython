@@ -534,9 +534,9 @@ Eager Task Factory
 
     A task factory for eager task execution.
 
-    When using this factory (via ``loop.set_task_factory(asyncio.eager_task_factory)``),
+    When using this factory (via :meth:`loop.set_task_factory(asyncio.eager_task_factory) <loop.set_task_factory>`),
     coroutines begin execution synchronously during :class:`Task` construction.
-    :class:`Task`s are only scheduled on the event loop if they block.
+    Tasks are only scheduled on the event loop if they block.
     This can be a performance improvement as the overhead of loop scheduling
     is avoided for coroutines that complete synchronously.
 
