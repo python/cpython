@@ -308,6 +308,10 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Set up GCC-10 for ASAN
+      uses: egor-tensin/setup-gcc@v1
+      with:
+        version: 10
     - name: Configure OpenSSL env vars
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
