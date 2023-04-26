@@ -207,6 +207,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 2;
         case LOAD_SUPER_ATTR:
             return 3;
+        case LOAD_SUPER_ATTR_METHOD:
+            return 3;
         case LOAD_ATTR:
             return 1;
         case LOAD_ATTR_INSTANCE_VALUE:
@@ -593,6 +595,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case LOAD_SUPER_ATTR:
             return ((oparg & 1) ? 1 : 0) + 1;
+        case LOAD_SUPER_ATTR_METHOD:
+            return 2;
         case LOAD_ATTR:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_INSTANCE_VALUE:
@@ -775,7 +779,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
 }
 #endif
 
-enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000 };
+enum InstructionFormat { INSTR_FMT_IB, INSTR_FMT_IBC, INSTR_FMT_IBC00, INSTR_FMT_IBC000, INSTR_FMT_IBC00000000, INSTR_FMT_IBIB, INSTR_FMT_IX, INSTR_FMT_IXC, INSTR_FMT_IXC000, INSTR_FMT_IXC00000000 };
 struct opcode_metadata {
     bool valid_entry;
     enum InstructionFormat instr_format;
@@ -883,7 +887,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[256] = {
     [DICT_UPDATE] = { true, INSTR_FMT_IB },
     [DICT_MERGE] = { true, INSTR_FMT_IB },
     [MAP_ADD] = { true, INSTR_FMT_IB },
-    [LOAD_SUPER_ATTR] = { true, INSTR_FMT_IB },
+    [LOAD_SUPER_ATTR] = { true, INSTR_FMT_IBC00000000 },
+    [LOAD_SUPER_ATTR_METHOD] = { true, INSTR_FMT_IXC00000000 },
     [LOAD_ATTR] = { true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_INSTANCE_VALUE] = { true, INSTR_FMT_IBC00000000 },
     [LOAD_ATTR_MODULE] = { true, INSTR_FMT_IBC00000000 },
