@@ -599,6 +599,10 @@ and its :meth:`~Lock.release` method to unlock it. Reentrant locks
 support the :ref:`context management protocol <with-locks>` so :keyword:`with` can be used
 to acquire and release the lock automatically in a block of code.
 
+.. seealso::
+
+   :ref:`with-locks`.
+
 RLock's :meth:`~RLock.acquire`/:meth:`~RLock.release` call pairs may be nested,
 unlike Lock's :meth:`~Lock.acquire`/:meth:`~Lock.release`. Only the final
 :meth:`~RLock.release` (the :meth:`~Lock.release` of the outermost pair) resets
