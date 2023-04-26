@@ -332,7 +332,7 @@ expressions will often be written in Python code using this raw string notation.
 
 In addition, special escape sequences that are valid in regular expressions,
 but not valid as Python string literals, now result in a
-:exc:`DeprecationWarning` and will eventually become a :exc:`SyntaxError`,
+:exc:`SyntaxWarning` and will eventually become a :exc:`SyntaxError`,
 which means the sequences will be invalid if raw string notation or escaping
 the backslashes isn't used.
 
@@ -468,9 +468,9 @@ Two pattern methods return all of the matches for a pattern.
    ['12', '11', '10']
 
 The ``r`` prefix, making the literal a raw string literal, is needed in this
-example because escape sequences in a normal "cooked" string literal that are
-not recognized by Python, as opposed to regular expressions, now result in a
-:exc:`DeprecationWarning` and will eventually become a :exc:`SyntaxError`.  See
+example because ``\d`` is not an escape sequence recognized in Python string literals.
+Such unrecognized sequences now produce a
+:exc:`SyntaxWarning` and will eventually become a :exc:`SyntaxError`.  See
 :ref:`the-backslash-plague`.
 
 :meth:`~re.Pattern.findall` has to create the entire list before it can be returned as the
