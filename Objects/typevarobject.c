@@ -503,6 +503,7 @@ typedef struct {
 static void
 paramspecattr_dealloc(PyObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     paramspecattrobject *psa = (paramspecattrobject *)self;
 
     _PyObject_GC_UNTRACK(self);
@@ -510,6 +511,7 @@ paramspecattr_dealloc(PyObject *self)
     Py_XDECREF(psa->__origin__);
 
     Py_TYPE(self)->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static int
