@@ -1,1 +1,0 @@
-Fixed types of :mod:`struct` module to be immutable. Patch by Kumar Aditya.

@@ -50,9 +50,6 @@ PyAPI_FUNC(PyObject *) _PyObject_MakeTpCall(
     PyObject *const *args, Py_ssize_t nargs,
     PyObject *keywords);
 
-#define PY_VECTORCALL_ARGUMENTS_OFFSET \
-    (_Py_STATIC_CAST(size_t, 1) << (8 * sizeof(size_t) - 1))
-
 // PyVectorcall_NARGS() is exported as a function for the stable ABI.
 // Here (when we are not using the stable ABI), the name is overridden to
 // call a static inline function for best performance.
@@ -64,12 +61,6 @@ _PyVectorcall_NARGS(size_t n)
 }
 
 PyAPI_FUNC(vectorcallfunc) PyVectorcall_Function(PyObject *callable);
-
-PyAPI_FUNC(PyObject *) PyObject_Vectorcall(
-    PyObject *callable,
-    PyObject *const *args,
-    size_t nargsf,
-    PyObject *kwnames);
 
 // Backwards compatibility aliases for API that was provisional in Python 3.8
 #define _PyObject_Vectorcall PyObject_Vectorcall
@@ -95,10 +86,6 @@ PyAPI_FUNC(PyObject *) _PyObject_FastCall(
     Py_ssize_t nargs);
 
 PyAPI_FUNC(PyObject *) PyObject_CallOneArg(PyObject *func, PyObject *arg);
-
-PyAPI_FUNC(PyObject *) PyObject_VectorcallMethod(
-    PyObject *name, PyObject *const *args,
-    size_t nargsf, PyObject *kwnames);
 
 static inline PyObject *
 PyObject_CallMethodNoArgs(PyObject *self, PyObject *name)

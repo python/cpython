@@ -246,11 +246,11 @@ _PyPegen_fill_token(Parser *p)
 // The array counts the number of tokens skipped by memoization,
 // indexed by type.
 
-#define NSTATISTICS 2000
-static long memo_statistics[NSTATISTICS];
+#define NSTATISTICS _PYPEGEN_NSTATISTICS
+#define memo_statistics _PyRuntime.parser.memo_statistics
 
 void
-_PyPegen_clear_memo_statistics()
+_PyPegen_clear_memo_statistics(void)
 {
     for (int i = 0; i < NSTATISTICS; i++) {
         memo_statistics[i] = 0;
@@ -258,7 +258,7 @@ _PyPegen_clear_memo_statistics()
 }
 
 PyObject *
-_PyPegen_get_memo_statistics()
+_PyPegen_get_memo_statistics(void)
 {
     PyObject *ret = PyList_New(NSTATISTICS);
     if (ret == NULL) {
@@ -359,7 +359,7 @@ _PyPegen_expect_token(Parser *p, int type)
     }
     Token *t = p->tokens[p->mark];
     if (t->type != type) {
-        return NULL;
+       return NULL;
     }
     p->mark += 1;
     return t;
@@ -643,13 +643,10 @@ _PyPegen_number_token(Parser *p)
         PyThreadState *tstate = _PyThreadState_GET();
         // The only way a ValueError should happen in _this_ code is via
         // PyLong_FromString hitting a length limit.
-        if (tstate->curexc_type == PyExc_ValueError &&
-            tstate->curexc_value != NULL) {
-            PyObject *type, *value, *tb;
-            // This acts as PyErr_Clear() as we're replacing curexc.
-            PyErr_Fetch(&type, &value, &tb);
-            Py_XDECREF(tb);
-            Py_DECREF(type);
+        if (tstate->current_exception != NULL &&
+            Py_TYPE(tstate->current_exception) == (PyTypeObject *)PyExc_ValueError
+        ) {
+            PyObject *exc = PyErr_GetRaisedException();
             /* Intentionally omitting columns to avoid a wall of 1000s of '^'s
              * on the error message. Nobody is going to overlook their huge
              * numeric literal once given the line. */
@@ -659,8 +656,8 @@ _PyPegen_number_token(Parser *p)
                 t->end_lineno, -1 /* end_col_offset */,
                 "%S - Consider hexadecimal for huge integer literals "
                 "to avoid decimal conversion limits.",
-                value);
-            Py_DECREF(value);
+                exc);
+            Py_DECREF(exc);
         }
         return NULL;
     }
@@ -885,8 +882,7 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
         tok->fp_interactive = 1;
     }
     // This transfers the ownership to the tokenizer
-    tok->filename = filename_ob;
-    Py_INCREF(filename_ob);
+    tok->filename = Py_NewRef(filename_ob);
 
     // From here on we need to clean up even if there's an error
     mod_ty result = NULL;
@@ -925,8 +921,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
         return NULL;
     }
     // This transfers the ownership to the tokenizer
-    tok->filename = filename_ob;
-    Py_INCREF(filename_ob);
+    tok->filename = Py_NewRef(filename_ob);
 
     // We need to clear up from here on
     mod_ty result = NULL;

@@ -47,12 +47,11 @@ def clean_lines(text):
 '''
 
 # XXX Handle these.
+# Tab separated:
 EXCLUDED = clean_lines('''
 # @begin=conf@
 
 # OSX
-#Modules/_ctypes/darwin/*.c
-#Modules/_ctypes/libffi_osx/*.c
 Modules/_scproxy.c                # SystemConfiguration/SystemConfiguration.h
 
 # Windows
@@ -82,6 +81,10 @@ Objects/unicodetype_db.h
 # generated
 Python/deepfreeze/*.c
 Python/frozen_modules/*.h
+Python/generated_cases.c.h
+
+# not actually source
+Python/bytecodes.c
 
 # @end=conf@
 ''')
@@ -89,6 +92,7 @@ Python/frozen_modules/*.h
 # XXX Fix the parser.
 EXCLUDED += clean_lines('''
 # The tool should be able to parse these...
+
 # The problem with xmlparse.c is that something
 # has gone wrong where # we handle "maybe inline actual"
 # in Tools/c-analyzer/c_parser/parser/_global.py.
@@ -103,10 +107,20 @@ glob	dirname
 *	./Include
 *	./Include/internal
 
-Modules/_tkinter.c	/usr/include/tcl8.6
-Modules/tkappinit.c	/usr/include/tcl
 Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
+Modules/_elementtree.c	Modules/expat
+Modules/_hacl/*.c	Modules/_hacl/include
+Modules/_hacl/*.h	Modules/_hacl/include
+Modules/md5module.c	Modules/_hacl/include
+Modules/sha1module.c	Modules/_hacl/include
+Modules/sha2module.c	Modules/_hacl/include
 Objects/stringlib/*.h	Objects
+
+# possible system-installed headers, just in case
+Modules/_tkinter.c	/usr/include/tcl8.6
+Modules/_uuidmodule.c	/usr/include/uuid
+Modules/nismodule.c	/usr/include/tirpc
+Modules/tkappinit.c	/usr/include/tcl
 
 # @end=tsv@
 ''')[1:]
@@ -171,6 +185,7 @@ Modules/_datetimemodule.c	Py_BUILD_CORE	1
 Modules/_functoolsmodule.c	Py_BUILD_CORE	1
 Modules/_heapqmodule.c	Py_BUILD_CORE	1
 Modules/_io/*.c	Py_BUILD_CORE	1
+Modules/_io/*.h	Py_BUILD_CORE	1
 Modules/_localemodule.c	Py_BUILD_CORE	1
 Modules/_operator.c	Py_BUILD_CORE	1
 Modules/_posixsubprocess.c	Py_BUILD_CORE	1
@@ -285,6 +300,7 @@ Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
 
 SAME = {
     _abs('Include/*.h'): [_abs('Include/cpython/')],
+    _abs('Python/ceval.c'): ['Python/generated_cases.c.h'],
 }
 
 MAX_SIZES = {
@@ -293,6 +309,7 @@ MAX_SIZES = {
     # First match wins.
     _abs('Modules/_ctypes/ctypes.h'): (5_000, 500),
     _abs('Modules/_datetimemodule.c'): (20_000, 300),
+    _abs('Modules/_hacl/*.c'): (200_000, 500),
     _abs('Modules/posixmodule.c'): (20_000, 500),
     _abs('Modules/termios.c'): (10_000, 800),
     _abs('Modules/_testcapimodule.c'): (20_000, 400),

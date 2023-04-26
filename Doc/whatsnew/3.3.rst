@@ -560,6 +560,7 @@ Example with (non-bound) methods::
    >>> class C:
    ...     def meth(self):
    ...         pass
+   ...
    >>> C.meth.__name__
    'meth'
    >>> C.meth.__qualname__

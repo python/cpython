@@ -1,5 +1,0 @@
-Removed deprecated interfaces in ``importlib.metadata`` (entry points
-accessed as dictionary, implicit dictionary construction of sequence of
-``EntryPoint`` objects, mutablility of ``EntryPoints`` result, access of
-entry point by index). ``entry_points`` now has a simpler, more
-straightforward API (returning ``EntryPoints``).

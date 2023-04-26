@@ -260,6 +260,8 @@ class BugsTestCase(unittest.TestCase):
         #if os.name == 'nt' and support.Py_DEBUG:
         if os.name == 'nt':
             MAX_MARSHAL_STACK_DEPTH = 1000
+        elif sys.platform == 'wasi':
+            MAX_MARSHAL_STACK_DEPTH = 1500
         else:
             MAX_MARSHAL_STACK_DEPTH = 2000
         for i in range(MAX_MARSHAL_STACK_DEPTH - 2):
@@ -353,7 +355,7 @@ class BugsTestCase(unittest.TestCase):
             for elements in (
                 "float('nan'), b'a', b'b', b'c', 'x', 'y', 'z'",
                 # Also test for bad interactions with backreferencing:
-                "('Spam', 0), ('Spam', 1), ('Spam', 2)",
+                "('Spam', 0), ('Spam', 1), ('Spam', 2), ('Spam', 3), ('Spam', 4), ('Spam', 5)",
             ):
                 s = f"{kind}([{elements}])"
                 with self.subTest(s):

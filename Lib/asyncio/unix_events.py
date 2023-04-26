@@ -846,6 +846,13 @@ class AbstractChildWatcher:
         waitpid(-1), there should be only one active object per process.
     """
 
+    def __init_subclass__(cls) -> None:
+        if cls.__module__ != __name__:
+            warnings._deprecated("AbstractChildWatcher",
+                             "{name!r} is deprecated as of Python 3.12 and will be "
+                             "removed in Python {remove}.",
+                              remove=(3, 14))
+
     def add_child_handler(self, pid, callback, *args):
         """Register a new child handler.
 

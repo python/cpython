@@ -1,6 +1,5 @@
 /* This is built as a stand-alone executable by the Makefile, and helps turn
-   modules into frozen modules (like Lib/importlib/_bootstrap.py
-   into Python/importlib.h).
+   modules into frozen modules.
 
    This is used directly by Tools/build/freeze_modules.py, and indirectly by "make regen-frozen".
 
@@ -8,6 +7,7 @@
 
    Keep this file in sync with Programs/_freeze_module.py.
 */
+
 
 #include <Python.h>
 #include <marshal.h>
@@ -21,6 +21,8 @@
 #ifndef MS_WINDOWS
 #include <unistd.h>
 #endif
+
+uint32_t _Py_next_func_version = 1;
 
 /* Empty initializer for deepfrozen modules */
 int _Py_Deepfreeze_Init(void)
@@ -194,6 +196,7 @@ write_frozen(const char *outpath, const char *inpath, const char *name,
 
     if (ferror(outfile)) {
         fprintf(stderr, "error when writing to '%s'\n", outpath);
+        fclose(outfile);
         return -1;
     }
     fclose(outfile);

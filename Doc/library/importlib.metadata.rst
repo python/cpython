@@ -73,7 +73,7 @@ something into it:
 
 .. code-block:: shell-session
 
-    $ python3 -m venv example
+    $ python -m venv example
     $ source example/bin/activate
     (example) $ python -m pip install wheel
 
@@ -211,7 +211,7 @@ all the metadata in a JSON-compatible form per :PEP:`566`::
     The actual type of the object returned by ``metadata()`` is an
     implementation detail and should be accessed only through the interface
     described by the
-    `PackageMetadata protocol <https://importlib-metadata.readthedocs.io/en/latest/api.html#importlib_metadata.PackageMetadata>`.
+    `PackageMetadata protocol <https://importlib-metadata.readthedocs.io/en/latest/api.html#importlib_metadata.PackageMetadata>`_.
 
 .. versionchanged:: 3.10
    The ``Description`` is now included in the metadata when presented
@@ -308,6 +308,10 @@ Python module or `Import Package <https://packaging.python.org/en/latest/glossar
     >>> packages_distributions()
     {'importlib_metadata': ['importlib-metadata'], 'yaml': ['PyYAML'], 'jaraco': ['jaraco.classes', 'jaraco.functools'], ...}
 
+Some editable installs, `do not supply top-level names
+<https://github.com/pypa/packaging-problems/issues/609>`_, and thus this
+function is not reliable with such installs.
+
 .. versionadded:: 3.10
 
 .. _distributions:
@@ -360,7 +364,7 @@ Because `Distribution Package <https://packaging.python.org/en/latest/glossary/#
 is not available through :data:`sys.path` searches, or
 package loaders directly,
 the metadata for a distribution is found through import
-system `finders`_.  To find a distribution package's metadata,
+system :ref:`finders <finders-and-loaders>`.  To find a distribution package's metadata,
 ``importlib.metadata`` queries the list of :term:`meta path finders <meta path finder>` on
 :data:`sys.meta_path`.
 
@@ -396,4 +400,3 @@ a custom finder, return instances of this derived ``Distribution`` in the
 
 .. _`entry point API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points
 .. _`metadata API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#metadata-api
-.. _`finders`: https://docs.python.org/3/reference/import.html#finders-and-loaders

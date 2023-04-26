@@ -1,1 +1,0 @@
-Fix crash in :class:`struct.Struct` when it was not completely initialized by initializing it in :meth:`~object.__new__``.  Patch by Kumar Aditya.
