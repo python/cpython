@@ -155,6 +155,17 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
         return -1;
     }
 
+    if (new_token->metadata != NULL) {
+        parser_token->metadata = new_token->metadata;
+        if (_PyArena_AddPyObject(p->arena, parser_token->metadata) < 0) {
+            Py_DECREF(parser_token->metadata);
+            return -1;
+        }
+    }
+    else {
+        parser_token->metadata = NULL;
+    }
+
     parser_token->level = new_token->level;
     parser_token->lineno = new_token->lineno;
     parser_token->col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + new_token->col_offset
@@ -198,6 +209,7 @@ int
 _PyPegen_fill_token(Parser *p)
 {
     struct token new_token;
+    new_token.metadata = NULL;
     int type = _PyTokenizer_Get(p->tok, &new_token);
 
     // Record and skip '# type: ignore' comments

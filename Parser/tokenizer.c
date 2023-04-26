@@ -31,6 +31,7 @@
 /* Don't ever change this -- it would break the portability of Python code */
 #define TABSIZE 8
 
+#define TOK_NEXTC() tok_nextc(tok, token)
 #define MAKE_TOKEN(token_type) token_setup(tok, token, token_type, p_start, p_end)
 #define MAKE_TYPE_COMMENT_TOKEN(token_type, col_offset, end_col_offset) (\
                 type_comment_token_setup(tok, token, token_type, col_offset, end_col_offset, p_start, p_end))
@@ -58,7 +59,7 @@ static inline tokenizer_mode* TOK_NEXT_MODE(struct tok_state* tok) {
 
 /* Forward */
 static struct tok_state *tok_new(void);
-static int tok_nextc(struct tok_state *tok);
+static int tok_nextc(struct tok_state *tok, struct token *token);
 static void tok_backup(struct tok_state *tok, int c);
 static int syntaxerror(struct tok_state *tok, const char *format, ...);
 
@@ -391,7 +392,7 @@ restore_fstring_buffers(struct tok_state *tok)
 }
 
 static int
-update_fstring_expr(struct tok_state *tok, char cur)
+update_fstring_expr(struct tok_state *tok, struct token *token, char cur)
 {
     assert(tok->cur != NULL);
 
@@ -432,6 +433,15 @@ update_fstring_expr(struct tok_state *tok, char cur)
         case ':':
             if (tok_mode->last_expr_end == -1) {
                 tok_mode->last_expr_end = strlen(tok->start);
+                PyObject *res = PyUnicode_DecodeUTF8(
+                    tok_mode->last_expr_buffer,
+                    tok_mode->last_expr_size - tok_mode->last_expr_end,
+                    NULL
+                );
+                if (!res) {
+                    goto error;
+                }
+                token->metadata = res;
             }
             break;
         default:
@@ -959,7 +969,7 @@ _PyTokenizer_Free(struct tok_state *tok)
 }
 
 static int
-tok_readline_raw(struct tok_state *tok)
+tok_readline_raw(struct tok_state *tok, struct token *token)
 {
     do {
         if (!tok_reserve_buf(tok, BUFSIZ)) {
@@ -971,7 +981,7 @@ tok_readline_raw(struct tok_state *tok)
         if (line == NULL) {
             return 1;
         }
-        if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
+        if (tok->tok_mode_stack_index && !update_fstring_expr(tok, token, 0)) {
             return 0;
         }
         if (tok->fp_interactive &&
@@ -1009,7 +1019,7 @@ tok_underflow_string(struct tok_state *tok) {
 }
 
 static int
-tok_underflow_interactive(struct tok_state *tok) {
+tok_underflow_interactive(struct tok_state *tok, struct token *token) {
     if (tok->interactive_underflow == IUNDERFLOW_STOP) {
         tok->done = E_INTERACT_STOP;
         return 1;
@@ -1094,14 +1104,14 @@ tok_underflow_interactive(struct tok_state *tok) {
         return 0;
     }
 
-    if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
+    if (tok->tok_mode_stack_index && !update_fstring_expr(tok, token, 0)) {
         return 0;
     }
     return 1;
 }
 
 static int
-tok_underflow_file(struct tok_state *tok) {
+tok_underflow_file(struct tok_state *tok, struct token *token) {
     if (tok->start == NULL) {
         tok->cur = tok->inp = tok->buf;
     }
@@ -1124,7 +1134,7 @@ tok_underflow_file(struct tok_state *tok) {
     }
     else {
         /* We want a 'raw' read. */
-        if (!tok_readline_raw(tok)) {
+        if (!tok_readline_raw(tok, token)) {
             return 0;
         }
     }
@@ -1192,7 +1202,7 @@ print_escape(FILE *f, const char *s, Py_ssize_t size)
 /* Get next char, updating state; error code goes into tok->done */
 
 static int
-tok_nextc(struct tok_state *tok)
+tok_nextc(struct tok_state *tok, struct token *token)
 {
     int rc;
     for (;;) {
@@ -1207,10 +1217,10 @@ tok_nextc(struct tok_state *tok)
             rc = tok_underflow_string(tok);
         }
         else if (tok->prompt != NULL) {
-            rc = tok_underflow_interactive(tok);
+            rc = tok_underflow_interactive(tok, token);
         }
         else {
-            rc = tok_underflow_file(tok);
+            rc = tok_underflow_file(tok, token);
         }
 #if defined(Py_DEBUG)
         if (tok->debug) {
@@ -1399,12 +1409,12 @@ warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_cha
 }
 
 static int
-lookahead(struct tok_state *tok, const char *test)
+lookahead(struct tok_state *tok, struct token *token, const char *test)
 {
     const char *s = test;
     int res = 0;
     while (1) {
-        int c = tok_nextc(tok);
+        int c = TOK_NEXTC();
         if (*s == 0) {
             res = !is_potential_identifier_char(c);
         }
@@ -1422,7 +1432,7 @@ lookahead(struct tok_state *tok, const char *test)
 }
 
 static int
-verify_end_of_number(struct tok_state *tok, int c, const char *kind)
+verify_end_of_number(struct tok_state *tok, struct token *token, int c, const char *kind)
 {
     /* Emit a deprecation warning only if the numeric literal is immediately
      * followed by one of keywords which can occur after a numeric literal
@@ -1436,26 +1446,26 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind)
      */
     int r = 0;
     if (c == 'a') {
-        r = lookahead(tok, "nd");
+        r = lookahead(tok, token, "nd");
     }
     else if (c == 'e') {
-        r = lookahead(tok, "lse");
+        r = lookahead(tok, token, "lse");
     }
     else if (c == 'f') {
-        r = lookahead(tok, "or");
+        r = lookahead(tok, token, "or");
     }
     else if (c == 'i') {
-        int c2 = tok_nextc(tok);
+        int c2 = TOK_NEXTC();
         if (c2 == 'f' || c2 == 'n' || c2 == 's') {
             r = 1;
         }
         tok_backup(tok, c2);
     }
     else if (c == 'o') {
-        r = lookahead(tok, "r");
+        r = lookahead(tok, token, "r");
     }
     else if (c == 'n') {
-        r = lookahead(tok, "ot");
+        r = lookahead(tok, token, "ot");
     }
     if (r) {
         tok_backup(tok, c);
@@ -1464,7 +1474,7 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind)
         {
             return 0;
         }
-        tok_nextc(tok);
+        TOK_NEXTC();
     }
     else /* In future releases, only error will remain. */
     if (is_potential_identifier_char(c)) {
@@ -1532,18 +1542,18 @@ verify_identifier(struct tok_state *tok)
 }
 
 static int
-tok_decimal_tail(struct tok_state *tok)
+tok_decimal_tail(struct tok_state *tok, struct token *token)
 {
     int c;
 
     while (1) {
         do {
-            c = tok_nextc(tok);
+            c = TOK_NEXTC();
         } while (isdigit(c));
         if (c != '_') {
             break;
         }
-        c = tok_nextc(tok);
+        c = TOK_NEXTC();
         if (!isdigit(c)) {
             tok_backup(tok, c);
             syntaxerror(tok, "invalid decimal literal");
@@ -1555,13 +1565,13 @@ tok_decimal_tail(struct tok_state *tok)
 
 
 static inline int
-tok_continuation_line(struct tok_state *tok) {
-    int c = tok_nextc(tok);
+tok_continuation_line(struct tok_state *tok, struct token *token) {
+    int c = TOK_NEXTC();
     if (c != '\n') {
         tok->done = E_LINECONT;
         return -1;
     }
-    c = tok_nextc(tok);
+    c = TOK_NEXTC();
     if (c == EOF) {
         tok->done = E_EOF;
         tok->cur = tok->inp;
@@ -1628,7 +1638,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         tok->atbol = 0;
         int cont_line_col = 0;
         for (;;) {
-            c = tok_nextc(tok);
+            c = TOK_NEXTC();
             if (c == ' ') {
                 col++, altcol++;
             }
@@ -1645,7 +1655,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 // preceded by whitespace, **the first one we find** determines
                 // the level of indentation of whatever comes next.
                 cont_line_col = cont_line_col ? cont_line_col : col;
-                if ((c = tok_continuation_line(tok)) == -1) {
+                if ((c = tok_continuation_line(tok, token)) == -1) {
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
             }
@@ -1733,7 +1743,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     }
 
     /* Peek ahead at the next character */
-    c = tok_nextc(tok);
+    c = TOK_NEXTC();
     tok_backup(tok, c);
     /* Check if we are closing an async function */
     if (tok->async_def
@@ -1761,7 +1771,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     tok->start = NULL;
     /* Skip spaces */
     do {
-        c = tok_nextc(tok);
+        c = TOK_NEXTC();
     } while (c == ' ' || c == '\t' || c == '\014');
 
     /* Set start of current token */
@@ -1779,7 +1789,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         int current_starting_col_offset;
 
         while (c != EOF && c != '\n') {
-            c = tok_nextc(tok);
+            c = TOK_NEXTC();
         }
 
         if (tok->type_comments) {
@@ -1825,7 +1835,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
                     /* If this type ignore is the only thing on the line, consume the newline also. */
                     if (blankline) {
-                        tok_nextc(tok);
+                        TOK_NEXTC();
                         tok->atbol = 1;
                     }
                     return MAKE_TYPE_COMMENT_TOKEN(TYPE_IGNORE, ignore_end_col_offset, tok->col_offset);
@@ -1874,7 +1884,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             else {
                 break;
             }
-            c = tok_nextc(tok);
+            c = TOK_NEXTC();
             if (c == '"' || c == '\'') {
                 if (saw_f) {
                     goto f_string_quote;
@@ -1886,7 +1896,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             if (c >= 128) {
                 nonascii = 1;
             }
-            c = tok_nextc(tok);
+            c = TOK_NEXTC();
         }
         tok_backup(tok, c);
         if (nonascii && !verify_identifier(tok)) {
@@ -1963,11 +1973,11 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
     /* Period or number starting with period? */
     if (c == '.') {
-        c = tok_nextc(tok);
+        c = TOK_NEXTC();
         if (isdigit(c)) {
             goto fraction;
         } else if (c == '.') {
-            c = tok_nextc(tok);
+            c = TOK_NEXTC();
             if (c == '.') {
                 p_start = tok->start;
                 p_end = tok->cur;
@@ -1990,32 +2000,32 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     if (isdigit(c)) {
         if (c == '0') {
             /* Hex, octal or binary -- maybe. */
-            c = tok_nextc(tok);
+            c = TOK_NEXTC();
             if (c == 'x' || c == 'X') {
                 /* Hex */
-                c = tok_nextc(tok);
+                c = TOK_NEXTC();
                 do {
                     if (c == '_') {
-                        c = tok_nextc(tok);
+                        c = TOK_NEXTC();
                     }
                     if (!isxdigit(c)) {
                         tok_backup(tok, c);
                         return MAKE_TOKEN(syntaxerror(tok, "invalid hexadecimal literal"));
                     }
                     do {
-                        c = tok_nextc(tok);
+                        c = TOK_NEXTC();
                     } while (isxdigit(c));
                 } while (c == '_');
-                if (!verify_end_of_number(tok, c, "hexadecimal")) {
+                if (!verify_end_of_number(tok, token, c, "hexadecimal")) {
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
             }
             else if (c == 'o' || c == 'O') {
                 /* Octal */
-                c = tok_nextc(tok);
+                c = TOK_NEXTC();
                 do {
                     if (c == '_') {
-                        c = tok_nextc(tok);
+                        c = TOK_NEXTC();
                     }
                     if (c < '0' || c >= '8') {
                         if (isdigit(c)) {
@@ -2028,23 +2038,23 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                         }
                     }
                     do {
-                        c = tok_nextc(tok);
+                        c = TOK_NEXTC();
                     } while ('0' <= c && c < '8');
                 } while (c == '_');
                 if (isdigit(c)) {
                     return MAKE_TOKEN(syntaxerror(tok,
                             "invalid digit '%c' in octal literal", c));
                 }
-                if (!verify_end_of_number(tok, c, "octal")) {
+                if (!verify_end_of_number(tok, token, c, "octal")) {
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
             }
             else if (c == 'b' || c == 'B') {
                 /* Binary */
-                c = tok_nextc(tok);
+                c = TOK_NEXTC();
                 do {
                     if (c == '_') {
-                        c = tok_nextc(tok);
+                        c = TOK_NEXTC();
                     }
                     if (c != '0' && c != '1') {
                         if (isdigit(c)) {
@@ -2056,13 +2066,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                         }
                     }
                     do {
-                        c = tok_nextc(tok);
+                        c = TOK_NEXTC();
                     } while (c == '0' || c == '1');
                 } while (c == '_');
                 if (isdigit(c)) {
                     return MAKE_TOKEN(syntaxerror(tok, "invalid digit '%c' in binary literal", c));
                 }
-                if (!verify_end_of_number(tok, c, "binary")) {
+                if (!verify_end_of_number(tok, token, c, "binary")) {
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
             }
@@ -2072,7 +2082,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 /* in any case, allow '0' as a literal */
                 while (1) {
                     if (c == '_') {
-                        c = tok_nextc(tok);
+                        c = TOK_NEXTC();
                         if (!isdigit(c)) {
                             tok_backup(tok, c);
                             return MAKE_TOKEN(syntaxerror(tok, "invalid decimal literal"));
@@ -2081,18 +2091,18 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     if (c != '0') {
                         break;
                     }
-                    c = tok_nextc(tok);
+                    c = TOK_NEXTC();
                 }
                 char* zeros_end = tok->cur;
                 if (isdigit(c)) {
                     nonzero = 1;
-                    c = tok_decimal_tail(tok);
+                    c = tok_decimal_tail(tok, token);
                     if (c == 0) {
                         return MAKE_TOKEN(ERRORTOKEN);
                     }
                 }
                 if (c == '.') {
-                    c = tok_nextc(tok);
+                    c = TOK_NEXTC();
                     goto fraction;
                 }
                 else if (c == 'e' || c == 'E') {
@@ -2111,25 +2121,25 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                             "literals are not permitted; "
                             "use an 0o prefix for octal integers"));
                 }
-                if (!verify_end_of_number(tok, c, "decimal")) {
+                if (!verify_end_of_number(tok, token, c, "decimal")) {
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
             }
         }
         else {
             /* Decimal */
-            c = tok_decimal_tail(tok);
+            c = tok_decimal_tail(tok, token);
             if (c == 0) {
                 return MAKE_TOKEN(ERRORTOKEN);
             }
             {
                 /* Accept floating point numbers. */
                 if (c == '.') {
-                    c = tok_nextc(tok);
+                    c = TOK_NEXTC();
         fraction:
                     /* Fraction */
                     if (isdigit(c)) {
-                        c = tok_decimal_tail(tok);
+                        c = tok_decimal_tail(tok, token);
                         if (c == 0) {
                             return MAKE_TOKEN(ERRORTOKEN);
                         }
@@ -2140,16 +2150,16 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                   exponent:
                     e = c;
                     /* Exponent part */
-                    c = tok_nextc(tok);
+                    c = TOK_NEXTC();
                     if (c == '+' || c == '-') {
-                        c = tok_nextc(tok);
+                        c = TOK_NEXTC();
                         if (!isdigit(c)) {
                             tok_backup(tok, c);
                             return MAKE_TOKEN(syntaxerror(tok, "invalid decimal literal"));
                         }
                     } else if (!isdigit(c)) {
                         tok_backup(tok, c);
-                        if (!verify_end_of_number(tok, e, "decimal")) {
+                        if (!verify_end_of_number(tok, token, e, "decimal")) {
                             return MAKE_TOKEN(ERRORTOKEN);
                         }
                         tok_backup(tok, e);
@@ -2157,7 +2167,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                         p_end = tok->cur;
                         return MAKE_TOKEN(NUMBER);
                     }
-                    c = tok_decimal_tail(tok);
+                    c = tok_decimal_tail(tok, token);
                     if (c == 0) {
                         return MAKE_TOKEN(ERRORTOKEN);
                     }
@@ -2165,12 +2175,12 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 if (c == 'j' || c == 'J') {
                     /* Imaginary part */
         imaginary:
-                    c = tok_nextc(tok);
-                    if (!verify_end_of_number(tok, c, "imaginary")) {
+                    c = TOK_NEXTC();
+                    if (!verify_end_of_number(tok, token, c, "imaginary")) {
                         return MAKE_TOKEN(ERRORTOKEN);
                     }
                 }
-                else if (!verify_end_of_number(tok, c, "decimal")) {
+                else if (!verify_end_of_number(tok, token, c, "decimal")) {
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
             }
@@ -2194,9 +2204,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         tok->multi_line_start = tok->line_start;
 
         /* Find the quote size and start of string */
-        int after_quote = tok_nextc(tok);
+        int after_quote = TOK_NEXTC();
         if (after_quote == quote) {
-            int after_after_quote = tok_nextc(tok);
+            int after_after_quote = TOK_NEXTC();
             if (after_after_quote == quote) {
                 quote_size = 3;
             }
@@ -2258,9 +2268,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         tok->multi_line_start = tok->line_start;
 
         /* Find the quote size and start of string */
-        c = tok_nextc(tok);
+        c = TOK_NEXTC();
         if (c == quote) {
-            c = tok_nextc(tok);
+            c = TOK_NEXTC();
             if (c == quote) {
                 quote_size = 3;
             }
@@ -2274,7 +2284,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
         /* Get rest of string */
         while (end_quote_size != quote_size) {
-            c = tok_nextc(tok);
+            c = TOK_NEXTC();
             if (tok->done == E_DECODE)
                 break;
             if (c == EOF || (quote_size == 1 && c == '\n')) {
@@ -2324,7 +2334,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             else {
                 end_quote_size = 0;
                 if (c == '\\') {
-                    tok_nextc(tok);  /* skip escaped char */
+                    TOK_NEXTC();  /* skip escaped char */
                 }
             }
         }
@@ -2336,7 +2346,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
     /* Line continuation */
     if (c == '\\') {
-        if ((c = tok_continuation_line(tok)) == -1) {
+        if ((c = tok_continuation_line(tok, token)) == -1) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
         tok->cont_line = 1;
@@ -2351,7 +2361,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
          * to adjust it manually */
         int cursor = current_tok->curly_bracket_depth - (c != '{');
 
-        if (cursor == 0 && !update_fstring_expr(tok, c)) {
+        if (cursor == 0 && !update_fstring_expr(tok, token, c)) {
             return MAKE_TOKEN(ENDMARKER);
         }
 
@@ -2365,10 +2375,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
     /* Check for two-character token */
     {
-        int c2 = tok_nextc(tok);
+        int c2 = TOK_NEXTC();
         int current_token = _PyToken_TwoChars(c, c2);
         if (current_token != OP) {
-            int c3 = tok_nextc(tok);
+            int c3 = TOK_NEXTC();
             int current_token3 = _PyToken_ThreeChars(c, c2, c3);
             if (current_token3 != OP) {
                 current_token = current_token3;
@@ -2478,9 +2488,9 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
 
     // If we start with a bracket, we defer to the normal mode as there is nothing for us to tokenize
     // before it.
-    int start_char = tok_nextc(tok);
+    int start_char = TOK_NEXTC();
     if (start_char == '{') {
-        int peek1 = tok_nextc(tok);
+        int peek1 = TOK_NEXTC();
         tok_backup(tok, peek1);
         tok_backup(tok, start_char);
         if (peek1 != '{') {
@@ -2498,7 +2508,7 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
 
     // Check if we are at the end of the string
     for (int i = 0; i < current_tok->f_string_quote_size; i++) {
-        int quote = tok_nextc(tok);
+        int quote = TOK_NEXTC();
         if (quote != current_tok->f_string_quote) {
             tok_backup(tok, quote);
             goto f_string_middle;
@@ -2520,7 +2530,7 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
 f_string_middle:
 
     while (end_quote_size != current_tok->f_string_quote_size) {
-        int c = tok_nextc(tok);
+        int c = TOK_NEXTC();
         if (c == EOF || (current_tok->f_string_quote_size == 1 && c == '\n')) {
             assert(tok->multi_line_start != NULL);
             // shift the tok_state's location into
@@ -2557,7 +2567,7 @@ f_string_middle:
                 INSIDE_FSTRING_EXPR(current_tok)
         );
         if (c == '{') {
-            int peek = tok_nextc(tok);
+            int peek = TOK_NEXTC();
             if (peek != '{' || in_format_spec) {
                 tok_backup(tok, peek);
                 tok_backup(tok, c);
@@ -2579,7 +2589,7 @@ f_string_middle:
                 p_end = tok->cur;
                 return MAKE_TOKEN(FSTRING_MIDDLE);
             }
-            int peek = tok_nextc(tok);
+            int peek = TOK_NEXTC();
 
             // The tokenizer can only be in the format spec if we have already completed the expression
             // scanning (indicated by the end of the expression being set) and we are not at the top level
@@ -2597,7 +2607,7 @@ f_string_middle:
             }
             return MAKE_TOKEN(FSTRING_MIDDLE);
         } else if (c == '\\') {
-            int peek = tok_nextc(tok);
+            int peek = TOK_NEXTC();
             // Special case when the backslash is right before a curly
             // brace. We have to restore and return the control back
             // to the loop for the next iteration.
@@ -2614,7 +2624,7 @@ f_string_middle:
             if (!current_tok->f_string_raw) {
                 if (peek == 'N') {
                     /* Handle named unicode escapes (\N{BULLET}) */
-                    peek = tok_nextc(tok);
+                    peek = TOK_NEXTC();
                     if (peek == '{') {
                         unicode_escape = 1;
                     } else {

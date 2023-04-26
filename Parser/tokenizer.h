@@ -31,6 +31,7 @@ struct token {
     int level;
     int lineno, col_offset, end_lineno, end_col_offset;
     const char *start, *end;
+    PyObject *metadata;
 };
 
 enum tokenizer_mode_kind_t {
