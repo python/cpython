@@ -11,7 +11,7 @@
 configure*                    @erlend-aasland @corona10
 
 # asyncio
-**/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303
+**/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303 @willingc
 
 # Core
 **/*context*                  @1st1
