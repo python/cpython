@@ -57,9 +57,9 @@ the following command can be used to display the disassembly of
      2           0 RESUME                   0
    <BLANKLINE>
      3           2 LOAD_GLOBAL              1 (NULL + len)
-                14 LOAD_FAST                0 (alist)
-                16 CALL                     1
-                26 RETURN_VALUE
+                12 LOAD_FAST                0 (alist)
+                14 CALL                     1
+                22 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -768,16 +768,6 @@ iterations of the loop.
 
    .. versionadded:: 3.11
 
-.. opcode:: PREP_RERAISE_STAR
-
-   Combines the raised and reraised exceptions list from ``STACK[-1]``, into an
-   exception group to propagate from a try-except* block. Uses the original exception
-   group from ``STACK[-2]`` to reconstruct the structure of reraised exceptions. Pops
-   two items from the stack and pushes the exception to reraise or ``None``
-   if there isn't one.
-
-   .. versionadded:: 3.11
-
 .. opcode:: WITH_EXCEPT_START
 
     Calls the function in position 4 on the stack with arguments (type, val, tb)
@@ -1046,19 +1036,28 @@ iterations of the loop.
       pushed to the stack before the attribute or unbound method respectively.
 
 
+.. opcode:: LOAD_SUPER_ATTR (namei)
+
+   This opcode implements :func:`super` (e.g. ``super().method()`` and
+   ``super().attr``). It works the same as :opcode:`LOAD_ATTR`, except that
+   ``namei`` is shifted left by 2 bits instead of 1, and instead of expecting a
+   single receiver on the stack, it expects three objects (from top of stack
+   down): ``self`` (the first argument to the current method), ``cls`` (the
+   class within which the current method was defined), and the global ``super``.
+
+   The low bit of ``namei`` signals to attempt a method load, as with
+   :opcode:`LOAD_ATTR`.
+
+   The second-low bit of ``namei``, if set, means that this was a two-argument
+   call to :func:`super` (unset means zero-argument).
+
+   .. versionadded:: 3.12
+
+
 .. opcode:: COMPARE_OP (opname)
 
    Performs a Boolean operation.  The operation name can be found in
    ``cmp_op[opname]``.
-
-
-.. opcode:: COMPARE_AND_BRANCH (opname)
-
-   Compares the top two values on the stack, popping them, then branches.
-   The direction and offset of the jump is embedded as a ``POP_JUMP_IF_TRUE``
-   or ``POP_JUMP_IF_FALSE`` instruction immediately following the cache.
-
-   .. versionadded:: 3.12
 
 
 .. opcode:: IS_OP (invert)
@@ -1161,30 +1160,6 @@ iterations of the loop.
 
    .. versionchanged:: 3.12
       This is no longer a pseudo-instruction.
-
-
-.. opcode:: JUMP_IF_TRUE_OR_POP (delta)
-
-   If ``STACK[-1]`` is true, increments the bytecode counter by *delta* and leaves
-   ``STACK[-1]`` on the stack.  Otherwise (``STACK[-1]`` is false), ``STACK[-1]``
-   is popped.
-
-   .. versionadded:: 3.1
-
-   .. versionchanged:: 3.11
-      The oparg is now a relative delta rather than an absolute target.
-
-.. opcode:: JUMP_IF_FALSE_OR_POP (delta)
-
-   If ``STACK[-1]`` is false, increments the bytecode counter by *delta* and leaves
-   ``STACK[-1]`` on the stack. Otherwise (``STACK[-1]`` is true), ``STACK[-1]`` is
-   popped.
-
-   .. versionadded:: 3.1
-
-   .. versionchanged:: 3.11
-      The oparg is now a relative delta rather than an absolute target.
-
 
 .. opcode:: FOR_ITER (delta)
 
@@ -1515,7 +1490,8 @@ iterations of the loop.
 .. opcode:: CALL_INTRINSIC_1
 
    Calls an intrinsic function with one argument. Passes ``STACK[-1]`` as the
-   argument and sets ``STACK[-1]`` to the result. Used to implement functionality that is necessary but not performance critical.
+   argument and sets ``STACK[-1]`` to the result. Used to implement
+   functionality that is necessary but not performance critical.
 
     The operand determines which intrinsic function is called:
 
@@ -1526,6 +1502,19 @@ iterations of the loop.
     * ``4`` Wraps an aync generator value
     * ``5`` Performs the unary ``+`` operation
     * ``6`` Converts a list to a tuple
+
+   .. versionadded:: 3.12
+
+.. opcode:: CALL_INTRINSIC_2
+
+   Calls an intrinsic function with two arguments. Passes ``STACK[-2]``, ``STACK[-1]`` as the
+   arguments and sets ``STACK[-1]`` to the result. Used to implement functionality that is
+   necessary but not performance critical.
+
+    The operand determines which intrinsic function is called:
+
+    * ``0`` Not valid
+    * ``1`` Calculates the :exc:`ExceptionGroup` to raise from a ``try-except*``.
 
    .. versionadded:: 3.12
 

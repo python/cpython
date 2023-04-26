@@ -54,19 +54,100 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
 
 
 #ifdef Py_REF_DEBUG
+/* We keep the legacy symbol around for backward compatibility. */
 Py_ssize_t _Py_RefTotal;
 
-Py_ssize_t
-_Py_GetRefTotal(void)
+static inline Py_ssize_t
+get_legacy_reftotal(void)
 {
     return _Py_RefTotal;
 }
+#endif
+
+#ifdef Py_REF_DEBUG
+
+#  define REFTOTAL(interp) \
+    interp->object_state.reftotal
+
+static inline void
+reftotal_increment(PyInterpreterState *interp)
+{
+    REFTOTAL(interp)++;
+}
+
+static inline void
+reftotal_decrement(PyInterpreterState *interp)
+{
+    REFTOTAL(interp)--;
+}
+
+static inline void
+reftotal_add(PyInterpreterState *interp, Py_ssize_t n)
+{
+    REFTOTAL(interp) += n;
+}
+
+static inline Py_ssize_t get_global_reftotal(_PyRuntimeState *);
+
+/* We preserve the number of refs leaked during runtime finalization,
+   so they can be reported if the runtime is initialized again. */
+// XXX We don't lose any information by dropping this,
+// so we should consider doing so.
+static Py_ssize_t last_final_reftotal = 0;
+
+void
+_Py_FinalizeRefTotal(_PyRuntimeState *runtime)
+{
+    last_final_reftotal = get_global_reftotal(runtime);
+    runtime->object_state.interpreter_leaks = 0;
+}
+
+void
+_PyInterpreterState_FinalizeRefTotal(PyInterpreterState *interp)
+{
+    interp->runtime->object_state.interpreter_leaks += REFTOTAL(interp);
+    REFTOTAL(interp) = 0;
+}
+
+static inline Py_ssize_t
+get_reftotal(PyInterpreterState *interp)
+{
+    /* For a single interpreter, we ignore the legacy _Py_RefTotal,
+       since we can't determine which interpreter updated it. */
+    return REFTOTAL(interp);
+}
+
+static inline Py_ssize_t
+get_global_reftotal(_PyRuntimeState *runtime)
+{
+    Py_ssize_t total = 0;
+
+    /* Add up the total from each interpreter. */
+    HEAD_LOCK(&_PyRuntime);
+    PyInterpreterState *interp = PyInterpreterState_Head();
+    for (; interp != NULL; interp = PyInterpreterState_Next(interp)) {
+        total += REFTOTAL(interp);
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+
+    /* Add in the updated value from the legacy _Py_RefTotal. */
+    total += get_legacy_reftotal();
+    total += last_final_reftotal;
+    total += runtime->object_state.interpreter_leaks;
+
+    return total;
+}
+
+#undef REFTOTAL
 
 void
 _PyDebug_PrintTotalRefs(void) {
+    _PyRuntimeState *runtime = &_PyRuntime;
     fprintf(stderr,
             "[%zd refs, %zd blocks]\n",
-            _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
+            get_global_reftotal(runtime), _Py_GetGlobalAllocatedBlocks());
+    /* It may be helpful to also print the "legacy" reftotal separately.
+       Likewise for the total for each interpreter. */
 }
 #endif /* Py_REF_DEBUG */
 
@@ -121,6 +202,58 @@ _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
                            filename, lineno, __func__);
 }
 
+/* This is used strictly by Py_INCREF(). */
+void
+_Py_IncRefTotal_DO_NOT_USE_THIS(void)
+{
+    reftotal_increment(_PyInterpreterState_GET());
+}
+
+/* This is used strictly by Py_DECREF(). */
+void
+_Py_DecRefTotal_DO_NOT_USE_THIS(void)
+{
+    reftotal_decrement(_PyInterpreterState_GET());
+}
+
+void
+_Py_IncRefTotal(PyInterpreterState *interp)
+{
+    reftotal_increment(interp);
+}
+
+void
+_Py_DecRefTotal(PyInterpreterState *interp)
+{
+    reftotal_decrement(interp);
+}
+
+void
+_Py_AddRefTotal(PyInterpreterState *interp, Py_ssize_t n)
+{
+    reftotal_add(interp, n);
+}
+
+/* This includes the legacy total
+   and any carried over from the last runtime init/fini cycle. */
+Py_ssize_t
+_Py_GetGlobalRefTotal(void)
+{
+    return get_global_reftotal(&_PyRuntime);
+}
+
+Py_ssize_t
+_Py_GetLegacyRefTotal(void)
+{
+    return get_legacy_reftotal();
+}
+
+Py_ssize_t
+_PyInterpreterState_GetRefTotal(PyInterpreterState *interp)
+{
+    return get_reftotal(interp);
+}
+
 #endif /* Py_REF_DEBUG */
 
 void
@@ -146,6 +279,9 @@ _Py_DecRef(PyObject *o)
 {
     Py_DECREF(o);
 }
+
+
+/**************************************/
 
 PyObject *
 PyObject_Init(PyObject *op, PyTypeObject *tp)
@@ -238,17 +374,12 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
      * never happened. */
     Py_ssize_t refcnt = Py_REFCNT(self);
-    _Py_NewReference(self);
+    _Py_NewReferenceNoTotal(self);
     Py_SET_REFCNT(self, refcnt);
 
     _PyObject_ASSERT(self,
                      (!_PyType_IS_GC(Py_TYPE(self))
                       || _PyObject_GC_IS_TRACKED(self)));
-    /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
-       _Py_RefTotal, so we need to undo that. */
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
     return -1;
 }
 
@@ -370,13 +501,12 @@ _PyObject_Dump(PyObject* op)
     fflush(stderr);
 
     PyGILState_STATE gil = PyGILState_Ensure();
-    PyObject *error_type, *error_value, *error_traceback;
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     (void)PyObject_Print(op, stderr, 0);
     fflush(stderr);
 
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
     PyGILState_Release(gil);
 
     fprintf(stderr, "\n");
@@ -860,25 +990,22 @@ set_attribute_error_context(PyObject* v, PyObject* name)
         return 0;
     }
     // Intercept AttributeError exceptions and augment them to offer suggestions later.
-    PyObject *type, *value, *traceback;
-    PyErr_Fetch(&type, &value, &traceback);
-    PyErr_NormalizeException(&type, &value, &traceback);
-    // Check if the normalized exception is indeed an AttributeError
-    if (!PyErr_GivenExceptionMatches(value, PyExc_AttributeError)) {
+    PyObject *exc = PyErr_GetRaisedException();
+    if (!PyErr_GivenExceptionMatches(exc, PyExc_AttributeError)) {
         goto restore;
     }
-    PyAttributeErrorObject* the_exc = (PyAttributeErrorObject*) value;
+    PyAttributeErrorObject* the_exc = (PyAttributeErrorObject*) exc;
     // Check if this exception was already augmented
     if (the_exc->name || the_exc->obj) {
         goto restore;
     }
     // Augment the exception with the name and object
-    if (PyObject_SetAttr(value, &_Py_ID(name), name) ||
-        PyObject_SetAttr(value, &_Py_ID(obj), v)) {
+    if (PyObject_SetAttr(exc, &_Py_ID(name), name) ||
+        PyObject_SetAttr(exc, &_Py_ID(obj), v)) {
         return 1;
     }
 restore:
-    PyErr_Restore(type, value, traceback);
+    PyErr_SetRaisedException(exc);
     return 0;
 }
 
@@ -906,7 +1033,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
     }
     else {
         PyErr_Format(PyExc_AttributeError,
-                    "'%.50s' object has no attribute '%U'",
+                    "'%.100s' object has no attribute '%U'",
                     tp->tp_name, name);
     }
 
@@ -1226,7 +1353,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     }
 
     PyErr_Format(PyExc_AttributeError,
-                 "'%.50s' object has no attribute '%U'",
+                 "'%.100s' object has no attribute '%U'",
                  tp->tp_name, name);
 
     set_attribute_error_context(obj, name);
@@ -1347,7 +1474,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
 
     if (!suppress) {
         PyErr_Format(PyExc_AttributeError,
-                     "'%.50s' object has no attribute '%U'",
+                     "'%.100s' object has no attribute '%U'",
                      tp->tp_name, name);
 
         set_attribute_error_context(obj, name);
@@ -1418,7 +1545,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             }
             else {
                 PyErr_Format(PyExc_AttributeError,
-                            "'%.50s' object attribute '%U' is read-only",
+                            "'%.100s' object attribute '%U' is read-only",
                             tp->tp_name, name);
             }
             goto done;
@@ -1627,10 +1754,14 @@ none_repr(PyObject *op)
     return PyUnicode_FromString("None");
 }
 
-static void _Py_NO_RETURN
-none_dealloc(PyObject* Py_UNUSED(ignore))
+static void
+none_dealloc(PyObject* none)
 {
-    _Py_FatalRefcountError("deallocating None");
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref None out of existence. Instead,
+     * since None is an immortal object, re-set the reference count.
+     */
+    _Py_SetImmortal(none);
 }
 
 static PyObject *
@@ -1696,7 +1827,7 @@ PyTypeObject _PyNone_Type = {
     "NoneType",
     0,
     0,
-    none_dealloc,       /*tp_dealloc*/ /*never called*/
+    none_dealloc,       /*tp_dealloc*/
     0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
@@ -1733,8 +1864,9 @@ PyTypeObject _PyNone_Type = {
 };
 
 PyObject _Py_NoneStruct = {
-  _PyObject_EXTRA_INIT
-  1, &_PyNone_Type
+    _PyObject_EXTRA_INIT
+    { _Py_IMMORTAL_REFCNT },
+    &_PyNone_Type
 };
 
 /* NotImplemented is an object that can be used to signal that an
@@ -1767,13 +1899,14 @@ notimplemented_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_RETURN_NOTIMPLEMENTED;
 }
 
-static void _Py_NO_RETURN
-notimplemented_dealloc(PyObject* ignore)
+static void
+notimplemented_dealloc(PyObject *notimplemented)
 {
     /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref NotImplemented out of existence.
+     * we accidentally decref NotImplemented out of existence. Instead,
+     * since Notimplemented is an immortal object, re-set the reference count.
      */
-    Py_FatalError("deallocating NotImplemented");
+    _Py_SetImmortal(notimplemented);
 }
 
 static int
@@ -1835,16 +1968,15 @@ PyTypeObject _PyNotImplemented_Type = {
 
 PyObject _Py_NotImplementedStruct = {
     _PyObject_EXTRA_INIT
-    1, &_PyNotImplemented_Type
+    { _Py_IMMORTAL_REFCNT },
+    &_PyNotImplemented_Type
 };
 
-#ifdef MS_WINDOWS
-extern PyTypeObject PyHKEY_Type;
-#endif
 extern PyTypeObject _Py_GenericAliasIterType;
 extern PyTypeObject _PyMemoryIter_Type;
 extern PyTypeObject _PyLineIterator;
 extern PyTypeObject _PyPositionsIterator;
+extern PyTypeObject _PyLegacyEventHandler_Type;
 
 static PyTypeObject* static_types[] = {
     // The two most important base types: must be initialized first and
@@ -1890,9 +2022,6 @@ static PyTypeObject* static_types[] = {
     &PyFunction_Type,
     &PyGen_Type,
     &PyGetSetDescr_Type,
-#ifdef MS_WINDOWS
-    &PyHKEY_Type,
-#endif
     &PyInstanceMethod_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
@@ -1942,6 +2071,7 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_BitmapNode_Type,
     &_PyHamt_CollisionNode_Type,
     &_PyHamt_Type,
+    &_PyLegacyEventHandler_Type,
     &_PyInterpreterID_Type,
     &_PyLineIterator,
     &_PyManagedBuffer_Type,
@@ -2014,19 +2144,32 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
 }
 
 
-void
-_Py_NewReference(PyObject *op)
+static inline void
+new_reference(PyObject *op)
 {
     if (_PyRuntime.tracemalloc.config.tracing) {
         _PyTraceMalloc_NewReference(op);
     }
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
-    Py_SET_REFCNT(op, 1);
+    // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
+    op->ob_refcnt = 1;
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op, 1);
 #endif
+}
+
+void
+_Py_NewReference(PyObject *op)
+{
+#ifdef Py_REF_DEBUG
+    reftotal_increment(_PyInterpreterState_GET());
+#endif
+    new_reference(op);
+}
+
+void
+_Py_NewReferenceNoTotal(PyObject *op)
+{
+    new_reference(op);
 }
 
 
@@ -2190,9 +2333,8 @@ Py_ReprLeave(PyObject *obj)
     PyObject *dict;
     PyObject *list;
     Py_ssize_t i;
-    PyObject *error_type, *error_value, *error_traceback;
 
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     dict = PyThreadState_GetDict();
     if (dict == NULL)
@@ -2213,7 +2355,7 @@ Py_ReprLeave(PyObject *obj)
 
 finally:
     /* ignore exceptions because there is no way to report them. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 /* Trashcan support. */
@@ -2387,14 +2529,9 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
         /* Display the traceback where the object has been allocated.
            Do it before dumping repr(obj), since repr() is more likely
            to crash than dumping the traceback. */
-        void *ptr;
         PyTypeObject *type = Py_TYPE(obj);
-        if (_PyType_IS_GC(type)) {
-            ptr = (void *)((char *)obj - sizeof(PyGC_Head));
-        }
-        else {
-            ptr = (void *)obj;
-        }
+        const size_t presize = _PyType_PreHeaderSize(type);
+        void *ptr = (void *)((char *)obj - presize);
         _PyMem_DumpTraceback(fileno(stderr), ptr);
 
         /* This might succeed or fail, but we're about to abort, so at least

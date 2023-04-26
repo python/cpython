@@ -671,6 +671,20 @@ get_interp_settings(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+clear_extension(PyObject *self, PyObject *args)
+{
+    PyObject *name = NULL, *filename = NULL;
+    if (!PyArg_ParseTuple(args, "OO:clear_extension", &name, &filename)) {
+        return NULL;
+    }
+    if (_PyImport_ClearExtension(name, filename) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -692,6 +706,7 @@ static PyMethodDef module_functions[] = {
     _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
     {"get_interp_settings", get_interp_settings, METH_VARARGS, NULL},
+    {"clear_extension", clear_extension, METH_VARARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
