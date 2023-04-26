@@ -544,8 +544,10 @@ _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *class, PyObject *
         write_u32(cache->self_type_version, Py_TYPE(self)->tp_version_tag);
         write_obj(cache->method, res);  // borrowed
         instr->op.code = LOAD_SUPER_ATTR_METHOD;
+        Py_DECREF(res);
         goto success;
     }
+    Py_DECREF(res);
     SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_NOT_METHOD);
 
 fail:
