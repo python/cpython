@@ -5686,8 +5686,7 @@ _ctypes_add_types(PyObject *mod)
      * Simple classes
      */
 
-    /* PyCField_Type is derived from PyBaseObject_Type */
-    TYPE_READY(&PyCField_Type);
+    CREATE_TYPE(mod, st->PyCField_Type, &cfield_spec);
 
     /*************************************************
      *

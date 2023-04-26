@@ -35,6 +35,7 @@
 typedef struct {
     PyTypeObject *DictRemover_Type;
     PyTypeObject *PyCArg_Type;
+    PyTypeObject *PyCField_Type;
     PyTypeObject *PyCThunk_Type;
 } ctypes_state;
 
@@ -43,6 +44,7 @@ extern ctypes_state global_state;
 #define GLOBAL_STATE() (&global_state)
 
 extern PyType_Spec carg_spec;
+extern PyType_Spec cfield_spec;
 extern PyType_Spec cthunk_spec;
 
 typedef struct tagPyCArgObject PyCArgObject;
@@ -153,7 +155,6 @@ extern PyTypeObject PyCSimpleType_Type;
 #define PyCSimpleTypeObject_CheckExact(v)       Py_IS_TYPE(v, &PyCSimpleType_Type)
 #define PyCSimpleTypeObject_Check(v)    PyObject_TypeCheck(v, &PyCSimpleType_Type)
 
-extern PyTypeObject PyCField_Type;
 extern struct fielddesc *_ctypes_get_fielddesc(const char *fmt);
 
 

@@ -356,12 +356,10 @@ Modules/_ctypes/_ctypes.c	-	Struct_Type	-
 Modules/_ctypes/_ctypes.c	-	UnionType_Type	-
 Modules/_ctypes/_ctypes.c	-	Union_Type	-
 Modules/_ctypes/callproc.c	-	PyCArg_Type	-
-Modules/_ctypes/cfield.c	-	PyCField_Type	-
 Modules/_ctypes/ctypes.h	-	PyCArg_Type	-
 Modules/_ctypes/ctypes.h	-	PyCArrayType_Type	-
 Modules/_ctypes/ctypes.h	-	PyCArray_Type	-
 Modules/_ctypes/ctypes.h	-	PyCData_Type	-
-Modules/_ctypes/ctypes.h	-	PyCField_Type	-
 Modules/_ctypes/ctypes.h	-	PyCFuncPtrType_Type	-
 Modules/_ctypes/ctypes.h	-	PyCFuncPtr_Type	-
 Modules/_ctypes/ctypes.h	-	PyCPointerType_Type	-
