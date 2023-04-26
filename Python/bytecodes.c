@@ -1219,6 +1219,35 @@ dummy_func(
             }
         }
 
+        inst(LOAD_CLASS_DICT, ( -- v)) {
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+            PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
+            if (func == NULL) {
+                _PyErr_Format(tstate, PyExc_SystemError,
+                              "no function defined when loading %R from class dict", name);
+                goto error;
+            }
+            PyObject *class_dict = func->func_class_dict;
+            if (class_dict == NULL) {
+                _PyErr_Format(tstate, PyExc_SystemError,
+                              "no class dict set when loading %R", name);
+                goto error;
+            }
+            if (PyDict_CheckExact(class_dict)) {
+                v = PyDict_GetItemWithError(class_dict, name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+            }
+            else {
+                v = PyObject_GetItem(class_dict, name);
+            }
+            if (_PyErr_Occurred(tstate)) {
+                goto error;
+            }
+            assert(v != NULL);
+        }
+
         family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
             LOAD_GLOBAL,
             LOAD_GLOBAL_MODULE,
@@ -3081,7 +3110,6 @@ dummy_func(
                              kwdefaults  if (oparg & 0x02),
                              annotations if (oparg & 0x04),
                              closure     if (oparg & 0x08),
-                             locals      if (oparg & 0x20),
                              codeobj -- func)) {
 
             PyFunctionObject *func_obj = (PyFunctionObject *)
@@ -3092,10 +3120,6 @@ dummy_func(
                 goto error;
             }
 
-            if (oparg & 0x20) {
-                assert(PyDict_CheckExact(locals));
-                func_obj->func_locals = locals;
-            }
             if (oparg & 0x08) {
                 assert(PyTuple_CheckExact(closure));
                 func_obj->func_closure = closure;

@@ -167,6 +167,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [LOAD_ATTR_WITH_HINT] = LOAD_ATTR,
     [LOAD_BUILD_CLASS] = LOAD_BUILD_CLASS,
     [LOAD_CLASSDEREF] = LOAD_CLASSDEREF,
+    [LOAD_CLASS_DICT] = LOAD_CLASS_DICT,
     [LOAD_CLOSURE] = LOAD_CLOSURE,
     [LOAD_CONST] = LOAD_CONST,
     [LOAD_CONST__LOAD_FAST] = LOAD_CONST,
@@ -413,7 +414,7 @@ static const char *const _PyOpcode_OpName[263] = {
     [KW_NAMES] = "KW_NAMES",
     [CALL_INTRINSIC_1] = "CALL_INTRINSIC_1",
     [CALL_INTRINSIC_2] = "CALL_INTRINSIC_2",
-    [175] = "<175>",
+    [LOAD_CLASS_DICT] = "LOAD_CLASS_DICT",
     [176] = "<176>",
     [177] = "<177>",
     [178] = "<178>",
@@ -510,7 +511,6 @@ static const char *const _PyOpcode_OpName[263] = {
     case 168: \
     case 169: \
     case 170: \
-    case 175: \
     case 176: \
     case 177: \
     case 178: \

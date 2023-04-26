@@ -227,6 +227,8 @@ hasconst.append(172)
 def_op('CALL_INTRINSIC_1', 173)
 def_op('CALL_INTRINSIC_2', 174)
 
+def_op('LOAD_CLASS_DICT', 175)
+
 # Instrumented instructions
 MIN_INSTRUMENTED_OPCODE = 238
 

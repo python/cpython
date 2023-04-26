@@ -1754,14 +1754,6 @@ compiler_make_closure(struct compiler *c, location loc,
         ADDOP_I(c, loc, BUILD_TUPLE, co->co_nfreevars);
     }
 
-    /* If flag 0x20 is set, we want to bind func_locals
-       to the current locals at runtime.
-       Push them on the stack in the right spot.
-    */
-    if (flags & 0x20) {
-        ADDOP(c, loc, LOAD_LOCALS);
-    }
-
     ADDOP_LOAD_CONST(c, loc, (PyObject*)co);
     ADDOP_I(c, loc, MAKE_FUNCTION, flags);
     return SUCCESS;

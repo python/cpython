@@ -549,7 +549,6 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
     }
     PyFrameConstructor desc = {
         .fc_globals = globals,
-        .fc_locals = locals,
         .fc_builtins = builtins,
         .fc_name = ((PyCodeObject *)co)->co_name,
         .fc_qualname = ((PyCodeObject *)co)->co_name,
@@ -1584,7 +1583,6 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     }
     PyFrameConstructor constr = {
         .fc_globals = globals,
-        .fc_locals = locals,
         .fc_builtins = builtins,
         .fc_name = ((PyCodeObject *)_co)->co_name,
         .fc_qualname = ((PyCodeObject *)_co)->co_name,

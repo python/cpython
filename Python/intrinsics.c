@@ -221,8 +221,19 @@ prep_reraise_star(PyThreadState* unused, PyObject *orig, PyObject *excs)
     return _PyExc_PrepReraiseStar(orig, excs);
 }
 
+static PyObject *
+set_class_dict(PyThreadState* unused, PyObject *fn, PyObject *class_dict)
+{
+    assert(PyFunction_Check(fn));
+    assert(PyDict_Check(class_dict));
+    PyFunctionObject *func = (PyFunctionObject *)fn;
+    func->func_class_dict = class_dict;
+    return (PyObject *)func;
+}
+
 const instrinsic_func2
 _PyIntrinsics_BinaryFunctions[] = {
     [INTRINSIC_PREP_RERAISE_STAR] = prep_reraise_star,
+    [INTRINSIC_SET_CLASS_DICT] = set_class_dict,
 };
 

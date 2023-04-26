@@ -196,12 +196,6 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         goto error;
     }
 
-    if (((PyFunctionObject *)func)->func_locals != NULL) {
-        const char *msg =
-            "__locals__ not set on class body function defining %.200R";
-        PyErr_Format(PyExc_RuntimeError, msg, cls);
-    }
-
     PyThreadState *tstate = _PyThreadState_GET();
     EVAL_CALL_STAT_INC(EVAL_CALL_BUILD_CLASS);
     cell = _PyEval_Vector(tstate, (PyFunctionObject *)func, ns, NULL, 0, NULL);

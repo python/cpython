@@ -14,8 +14,9 @@
 /* Binary Functions: */
 
 #define INTRINSIC_PREP_RERAISE_STAR 1
+#define INTRINSIC_SET_CLASS_DICT    2
 
-#define MAX_INTRINSIC_2 1
+#define MAX_INTRINSIC_2 2
 
 
 typedef PyObject *(*instrinsic_func1)(PyThreadState* tstate, PyObject *value);
