@@ -1601,14 +1601,17 @@ _sqlite3.Connection.load_extension as pysqlite_connection_load_extension
 
     name as extension_name: str
     /
+    *
+    entrypoint: str(accept={str, NoneType}) = None
 
 Load SQLite extension module.
 [clinic start generated code]*/
 
 static PyObject *
 pysqlite_connection_load_extension_impl(pysqlite_Connection *self,
-                                        const char *extension_name)
-/*[clinic end generated code: output=47eb1d7312bc97a7 input=edd507389d89d621]*/
+                                        const char *extension_name,
+                                        const char *entrypoint)
+/*[clinic end generated code: output=7e61a7add9de0286 input=c36b14ea702e04f5]*/
 {
     int rc;
     char* errmsg;
@@ -1621,7 +1624,7 @@ pysqlite_connection_load_extension_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    rc = sqlite3_load_extension(self->db, extension_name, 0, &errmsg);
+    rc = sqlite3_load_extension(self->db, extension_name, entrypoint, &errmsg);
     if (rc != 0) {
         PyErr_SetString(self->OperationalError, errmsg);
         return NULL;
