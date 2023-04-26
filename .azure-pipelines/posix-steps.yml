@@ -1,4 +1,5 @@
 parameters:
+  hypothesis: false
   coverage: false
   sudo_dependencies: sudo
   dependencies: apt
@@ -53,7 +54,7 @@ steps:
     displayName: 'Publish code coverage results'
 
 
-- ${{ if ne(parameters.coverage, 'true') }}:
+- ${{ if and(ne(parameters.coverage, 'true'), ne(parameters.hypothesis, 'true')) }}:
   - script: make pythoninfo
     displayName: 'Display build info'
 
@@ -71,6 +72,36 @@ steps:
       ./python Tools/patchcheck/patchcheck.py --ci true
     displayName: 'Run patchcheck.py'
     condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
+
+- ${{ if eq(parameters.hypothesis, 'true') }}:
+  - script: ./python -m venv hypovenv && ./hypovenv/bin/python -m pip install -U hypothesis
+    displayName: 'Set up virtual environment'
+
+  - script: ./hypovenv/bin/python -m test.pythoninfo
+    displayName: 'Display build info'
+
+  - script: |
+      # Most of the excluded tests are slow test suites with no property tests
+      #
+      # (GH-104097) test_sysconfig is skipped because it has tests that are
+      # failing when executed from inside a virtual environment.
+      $COMMAND -m test \
+                -W \
+                -x test_asyncio \
+                -x test_multiprocessing_fork \
+                -x test_multiprocessing_forkserver \
+                -x test_multiprocessing_spawn \
+                -x test_concurrent_futures \
+                -x test_socket \
+                -x test_subprocess \
+                -x test_signal \
+                -x test_sysconfig
+    displayName: 'Run tests with hypothesis installed'
+    env:
+      ${{ if eq(parameters.xvfb, 'true') }}:
+        COMMAND: xvfb-run ./hypovenv/bin/python
+      ${{ if ne(parameters.xvfb, 'true') }}:
+        COMMAND: ./hypovenv/bin/python
 
 
 - task: PublishTestResults@2
