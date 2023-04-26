@@ -5661,14 +5661,13 @@ _ctypes_add_types(PyObject *mod)
         } \
     } while (0)
 
-#define CREATE_TYPE(MOD, TP, SPEC) \
-    do { \
-        PyObject *type = PyType_FromMetaclass(NULL, MOD, SPEC, NULL); \
-        if (type == NULL) { \
-            return -1; \
-        } \
-        TP = (PyTypeObject *)type; \
-    } while (0)
+#define CREATE_TYPE(MOD, TP, SPEC) do {                             \
+    PyObject *type = PyType_FromMetaclass(NULL, MOD, SPEC, NULL);   \
+    if (type == NULL) {                                             \
+        return -1;                                                  \
+    }                                                               \
+    TP = (PyTypeObject *)type;                                      \
+} while (0)
 
     ctypes_state *st = GLOBAL_STATE();
 
