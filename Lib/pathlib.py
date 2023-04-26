@@ -731,7 +731,7 @@ class Path(PurePath):
             msg = ("support for supplying keyword arguments to pathlib.PurePath "
                    "is deprecated and scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath(**kwargs)", msg, remove=(3, 14))
-        super().__init__(*args)
+        super().__init__(*args, template=template)
 
     def __new__(cls, *args, **kwargs):
         if cls is Path:
