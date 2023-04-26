@@ -1696,7 +1696,7 @@ simple_stmts_rule(Parser *p)
 
 // simple_stmt:
 //     | assignment
-//     | type_alias
+//     | &"type" type_alias
 //     | star_expressions
 //     | &'return' return_stmt
 //     | &('import' | 'from') import_stmt
@@ -1754,24 +1754,26 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "assignment"));
     }
-    { // type_alias
+    { // &"type" type_alias
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "type_alias"));
+        D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&\"type\" type_alias"));
         stmt_ty type_alias_var;
         if (
+            _PyPegen_lookahead_with_string(1, _PyPegen_expect_soft_keyword, p, "type")
+            &&
             (type_alias_var = type_alias_rule(p))  // type_alias
         )
         {
-            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "type_alias"));
+            D(fprintf(stderr, "%*c+ simple_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&\"type\" type_alias"));
             _res = type_alias_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s simple_stmt[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "type_alias"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&\"type\" type_alias"));
     }
     { // star_expressions
         if (p->error_indicator) {

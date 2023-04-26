@@ -112,7 +112,7 @@ simple_stmts[asdl_stmt_seq*]:
 # will throw a SyntaxError.
 simple_stmt[stmt_ty] (memo):
     | assignment
-    | type_alias
+    | &"type" type_alias
     | e=star_expressions { _PyAST_Expr(e, EXTRA) }
     | &'return' return_stmt
     | &('import' | 'from') import_stmt
