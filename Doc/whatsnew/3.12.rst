@@ -204,8 +204,9 @@ Other Language Changes
   exception as a :pep:`678` note. (Contributed by Irit Katriel in :gh:`77757`.)
 
 * When a ``try-except*`` construct handles the entire :exc:`ExceptionGroup` and
-and raises one other exception, that exception is no longer wrapped in an
-:exc:`ExceptionGroup`. (Contributed by Irit Katriel in :gh:`103590`.)
+  and raises one other exception, that exception is no longer wrapped in an
+  :exc:`ExceptionGroup`. (Contributed by Irit Katriel in :gh:`103590`.)
+
 
 New Modules
 ===========
