@@ -60,11 +60,17 @@ struct pair_encodemap {
     DBCHAR code;
 };
 
+#ifndef CJK_MOD_SPECIFIC_STATE
+#define CJK_MOD_SPECIFIC_STATE
+#endif
+
 typedef struct _cjk_mod_state {
     int num_mappings;
     int num_codecs;
     struct dbcs_map *mapping_list;
     MultibyteCodec *codec_list;
+
+    CJK_MOD_SPECIFIC_STATE
 } cjkcodecs_module_state;
 
 static inline cjkcodecs_module_state *
