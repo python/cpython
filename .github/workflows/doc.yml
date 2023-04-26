@@ -56,11 +56,13 @@ jobs:
 
     # Add pull request annotations for Sphinx nitpicks (missing references)
     - name: 'Get list of changed files'
+      if: github.event_name == 'pull_request'
       id: changed_files
       uses: Ana06/get-changed-files@v2.2.0
       with:
         filter: "Doc/**"
     - name: 'Build changed files in nit-picky mode'
+      if: github.event_name == 'pull_request'
       continue-on-error: true
       run: |
         # Mark files the pull request modified
