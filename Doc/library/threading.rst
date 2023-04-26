@@ -633,8 +633,9 @@ call release as many times the lock has been acquired can lead to deadlock.
 
       .. seealso::
 
-         :ref:`Using RLock as a context manager <with-locks>` is recommended
-            over manual :meth:`!acquire` and :meth:`release` calls whenever practical.
+         :ref:`Using RLock as a context manager <with-locks>`
+            Recommended over manual :meth:`!acquire` and :meth:`release` calls
+            whenever practical.
 
 
       When invoked with the *blocking* argument set to ``True`` (the default):
