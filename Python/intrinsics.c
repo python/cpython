@@ -227,8 +227,8 @@ set_class_dict(PyThreadState* unused, PyObject *fn, PyObject *class_dict)
     assert(PyFunction_Check(fn));
     assert(PyDict_Check(class_dict));
     PyFunctionObject *func = (PyFunctionObject *)fn;
-    func->func_class_dict = class_dict;
-    return (PyObject *)func;
+    Py_XSETREF(func->func_class_dict, Py_NewRef(class_dict));
+    return Py_NewRef(fn);
 }
 
 const instrinsic_func2
