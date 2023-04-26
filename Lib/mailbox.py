@@ -395,6 +395,48 @@ class Maildir(Mailbox):
         f = open(os.path.join(self._path, self._lookup(key)), 'rb')
         return _ProxyFile(f)
 
+    def get_info(self, key):
+        """Get the keyed message's "info" as a string."""
+        subpath = self._lookup(key)
+        if self.colon in subpath:
+            return subpath.split(self.colon)[-1]
+        return ''
+
+    def set_info(self, key, info):
+        """Set the keyed message's "info" string."""
+        if not isinstance(info, str):
+            raise TypeError('info must be a string: %s' % type(info))
+        old_subpath = self._lookup(key)
+        new_subpath = old_subpath.split(self.colon)[0]
+        if info:
+            new_subpath += self.colon + info
+        if new_subpath == old_subpath:
+            return
+        old_path = os.path.join(self._path, old_subpath)
+        new_path = os.path.join(self._path, new_subpath)
+        os.rename(old_path, new_path)
+        self._toc[key] = new_subpath
+
+    def get_flags(self, key):
+        """Return as a string the flags that are set on the keyed message."""
+        info = self.get_info(key)
+        if info.startswith('2,'):
+            return info[2:]
+        return ''
+
+    def set_flags(self, key, flags):
+        """Set the given flags and unset all others on the keyed message."""
+        self.set_info(key, '2,' + ''.join(sorted(flags)))
+
+    def add_flag(self, key, flag):
+        """Set the given flag(s) without changing others on the keyed message."""
+        self.set_flags(key, ''.join(set(self.get_flags(key)) | set(flag)))
+
+    def remove_flag(self, key, flag):
+        """Unset the given string flag(s) without changing others on the keyed message."""
+        if self.get_flags(key):
+            self.set_flags(key, ''.join(set(self.get_flags(key)) - set(flag)))
+
     def iterkeys(self):
         """Return an iterator over keys."""
         self._refresh()
