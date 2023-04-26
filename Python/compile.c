@@ -2284,10 +2284,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
     Py_DECREF(co);
     if (asdl_seq_LEN(typeparams) > 0) {
-        ADDOP_I(c, loc, COPY, 1);
         RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Load));
         ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS);
-        ADDOP(c, loc, POP_TOP);
 
         if (is_typeparams_in_class) {
             c->u->u_metadata.u_argcount += 1;

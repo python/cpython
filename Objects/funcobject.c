@@ -676,7 +676,7 @@ _Py_set_function_type_params(PyThreadState *unused, PyObject *func,
         return NULL;
     }
     Py_XSETREF(f->func_typeparams, Py_NewRef(type_params));
-    Py_RETURN_NONE;
+    return Py_NewRef(func);
 }
 
 
