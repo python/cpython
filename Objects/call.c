@@ -178,23 +178,27 @@ object_is_not_callable(PyThreadState *tstate, PyObject *callable)
         // TypeError: 'module' object is not callable. Did you mean: 'pprint.pprint(...)'?
         PyObject *name = PyModule_GetNameObject(callable);
         if (name == NULL) {
-            return;
+            _PyErr_Clear(tstate);
+            goto basic_type_error;
         }
         PyObject *attr;
         int res = _PyObject_LookupAttr(callable, name, &attr);
-        if (res > 0 && PyCallable_Check(attr)) {
+        if (res < 0) {
+            _PyErr_Clear(tstate);
+        }
+        else if (res > 0 && PyCallable_Check(attr)) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "'%.200s' object is not callable. "
                           "Did you mean: '%U.%U(...)'?",
                           Py_TYPE(callable)->tp_name, name, name);
+            Py_DECREF(attr);
+            Py_DECREF(name);
+            return;
         }
         Py_XDECREF(attr);
         Py_DECREF(name);
-        if (_PyErr_Occurred(tstate)) {
-            // Either our lookup failed, or we set the exception above:
-            return;
-        }
     }
+basic_type_error:
     _PyErr_Format(tstate, PyExc_TypeError, "'%.200s' object is not callable",
                   Py_TYPE(callable)->tp_name);
 }
