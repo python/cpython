@@ -148,8 +148,7 @@ NOTTESTS = set()
 # Beware this can't generally be done for any directory with sub-tests as the
 # __init__.py may do things which alter what tests are to be run.
 SPLITTESTDIRS = {
-    "test_asyncio",
-    "test_compiler",
+    "test_asyncio"
 }
 
 # Storage of uncollectable objects
