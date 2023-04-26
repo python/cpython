@@ -98,7 +98,7 @@ PyAPI_FUNC(void) _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, Py
 
 /* Context manipulation (PEP 3134) */
 
-PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
+Py_DEPRECATED(3.12) PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
 
 /* Like PyErr_Format(), but saves current exception as __context__ and
@@ -115,24 +115,6 @@ PyAPI_FUNC(PyObject *) _PyErr_FormatFromCause(
 PyAPI_FUNC(int) _PyException_AddNote(
      PyObject *exc,
      PyObject *note);
-
-/* Helper that attempts to replace the current exception with one of the
- * same type but with a prefix added to the exception text. The resulting
- * exception description looks like:
- *
- *     prefix (exc_type: original_exc_str)
- *
- * Only some exceptions can be safely replaced. If the function determines
- * it isn't safe to perform the replacement, it will leave the original
- * unmodified exception in place.
- *
- * Returns a borrowed reference to the new exception (if any), NULL if the
- * existing exception was left in place.
- */
-PyAPI_FUNC(PyObject *) _PyErr_TrySetFromCause(
-    const char *prefix_format,   /* ASCII-encoded string  */
-    ...
-    );
 
 /* In signalmodule.c */
 

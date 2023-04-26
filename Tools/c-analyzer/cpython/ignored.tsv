@@ -141,7 +141,6 @@ Modules/syslogmodule.c	-	S_log_open	-
 ##-----------------------
 ## kept for stable ABI compatibility
 
-# XXX should be per-interpreter, without impacting stable ABI extensions
 Objects/object.c	-	_Py_RefTotal	-
 
 ##-----------------------
@@ -156,6 +155,9 @@ Python/sysmodule.c	-	_preinit_xoptions	-
 Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
+
+# explicitly protected, internal-only
+Modules/_xxinterpchannelsmodule.c	-	_globals	-
 
 
 ##################################
@@ -301,11 +303,13 @@ Objects/genobject.c	-	NON_INIT_CORO_MSG	-
 Objects/longobject.c	-	_PyLong_DigitValue	-
 Objects/object.c	-	_Py_SwappedOp	-
 Objects/object.c	-	_Py_abstract_hack	-
+Objects/object.c	-	last_final_reftotal	-
 Objects/object.c	-	static_types	-
 Objects/obmalloc.c	-	_PyMem	-
 Objects/obmalloc.c	-	_PyMem_Debug	-
 Objects/obmalloc.c	-	_PyMem_Raw	-
 Objects/obmalloc.c	-	_PyObject	-
+Objects/obmalloc.c	-	last_final_leaks	-
 Objects/obmalloc.c	-	usedpools	-
 Objects/typeobject.c	-	name_op	-
 Objects/typeobject.c	-	slotdefs	-
@@ -350,7 +354,6 @@ Python/pylifecycle.c	-	INTERPRETER_TRAMPOLINE_CODEDEF	-
 Python/pystate.c	-	initial	-
 Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
-Python/specialize.c	-	compare_masks	-
 Python/stdlib_module_names.h	-	_Py_stdlib_module_names	-
 Python/sysmodule.c	-	_PySys_ImplCacheTag	-
 Python/sysmodule.c	-	_PySys_ImplName	-
