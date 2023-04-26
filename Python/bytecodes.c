@@ -253,7 +253,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        inst(UNARY_NOT, (value -- res)) {
+        inst(UNARY_NOT, (value -- res)) { // XXX
             int err = PyObject_IsTrue(value);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
@@ -263,7 +263,6 @@ dummy_func(
             else {
                 res = Py_False;
             }
-            Py_INCREF(res);
         }
 
         inst(UNARY_INVERT, (value -- res)) {
@@ -957,7 +956,7 @@ dummy_func(
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
                 value = Py_NewRef(((PyStopIterationObject *)exc_value)->value);
                 DECREF_INPUTS();
-                none = Py_NewRef(Py_None);
+                none = Py_None;
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
@@ -1911,7 +1910,6 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             res = (sign_ish & oparg) ? Py_True : Py_False;
-            Py_INCREF(res);
         }
 
         // Similar to COMPARE_OP_FLOAT
@@ -1930,7 +1928,6 @@ dummy_func(
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             res = (sign_ish & oparg) ? Py_True : Py_False;
-            Py_INCREF(res);
         }
 
         // Similar to COMPARE_OP_FLOAT, but for ==, != only
@@ -1946,20 +1943,19 @@ dummy_func(
             assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
             assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
             res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? Py_True : Py_False;
-            Py_INCREF(res);
         }
 
         inst(IS_OP, (left, right -- b)) {
             int res = Py_Is(left, right) ^ oparg;
             DECREF_INPUTS();
-            b = Py_NewRef(res ? Py_True : Py_False);
+            b = res ? Py_True : Py_False;
         }
 
         inst(CONTAINS_OP, (left, right -- b)) {
             int res = PySequence_Contains(right, left);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
-            b = Py_NewRef((res^oparg) ? Py_True : Py_False);
+            b = (res ^ oparg) ? Py_True : Py_False;
         }
 
         inst(CHECK_EG_MATCH, (exc_value, match_type -- rest, match)) {
@@ -1992,7 +1988,7 @@ dummy_func(
 
             int res = PyErr_GivenExceptionMatches(left, right);
             DECREF_INPUTS();
-            b = Py_NewRef(res ? Py_True : Py_False);
+            b = res ? Py_True : Py_False;
         }
 
          inst(IMPORT_NAME, (level, fromlist -- res)) {
@@ -2018,15 +2014,11 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(POP_JUMP_IF_FALSE, (cond -- )) {
-            if (Py_IsTrue(cond)) {
-                _Py_DECREF_NO_DEALLOC(cond);
-            }
-            else if (Py_IsFalse(cond)) {
-                _Py_DECREF_NO_DEALLOC(cond);
+        inst(POP_JUMP_IF_FALSE, (cond -- )) { // XXX
+            if (Py_IsFalse(cond)) {
                 JUMPBY(oparg);
             }
-            else {
+            else if (!Py_IsTrue(cond)) {
                 int err = PyObject_IsTrue(cond);
                 DECREF_INPUTS();
                 if (err == 0) {
@@ -2038,15 +2030,11 @@ dummy_func(
             }
         }
 
-        inst(POP_JUMP_IF_TRUE, (cond -- )) {
-            if (Py_IsFalse(cond)) {
-                _Py_DECREF_NO_DEALLOC(cond);
-            }
-            else if (Py_IsTrue(cond)) {
-                _Py_DECREF_NO_DEALLOC(cond);
+        inst(POP_JUMP_IF_TRUE, (cond -- )) { // XXX
+            if (Py_IsTrue(cond)) {
                 JUMPBY(oparg);
             }
-            else {
+            else if (!Py_IsFalse(cond)) {
                 int err = PyObject_IsTrue(cond);
                 DECREF_INPUTS();
                 if (err > 0) {
@@ -2058,19 +2046,15 @@ dummy_func(
             }
         }
 
-        inst(POP_JUMP_IF_NOT_NONE, (value -- )) {
+        inst(POP_JUMP_IF_NOT_NONE, (value -- )) { // XXX
             if (!Py_IsNone(value)) {
                 DECREF_INPUTS();
                 JUMPBY(oparg);
             }
-            else {
-                _Py_DECREF_NO_DEALLOC(value);
-            }
         }
 
-        inst(POP_JUMP_IF_NONE, (value -- )) {
+        inst(POP_JUMP_IF_NONE, (value -- )) { // XXX
             if (Py_IsNone(value)) {
-                _Py_DECREF_NO_DEALLOC(value);
                 JUMPBY(oparg);
             }
             else {
@@ -2106,19 +2090,19 @@ dummy_func(
             }
             else {
                 ERROR_IF(_PyErr_Occurred(tstate), error);  // Error!
-                attrs = Py_NewRef(Py_None);  // Failure!
+                attrs = Py_None;  // Failure!
             }
         }
 
         inst(MATCH_MAPPING, (subject -- subject, res)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
-            res = Py_NewRef(match ? Py_True : Py_False);
+            res = match ? Py_True : Py_False;
             PREDICT(POP_JUMP_IF_FALSE);
         }
 
         inst(MATCH_SEQUENCE, (subject -- subject, res)) {
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
-            res = Py_NewRef(match ? Py_True : Py_False);
+            res = match ? Py_True : Py_False;
             PREDICT(POP_JUMP_IF_FALSE);
         }
 
@@ -2309,7 +2293,7 @@ dummy_func(
             STAT_INC(FOR_ITER, hit);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
             frame->return_offset = oparg;
-            _PyFrame_StackPush(gen_frame, Py_NewRef(Py_None));
+            _PyFrame_StackPush(gen_frame, Py_None);
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
@@ -2416,7 +2400,7 @@ dummy_func(
                 prev_exc = exc_info->exc_value;
             }
             else {
-                prev_exc = Py_NewRef(Py_None);
+                prev_exc = Py_None;
             }
             assert(PyExceptionInstance_Check(new_exc));
             exc_info->exc_value = Py_NewRef(new_exc);
@@ -3313,7 +3297,6 @@ dummy_func(
             _Py_CODEUNIT *here = next_instr-1;
             int offset;
             if (Py_IsNone(value)) {
-                _Py_DECREF_NO_DEALLOC(value);
                 offset = oparg;
             }
             else {
@@ -3328,7 +3311,6 @@ dummy_func(
             _Py_CODEUNIT *here = next_instr-1;
             int offset;
             if (Py_IsNone(value)) {
-                _Py_DECREF_NO_DEALLOC(value);
                 offset = 0;
             }
             else {
