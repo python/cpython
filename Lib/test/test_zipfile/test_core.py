@@ -1080,6 +1080,41 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
                     self.assertEqual(zinfo.header_offset, expected_header_offset)
                     self.assertEqual(zf.read(zinfo), expected_content)
 
+    def test_force_zip64(self):
+        """Test that forcing zip64 extensions correctly notes this in the zip file"""
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, mode="w", allowZip64=True) as zf:
+            with zf.open("text.txt", mode="w", force_zip64=True) as zi:
+                zi.write(b"_")
+
+        zipdata = data.getvalue()
+
+        # pull out and check zip information
+        (
+            header, vers, os, flags, comp, csize, usize, fn_len,
+            ex_total_len, filename, ex_id, ex_len, ex_usize, ex_csize, cd_sig
+        ) = struct.unpack("<4sBBHH8xIIHH8shhQQx4s", zipdata[:63])
+
+        self.assertEqual(header, b"PK\x03\x04")  # local file header
+        self.assertGreaterEqual(vers, zipfile.ZIP64_VERSION)  # requires zip64 to extract
+        self.assertEqual(os, 0)  # compatible with MS-DOS
+        self.assertEqual(flags, 0)  # no flags
+        self.assertEqual(comp, 0)  # compression method = stored
+        self.assertEqual(csize, 0xFFFFFFFF)  # sizes are in zip64 extra
+        self.assertEqual(usize, 0xFFFFFFFF)
+        self.assertEqual(fn_len, 8)  # filename len
+        self.assertEqual(ex_total_len, 20)  # size of extra records
+        self.assertEqual(ex_id, 1)  # Zip64 extra record
+        self.assertEqual(ex_len, 16)  # 16 bytes of data
+        self.assertEqual(ex_usize, 1)  # uncompressed size
+        self.assertEqual(ex_csize, 1)  # compressed size
+        self.assertEqual(cd_sig, b"PK\x01\x02") # ensure the central directory header is next
+
+        z = zipfile.ZipFile(io.BytesIO(zipdata))
+        zinfos = z.infolist()
+        self.assertEqual(len(zinfos), 1)
+        self.assertGreaterEqual(zinfos[0].extract_version, zipfile.ZIP64_VERSION)  # requires zip64 to extract
+
 
 @requires_zlib()
 class DeflateTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,

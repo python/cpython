@@ -455,17 +455,15 @@ class ZipInfo (object):
         extra = self.extra
 
         min_version = 0
-        if zip64 is None:
-            zip64 = file_size > ZIP64_LIMIT or compress_size > ZIP64_LIMIT
+        if (file_size > ZIP64_LIMIT or compress_size > ZIP64_LIMIT):
+            if zip64 is None:
+                zip64 = True
+            elif not zip64:
+                raise LargeZipFile("Filesize would require ZIP64 extensions")
         if zip64:
             fmt = '<HHQQ'
             extra = extra + struct.pack(fmt,
                                         1, struct.calcsize(fmt)-4, file_size, compress_size)
-        if file_size > ZIP64_LIMIT or compress_size > ZIP64_LIMIT:
-            if not zip64:
-                raise LargeZipFile("Filesize would require ZIP64 extensions")
-            # File is larger than what fits into a 4 byte integer,
-            # fall back to the ZIP64 extension
             file_size = 0xffffffff
             compress_size = 0xffffffff
             min_version = ZIP64_VERSION
