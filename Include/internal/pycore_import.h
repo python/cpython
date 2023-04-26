@@ -19,6 +19,8 @@ struct _import_runtime_state {
            used exclusively for when the extensions dict is access/modified
            from an arbitrary thread. */
         PyThreadState main_tstate;
+        /* A lock to guard the dict. */
+        PyThread_type_lock mutex;
         /* A dict mapping (filename, name) to PyModuleDef for modules.
            Only legacy (single-phase init) extension modules are added
            and only if they support multiple initialization (m_size >- 0)

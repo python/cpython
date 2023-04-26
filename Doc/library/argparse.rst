@@ -585,7 +585,7 @@ arguments will never be treated as file references.
 
 .. versionchanged:: 3.12
    :class:`ArgumentParser` changed encoding and errors to read arguments files
-   from default (e.g. :func:`locale.getpreferredencoding(False)` and
+   from default (e.g. :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
    ``"strict"``) to :term:`filesystem encoding and error handler`.
    Arguments file should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
@@ -1191,7 +1191,7 @@ done downstream after the arguments are parsed.
 For example, JSON or YAML conversions have complex error cases that require
 better reporting than can be given by the ``type`` keyword.  A
 :exc:`~json.JSONDecodeError` would not be well formatted and a
-:exc:`FileNotFound` exception would not be handled at all.
+:exc:`FileNotFoundError` exception would not be handled at all.
 
 Even :class:`~argparse.FileType` has its limitations for use with the ``type``
 keyword.  If one argument uses *FileType* and then a subsequent argument fails,
@@ -1445,7 +1445,7 @@ Action classes
 Action classes implement the Action API, a callable which returns a callable
 which processes arguments from the command-line. Any object which follows
 this API may be passed as the ``action`` parameter to
-:meth:`add_argument`.
+:meth:`~ArgumentParser.add_argument`.
 
 .. class:: Action(option_strings, dest, nargs=None, const=None, default=None, \
                   type=None, choices=None, required=False, help=None, \
@@ -1723,7 +1723,7 @@ Sub-commands
    :class:`ArgumentParser` supports the creation of such sub-commands with the
    :meth:`add_subparsers` method.  The :meth:`add_subparsers` method is normally
    called with no arguments and returns a special action object.  This object
-   has a single method, :meth:`~ArgumentParser.add_parser`, which takes a
+   has a single method, :meth:`~_SubParsersAction.add_parser`, which takes a
    command name and any :class:`ArgumentParser` constructor arguments, and
    returns an :class:`ArgumentParser` object that can be modified as usual.
 
@@ -1789,7 +1789,7 @@ Sub-commands
    for that particular parser will be printed.  The help message will not
    include parent parser or sibling parser messages.  (A help message for each
    subparser command, however, can be given by supplying the ``help=`` argument
-   to :meth:`add_parser` as above.)
+   to :meth:`~_SubParsersAction.add_parser` as above.)
 
    ::
 
@@ -2157,7 +2157,7 @@ the populated namespace and the list of remaining argument strings.
 
 .. warning::
    :ref:`Prefix matching <prefix-matching>` rules apply to
-   :meth:`parse_known_args`. The parser may consume an option even if it's just
+   :meth:`~ArgumentParser.parse_known_args`. The parser may consume an option even if it's just
    a prefix of one of its known options, instead of leaving it in the remaining
    arguments list.
 
@@ -2295,3 +2295,17 @@ A partial upgrade path from :mod:`optparse` to :mod:`argparse`:
 
 * Replace the OptionParser constructor ``version`` argument with a call to
   ``parser.add_argument('--version', action='version', version='<the version>')``.
+
+Exceptions
+----------
+
+.. exception:: ArgumentError
+
+   An error from creating or using an argument (optional or positional).
+
+   The string value of this exception is the message, augmented with
+   information about the argument that caused it.
+
+.. exception:: ArgumentTypeError
+
+   Raised when something goes wrong converting a command line string to a type.
