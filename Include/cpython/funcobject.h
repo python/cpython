@@ -42,6 +42,7 @@ typedef struct {
     PyObject *func_module;      /* The __module__ attribute, can be anything */
     PyObject *func_annotations; /* Annotations, a dict or NULL */
     PyObject *func_typeparams;  /* Tuple of active type variables or NULL */
+    PyObject *func_class_dict;  /* Class dict, a dict or NULL */
     vectorcallfunc vectorcall;
     /* Version number for use by specializer.
      * Can set to non-zero when we want to specialize.
@@ -68,6 +69,7 @@ PyAPI_FUNC(PyObject *) PyFunction_New(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_NewWithQualName(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetCode(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetGlobals(PyObject *);
+PyAPI_FUNC(PyObject *) PyFunction_GetClassDict(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetModule(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetDefaults(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetDefaults(PyObject *, PyObject *);
@@ -99,6 +101,11 @@ static inline PyObject* PyFunction_GET_GLOBALS(PyObject *func) {
     return _PyFunction_CAST(func)->func_globals;
 }
 #define PyFunction_GET_GLOBALS(func) PyFunction_GET_GLOBALS(_PyObject_CAST(func))
+
+static inline PyObject* PyFunction_GET_CLASS_DICT(PyObject *func) {
+    return _PyFunction_CAST(func)->func_class_dict;
+}
+#define PyFunction_GET_CLASS_DICT(func) PyFunction_GET_CLASS_DICT(_PyObject_CAST(func))
 
 static inline PyObject* PyFunction_GET_MODULE(PyObject *func) {
     return _PyFunction_CAST(func)->func_module;

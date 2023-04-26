@@ -1160,16 +1160,35 @@ dummy_func(
             }
         }
 
-        inst(LOAD_CLASS_OR_GLOBAL, (-- v)) {
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
-            PyObject *locals = GETLOCAL(0);
-            if (locals == NULL) {
+        op(_LOAD_NAME_INTRO, (-- class_dict, name)) {
+            name = GETITEM(frame->f_code->co_names, oparg);
+            class_dict = LOCALS();
+            if (class_dict == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals when loading %R", name);
                 goto error;
             }
-            if (PyDict_CheckExact(locals)) {
-                v = PyDict_GetItemWithError(locals, name);
+        }
+
+        op(_LOAD_CLASS_OR_GLOBAL_INTRO, (-- class_dict, name)) {
+            name = GETITEM(frame->f_code->co_names, oparg);
+            PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
+            if (func == NULL) {
+                _PyErr_Format(tstate, PyExc_SystemError,
+                              "no function defined when loading %R from class dict", name);
+                goto error;
+            }
+            class_dict = func->func_class_dict;
+            if (class_dict == NULL) {
+                _PyErr_Format(tstate, PyExc_SystemError,
+                              "no class dict set when loading %R", name);
+                goto error;
+            }
+        }
+
+        op(_LOAD_NAME_COMMON, (class_dict, name -- v)) {
+            if (PyDict_CheckExact(class_dict)) {
+                v = PyDict_GetItemWithError(class_dict, name);
                 if (v != NULL) {
                     Py_INCREF(v);
                 }
@@ -1178,7 +1197,7 @@ dummy_func(
                 }
             }
             else {
-                v = PyObject_GetItem(locals, name);
+                v = PyObject_GetItem(class_dict, name);
                 if (v == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
                         goto error;
@@ -1221,66 +1240,9 @@ dummy_func(
             }
         }
 
-        inst(LOAD_NAME, ( -- v)) {
-            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
-            PyObject *locals = LOCALS();
-            if (locals == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no locals when loading %R", name);
-                goto error;
-            }
-            if (PyDict_CheckExact(locals)) {
-                v = PyDict_GetItemWithError(locals, name);
-                if (v != NULL) {
-                    Py_INCREF(v);
-                }
-                else if (_PyErr_Occurred(tstate)) {
-                    goto error;
-                }
-            }
-            else {
-                v = PyObject_GetItem(locals, name);
-                if (v == NULL) {
-                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
-                        goto error;
-                    _PyErr_Clear(tstate);
-                }
-            }
-            if (v == NULL) {
-                v = PyDict_GetItemWithError(GLOBALS(), name);
-                if (v != NULL) {
-                    Py_INCREF(v);
-                }
-                else if (_PyErr_Occurred(tstate)) {
-                    goto error;
-                }
-                else {
-                    if (PyDict_CheckExact(BUILTINS())) {
-                        v = PyDict_GetItemWithError(BUILTINS(), name);
-                        if (v == NULL) {
-                            if (!_PyErr_Occurred(tstate)) {
-                                format_exc_check_arg(
-                                        tstate, PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-                            }
-                            goto error;
-                        }
-                        Py_INCREF(v);
-                    }
-                    else {
-                        v = PyObject_GetItem(BUILTINS(), name);
-                        if (v == NULL) {
-                            if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                                format_exc_check_arg(
-                                            tstate, PyExc_NameError,
-                                            NAME_ERROR_MSG, name);
-                            }
-                            goto error;
-                        }
-                    }
-                }
-            }
-        }
+        macro(LOAD_NAME) = _LOAD_NAME_INTRO + _LOAD_NAME_COMMON;
+
+        macro(LOAD_CLASS_OR_GLOBAL) = _LOAD_CLASS_OR_GLOBAL_INTRO + _LOAD_NAME_COMMON;
 
         family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
             LOAD_GLOBAL,

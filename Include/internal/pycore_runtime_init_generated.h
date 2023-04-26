@@ -630,6 +630,7 @@ extern "C" {
     INIT_ID(__getnewargs__), \
     INIT_ID(__getnewargs_ex__), \
     INIT_ID(__getstate__), \
+    INIT_ID(__globals__), \
     INIT_ID(__gt__), \
     INIT_ID(__hash__), \
     INIT_ID(__iadd__), \

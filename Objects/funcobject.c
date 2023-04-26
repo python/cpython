@@ -119,6 +119,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_defaults = Py_XNewRef(constr->fc_defaults);
     op->func_kwdefaults = Py_XNewRef(constr->fc_kwdefaults);
     op->func_closure = Py_XNewRef(constr->fc_closure);
+    op->func_class_dict = NULL;
     op->func_doc = Py_NewRef(Py_None);
     op->func_dict = NULL;
     op->func_weakreflist = NULL;
@@ -204,6 +205,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_module = module;
     op->func_annotations = NULL;
     op->func_typeparams = NULL;
+    op->func_class_dict = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
     op->func_version = 0;
     _PyObject_GC_TRACK(op);
@@ -262,6 +264,16 @@ PyFunction_GetGlobals(PyObject *op)
         return NULL;
     }
     return ((PyFunctionObject *) op) -> func_globals;
+}
+
+PyObject *
+PyFunction_GetClassDict(PyObject *op)
+{
+    if (!PyFunction_Check(op)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    return ((PyFunctionObject *) op) -> func_class_dict;
 }
 
 PyObject *
@@ -454,6 +466,7 @@ static PyMemberDef func_memberlist[] = {
     {"__globals__",   T_OBJECT,     OFF(func_globals), READONLY},
     {"__module__",    T_OBJECT,     OFF(func_module), 0},
     {"__builtins__",  T_OBJECT,     OFF(func_builtins), READONLY},
+    {"__class_dict__",T_OBJECT,     OFF(func_class_dict), READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -813,6 +826,7 @@ func_clear(PyFunctionObject *op)
     Py_CLEAR(op->func_closure);
     Py_CLEAR(op->func_annotations);
     Py_CLEAR(op->func_typeparams);
+    Py_CLEAR(op->func_class_dict);
     // Don't Py_CLEAR(op->func_code), since code is always required
     // to be non-NULL. Similarly, name and qualname shouldn't be NULL.
     // However, name and qualname could be str subclasses, so they
@@ -868,6 +882,7 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
     Py_VISIT(f->func_closure);
     Py_VISIT(f->func_annotations);
     Py_VISIT(f->func_typeparams);
+    Py_VISIT(f->func_class_dict);
     Py_VISIT(f->func_qualname);
     return 0;
 }
