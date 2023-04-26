@@ -43,10 +43,9 @@ class IllegalWeekdayError(ValueError):
 
 
 def __getattr__(name):
-    if name in ('January','February'):
+    if name in ('January', 'February'):
         warnings.warn(f"The '{name}' attribute is deprecated, use '{name.upper()}' instead",
-                        DeprecationWarning,
-                        stacklevel=2)
+                      DeprecationWarning, stacklevel=2)
         if name == 'January':
             return 1
         else:
@@ -82,6 +81,7 @@ class Day(IntEnum):
     FRIDAY = 4
     SATURDAY = 5
     SUNDAY = 6
+
 
 
 # Number of days per month (except for February in leap years)
