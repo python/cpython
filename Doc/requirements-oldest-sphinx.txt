@@ -14,6 +14,7 @@ python-docs-theme>=2022.1
 # Docutils<0.17, Jinja2<3, and MarkupSafe<2 are additionally specified as
 # Sphinx 3.2 is incompatible with newer releases of these packages.
 
+Sphinx==3.2.1
 alabaster==0.7.13
 Babel==2.12.1
 certifi==2022.12.7
@@ -28,7 +29,6 @@ packaging==23.1
 Pygments==2.15.1
 requests==2.29.0
 snowballstemmer==2.2.0
-Sphinx==3.2.1
 sphinxcontrib-applehelp==1.0.4
 sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==2.0.1
