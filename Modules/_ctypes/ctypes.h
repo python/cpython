@@ -35,6 +35,7 @@
 typedef struct {
     PyTypeObject *DictRemover_Type;
     PyTypeObject *PyCArg_Type;
+    PyTypeObject *PyCThunk_Type;
 } ctypes_state;
 
 extern ctypes_state global_state;
@@ -42,6 +43,7 @@ extern ctypes_state global_state;
 #define GLOBAL_STATE() (&global_state)
 
 extern PyType_Spec carg_spec;
+extern PyType_Spec cthunk_spec;
 
 typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;
@@ -99,8 +101,7 @@ typedef struct {
     ffi_type *ffi_restype;
     ffi_type *atypes[1];
 } CThunkObject;
-extern PyTypeObject PyCThunk_Type;
-#define CThunk_CheckExact(v)        Py_IS_TYPE(v, &PyCThunk_Type)
+#define CThunk_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCThunk_Type)
 
 typedef struct {
     /* First part identical to tagCDataObject */

@@ -5653,7 +5653,7 @@ _ctypes_add_types(PyObject *mod)
        tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
     */
     CREATE_TYPE(mod, st->PyCArg_Type, &carg_spec);
-    TYPE_READY(&PyCThunk_Type);
+    CREATE_TYPE(mod, st->PyCThunk_Type, &cthunk_spec);
     TYPE_READY(&PyCData_Type);
     /* StgDict is derived from PyDict_Type */
     TYPE_READY_BASE(&PyCStgDict_Type, &PyDict_Type);
