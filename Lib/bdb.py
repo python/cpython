@@ -574,6 +574,8 @@ class Bdb:
             line = linecache.getline(filename, lineno, frame.f_globals)
             if line:
                 s += lprefix + line.strip()
+        else:
+            s += f'{lprefix}Warning: lineno is None'
         return s
 
     # The following methods can be called by clients to use

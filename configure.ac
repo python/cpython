@@ -97,7 +97,6 @@ if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # resources get picked up before their $srcdir counterparts.
     #   Objects/ -> typeslots.inc
     #   Include/ -> Python.h
-    #   Python/  -> importlib.h
     # (A side effect of this is that these resources will automatically be
     #  regenerated when building out-of-tree, regardless of whether or not
     #  the $srcdir counterpart is up-to-date.  This is an acceptable trade
@@ -1939,6 +1938,13 @@ if test "$Py_BOLT" = 'true' ; then
   DEF_MAKE_ALL_RULE="bolt-opt"
   DEF_MAKE_RULE="build_all"
 
+  AC_SUBST(READELF)
+  AC_CHECK_TOOLS(READELF, [readelf], "notfound")
+  if test "$READELF" == "notfound"
+  then
+    AC_MSG_ERROR([readelf is required for a --enable-bolt build but could not be found.])
+  fi
+      
   # -fno-reorder-blocks-and-partition is required for bolt to work.
   # Possibly GCC only.
   AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[
@@ -2073,6 +2079,45 @@ case $CC in
         fi
 esac
 
+dnl Historically, some of our code assumed that signed integer overflow
+dnl is defined behaviour via twos-complement.
+dnl Set STRICT_OVERFLOW_CFLAGS and NO_STRICT_OVERFLOW_CFLAGS depending on compiler support.
+dnl Pass the latter to modules that depend on such behaviour.
+_SAVE_VAR([CFLAGS])
+CFLAGS="-fstrict-overflow -fno-strict-overflow"
+AC_CACHE_CHECK([if $CC supports -fstrict-overflow and -fno-strict-overflow],
+               [ac_cv_cc_supports_fstrict_overflow],
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[]], [[]])],
+    [ac_cv_cc_supports_fstrict_overflow=yes],
+    [ac_cv_cc_supports_fstrict_overflow=no]
+  )
+)
+_RESTORE_VAR([CFLAGS])
+
+AS_VAR_IF([ac_cv_cc_supports_fstrict_overflow], [yes],
+          [STRICT_OVERFLOW_CFLAGS="-fstrict-overflow"
+           NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"],
+          [STRICT_OVERFLOW_CFLAGS=""
+           NO_STRICT_OVERFLOW_CFLAGS=""])
+
+AC_MSG_CHECKING([for --with-strict-overflow])
+AC_ARG_WITH([strict-overflow],
+  AS_HELP_STRING(
+    [--with-strict-overflow],
+    [if 'yes', add -fstrict-overflow to CFLAGS, else add -fno-strict-overflow (default is no)]
+  ),
+  [
+    AS_VAR_IF(
+      [ac_cv_cc_supports_fstrict_overflow], [no],
+      [AC_MSG_WARN([--with-strict-overflow=yes requires a compiler that supports -fstrict-overflow])],
+      []
+    )
+  ],
+  [with_strict_overflow=no]
+)
+AC_MSG_RESULT([$with_strict_overflow])
+
 # Check if CC supports -Og optimization level
 _SAVE_VAR([CFLAGS])
 CFLAGS="-Og"
@@ -2103,15 +2148,8 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        # For gcc 4.x we need to use -fwrapv so lets check if its supported
-        if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
-           WRAP="-fwrapv"
-        fi
-
         if test -n "${cc_is_clang}"
         then
-            # Clang also needs -fwrapv
-            WRAP="-fwrapv"
             # bpo-30104: disable strict aliasing to compile correctly dtoa.c,
             # see Makefile.pre.in for more information
             CFLAGS_ALIASING="-fno-strict-aliasing"
@@ -2122,7 +2160,7 @@ then
 	    if test "$Py_DEBUG" = 'true' ; then
 		OPT="-g $PYDEBUG_CFLAGS -Wall"
 	    else
-		OPT="-g $WRAP -O3 -Wall"
+		OPT="-g -O3 -Wall"
 	    fi
 	    ;;
 	*)
@@ -2237,6 +2275,10 @@ AC_DEFUN([PY_CHECK_CC_WARNING], [
 ])
 
 # tweak BASECFLAGS based on compiler and platform
+AS_VAR_IF([with_strict_overflow], [yes],
+          [BASECFLAGS="$BASECFLAGS $STRICT_OVERFLOW_CFLAGS"],
+          [BASECFLAGS="$BASECFLAGS $NO_STRICT_OVERFLOW_CFLAGS"])
+
 case $GCC in
 yes)
     CFLAGS_NODIST="$CFLAGS_NODIST -std=c11"
@@ -7194,8 +7236,12 @@ PY_STDLIB_MOD_SIMPLE([unicodedata])
 
 dnl By default we always compile these even when OpenSSL is available
 dnl (issue #14693). The modules are small.
-PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
-PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
+PY_STDLIB_MOD([_md5],
+  [test "$with_builtin_md5" = yes], [],
+  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
+PY_STDLIB_MOD([_sha1],
+  [test "$with_builtin_sha1" = yes], [],
+  [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
 PY_STDLIB_MOD([_sha2],
   [test "$with_builtin_sha2" = yes], [],
   [-I\$(srcdir)/Modules/_hacl/include -I\$(srcdir)/Modules/_hacl/internal -D_BSD_SOURCE -D_DEFAULT_SOURCE])
@@ -7209,7 +7255,7 @@ PY_STDLIB_MOD([_crypt],
   [$LIBCRYPT_CFLAGS], [$LIBCRYPT_LIBS])
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
-  [$LIBFFI_CFLAGS], [$LIBFFI_LIBS])
+  [$NO_STRICT_OVERFLOW_CFLAGS $LIBFFI_CFLAGS], [$LIBFFI_LIBS])
 PY_STDLIB_MOD([_curses],
   [], [test "$have_curses" != "no"],
   [$CURSES_CFLAGS], [$CURSES_LIBS]
