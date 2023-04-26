@@ -406,6 +406,11 @@ sqlite3
   :ref:`transaction handling <sqlite3-transaction-control-autocommit>`.
   (Contributed by Erlend E. Aasland in :gh:`83638`.)
 
+* Add *entrypoint* keyword-only parameter to
+  :meth:`~sqlite3.Connection.load_extension`,
+  for overriding the SQLite extension entry point.
+  (Contributed by Erlend E. Aasland in :gh:`103015`.)
+
 * Add :meth:`~sqlite3.Connection.getconfig` and
   :meth:`~sqlite3.Connection.setconfig` to :class:`~sqlite3.Connection`
   to make configuration changes to a database connection.

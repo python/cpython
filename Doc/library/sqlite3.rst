@@ -1073,11 +1073,24 @@ Connection objects
          (2, 'broccoli pie', 'broccoli cheese onions flour')
          (3, 'pumpkin pie', 'pumpkin sugar flour butter')
 
-   .. method:: load_extension(path, /)
+   .. method:: load_extension(path, /, *, entrypoint=None)
 
-      Load an SQLite extension from a shared library located at *path*.
+      Load an SQLite extension from a shared library.
       Enable extension loading with :meth:`enable_load_extension` before
       calling this method.
+
+      :param str path:
+
+         The path to the SQLite extension.
+
+      :param entrypoint:
+
+         Entry point name.
+         If ``None`` (the default),
+         SQLite will come up with an entry point name of its own;
+         see the SQLite docs `Loading an Extension`_ for details.
+
+      :type entrypoint: str | None
 
       .. audit-event:: sqlite3.load_extension connection,path sqlite3.Connection.load_extension
 
@@ -1085,6 +1098,11 @@ Connection objects
 
       .. versionchanged:: 3.10
          Added the ``sqlite3.load_extension`` auditing event.
+
+      .. versionadded:: 3.12
+         The *entrypoint* parameter.
+
+   .. _Loading an Extension: https://www.sqlite.org/loadext.html#loading_an_extension_
 
    .. method:: iterdump
 
