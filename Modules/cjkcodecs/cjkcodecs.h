@@ -60,7 +60,7 @@ struct pair_encodemap {
     DBCHAR code;
 };
 
-typedef struct {
+typedef struct _cjk_mod_state {
     int num_mappings;
     int num_codecs;
     struct dbcs_map *mapping_list;
@@ -271,9 +271,12 @@ add_codecs(cjkcodecs_module_state *st)                          \
 #define CODEC_STATELESS_WINIT(enc) \
     NEXT_CODEC = (MultibyteCodec){#enc, NULL, enc##_codec_init, _STATELESS_METHODS(enc)};
 
-#define END_CODECS_LIST             \
-    assert(st->num_codecs == idx);  \
-    return 0;                       \
+#define END_CODECS_LIST                         \
+    assert(st->num_codecs == idx);              \
+    for (int i = 0; i < st->num_codecs; i++) {  \
+        st->codec_list[i].modstate = st;        \
+    }                                           \
+    return 0;                                   \
 }
 
 

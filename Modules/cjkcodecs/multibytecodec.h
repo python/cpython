@@ -27,6 +27,7 @@ typedef struct {
     unsigned char c[8];
 } MultibyteCodec_State;
 
+struct _cjk_mod_state;
 struct _multibyte_codec;
 
 typedef int (*mbcodec_init)(const struct _multibyte_codec *codec);
@@ -60,6 +61,7 @@ typedef struct _multibyte_codec {
     mbdecode_func decode;
     mbdecodeinit_func decinit;
     mbdecodereset_func decreset;
+    struct _cjk_mod_state *modstate;
 } MultibyteCodec;
 
 typedef struct {
