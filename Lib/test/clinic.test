@@ -3781,6 +3781,9 @@ test_vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t narg
     }
     a = args[0];
     __clinic_args = PyTuple_New(nargs - 1);
+    if (!__clinic_args) {
+        goto exit;
+    }
     for (Py_ssize_t i = 0; i < nargs - 1; ++i) {
         PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[1 + i]));
     }
@@ -3793,7 +3796,7 @@ exit:
 
 static PyObject *
 test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=081a953b8cbe7617 input=08dc2bf7afbf1613]*/
+/*[clinic end generated code: output=79b75dc07decc8d6 input=08dc2bf7afbf1613]*/
 
 /*[clinic input]
 test_vararg

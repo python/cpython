@@ -341,11 +341,11 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     """
     sys.audit("os.walk", top, topdown, onerror, followlinks)
 
-    stack = [(False, fspath(top))]
+    stack = [fspath(top)]
     islink, join = path.islink, path.join
     while stack:
-        must_yield, top = stack.pop()
-        if must_yield:
+        top = stack.pop()
+        if isinstance(top, tuple):
             yield top
             continue
 
@@ -422,13 +422,13 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                 # the caller can replace the directory entry during the "yield"
                 # above.
                 if followlinks or not islink(new_path):
-                    stack.append((False, new_path))
+                    stack.append(new_path)
         else:
             # Yield after sub-directory traversal if going bottom up
-            stack.append((True, (top, dirs, nondirs)))
+            stack.append((top, dirs, nondirs))
             # Traverse into sub-directories
             for new_path in reversed(walk_dirs):
-                stack.append((False, new_path))
+                stack.append(new_path)
 
 __all__.append("walk")
 
