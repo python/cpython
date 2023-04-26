@@ -167,6 +167,38 @@ PyObject_VectorcallDict(PyObject *callable, PyObject *const *args,
     return _PyObject_FastCallDictTstate(tstate, callable, args, nargsf, kwargs);
 }
 
+static void
+object_is_not_callable(PyThreadState *tstate, PyObject *callable)
+{
+    if (Py_IS_TYPE(callable, &PyModule_Type)) {
+        // >>> import pprint
+        // >>> pprint(thing)
+        // Traceback (most recent call last):
+        //   File "<stdin>", line 1, in <module>
+        // TypeError: 'module' object is not callable. Did you mean: 'pprint.pprint(...)'?
+        PyObject *name = PyModule_GetNameObject(callable);
+        if (name == NULL) {
+            return;
+        }
+        PyObject *attr;
+        int res = _PyObject_LookupAttr(callable, name, &attr);
+        if (res > 0 && PyCallable_Check(attr)) {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "'%.200s' object is not callable. "
+                          "Did you mean: '%U.%U(...)'?",
+                          Py_TYPE(callable)->tp_name, name, name);
+        }
+        Py_XDECREF(attr);
+        Py_DECREF(name);
+        if (_PyErr_Occurred(tstate)) {
+            // Either our lookup failed, or we set the exception above:
+            return;
+        }
+    }
+    _PyErr_Format(tstate, PyExc_TypeError, "'%.200s' object is not callable",
+                  Py_TYPE(callable)->tp_name);
+}
+
 
 PyObject *
 _PyObject_MakeTpCall(PyThreadState *tstate, PyObject *callable,
@@ -181,9 +213,7 @@ _PyObject_MakeTpCall(PyThreadState *tstate, PyObject *callable,
      * temporary dictionary for keyword arguments (if any) */
     ternaryfunc call = Py_TYPE(callable)->tp_call;
     if (call == NULL) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "'%.200s' object is not callable",
-                      Py_TYPE(callable)->tp_name);
+        object_is_not_callable(tstate, callable);
         return NULL;
     }
 
@@ -332,9 +362,7 @@ _PyObject_Call(PyThreadState *tstate, PyObject *callable,
     else {
         call = Py_TYPE(callable)->tp_call;
         if (call == NULL) {
-            _PyErr_Format(tstate, PyExc_TypeError,
-                          "'%.200s' object is not callable",
-                          Py_TYPE(callable)->tp_name);
+            object_is_not_callable(tstate, callable);
             return NULL;
         }
 
