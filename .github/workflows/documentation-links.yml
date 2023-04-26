@@ -5,7 +5,6 @@ on:
       - opened
     paths:
     - 'Doc/**'
-    - 'Misc/**'
     - '.github/workflows/doc.yml'
 
 permissions:
@@ -17,5 +16,5 @@ jobs:
     steps:
       - uses: readthedocs/actions/preview@v1
         with:
-          project-slug: "cpython-devguide"
+          project-slug: "cpython-previews"
           single-version: "true"
