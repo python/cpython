@@ -36,6 +36,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       run_tests: ${{ steps.check.outputs.run_tests }}
+      run_hypothesis: ${{ steps.check.outputs.run_hypothesis }}
     steps:
       - uses: actions/checkout@v3
       - name: Check for source changes
@@ -59,6 +60,17 @@ jobs:
             #
             # https://github.com/python/core-workflow/issues/373
             git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
+          fi
+
+          # Check if we should run hypothesis tests
+          GIT_BRANCH=${GITHUB_BASE_REF:-${GITHUB_REF#refs/heads/}}
+          echo $GIT_BRANCH
+          if $(echo "$GIT_BRANCH" | grep -q -w '3\.\(8\|9\|10\|11\)'); then
+            echo "Branch too old for hypothesis tests"
+            echo "run_hypothesis=false" >> $GITHUB_OUTPUT
+          else
+            echo "Run hypothesis tests"
+            echo "run_hypothesis=true" >> $GITHUB_OUTPUT
           fi
 
   check_generated_files:
@@ -193,7 +205,10 @@ jobs:
     env:
       OPENSSL_VER: 1.1.1t
       PYTHONSTRICTEXTENSIONBUILD: 1
+      RUN_HYPOTHESIS: ${{needs.check_source.outputs.run_hypothesis}}
     steps:
+    - name: Print run_hypothesis
+      run: echo $RUN_HYPOTHESIS
     - uses: actions/checkout@v3
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
@@ -238,9 +253,18 @@ jobs:
     - name: Remount sources writable for tests
       # some tests write to srcdir, lack of pyc files slows down testing
       run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
-    - name: Tests
+    - name: "Create archive of build for other jobs"
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+      run: |
+        # This complicated invocation is required to get a tarball with the
+        # build directory at its root, including all hidden files.
+        find . -printf "%P\n" | \
+          tar -czf ${GITHUB_WORKSPACE}/ubuntu-build.tar.gz --no-recursion . -T -
+    - name: "Upload artifact for other jobs"
+      uses: actions/upload-artifact@v3
+      with:
+        name: ubuntu-latest-build
+        path: "ubuntu-build.tar.gz"
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
@@ -290,6 +314,74 @@ jobs:
       run: make pythoninfo
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
+
+  test_ubuntu:
+    name: "Tests on Ubuntu"
+    runs-on: ubuntu-20.04
+    needs: build_ubuntu
+    if: needs.check_source.outputs.run_tests == 'true'
+    steps:
+    - name: Setup directory envs for out-of-tree builds
+      run: |
+        echo "CPYTHON_BUILDDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-builddir)" >> $GITHUB_ENV
+    - name: "Download build artifact"
+      uses: actions/download-artifact@v3
+      with:
+        name: ubuntu-latest-build
+    - name: "Unpack build"
+      run: |
+        mkdir -p ${{ env.CPYTHON_BUILDDIR }}
+        tar -xf ubuntu-build.tar.gz -C ${{ env.CPYTHON_BUILDDIR }}
+    - name: Tests
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+
+  test_hypothesis:
+    name: "Hypothesis Tests on Ubuntu"
+    runs-on: ubuntu-20.04
+    needs: build_ubuntu
+    if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_hypothesis == 'true'
+    env:
+      OPENSSL_VER: 1.1.1t
+      PYTHONSTRICTEXTENSIONBUILD: 1
+    steps:
+    - name: Setup directory envs for out-of-tree builds
+      run: |
+        echo "CPYTHON_BUILDDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-builddir)" >> $GITHUB_ENV
+    - name: "Download build artifact"
+      uses: actions/download-artifact@v3
+      with:
+        name: ubuntu-latest-build
+    - name: "Unpack build"
+      run: |
+        mkdir -p ${{ env.CPYTHON_BUILDDIR }}
+        tar -xf ubuntu-build.tar.gz -C ${{ env.CPYTHON_BUILDDIR }}
+    - name: "Create hypothesis venv"
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: |
+        VENV_LOC=$(realpath -m .)/hypovenv
+        VENV_PYTHON=$VENV_LOC/bin/python
+        echo "HYPOVENV=${VENV_LOC}" >> $GITHUB_ENV
+        echo "VENV_PYTHON=${VENV_PYTHON}" >> $GITHUB_ENV
+        ./python -m venv $VENV_LOC && $VENV_PYTHON -m pip install -U hypothesis
+    - name: "Run tests"
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: |
+        # Most of the excluded tests are slow test suites with no property tests
+        #
+        # (GH-104097) test_sysconfig is skipped because it has tests that are
+        # failing when executed from inside a virtual environment.
+        ${{ env.VENV_PYTHON }} -m test \
+          -W \
+          -x test_asyncio \
+          -x test_multiprocessing_fork \
+          -x test_multiprocessing_forkserver \
+          -x test_multiprocessing_spawn \
+          -x test_concurrent_futures \
+          -x test_socket \
+          -x test_subprocess \
+          -x test_signal \
+          -x test_sysconfig
 
 
   build_asan:
