@@ -1224,27 +1224,6 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq
 // Fstring stuff
 
 static expr_ty
-decode_fstring_buffer(Parser *p, int lineno, int col_offset, int end_lineno,
-                      int end_col_offset)
-{
-    tokenizer_mode *tok_mode = &(p->tok->tok_mode_stack[p->tok->tok_mode_stack_index]);
-    assert(tok_mode->last_expr_buffer != NULL);
-    assert(tok_mode->last_expr_size >= 0 && tok_mode->last_expr_end >= 0);
-
-    PyObject *res = PyUnicode_DecodeUTF8(
-        tok_mode->last_expr_buffer,
-        tok_mode->last_expr_size - tok_mode->last_expr_end,
-        NULL
-    );
-    if (!res || _PyArena_AddPyObject(p->arena, res) < 0) {
-        Py_XDECREF(res);
-        return NULL;
-    }
-
-    return _PyAST_Constant(res, NULL, lineno, col_offset, end_lineno, end_col_offset, p->arena);
-}
-
-static expr_ty
 _PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant) {
     assert(PyUnicode_CheckExact(constant->v.Constant.value));
 
