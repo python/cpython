@@ -1803,10 +1803,9 @@ class datetime(date):
         """Construct a naive UTC datetime from a POSIX timestamp."""
         import warnings
         warnings.warn("datetime.utcfromtimestamp() is deprecated and scheduled "
-                      "for removal in a future version. It is instead "
-                      "recommended that users use timezone-aware objects to "
-                      "represent datetimes in UTC. To get such an object from "
-                      "a timestamp, use datetime.fromtimestamp(t, datetime.UTC).",
+                      "for removal in a future version. Use timezone-aware "
+                      "objects to represent datetimes in UTC: "
+                      "datetime.fromtimestamp(t, datetime.UTC).",
                       DeprecationWarning,
                       stacklevel=2)
         return cls._fromtimestamp(t, True, None)
@@ -1822,10 +1821,9 @@ class datetime(date):
         "Construct a UTC datetime from time.time()."
         import warnings
         warnings.warn("datetime.utcnow() is deprecated and scheduled for "
-                      "removal in a future version. It is instead recommended "
-                      "that users use timezone-aware objects to represent "
-                      "datetimes in UTC. To get such an object representing "
-                      "the current time, use datetime.now(datetime.UTC).",
+                      "removal in a future version. Instead, Use timezone-aware "
+                      "objects to represent datetimes in UTC: "
+                      "datetime.now(datetime.UTC).",
                       DeprecationWarning,
                       stacklevel=2)
         t = _time.time()
