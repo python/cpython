@@ -192,7 +192,7 @@ The following classes are provided:
 
    This class is an abstraction of a URL request.
 
-   *url* should be a string containing a valid, properly encoded, URL.
+   *url* should be a string containing a valid, properly encoded URL.
 
    *data* must be an object specifying additional data to send to the
    server, or ``None`` if no such data is needed.  Currently HTTP
