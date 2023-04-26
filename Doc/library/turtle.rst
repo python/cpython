@@ -193,8 +193,8 @@ Methods of TurtleScreen/Screen
 Window control
    | :func:`bgcolor`
    | :func:`bgpic`
-   | :func:`clear` | :func:`clearscreen`
-   | :func:`reset` | :func:`resetscreen`
+   | :func:`clearscreen`
+   | :func:`resetscreen`
    | :func:`screensize`
    | :func:`setworldcoordinates`
 
@@ -662,7 +662,7 @@ Tell Turtle's state
 
    Return the angle between the line from turtle position to position specified
    by (x,y), the vector or the other turtle.  This depends on the turtle's start
-   orientation which depends on the mode - "standard"/"world" or "logo").
+   orientation which depends on the mode - "standard"/"world" or "logo".
 
    .. doctest::
       :skipif: _tkinter is None
@@ -913,8 +913,8 @@ Color control
       Set pencolor to the RGB color represented by *r*, *g*, and *b*.  Each of
       *r*, *g*, and *b* must be in the range 0..colormode.
 
-    If turtleshape is a polygon, the outline of that polygon is drawn with the
-    newly set pencolor.
+   If turtleshape is a polygon, the outline of that polygon is drawn with the
+   newly set pencolor.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -962,8 +962,8 @@ Color control
       Set fillcolor to the RGB color represented by *r*, *g*, and *b*.  Each of
       *r*, *g*, and *b* must be in the range 0..colormode.
 
-    If turtleshape is a polygon, the interior of that polygon is drawn
-    with the newly set fillcolor.
+   If turtleshape is a polygon, the interior of that polygon is drawn
+   with the newly set fillcolor.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1001,8 +1001,8 @@ Color control
       Equivalent to ``pencolor(colorstring1)`` and ``fillcolor(colorstring2)``
       and analogously if the other input format is used.
 
-    If turtleshape is a polygon, outline and interior of that polygon is drawn
-    with the newly set colors.
+   If turtleshape is a polygon, outline and interior of that polygon is drawn
+   with the newly set colors.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1069,7 +1069,6 @@ More drawing control
 ~~~~~~~~~~~~~~~~~~~~
 
 .. function:: reset()
-   :noindex:
 
    Delete the turtle's drawings from the screen, re-center the turtle and set
    variables to the default values.
@@ -1091,7 +1090,6 @@ More drawing control
 
 
 .. function:: clear()
-   :noindex:
 
    Delete the turtle's drawings from the screen.  Do not move turtle.  State and
    position of the turtle as well as drawings of other turtles are not affected.
@@ -1105,7 +1103,7 @@ More drawing control
    :param font: a triple (fontname, fontsize, fonttype)
 
    Write text - the string representation of *arg* - at the current turtle
-   position according to *align* ("left", "center" or right") and with the given
+   position according to *align* ("left", "center" or "right") and with the given
    font.  If *move* is true, the pen is moved to the bottom-right corner of the
    text.  By default, *move* is ``False``.
 
@@ -1192,7 +1190,7 @@ Appearance
      :func:`shapesize`.
    - "noresize": no adaption of the turtle's appearance takes place.
 
-   resizemode("user") is called by :func:`shapesize` when used with arguments.
+   ``resizemode("user")`` is called by :func:`shapesize` when used with arguments.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1216,7 +1214,7 @@ Appearance
    will be displayed stretched according to its stretchfactors: *stretch_wid* is
    stretchfactor perpendicular to its orientation, *stretch_len* is
    stretchfactor in direction of its orientation, *outline* determines the width
-   of the shapes's outline.
+   of the shape's outline.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1281,7 +1279,7 @@ Appearance
    (direction of movement).
 
    .. doctest::
-      :skipif: _tkinter is None
+      :skipif: _tkinter is None or 'always; deprecated method'
 
       >>> turtle.reset()
       >>> turtle.shape("circle")
@@ -1330,7 +1328,7 @@ Appearance
    matrix as a tuple of 4 elements.
    Otherwise set the given elements and transform the turtleshape
    according to the matrix consisting of first row t11, t12 and
-   second row t21, 22. The determinant t11 * t22 - t12 * t21 must not be
+   second row t21, t22. The determinant t11 * t22 - t12 * t21 must not be
    zero, otherwise an error is raised.
    Modify stretchfactor, shearfactor and tiltangle according to the
    given matrix.
@@ -1513,7 +1511,7 @@ Special Turtle methods
 
    :param size: an integer or ``None``
 
-   Set or disable undobuffer.  If *size* is an integer an empty undobuffer of
+   Set or disable undobuffer.  If *size* is an integer, an empty undobuffer of
    given size is installed.  *size* gives the maximum number of turtle actions
    that can be undone by the :func:`undo` method/function.  If *size* is
    ``None``, the undobuffer is disabled.
@@ -1547,7 +1545,7 @@ below:
 
 1. Create an empty Shape object of type "compound".
 2. Add as many components to this object as desired, using the
-   :meth:`addcomponent` method.
+   :meth:`~Shape.addcomponent` method.
 
    For example:
 
@@ -1627,11 +1625,7 @@ Window control
 
 
 .. function:: clear()
-              clearscreen()
-
-   Delete all drawings and all turtles from the TurtleScreen.  Reset the now
-   empty TurtleScreen to its initial state: white background, no background
-   image, no event bindings and tracing on.
+   :noindex:
 
    .. note::
       This TurtleScreen method is available as a global function only under the
@@ -1639,15 +1633,25 @@ Window control
       derived from the Turtle method ``clear``.
 
 
-.. function:: reset()
-              resetscreen()
+.. function:: clearscreen()
 
-   Reset all Turtles on the Screen to their initial state.
+   Delete all drawings and all turtles from the TurtleScreen.  Reset the now
+   empty TurtleScreen to its initial state: white background, no background
+   image, no event bindings and tracing on.
+
+
+.. function:: reset()
+   :noindex:
 
    .. note::
       This TurtleScreen method is available as a global function only under the
       name ``resetscreen``.  The global function ``reset`` is another one
       derived from the Turtle method ``reset``.
+
+
+.. function:: resetscreen()
+
+   Reset all Turtles on the Screen to their initial state.
 
 
 .. function:: screensize(canvwidth=None, canvheight=None, bg=None)
@@ -1821,7 +1825,7 @@ Using screen events
    existing bindings are removed.
 
    Example for a TurtleScreen instance named ``screen`` and a Turtle instance
-   named turtle:
+   named ``turtle``:
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1894,7 +1898,7 @@ Input methods
    Pop up a dialog window for input of a number. title is the title of the
    dialog window, prompt is a text mostly describing what numerical information
    to input. default: default value, minval: minimum value for input,
-   maxval: maximum value for input
+   maxval: maximum value for input.
    The number input must be in the range minval .. maxval if these are
    given. If not, a hint is issued and the dialog remains open for
    correction.
@@ -1938,7 +1942,7 @@ Settings and special methods
    :param cmode: one of the values 1.0 or 255
 
    Return the colormode or set it to 1.0 or 255.  Subsequently *r*, *g*, *b*
-   values of color triples have to be in the range 0..\ *cmode*.
+   values of color triples have to be in the range 0..*cmode*.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -2002,7 +2006,7 @@ Settings and special methods
 
           >>> screen.register_shape("triangle", ((5,-3), (0,5), (-5,-3)))
 
-   (3) *name* is an arbitrary string and shape is a (compound) :class:`Shape`
+   (3) *name* is an arbitrary string and *shape* is a (compound) :class:`Shape`
        object: Install the corresponding compound shape.
 
    Add a turtle shape to TurtleScreen's shapelist.  Only thusly registered
@@ -2048,7 +2052,7 @@ Methods specific to Screen, not inherited from TurtleScreen
 
 .. function:: exitonclick()
 
-   Bind bye() method to mouse clicks on the Screen.
+   Bind ``bye()`` method to mouse clicks on the Screen.
 
 
    If the value "using_IDLE" in the configuration dictionary is ``False``
@@ -2121,7 +2125,7 @@ Public classes
 
    :param cv: a :class:`tkinter.Canvas`
 
-   Provides screen oriented methods like :func:`setbg` etc. that are described
+   Provides screen oriented methods like :func:`bgcolor` etc. that are described
    above.
 
 .. class:: Screen()
@@ -2311,7 +2315,9 @@ of this module or which better fits to your needs, e.g. for use in a classroom,
 you can prepare a configuration file ``turtle.cfg`` which will be read at import
 time and modify the configuration according to its settings.
 
-The built in configuration would correspond to the following turtle.cfg::
+The built in configuration would correspond to the following ``turtle.cfg``:
+
+.. code-block:: ini
 
    width = 0.5
    height = 0.75
@@ -2336,25 +2342,25 @@ The built in configuration would correspond to the following turtle.cfg::
 
 Short explanation of selected entries:
 
-- The first four lines correspond to the arguments of the :meth:`Screen.setup`
+- The first four lines correspond to the arguments of the :func:`Screen.setup <setup>`
   method.
 - Line 5 and 6 correspond to the arguments of the method
-  :meth:`Screen.screensize`.
+  :func:`Screen.screensize <screensize>`.
 - *shape* can be any of the built-in shapes, e.g: arrow, turtle, etc.  For more
   info try ``help(shape)``.
-- If you want to use no fillcolor (i.e. make the turtle transparent), you have
+- If you want to use no fill color (i.e. make the turtle transparent), you have
   to write ``fillcolor = ""`` (but all nonempty strings must not have quotes in
-  the cfg-file).
+  the cfg file).
 - If you want to reflect the turtle its state, you have to use ``resizemode =
   auto``.
 - If you set e.g. ``language = italian`` the docstringdict
   :file:`turtle_docstringdict_italian.py` will be loaded at import time (if
-  present on the import path, e.g. in the same directory as :mod:`turtle`.
+  present on the import path, e.g. in the same directory as :mod:`turtle`).
 - The entries *exampleturtle* and *examplescreen* define the names of these
   objects as they occur in the docstrings.  The transformation of
   method-docstrings to function-docstrings will delete these names from the
   docstrings.
-- *using_IDLE*: Set this to ``True`` if you regularly work with IDLE and its -n
+- *using_IDLE*: Set this to ``True`` if you regularly work with IDLE and its ``-n``
   switch ("no subprocess").  This will prevent :func:`exitonclick` to enter the
   mainloop.
 
@@ -2393,6 +2399,8 @@ The :mod:`turtledemo` package directory contains:
   and use such files.
 
 The demo scripts are:
+
+.. currentmodule:: turtle
 
 .. tabularcolumns:: |l|L|L|
 
@@ -2440,6 +2448,9 @@ The demo scripts are:
 | planet_and_moon| simulation of                | compound shapes,      |
 |                | gravitational system         | :class:`Vec2D`        |
 +----------------+------------------------------+-----------------------+
+| rosette        | a pattern from the wikipedia | :func:`clone`,        |
+|                | article on turtle graphics   | :func:`undo`          |
++----------------+------------------------------+-----------------------+
 | round_dance    | dancing turtles rotating     | compound shapes, clone|
 |                | pairwise in opposite         | shapesize, tilt,      |
 |                | direction                    | get_shapepoly, update |
@@ -2453,9 +2464,6 @@ The demo scripts are:
 | two_canvases   | simple design                | turtles on two        |
 |                |                              | canvases              |
 +----------------+------------------------------+-----------------------+
-| wikipedia      | a pattern from the wikipedia | :func:`clone`,        |
-|                | article on turtle graphics   | :func:`undo`          |
-+----------------+------------------------------+-----------------------+
 | yinyang        | another elementary example   | :func:`circle`        |
 +----------------+------------------------------+-----------------------+
 
@@ -2465,20 +2473,20 @@ Have fun!
 Changes since Python 2.6
 ========================
 
-- The methods :meth:`Turtle.tracer`, :meth:`Turtle.window_width` and
-  :meth:`Turtle.window_height` have been eliminated.
+- The methods :func:`Turtle.tracer <tracer>`, :func:`Turtle.window_width <window_width>` and
+  :func:`Turtle.window_height <window_height>` have been eliminated.
   Methods with these names and functionality are now available only
   as methods of :class:`Screen`. The functions derived from these remain
   available. (In fact already in Python 2.6 these methods were merely
   duplications of the corresponding
-  :class:`TurtleScreen`/:class:`Screen`-methods.)
+  :class:`TurtleScreen`/:class:`Screen` methods.)
 
-- The method :meth:`Turtle.fill` has been eliminated.
-  The behaviour of :meth:`begin_fill` and :meth:`end_fill`
-  have changed slightly: now  every filling-process must be completed with an
+- The method :func:`!Turtle.fill` has been eliminated.
+  The behaviour of :func:`begin_fill` and :func:`end_fill`
+  have changed slightly: now every filling process must be completed with an
   ``end_fill()`` call.
 
-- A method :meth:`Turtle.filling` has been added. It returns a boolean
+- A method :func:`Turtle.filling <filling>` has been added. It returns a boolean
   value: ``True`` if a filling process is under way, ``False`` otherwise.
   This behaviour corresponds to a ``fill()`` call without arguments in
   Python 2.6.
@@ -2486,23 +2494,23 @@ Changes since Python 2.6
 Changes since Python 3.0
 ========================
 
-- The methods :meth:`Turtle.shearfactor`, :meth:`Turtle.shapetransform` and
-  :meth:`Turtle.get_shapepoly` have been added. Thus the full range of
+- The :class:`Turtle` methods :func:`shearfactor`, :func:`shapetransform` and
+  :func:`get_shapepoly` have been added. Thus the full range of
   regular linear transforms is now available for transforming turtle shapes.
-  :meth:`Turtle.tiltangle` has been enhanced in functionality: it now can
-  be used to get or set the tiltangle. :meth:`Turtle.settiltangle` has been
+  :func:`tiltangle` has been enhanced in functionality: it now can
+  be used to get or set the tilt angle. :func:`settiltangle` has been
   deprecated.
 
-- The method :meth:`Screen.onkeypress` has been added as a complement to
-  :meth:`Screen.onkey` which in fact binds actions to the keyrelease event.
-  Accordingly the latter has got an alias: :meth:`Screen.onkeyrelease`.
+- The :class:`Screen` method :func:`onkeypress` has been added as a complement to
+  :func:`onkey`. As the latter binds actions to the key release event,
+  an alias: :func:`onkeyrelease` was also added for it.
 
-- The method  :meth:`Screen.mainloop` has been added. So when working only
-  with Screen and Turtle objects one must not additionally import
-  :func:`mainloop` anymore.
+- The method :func:`Screen.mainloop <mainloop>` has been added,
+  so there is no longer a need to use the standalone :func:`mainloop` function
+  when working with :class:`Screen` and :class:`Turtle` objects.
 
-- Two input methods has been added :meth:`Screen.textinput` and
-  :meth:`Screen.numinput`. These popup input dialogs and return
+- Two input methods have been added: :func:`Screen.textinput <textinput>` and
+  :func:`Screen.numinput <numinput>`. These pop up input dialogs and return
   strings and numbers respectively.
 
 - Two example scripts :file:`tdemo_nim.py` and :file:`tdemo_round_dance.py`

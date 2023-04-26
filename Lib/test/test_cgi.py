@@ -1,4 +1,3 @@
-import cgi
 import os
 import sys
 import tempfile
@@ -6,6 +5,10 @@ import unittest
 from collections import namedtuple
 from io import StringIO, BytesIO
 from test import support
+from test.support import warnings_helper
+
+cgi = warnings_helper.import_deprecated("cgi")
+
 
 class HackedSysModule:
     # The regression test will have real values in sys.argv, which
@@ -50,15 +53,12 @@ def do_test(buf, method):
         return ComparableException(err)
 
 parse_strict_test_cases = [
-    ("", ValueError("bad query field: ''")),
+    ("", {}),
     ("&", ValueError("bad query field: ''")),
     ("&&", ValueError("bad query field: ''")),
-    (";", ValueError("bad query field: ''")),
-    (";&;", ValueError("bad query field: ''")),
     # Should the next few really be valid?
     ("=", {}),
     ("=&=", {}),
-    ("=;=", {}),
     # This rest seem to make sense
     ("=a", {'': ['a']}),
     ("&=a", ValueError("bad query field: ''")),
@@ -73,8 +73,6 @@ parse_strict_test_cases = [
     ("a=a+b&b=b+c", {'a': ['a b'], 'b': ['b c']}),
     ("a=a+b&a=b+a", {'a': ['a b', 'b a']}),
     ("x=1&y=2.0&z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
-    ("x=1;y=2.0&z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
-    ("x=1;y=2.0;z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
     ("Hbc5161168c542333633315dee1182227:key_store_seqid=400006&cuyer=r&view=bustomer&order_id=0bb2e248638833d48cb7fed300000f1b&expire=964546263&lobale=en-US&kid=130003.300038&ss=env",
      {'Hbc5161168c542333633315dee1182227:key_store_seqid': ['400006'],
       'cuyer': ['r'],
@@ -201,6 +199,31 @@ Content-Length: 3
                     else:
                         self.assertEqual(fs.getvalue(key), expect_val[0])
 
+    def test_separator(self):
+        parse_semicolon = [
+            ("x=1;y=2.0", {'x': ['1'], 'y': ['2.0']}),
+            ("x=1;y=2.0;z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
+            (";", ValueError("bad query field: ''")),
+            (";;", ValueError("bad query field: ''")),
+            ("=;a", ValueError("bad query field: 'a'")),
+            (";b=a", ValueError("bad query field: ''")),
+            ("b;=a", ValueError("bad query field: 'b'")),
+            ("a=a+b;b=b+c", {'a': ['a b'], 'b': ['b c']}),
+            ("a=a+b;a=b+a", {'a': ['a b', 'b a']}),
+        ]
+        for orig, expect in parse_semicolon:
+            env = {'QUERY_STRING': orig}
+            fs = cgi.FieldStorage(separator=';', environ=env)
+            if isinstance(expect, dict):
+                for key in expect.keys():
+                    expect_val = expect[key]
+                    self.assertIn(key, fs)
+                    if len(expect_val) > 1:
+                        self.assertEqual(fs.getvalue(key), expect_val)
+                    else:
+                        self.assertEqual(fs.getvalue(key), expect_val[0])
+
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_log(self):
         cgi.log("Testing")
 

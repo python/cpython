@@ -35,8 +35,9 @@ byte-code cache files in the directory containing the source code.
    in ``.pyc``.
    For example, if *file* is ``/foo/bar/baz.py`` *cfile* will default to
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` for Python 3.2.  If *dfile* is
-   specified, it is used as the name of the source file in error messages when
-   instead of *file*.  If *doraise* is true, a :exc:`PyCompileError` is raised
+   specified, it is used instead of *file* as the name of the source file from
+   which source lines are obtained for display in exception tracebacks.
+   If *doraise* is true, a :exc:`PyCompileError` is raised
    when an error is encountered while compiling *file*. If *doraise* is false
    (the default), an error string is written to ``sys.stderr``, but no exception
    is raised.  This function returns the path to byte-compiled file, i.e.

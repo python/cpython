@@ -1,1 +1,0 @@
-Fix refleak in _Py_fopen_obj() when PySys_Audit() fails

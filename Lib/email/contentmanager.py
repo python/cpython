@@ -72,12 +72,14 @@ def get_non_text_content(msg):
     return msg.get_payload(decode=True)
 for maintype in 'audio image video application'.split():
     raw_data_manager.add_get_handler(maintype, get_non_text_content)
+del maintype
 
 
 def get_message_content(msg):
     return msg.get_payload(0)
 for subtype in 'rfc822 external-body'.split():
     raw_data_manager.add_get_handler('message/'+subtype, get_message_content)
+del subtype
 
 
 def get_and_fixup_unknown_message_content(msg):
@@ -144,7 +146,7 @@ def _encode_text(string, charset, cte, policy):
     linesep = policy.linesep.encode('ascii')
     def embedded_body(lines): return linesep.join(lines) + linesep
     def normal_body(lines): return b'\n'.join(lines) + b'\n'
-    if cte==None:
+    if cte is None:
         # Use heuristics to decide on the "best" encoding.
         if max((len(x) for x in lines), default=0) <= policy.max_line_length:
             try:
@@ -238,9 +240,7 @@ def set_bytes_content(msg, data, maintype, subtype, cte='base64',
         data = binascii.b2a_qp(data, istext=False, header=False, quotetabs=True)
         data = data.decode('ascii')
     elif cte == '7bit':
-        # Make sure it really is only ASCII.  The early warning here seems
-        # worth the overhead...if you care write your own content manager :).
-        data.encode('ascii')
+        data = data.decode('ascii')
     elif cte in ('8bit', 'binary'):
         data = data.decode('ascii', 'surrogateescape')
     msg.set_payload(data)
@@ -248,3 +248,4 @@ def set_bytes_content(msg, data, maintype, subtype, cte='base64',
     _finalize_set(msg, disposition, filename, cid, params)
 for typ in (bytes, bytearray, memoryview):
     raw_data_manager.add_set_handler(typ, set_bytes_content)
+del typ

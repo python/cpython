@@ -1,8 +1,9 @@
 from test.support.os_helper import temp_dir
 from test.support.script_helper import assert_python_failure
+from test.support.warnings_helper import import_deprecated
 import unittest
 import sys
-import cgitb
+cgitb = import_deprecated("cgitb")
 
 class TestCgitb(unittest.TestCase):
 

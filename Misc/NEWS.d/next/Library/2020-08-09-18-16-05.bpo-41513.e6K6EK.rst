@@ -1,2 +1,0 @@
-Minor algorithmic improvement to math.hypot() and math.dist() giving small
-gains in speed and accuracy.
