@@ -604,11 +604,6 @@ and its :meth:`~Lock.release` method to unlock it.
   :meth:`~RLock.acquire` and :meth:`~RLock.release`
   to handle acquiring and releasing the lock for a block of code.
 
-.. seealso::
-
-   :ref:`Using RLock as a context manager <with-locks>` is recommended
-   over manual :meth:`!acquire` and :meth:`release` calls whenever practical.
-
 RLock's :meth:`~RLock.acquire`/:meth:`~RLock.release` call pairs may be nested,
 unlike Lock's :meth:`~Lock.acquire`/:meth:`~Lock.release`. Only the final
 :meth:`~RLock.release` (the :meth:`~Lock.release` of the outermost pair) resets
@@ -635,6 +630,12 @@ call release as many times the lock has been acquired can lead to deadlock.
    .. method:: acquire(blocking=True, timeout=-1)
 
       Acquire a lock, blocking or non-blocking.
+
+      .. seealso::
+
+         :ref:`Using RLock as a context manager <with-locks>` is recommended
+            over manual :meth:`!acquire` and :meth:`release` calls whenever practical.
+
 
       When invoked with the *blocking* argument set to ``True`` (the default):
 
