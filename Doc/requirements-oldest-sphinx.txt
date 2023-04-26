@@ -1,7 +1,7 @@
 # Requirements to build the Python documentation, for the oldest supported
 # Sphinx version.
 #
-# We pin every package to ensure a consistent environment.
+# We pin Sphinx and all of its dependencies to ensure a consistent environment.
 
 blurb
 python-docs-theme>=2022.1
