@@ -909,6 +909,14 @@ class DisTests(DisTestBase):
     def test_dis(self):
         self.do_disassembly_test(_f, dis_f)
 
+    def test_disco(self):
+        func = _f
+        disassemble_output = self.get_disassembly(func.__code__, wrapper=False)
+        disco_output = io.StringIO()
+        with contextlib.redirect_stdout(disco_output):
+            dis.disco(func.__code__)
+        self.assertEqual(disassemble_output, disco_output.getvalue())
+
     def test_bug_708901(self):
         self.do_disassembly_test(bug708901, dis_bug708901)
 
