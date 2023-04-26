@@ -253,7 +253,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        inst(UNARY_NOT, (value -- res)) { // XXX
+        inst(UNARY_NOT, (value -- res)) {
             int err = PyObject_IsTrue(value);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
@@ -2014,7 +2014,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        inst(POP_JUMP_IF_FALSE, (cond -- )) { // XXX
+        inst(POP_JUMP_IF_FALSE, (cond -- )) {
             if (Py_IsFalse(cond)) {
                 JUMPBY(oparg);
             }
@@ -2030,7 +2030,7 @@ dummy_func(
             }
         }
 
-        inst(POP_JUMP_IF_TRUE, (cond -- )) { // XXX
+        inst(POP_JUMP_IF_TRUE, (cond -- )) {
             if (Py_IsTrue(cond)) {
                 JUMPBY(oparg);
             }
@@ -2046,14 +2046,14 @@ dummy_func(
             }
         }
 
-        inst(POP_JUMP_IF_NOT_NONE, (value -- )) { // XXX
+        inst(POP_JUMP_IF_NOT_NONE, (value -- )) {
             if (!Py_IsNone(value)) {
                 DECREF_INPUTS();
                 JUMPBY(oparg);
             }
         }
 
-        inst(POP_JUMP_IF_NONE, (value -- )) { // XXX
+        inst(POP_JUMP_IF_NONE, (value -- )) {
             if (Py_IsNone(value)) {
                 JUMPBY(oparg);
             }
