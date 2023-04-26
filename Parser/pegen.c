@@ -155,15 +155,13 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
         return -1;
     }
 
+    parser_token->metadata = NULL;
     if (new_token->metadata != NULL) {
-        parser_token->metadata = new_token->metadata;
-        if (_PyArena_AddPyObject(p->arena, parser_token->metadata) < 0) {
+        if (_PyArena_AddPyObject(p->arena, new_token->metadata) < 0) {
             Py_DECREF(parser_token->metadata);
             return -1;
         }
-    }
-    else {
-        parser_token->metadata = NULL;
+        parser_token->metadata = new_token->metadata;
     }
 
     parser_token->level = new_token->level;
