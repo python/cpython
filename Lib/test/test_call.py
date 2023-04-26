@@ -207,9 +207,15 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         msg = r"^'object' object is not callable$"
         self.assertRaisesRegex(TypeError, msg, object())
 
-    def test_module_not_callable_no_suggestion(self):
+    def test_module_not_callable_no_suggestion_0(self):
         msg = r"^'module' object is not callable$"
         self.assertRaisesRegex(TypeError, msg, types.ModuleType("mod"))
+
+    def test_module_not_callable_not_suggestion_1(self):
+        msg = r"^'module' object is not callable$"
+        mod = types.ModuleType("mod")
+        mod.mod = 42
+        self.assertRaisesRegex(TypeError, msg, mod)
 
     def test_module_not_callable_suggestion(self):
         msg = r"^'module' object is not callable\. Did you mean: 'mod\.mod\(\.\.\.\)'\?$"
