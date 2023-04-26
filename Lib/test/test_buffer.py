@@ -4456,6 +4456,12 @@ class TestPythonBufferProtocol(unittest.TestCase):
 
         self.assertRaises(TypeError, memoryview, MustReturnMV())
 
+        class NoBytesEither:
+            def __buffer__(self, flags):
+                return b"hello"
+
+        self.assertRaises(TypeError, memoryview, NoBytesEither())
+
         class WrongArity:
             def __buffer__(self):
                 return memoryview(b"hello")
@@ -4524,6 +4530,11 @@ class TestPythonBufferProtocol(unittest.TestCase):
         with memoryview._from_flags(mutable, inspect.BufferFlags.WRITABLE) as mv:
             self.assertEqual(mv.tobytes(), b"hello")
             mv[0] = ord(b'x')
+            self.assertEqual(mv.tobytes(), b"xello")
+        with memoryview._from_flags(mutable, inspect.BufferFlags.SIMPLE) as mv:
+            self.assertEqual(mv.tobytes(), b"xello")
+            with self.assertRaises(TypeError):
+                mv[0] = ord(b'h')
             self.assertEqual(mv.tobytes(), b"xello")
         with memoryview._from_flags(immutable, inspect.BufferFlags.SIMPLE) as mv:
             self.assertEqual(mv.tobytes(), b"hello")
