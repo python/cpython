@@ -2761,6 +2761,99 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
 }
 
 
+/******************/
+/* global objects */
+/******************/
+
+static void
+immortalized_add(struct _Py_immortalized_objects *state, PyObject *obj)
+{
+    struct _Py_immortalized_object *entry;
+    if (state->count < _Py_IMMORTALIZED_ARRAY_SIZE) {
+        entry = &state->_objects[state->count];
+    }
+    else {
+        entry = PyMem_RawMalloc(sizeof(*entry));
+        if (entry == NULL) {
+            Py_FatalError("could not allocate immortalized list entry");
+        }
+    }
+
+    entry->obj = obj;
+    entry->final_refcnt = Py_REFCNT(obj);
+    entry->next = NULL;
+
+    if (state->head == NULL) {
+        assert(state->count == 0);
+        assert(state->last == NULL);
+        state->head = entry;
+    }
+    else {
+        state->last->next = entry;
+    }
+    state->count += 1;
+    state->last = entry;
+}
+
+static void
+immortalized_fini(struct _Py_immortalized_objects *state)
+{
+    struct _Py_immortalized_object *next = state->head;
+    state->head = NULL;
+    state->last = NULL;
+    for (int i = 0; i < _Py_IMMORTALIZED_ARRAY_SIZE && next != NULL; i++) {
+        struct _Py_immortalized_object *entry = next;
+        next = entry->next;
+        entry->obj->ob_refcnt = entry->final_refcnt;
+    }
+    while (next != NULL) {
+        struct _Py_immortalized_object *entry = next;
+        next = next->next;
+        entry->obj->ob_refcnt = entry->final_refcnt;
+        PyMem_RawFree(entry);
+    }
+}
+
+void
+_Py_EnsureImmortal(PyObject *obj)
+{
+    assert(_Py_IsMainInterpreter(_PyInterpreterState_GET()));
+    if (_Py_IsImmortal(obj)) {
+        return;
+    }
+
+    _Py_SetImmortal(obj);
+    immortalized_add(&_PyRuntime.immortalized_objects, obj);
+
+    if (Py_TYPE(obj) == &PyDict_Type) {
+        Py_ssize_t i = 0;
+        PyObject *key, *value;  // borrowed ref
+        while (PyDict_Next(obj, &i, &key, &value)) {
+            _Py_EnsureImmortal(key);
+            _Py_EnsureImmortal(value);
+        }
+    }
+    else if (Py_TYPE(obj) == &PyTuple_Type) {
+        assert(PyTuple_GET_SIZE(obj) > 0);
+        Py_ssize_t size = PyTuple_GET_SIZE(obj);
+        assert(size > 0);
+        for (Py_ssize_t i = 0; i < size; i++) {
+            _Py_EnsureImmortal(PyTuple_GET_ITEM(obj, i));
+        }
+    }
+}
+
+void
+_Py_ImmortalObjectsFini(void)
+{
+    immortalized_fini(&_PyRuntime.immortalized_objects);
+}
+
+
+/*************/
+/* other API */
+/*************/
+
 _PyFrameEvalFunction
 _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 {

@@ -4498,6 +4498,17 @@ _PyStaticType_Dealloc(PyTypeObject *type)
 
     type_dealloc_common(type);
 
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        if (type->tp_dict != NULL) {
+            type->tp_dict->ob_refcnt = 1;
+        }
+        if (type->tp_bases != NULL && PyTuple_GET_SIZE(type->tp_bases) > 0) {
+            type->tp_bases->ob_refcnt = 1;
+        }
+        if (type->tp_mro != NULL && PyTuple_GET_SIZE(type->tp_mro) > 0) {
+            type->tp_mro->ob_refcnt = 1;
+        }
+    }
     Py_CLEAR(type->tp_dict);
     Py_CLEAR(type->tp_bases);
     Py_CLEAR(type->tp_mro);
@@ -7030,6 +7041,7 @@ PyType_Ready(PyTypeObject *type)
 int
 _PyStaticType_InitBuiltin(PyTypeObject *self)
 {
+    assert(_Py_IsImmortal((PyObject *)self));
     self->tp_flags |= _Py_TPFLAGS_STATIC_BUILTIN;
 
     assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
@@ -7042,6 +7054,11 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
     if (res < 0) {
         static_builtin_state_clear(self);
     }
+
+    _Py_EnsureImmortal(self->tp_dict);
+    _Py_EnsureImmortal(self->tp_bases);
+    _Py_EnsureImmortal(self->tp_mro);
+
     return res;
 }
 
