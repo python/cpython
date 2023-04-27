@@ -230,6 +230,10 @@ their completion.
       Note, that the data read is buffered in memory, so do not use
       this method if the data size is large or unlimited.
 
+      .. versionchanged:: 3.12
+
+         *stdin* gets closed when `input=None` too.
+
    .. method:: send_signal(signal)
 
       Sends the signal *signal* to the child process.
