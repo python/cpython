@@ -809,7 +809,6 @@ static PyMemberDef type_members[] = {
     {"__base__", T_OBJECT, offsetof(PyTypeObject, tp_base), READONLY},
     {"__dictoffset__", T_PYSSIZET,
      offsetof(PyTypeObject, tp_dictoffset), READONLY},
-    {"__mro__", T_OBJECT, offsetof(PyTypeObject, tp_mro), READONLY},
     {0}
 };
 
@@ -1024,6 +1023,12 @@ static PyObject *
 type_get_bases(PyTypeObject *type, void *context)
 {
     return Py_NewRef(lookup_tp_bases(type));
+}
+
+static PyObject *
+type_get_mro(PyTypeObject *type, void *context)
+{
+    return Py_NewRef(lookup_tp_mro(type));
 }
 
 static PyTypeObject *best_base(PyObject *);
@@ -1402,6 +1407,7 @@ static PyGetSetDef type_getsets[] = {
     {"__name__", (getter)type_name, (setter)type_set_name, NULL},
     {"__qualname__", (getter)type_qualname, (setter)type_set_qualname, NULL},
     {"__bases__", (getter)type_get_bases, (setter)type_set_bases, NULL},
+    {"__mro__", (getter)type_get_mro, NULL, NULL},
     {"__module__", (getter)type_module, (setter)type_set_module, NULL},
     {"__abstractmethods__", (getter)type_abstractmethods,
      (setter)type_set_abstractmethods, NULL},
