@@ -1626,7 +1626,7 @@ class TestCollectionABCs(ABCTestCase):
         class SetUsingInstanceFromIterable(MutableSet):
             def __init__(self, values, created_by):
                 if not created_by:
-                    raise ValueError(f'created_by must be specified')
+                    raise ValueError('created_by must be specified')
                 self.created_by = created_by
                 self._values = set(values)
 

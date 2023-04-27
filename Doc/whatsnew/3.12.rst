@@ -66,6 +66,10 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+New typing features:
+
+* :ref:`whatsnew312-pep692`
+
 Important deprecations, removals or restrictions:
 
 * :pep:`623`, Remove wstr from Unicode
@@ -137,6 +141,43 @@ New Features
   (Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
   with contributions from Gregory P. Smith [Google] and Mark Shannon
   in :gh:`96123`.)
+* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+  have a new a *filter* argument that allows limiting tar features than may be
+  surprising or dangerous, such as creating files outside the destination
+  directory.
+  See :ref:`tarfile-extraction-filter` for details.
+  In Python 3.14, the default will switch to ``'data'``.
+  (Contributed by Petr Viktorin in :pep:`706`.)
+
+New Features Related to Type Hints
+==================================
+
+This section covers major changes affecting :pep:`484` type hints and
+the :mod:`typing` module.
+
+.. _whatsnew312-pep692:
+
+PEP 692: Using ``TypedDict`` for more precise ``**kwargs`` typing
+-----------------------------------------------------------------
+
+Typing ``**kwargs`` in a function signature as introduced by :pep:`484` allowed
+for valid annotations only in cases where all of the ``**kwargs`` were of the
+same type.
+
+This PEP specifies a more precise way of typing ``**kwargs`` by relying on
+typed dictionaries::
+
+   from typing import TypedDict, Unpack
+
+   class Movie(TypedDict):
+     name: str
+     year: int
+
+   def foo(**kwargs: Unpack[Movie]): ...
+
+See :pep:`692` for more details.
+
+(PEP written by Franek Magiera)
 
 
 Other Language Changes
@@ -195,6 +236,11 @@ Other Language Changes
 * Exceptions raised in a typeobject's ``__set_name__`` method are no longer
   wrapped by a :exc:`RuntimeError`. Context information is added to the
   exception as a :pep:`678` note. (Contributed by Irit Katriel in :gh:`77757`.)
+
+* When a ``try-except*`` construct handles the entire :exc:`ExceptionGroup`
+  and raises one other exception, that exception is no longer wrapped in an
+  :exc:`ExceptionGroup`. (Contributed by Irit Katriel in :gh:`103590`.)
+
 
 New Modules
 ===========
@@ -309,6 +355,13 @@ fractions
 * Objects of type :class:`fractions.Fraction` now support float-style
   formatting. (Contributed by Mark Dickinson in :gh:`100161`.)
 
+itertools
+---------
+
+* Added :class:`itertools.batched()` for collecting into even-sized
+  tuples where the last batch may be shorter than the rest.
+  (Contributed by Raymond Hettinger in :gh:`98363`.)
+
 math
 ----
 
@@ -392,6 +445,16 @@ sqlite3
   :ref:`transaction handling <sqlite3-transaction-control-autocommit>`.
   (Contributed by Erlend E. Aasland in :gh:`83638`.)
 
+* Add *entrypoint* keyword-only parameter to
+  :meth:`~sqlite3.Connection.load_extension`,
+  for overriding the SQLite extension entry point.
+  (Contributed by Erlend E. Aasland in :gh:`103015`.)
+
+* Add :meth:`~sqlite3.Connection.getconfig` and
+  :meth:`~sqlite3.Connection.setconfig` to :class:`~sqlite3.Connection`
+  to make configuration changes to a database connection.
+  (Contributed by Erlend E. Aasland in :gh:`103489`.)
+
 threading
 ---------
 
@@ -399,6 +462,13 @@ threading
   :func:`threading.setprofile_all_threads` that allow to set tracing and
   profiling functions in all running threads in addition to the calling one.
   (Contributed by Pablo Galindo in :gh:`93503`.)
+
+types
+-----
+
+* Add :func:`types.get_original_bases` to allow for further introspection of
+  :ref:`user-defined-generics` when subclassed. (Contributed by
+  James Hilton-Balfe and Alex Waygood in :gh:`101827`.)
 
 unicodedata
 -----------
@@ -436,8 +506,10 @@ uuid
 tempfile
 --------
 
-The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
-*delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
+* The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
+  *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
+* :func:`tempfile.mkdtemp` now always returns an absolute path, even if the
+  argument provided to the *dir* parameter is a relative path.
 
 .. _whatsnew-typing-py312:
 
@@ -615,6 +687,10 @@ Deprecated
 
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated as will be removed
   in Python 3.14. Use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
+
+* Extracting tar archives without specifying *filter* is deprecated until
+  Python 3.14, when ``'data'`` filter will become the default.
+  See :ref:`tarfile-extraction-filter` for details.
 
 
 Pending Removal in Python 3.13
@@ -978,6 +1054,10 @@ Changes in the Python API
   exception instance, rather than to a ``(typ, exc, tb)`` tuple.
   (Contributed by Irit Katriel in :gh:`103176`.)
 
+* When extracting tar files using :mod:`tarfile` or
+  :func:`shutil.unpack_archive`, pass the *filter* argument to limit features
+  that may be surprising or dangerous.
+  See :ref:`tarfile-extraction-filter` for details.
 
 Build Changes
 =============
@@ -1136,6 +1216,24 @@ New Features
 * Add :c:func:`PyErr_DisplayException`, which takes an exception instance,
   to replace the legacy-api :c:func:`!PyErr_Display`. (Contributed by
   Irit Katriel in :gh:`102755`).
+
+* :pep:`683`: Introduced Immortal Objects to Python which allows objects
+  to bypass reference counts and introduced changes to the C-API:
+
+  - ``_Py_IMMORTAL_REFCNT``: The reference count that defines an object
+      as immortal.
+  - ``_Py_IsImmortal`` Checks if an object has the immortal reference count.
+  - ``PyObject_HEAD_INIT`` This will now initialize reference count to
+      ``_Py_IMMORTAL_REFCNT`` when used with ``Py_BUILD_CORE``.
+  - ``SSTATE_INTERNED_IMMORTAL`` An identifier for interned unicode objects
+       that are immortal.
+  - ``SSTATE_INTERNED_IMMORTAL_STATIC`` An identifier for interned unicode
+       objects that are immortal and static
+  - ``sys.getunicodeinternedsize`` This returns the total number of unicode
+      objects that have been interned. This is now needed for refleak.py to
+      correctly track reference counts and allocated blocks
+
+  (Contributed by Eddie Elizondo in :gh:`84436`.)
 
 Porting to Python 3.12
 ----------------------
@@ -1301,8 +1399,7 @@ Removed
    * :c:func:`!PyUnicode_GetSize`
    * :c:func:`!PyUnicode_GET_DATA_SIZE`
 
-* Remove the ``PyUnicode_InternImmortal()`` function and the
-  ``SSTATE_INTERNED_IMMORTAL`` macro.
+* Remove the ``PyUnicode_InternImmortal()`` function macro.
   (Contributed by Victor Stinner in :gh:`85858`.)
 
 * Remove ``Jython`` compatibility hacks from several stdlib modules and tests.
