@@ -2,192 +2,180 @@ import asyncio
 import textwrap
 import unittest
 
-from typing import Sequence, TypeVar, TypeVarTuple, ParamSpec
+from typing import Any, Sequence, TypeVar, TypeVarTuple, ParamSpec
+
+
+def run_code(code: str) -> dict[str, Any]:
+    ns = {}
+    exec(textwrap.dedent(code), ns)
+    return ns
 
 
 class TypeParamsInvalidTest(unittest.TestCase):
     def test_name_collision_01(self):
-        code = """def func[**A, A](): ..."""
         with self.assertRaisesRegex(SyntaxError, "duplicate type parameter 'A'"):
-            exec(code, {})
+            run_code("""def func[**A, A](): ...""")
 
     def test_name_non_collision_02(self):
-        code = """def func[A](A): ..."""
-        exec(code, {})
+        run_code("""def func[A](A): ...""")
 
     def test_name_non_collision_03(self):
-        code = """def func[A](*A): ..."""
-        exec(code, {})
+        run_code("""def func[A](*A): ...""")
 
     def test_name_non_collision_04(self):
         # Mangled names should not cause a conflict.
-        code = textwrap.dedent("""\
+        run_code("""\
             class ClassA:
                 def func[__A](self, __A): ...
             """
         )
-        exec(code, {})
 
     def test_name_non_collision_05(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             class ClassA:
                 def func[_ClassA__A](self, __A): ...
             """
         )
-        exec(code, {})
 
     def test_name_non_collision_06(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             class ClassA[X]:
                 def func(self, X): ...
             """
         )
-        exec(code, {})
 
     def test_name_non_collision_07(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             class ClassA[X]:
                 def func(self):
                     X = 1
             """
         )
-        exec(code, {})
 
     def test_name_non_collision_08(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             class ClassA[X]:
                 def func(self):
                     a = [X for X in []]
             """
         )
-        exec(code, {})
 
     def test_name_non_collision_9(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             class ClassA[X]:
                 def func[X](self):
                     ...
             """
         )
-        exec(code, {})
 
     def test_name_non_collision_10(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             class ClassA[X]:
                 X: int
             """
         )
-        exec(code, {})
 
     def test_name_non_collision_11(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             def outer():
                 X = 1
                 def inner[X]():
                     nonlocal X
             """
         )
-        exec(code, {})
 
     def test_name_non_collision_13(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             X = 1
             def outer():
                 def inner[X]():
                     global X
             """
         )
-        exec(code, {})
 
     def test_disallowed_expressions(self):
         with self.assertRaises(SyntaxError):
-            exec("type X = (yield)", {})
+            run_code("type X = (yield)")
         with self.assertRaises(SyntaxError):
-            exec("type X = (yield from x)", {})
+            run_code("type X = (yield from x)")
         with self.assertRaises(SyntaxError):
-            exec("type X = (await 42)", {})
+            run_code("type X = (await 42)")
         with self.assertRaises(SyntaxError):
-            exec("async def f(): type X = (yield)", {})
+            run_code("async def f(): type X = (yield)")
         with self.assertRaises(SyntaxError):
-            exec("type X = (y := 3)", {})
+            run_code("type X = (y := 3)")
         with self.assertRaises(SyntaxError):
-            exec("class X[T: (yield)]: pass", {})
+            run_code("class X[T: (yield)]: pass")
         with self.assertRaises(SyntaxError):
-            exec("class X[T: (yield from x)]: pass", {})
+            run_code("class X[T: (yield from x)]: pass")
         with self.assertRaises(SyntaxError):
-            exec("class X[T: (await 42)]: pass", {})
+            run_code("class X[T: (await 42)]: pass")
         with self.assertRaises(SyntaxError):
-            exec("class X[T: (y := 3)]: pass", {})
+            run_code("class X[T: (y := 3)]: pass")
         with self.assertRaises(SyntaxError):
-            exec("class X[T](y := Sequence[T]): pass", {})
+            run_code("class X[T](y := Sequence[T]): pass")
         with self.assertRaises(SyntaxError):
-            exec("def f[T](y: (x := Sequence[T])): pass", {})
+            run_code("def f[T](y: (x := Sequence[T])): pass")
 
 
 class TypeParamsAccessTest(unittest.TestCase):
     def test_class_access_01(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             class ClassA[A, B](dict[A, B]):
                 ...
             """
         )
-        exec(code, {})
 
     def test_class_access_02(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             class MyMeta[A, B](type): ...
             class ClassA[A, B](metaclass=MyMeta[A, B]):
                 ...
             """
         )
-        exec(code, {})
 
     def test_class_access_03(self):
-        code = textwrap.dedent("""\
+        code = """\
             def my_decorator(a):
                 ...
             @my_decorator(A)
             class ClassA[A, B]():
                 ...
             """
-        )
 
         with self.assertRaisesRegex(NameError, "name 'A' is not defined"):
-            exec(code, {})
+            run_code(code)
 
     def test_function_access_01(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             def func[A, B](a: dict[A, B]):
                 ...
             """
         )
-        exec(code, {})
 
     def test_function_access_02(self):
-        code = textwrap.dedent("""\
+        code = """\
             def func[A](a = list[A]()):
                 ...
             """
-        )
 
         with self.assertRaisesRegex(NameError, "name 'A' is not defined"):
-            exec(code, {})
+            run_code(code)
 
     def test_function_access_03(self):
-        code = textwrap.dedent("""\
+        code = """\
             def my_decorator(a):
                 ...
             @my_decorator(A)
             def func[A]():
                 ...
             """
-        )
 
         with self.assertRaisesRegex(NameError, "name 'A' is not defined"):
-            exec(code, {})
+            run_code(code)
 
     def test_method_access_01(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             class ClassA:
                 x = int
                 def func[T](self, a: x, b: T):
@@ -196,10 +184,9 @@ class TypeParamsAccessTest(unittest.TestCase):
             assert ClassA.func.__annotations__["a"] is int
             """
         )
-        exec(code, {})
 
     def test_nested_access_01(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             class ClassA[A]:
                 def funcB[B](self):
                     class ClassC[C]:
@@ -207,42 +194,38 @@ class TypeParamsAccessTest(unittest.TestCase):
                             lambda : (A, B, C, D)
             """
         )
-        exec(code, {})
 
     def test_out_of_scope_01(self):
-        code = textwrap.dedent("""\
+        code = """\
             class ClassA[T]: ...
             x = T
             """
-        )
 
         with self.assertRaisesRegex(NameError, "name 'T' is not defined"):
-            exec(code, {})
+            run_code(code)
 
     def test_out_of_scope_02(self):
-        code = textwrap.dedent("""\
+        code = """\
             class ClassA[A]:
                 def funcB[B](self): ...
 
                 x = B
             """
-        )
 
         with self.assertRaisesRegex(NameError, "name 'B' is not defined"):
-            exec(code, {})
+            run_code(code)
 
     def test_class_scope_interaction_01(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             class C:
                 x = 1
                 def method[T](self, arg: x): pass
 
             assert C.method.__annotations__["arg"] == 1
         """)
-        exec(code, {})
 
     def test_class_scope_interaction_02(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             from typing import Generic
             class C:
                 class Base: pass
@@ -250,27 +233,25 @@ class TypeParamsAccessTest(unittest.TestCase):
 
             assert C.Child.__bases__ == (C.Base, Generic)
         """)
-        exec(code, {})
 
     def test_class_deref(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             class C[T]:
                 T = "class"
                 type Alias = T
 
             assert C.Alias.__value__ == "class", repr(C.Alias)
         """)
-        exec(code, {})
 
     def test_nonlocal(self):
-        code = textwrap.dedent("""\
+        code = """\
             def outer2[T]():
 
                 def inner1():
                     nonlocal T
-        """)
+        """
         with self.assertRaisesRegex(SyntaxError, "nonlocal binding not allowed for type parameter 'T'"):
-            exec(code, {})
+            run_code(code)
 
     def test_reference_previous_typevar(self):
         def func[S, T: Sequence[S]]():
@@ -322,7 +303,7 @@ class TypeParamsClassScopeTest(unittest.TestCase):
             type U = T
         self.assertIs(X.U.__value__, int)
 
-        code = textwrap.dedent("""\
+        run_code("""\
             glb = "global"
             class X:
                 cls = "class"
@@ -330,7 +311,6 @@ class TypeParamsClassScopeTest(unittest.TestCase):
 
             assert X.U.__value__ == ("global", "class"), X.U.__value__
         """)
-        exec(code, {})
 
     def test_bound(self):
         class X:
@@ -338,7 +318,7 @@ class TypeParamsClassScopeTest(unittest.TestCase):
             def foo[U: T](self): ...
         self.assertIs(X.foo.__type_params__[0].__bound__, int)
 
-        code = textwrap.dedent("""\
+        run_code("""\
             glb = "global"
             class X:
                 cls = "class"
@@ -348,7 +328,6 @@ class TypeParamsClassScopeTest(unittest.TestCase):
             assert T.__bound__ == "global"
             assert U.__bound__ == "class"
         """)
-        exec(code, {})
 
 
 class ManglingTest(unittest.TestCase):
@@ -376,14 +355,13 @@ class ManglingTest(unittest.TestCase):
 
 class TypeParamsTraditionalTypeVars(unittest.TestCase):
     def test_traditional_01(self):
-        code = textwrap.dedent("""\
-                from typing import Generic
-                class ClassA[T](Generic[T]): ...
+        code = """\
+            from typing import Generic
+            class ClassA[T](Generic[T]): ...
             """
-        )
 
         with self.assertRaisesRegex(TypeError, r"Cannot inherit from Generic\[...\] multiple types."):
-            exec(code, {})
+            run_code(code)
 
     def test_traditional_02(self):
         from typing import TypeVar
@@ -467,14 +445,13 @@ class TypeParamsTypeVarTest(unittest.TestCase):
 
 class TypeParamsTypeVarTupleTest(unittest.TestCase):
     def test_typevartuple_01(self):
-        code = textwrap.dedent("""\
+        code = """\
             def func1[*A: str]():
                 return (A, B, C)
             """
-        )
 
         with self.assertRaisesRegex(SyntaxError, r"expected '\('"):
-            exec(code, {})
+            run_code(code)
 
     def test_typevartuple_02(self):
         def func1[*A]():
@@ -486,14 +463,13 @@ class TypeParamsTypeVarTupleTest(unittest.TestCase):
 
 class TypeParamsTypeVarParamSpec(unittest.TestCase):
     def test_paramspec_01(self):
-        code = textwrap.dedent("""\
+        code = """\
             def func1[**A: str]():
                 return (A, B, C)
             """
-        )
 
         with self.assertRaisesRegex(SyntaxError, r"expected '\('"):
-            exec(code, {})
+            run_code(code)
 
     def test_paramspec_02(self):
         def func1[**A]():
@@ -528,15 +504,14 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
         self.assertEqual(ClassA.__type_params__, ())
 
     def test_typeparams_dunder_class_03(self):
-        code = textwrap.dedent("""\
+        code = """\
             class ClassA[A]():
                 pass
             ClassA.__type_params__ = ()
             """
-        )
 
         with self.assertRaisesRegex(AttributeError, "attribute '__type_params__' of 'type' objects is not writable"):
-            exec(code, {})
+            run_code(code)
 
     def test_typeparams_dunder_function_01(self):
         def outer[A, B]():
@@ -557,12 +532,11 @@ class TypeParamsTypeParamsDunder(unittest.TestCase):
         self.assertEqual(func1.__type_params__, ())
 
     def test_typeparams_dunder_function_03(self):
-        code = textwrap.dedent("""\
+        code = """\
             def func[A]():
                 pass
             func.__type_params__ = ()
             """
-        )
 
         with self.assertRaisesRegex(AttributeError, "attribute '__type_params__' of 'function' objects is not writable"):
-            exec(code, {})
+            run_code(code)
