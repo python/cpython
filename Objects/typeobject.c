@@ -8298,7 +8298,8 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
              (void *)PyObject_GenericGetAttr)) {
         res = _PyObject_GenericGetAttrWithDict(self, name, NULL, 1);
-        /* if no error has occurred, then it must be suppressed by us */
+        /* if res == NULL with no exception set, then it must be an
+           AttributeError suppressed by us. */
         if (res == NULL && !PyErr_Occurred()) {
             res = call_attribute(self, getattr, name);
         }
