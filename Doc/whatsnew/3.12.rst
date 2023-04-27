@@ -612,7 +612,7 @@ CPython bytecode changes
   instructions. (Contributed by Irit Katriel in :gh:`102859`.)
 
 * Removed the :opcode:`PRECALL` instruction. (Contributed by Mark Shannon in
-  :gh:`92925`)
+  :gh:`92925`.)
 
 Demos and Tools
 ===============
