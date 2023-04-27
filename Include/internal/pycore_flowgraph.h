@@ -11,7 +11,6 @@ extern "C" {
 #include "pycore_opcode_utils.h"
 #include "pycore_compile.h"
 
-static const _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
 
 typedef struct {
     int i_opcode;

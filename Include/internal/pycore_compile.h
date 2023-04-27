@@ -19,6 +19,7 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     int optimize,
     struct _arena *arena);
 
+static const _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
 
 typedef struct {
     int optimize;
