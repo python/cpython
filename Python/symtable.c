@@ -1172,11 +1172,6 @@ symtable_enter_typeparam_block(struct symtable *st, identifier name,
     }
     if (current_type == ClassBlock) {
         st->st_cur->ste_type_params_in_class = 1;
-        _Py_DECLARE_STR(namespace, ".namespace");
-        if (!symtable_add_def(st, &_Py_STR(namespace), DEF_PARAM,
-                              lineno, col_offset, end_lineno, end_col_offset)) {
-            return 0;
-        }
     }
     if (kind == AsyncFunctionDef_kind || kind == FunctionDef_kind || kind == ClassDef_kind) {
         _Py_DECLARE_STR(type_params, ".type_params");
