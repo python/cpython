@@ -2197,15 +2197,6 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         ADDOP(c, loc, PUSH_NULL);
         // We'll swap in the callable here later.
         ADDOP_LOAD_CONST(c, loc, Py_None);
-        PySTEntryObject *ste = PySymtable_Lookup(c->c_st, (void *)typeparams);
-        if (ste == NULL) {
-            return ERROR;
-        }
-        is_typeparams_in_class = ste->ste_type_params_in_class;
-        if (is_typeparams_in_class) {
-            ADDOP(c, loc, LOAD_LOCALS);
-        }
-        Py_DECREF(ste);
     }
 
     funcflags = compiler_default_arguments(c, loc, args);
@@ -2287,15 +2278,14 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Load));
         ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS);
 
-        if (is_typeparams_in_class) {
-            c->u->u_metadata.u_argcount += 1;
-        }
         if (funcflags & 0x02) {
             c->u->u_metadata.u_argcount += 1;
         }
         if (funcflags & 0x01) {
             c->u->u_metadata.u_argcount += 1;
         }
+        // Must be before we exit the scope
+        int is_typeparams_in_class = c->u->u_ste->ste_type_params_in_class;
         PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
@@ -2306,6 +2296,10 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             return ERROR;
         }
         Py_DECREF(co);
+        if (is_typeparams_in_class) {
+            ADDOP(c, loc, LOAD_LOCALS);
+            ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_CLASS_DICT);
+        }
         ADDOP_I(c, loc, SWAP, num_typeparam_args + 2);
         ADDOP(c, loc, POP_TOP);
         ADDOP_I(c, loc, CALL, num_typeparam_args);
@@ -2478,8 +2472,8 @@ compiler_class(struct compiler *c, stmt_ty s)
                                              bases,
                                              s->v.ClassDef.keywords));
 
-        int is_in_class = c->u->u_ste->ste_type_params_in_class;
-        c->u->u_metadata.u_argcount = is_in_class;
+        // Must be before we exit the scope
+        int is_typeparams_in_class = c->u->u_ste->ste_type_params_in_class;
         PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
@@ -2490,10 +2484,11 @@ compiler_class(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(co);
-        if (is_in_class) {
+        if (is_typeparams_in_class) {
             ADDOP(c, loc, LOAD_LOCALS);
+            ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_CLASS_DICT);
         }
-        ADDOP_I(c, loc, CALL, is_in_class);
+        ADDOP_I(c, loc, CALL, 0);
     } else {
         RETURN_IF_ERROR(compiler_call_helper(c, loc, 2,
                                             s->v.ClassDef.bases,
@@ -2554,8 +2549,8 @@ compiler_typealias(struct compiler *c, stmt_ty s)
     ADDOP_I(c, loc, BUILD_TUPLE, 3);
     ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEALIAS);
     if (asdl_seq_LEN(typeparams) > 0) {
-        int is_in_class = c->u->u_ste->ste_type_params_in_class;
-        c->u->u_metadata.u_argcount = is_in_class;
+        // Must be before we exit the scope
+        int is_typeparams_in_class = c->u->u_ste->ste_type_params_in_class;
         PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
@@ -2566,10 +2561,11 @@ compiler_typealias(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(co);
-        if (is_in_class) {
+        if (is_typeparams_in_class) {
             ADDOP(c, loc, LOAD_LOCALS);
+            ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_CLASS_DICT);
         }
-        ADDOP_I(c, loc, CALL, is_in_class);
+        ADDOP_I(c, loc, CALL, 0);
     }
     RETURN_IF_ERROR(compiler_nameop(c, loc, name, Store));
     return SUCCESS;
