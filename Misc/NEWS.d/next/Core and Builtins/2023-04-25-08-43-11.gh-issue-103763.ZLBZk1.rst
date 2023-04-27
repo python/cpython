@@ -16,7 +16,8 @@ This node holds instances of the new AST classes ``ast.TypeVar``,
 ``typing.ParamSpecKwargs``, ``typing.TypeVarTuple``, and
 ``typing.Generic`` are now implemented in C rather than Python.
 
-There are new bytecode instructions ``LOAD_LOCALS`` and ``LOAD_CLASS_OR_GLOBAL``
+There are new bytecode instructions ``LOAD_LOCALS``,
+``LOAD_CLASSDICT_OR_GLOBAL``, and ``LOAD_CLASSDICT_OR_DEREF``
 to support correct resolution of names in class namespaces.
 
 Patch by Eric Traut, Larry Hastings, and Jelle Zijlstra.
