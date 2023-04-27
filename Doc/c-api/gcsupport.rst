@@ -73,8 +73,9 @@ rules:
    .. warning::
        The function is marked as unstable because the final mechanism
        for reserving extra data after an instance is not yet decided.
-       Once :pep:`697` is implemented, the mechanism described there can
-       be used to reserve the extra data.
+       For allocating a variable number of fields, prefer using
+       :c:type:`PyVarObject` and :c:member:`~PyTypeObject.tp_itemsize`
+       instead.
 
    .. versionadded:: 3.12
 
