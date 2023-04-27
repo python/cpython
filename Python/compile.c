@@ -5706,7 +5706,7 @@ compiler_error(struct compiler *c, location loc,
     }
     PyObject *loc_obj = PyErr_ProgramTextObject(c->c_filename, loc.lineno);
     if (loc_obj == NULL) {
-        loc_obj = Py_NewRef(Py_None);
+        loc_obj = Py_None;
     }
     PyObject *args = Py_BuildValue("O(OiiOii)", msg, c->c_filename,
                                    loc.lineno, loc.col_offset + 1, loc_obj,
