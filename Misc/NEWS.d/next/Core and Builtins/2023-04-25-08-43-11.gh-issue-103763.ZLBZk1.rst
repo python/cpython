@@ -1,6 +1,5 @@
 Implement :pep:`695`, adding syntactic support for generic classes, generic
-functions, and type aliases. Patch by Eric Traut, Larry Hastings, and Jelle
-Zijlstra.
+functions, and type aliases.
 
 This includes the following changes:
 
@@ -17,3 +16,5 @@ This includes the following changes:
   ``typing.Generic`` are now implemented in C rather than Python.
 - New bytecode instructions ``LOAD_LOCALS`` and ``LOAD_CLASS_OR_GLOBAL``
   to support correct resolution of names in class namespaces.
+
+Patch by Eric Traut, Larry Hastings, and Jelle Zijlstra.
