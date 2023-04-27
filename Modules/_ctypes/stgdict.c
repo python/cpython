@@ -37,6 +37,18 @@ PyCStgDict_init(StgDictObject *self, PyObject *args, PyObject *kwds)
 }
 
 static int
+PyCStgDict_traverse(StgDictObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->proto);
+    Py_VISIT(self->argtypes);
+    Py_VISIT(self->converters);
+    Py_VISIT(self->restype);
+    Py_VISIT(self->checker);
+    return PyDict_Type.tp_traverse((PyObject *)self, visit, arg);
+}
+
+static int
 PyCStgDict_clear(StgDictObject *self)
 {
     Py_CLEAR(self->proto);
@@ -44,17 +56,20 @@ PyCStgDict_clear(StgDictObject *self)
     Py_CLEAR(self->converters);
     Py_CLEAR(self->restype);
     Py_CLEAR(self->checker);
-    return 0;
+    return PyDict_Type.tp_clear((PyObject *)self);
 }
 
 static void
 PyCStgDict_dealloc(StgDictObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
     PyCStgDict_clear(self);
     PyMem_Free(self->format);
     PyMem_Free(self->shape);
     PyMem_Free(self->ffi_type_pointer.elements);
     PyDict_Type.tp_dealloc((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -135,46 +150,21 @@ static struct PyMethodDef PyCStgDict_methods[] = {
     {NULL, NULL}                /* sentinel */
 };
 
-PyTypeObject PyCStgDict_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "StgDict",
-    sizeof(StgDictObject),
-    0,
-    (destructor)PyCStgDict_dealloc,             /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    0,                                          /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    PyCStgDict_methods,                         /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    (initproc)PyCStgDict_init,                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
+static PyType_Slot cstgdict_slots[] = {
+    {Py_tp_dealloc, PyCStgDict_dealloc},
+    {Py_tp_traverse, PyCStgDict_traverse},
+    {Py_tp_clear, PyCStgDict_clear},
+    {Py_tp_methods, PyCStgDict_methods},
+    {Py_tp_init, PyCStgDict_init},
+    {0, NULL},
+};
+
+PyType_Spec cstgdict_spec = {
+    .name = "_ctypes.StgDict",
+    .basicsize = sizeof(StgDictObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = cstgdict_slots,
 };
 
 /* May return NULL, but does not set an exception! */
@@ -186,7 +176,8 @@ PyType_stgdict(PyObject *obj)
     if (!PyType_Check(obj))
         return NULL;
     type = (PyTypeObject *)obj;
-    if (!type->tp_dict || !PyCStgDict_CheckExact(type->tp_dict))
+    ctypes_state *st = GLOBAL_STATE();
+    if (!type->tp_dict || !PyCStgDict_CheckExact(st, type->tp_dict))
         return NULL;
     return (StgDictObject *)type->tp_dict;
 }
@@ -200,7 +191,8 @@ StgDictObject *
 PyObject_stgdict(PyObject *self)
 {
     PyTypeObject *type = Py_TYPE(self);
-    if (!type->tp_dict || !PyCStgDict_CheckExact(type->tp_dict))
+    ctypes_state *st = GLOBAL_STATE();
+    if (!type->tp_dict || !PyCStgDict_CheckExact(st, type->tp_dict))
         return NULL;
     return (StgDictObject *)type->tp_dict;
 }

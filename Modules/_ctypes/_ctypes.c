@@ -530,7 +530,9 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         return NULL;
     }
 
-    dict = (StgDictObject *)_PyObject_CallNoArgs((PyObject *)&PyCStgDict_Type);
+    ctypes_state *st = GLOBAL_STATE();
+    dict = (StgDictObject *)
+           _PyObject_CallNoArgs((PyObject *)st->PyCStgDict_Type);
     if (!dict) {
         Py_DECREF(result);
         return NULL;
@@ -1088,8 +1090,9 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
   stgdict items size, align, length contain info about pointers itself,
   stgdict->proto has info about the pointed to type!
 */
+    ctypes_state *st = GLOBAL_STATE();
     stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)&PyCStgDict_Type);
+        (PyObject *)st->PyCStgDict_Type);
     if (!stgdict)
         return NULL;
     stgdict->size = sizeof(void *);
@@ -1529,8 +1532,9 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
+    ctypes_state *st = GLOBAL_STATE();
     stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)&PyCStgDict_Type);
+        (PyObject *)st->PyCStgDict_Type);
     if (!stgdict)
         goto error;
 
@@ -1975,8 +1979,9 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     if (result == NULL)
         return NULL;
 
+    ctypes_state *st = GLOBAL_STATE();
     stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)&PyCStgDict_Type);
+        (PyObject *)st->PyCStgDict_Type);
     if (!stgdict) {
         Py_DECREF(result);
         return NULL;
@@ -2086,8 +2091,9 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
+    ctypes_state *st = GLOBAL_STATE();
     stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)&PyCStgDict_Type);
+        (PyObject *)st->PyCStgDict_Type);
     if (!stgdict)
         goto error;
 
@@ -2529,8 +2535,9 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyTypeObject *result;
     StgDictObject *stgdict;
 
+    ctypes_state *st = GLOBAL_STATE();
     stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)&PyCStgDict_Type);
+        (PyObject *)st->PyCStgDict_Type);
     if (!stgdict)
         return NULL;
 
@@ -5676,7 +5683,7 @@ _ctypes_add_types(PyObject *mod)
     CREATE_TYPE(mod, st->PyCThunk_Type, &cthunk_spec, NULL);
     TYPE_READY(&PyCData_Type);
     /* StgDict is derived from PyDict_Type */
-    TYPE_READY_BASE(&PyCStgDict_Type, &PyDict_Type);
+    CREATE_TYPE(mod, st->PyCStgDict_Type, &cstgdict_spec, &PyDict_Type);
 
     /*************************************************
      *

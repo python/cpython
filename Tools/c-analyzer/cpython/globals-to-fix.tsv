@@ -358,14 +358,12 @@ Modules/_ctypes/ctypes.h	-	PyCFuncPtr_Type	-
 Modules/_ctypes/ctypes.h	-	PyCPointerType_Type	-
 Modules/_ctypes/ctypes.h	-	PyCPointer_Type	-
 Modules/_ctypes/ctypes.h	-	PyCSimpleType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCStgDict_Type	-
 Modules/_ctypes/ctypes.h	-	PyCStructType_Type	-
 Modules/_ctypes/ctypes.h	-	PyExc_ArgError	-
 Modules/_ctypes/ctypes.h	-	_ctypes_conversion_encoding	-
 Modules/_ctypes/ctypes.h	-	_ctypes_conversion_errors	-
 Modules/_ctypes/ctypes.h	-	_ctypes_ptrtype_cache	-
 Modules/_ctypes/ctypes.h	-	basespec_string	-
-Modules/_ctypes/stgdict.c	-	PyCStgDict_Type	-
 Modules/_cursesmodule.c	-	PyCursesWindow_Type	-
 Modules/_datetimemodule.c	-	PyDateTime_DateTimeType	-
 Modules/_datetimemodule.c	-	PyDateTime_DateType	-

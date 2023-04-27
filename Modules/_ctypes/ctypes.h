@@ -41,6 +41,7 @@ typedef struct {
     PyTypeObject *PyComError_Type;
 #endif
     PyTypeObject *StructParam_Type;
+    PyTypeObject *PyCStgDict_Type;
 } ctypes_state;
 
 extern ctypes_state global_state;
@@ -49,6 +50,7 @@ extern ctypes_state global_state;
 
 extern PyType_Spec carg_spec;
 extern PyType_Spec cfield_spec;
+extern PyType_Spec cstgdict_spec;
 extern PyType_Spec cthunk_spec;
 
 typedef struct tagPyCArgObject PyCArgObject;
@@ -140,9 +142,8 @@ typedef struct {
     PyObject *paramflags;
 } PyCFuncPtrObject;
 
-extern PyTypeObject PyCStgDict_Type;
-#define PyCStgDict_CheckExact(v)            Py_IS_TYPE(v, &PyCStgDict_Type)
-#define PyCStgDict_Check(v)         PyObject_TypeCheck(v, &PyCStgDict_Type)
+#define PyCStgDict_CheckExact(st, v)    Py_IS_TYPE((v), (st)->PyCStgDict_Type)
+#define PyCStgDict_Check(st, v)         PyObject_TypeCheck((v), (st)->PyCStgDict_Type)
 
 extern int PyCStructUnionType_update_stgdict(PyObject *fields, PyObject *type, int isStruct);
 extern int PyType_stginfo(PyTypeObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
