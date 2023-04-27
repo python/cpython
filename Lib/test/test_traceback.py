@@ -802,12 +802,12 @@ class TracebackErrorLocationCaretTestBase:
             )()
         actual = self.get_exception(f)
         expected = [
-            f"Traceback (most recent call last):",
+            "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
-            f"    callable()",
+            "    callable()",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
-            f"    .method",
-            f"     ^^^^^^",
+            "    .method",
+            "     ^^^^^^",
         ]
         self.assertEqual(actual, expected)
 
@@ -818,11 +818,11 @@ class TracebackErrorLocationCaretTestBase:
             )()
         actual = self.get_exception(f)
         expected = [
-            f"Traceback (most recent call last):",
+            "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
-            f"    callable()",
+            "    callable()",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
-            f"    method",
+            "    method",
         ]
         self.assertEqual(actual, expected)
 
@@ -833,12 +833,12 @@ class TracebackErrorLocationCaretTestBase:
             )()
         actual = self.get_exception(f)
         expected = [
-            f"Traceback (most recent call last):",
+            "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
-            f"    callable()",
+            "    callable()",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
-            f"    . method",
-            f"      ^^^^^^",
+            "    . method",
+            "      ^^^^^^",
         ]
         self.assertEqual(actual, expected)
 
@@ -848,11 +848,11 @@ class TracebackErrorLocationCaretTestBase:
 
         actual = self.get_exception(f)
         expected = [
-            f"Traceback (most recent call last):",
+            "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
-            f"    callable()",
+            "    callable()",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 1}, in f",
-            f"    ｗｉｄｔｈ",
+            "    ｗｉｄｔｈ",
         ]
         self.assertEqual(actual, expected)
 
@@ -864,11 +864,11 @@ class TracebackErrorLocationCaretTestBase:
 
         actual = self.get_exception(f)
         expected = [
-            f"Traceback (most recent call last):",
+            "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
-            f"    callable()",
+            "    callable()",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 2}, in f",
-            f"    raise ValueError(ｗｉｄｔｈ)",
+            "    raise ValueError(ｗｉｄｔｈ)",
         ]
         self.assertEqual(actual, expected)
 
@@ -882,12 +882,12 @@ class TracebackErrorLocationCaretTestBase:
 
         actual = self.get_exception(f)
         expected = [
-            f"Traceback (most recent call last):",
+            "Traceback (most recent call last):",
             f"  File \"{__file__}\", line {self.callable_line}, in get_exception",
-            f"    callable()",
+            "    callable()",
             f"  File \"{__file__}\", line {f.__code__.co_firstlineno + 4}, in f",
-            f"    print(1, ｗｗｗ(",
-            f"             ^^^^",
+            "    print(1, ｗｗｗ(",
+            "             ^^^^",
         ]
         self.assertEqual(actual, expected)
 
@@ -2844,26 +2844,26 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         formatted = ''.join(teg.format()).split('\n')
 
         expected = [
-                    f'  | ExceptionGroup: eg (2 sub-exceptions)',
-                    f'  +-+---------------- 1 ----------------',
-                    f'    | ExceptionGroup: eg1 (3 sub-exceptions)',
-                    f'    +-+---------------- 1 ----------------',
-                    f'      | ValueError: 0',
-                    f'      +---------------- 2 ----------------',
-                    f'      | ValueError: 1',
-                    f'      +---------------- ... ----------------',
-                    f'      | and 1 more exception',
-                    f'      +------------------------------------',
-                    f'    +---------------- 2 ----------------',
-                    f'    | ExceptionGroup: eg2 (10 sub-exceptions)',
-                    f'    +-+---------------- 1 ----------------',
-                    f'      | TypeError: 0',
-                    f'      +---------------- 2 ----------------',
-                    f'      | TypeError: 1',
-                    f'      +---------------- ... ----------------',
-                    f'      | and 8 more exceptions',
-                    f'      +------------------------------------',
-                    f'']
+                    '  | ExceptionGroup: eg (2 sub-exceptions)',
+                    '  +-+---------------- 1 ----------------',
+                    '    | ExceptionGroup: eg1 (3 sub-exceptions)',
+                    '    +-+---------------- 1 ----------------',
+                    '      | ValueError: 0',
+                    '      +---------------- 2 ----------------',
+                    '      | ValueError: 1',
+                    '      +---------------- ... ----------------',
+                    '      | and 1 more exception',
+                    '      +------------------------------------',
+                    '    +---------------- 2 ----------------',
+                    '    | ExceptionGroup: eg2 (10 sub-exceptions)',
+                    '    +-+---------------- 1 ----------------',
+                    '      | TypeError: 0',
+                    '      +---------------- 2 ----------------',
+                    '      | TypeError: 1',
+                    '      +---------------- ... ----------------',
+                    '      | and 8 more exceptions',
+                    '      +------------------------------------',
+                    '']
 
         self.assertEqual(formatted, expected)
 
@@ -2876,22 +2876,22 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         formatted = ''.join(teg.format()).split('\n')
 
         expected = [
-                    f'  | ExceptionGroup: exc (3 sub-exceptions)',
-                    f'  +-+---------------- 1 ----------------',
-                    f'    | ValueError: -2',
-                    f'    +---------------- 2 ----------------',
-                    f'    | ExceptionGroup: exc (3 sub-exceptions)',
-                    f'    +-+---------------- 1 ----------------',
-                    f'      | ValueError: -1',
-                    f'      +---------------- 2 ----------------',
-                    f'      | ... (max_group_depth is 2)',
-                    f'      +---------------- 3 ----------------',
-                    f'      | ValueError: 1',
-                    f'      +------------------------------------',
-                    f'    +---------------- 3 ----------------',
-                    f'    | ValueError: 2',
-                    f'    +------------------------------------',
-                    f'']
+                    '  | ExceptionGroup: exc (3 sub-exceptions)',
+                    '  +-+---------------- 1 ----------------',
+                    '    | ValueError: -2',
+                    '    +---------------- 2 ----------------',
+                    '    | ExceptionGroup: exc (3 sub-exceptions)',
+                    '    +-+---------------- 1 ----------------',
+                    '      | ValueError: -1',
+                    '      +---------------- 2 ----------------',
+                    '      | ... (max_group_depth is 2)',
+                    '      +---------------- 3 ----------------',
+                    '      | ValueError: 1',
+                    '      +------------------------------------',
+                    '    +---------------- 3 ----------------',
+                    '    | ValueError: 2',
+                    '    +------------------------------------',
+                    '']
 
         self.assertEqual(formatted, expected)
 

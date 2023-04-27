@@ -21,6 +21,7 @@
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
 #include "pycore_dict.h"

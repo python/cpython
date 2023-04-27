@@ -8418,6 +8418,18 @@ socket_exec(PyObject *m)
 #ifdef IP_BIND_ADDRESS_NO_PORT
     ADD_INT_MACRO(m, IP_BIND_ADDRESS_NO_PORT);
 #endif
+#ifdef IP_UNBLOCK_SOURCE
+    ADD_INT_MACRO(m, IP_UNBLOCK_SOURCE);
+#endif
+#ifdef IP_BLOCK_SOURCE
+    ADD_INT_MACRO(m, IP_BLOCK_SOURCE);
+#endif
+#ifdef IP_ADD_SOURCE_MEMBERSHIP
+    ADD_INT_MACRO(m, IP_ADD_SOURCE_MEMBERSHIP);
+#endif
+#ifdef IP_DROP_SOURCE_MEMBERSHIP
+    ADD_INT_MACRO(m, IP_DROP_SOURCE_MEMBERSHIP);
+#endif
 
     /* IPv6 [gs]etsockopt options, defined in RFC2553 */
 #ifdef  IPV6_JOIN_GROUP
