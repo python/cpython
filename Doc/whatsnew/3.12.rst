@@ -660,7 +660,7 @@ Deprecated
   See :ref:`tarfile-extraction-filter` for details.
 
 * ``calendar.January`` and ``calendar.February`` constants are deprecated and
-  replaced by :data:`calendar.Month.JANUARY` and :data:`calendar.Month.February`.
+  replaced by :data:`calendar.Month.JANUARY` and :data:`calendar.Month.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
 Pending Removal in Python 3.13
