@@ -392,6 +392,11 @@ c"""', """\
     FSTRING_MIDDLE 'c'           (1, 7) (1, 8)
     FSTRING_END \'"\'           (1, 8) (1, 9)
     """)
+        self.check_tokenize('fR"a{{b}c"', """\
+    FSTRING_START \'fR"\'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'a{{b}c'      (1, 3) (1, 9)
+    FSTRING_END \'"\'           (1, 9) (1, 10)
+    """)
         self.check_tokenize('f"""abc"""', """\
     FSTRING_START 'f\"""'        (1, 0) (1, 4)
     FSTRING_MIDDLE 'abc'         (1, 4) (1, 7)

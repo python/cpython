@@ -639,33 +639,43 @@ def _tokenize_fstring_mode(line, tok_start):
     curly_brackets = []
     start, i = end[1], 0
 
-    for c in middle:
+    for position, c in enumerate(middle):
         match c:
             case '{':
-                # TODO: handle {{ and \{
-                curly_brackets.append(c)
-                mid_expr += c
-                yield TokenInfo(
-                    type=FSTRING_MIDDLE,
-                    string=mid_token,
-                    start=end,
-                    end=(line_number, start + i),
-                    line=line)
-                mid_token = ''
-                end = line_number, start + i
+                # check out next position, if it's another {, then it is
+                # escaping the { character
+                if ((len(middle) >= position + 1 and middle[position + 1] == '{')
+                    or (position > 0 and middle[position - 1] in ('\\', '{'))):
+                    mid_token += c
+                else:
+                    curly_brackets.append(c)
+                    mid_expr += c
+                    yield TokenInfo(
+                        type=FSTRING_MIDDLE,
+                        string=mid_token,
+                        start=end,
+                        end=(line_number, start + i),
+                        line=line)
+                    mid_token = ''
+                    end = line_number, start + i
             case '}':
-                curly_brackets.pop()
-                mid_expr += c
-                yield TokenInfo(
-                    type=FSTRING_EXPR,
-                    string=mid_expr,
-                    # +1 is needed here since this token is yielded when
-                    # reading the }, before incrementing i.
-                    start=end,
-                    end=(line_number, start + i + 1),
-                    line=line)
-                mid_expr = ''
-                end = line_number, start + i + 1
+                # if no opening { is seen before, this character is taken
+                # as part of the fstring middle token
+                if mid_expr:
+                    curly_brackets.pop()
+                    mid_expr += c
+                    yield TokenInfo(
+                        type=FSTRING_EXPR,
+                        string=mid_expr,
+                        # +1 is needed here since this token is yielded when
+                        # reading the }, before incrementing i.
+                        start=end,
+                        end=(line_number, start + i + 1),
+                        line=line)
+                    mid_expr = ''
+                    end = line_number, start + i + 1
+                else:
+                    mid_token += c
             case '\n':
                 if mid_expr:
                     mid_expr += c
