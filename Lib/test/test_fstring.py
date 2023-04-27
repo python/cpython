@@ -1141,7 +1141,7 @@ x = (
                              "Bf''",
                              "BF''",]
         double_quote_cases = [case.replace("'", '"') for case in single_quote_cases]
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
+        self.assertAllRaise(NameError, 'is not defined',
                             single_quote_cases + double_quote_cases)
 
     def test_leading_trailing_spaces(self):

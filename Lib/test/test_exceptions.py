@@ -272,7 +272,7 @@ class ExceptionTests(unittest.TestCase):
 
             def baz():
                 '''quux'''
-            """, 9, 24)
+            """, 9, 20)
         check("pass\npass\npass\n(1+)\npass\npass\npass", 4, 4)
         check("(1+)", 1, 4)
         check("[interesting\nfoo()\n", 1, 1)

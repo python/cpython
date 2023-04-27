@@ -1806,8 +1806,9 @@ class CTokenizeTest(TestCase):
     NAME       'x'           (1, 0) (1, 1)
     EQUAL      '='           (1, 2) (1, 3)
     STRING     '"doesn\\'t "' (1, 4) (1, 14)
-    NAME       'shrink'      (1, 14) (1, 20)
-    STRING     '", does it"' (1, 20) (1, 31)
+    TAGSTRING_START \'shrink"\'     (1, 14) (1, 21)
+    FSTRING_MIDDLE ', does it'   (1, 21) (1, 30)
+    FSTRING_END \'"\'           (1, 30) (1, 31)
     """)
 
         self.check_tokenize("x = 'abc' + 'ABC'", """\
