@@ -9,7 +9,6 @@
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
-#include <Python.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>               // putenv()
@@ -1912,14 +1911,13 @@ static int test_unicode_id_init(void)
 
         str1 = _PyUnicode_FromId(&PyId_test_unicode_id_init);
         assert(str1 != NULL);
-        assert(Py_REFCNT(str1) == 1);
+        assert(_Py_IsImmortal(str1));
 
         str2 = PyUnicode_FromString("test_unicode_id_init");
         assert(str2 != NULL);
 
         assert(PyUnicode_Compare(str1, str2) == 0);
 
-        // str1 is a borrowed reference
         Py_DECREF(str2);
 
         Py_Finalize();

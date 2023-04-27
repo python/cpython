@@ -39,8 +39,11 @@
 #include "structmember.h"         // PyMemberDef
 
 
+#ifndef WINDOWS_LEAN_AND_MEAN
 #define WINDOWS_LEAN_AND_MEAN
+#endif
 #include "windows.h"
+#include <winioctl.h>
 #include <crtdbg.h>
 #include "winreparse.h"
 
@@ -63,22 +66,13 @@
 
 #define T_HANDLE T_POINTER
 
-/* Grab CancelIoEx dynamically from kernel32 */
-static int has_CancelIoEx = -1;
-static BOOL (CALLBACK *Py_CancelIoEx)(HANDLE, LPOVERLAPPED);
-
-static int
-check_CancelIoEx()
-{
-    if (has_CancelIoEx == -1)
-    {
-        HINSTANCE hKernel32 = GetModuleHandle("KERNEL32");
-        * (FARPROC *) &Py_CancelIoEx = GetProcAddress(hKernel32,
-                                                      "CancelIoEx");
-        has_CancelIoEx = (Py_CancelIoEx != NULL);
-    }
-    return has_CancelIoEx;
-}
+// winbase.h limits the STARTF_* flags to the desktop API as of 10.0.19041.
+#ifndef STARTF_USESHOWWINDOW
+#define STARTF_USESHOWWINDOW 0x00000001
+#endif
+#ifndef STARTF_USESTDHANDLES
+#define STARTF_USESTDHANDLES 0x00000100
+#endif
 
 typedef struct {
     PyTypeObject *overlapped_type;
@@ -134,8 +128,7 @@ overlapped_dealloc(OverlappedObject *self)
 
     PyObject_GC_UnTrack(self);
     if (self->pending) {
-        if (check_CancelIoEx() &&
-            Py_CancelIoEx(self->handle, &self->overlapped) &&
+        if (CancelIoEx(self->handle, &self->overlapped) &&
             GetOverlappedResult(self->handle, &self->overlapped, &bytes, TRUE))
         {
             /* The operation is no longer pending -- nothing to do. */
@@ -306,10 +299,7 @@ _winapi_Overlapped_cancel_impl(OverlappedObject *self)
 
     if (self->pending) {
         Py_BEGIN_ALLOW_THREADS
-        if (check_CancelIoEx())
-            res = Py_CancelIoEx(self->handle, &self->overlapped);
-        else
-            res = CancelIo(self->handle);
+        res = CancelIoEx(self->handle, &self->overlapped);
         Py_END_ALLOW_THREADS
     }
 
@@ -404,13 +394,13 @@ _winapi_CloseHandle_impl(PyObject *module, HANDLE handle)
 _winapi.ConnectNamedPipe
 
     handle: HANDLE
-    overlapped as use_overlapped: bool(accept={int}) = False
+    overlapped as use_overlapped: bool = False
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_ConnectNamedPipe_impl(PyObject *module, HANDLE handle,
                               int use_overlapped)
-/*[clinic end generated code: output=335a0e7086800671 input=34f937c1c86e5e68]*/
+/*[clinic end generated code: output=335a0e7086800671 input=a80e56e8bd370e31]*/
 {
     BOOL success;
     OverlappedObject *overlapped = NULL;
@@ -655,8 +645,10 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 cleanup:
     ret = GetLastError();
 
-    CloseHandle(token);
-    CloseHandle(junction);
+    if (token != NULL)
+        CloseHandle(token);
+    if (junction != NULL)
+        CloseHandle(junction);
     PyMem_RawFree(rdb);
 
     if (ret != 0)
@@ -1220,8 +1212,10 @@ _winapi_ExitProcess_impl(PyObject *module, UINT ExitCode)
 /*[clinic end generated code: output=a387deb651175301 input=4f05466a9406c558]*/
 {
     #if defined(Py_DEBUG)
+#ifdef MS_WINDOWS_DESKTOP
         SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOALIGNMENTFAULTEXCEPT|
                      SEM_NOGPFAULTERRORBOX|SEM_NOOPENFILEERRORBOX);
+#endif
         _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_DEBUG);
     #endif
 
@@ -1394,6 +1388,30 @@ _winapi_MapViewOfFile_impl(PyObject *module, HANDLE file_map,
 }
 
 /*[clinic input]
+_winapi.UnmapViewOfFile
+
+    address: LPCVOID
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_UnmapViewOfFile_impl(PyObject *module, LPCVOID address)
+/*[clinic end generated code: output=4f7e18ac75d19744 input=8c4b6119ad9288a3]*/
+{
+    BOOL success;
+
+    Py_BEGIN_ALLOW_THREADS
+    success = UnmapViewOfFile(address);
+    Py_END_ALLOW_THREADS
+
+    if (!success) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 _winapi.OpenFileMapping -> HANDLE
 
     desired_access: DWORD
@@ -1552,13 +1570,13 @@ _winapi.ReadFile
 
     handle: HANDLE
     size: DWORD
-    overlapped as use_overlapped: bool(accept={int}) = False
+    overlapped as use_overlapped: bool = False
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_ReadFile_impl(PyObject *module, HANDLE handle, DWORD size,
                       int use_overlapped)
-/*[clinic end generated code: output=d3d5b44a8201b944 input=08c439d03a11aac5]*/
+/*[clinic end generated code: output=d3d5b44a8201b944 input=4f82f8e909ad91ad]*/
 {
     DWORD nread;
     PyObject *buf;
@@ -1838,13 +1856,13 @@ _winapi.WriteFile
 
     handle: HANDLE
     buffer: object
-    overlapped as use_overlapped: bool(accept={int}) = False
+    overlapped as use_overlapped: bool = False
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
                        int use_overlapped)
-/*[clinic end generated code: output=2ca80f6bf3fa92e3 input=11eae2a03aa32731]*/
+/*[clinic end generated code: output=2ca80f6bf3fa92e3 input=2badb008c8a2e2a0]*/
 {
     Py_buffer _buf, *buf;
     DWORD len, written;
@@ -2036,6 +2054,26 @@ _winapi__mimetypes_read_windows_registry_impl(PyObject *module,
 #undef CB_TYPE
 }
 
+/*[clinic input]
+_winapi.NeedCurrentDirectoryForExePath -> bool
+
+    exe_name: LPCWSTR
+    /
+[clinic start generated code]*/
+
+static int
+_winapi_NeedCurrentDirectoryForExePath_impl(PyObject *module,
+                                            LPCWSTR exe_name)
+/*[clinic end generated code: output=a65ec879502b58fc input=972aac88a1ec2f00]*/
+{
+    BOOL result;
+
+    Py_BEGIN_ALLOW_THREADS
+    result = NeedCurrentDirectoryForExePathW(exe_name);
+    Py_END_ALLOW_THREADS
+
+    return result;
+}
 
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
@@ -2062,6 +2100,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_READFILE_METHODDEF
     _WINAPI_SETNAMEDPIPEHANDLESTATE_METHODDEF
     _WINAPI_TERMINATEPROCESS_METHODDEF
+    _WINAPI_UNMAPVIEWOFFILE_METHODDEF
     _WINAPI_VIRTUALQUERYSIZE_METHODDEF
     _WINAPI_WAITNAMEDPIPE_METHODDEF
     _WINAPI_WAITFORMULTIPLEOBJECTS_METHODDEF
@@ -2070,6 +2109,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_GETACP_METHODDEF
     _WINAPI_GETFILETYPE_METHODDEF
     _WINAPI__MIMETYPES_READ_WINDOWS_REGISTRY_METHODDEF
+    _WINAPI_NEEDCURRENTDIRECTORYFOREXEPATH_METHODDEF
     {NULL, NULL}
 };
 

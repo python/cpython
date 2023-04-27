@@ -54,7 +54,7 @@ class TestLLTrace(unittest.TestCase):
         """)
         self.assertIn("GET_ITER", stdout)
         self.assertIn("FOR_ITER", stdout)
-        self.assertIn("UNARY_POSITIVE", stdout)
+        self.assertIn("CALL_INTRINSIC_1", stdout)
         self.assertIn("POP_TOP", stdout)
         self.assertNotIn("BINARY_OP", stdout)
         self.assertNotIn("UNARY_NEGATIVE", stdout)

@@ -27,7 +27,6 @@ import traceback
 import types
 
 from types import *
-NoneType = type(None)
 
 # TODO:
 #
@@ -42,7 +41,6 @@ NoneType = type(None)
 
 version = '1'
 
-NoneType = type(None)
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
 CLINIC_PREFIXED_ARGS = {"args"}
@@ -719,7 +717,7 @@ class CLanguage(Language):
         vararg = NO_VARARG
         pos_only = min_pos = max_pos = min_kw_only = pseudo_args = 0
         for i, p in enumerate(parameters, 1):
-            if p.is_keyword_only() or vararg != NO_VARARG:
+            if p.is_keyword_only():
                 assert not p.is_positional_only()
                 if not p.is_optional():
                     min_kw_only = i - max_pos
@@ -962,12 +960,16 @@ class CLanguage(Language):
                     if not new_or_init:
                         parser_code.append(normalize_snippet("""
                             %s = PyTuple_New(%s);
+                            if (!%s) {{
+                                goto exit;
+                            }}
                             for (Py_ssize_t i = 0; i < %s; ++i) {{
                                 PyTuple_SET_ITEM(%s, i, Py_NewRef(args[%d + i]));
                             }}
                             """ % (
                                 p.converter.parser_name,
                                 left_args,
+                                p.converter.parser_name,
                                 left_args,
                                 p.converter.parser_name,
                                 max_pos
@@ -1016,13 +1018,14 @@ class CLanguage(Language):
             parser_definition = parser_body(parser_prototype, *parser_code)
 
         else:
-            has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters))
+            has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
             if vararg == NO_VARARG:
                 args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
                     min_pos,
                     max_pos,
                     min_kw_only
                 )
+                nargs = "nargs"
             else:
                 args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
                     min_pos,
@@ -1030,6 +1033,7 @@ class CLanguage(Language):
                     min_kw_only,
                     vararg
                 )
+                nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
             if not new_or_init:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = parser_prototype_fastcall_keywords
@@ -1037,8 +1041,7 @@ class CLanguage(Language):
                 declarations = declare_parser(f)
                 declarations += "\nPyObject *argsbuf[%s];" % len(converters)
                 if has_optional_kw:
-                    pre_buffer = "0" if vararg != NO_VARARG else "nargs"
-                    declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (pre_buffer, min_pos + min_kw_only)
+                    declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
                     args = %s(args, nargs, NULL, kwnames, &_parser, %s, argsbuf);
                     if (!args) {{
@@ -1055,7 +1058,7 @@ class CLanguage(Language):
                 declarations += "\nPyObject * const *fastargs;"
                 declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
                 if has_optional_kw:
-                    declarations += "\nPy_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (min_pos + min_kw_only)
+                    declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (nargs, min_pos + min_kw_only)
                 parser_code = [normalize_snippet("""
                     fastargs = %s(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, %s, argsbuf);
                     if (!fastargs) {{
@@ -1171,6 +1174,7 @@ class CLanguage(Language):
                 raise ValueError("Slot methods cannot access their defining class.")
 
             if not parses_keywords:
+                declarations = '{base_type_ptr}'
                 fields.insert(0, normalize_snippet("""
                     if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs)) {{
                         goto exit;
@@ -1184,7 +1188,7 @@ class CLanguage(Language):
                         """, indent=4))
 
             parser_definition = parser_body(parser_prototype, *fields,
-                                            declarations=parser_body_declarations)
+                                            declarations=declarations)
 
 
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
@@ -2829,7 +2833,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         The C statements required to modify this variable after parsing.
         Returns a string containing this code indented at column 0.
-        If no initialization is necessary, returns an empty string.
+        If no modification is necessary, returns an empty string.
         """
         return ""
 
@@ -3836,20 +3840,21 @@ class self_converter(CConverter):
         cls = self.function.cls
 
         if ((kind in (METHOD_NEW, METHOD_INIT)) and cls and cls.typedef):
-            type_object = self.function.cls.type_object
-            prefix = (type_object[1:] + '.' if type_object[0] == '&' else
-                      type_object + '->')
             if kind == METHOD_NEW:
-                type_check = ('({0} == {1} ||\n        '
-                              ' {0}->tp_init == {2}tp_init)'
-                             ).format(self.name, type_object, prefix)
+                type_check = (
+                    '({0} == base_tp || {0}->tp_init == base_tp->tp_init)'
+                 ).format(self.name)
             else:
-                type_check = ('(Py_IS_TYPE({0}, {1}) ||\n        '
-                              ' Py_TYPE({0})->tp_new == {2}tp_new)'
-                             ).format(self.name, type_object, prefix)
+                type_check = ('(Py_IS_TYPE({0}, base_tp) ||\n        '
+                              ' Py_TYPE({0})->tp_new == base_tp->tp_new)'
+                             ).format(self.name)
 
             line = '{} &&\n        '.format(type_check)
             template_dict['self_type_check'] = line
+
+            type_object = self.function.cls.type_object
+            type_ptr = f'PyTypeObject *base_tp = {type_object};'
+            template_dict['base_type_ptr'] = type_ptr
 
 
 
@@ -5211,10 +5216,6 @@ clinic = None
 
 def main(argv):
     import sys
-
-    if sys.version_info.major < 3 or sys.version_info.minor < 3:
-        sys.exit("Error: clinic.py requires Python 3.3 or greater.")
-
     import argparse
     cmdline = argparse.ArgumentParser(
         description="""Preprocessor for CPython C files.

@@ -44,6 +44,7 @@ CO_FAST_LOCAL = 0x20
 CO_FAST_CELL = 0x40
 CO_FAST_FREE = 0x80
 
+next_code_version = 1
 
 def get_localsplus(code: types.CodeType):
     a = collections.defaultdict(int)
@@ -60,7 +61,6 @@ def get_localsplus_counts(code: types.CodeType,
                           names: Tuple[str, ...],
                           kinds: bytes) -> Tuple[int, int, int, int]:
     nlocals = 0
-    nplaincellvars = 0
     ncellvars = 0
     nfreevars = 0
     assert len(names) == len(kinds)
@@ -71,15 +71,13 @@ def get_localsplus_counts(code: types.CodeType,
                 ncellvars += 1
         elif kind & CO_FAST_CELL:
             ncellvars += 1
-            nplaincellvars += 1
         elif kind & CO_FAST_FREE:
             nfreevars += 1
     assert nlocals == len(code.co_varnames) == code.co_nlocals, \
         (nlocals, len(code.co_varnames), code.co_nlocals)
     assert ncellvars == len(code.co_cellvars)
     assert nfreevars == len(code.co_freevars)
-    assert len(names) == nlocals + nplaincellvars + nfreevars
-    return nlocals, nplaincellvars, ncellvars, nfreevars
+    return nlocals, ncellvars, nfreevars
 
 
 PyUnicode_1BYTE_KIND = 1
@@ -144,7 +142,7 @@ class Printer:
 
     def object_head(self, typename: str) -> None:
         with self.block(".ob_base =", ","):
-            self.write(f".ob_refcnt = 999999999,")
+            self.write(f".ob_refcnt = _Py_IMMORTAL_REFCNT,")
             self.write(f".ob_type = &{typename},")
 
     def object_var_head(self, typename: str, size: int) -> None:
@@ -177,6 +175,12 @@ class Printer:
             return f"&_Py_STR({strings[s]})"
         if s in identifiers:
             return f"&_Py_ID({s})"
+        if len(s) == 1:
+            c = ord(s)
+            if c < 128:
+                return f"(PyObject *)&_Py_SINGLETON(strings).ascii[{c}]"
+            elif c < 256:
+                return f"(PyObject *)&_Py_SINGLETON(strings).latin1[{c - 128}]"
         if re.match(r'\A[A-Za-z0-9_]+\Z', s):
             name = f"const_str_{s}"
         kind, ascii = analyze_character_width(s)
@@ -227,6 +231,7 @@ class Printer:
 
 
     def generate_code(self, name: str, code: types.CodeType) -> str:
+        global next_code_version
         # The ordering here matches PyCode_NewWithPosOnlyArgs()
         # (but see below).
         co_consts = self.generate(name + "_consts", code.co_consts)
@@ -241,7 +246,7 @@ class Printer:
         co_localsplusnames = self.generate(name + "_localsplusnames", localsplusnames)
         co_localspluskinds = self.generate(name + "_localspluskinds", localspluskinds)
         # Derived values
-        nlocals, nplaincellvars, ncellvars, nfreevars = \
+        nlocals, ncellvars, nfreevars = \
             get_localsplus_counts(code, localsplusnames, localspluskinds)
         co_code_adaptive = make_string_literal(code.co_code)
         self.write("static")
@@ -256,18 +261,19 @@ class Printer:
             self.write(f".co_names = {co_names},")
             self.write(f".co_exceptiontable = {co_exceptiontable},")
             self.field(code, "co_flags")
-            self.write("._co_linearray_entry_size = 0,")
             self.field(code, "co_argcount")
             self.field(code, "co_posonlyargcount")
             self.field(code, "co_kwonlyargcount")
+            # The following should remain in sync with _PyFrame_NumSlotsForCodeObject
             self.write(f".co_framesize = {code.co_stacksize + len(localsplusnames)} + FRAME_SPECIALS_SIZE,")
             self.field(code, "co_stacksize")
             self.field(code, "co_firstlineno")
             self.write(f".co_nlocalsplus = {len(localsplusnames)},")
             self.field(code, "co_nlocals")
-            self.write(f".co_nplaincellvars = {nplaincellvars},")
             self.write(f".co_ncellvars = {ncellvars},")
             self.write(f".co_nfreevars = {nfreevars},")
+            self.write(f".co_version = {next_code_version},")
+            next_code_version += 1
             self.write(f".co_localsplusnames = {co_localsplusnames},")
             self.write(f".co_localspluskinds = {co_localspluskinds},")
             self.write(f".co_filename = {co_filename},")
@@ -275,7 +281,6 @@ class Printer:
             self.write(f".co_qualname = {co_qualname},")
             self.write(f".co_linetable = {co_linetable},")
             self.write(f"._co_cached = NULL,")
-            self.write("._co_linearray = NULL,")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
             for i, op in enumerate(code.co_code[::2]):
                 if op == RESUME:
@@ -308,7 +313,7 @@ class Printer:
         return f"& {name}._object.ob_base.ob_base"
 
     def _generate_int_for_bits(self, name: str, i: int, digit: int) -> None:
-        sign = -1 if i < 0 else 0 if i == 0 else +1
+        sign = (i > 0) - (i < 0)
         i = abs(i)
         digits: list[int] = []
         while i:
@@ -317,10 +322,12 @@ class Printer:
         self.write("static")
         with self.indent():
             with self.block("struct"):
-                self.write("PyObject_VAR_HEAD")
+                self.write("PyObject ob_base;")
+                self.write("uintptr_t lv_tag;")
                 self.write(f"digit ob_digit[{max(1, len(digits))}];")
         with self.block(f"{name} =", ";"):
-            self.object_var_head("PyLong_Type", sign*len(digits))
+            self.object_head("PyLong_Type")
+            self.write(f".lv_tag = TAG_FROM_SIGN_AND_SIZE({sign}, {len(digits)}),")
             if digits:
                 ds = ", ".join(map(str, digits))
                 self.write(f".ob_digit = {{ {ds} }},")
@@ -344,7 +351,7 @@ class Printer:
             self.write('#error "PYLONG_BITS_IN_DIGIT should be 15 or 30"')
             self.write("#endif")
             # If neither clause applies, it won't compile
-        return f"& {name}.ob_base.ob_base"
+        return f"& {name}.ob_base"
 
     def generate_float(self, name: str, x: float) -> str:
         with self.block(f"static PyFloatObject {name} =", ";"):
@@ -461,6 +468,7 @@ def generate(args: list[str], output: TextIO) -> None:
             with printer.block(f"if ({p} < 0)"):
                 printer.write("return -1;")
         printer.write("return 0;")
+    printer.write(f"\nuint32_t _Py_next_func_version = {next_code_version};\n")
     if verbose:
         print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
 
