@@ -179,7 +179,22 @@ exec_tests = [
     "def f(a=1, /, b=2, *, c): pass",
     "def f(a=1, /, b=2, *, c=4, **kwargs): pass",
     "def f(a=1, /, b=2, *, c, **kwargs): pass",
-
+    # Type aliases
+    "type X = int",
+    "type X[T] = int",
+    "type X[T, *Ts, **P] = (T, Ts, P)",
+    "type X[T: int, *Ts, **P] = (T, Ts, P)",
+    "type X[T: (int, str), *Ts, **P] = (T, Ts, P)",
+    # Generic classes
+    "class X[T]: pass",
+    "class X[T, *Ts, **P]: pass",
+    "class X[T: int, *Ts, **P]: pass",
+    "class X[T: (int, str), *Ts, **P]: pass",
+    # Generic functions
+    "def f[T](): pass",
+    "def f[T, *Ts, **P](): pass",
+    "def f[T: int, *Ts, **P](): pass",
+    "def f[T: (int, str), *Ts, **P](): pass",
 ]
 
 # These are compiled through "single"
@@ -260,7 +275,6 @@ eval_tests = [
   "()",
   # Combination
   "a.b.c.d(a.b[1:2])",
-
 ]
 
 # TODO: expr_context, slice, boolop, operator, unaryop, cmpop, comprehension
@@ -2684,6 +2698,19 @@ exec_results = [
 ('Module', [('FunctionDef', (1, 0, 1, 30), 'f', [], ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 14, 1, 15), 'b', None, None)], None, [('arg', (1, 22, 1, 23), 'c', None, None)], [None], None, [('Constant', (1, 8, 1, 9), 1, None), ('Constant', (1, 16, 1, 17), 2, None)]), [('Pass', (1, 26, 1, 30))], [], None, None)], []),
 ('Module', [('FunctionDef', (1, 0, 1, 42), 'f', [], ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 14, 1, 15), 'b', None, None)], None, [('arg', (1, 22, 1, 23), 'c', None, None)], [('Constant', (1, 24, 1, 25), 4, None)], ('arg', (1, 29, 1, 35), 'kwargs', None, None), [('Constant', (1, 8, 1, 9), 1, None), ('Constant', (1, 16, 1, 17), 2, None)]), [('Pass', (1, 38, 1, 42))], [], None, None)], []),
 ('Module', [('FunctionDef', (1, 0, 1, 40), 'f', [], ('arguments', [('arg', (1, 6, 1, 7), 'a', None, None)], [('arg', (1, 14, 1, 15), 'b', None, None)], None, [('arg', (1, 22, 1, 23), 'c', None, None)], [None], ('arg', (1, 27, 1, 33), 'kwargs', None, None), [('Constant', (1, 8, 1, 9), 1, None), ('Constant', (1, 16, 1, 17), 2, None)]), [('Pass', (1, 36, 1, 40))], [], None, None)], []),
+('Module', [('TypeAlias', (1, 0, 1, 12), ('Name', (1, 5, 1, 6), 'X', ('Store',)), [], ('Name', (1, 9, 1, 12), 'int', ('Load',)))], []),
+('Module', [('TypeAlias', (1, 0, 1, 15), ('Name', (1, 5, 1, 6), 'X', ('Store',)), [('TypeVar', (1, 7, 1, 8), 'T', None)], ('Name', (1, 12, 1, 15), 'int', ('Load',)))], []),
+('Module', [('TypeAlias', (1, 0, 1, 32), ('Name', (1, 5, 1, 6), 'X', ('Store',)), [('TypeVar', (1, 7, 1, 8), 'T', None), ('TypeVarTuple', (1, 10, 1, 13), 'Ts'), ('ParamSpec', (1, 15, 1, 18), 'P')], ('Tuple', (1, 22, 1, 32), [('Name', (1, 23, 1, 24), 'T', ('Load',)), ('Name', (1, 26, 1, 28), 'Ts', ('Load',)), ('Name', (1, 30, 1, 31), 'P', ('Load',))], ('Load',)))], []),
+('Module', [('TypeAlias', (1, 0, 1, 37), ('Name', (1, 5, 1, 6), 'X', ('Store',)), [('TypeVar', (1, 7, 1, 13), 'T', ('Name', (1, 10, 1, 13), 'int', ('Load',))), ('TypeVarTuple', (1, 15, 1, 18), 'Ts'), ('ParamSpec', (1, 20, 1, 23), 'P')], ('Tuple', (1, 27, 1, 37), [('Name', (1, 28, 1, 29), 'T', ('Load',)), ('Name', (1, 31, 1, 33), 'Ts', ('Load',)), ('Name', (1, 35, 1, 36), 'P', ('Load',))], ('Load',)))], []),
+('Module', [('TypeAlias', (1, 0, 1, 44), ('Name', (1, 5, 1, 6), 'X', ('Store',)), [('TypeVar', (1, 7, 1, 20), 'T', ('Tuple', (1, 10, 1, 20), [('Name', (1, 11, 1, 14), 'int', ('Load',)), ('Name', (1, 16, 1, 19), 'str', ('Load',))], ('Load',))), ('TypeVarTuple', (1, 22, 1, 25), 'Ts'), ('ParamSpec', (1, 27, 1, 30), 'P')], ('Tuple', (1, 34, 1, 44), [('Name', (1, 35, 1, 36), 'T', ('Load',)), ('Name', (1, 38, 1, 40), 'Ts', ('Load',)), ('Name', (1, 42, 1, 43), 'P', ('Load',))], ('Load',)))], []),
+('Module', [('ClassDef', (1, 0, 1, 16), 'X', [('TypeVar', (1, 8, 1, 9), 'T', None)], [], [], [('Pass', (1, 12, 1, 16))], [])], []),
+('Module', [('ClassDef', (1, 0, 1, 26), 'X', [('TypeVar', (1, 8, 1, 9), 'T', None), ('TypeVarTuple', (1, 11, 1, 14), 'Ts'), ('ParamSpec', (1, 16, 1, 19), 'P')], [], [], [('Pass', (1, 22, 1, 26))], [])], []),
+('Module', [('ClassDef', (1, 0, 1, 31), 'X', [('TypeVar', (1, 8, 1, 14), 'T', ('Name', (1, 11, 1, 14), 'int', ('Load',))), ('TypeVarTuple', (1, 16, 1, 19), 'Ts'), ('ParamSpec', (1, 21, 1, 24), 'P')], [], [], [('Pass', (1, 27, 1, 31))], [])], []),
+('Module', [('ClassDef', (1, 0, 1, 38), 'X', [('TypeVar', (1, 8, 1, 21), 'T', ('Tuple', (1, 11, 1, 21), [('Name', (1, 12, 1, 15), 'int', ('Load',)), ('Name', (1, 17, 1, 20), 'str', ('Load',))], ('Load',))), ('TypeVarTuple', (1, 23, 1, 26), 'Ts'), ('ParamSpec', (1, 28, 1, 31), 'P')], [], [], [('Pass', (1, 34, 1, 38))], [])], []),
+('Module', [('FunctionDef', (1, 0, 1, 16), 'f', [('TypeVar', (1, 6, 1, 7), 'T', None)], ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 12, 1, 16))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0, 1, 26), 'f', [('TypeVar', (1, 6, 1, 7), 'T', None), ('TypeVarTuple', (1, 9, 1, 12), 'Ts'), ('ParamSpec', (1, 14, 1, 17), 'P')], ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 22, 1, 26))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0, 1, 31), 'f', [('TypeVar', (1, 6, 1, 12), 'T', ('Name', (1, 9, 1, 12), 'int', ('Load',))), ('TypeVarTuple', (1, 14, 1, 17), 'Ts'), ('ParamSpec', (1, 19, 1, 22), 'P')], ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 27, 1, 31))], [], None, None)], []),
+('Module', [('FunctionDef', (1, 0, 1, 38), 'f', [('TypeVar', (1, 6, 1, 19), 'T', ('Tuple', (1, 9, 1, 19), [('Name', (1, 10, 1, 13), 'int', ('Load',)), ('Name', (1, 15, 1, 18), 'str', ('Load',))], ('Load',))), ('TypeVarTuple', (1, 21, 1, 24), 'Ts'), ('ParamSpec', (1, 26, 1, 29), 'P')], ('arguments', [], [], None, [], [], None, []), [('Pass', (1, 34, 1, 38))], [], None, None)], []),
 ]
 single_results = [
 ('Interactive', [('Expr', (1, 0, 1, 3), ('BinOp', (1, 0, 1, 3), ('Constant', (1, 0, 1, 1), 1, None), ('Add',), ('Constant', (1, 2, 1, 3), 2, None)))]),
