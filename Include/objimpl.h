@@ -131,10 +131,6 @@ PyAPI_FUNC(PyVarObject *) PyObject_InitVar(PyVarObject *,
 PyAPI_FUNC(PyObject *) _PyObject_New(PyTypeObject *);
 PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
 
-#if !defined(Py_LIMITED_API)
-PyAPI_FUNC(PyObject *) PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *, size_t);
-#endif
-
 #define PyObject_New(type, typeobj) ((type *)_PyObject_New(typeobj))
 
 // Alias to PyObject_New(). In Python 3.8, PyObject_NEW() called directly
