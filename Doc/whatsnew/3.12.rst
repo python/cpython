@@ -66,6 +66,10 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+New typing features:
+
+* :ref:`whatsnew312-pep692`
+
 Important deprecations, removals or restrictions:
 
 * :pep:`623`, Remove wstr from Unicode
@@ -144,6 +148,36 @@ New Features
   See :ref:`tarfile-extraction-filter` for details.
   In Python 3.14, the default will switch to ``'data'``.
   (Contributed by Petr Viktorin in :pep:`706`.)
+
+New Features Related to Type Hints
+==================================
+
+This section covers major changes affecting :pep:`484` type hints and
+the :mod:`typing` module.
+
+.. _whatsnew312-pep692:
+
+PEP 692: Using ``TypedDict`` for more precise ``**kwargs`` typing
+-----------------------------------------------------------------
+
+Typing ``**kwargs`` in a function signature as introduced by :pep:`484` allowed
+for valid annotations only in cases where all of the ``**kwargs`` were of the
+same type.
+
+This PEP specifies a more precise way of typing ``**kwargs`` by relying on
+typed dictionaries::
+
+   from typing import TypedDict, Unpack
+
+   class Movie(TypedDict):
+     name: str
+     year: int
+
+   def foo(**kwargs: Unpack[Movie]): ...
+
+See :pep:`692` for more details.
+
+(PEP written by Franek Magiera)
 
 
 Other Language Changes
@@ -405,6 +439,16 @@ sqlite3
   to control :pep:`249`-compliant
   :ref:`transaction handling <sqlite3-transaction-control-autocommit>`.
   (Contributed by Erlend E. Aasland in :gh:`83638`.)
+
+* Add *entrypoint* keyword-only parameter to
+  :meth:`~sqlite3.Connection.load_extension`,
+  for overriding the SQLite extension entry point.
+  (Contributed by Erlend E. Aasland in :gh:`103015`.)
+
+* Add :meth:`~sqlite3.Connection.getconfig` and
+  :meth:`~sqlite3.Connection.setconfig` to :class:`~sqlite3.Connection`
+  to make configuration changes to a database connection.
+  (Contributed by Erlend E. Aasland in :gh:`103489`.)
 
 threading
 ---------

@@ -1535,5 +1535,19 @@ x = (
         self.assertAllRaise(SyntaxError, "unterminated triple-quoted f-string literal",
                             ['f"""', "f'''"])
 
+    def test_syntax_error_after_debug(self):
+        self.assertAllRaise(SyntaxError, "f-string: expecting a valid expression after '{'",
+                            [
+                                "f'{1=}{;'",
+                                "f'{1=}{+;'",
+                                "f'{1=}{2}{;'",
+                                "f'{1=}{3}{;'",
+                            ])
+        self.assertAllRaise(SyntaxError, "f-string: expecting '=', or '!', or ':', or '}'",
+                            [
+                                "f'{1=}{1;'",
+                                "f'{1=}{1;}'",
+                            ])
+
 if __name__ == '__main__':
     unittest.main()

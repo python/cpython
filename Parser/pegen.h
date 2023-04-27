@@ -39,6 +39,7 @@ typedef struct {
     int level;
     int lineno, col_offset, end_lineno, end_col_offset;
     Memo *memo;
+    PyObject *metadata;
 } Token;
 
 typedef struct {
@@ -117,6 +118,11 @@ typedef struct {
     void *element;
     int is_keyword;
 } KeywordOrStarred;
+
+typedef struct {
+    void *result;
+    PyObject *metadata;
+} ResultTokenWithMetadata;
 
 // Internal parser functions
 #if defined(Py_DEBUG)
@@ -310,7 +316,8 @@ StarEtc *_PyPegen_star_etc(Parser *, arg_ty, asdl_seq *, arg_ty);
 arguments_ty _PyPegen_make_arguments(Parser *, asdl_arg_seq *, SlashWithDefault *,
                                      asdl_arg_seq *, asdl_seq *, StarEtc *);
 arguments_ty _PyPegen_empty_arguments(Parser *);
-expr_ty _PyPegen_formatted_value(Parser *, expr_ty, Token *, expr_ty, expr_ty, int, int, int, int, PyArena *);
+expr_ty _PyPegen_formatted_value(Parser *, expr_ty, Token *, ResultTokenWithMetadata *, ResultTokenWithMetadata *, Token *,
+                                 int, int, int, int, PyArena *);
 AugOperator *_PyPegen_augoperator(Parser*, operator_ty type);
 stmt_ty _PyPegen_function_def_decorators(Parser *, asdl_expr_seq *, stmt_ty);
 stmt_ty _PyPegen_class_def_decorators(Parser *, asdl_expr_seq *, stmt_ty);
@@ -329,7 +336,9 @@ expr_ty _PyPegen_ensure_real(Parser *p, expr_ty);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
 int _PyPegen_check_barry_as_flufl(Parser *, Token *);
 int _PyPegen_check_legacy_stmt(Parser *p, expr_ty t);
-expr_ty _PyPegen_check_fstring_conversion(Parser *p, Token *, expr_ty t);
+ResultTokenWithMetadata *_PyPegen_check_fstring_conversion(Parser *p, Token *, expr_ty t);
+ResultTokenWithMetadata *_PyPegen_setup_full_format_spec(Parser *, Token *, asdl_expr_seq *, int, int,
+                                                         int, int, PyArena *);
 mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 expr_ty _PyPegen_get_last_comprehension_item(comprehension_ty comprehension);

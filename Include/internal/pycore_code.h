@@ -53,6 +53,15 @@ typedef struct {
 
 typedef struct {
     uint16_t counter;
+    uint16_t class_version[2];
+    uint16_t self_type_version[2];
+    uint16_t method[4];
+} _PySuperAttrCache;
+
+#define INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR CACHE_ENTRIES(_PySuperAttrCache)
+
+typedef struct {
+    uint16_t counter;
     uint16_t version[2];
     uint16_t index;
 } _PyAttrCache;
@@ -217,6 +226,8 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
 /* Specialization functions */
 
+extern void _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *class, PyObject *self,
+                                         _Py_CODEUNIT *instr, PyObject *name, int load_method);
 extern void _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
 extern void _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr,
