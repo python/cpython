@@ -2044,7 +2044,6 @@ LIBSUBDIRS=	asyncio \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
-		test/__pycache__ \
 		test/audiodata \
 		test/capath \
 		test/cjkencodings \
@@ -2056,15 +2055,12 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/imghdrdata \
 		test/leakers \
 		test/libregrtest \
-		test/libregrtest/__pycache__ \
 		test/sndhdrdata \
 		test/subprocessdata \
 		test/support \
-		test/support/__pycache__ \
 		test/test_asyncio \
 		test/test_capi \
 		test/test_ctypes \
-		test/test_ctypes/__pycache__ \
 		test/test_email \
 		test/test_email/data \
 		test/test_import \
