@@ -573,6 +573,38 @@ Module constants
       package, a third-party library which used to upstream changes to
       :mod:`!sqlite3`. Today, it carries no meaning or practical value.
 
+.. _sqlite3-dbconfig-constants:
+
+.. data:: SQLITE_DBCONFIG_DEFENSIVE
+          SQLITE_DBCONFIG_DQS_DDL
+          SQLITE_DBCONFIG_DQS_DML
+          SQLITE_DBCONFIG_ENABLE_FKEY
+          SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER
+          SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION
+          SQLITE_DBCONFIG_ENABLE_QPSG
+          SQLITE_DBCONFIG_ENABLE_TRIGGER
+          SQLITE_DBCONFIG_ENABLE_VIEW
+          SQLITE_DBCONFIG_LEGACY_ALTER_TABLE
+          SQLITE_DBCONFIG_LEGACY_FILE_FORMAT
+          SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE
+          SQLITE_DBCONFIG_RESET_DATABASE
+          SQLITE_DBCONFIG_TRIGGER_EQP
+          SQLITE_DBCONFIG_TRUSTED_SCHEMA
+          SQLITE_DBCONFIG_WRITABLE_SCHEMA
+
+   These constants are used for the :meth:`Connection.setconfig`
+   and :meth:`~Connection.getconfig` methods.
+
+   The availability of these constants varies depending on the version of SQLite
+   Python was compiled with.
+
+   .. versionadded:: 3.12
+
+   .. seealso::
+
+     https://www.sqlite.org/c3ref/c_dbconfig_defensive.html
+        SQLite docs: Database Connection Configuration Options
+
 
 .. _sqlite3-connection-objects:
 
@@ -1041,11 +1073,24 @@ Connection objects
          (2, 'broccoli pie', 'broccoli cheese onions flour')
          (3, 'pumpkin pie', 'pumpkin sugar flour butter')
 
-   .. method:: load_extension(path, /)
+   .. method:: load_extension(path, /, *, entrypoint=None)
 
-      Load an SQLite extension from a shared library located at *path*.
+      Load an SQLite extension from a shared library.
       Enable extension loading with :meth:`enable_load_extension` before
       calling this method.
+
+      :param str path:
+
+         The path to the SQLite extension.
+
+      :param entrypoint:
+
+         Entry point name.
+         If ``None`` (the default),
+         SQLite will come up with an entry point name of its own;
+         see the SQLite docs `Loading an Extension`_ for details.
+
+      :type entrypoint: str | None
 
       .. audit-event:: sqlite3.load_extension connection,path sqlite3.Connection.load_extension
 
@@ -1053,6 +1098,11 @@ Connection objects
 
       .. versionchanged:: 3.10
          Added the ``sqlite3.load_extension`` auditing event.
+
+      .. versionadded:: 3.12
+         The *entrypoint* parameter.
+
+   .. _Loading an Extension: https://www.sqlite.org/loadext.html#loading_an_extension_
 
    .. method:: iterdump
 
@@ -1200,6 +1250,30 @@ Connection objects
 
    .. _SQLite limit category: https://www.sqlite.org/c3ref/c_limit_attached.html
 
+
+   .. method:: getconfig(op, /)
+
+      Query a boolean connection configuration option.
+
+      :param int op:
+         A :ref:`SQLITE_DBCONFIG code <sqlite3-dbconfig-constants>`.
+
+      :rtype: bool
+
+      .. versionadded:: 3.12
+
+   .. method:: setconfig(op, enable=True, /)
+
+      Set a boolean connection configuration option.
+
+      :param int op:
+         A :ref:`SQLITE_DBCONFIG code <sqlite3-dbconfig-constants>`.
+
+      :param bool enable:
+         ``True`` if the configuration option should be enabled (default);
+         ``False`` if it should be disabled.
+
+      .. versionadded:: 3.12
 
    .. method:: serialize(*, name="main")
 
