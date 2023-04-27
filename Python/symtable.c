@@ -1399,6 +1399,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT(st, expr, s->v.TypeAlias.name);
         assert(s->v.TypeAlias.name->kind == Name_kind);
         PyObject *name = s->v.TypeAlias.name->v.Name.id;
+        int is_in_class = st->st_cur->ste_type == ClassBlock;
         if (asdl_seq_LEN(s->v.TypeAlias.typeparams) > 0) {
             if (!symtable_enter_typeparam_block(
                     st, name,
@@ -1412,6 +1413,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (!symtable_enter_block(st, name, TypeAliasBlock,
                                   (void *)s, LOCATION(s)))
             VISIT_QUIT(st, 0);
+        st->st_cur->ste_type_params_in_class = is_in_class;
         VISIT(st, expr, s->v.TypeAlias.value);
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);

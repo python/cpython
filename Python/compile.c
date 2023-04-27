@@ -2540,6 +2540,7 @@ compiler_typealias(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(compiler_add_const(c->c_const_cache, c->u, Py_None));
     VISIT_IN_SCOPE(c, expr, s->v.TypeAlias.value);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
+    int is_in_class = c->u->u_ste->ste_type_params_in_class;
     PyCodeObject *co = optimize_and_assemble(c, 1);
     compiler_exit_scope(c);
     if (co == NULL) {
@@ -2550,6 +2551,10 @@ compiler_typealias(struct compiler *c, stmt_ty s)
         return ERROR;
     }
     Py_DECREF(co);
+    if (is_in_class) {
+        ADDOP(c, loc, LOAD_LOCALS);
+        ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_CLASS_DICT);
+    }
     ADDOP_I(c, loc, BUILD_TUPLE, 3);
     ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEALIAS);
     if (asdl_seq_LEN(typeparams) > 0) {
