@@ -1082,13 +1082,21 @@ type_set_abstractmethods(PyTypeObject *type, PyObject *value, void *context)
 static PyObject *
 type_get_bases(PyTypeObject *type, void *context)
 {
-    return Py_NewRef(lookup_tp_bases(type));
+    PyObject *bases = lookup_tp_bases(type);
+    if (bases == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(bases);
 }
 
 static PyObject *
 type_get_mro(PyTypeObject *type, void *context)
 {
-    return Py_NewRef(lookup_tp_mro(type));
+    PyObject *mro = lookup_tp_mro(type);
+    if (mro == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(mro);
 }
 
 static PyTypeObject *best_base(PyObject *);
