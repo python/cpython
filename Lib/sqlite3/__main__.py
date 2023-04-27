@@ -63,7 +63,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
 
 
 def eofkey():
-    if sys.platform == "win32":
+    if sys.platform != "win32":
         return "CTRL-D"
     if "idlelib.run" in sys.modules:
         return "CTRL-D"
