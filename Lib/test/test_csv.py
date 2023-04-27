@@ -1189,7 +1189,7 @@ abc\0def
 ghijkl\0mno
 ghi\0jkl
 """
-    sample15 = 'Timestamp,URL,Title\r\n2020-10-01 17:17:37+08:00,https://www.mozilla.org/en-US/firefox/welcome/2/,"Pocket - Save news, videos, stories and more"\r\n'
+    sample15 = 'time,title\r\n2020-10-01,"Pocket - Save news, videos, stories and more"\r\n'
 
 
     def test_issue43625(self):
