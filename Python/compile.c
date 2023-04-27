@@ -6997,11 +6997,12 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     if (_PyCfg_ResolveJumps(&g) < 0) {
         goto error;
     }
+
+    /* Can't modify the bytecode after computing jump offsets. */
+
     if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
         goto error;
     }
-
-    /* Can't modify the bytecode after computing jump offsets. */
 
     co = _PyAssemble_MakeCodeObject(&u->u_metadata, const_cache, consts,
                                     maxdepth, &optimized_instrs, nlocalsplus,
