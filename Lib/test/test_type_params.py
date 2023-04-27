@@ -305,6 +305,42 @@ class TypeParamsLazyEvaluationTest(unittest.TestCase):
         self.assertEqual(type_params[1].__constraints__, ("defined",))
 
 
+class TypeParamsClassScopeTest(unittest.TestCase):
+    def test_alias(self):
+        class X:
+            T = int
+            type U = T
+        self.assertIs(X.U.__value__, int)
+
+        code = textwrap.dedent("""\
+            glb = "global"
+            class X:
+                cls = "class"
+                type U = (glb, cls)
+
+            assert X.U.__value__ == ("global", "class"), X.U.__value__
+        """)
+        exec(code, {})
+
+    def test_bound(self):
+        class X:
+            T = int
+            def foo[U: T](self): ...
+        self.assertIs(X.foo.__type_params__[0].__bound__, int)
+
+        code = textwrap.dedent("""\
+            glb = "global"
+            class X:
+                cls = "class"
+                def foo[T: glb, U: cls](self): ...
+
+            T, U = X.foo.__type_params__
+            assert T.__bound__ == "global"
+            assert U.__bound__ == "class"
+        """)
+        exec(code, {})
+
+
 class TypeParamsTraditionalTypeVars(unittest.TestCase):
     def test_traditional_01(self):
         code = textwrap.dedent("""\

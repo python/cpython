@@ -1958,8 +1958,8 @@ symtable_visit_typeparam(struct symtable *st, typeparam_ty tp)
             VISIT(st, expr, tp->v.TypeVar.bound);
             if (!symtable_exit_block(st))
                 VISIT_QUIT(st, 0);
+        }
         break;
-    }
     case TypeVarTuple_kind:
         if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
