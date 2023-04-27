@@ -48,7 +48,6 @@ struct _Py_global_strings {
         STRUCT_FOR_STR(json_decoder, "json.decoder")
         STRUCT_FOR_STR(kwdefaults, ".kwdefaults")
         STRUCT_FOR_STR(list_err, "list index out of range")
-        STRUCT_FOR_STR(namespace, ".namespace")
         STRUCT_FOR_STR(newline, "\n")
         STRUCT_FOR_STR(open_br, "{")
         STRUCT_FOR_STR(percent, "%")

@@ -563,7 +563,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(json_decoder));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(kwdefaults));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(list_err));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(namespace));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(newline));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(open_br));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(percent));

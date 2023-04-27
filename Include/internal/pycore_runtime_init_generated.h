@@ -554,7 +554,6 @@ extern "C" {
     INIT_STR(json_decoder, "json.decoder"), \
     INIT_STR(kwdefaults, ".kwdefaults"), \
     INIT_STR(list_err, "list index out of range"), \
-    INIT_STR(namespace, ".namespace"), \
     INIT_STR(newline, "\n"), \
     INIT_STR(open_br, "{"), \
     INIT_STR(percent, "%"), \
