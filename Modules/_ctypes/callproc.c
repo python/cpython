@@ -469,21 +469,41 @@ PyCArgObject *
 PyCArgObject_new(void)
 {
     PyCArgObject *p;
-    p = PyObject_New(PyCArgObject, &PyCArg_Type);
+    ctypes_state *st = GLOBAL_STATE();
+    p = PyObject_GC_New(PyCArgObject, st->PyCArg_Type);
     if (p == NULL)
         return NULL;
     p->pffi_type = NULL;
     p->tag = '\0';
     p->obj = NULL;
     memset(&p->value, 0, sizeof(p->value));
+    PyObject_GC_Track(p);
     return p;
+}
+
+static int
+PyCArg_traverse(PyCArgObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->obj);
+    return 0;
+}
+
+static int
+PyCArg_clear(PyCArgObject *self)
+{
+    Py_CLEAR(self->obj);
+    return 0;
 }
 
 static void
 PyCArg_dealloc(PyCArgObject *self)
 {
-    Py_XDECREF(self->obj);
-    PyObject_Free(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    (void)PyCArg_clear(self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -567,36 +587,21 @@ static PyMemberDef PyCArgType_members[] = {
     { NULL },
 };
 
-PyTypeObject PyCArg_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "CArgObject",
-    sizeof(PyCArgObject),
-    0,
-    (destructor)PyCArg_dealloc,                 /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    (reprfunc)PyCArg_repr,                      /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
-    0,                                          /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    PyCArgType_members,                         /* tp_members */
+static PyType_Slot carg_slots[] = {
+    {Py_tp_dealloc, PyCArg_dealloc},
+    {Py_tp_traverse, PyCArg_traverse},
+    {Py_tp_clear, PyCArg_clear},
+    {Py_tp_repr, PyCArg_repr},
+    {Py_tp_members, PyCArgType_members},
+    {0, NULL},
+};
+
+PyType_Spec carg_spec = {
+    .name = "_ctypes.CArgObject",
+    .basicsize = sizeof(PyCArgObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
+    .slots = carg_slots,
 };
 
 /****************************************************************/
@@ -669,7 +674,8 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         return 0;
     }
 
-    if (PyCArg_CheckExact(obj)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (PyCArg_CheckExact(st, obj)) {
         PyCArgObject *carg = (PyCArgObject *)obj;
         pa->ffi_type = carg->pffi_type;
         pa->keep = Py_NewRef(obj);
