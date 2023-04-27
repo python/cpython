@@ -261,6 +261,12 @@ asyncio
   yielding tasks.
   (Contributed by Kumar Aditya in :gh:`78530`.)
 
+calendar
+--------
+
+* Add enums for month and day. For example: ``JANUARY`` and ``MONDAY``.
+  (Contributed by Prince Roshan in :gh:`103636`.)
+
 csv
 ---
 
@@ -548,11 +554,6 @@ sys
   exception instance, rather than to a ``(typ, exc, tb)`` tuple.
   (Contributed by Irit Katriel in :gh:`103176`.)
 
-calendar
---------
-
-* Add enums for month and day. For example: ``JANUARY`` and ``MONDAY``.
-  (Contributed by Prince Roshan in :gh:`103636`.)
 
 Optimizations
 =============
