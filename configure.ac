@@ -97,7 +97,6 @@ if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # resources get picked up before their $srcdir counterparts.
     #   Objects/ -> typeslots.inc
     #   Include/ -> Python.h
-    #   Python/  -> importlib.h
     # (A side effect of this is that these resources will automatically be
     #  regenerated when building out-of-tree, regardless of whether or not
     #  the $srcdir counterpart is up-to-date.  This is an acceptable trade
@@ -1939,6 +1938,13 @@ if test "$Py_BOLT" = 'true' ; then
   DEF_MAKE_ALL_RULE="bolt-opt"
   DEF_MAKE_RULE="build_all"
 
+  AC_SUBST(READELF)
+  AC_CHECK_TOOLS(READELF, [readelf], "notfound")
+  if test "$READELF" == "notfound"
+  then
+    AC_MSG_ERROR([readelf is required for a --enable-bolt build but could not be found.])
+  fi
+      
   # -fno-reorder-blocks-and-partition is required for bolt to work.
   # Possibly GCC only.
   AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[

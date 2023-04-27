@@ -93,8 +93,6 @@
     { \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
-        assert(cframe.use_tracing == 0 || cframe.use_tracing == 255); \
-        opcode |= cframe.use_tracing OR_DTRACE_LINE; \
         DISPATCH_GOTO(); \
     }
 
@@ -102,7 +100,6 @@
     { \
         opcode = next_instr->op.code; \
         PRE_DISPATCH_GOTO(); \
-        opcode |= cframe.use_tracing OR_DTRACE_LINE; \
         DISPATCH_GOTO(); \
     }
 
@@ -183,7 +180,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define PREDICT(next_op) \
     do { \
         _Py_CODEUNIT word = *next_instr; \
-        opcode = word.op.code | cframe.use_tracing OR_DTRACE_LINE; \
+        opcode = word.op.code; \
         if (opcode == next_op) { \
             oparg = word.op.arg; \
             INSTRUCTION_START(next_op); \
@@ -283,47 +280,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
 
-/* Shared opcode macros */
-
-#define TRACE_FUNCTION_EXIT() \
-    if (cframe.use_tracing) { \
-        if (trace_function_exit(tstate, frame, retval)) { \
-            Py_DECREF(retval); \
-            goto exit_unwind; \
-        } \
-    }
-
-#define DTRACE_FUNCTION_EXIT() \
-    if (PyDTrace_FUNCTION_RETURN_ENABLED()) { \
-        dtrace_function_return(frame); \
-    }
-
-#define TRACE_FUNCTION_UNWIND()  \
-    if (cframe.use_tracing) { \
-        /* Since we are already unwinding, \
-         * we don't care if this raises */ \
-        trace_function_exit(tstate, frame, NULL); \
-    }
-
-#define TRACE_FUNCTION_ENTRY() \
-    if (cframe.use_tracing) { \
-        _PyFrame_SetStackPointer(frame, stack_pointer); \
-        int err = trace_function_entry(tstate, frame); \
-        stack_pointer = _PyFrame_GetStackPointer(frame); \
-        frame->stacktop = -1; \
-        if (err) { \
-            goto error; \
-        } \
-    }
-
-#define TRACE_FUNCTION_THROW_ENTRY() \
-    if (cframe.use_tracing) { \
-        assert(frame->stacktop >= 0); \
-        if (trace_function_entry(tstate, frame)) { \
-            goto exit_unwind; \
-        } \
-    }
-
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
         dtrace_function_entry(frame); \
@@ -371,3 +327,18 @@ do { \
         _Py_DECREF_NO_DEALLOC(right); \
     } \
 } while (0)
+
+// If a trace function sets a new f_lineno and
+// *then* raises, we use the destination when searching
+// for an exception handler, displaying the traceback, and so on
+#define INSTRUMENTED_JUMP(src, dest, event) \
+do { \
+    _PyFrame_SetStackPointer(frame, stack_pointer); \
+    int err = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+    stack_pointer = _PyFrame_GetStackPointer(frame); \
+    if (err) { \
+        next_instr = (dest)+1; \
+        goto error; \
+    } \
+    next_instr = frame->prev_instr; \
+} while (0);

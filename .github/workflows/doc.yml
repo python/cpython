@@ -36,6 +36,7 @@ jobs:
   build_doc:
     name: 'Docs'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
     - uses: actions/checkout@v3
     - name: Register Sphinx problem matcher
@@ -55,11 +56,13 @@ jobs:
 
     # Add pull request annotations for Sphinx nitpicks (missing references)
     - name: 'Get list of changed files'
+      if: github.event_name == 'pull_request'
       id: changed_files
       uses: Ana06/get-changed-files@v2.2.0
       with:
         filter: "Doc/**"
     - name: 'Build changed files in nit-picky mode'
+      if: github.event_name == 'pull_request'
       continue-on-error: true
       run: |
         # Mark files the pull request modified
@@ -80,6 +83,7 @@ jobs:
   doctest:
     name: 'Doctest'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
     - uses: actions/checkout@v3
     - name: Register Sphinx problem matcher
