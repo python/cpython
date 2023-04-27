@@ -751,8 +751,8 @@ static NameDefaultPair* lambda_param_maybe_default_rule(Parser *p);
 static arg_ty lambda_param_rule(Parser *p);
 static expr_ty fstring_middle_rule(Parser *p);
 static expr_ty fstring_replacement_field_rule(Parser *p);
-static expr_ty fstring_conversion_rule(Parser *p);
-static expr_ty fstring_full_format_spec_rule(Parser *p);
+static ResultTokenWithMetadata* fstring_conversion_rule(Parser *p);
+static ResultTokenWithMetadata* fstring_full_format_spec_rule(Parser *p);
 static expr_ty fstring_format_spec_rule(Parser *p);
 static expr_ty string_rule(Parser *p);
 static expr_ty strings_rule(Parser *p);
@@ -16048,11 +16048,11 @@ fstring_replacement_field_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> fstring_replacement_field[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' (yield_expr | star_expressions) \"=\"? fstring_conversion? fstring_full_format_spec? '}'"));
         Token * _literal;
-        Token * _literal_1;
         void *a;
         void *conversion;
         void *debug_expr;
         void *format;
+        Token * rbrace;
         if (
             (_literal = _PyPegen_expect_token(p, 25))  // token='{'
             &&
@@ -16064,7 +16064,7 @@ fstring_replacement_field_rule(Parser *p)
             &&
             (format = fstring_full_format_spec_rule(p), !p->error_indicator)  // fstring_full_format_spec?
             &&
-            (_literal_1 = _PyPegen_expect_token(p, 26))  // token='}'
+            (rbrace = _PyPegen_expect_token(p, 26))  // token='}'
         )
         {
             D(fprintf(stderr, "%*c+ fstring_replacement_field[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' (yield_expr | star_expressions) \"=\"? fstring_conversion? fstring_full_format_spec? '}'"));
@@ -16077,7 +16077,7 @@ fstring_replacement_field_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyPegen_formatted_value ( p , a , debug_expr , conversion , format , EXTRA );
+            _res = _PyPegen_formatted_value ( p , a , debug_expr , conversion , format , rbrace , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -16115,7 +16115,7 @@ fstring_replacement_field_rule(Parser *p)
 }
 
 // fstring_conversion: "!" NAME
-static expr_ty
+static ResultTokenWithMetadata*
 fstring_conversion_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
@@ -16126,7 +16126,7 @@ fstring_conversion_rule(Parser *p)
         p->level--;
         return NULL;
     }
-    expr_ty _res = NULL;
+    ResultTokenWithMetadata* _res = NULL;
     int _mark = p->mark;
     { // "!" NAME
         if (p->error_indicator) {
@@ -16162,7 +16162,7 @@ fstring_conversion_rule(Parser *p)
 }
 
 // fstring_full_format_spec: ':' fstring_format_spec*
-static expr_ty
+static ResultTokenWithMetadata*
 fstring_full_format_spec_rule(Parser *p)
 {
     if (p->level++ == MAXSTACK) {
@@ -16173,7 +16173,7 @@ fstring_full_format_spec_rule(Parser *p)
         p->level--;
         return NULL;
     }
-    expr_ty _res = NULL;
+    ResultTokenWithMetadata* _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -16190,10 +16190,10 @@ fstring_full_format_spec_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> fstring_full_format_spec[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "':' fstring_format_spec*"));
-        Token * _literal;
+        Token * colon;
         asdl_seq * spec;
         if (
-            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            (colon = _PyPegen_expect_token(p, 11))  // token=':'
             &&
             (spec = _loop0_114_rule(p))  // fstring_format_spec*
         )
@@ -16208,7 +16208,7 @@ fstring_full_format_spec_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = spec ? _PyAST_JoinedStr ( ( asdl_expr_seq* ) spec , EXTRA ) : NULL;
+            _res = _PyPegen_setup_full_format_spec ( p , colon , ( asdl_expr_seq* ) spec , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
