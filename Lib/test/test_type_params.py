@@ -257,7 +257,7 @@ class TypeParamsAccessTest(unittest.TestCase):
             def outer2[T]():
 
                 def inner1():
-                    nonlocal T  # Syntax error: nonlocal binding not allowed for type parameter
+                    nonlocal T
         """)
         with self.assertRaisesRegex(SyntaxError, "nonlocal binding not allowed for type parameter 'T'"):
             exec(code, {})

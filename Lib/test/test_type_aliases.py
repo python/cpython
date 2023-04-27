@@ -2,7 +2,7 @@ import textwrap
 import types
 import unittest
 
-from typing import TypeAliasType
+from typing import Callable, TypeAliasType
 
 class TypeParamsInvalidTest(unittest.TestCase):
     def test_name_collision_01(self):
@@ -90,13 +90,34 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         b = o.__parameters__[0]
         self.assertEqual(o.__type_params__, (b,))
 
+        def more_generic[T, *Ts, **P]():
+            type TA[T2, *Ts2, **P2] = tuple[Callable[P, tuple[T, *Ts]], Callable[P2, tuple[T2, *Ts2]]]
+            return TA
+
+        alias = more_generic()
+        self.assertIsInstance(alias, TypeAliasType)
+        T2, Ts2, P2 = alias.__type_params__
+        self.assertEqual(alias.__parameters__, (T2, *Ts2, P2))
+        T, Ts, P = more_generic.__type_params__
+        self.assertEqual(alias.__value__, tuple[Callable[P, tuple[T, *Ts]], Callable[P2, tuple[T2, *Ts2]]])
+
     def test_subscripting(self):
         type NonGeneric = int
         type Generic[A] = dict[A, A]
+        type VeryGeneric[T, *Ts, **P] = Callable[P, tuple[T, *Ts]]
 
         with self.assertRaises(TypeError):
             NonGeneric[int]
-        self.assertIsInstance(Generic[int], types.GenericAlias)
+
+        specialized = Generic[int]
+        self.assertIsInstance(specialized, types.GenericAlias)
+        self.assertIs(specialized.__origin__, Generic)
+        self.assertEqual(specialized.__args__, (int,))
+
+        specialized2 = VeryGeneric[int, str, float, [bool, range]]
+        self.assertIsInstance(specialized2, types.GenericAlias)
+        self.assertIs(specialized2.__origin__, VeryGeneric)
+        self.assertEqual(specialized2.__args__, (int, str, float, [bool, range]))
 
     def test_repr(self):
         type Simple = int
