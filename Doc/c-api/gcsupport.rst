@@ -67,8 +67,12 @@ rules:
 
 .. c:function:: PyObject* PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *type, size_t extra_size)
 
-   Analogous to :c:func:`PyObject_GC_New` but for container objects that
-   have additional data at the end of the object not managed by Python.
+   Analogous to :c:func:`PyObject_GC_New` but allocates *extra_size*
+   bytes at the end of the object (at offset
+   :c:member:`~PyTypeObject.tp_basicsize`).
+
+   The extra data will be deallocated with the object, but otherwise it is
+   not managed by Python.
 
    .. warning::
        The function is marked as unstable because the final mechanism
