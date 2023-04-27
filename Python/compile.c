@@ -2339,6 +2339,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 
     asdl_typeparam_seq *typeparams = s->v.ClassDef.typeparams;
     if (asdl_seq_LEN(typeparams) > 0) {
+        Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         ADDOP(c, loc, PUSH_NULL);
         PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>",
                                                          s->v.ClassDef.name);

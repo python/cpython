@@ -341,6 +341,29 @@ class TypeParamsClassScopeTest(unittest.TestCase):
         exec(code, {})
 
 
+class ManglingTest(unittest.TestCase):
+    def test_mangling(self):
+        class Foo[__T]:
+            param = __T
+            def meth[__U](self, arg: __T, arg2: __U):
+                return (__T, __U)
+            type Alias[__V] = (__T, __V)
+
+        T = Foo.__type_params__[0]
+        self.assertEqual(T.__name__, "__T")
+        U = Foo.meth.__type_params__[0]
+        self.assertEqual(U.__name__, "__U")
+        V = Foo.Alias.__type_params__[0]
+        self.assertEqual(V.__name__, "__V")
+
+        anno = Foo.meth.__annotations__
+        self.assertIs(anno["arg"], T)
+        self.assertIs(anno["arg2"], U)
+        self.assertEqual(Foo().meth(1, 2), (T, U))
+
+        self.assertEqual(Foo.Alias.__value__, (T, V))
+
+
 class TypeParamsTraditionalTypeVars(unittest.TestCase):
     def test_traditional_01(self):
         code = textwrap.dedent("""\
