@@ -6948,8 +6948,12 @@ type_ready_post_checks(PyTypeObject *type)
 static int
 type_ready(PyTypeObject *type)
 {
+    _PyObject_ASSERT((PyObject *)type,
+                     (type->tp_flags & Py_TPFLAGS_READYING) == 0);
+    type->tp_flags |= Py_TPFLAGS_READYING;
+
     if (type_ready_pre_checks(type) < 0) {
-        return -1;
+        goto error;
     }
 
 #ifdef Py_TRACE_REFS
@@ -6963,41 +6967,49 @@ type_ready(PyTypeObject *type)
 
     /* Initialize tp_dict: _PyType_IsReady() tests if tp_dict != NULL */
     if (type_ready_set_dict(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_set_bases(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_mro(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_set_new(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_fill_dict(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_inherit(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_preheader(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_set_hash(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_add_subclasses(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_managed_dict(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_post_checks(type) < 0) {
-        return -1;
+        goto error;
     }
-    return 0;
-}
 
+    /* All done -- set the ready flag */
+    type->tp_flags = (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
+
+    assert(_PyType_CheckConsistency(type));
+    return 0;
+
+error:
+    type->tp_flags &= ~Py_TPFLAGS_READYING;
+    return -1;
+}
 
 int
 PyType_Ready(PyTypeObject *type)
@@ -7006,31 +7018,29 @@ PyType_Ready(PyTypeObject *type)
         assert(_PyType_CheckConsistency(type));
         return 0;
     }
-    _PyObject_ASSERT((PyObject *)type,
-                     (type->tp_flags & Py_TPFLAGS_READYING) == 0);
-
-    type->tp_flags |= Py_TPFLAGS_READYING;
+    assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
 
     /* Historically, all static types were immutable. See bpo-43908 */
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
     }
 
-    if (type_ready(type) < 0) {
-        type->tp_flags &= ~Py_TPFLAGS_READYING;
-        return -1;
-    }
-
-    /* All done -- set the ready flag */
-    type->tp_flags = (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
-    assert(_PyType_CheckConsistency(type));
-    return 0;
+    return type_ready(type);
 }
 
 int
 _PyStaticType_InitBuiltin(PyTypeObject *self)
 {
+    assert(!(self->tp_flags & Py_TPFLAGS_HEAPTYPE));
+
+    if (self->tp_flags & Py_TPFLAGS_READY) {
+        assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+        assert(_PyType_CheckConsistency(self));
+        return 0;
+    }
+
     self->tp_flags |= _Py_TPFLAGS_STATIC_BUILTIN;
+    self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
 
     assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
     self->tp_version_tag = NEXT_GLOBAL_VERSION_TAG++;
@@ -7038,7 +7048,7 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
 
     static_builtin_state_init(self);
 
-    int res = PyType_Ready(self);
+    int res = type_ready(self);
     if (res < 0) {
         static_builtin_state_clear(self);
     }
