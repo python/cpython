@@ -6758,6 +6758,10 @@ type_ready_pre_checks(PyTypeObject *type)
 static int
 type_ready_set_bases(PyTypeObject *type)
 {
+    if (lookup_tp_bases(type) != NULL) {
+        return 0;
+    }
+
     /* Initialize tp_base (defaults to BaseObject unless that's us) */
     PyTypeObject *base = type->tp_base;
     if (base == NULL && type != &PyBaseObject_Type) {
@@ -7274,6 +7278,11 @@ _PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
            Otherwise we would initialize it here. */
 
         assert(_PyType_CheckConsistency(self));
+        /* We must explicitly set these for subinterpreters.
+           tp_subclasses is set lazily. */
+        type_ready_set_dict(self);
+        type_ready_set_bases(self);
+        type_ready_mro(self);
         return 0;
     }
 
