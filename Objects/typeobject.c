@@ -242,6 +242,12 @@ clear_tp_bases(PyTypeObject *self)
 static inline PyObject *
 lookup_tp_mro(PyTypeObject *self)
 {
+    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        static_builtin_state *state = _PyStaticType_GetState(interp, self);
+        assert(state != NULL);
+        return state->tp_mro;
+    }
     return self->tp_mro;
 }
 
@@ -254,12 +260,26 @@ _PyType_GetMRO(PyTypeObject *self)
 static inline void
 set_tp_mro(PyTypeObject *self, PyObject *mro)
 {
+    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        static_builtin_state *state = _PyStaticType_GetState(interp, self);
+        assert(state != NULL);
+        state->tp_mro = mro;
+        return;
+    }
     self->tp_mro = mro;
 }
 
 static inline void
 clear_tp_mro(PyTypeObject *self)
 {
+    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        static_builtin_state *state = _PyStaticType_GetState(interp, self);
+        assert(state != NULL);
+        Py_CLEAR(state->tp_mro);
+        return;
+    }
     Py_CLEAR(self->tp_mro);
 }
 
@@ -4719,11 +4739,11 @@ clear_static_type_objects(PyInterpreterState *interp, PyTypeObject *type)
 {
     if (_Py_IsMainInterpreter(interp)) {
         clear_tp_dict(type);
-        clear_tp_mro(type);
         Py_CLEAR(type->tp_cache);
     }
     else {
         clear_tp_bases(type);
+        clear_tp_mro(type);
     }
     clear_static_tp_subclasses(type);
 }
