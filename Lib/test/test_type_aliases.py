@@ -1,52 +1,47 @@
-import textwrap
 import types
 import unittest
 
 from typing import Callable, TypeAliasType
 
+from .test_type_params import run_code
+
+
 class TypeParamsInvalidTest(unittest.TestCase):
     def test_name_collision_01(self):
-        code = """type TA1[A, **A] = None"""
-
         with self.assertRaisesRegex(SyntaxError, "duplicate type parameter 'A'"):
-            exec(code, {}, {})
+            run_code("""type TA1[A, **A] = None""")
 
     def test_name_non_collision_02(self):
-        code = """type TA1[A] = lambda A: None"""
-        exec(code, {}, {})
+        run_code("""type TA1[A] = lambda A: None""")
 
     def test_name_non_collision_03(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             class Outer[A]:
                 type TA1[A] = None
             """
         )
-        exec(code, {}, {})
 
 
 class TypeParamsAccessTest(unittest.TestCase):
     def test_alias_access_01(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             type TA1[A, B] = dict[A, B]
             """
         )
-        exec(code, {}, {})
 
     def test_alias_access_02(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             type TA1[A, B] = TA1[A, B] | int
             """
         )
-        exec(code, {}, {})
 
     def test_alias_access_03(self):
-        code = textwrap.dedent("""\
+        run_code("""\
             class Outer[A]:
                 def inner[B](self):
                     type TA1[C] = TA1[A, B] | int
             """
         )
-        exec(code, {}, {})
 
 
 class TypeParamsAliasValueTest(unittest.TestCase):
