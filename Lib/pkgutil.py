@@ -204,7 +204,8 @@ class ImpImporter:
 
     def __init__(self, path=None):
         global imp
-        warnings.warn("This emulation is deprecated, use 'importlib' instead",
+        warnings.warn("This emulation is deprecated and slated for removal "
+                      "in Python 3.12; use 'importlib' instead",
              DeprecationWarning)
         _import_imp()
         self.path = path
@@ -271,7 +272,8 @@ class ImpLoader:
     code = source = None
 
     def __init__(self, fullname, file, filename, etc):
-        warnings.warn("This emulation is deprecated, use 'importlib' instead",
+        warnings.warn("This emulation is deprecated and slated for removal in "
+                      "Python 3.12; use 'importlib' instead",
                       DeprecationWarning)
         _import_imp()
         self.file = file
@@ -411,6 +413,7 @@ def get_importer(path_item):
     The cache (or part of it) can be cleared manually if a
     rescan of sys.path_hooks is necessary.
     """
+    path_item = os.fsdecode(path_item)
     try:
         importer = sys.path_importer_cache[path_item]
     except KeyError:
@@ -508,10 +511,10 @@ def extend_path(path, name):
         from pkgutil import extend_path
         __path__ = extend_path(__path__, __name__)
 
-    This will add to the package's __path__ all subdirectories of
-    directories on sys.path named after the package.  This is useful
-    if one wants to distribute different parts of a single logical
-    package as multiple directories.
+    For each directory on sys.path that has a subdirectory that
+    matches the package name, add the subdirectory to the package's
+    __path__.  This is useful if one wants to distribute different
+    parts of a single logical package as multiple directories.
 
     It also looks for *.pkg files beginning where * matches the name
     argument.  This feature is similar to *.pth files (see site.py),
@@ -635,3 +638,79 @@ def get_data(package, resource):
     parts.insert(0, os.path.dirname(mod.__file__))
     resource_name = os.path.join(*parts)
     return loader.get_data(resource_name)
+
+
+_NAME_PATTERN = None
+
+def resolve_name(name):
+    """
+    Resolve a name to an object.
+
+    It is expected that `name` will be a string in one of the following
+    formats, where W is shorthand for a valid Python identifier and dot stands
+    for a literal period in these pseudo-regexes:
+
+    W(.W)*
+    W(.W)*:(W(.W)*)?
+
+    The first form is intended for backward compatibility only. It assumes that
+    some part of the dotted name is a package, and the rest is an object
+    somewhere within that package, possibly nested inside other objects.
+    Because the place where the package stops and the object hierarchy starts
+    can't be inferred by inspection, repeated attempts to import must be done
+    with this form.
+
+    In the second form, the caller makes the division point clear through the
+    provision of a single colon: the dotted name to the left of the colon is a
+    package to be imported, and the dotted name to the right is the object
+    hierarchy within that package. Only one import is needed in this form. If
+    it ends with the colon, then a module object is returned.
+
+    The function will return an object (which might be a module), or raise one
+    of the following exceptions:
+
+    ValueError - if `name` isn't in a recognised format
+    ImportError - if an import failed when it shouldn't have
+    AttributeError - if a failure occurred when traversing the object hierarchy
+                     within the imported package to get to the desired object.
+    """
+    global _NAME_PATTERN
+    if _NAME_PATTERN is None:
+        # Lazy import to speedup Python startup time
+        import re
+        dotted_words = r'(?!\d)(\w+)(\.(?!\d)(\w+))*'
+        _NAME_PATTERN = re.compile(f'^(?P<pkg>{dotted_words})'
+                                   f'(?P<cln>:(?P<obj>{dotted_words})?)?$',
+                                   re.UNICODE)
+
+    m = _NAME_PATTERN.match(name)
+    if not m:
+        raise ValueError(f'invalid format: {name!r}')
+    gd = m.groupdict()
+    if gd.get('cln'):
+        # there is a colon - a one-step import is all that's needed
+        mod = importlib.import_module(gd['pkg'])
+        parts = gd.get('obj')
+        parts = parts.split('.') if parts else []
+    else:
+        # no colon - have to iterate to find the package boundary
+        parts = name.split('.')
+        modname = parts.pop(0)
+        # first part *must* be a module/package.
+        mod = importlib.import_module(modname)
+        while parts:
+            p = parts[0]
+            s = f'{modname}.{p}'
+            try:
+                mod = importlib.import_module(s)
+                parts.pop(0)
+                modname = s
+            except ImportError:
+                break
+    # if we reach this point, mod is the module, already imported, and
+    # parts is the list of parts in the object hierarchy to be traversed, or
+    # an empty list if just the module is wanted.
+    result = mod
+    for p in parts:
+        result = getattr(result, p)
+    return result

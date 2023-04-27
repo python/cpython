@@ -77,15 +77,6 @@ class LocaleTime(object):
         if time.tzname != self.tzname or time.daylight != self.daylight:
             raise ValueError("timezone changed during initialization")
 
-    def __pad(self, seq, front):
-        # Add '' to seq to either the front (is True), else the back.
-        seq = list(seq)
-        if front:
-            seq.insert(0, '')
-        else:
-            seq.append('')
-        return seq
-
     def __calc_weekday(self):
         # Set self.a_weekday and self.f_weekday using the calendar
         # module.
@@ -191,7 +182,7 @@ class TimeRE(dict):
             self.locale_time = LocaleTime()
         base = super()
         base.__init__({
-            # The " \d" part of the regex is to make %c from ANSI C work
+            # The " [1-9]" part of the regex is to make %c from ANSI C work
             'd': r"(?P<d>3[0-1]|[1-2]\d|0[1-9]|[1-9]| [1-9])",
             'f': r"(?P<f>[0-9]{1,6})",
             'H': r"(?P<H>2[0-3]|[0-1]\d|\d)",
@@ -210,7 +201,7 @@ class TimeRE(dict):
             #XXX: Does 'Y' need to worry about having less or more than
             #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
-            'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|Z)",
+            'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|(?-i:Z))",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
@@ -297,22 +288,6 @@ def _calc_julian_from_U_or_W(year, week_of_year, day_of_week, week_starts_Mon):
     else:
         days_to_week = week_0_length + (7 * (week_of_year - 1))
         return 1 + days_to_week + day_of_week
-
-
-def _calc_julian_from_V(iso_year, iso_week, iso_weekday):
-    """Calculate the Julian day based on the ISO 8601 year, week, and weekday.
-    ISO weeks start on Mondays, with week 01 being the week containing 4 Jan.
-    ISO week days range from 1 (Monday) to 7 (Sunday).
-    """
-    correction = datetime_date(iso_year, 1, 4).isoweekday() + 3
-    ordinal = (iso_week * 7) + iso_weekday - correction
-    # ordinal may be negative or 0 now, which means the date is in the previous
-    # calendar year
-    if ordinal < 1:
-        ordinal += datetime_date(iso_year, 1, 1).toordinal()
-        iso_year -= 1
-        ordinal -= datetime_date(iso_year, 1, 1).toordinal()
-    return iso_year, ordinal
 
 
 def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
@@ -463,7 +438,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     z = z[:3] + z[4:]
                     if len(z) > 5:
                         if z[5] != ':':
-                            msg = f"Unconsistent use of : in {found_dict['z']}"
+                            msg = f"Inconsistent use of : in {found_dict['z']}"
                             raise ValueError(msg)
                         z = z[:5] + z[6:]
                 hours = int(z[1:3])
@@ -492,7 +467,8 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     else:
                         tz = value
                         break
-    # Deal with the cases where ambiguities arize
+
+    # Deal with the cases where ambiguities arise
     # don't assume default values for ISO week/year
     if year is None and iso_year is not None:
         if iso_week is None or weekday is None:
@@ -520,7 +496,6 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     elif year is None:
         year = 1900
 
-
     # If we know the week of the year and what day of that week, we can figure
     # out the Julian day of the year.
     if julian is None and weekday is not None:
@@ -529,7 +504,10 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             julian = _calc_julian_from_U_or_W(year, week_of_year, weekday,
                                                 week_starts_Mon)
         elif iso_year is not None and iso_week is not None:
-            year, julian = _calc_julian_from_V(iso_year, iso_week, weekday + 1)
+            datetime_result = datetime_date.fromisocalendar(iso_year, iso_week, weekday + 1)
+            year = datetime_result.year
+            month = datetime_result.month
+            day = datetime_result.day
         if julian is not None and julian <= 0:
             year -= 1
             yday = 366 if calendar.isleap(year) else 365

@@ -1,8 +1,8 @@
 """Unit tests for zero-argument super() & related machinery."""
 
 import unittest
-import warnings
-from test.support import check_warnings
+from unittest.mock import patch
+from test import shadowed_super
 
 
 class A:
@@ -173,14 +173,10 @@ class TestSuper(unittest.TestCase):
                 test_namespace = namespace
                 return None
 
-        # This case shouldn't trigger the __classcell__ deprecation warning
-        with check_warnings() as w:
-            warnings.simplefilter("always", DeprecationWarning)
-            class A(metaclass=Meta):
-                @staticmethod
-                def f():
-                    return __class__
-        self.assertEqual(w.warnings, [])
+        class A(metaclass=Meta):
+            @staticmethod
+            def f():
+                return __class__
 
         self.assertIs(A, None)
 
@@ -244,37 +240,19 @@ class TestSuper(unittest.TestCase):
                 namespace.pop('__classcell__', None)
                 return super().__new__(cls, name, bases, namespace)
 
-        # The default case should continue to work without any warnings
-        with check_warnings() as w:
-            warnings.simplefilter("always", DeprecationWarning)
-            class WithoutClassRef(metaclass=Meta):
-                pass
-        self.assertEqual(w.warnings, [])
+        # The default case should continue to work without any errors
+        class WithoutClassRef(metaclass=Meta):
+            pass
 
         # With zero-arg super() or an explicit __class__ reference, we expect
-        # __build_class__ to emit a DeprecationWarning complaining that
+        # __build_class__ to raise a RuntimeError complaining that
         # __class__ was not set, and asking if __classcell__ was propagated
         # to type.__new__.
-        # In Python 3.7, that warning will become a RuntimeError.
-        expected_warning = (
-            '__class__ not set.*__classcell__ propagated',
-            DeprecationWarning
-        )
-        with check_warnings(expected_warning):
-            warnings.simplefilter("always", DeprecationWarning)
+        expected_error = '__class__ not set.*__classcell__ propagated'
+        with self.assertRaisesRegex(RuntimeError, expected_error):
             class WithClassRef(metaclass=Meta):
                 def f(self):
                     return __class__
-        # Check __class__ still gets set despite the warning
-        self.assertIs(WithClassRef().f(), WithClassRef)
-
-        # Check the warning is turned into an error as expected
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            with self.assertRaises(DeprecationWarning):
-                class WithClassRef(metaclass=Meta):
-                    def f(self):
-                        return __class__
 
     def test___classcell___overwrite(self):
         # See issue #23722
@@ -307,17 +285,28 @@ class TestSuper(unittest.TestCase):
     def test_obscure_super_errors(self):
         def f():
             super()
-        self.assertRaises(RuntimeError, f)
+        with self.assertRaisesRegex(RuntimeError, r"no arguments"):
+            f()
+
+        class C:
+            def f():
+                super()
+        with self.assertRaisesRegex(RuntimeError, r"no arguments"):
+            C.f()
+
         def f(x):
             del x
             super()
-        self.assertRaises(RuntimeError, f, None)
+        with self.assertRaisesRegex(RuntimeError, r"arg\[0\] deleted"):
+            f(None)
+
         class X:
             def f(x):
                 nonlocal __class__
                 del __class__
                 super()
-        self.assertRaises(RuntimeError, X().f)
+        with self.assertRaisesRegex(RuntimeError, r"empty __class__ cell"):
+            X().f()
 
     def test_cell_as_self(self):
         class X:
@@ -340,6 +329,86 @@ class TestSuper(unittest.TestCase):
         sp = super(float, 1.0)
         for i in range(1000):
             super.__init__(sp, int, i)
+
+    def test_super_argcount(self):
+        with self.assertRaisesRegex(TypeError, "expected at most"):
+            super(int, int, int)
+
+    def test_super_argtype(self):
+        with self.assertRaisesRegex(TypeError, "argument 1 must be a type"):
+            super(1, int)
+
+    def test_shadowed_global(self):
+        self.assertEqual(shadowed_super.C().method(), "truly super")
+
+    def test_shadowed_local(self):
+        class super:
+            msg = "quite super"
+
+        class C:
+            def method(self):
+                return super().msg
+
+        self.assertEqual(C().method(), "quite super")
+
+    def test_shadowed_dynamic(self):
+        class MySuper:
+            msg = "super super"
+
+        class C:
+            def method(self):
+                return super().msg
+
+        with patch("test.test_super.super", MySuper) as m:
+            self.assertEqual(C().method(), "super super")
+
+    def test_shadowed_dynamic_two_arg(self):
+        call_args = []
+        class MySuper:
+            def __init__(self, *args):
+                call_args.append(args)
+            msg = "super super"
+
+        class C:
+            def method(self):
+                return super(1, 2).msg
+
+        with patch("test.test_super.super", MySuper) as m:
+            self.assertEqual(C().method(), "super super")
+            self.assertEqual(call_args, [(1, 2)])
+
+    def test_attribute_error(self):
+        class C:
+            def method(self):
+                return super().msg
+
+        with self.assertRaisesRegex(AttributeError, "'super' object has no attribute 'msg'"):
+            C().method()
+
+    def test_bad_first_arg(self):
+        class C:
+            def method(self):
+                return super(1, self).method()
+
+        with self.assertRaisesRegex(TypeError, "argument 1 must be a type"):
+            C().method()
+
+    def test_super___class__(self):
+        class C:
+            def method(self):
+                return super().__class__
+
+        self.assertEqual(C().method(), super)
+
+    def test_super_subclass___class__(self):
+        class mysuper(super):
+            pass
+
+        class C:
+            def method(self):
+                return mysuper(C, self).__class__
+
+        self.assertEqual(C().method(), mysuper)
 
 
 if __name__ == "__main__":

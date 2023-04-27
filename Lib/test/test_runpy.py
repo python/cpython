@@ -1,18 +1,21 @@
 # Test the runpy module
-import unittest
-import os
+import contextlib
+import importlib.machinery, importlib.util
 import os.path
-import sys
-import re
-import tempfile
-import importlib, importlib.machinery, importlib.util
+import pathlib
 import py_compile
+import re
+import signal
+import subprocess
+import sys
+import tempfile
+import textwrap
+import unittest
 import warnings
-from test.support import (
-    forget, make_legacy_pyc, unload, verbose, no_tracing,
-    create_empty_file, temp_dir)
-from test.support.script_helper import (
-    make_pkg, make_script, make_zip_pkg, make_zip_script)
+from test.support import no_tracing, verbose, requires_subprocess
+from test.support.import_helper import forget, make_legacy_pyc, unload
+from test.support.os_helper import create_empty_file, temp_dir
+from test.support.script_helper import make_script, make_zip_script
 
 
 import runpy
@@ -238,9 +241,8 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
                 if verbose > 1: print("  Next level in:", sub_dir)
                 if verbose > 1: print("  Created:", pkg_fname)
         mod_fname = os.path.join(sub_dir, test_fname)
-        mod_file = open(mod_fname, "w")
-        mod_file.write(source)
-        mod_file.close()
+        with open(mod_fname, "w") as mod_file:
+            mod_file.write(source)
         if verbose > 1: print("  Created:", mod_fname)
         mod_name = (pkg_name+".")*depth + mod_base
         mod_spec = importlib.util.spec_from_file_location(mod_name,
@@ -654,6 +656,14 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self._check_script(script_name, "<run_path>", script_name,
                                script_name, expect_spec=False)
 
+    def test_basic_script_with_path_object(self):
+        with temp_dir() as script_dir:
+            mod_name = 'script'
+            script_name = pathlib.Path(self._make_test_script(script_dir,
+                                                              mod_name))
+            self._check_script(script_name, "<run_path>", script_name,
+                               script_name, expect_spec=False)
+
     def test_basic_script_no_suffix(self):
         with temp_dir() as script_dir:
             mod_name = 'script'
@@ -730,8 +740,7 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
                       "runpy.run_path(%r)\n") % dummy_dir
             script_name = self._make_test_script(script_dir, mod_name, source)
             zip_name, fname = make_zip_script(script_dir, 'test_zip', script_name)
-            msg = "recursion depth exceeded"
-            self.assertRaisesRegex(RecursionError, msg, run_path, zip_name)
+            self.assertRaises(RecursionError, run_path, zip_name)
 
     def test_encoding(self):
         with temp_dir() as script_dir:
@@ -743,6 +752,86 @@ s = "non-ASCII: h\xe9"
 """)
             result = run_path(filename)
             self.assertEqual(result['s'], "non-ASCII: h\xe9")
+
+
+class TestExit(unittest.TestCase):
+    STATUS_CONTROL_C_EXIT = 0xC000013A
+    EXPECTED_CODE = (
+        STATUS_CONTROL_C_EXIT
+        if sys.platform == "win32"
+        else -signal.SIGINT
+    )
+    @staticmethod
+    @contextlib.contextmanager
+    def tmp_path(*args, **kwargs):
+        with temp_dir() as tmp_fn:
+            yield pathlib.Path(tmp_fn)
+
+
+    def run(self, *args, **kwargs):
+        with self.tmp_path() as tmp:
+            self.ham = ham = tmp / "ham.py"
+            ham.write_text(
+                textwrap.dedent(
+                    """\
+                    raise KeyboardInterrupt
+                    """
+                )
+            )
+            super().run(*args, **kwargs)
+
+    @requires_subprocess()
+    def assertSigInt(self, cmd, *args, **kwargs):
+        # Use -E to ignore PYTHONSAFEPATH
+        cmd = [sys.executable, '-E', *cmd]
+        proc = subprocess.run(cmd, *args, **kwargs, text=True, stderr=subprocess.PIPE)
+        self.assertTrue(proc.stderr.endswith("\nKeyboardInterrupt\n"), proc.stderr)
+        self.assertEqual(proc.returncode, self.EXPECTED_CODE)
+
+    def test_pymain_run_file(self):
+        self.assertSigInt([self.ham])
+
+    def test_pymain_run_file_runpy_run_module(self):
+        tmp = self.ham.parent
+        run_module = tmp / "run_module.py"
+        run_module.write_text(
+            textwrap.dedent(
+                """\
+                import runpy
+                runpy.run_module("ham")
+                """
+            )
+        )
+        self.assertSigInt([run_module], cwd=tmp)
+
+    def test_pymain_run_file_runpy_run_module_as_main(self):
+        tmp = self.ham.parent
+        run_module_as_main = tmp / "run_module_as_main.py"
+        run_module_as_main.write_text(
+            textwrap.dedent(
+                """\
+                import runpy
+                runpy._run_module_as_main("ham")
+                """
+            )
+        )
+        self.assertSigInt([run_module_as_main], cwd=tmp)
+
+    def test_pymain_run_command_run_module(self):
+        self.assertSigInt(
+            ["-c", "import runpy; runpy.run_module('ham')"],
+            cwd=self.ham.parent,
+        )
+
+    def test_pymain_run_command(self):
+        self.assertSigInt(["-c", "import ham"], cwd=self.ham.parent)
+
+    def test_pymain_run_stdin(self):
+        self.assertSigInt([], input="import ham", cwd=self.ham.parent)
+
+    def test_pymain_run_module(self):
+        ham = self.ham
+        self.assertSigInt(["-m", ham.stem], cwd=ham.parent)
 
 
 if __name__ == "__main__":

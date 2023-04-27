@@ -55,7 +55,7 @@ equivalent to the above example::
    <yourscript> -q -foutfile
    <yourscript> -qfoutfile
 
-Additionally, users can run one of  ::
+Additionally, users can run one of the following ::
 
    <yourscript> -h
    <yourscript> --help
@@ -131,7 +131,7 @@ option
    These option syntaxes are not supported by :mod:`optparse`, and they never
    will be.  This is deliberate: the first three are non-standard on any
    environment, and the last only makes sense if you're exclusively targeting
-   VMS, MS-DOS, and/or Windows.
+   Windows or certain legacy platforms (e.g. VMS, MS-DOS).
 
 option argument
    an argument that follows an option, is closely associated with that option,
@@ -379,8 +379,8 @@ types is covered in section :ref:`optparse-extending-optparse`.
 Handling boolean (flag) options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Flag options---set a variable to true or false when a particular option is seen
----are quite common.  :mod:`optparse` supports them with two separate actions,
+Flag options---set a variable to true or false when a particular option is
+seen---are quite common.  :mod:`optparse` supports them with two separate actions,
 ``store_true`` and ``store_false``.  For example, you might have a ``verbose``
 flag that is turned on with ``-v`` and off with ``-q``::
 
@@ -388,8 +388,8 @@ flag that is turned on with ``-v`` and off with ``-q``::
    parser.add_option("-q", action="store_false", dest="verbose")
 
 Here we have two different options with the same destination, which is perfectly
-OK.  (It just means you have to be a bit careful when setting default values---
-see below.)
+OK.  (It just means you have to be a bit careful when setting default
+values---see below.)
 
 When :mod:`optparse` encounters ``-v`` on the command line, it sets
 ``options.verbose`` to ``True``; when it encounters ``-q``,
@@ -404,7 +404,7 @@ Other actions
 Some other actions supported by :mod:`optparse` are:
 
 ``"store_const"``
-   store a constant value
+   store a constant value, pre-set via :attr:`Option.const`
 
 ``"append"``
    append this option's argument to a list
@@ -415,7 +415,7 @@ Some other actions supported by :mod:`optparse` are:
 ``"callback"``
    call a specified function
 
-These are covered in section :ref:`optparse-reference-guide`, Reference Guide
+These are covered in section :ref:`optparse-reference-guide`,
 and section :ref:`optparse-option-callbacks`.
 
 
@@ -525,11 +525,11 @@ help message:
   default: ``"Usage: %prog [options]"``, which is fine if your script doesn't
   take any positional arguments.
 
-* every option defines a help string, and doesn't worry about line-wrapping---
-  :mod:`optparse` takes care of wrapping lines and making the help output look
-  good.
+* every option defines a help string, and doesn't worry about
+  line-wrapping---\ :mod:`optparse` takes care of wrapping lines and making
+  the help output look good.
 
-* options that take a value indicate this fact in their automatically-generated
+* options that take a value indicate this fact in their automatically generated
   help message, e.g. for the "mode" option::
 
      -m MODE, --mode=MODE
@@ -539,7 +539,7 @@ help message:
   :mod:`optparse` converts the destination variable name to uppercase and uses
   that for the meta-variable.  Sometimes, that's not what you want---for
   example, the ``--filename`` option explicitly sets ``metavar="FILE"``,
-  resulting in this automatically-generated option description::
+  resulting in this automatically generated option description::
 
      -f FILE, --filename=FILE
 
@@ -925,19 +925,19 @@ The canonical way to create an :class:`Option` instance is with the
       store this option's argument (default)
 
    ``"store_const"``
-      store a constant value
+      store a constant value, pre-set via :attr:`Option.const`
 
    ``"store_true"``
-      store a true value
+      store ``True``
 
    ``"store_false"``
-      store a false value
+      store ``False``
 
    ``"append"``
       append this option's argument to a list
 
    ``"append_const"``
-      append a constant value to a list
+      append a constant value to a list, pre-set via :attr:`Option.const`
 
    ``"count"``
       increment a counter by one
@@ -954,7 +954,16 @@ The canonical way to create an :class:`Option` instance is with the
 
 As you can see, most actions involve storing or updating a value somewhere.
 :mod:`optparse` always creates a special object for this, conventionally called
-``options`` (it happens to be an instance of :class:`optparse.Values`).  Option
+``options``, which is an instance of :class:`optparse.Values`.
+
+.. class:: Values
+
+   An object holding parsed argument names and values as attributes.
+   Normally created by calling when calling :meth:`OptionParser.parse_args`,
+   and can be overridden by a custom subclass passed to the *values* argument of
+   :meth:`OptionParser.parse_args` (as described in :ref:`optparse-parsing-arguments`).
+
+Option
 arguments (and various other values) are stored as attributes of this object,
 according to the :attr:`~Option.dest` (destination) option attribute.
 
@@ -990,6 +999,14 @@ one that makes sense for *all* options.
 
 Option attributes
 ^^^^^^^^^^^^^^^^^
+
+.. class:: Option
+
+   A single command line argument,
+   with various attributes passed by keyword to the constructor.
+   Normally created with :meth:`OptionParser.add_option` rather than directly,
+   and can be overridden by a custom class via the *option_class* argument
+   to :class:`OptionParser`.
 
 The following option attributes may be passed as keyword arguments to
 :meth:`OptionParser.add_option`.  If you pass an option attribute that is not
@@ -1135,12 +1152,12 @@ must specify for any option using that action.
 
 * ``"store_true"`` [relevant: :attr:`~Option.dest`]
 
-  A special case of ``"store_const"`` that stores a true value to
+  A special case of ``"store_const"`` that stores ``True`` to
   :attr:`~Option.dest`.
 
 * ``"store_false"`` [relevant: :attr:`~Option.dest`]
 
-  Like ``"store_true"``, but stores a false value.
+  Like ``"store_true"``, but stores ``False``.
 
   Example::
 
@@ -1396,7 +1413,7 @@ provides several methods to help you out:
 
 .. method:: OptionParser.has_option(opt_str)
 
-   Return true if the OptionParser has an option with option string *opt_str*
+   Return ``True`` if the OptionParser has an option with option string *opt_str*
    (e.g., ``-q`` or ``--verbose``).
 
 .. method:: OptionParser.remove_option(opt_str)
@@ -1449,7 +1466,7 @@ intelligently and add conflicting options to it::
    parser.add_option("-n", "--dry-run", ..., help="do no harm")
    parser.add_option("-n", "--noisy", ..., help="be noisy")
 
-At this point, :mod:`optparse` detects that a previously-added option is already
+At this point, :mod:`optparse` detects that a previously added option is already
 using the ``-n`` option string.  Since ``conflict_handler`` is ``"resolve"``,
 it resolves the situation by removing ``-n`` from the earlier option's list of
 option strings.  Now ``--dry-run`` is the only way for the user to activate
@@ -1460,7 +1477,7 @@ that option.  If the user asks for help, the help message will reflect that::
      ...
      -n, --noisy   be noisy
 
-It's possible to whittle away the option strings for a previously-added option
+It's possible to whittle away the option strings for a previously added option
 until there are none left, and the user has no way of invoking that option from
 the command-line.  In that case, :mod:`optparse` removes that option completely,
 so it doesn't show up in help text or anywhere else. Carrying on with our
@@ -1677,7 +1694,7 @@ The callback function should raise :exc:`OptionValueError` if there are any
 problems with the option or its argument(s).  :mod:`optparse` catches this and
 terminates the program, printing the error message you supply to stderr.  Your
 message should be clear, concise, accurate, and mention the option at fault.
-Otherwise, the user will have a hard time figuring out what he did wrong.
+Otherwise, the user will have a hard time figuring out what they did wrong.
 
 
 .. _optparse-callback-example-1:
@@ -2027,7 +2044,7 @@ Features of note:
      values.ensure_value(attr, value)
 
   If the ``attr`` attribute of ``values`` doesn't exist or is ``None``, then
-  ensure_value() first sets it to ``value``, and then returns 'value. This is
+  ensure_value() first sets it to ``value``, and then returns ``value``. This is
   very handy for actions like ``"extend"``, ``"append"``, and ``"count"``, all
   of which accumulate data in a variable and expect that variable to be of a
   certain type (a list for the first two, an integer for the latter).  Using
@@ -2035,3 +2052,27 @@ Features of note:
   about setting a default value for the option destinations in question; they
   can just leave the default as ``None`` and :meth:`ensure_value` will take care of
   getting it right when it's needed.
+
+Exceptions
+----------
+
+.. exception:: OptionError
+
+   Raised if an :class:`Option` instance is created with invalid or
+   inconsistent arguments.
+
+.. exception:: OptionConflictError
+
+   Raised if conflicting options are added to an :class:`OptionParser`.
+
+.. exception:: OptionValueError
+
+   Raised if an invalid option value is encountered on the command line.
+
+.. exception:: BadOptionError
+
+   Raised if an invalid option is passed on the command line.
+
+.. exception:: AmbiguousOptionError
+
+   Raised if an ambiguous option is passed on the command line.

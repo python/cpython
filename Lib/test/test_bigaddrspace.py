@@ -55,7 +55,7 @@ class BytesTest(unittest.TestCase):
 
 class StrTest(unittest.TestCase):
 
-    unicodesize = 2 if sys.maxunicode < 65536 else 4
+    unicodesize = 4
 
     @bigaddrspacetest
     def test_concat(self):
@@ -92,10 +92,7 @@ class StrTest(unittest.TestCase):
             x = None
 
 
-def test_main():
-    support.run_unittest(BytesTest, StrTest)
-
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         support.set_memlimit(sys.argv[1])
-    test_main()
+    unittest.main()

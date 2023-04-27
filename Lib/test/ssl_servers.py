@@ -9,10 +9,11 @@ from http.server import (HTTPServer as _HTTPServer,
     SimpleHTTPRequestHandler, BaseHTTPRequestHandler)
 
 from test import support
+from test.support import socket_helper
 
 here = os.path.dirname(__file__)
 
-HOST = support.HOST
+HOST = socket_helper.HOST
 CERTFILE = os.path.join(here, 'keycert.pem')
 
 # This one's based on HTTPServer, which is based on socketserver
@@ -49,7 +50,7 @@ class RootedHTTPRequestHandler(SimpleHTTPRequestHandler):
     server_version = "TestHTTPS/1.0"
     root = here
     # Avoid hanging when a request gets interrupted by the client
-    timeout = 5
+    timeout = support.LOOPBACK_TIMEOUT
 
     def translate_path(self, path):
         """Translate a /-separated PATH to the local filename syntax.
