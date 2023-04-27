@@ -509,6 +509,13 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
                                        PyStructSequence_Desc *desc,
                                        unsigned long tp_flags)
 {
+    if (type->tp_flags & Py_TPFLAGS_READY) {
+        if (_PyStaticType_InitBuiltin(type) < 0) {
+            goto failed_init_builtin;
+        }
+        return 0;
+    }
+
     PyMemberDef *members;
     Py_ssize_t n_members, n_unnamed_members;
 
@@ -517,18 +524,25 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
         return -1;
     }
     initialize_static_fields(type, desc, members, tp_flags);
+
+    Py_INCREF(type);  // XXX It should be immortal.
     if (_PyStaticType_InitBuiltin(type) < 0) {
         PyMem_Free(members);
-        PyErr_Format(PyExc_RuntimeError,
-                     "Can't initialize builtin type %s",
-                     desc->name);
-        return -1;
+        goto failed_init_builtin;
     }
-    if (initialize_static_type(type, desc, n_members, n_unnamed_members) < 0) {
+
+    if (initialize_structseq_dict(
+            desc, type->tp_dict, n_members, n_unnamed_members) < 0) {
         PyMem_Free(members);
         return -1;
     }
     return 0;
+
+failed_init_builtin:
+    PyErr_Format(PyExc_RuntimeError,
+                 "Can't initialize builtin type %s",
+                 desc->name);
+    return -1;
 }
 
 int
