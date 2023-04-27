@@ -1,0 +1,1 @@
+_guess_quote_and_delimiter should be able to handle windows \r
