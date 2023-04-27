@@ -675,27 +675,6 @@ validate_pattern(struct validator *state, pattern_ty p, int star_ok)
 }
 
 static int
-validate_typeparam(struct validator *state, typeparam_ty tp)
-{
-    VALIDATE_POSITIONS(tp);
-    int ret = -1;
-    switch (tp->kind) {
-        case TypeVar_kind:
-            ret = validate_name(tp->v.TypeVar.name) &&
-                (!tp->v.TypeVar.bound ||
-                 validate_expr(state, tp->v.TypeVar.bound, Load));
-            break;
-        case ParamSpec_kind:
-            ret = validate_name(tp->v.ParamSpec.name);
-            break;
-        case TypeVarTuple_kind:
-            ret = validate_name(tp->v.TypeVarTuple.name);
-            break;
-    }
-    return ret;
-}
-
-static int
 _validate_nonempty_seq(asdl_seq *seq, const char *what, const char *owner)
 {
     if (asdl_seq_LEN(seq))
@@ -994,6 +973,27 @@ validate_patterns(struct validator *state, asdl_pattern_seq *patterns, int star_
         }
     }
     return 1;
+}
+
+static int
+validate_typeparam(struct validator *state, typeparam_ty tp)
+{
+    VALIDATE_POSITIONS(tp);
+    int ret = -1;
+    switch (tp->kind) {
+        case TypeVar_kind:
+            ret = validate_name(tp->v.TypeVar.name) &&
+                (!tp->v.TypeVar.bound ||
+                 validate_expr(state, tp->v.TypeVar.bound, Load));
+            break;
+        case ParamSpec_kind:
+            ret = validate_name(tp->v.ParamSpec.name);
+            break;
+        case TypeVarTuple_kind:
+            ret = validate_name(tp->v.TypeVarTuple.name);
+            break;
+    }
+    return ret;
 }
 
 static int
