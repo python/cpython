@@ -96,7 +96,7 @@ Pure path objects provide path-handling operations which don't actually
 access a filesystem.  There are three ways to access these classes, which
 we also call *flavours*:
 
-.. class:: PurePath(*pathsegments, template=None)
+.. class:: PurePath(*pathsegments, blueprint=None)
 
    A generic class that represents the system's path flavour (instantiating
    it creates either a :class:`PurePosixPath` or a :class:`PureWindowsPath`)::
@@ -150,7 +150,7 @@ we also call *flavours*:
    to ``PurePosixPath('bar')``, which is wrong if ``foo`` is a symbolic link
    to another directory)
 
-   The optional *template* argument may provide another path object. It is
+   The optional *blueprint* argument may provide another path object. It is
    supplied whenever a new path object is created from an existing one, such
    as in :attr:`parent` or :meth:`relative_to`. Subclasses may use this to
    pass information between path objects. For example::
@@ -158,10 +158,10 @@ we also call *flavours*:
       from pathlib import PurePosixPath
 
       class MyPath(PurePosixPath):
-          def __init__(self, *pathsegments, template=None, session_id=None):
-              super().__init__(*pathsegments, template=template)
-              if template:
-                  self.session_id = template.session_id
+          def __init__(self, *pathsegments, blueprint=None, session_id=None):
+              super().__init__(*pathsegments, blueprint=blueprint)
+              if blueprint:
+                  self.session_id = blueprint.session_id
               else:
                   self.session_id = session_id
 
@@ -170,11 +170,11 @@ we also call *flavours*:
       print(hosts.session_id)  # 42
 
    .. note::
-      The classes provided in this module ignore the *template* argument.
+      The classes provided in this module ignore the *blueprint* argument.
       It is there purely as a hook for user-defined subclasses.
 
    .. versionadded:: 3.12
-      The *template* argument.
+      The *blueprint* argument.
 
    Pure path objects implement the :class:`os.PathLike` interface, allowing them
    to be used anywhere the interface is accepted.
@@ -182,7 +182,7 @@ we also call *flavours*:
    .. versionchanged:: 3.6
       Added support for the :class:`os.PathLike` interface.
 
-.. class:: PurePosixPath(*pathsegments, template=None)
+.. class:: PurePosixPath(*pathsegments, blueprint=None)
 
    A subclass of :class:`PurePath`, this path flavour represents non-Windows
    filesystem paths::
@@ -190,9 +190,9 @@ we also call *flavours*:
       >>> PurePosixPath('/etc')
       PurePosixPath('/etc')
 
-   *pathsegments* and *template* are specified similarly to :class:`PurePath`.
+   *pathsegments* and *blueprint* are specified similarly to :class:`PurePath`.
 
-.. class:: PureWindowsPath(*pathsegments, template=None)
+.. class:: PureWindowsPath(*pathsegments, blueprint=None)
 
    A subclass of :class:`PurePath`, this path flavour represents Windows
    filesystem paths, including `UNC paths`_::
@@ -202,7 +202,7 @@ we also call *flavours*:
       >>> PureWindowsPath('//server/share/file')
       PureWindowsPath('//server/share/file')
 
-   *pathsegments* and *template* are specified similarly to :class:`PurePath`.
+   *pathsegments* and *blueprint* are specified similarly to :class:`PurePath`.
 
    .. _unc paths: https://en.wikipedia.org/wiki/Path_(computing)#UNC
 
@@ -716,7 +716,7 @@ Concrete paths are subclasses of the pure path classes.  In addition to
 operations provided by the latter, they also provide methods to do system
 calls on path objects.  There are three ways to instantiate concrete paths:
 
-.. class:: Path(*pathsegments, template=None)
+.. class:: Path(*pathsegments, blueprint=None)
 
    A subclass of :class:`PurePath`, this class represents concrete paths of
    the system's path flavour (instantiating it creates either a
@@ -725,9 +725,9 @@ calls on path objects.  There are three ways to instantiate concrete paths:
       >>> Path('setup.py')
       PosixPath('setup.py')
 
-   *pathsegments* and *template* are specified similarly to :class:`PurePath`.
+   *pathsegments* and *blueprint* are specified similarly to :class:`PurePath`.
 
-.. class:: PosixPath(*pathsegments, template=None)
+.. class:: PosixPath(*pathsegments, blueprint=None)
 
    A subclass of :class:`Path` and :class:`PurePosixPath`, this class
    represents concrete non-Windows filesystem paths::
@@ -735,9 +735,9 @@ calls on path objects.  There are three ways to instantiate concrete paths:
       >>> PosixPath('/etc')
       PosixPath('/etc')
 
-   *pathsegments* and *template* are specified similarly to :class:`PurePath`.
+   *pathsegments* and *blueprint* are specified similarly to :class:`PurePath`.
 
-.. class:: WindowsPath(*pathsegments, template=None)
+.. class:: WindowsPath(*pathsegments, blueprint=None)
 
    A subclass of :class:`Path` and :class:`PureWindowsPath`, this class
    represents concrete Windows filesystem paths::
@@ -745,7 +745,7 @@ calls on path objects.  There are three ways to instantiate concrete paths:
       >>> WindowsPath('c:/Program Files/')
       WindowsPath('c:/Program Files')
 
-   *pathsegments* and *template* are specified similarly to :class:`PurePath`.
+   *pathsegments* and *blueprint* are specified similarly to :class:`PurePath`.
 
 You can only instantiate the class flavour that corresponds to your system
 (allowing system calls on non-compatible path flavours could lead to

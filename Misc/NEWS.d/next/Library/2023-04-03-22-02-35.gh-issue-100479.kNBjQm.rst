@@ -1,4 +1,4 @@
-Add optional *template* argument to :class:`pathlib.PurePath` and
+Add optional *blueprint* argument to :class:`pathlib.PurePath` and
 :class:`~pathlib.Path`. This argument is supplied whenever a derivative path
 is created, such as from :attr:`pathlib.PurePath.parent`. Subclasses may use
 to pass information to derivative paths. Patch by Barney Gale.

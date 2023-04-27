@@ -298,7 +298,7 @@ class PurePath(object):
         # when pickling related paths.
         return (self.__class__, self.parts)
 
-    def __init__(self, *args, template=None):
+    def __init__(self, *args, blueprint=None):
         if not args:
             path = ''
         elif len(args) == 1:
@@ -335,7 +335,7 @@ class PurePath(object):
 
     def _from_parsed_parts(self, drv, root, tail):
         path_str = self._format_parsed_parts(drv, root, tail)
-        path = type(self)(path_str, template=self)
+        path = type(self)(path_str, blueprint=self)
         path._str = path_str or '.'
         path._drv = drv
         path._root = root
@@ -575,7 +575,7 @@ class PurePath(object):
             warnings._deprecated("pathlib.PurePath.relative_to(*args)", msg,
                                  remove=(3, 14))
         path_cls = type(self)
-        other = path_cls(other, *_deprecated, template=self)
+        other = path_cls(other, *_deprecated, blueprint=self)
         for step, path in enumerate([other] + list(other.parents)):
             if self.is_relative_to(path):
                 break
@@ -584,7 +584,7 @@ class PurePath(object):
         if step and not walk_up:
             raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
         parts = ['..'] * step + self._tail[len(path._tail):]
-        return path_cls(*parts, template=self)
+        return path_cls(*parts, blueprint=self)
 
     def is_relative_to(self, other, /, *_deprecated):
         """Return True if the path is relative to another path or False.
@@ -595,7 +595,7 @@ class PurePath(object):
                    "scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath.is_relative_to(*args)",
                                  msg, remove=(3, 14))
-        other = type(self)(other, *_deprecated, template=self)
+        other = type(self)(other, *_deprecated, blueprint=self)
         return other == self or other in self.parents
 
     @property
@@ -613,7 +613,7 @@ class PurePath(object):
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return type(self)(self._raw_path, *pathsegments, template=self)
+        return type(self)(self._raw_path, *pathsegments, blueprint=self)
 
     def __truediv__(self, key):
         try:
@@ -623,7 +623,7 @@ class PurePath(object):
 
     def __rtruediv__(self, key):
         try:
-            return type(self)(key, self._raw_path, template=self)
+            return type(self)(key, self._raw_path, blueprint=self)
         except TypeError:
             return NotImplemented
 
@@ -672,7 +672,7 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
-        pat = type(self)(path_pattern, template=self)
+        pat = type(self)(path_pattern, blueprint=self)
         if not pat.parts:
             raise ValueError("empty pattern")
         pat_parts = pat._parts_normcase
@@ -726,12 +726,12 @@ class Path(PurePath):
     """
     __slots__ = ()
 
-    def __init__(self, *args, template=None, **kwargs):
+    def __init__(self, *args, blueprint=None, **kwargs):
         if kwargs:
             msg = ("support for supplying keyword arguments to pathlib.PurePath "
                    "is deprecated and scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath(**kwargs)", msg, remove=(3, 14))
-        super().__init__(*args, template=template)
+        super().__init__(*args, blueprint=blueprint)
 
     def __new__(cls, *args, **kwargs):
         if cls is Path:
@@ -747,7 +747,7 @@ class Path(PurePath):
             path_str = f'{path_str}{name}'
         else:
             path_str = name
-        path = type(self)(path_str, template=self)
+        path = type(self)(path_str, blueprint=self)
         path._str = path_str
         path._drv = self.drive
         path._root = self.root
@@ -797,7 +797,7 @@ class Path(PurePath):
         try:
             other_st = other_path.stat()
         except AttributeError:
-            other_st = type(self)(other_path, template=self).stat()
+            other_st = type(self)(other_path, blueprint=self).stat()
         return self._flavour.samestat(st, other_st)
 
     def iterdir(self):
@@ -859,7 +859,7 @@ class Path(PurePath):
             cwd = self._flavour.abspath(self.drive)
         else:
             cwd = os.getcwd()
-        return type(self)(cwd, self._raw_path, template=self)
+        return type(self)(cwd, self._raw_path, blueprint=self)
 
     def resolve(self, strict=False):
         """
@@ -877,7 +877,7 @@ class Path(PurePath):
         except OSError as e:
             check_eloop(e)
             raise
-        p = type(self)(s, template=self)
+        p = type(self)(s, blueprint=self)
 
         # In non-strict mode, realpath() doesn't raise on symlink loops.
         # Ensure we get an exception by calling stat()
@@ -967,7 +967,7 @@ class Path(PurePath):
         """
         if not hasattr(os, "readlink"):
             raise NotImplementedError("os.readlink() not available on this system")
-        return type(self)(os.readlink(self), template=self)
+        return type(self)(os.readlink(self), blueprint=self)
 
     def touch(self, mode=0o666, exist_ok=True):
         """
@@ -1056,7 +1056,7 @@ class Path(PurePath):
         Returns the new Path instance pointing to the target path.
         """
         os.rename(self, target)
-        return type(self)(target, template=self)
+        return type(self)(target, blueprint=self)
 
     def replace(self, target):
         """
@@ -1069,7 +1069,7 @@ class Path(PurePath):
         Returns the new Path instance pointing to the target path.
         """
         os.replace(self, target)
-        return type(self)(target, template=self)
+        return type(self)(target, blueprint=self)
 
     def symlink_to(self, target, target_is_directory=False):
         """
