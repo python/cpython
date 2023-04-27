@@ -524,11 +524,15 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
         return -1;
     }
     initialize_static_fields(type, desc, members, tp_flags);
+
+    Py_INCREF(type);  // XXX It should be immortal.
     if (_PyStaticType_InitBuiltin(type) < 0) {
         PyMem_Free(members);
         goto failed_init_builtin;
     }
-    if (initialize_static_type(type, desc, n_members, n_unnamed_members) < 0) {
+
+    if (initialize_structseq_dict(
+            desc, type->tp_dict, n_members, n_unnamed_members) < 0) {
         PyMem_Free(members);
         return -1;
     }
