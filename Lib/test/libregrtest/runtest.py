@@ -148,7 +148,8 @@ NOTTESTS = set()
 # Beware this can't generally be done for any directory with sub-tests as the
 # __init__.py may do things which alter what tests are to be run.
 SPLITTESTDIRS = {
-    "test_asyncio"
+    "test_asyncio",
+        "test_multiprocessing",
 }
 
 # Storage of uncollectable objects
@@ -167,24 +168,24 @@ def findtestdir(path=None):
 
 
 def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS, splittestdirs=SPLITTESTDIRS, base_mod=""):
-     """Return a list of all applicable test modules."""
-     testdir = findtestdir(testdir)
-     names = os.listdir(testdir)
-     tests = []
-     others = set(stdtests) | nottests
-     for name in names:
-         mod, ext = os.path.splitext(name)
-         if mod[:5] == "test_" and mod not in others:
-             if mod in splittestdirs:
-                 subdir = os.path.join(testdir, mod)
-                 if len(base_mod):
-                     mod = f"{base_mod}.{mod}"
-                 else:
-                     mod = f"test.{mod}"
-                 tests.extend(findtests(subdir, [], nottests, splittestdirs, mod))
-             elif ext in (".py", ""):
-                 tests.append(f"{base_mod}.{mod}" if len(base_mod) else mod)
-     return stdtests + sorted(tests)
+    """Return a list of all applicable test modules."""
+    testdir = findtestdir(testdir)
+    names = os.listdir(testdir)
+    tests = []
+    others = set(stdtests) | nottests
+    for name in names:
+        mod, ext = os.path.splitext(name)
+        if mod[:5] == "test_" and mod not in others:
+            if mod in splittestdirs:
+                subdir = os.path.join(testdir, mod)
+                if len(base_mod):
+                    mod = f"{base_mod}.{mod}"
+                else:
+                    mod = f"test.{mod}"
+                tests.extend(findtests(subdir, [], nottests, splittestdirs, mod))
+            elif ext in (".py", ""):
+                tests.append(f"{base_mod}.{mod}" if len(base_mod) else mod)
+    return stdtests + sorted(tests)
 
 def get_abs_module(ns: Namespace, test_name: str) -> str:
     if test_name.startswith('test.') or ns.testdir:
