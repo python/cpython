@@ -283,18 +283,21 @@ typevar_alloc(const char *name, PyObject *bound, PyObject *evaluate_bound,
               bool covariant, bool contravariant, bool infer_variance,
               PyObject *module)
 {
+
+    char *owned_name = strdup(name);
+    if (owned_name == NULL) {
+        return NULL;
+    }
+
     PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typevar_type;
     assert(tp != NULL);
     typevarobject *tv = PyObject_GC_New(typevarobject, tp);
     if (tv == NULL) {
+        free((void *)owned_name);
         return NULL;
     }
 
-    tv->name = strdup(name);
-    if (tv->name == NULL) {
-        Py_DECREF(tv);
-        return NULL;
-    }
+    tv->name = owned_name;
 
     tv->bound = Py_XNewRef(bound);
     tv->evaluate_bound = Py_XNewRef(evaluate_bound);
@@ -304,6 +307,8 @@ typevar_alloc(const char *name, PyObject *bound, PyObject *evaluate_bound,
     tv->covariant = covariant;
     tv->contravariant = contravariant;
     tv->infer_variance = infer_variance;
+    PyObject_GC_Track(tv);
+
     if (module != NULL) {
         if (PyObject_SetAttrString((PyObject *)tv, "__module__", module) < 0) {
             Py_DECREF(tv);
@@ -311,7 +316,6 @@ typevar_alloc(const char *name, PyObject *bound, PyObject *evaluate_bound,
         }
     }
 
-    PyObject_GC_Track(tv);
     return tv;
 }
 
