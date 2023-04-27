@@ -910,7 +910,7 @@ class Fraction(numbers.Rational):
     def __eq__(a, b):
         """a == b"""
         if type(b) is int:
-            return a._numerator == b and a._denominator == 1
+            return a._numerator / a._denominator == b
         if isinstance(b, numbers.Rational):
             return (a._numerator == b.numerator and
                     a._denominator == b.denominator)
