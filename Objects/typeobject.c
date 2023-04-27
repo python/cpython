@@ -7274,15 +7274,12 @@ _PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
 
         static_builtin_state_init(interp, self);
 
-        /* Per-interpreter tp_subclasses is done lazily.
-           Otherwise we would initialize it here. */
-
-        assert(_PyType_CheckConsistency(self));
         /* We must explicitly set these for subinterpreters.
            tp_subclasses is set lazily. */
         type_ready_set_dict(self);
         type_ready_set_bases(self);
         type_ready_mro(self);
+        assert(_PyType_CheckConsistency(self));
         return 0;
     }
 
