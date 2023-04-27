@@ -307,7 +307,7 @@ Module functions
        to avoid data corruption.
        See :attr:`threadsafety` for more information.
 
-   :param Connection factory:
+   :param ~sqlite3.Connection factory:
        A custom subclass of :class:`Connection` to create the connection with,
        if not the default :class:`Connection` class.
 
@@ -325,7 +325,7 @@ Module functions
        The query string allows passing parameters to SQLite,
        enabling various :ref:`sqlite3-uri-tricks`.
 
-   :rtype: Connection
+   :rtype: ~sqlite3.Connection
 
    .. audit-event:: sqlite3.connect database sqlite3.connect
    .. audit-event:: sqlite3.connect/handle connection_handle sqlite3.connect
@@ -1035,7 +1035,7 @@ Connection objects
       Works even if the database is being accessed by other clients
       or concurrently by the same connection.
 
-      :param Connection target:
+      :param ~sqlite3.Connection target:
           The database connection to save the backup to.
 
       :param int pages:
