@@ -161,7 +161,6 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
             Py_DECREF(parser_token->metadata);
             return -1;
         }
-        Py_DECREF(parser_token->metadata);
         parser_token->metadata = new_token->metadata;
     }
 
