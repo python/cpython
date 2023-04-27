@@ -126,7 +126,7 @@ _tg_screen_functions = ['addshape', 'bgcolor', 'bgpic', 'bye',
         'setworldcoordinates', 'textinput', 'title', 'tracer', 'turtles', 'update',
         'window_height', 'window_width']
 _tg_turtle_functions = ['back', 'backward', 'begin_fill', 'begin_poly', 'bk',
-        'circle', 'clear', 'clearstamp', 'clearstamps', 'clone', 'color',
+        'circle', 'clear', 'clearstamp', 'clearstamps', 'clone', 'color', 'teleport',
         'degrees', 'distance', 'dot', 'down', 'end_fill', 'end_poly', 'fd',
         'fillcolor', 'filling', 'forward', 'get_poly', 'getpen', 'getscreen', 'get_shapepoly',
         'getturtle', 'goto', 'heading', 'hideturtle', 'home', 'ht', 'isdown',
@@ -2710,6 +2710,23 @@ class RawTurtle(TPen, TNavigator):
         if not ((0 <= r <= 255) and (0 <= g <= 255) and (0 <= b <= 255)):
             raise TurtleGraphicsError("bad color sequence: %s" % str(args))
         return "#%02x%02x%02x" % (r, g, b)
+    
+    def teleport(self, x=None, y=None) -> None:
+        """
+        Header
+        """
+        pendown = self.isdown()
+        if pendown:
+            self.pen(pendown=False)
+        new_x, new_y = self._position
+        if x is not None and y is not None:
+            new_x, new_y = x, y
+        elif x is not None:
+            new_x, new_y = x, self._position[1]
+        elif y is not None:
+            new_x, new_y = self._position[0], y
+        self._position = Vec2D(new_x, new_y)
+        self.pen(pendown=pendown)   
 
     def clone(self):
         """Create and return a clone of the turtle.
