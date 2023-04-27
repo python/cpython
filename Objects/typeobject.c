@@ -3040,9 +3040,6 @@ type_new_set_module(PyTypeObject *type)
     if (PyDict_SetItem(type->tp_dict, &_Py_ID(__module__), module) < 0) {
         return -1;
     }
-    if (PyDict_SetItem(type->tp_dict, &_Py_ID(__globals__), globals) < 0) {
-        return -1;
-    }
     return 0;
 }
 

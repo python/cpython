@@ -124,7 +124,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__getnewargs__)
         STRUCT_FOR_ID(__getnewargs_ex__)
         STRUCT_FOR_ID(__getstate__)
-        STRUCT_FOR_ID(__globals__)
         STRUCT_FOR_ID(__gt__)
         STRUCT_FOR_ID(__hash__)
         STRUCT_FOR_ID(__iadd__)

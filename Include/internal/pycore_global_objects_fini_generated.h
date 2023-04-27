@@ -636,7 +636,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__getnewargs__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__getnewargs_ex__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__getstate__));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__globals__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__gt__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__hash__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__iadd__));
