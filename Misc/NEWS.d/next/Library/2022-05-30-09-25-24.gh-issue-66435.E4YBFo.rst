@@ -1,0 +1,2 @@
+Allow the event loop to be re-entrant, by making it possible to call
+``asyncio.run(coro, running_ok=True)`` inside an already running event loop.

@@ -22,16 +22,20 @@ to simplify async code usage for common wide-spread scenarios.
 Running an asyncio Program
 ==========================
 
-.. function:: run(coro, *, debug=None, loop_factory=None)
+.. function:: run(coro, *, debug=None, loop_factory=None, running_ok=False)
 
    Execute the :term:`coroutine` *coro* and return the result.
 
-   This function runs the passed coroutine, taking care of
+   If *running_ok* is ``False``, this function runs the passed coroutine, taking care of
    managing the asyncio event loop, *finalizing asynchronous
-   generators*, and closing the executor.
+   generators*, and closing the executor. This function cannot be called when another
+   asyncio event loop is running in the same thread.
 
-   This function cannot be called when another asyncio event loop is
-   running in the same thread.
+   If *running_ok* is ``True``, this function allows running the passed coroutine even if
+   this code is already running in an event loop. In other words, it allows re-entering
+   the event loop, while an exception would be raised if *running_ok* were ``False``. If
+   this function is called inside an already running event loop, the same loop is used,
+   and it is not closed at the end.
 
    If *debug* is ``True``, the event loop will be run in debug mode. ``False`` disables
    debug mode explicitly. ``None`` is used to respect the global

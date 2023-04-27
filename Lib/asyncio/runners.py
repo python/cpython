@@ -45,10 +45,11 @@ class Runner:
 
     # Note: the class is final, it is not intended for inheritance.
 
-    def __init__(self, *, debug=None, loop_factory=None):
+    def __init__(self, *, debug=None, loop_factory=None, running_ok=False):
         self._state = _State.CREATED
         self._debug = debug
         self._loop_factory = loop_factory
+        self._running_ok = running_ok
         self._loop = None
         self._context = None
         self._interrupt_count = 0
@@ -59,7 +60,15 @@ class Runner:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
+        close = True
+        try:
+            events.get_running_loop()
+            if self._running_ok:
+                close = False
+        except:
+            pass
+        if close:
+            self.close()
 
     def close(self):
         """Shutdown and close event loop."""
@@ -68,9 +77,11 @@ class Runner:
         try:
             loop = self._loop
             _cancel_all_tasks(loop)
-            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.run_until_complete(loop.shutdown_asyncgens(), running_ok=self._running_ok)
             loop.run_until_complete(
-                loop.shutdown_default_executor(constants.THREAD_JOIN_TIMEOUT))
+                loop.shutdown_default_executor(constants.THREAD_JOIN_TIMEOUT),
+                running_ok=self._running_ok,
+            )
         finally:
             if self._set_event_loop:
                 events.set_event_loop(None)
@@ -88,7 +99,7 @@ class Runner:
         if not coroutines.iscoroutine(coro):
             raise ValueError("a coroutine was expected, got {!r}".format(coro))
 
-        if events._get_running_loop() is not None:
+        if not self._running_ok and events._get_running_loop() is not None:
             # fail fast with short traceback
             raise RuntimeError(
                 "Runner.run() cannot be called from a running event loop")
@@ -115,7 +126,7 @@ class Runner:
 
         self._interrupt_count = 0
         try:
-            return self._loop.run_until_complete(task)
+            return self._loop.run_until_complete(task, running_ok=self._running_ok)
         except exceptions.CancelledError:
             if self._interrupt_count > 0:
                 uncancel = getattr(task, "uncancel", None)
@@ -157,7 +168,7 @@ class Runner:
         raise KeyboardInterrupt()
 
 
-def run(main, *, debug=None, loop_factory=None):
+def run(main, *, debug=None, loop_factory=None, running_ok=False):
     """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
@@ -185,12 +196,12 @@ def run(main, *, debug=None, loop_factory=None):
 
         asyncio.run(main())
     """
-    if events._get_running_loop() is not None:
+    if not running_ok and events._get_running_loop() is not None:
         # fail fast with short traceback
         raise RuntimeError(
             "asyncio.run() cannot be called from a running event loop")
 
-    with Runner(debug=debug, loop_factory=loop_factory) as runner:
+    with Runner(debug=debug, loop_factory=loop_factory, running_ok=running_ok) as runner:
         return runner.run(main)
 
 

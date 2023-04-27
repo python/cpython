@@ -594,21 +594,23 @@ class BaseEventLoop(events.AbstractEventLoop):
             if not self.is_closed():
                 self.call_soon_threadsafe(future.set_exception, ex)
 
-    def _check_running(self):
+    def _check_running(self, running_ok=False):
         if self.is_running():
             raise RuntimeError('This event loop is already running')
-        if events._get_running_loop() is not None:
+        if not running_ok and events._get_running_loop() is not None:
             raise RuntimeError(
                 'Cannot run the event loop while another loop is running')
 
-    def run_forever(self):
+    def run_forever(self, running_ok=False):
         """Run until stop() is called."""
         self._check_closed()
-        self._check_running()
+        self._check_running(running_ok=running_ok)
         self._set_coroutine_origin_tracking(self._debug)
 
         old_agen_hooks = sys.get_asyncgen_hooks()
         try:
+            old_thread_id = self._thread_id
+            old_running_loop = events._get_running_loop()
             self._thread_id = threading.get_ident()
             sys.set_asyncgen_hooks(firstiter=self._asyncgen_firstiter_hook,
                                    finalizer=self._asyncgen_finalizer_hook)
@@ -620,12 +622,12 @@ class BaseEventLoop(events.AbstractEventLoop):
                     break
         finally:
             self._stopping = False
-            self._thread_id = None
-            events._set_running_loop(None)
+            self._thread_id = old_thread_id
+            events._set_running_loop(old_running_loop)
             self._set_coroutine_origin_tracking(False)
             sys.set_asyncgen_hooks(*old_agen_hooks)
 
-    def run_until_complete(self, future):
+    def run_until_complete(self, future, running_ok=False):
         """Run until the Future is done.
 
         If the argument is a coroutine, it is wrapped in a Task.
@@ -637,7 +639,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         Return the Future's result, or raise its exception.
         """
         self._check_closed()
-        self._check_running()
+        self._check_running(running_ok=running_ok)
 
         new_task = not futures.isfuture(future)
         future = tasks.ensure_future(future, loop=self)
@@ -648,7 +650,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         future.add_done_callback(_run_until_complete_cb)
         try:
-            self.run_forever()
+            self.run_forever(running_ok=running_ok)
         except:
             if new_task and future.done() and not future.cancelled():
                 # The coroutine raised a BaseException. Consume the exception
