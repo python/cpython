@@ -22,7 +22,7 @@
     }
 
 typedef _PyCompilerSrcLocation location;
-typedef _PyCompilerInstruction instruction;
+typedef _PyCompile_Instruction instruction;
 typedef _PyCompile_InstructionSequence instr_sequence;
 
 static inline bool

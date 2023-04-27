@@ -45,10 +45,10 @@ typedef struct {
     int i_oparg;
     _PyCompilerSrcLocation i_loc;
     _PyCompile_ExceptHandlerInfo i_except_handler_info;
-} _PyCompilerInstruction;
+} _PyCompile_Instruction;
 
 typedef struct {
-    _PyCompilerInstruction *s_instrs;
+    _PyCompile_Instruction *s_instrs;
     int s_allocated;
     int s_used;
 

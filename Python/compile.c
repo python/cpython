@@ -160,7 +160,7 @@ _PyCompile_InstrSize(int opcode, int oparg)
     return extended_args + 1 + caches;
 }
 
-typedef _PyCompilerInstruction instruction;
+typedef _PyCompile_Instruction instruction;
 typedef _PyCompile_InstructionSequence instr_sequence;
 
 #define INITIAL_INSTR_SEQUENCE_SIZE 100
