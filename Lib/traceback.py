@@ -179,7 +179,7 @@ def _safe_string(value, what, func=str):
 # --
 
 def print_exc(limit=None, file=None, chain=True):
-    """Shorthand for 'print_exception(*sys.exc_info(), limit, file)'."""
+    """Shorthand for 'print_exception(*sys.exc_info(), limit, file, chain)'."""
     print_exception(*sys.exc_info(), limit=limit, file=file, chain=chain)
 
 def format_exc(limit=None, chain=True):
@@ -187,12 +187,16 @@ def format_exc(limit=None, chain=True):
     return "".join(format_exception(*sys.exc_info(), limit=limit, chain=chain))
 
 def print_last(limit=None, file=None, chain=True):
-    """This is a shorthand for 'print_exception(sys.last_type,
-    sys.last_value, sys.last_traceback, limit, file)'."""
-    if not hasattr(sys, "last_type"):
+    """This is a shorthand for 'print_exception(sys.last_exc, limit, file, chain)'."""
+    if not hasattr(sys, "last_exc") and not hasattr(sys, "last_type"):
         raise ValueError("no last exception")
-    print_exception(sys.last_type, sys.last_value, sys.last_traceback,
-                    limit, file, chain)
+
+    if hasattr(sys, "last_exc"):
+        print_exception(sys.last_exc, limit, file, chain)
+    else:
+        print_exception(sys.last_type, sys.last_value, sys.last_traceback,
+                        limit, file, chain)
+
 
 #
 # Printing and Extracting Stacks.
@@ -586,12 +590,15 @@ def _extract_caret_anchors_from_line_segment(segment):
     if len(tree.body) != 1:
         return None
 
+    normalize = lambda offset: _byte_offset_to_character_offset(segment, offset)
     statement = tree.body[0]
     match statement:
         case ast.Expr(expr):
             match expr:
                 case ast.BinOp():
-                    operator_str = segment[expr.left.end_col_offset:expr.right.col_offset]
+                    operator_start = normalize(expr.left.end_col_offset)
+                    operator_end = normalize(expr.right.col_offset)
+                    operator_str = segment[operator_start:operator_end]
                     operator_offset = len(operator_str) - len(operator_str.lstrip())
 
                     left_anchor = expr.left.end_col_offset + operator_offset
@@ -601,9 +608,11 @@ def _extract_caret_anchors_from_line_segment(segment):
                         and not operator_str[operator_offset + 1].isspace()
                     ):
                         right_anchor += 1
-                    return _Anchors(left_anchor, right_anchor)
+                    return _Anchors(normalize(left_anchor), normalize(right_anchor))
                 case ast.Subscript():
-                    return _Anchors(expr.value.end_col_offset, expr.slice.end_col_offset + 1)
+                    subscript_start = normalize(expr.value.end_col_offset)
+                    subscript_end = normalize(expr.slice.end_col_offset + 1)
+                    return _Anchors(subscript_start, subscript_end)
 
     return None
 
@@ -1037,6 +1046,16 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             + list(frame.f_globals)
             + list(frame.f_builtins)
         )
+
+        # Check first if we are in a method and the instance
+        # has the wrong name as attribute
+        if 'self' in frame.f_locals:
+            self = frame.f_locals['self']
+            if hasattr(self, wrong_name):
+                return f"self.{wrong_name}"
+
+    # Compute closest match
+
     if len(d) > _MAX_CANDIDATE_ITEMS:
         return None
     wrong_name_len = len(wrong_name)

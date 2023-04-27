@@ -31,7 +31,36 @@ struct token {
     int level;
     int lineno, col_offset, end_lineno, end_col_offset;
     const char *start, *end;
+    PyObject *metadata;
 };
+
+enum tokenizer_mode_kind_t {
+    TOK_REGULAR_MODE,
+    TOK_FSTRING_MODE,
+};
+
+#define MAX_EXPR_NESTING 3
+
+typedef struct _tokenizer_mode {
+    enum tokenizer_mode_kind_t kind;
+
+    int curly_bracket_depth;
+    int curly_bracket_expr_start_depth;
+
+    char f_string_quote;
+    int f_string_quote_size;
+    int f_string_raw;
+    const char* f_string_start;
+    const char* f_string_multi_line_start;
+
+    Py_ssize_t f_string_start_offset;
+    Py_ssize_t f_string_multi_line_start_offset;
+
+    Py_ssize_t last_expr_size;
+    Py_ssize_t last_expr_end;
+    char* last_expr_buffer;
+    int f_string_debug;
+} tokenizer_mode;
 
 /* Tokenizer state */
 struct tok_state {
@@ -92,6 +121,11 @@ struct tok_state {
                              NEWLINE token after it. */
     /* How to proceed when asked for a new token in interactive mode */
     enum interactive_underflow_t interactive_underflow;
+    int report_warnings;
+    // TODO: Factor this into its own thing
+    tokenizer_mode tok_mode_stack[MAXLEVEL];
+    int tok_mode_stack_index;
+    int tok_report_warnings;
 #ifdef Py_DEBUG
     int debug;
 #endif

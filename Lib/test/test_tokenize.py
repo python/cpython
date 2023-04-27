@@ -10,6 +10,8 @@ from textwrap import dedent
 from unittest import TestCase, mock
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
+from test.support import os_helper
+from test.support.script_helper import run_test_script, make_script
 import os
 import token
 
@@ -1623,6 +1625,10 @@ class TestRoundtrip(TestCase):
         # 7 more testfiles fail.  Remove them also until the failure is diagnosed.
 
         testfiles.remove(os.path.join(tempdir, "test_unicode_identifiers.py"))
+
+        # TODO: Remove this once we can unparse PEP 701 syntax
+        testfiles.remove(os.path.join(tempdir, "test_fstring.py"))
+
         for f in ('buffer', 'builtin', 'fileio', 'inspect', 'os', 'platform', 'sys'):
             testfiles.remove(os.path.join(tempdir, "test_%s.py") % f)
 
@@ -1935,25 +1941,39 @@ c"""', """\
     """)
 
         self.check_tokenize('f"abc"', """\
-    STRING     'f"abc"'      (1, 0) (1, 6)
+    FSTRING_START 'f"'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'abc'         (1, 2) (1, 5)
+    FSTRING_END '"'           (1, 5) (1, 6)
     """)
 
         self.check_tokenize('fR"a{b}c"', """\
-    STRING     'fR"a{b}c"'   (1, 0) (1, 9)
+    FSTRING_START 'fR"'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'a'           (1, 3) (1, 4)
+    LBRACE     '{'           (1, 4) (1, 5)
+    NAME       'b'           (1, 5) (1, 6)
+    RBRACE     '}'           (1, 6) (1, 7)
+    FSTRING_MIDDLE 'c'           (1, 7) (1, 8)
+    FSTRING_END '"'           (1, 8) (1, 9)
     """)
 
         self.check_tokenize('f"""abc"""', """\
-    STRING     'f\"\"\"abc\"\"\"'  (1, 0) (1, 10)
+    FSTRING_START 'f\"""'        (1, 0) (1, 4)
+    FSTRING_MIDDLE 'abc'         (1, 4) (1, 7)
+    FSTRING_END '\"""'         (1, 7) (1, 10)
     """)
 
         self.check_tokenize(r'f"abc\
 def"', """\
-    STRING     'f"abc\\\\\\ndef"' (1, 0) (2, 4)
+    FSTRING_START \'f"\'          (1, 0) (1, 2)
+    FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 2) (2, 3)
+    FSTRING_END '"'           (2, 3) (2, 4)
     """)
 
         self.check_tokenize(r'Rf"abc\
 def"', """\
-    STRING     'Rf"abc\\\\\\ndef"' (1, 0) (2, 4)
+    FSTRING_START 'Rf"'         (1, 0) (1, 3)
+    FSTRING_MIDDLE 'abc\\\\\\ndef'  (1, 3) (2, 3)
+    FSTRING_END '"'           (2, 3) (2, 4)
     """)
 
     def test_function(self):
@@ -2629,6 +2649,20 @@ async def f():
         """)
 
         self.assertEqual(get_tokens(code), get_tokens(code_no_cont))
+
+
+class CTokenizerBufferTests(unittest.TestCase):
+    def test_newline_at_the_end_of_buffer(self):
+        # See issue 99581: Make sure that if we need to add a new line at the
+        # end of the buffer, we have enough space in the buffer, specially when
+        # the current line is as long as the buffer space available.
+        test_script = f"""\
+        #coding: latin-1
+        #{"a"*10000}
+        #{"a"*10002}"""
+        with os_helper.temp_dir() as temp_dir:
+            file_name = make_script(temp_dir, 'foo', test_script)
+            run_test_script(file_name)
 
 
 if __name__ == "__main__":

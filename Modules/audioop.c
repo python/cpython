@@ -1471,8 +1471,7 @@ audioop_ratecv_impl(PyObject *module, Py_buffer *fragment, int width,
                 len = (Py_ssize_t)(ncp - PyBytes_AsString(str));
                 rv = PyBytes_FromStringAndSize
                     (PyBytes_AsString(str), len);
-                Py_DECREF(str);
-                str = rv;
+                Py_SETREF(str, rv);
                 if (str == NULL)
                     goto exit;
                 rv = Py_BuildValue("(O(iO))", str, d, samps);

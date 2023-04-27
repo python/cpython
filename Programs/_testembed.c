@@ -1,7 +1,6 @@
 #ifndef Py_BUILD_CORE_MODULE
 #  define Py_BUILD_CORE_MODULE
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 /* Always enable assertion (even in release mode) */
 #undef NDEBUG
@@ -10,7 +9,6 @@
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
-#include <Python.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>               // putenv()
@@ -1891,7 +1889,14 @@ static int test_unicode_id_init(void)
 {
     // bpo-42882: Test that _PyUnicode_FromId() works
     // when Python is initialized multiples times.
-    _Py_IDENTIFIER(test_unicode_id_init);
+
+    // This is equivalent to `_Py_IDENTIFIER(test_unicode_id_init)`
+    // but since `_Py_IDENTIFIER` is disabled when `Py_BUILD_CORE`
+    // is defined, it is manually expanded here.
+    static _Py_Identifier PyId_test_unicode_id_init = {
+        .string = "test_unicode_id_init",
+        .index = -1,
+    };
 
     // Initialize Python once without using the identifier
     _testembed_Py_InitializeFromConfig();
@@ -1906,14 +1911,13 @@ static int test_unicode_id_init(void)
 
         str1 = _PyUnicode_FromId(&PyId_test_unicode_id_init);
         assert(str1 != NULL);
-        assert(Py_REFCNT(str1) == 1);
+        assert(_Py_IsImmortal(str1));
 
         str2 = PyUnicode_FromString("test_unicode_id_init");
         assert(str2 != NULL);
 
         assert(PyUnicode_Compare(str1, str2) == 0);
 
-        // str1 is a borrowed reference
         Py_DECREF(str2);
 
         Py_Finalize();

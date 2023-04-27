@@ -996,6 +996,7 @@ probability that the Python room will stay within its capacity limits?
     >>> seed(8675309)
     >>> def trial():
     ...     return choices(('Python', 'Ruby'), (p, q), k=n).count('Python')
+    ...
     >>> mean(trial() <= k for i in range(10_000))
     0.8398
 
