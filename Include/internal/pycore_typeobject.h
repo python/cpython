@@ -44,6 +44,8 @@ struct type_cache {
 
 typedef struct {
     PyTypeObject *type;
+    // XXX tp_dict, tp_bases, and tp_mro can probably be statically
+    // allocated, instead of dynamically and stored on the interpreter.
     PyObject *tp_dict;
     PyObject *tp_bases;
     PyObject *tp_mro;
