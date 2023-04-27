@@ -7014,12 +7014,11 @@ error:
 int
 PyType_Ready(PyTypeObject *type)
 {
-    assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
-
     if (type->tp_flags & Py_TPFLAGS_READY) {
         assert(_PyType_CheckConsistency(type));
         return 0;
     }
+    assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
 
     /* Historically, all static types were immutable. See bpo-43908 */
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
