@@ -2111,6 +2111,10 @@ compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
                     return ERROR;
                 }
                 Py_DECREF(co);
+                if (c->u->u_ste->ste_type_params_in_class) {
+                    ADDOP(c, loc, LOAD_LOCALS);
+                    ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_CLASS_DICT);
+                }
 
                 int intrinsic = bound->kind == Tuple_kind
                     ? INTRINSIC_TYPEVAR_WITH_CONSTRAINTS

@@ -1947,15 +1947,17 @@ symtable_visit_typeparam(struct symtable *st, typeparam_ty tp)
         if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
         if (tp->v.TypeVar.bound) {
+            int is_in_class = st->st_cur->ste_type_params_in_class;
             if (!symtable_enter_block(st, tp->v.TypeVar.name,
                                       TypeVarBoundBlock, (void *)tp,
                                       LOCATION(tp)))
                 VISIT_QUIT(st, 0);
+            st->st_cur->ste_type_params_in_class = is_in_class;
             VISIT(st, expr, tp->v.TypeVar.bound);
             if (!symtable_exit_block(st))
                 VISIT_QUIT(st, 0);
-        }
         break;
+    }
     case TypeVarTuple_kind:
         if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
