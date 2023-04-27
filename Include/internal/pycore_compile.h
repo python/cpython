@@ -33,11 +33,17 @@ extern int _PyAST_Optimize(
     struct _arena *arena,
     _PyASTOptimizeState *state);
 
+typedef struct {
+    int h_offset;
+    int h_startdepth;
+    int h_preserve_lasti;
+} _PyCompilerExceptHandlerInfo;
 
 typedef struct {
     int i_opcode;
     int i_oparg;
     _PyCompilerSrcLocation i_loc;
+    _PyCompilerExceptHandlerInfo i_except_handler_info;
 } _PyCompilerInstruction;
 
 typedef struct {
@@ -81,6 +87,8 @@ int _PyCompile_EnsureArrayLargeEnough(
         size_t item_size);
 
 int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
+
+int _PyCompile_InstrSize(int opcode, int oparg);
 
 /* Access compiler internals for unit testing */
 
