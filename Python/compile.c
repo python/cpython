@@ -892,7 +892,7 @@ static PyObject*
 merge_consts_recursive(PyObject *const_cache, PyObject *o)
 {
     assert(PyDict_CheckExact(const_cache));
-    // None and Ellipsis are immortal object, and key is the singleton.
+    // None and Ellipsis are immortal objects, and key is the singleton.
     // No need to merge object and key.
     if (o == Py_None || o == Py_Ellipsis) {
         return o;
