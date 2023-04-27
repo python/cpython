@@ -38,13 +38,13 @@ typedef struct {
     int h_offset;
     int h_startdepth;
     int h_preserve_lasti;
-} _PyCompilerExceptHandlerInfo;
+} _PyCompile_ExceptHandlerInfo;
 
 typedef struct {
     int i_opcode;
     int i_oparg;
     _PyCompilerSrcLocation i_loc;
-    _PyCompilerExceptHandlerInfo i_except_handler_info;
+    _PyCompile_ExceptHandlerInfo i_except_handler_info;
 } _PyCompilerInstruction;
 
 typedef struct {

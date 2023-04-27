@@ -7048,7 +7048,7 @@ cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq)
             RETURN_IF_ERROR(
                 instr_sequence_addop(seq, instr->i_opcode, instr->i_oparg, instr->i_loc));
 
-            _PyCompilerExceptHandlerInfo *hi = &seq->s_instrs[seq->s_used-1].i_except_handler_info;
+            _PyCompile_ExceptHandlerInfo *hi = &seq->s_instrs[seq->s_used-1].i_except_handler_info;
             if (instr->i_except != NULL) {
                 hi->h_offset = instr->i_except->b_offset;
                 hi->h_startdepth = instr->i_except->b_startdepth;

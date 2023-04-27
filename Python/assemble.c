@@ -118,7 +118,7 @@ assemble_emit_exception_table_item(struct assembler *a, int value, int msb)
 
 static int
 assemble_emit_exception_table_entry(struct assembler *a, int start, int end,
-                                    _PyCompilerExceptHandlerInfo *handler)
+                                    _PyCompile_ExceptHandlerInfo *handler)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_except_table);
     if (a->a_except_table_off + MAX_SIZE_OF_ENTRY >= len) {
@@ -144,7 +144,7 @@ static int
 assemble_exception_table(struct assembler *a, instr_sequence *instrs)
 {
     int ioffset = 0;
-    _PyCompilerExceptHandlerInfo handler;
+    _PyCompile_ExceptHandlerInfo handler;
     handler.h_offset = -1;
     int start = -1;
     for (int i = 0; i < instrs->s_used; i++) {
