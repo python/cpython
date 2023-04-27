@@ -4037,7 +4037,15 @@ compiler_nameop(struct compiler *c, location loc,
     case OP_DEREF:
         switch (ctx) {
         case Load:
-            op = (c->u->u_ste->ste_type == ClassBlock) ? LOAD_CLASSDEREF : LOAD_DEREF;
+            if (c->u->u_ste->ste_type == ClassBlock) {
+                op = LOAD_CLASSDEREF;
+            }
+            else if (c->u->u_ste->ste_type_params_in_class) {
+                op = LOAD_CLASSDICT_OR_DEREF;
+            }
+            else {
+                op = LOAD_DEREF;
+            }
             break;
         case Store: op = STORE_DEREF; break;
         case Del: op = DELETE_DEREF; break;
@@ -4055,7 +4063,7 @@ compiler_nameop(struct compiler *c, location loc,
         switch (ctx) {
         case Load:
             if (c->u->u_ste->ste_type_params_in_class) {
-                op = LOAD_CLASS_OR_GLOBAL;
+                op = LOAD_CLASSDICT_OR_GLOBAL;
             } else {
                 op = LOAD_GLOBAL;
             }
@@ -7195,6 +7203,7 @@ fix_cell_offsets(struct compiler_unit *u, basicblock *entryblock, int *fixedmap)
                 case STORE_DEREF:
                 case DELETE_DEREF:
                 case LOAD_CLASSDEREF:
+                case LOAD_CLASSDICT_OR_DEREF:
                     assert(oldoffset >= 0);
                     assert(oldoffset < noffsets);
                     assert(fixedmap[oldoffset] >= 0);

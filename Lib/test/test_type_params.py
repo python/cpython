@@ -252,6 +252,16 @@ class TypeParamsAccessTest(unittest.TestCase):
         """)
         exec(code, {})
 
+    def test_class_deref(self):
+        code = textwrap.dedent("""\
+            class C[T]:
+                T = "class"
+                type Alias = T
+
+            assert C.Alias.__value__ == "class", repr(C.Alias)
+        """)
+        exec(code, {})
+
     def test_nonlocal(self):
         code = textwrap.dedent("""\
             def outer2[T]():

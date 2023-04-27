@@ -1179,7 +1179,7 @@ dummy_func(
             }
         }
 
-        op(_LOAD_CLASS_OR_GLOBAL_INTRO, (-- class_dict, name)) {
+        op(_LOAD_CLASSDICT_OR_GLOBAL_INTRO, (-- class_dict, name)) {
             name = GETITEM(frame->f_code->co_names, oparg);
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             if (func == NULL) {
@@ -1251,7 +1251,7 @@ dummy_func(
 
         macro(LOAD_NAME) = _LOAD_NAME_INTRO + _LOAD_NAME_COMMON;
 
-        macro(LOAD_CLASS_OR_GLOBAL) = _LOAD_CLASS_OR_GLOBAL_INTRO + _LOAD_NAME_COMMON;
+        macro(LOAD_CLASSDICT_OR_GLOBAL) = _LOAD_CLASSDICT_OR_GLOBAL_INTRO + _LOAD_NAME_COMMON;
 
         family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
             LOAD_GLOBAL,
@@ -1373,13 +1373,32 @@ dummy_func(
             Py_DECREF(oldobj);
         }
 
-        inst(LOAD_CLASSDEREF, ( -- value)) {
-            PyObject *name, *locals = LOCALS();
-            assert(locals);
+        op(_LOAD_CLASSDEREF_INTRO, (-- class_dict)) {
+            class_dict = LOCALS();
+        }
+
+        op(_LOAD_CLASSDICT_OR_DEREF_INTRO, (-- class_dict)) {
+            PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
+            if (func == NULL) {
+                _PyErr_Format(tstate, PyExc_SystemError,
+                              "no function defined when loading from class dict");
+                goto error;
+            }
+            class_dict = func->func_class_dict;
+            if (class_dict == NULL) {
+                _PyErr_Format(tstate, PyExc_SystemError,
+                              "no class dict set when loading from class dict");
+                goto error;
+            }
+        }
+
+        op(_LOAD_CLASSDEREF_COMMON, (class_dict -- value)) {
+            PyObject *name;
+            assert(class_dict);
             assert(oparg >= 0 && oparg < frame->f_code->co_nlocalsplus);
             name = PyTuple_GET_ITEM(frame->f_code->co_localsplusnames, oparg);
-            if (PyDict_CheckExact(locals)) {
-                value = PyDict_GetItemWithError(locals, name);
+            if (PyDict_CheckExact(class_dict)) {
+                value = PyDict_GetItemWithError(class_dict, name);
                 if (value != NULL) {
                     Py_INCREF(value);
                 }
@@ -1388,7 +1407,7 @@ dummy_func(
                 }
             }
             else {
-                value = PyObject_GetItem(locals, name);
+                value = PyObject_GetItem(class_dict, name);
                 if (value == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
                         goto error;
@@ -1406,6 +1425,9 @@ dummy_func(
                 Py_INCREF(value);
             }
         }
+
+        macro(LOAD_CLASSDEREF) = _LOAD_CLASSDEREF_INTRO + _LOAD_CLASSDEREF_COMMON;
+        macro(LOAD_CLASSDICT_OR_DEREF) = _LOAD_CLASSDICT_OR_DEREF_INTRO + _LOAD_CLASSDEREF_COMMON;
 
         inst(LOAD_DEREF, ( -- value)) {
             PyObject *cell = GETLOCAL(oparg);
