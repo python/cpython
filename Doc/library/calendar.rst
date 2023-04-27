@@ -30,88 +30,50 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
 .. class:: Day
 
-   This enumeration defines the days of the week as integer constants.
+   Enumeration defining the days of the week as integer constants, from 0 to 6.
 
    .. attribute:: MONDAY
 
-      The constant for Monday, with a value of 0.
-
    .. attribute:: TUESDAY
-
-      The constant for Tuesday, with a value of 1.
 
    .. attribute:: WEDNESDAY
 
-      The constant for Wednesday, with a value of 2.
-
    .. attribute:: THURSDAY
-
-      The constant for Thursday, with a value of 3.
 
    .. attribute:: FRIDAY
 
-      The constant for Friday, with a value of 4.
-
    .. attribute:: SATURDAY
 
-      The constant for Saturday, with a value of 5.
-
    .. attribute:: SUNDAY
-
-      The constant for Sunday, with a value of 6.
 
 
 .. class:: Month
 
-   This enumeration defines the months of the year as integer constants.
+   Enumeration defining months of the year as integer constants, from 1 to 12.
 
    .. attribute:: JANUARY
 
-      The constant for January, with a value of 1.
-
    .. attribute:: FEBRUARY
-
-      The constant for February, with a value of 2.
 
    .. attribute:: MARCH
 
-      The constant for March, with a value of 3.
-
    .. attribute:: APRIL
-
-      The constant for April, with a value of 4.
 
    .. attribute:: MAY
 
-      The constant for May, with a value of 5.
-
    .. attribute:: JUNE
-
-      The constant for June, with a value of 6.
 
    .. attribute:: JULY
 
-      The constant for July, with a value of 7.
-
    .. attribute:: AUGUST
-
-      The constant for August, with a value of 8.
 
    .. attribute:: SEPTEMBER
 
-      The constant for September, with a value of 9.
-
    .. attribute:: OCTOBER
-
-      The constant for October, with a value of 10.
 
    .. attribute:: NOVEMBER
 
-      The constant for November, with a value of 11.
-
    .. attribute:: DECEMBER
-
-      The constant for December, with a value of 12.
 
 
 .. class:: Calendar(firstweekday=0)
