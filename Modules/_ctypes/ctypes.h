@@ -36,12 +36,12 @@ typedef struct {
     PyTypeObject *DictRemover_Type;
     PyTypeObject *PyCArg_Type;
     PyTypeObject *PyCField_Type;
+    PyTypeObject *PyCStgDict_Type;
     PyTypeObject *PyCThunk_Type;
 #ifdef MS_WIN32
     PyTypeObject *PyComError_Type;
 #endif
     PyTypeObject *StructParam_Type;
-    PyTypeObject *PyCStgDict_Type;
 } ctypes_state;
 
 extern ctypes_state global_state;
