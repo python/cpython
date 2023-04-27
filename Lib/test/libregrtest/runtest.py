@@ -149,7 +149,7 @@ NOTTESTS = set()
 # __init__.py may do things which alter what tests are to be run.
 SPLITTESTDIRS = {
     "test_asyncio",
-        "test_multiprocessing",
+    "test_multiprocessing",
 }
 
 # Storage of uncollectable objects
