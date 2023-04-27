@@ -286,6 +286,7 @@ typevar_alloc(const char *name, PyObject *bound, PyObject *evaluate_bound,
 
     char *owned_name = strdup(name);
     if (owned_name == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
 
@@ -307,7 +308,7 @@ typevar_alloc(const char *name, PyObject *bound, PyObject *evaluate_bound,
     tv->covariant = covariant;
     tv->contravariant = contravariant;
     tv->infer_variance = infer_variance;
-    PyObject_GC_Track(tv);
+    _PyObject_GC_TRACK(tv);
 
     if (module != NULL) {
         if (PyObject_SetAttrString((PyObject *)tv, "__module__", module) < 0) {
@@ -813,27 +814,29 @@ static paramspecobject *
 paramspec_alloc(const char *name, PyObject *bound, bool covariant,
                 bool contravariant, bool infer_variance, PyObject *module)
 {
+    char *owned_name = strdup(name);
+    if (owned_name == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspec_type;
     paramspecobject *ps = PyObject_GC_New(paramspecobject, tp);
     if (ps == NULL) {
+        free((void *)owned_name);
         return NULL;
     }
-    ps->name = strdup(name);
-    if (ps->name == NULL) {
-        Py_DECREF(ps);
-        return NULL;
-    }
+    ps->name = owned_name;
     ps->bound = Py_XNewRef(bound);
     ps->covariant = covariant;
     ps->contravariant = contravariant;
     ps->infer_variance = infer_variance;
+    _PyObject_GC_TRACK(ps);
     if (module != NULL) {
         if (PyObject_SetAttrString((PyObject *)ps, "__module__", module) < 0) {
             Py_DECREF(ps);
             return NULL;
         }
     }
-    _PyObject_GC_TRACK(ps);
     return ps;
 }
 
@@ -1071,23 +1074,25 @@ static PyMemberDef typevartuple_members[] = {
 static typevartupleobject *
 typevartuple_alloc(const char *name, PyObject *module)
 {
+    char *owned_name = strdup(name);
+    if (owned_name == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
     typevartupleobject *tvt = PyObject_GC_New(typevartupleobject, tp);
     if (tvt == NULL) {
+        free(owned_name);
         return NULL;
     }
-    tvt->name = strdup(name);
-    if (tvt->name == NULL) {
-        Py_DECREF(tvt);
-        return NULL;
-    }
+    tvt->name = owned_name;
+    _PyObject_GC_TRACK(tvt);
     if (module != NULL) {
         if (PyObject_SetAttrString((PyObject *)tvt, "__module__", module) < 0) {
             Py_DECREF(tvt);
             return NULL;
         }
     }
-    _PyObject_GC_TRACK(tvt);
     return tvt;
 }
 
@@ -1421,16 +1426,18 @@ static PyGetSetDef typealias_getset[] = {
 static typealiasobject *
 typealias_alloc(const char *name, PyObject *type_params, PyObject *compute_value)
 {
+    char *owned_name = strdup(name);
+    if (owned_name == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typealias_type;
     typealiasobject *ta = PyObject_GC_New(typealiasobject, tp);
     if (ta == NULL) {
+        free(owned_name);
         return NULL;
     }
-    ta->name = strdup(name);
-    if (ta->name == NULL) {
-        Py_DECREF(ta);
-        return NULL;
-    }
+    ta->name = owned_name;
     ta->type_params = Py_IsNone(type_params) ? NULL : Py_XNewRef(type_params);
     ta->compute_value = Py_NewRef(compute_value);
     ta->value = NULL;
