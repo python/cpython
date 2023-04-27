@@ -1990,10 +1990,6 @@ _PyFloat_InitState(PyInterpreterState *interp)
 PyStatus
 _PyFloat_InitTypes(PyInterpreterState *interp)
 {
-    if (PyType_Ready(&PyFloat_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize float type");
-    }
-
     /* Init float info */
     if (_PyStructSequence_InitBuiltin(&FloatInfoType,
                                       &floatinfo_desc) < 0) {
