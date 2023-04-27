@@ -1,2 +1,19 @@
 Implement :pep:`695`, adding syntactic support for generic classes, generic
-functions, and type aliases. Patch by Eric Traut and Jelle Zijlstra.
+functions, and type aliases. Patch by Eric Traut, Larry Hastings, and Jelle
+Zijlstra.
+
+This includes the following changes:
+
+- A new ``type X = ...`` syntax for type aliases, which resolves at
+  runtime to an instance of the new class ``typing.TypeAliasType``.
+  This is implemented as a new AST node ``ast.TypeAlias``.
+- New syntax (``class X[T]: ...``, ``def func[T](): ...``) for defining
+  generic functions and classes. This is implemented as a new
+  ``typeparams`` attribute on the AST nodes for classes and functions.
+  This node holds instances of the new AST classes ``ast.TypeVar``,
+  ``ast.ParamSpec``, and ``ast.TypeVarTuple``.
+- ``typing.TypeVar``, ``typing.ParamSpec``, ``typing.ParamSpecArgs``,
+  ``typing.ParamSpecKwargs``, ``typing.TypeVarTuple``, and
+  ``typing.Generic`` are now implemented in C rather than Python.
+- New bytecode instructions ``LOAD_LOCALS`` and ``LOAD_CLASS_OR_GLOBAL``
+  to support correct resolution of names in class namespaces.
