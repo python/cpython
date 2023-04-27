@@ -111,7 +111,7 @@ tok_new(void)
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
     tok->report_warnings = 1;
-    tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0};
+    tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0, .f_string_debug=0};
     tok->tok_mode_stack_index = 0;
     tok->tok_report_warnings = 1;
 #ifdef Py_DEBUG
@@ -394,11 +394,12 @@ static int
 set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
     assert(token != NULL);
     assert(c == '}' || c == ':' || c == '!');
-    if (token->metadata) {
+    tokenizer_mode *tok_mode = TOK_GET_MODE(tok);
+
+    if (!tok_mode->f_string_debug || token->metadata) {
         return 0;
     }
 
-    tokenizer_mode *tok_mode = TOK_GET_MODE(tok);
     PyObject *res = PyUnicode_DecodeUTF8(
         tok_mode->last_expr_buffer,
         tok_mode->last_expr_size - tok_mode->last_expr_end,
@@ -2237,7 +2238,6 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         tokenizer_mode *the_current_tok = TOK_NEXT_MODE(tok);
         the_current_tok->kind = TOK_FSTRING_MODE;
         the_current_tok->f_string_quote = quote;
-        the_current_tok->f_string_quote_size = quote_size;
         the_current_tok->f_string_start = tok->start;
         the_current_tok->f_string_multi_line_start = tok->line_start;
         the_current_tok->f_string_start_offset = -1;
@@ -2245,6 +2245,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         the_current_tok->last_expr_buffer = NULL;
         the_current_tok->last_expr_size = 0;
         the_current_tok->last_expr_end = -1;
+        the_current_tok->f_string_debug = 0;
 
         switch (*tok->start) {
             case 'F':
@@ -2468,6 +2469,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             if (c == '}' && current_tok->curly_bracket_depth == current_tok->curly_bracket_expr_start_depth) {
                 current_tok->curly_bracket_expr_start_depth--;
                 current_tok->kind = TOK_FSTRING_MODE;
+                current_tok->f_string_debug = 0;
             }
         }
         break;
@@ -2479,6 +2481,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         char hex[9];
         (void)PyOS_snprintf(hex, sizeof(hex), "%04X", c);
         return MAKE_TOKEN(syntaxerror(tok, "invalid non-printable character U+%s", hex));
+    }
+
+    if( c == '=' && INSIDE_FSTRING_EXPR(current_tok)) {
+        current_tok->f_string_debug = 1;
     }
 
     /* Punctuation character */
