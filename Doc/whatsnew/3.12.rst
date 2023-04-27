@@ -551,7 +551,7 @@ sys
 calendar
 --------
 
-* Added Enum for Month and Day
+* Add enums for month and day. For example: ``JANUARY`` and ``MONDAY``.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
 Optimizations
@@ -658,8 +658,9 @@ Deprecated
   Python 3.14, when ``'data'`` filter will become the default.
   See :ref:`tarfile-extraction-filter` for details.
 
-* ``January`` and ``February`` is deprecated from :mod:`calendar`,
+* ``January`` and ``February`` are deprecated from :mod:`calendar`,
   use ``JANUARY`` and ``FEBRUARY`` instead.
+  (Contributed by Prince Roshan in :gh:`103636`.)
 
 Pending Removal in Python 3.13
 ------------------------------
