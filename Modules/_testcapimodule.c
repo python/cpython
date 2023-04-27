@@ -3409,8 +3409,9 @@ obj_extra_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     size_t extra_size = sizeof(PyObject *);
     PyObject *obj = PyUnstable_Object_GC_NewWithExtraData(type, extra_size);
-    if (obj == NULL)
+    if (obj == NULL) {
         return PyErr_NoMemory();
+    }
     memset(obj, '\0', type->tp_basicsize + extra_size);
     PyObject_Init(obj, type);
     PyObject_GC_Track(obj);
@@ -3428,10 +3429,10 @@ obj_extra_data_get(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyObject **extra_storage = obj_extra_data_get_extra_storage(self);
     PyObject *value = *extra_storage;
-    if (!value)
+    if (!value) {
         Py_RETURN_NONE;
-    Py_INCREF(value);
-    return value;
+    }
+    return Py_NewRef(value);
 }
 
 static int
@@ -3440,8 +3441,7 @@ obj_extra_data_set(PyObject *self, PyObject *newval, void *Py_UNUSED(ignored))
     PyObject **extra_storage = obj_extra_data_get_extra_storage(self);
     Py_CLEAR(*extra_storage);
     if (newval) {
-        Py_INCREF(newval);
-        *extra_storage = newval;
+        *extra_storage = Py_NewRef(newval);
     }
     return 0;
 }
