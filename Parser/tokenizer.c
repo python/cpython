@@ -394,6 +394,9 @@ static int
 set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
     assert(token != NULL);
     assert(c == '}' || c == ':' || c == '!');
+    if (token->metadata) {
+        return 0;
+    }
 
     tokenizer_mode *tok_mode = TOK_GET_MODE(tok);
     PyObject *res = PyUnicode_DecodeUTF8(
