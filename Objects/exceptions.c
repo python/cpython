@@ -3591,10 +3591,6 @@ static struct static_exception static_exceptions[] = {
 int
 _PyExc_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return 0;
-    }
-
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_exceptions); i++) {
         PyTypeObject *exc = static_exceptions[i].exc;
         if (_PyStaticType_InitBuiltin(exc) < 0) {
