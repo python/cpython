@@ -62,6 +62,14 @@ class SqliteInteractiveConsole(InteractiveConsole):
         return False
 
 
+def eofkey():
+    if sys.platform == "win32":
+        return "CTRL-D"
+    if "idlelib.run" in sys.modules:
+        return "CTRL-D"
+    return "CTRL-Z"
+
+
 def main():
     parser = ArgumentParser(
         description="Python sqlite3 CLI",
@@ -94,13 +102,12 @@ def main():
         db_name = repr(args.filename)
 
     # Prepare REPL banner and prompts.
-    eofkey = "CTRL-Z" if sys.platform == "win32" else "CTRL-D"
     banner = dedent(f"""
         sqlite3 shell, running on SQLite version {sqlite3.sqlite_version}
         Connected to {db_name}
 
         Each command will be run using execute() on the cursor.
-        Type ".help" for more information; type ".quit" or {eofkey} to quit.
+        Type ".help" for more information; type ".quit" or {eofkey()} to quit.
     """).strip()
     sys.ps1 = "sqlite> "
     sys.ps2 = "    ... "
