@@ -341,7 +341,6 @@ Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
 ##-----------------------
 ## static types
 
-Modules/_ctypes/_ctypes.c	-	DictRemover_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCArrayType_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCArray_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCData_Type	-
@@ -352,18 +351,14 @@ Modules/_ctypes/_ctypes.c	-	PyCPointer_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCSimpleType_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCStructType_Type	-
 Modules/_ctypes/_ctypes.c	-	Simple_Type	-
-Modules/_ctypes/_ctypes.c	-	StructParam_Type	-
 Modules/_ctypes/_ctypes.c	-	Struct_Type	-
 Modules/_ctypes/_ctypes.c	-	UnionType_Type	-
 Modules/_ctypes/_ctypes.c	-	Union_Type	-
-Modules/_ctypes/callbacks.c	-	PyCThunk_Type	-
 Modules/_ctypes/callproc.c	-	PyCArg_Type	-
-Modules/_ctypes/cfield.c	-	PyCField_Type	-
 Modules/_ctypes/ctypes.h	-	PyCArg_Type	-
 Modules/_ctypes/ctypes.h	-	PyCArrayType_Type	-
 Modules/_ctypes/ctypes.h	-	PyCArray_Type	-
 Modules/_ctypes/ctypes.h	-	PyCData_Type	-
-Modules/_ctypes/ctypes.h	-	PyCField_Type	-
 Modules/_ctypes/ctypes.h	-	PyCFuncPtrType_Type	-
 Modules/_ctypes/ctypes.h	-	PyCFuncPtr_Type	-
 Modules/_ctypes/ctypes.h	-	PyCPointerType_Type	-
@@ -371,7 +366,6 @@ Modules/_ctypes/ctypes.h	-	PyCPointer_Type	-
 Modules/_ctypes/ctypes.h	-	PyCSimpleType_Type	-
 Modules/_ctypes/ctypes.h	-	PyCStgDict_Type	-
 Modules/_ctypes/ctypes.h	-	PyCStructType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCThunk_Type	-
 Modules/_ctypes/ctypes.h	-	PyExc_ArgError	-
 Modules/_ctypes/ctypes.h	-	_ctypes_conversion_encoding	-
 Modules/_ctypes/ctypes.h	-	_ctypes_conversion_errors	-
@@ -454,6 +448,8 @@ Modules/_decimal/_decimal.c	-	SignalTuple	-
 Modules/_asynciomodule.c	-	fi_freelist	-
 Modules/_asynciomodule.c	-	fi_freelist_len	-
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
+Modules/_ctypes/_ctypes.c	-	global_state	-
+Modules/_ctypes/ctypes.h	-	global_state	-
 Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
