@@ -3114,10 +3114,12 @@ dummy_func(
                     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
                                                                                 (PyFunctionObject *)func, locals,
                                                                                 nargs, callargs, kwargs);
-                    STACK_SHRINK(2); /* get rid of func and NULL */
+                    // Need to manually shrinkg the stack since we exit with DISPATCH_INLINED.
+                    STACK_SHRINK(oparg + 3);
                     if (new_frame == NULL) {
                         goto error;
                     }
+                    frame->return_offset = 0;
                     DISPATCH_INLINED(new_frame);
                 }
                 result = PyObject_Call(func, callargs, kwargs);
