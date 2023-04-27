@@ -264,7 +264,7 @@ asyncio
 calendar
 --------
 
-* Add enums for month and day. For example: ``JANUARY`` and ``MONDAY``.
+* Add enums :data:`~calendar.Month` and :data:`~calendar.Day`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
 csv
