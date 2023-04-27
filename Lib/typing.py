@@ -33,12 +33,16 @@ import types
 import warnings
 from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
 
-
-try:
-    from _typing import _idfunc
-except ImportError:
-    def _idfunc(_, x):
-        return x
+from _typing import (
+    _idfunc,
+    TypeVar,
+    ParamSpec,
+    TypeVarTuple,
+    ParamSpecArgs,
+    ParamSpecKwargs,
+    TypeAliasType,
+    Generic,
+)
 
 # Please keep __all__ alphabetized within each category.
 __all__ = [
@@ -180,11 +184,7 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
 
     We append the repr() of the actual value (truncated to 100 chars).
     """
-    try:
-        invalid_generic_forms = (Generic, Protocol)
-    except NameError:
-        # Run during interpreter startup
-        return arg
+    invalid_generic_forms = (Generic, Protocol)
     if not allow_special_forms:
         invalid_generic_forms += (ClassVar,)
         if is_argument:
@@ -1022,11 +1022,7 @@ def _generic_class_getitem(cls, params):
         params = (params,)
 
     params = tuple(_type_convert(p) for p in params)
-    try:
-        is_generic_or_protocol = cls in (Generic, Protocol)
-    except NameError:
-        # Happens during interpreter startup
-        return _GenericAlias(cls, params, _paramspec_tvars=True)
+    is_generic_or_protocol = cls in (Generic, Protocol)
 
     if is_generic_or_protocol:
         # Generic and Protocol can only be subscripted with unique type variables.
@@ -1062,18 +1058,12 @@ def _generic_class_getitem(cls, params):
 
 
 def _generic_init_subclass(cls, *args, **kwargs):
-    try:
-        generic_cls = Generic
-    except NameError:
-        # Happens during interpreter startup. We are creating
-        # the _Dummy class.
-        generic_cls = cls.__mro__[1]
-    super(generic_cls, cls).__init_subclass__(*args, **kwargs)
+    super(Generic, cls).__init_subclass__(*args, **kwargs)
     tvars = []
     if '__orig_bases__' in cls.__dict__:
-        error = generic_cls in cls.__orig_bases__
+        error = Generic in cls.__orig_bases__
     else:
-        error = (generic_cls in cls.__bases__ and
+        error = (Generic in cls.__bases__ and
                     cls.__name__ != 'Protocol' and
                     type(cls) != _TypedDictMeta)
     if error:
@@ -1088,7 +1078,7 @@ def _generic_init_subclass(cls, *args, **kwargs):
         gvars = None
         for base in cls.__orig_bases__:
             if (isinstance(base, _GenericAlias) and
-                    base.__origin__ is generic_cls):
+                    base.__origin__ is Generic):
                 if gvars is not None:
                     raise TypeError(
                         "Cannot inherit from Generic[...] multiple types.")
@@ -1394,12 +1384,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 
         if self._name:  # generic version of an ABC or built-in class
             return super().__mro_entries__(bases)
-        try:
-            is_Generic = self.__origin__ is Generic
-        except NameError:
-            # Happens during interpreter startup
-            return (self.__origin__,)
-        if is_Generic:
+        if self.__origin__ is Generic:
             if Protocol in bases:
                 return ()
             i = bases.index(self)
@@ -1751,16 +1736,6 @@ def _lazy_load_getattr_static():
 
 _cleanups.append(_lazy_load_getattr_static.cache_clear)
 
-class _Dummy[T, *Ts, **P]:
-    pass
-
-TypeVar = type(_Dummy.__type_params__[0])
-TypeVarTuple = type(_Dummy.__type_params__[1])
-ParamSpec = type(_Dummy.__type_params__[2])
-ParamSpecArgs = type(ParamSpec("P").args)
-ParamSpecKwargs = type(ParamSpec("P").kwargs)
-Generic = _Dummy.__mro__[1]
-
 def _pickle_psargs(psargs):
     return ParamSpecArgs, (psargs.__origin__,)
 
@@ -1771,10 +1746,7 @@ def _pickle_pskwargs(pskwargs):
 
 copyreg.pickle(ParamSpecKwargs, _pickle_pskwargs)
 
-type _Alias = int
-TypeAliasType = type(_Alias)
-
-del _Dummy, _pickle_psargs, _pickle_pskwargs, _Alias
+del _pickle_psargs, _pickle_pskwargs
 
 
 class _ProtocolMeta(ABCMeta):

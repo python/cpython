@@ -48,10 +48,6 @@ from test import mod_generics_cache
 from test import _typed_dict_helper
 
 
-py_typing = import_helper.import_fresh_module('typing', blocked=['_typing'])
-c_typing = import_helper.import_fresh_module('typing', fresh=['_typing'])
-
-
 CANNOT_SUBCLASS_TYPE = 'Cannot subclass special typing classes'
 NOT_A_BASE_TYPE = "type 'typing.%s' is not an acceptable base type"
 CANNOT_SUBCLASS_INSTANCE = 'Cannot subclass an instance of %s'
@@ -6434,34 +6430,27 @@ class TypeTests(BaseTestCase):
 class TestModules(TestCase):
     func_names = ['_idfunc']
 
-    def test_py_functions(self):
-        for fname in self.func_names:
-            self.assertEqual(getattr(py_typing, fname).__module__, 'typing')
-
-    @skipUnless(c_typing, 'requires _typing')
     def test_c_functions(self):
         for fname in self.func_names:
-            self.assertEqual(getattr(c_typing, fname).__module__, '_typing')
+            self.assertEqual(getattr(typing, fname).__module__, '_typing')
 
 
-class NewTypeTests:
+class NewTypeTests(BaseTestCase):
     def cleanup(self):
-        for f in self.module._cleanups:
+        for f in typing._cleanups:
             f()
 
     @classmethod
     def setUpClass(cls):
-        sys.modules['typing'] = cls.module
         global UserId
-        UserId = cls.module.NewType('UserId', int)
-        cls.UserName = cls.module.NewType(cls.__qualname__ + '.UserName', str)
+        UserId = typing.NewType('UserId', int)
+        cls.UserName = typing.NewType(cls.__qualname__ + '.UserName', str)
 
     @classmethod
     def tearDownClass(cls):
         global UserId
         del UserId
         del cls.UserName
-        sys.modules['typing'] = typing
 
     def tearDown(self):
         self.cleanup()
@@ -6481,11 +6470,11 @@ class NewTypeTests:
     def test_or(self):
         for cls in (int, self.UserName):
             with self.subTest(cls=cls):
-                self.assertEqual(UserId | cls, self.module.Union[UserId, cls])
-                self.assertEqual(cls | UserId, self.module.Union[cls, UserId])
+                self.assertEqual(UserId | cls, typing.Union[UserId, cls])
+                self.assertEqual(cls | UserId, typing.Union[cls, UserId])
 
-                self.assertEqual(self.module.get_args(UserId | cls), (UserId, cls))
-                self.assertEqual(self.module.get_args(cls | UserId), (cls, UserId))
+                self.assertEqual(typing.get_args(UserId | cls), (UserId, cls))
+                self.assertEqual(typing.get_args(cls | UserId), (cls, UserId))
 
     def test_special_attrs(self):
         self.assertEqual(UserId.__name__, 'UserId')
@@ -6506,7 +6495,7 @@ class NewTypeTests:
                          f'{__name__}.{self.__class__.__qualname__}.UserName')
 
     def test_pickle(self):
-        UserAge = self.module.NewType('UserAge', float)
+        UserAge = typing.NewType('UserAge', float)
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
                 pickled = pickle.dumps(UserId, proto)
@@ -6536,15 +6525,6 @@ class NewTypeTests:
         ):
             class ProUserId(UserId):
                 ...
-
-
-class NewTypePythonTests(NewTypeTests, BaseTestCase):
-    module = py_typing
-
-
-@skipUnless(c_typing, 'requires _typing')
-class NewTypeCTests(NewTypeTests, BaseTestCase):
-    module = c_typing
 
 
 class NamedTupleTests(BaseTestCase):
