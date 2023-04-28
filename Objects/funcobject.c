@@ -682,16 +682,23 @@ PyObject *
 _Py_set_function_type_params(PyThreadState *unused, PyObject *func,
                              PyObject *type_params)
 {
+    assert(PyFunction_Check(func));
+    assert(PyTuple_Check(type_params));
     PyFunctionObject *f = (PyFunctionObject *)func;
-    if (!PyTuple_Check(type_params)) {
-        PyErr_SetString(PyExc_TypeError,
-            "__type_params__ must be set to a tuple object");
-        return NULL;
-    }
     Py_XSETREF(f->func_typeparams, Py_NewRef(type_params));
     return Py_NewRef(func);
 }
 
+PyObject *
+_Py_set_function_class_dict(PyThreadState* unused, PyObject *func,
+                            PyObject *class_dict)
+{
+    assert(PyFunction_Check(func));
+    assert(PyDict_Check(class_dict));
+    PyFunctionObject *f = (PyFunctionObject *)func;
+    Py_XSETREF(f->func_class_dict, Py_NewRef(class_dict));
+    return Py_NewRef(func);
+}
 
 static PyGetSetDef func_getsetlist[] = {
     {"__code__", (getter)func_get_code, (setter)func_set_code},

@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_frame.h"
+#include "pycore_function.h"
 #include "pycore_runtime.h"
 #include "pycore_global_objects.h"
 #include "pycore_intrinsics.h"
@@ -251,21 +252,11 @@ make_typevar_with_constraints(PyThreadState* unused, PyObject *name,
                             evaluate_constraints);
 }
 
-static PyObject *
-set_class_dict(PyThreadState* unused, PyObject *fn, PyObject *class_dict)
-{
-    assert(PyFunction_Check(fn));
-    assert(PyDict_Check(class_dict));
-    PyFunctionObject *func = (PyFunctionObject *)fn;
-    Py_XSETREF(func->func_class_dict, Py_NewRef(class_dict));
-    return Py_NewRef(fn);
-}
-
 const instrinsic_func2
 _PyIntrinsics_BinaryFunctions[] = {
     [INTRINSIC_PREP_RERAISE_STAR] = prep_reraise_star,
     [INTRINSIC_TYPEVAR_WITH_BOUND] = make_typevar_with_bound,
     [INTRINSIC_TYPEVAR_WITH_CONSTRAINTS] = make_typevar_with_constraints,
     [INTRINSIC_SET_FUNCTION_TYPE_PARAMS] = _Py_set_function_type_params,
-    [INTRINSIC_SET_CLASS_DICT] = set_class_dict,
+    [INTRINSIC_SET_CLASS_DICT] = _Py_set_function_class_dict,
 };

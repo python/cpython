@@ -19,6 +19,8 @@ extern PyFunctionObject* _PyFunction_FromConstructor(PyFrameConstructor *constr)
 extern uint32_t _PyFunction_GetVersionForCurrentState(PyFunctionObject *func);
 extern PyObject *_Py_set_function_type_params(
     PyThreadState* unused, PyObject *func, PyObject *type_params);
+extern PyObject *_Py_set_function_class_dict(
+    PyThreadState* unused, PyObject *func, PyObject *class_dict);
 
 #ifdef __cplusplus
 }
