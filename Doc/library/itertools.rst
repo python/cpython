@@ -789,6 +789,7 @@ which incur interpreter overhead.
 .. testcode::
 
    import collections
+   import functools
    import math
    import operator
    import random
@@ -1092,10 +1093,8 @@ The following recipes have a more mathematical flavor:
           (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
        """
        # polynomial_from_roots([5, -4, 3]) --> [1, -4, -17, 60]
-       expansion = [1]
-       for r in roots:
-           expansion = convolve(expansion, (1, -r))
-       return list(expansion)
+       factors = zip(repeat(1), map(operator.neg, roots))
+       return list(functools.reduce(convolve, factors, [1]))
 
    def polynomial_eval(coefficients, x):
        """Evaluate a polynomial at a specific value.
