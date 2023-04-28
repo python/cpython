@@ -2,7 +2,6 @@
 
 #include "Python.h"
 
-#include "pycore_bytesobject.h"   // _PyBytes_InitTypes()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_exceptions.h"    // _PyExc_InitTypes()
@@ -26,7 +25,6 @@
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
-#include "pycore_tuple.h"         // _PyTuple_InitTypes()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "opcode.h"
@@ -684,11 +682,6 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyBytes_InitTypes(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     status = _PyLong_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -700,11 +693,6 @@ pycore_init_types(PyInterpreterState *interp)
     }
 
     status = _PyFloat_InitTypes(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyTuple_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
