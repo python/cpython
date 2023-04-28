@@ -77,6 +77,8 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    .. attribute:: DECEMBER
 
+   .. versionadded:: 3.12
+
 
 .. class:: Calendar(firstweekday=0)
 
