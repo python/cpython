@@ -312,6 +312,13 @@ class PurePath(object):
                 f"not {type(path).__name__!r}")
         self._raw_path = path
 
+    def __newpath__(self, *pathsegments):
+        """Construct a new path object from any number of path-like objects.
+        Subclasses may override this method to customize how new path objects
+        are created from methods like `iterdir()`.
+        """
+        return type(self)(*pathsegments)
+
     @classmethod
     def _parse_path(cls, path):
         if not path:
@@ -335,7 +342,7 @@ class PurePath(object):
 
     def _from_parsed_parts(self, drv, root, tail):
         path_str = self._format_parsed_parts(drv, root, tail)
-        path = self.makepath(path_str)
+        path = self.__newpath__(path_str)
         path._str = path_str or '.'
         path._drv = drv
         path._root = root
@@ -574,7 +581,7 @@ class PurePath(object):
                    "scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath.relative_to(*args)", msg,
                                  remove=(3, 14))
-        other = self.makepath(other, *_deprecated)
+        other = self.__newpath__(other, *_deprecated)
         for step, path in enumerate([other] + list(other.parents)):
             if self.is_relative_to(path):
                 break
@@ -583,7 +590,7 @@ class PurePath(object):
         if step and not walk_up:
             raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
         parts = ['..'] * step + self._tail[len(path._tail):]
-        return self.makepath(*parts)
+        return self.__newpath__(*parts)
 
     def is_relative_to(self, other, /, *_deprecated):
         """Return True if the path is relative to another path or False.
@@ -594,7 +601,7 @@ class PurePath(object):
                    "scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath.is_relative_to(*args)",
                                  msg, remove=(3, 14))
-        other = self.makepath(other, *_deprecated)
+        other = self.__newpath__(other, *_deprecated)
         return other == self or other in self.parents
 
     @property
@@ -606,20 +613,13 @@ class PurePath(object):
         else:
             return tuple(self._tail)
 
-    def makepath(self, *pathsegments):
-        """Construct a new path object from any number of path-like objects.
-        Subclasses may override this method to customize how new path objects
-        are created from methods like `iterdir()`.
-        """
-        return type(self)(*pathsegments)
-
     def joinpath(self, *pathsegments):
         """Combine this path with one or several arguments, and return a
         new path representing either a subpath (if all arguments are relative
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self.makepath(self._raw_path, *pathsegments)
+        return self.__newpath__(self._raw_path, *pathsegments)
 
     def __truediv__(self, key):
         try:
@@ -629,7 +629,7 @@ class PurePath(object):
 
     def __rtruediv__(self, key):
         try:
-            return self.makepath(key, self._raw_path)
+            return self.__newpath__(key, self._raw_path)
         except TypeError:
             return NotImplemented
 
@@ -678,7 +678,7 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
-        pat = self.makepath(path_pattern)
+        pat = self.__newpath__(path_pattern)
         if not pat.parts:
             raise ValueError("empty pattern")
         pat_parts = pat._parts_normcase
@@ -753,7 +753,7 @@ class Path(PurePath):
             path_str = f'{path_str}{name}'
         else:
             path_str = name
-        path = self.makepath(path_str)
+        path = self.__newpath__(path_str)
         path._str = path_str
         path._drv = self.drive
         path._root = self.root
@@ -803,7 +803,7 @@ class Path(PurePath):
         try:
             other_st = other_path.stat()
         except AttributeError:
-            other_st = self.makepath(other_path).stat()
+            other_st = self.__newpath__(other_path).stat()
         return self._flavour.samestat(st, other_st)
 
     def iterdir(self):
@@ -865,7 +865,7 @@ class Path(PurePath):
             cwd = self._flavour.abspath(self.drive)
         else:
             cwd = os.getcwd()
-        return self.makepath(cwd, self._raw_path)
+        return self.__newpath__(cwd, self._raw_path)
 
     def resolve(self, strict=False):
         """
@@ -883,7 +883,7 @@ class Path(PurePath):
         except OSError as e:
             check_eloop(e)
             raise
-        p = self.makepath(s)
+        p = self.__newpath__(s)
 
         # In non-strict mode, realpath() doesn't raise on symlink loops.
         # Ensure we get an exception by calling stat()
@@ -973,7 +973,7 @@ class Path(PurePath):
         """
         if not hasattr(os, "readlink"):
             raise NotImplementedError("os.readlink() not available on this system")
-        return self.makepath(os.readlink(self))
+        return self.__newpath__(os.readlink(self))
 
     def touch(self, mode=0o666, exist_ok=True):
         """
@@ -1062,7 +1062,7 @@ class Path(PurePath):
         Returns the new Path instance pointing to the target path.
         """
         os.rename(self, target)
-        return self.makepath(target)
+        return self.__newpath__(target)
 
     def replace(self, target):
         """
@@ -1075,7 +1075,7 @@ class Path(PurePath):
         Returns the new Path instance pointing to the target path.
         """
         os.replace(self, target)
-        return self.makepath(target)
+        return self.__newpath__(target)
 
     def symlink_to(self, target, target_is_directory=False):
         """
