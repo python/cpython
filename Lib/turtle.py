@@ -2711,13 +2711,16 @@ class RawTurtle(TPen, TNavigator):
             raise TurtleGraphicsError("bad color sequence: %s" % str(args))
         return "#%02x%02x%02x" % (r, g, b)
     
-    def teleport(self, x=None, y=None) -> None:
+    def teleport(self, x=None, y=None, fill_gap: bool = False) -> None:
         """
         Header
         """
         pendown = self.isdown()
+        was_filling = self.filling()
         if pendown:
             self.pen(pendown=False)
+        if was_filling and not fill_gap:
+            self.end_fill()
         new_x, new_y = self._position
         if x is not None and y is not None:
             new_x, new_y = x, y
@@ -2726,7 +2729,9 @@ class RawTurtle(TPen, TNavigator):
         elif y is not None:
             new_x, new_y = self._position[0], y
         self._position = Vec2D(new_x, new_y)
-        self.pen(pendown=pendown)   
+        self.pen(pendown=pendown)
+        if was_filling and not fill_gap:
+            self.begin_fill()   
 
     def clone(self):
         """Create and return a clone of the turtle.
