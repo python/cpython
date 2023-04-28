@@ -42,7 +42,7 @@ def file_line_helper(line):
         if match:
             filename, lineno = match.group(1, 2)
             try:
-                f = open(filename, "r")
+                f = open(filename)
                 f.close()
                 break
             except OSError:

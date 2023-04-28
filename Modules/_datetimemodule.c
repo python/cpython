@@ -5178,6 +5178,13 @@ datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz)
 static PyObject *
 datetime_utcnow(PyObject *cls, PyObject *dummy)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "datetime.utcnow() is deprecated and scheduled for removal in a "
+        "future version. Use timezone-aware objects to represent datetimes "
+        "in UTC: datetime.now(datetime.UTC).", 2))
+    {
+        return NULL;
+    }
     return datetime_best_possible(cls, _PyTime_gmtime, Py_None);
 }
 
@@ -5215,6 +5222,13 @@ datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
 static PyObject *
 datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "datetime.utcfromtimestamp() is deprecated and scheduled for removal "
+        "in a future version. Use timezone-aware objects to represent "
+        "datetimes in UTC: datetime.now(datetime.UTC).", 2))
+    {
+        return NULL;
+    }
     PyObject *timestamp;
     PyObject *result = NULL;
 
@@ -6221,21 +6235,36 @@ local_to_seconds(int year, int month, int day,
 static PyObject *
 local_timezone_from_local(PyDateTime_DateTime *local_dt)
 {
-    long long seconds;
+    long long seconds, seconds2;
     time_t timestamp;
+    int fold = DATE_GET_FOLD(local_dt);
     seconds = local_to_seconds(GET_YEAR(local_dt),
                                GET_MONTH(local_dt),
                                GET_DAY(local_dt),
                                DATE_GET_HOUR(local_dt),
                                DATE_GET_MINUTE(local_dt),
                                DATE_GET_SECOND(local_dt),
-                               DATE_GET_FOLD(local_dt));
+                               fold);
     if (seconds == -1)
         return NULL;
 
-    datetime_state *st = find_module_state_by_def(Py_TYPE(local_dt));
+    seconds2 = local_to_seconds(GET_YEAR(local_dt),
+                                GET_MONTH(local_dt),
+                                GET_DAY(local_dt),
+                                DATE_GET_HOUR(local_dt),
+                                DATE_GET_MINUTE(local_dt),
+                                DATE_GET_SECOND(local_dt),
+                                !fold);
+    if (seconds2 == -1)
+        return NULL;
+    /* Detect gap */
+    if (seconds2 != seconds && (seconds2 > seconds) == fold)
+        seconds = seconds2;
+
     /* XXX: add bounds check */
     timestamp = seconds - epoch;
+
+    datetime_state *st = find_module_state_by_def(Py_TYPE(local_dt));
     return local_timezone_from_timestamp(st, timestamp);
 }
 

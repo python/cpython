@@ -545,7 +545,9 @@ def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
         "Use setlocale(), getencoding() and getlocale() instead",
         DeprecationWarning, stacklevel=2
     )
+    return _getdefaultlocale(envvars)
 
+def _getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
     try:
         # check if it's supported by the _locale module
         import _locale
@@ -639,7 +641,7 @@ except ImportError:
             # On Android langinfo.h and CODESET are missing, and UTF-8 is
             # always used in mbstowcs() and wcstombs().
             return 'utf-8'
-        encoding = getdefaultlocale()[1]
+        encoding = _getdefaultlocale()[1]
         if encoding is None:
             # LANG not set, default to UTF-8
             encoding = 'utf-8'
@@ -960,7 +962,7 @@ locale_alias = {
     'c.ascii':                              'C',
     'c.en':                                 'C',
     'c.iso88591':                           'en_US.ISO8859-1',
-    'c.utf8':                               'en_US.UTF-8',
+    'c.utf8':                               'C.UTF-8',
     'c_c':                                  'C',
     'c_c.c':                                'C',
     'ca':                                   'ca_ES.ISO8859-1',

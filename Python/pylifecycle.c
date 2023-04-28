@@ -2,7 +2,6 @@
 
 #include "Python.h"
 
-#include "pycore_bytesobject.h"   // _PyBytes_InitTypes()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_exceptions.h"    // _PyExc_InitTypes()
@@ -26,7 +25,6 @@
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
-#include "pycore_tuple.h"         // _PyTuple_InitTypes()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "opcode.h"
@@ -547,10 +545,20 @@ pycore_init_runtime(_PyRuntimeState *runtime,
 }
 
 
-static void
+static PyStatus
 init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *config)
 {
     assert(interp->feature_flags == 0);
+
+    if (config->use_main_obmalloc) {
+        interp->feature_flags |= Py_RTFLAGS_USE_MAIN_OBMALLOC;
+    }
+    else if (!config->check_multi_interp_extensions) {
+        /* The reason: PyModuleDef.m_base.m_copy leaks objects between
+           interpreters. */
+        return _PyStatus_ERR("per-interpreter obmalloc does not support "
+                             "single-phase init extension modules");
+    }
 
     if (config->allow_fork) {
         interp->feature_flags |= Py_RTFLAGS_FORK;
@@ -570,6 +578,8 @@ init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *con
     if (config->check_multi_interp_extensions) {
         interp->feature_flags |= Py_RTFLAGS_MULTI_INTERP_EXTENSIONS;
     }
+
+    return _PyStatus_OK();
 }
 
 
@@ -622,7 +632,10 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
 
     const _PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
-    init_interp_settings(interp, &config);
+    status = init_interp_settings(interp, &config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     PyThreadState *tstate = _PyThreadState_New(interp);
     if (tstate == NULL) {
@@ -635,8 +648,6 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-
-    _PyThreadState_InitDetached(&runtime->cached_objects.main_tstate, interp);
 
     *tstate_p = tstate;
     return _PyStatus_OK();
@@ -671,11 +682,6 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyBytes_InitTypes(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     status = _PyLong_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -687,11 +693,6 @@ pycore_init_types(PyInterpreterState *interp)
     }
 
     status = _PyFloat_InitTypes(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyTuple_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -809,11 +810,6 @@ pycore_interp_init(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     PyStatus status;
     PyObject *sysmod = NULL;
-
-    // This is a temporary fix until we have immortal objects.
-    // (See _PyType_InitCache() in typeobject.c.)
-    extern void _PyType_FixCacheRefcounts(void);
-    _PyType_FixCacheRefcounts();
 
     // Create singletons before the first PyType_Ready() call, since
     // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)
@@ -1675,6 +1671,8 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyFloat_FiniType(interp);
     _PyLong_FiniTypes(interp);
     _PyThread_FiniType(interp);
+    // XXX fini collections module static types (_PyStaticType_Dealloc())
+    // XXX fini IO module static types (_PyStaticType_Dealloc())
     _PyErr_FiniTypes(interp);
     _PyTypes_FiniTypes(interp);
 
@@ -1934,8 +1932,6 @@ Py_FinalizeEx(void)
     // XXX Do this sooner during finalization.
     // XXX Ensure finalizer errors are handled properly.
 
-    _PyThreadState_ClearDetached(&runtime->cached_objects.main_tstate);
-
     finalize_interp_clear(tstate);
     finalize_interp_delete(tstate->interp);
 
@@ -1945,6 +1941,7 @@ Py_FinalizeEx(void)
     }
     _Py_FinalizeRefTotal(runtime);
 #endif
+    _Py_FinalizeAllocatedBlocks(runtime);
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -2045,7 +2042,10 @@ new_interpreter(PyThreadState **tstate_p, const _PyInterpreterConfig *config)
         goto error;
     }
 
-    init_interp_settings(interp, config);
+    status = init_interp_settings(interp, config);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto error;
+    }
 
     status = init_interp_create_gil(tstate);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2941,23 +2941,23 @@ wait_for_thread_shutdown(PyThreadState *tstate)
     Py_DECREF(threading);
 }
 
-#define NEXITFUNCS 32
 int Py_AtExit(void (*func)(void))
 {
-    if (_PyRuntime.nexitfuncs >= NEXITFUNCS)
+    if (_PyRuntime.atexit.ncallbacks >= NEXITFUNCS)
         return -1;
-    _PyRuntime.exitfuncs[_PyRuntime.nexitfuncs++] = func;
+    _PyRuntime.atexit.callbacks[_PyRuntime.atexit.ncallbacks++] = func;
     return 0;
 }
 
 static void
 call_ll_exitfuncs(_PyRuntimeState *runtime)
 {
-    while (runtime->nexitfuncs > 0) {
+    struct _atexit_runtime_state *state = &runtime->atexit;
+    while (state->ncallbacks > 0) {
         /* pop last function from the list */
-        runtime->nexitfuncs--;
-        void (*exitfunc)(void) = runtime->exitfuncs[runtime->nexitfuncs];
-        runtime->exitfuncs[runtime->nexitfuncs] = NULL;
+        state->ncallbacks--;
+        atexit_callbackfunc exitfunc = state->callbacks[state->ncallbacks];
+        state->callbacks[state->ncallbacks] = NULL;
 
         exitfunc();
     }
