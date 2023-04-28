@@ -3,7 +3,7 @@
 static PyObject *
 test_immortal_bool(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject* objects[] = {Py_True, Py_False};
+    PyObject *objects[] = {Py_True, Py_False};
     Py_ssize_t n = Py_ARRAY_LENGTH(objects);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject* obj = objects[i];
