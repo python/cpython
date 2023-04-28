@@ -7,7 +7,8 @@
 extern "C" {
 #endif
 
-static inline int _PyAwaitable_SetAwaiter(PyObject *receiver, PyObject *awaiter) {
+static inline int
+_PyAwaitable_SetAwaiter(PyObject *receiver, PyObject *awaiter) {
     PyTypeObject *ty = Py_TYPE(receiver);
     PyAsyncMethods *am = (PyAsyncMethods *) ty->tp_as_async;
     if ((am != NULL) && (am->am_set_awaiter != NULL)) {
