@@ -10,7 +10,7 @@ class TestCAPI(unittest.TestCase):
 
     def test_immortal_none(self):
         _testcapi.test_immortal_none()
-    
+
     def test_immortal_ellipsis(self):
         _testcapi.test_immortal_ellipsis()
 
