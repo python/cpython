@@ -22,6 +22,9 @@ def tearDownModule():
 
 
 class EagerTaskFactoryLoopTests:
+
+    Task = None
+
     def run_coro(self, coro):
         """
         Helper method to run the `coro` coroutine in the test event loop.
@@ -40,7 +43,7 @@ class EagerTaskFactoryLoopTests:
     def setUp(self):
         super().setUp()
         self.loop = asyncio.new_event_loop()
-        self.eager_task_factory = asyncio.create_eager_task_factory(self.__class__.Task)
+        self.eager_task_factory = asyncio.create_eager_task_factory(self.Task)
         self.loop.set_task_factory(self.eager_task_factory)
         self.set_event_loop(self.loop)
 
@@ -52,7 +55,7 @@ class EagerTaskFactoryLoopTests:
 
         async def run():
             t = self.loop.create_task(noop())
-            self.assertIsInstance(t, self.__class__.Task)
+            self.assertIsInstance(t, self.Task)
             await t
 
         self.run_coro(run())
@@ -136,7 +139,7 @@ class EagerTaskFactoryLoopTests:
 
         async def coro():
             nonlocal captured_current_task
-            captured_current_task = asyncio.tasks.current_task()
+            captured_current_task = asyncio.current_task()
 
         async def run():
             t = self.loop.create_task(coro())
@@ -149,12 +152,12 @@ class EagerTaskFactoryLoopTests:
 
         async def coro():
             nonlocal captured_all_tasks
-            captured_all_tasks = asyncio.tasks.all_tasks()
+            captured_all_tasks = asyncio.all_tasks()
 
         async def run():
             t = self.loop.create_task(coro())
             self.assertIn(t, captured_all_tasks)
-            self.assertNotIn(t, asyncio.tasks.all_tasks())
+            self.assertNotIn(t, asyncio.all_tasks())
 
         self.run_coro(run())
 
@@ -163,7 +166,7 @@ class EagerTaskFactoryLoopTests:
 
         async def coro(fut1, fut2):
             nonlocal captured_eager_all_tasks
-            captured_eager_all_tasks = asyncio.tasks.all_tasks()
+            captured_eager_all_tasks = asyncio.all_tasks()
             await fut1
             fut2.set_result(None)
 
@@ -172,10 +175,10 @@ class EagerTaskFactoryLoopTests:
             fut2 = self.loop.create_future()
             t = self.loop.create_task(coro(fut1, fut2))
             self.assertIn(t, captured_eager_all_tasks)
-            self.assertIn(t, asyncio.tasks.all_tasks())
+            self.assertIn(t, asyncio.all_tasks())
             fut1.set_result(None)
             await fut2
-            self.assertNotIn(t, asyncio.tasks.all_tasks())
+            self.assertNotIn(t, asyncio.all_tasks())
 
         self.run_coro(run())
 
