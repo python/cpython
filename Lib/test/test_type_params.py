@@ -261,7 +261,26 @@ class TypeParamsAccessTest(unittest.TestCase):
         self.assertEqual(T.__bound__, Sequence[S])
 
 
+def global_generic_func[T]():
+    pass
+
+class GlobalGenericClass[T]:
+    pass
+
+
 class TypeParamsLazyEvaluationTest(unittest.TestCase):
+    def test_qualname(self):
+        class Foo[T]:
+            pass
+
+        def func[T]():
+            pass
+
+        self.assertEqual(Foo.__qualname__, "TypeParamsLazyEvaluationTest.test_qualname.<locals>.Foo")
+        self.assertEqual(func.__qualname__, "TypeParamsLazyEvaluationTest.test_qualname.<locals>.func")
+        self.assertEqual(global_generic_func.__qualname__, "global_generic_func")
+        self.assertEqual(GlobalGenericClass.__qualname__, "GlobalGenericClass")
+
     def test_recursive_class(self):
         class Foo[T: Foo, U: (Foo, Foo)]:
             pass
