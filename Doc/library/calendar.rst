@@ -46,6 +46,8 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    .. attribute:: SUNDAY
 
+   .. versionadded:: 3.12
+
 
 .. class:: Month
 
