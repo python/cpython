@@ -433,12 +433,10 @@ error:
 
 static PyMemberDef *
 initialize_members(PyStructSequence_Desc *desc,
-                   Py_ssize_t *pn_members, Py_ssize_t *pn_unnamed_members)
+                   Py_ssize_t n_members, Py_ssize_t n_unnamed_members)
 {
     PyMemberDef *members;
-    Py_ssize_t n_members, n_unnamed_members;
 
-    n_members = count_members(desc, &n_unnamed_members);
     members = PyMem_NEW(PyMemberDef, n_members - n_unnamed_members + 1);
     if (members == NULL) {
         PyErr_NoMemory();
@@ -463,8 +461,6 @@ initialize_members(PyStructSequence_Desc *desc,
     }
     members[k].name = NULL;
 
-    *pn_members = n_members;
-    *pn_unnamed_members = n_unnamed_members;
     return members;
 }
 
@@ -520,7 +516,8 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
     PyMemberDef *members;
     Py_ssize_t n_members, n_unnamed_members;
 
-    members = initialize_members(desc, &n_members, &n_unnamed_members);
+    n_members = count_members(desc, &n_unnamed_members);
+    members = initialize_members(desc, n_members, n_unnamed_members);
     if (members == NULL) {
         return -1;
     }
@@ -566,7 +563,8 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
         return -1;
     }
 
-    members = initialize_members(desc, &n_members, &n_unnamed_members);
+    n_members = count_members(desc, &n_unnamed_members);
+    members = initialize_members(desc, n_members, n_unnamed_members);
     if (members == NULL) {
         return -1;
     }
@@ -627,7 +625,8 @@ _PyStructSequence_NewType(PyStructSequence_Desc *desc, unsigned long tp_flags)
     Py_ssize_t n_members, n_unnamed_members;
 
     /* Initialize MemberDefs */
-    members = initialize_members(desc, &n_members, &n_unnamed_members);
+    n_members = count_members(desc, &n_unnamed_members);
+    members = initialize_members(desc, n_members, n_unnamed_members);
     if (members == NULL) {
         return NULL;
     }
