@@ -702,6 +702,19 @@ compiler_set_qualname(struct compiler *c)
         capsule = PyList_GET_ITEM(c->c_stack, stack_size - 1);
         parent = (struct compiler_unit *)PyCapsule_GetPointer(capsule, CAPSULE_NAME);
         assert(parent);
+        if (parent->u_scope_type == COMPILER_SCOPE_TYPEPARAMS) {
+            /* The parent is a type parameter scope, so we need to
+               look at the grandparent. */
+            if (stack_size == 2) {
+                // If we're immediately within the module, we can skip
+                // the rest and just set the qualname to be the same as name.
+                u->u_metadata.u_qualname = Py_NewRef(u->u_metadata.u_name);
+                return SUCCESS;
+            }
+            capsule = PyList_GET_ITEM(c->c_stack, stack_size - 2);
+            parent = (struct compiler_unit *)PyCapsule_GetPointer(capsule, CAPSULE_NAME);
+            assert(parent);
+        }
 
         if (u->u_scope_type == COMPILER_SCOPE_FUNCTION
             || u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION
