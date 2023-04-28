@@ -7075,7 +7075,7 @@ type_ready_add_subclasses(PyTypeObject *type)
 // Set tp_new and the "__new__" key in the type dictionary.
 // Use the Py_TPFLAGS_DISALLOW_INSTANTIATION flag.
 static int
-type_ready_set_new(PyTypeObject *type)
+type_ready_set_new(PyTypeObject *type, int rerunbuiltin)
 {
     PyTypeObject *base = type->tp_base;
     /* The condition below could use some explanation.
@@ -7097,10 +7097,12 @@ type_ready_set_new(PyTypeObject *type)
 
     if (!(type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION)) {
         if (type->tp_new != NULL) {
-            // If "__new__" key does not exists in the type dictionary,
-            // set it to tp_new_wrapper().
-            if (add_tp_new_wrapper(type) < 0) {
-                return -1;
+            if (!rerunbuiltin || base == NULL || type->tp_new != base->tp_new) {
+                // If "__new__" key does not exists in the type dictionary,
+                // set it to tp_new_wrapper().
+                if (add_tp_new_wrapper(type) < 0) {
+                    return -1;
+                }
             }
         }
         else {
@@ -7174,7 +7176,7 @@ type_ready_post_checks(PyTypeObject *type)
 
 
 static int
-type_ready(PyTypeObject *type)
+type_ready(PyTypeObject *type, int rerunbuiltin)
 {
     _PyObject_ASSERT((PyObject *)type,
                      (type->tp_flags & Py_TPFLAGS_READYING) == 0);
@@ -7203,17 +7205,19 @@ type_ready(PyTypeObject *type)
     if (type_ready_mro(type) < 0) {
         goto error;
     }
-    if (type_ready_set_new(type) < 0) {
+    if (type_ready_set_new(type, rerunbuiltin) < 0) {
         goto error;
     }
     if (type_ready_fill_dict(type) < 0) {
         goto error;
     }
-    if (type_ready_inherit(type) < 0) {
-        goto error;
-    }
-    if (type_ready_preheader(type) < 0) {
-        goto error;
+    if (!rerunbuiltin) {
+        if (type_ready_inherit(type) < 0) {
+            goto error;
+        }
+        if (type_ready_preheader(type) < 0) {
+            goto error;
+        }
     }
     if (type_ready_set_hash(type) < 0) {
         goto error;
@@ -7221,11 +7225,13 @@ type_ready(PyTypeObject *type)
     if (type_ready_add_subclasses(type) < 0) {
         goto error;
     }
-    if (type_ready_managed_dict(type) < 0) {
-        goto error;
-    }
-    if (type_ready_post_checks(type) < 0) {
-        goto error;
+    if (!rerunbuiltin) {
+        if (type_ready_managed_dict(type) < 0) {
+            goto error;
+        }
+        if (type_ready_post_checks(type) < 0) {
+            goto error;
+        }
     }
 
     /* All done -- set the ready flag */
@@ -7253,7 +7259,7 @@ PyType_Ready(PyTypeObject *type)
         type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
     }
 
-    return type_ready(type);
+    return type_ready(type, 0);
 }
 
 int
@@ -7264,37 +7270,26 @@ _PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
     assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_DICT));
     assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF));
 
-#ifndef NDEBUG
     int ismain = _Py_IsMainInterpreter(interp);
-#endif
-    if (self->tp_flags & Py_TPFLAGS_READY) {
+    if ((self->tp_flags & Py_TPFLAGS_READY) == 0) {
+        assert(ismain);
+
+        self->tp_flags |= _Py_TPFLAGS_STATIC_BUILTIN;
+        self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
+
+        assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
+        self->tp_version_tag = NEXT_GLOBAL_VERSION_TAG++;
+        self->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
+    }
+    else {
         assert(!ismain);
         assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
         assert(self->tp_flags & Py_TPFLAGS_VALID_VERSION_TAG);
-
-        static_builtin_state_init(interp, self);
-
-        /* We must explicitly set these for subinterpreters.
-           tp_subclasses is set lazily. */
-        type_ready_set_dict(self);
-        type_ready_set_bases(self);
-        type_ready_mro(self);
-        assert(_PyType_CheckConsistency(self));
-        return 0;
     }
-
-    assert(ismain);
-
-    self->tp_flags |= _Py_TPFLAGS_STATIC_BUILTIN;
-    self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
-
-    assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
-    self->tp_version_tag = NEXT_GLOBAL_VERSION_TAG++;
-    self->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
 
     static_builtin_state_init(interp, self);
 
-    int res = type_ready(self);
+    int res = type_ready(self, !ismain);
     if (res < 0) {
         static_builtin_state_clear(interp, self);
     }
