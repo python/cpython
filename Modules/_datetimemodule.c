@@ -5144,6 +5144,13 @@ datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz)
 static PyObject *
 datetime_utcnow(PyObject *cls, PyObject *dummy)
 {
+    PyErr_WarnEx(
+        PyExc_DeprecationWarning,
+        "datetime.utcnow() is deprecated and scheduled for removal in a future "
+        "version. Use timezone-aware objects to represent datetimes in UTC: "
+        "datetime.now(datetime.UTC).",
+        2
+    );
     return datetime_best_possible(cls, _PyTime_gmtime, Py_None);
 }
 
@@ -5180,6 +5187,13 @@ datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
 static PyObject *
 datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 {
+    PyErr_WarnEx(
+        PyExc_DeprecationWarning,
+        "datetime.utcfromtimestamp() is deprecated and scheduled for removal "
+        "in a future version. Use timezone-aware objects to represent "
+        "datetimes in UTC: datetime.now(datetime.UTC).",
+        2
+    );
     PyObject *timestamp;
     PyObject *result = NULL;
 

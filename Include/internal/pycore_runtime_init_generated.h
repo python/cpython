@@ -884,6 +884,7 @@ extern "C" {
     INIT_ID(end_lineno), \
     INIT_ID(end_offset), \
     INIT_ID(endpos), \
+    INIT_ID(entrypoint), \
     INIT_ID(env), \
     INIT_ID(errors), \
     INIT_ID(event), \
