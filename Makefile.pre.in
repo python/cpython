@@ -1956,7 +1956,6 @@ TESTSUBDIRS=	ctypes/test \
 		test/support \
 		test/test_asyncio \
 		test/test_capi \
-		test/test_ctypes \
 		test/test_email \
 		test/test_email/data \
 		test/test_import \
@@ -2040,8 +2039,9 @@ TESTSUBDIRS=	ctypes/test \
 		test/xmltestdata \
 		test/xmltestdata/c14n-20 \
 		test/ziptestdata \
-		tkinter/test_tkinter \
-		tkinter/test_ttk \
+		tkinter/test \
+		tkinter/test/test_tkinter \
+		tkinter/test/test_ttk \
 		unittest/test \
 		unittest/test/testmock
 
