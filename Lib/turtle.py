@@ -2752,13 +2752,8 @@ class RawTurtle(TPen, TNavigator):
             self.pen(pendown=False)
         if was_filling and not fill_gap:
             self.end_fill()
-        new_x, new_y = self._position
-        if x is not None and y is not None:
-            new_x, new_y = x, y
-        elif x is not None:
-            new_x, new_y = x, self._position[1]
-        elif y is not None:
-            new_x, new_y = self._position[0], y
+        new_x = x if x is not None else self._position[0]
+        new_y = y if y is not None else self._position[1]
         self._position = Vec2D(new_x, new_y)
         self.pen(pendown=pendown)
         if was_filling and not fill_gap:
