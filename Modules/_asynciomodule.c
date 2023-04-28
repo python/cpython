@@ -3342,6 +3342,7 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
     return ret;
 }
 
+
 /*********************** Module **************************/
 
 
