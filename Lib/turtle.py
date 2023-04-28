@@ -2300,6 +2300,15 @@ class TPen(object):
         else:
             return self._color(self._fillcolor)
 
+    def teleport(self, x=None, y=None, fill_gap: bool = False) -> None:
+        """To be overwritten by child class RawTurtle.
+        Includes no TNavigator references.
+        """
+        pendown = self.isdown()
+        if pendown:
+            self.pen(pendown=False)
+        self.pen(pendown=pendown)
+
     def showturtle(self):
         """Makes the turtle visible.
 
