@@ -1292,6 +1292,9 @@ def platform(aliased=False, terse=False):
 ### freedesktop.org os-release standard
 # https://www.freedesktop.org/software/systemd/man/os-release.html
 
+# /etc takes precedence over /usr/lib
+_os_release_candidates = ("/etc/os-release", "/usr/lib/os-release")
+_os_release_cache = None
 
 def _parse_os_release(lines):
     # These fields are mandatory fields with well-known defaults
@@ -1324,10 +1327,6 @@ def freedesktop_os_release():
     """Return operation system identification from freedesktop.org os-release
     """
     global _os_release_cache
-
-    # /etc takes precedence over /usr/lib
-    _os_release_candidates = ("/etc/os-release", "/usr/lib/os-release")
-    _os_release_cache = None
 
     if _os_release_cache is None:
         errno = None
