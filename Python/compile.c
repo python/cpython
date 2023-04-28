@@ -2529,7 +2529,7 @@ compiler_typealias(struct compiler *c, stmt_ty s)
     VISIT_IN_SCOPE(c, expr, s->v.TypeAlias.value);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
     int is_in_class = c->u->u_ste->ste_type_params_in_class;
-    PyCodeObject *co = optimize_and_assemble(c, 1);
+    PyCodeObject *co = optimize_and_assemble(c, 0);
     compiler_exit_scope(c);
     if (co == NULL) {
         return ERROR;
