@@ -542,6 +542,7 @@ extern "C" {
     INIT_STR(anon_setcomp, "<setcomp>"), \
     INIT_STR(anon_string, "<string>"), \
     INIT_STR(anon_unknown, "<unknown>"), \
+    INIT_STR(class_dict, ".class_dict"), \
     INIT_STR(close_br, "}"), \
     INIT_STR(dbl_close_br, "}}"), \
     INIT_STR(dbl_open_br, "{{"), \

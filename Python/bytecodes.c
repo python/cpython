@@ -997,18 +997,9 @@ dummy_func(
         inst(LOAD_LOCALS, ( -- locals)) {
             locals = LOCALS();
             if (locals == NULL) {
-                PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
-                if (func == NULL) {
-                    _PyErr_SetString(tstate, PyExc_SystemError,
-                                     "no locals found");
-                    ERROR_IF(true, error);
-                }
-                locals = func->func_class_dict;
-                if (locals == NULL) {
-                    _PyErr_SetString(tstate, PyExc_SystemError,
-                                     "no class dict set when loading locals");
-                    ERROR_IF(true, error);
-                }
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                    "no locals found");
+                ERROR_IF(true, error);
             }
             Py_INCREF(locals);
         }

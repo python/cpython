@@ -36,6 +36,7 @@ struct _Py_global_strings {
         STRUCT_FOR_STR(anon_setcomp, "<setcomp>")
         STRUCT_FOR_STR(anon_string, "<string>")
         STRUCT_FOR_STR(anon_unknown, "<unknown>")
+        STRUCT_FOR_STR(class_dict, ".class_dict")
         STRUCT_FOR_STR(close_br, "}")
         STRUCT_FOR_STR(dbl_close_br, "}}")
         STRUCT_FOR_STR(dbl_open_br, "{{")

@@ -2112,7 +2112,7 @@ compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
                 }
                 Py_DECREF(co);
                 if (c->u->u_ste->ste_type_params_in_class) {
-                    ADDOP(c, loc, LOAD_LOCALS);
+                    ADDOP_I(c, loc, LOAD_FAST, 0);
                     ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_CLASS_DICT);
                 }
 
@@ -2195,12 +2195,16 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
     location loc = LOC(s);
 
-    int is_typeparams_in_class = 0;
+    int is_typeparams_in_class = c->u->u_ste->ste_type == ClassBlock;
+    int is_generic = asdl_seq_LEN(typeparams) > 0;
 
-    if (asdl_seq_LEN(typeparams) > 0) {
+    if (is_generic) {
         ADDOP(c, loc, PUSH_NULL);
         // We'll swap in the callable here later.
         ADDOP_LOAD_CONST(c, loc, Py_None);
+        if (is_typeparams_in_class) {
+            ADDOP(c, loc, LOAD_LOCALS);
+        }
     }
 
     funcflags = compiler_default_arguments(c, loc, args);
@@ -2211,7 +2215,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     int num_typeparam_args = 0;
     _Py_DECLARE_STR(type_params, ".type_params");
 
-    if (asdl_seq_LEN(typeparams) > 0) {
+    if (is_generic) {
         PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>", name);
         if (!typeparams_name) {
             return ERROR;
@@ -2278,18 +2282,19 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return ERROR;
     }
     Py_DECREF(co);
-    if (asdl_seq_LEN(typeparams) > 0) {
+    if (is_generic) {
         RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Load));
         ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS);
 
+        if (is_typeparams_in_class) {
+            c->u->u_metadata.u_argcount += 1;
+        }
         if (funcflags & 0x02) {
             c->u->u_metadata.u_argcount += 1;
         }
         if (funcflags & 0x01) {
             c->u->u_metadata.u_argcount += 1;
         }
-        // Must be before we exit the scope
-        int is_typeparams_in_class = c->u->u_ste->ste_type_params_in_class;
         PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
@@ -2338,7 +2343,8 @@ compiler_class(struct compiler *c, stmt_ty s)
     location loc = LOC(s);
 
     asdl_typeparam_seq *typeparams = s->v.ClassDef.typeparams;
-    if (asdl_seq_LEN(typeparams) > 0) {
+    int is_generic = asdl_seq_LEN(typeparams) > 0;
+    if (is_generic) {
         Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         ADDOP(c, loc, PUSH_NULL);
         PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>",
@@ -2452,7 +2458,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 
     /* 5. generate the rest of the code for the call */
 
-    if (asdl_seq_LEN(typeparams) > 0) {
+    if (is_generic) {
         _Py_DECLARE_STR(type_params, ".type_params");
         _Py_DECLARE_STR(generic_base, ".generic_base");
         RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Load));
@@ -2479,6 +2485,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 
         // Must be before we exit the scope
         int is_typeparams_in_class = c->u->u_ste->ste_type_params_in_class;
+        c->u->u_metadata.u_argcount = is_typeparams_in_class;
         PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
@@ -2492,8 +2499,9 @@ compiler_class(struct compiler *c, stmt_ty s)
         if (is_typeparams_in_class) {
             ADDOP(c, loc, LOAD_LOCALS);
             ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_CLASS_DICT);
+            ADDOP(c, loc, LOAD_LOCALS);
         }
-        ADDOP_I(c, loc, CALL, 0);
+        ADDOP_I(c, loc, CALL, is_typeparams_in_class);
     } else {
         RETURN_IF_ERROR(compiler_call_helper(c, loc, 2,
                                             s->v.ClassDef.bases,
@@ -2513,8 +2521,9 @@ compiler_typealias(struct compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     asdl_typeparam_seq *typeparams = s->v.TypeAlias.typeparams;
+    int is_generic = asdl_seq_LEN(typeparams) > 0;
     PyObject *name = s->v.TypeAlias.name->v.Name.id;
-    if (asdl_seq_LEN(typeparams) > 0) {
+    if (is_generic) {
         ADDOP(c, loc, PUSH_NULL);
         PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>",
                                                          name);
@@ -2553,14 +2562,20 @@ compiler_typealias(struct compiler *c, stmt_ty s)
     }
     Py_DECREF(co);
     if (is_in_class) {
-        ADDOP(c, loc, LOAD_LOCALS);
+        if (is_generic) {
+            ADDOP_I(c, loc, LOAD_FAST, 0);
+        }
+        else {
+            ADDOP(c, loc, LOAD_LOCALS);
+        }
         ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_CLASS_DICT);
     }
     ADDOP_I(c, loc, BUILD_TUPLE, 3);
     ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEALIAS);
-    if (asdl_seq_LEN(typeparams) > 0) {
+    if (is_generic) {
         // Must be before we exit the scope
         int is_typeparams_in_class = c->u->u_ste->ste_type_params_in_class;
+        c->u->u_metadata.u_argcount = is_typeparams_in_class;
         PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
@@ -2574,8 +2589,9 @@ compiler_typealias(struct compiler *c, stmt_ty s)
         if (is_typeparams_in_class) {
             ADDOP(c, loc, LOAD_LOCALS);
             ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_CLASS_DICT);
+            ADDOP(c, loc, LOAD_LOCALS);
         }
-        ADDOP_I(c, loc, CALL, 0);
+        ADDOP_I(c, loc, CALL, is_typeparams_in_class);
     }
     RETURN_IF_ERROR(compiler_nameop(c, loc, name, Store));
     return SUCCESS;

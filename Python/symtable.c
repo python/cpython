@@ -1172,6 +1172,15 @@ symtable_enter_typeparam_block(struct symtable *st, identifier name,
     }
     if (current_type == ClassBlock) {
         st->st_cur->ste_type_params_in_class = 1;
+        _Py_DECLARE_STR(class_dict, ".class_dict");
+        if (!symtable_add_def(st, &_Py_STR(class_dict),
+                              DEF_PARAM, lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
+        if (!symtable_add_def(st, &_Py_STR(class_dict),
+                              USE, lineno, col_offset, end_lineno, end_col_offset)) {
+            return 0;
+        }
     }
     if (kind == AsyncFunctionDef_kind || kind == FunctionDef_kind || kind == ClassDef_kind) {
         _Py_DECLARE_STR(type_params, ".type_params");
@@ -1391,12 +1400,13 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         }
         break;
     }
-    case TypeAlias_kind:
+    case TypeAlias_kind: {
         VISIT(st, expr, s->v.TypeAlias.name);
         assert(s->v.TypeAlias.name->kind == Name_kind);
         PyObject *name = s->v.TypeAlias.name->v.Name.id;
         int is_in_class = st->st_cur->ste_type == ClassBlock;
-        if (asdl_seq_LEN(s->v.TypeAlias.typeparams) > 0) {
+        int is_generic = asdl_seq_LEN(s->v.TypeAlias.typeparams) > 0;
+        if (is_generic) {
             if (!symtable_enter_typeparam_block(
                     st, name,
                     (void *)s->v.TypeAlias.typeparams,
@@ -1413,11 +1423,12 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT(st, expr, s->v.TypeAlias.value);
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
-        if (asdl_seq_LEN(s->v.TypeAlias.typeparams) > 0) {
+        if (is_generic) {
             if (!symtable_exit_block(st))
                 VISIT_QUIT(st, 0);
         }
         break;
+    }
     case Return_kind:
         if (s->v.Return.value) {
             VISIT(st, expr, s->v.Return.value);
