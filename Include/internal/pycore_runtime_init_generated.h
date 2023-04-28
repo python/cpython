@@ -1021,6 +1021,7 @@ extern "C" {
     INIT_ID(memlimit), \
     INIT_ID(message), \
     INIT_ID(metaclass), \
+    INIT_ID(metadata), \
     INIT_ID(method), \
     INIT_ID(mod), \
     INIT_ID(mode), \
