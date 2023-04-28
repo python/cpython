@@ -2316,7 +2316,7 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
 {
     PyObject *round, *result;
 
-    if (Py_TYPE(number)->tp_dict == NULL) {
+    if (!_PyType_IsReady(Py_TYPE(number))) {
         if (PyType_Ready(Py_TYPE(number)) < 0)
             return NULL;
     }
