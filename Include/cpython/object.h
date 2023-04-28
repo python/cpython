@@ -234,7 +234,18 @@ struct _typeobject {
  * It should should be treated as an opaque blob
  * by code other than the specializer and interpreter. */
 struct _specialization_cache {
+    // In order to avoid bloating the bytecode with lots of inline caches, the
+    // members of this structure have a somewhat unique contract. They are set
+    // by the specialization machinery, and are invalidated by PyType_Modified.
+    // The rules for using them are as follows:
+    // - If getitem is non-NULL, then it is the same Python function that
+    //   PyType_Lookup(cls, "__getitem__") would return.
+    // - If getitem is NULL, then getitem_version is meaningless.
+    // - If getitem->func_version == getitem_version, then getitem can be called
+    //   with two positional arguments and no keyword arguments, and has neither
+    //   *args nor **kwargs (as required by BINARY_SUBSCR_GETITEM):
     PyObject *getitem;
+    uint32_t getitem_version;
 };
 
 /* The *real* layout of a type object when allocated on the heap */
@@ -553,3 +564,10 @@ PyAPI_FUNC(int) PyType_AddWatcher(PyType_WatchCallback callback);
 PyAPI_FUNC(int) PyType_ClearWatcher(int watcher_id);
 PyAPI_FUNC(int) PyType_Watch(int watcher_id, PyObject *type);
 PyAPI_FUNC(int) PyType_Unwatch(int watcher_id, PyObject *type);
+
+/* Attempt to assign a version tag to the given type.
+ *
+ * Returns 1 if the type already had a valid version tag or a new one was
+ * assigned, or 0 if a new tag could not be assigned.
+ */
+PyAPI_FUNC(int) PyUnstable_Type_AssignVersionTag(PyTypeObject *type);

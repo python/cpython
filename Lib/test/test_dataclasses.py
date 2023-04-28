@@ -285,6 +285,23 @@ class TestCase(unittest.TestCase):
         c = C(5)
         self.assertEqual(c.BUILTINS, 5)
 
+    def test_field_with_special_single_underscore_names(self):
+        # gh-98886
+
+        @dataclass
+        class X:
+            x: int = field(default_factory=lambda: 111)
+            _dflt_x: int = field(default_factory=lambda: 222)
+
+        X()
+
+        @dataclass
+        class Y:
+            y: int = field(default_factory=lambda: 111)
+            _HAS_DEFAULT_FACTORY: int = 222
+
+        assert Y(y=222).y == 222
+
     def test_field_named_like_builtin(self):
         # Attribute names can shadow built-in names
         # since code generation is used.
@@ -740,8 +757,8 @@ class TestCase(unittest.TestCase):
                 class Subclass(typ): pass
 
                 with self.assertRaisesRegex(ValueError,
-                                            f"mutable default .*Subclass'>"
-                                            ' for field z is not allowed'
+                                            "mutable default .*Subclass'>"
+                                            " for field z is not allowed"
                                             ):
                     @dataclass
                     class Point:
@@ -2279,6 +2296,19 @@ class TestDocString(unittest.TestCase):
             x: deque = field(default_factory=deque)
 
         self.assertDocStrEqual(C.__doc__, "C(x:collections.deque=<factory>)")
+
+    def test_docstring_with_no_signature(self):
+        # See https://github.com/python/cpython/issues/103449
+        class Meta(type):
+            __call__ = dict
+        class Base(metaclass=Meta):
+            pass
+
+        @dataclass
+        class C(Base):
+            pass
+
+        self.assertDocStrEqual(C.__doc__, "C")
 
 
 class TestInit(unittest.TestCase):

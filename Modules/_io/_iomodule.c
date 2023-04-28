@@ -616,8 +616,9 @@ iomodule_clear(PyObject *mod) {
 }
 
 static void
-iomodule_free(PyObject *mod) {
-    iomodule_clear(mod);
+iomodule_free(void *mod)
+{
+    (void)iomodule_clear((PyObject *)mod);
 }
 
 
@@ -670,13 +671,11 @@ static PyTypeObject* static_types[] = {
 PyStatus
 _PyIO_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    // Set type base classes
 #ifdef HAVE_WINDOWS_CONSOLE_IO
-    PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
+    if (_Py_IsMainInterpreter(interp)) {
+        // Set type base classes
+        PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
+    }
 #endif
 
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
