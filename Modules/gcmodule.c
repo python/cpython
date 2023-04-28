@@ -2365,6 +2365,7 @@ PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
     if (op == NULL) {
         return NULL;
     }
+    memset(op, 0, _PyObject_SIZE(tp) + extra_size);
     _PyObject_Init(op, tp);
     return op;
 }

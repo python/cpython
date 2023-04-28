@@ -3412,8 +3412,6 @@ obj_extra_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (obj == NULL) {
         return PyErr_NoMemory();
     }
-    memset(obj, '\0', type->tp_basicsize + extra_size);
-    PyObject_Init(obj, type);
     PyObject_GC_Track(obj);
     return obj;
 }

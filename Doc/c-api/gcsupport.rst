@@ -59,7 +59,6 @@ rules:
    Analogous to :c:func:`PyObject_New` but for container objects with the
    :const:`Py_TPFLAGS_HAVE_GC` flag set.
 
-
 .. c:function:: TYPE* PyObject_GC_NewVar(TYPE, PyTypeObject *type, Py_ssize_t size)
 
    Analogous to :c:func:`PyObject_NewVar` but for container objects with the
@@ -70,6 +69,8 @@ rules:
    Analogous to :c:func:`PyObject_GC_New` but allocates *extra_size*
    bytes at the end of the object (at offset
    :c:member:`~PyTypeObject.tp_basicsize`).
+   The allocated memory is initialized: to zero, except for the
+   :c:type:`Python object header <PyObject>`.
 
    The extra data will be deallocated with the object, but otherwise it is
    not managed by Python.
