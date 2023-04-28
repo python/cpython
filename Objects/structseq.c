@@ -31,6 +31,7 @@ get_type_attr_as_size(PyTypeObject *tp, PyObject *name)
         PyErr_Format(PyExc_TypeError,
                      "Missed attribute '%U' of type %s",
                      name, tp->tp_name);
+        return -1;
     }
     return PyLong_AsSsize_t(v);
 }
