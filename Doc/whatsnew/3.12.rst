@@ -1288,6 +1288,21 @@ Porting to Python 3.12
   available on debug builds.  If you happen to be using it then you'll
   need to start using ``_Py_GetGlobalRefTotal()``.
 
+* The following functions now select an appropriate metaclass for the newly
+  created type:
+
+  * :c:func:`PyType_FromSpec`
+  * :c:func:`PyType_FromSpecWithBases`
+  * :c:func:`PyType_FromModuleAndSpec`
+
+  Creating classes whose metaclass overrides :c:member:`~PyTypeObject.tp_new`
+  is deprecated, and in Python 3.14+ it will be no longer allowed.
+  Note that these functions ignore ``tp_new`` of the metaclass, possibly
+  allowing incomplete initialization.
+
+  Note that :c:func:`PyType_FromMetaclass` (added in Python 3.12)
+  already disallows creating classes whose metaclass overrides ``tp_new``.
+
 Deprecated
 ----------
 
@@ -1363,6 +1378,11 @@ Deprecated
 
 * ``_PyErr_ChainExceptions`` is deprecated. Use ``_PyErr_ChainExceptions1``
   instead. (Contributed by Irit Katriel in :gh:`102192`.)
+
+* Using :c:func:`PyType_FromSpec`, :c:func:`PyType_FromSpecWithBases`
+  or :c:func:`PyType_FromModuleAndSpec` to create a class whose metaclass
+  overrides :c:member:`~PyTypeObject.tp_new`.
+  Call the metaclass instead.
 
 Removed
 -------

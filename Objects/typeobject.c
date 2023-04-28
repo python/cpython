@@ -3634,8 +3634,9 @@ check_basicsize_includes_size_and_offsets(PyTypeObject* type)
 }
 
 PyObject *
-PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
-                     PyType_Spec *spec, PyObject *bases_in)
+_PyType_FromMetaclass_impl(
+    PyTypeObject *metaclass, PyObject *module,
+    PyType_Spec *spec, PyObject *bases_in, int _allow_tp_new)
 {
     /* Invariant: A non-NULL value in one of these means this function holds
      * a strong reference or owns allocated memory.
@@ -3810,9 +3811,21 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
         goto finally;
     }
     if (metaclass->tp_new != PyType_Type.tp_new) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Metaclasses with custom tp_new are not supported.");
-        goto finally;
+        if (_allow_tp_new) {
+            if (PyErr_WarnFormat(
+                    PyExc_DeprecationWarning, 1,
+                    "Using PyType_Spec with metaclasses that have custom "
+                    "tp_new is deprecated and will no longer be allowed in "
+                    "Python 3.14.") < 0) {
+                goto finally;
+            }
+        }
+        else {
+            PyErr_SetString(
+                PyExc_TypeError,
+                "Metaclasses with custom tp_new are not supported.");
+            goto finally;
+        }
     }
 
     /* Calculate best base, and check that all bases are type objects */
@@ -3999,21 +4012,28 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
 }
 
 PyObject *
+PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
+                     PyType_Spec *spec, PyObject *bases_in)
+{
+    return _PyType_FromMetaclass_impl(metaclass, module, spec, bases_in, 0);
+}
+
+PyObject *
 PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 {
-    return PyType_FromMetaclass(NULL, module, spec, bases);
+    return _PyType_FromMetaclass_impl(NULL, module, spec, bases, 1);
 }
 
 PyObject *
 PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 {
-    return PyType_FromMetaclass(NULL, NULL, spec, bases);
+    return _PyType_FromMetaclass_impl(NULL, NULL, spec, bases, 1);
 }
 
 PyObject *
 PyType_FromSpec(PyType_Spec *spec)
 {
-    return PyType_FromMetaclass(NULL, NULL, spec, NULL);
+    return _PyType_FromMetaclass_impl(NULL, NULL, spec, NULL, 1);
 }
 
 PyObject *
