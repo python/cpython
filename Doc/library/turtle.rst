@@ -383,7 +383,7 @@ Turtle motion
    be drawn. The turtle's orientation does not change. If currently
    filling, the polygon(s) teleported from will be filled after leaving,
    and filling will begin again after teleporting. This can be disabled
-   with fill_gap=True, which makes the imaginary line traveled during 
+   with fill_gap=True, which makes the imaginary line traveled during
    teleporting act as a fill barrier like in goto(x, y).
 
    .. doctest::
