@@ -3471,23 +3471,28 @@ obj_extra_data_clear(PyObject *self)
 static void
 obj_extra_data_dealloc(PyObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     obj_extra_data_clear(self);
-    Py_TYPE(self)->tp_free(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
-static PyTypeObject ObjExtraData_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "obj_with_extra_data",
-    sizeof(ObjExtraData),
-    0,
-    .tp_getset = obj_extra_data_getset,
-    .tp_dealloc = obj_extra_data_dealloc,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)obj_extra_data_traverse,
-    .tp_clear = (inquiry)obj_extra_data_clear,
-    .tp_new = obj_extra_data_new,
-    .tp_free = PyObject_GC_Del,
+static PyType_Slot ObjExtraData_Slots[] = {
+    {Py_tp_getset, obj_extra_data_getset},
+    {Py_tp_dealloc, obj_extra_data_dealloc},
+    {Py_tp_traverse, obj_extra_data_traverse},
+    {Py_tp_clear, obj_extra_data_clear},
+    {Py_tp_new, obj_extra_data_new},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec ObjExtraData_TypeSpec = {
+    .name = "_testcapi.ObjExtraData",
+    .basicsize = sizeof(ObjExtraData),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .slots = ObjExtraData_Slots,
 };
 
 struct atexit_data {
@@ -4213,10 +4218,16 @@ PyInit__testcapi(void)
     Py_INCREF(&MethStatic_Type);
     PyModule_AddObject(m, "MethStatic", (PyObject *)&MethStatic_Type);
 
-    if (PyType_Ready(&ObjExtraData_Type) < 0)
+    PyObject *ObjExtraData_Type = PyType_FromModuleAndSpec(
+        m, &ObjExtraData_TypeSpec, NULL);
+    if (ObjExtraData_Type == 0) {
         return NULL;
-    Py_INCREF(&ObjExtraData_Type);
-    PyModule_AddObject(m, "ObjExtraData", (PyObject *)&ObjExtraData_Type);
+    }
+    int ret = PyModule_AddType(m, (PyTypeObject*)ObjExtraData_Type);
+    Py_DECREF(&ObjExtraData_Type);
+    if (ret < 0) {
+        return NULL;
+    }
 
     PyModule_AddObject(m, "CHAR_MAX", PyLong_FromLong(CHAR_MAX));
     PyModule_AddObject(m, "CHAR_MIN", PyLong_FromLong(CHAR_MIN));
