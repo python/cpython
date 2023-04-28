@@ -140,12 +140,17 @@ class EagerTaskFactoryLoopTests:
         async def coro():
             nonlocal captured_current_task
             captured_current_task = asyncio.current_task()
+            # verify the task before and after blocking is identical
+            await asyncio.sleep(0.1)
+            self.assertIs(asyncio.current_task(), captured_current_task)
 
         async def run():
             t = self.loop.create_task(coro())
             self.assertIs(captured_current_task, t)
+            await t
 
         self.run_coro(run())
+        captured_current_task = None
 
     def test_all_tasks_with_eager_completion(self):
         captured_all_tasks = None
