@@ -87,6 +87,14 @@ type_check(PyObject *arg)
     return result;
 }
 
+/*
+ * Return a typing.Union. This is used as the nb_or (|) operator for
+ * TypeVar and ParamSpec. We use this rather than _Py_union_type_or
+ * (which would produce a types.Union) because historically TypeVar
+ * supported unions with forward references, and we want to preserve
+ * that behavior. _Py_union_type_or only allows a small set of
+ * types.
+ */
 static PyObject *
 make_union(PyObject *self, PyObject *other)
 {
@@ -1007,6 +1015,8 @@ static PyType_Slot paramspec_slots[] = {
     {Py_tp_members, paramspec_members},
     {Py_tp_methods, paramspec_methods},
     {Py_tp_getset, paramspec_getset},
+    // Unions of ParamSpecs have no defined meaning, but they were allowed
+    // by the Python implementation, so we allow them here too.
     {Py_nb_or, make_union},
     {Py_tp_new, paramspec_new},
     {Py_tp_dealloc, paramspec_dealloc},
