@@ -1083,7 +1083,7 @@ The following recipes have a more mathematical flavor:
        # convolve(data, [1, -2, 1]) --> 2nd finite difference (2nd derivative)
        kernel = tuple(kernel)[::-1]
        n = len(kernel)
-       padded_signal = chain(repeat(0, n-1), signal, [0] * (n-1))
+       padded_signal = chain(repeat(0, n-1), signal, repeat(0, n-1))
        for window in sliding_window(padded_signal, n):
            yield math.sumprod(kernel, window)
 
