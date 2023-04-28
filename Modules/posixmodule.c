@@ -278,17 +278,17 @@ corresponding Unix manual entries for more information on calls.");
 #  undef HAVE_SCHED_SETAFFINITY
 #endif
 
-#if defined(HAVE_SYS_XATTR_H) && defined(__linux__) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
+#if defined(HAVE_SYS_XATTR_H) && defined(__linux__)
+#  include <sys/xattr.h>
 #  define USE_XATTRS
 #  include <linux/limits.h>  // Needed for XATTR_SIZE_MAX on musl libc.
-#elif defined(HAVE_SYS_EXTATTR_H) && defined(__FreeBSD__)
-#  define USE_XATTRS
-#endif
-
-#if defined(USE_XATTRS) && defined(HAVE_SYS_XATTR_H)
+#elif defined(HAVE_SYS_XATTR_H) && defined(__APPLE__)
 #  include <sys/xattr.h>
-#elif defined(USE_XATTRS) && defined(HAVE_SYS_EXTATTR_H)
+#  define USE_XATTRS
+#  define XATTR_SIZE_MAX 4096
+#elif defined(HAVE_SYS_EXTATTR_H) && defined(__FreeBSD__)
 #  include <sys/extattr.h>
+#  define USE_XATTRS
 #  define XATTR_SIZE_MAX 4096
 #  define XATTR_LIST_MAX 4096
 #  define XATTR_CREATE 1
@@ -14069,7 +14069,6 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
     Py_ssize_t i;
     PyObject *buffer = NULL;
     Py_ssize_t buffer_size = 0;
-    void *ptr = NULL;
 
     if (fd_and_follow_symlinks_invalid("getxattr", path->fd, follow_symlinks))
         return NULL;
@@ -14079,7 +14078,7 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
     }
 
     for (i = 0; i < 2; i++) {
-        void *ptr;
+        void *ptr = NULL;
         ssize_t result;
         if (i) {
             buffer = PyBytes_FromStringAndSize(NULL, buffer_size);
@@ -14089,12 +14088,24 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
         }
 
         Py_BEGIN_ALLOW_THREADS;
+#ifdef __APPLE__
+        if (path->fd >= 0)
+            result = fgetxattr(path->fd, attribute->narrow, ptr, buffer_size,
+                               0, 0);
+        else if (follow_symlinks)
+            result = getxattr(path->narrow, attribute->narrow, ptr,
+                              buffer_size, 0, 0);
+        else
+            result = getxattr(path->narrow, attribute->narrow, ptr,
+                              buffer_size, 0, XATTR_NOFOLLOW);
+#else
         if (path->fd >= 0)
             result = fgetxattr(path->fd, attribute->narrow, ptr, buffer_size);
         else if (follow_symlinks)
             result = getxattr(path->narrow, attribute->narrow, ptr, buffer_size);
         else
             result = lgetxattr(path->narrow, attribute->narrow, ptr, buffer_size);
+#endif
         Py_END_ALLOW_THREADS;
 
         if (result < 0) {
@@ -14149,6 +14160,17 @@ os_setxattr_impl(PyObject *module, path_t *path, path_t *attribute,
     }
 
     Py_BEGIN_ALLOW_THREADS;
+#ifdef __APPLE__
+    if (path->fd > -1)
+        result = fsetxattr(path->fd, attribute->narrow,
+                           value->buf, value->len, 0, flags);
+    else if (follow_symlinks)
+        result = setxattr(path->narrow, attribute->narrow,
+                           value->buf, value->len, 0, flags);
+    else
+        result = setxattr(path->narrow, attribute->narrow,
+                           value->buf, value->len, 0, flags | XATTR_NOFOLLOW);
+#else
     if (path->fd > -1)
         result = fsetxattr(path->fd, attribute->narrow,
                            value->buf, value->len, flags);
@@ -14158,6 +14180,7 @@ os_setxattr_impl(PyObject *module, path_t *path, path_t *attribute,
     else
         result = lsetxattr(path->narrow, attribute->narrow,
                            value->buf, value->len, flags);
+#endif
     Py_END_ALLOW_THREADS;
 
     if (result) {
@@ -14201,12 +14224,21 @@ os_removexattr_impl(PyObject *module, path_t *path, path_t *attribute,
     }
 
     Py_BEGIN_ALLOW_THREADS;
+#ifdef __APPLE__
+    if (path->fd > -1)
+        result = fremovexattr(path->fd, attribute->narrow, 0);
+    else if (follow_symlinks)
+        result = removexattr(path->narrow, attribute->narrow, 0);
+    else
+        result = removexattr(path->narrow, attribute->narrow, XATTR_NOFOLLOW);
+#else
     if (path->fd > -1)
         result = fremovexattr(path->fd, attribute->narrow);
     else if (follow_symlinks)
         result = removexattr(path->narrow, attribute->narrow);
     else
         result = lremovexattr(path->narrow, attribute->narrow);
+#endif
     Py_END_ALLOW_THREADS;
 
     if (result) {
@@ -14262,12 +14294,21 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
         }
 
         Py_BEGIN_ALLOW_THREADS;
+#ifdef __APPLE__
+        if (path->fd > -1)
+            length = flistxattr(path->fd, buffer, buffer_size, 0);
+        else if (follow_symlinks)
+            length = listxattr(name, buffer, buffer_size, 0);
+        else
+            length = listxattr(name, buffer, buffer_size, XATTR_NOFOLLOW);
+#else
         if (path->fd > -1)
             length = flistxattr(path->fd, buffer, buffer_size);
         else if (follow_symlinks)
             length = listxattr(name, buffer, buffer_size);
         else
             length = llistxattr(name, buffer, buffer_size);
+#endif
         Py_END_ALLOW_THREADS;
 
         if (length < 0) {

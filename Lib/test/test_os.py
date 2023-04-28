@@ -3675,7 +3675,7 @@ class ExtendedAttributeTests(unittest.TestCase):
 
     def _check_xattrs_str(self, s, getxattr, setxattr, removexattr, listxattr, **kwargs):
         fn = os_helper.TESTFN
-        if sys.platform.startswith("freebsd"):
+        if sys.platform.startswith("freebsd") or sys.platform == "darwin":
             xattr_errno = errno.ENOATTR
         else:
             xattr_errno = errno.ENODATA
