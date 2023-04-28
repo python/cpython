@@ -1,0 +1,2 @@
+Added func:`turtle.teleport` to turtle library.
+Patch by Liam Gersten.
