@@ -516,27 +516,29 @@ class Distribution(DeprecatedNonAbstract):
         """
         Read installed-files.txt and return lines in a similar
         CSV-parsable format as RECORD: each file must be placed
-        relative to the site-packages directory, and must also be
+        relative to the site-packages directory and must also be
         quoted (since file names can contain literal commas).
 
         This file is written when the package is installed by pip,
         but it might not be written for other installation methods.
-        Hence, even if we can assume that this file is accurate
-        when it exists, we cannot assume that it always exists.
+        Assume the file is accurate if it exists.
         """
         text = self.read_text('installed-files.txt')
-        # We need to prepend the .egg-info/ subdir to the lines in this file.
-        # But this subdir is only available in the PathDistribution's self._path
-        # which is not easily accessible from this base class...
+        # Prepend the .egg-info/ subdir to the lines in this file.
+        # But this subdir is only available from PathDistribution's
+        # self._path.
         subdir = getattr(self, '_path', None)
         if not text or not subdir:
             return
-        with contextlib.suppress(Exception):
-            ret = [
-                str((subdir / line).resolve().relative_to(self.locate_file('')))
-                for line in text.splitlines()
-            ]
-            return map('"{}"'.format, ret)
+
+        paths = (
+            (subdir / name)
+            .resolve()
+            .relative_to(self.locate_file('').resolve())
+            .as_posix()
+            for name in text.splitlines()
+        )
+        return map('"{}"'.format, paths)
 
     def _read_files_egginfo_sources(self):
         """
