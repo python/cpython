@@ -979,6 +979,7 @@ bytesio_traverse(bytesio *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
+    Py_VISIT(self->buf);
     return 0;
 }
 
@@ -986,6 +987,7 @@ static int
 bytesio_clear(bytesio *self)
 {
     Py_CLEAR(self->dict);
+    Py_CLEAR(self->buf);
     return 0;
 }
 
