@@ -126,7 +126,7 @@ _tg_screen_functions = ['addshape', 'bgcolor', 'bgpic', 'bye',
         'setworldcoordinates', 'textinput', 'title', 'tracer', 'turtles', 'update',
         'window_height', 'window_width']
 _tg_turtle_functions = ['back', 'backward', 'begin_fill', 'begin_poly', 'bk',
-        'circle', 'clear', 'clearstamp', 'clearstamps', 'clone', 'color', 'teleport',
+        'circle', 'clear', 'clearstamp', 'clearstamps', 'clone', 'color',
         'degrees', 'distance', 'dot', 'down', 'end_fill', 'end_poly', 'fd',
         'fillcolor', 'filling', 'forward', 'get_poly', 'getpen', 'getscreen', 'get_shapepoly',
         'getturtle', 'goto', 'heading', 'hideturtle', 'home', 'ht', 'isdown',
@@ -135,7 +135,7 @@ _tg_turtle_functions = ['back', 'backward', 'begin_fill', 'begin_poly', 'bk',
         'pu', 'radians', 'right', 'reset', 'resizemode', 'rt',
         'seth', 'setheading', 'setpos', 'setposition', 'settiltangle',
         'setundobuffer', 'setx', 'sety', 'shape', 'shapesize', 'shapetransform', 'shearfactor', 'showturtle',
-        'speed', 'st', 'stamp', 'tilt', 'tiltangle', 'towards',
+        'speed', 'st', 'stamp', 'teleport', 'tilt', 'tiltangle', 'towards',
         'turtlesize', 'undo', 'undobufferentries', 'up', 'width',
         'write', 'xcor', 'ycor']
 _tg_utilities = ['write_docstringdict', 'done']
