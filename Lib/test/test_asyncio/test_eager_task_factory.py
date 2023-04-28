@@ -191,18 +191,29 @@ class EagerTaskFactoryLoopTests:
         cv = contextvars.ContextVar('cv')
         cv.set(1)
 
-        coro_ran = False
+        coro_first_step_ran = False
+        coro_second_step_ran = False
 
         async def coro():
-            nonlocal coro_ran
+            nonlocal coro_first_step_ran
+            nonlocal coro_second_step_ran
             self.assertEqual(cv.get(), 1)
             cv.set(2)
             self.assertEqual(cv.get(), 2)
-            coro_ran = True
+            coro_first_step_ran = True
+            await asyncio.sleep(0.1)
+            self.assertEqual(cv.get(), 2)
+            cv.set(3)
+            self.assertEqual(cv.get(), 3)
+            coro_second_step_ran = True
 
         async def run():
             t = self.loop.create_task(coro())
-            self.assertTrue(coro_ran)
+            self.assertTrue(coro_first_step_ran)
+            self.assertFalse(coro_second_step_ran)
+            self.assertEqual(cv.get(), 1)
+            await t
+            self.assertTrue(coro_second_step_ran)
             self.assertEqual(cv.get(), 1)
 
         self.run_coro(run())
