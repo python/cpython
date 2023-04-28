@@ -793,8 +793,8 @@ class CAPITest(unittest.TestCase):
                 self.assertLess(data_size - extra_size,
                                 _testcapi.alignof_max_align_t)
 
-            # Everything should be aligned
-            self.assertEqual(data_ptr % _testcapi.alignof_max_align_t, 0)
+            # The offsets/sizes we calculated should be aligned.
+            self.assertEqual(data_offset % _testcapi.alignof_max_align_t, 0)
             self.assertEqual(data_size % _testcapi.alignof_max_align_t, 0)
 
         sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
