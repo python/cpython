@@ -1614,6 +1614,13 @@ class TNavigator(object):
         """move turtle to position end."""
         self._position = end
 
+    def teleport(self, x=None, y=None, fill_gap: bool = False) -> None:
+        """To be overwritten by child class RawTurtle.
+        Includes no TPen references."""
+        new_x = x if x is not None else self._position[0]
+        new_y = y if y is not None else self._position[1]
+        self._position = Vec2D(new_x, new_y)
+
     def forward(self, distance):
         """Move the turtle forward by the specified distance.
 
