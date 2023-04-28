@@ -6938,7 +6938,8 @@ type_ready_post_checks(PyTypeObject *type)
     else if (type->tp_dictoffset < (Py_ssize_t)sizeof(PyObject)) {
         if (type->tp_dictoffset + type->tp_basicsize <= 0) {
             PyErr_Format(PyExc_SystemError,
-                         "type %s has a tp_dictoffset that is too small");
+                         "type %s has a tp_dictoffset that is too small",
+                         type->tp_name);
         }
     }
     return 0;
