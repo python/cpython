@@ -46,7 +46,7 @@ test_immortal_none(PyObject *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 test_immortal_small_ints(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    for(int i = -5; i < 255; i++) {
+    for(int i = -5; i <= 256; i++) {
         PyObject *small_int = PyLong_FromLong(i);
         if (!_Py_IsImmortal(small_int)) {
             PyErr_Format(PyExc_RuntimeError, "Small int(%d) object should be the immportal object.", i);
