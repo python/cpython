@@ -18,6 +18,6 @@ synchronous call stack while C3 is executing is only C3, C2. It's possible
 to reconstruct this view in most cases using what is currently available in
 CPython, however it's difficult to do so efficiently, and would be very
 challenging to do so, let alone efficiently, in an out of process profiler
-that leverages eBPF. This adds a new field `{cr,ag}_awaiter` to coroutines
+that leverages eBPF. This adds a new field ``{cr,ag}_awaiter`` to coroutines
 and async generators, respectively, that allows one to efficiently
 reconstruct the chain of suspended coroutines.
