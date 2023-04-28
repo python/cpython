@@ -57,7 +57,7 @@ softkwlist = [
     '_',
     'case',
     'match',
-    'type',
+    'type'
 ]
 
 iskeyword = frozenset(kwlist).__contains__

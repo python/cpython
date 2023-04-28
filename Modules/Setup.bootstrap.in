@@ -22,6 +22,7 @@ _sre _sre/sre.c
 _thread _threadmodule.c
 time timemodule.c
 _weakref _weakref.c
+_typing _typingmodule.c
 
 # commonly used core modules
 _abc _abc.c
