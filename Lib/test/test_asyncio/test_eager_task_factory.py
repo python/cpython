@@ -1,12 +1,13 @@
 """Tests for base_events.py"""
 
+import asyncio
+import contextvars
 import gc
 import time
 import unittest
+
 from types import GenericAlias
 from unittest import mock
-
-import asyncio
 from asyncio import base_events
 from asyncio import tasks
 from test.test_asyncio import utils as test_utils
@@ -20,14 +21,7 @@ def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
 
-class EagerTaskFactoryLoopTests(test_utils.TestCase):
-
-    def new_task(self, loop, coro, name='TestTask', context=None):
-        return tasks.Task(coro, loop=loop, name=name, context=context)
-
-    def new_future(self, loop):
-        return asyncio.Future(loop=loop)
-
+class EagerTaskFactoryLoopTests:
     def run_coro(self, coro):
         """
         Helper method to run the `coro` coroutine in the test event loop.
@@ -46,11 +40,22 @@ class EagerTaskFactoryLoopTests(test_utils.TestCase):
     def setUp(self):
         super().setUp()
         self.loop = asyncio.new_event_loop()
-        self.loop.set_task_factory(asyncio.eager_task_factory)
+        self.eager_task_factory = asyncio.create_eager_task_factory(self.__class__.Task)
+        self.loop.set_task_factory(self.eager_task_factory)
         self.set_event_loop(self.loop)
 
     def test_eager_task_factory_set(self):
-        self.assertIs(self.loop.get_task_factory(), asyncio.eager_task_factory)
+        self.assertIsNotNone(self.eager_task_factory)
+        self.assertIs(self.loop.get_task_factory(), self.eager_task_factory)
+
+        async def noop(): pass
+
+        async def run():
+            t = self.loop.create_task(noop())
+            self.assertIsInstance(t, self.__class__.Task)
+            await t
+
+        self.run_coro(run())
 
     def test_await_future_during_eager_step(self):
 
@@ -125,6 +130,84 @@ class EagerTaskFactoryLoopTests(test_utils.TestCase):
             self.run_coro(run())
 
         self.assertEqual('cancellation message', cm.exception.args[0])
+
+    def test_current_task(self):
+        captured_current_task = None
+
+        async def coro():
+            nonlocal captured_current_task
+            captured_current_task = asyncio.tasks.current_task()
+
+        async def run():
+            t = self.loop.create_task(coro())
+            self.assertIs(captured_current_task, t)
+
+        self.run_coro(run())
+
+    def test_all_tasks_with_eager_completion(self):
+        captured_all_tasks = None
+
+        async def coro():
+            nonlocal captured_all_tasks
+            captured_all_tasks = asyncio.tasks.all_tasks()
+
+        async def run():
+            t = self.loop.create_task(coro())
+            self.assertIn(t, captured_all_tasks)
+            self.assertNotIn(t, asyncio.tasks.all_tasks())
+
+        self.run_coro(run())
+
+    def test_all_tasks_with_blocking(self):
+        captured_eager_all_tasks = None
+
+        async def coro(fut1, fut2):
+            nonlocal captured_eager_all_tasks
+            captured_eager_all_tasks = asyncio.tasks.all_tasks()
+            await fut1
+            fut2.set_result(None)
+
+        async def run():
+            fut1 = self.loop.create_future()
+            fut2 = self.loop.create_future()
+            t = self.loop.create_task(coro(fut1, fut2))
+            self.assertIn(t, captured_eager_all_tasks)
+            self.assertIn(t, asyncio.tasks.all_tasks())
+            fut1.set_result(None)
+            await fut2
+            self.assertNotIn(t, asyncio.tasks.all_tasks())
+
+        self.run_coro(run())
+
+    def test_context_vars(self):
+        cv = contextvars.ContextVar('cv')
+        cv.set(1)
+
+        coro_ran = False
+
+        async def coro():
+            nonlocal coro_ran
+            self.assertEqual(cv.get(), 1)
+            cv.set(2)
+            self.assertEqual(cv.get(), 2)
+            coro_ran = True
+
+        async def run():
+            t = self.loop.create_task(coro())
+            self.assertTrue(coro_ran)
+            self.assertEqual(cv.get(), 1)
+
+        self.run_coro(run())
+
+
+class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
+    Task = tasks._PyTask
+
+
+@unittest.skipUnless(hasattr(tasks, '_CTask'),
+                     'requires the C _asyncio module')
+class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
+    Task = getattr(tasks, '_CTask', None)
 
 
 class AsyncTaskCounter:
@@ -237,7 +320,6 @@ class NonEagerCTaskTests(BaseNonEagerTaskFactoryTests, test_utils.TestCase):
                      'requires the C _asyncio module')
 class EagerCTaskTests(BaseEagerTaskFactoryTests, test_utils.TestCase):
     Task = getattr(tasks, '_CTask', None)
-
 
 if __name__ == '__main__':
     unittest.main()
