@@ -19,10 +19,10 @@ from test.libregrtest.utils import clear_caches, format_duration, print_warning
 
 class TestResult:
     def __init__(
-            self,
-            name: str,
-            duration_sec: float = 0.0,
-            xml_data: list[str] | None = None,
+        self,
+        name: str,
+        duration_sec: float = 0.0,
+        xml_data: list[str] | None = None,
     ) -> None:
         self.name = name
         self.duration_sec = duration_sec
@@ -39,12 +39,12 @@ class Passed(TestResult):
 
 class Failed(TestResult):
     def __init__(
-            self,
-            name: str,
-            duration_sec: float = 0.0,
-            xml_data: list[str] | None = None,
-            errors: list[tuple[str, str]] | None = None,
-            failures: list[tuple[str, str]] | None = None,
+        self,
+        name: str,
+        duration_sec: float = 0.0,
+        xml_data: list[str] | None = None,
+        errors: list[tuple[str, str]] | None = None,
+        failures: list[tuple[str, str]] | None = None,
     ) -> None:
         super().__init__(name, duration_sec=duration_sec, xml_data=xml_data)
         self.errors = errors
@@ -128,16 +128,16 @@ PROGRESS_MIN_TIME = 30.0   # seconds
 # small set of tests to determine if we have a basically functioning interpreter
 # (i.e. if any of these fail, then anything else is likely to follow)
 STDTESTS = [
-        'test_grammar',
-        'test_opcodes',
-        'test_dict',
-        'test_builtin',
-        'test_exceptions',
-        'test_types',
-        'test_unittest',
-        'test_doctest',
-        'test_doctest2',
-        'test_support'
+    'test_grammar',
+    'test_opcodes',
+    'test_dict',
+    'test_builtin',
+    'test_exceptions',
+    'test_types',
+    'test_unittest',
+    'test_doctest',
+    'test_doctest2',
+    'test_support'
 ]
 
 # set of tests that we don't want to be executed when using regrtest
@@ -149,8 +149,8 @@ NOTTESTS = set()
 # __init__.py may do things which alter what tests are to be run.
 
 SPLITTESTDIRS = {
-        "test_asyncio",
-        "test_compiler",
+    "test_asyncio",
+    "test_compiler",
 }
 
 # Storage of uncollectable objects
@@ -203,7 +203,7 @@ def _runtest(ns: Namespace, test_name: str) -> TestResult:
     output_on_failure = ns.verbose3
 
     use_timeout = (
-            ns.timeout is not None and threading_helper.can_start_thread
+        ns.timeout is not None and threading_helper.can_start_thread
     )
     if use_timeout:
         faulthandler.dump_traceback_later(ns.timeout, exit=True)
@@ -234,7 +234,7 @@ def _runtest(ns: Namespace, test_name: str) -> TestResult:
                 print_warning.orig_stderr = stream
 
                 result = _runtest_inner(ns, test_name,
-                                                                display_failure=False)
+                                        display_failure=False)
                 if not isinstance(result, Passed):
                     output = stream.getvalue()
             finally:
@@ -250,13 +250,13 @@ def _runtest(ns: Namespace, test_name: str) -> TestResult:
             support.verbose = ns.verbose
 
             result = _runtest_inner(ns, test_name,
-                                                            display_failure=not ns.verbose)
+                                    display_failure=not ns.verbose)
 
         if xml_list:
             import xml.etree.ElementTree as ET
             result.xml_data = [
-                    ET.tostring(x).decode('us-ascii')
-                    for x in xml_list
+                ET.tostring(x).decode('us-ascii')
+                for x in xml_list
             ]
 
         result.duration_sec = time.perf_counter() - start_time
@@ -284,7 +284,7 @@ def runtest(ns: Namespace, test_name: str) -> TestResult:
         if not ns.pgo:
             msg = traceback.format_exc()
             print(f"test {test_name} crashed -- {msg}",
-                      file=sys.stderr, flush=True)
+                  file=sys.stderr, flush=True)
         return Failed(test_name)
 
 
@@ -345,7 +345,7 @@ def _runtest_inner2(ns: Namespace, test_name: str) -> bool:
     if gc.garbage:
         support.environment_altered = True
         print_warning(f"{test_name} created {len(gc.garbage)} "
-                                  f"uncollectable object(s).")
+                      f"uncollectable object(s).")
 
         # move the uncollectable objects somewhere,
         # so we don't see them again
@@ -358,7 +358,7 @@ def _runtest_inner2(ns: Namespace, test_name: str) -> bool:
 
 
 def _runtest_inner(
-        ns: Namespace, test_name: str, display_failure: bool = True
+    ns: Namespace, test_name: str, display_failure: bool = True
 ) -> TestResult:
     # Detect environment changes, handle exceptions.
 
@@ -404,7 +404,7 @@ def _runtest_inner(
         if not ns.pgo:
             msg = traceback.format_exc()
             print(f"test {test_name} crashed -- {msg}",
-                      file=sys.stderr, flush=True)
+                  file=sys.stderr, flush=True)
         return UncaughtException(test_name)
 
     if refleak:
@@ -432,7 +432,7 @@ def cleanup_test_droppings(test_name: str, verbose: int) -> None:
             kind, nuker = "file", os.unlink
         else:
             raise RuntimeError(f"os.path says {name!r} exists but is neither "
-                                               f"directory nor file")
+                               f"directory nor file")
 
         if verbose:
             print_warning(f"{test_name} left behind {kind} {name!r}")
@@ -445,4 +445,4 @@ def cleanup_test_droppings(test_name: str, verbose: int) -> None:
             nuker(name)
         except Exception as exc:
             print_warning(f"{test_name} left behind {kind} {name!r} "
-                                      f"and it couldn't be removed: {exc}")
+                          f"and it couldn't be removed: {exc}")
