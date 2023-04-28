@@ -515,7 +515,7 @@ specialize_module_load_attr(
 /* Attribute specialization */
 
 void
-_Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *klass, PyObject *self,
+_Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls, PyObject *self,
                              _Py_CODEUNIT *instr, PyObject *name, int load_method) {
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[LOAD_SUPER_ATTR] == INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR);
@@ -528,11 +528,11 @@ _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *klass, PyObject *
         SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_SHADOWED);
         goto fail;
     }
-    if (!PyType_Check(klass)) {
+    if (!PyType_Check(cls)) {
         SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_BAD_CLASS);
         goto fail;
     }
-    PyTypeObject *tp = (PyTypeObject *)klass;
+    PyTypeObject *tp = (PyTypeObject *)cls;
     PyObject *res = _PySuper_LookupDescr(tp, self, name);
     if (res == NULL) {
         SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_ERROR_OR_NOT_FOUND);
