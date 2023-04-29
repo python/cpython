@@ -1051,7 +1051,7 @@ code, or when embedding the Python interpreter:
 
    .. deprecated:: 3.9
 
-   .. index:: module: _thread
+   .. index:: pair: module; _thread
 
 
 .. c:function:: int PyEval_ThreadsInitialized()
