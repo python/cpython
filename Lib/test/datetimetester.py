@@ -15,6 +15,7 @@ import re
 import struct
 import sys
 import unittest
+import warnings
 
 from array import array
 
@@ -51,7 +52,6 @@ assert len(pickle_choices) == pickle.HIGHEST_PROTOCOL + 1
 # An arbitrary collection of objects of non-datetime types, for testing
 # mixed-type comparisons.
 OTHERSTUFF = (10, 34.5, "abc", {}, [], ())
-
 
 # XXX Copied from test_float.
 INF = float("inf")
@@ -2645,9 +2645,10 @@ class TestDateTime(TestDate):
         for test_name, ts in test_cases:
             with self.subTest(test_name, ts=ts):
                 with self.assertRaises((ValueError, OverflowError)):
-                    # converting a Python int to C time_t can raise a
-                    # OverflowError, especially on 32-bit platforms.
-                    self.theclass.utcfromtimestamp(ts)
+                    with self.assertWarns(DeprecationWarning):
+                        # converting a Python int to C time_t can raise a
+                        # OverflowError, especially on 32-bit platforms.
+                        self.theclass.utcfromtimestamp(ts)
 
     def test_insane_fromtimestamp(self):
         # It's possible that some platform maps time_t to double,
@@ -2664,8 +2665,9 @@ class TestDateTime(TestDate):
         # exempt such platforms (provided they return reasonable
         # results!).
         for insane in -1e200, 1e200:
-            self.assertRaises(OverflowError, self.theclass.utcfromtimestamp,
-                              insane)
+            with self.assertWarns(DeprecationWarning):
+                self.assertRaises(OverflowError, self.theclass.utcfromtimestamp,
+                                  insane)
 
     @unittest.skipIf(sys.platform == "win32", "Windows doesn't accept negative timestamps")
     def test_negative_float_fromtimestamp(self):
@@ -3024,7 +3026,7 @@ class TestDateTime(TestDate):
         for name, meth_name, kwargs in test_cases:
             with self.subTest(name):
                 constr = getattr(DateTimeSubclass, meth_name)
-                if constr == "utcnow":
+                if meth_name == "utcnow":
                     with self.assertWarns(DeprecationWarning):
                         dt = constr(**kwargs)
                 else:
@@ -4752,8 +4754,10 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         # Try with and without naming the keyword; for whatever reason,
         # utcfromtimestamp() doesn't accept a tzinfo argument.
         off42 = FixedOffset(42, "42")
-        self.assertRaises(TypeError, meth, ts, off42)
-        self.assertRaises(TypeError, meth, ts, tzinfo=off42)
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertRaises(TypeError, meth, ts, off42)
+            self.assertRaises(TypeError, meth, ts, tzinfo=off42)
 
     def test_tzinfo_timetuple(self):
         # TestDateTime tested most of this.  datetime adds a twist to the
