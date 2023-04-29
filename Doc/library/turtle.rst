@@ -397,7 +397,7 @@ Turtle motion
 
        >>> tp = turtle.pos()
        >>> tp
-       (0.00, 0.00)
+       (0.00,0.00)
        >>> turtle.teleport(60)
        >>> turtle.pos()
        (60.00,0.00)
@@ -576,8 +576,7 @@ Turtle motion
       :skipif: _tkinter is None
 
       >>> turtle.color("blue")
-      >>> turtle.stamp()
-      11
+      >>> stamp_id = turtle.stamp()
       >>> turtle.fd(50)
 
 
@@ -614,15 +613,8 @@ Turtle motion
    .. doctest::
 
       >>> for i in range(8):
-      ...     turtle.stamp(); turtle.fd(30)
-      13
-      14
-      15
-      16
-      17
-      18
-      19
-      20
+      ...     unused_stamp_id = turtle.stamp()
+      ...     turtle.fd(30)
       >>> turtle.clearstamps(2)
       >>> turtle.clearstamps(-2)
       >>> turtle.clearstamps()
