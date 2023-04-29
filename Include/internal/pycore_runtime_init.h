@@ -29,7 +29,7 @@ extern PyTypeObject _PyExc_MemoryError;
             _pymem_allocators_debug_INIT, \
             _pymem_allocators_obj_arena_INIT, \
         }, \
-        .obmalloc = _obmalloc_state_INIT(runtime.obmalloc), \
+        .obmalloc = _obmalloc_global_state_INIT, \
         .pyhash_state = pyhash_state_INIT, \
         .signals = _signals_RUNTIME_INIT, \
         .interpreters = { \
@@ -41,6 +41,11 @@ extern PyTypeObject _PyExc_MemoryError;
            in accordance with the specification. */ \
         .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
+        .imports = { \
+            .extensions = { \
+                .main_tstate = _PyThreadState_INIT, \
+            }, \
+        }, \
         .ceval = { \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
         }, \
@@ -59,9 +64,6 @@ extern PyTypeObject _PyExc_MemoryError;
         .types = { \
             .next_version_tag = 1, \
         }, \
-        .cached_objects = { \
-            .main_tstate = _PyThreadState_INIT, \
-        }, \
         .static_objects = { \
             .singletons = { \
                 .small_ints = _Py_small_ints_INIT, \
@@ -74,13 +76,13 @@ extern PyTypeObject _PyExc_MemoryError;
                     .latin1 = _Py_str_latin1_INIT, \
                 }, \
                 .tuple_empty = { \
-                    .ob_base = _PyVarObject_IMMORTAL_INIT(&PyTuple_Type, 0) \
+                    .ob_base = _PyVarObject_HEAD_INIT(&PyTuple_Type, 0) \
                 }, \
                 .hamt_bitmap_node_empty = { \
-                    .ob_base = _PyVarObject_IMMORTAL_INIT(&_PyHamt_BitmapNode_Type, 0) \
+                    .ob_base = _PyVarObject_HEAD_INIT(&_PyHamt_BitmapNode_Type, 0) \
                 }, \
                 .context_token_missing = { \
-                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyContextTokenMissing_Type), \
+                    .ob_base = _PyObject_HEAD_INIT(&_PyContextTokenMissing_Type) \
                 }, \
             }, \
         }, \
@@ -91,6 +93,7 @@ extern PyTypeObject _PyExc_MemoryError;
     { \
         .id_refcount = -1, \
         .imports = IMPORTS_INIT, \
+        .obmalloc = _obmalloc_state_INIT(INTERP.obmalloc), \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         }, \
@@ -110,15 +113,18 @@ extern PyTypeObject _PyExc_MemoryError;
         .func_state = { \
             .next_version = 1, \
         }, \
+        .types = { \
+            .next_version_tag = _Py_TYPE_BASE_VERSION_TAG, \
+        }, \
         .static_objects = { \
             .singletons = { \
                 ._not_used = 1, \
                 .hamt_empty = { \
-                    .ob_base = _PyObject_IMMORTAL_INIT(&_PyHamt_Type), \
+                    .ob_base = _PyObject_HEAD_INIT(&_PyHamt_Type) \
                     .h_root = (PyHamtNode*)&_Py_SINGLETON(hamt_bitmap_node_empty), \
                 }, \
                 .last_resort_memory_error = { \
-                    _PyObject_IMMORTAL_INIT(&_PyExc_MemoryError), \
+                    _PyObject_HEAD_INIT(&_PyExc_MemoryError) \
                 }, \
             }, \
         }, \
@@ -136,7 +142,7 @@ extern PyTypeObject _PyExc_MemoryError;
 
 #define _PyBytes_SIMPLE_INIT(CH, LEN) \
     { \
-        _PyVarObject_IMMORTAL_INIT(&PyBytes_Type, (LEN)), \
+        _PyVarObject_HEAD_INIT(&PyBytes_Type, (LEN)) \
         .ob_shash = -1, \
         .ob_sval = { (CH) }, \
     }
@@ -147,7 +153,7 @@ extern PyTypeObject _PyExc_MemoryError;
 
 #define _PyUnicode_ASCII_BASE_INIT(LITERAL, ASCII) \
     { \
-        .ob_base = _PyObject_IMMORTAL_INIT(&PyUnicode_Type), \
+        .ob_base = _PyObject_HEAD_INIT(&PyUnicode_Type) \
         .length = sizeof(LITERAL) - 1, \
         .hash = -1, \
         .state = { \

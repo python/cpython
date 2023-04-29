@@ -8,15 +8,13 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_object.h"  // _PyObject_IMMORTAL_REFCNT
-
 #ifdef Py_DEBUG
 static inline void
 _PyStaticObject_CheckRefcnt(PyObject *obj) {
-    if (Py_REFCNT(obj) < _PyObject_IMMORTAL_REFCNT) {
+    if (Py_REFCNT(obj) < _Py_IMMORTAL_REFCNT) {
         _PyObject_ASSERT_FAILED_MSG(obj,
             "immortal object has less refcnt than expected "
-            "_PyObject_IMMORTAL_REFCNT");
+            "_Py_IMMORTAL_REFCNT");
     }
 }
 #endif
@@ -892,6 +890,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(end_lineno));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(end_offset));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(endpos));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(entrypoint));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(env));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(errors));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(event));

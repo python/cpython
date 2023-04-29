@@ -355,33 +355,26 @@ call_soon(asyncio_state *state, PyObject *loop, PyObject *func, PyObject *arg,
           PyObject *ctx)
 {
     PyObject *handle;
-    PyObject *stack[3];
-    Py_ssize_t nargs;
 
     if (ctx == NULL) {
-        handle = PyObject_CallMethodObjArgs(
-            loop, &_Py_ID(call_soon), func, arg, NULL);
+        PyObject *stack[] = {loop, func, arg};
+        size_t nargsf = 3 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+        handle = PyObject_VectorcallMethod(&_Py_ID(call_soon), stack, nargsf, NULL);
     }
     else {
-        /* Use FASTCALL to pass a keyword-only argument to call_soon */
-
-        PyObject *callable = PyObject_GetAttr(loop, &_Py_ID(call_soon));
-        if (callable == NULL) {
-            return -1;
-        }
-
         /* All refs in 'stack' are borrowed. */
-        nargs = 1;
-        stack[0] = func;
+        PyObject *stack[4];
+        size_t nargs = 2;
+        stack[0] = loop;
+        stack[1] = func;
         if (arg != NULL) {
-            stack[1] = arg;
+            stack[2] = arg;
             nargs++;
         }
         stack[nargs] = (PyObject *)ctx;
-        EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, callable);
-        handle = PyObject_Vectorcall(callable, stack, nargs,
-                                     state->context_kwname);
-        Py_DECREF(callable);
+        size_t nargsf = nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
+        handle = PyObject_VectorcallMethod(&_Py_ID(call_soon), stack, nargsf,
+                                           state->context_kwname);
     }
 
     if (handle == NULL) {
@@ -2076,8 +2069,10 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     Py_XSETREF(self->task_coro, coro);
 
     if (name == Py_None) {
-        name = PyUnicode_FromFormat("Task-%" PRIu64,
-                                    ++state->task_name_counter);
+        // optimization: defer task name formatting
+        // store the task counter as PyLong in the name
+        // for deferred formatting in get_name
+        name = PyLong_FromUnsignedLongLong(++state->task_name_counter);
     } else if (!PyUnicode_CheckExact(name)) {
         name = PyObject_Str(name);
     } else {
@@ -2359,8 +2354,9 @@ _asyncio_Task_get_stack_impl(TaskObj *self, PyTypeObject *cls,
 /*[clinic end generated code: output=6774dfc10d3857fa input=8e01c9b2618ae953]*/
 {
     asyncio_state *state = get_asyncio_state_by_cls(cls);
-    return PyObject_CallFunctionObjArgs(
-        state->asyncio_task_get_stack_func, self, limit, NULL);
+    PyObject *stack[] = {(PyObject *)self, limit};
+    return PyObject_Vectorcall(state->asyncio_task_get_stack_func,
+                               stack, 2, NULL);
 }
 
 /*[clinic input]
@@ -2387,8 +2383,9 @@ _asyncio_Task_print_stack_impl(TaskObj *self, PyTypeObject *cls,
 /*[clinic end generated code: output=b38affe9289ec826 input=150b35ba2d3a7dee]*/
 {
     asyncio_state *state = get_asyncio_state_by_cls(cls);
-    return PyObject_CallFunctionObjArgs(
-        state->asyncio_task_print_stack_func, self, limit, file, NULL);
+    PyObject *stack[] = {(PyObject *)self, limit, file};
+    return PyObject_Vectorcall(state->asyncio_task_print_stack_func,
+                               stack, 3, NULL);
 }
 
 /*[clinic input]
@@ -2454,6 +2451,13 @@ _asyncio_Task_get_name_impl(TaskObj *self)
 /*[clinic end generated code: output=0ecf1570c3b37a8f input=a4a6595d12f4f0f8]*/
 {
     if (self->task_name) {
+        if (PyLong_CheckExact(self->task_name)) {
+            PyObject *name = PyUnicode_FromFormat("Task-%S", self->task_name);
+            if (name == NULL) {
+                return NULL;
+            }
+            Py_SETREF(self->task_name, name);
+        }
         return Py_NewRef(self->task_name);
     }
 
