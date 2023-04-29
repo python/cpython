@@ -293,8 +293,7 @@ PyObject* _unicode_dedent(PyObject *unicode)
     Py_ssize_t common_leading_spaces = effective_inf;
 
     Py_ssize_t num_lines = PyObject_Length(lines);
-    for (Py_ssize_t line_idx = 0; line_idx < num_lines; line_idx ++)
-    {
+    for (Py_ssize_t line_idx = 0; line_idx < num_lines; line_idx ++) {
         PyObject* index = PyLong_FromSsize_t(line_idx);
         PyObject* line = PyObject_GetItem(lines, index);
         PyObject* striped_line = _PyUnicode_XStrip(line, 0, space);
@@ -306,8 +305,7 @@ PyObject* _unicode_dedent(PyObject *unicode)
 
         // On non-empty lines, see if the amount of leading whitespace is less
         // than current value. If so, update it.
-        if (line_len > 1 && leading_spaces < common_leading_spaces)
-        {
+        if (line_len > 1 && leading_spaces < common_leading_spaces) {
             common_leading_spaces = leading_spaces;
         }
 
@@ -316,23 +314,22 @@ PyObject* _unicode_dedent(PyObject *unicode)
         Py_DECREF(index);
     }
 
-    if (common_leading_spaces > 0 && common_leading_spaces < effective_inf){
+    if (common_leading_spaces > 0 && common_leading_spaces < effective_inf) {
 
         // We found common leading whitespace, strip if off.
         PyObject* new_lines = PyList_New(num_lines);
-        for (Py_ssize_t line_idx = 0; line_idx < num_lines; line_idx ++)
-        {
+        for (Py_ssize_t line_idx = 0; line_idx < num_lines; line_idx ++) {
             PyObject* index = PyLong_FromSsize_t(line_idx);
             PyObject* line = PyObject_GetItem(lines, index);
             Py_ssize_t end = PyObject_Length(line);
             Py_ssize_t start = common_leading_spaces;
-            if (end <= 1){
+            if (end <= 1) {
                 start = 0;
             }
             PyObject* new_line = PyUnicode_Substring(line, start, end);
             PyList_SetItem(new_lines, line_idx, new_line);
 
-            Py_DECREF(new_line);
+            //Py_DECREF(new_line);  // is it correct that we dont need to DECREF here?
             Py_DECREF(line);
             Py_DECREF(index);
         }
@@ -346,7 +343,7 @@ PyObject* _unicode_dedent(PyObject *unicode)
         // Guidance here would be appreciated.
         Py_DECREF(unicode);
     }
-    else{
+    else {
        new_unicode = unicode;
     }
 
@@ -375,8 +372,11 @@ pymain_run_command(wchar_t *command)
         return pymain_exit_err_print();
     }
 
-    // Should the input be modified here with the Python C-API?
-    unicode = _unicode_dedent(unicode);
+    // Only perform auto-dedent if the string starts with a newline
+    if (wcsncmp(command, L"\n", 1) == 0) {
+        // Should the input be modified here with the Python C-API?
+        unicode = _unicode_dedent(unicode);
+    }
 
     bytes = PyUnicode_AsUTF8String(unicode);
     Py_DECREF(unicode);
