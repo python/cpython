@@ -1084,6 +1084,8 @@ class TestBranchAndJumpEvents(CheckEvents):
 
 
 class TestLoadSuperAttr(CheckEvents):
+    RECORDERS = CallRecorder, LineRecorder, CRaiseRecorder, CReturnRecorder
+
     def _super_method_call(self, optimized=False):
         assignment = "x = 1" if optimized else "super = super"
         codestr = textwrap.dedent(f"""
@@ -1128,10 +1130,62 @@ class TestLoadSuperAttr(CheckEvents):
         nonopt_func, nonopt_expected = self._super_method_call(optimized=False)
         opt_func, opt_expected = self._super_method_call(optimized=True)
 
-        recorders = CallRecorder, LineRecorder, CRaiseRecorder, CReturnRecorder
+        self.check_events(nonopt_func, recorders=self.RECORDERS, expected=nonopt_expected)
+        self.check_events(opt_func, recorders=self.RECORDERS, expected=opt_expected)
 
-        self.check_events(nonopt_func, recorders=recorders, expected=nonopt_expected)
-        self.check_events(opt_func, recorders=recorders, expected=opt_expected)
+    def _super_method_call_error(self, optimized=False):
+        assignment = "x = 1" if optimized else "super = super"
+        codestr = textwrap.dedent(f"""
+            {assignment}
+            class A:
+                def method(self, x):
+                    return x
+
+            class B(A):
+                def method(self, x):
+                    return super(
+                        x,
+                        self,
+                    ).method(
+                        x
+                    )
+
+            b = B()
+            def f():
+                try:
+                    return b.method(1)
+                except TypeError:
+                    pass
+                else:
+                    assert False, "should have raised TypeError"
+        """)
+        d = {}
+        exec(codestr, d, d)
+        expected = [
+            ('line', 'check_events', 10),
+            ('call', 'f', sys.monitoring.MISSING),
+            ('line', 'f', 1),
+            ('line', 'f', 2),
+            ('call', 'method', d["b"]),
+            ('line', 'method', 1),
+            ('line', 'method', 2),
+            ('line', 'method', 3),
+            ('line', 'method', 1),
+            ('call', 'super', 1),
+            ('C raise', 'super', 1),
+            ('line', 'f', 3),
+            ('line', 'f', 4),
+            ('line', 'check_events', 11),
+            ('call', 'set_events', 2),
+        ]
+        return d["f"], expected
+
+    def test_method_call_error(self):
+        nonopt_func, nonopt_expected = self._super_method_call_error(optimized=False)
+        opt_func, opt_expected = self._super_method_call_error(optimized=True)
+
+        self.check_events(nonopt_func, recorders=self.RECORDERS, expected=nonopt_expected)
+        self.check_events(opt_func, recorders=self.RECORDERS, expected=opt_expected)
 
     def _super_attr(self, optimized=False):
         assignment = "x = 1" if optimized else "super = super"
@@ -1170,10 +1224,8 @@ class TestLoadSuperAttr(CheckEvents):
         nonopt_func, nonopt_expected = self._super_attr(optimized=False)
         opt_func, opt_expected = self._super_attr(optimized=True)
 
-        recorders = CallRecorder, LineRecorder, CRaiseRecorder, CReturnRecorder
-
-        self.check_events(nonopt_func, recorders=recorders, expected=nonopt_expected)
-        self.check_events(opt_func, recorders=recorders, expected=opt_expected)
+        self.check_events(nonopt_func, recorders=self.RECORDERS, expected=nonopt_expected)
+        self.check_events(opt_func, recorders=self.RECORDERS, expected=opt_expected)
 
 
 class TestSetGetEvents(MonitoringTestBase, unittest.TestCase):

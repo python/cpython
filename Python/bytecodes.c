@@ -1594,12 +1594,9 @@ dummy_func(
             PyObject *stack[] = {class, self};
             PyObject *super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
             DECREF_INPUTS();
-            ERROR_IF(super == NULL, error);
-            res = PyObject_GetAttr(super, name);
-            Py_DECREF(super);
             if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
                 PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
-                if (res == NULL) {
+                if (super == NULL) {
                     _Py_call_instrumentation_exc2(
                         tstate, PY_MONITORING_EVENT_C_RAISE,
                         frame, next_instr-1, global_super, arg);
@@ -1613,6 +1610,9 @@ dummy_func(
                     }
                 }
             }
+            ERROR_IF(super == NULL, error);
+            res = PyObject_GetAttr(super, name);
+            Py_DECREF(super);
             ERROR_IF(res == NULL, error);
         }
 
