@@ -1,0 +1,1 @@
+Fix `mmap_subscript` in mmapmodule.c to avoid segmentation fault
