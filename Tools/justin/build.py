@@ -105,7 +105,7 @@ class ObjectParser:
         while line is not None:
             pattern = r"RELOCATION RECORDS FOR \[([\w+\.]+)\]:"
             match = re.fullmatch(pattern, line)
-            assert match is not None
+            assert match is not None, line
             [section] = match.groups()
             assert section not in relocs
             line = next(lines, None)
@@ -421,7 +421,7 @@ class Engine:
         "STORE_ATTR",
         "STORE_ATTR_INSTANCE_VALUE",
         "STORE_ATTR_SLOT",
-        "STORE_ATTR_WITH_HINT",
+        # "STORE_ATTR_WITH_HINT",
         "STORE_DEREF",
         "STORE_FAST",
         "STORE_FAST__LOAD_FAST",

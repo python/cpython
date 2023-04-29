@@ -227,6 +227,26 @@ dis_bug46724 = """\
        JUMP_FORWARD            -4 (to 0)
 """
 
+def func_w_kwargs(a, b, **c):
+    pass
+
+def wrap_func_w_kwargs():
+    func_w_kwargs(1, 2, c=5)
+
+dis_kw_names = """\
+%3d        RESUME                   0
+
+%3d        LOAD_GLOBAL              1 (NULL + func_w_kwargs)
+           LOAD_CONST               1 (1)
+           LOAD_CONST               2 (2)
+           LOAD_CONST               3 (5)
+           KW_NAMES                 4 (('c',))
+           CALL                     3
+           POP_TOP
+           RETURN_CONST             0 (None)
+""" % (wrap_func_w_kwargs.__code__.co_firstlineno,
+       wrap_func_w_kwargs.__code__.co_firstlineno + 1)
+
 _BIG_LINENO_FORMAT = """\
   1        RESUME                   0
 
@@ -861,6 +881,13 @@ class DisTests(DisTestBase):
         self.maxDiff = None
         got = self.get_disassembly(func, depth=0)
         self.do_disassembly_compare(got, expected, with_offsets)
+        # Add checks for dis.disco
+        if hasattr(func, '__code__'):
+            got_disco = io.StringIO()
+            with contextlib.redirect_stdout(got_disco):
+                dis.disco(func.__code__)
+            self.do_disassembly_compare(got_disco.getvalue(), expected,
+                                        with_offsets)
 
     def test_opmap(self):
         self.assertEqual(dis.opmap["NOP"], 9)
@@ -910,6 +937,10 @@ class DisTests(DisTestBase):
     def test_bug_46724(self):
         # Test that negative operargs are handled properly
         self.do_disassembly_test(bug46724, dis_bug46724)
+
+    def test_kw_names(self):
+        # Test that value is displayed for KW_NAMES
+        self.do_disassembly_test(wrap_func_w_kwargs, dis_kw_names)
 
     def test_big_linenos(self):
         def func(count):
@@ -1934,6 +1965,14 @@ class TestFinderMethods(unittest.TestCase):
         ]
 
         self.assertEqual(sorted(labels), sorted(jumps))
+
+    def test_findlinestarts(self):
+        def func():
+            pass
+
+        code = func.__code__
+        offsets = [linestart[0] for linestart in dis.findlinestarts(code)]
+        self.assertEqual(offsets, [0, 2])
 
 
 class TestDisTraceback(DisTestBase):

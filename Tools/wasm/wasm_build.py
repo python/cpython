@@ -73,7 +73,7 @@ Builds require a clean source directory. Please use a clean checkout or
 run "make clean -C '{SRCDIR}'".
 """
 
-INSTALL_NATIVE = f"""
+INSTALL_NATIVE = """
 Builds require a C compiler (gcc, clang), make, pkg-config, and development
 headers for dependencies like zlib.
 
@@ -598,7 +598,7 @@ class BuildProfile:
         end = time.monotonic() + 3.0
         while time.monotonic() < end and srv.returncode is None:
             try:
-                with socket.create_connection((bind, port), timeout=0.1) as s:
+                with socket.create_connection((bind, port), timeout=0.1) as _:
                     pass
             except OSError:
                 time.sleep(0.01)

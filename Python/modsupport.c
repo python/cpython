@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"   // _PyIndex_Check()
+#include "pycore_object.h"     // _PyType_IsReady()
 
 #define FLAG_SIZE_T 1
 typedef double va_double;
@@ -693,7 +694,7 @@ PyModule_AddStringConstant(PyObject *m, const char *name, const char *value)
 int
 PyModule_AddType(PyObject *module, PyTypeObject *type)
 {
-    if (PyType_Ready(type) < 0) {
+    if (!_PyType_IsReady(type) && PyType_Ready(type) < 0) {
         return -1;
     }
 

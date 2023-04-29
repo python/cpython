@@ -13,6 +13,7 @@ import re
 import types
 import decimal
 import unittest
+from test import support
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure
 
@@ -536,6 +537,7 @@ x = (
                              r"""f'{("x}'""",
                              ])
 
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_mismatched_parens(self):
         self.assertAllRaise(SyntaxError, r"closing parenthesis '\}' "
                             r"does not match opening parenthesis '\('",
@@ -938,15 +940,13 @@ x = (
                              "f'{lambda :x}'",
                              "f'{lambda *arg, :x}'",
                              "f'{1, lambda:x}'",
+                             "f'{lambda x:}'",
+                             "f'{lambda :}'",
                              ])
 
         # but don't emit the paren warning in general cases
-        self.assertAllRaise(SyntaxError,
-                            "f-string: expecting a valid expression after '{'",
-                            ["f'{lambda x:}'",
-                             "f'{lambda :}'",
-                             "f'{+ lambda:None}'",
-                             ])
+        with self.assertRaisesRegex(SyntaxError, "f-string: expecting a valid expression after '{'"):
+            eval("f'{+ lambda:None}'")
 
     def test_valid_prefixes(self):
         self.assertEqual(F'{1}', "1")
@@ -1529,6 +1529,25 @@ x = (
         with self.assertRaisesRegex(SyntaxError,
                                     "f-string: expecting a valid expression after '{'"):
             compile("f'{**a}'", "?", "exec")
+
+    def test_not_closing_quotes(self):
+        self.assertAllRaise(SyntaxError, "unterminated f-string literal", ['f"', "f'"])
+        self.assertAllRaise(SyntaxError, "unterminated triple-quoted f-string literal",
+                            ['f"""', "f'''"])
+
+    def test_syntax_error_after_debug(self):
+        self.assertAllRaise(SyntaxError, "f-string: expecting a valid expression after '{'",
+                            [
+                                "f'{1=}{;'",
+                                "f'{1=}{+;'",
+                                "f'{1=}{2}{;'",
+                                "f'{1=}{3}{;'",
+                            ])
+        self.assertAllRaise(SyntaxError, "f-string: expecting '=', or '!', or ':', or '}'",
+                            [
+                                "f'{1=}{1;'",
+                                "f'{1=}{1;}'",
+                            ])
 
 if __name__ == '__main__':
     unittest.main()

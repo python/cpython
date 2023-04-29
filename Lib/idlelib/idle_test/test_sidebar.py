@@ -328,7 +328,7 @@ class LineNumbersTest(unittest.TestCase):
         self.assertEqual(self.linenumber.sidebar_text.index('@0,0'), '11.0')
 
         # Generate a mouse-wheel event and make sure it scrolled up or down.
-        # The meaning of the "delta" is OS-dependant, so this just checks for
+        # The meaning of the "delta" is OS-dependent, so this just checks for
         # any change.
         self.linenumber.sidebar_text.event_generate('<MouseWheel>',
                                                     x=0, y=0,
@@ -691,7 +691,7 @@ class ShellSidebarTest(unittest.TestCase):
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
         # Scroll up using the <MouseWheel> event.
-        # The meaning delta is platform-dependant.
+        # The meaning of delta is platform-dependent.
         delta = -1 if sys.platform == 'darwin' else 120
         sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
         yield
