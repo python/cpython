@@ -402,7 +402,7 @@ The Python compiler currently generates the following bytecode instructions.
 
 **General instructions**
 
-In the following, We will refer to the interpreter stack as STACK and describe
+In the following, We will refer to the interpreter stack as ``STACK`` and describe
 operations on it as if it was a Python list. The top of the stack corresponds to
 ``STACK[-1]`` in this language.
 
@@ -414,7 +414,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
 .. opcode:: POP_TOP
 
-   Removes the top-of-stack item.::
+   Removes the top-of-stack item::
 
       STACK.pop()
 
@@ -422,7 +422,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 .. opcode:: END_FOR
 
    Removes the top two values from the stack.
-   Equivalent to POP_TOP; POP_TOP.
+   Equivalent to ``POP_TOP``; ``POP_TOP``.
    Used to clean up at the end of loops, hence the name.
 
    .. versionadded:: 3.12
@@ -431,7 +431,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 .. opcode:: COPY (i)
 
    Push the i-th item to the top of the stack without removing it from its original
-   location.::
+   location::
 
       assert i > 0
       STACK.append(STACK[-i])
@@ -441,7 +441,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
 .. opcode:: SWAP (i)
 
-   Swap the top of the stack with the i-th element.::
+   Swap the top of the stack with the i-th element::
 
       STACK[-i], STACK[-1] = stack[-1], STACK[-i]
 
@@ -513,7 +513,7 @@ not have to be) the original ``STACK[-2]``.
 .. opcode:: BINARY_OP (op)
 
    Implements the binary and in-place operators (depending on the value of
-   *op*).::
+   *op*)::
 
       rhs = STACK.pop()
       lhs = STACK.pop()
@@ -580,14 +580,14 @@ not have to be) the original ``STACK[-2]``.
 
    Implements ``STACK[-1] = get_awaitable(STACK[-1])``, where ``get_awaitable(o)``
    returns ``o`` if ``o`` is a coroutine object or a generator object with
-   the CO_ITERABLE_COROUTINE flag, or resolves
+   the :data:`~inspect.CO_ITERABLE_COROUTINE` flag, or resolves
    ``o.__await__``.
 
     If the ``where`` operand is nonzero, it indicates where the instruction
     occurs:
 
-    * ``1`` After a call to ``__aenter__``
-    * ``2`` After a call to ``__aexit__``
+    * ``1``: After a call to ``__aenter__``
+    * ``2``: After a call to ``__aexit__``
 
    .. versionadded:: 3.5
 
@@ -652,6 +652,7 @@ not have to be) the original ``STACK[-2]``.
 .. opcode:: SET_ADD (i)
 
    Implements::
+
       item = STACK.pop()
       set.add(STACK[-i], item)
 
@@ -705,11 +706,11 @@ iterations of the loop.
 
    Yields ``STACK.pop()`` from a :term:`generator`.
 
-    .. versionchanged:: 3.11
-       oparg set to be the stack depth.
+   .. versionchanged:: 3.11
+      oparg set to be the stack depth.
 
-    .. versionchanged:: 3.12
-       oparg set to be the exception block depth, for efficient closing of generators.
+   .. versionchanged:: 3.12
+      oparg set to be the exception block depth, for efficient closing of generators.
 
 
 .. opcode:: SETUP_ANNOTATIONS
@@ -726,32 +727,32 @@ iterations of the loop.
 
    Pops a value from the stack, which is used to restore the exception state.
 
-    .. versionchanged:: 3.11
-       Exception representation on the stack now consist of one, not three, items.
+   .. versionchanged:: 3.11
+      Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: RERAISE
 
-    Re-raises the exception currently on top of the stack. If oparg is non-zero,
-    pops an additional value from the stack which is used to set ``f_lasti``
-    of the current frame.
+   Re-raises the exception currently on top of the stack. If oparg is non-zero,
+   pops an additional value from the stack which is used to set ``f_lasti``
+   of the current frame.
 
-    .. versionadded:: 3.9
+   .. versionadded:: 3.9
 
-    .. versionchanged:: 3.11
-       Exception representation on the stack now consist of one, not three, items.
+   .. versionchanged:: 3.11
+      Exception representation on the stack now consist of one, not three, items.
 
 .. opcode:: PUSH_EXC_INFO
 
-    Pops a value from the stack. Pushes the current exception to the top of the stack.
-    Pushes the value originally popped back to the stack.
-    Used in exception handlers.
+   Pops a value from the stack. Pushes the current exception to the top of the stack.
+   Pushes the value originally popped back to the stack.
+   Used in exception handlers.
 
-    .. versionadded:: 3.11
+   .. versionadded:: 3.11
 
 .. opcode:: CHECK_EXC_MATCH
 
    Performs exception matching for ``except``. Tests whether the ``STACK[-2]``
-   is an exception matching ``STACK[-1]``. Pops STACK[-1] and pushes the boolean
+   is an exception matching ``STACK[-1]``. Pops ``STACK[-1]`` and pushes the boolean
    result of the test.
 
    .. versionadded:: 3.11
@@ -770,16 +771,16 @@ iterations of the loop.
 
 .. opcode:: WITH_EXCEPT_START
 
-    Calls the function in position 4 on the stack with arguments (type, val, tb)
-    representing the exception at the top of the stack.
-    Used to implement the call ``context_manager.__exit__(*exc_info())`` when an exception
-    has occurred in a :keyword:`with` statement.
+   Calls the function in position 4 on the stack with arguments (type, val, tb)
+   representing the exception at the top of the stack.
+   Used to implement the call ``context_manager.__exit__(*exc_info())`` when an exception
+   has occurred in a :keyword:`with` statement.
 
-    .. versionadded:: 3.9
+   .. versionadded:: 3.9
 
-    .. versionchanged:: 3.11
-       The ``__exit__`` function is in position 4 of the stack rather than 7.
-       Exception representation on the stack now consist of one, not three, items.
+   .. versionchanged:: 3.11
+      The ``__exit__`` function is in position 4 of the stack rather than 7.
+      Exception representation on the stack now consist of one, not three, items.
 
 
 .. opcode:: LOAD_ASSERTION_ERROR
@@ -863,7 +864,7 @@ iterations of the loop.
 .. opcode:: UNPACK_SEQUENCE (count)
 
    Unpacks ``STACK[-1]`` into *count* individual values, which are put onto the stack
-   right-to-left.::
+   right-to-left::
 
       STACK.extend(STACK.pop()[:count:-1])
 
@@ -1028,7 +1029,7 @@ iterations of the loop.
    This bytecode distinguishes two cases: if ``STACK[-1]`` has a method with the
    correct name, the bytecode pushes the unbound method and ``STACK[-1]``.
    ``STACK[-1]`` will be used as the first argument (``self``) by :opcode:`CALL`
-   when calling the unbound method. Otherwise, ``NULL`` and the object return by
+   when calling the unbound method. Otherwise, ``NULL`` and the object returned by
    the attribute lookup are pushed.
 
    .. versionchanged:: 3.12
@@ -1207,7 +1208,7 @@ iterations of the loop.
 
 .. opcode:: MAKE_CELL (i)
 
-   Creates a new cell in slot ``i``.  If that slot is empty then
+   Creates a new cell in slot ``i``.  If that slot is nonempty then
    that value is stored into the new cell.
 
    .. versionadded:: 3.11
@@ -1332,9 +1333,9 @@ iterations of the loop.
 
 .. opcode:: PUSH_NULL
 
-    Pushes a ``NULL`` to the stack.
-    Used in the call sequence to match the ``NULL`` pushed by
-    :opcode:`LOAD_METHOD` for non-method calls.
+   Pushes a ``NULL`` to the stack.
+   Used in the call sequence to match the ``NULL`` pushed by
+   :opcode:`LOAD_METHOD` for non-method calls.
 
    .. versionadded:: 3.11
 
@@ -1434,38 +1435,38 @@ iterations of the loop.
 
 .. opcode:: RESUME (where)
 
-    A no-op. Performs internal tracing, debugging and optimization checks.
+   A no-op. Performs internal tracing, debugging and optimization checks.
 
-    The ``where`` operand marks where the ``RESUME`` occurs:
+   The ``where`` operand marks where the ``RESUME`` occurs:
 
-    * ``0`` The start of a function, which is neither a generator, coroutine
-      nor an async generator
-    * ``1`` After a ``yield`` expression
-    * ``2`` After a ``yield from`` expression
-    * ``3`` After an ``await`` expression
+   * ``0`` The start of a function, which is neither a generator, coroutine
+     nor an async generator
+   * ``1`` After a ``yield`` expression
+   * ``2`` After a ``yield from`` expression
+   * ``3`` After an ``await`` expression
 
    .. versionadded:: 3.11
 
 
 .. opcode:: RETURN_GENERATOR
 
-    Create a generator, coroutine, or async generator from the current frame.
-    Used as first opcode of in code object for the above mentioned callables.
-    Clear the current frame and return the newly created generator.
+   Create a generator, coroutine, or async generator from the current frame.
+   Used as first opcode of in code object for the above mentioned callables.
+   Clear the current frame and return the newly created generator.
 
-    .. versionadded:: 3.11
+   .. versionadded:: 3.11
 
 
 .. opcode:: SEND (delta)
 
-    Equivalent to ``STACK[-1] = STACK[-2].send(STACK[-1])``. Used in ``yield from``
-    and ``await`` statements.
+   Equivalent to ``STACK[-1] = STACK[-2].send(STACK[-1])``. Used in ``yield from``
+   and ``await`` statements.
 
-    If the call raises :exc:`StopIteration`, pop both items, push the
-    exception's ``value`` attribute, and increment the bytecode counter by
-    *delta*.
+   If the call raises :exc:`StopIteration`, pop both items, push the
+   exception's ``value`` attribute, and increment the bytecode counter by
+   *delta*.
 
-    .. versionadded:: 3.11
+   .. versionadded:: 3.11
 
 
 .. opcode:: HAVE_ARGUMENT
@@ -1493,15 +1494,15 @@ iterations of the loop.
    argument and sets ``STACK[-1]`` to the result. Used to implement
    functionality that is necessary but not performance critical.
 
-    The operand determines which intrinsic function is called:
+   The operand determines which intrinsic function is called:
 
-    * ``0`` Not valid
-    * ``1`` Prints the argument to standard out. Used in the REPL.
-    * ``2`` Performs ``import *`` for the named module.
-    * ``3`` Extracts the return value from a ``StopIteration`` exception.
-    * ``4`` Wraps an aync generator value
-    * ``5`` Performs the unary ``+`` operation
-    * ``6`` Converts a list to a tuple
+   * ``0`` Not valid
+   * ``1`` Prints the argument to standard out. Used in the REPL.
+   * ``2`` Performs ``import *`` for the named module.
+   * ``3`` Extracts the return value from a ``StopIteration`` exception.
+   * ``4`` Wraps an aync generator value
+   * ``5`` Performs the unary ``+`` operation
+   * ``6`` Converts a list to a tuple
 
    .. versionadded:: 3.12
 
@@ -1511,17 +1512,17 @@ iterations of the loop.
    arguments and sets ``STACK[-1]`` to the result. Used to implement functionality that is
    necessary but not performance critical.
 
-    The operand determines which intrinsic function is called:
+   The operand determines which intrinsic function is called:
 
-    * ``0`` Not valid
-    * ``1`` Calculates the :exc:`ExceptionGroup` to raise from a ``try-except*``.
+   * ``0`` Not valid
+   * ``1`` Calculates the :exc:`ExceptionGroup` to raise from a ``try-except*``.
 
    .. versionadded:: 3.12
 
 
 **Pseudo-instructions**
 
-These opcodes do not appear in python bytecode, they are used by the compiler
+These opcodes do not appear in Python bytecode. They are used by the compiler
 but are replaced by real opcodes or removed before bytecode is generated.
 
 .. opcode:: SETUP_FINALLY (target)
@@ -1533,7 +1534,7 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
 .. opcode:: SETUP_CLEANUP (target)
 
-   Like ``SETUP_FINALLY``, but in case of exception also pushes the last
+   Like ``SETUP_FINALLY``, but in case of an exception also pushes the last
    instruction (``lasti``) to the stack so that ``RERAISE`` can restore it.
    If an exception occurs, the value stack level and the last instruction on
    the frame are restored to their current state, and control is transferred
@@ -1542,7 +1543,7 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
 .. opcode:: SETUP_WITH (target)
 
-   Like ``SETUP_CLEANUP``, but in case of exception one more item is popped
+   Like ``SETUP_CLEANUP``, but in case of an exception one more item is popped
    from the stack before control is transferred to the exception handler at
    ``target``.
 
@@ -1576,9 +1577,9 @@ Opcode collections
 These collections are provided for automatic introspection of bytecode
 instructions:
 
-   .. versionchanged:: 3.12
-      The collections now contain pseudo instructions as well. These are
-      opcodes with values ``>= MIN_PSEUDO_OPCODE``.
+.. versionchanged:: 3.12
+   The collections now contain pseudo instructions as well. These are
+   opcodes with values ``>= MIN_PSEUDO_OPCODE``.
 
 .. data:: opname
 
@@ -1599,7 +1600,7 @@ instructions:
 
    Sequence of bytecodes that use their argument.
 
-    .. versionadded:: 3.12
+   .. versionadded:: 3.12
 
 
 .. data:: hasconst
@@ -1609,10 +1610,10 @@ instructions:
 
 .. data:: hasfree
 
-   Sequence of bytecodes that access a free variable (note that 'free' in this
+   Sequence of bytecodes that access a free variable. 'free' in this
    context refers to names in the current scope that are referenced by inner
    scopes or names in outer scopes that are referenced from this scope.  It does
-   *not* include references to global or builtin scopes).
+   *not* include references to global or builtin scopes.
 
 
 .. data:: hasname
@@ -1643,4 +1644,4 @@ instructions:
 
    Sequence of bytecodes that set an exception handler.
 
-    .. versionadded:: 3.12
+   .. versionadded:: 3.12

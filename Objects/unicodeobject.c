@@ -14573,10 +14573,6 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
 PyStatus
 _PyUnicode_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
     if (_PyStaticType_InitBuiltin(&EncodingMapType) < 0) {
         goto error;
     }
