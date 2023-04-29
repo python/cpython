@@ -136,11 +136,11 @@ _ver_stages = {
     'pl': 200, 'p': 200,
 }
 
-_component_re = re.compile(r'([0-9]+|[._+-])')
 
 def _comparable_version(version):
+    component_re = re.compile(r'([0-9]+|[._+-])')
     result = []
-    for v in _component_re.split(version):
+    for v in component_re.split(version):
         if v not in '._+-':
             try:
                 v = int(v, 10)
@@ -185,7 +185,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
             # sys.executable is not set.
             return lib, version
 
-    _libc_search = re.compile(b'(__libc_init)'
+    libc_search = re.compile(b'(__libc_init)'
                           b'|'
                           b'(GLIBC_([0-9.]+))'
                           b'|'
@@ -201,7 +201,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         pos = 0
         while pos < len(binary):
             if b'libc' in binary or b'GLIBC' in binary:
-                m = _libc_search.search(binary, pos)
+                m = libc_search.search(binary, pos)
             else:
                 m = None
             if not m or m.end() == len(binary):
@@ -293,13 +293,13 @@ def _syscmd_ver(system='', release='', version='',
     else:
         return system, release, version
 
-    _ver_output = re.compile(r'(?:([\w ]+) ([\w.]+) '
+    ver_output = re.compile(r'(?:([\w ]+) ([\w.]+) '
                          r'.*'
                          r'\[.* ([\d.]+)\])')
 
     # Parse the output
     info = info.strip()
-    m = _ver_output.match(info)
+    m = ver_output.match(info)
     if m is not None:
         system, release, version = m.groups()
         # Strip trailing dots from version and release
@@ -1066,7 +1066,7 @@ def _sys_version(sys_version=None):
     if result is not None:
         return result
 
-    _sys_version_parser = re.compile(
+    sys_version_parser = re.compile(
         r'([\w.+]+)\s*'  # "version<space>"
         r'\(#?([^,]+)'  # "(#buildno"
         r'(?:,\s*([\w ]*)'  # ", builddate"
@@ -1076,7 +1076,7 @@ def _sys_version(sys_version=None):
     if sys.platform.startswith('java'):
         # Jython
         name = 'Jython'
-        match = _sys_version_parser.match(sys_version)
+        match = sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError(
                 'failed to parse Jython sys.version: %s' %
@@ -1088,13 +1088,13 @@ def _sys_version(sys_version=None):
 
     elif "PyPy" in sys_version:
         # PyPy
-        _pypy_sys_version_parser = re.compile(
+        pypy_sys_version_parser = re.compile(
             r'([\w.+]+)\s*'
             r'\(#?([^,]+),\s*([\w ]+),\s*([\w :]+)\)\s*'
             r'\[PyPy [^\]]+\]?')
 
         name = "PyPy"
-        match = _pypy_sys_version_parser.match(sys_version)
+        match = pypy_sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError("failed to parse PyPy sys.version: %s" %
                              repr(sys_version))
@@ -1103,7 +1103,7 @@ def _sys_version(sys_version=None):
 
     else:
         # CPython
-        match = _sys_version_parser.match(sys_version)
+        match = sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError(
                 'failed to parse CPython sys.version: %s' %
@@ -1308,16 +1308,16 @@ def _parse_os_release(lines):
 
     # NAME=value with optional quotes (' or "). The regular expression is less
     # strict than shell lexer, but that's ok.
-    _os_release_line = re.compile(
+    os_release_line = re.compile(
         "^(?P<name>[a-zA-Z0-9_]+)=(?P<quote>[\"\']?)(?P<value>.*)(?P=quote)$"
     )
     # unescape five special characters mentioned in the standard
-    _os_release_unescape = re.compile(r"\\([\\\$\"\'`])")
+    os_release_unescape = re.compile(r"\\([\\\$\"\'`])")
 
     for line in lines:
-        mo = _os_release_line.match(line)
+        mo = os_release_line.match(line)
         if mo is not None:
-            info[mo.group('name')] = _os_release_unescape.sub(
+            info[mo.group('name')] = os_release_unescape.sub(
                 r"\1", mo.group('value')
             )
 
