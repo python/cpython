@@ -1,7 +1,7 @@
 # Sample script for use by test_gdb.py
 
 def foo(a, b, c):
-    bar(a, b, c)
+    bar(a=a, b=b, c=c)
 
 def bar(a, b, c):
     baz(a, b, c)

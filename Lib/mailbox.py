@@ -18,6 +18,7 @@ import email.message
 import email.generator
 import io
 import contextlib
+from types import GenericAlias
 try:
     import fcntl
 except ImportError:
@@ -259,6 +260,8 @@ class Mailbox:
                 target.write(linesep)
         else:
             raise TypeError('Invalid message type: %s' % type(message))
+
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class Maildir(Mailbox):
@@ -1953,10 +1956,7 @@ class _ProxyFile:
 
     def __iter__(self):
         """Iterate over lines."""
-        while True:
-            line = self.readline()
-            if not line:
-                return
+        while line := self.readline():
             yield line
 
     def tell(self):
@@ -2014,6 +2014,8 @@ class _ProxyFile:
         if not hasattr(self._file, 'closed'):
             return False
         return self._file.closed
+
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class _PartialFile(_ProxyFile):
