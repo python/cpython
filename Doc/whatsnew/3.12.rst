@@ -610,6 +610,9 @@ Optimizations
   replacement strings containing group references by 2--3 times.
   (Contributed by Serhiy Storchaka in :gh:`91524`.)
 
+* Speed up :class:`asyncio.Task` creation by deferring expensive string formatting.
+  (Contributed by Itamar O in :gh:`103793`.)
+
 
 CPython bytecode changes
 ========================
