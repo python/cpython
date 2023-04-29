@@ -644,10 +644,11 @@ x = (
         self.assertEqual(f'{"#"}', '#')
         self.assertEqual(f'{d["#"]}', 'hash')
 
-        self.assertAllRaise(SyntaxError, "f-string expression part cannot include '#'",
-                            ["f'{1#}'",   # error because the expression becomes "(1#)"
-                             "f'{3(#)}'",
+        self.assertAllRaise(SyntaxError, "'{' was never closed",
+                            ["f'{1#}'",   # error because everything after '#' is a comment
                              "f'{#}'",
+                             "f'one: {1#}'",
+                             "f'{1# one} {2 this is a comment still#}'",
                              ])
         self.assertAllRaise(SyntaxError, r"f-string: unmatched '\)'",
                             ["f'{)#}'",   # When wrapped in parens, this becomes

@@ -1793,12 +1793,6 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     /* Skip comment, unless it's a type comment */
     if (c == '#') {
 
-        // We don't allow # inside a one-line f-string expr,
-        // but we do in multi-line f-string expr
-        if (INSIDE_FSTRING(tok) && (tok->lineno == 1)) {
-            return MAKE_TOKEN(syntaxerror(tok, "f-string expression part cannot include '#'"));
-        }
-
         const char *prefix, *p, *type_start;
         int current_starting_col_offset;
 
