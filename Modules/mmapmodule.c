@@ -933,6 +933,7 @@ mmap_item(mmap_object *self, Py_ssize_t i)
 static PyObject *
 mmap_subscript(mmap_object *self, PyObject *item)
 {
+    CHECK_VALID(NULL);
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         CHECK_VALID(NULL);
