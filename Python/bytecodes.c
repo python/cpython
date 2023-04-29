@@ -3114,7 +3114,7 @@ dummy_func(
                     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
                                                                                 (PyFunctionObject *)func, locals,
                                                                                 nargs, callargs, kwargs);
-                    // Need to manually shrinkg the stack since we exit with DISPATCH_INLINED.
+                    // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
                     STACK_SHRINK(oparg + 3);
                     if (new_frame == NULL) {
                         goto error;
