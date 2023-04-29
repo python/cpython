@@ -1253,10 +1253,6 @@ always available.
 
     Originally specified in :pep:`302`.
 
-    .. versionchanged:: 3.3
-       ``None`` is stored instead of :class:`imp.NullImporter` when no finder
-       is found.
-
 
 .. data:: platform
 
