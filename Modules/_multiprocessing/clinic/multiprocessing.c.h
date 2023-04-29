@@ -96,7 +96,10 @@ _multiprocessing_send(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
-    Py_buffer buf = {NULL, NULL};
+    Py_buffer buf;
+    /* initializers for buf */
+    buf.buf = NULL;
+    buf.obj = NULL;
 
     if (!_PyArg_CheckPositional("send", nargs, 2, 2)) {
         goto exit;
@@ -172,4 +175,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEND_METHODDEF
     #define _MULTIPROCESSING_SEND_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEND_METHODDEF) */
-/*[clinic end generated code: output=4a6afc67c1f5ec85 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2dbec831071546f3 input=a9049054013a1b77]*/
