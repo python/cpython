@@ -1614,7 +1614,7 @@ class TNavigator(object):
         """move turtle to position end."""
         self._position = end
 
-    def teleport(self, x=None, y=None, fill_gap: bool = False) -> None:
+    def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
         """To be overwritten by child class RawTurtle.
         Includes no TPen references."""
         new_x = x if x is not None else self._position[0]
@@ -2300,7 +2300,7 @@ class TPen(object):
         else:
             return self._color(self._fillcolor)
 
-    def teleport(self, x=None, y=None, fill_gap: bool = False) -> None:
+    def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
         """To be overwritten by child class RawTurtle.
         Includes no TNavigator references.
         """
@@ -2727,13 +2727,13 @@ class RawTurtle(TPen, TNavigator):
             raise TurtleGraphicsError("bad color sequence: %s" % str(args))
         return "#%02x%02x%02x" % (r, g, b)
     
-    def teleport(self, x=None, y=None, fill_gap: bool = False) -> None:
+    def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
         """Instantly move turtle to an absolute position.
 
         Arguments:
         x -- a number      or     None
         y -- a number             None
-        fill_gap -- a boolean     None
+        fill_gap -- a boolean     This argument must be specified by name.
 
         call: teleport(x, y)         # two coordinates
         --or: teleport(x)            # teleport to x position, keeping y as is
@@ -2751,7 +2751,7 @@ class RawTurtle(TPen, TNavigator):
         Example (for a Turtle instance named turtle):
         >>> tp = turtle.pos()
         >>> tp
-        (0.00, 0.00)
+        (0.00,0.00)
         >>> turtle.teleport(60)
         >>> turtle.pos()
         (60.00,0.00)
