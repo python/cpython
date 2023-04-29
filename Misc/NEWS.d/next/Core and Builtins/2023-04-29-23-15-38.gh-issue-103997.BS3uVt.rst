@@ -1,0 +1,1 @@
+Strings passed to  "-c" are now automatically dedented (common leading whitespace is removed). This allows "python -c" invocations to be indented in shell scripts without causing indentation errors.
