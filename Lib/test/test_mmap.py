@@ -265,7 +265,7 @@ class MmapTests(unittest.TestCase):
         self.assertRaises(OSError, mmap.mmap, -2, 4096)
 
     def test_if_crash(self): # test for issue gh-103987
-        with open("TESTFN", "wb+") as f:
+        with open(TESTFN, "wb+") as f:
             data = b'aabaac\x00deef\x00\x00aa\x00'
             n = len(data)
             f.write(data)
