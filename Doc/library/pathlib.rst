@@ -680,7 +680,7 @@ Pure paths provide the following methods and properties:
       PureWindowsPath('README')
 
 
-.. method:: PurePath.__newpath__(*pathsegments)
+.. method:: PurePath._newpath_(*pathsegments)
 
    Create a new path object of the same type by combining the given
    *pathsegments*. This method is called whenever a derivative path is created,
@@ -694,7 +694,7 @@ Pure paths provide the following methods and properties:
               super().__init__(*args)
               self.session_id = session_id
 
-          def __newpath__(self, *pathsegments):
+          def _newpath_(self, *pathsegments):
               return type(self)(*pathsegments, session_id=self.session_id)
 
       etc = MyPath('/etc', session_id=42)

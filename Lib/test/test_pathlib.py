@@ -33,7 +33,7 @@ class _BasePurePathSubclass(object):
         super().__init__(*args)
         self.session_id = session_id
 
-    def __newpath__(self, *args):
+    def _newpath_(self, *args):
         return type(self)(*args, session_id=self.session_id)
 
 
@@ -128,7 +128,7 @@ class _BasePurePathTest(object):
         p = P('foo', 'bar', session_id=42)
         self.assertEqual(42, (p / 'foo').session_id)
         self.assertEqual(42, ('foo' / p).session_id)
-        self.assertEqual(42, p.__newpath__('foo').session_id)
+        self.assertEqual(42, p._newpath_('foo').session_id)
         self.assertEqual(42, p.joinpath('foo').session_id)
         self.assertEqual(42, p.with_name('foo').session_id)
         self.assertEqual(42, p.with_stem('foo').session_id)
@@ -1631,7 +1631,7 @@ class _BasePathTest(object):
         p = P(BASE, session_id=42)
         self.assertEqual(42, p.absolute().session_id)
         self.assertEqual(42, p.resolve().session_id)
-        self.assertEqual(42, p.__newpath__('~').expanduser().session_id)
+        self.assertEqual(42, p._newpath_('~').expanduser().session_id)
         self.assertEqual(42, (p / 'fileA').rename(p / 'fileB').session_id)
         self.assertEqual(42, (p / 'fileB').replace(p / 'fileA').session_id)
         if os_helper.can_symlink():
