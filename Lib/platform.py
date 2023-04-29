@@ -1072,7 +1072,7 @@ def _sys_version(sys_version=None):
         r'(?:,\s*([\w ]*)'  # ", builddate"
         r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
         r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
-    
+
     if sys.platform.startswith('java'):
         # Jython
         name = 'Jython'
