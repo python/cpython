@@ -429,7 +429,7 @@ class ExtendPathTests(unittest.TestCase):
             importers = list(iter_importers(fullname))
             expected_importer = get_importer(pathitem)
             for finder in importers:
-                spec = pkgutil._get_spec(finder, fullname)
+                spec = finder.find_spec(fullname)
                 loader = spec.loader
                 try:
                     loader = loader.loader
@@ -441,7 +441,7 @@ class ExtendPathTests(unittest.TestCase):
                 self.assertEqual(finder, expected_importer)
                 self.assertIsInstance(loader,
                                       importlib.machinery.SourceFileLoader)
-                self.assertIsNone(pkgutil._get_spec(finder, pkgname))
+                self.assertIsNone(finder.find_spec(pkgname))
 
             with self.assertRaises(ImportError):
                 list(iter_importers('invalid.module'))
