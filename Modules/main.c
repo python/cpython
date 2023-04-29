@@ -275,51 +275,43 @@ pymain_import_readline(const PyConfig *config)
 
 /*}                                                                            */
 
+
+/* Strip common leading whitespace from an input command */
 PyObject* _unicode_dedent(PyObject *unicode)
 {
-    PyObject *lines = PyUnicode_Splitlines(unicode, 1);
-    /*PyObject_Print(lines, stdout, 0);*/
-    /*fprintf(stdout, "\n");*/
-
-    Py_ssize_t num_lines = PyObject_Length(lines);
 
     PyObject* space = PyUnicode_FromWideChar(L" ", -1);
     PyObject* emptystr = PyUnicode_FromWideChar(L"", -1);
     PyObject* new_unicode;
 
-    // Initialize leading space to a large value to indicate
+    // Break up the input into lines
+    PyObject *lines = PyUnicode_Splitlines(unicode, 1);
+
+    // Init leading space to a large value to indicate
     // that it is uninitialized
     Py_ssize_t effective_inf = PyObject_Length(unicode) + 1;
     Py_ssize_t common_leading_spaces = effective_inf;
 
+    Py_ssize_t num_lines = PyObject_Length(lines);
     for (Py_ssize_t line_idx = 0; line_idx < num_lines; line_idx ++)
     {
         PyObject* index = PyLong_FromSsize_t(line_idx);
         PyObject* line = PyObject_GetItem(lines, index);
-        Py_ssize_t line_len = PyObject_Length(line);
-
         PyObject* striped_line = _PyUnicode_XStrip(line, 0, space);
-        Py_ssize_t stripline_len = PyObject_Length(striped_line);
 
+        // Determine the number of leading whitespace on this line.
+        Py_ssize_t line_len = PyObject_Length(line);
+        Py_ssize_t stripline_len = PyObject_Length(striped_line);
         Py_ssize_t leading_spaces = line_len - stripline_len;
 
         // On non-empty lines, see if the amount of leading whitespace is less
         // than current value. If so, update it.
-        if (line_len > 1)
+        if (line_len > 1 && leading_spaces < common_leading_spaces)
         {
-            if (leading_spaces < common_leading_spaces) {
-                common_leading_spaces = leading_spaces;
-            }
+            common_leading_spaces = leading_spaces;
         }
 
-        /*fprintf(stdout, "Index: %d\n", line_idx);                             */
-        /*fprintf(stdout, "Line Length: %d\n", line_len);                       */
-        /*fprintf(stdout, "Strip Line Length: %d\n", stripline_len);            */
-        /*fprintf(stdout, "leading_spaces: %d\n", leading_spaces);              */
-        /*fprintf(stdout, "common_leading_spaces: %d\n", common_leading_spaces);*/
-        /*fprintf(stdout, "Line: ");                                            */
-        /*PyObject_Print(PyObject_Repr(line), stdout, 1);*/
-        //fprintf(stdout, "\n");
+        Py_DECREF(striped_line);
         Py_DECREF(line);
         Py_DECREF(index);
     }
@@ -339,23 +331,28 @@ PyObject* _unicode_dedent(PyObject *unicode)
             }
             PyObject* new_line = PyUnicode_Substring(line, start, end);
             PyList_SetItem(new_lines, line_idx, new_line);
+
+            Py_DECREF(new_line);
             Py_DECREF(line);
             Py_DECREF(index);
         }
-        /*PyObject_Print(PyObject_Repr(new_lines), stdout, 0);*/
-        //fprintf(stdout, "\n");
-
         new_unicode = PyUnicode_Join(emptystr, new_lines);
 
+        Py_DECREF(new_lines);
+
+        // We are going to return an updated version of "unicode" that the
+        // caller will decref, so need to decref the version we are replacing
+        // here.  This feels fragile and like the wrong way to do this.
+        // Guidance here would be appreciated.
         Py_DECREF(unicode);
-        /*PyObject_Print(PyObject_Repr(new_unicode), stdout, 0);*/
     }
     else{
        new_unicode = unicode;
     }
 
-    //fprintf(stderr, "num_lines: %d\n", num_lines);
     Py_DECREF(lines);
+    Py_DECREF(space);
+    Py_DECREF(emptystr);
     return new_unicode;
 }
 
@@ -366,6 +363,7 @@ pymain_run_command(wchar_t *command)
     PyObject *unicode, *bytes;
     int ret;
 
+    // Should the input be modified here with pure C?
     //_command_dedent(wchar_t *command)
 
     unicode = PyUnicode_FromWideChar(command, -1);
@@ -377,6 +375,7 @@ pymain_run_command(wchar_t *command)
         return pymain_exit_err_print();
     }
 
+    // Should the input be modified here with the Python C-API?
     unicode = _unicode_dedent(unicode);
 
     bytes = PyUnicode_AsUTF8String(unicode);
