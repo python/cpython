@@ -18,10 +18,8 @@ from c_common.scriptutil import (
     configure_logger,
     get_prog,
     filter_filenames,
-    iter_marks,
 )
 from c_parser.info import KIND
-from c_parser.match import is_type_decl
 from .match import filter_forward
 from . import (
     analyze as _analyze,

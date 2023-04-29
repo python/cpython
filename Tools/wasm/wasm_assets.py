@@ -6,7 +6,8 @@ contains:
 
 - a stripped down, pyc-only stdlib zip file, e.g. {PREFIX}/lib/python311.zip
 - os.py as marker module {PREFIX}/lib/python3.11/os.py
-- empty lib-dynload directory, to make sure it is copied into the bundle {PREFIX}/lib/python3.11/lib-dynload/.empty
+- empty lib-dynload directory, to make sure it is copied into the bundle:
+    {PREFIX}/lib/python3.11/lib-dynload/.empty
 """
 
 import argparse
@@ -41,16 +42,12 @@ OMIT_FILES = (
     "ensurepip/",
     "venv/",
     # build system
-    "distutils/",
     "lib2to3/",
     # deprecated
-    "asyncore.py",
-    "asynchat.py",
     "uu.py",
     "xdrlib.py",
     # other platforms
     "_aix_support.py",
-    "_bootsubprocess.py",
     "_osx_support.py",
     # webbrowser
     "antigravity.py",

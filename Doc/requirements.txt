@@ -1,4 +1,7 @@
 # Requirements to build the Python documentation
+#
+# Note that when updating this file, you will likely also have to update
+# the Doc/constraints.txt file.
 
 # Sphinx version is pinned so that new versions that introduce new warnings
 # won't suddenly cause build failures. Updating the version is fine as long
@@ -7,11 +10,11 @@ sphinx==4.5.0
 
 blurb
 
-# sphinx-lint 0.6.2 yields many default role errors due to the new regular
-# expression used for default role detection, so we don't use the version
-# until the errors are fixed.
-sphinx-lint==0.6.5
+sphinx-lint==0.6.7
+sphinxext-opengraph==0.7.5
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.
 python-docs-theme>=2022.1
+
+-c constraints.txt

@@ -1,1 +1,0 @@
-Use double caching for compiled RE patterns.

@@ -1,1 +1,0 @@
-Earlier in 3.11 we deprecated ``asyncio.Task.cancel("message")``. We realized we were too harsh, and have undeprecated it.

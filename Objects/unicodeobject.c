@@ -52,9 +52,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_pathconfig.h"    // _Py_DumpPathConfig()
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_runtime_init.h"  // _PyUnicode_InitStaticStrings()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
+#include "pycore_unicodeobject_generated.h"  // _PyUnicode_InitStaticStrings()
 #include "stringlib/eq.h"         // unicode_eq()
 
 #ifdef MS_WINDOWS
@@ -221,25 +221,46 @@ static inline PyObject* unicode_get_empty(void)
 static inline PyObject* unicode_new_empty(void)
 {
     PyObject *empty = unicode_get_empty();
-    Py_INCREF(empty);
-    return empty;
+    return Py_NewRef(empty);
 }
 
 /* This dictionary holds all interned unicode strings.  Note that references
    to strings in this dictionary are *not* counted in the string's ob_refcnt.
    When the interned string reaches a refcnt of 0 the string deallocation
    function will delete the reference from this dictionary.
-   Another way to look at this is that to say that the actual reference
-   count of a string is:  s->ob_refcnt + (s->state ? 2 : 0)
 */
-static inline PyObject *get_interned_dict(void)
+static inline PyObject *get_interned_dict(PyInterpreterState *interp)
 {
-    return _PyRuntime.global_objects.interned;
+    return _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
 }
 
-static inline void set_interned_dict(PyObject *dict)
+Py_ssize_t
+_PyUnicode_InternedSize()
 {
-    _PyRuntime.global_objects.interned = dict;
+    return PyObject_Length(get_interned_dict(_PyInterpreterState_GET()));
+}
+
+static int
+init_interned_dict(PyInterpreterState *interp)
+{
+    assert(get_interned_dict(interp) == NULL);
+    PyObject *interned = interned = PyDict_New();
+    if (interned == NULL) {
+        return -1;
+    }
+    _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = interned;
+    return 0;
+}
+
+static void
+clear_interned_dict(PyInterpreterState *interp)
+{
+    PyObject *interned = get_interned_dict(interp);
+    if (interned != NULL) {
+        PyDict_Clear(interned);
+        Py_DECREF(interned);
+        _Py_INTERP_CACHED_OBJECT(interp, interned_strings) = NULL;
+    }
 }
 
 #define _Py_RETURN_UNICODE_EMPTY()   \
@@ -611,8 +632,7 @@ static PyObject*
 unicode_result_unchanged(PyObject *unicode)
 {
     if (PyUnicode_CheckExact(unicode)) {
-        Py_INCREF(unicode);
-        return unicode;
+        return Py_NewRef(unicode);
     }
     else
         /* Subtype -- return genuine unicode string with the same value. */
@@ -949,21 +969,18 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(unicode);
 #endif
 
     new_unicode = (PyObject *)PyObject_Realloc(unicode, new_size);
     if (new_unicode == NULL) {
-        _Py_NewReference(unicode);
+        _Py_NewReferenceNoTotal(unicode);
         PyErr_NoMemory();
         return NULL;
     }
     unicode = new_unicode;
-    _Py_NewReference(unicode);
+    _Py_NewReferenceNoTotal(unicode);
 
     _PyUnicode_LENGTH(unicode) = length;
 #ifdef Py_DEBUG
@@ -1530,23 +1547,14 @@ unicode_dealloc(PyObject *unicode)
         _Py_FatalRefcountError("deallocating an Unicode singleton");
     }
 #endif
-    PyObject *interned = get_interned_dict();
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref an immortal string out of existence. Since
+     * the string is an immortal object, just re-set the reference count.
+     */
     if (PyUnicode_CHECK_INTERNED(unicode)) {
-        /* Revive the dead object temporarily. PyDict_DelItem() removes two
-           references (key and value) which were ignored by
-           PyUnicode_InternInPlace(). Use refcnt=3 rather than refcnt=2
-           to prevent calling unicode_dealloc() again. Adjust refcnt after
-           PyDict_DelItem(). */
-        assert(Py_REFCNT(unicode) == 0);
-        Py_SET_REFCNT(unicode, 3);
-        if (PyDict_DelItem(interned, unicode) != 0) {
-            _PyErr_WriteUnraisableMsg("deletion of interned string failed",
-                                      NULL);
-        }
-        assert(Py_REFCNT(unicode) == 1);
-        Py_SET_REFCNT(unicode, 0);
+        _Py_SetImmortal(unicode);
+        return;
     }
-
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
         PyObject_Free(_PyUnicode_UTF8(unicode));
     }
@@ -1858,7 +1866,7 @@ _PyUnicode_FromId(_Py_Identifier *id)
 
     Py_ssize_t index = _Py_atomic_size_get(&id->index);
     if (index < 0) {
-        struct _Py_unicode_runtime_ids *rt_ids = &interp->runtime->unicode_ids;
+        struct _Py_unicode_runtime_ids *rt_ids = &interp->runtime->unicode_state.ids;
 
         PyThread_acquire_lock(rt_ids->lock, WAIT_LOCK);
         // Check again to detect concurrent access. Another thread can have
@@ -2947,8 +2955,7 @@ PyUnicode_FromObject(PyObject *obj)
     /* XXX Perhaps we should make this API an alias of
        PyObject_Str() instead ?! */
     if (PyUnicode_CheckExact(obj)) {
-        Py_INCREF(obj);
-        return obj;
+        return Py_NewRef(obj);
     }
     if (PyUnicode_Check(obj)) {
         /* For a Unicode subtype that's not a Unicode object,
@@ -4533,6 +4540,9 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     }
     s += ascii_decode(s, end, PyUnicode_1BYTE_DATA(u));
     if (s == end) {
+        if (consumed) {
+            *consumed = size;
+        }
         return u;
     }
 
@@ -5697,8 +5707,6 @@ PyUnicode_AsUTF16String(PyObject *unicode)
 
 /* --- Unicode Escape Codec ----------------------------------------------- */
 
-static _PyUnicode_Name_CAPI *ucnhash_capi = NULL;
-
 PyObject *
 _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
                                Py_ssize_t size,
@@ -5711,6 +5719,8 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
     const char *end;
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
+    _PyUnicode_Name_CAPI *ucnhash_capi;
+    PyInterpreterState *interp = _PyInterpreterState_Get();
 
     // so we can remember if we've seen an invalid escape char or not
     *first_invalid_escape = NULL;
@@ -5858,6 +5868,7 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
 
             /* \N{name} */
         case 'N':
+            ucnhash_capi = interp->unicode.ucnhash_capi;
             if (ucnhash_capi == NULL) {
                 /* load the unicode data module */
                 ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
@@ -5869,6 +5880,7 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
                         );
                     goto onError;
                 }
+                interp->unicode.ucnhash_capi = ucnhash_capi;
             }
 
             message = "malformed \\N character escape";
@@ -8668,8 +8680,7 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
     }
     if (PyUnicode_IS_ASCII(unicode)) {
         /* If the string is already ASCII, just return the same string */
-        Py_INCREF(unicode);
-        return unicode;
+        return Py_NewRef(unicode);
     }
 
     Py_ssize_t len = PyUnicode_GET_LENGTH(unicode);
@@ -9413,8 +9424,7 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     if (seqlen == 1) {
         if (PyUnicode_CheckExact(items[0])) {
             res = items[0];
-            Py_INCREF(res);
-            return res;
+            return Py_NewRef(res);
         }
         seplen = 0;
         maxchar = 0;
@@ -9733,8 +9743,7 @@ split(PyObject *self,
         out = PyList_New(1);
         if (out == NULL)
             return NULL;
-        Py_INCREF(self);
-        PyList_SET_ITEM(out, 0, self);
+        PyList_SET_ITEM(out, 0, Py_NewRef(self));
         return out;
     }
     buf1 = PyUnicode_DATA(self);
@@ -9826,8 +9835,7 @@ rsplit(PyObject *self,
         out = PyList_New(1);
         if (out == NULL)
             return NULL;
-        Py_INCREF(self);
-        PyList_SET_ITEM(out, 0, self);
+        PyList_SET_ITEM(out, 0, Py_NewRef(self));
         return out;
     }
     buf1 = PyUnicode_DATA(self);
@@ -10444,8 +10452,8 @@ unicode_compare_eq(PyObject *str1, PyObject *str2)
 int
 _PyUnicode_Equal(PyObject *str1, PyObject *str2)
 {
-    assert(PyUnicode_CheckExact(str1));
-    assert(PyUnicode_CheckExact(str2));
+    assert(PyUnicode_Check(str1));
+    assert(PyUnicode_Check(str2));
     if (str1 == str2) {
         return 1;
     }
@@ -10746,8 +10754,7 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
     PyObject *empty = unicode_get_empty();  // Borrowed reference
     if (left == empty) {
         Py_DECREF(left);
-        Py_INCREF(right);
-        *p_left = right;
+        *p_left = Py_NewRef(right);
         return;
     }
     if (right == empty) {
@@ -12449,7 +12456,7 @@ unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
 /*[clinic input]
 str.splitlines as unicode_splitlines
 
-    keepends: bool(accept={int}) = False
+    keepends: bool = False
 
 Return a list of the lines in the string, breaking at line boundaries.
 
@@ -12459,7 +12466,7 @@ true.
 
 static PyObject *
 unicode_splitlines_impl(PyObject *self, int keepends)
-/*[clinic end generated code: output=f664dcdad153ec40 input=b508e180459bdd8b]*/
+/*[clinic end generated code: output=f664dcdad153ec40 input=ba6ad05ee85d2b55]*/
 {
     return PyUnicode_Splitlines(self, keepends);
 }
@@ -12977,8 +12984,7 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
         if (writer->buffer == NULL && !writer->overallocate) {
             assert(_PyUnicode_CheckConsistency(str, 1));
             writer->readonly = 1;
-            Py_INCREF(str);
-            writer->buffer = str;
+            writer->buffer = Py_NewRef(str);
             _PyUnicodeWriter_Update(writer);
             writer->pos += len;
             return 0;
@@ -13581,8 +13587,7 @@ _PyUnicode_FormatLong(PyObject *val, int alt, int prec, int type)
         for (i = 0; i < numdigits; i++)
             *b1++ = *buf++;
         *b1 = '\0';
-        Py_DECREF(result);
-        result = r1;
+        Py_SETREF(result, r1);
         buf = PyBytes_AS_STRING(result);
         len = numnondigits + prec;
     }
@@ -13599,8 +13604,7 @@ _PyUnicode_FormatLong(PyObject *val, int alt, int prec, int type)
         || buf != PyUnicode_DATA(result)) {
         PyObject *unicode;
         unicode = _PyUnicode_FromASCII(buf, len);
-        Py_DECREF(result);
-        result = unicode;
+        Py_SETREF(result, unicode);
     }
     else if (len != PyUnicode_GET_LENGTH(result)) {
         if (PyUnicode_Resize(&result, len) < 0)
@@ -13641,8 +13645,7 @@ mainformatlong(PyObject *v,
         assert(PyLong_Check(iobj));
     }
     else {
-        iobj = v;
-        Py_INCREF(iobj);
+        iobj = Py_NewRef(v);
     }
 
     if (PyLong_CheckExact(v)
@@ -13965,8 +13968,7 @@ unicode_format_arg_format(struct unicode_formatter_t *ctx,
         }
 
         if (PyUnicode_CheckExact(v) && arg->ch == 's') {
-            *p_str = v;
-            Py_INCREF(*p_str);
+            *p_str = Py_NewRef(v);
         }
         else {
             if (arg->ch == 's')
@@ -14502,12 +14504,14 @@ PyTypeObject PyUnicode_Type = {
 
 /* Initialize the Unicode implementation */
 
-void
-_PyUnicode_InitState(PyInterpreterState *interp)
+static void
+_init_global_state(void)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
+    static int initialized = 0;
+    if (initialized) {
         return;
     }
+    initialized = 1;
 
     /* initialize the linebreak bloom filter */
     const Py_UCS2 linebreak[] = {
@@ -14525,29 +14529,42 @@ _PyUnicode_InitState(PyInterpreterState *interp)
         Py_ARRAY_LENGTH(linebreak));
 }
 
+void
+_PyUnicode_InitState(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+    _init_global_state();
+}
+
 
 PyStatus
 _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
+    // Initialize the global interned dict
+    if (init_interned_dict(interp)) {
+        PyErr_Clear();
+        return _PyStatus_ERR("failed to create interned dict");
     }
 
-    /* Intern statically allocated string identifiers and deepfreeze strings.
-     * This must be done before any module initialization so that statically
-     * allocated string identifiers are used instead of heap allocated strings.
-     * Deepfreeze uses the interned identifiers if present to save space
-     * else generates them and they are interned to speed up dict lookups.
-    */
-    _PyUnicode_InitStaticStrings();
+    if (_Py_IsMainInterpreter(interp)) {
+        /* Intern statically allocated string identifiers and deepfreeze strings.
+         * This must be done before any module initialization so that statically
+         * allocated string identifiers are used instead of heap allocated strings.
+         * Deepfreeze uses the interned identifiers if present to save space
+         * else generates them and they are interned to speed up dict lookups.
+        */
+        _PyUnicode_InitStaticStrings(interp);
 
 #ifdef Py_DEBUG
-    assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
+        assert(_PyUnicode_CheckConsistency(&_Py_STR(empty), 1));
 
-    for (int i = 0; i < 256; i++) {
-        assert(_PyUnicode_CheckConsistency(LATIN1(i), 1));
-    }
+        for (int i = 0; i < 256; i++) {
+            assert(_PyUnicode_CheckConsistency(LATIN1(i), 1));
+        }
 #endif
+    }
 
     return _PyStatus_OK();
 }
@@ -14556,10 +14573,6 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
 PyStatus
 _PyUnicode_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
     if (_PyStaticType_InitBuiltin(&EncodingMapType) < 0) {
         goto error;
     }
@@ -14577,7 +14590,7 @@ error:
 
 
 void
-PyUnicode_InternInPlace(PyObject **p)
+_PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
 {
     PyObject *s = *p;
 #ifdef Py_DEBUG
@@ -14599,15 +14612,8 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
-    PyObject *interned = get_interned_dict();
-    if (interned == NULL) {
-        interned = PyDict_New();
-        if (interned == NULL) {
-            PyErr_Clear(); /* Don't leave an exception */
-            return;
-        }
-        set_interned_dict(interned);
-    }
+    PyObject *interned = get_interned_dict(interp);
+    assert(interned != NULL);
 
     PyObject *t = PyDict_SetDefault(interned, s, s);
     if (t == NULL) {
@@ -14616,16 +14622,32 @@ PyUnicode_InternInPlace(PyObject **p)
     }
 
     if (t != s) {
-        Py_INCREF(t);
-        Py_SETREF(*p, t);
+        Py_SETREF(*p, Py_NewRef(t));
         return;
     }
 
-    /* The two references in interned dict (key and value) are not counted by
-       refcnt. unicode_dealloc() and _PyUnicode_ClearInterned() take care of
-       this. */
-    Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
-    _PyUnicode_STATE(s).interned = 1;
+    if (_Py_IsImmortal(s)) {
+        _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
+       return;
+    }
+#ifdef Py_REF_DEBUG
+    /* The reference count value excluding the 2 references from the
+       interned dictionary should be excluded from the RefTotal. The
+       decrements to these objects will not be registered so they
+       need to be accounted for in here. */
+    for (Py_ssize_t i = 0; i < Py_REFCNT(s) - 2; i++) {
+        _Py_DecRefTotal(_PyInterpreterState_GET());
+    }
+#endif
+    _Py_SetImmortal(s);
+    _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
+}
+
+void
+PyUnicode_InternInPlace(PyObject **p)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_InternInPlace(interp, p);
 }
 
 // Function kept for the stable ABI.
@@ -14652,21 +14674,26 @@ PyUnicode_InternFromString(const char *cp)
 void
 _PyUnicode_ClearInterned(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        // interned dict is shared by all interpreters
-        return;
-    }
-
-    PyObject *interned = get_interned_dict();
+    PyObject *interned = get_interned_dict(interp);
     if (interned == NULL) {
         return;
     }
     assert(PyDict_CheckExact(interned));
 
-    /* Interned unicode strings are not forcibly deallocated; rather, we give
-       them their stolen references back, and then clear and DECREF the
-       interned dict. */
-
+    /* TODO:
+     * Currently, the runtime is not able to guarantee that it can exit without
+     * allocations that carry over to a future initialization of Python within
+     * the same process. i.e:
+     *   ./python -X showrefcount -c 'import itertools'
+     *   [237 refs, 237 blocks]
+     *
+     * Therefore, this should remain disabled for until there is a strict guarantee
+     * that no memory will be left after `Py_Finalize`.
+     */
+#ifdef Py_DEBUG
+    /* For all non-singleton interned strings, restore the two valid references
+       to that instance from within the intern string dictionary and let the
+       normal reference counting process clean up these instances. */
 #ifdef INTERNED_STATS
     fprintf(stderr, "releasing %zd interned strings\n",
             PyDict_GET_SIZE(interned));
@@ -14676,15 +14703,27 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     Py_ssize_t pos = 0;
     PyObject *s, *ignored_value;
     while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
-        assert(PyUnicode_CHECK_INTERNED(s));
-        // Restore the two references (key and value) ignored
-        // by PyUnicode_InternInPlace().
-        Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
+        assert(PyUnicode_IS_READY(s));
+        switch (PyUnicode_CHECK_INTERNED(s)) {
+        case SSTATE_INTERNED_IMMORTAL:
+            // Skip the Immortal Instance check and restore
+            // the two references (key and value) ignored
+            // by PyUnicode_InternInPlace().
+            s->ob_refcnt = 2;
 #ifdef INTERNED_STATS
-        total_length += PyUnicode_GET_LENGTH(s);
+            total_length += PyUnicode_GET_LENGTH(s);
 #endif
-
-        _PyUnicode_STATE(s).interned = 0;
+            break;
+        case SSTATE_INTERNED_IMMORTAL_STATIC:
+            break;
+        case SSTATE_INTERNED_MORTAL:
+            /* fall through */
+        case SSTATE_NOT_INTERNED:
+            /* fall through */
+        default:
+            Py_UNREACHABLE();
+        }
+        _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
     }
 #ifdef INTERNED_STATS
     fprintf(stderr,
@@ -14692,9 +14731,13 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             total_length);
 #endif
 
-    PyDict_Clear(interned);
-    Py_DECREF(interned);
-    set_interned_dict(NULL);
+    struct _Py_unicode_state *state = &interp->unicode;
+    struct _Py_unicode_ids *ids = &state->ids;
+    for (Py_ssize_t i=0; i < ids->size; i++) {
+        Py_XINCREF(ids->array[i]);
+    }
+#endif /* Py_DEBUG */
+    clear_interned_dict(interp);
 }
 
 
@@ -14782,14 +14825,21 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
-                             it->it_seq, it->it_index);
+        return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
         PyObject *u = unicode_new_empty();
-        if (u == NULL)
+        if (u == NULL) {
+            Py_XDECREF(iter);
             return NULL;
-        return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), u);
+        }
+        return Py_BuildValue("N(N)", iter, u);
     }
 }
 
@@ -14887,8 +14937,7 @@ unicode_iter(PyObject *seq)
     if (it == NULL)
         return NULL;
     it->it_index = 0;
-    Py_INCREF(seq);
-    it->it_seq = seq;
+    it->it_seq = Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
@@ -15101,7 +15150,7 @@ _PyUnicode_EnableLegacyWindowsFSEncoding(void)
 static inline int
 unicode_is_finalizing(void)
 {
-    return (get_interned_dict() == NULL);
+    return (get_interned_dict(_PyInterpreterState_Main()) == NULL);
 }
 #endif
 
@@ -15124,15 +15173,14 @@ _PyUnicode_Fini(PyInterpreterState *interp)
 {
     struct _Py_unicode_state *state = &interp->unicode;
 
-    if (_Py_IsMainInterpreter(interp)) {
-        // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
-        assert(get_interned_dict() == NULL);
-        // bpo-47182: force a unicodedata CAPI capsule re-import on
-        // subsequent initialization of main interpreter.
-        ucnhash_capi = NULL;
-    }
+    // _PyUnicode_ClearInterned() must be called before _PyUnicode_Fini()
+    assert(get_interned_dict(interp) == NULL);
 
     _PyUnicode_FiniEncodings(&state->fs_codec);
+
+    // bpo-47182: force a unicodedata CAPI capsule re-import on
+    // subsequent initialization of interpreter.
+    interp->unicode.ucnhash_capi = NULL;
 
     unicode_clear_identifiers(state);
 }

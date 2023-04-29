@@ -37,13 +37,6 @@ class FindSpecTests(abc.FinderTests):
         spec = self.machinery.BuiltinImporter.find_spec(name)
         self.assertIsNone(spec)
 
-    def test_ignore_path(self):
-        # The value for 'path' should always trigger a failed import.
-        with util.uncache(util.BUILTINS.good_name):
-            spec = self.machinery.BuiltinImporter.find_spec(util.BUILTINS.good_name,
-                                                            ['pkg'])
-            self.assertIsNone(spec)
-
 
 (Frozen_FindSpecTests,
  Source_FindSpecTests

@@ -1,2 +1,0 @@
-Lazily create a table mapping bytecode offsets to line numbers to speed up
-calculation of line numbers when tracing.

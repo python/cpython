@@ -1,3 +1,0 @@
-Shared module targets now depend on new ``MODULE_DEPS`` variable, which
-includes ``EXPORTSYMS``. This fixes a build order issue on unsupported AIX
-platform.

@@ -1,1 +1,0 @@
-Deprecated :meth:`asyncio.AbstractEventLoopPolicy.get_child_watcher` and :meth:`asyncio.AbstractEventLoopPolicy.set_child_watcher` methods to be removed in Python 3.14. Patch by Kumar Aditya.

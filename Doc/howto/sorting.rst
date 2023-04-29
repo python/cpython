@@ -247,7 +247,7 @@ To accommodate those situations, Python provides
 :class:`functools.cmp_to_key` to wrap the comparison function
 to make it usable as a key function::
 
-    sorted(words, key=cmp_to_key(strcoll)
+    sorted(words, key=cmp_to_key(strcoll))  # locale-aware sort order
 
 Odds and Ends
 =============

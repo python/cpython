@@ -1,0 +1,2 @@
+Substitute CTRL-D with CTRL-Z in :mod:`sqlite3` CLI banner when running on
+Windows.

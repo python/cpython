@@ -147,12 +147,20 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_vectorcall`        | :c:type:`vectorcallfunc`          |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | [:c:member:`~PyTypeObject.tp_watched`]         | char                              |                   |   |   |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
 
 .. [#slots]
-   A slot name in parentheses indicates it is (effectively) deprecated.
-   Names in angle brackets should be treated as read-only.
-   Names in square brackets are for internal use only.
-   "<R>" (as a prefix) means the field is required (must be non-``NULL``).
+
+   **()**: A slot name in parentheses indicates it is (effectively) deprecated.
+
+   **<>**: Names in angle brackets should be initially set to ``NULL`` and
+   treated as read-only.
+
+   **[]**: Names in square brackets are for internal use only.
+
+   **<R>** (as a prefix) means the field is required (must be non-``NULL``).
+
 .. [#cols] Columns:
 
    **"O"**:  set on :c:type:`PyBaseObject_Type`
@@ -444,6 +452,7 @@ slot typedefs
 |                             |                             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
 |                             |    :c:type:`Py_ssize_t`     |                      |
+|                             |    :c:type:`PyObject` *     |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`objobjproc`        | .. line-block::             | int                  |
 |                             |                             |                      |
@@ -1136,7 +1145,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
     .. data:: Py_TPFLAGS_MANAGED_DICT
 
-       This bit indicates that instances of the class have a ``__dict___``
+       This bit indicates that instances of the class have a ``__dict__``
        attribute, and that the space for the dictionary is managed by the VM.
 
        If this flag is set, :const:`Py_TPFLAGS_HAVE_GC` should also be set.
@@ -1245,6 +1254,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       **Inheritance:**
 
       This flag is not inherited.
+      However, subclasses will not be instantiable unless they provide a
+      non-NULL :c:member:`~PyTypeObject.tp_new` (which is only possible
+      via the C API).
+
+      .. note::
+
+         To disallow instantiating a class directly but allow instantiating
+         its subclasses (e.g. for an :term:`abstract base class`),
+         do not use this flag.
+         Instead, make :c:member:`~PyTypeObject.tp_new` only succeed for
+         subclasses.
 
       .. versionadded:: 3.10
 
@@ -1291,6 +1311,16 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       .. seealso:: :pep:`634` -- Structural Pattern Matching: Specification
 
       .. versionadded:: 3.10
+
+
+   .. data:: Py_TPFLAGS_VALID_VERSION_TAG
+
+      Internal. Do not set or unset this flag.
+      To indicate that a class has changed call :c:func:`PyType_Modified`
+
+      .. warning::
+         This flag is present in header files, but is an internal feature and should
+         not be used. It will be removed in a future version of CPython
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
@@ -1912,8 +1942,19 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    Tuple of base types.
 
-   This is set for types created by a class statement.  It should be ``NULL`` for
-   statically defined types.
+   This field should be set to ``NULL`` and treated as read-only.
+   Python will fill it in when the type is :c:func:`initialized <PyType_Ready>`.
+
+   For dynamically created classes, the ``Py_tp_bases``
+   :c:type:`slot <PyType_Slot>` can be used instead of the *bases* argument
+   of :c:func:`PyType_FromSpecWithBases`.
+   The argument form is preferred.
+
+   .. warning::
+
+      Multiple inheritance does not work well for statically defined types.
+      If you set ``tp_bases`` to a tuple, Python will not raise an error,
+      but some slots will only be inherited from the first base.
 
    **Inheritance:**
 
@@ -1925,6 +1966,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    Tuple containing the expanded set of base types, starting with the type itself
    and ending with :class:`object`, in Method Resolution Order.
 
+   This field should be set to ``NULL`` and treated as read-only.
+   Python will fill it in when the type is :c:func:`initialized <PyType_Ready>`.
 
    **Inheritance:**
 
@@ -2058,6 +2101,13 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is never inherited.
 
    .. versionadded:: 3.9 (the field exists since 3.8 but it's only used since 3.9)
+
+
+.. c:member:: char PyTypeObject.tp_watched
+
+   Internal. Do not use.
+
+   .. versionadded:: 3.12
 
 
 .. _static-types:
@@ -2594,7 +2644,7 @@ Slot Type typedefs
 
 .. c:type:: PyObject *(*ssizeargfunc)(PyObject *, Py_ssize_t)
 
-.. c:type:: int (*ssizeobjargproc)(PyObject *, Py_ssize_t)
+.. c:type:: int (*ssizeobjargproc)(PyObject *, Py_ssize_t, PyObject *)
 
 .. c:type:: int (*objobjproc)(PyObject *, PyObject *)
 

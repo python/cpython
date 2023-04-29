@@ -1,3 +1,0 @@
-The :c:func:`PyUnicode_FSDecoder` function no longer accepts bytes-like
-paths, like :class:`bytearray` and :class:`memoryview` types: only the exact
-:class:`bytes` type is accepted for bytes strings. Patch by Victor Stinner.

@@ -1,6 +1,29 @@
 import unittest
 
 
+class TestLoadSuperAttrCache(unittest.TestCase):
+    def test_descriptor_not_double_executed_on_spec_fail(self):
+        calls = []
+        class Descriptor:
+            def __get__(self, instance, owner):
+                calls.append((instance, owner))
+                return lambda: 1
+
+        class C:
+            d = Descriptor()
+
+        class D(C):
+            def f(self):
+                return super().d()
+
+        d = D()
+
+        self.assertEqual(d.f(), 1)  # warmup
+        calls.clear()
+        self.assertEqual(d.f(), 1)  # try to specialize
+        self.assertEqual(calls, [(d, D)])
+
+
 class TestLoadAttrCache(unittest.TestCase):
     def test_descriptor_added_after_optimization(self):
         class Descriptor:
@@ -176,6 +199,73 @@ class TestLoadAttrCache(unittest.TestCase):
 
         for _ in range(1025):
             self.assertFalse(f())
+
+    def test_load_shadowing_slot_should_raise_type_error(self):
+        class Class:
+            __slots__ = ("slot",)
+
+        class Sneaky:
+            __slots__ = ("shadowed",)
+            shadowing = Class.slot
+
+        def f(o):
+            o.shadowing
+
+        o = Sneaky()
+        o.shadowed = 42
+
+        for _ in range(1025):
+            with self.assertRaises(TypeError):
+                f(o)
+
+    def test_store_shadowing_slot_should_raise_type_error(self):
+        class Class:
+            __slots__ = ("slot",)
+
+        class Sneaky:
+            __slots__ = ("shadowed",)
+            shadowing = Class.slot
+
+        def f(o):
+            o.shadowing = 42
+
+        o = Sneaky()
+
+        for _ in range(1025):
+            with self.assertRaises(TypeError):
+                f(o)
+
+    def test_load_borrowed_slot_should_not_crash(self):
+        class Class:
+            __slots__ = ("slot",)
+
+        class Sneaky:
+            borrowed = Class.slot
+
+        def f(o):
+            o.borrowed
+
+        o = Sneaky()
+
+        for _ in range(1025):
+            with self.assertRaises(TypeError):
+                f(o)
+
+    def test_store_borrowed_slot_should_not_crash(self):
+        class Class:
+            __slots__ = ("slot",)
+
+        class Sneaky:
+            borrowed = Class.slot
+
+        def f(o):
+            o.borrowed = 42
+
+        o = Sneaky()
+
+        for _ in range(1025):
+            with self.assertRaises(TypeError):
+                f(o)
 
 
 class TestLoadMethodCache(unittest.TestCase):

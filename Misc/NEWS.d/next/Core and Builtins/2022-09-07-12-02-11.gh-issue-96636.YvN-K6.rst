@@ -1,3 +1,0 @@
-Ensure that tracing, ``sys.setrace()``, is turned on immediately. In
-pre-release versions of 3.11, some tracing events might have been lost when
-turning on tracing in a ``__del__`` method or interrupt.
