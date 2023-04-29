@@ -188,6 +188,8 @@ Importing Modules
    .. versionchanged:: 3.3
       Uses :func:`imp.source_from_cache()` in calculating the source path if
       only the bytecode path is provided.
+   .. versionchanged:: 3.12
+      No longer uses the removed ``imp`` module.
 
 
 .. c:function:: long PyImport_GetMagicNumber()

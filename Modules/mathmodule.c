@@ -836,7 +836,7 @@ long_lcm(PyObject *a, PyObject *b)
 {
     PyObject *g, *m, *f, *ab;
 
-    if (Py_SIZE(a) == 0 || Py_SIZE(b) == 0) {
+    if (_PyLong_IsZero((PyLongObject *)a) || _PyLong_IsZero((PyLongObject *)b)) {
         return PyLong_FromLong(0);
     }
     g = _PyLong_GCD(a, b);
@@ -1726,13 +1726,13 @@ math_isqrt(PyObject *module, PyObject *n)
         return NULL;
     }
 
-    if (_PyLong_Sign(n) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
         PyErr_SetString(
             PyExc_ValueError,
             "isqrt() argument must be nonnegative");
         goto error;
     }
-    if (_PyLong_Sign(n) == 0) {
+    if (_PyLong_IsZero((PyLongObject *)n)) {
         Py_DECREF(n);
         return PyLong_FromLong(0);
     }
@@ -2096,7 +2096,7 @@ math_trunc(PyObject *module, PyObject *x)
         return PyFloat_Type.tp_as_number->nb_int(x);
     }
 
-    if (Py_TYPE(x)->tp_dict == NULL) {
+    if (_PyType_IsReady(Py_TYPE(x))) {
         if (PyType_Ready(Py_TYPE(x)) < 0)
             return NULL;
     }
@@ -2254,7 +2254,7 @@ loghelper(PyObject* arg, double (*func)(double))
         Py_ssize_t e;
 
         /* Negative or zero inputs give a ValueError. */
-        if (Py_SIZE(arg) <= 0) {
+        if (!_PyLong_IsPositive((PyLongObject *)arg)) {
             PyErr_SetString(PyExc_ValueError,
                             "math domain error");
             return NULL;
@@ -2314,7 +2314,7 @@ math_log(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 PyDoc_STRVAR(math_log_doc,
 "log(x, [base=math.e])\n\
 Return the logarithm of x to the given base.\n\n\
-If the base not specified, returns the natural logarithm (base e) of x.");
+If the base is not specified, returns the natural logarithm (base e) of x.");
 
 /*[clinic input]
 math.log2
@@ -3716,12 +3716,12 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
     }
     assert(PyLong_CheckExact(n) && PyLong_CheckExact(k));
 
-    if (Py_SIZE(n) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
         PyErr_SetString(PyExc_ValueError,
                         "n must be a non-negative integer");
         goto error;
     }
-    if (Py_SIZE(k) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)k)) {
         PyErr_SetString(PyExc_ValueError,
                         "k must be a non-negative integer");
         goto error;
@@ -3808,12 +3808,12 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     }
     assert(PyLong_CheckExact(n) && PyLong_CheckExact(k));
 
-    if (Py_SIZE(n) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
         PyErr_SetString(PyExc_ValueError,
                         "n must be a non-negative integer");
         goto error;
     }
-    if (Py_SIZE(k) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)k)) {
         PyErr_SetString(PyExc_ValueError,
                         "k must be a non-negative integer");
         goto error;
@@ -3845,7 +3845,8 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         if (temp == NULL) {
             goto error;
         }
-        if (Py_SIZE(temp) < 0) {
+        assert(PyLong_Check(temp));
+        if (_PyLong_IsNegative((PyLongObject *)temp)) {
             Py_DECREF(temp);
             result = PyLong_FromLong(0);
             goto done;

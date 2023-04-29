@@ -470,7 +470,7 @@ user's system, including environment variables, system registry settings, and
 installed packages. The standard library is included as pre-compiled and
 optimized ``.pyc`` files in a ZIP, and ``python3.dll``, ``python37.dll``,
 ``python.exe`` and ``pythonw.exe`` are all provided. Tcl/tk (including all
-dependants, such as Idle), pip and the Python documentation are not included.
+dependents, such as Idle), pip and the Python documentation are not included.
 
 .. note::
 

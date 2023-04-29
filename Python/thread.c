@@ -137,10 +137,8 @@ PyThread_GetInfo(void)
     int len;
 #endif
 
-    if (ThreadInfoType.tp_name == 0) {
-        if (_PyStructSequence_InitBuiltin(&ThreadInfoType,
-                                          &threadinfo_desc) < 0)
-            return NULL;
+    if (_PyStructSequence_InitBuiltin(&ThreadInfoType, &threadinfo_desc) < 0) {
+        return NULL;
     }
 
     threadinfo = PyStructSequence_New(&ThreadInfoType);
