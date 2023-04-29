@@ -16728,7 +16728,18 @@ all_ins(PyObject *m)
 #ifdef USE_XATTRS
     if (PyModule_AddIntMacro(m, XATTR_CREATE)) return -1;
     if (PyModule_AddIntMacro(m, XATTR_REPLACE)) return -1;
+#endif
+#ifdef XATTR_SIZE_MAX  // Linux
     if (PyModule_AddIntMacro(m, XATTR_SIZE_MAX)) return -1;
+#endif
+#ifdef XATTR_NAME_MAX  // Linux
+    if (PyModule_AddIntMacro(m, XATTR_NAME_MAX)) return -1;
+#endif
+#ifdef XATTR_MAXNAMELEN  // Darwin
+    if (PyModule_AddIntMacro(m, XATTR_MAXNAMELEN)) return -1;
+#endif
+#ifdef EXTATTR_MAXNAMELEN  // FreeBSD
+    if (PyModule_AddIntMacro(m, EXTATTR_MAXNAMELEN)) return -1;
 #endif
 
 #if HAVE_DECL_RTLD_LAZY
