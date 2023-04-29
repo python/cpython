@@ -59,7 +59,7 @@
     #define USE_COMPUTED_GOTOS 0
 #endif
 
-#ifndef _PyJIT_ACTIVE
+#if !defined(_PyJIT_ACTIVE) && _PyJIT_MAX_RECORDING_LENGTH
     #define _PyJIT_RECORD(CFRAME, NEXT_INSTR)                                                    \
         do {                                                                                     \
             if ((CFRAME).jit_recording_end) {                                                    \

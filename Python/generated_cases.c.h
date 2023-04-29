@@ -2787,7 +2787,7 @@
         TARGET(JUMP_BACKWARD) {
             PREDICTED(JUMP_BACKWARD);
             #line 1980 "Python/bytecodes.c"
-            #if ENABLE_SPECIALIZATION
+            #if ENABLE_SPECIALIZATION && _PyJIT_MAX_RECORDING_LENGTH
             if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {
                 _Py_Specialize_JumpBackwardBegin(&cframe, next_instr - 1);
                 GO_TO_INSTRUCTION(JUMP_BACKWARD_QUICK);
@@ -2826,7 +2826,7 @@
             assert(oparg < INSTR_OFFSET());
             JUMPBY(-oparg);
             CHECK_EVAL_BREAKER();
-            int status = ((int (*)(PyThreadState *, _PyInterpreterFrame *, PyObject **, _Py_CODEUNIT *))(uintptr_t)trace)(tstate, frame, stack_pointer, next_instr);
+            int status = ((_PyJITFunction)(uintptr_t)trace)(tstate, frame, stack_pointer, next_instr);
             frame = cframe.current_frame;
             next_instr = frame->prev_instr;
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -2834,7 +2834,7 @@
                 UPDATE_MISS_STATS(JUMP_BACKWARD);
                 if (ADAPTIVE_COUNTER_IS_ZERO(instr[1].cache)) {
                     instr->op.code = JUMP_BACKWARD;
-                    _PyJIT_Free((unsigned char *)(uintptr_t)trace);
+                    _PyJIT_Free((_PyJITFunction)(uintptr_t)trace);
                 }
                 else {
                     DECREMENT_ADAPTIVE_COUNTER(instr[1].cache);

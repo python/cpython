@@ -4,6 +4,7 @@
 #include "pycore_dict.h"
 #include "pycore_floatobject.h"
 #include "pycore_intrinsics.h"
+#include "pycore_jit.h"
 #include "pycore_long.h"
 #include "pycore_object.h"
 #include "pycore_opcode.h"
@@ -45,9 +46,9 @@ alloc(size_t nbytes)
 
 
 void
-_PyJIT_Free(unsigned char *memory)
+_PyJIT_Free(_PyJITFunction trace)
 {
-    memory -= sizeof(size_t);
+    unsigned char *memory = (unsigned char *)trace - sizeof(size_t);
     size_t nbytes = *(size_t *)memory;
     MUNMAP(memory, nbytes);
 }
@@ -68,7 +69,7 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
 
 // The world's smallest compiler?
 // Make sure to call _PyJIT_Free on the memory when you're done with it!
-unsigned char *
+_PyJITFunction
 _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
 {
     // First, loop over everything once to find the total compiled size:
@@ -106,5 +107,5 @@ _PyJIT_CompileTrace(int size, _Py_CODEUNIT **trace)
     };
     // Wow, done already?
     assert(memory + nbytes == head);
-    return memory;
+    return (_PyJITFunction)memory;
 }

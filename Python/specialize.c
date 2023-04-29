@@ -2231,12 +2231,12 @@ _Py_Specialize_JumpBackwardEnd(_PyCFrame *cframe, _Py_CODEUNIT *instr)
     // assert(_PyOpcode_Caches[JUMP_BACKWARD] == INLINE_CACHE_ENTRIES_JUMP_BACKWARD);
     if (instr == cframe->jit_recording_end) {
         instr->op.code = JUMP_BACKWARD_QUICK;
-        unsigned char *compiled = _PyJIT_CompileTrace(cframe->jit_recording_size, cframe->jit_recording);
+        _PyJITFunction compiled = _PyJIT_CompileTrace(cframe->jit_recording_size, cframe->jit_recording);
         if (compiled) {
             STAT_INC(JUMP_BACKWARD, success);
             instr->op.code = JUMP_BACKWARD_INTO_TRACE;
             instr[1].cache = adaptive_counter_cooldown();
-            *(unsigned char **)(&instr[2]) = compiled;
+            *(_PyJITFunction *)(&instr[2]) = compiled;
             goto done;
         }
         SPECIALIZATION_FAIL(JUMP_BACKWARD, SPEC_FAIL_JUMP_BACKWARD_UNSUPPORTED_OPCODE);
