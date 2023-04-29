@@ -1,6 +1,8 @@
 /* typing accelerator C extension: _typing module. */
 
+#ifndef Py_BUILD_CORE
 #define Py_BUILD_CORE
+#endif
 
 #include "Python.h"
 #include "internal/pycore_interp.h"
