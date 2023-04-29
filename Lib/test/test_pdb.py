@@ -1675,6 +1675,51 @@ def test_pdb_issue_gh_101673():
     (Pdb) continue
     """
 
+def test_pdb_issue_gh_103225():
+    """See GH-103225
+
+    Make sure longlist uses 1-based line numbers in frames that correspond to a module
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'longlist',
+    ...     'continue'
+    ... ]):
+    ...     a = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     b = 2
+    > <doctest test.test_pdb.test_pdb_issue_gh_103225[0]>(7)<module>()
+    -> b = 2
+    (Pdb) longlist
+      1     with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+      2         'longlist',
+      3         'continue'
+      4     ]):
+      5         a = 1
+      6         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+      7  ->     b = 2
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_101517():
+    """See GH-101517
+
+    Make sure pdb doesn't crash when the exception is caught in a try/except* block
+
+    >>> def test_function():
+    ...     try:
+    ...         raise KeyError
+    ...     except* Exception as e:
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue'
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(5)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) continue
+    """
+
 
 @support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
@@ -2350,6 +2395,12 @@ def bœr():
         stdout, stderr = self._run_pdb(["gh93696_host.py"], commands)
         # verify that pdb found the source of the "frozen" function
         self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
+
+    def test_non_utf8_encoding(self):
+        script_dir = os.path.join(os.path.dirname(__file__), 'encoded_modules')
+        for filename in os.listdir(script_dir):
+            if filename.endswith(".py"):
+                self._run_pdb([os.path.join(script_dir, filename)], 'q')
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
