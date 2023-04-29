@@ -177,13 +177,10 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS, *, split_test_
         if mod[:5] == "test_" and mod not in others:
             if mod in split_test_dirs:
                 subdir = os.path.join(testdir, mod)
-                if len(base_mod):
-                    mod = f"{base_mod}.{mod}"
-                else:
-                    mod = f"test.{mod}"
+                mod = f"{base_mod or 'test'}.{mod}"
                 tests.extend(findtests(subdir, [], nottests, split_test_dirs=split_test_dirs, base_mod=mod))
             elif ext in (".py", ""):
-                tests.append(f"{base_mod}.{mod}" if len(base_mod) else mod)
+                tests.append(f"{base_mod}.{mod}" if base_mod else mod)
     return stdtests + sorted(tests)
 
 
