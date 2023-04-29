@@ -8,6 +8,7 @@ import locale
 import sys
 import datetime
 import os
+import warnings
 
 # From https://en.wikipedia.org/wiki/Leap_year_starting_on_Saturday
 result_0_02_text = """\
@@ -490,6 +491,14 @@ class OutputTestCase(unittest.TestCase):
             self.assertEqual(out.getvalue().strip(), "1   2   3")
 
 class CalendarTestCase(unittest.TestCase):
+
+    def test_deprecation_warning(self):
+        with warnings.catch_warnings(record=True) as w:
+            calendar.January
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].category, DeprecationWarning)
+        self.assertIn("The 'January' attribute is deprecated, use 'JANUARY' instead", str(w[0].message))
+
     def test_isleap(self):
         # Make sure that the return is right for a few years, and
         # ensure that the return values are 1 or 0, not just true or
