@@ -618,18 +618,17 @@ class TestExceptStarRaise(ExceptStarTest):
                 raise orig
             except* (TypeError, ValueError) as e:
                 raise SyntaxError(3)
-        except BaseException as e:
+        except SyntaxError as e:
             exc = e
 
-        self.assertExceptionIsLike(
-            exc, ExceptionGroup("", [SyntaxError(3)]))
+        self.assertExceptionIsLike(exc, SyntaxError(3))
 
         self.assertExceptionIsLike(
-            exc.exceptions[0].__context__,
+            exc.__context__,
             ExceptionGroup("eg", [TypeError(1), ValueError(2)]))
 
         self.assertMetadataNotEqual(orig, exc)
-        self.assertMetadataEqual(orig, exc.exceptions[0].__context__)
+        self.assertMetadataEqual(orig, exc.__context__)
 
     def test_raise_handle_all_raise_one_unnamed(self):
         orig = ExceptionGroup("eg", [TypeError(1), ValueError(2)])
@@ -638,18 +637,17 @@ class TestExceptStarRaise(ExceptStarTest):
                 raise orig
             except* (TypeError, ValueError) as e:
                 raise SyntaxError(3)
-        except ExceptionGroup as e:
+        except SyntaxError as e:
             exc = e
 
-        self.assertExceptionIsLike(
-            exc, ExceptionGroup("", [SyntaxError(3)]))
+        self.assertExceptionIsLike(exc, SyntaxError(3))
 
         self.assertExceptionIsLike(
-            exc.exceptions[0].__context__,
+            exc.__context__,
             ExceptionGroup("eg", [TypeError(1), ValueError(2)]))
 
         self.assertMetadataNotEqual(orig, exc)
-        self.assertMetadataEqual(orig, exc.exceptions[0].__context__)
+        self.assertMetadataEqual(orig, exc.__context__)
 
     def test_raise_handle_all_raise_two_named(self):
         orig = ExceptionGroup("eg", [TypeError(1), ValueError(2)])
@@ -773,23 +771,22 @@ class TestExceptStarRaiseFrom(ExceptStarTest):
                 raise orig
             except* (TypeError, ValueError) as e:
                 raise SyntaxError(3) from e
-        except BaseException as e:
+        except SyntaxError as e:
             exc = e
 
-        self.assertExceptionIsLike(
-            exc, ExceptionGroup("", [SyntaxError(3)]))
+        self.assertExceptionIsLike(exc, SyntaxError(3))
 
         self.assertExceptionIsLike(
-            exc.exceptions[0].__context__,
+            exc.__context__,
             ExceptionGroup("eg", [TypeError(1), ValueError(2)]))
 
         self.assertExceptionIsLike(
-            exc.exceptions[0].__cause__,
+            exc.__cause__,
             ExceptionGroup("eg", [TypeError(1), ValueError(2)]))
 
         self.assertMetadataNotEqual(orig, exc)
-        self.assertMetadataEqual(orig, exc.exceptions[0].__context__)
-        self.assertMetadataEqual(orig, exc.exceptions[0].__cause__)
+        self.assertMetadataEqual(orig, exc.__context__)
+        self.assertMetadataEqual(orig, exc.__cause__)
 
     def test_raise_handle_all_raise_one_unnamed(self):
         orig = ExceptionGroup("eg", [TypeError(1), ValueError(2)])
@@ -799,23 +796,22 @@ class TestExceptStarRaiseFrom(ExceptStarTest):
             except* (TypeError, ValueError) as e:
                 e = sys.exception()
                 raise SyntaxError(3) from e
-        except ExceptionGroup as e:
+        except SyntaxError as e:
             exc = e
 
-        self.assertExceptionIsLike(
-            exc, ExceptionGroup("", [SyntaxError(3)]))
+        self.assertExceptionIsLike(exc, SyntaxError(3))
 
         self.assertExceptionIsLike(
-            exc.exceptions[0].__context__,
+            exc.__context__,
             ExceptionGroup("eg", [TypeError(1), ValueError(2)]))
 
         self.assertExceptionIsLike(
-            exc.exceptions[0].__cause__,
+            exc.__cause__,
             ExceptionGroup("eg", [TypeError(1), ValueError(2)]))
 
         self.assertMetadataNotEqual(orig, exc)
-        self.assertMetadataEqual(orig, exc.exceptions[0].__context__)
-        self.assertMetadataEqual(orig, exc.exceptions[0].__cause__)
+        self.assertMetadataEqual(orig, exc.__context__)
+        self.assertMetadataEqual(orig, exc.__cause__)
 
     def test_raise_handle_all_raise_two_named(self):
         orig = ExceptionGroup("eg", [TypeError(1), ValueError(2)])
