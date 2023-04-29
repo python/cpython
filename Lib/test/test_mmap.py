@@ -265,19 +265,22 @@ class MmapTests(unittest.TestCase):
         self.assertRaises(OSError, mmap.mmap, -2, 4096)
 
     def test_if_crash(self): # test for issue gh-103987
-        with open("TESTFN", "w+") as f:
-            f.write("foobar")
+        with open("TESTFN", "wb+") as f:
+            data = b'aabaac\x00deef\x00\x00aa\x00'
+            n = len(data)
+            f.write(data)
             f.flush()
 
-            class X(object):
+            class X:
                 def __index__(self):
                     m.close()
                     return 1
 
-            m = mmap.mmap(f.fileno(), 6, access=mmap.ACCESS_READ)
-            self.assertEqual(m[1], 111)
-            with self.assertRaises(ValueError):
-                m[X()] # should not crash
+            m = mmap.mmap(f.fileno(), n, access=mmap.ACCESS_READ)
+
+        self.assertEqual(m[1], 97)
+        with self.assertRaises(ValueError):
+            m[X()] # should not crash
 
         m.close()
 
