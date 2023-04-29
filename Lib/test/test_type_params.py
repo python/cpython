@@ -1,6 +1,7 @@
 import asyncio
 import textwrap
 import unittest
+from test.support import requires_working_socket
 
 from typing import Any, Sequence, TypeVar, TypeVarTuple, ParamSpec
 
@@ -445,6 +446,7 @@ class TypeParamsTypeVarTest(unittest.TestCase):
         self.assertIsInstance(c, TypeVar)
         self.assertEqual(c.__name__, "C")
 
+    @requires_working_socket()
     def test_typevar_coroutine(self):
         def get_coroutine[A]():
             async def coroutine[B]():
