@@ -377,7 +377,7 @@ Sequences
          (and hence unhashable), byte arrays otherwise provide the same interface
          and functionality as immutable :class:`bytes` objects.
 
-      .. index:: module: array
+      .. index:: pair: module; array
 
       The extension module :mod:`array` provides an additional example of a
       mutable sequence type, as does the :mod:`collections` module.
