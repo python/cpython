@@ -145,7 +145,7 @@ _PyDebug_PrintTotalRefs(void) {
     _PyRuntimeState *runtime = &_PyRuntime;
     fprintf(stderr,
             "[%zd refs, %zd blocks]\n",
-            get_global_reftotal(runtime), _Py_GetAllocatedBlocks());
+            get_global_reftotal(runtime), _Py_GetGlobalAllocatedBlocks());
     /* It may be helpful to also print the "legacy" reftotal separately.
        Likewise for the total for each interpreter. */
 }
@@ -890,7 +890,7 @@ PyObject_Hash(PyObject *v)
      * an explicit call to PyType_Ready, we implicitly call
      * PyType_Ready here and then check the tp_hash slot again
      */
-    if (tp->tp_dict == NULL) {
+    if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0)
             return -1;
         if (tp->tp_hash != NULL)
@@ -1033,7 +1033,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
     }
     else {
         PyErr_Format(PyExc_AttributeError,
-                    "'%.50s' object has no attribute '%U'",
+                    "'%.100s' object has no attribute '%U'",
                     tp->tp_name, name);
     }
 
@@ -1353,7 +1353,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     }
 
     PyErr_Format(PyExc_AttributeError,
-                 "'%.50s' object has no attribute '%U'",
+                 "'%.100s' object has no attribute '%U'",
                  tp->tp_name, name);
 
     set_attribute_error_context(obj, name);
@@ -1385,7 +1385,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
     Py_INCREF(name);
 
-    if (tp->tp_dict == NULL) {
+    if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0)
             goto done;
     }
@@ -1474,7 +1474,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
 
     if (!suppress) {
         PyErr_Format(PyExc_AttributeError,
-                     "'%.50s' object has no attribute '%U'",
+                     "'%.100s' object has no attribute '%U'",
                      tp->tp_name, name);
 
         set_attribute_error_context(obj, name);
@@ -1507,8 +1507,9 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         return -1;
     }
 
-    if (tp->tp_dict == NULL && PyType_Ready(tp) < 0)
+    if (!_PyType_IsReady(tp) && PyType_Ready(tp) < 0) {
         return -1;
+    }
 
     Py_INCREF(name);
     Py_INCREF(tp);
@@ -1545,7 +1546,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             }
             else {
                 PyErr_Format(PyExc_AttributeError,
-                            "'%.50s' object attribute '%U' is read-only",
+                            "'%.100s' object attribute '%U' is read-only",
                             tp->tp_name, name);
             }
             goto done;
@@ -2101,10 +2102,6 @@ static PyTypeObject* static_types[] = {
 PyStatus
 _PyTypes_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
     // All other static types (unless initialized elsewhere)
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];

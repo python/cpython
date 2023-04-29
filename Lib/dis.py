@@ -41,6 +41,7 @@ JUMP_BACKWARD = opmap['JUMP_BACKWARD']
 FOR_ITER = opmap['FOR_ITER']
 SEND = opmap['SEND']
 LOAD_ATTR = opmap['LOAD_ATTR']
+LOAD_SUPER_ATTR = opmap['LOAD_SUPER_ATTR']
 
 CACHE = opmap["CACHE"]
 
@@ -368,9 +369,8 @@ def _get_const_value(op, arg, co_consts):
     assert op in hasconst
 
     argval = UNKNOWN
-    if op == LOAD_CONST or op == RETURN_CONST:
-        if co_consts is not None:
-            argval = co_consts[arg]
+    if co_consts is not None:
+        argval = co_consts[arg]
     return argval
 
 def _get_const_info(op, arg, co_consts):
@@ -473,6 +473,10 @@ def _get_instructions_bytes(code, varname_from_oparg=None,
                         argrepr = "NULL + " + argrepr
                 elif deop == LOAD_ATTR:
                     argval, argrepr = _get_name_info(arg//2, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = "NULL|self + " + argrepr
+                elif deop == LOAD_SUPER_ATTR:
+                    argval, argrepr = _get_name_info(arg//4, get_name)
                     if (arg & 1) and argrepr:
                         argrepr = "NULL|self + " + argrepr
                 else:
