@@ -264,7 +264,8 @@ class MmapTests(unittest.TestCase):
         # Try opening a bad file descriptor...
         self.assertRaises(OSError, mmap.mmap, -2, 4096)
 
-    def test_if_crash(self): # test for issue gh-103987
+    def test_unexpected_mmap_close(self):
+        # See gh-103987
         with open(TESTFN, "wb+") as f:
             data = b'aabaac\x00deef\x00\x00aa\x00'
             n = len(data)
