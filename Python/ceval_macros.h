@@ -93,16 +93,13 @@
     { \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
-        assert(cframe.use_tracing == 0 || cframe.use_tracing == 255); \
-        opcode |= cframe.use_tracing OR_DTRACE_LINE; \
         DISPATCH_GOTO(); \
     }
 
 #define DISPATCH_SAME_OPARG() \
     { \
-        opcode = _Py_OPCODE(*next_instr); \
+        opcode = next_instr->op.code; \
         PRE_DISPATCH_GOTO(); \
-        opcode |= cframe.use_tracing OR_DTRACE_LINE; \
         DISPATCH_GOTO(); \
     }
 
@@ -143,8 +140,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(frame->f_code)))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
-        opcode = _Py_OPCODE(word); \
-        oparg = _Py_OPARG(word); \
+        opcode = word.op.code; \
+        oparg = word.op.arg; \
     } while (0)
 #define JUMPTO(x)       (next_instr = _PyCode_CODE(frame->f_code) + (x))
 #define JUMPBY(x)       (next_instr += (x))
@@ -180,14 +177,14 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #if USE_COMPUTED_GOTOS
 #define PREDICT(op)             if (0) goto PREDICT_ID(op)
 #else
-#define PREDICT(op) \
+#define PREDICT(next_op) \
     do { \
         _Py_CODEUNIT word = *next_instr; \
-        opcode = _Py_OPCODE(word) | cframe.use_tracing OR_DTRACE_LINE; \
-        if (opcode == op) { \
-            oparg = _Py_OPARG(word); \
-            INSTRUCTION_START(op); \
-            goto PREDICT_ID(op); \
+        opcode = word.op.code; \
+        if (opcode == next_op) { \
+            oparg = word.op.arg; \
+            INSTRUCTION_START(next_op); \
+            goto PREDICT_ID(next_op); \
         } \
     } while(0)
 #endif
@@ -283,46 +280,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
 
-/* Shared opcode macros */
-
-#define TRACE_FUNCTION_EXIT() \
-    if (cframe.use_tracing) { \
-        if (trace_function_exit(tstate, frame, retval)) { \
-            Py_DECREF(retval); \
-            goto exit_unwind; \
-        } \
-    }
-
-#define DTRACE_FUNCTION_EXIT() \
-    if (PyDTrace_FUNCTION_RETURN_ENABLED()) { \
-        dtrace_function_return(frame); \
-    }
-
-#define TRACE_FUNCTION_UNWIND()  \
-    if (cframe.use_tracing) { \
-        /* Since we are already unwinding, \
-         * we don't care if this raises */ \
-        trace_function_exit(tstate, frame, NULL); \
-    }
-
-#define TRACE_FUNCTION_ENTRY() \
-    if (cframe.use_tracing) { \
-        _PyFrame_SetStackPointer(frame, stack_pointer); \
-        int err = trace_function_entry(tstate, frame); \
-        stack_pointer = _PyFrame_GetStackPointer(frame); \
-        if (err) { \
-            goto error; \
-        } \
-    }
-
-#define TRACE_FUNCTION_THROW_ENTRY() \
-    if (cframe.use_tracing) { \
-        assert(frame->stacktop >= 0); \
-        if (trace_function_entry(tstate, frame)) { \
-            goto exit_unwind; \
-        } \
-    }
-
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
         dtrace_function_entry(frame); \
@@ -347,3 +304,41 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     } while (0);
 
 #define NAME_ERROR_MSG "name '%.200s' is not defined"
+
+#define KWNAMES_LEN() \
+    (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
+
+#define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) \
+do { \
+    if (Py_REFCNT(left) == 1) { \
+        ((PyFloatObject *)left)->ob_fval = (dval); \
+        _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);\
+        result = (left); \
+    } \
+    else if (Py_REFCNT(right) == 1)  {\
+        ((PyFloatObject *)right)->ob_fval = (dval); \
+        _Py_DECREF_NO_DEALLOC(left); \
+        result = (right); \
+    }\
+    else { \
+        result = PyFloat_FromDouble(dval); \
+        if ((result) == NULL) goto error; \
+        _Py_DECREF_NO_DEALLOC(left); \
+        _Py_DECREF_NO_DEALLOC(right); \
+    } \
+} while (0)
+
+// If a trace function sets a new f_lineno and
+// *then* raises, we use the destination when searching
+// for an exception handler, displaying the traceback, and so on
+#define INSTRUMENTED_JUMP(src, dest, event) \
+do { \
+    _PyFrame_SetStackPointer(frame, stack_pointer); \
+    int err = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+    stack_pointer = _PyFrame_GetStackPointer(frame); \
+    if (err) { \
+        next_instr = (dest)+1; \
+        goto error; \
+    } \
+    next_instr = frame->prev_instr; \
+} while (0);

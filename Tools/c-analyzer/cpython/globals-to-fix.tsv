@@ -135,6 +135,9 @@ Objects/stringlib/unicode_format.h	-	PyFieldNameIter_Type	-
 Objects/unicodeobject.c	-	EncodingMapType	-
 #Objects/unicodeobject.c	-	PyFieldNameIter_Type	-
 #Objects/unicodeobject.c	-	PyFormatterIter_Type	-
+Python/legacy_tracing.c	-	_PyLegacyEventHandler_Type	-
+Objects/object.c	-	_PyLegacyEventHandler_Type	-
+
 
 ##-----------------------
 ## static builtin structseq
@@ -297,6 +300,8 @@ Objects/object.c	-	_Py_NotImplementedStruct	-
 Objects/setobject.c	-	_dummy_struct	-
 Objects/setobject.c	-	_PySet_Dummy	-
 Objects/sliceobject.c	-	_Py_EllipsisObject	-
+Python/instrumentation.c	-	DISABLE	-
+Python/instrumentation.c	-	_PyInstrumentation_MISSING	-
 
 
 ##################################
@@ -311,52 +316,17 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 ##-----------------------
 ## static types
 
-Modules/_collectionsmodule.c	-	defdict_type	-
-Modules/_collectionsmodule.c	-	deque_type	-
-Modules/_collectionsmodule.c	-	dequeiter_type	-
-Modules/_collectionsmodule.c	-	dequereviter_type	-
-Modules/_collectionsmodule.c	-	tuplegetter_type	-
 Modules/_io/bufferedio.c	-	PyBufferedIOBase_Type	-
-Modules/_io/bufferedio.c	-	PyBufferedRWPair_Type	-
-Modules/_io/bufferedio.c	-	PyBufferedRandom_Type	-
-Modules/_io/bufferedio.c	-	PyBufferedReader_Type	-
-Modules/_io/bufferedio.c	-	PyBufferedWriter_Type	-
-Modules/_io/bytesio.c	-	PyBytesIO_Type	-
 Modules/_io/bytesio.c	-	_PyBytesIOBuffer_Type	-
-Modules/_io/fileio.c	-	PyFileIO_Type	-
 Modules/_io/iobase.c	-	PyIOBase_Type	-
 Modules/_io/iobase.c	-	PyRawIOBase_Type	-
-Modules/_io/stringio.c	-	PyStringIO_Type	-
 Modules/_io/textio.c	-	PyIncrementalNewlineDecoder_Type	-
 Modules/_io/textio.c	-	PyTextIOBase_Type	-
-Modules/_io/textio.c	-	PyTextIOWrapper_Type	-
 Modules/_io/winconsoleio.c	-	PyWindowsConsoleIO_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorNopGet_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
-Modules/itertoolsmodule.c	-	_grouper_type	-
-Modules/itertoolsmodule.c	-	accumulate_type	-
-Modules/itertoolsmodule.c	-	batched_type	-
-Modules/itertoolsmodule.c	-	chain_type	-
-Modules/itertoolsmodule.c	-	combinations_type	-
-Modules/itertoolsmodule.c	-	compress_type	-
-Modules/itertoolsmodule.c	-	count_type	-
-Modules/itertoolsmodule.c	-	cwr_type	-
-Modules/itertoolsmodule.c	-	cycle_type	-
-Modules/itertoolsmodule.c	-	dropwhile_type	-
-Modules/itertoolsmodule.c	-	filterfalse_type	-
-Modules/itertoolsmodule.c	-	groupby_type	-
-Modules/itertoolsmodule.c	-	islice_type	-
-Modules/itertoolsmodule.c	-	pairwise_type	-
-Modules/itertoolsmodule.c	-	permutations_type	-
-Modules/itertoolsmodule.c	-	product_type	-
-Modules/itertoolsmodule.c	-	repeat_type	-
-Modules/itertoolsmodule.c	-	starmap_type	-
-Modules/itertoolsmodule.c	-	takewhile_type	-
-Modules/itertoolsmodule.c	-	tee_type	-
-Modules/itertoolsmodule.c	-	teedataobject_type	-
-Modules/itertoolsmodule.c	-	ziplongest_type	-
 
 
 ##################################
@@ -371,7 +341,6 @@ Modules/itertoolsmodule.c	-	ziplongest_type	-
 ##-----------------------
 ## static types
 
-Modules/_ctypes/_ctypes.c	-	DictRemover_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCArrayType_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCArray_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCData_Type	-
@@ -382,18 +351,14 @@ Modules/_ctypes/_ctypes.c	-	PyCPointer_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCSimpleType_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCStructType_Type	-
 Modules/_ctypes/_ctypes.c	-	Simple_Type	-
-Modules/_ctypes/_ctypes.c	-	StructParam_Type	-
 Modules/_ctypes/_ctypes.c	-	Struct_Type	-
 Modules/_ctypes/_ctypes.c	-	UnionType_Type	-
 Modules/_ctypes/_ctypes.c	-	Union_Type	-
-Modules/_ctypes/callbacks.c	-	PyCThunk_Type	-
 Modules/_ctypes/callproc.c	-	PyCArg_Type	-
-Modules/_ctypes/cfield.c	-	PyCField_Type	-
 Modules/_ctypes/ctypes.h	-	PyCArg_Type	-
 Modules/_ctypes/ctypes.h	-	PyCArrayType_Type	-
 Modules/_ctypes/ctypes.h	-	PyCArray_Type	-
 Modules/_ctypes/ctypes.h	-	PyCData_Type	-
-Modules/_ctypes/ctypes.h	-	PyCField_Type	-
 Modules/_ctypes/ctypes.h	-	PyCFuncPtrType_Type	-
 Modules/_ctypes/ctypes.h	-	PyCFuncPtr_Type	-
 Modules/_ctypes/ctypes.h	-	PyCPointerType_Type	-
@@ -401,7 +366,6 @@ Modules/_ctypes/ctypes.h	-	PyCPointer_Type	-
 Modules/_ctypes/ctypes.h	-	PyCSimpleType_Type	-
 Modules/_ctypes/ctypes.h	-	PyCStgDict_Type	-
 Modules/_ctypes/ctypes.h	-	PyCStructType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCThunk_Type	-
 Modules/_ctypes/ctypes.h	-	PyExc_ArgError	-
 Modules/_ctypes/ctypes.h	-	_ctypes_conversion_encoding	-
 Modules/_ctypes/ctypes.h	-	_ctypes_conversion_errors	-
@@ -420,15 +384,8 @@ Modules/_decimal/_decimal.c	-	PyDecContextManager_Type	-
 Modules/_decimal/_decimal.c	-	PyDecContext_Type	-
 Modules/_decimal/_decimal.c	-	PyDecSignalDictMixin_Type	-
 Modules/_decimal/_decimal.c	-	PyDec_Type	-
-Modules/_pickle.c	-	Pdata_Type	-
-Modules/_pickle.c	-	PicklerMemoProxyType	-
-Modules/_pickle.c	-	Pickler_Type	-
-Modules/_pickle.c	-	UnpicklerMemoProxyType	-
-Modules/_pickle.c	-	Unpickler_Type	-
-Modules/_zoneinfo.c	-	PyZoneInfo_ZoneInfoType	-
 Modules/ossaudiodev.c	-	OSSAudioType	-
 Modules/ossaudiodev.c	-	OSSMixerType	-
-Modules/socketmodule.c	-	sock_type	-
 Modules/xxmodule.c	-	Null_Type	-
 Modules/xxmodule.c	-	Str_Type	-
 Modules/xxmodule.c	-	Xxo_Type	-
@@ -452,8 +409,6 @@ Modules/_cursesmodule.c	-	PyCursesError	-
 Modules/_decimal/_decimal.c	-	DecimalException	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
 Modules/ossaudiodev.c	-	OSSAudioError	-
-Modules/socketmodule.c	-	socket_herror	-
-Modules/socketmodule.c	-	socket_gaierror	-
 Modules/xxlimited_35.c	-	ErrorObject	-
 Modules/xxmodule.c	-	ErrorObject	-
 
@@ -463,11 +418,6 @@ Modules/xxmodule.c	-	ErrorObject	-
 ## manually cached PyUnicodeOjbect
 Modules/_ctypes/callproc.c	_ctypes_get_errobj	error_object_name	-
 Modules/_ctypes/_ctypes.c	CreateSwappedType	suffix	-
-
-## other - during module init
-Modules/_zoneinfo.c	-	io_open	-
-Modules/_zoneinfo.c	-	_tzpath_find_tzfile	-
-Modules/_zoneinfo.c	-	_common_mod	-
 
 ##-----------------------
 ## other
@@ -493,18 +443,17 @@ Modules/_decimal/_decimal.c	-	extended_context_template	-
 Modules/_decimal/_decimal.c	-	round_map	-
 Modules/_decimal/_decimal.c	-	Rational	-
 Modules/_decimal/_decimal.c	-	SignalTuple	-
-Modules/arraymodule.c	array_array___reduce_ex___impl	array_reconstructor	-
 
 ## state
 Modules/_asynciomodule.c	-	fi_freelist	-
 Modules/_asynciomodule.c	-	fi_freelist_len	-
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
+Modules/_ctypes/_ctypes.c	-	global_state	-
+Modules/_ctypes/ctypes.h	-	global_state	-
 Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
 Modules/_tkinter.c	-	trbInCmd	-
-Modules/_zoneinfo.c	-	TIMEDELTA_CACHE	-
-Modules/_zoneinfo.c	-	ZONEINFO_WEAK_CACHE	-
 
 
 ##################################
@@ -532,34 +481,9 @@ Modules/_decimal/_decimal.c	-	_py_float_abs	-
 Modules/_decimal/_decimal.c	-	_py_long_bit_length	-
 Modules/_decimal/_decimal.c	-	_py_float_as_integer_ratio	-
 Modules/_elementtree.c	-	expat_capi	-
-Modules/cjkcodecs/_codecs_hk.c	-	big5_encmap	-
-Modules/cjkcodecs/_codecs_hk.c	-	big5_decmap	-
-Modules/cjkcodecs/_codecs_hk.c	big5hkscs_codec_init	initialized	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	cp949_encmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	ksx1001_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisxcommon_encmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0208_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0212_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_bmp_encmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_1_bmp_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_2_bmp_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_emp_encmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_1_emp_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	jisx0213_2_emp_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	gbcommon_encmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	-	gb2312_decmap	-
-Modules/cjkcodecs/_codecs_iso2022.c	ksx1001_init	initialized	-
-Modules/cjkcodecs/_codecs_iso2022.c	jisx0208_init	initialized	-
-Modules/cjkcodecs/_codecs_iso2022.c	jisx0212_init	initialized	-
-Modules/cjkcodecs/_codecs_iso2022.c	jisx0213_init	initialized	-
-Modules/cjkcodecs/_codecs_iso2022.c	gb2312_init	initialized	-
-Modules/cjkcodecs/cjkcodecs.h	-	codec_list	-
-Modules/cjkcodecs/cjkcodecs.h	-	mapping_list	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-
 Modules/readline.c	-	libedit_history_start	-
-Modules/socketmodule.c	-	accept4_works	-
-Modules/socketmodule.c	-	sock_cloexec_works	-
 
 ##-----------------------
 ## state
@@ -577,10 +501,6 @@ Modules/_tkinter.c	-	command_mutex	-
 Modules/_tkinter.c	-	HeadFHCD	-
 Modules/_tkinter.c	-	stdin_ready	-
 Modules/_tkinter.c	-	event_tstate	-
-Modules/_xxsubinterpretersmodule.c	-	_globals	-
-Modules/_zoneinfo.c	-	ZONEINFO_STRONG_CACHE	-
-Modules/_zoneinfo.c	-	ZONEINFO_STRONG_CACHE_MAX_SIZE	-
-Modules/_zoneinfo.c	-	NO_TTINFO	-
 Modules/readline.c	-	completer_word_break_characters	-
 Modules/readline.c	-	_history_length	-
 Modules/readline.c	-	should_auto_add_history	-
@@ -589,4 +509,3 @@ Modules/readline.c	-	sigwinch_ohandler	-
 Modules/readline.c	-	completed_input_string	-
 Modules/rotatingtree.c	-	random_stream	-
 Modules/rotatingtree.c	-	random_value	-
-Modules/socketmodule.c	-	defaulttimeout	-

@@ -952,6 +952,24 @@ class SpecSignatureTest(unittest.TestCase):
         self.assertFalse(hasattr(autospec, '__name__'))
 
 
+    def test_autospec_signature_staticmethod(self):
+        class Foo:
+            @staticmethod
+            def static_method(a, b=10, *, c): pass
+
+        mock = create_autospec(Foo.__dict__['static_method'])
+        self.assertEqual(inspect.signature(Foo.static_method), inspect.signature(mock))
+
+
+    def test_autospec_signature_classmethod(self):
+        class Foo:
+            @classmethod
+            def class_method(cls, a, b=10, *, c): pass
+
+        mock = create_autospec(Foo.__dict__['class_method'])
+        self.assertEqual(inspect.signature(Foo.class_method), inspect.signature(mock))
+
+
     def test_spec_inspect_signature(self):
 
         def myfunc(x, y): pass
@@ -1077,7 +1095,7 @@ class TestCallList(unittest.TestCase):
             p.stop()
 
 
-    def test_propertymock_returnvalue(self):
+    def test_propertymock_bare(self):
         m = MagicMock()
         p = PropertyMock()
         type(m).foo = p
@@ -1086,6 +1104,27 @@ class TestCallList(unittest.TestCase):
         p.assert_called_once_with()
         self.assertIsInstance(returned, MagicMock)
         self.assertNotIsInstance(returned, PropertyMock)
+
+
+    def test_propertymock_returnvalue(self):
+        m = MagicMock()
+        p = PropertyMock(return_value=42)
+        type(m).foo = p
+
+        returned = m.foo
+        p.assert_called_once_with()
+        self.assertEqual(returned, 42)
+        self.assertNotIsInstance(returned, PropertyMock)
+
+
+    def test_propertymock_side_effect(self):
+        m = MagicMock()
+        p = PropertyMock(side_effect=ValueError)
+        type(m).foo = p
+
+        with self.assertRaises(ValueError):
+            m.foo
+        p.assert_called_once_with()
 
 
 class TestCallablePredicate(unittest.TestCase):

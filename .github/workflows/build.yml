@@ -33,6 +33,7 @@ jobs:
   check_source:
     name: 'Check for source changes'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       run_tests: ${{ steps.check.outputs.run_tests }}
     steps:
@@ -63,6 +64,7 @@ jobs:
   check_generated_files:
     name: 'Check if generated files are up to date'
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
@@ -111,10 +113,14 @@ jobs:
         run: make smelly
       - name: Check limited ABI symbols
         run: make check-limited-abi
+      - name: Check for unsupported C global variables
+        if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
+        run: make check-c-globals
 
   build_win32:
     name: 'Windows (x86)'
     runs-on: windows-latest
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
@@ -123,7 +129,6 @@ jobs:
     - uses: actions/checkout@v3
     - name: Build CPython
       run: .\PCbuild\build.bat -e -d -p Win32
-      timeout-minutes: 30
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
@@ -132,6 +137,7 @@ jobs:
   build_win_amd64:
     name: 'Windows (x64)'
     runs-on: windows-latest
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
@@ -142,7 +148,6 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
       run: .\PCbuild\build.bat -e -d -p x64
-      timeout-minutes: 30
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
@@ -151,18 +156,27 @@ jobs:
   build_macos:
     name: 'macOS'
     runs-on: macos-latest
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
+      HOMEBREW_NO_ANALYTICS: 1
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_INSTALL_CLEANUP: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v3
-    - name: Prepare homebrew environment variables
-      run: |
-        echo "LDFLAGS=-L$(brew --prefix tcl-tk)/lib" >> $GITHUB_ENV
-        echo "PKG_CONFIG_PATH=$(brew --prefix openssl@1.1)/lib/pkgconfig:$(brew --prefix tcl-tk)/lib/pkgconfig" >> $GITHUB_ENV
+    - name: Install Homebrew dependencies
+      run: brew install pkg-config openssl@1.1 xz gdbm tcl-tk
     - name: Configure CPython
-      run: ./configure --with-pydebug --prefix=/opt/python-dev
+      run: |
+        CFLAGS="-I$(brew --prefix gdbm)/include -I$(brew --prefix xz)/include" \
+        LDFLAGS="-L$(brew --prefix gdbm)/lib -I$(brew --prefix xz)/lib" \
+        PKG_CONFIG_PATH="$(brew --prefix tcl-tk)/lib/pkgconfig" \
+        ./configure \
+          --with-pydebug \
+          --prefix=/opt/python-dev \
+          --with-openssl="$(brew --prefix openssl@1.1)"
     - name: Build CPython
       run: make -j4
     - name: Display build info
@@ -173,10 +187,11 @@ jobs:
   build_ubuntu:
     name: 'Ubuntu'
     runs-on: ubuntu-20.04
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1s
+      OPENSSL_VER: 1.1.1t
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v3
@@ -230,12 +245,13 @@ jobs:
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
     runs-on: ubuntu-20.04
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.1.1s, 3.0.7, 3.1.0-beta1]
+        openssl_ver: [1.1.1t, 3.0.8, 3.1.0-beta1]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
@@ -279,10 +295,11 @@ jobs:
   build_asan:
     name: 'Address sanitizer'
     runs-on: ubuntu-20.04
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1s
+      OPENSSL_VER: 1.1.1t
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
@@ -291,6 +308,10 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Set up GCC-10 for ASAN
+      uses: egor-tensin/setup-gcc@v1
+      with:
+        version: 10
     - name: Configure OpenSSL env vars
       run: |
         echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV

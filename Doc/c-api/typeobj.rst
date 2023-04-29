@@ -1145,7 +1145,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
     .. data:: Py_TPFLAGS_MANAGED_DICT
 
-       This bit indicates that instances of the class have a ``__dict___``
+       This bit indicates that instances of the class have a ``__dict__``
        attribute, and that the space for the dictionary is managed by the VM.
 
        If this flag is set, :const:`Py_TPFLAGS_HAVE_GC` should also be set.
@@ -1311,6 +1311,16 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       .. seealso:: :pep:`634` -- Structural Pattern Matching: Specification
 
       .. versionadded:: 3.10
+
+
+   .. data:: Py_TPFLAGS_VALID_VERSION_TAG
+
+      Internal. Do not set or unset this flag.
+      To indicate that a class has changed call :c:func:`PyType_Modified`
+
+      .. warning::
+         This flag is present in header files, but is an internal feature and should
+         not be used. It will be removed in a future version of CPython
 
 
 .. c:member:: const char* PyTypeObject.tp_doc

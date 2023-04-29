@@ -5,13 +5,13 @@
 # https://git-scm.com/docs/gitignore#_pattern_format
 
 # GitHub
-.github/**                    @ezio-melotti
+.github/**                    @ezio-melotti @hugovk
 
 # Build system
 configure*                    @erlend-aasland @corona10
 
 # asyncio
-**/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303
+**/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303 @willingc
 
 # Core
 **/*context*                  @1st1
@@ -25,6 +25,8 @@ Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
 Python/ceval.c                @markshannon
 Python/compile.c              @markshannon @iritkatriel
+Python/assemble.c             @markshannon @iritkatriel
+Python/flowgraph.c            @markshannon @iritkatriel
 Python/ast_opt.c              @isidentical
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_peepholer.py    @brandtbucher
@@ -61,11 +63,7 @@ Python/traceback.c            @iritkatriel
 /Tools/build/parse_html5_entities.py   @ezio-melotti
 
 # Import (including importlib).
-# Ignoring importlib.h so as to not get flagged on
-# all pull requests that change the emitted
-# bytecode.
-**/*import*.c                 @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
-**/*import*.py                @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
+**/*import*                   @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
 **/*importlib/resources/*      @jaraco @warsaw @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
 
@@ -150,6 +148,8 @@ Lib/ast.py                    @isidentical
 **/*tomllib*                  @encukou @hauntsaninja
 
 **/*sysconfig*                @FFY00
+
+**/*cjkcodecs*                @corona10
 
 # macOS
 /Mac/                         @python/macos-team

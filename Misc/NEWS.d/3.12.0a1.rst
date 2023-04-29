@@ -4559,8 +4559,7 @@ The minimum Sphinx version required to build the documentation is now 3.2.
 .. section: Documentation
 
 Augmented documentation of asyncio.create_task(). Clarified the need to keep
-strong references to tasks and added a code snippet detailing how to to
-this.
+strong references to tasks and added a code snippet detailing how to do this.
 
 ..
 
@@ -5066,7 +5065,7 @@ are stubs and not functional.
 .. nonce: Bsswsc
 .. section: Build
 
-Add a new ``--with-dsymutil`` configure option to to link debug information
+Add a new ``--with-dsymutil`` configure option to link debug information
 in macOS. Patch by Pablo Galindo.
 
 ..
