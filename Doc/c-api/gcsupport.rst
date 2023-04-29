@@ -69,18 +69,18 @@ rules:
    Analogous to :c:func:`PyObject_GC_New` but allocates *extra_size*
    bytes at the end of the object (at offset
    :c:member:`~PyTypeObject.tp_basicsize`).
-   The allocated memory is initialized: to zero, except for the
-   :c:type:`Python object header <PyObject>`.
+   The allocated memory is initialized to zeros,
+   except for the :c:type:`Python object header <PyObject>`.
 
    The extra data will be deallocated with the object, but otherwise it is
    not managed by Python.
 
    .. warning::
-       The function is marked as unstable because the final mechanism
-       for reserving extra data after an instance is not yet decided.
-       For allocating a variable number of fields, prefer using
-       :c:type:`PyVarObject` and :c:member:`~PyTypeObject.tp_itemsize`
-       instead.
+      The function is marked as unstable because the final mechanism
+      for reserving extra data after an instance is not yet decided.
+      For allocating a variable number of fields, prefer using
+      :c:type:`PyVarObject` and :c:member:`~PyTypeObject.tp_itemsize`
+      instead.
 
    .. versionadded:: 3.12
 
