@@ -334,7 +334,7 @@ modules, and one that knows how to import modules from an :term:`import path`
    now raises :exc:`ImportWarning`.
 
 .. versionchanged:: 3.12
-   ``find_module()`` has been removed.  Use ``find_spec()`` instead.
+   ``find_module()`` has been removed.  Use :meth:`find_spec` instead.
 
 
 Loading
