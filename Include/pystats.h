@@ -72,8 +72,6 @@ typedef struct _object_stats {
     uint64_t type_cache_collisions;
 } ObjectStats;
 
-#
-
 typedef struct _stats {
     OpcodeStats opcode_stats[256];
     CallStats call_stats;

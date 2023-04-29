@@ -11,6 +11,7 @@
 #include "Python.h"
 #include "_iomodule.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -317,7 +318,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     _PyIO_State *state = get_io_state(module);
     {
         PyObject *RawIO_class = (PyObject *)state->PyFileIO_Type;
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
         const PyConfig *config = _Py_GetConfig();
         if (!config->legacy_windows_stdio && _PyIO_get_console_type(path_or_fd) != '\0') {
             RawIO_class = (PyObject *)&PyWindowsConsoleIO_Type;
@@ -437,10 +438,9 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
   error:
     if (result != NULL) {
-        PyObject *exc, *val, *tb, *close_result;
-        PyErr_Fetch(&exc, &val, &tb);
-        close_result = PyObject_CallMethodNoArgs(result, &_Py_ID(close));
-        _PyErr_ChainExceptions(exc, val, tb);
+        PyObject *exc = PyErr_GetRaisedException();
+        PyObject *close_result = PyObject_CallMethodNoArgs(result, &_Py_ID(close));
+        _PyErr_ChainExceptions1(exc);
         Py_XDECREF(close_result);
         Py_DECREF(result);
     }
@@ -616,8 +616,9 @@ iomodule_clear(PyObject *mod) {
 }
 
 static void
-iomodule_free(PyObject *mod) {
-    iomodule_clear(mod);
+iomodule_free(void *mod)
+{
+    (void)iomodule_clear((PyObject *)mod);
 }
 
 
@@ -661,18 +662,44 @@ static PyTypeObject* static_types[] = {
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
     &_PyBytesIOBuffer_Type,
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     &PyWindowsConsoleIO_Type,
 #endif
 };
 
 
-void
-_PyIO_Fini(void)
+PyStatus
+_PyIO_InitTypes(PyInterpreterState *interp)
 {
+#ifdef HAVE_WINDOWS_CONSOLE_IO
+    if (_Py_IsMainInterpreter(interp)) {
+        // Set type base classes
+        PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
+    }
+#endif
+
+    for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
+        PyTypeObject *type = static_types[i];
+        if (_PyStaticType_InitBuiltin(type) < 0) {
+            return _PyStatus_ERR("Can't initialize builtin type");
+        }
+    }
+
+    return _PyStatus_OK();
+}
+
+void
+_PyIO_FiniTypes(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return;
+    }
+
+    // Deallocate types in the reverse order to deallocate subclasses before
+    // their base classes.
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types) - 1; i >= 0; i--) {
-        PyTypeObject *exc = static_types[i];
-        _PyStaticType_Dealloc(exc);
+        PyTypeObject *type = static_types[i];
+        _PyStaticType_Dealloc(type);
     }
 }
 
@@ -717,11 +744,6 @@ PyInit__io(void)
                               (PyObject *) PyExc_BlockingIOError) < 0) {
         goto fail;
     }
-
-    // Set type base classes
-#ifdef MS_WINDOWS
-    PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
-#endif
 
     // Add types
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
