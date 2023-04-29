@@ -2,17 +2,18 @@
 
 See https://www.zope.dev/Members/fdrake/DateTimeWiki/TestCases
 """
-import io
-import itertools
 import bisect
 import copy
 import decimal
-import sys
+import io
+import itertools
+import math
 import os
 import pickle
 import random
 import re
 import struct
+import sys
 import unittest
 
 from array import array
@@ -56,6 +57,28 @@ OTHERSTUFF = (10, 34.5, "abc", {}, [], ())
 INF = float("inf")
 NAN = float("nan")
 
+
+def _utcfromtimestamp(klass, ts):
+    """Simple re-implementation of datetime.utcfromtimestamp.
+
+    utcfromtimestamp is deprecated because it returns a naïve datetime object
+    despite being aware that it is UTC. This sort of deliberately wrong object
+    happens to be useful when calculating transition times from a TZif file,
+    so this is a re-implementation of that.
+    """
+    frac, ts = math.modf(ts)
+
+    us = round(frac * 1e6)
+    if us >= 1000000:
+        ts += 1
+        us -= 1000000
+    elif us < 0:
+        ts -= 1
+        us += 1000000
+
+    y, m, d, hh, mm, ss, *_ = _time.gmtime(ts)
+
+    return klass(y, m, d, hh, mm, ss, us)
 
 #############################################################################
 # module tests
@@ -6098,15 +6121,14 @@ class ZoneInfo(tzinfo):
     def transitions(self):
         for (_, prev_ti), (t, ti) in pairs(zip(self.ut, self.ti)):
             shift = ti[0] - prev_ti[0]
-            # TODO: Remove this use of utcfromtimestamp
-            yield datetime.utcfromtimestamp(t), shift
+            yield _utcfromtimestamp(datetime, t), shift
 
     def nondst_folds(self):
         """Find all folds with the same value of isdst on both sides of the transition."""
         for (_, prev_ti), (t, ti) in pairs(zip(self.ut, self.ti)):
             shift = ti[0] - prev_ti[0]
             if shift < ZERO and ti[1] == prev_ti[1]:
-                yield datetime.utcfromtimestamp(t), -shift, prev_ti[2], ti[2]
+                yield _utcfromtimestamp(datetime, t,), -shift, prev_ti[2], ti[2]
 
     @classmethod
     def print_all_nondst_folds(cls, same_abbr=False, start_year=1):
