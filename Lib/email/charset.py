@@ -341,7 +341,6 @@ class Charset:
                 if not lines and not current_line:
                     lines.append(None)
                 else:
-                    separator = (' ' if lines else '')
                     joined_line = EMPTYSTRING.join(current_line)
                     header_bytes = _encode(joined_line, codec)
                     lines.append(encoder(header_bytes))

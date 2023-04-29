@@ -220,6 +220,10 @@ always available.
 
    .. audit-event:: sys._current_exceptions "" sys._current_exceptions
 
+   .. versionchanged:: 3.12
+      Each value in the dictionary is now a single exception instance, rather
+      than a 3-tuple as returned from ``sys.exc_info()``.
+
 .. function:: breakpointhook()
 
    This hook function is called by built-in :func:`breakpoint`.  By default,
@@ -664,6 +668,13 @@ always available.
    information, :func:`getallocatedblocks()` is allowed to return 0 instead.
 
    .. versionadded:: 3.4
+
+
+.. function:: getunicodeinternedsize()
+
+   Return the number of unicode objects that have been interned.
+
+   .. versionadded:: 3.12
 
 
 .. function:: getandroidapilevel()
@@ -1241,10 +1252,6 @@ always available.
     stored.
 
     Originally specified in :pep:`302`.
-
-    .. versionchanged:: 3.3
-       ``None`` is stored instead of :class:`imp.NullImporter` when no finder
-       is found.
 
 
 .. data:: platform

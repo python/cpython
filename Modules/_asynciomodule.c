@@ -2069,8 +2069,10 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     Py_XSETREF(self->task_coro, coro);
 
     if (name == Py_None) {
-        name = PyUnicode_FromFormat("Task-%" PRIu64,
-                                    ++state->task_name_counter);
+        // optimization: defer task name formatting
+        // store the task counter as PyLong in the name
+        // for deferred formatting in get_name
+        name = PyLong_FromUnsignedLongLong(++state->task_name_counter);
     } else if (!PyUnicode_CheckExact(name)) {
         name = PyObject_Str(name);
     } else {
@@ -2449,6 +2451,13 @@ _asyncio_Task_get_name_impl(TaskObj *self)
 /*[clinic end generated code: output=0ecf1570c3b37a8f input=a4a6595d12f4f0f8]*/
 {
     if (self->task_name) {
+        if (PyLong_CheckExact(self->task_name)) {
+            PyObject *name = PyUnicode_FromFormat("Task-%S", self->task_name);
+            if (name == NULL) {
+                return NULL;
+            }
+            Py_SETREF(self->task_name, name);
+        }
         return Py_NewRef(self->task_name);
     }
 

@@ -1200,6 +1200,33 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 }
 
 
+/* Adds a note to the current exception (if any) */
+void
+_PyErr_FormatNote(const char *format, ...)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    if (exc == NULL) {
+        return;
+    }
+    va_list vargs;
+    va_start(vargs, format);
+    PyObject *note = PyUnicode_FromFormatV(format, vargs);
+    va_end(vargs);
+    if (note == NULL) {
+        goto error;
+    }
+    int res = _PyException_AddNote(exc, note);
+    Py_DECREF(note);
+    if (res < 0) {
+        goto error;
+    }
+    PyErr_SetRaisedException(exc);
+    return;
+error:
+    _PyErr_ChainExceptions1(exc);
+}
+
+
 PyObject *
 PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
 {
@@ -1315,15 +1342,9 @@ static PyStructSequence_Desc UnraisableHookArgs_desc = {
 PyStatus
 _PyErr_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    if (UnraisableHookArgsType.tp_name == NULL) {
-        if (_PyStructSequence_InitBuiltin(&UnraisableHookArgsType,
-                                          &UnraisableHookArgs_desc) < 0) {
-            return _PyStatus_ERR("failed to initialize UnraisableHookArgs type");
-        }
+    if (_PyStructSequence_InitBuiltin(&UnraisableHookArgsType,
+                                      &UnraisableHookArgs_desc) < 0) {
+        return _PyStatus_ERR("failed to initialize UnraisableHookArgs type");
     }
     return _PyStatus_OK();
 }
