@@ -6706,7 +6706,6 @@ type_ready_mro(PyTypeObject *type)
        and static builtin types must have static builtin bases. */
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         assert(type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
-        int isbuiltin = type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN;
         PyObject *mro = type->tp_mro;
         Py_ssize_t n = PyTuple_GET_SIZE(mro);
         for (Py_ssize_t i = 0; i < n; i++) {
@@ -6718,7 +6717,8 @@ type_ready_mro(PyTypeObject *type)
                              type->tp_name, base->tp_name);
                 return -1;
             }
-            assert(!isbuiltin || (base->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+            assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) ||
+                   (base->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
         }
     }
     return 0;
@@ -6948,8 +6948,12 @@ type_ready_post_checks(PyTypeObject *type)
 static int
 type_ready(PyTypeObject *type)
 {
+    _PyObject_ASSERT((PyObject *)type,
+                     (type->tp_flags & Py_TPFLAGS_READYING) == 0);
+    type->tp_flags |= Py_TPFLAGS_READYING;
+
     if (type_ready_pre_checks(type) < 0) {
-        return -1;
+        goto error;
     }
 
 #ifdef Py_TRACE_REFS
@@ -6963,41 +6967,49 @@ type_ready(PyTypeObject *type)
 
     /* Initialize tp_dict: _PyType_IsReady() tests if tp_dict != NULL */
     if (type_ready_set_dict(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_set_bases(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_mro(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_set_new(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_fill_dict(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_inherit(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_preheader(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_set_hash(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_add_subclasses(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_managed_dict(type) < 0) {
-        return -1;
+        goto error;
     }
     if (type_ready_post_checks(type) < 0) {
-        return -1;
+        goto error;
     }
-    return 0;
-}
 
+    /* All done -- set the ready flag */
+    type->tp_flags = (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
+
+    assert(_PyType_CheckConsistency(type));
+    return 0;
+
+error:
+    type->tp_flags &= ~Py_TPFLAGS_READYING;
+    return -1;
+}
 
 int
 PyType_Ready(PyTypeObject *type)
@@ -7006,31 +7018,29 @@ PyType_Ready(PyTypeObject *type)
         assert(_PyType_CheckConsistency(type));
         return 0;
     }
-    _PyObject_ASSERT((PyObject *)type,
-                     (type->tp_flags & Py_TPFLAGS_READYING) == 0);
-
-    type->tp_flags |= Py_TPFLAGS_READYING;
+    assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
 
     /* Historically, all static types were immutable. See bpo-43908 */
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
     }
 
-    if (type_ready(type) < 0) {
-        type->tp_flags &= ~Py_TPFLAGS_READYING;
-        return -1;
-    }
-
-    /* All done -- set the ready flag */
-    type->tp_flags = (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
-    assert(_PyType_CheckConsistency(type));
-    return 0;
+    return type_ready(type);
 }
 
 int
 _PyStaticType_InitBuiltin(PyTypeObject *self)
 {
+    assert(!(self->tp_flags & Py_TPFLAGS_HEAPTYPE));
+
+    if (self->tp_flags & Py_TPFLAGS_READY) {
+        assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+        assert(_PyType_CheckConsistency(self));
+        return 0;
+    }
+
     self->tp_flags |= _Py_TPFLAGS_STATIC_BUILTIN;
+    self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
 
     assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
     self->tp_version_tag = NEXT_GLOBAL_VERSION_TAG++;
@@ -7038,7 +7048,7 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
 
     static_builtin_state_init(self);
 
-    int res = PyType_Ready(self);
+    int res = type_ready(self);
     if (res < 0) {
         static_builtin_state_clear(self);
     }
@@ -9380,22 +9390,19 @@ super_repr(PyObject *self)
             su->type ? su->type->tp_name : "NULL");
 }
 
-// if `method` is non-NULL, we are looking for a method descriptor,
-// and setting `*method` to 1 means we found one.
+/* Do a super lookup without executing descriptors or falling back to getattr
+on the super object itself.
+
+May return NULL with or without an exception set, like PyDict_GetItemWithError. */
 static PyObject *
-do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
-                PyTypeObject *su_obj_type, PyObject *name, int *method)
+_super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *name)
 {
     PyObject *mro, *res;
     Py_ssize_t i, n;
-    int temp_su = 0;
-
-    if (su_obj_type == NULL)
-        goto skip;
 
     mro = su_obj_type->tp_mro;
     if (mro == NULL)
-        goto skip;
+        return NULL;
 
     assert(PyTuple_Check(mro));
     n = PyTuple_GET_SIZE(mro);
@@ -9407,7 +9414,7 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
     }
     i++;  /* skip su->type (if any)  */
     if (i >= n)
-        goto skip;
+        return NULL;
 
     /* keep a strong reference to mro because su_obj_type->tp_mro can be
        replaced during PyDict_GetItemWithError(dict, name)  */
@@ -9420,22 +9427,6 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
         res = PyDict_GetItemWithError(dict, name);
         if (res != NULL) {
             Py_INCREF(res);
-            if (method && _PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
-                *method = 1;
-            }
-            else {
-                descrgetfunc f = Py_TYPE(res)->tp_descr_get;
-                if (f != NULL) {
-                    PyObject *res2;
-                    res2 = f(res,
-                        /* Only pass 'obj' param if this is instance-mode super
-                        (See SF ID #743627)  */
-                        (su_obj == (PyObject *)su_obj_type) ? NULL : su_obj,
-                        (PyObject *)su_obj_type);
-                    Py_SETREF(res, res2);
-                }
-            }
-
             Py_DECREF(mro);
             return res;
         }
@@ -9447,6 +9438,45 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
         i++;
     } while (i < n);
     Py_DECREF(mro);
+    return NULL;
+}
+
+// if `method` is non-NULL, we are looking for a method descriptor,
+// and setting `*method = 1` means we found one.
+static PyObject *
+do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
+                PyTypeObject *su_obj_type, PyObject *name, int *method)
+{
+    PyObject *res;
+    int temp_su = 0;
+
+    if (su_obj_type == NULL) {
+        goto skip;
+    }
+
+    res = _super_lookup_descr(su_type, su_obj_type, name);
+    if (res != NULL) {
+        if (method && _PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+            *method = 1;
+        }
+        else {
+            descrgetfunc f = Py_TYPE(res)->tp_descr_get;
+            if (f != NULL) {
+                PyObject *res2;
+                res2 = f(res,
+                    /* Only pass 'obj' param if this is instance-mode super
+                    (See SF ID #743627)  */
+                    (su_obj == (PyObject *)su_obj_type) ? NULL : su_obj,
+                    (PyObject *)su_obj_type);
+                Py_SETREF(res, res2);
+            }
+        }
+
+        return res;
+    }
+    else if (PyErr_Occurred()) {
+        return NULL;
+    }
 
   skip:
     if (su == NULL) {
@@ -9540,6 +9570,18 @@ _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *me
         return NULL;
     }
     PyObject *res = do_super_lookup(NULL, su_type, su_obj, su_obj_type, name, method);
+    Py_DECREF(su_obj_type);
+    return res;
+}
+
+PyObject *
+_PySuper_LookupDescr(PyTypeObject *su_type, PyObject *su_obj, PyObject *name)
+{
+    PyTypeObject *su_obj_type = supercheck(su_type, su_obj);
+    if (su_obj_type == NULL) {
+        return NULL;
+    }
+    PyObject *res = _super_lookup_descr(su_type, su_obj_type, name);
     Py_DECREF(su_obj_type);
     return res;
 }
