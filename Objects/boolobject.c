@@ -145,10 +145,14 @@ static PyNumberMethods bool_as_number = {
     0,                          /* nb_index */
 };
 
-static void _Py_NO_RETURN
-bool_dealloc(PyObject* Py_UNUSED(ignore))
+static void
+bool_dealloc(PyObject *boolean)
 {
-    _Py_FatalRefcountError("deallocating True or False");
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref Booleans out of existence. Instead,
+     * since bools are immortal, re-set the reference count.
+     */
+    _Py_SetImmortal(boolean);
 }
 
 /* The type object for bool.  Note that this cannot be subclassed! */
