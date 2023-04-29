@@ -686,11 +686,11 @@ init_interpreter(PyInterpreterState *interp,
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
-    for(int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
+    for (int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
     for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
-        for(int e = 0; e < PY_MONITORING_EVENTS; e++) {
+        for (int e = 0; e < PY_MONITORING_EVENTS; e++) {
             interp->monitoring_callables[t][e] = NULL;
 
         }
@@ -834,11 +834,11 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
-    for(int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
+    for (int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
     for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
-        for(int e = 0; e < PY_MONITORING_EVENTS; e++) {
+        for (int e = 0; e < PY_MONITORING_EVENTS; e++) {
             Py_CLEAR(interp->monitoring_callables[t][e]);
         }
     }
