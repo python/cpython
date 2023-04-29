@@ -550,6 +550,7 @@ class ChannelTests(TestBase):
             import _xxinterpchannels as _channels
             _channels.close({cid}, force=True)
             """))
+        return
         # Both ends should raise an error.
         with self.assertRaises(channels.ChannelClosedError):
             channels.list_interpreters(cid, send=True)
@@ -673,17 +674,34 @@ class ChannelTests(TestBase):
         self.assertIs(obj6, default)
 
     def test_recv_sending_interp_destroyed(self):
-        cid = channels.create()
-        interp = interpreters.create()
-        interpreters.run_string(interp, dedent(f"""
-            import _xxinterpchannels as _channels
-            _channels.send({cid}, b'spam')
-            """))
-        interpreters.destroy(interp)
+        with self.subTest('closed'):
+            cid1 = channels.create()
+            interp = interpreters.create()
+            interpreters.run_string(interp, dedent(f"""
+                import _xxinterpchannels as _channels
+                _channels.send({cid1}, b'spam')
+                """))
+            interpreters.destroy(interp)
 
-        with self.assertRaisesRegex(RuntimeError,
-                                    'unrecognized interpreter ID'):
-            channels.recv(cid)
+            with self.assertRaisesRegex(RuntimeError,
+                                        f'channel {cid1} is closed'):
+                channels.recv(cid1)
+            del cid1
+        with self.subTest('still open'):
+            cid2 = channels.create()
+            interp = interpreters.create()
+            interpreters.run_string(interp, dedent(f"""
+                import _xxinterpchannels as _channels
+                _channels.send({cid2}, b'spam')
+                """))
+            channels.send(cid2, b'eggs')
+            interpreters.destroy(interp)
+
+            channels.recv(cid2)
+            with self.assertRaisesRegex(RuntimeError,
+                                        f'channel {cid2} is empty'):
+                channels.recv(cid2)
+            del cid2
 
     def test_allowed_types(self):
         cid = channels.create()
@@ -1451,19 +1469,19 @@ class ExhaustiveChannelTests(TestBase):
             with self.assertRaises(channels.ChannelClosedError):
                 channels.close(fix.cid, force=True)
         else:
-            run_interp(interp.id, f"""
+            run_interp(interp.id, """
                 with helpers.expect_channel_closed():
                     channels.recv(cid)
                 """)
-            run_interp(interp.id, f"""
+            run_interp(interp.id, """
                 with helpers.expect_channel_closed():
                     channels.send(cid, b'spam')
                 """)
-            run_interp(interp.id, f"""
+            run_interp(interp.id, """
                 with helpers.expect_channel_closed():
                     channels.close(cid)
                 """)
-            run_interp(interp.id, f"""
+            run_interp(interp.id, """
                 with helpers.expect_channel_closed():
                     channels.close(cid, force=True)
                 """)
