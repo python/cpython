@@ -1,4 +1,4 @@
-"""Tests for scripts in the Tools directory.
+"""Tests for scripts in the Tools/scripts directory.
 
 This file contains extremely basic regression tests for the scripts found in
 the Tools directory of a Python checkout or tarball which don't have separate
@@ -17,14 +17,7 @@ class TestSundryScripts(unittest.TestCase):
     # At least make sure the rest don't have syntax errors.  When tests are
     # added for a script it should be added to the allowlist below.
 
-    # scripts that have independent tests.
-    allowlist = ['reindent']
-    # scripts that can't be imported without running
-    denylist = ['make_ctype']
-    # denylisted for other reasons
-    other = ['2to3']
-
-    skiplist = denylist + allowlist + other
+    skiplist = ['2to3']
 
     # import logging registers "atfork" functions which keep indirectly the
     # logging module dictionary alive. Mock the function to be able to unload
