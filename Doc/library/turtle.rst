@@ -373,7 +373,7 @@ Turtle motion
        (0.00,0.00)
 
 
-.. function:: teleport(x, y=None, fill_gap=False)
+.. function:: teleport(x, y=None, *, fill_gap=False)
 
    :param x: a number or ``None``
    :param y: a number or ``None``
