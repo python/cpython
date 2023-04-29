@@ -5661,8 +5661,9 @@ _ctypes_add_types(PyObject *mod)
         } \
     } while (0)
 
-#define CREATE_TYPE(MOD, TP, SPEC) do {                             \
-    PyObject *type = PyType_FromMetaclass(NULL, MOD, SPEC, NULL);   \
+#define CREATE_TYPE(MOD, TP, SPEC, BASE) do {                       \
+    PyObject *type = PyType_FromMetaclass(NULL, MOD, SPEC,          \
+                                          (PyObject *)BASE);        \
     if (type == NULL) {                                             \
         return -1;                                                  \
     }                                                               \
@@ -5675,8 +5676,8 @@ _ctypes_add_types(PyObject *mod)
        ob_type is the metatype (the 'type'), defaults to PyType_Type,
        tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
     */
-    CREATE_TYPE(mod, st->PyCArg_Type, &carg_spec);
-    CREATE_TYPE(mod, st->PyCThunk_Type, &cthunk_spec);
+    CREATE_TYPE(mod, st->PyCArg_Type, &carg_spec, NULL);
+    CREATE_TYPE(mod, st->PyCThunk_Type, &cthunk_spec, NULL);
     TYPE_READY(&PyCData_Type);
     /* StgDict is derived from PyDict_Type */
     TYPE_READY_BASE(&PyCStgDict_Type, &PyDict_Type);
@@ -5709,15 +5710,15 @@ _ctypes_add_types(PyObject *mod)
      * Simple classes
      */
 
-    CREATE_TYPE(mod, st->PyCField_Type, &cfield_spec);
+    CREATE_TYPE(mod, st->PyCField_Type, &cfield_spec, NULL);
 
     /*************************************************
      *
      * Other stuff
      */
 
-    CREATE_TYPE(mod, st->DictRemover_Type, &dictremover_spec);
-    CREATE_TYPE(mod, st->StructParam_Type, &structparam_spec);
+    CREATE_TYPE(mod, st->DictRemover_Type, &dictremover_spec, NULL);
+    CREATE_TYPE(mod, st->StructParam_Type, &structparam_spec, NULL);
 
 #ifdef MS_WIN32
     TYPE_READY_BASE(&PyComError_Type, (PyTypeObject*)PyExc_Exception);
