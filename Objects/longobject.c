@@ -6351,19 +6351,9 @@ PyLong_GetInfo(void)
 PyStatus
 _PyLong_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    if (PyType_Ready(&PyLong_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize int type");
-    }
-
     /* initialize int_info */
-    if (Int_InfoType.tp_name == NULL) {
-        if (_PyStructSequence_InitBuiltin(&Int_InfoType, &int_info_desc) < 0) {
-            return _PyStatus_ERR("can't init int info type");
-        }
+    if (_PyStructSequence_InitBuiltin(&Int_InfoType, &int_info_desc) < 0) {
+        return _PyStatus_ERR("can't init int info type");
     }
 
     return _PyStatus_OK();
