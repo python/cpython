@@ -2314,7 +2314,7 @@ math_log(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 PyDoc_STRVAR(math_log_doc,
 "log(x, [base=math.e])\n\
 Return the logarithm of x to the given base.\n\n\
-If the base not specified, returns the natural logarithm (base e) of x.");
+If the base is not specified, returns the natural logarithm (base e) of x.");
 
 /*[clinic input]
 math.log2
