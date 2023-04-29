@@ -368,8 +368,6 @@ class InvalidateCacheTests:
         class InvalidatingNullFinder:
             def __init__(self, *ignored):
                 self.called = False
-            def find_module(self, *args):
-                return None
             def invalidate_caches(self):
                 self.called = True
 

@@ -215,10 +215,8 @@ class FindSpecTests(FinderTests):
 class PathEntryFinderTests:
 
     def test_finder_with_failing_find_spec(self):
-        # PathEntryFinder with find_module() defined should work.
-        # Issue #20763.
         class Finder:
-            path_location = 'test_finder_with_find_module'
+            path_location = 'test_finder_with_find_spec'
             def __init__(self, path):
                 if path != self.path_location:
                     raise ImportError
