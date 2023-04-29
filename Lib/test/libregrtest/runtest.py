@@ -150,7 +150,6 @@ NOTTESTS = set()
 
 SPLITTESTDIRS = {
     "test_asyncio",
-    "test_multiprocessing",
 }
 
 # Storage of uncollectable objects
@@ -167,7 +166,7 @@ def findtestdir(path=None):
     return path or os.path.dirname(os.path.dirname(__file__)) or os.curdir
 
 
-def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS, splittestdirs=SPLITTESTDIRS, base_mod=""):
+def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS, *, split_test_dirs=SPLITTESTDIRS, base_mod=""):
     """Return a list of all applicable test modules."""
     testdir = findtestdir(testdir)
     names = os.listdir(testdir)
@@ -176,13 +175,13 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS, splittestdirs=
     for name in names:
         mod, ext = os.path.splitext(name)
         if mod[:5] == "test_" and mod not in others:
-            if mod in splittestdirs:
+            if mod in split_test_dirs:
                 subdir = os.path.join(testdir, mod)
                 if len(base_mod):
                     mod = f"{base_mod}.{mod}"
                 else:
                     mod = f"test.{mod}"
-                tests.extend(findtests(subdir, [], nottests, splittestdirs, mod))
+                tests.extend(findtests(subdir, [], nottests, split_test_dirs=split_test_dirs, base_mod=mod))
             elif ext in (".py", ""):
                 tests.append(f"{base_mod}.{mod}" if len(base_mod) else mod)
     return stdtests + sorted(tests)
