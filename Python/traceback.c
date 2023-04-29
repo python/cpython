@@ -11,7 +11,7 @@
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_parser.h"        // _PyParser_ASTFromString
 #include "pycore_pyarena.h"       // _PyArena_Free()
-#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
 
@@ -242,17 +242,18 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
 int
 PyTraceBack_Here(PyFrameObject *frame)
 {
-    PyObject *exc, *val, *tb, *newtb;
-    PyErr_Fetch(&exc, &val, &tb);
-    newtb = _PyTraceBack_FromFrame(tb, frame);
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(PyExceptionInstance_Check(exc));
+    PyObject *tb = PyException_GetTraceback(exc);
+    PyObject *newtb = _PyTraceBack_FromFrame(tb, frame);
+    Py_XDECREF(tb);
     if (newtb == NULL) {
-        _PyErr_ChainExceptions(exc, val, tb);
+        _PyErr_ChainExceptions1(exc);
         return -1;
     }
-    assert(PyExceptionInstance_Check(val));
-    PyException_SetTraceback(val, newtb);
-    PyErr_Restore(exc, val, newtb);
-    Py_XDECREF(tb);
+    PyException_SetTraceback(exc, newtb);
+    Py_XDECREF(newtb);
+    PyErr_SetRaisedException(exc);
     return 0;
 }
 

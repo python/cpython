@@ -965,8 +965,10 @@ class TestBufferProtocol(unittest.TestCase):
                     self.assertEqual(m.strides, tuple(strides))
                 self.assertEqual(m.suboffsets, tuple(suboffsets))
 
-                n = 1 if ndim == 0 else len(lst)
-                self.assertEqual(len(m), n)
+                if ndim == 0:
+                    self.assertRaises(TypeError, len, m)
+                else:
+                    self.assertEqual(len(m), len(lst))
 
                 rep = result.tolist() if fmt else result.tobytes()
                 self.assertEqual(rep, lst)
