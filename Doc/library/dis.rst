@@ -1088,7 +1088,7 @@ iterations of the loop.
 
 .. opcode:: MAKE_CELL (i)
 
-   Creates a new cell in slot ``i``.  If that slot is empty then
+   Creates a new cell in slot ``i``.  If that slot is nonempty then
    that value is stored into the new cell.
 
    .. versionadded:: 3.11
