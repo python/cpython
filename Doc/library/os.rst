@@ -3727,12 +3727,13 @@ features:
    .. versionadded:: 3.10
 
 
-Linux extended attributes
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Extended attributes
+~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 3.3
 
-These functions are all available on Linux only.
+.. versionchanged:: 3.12
+   Added support for macOS and FreeBSD.
 
 .. function:: getxattr(path, attribute, *, follow_symlinks=True)
 
@@ -3746,9 +3747,13 @@ These functions are all available on Linux only.
 
    .. audit-event:: os.getxattr path,attribute os.getxattr
 
+   .. availability:: Linux, macOS, FreeBSD.
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *path* and *attribute*.
 
+   .. versionchanged:: 3.12
+      Added support for macOS and FreeBSD.
 
 .. function:: listxattr(path=None, *, follow_symlinks=True)
 
@@ -3762,9 +3767,15 @@ These functions are all available on Linux only.
 
    .. audit-event:: os.listxattr path os.listxattr
 
+   .. availability:: Linux, macOS, FreeBSD.
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. availability:: Linux, macOS, FreeBSD.
+
+   .. versionchanged:: 3.12
+      Added support for macOS and FreeBSD.
 
 .. function:: removexattr(path, attribute, *, follow_symlinks=True)
 
@@ -3778,9 +3789,13 @@ These functions are all available on Linux only.
 
    .. audit-event:: os.removexattr path,attribute os.removexattr
 
+   .. availability:: Linux, macOS, FreeBSD.
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *path* and *attribute*.
 
+   .. versionchanged:: 3.12
+      Added support for macOS and FreeBSD.
 
 .. function:: setxattr(path, attribute, value, flags=0, *, follow_symlinks=True)
 
@@ -3803,27 +3818,62 @@ These functions are all available on Linux only.
 
    .. audit-event:: os.setxattr path,attribute,value,flags os.setxattr
 
+   .. availability:: Linux, macOS, FreeBSD.
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *path* and *attribute*.
 
+   .. versionchanged:: 3.12
+      Added support for macOS and FreeBSD.
 
 .. data:: XATTR_SIZE_MAX
 
    The maximum size the value of an extended attribute can be. Currently, this
-   is 64 KiB on Linux.
+   is 64 KiB.
 
+   .. availability:: Linux.
+
+.. data:: XATTR_NAME_MAX
+
+   The maximum length the name of an extended attribute (including the
+   namespace qualifier) can be. Currently, this is 255 bytes.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+.. data:: XATTR_MAXNAMELEN
+
+   The maximum length the name of an extended attribute can be. Currently, this
+   is 127 UTF-8 bytes.
+
+   .. availability:: macOS.
+
+   .. versionadded:: 3.12
+
+.. data:: EXTATTR_MAXNAMELEN
+
+   The maximum length the name of an extended attribute (excluding the
+   namespace qualifier) can be. Currently, this is 255 bytes.
+
+   .. availability:: FreeBSD.
+
+   .. versionadded:: 3.12
 
 .. data:: XATTR_CREATE
 
    This is a possible value for the flags argument in :func:`setxattr`. It
    indicates the operation must create an attribute.
 
+   .. availability:: Linux, macOS, FreeBSD.
 
 .. data:: XATTR_REPLACE
 
    This is a possible value for the flags argument in :func:`setxattr`. It
    indicates the operation must replace an existing attribute.
 
+
+   .. availability:: Linux, macOS, FreeBSD.
 
 .. _os-process:
 
