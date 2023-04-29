@@ -264,6 +264,23 @@ class MmapTests(unittest.TestCase):
         # Try opening a bad file descriptor...
         self.assertRaises(OSError, mmap.mmap, -2, 4096)
 
+    def test_if_crash(self): # test for issue gh-103987
+        with open("TESTFN", "w+") as f:
+            f.write("foobar")
+            f.flush()
+
+            class X(object):
+                def __index__(self):
+                    m.close()
+                    return 1
+
+            m = mmap.mmap(f.fileno(), 6, access=mmap.ACCESS_READ)
+            self.assertEqual(m[1], 111)
+            with self.assertRaises(ValueError):
+                m[X()] # should not crash
+
+        m.close()
+
     def test_tougher_find(self):
         # Do a tougher .find() test.  SF bug 515943 pointed out that, in 2.2,
         # searching for data with embedded \0 bytes didn't work.
