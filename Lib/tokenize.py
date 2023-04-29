@@ -647,7 +647,7 @@ def _tokenize_fstring_mode(line, tok_start):
                 if ((len(middle) >= position + 1 and middle[position + 1] == '{')
                     or (position > 0 and middle[position - 1] in ('\\', '{'))):
                     mid_token += c
-                else:
+                elif mid_token:
                     curly_brackets.append(c)
                     mid_expr += c
                     yield TokenInfo(
@@ -658,11 +658,17 @@ def _tokenize_fstring_mode(line, tok_start):
                         line=line)
                     mid_token = ''
                     end = line_number, start + i
+                else:
+                    curly_brackets.append(c)
+                    mid_expr += c
             case '}':
                 # if no opening { is seen before, this character is taken
                 # as part of the fstring middle token
-                if mid_expr:
+                # if there are remaining elements in the curly_brackets queue
+                # then the expression is not done yet
+                if curly_brackets:
                     curly_brackets.pop()
+                if mid_expr and not curly_brackets:
                     mid_expr += c
                     yield TokenInfo(
                         type=FSTRING_EXPR,
@@ -675,7 +681,10 @@ def _tokenize_fstring_mode(line, tok_start):
                     mid_expr = ''
                     end = line_number, start + i + 1
                 else:
-                    mid_token += c
+                    if mid_expr:
+                        mid_expr += c
+                    else:
+                        mid_token += c
             case '\n':
                 if mid_expr:
                     mid_expr += c
@@ -694,12 +703,13 @@ def _tokenize_fstring_mode(line, tok_start):
     # once the end of the expression is reached, release what's left of
     # mid_token
     start += i
-    yield TokenInfo(
-        type=FSTRING_MIDDLE,
-        string=mid_token,
-        start=end,
-        end=(line_number, start),
-        line=line)
+    if mid_token:
+        yield TokenInfo(
+            type=FSTRING_MIDDLE,
+            string=mid_token,
+            start=end,
+            end=(line_number, start),
+            line=line)
     end = line_number, start
 
     if curly_brackets:
