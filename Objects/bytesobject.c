@@ -3090,25 +3090,6 @@ error:
 }
 
 
-PyStatus
-_PyBytes_InitTypes(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    if (PyType_Ready(&PyBytes_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize bytes type");
-    }
-
-    if (PyType_Ready(&PyBytesIter_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize bytes iterator type");
-    }
-
-    return _PyStatus_OK();
-}
-
-
 /*********************** Bytes Iterator ****************************/
 
 typedef struct {

@@ -3008,7 +3008,7 @@ class TestCachedProperty(unittest.TestCase):
 
     def test_reuse_different_names(self):
         """Disallow this case because decorated function a would not be cached."""
-        with self.assertRaises(RuntimeError) as ctx:
+        with self.assertRaises(TypeError) as ctx:
             class ReusedCachedProperty:
                 @py_functools.cached_property
                 def a(self):
@@ -3017,7 +3017,7 @@ class TestCachedProperty(unittest.TestCase):
                 b = a
 
         self.assertEqual(
-            str(ctx.exception.__context__),
+            str(ctx.exception),
             str(TypeError("Cannot assign the same cached_property to two different names ('a' and 'b')."))
         )
 

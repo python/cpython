@@ -29,6 +29,16 @@ ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     return Py_NewRef(Py_Ellipsis);
 }
 
+static void
+ellipsis_dealloc(PyObject *ellipsis)
+{
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref Ellipsis out of existence. Instead,
+     * since Ellipsis is an immortal object, re-set the reference count.
+     */
+    _Py_SetImmortal(ellipsis);
+}
+
 static PyObject *
 ellipsis_repr(PyObject *op)
 {
@@ -51,7 +61,7 @@ PyTypeObject PyEllipsis_Type = {
     "ellipsis",                         /* tp_name */
     0,                                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
-    0, /*never called*/                 /* tp_dealloc */
+    ellipsis_dealloc,                   /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -89,7 +99,8 @@ PyTypeObject PyEllipsis_Type = {
 
 PyObject _Py_EllipsisObject = {
     _PyObject_EXTRA_INIT
-    1, &PyEllipsis_Type
+    { _Py_IMMORTAL_REFCNT },
+    &PyEllipsis_Type
 };
 
 

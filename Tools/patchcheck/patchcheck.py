@@ -130,9 +130,10 @@ def changed_files(base_branch=None):
         with subprocess.Popen(cmd.split(),
                               stdout=subprocess.PIPE,
                               cwd=SRCDIR) as st:
-            if st.wait() != 0:
+            git_file_status, _ = st.communicate()
+            if st.returncode != 0:
                 sys.exit(f'error running {cmd}')
-            for line in st.stdout:
+            for line in git_file_status.splitlines():
                 line = line.decode().rstrip()
                 status_text, filename = line.split(maxsplit=1)
                 status = set(status_text)
@@ -169,12 +170,24 @@ def report_modified_files(file_paths):
         return "\n".join(lines)
 
 
+#: Python files that have tabs by design:
+_PYTHON_FILES_WITH_TABS = frozenset({
+    'Tools/c-analyzer/cpython/_parser.py',
+})
+
+
 @status("Fixing Python file whitespace", info=report_modified_files)
 def normalize_whitespace(file_paths):
     """Make sure that the whitespace for .py files have been normalized."""
     reindent.makebackup = False  # No need to create backups.
-    fixed = [path for path in file_paths if path.endswith('.py') and
-             reindent.check(os.path.join(SRCDIR, path))]
+    fixed = [
+        path for path in file_paths
+        if (
+            path.endswith('.py')
+            and path not in _PYTHON_FILES_WITH_TABS
+            and reindent.check(os.path.join(SRCDIR, path))
+        )
+    ]
     return fixed
 
 
