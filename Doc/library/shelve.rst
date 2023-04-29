@@ -6,7 +6,7 @@
 
 **Source code:** :source:`Lib/shelve.py`
 
-.. index:: module: pickle
+.. index:: pair: module; pickle
 
 --------------
 
