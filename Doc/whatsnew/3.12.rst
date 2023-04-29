@@ -978,12 +978,11 @@ Removed
   * Support for ``find_loader()`` and ``find_module()`` APIs have been
     removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
 
-  * The ``imp`` module, ``importlib.abc.Finder``, ``pkg.ImpImporter``, and
-    ``pkg.ImpLoader`` have been removed.  (Contributed by Barry Warsaw in
-    :gh:`98040`.)
+  * ``importlib.abc.Finder``, ``pkg.ImpImporter``, and ``pkg.ImpLoader`` have
+    been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
 
-* The ``imp`` module has been removed.  (Contributed by Barry Warsaw in
-  :gh:`98040`.)
+  * The ``imp`` module has been removed.  (Contributed by Barry Warsaw in
+    :gh:`98040`.)
 
 * Removed the ``suspicious`` rule from the documentation Makefile, and
   removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
