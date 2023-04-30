@@ -1,10 +1,10 @@
 #include <stdbool.h>
 
 #include "Python.h"
-#include "pycore_flowgraph.h"
-#include "pycore_compile.h"
-#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_code.h"          // write_location_entry_start()
+#include "pycore_compile.h"
+#include "pycore_opcode.h"        // _PyOpcode_Caches[] and opcode category macros
+#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 
 
 #define DEFAULT_CODE_SIZE 128
@@ -22,8 +22,8 @@
     }
 
 typedef _PyCompilerSrcLocation location;
-typedef _PyCfgInstruction cfg_instr;
-typedef _PyCfgBasicblock basicblock;
+typedef _PyCompile_Instruction instruction;
+typedef _PyCompile_InstructionSequence instr_sequence;
 
 static inline bool
 same_location(location a, location b)
@@ -117,7 +117,8 @@ assemble_emit_exception_table_item(struct assembler *a, int value, int msb)
 #define MAX_SIZE_OF_ENTRY 20
 
 static int
-assemble_emit_exception_table_entry(struct assembler *a, int start, int end, basicblock *handler)
+assemble_emit_exception_table_entry(struct assembler *a, int start, int end,
+                                    _PyCompile_ExceptHandlerInfo *handler)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_except_table);
     if (a->a_except_table_off + MAX_SIZE_OF_ENTRY >= len) {
@@ -125,13 +126,13 @@ assemble_emit_exception_table_entry(struct assembler *a, int start, int end, bas
     }
     int size = end-start;
     assert(end > start);
-    int target = handler->b_offset;
-    int depth = handler->b_startdepth - 1;
-    if (handler->b_preserve_lasti) {
+    int target = handler->h_offset;
+    int depth = handler->h_startdepth - 1;
+    if (handler->h_preserve_lasti) {
         depth -= 1;
     }
     assert(depth >= 0);
-    int depth_lasti = (depth<<1) | handler->b_preserve_lasti;
+    int depth_lasti = (depth<<1) | handler->h_preserve_lasti;
     assemble_emit_exception_table_item(a, start, (1<<7));
     assemble_emit_exception_table_item(a, size, 0);
     assemble_emit_exception_table_item(a, target, 0);
@@ -140,29 +141,26 @@ assemble_emit_exception_table_entry(struct assembler *a, int start, int end, bas
 }
 
 static int
-assemble_exception_table(struct assembler *a, basicblock *entryblock)
+assemble_exception_table(struct assembler *a, instr_sequence *instrs)
 {
-    basicblock *b;
     int ioffset = 0;
-    basicblock *handler = NULL;
+    _PyCompile_ExceptHandlerInfo handler;
+    handler.h_offset = -1;
     int start = -1;
-    for (b = entryblock; b != NULL; b = b->b_next) {
-        ioffset = b->b_offset;
-        for (int i = 0; i < b->b_iused; i++) {
-            cfg_instr *instr = &b->b_instr[i];
-            if (instr->i_except != handler) {
-                if (handler != NULL) {
-                    RETURN_IF_ERROR(
-                        assemble_emit_exception_table_entry(a, start, ioffset, handler));
-                }
-                start = ioffset;
-                handler = instr->i_except;
+    for (int i = 0; i < instrs->s_used; i++) {
+        instruction *instr = &instrs->s_instrs[i];
+        if (instr->i_except_handler_info.h_offset != handler.h_offset) {
+            if (handler.h_offset >= 0) {
+                RETURN_IF_ERROR(
+                    assemble_emit_exception_table_entry(a, start, ioffset, &handler));
             }
-            ioffset += _PyCfg_InstrSize(instr);
+            start = ioffset;
+            handler = instr->i_except_handler_info;
         }
+        ioffset += _PyCompile_InstrSize(instr->i_opcode, instr->i_oparg);
     }
-    if (handler != NULL) {
-        RETURN_IF_ERROR(assemble_emit_exception_table_entry(a, start, ioffset, handler));
+    if (handler.h_offset >= 0) {
+        RETURN_IF_ERROR(assemble_emit_exception_table_entry(a, start, ioffset, &handler));
     }
     return SUCCESS;
 }
@@ -316,31 +314,31 @@ assemble_emit_location(struct assembler* a, location loc, int isize)
 }
 
 static int
-assemble_location_info(struct assembler *a, basicblock *entryblock, int firstlineno)
+assemble_location_info(struct assembler *a, instr_sequence *instrs,
+                       int firstlineno)
 {
     a->a_lineno = firstlineno;
     location loc = NO_LOCATION;
     int size = 0;
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        for (int j = 0; j < b->b_iused; j++) {
-            if (!same_location(loc, b->b_instr[j].i_loc)) {
+    for (int i = 0; i < instrs->s_used; i++) {
+        instruction *instr = &instrs->s_instrs[i];
+        if (!same_location(loc, instr->i_loc)) {
                 RETURN_IF_ERROR(assemble_emit_location(a, loc, size));
-                loc = b->b_instr[j].i_loc;
+                loc = instr->i_loc;
                 size = 0;
-            }
-            size += _PyCfg_InstrSize(&b->b_instr[j]);
         }
+        size += _PyCompile_InstrSize(instr->i_opcode, instr->i_oparg);
     }
     RETURN_IF_ERROR(assemble_emit_location(a, loc, size));
     return SUCCESS;
 }
 
 static void
-write_instr(_Py_CODEUNIT *codestr, cfg_instr *instruction, int ilen)
+write_instr(_Py_CODEUNIT *codestr, instruction *instr, int ilen)
 {
-    int opcode = instruction->i_opcode;
+    int opcode = instr->i_opcode;
     assert(!IS_PSEUDO_OPCODE(opcode));
-    int oparg = instruction->i_oparg;
+    int oparg = instr->i_oparg;
     assert(HAS_ARG(opcode) || oparg == 0);
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
@@ -380,12 +378,12 @@ write_instr(_Py_CODEUNIT *codestr, cfg_instr *instruction, int ilen)
 */
 
 static int
-assemble_emit_instr(struct assembler *a, cfg_instr *i)
+assemble_emit_instr(struct assembler *a, instruction *instr)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
     _Py_CODEUNIT *code;
 
-    int size = _PyCfg_InstrSize(i);
+    int size = _PyCompile_InstrSize(instr->i_opcode, instr->i_oparg);
     if (a->a_offset + size >= len / (int)sizeof(_Py_CODEUNIT)) {
         if (len > PY_SSIZE_T_MAX / 2) {
             return ERROR;
@@ -394,25 +392,24 @@ assemble_emit_instr(struct assembler *a, cfg_instr *i)
     }
     code = (_Py_CODEUNIT *)PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
     a->a_offset += size;
-    write_instr(code, i, size);
+    write_instr(code, instr, size);
     return SUCCESS;
 }
 
 static int
-assemble_emit(struct assembler *a, basicblock *entryblock, int first_lineno,
-              PyObject *const_cache)
+assemble_emit(struct assembler *a, instr_sequence *instrs,
+              int first_lineno, PyObject *const_cache)
 {
     RETURN_IF_ERROR(assemble_init(a, first_lineno));
 
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        for (int j = 0; j < b->b_iused; j++) {
-            RETURN_IF_ERROR(assemble_emit_instr(a, &b->b_instr[j]));
-        }
+    for (int i = 0; i < instrs->s_used; i++) {
+        instruction *instr = &instrs->s_instrs[i];
+        RETURN_IF_ERROR(assemble_emit_instr(a, instr));
     }
 
-    RETURN_IF_ERROR(assemble_location_info(a, entryblock, a->a_lineno));
+    RETURN_IF_ERROR(assemble_location_info(a, instrs, a->a_lineno));
 
-    RETURN_IF_ERROR(assemble_exception_table(a, entryblock));
+    RETURN_IF_ERROR(assemble_exception_table(a, instrs));
 
     RETURN_IF_ERROR(_PyBytes_Resize(&a->a_except_table, a->a_except_table_off));
     RETURN_IF_ERROR(_PyCompile_ConstCacheMergeOne(const_cache, &a->a_except_table));
@@ -586,13 +583,13 @@ error:
 
 PyCodeObject *
 _PyAssemble_MakeCodeObject(_PyCompile_CodeUnitMetadata *umd, PyObject *const_cache,
-                           PyObject *consts, int maxdepth, basicblock *entryblock,
+                           PyObject *consts, int maxdepth, instr_sequence *instrs,
                            int nlocalsplus, int code_flags, PyObject *filename)
 {
     PyCodeObject *co = NULL;
 
     struct assembler a;
-    int res = assemble_emit(&a, entryblock, umd->u_firstlineno, const_cache);
+    int res = assemble_emit(&a, instrs, umd->u_firstlineno, const_cache);
     if (res == SUCCESS) {
         co = makecode(umd, &a, const_cache, consts, maxdepth, nlocalsplus,
                       code_flags, filename);

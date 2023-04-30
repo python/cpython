@@ -113,13 +113,17 @@ static const uint8_t INSTRUMENTED_OPCODES[256] = {
 };
 
 static inline bool
-opcode_has_event(int opcode) {
-    return opcode < INSTRUMENTED_LINE &&
-        INSTRUMENTED_OPCODES[opcode] > 0;
+opcode_has_event(int opcode)
+{
+    return (
+        opcode < INSTRUMENTED_LINE &&
+        INSTRUMENTED_OPCODES[opcode] > 0
+    );
 }
 
 static inline bool
-is_instrumented(int opcode) {
+is_instrumented(int opcode)
+{
     assert(opcode != 0);
     assert(opcode != RESERVED);
     return opcode >= MIN_INSTRUMENTED_OPCODE;
@@ -339,7 +343,8 @@ dump_monitors(const char *prefix, _Py_Monitors monitors, FILE*out)
 /* Like _Py_GetBaseOpcode but without asserts.
  * Does its best to give the right answer, but won't abort
  * if something is wrong */
-int get_base_opcode_best_attempt(PyCodeObject *code, int offset)
+static int
+get_base_opcode_best_attempt(PyCodeObject *code, int offset)
 {
     int opcode = _Py_OPCODE(_PyCode_CODE(code)[offset]);
     if (INSTRUMENTED_OPCODES[opcode] != opcode) {
@@ -418,13 +423,15 @@ dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
     assert(test); \
 } while (0)
 
-bool valid_opcode(int opcode) {
+static bool
+valid_opcode(int opcode)
+{
     if (opcode > 0 &&
         opcode != RESERVED &&
         opcode < 255 &&
         _PyOpcode_OpName[opcode] &&
-        _PyOpcode_OpName[opcode][0] != '<'
-    ) {
+        _PyOpcode_OpName[opcode][0] != '<')
+    {
        return true;
     }
     return false;
@@ -550,11 +557,11 @@ de_instrument(PyCodeObject *code, int i, int event)
         opcode_ptr = &code->_co_monitoring->lines[i].original_opcode;
         opcode = *opcode_ptr;
     }
-     if (opcode == INSTRUMENTED_INSTRUCTION) {
+    if (opcode == INSTRUMENTED_INSTRUCTION) {
         opcode_ptr = &code->_co_monitoring->per_instruction_opcodes[i];
         opcode = *opcode_ptr;
     }
-   int deinstrumented = DE_INSTRUMENT[opcode];
+    int deinstrumented = DE_INSTRUMENT[opcode];
     if (deinstrumented == 0) {
         return;
     }
@@ -781,8 +788,7 @@ add_line_tools(PyCodeObject * code, int offset, int tools)
 {
     assert(tools_is_subset_for_event(code, PY_MONITORING_EVENT_LINE, tools));
     assert(code->_co_monitoring);
-    if (code->_co_monitoring->line_tools
-    ) {
+    if (code->_co_monitoring->line_tools) {
         code->_co_monitoring->line_tools[offset] |= tools;
     }
     else {
@@ -798,8 +804,7 @@ add_per_instruction_tools(PyCodeObject * code, int offset, int tools)
 {
     assert(tools_is_subset_for_event(code, PY_MONITORING_EVENT_INSTRUCTION, tools));
     assert(code->_co_monitoring);
-    if (code->_co_monitoring->per_instruction_tools
-    ) {
+    if (code->_co_monitoring->per_instruction_tools) {
         code->_co_monitoring->per_instruction_tools[offset] |= tools;
     }
     else {
@@ -814,11 +819,10 @@ static void
 remove_per_instruction_tools(PyCodeObject * code, int offset, int tools)
 {
     assert(code->_co_monitoring);
-    if (code->_co_monitoring->per_instruction_tools)
-    {
+    if (code->_co_monitoring->per_instruction_tools) {
         uint8_t *toolsptr = &code->_co_monitoring->per_instruction_tools[offset];
         *toolsptr &= ~tools;
-        if (*toolsptr == 0 ) {
+        if (*toolsptr == 0) {
             de_instrument_per_instruction(code, offset);
         }
     }
@@ -843,7 +847,7 @@ call_one_instrument(
     assert(tstate->tracing == 0);
     PyObject *instrument = interp->monitoring_callables[tool][event];
     if (instrument == NULL) {
-       return 0;
+        return 0;
     }
     int old_what = tstate->what_event;
     tstate->what_event = event;
@@ -865,16 +869,15 @@ static const int8_t MOST_SIGNIFICANT_BITS[16] = {
     3, 3, 3, 3,
 };
 
-/* We could use _Py_bit_length here, but that is designed for larger (32/64) bit ints,
-  and can perform relatively poorly on platforms without the necessary intrinsics. */
+/* We could use _Py_bit_length here, but that is designed for larger (32/64)
+ * bit ints, and can perform relatively poorly on platforms without the
+ * necessary intrinsics. */
 static inline int most_significant_bit(uint8_t bits) {
     assert(bits != 0);
     if (bits > 15) {
         return MOST_SIGNIFICANT_BITS[bits>>4]+4;
     }
-    else {
-        return MOST_SIGNIFICANT_BITS[bits];
-    }
+    return MOST_SIGNIFICANT_BITS[bits];
 }
 
 static bool
@@ -1002,8 +1005,8 @@ _Py_call_instrumentation_2args(
 int
 _Py_call_instrumentation_jump(
     PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *target
-) {
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *target)
+{
     assert(event == PY_MONITORING_EVENT_JUMP ||
            event == PY_MONITORING_EVENT_BRANCH);
     assert(frame->prev_instr == instr);
@@ -1309,8 +1312,8 @@ initialize_line_tools(PyCodeObject *code, _Py_Monitors *all_events)
     }
 }
 
-static
-int allocate_instrumentation_data(PyCodeObject *code)
+static int
+allocate_instrumentation_data(PyCodeObject *code)
 {
 
     if (code->_co_monitoring == NULL) {
@@ -1404,7 +1407,7 @@ static const uint8_t super_instructions[256] = {
 
 /* Should use instruction metadata for this */
 static bool
-is_super_instruction(int opcode) {
+is_super_instruction(uint8_t opcode) {
     return super_instructions[opcode] != 0;
 }
 
@@ -1516,7 +1519,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
 
 #define C_RETURN_EVENTS \
     ((1 << PY_MONITORING_EVENT_C_RETURN) | \
-    (1 << PY_MONITORING_EVENT_C_RAISE))
+     (1 << PY_MONITORING_EVENT_C_RAISE))
 
 #define C_CALL_EVENTS \
     (C_RETURN_EVENTS | (1 << PY_MONITORING_EVENT_CALL))
@@ -1561,8 +1564,8 @@ static int
 check_tool(PyInterpreterState *interp, int tool_id)
 {
     if (tool_id < PY_MONITORING_SYS_PROFILE_ID &&
-        interp->monitoring_tool_names[tool_id] == NULL
-    ) {
+        interp->monitoring_tool_names[tool_id] == NULL)
+    {
         PyErr_Format(PyExc_ValueError, "tool %d is not in use", tool_id);
         return -1;
     }

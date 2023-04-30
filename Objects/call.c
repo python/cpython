@@ -8,16 +8,6 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 
-static PyObject *const *
-_PyStack_UnpackDict(PyThreadState *tstate,
-                    PyObject *const *args, Py_ssize_t nargs,
-                    PyObject *kwargs, PyObject **p_kwnames);
-
-static void
-_PyStack_UnpackDict_Free(PyObject *const *stack, Py_ssize_t nargs,
-                         PyObject *kwnames);
-
-
 static PyObject *
 null_error(PyThreadState *tstate)
 {
@@ -965,7 +955,7 @@ _PyStack_AsDict(PyObject *const *values, PyObject *kwnames)
    The newly allocated argument vector supports PY_VECTORCALL_ARGUMENTS_OFFSET.
 
    When done, you must call _PyStack_UnpackDict_Free(stack, nargs, kwnames) */
-static PyObject *const *
+PyObject *const *
 _PyStack_UnpackDict(PyThreadState *tstate,
                     PyObject *const *args, Py_ssize_t nargs,
                     PyObject *kwargs, PyObject **p_kwnames)
@@ -1034,7 +1024,7 @@ _PyStack_UnpackDict(PyThreadState *tstate,
     return stack;
 }
 
-static void
+void
 _PyStack_UnpackDict_Free(PyObject *const *stack, Py_ssize_t nargs,
                          PyObject *kwnames)
 {
@@ -1042,6 +1032,12 @@ _PyStack_UnpackDict_Free(PyObject *const *stack, Py_ssize_t nargs,
     for (Py_ssize_t i = 0; i < n; i++) {
         Py_DECREF(stack[i]);
     }
+    _PyStack_UnpackDict_FreeNoDecRef(stack, kwnames);
+}
+
+void
+_PyStack_UnpackDict_FreeNoDecRef(PyObject *const *stack, PyObject *kwnames)
+{
     PyMem_Free((PyObject **)stack - 1);
     Py_DECREF(kwnames);
 }
