@@ -223,7 +223,7 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int('2br45qc', 35), 4294967297)
         self.assertEqual(int('1z141z5', 36), 4294967297)
 
-    def test_sign(self):
+    def test_invalid_signs(self):
         with self.assertRaises(ValueError):
             int('+')
         with self.assertRaises(ValueError):
