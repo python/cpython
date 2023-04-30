@@ -263,13 +263,15 @@ coverage_ignore_c_items = {
 
 linkcheck_allowed_redirects = {
     # bpo-NNNN -> BPO -> GH Issues
-    r'https://bugs.python.org/issue\?@action=redirect&bpo=\d+': 'https://github.com/python/cpython/issues/\d+',
+    r'https://bugs.python.org/issue\?@action=redirect&bpo=\d+': r'https://github.com/python/cpython/issues/\d+',
     # GH-NNNN used to refer to pull requests
     r'https://github.com/python/cpython/issues/\d+': r'https://github.com/python/cpython/pull/\d+',
     # :source:`something` linking files in the repository
     r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*',
     # Intentional HTTP use at Misc/NEWS.d/3.5.0a1.rst
     r'http://www.python.org/$': 'https://www.python.org/$',
+    # Used in license page, keep as is
+    r'https://www.zope.org/': r'https://www.zope.dev/',
     # Microsoft's redirects to learn.microsoft.com
     r'https://msdn.microsoft.com/.*': 'https://learn.microsoft.com/.*',
     r'https://docs.microsoft.com/.*': 'https://learn.microsoft.com/.*',
