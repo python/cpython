@@ -297,7 +297,7 @@ HTTPConnection Objects
       When using most HTTP methods (like ``GET`` or ``POST``)
       the provided ``url`` must be an absolute path and
       a ``Host`` header must be provided to conform with
-      :rfc:`2616#section-5.1.2`.
+      :rfc:`RFC 2616 §5.1.2 <2616#section-5.1.2>`.
 
       For example, to perform a ``GET`` request to ``https://docs.python.org/3/``::
 
