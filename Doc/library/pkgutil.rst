@@ -25,9 +25,9 @@ support.
       from pkgutil import extend_path
       __path__ = extend_path(__path__, __name__)
 
-   This will add to the package's ``__path__`` all subdirectories of directories
-   on :data:`sys.path` named after the package.  This is useful if one wants to
-   distribute different parts of a single logical package as multiple
+   For each directory on :data:`sys.path` that has a subdirectory that matches the
+   package name, add the subdirectory to the package's :attr:`__path__`.  This is useful
+   if one wants to distribute different parts of a single logical package as multiple
    directories.
 
    It also looks for :file:`\*.pkg` files beginning where ``*`` matches the
@@ -82,7 +82,7 @@ support.
    This is a backwards compatibility wrapper around
    :func:`importlib.util.find_spec` that converts most failures to
    :exc:`ImportError` and only returns the loader rather than the full
-   :class:`ModuleSpec`.
+   :class:`importlib.machinery.ModuleSpec`.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying

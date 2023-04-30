@@ -19,7 +19,7 @@ function.
 
 Readline keybindings may be configured via an initialization file, typically
 ``.inputrc`` in your home directory.  See `Readline Init File
-<https://tiswww.cwru.edu/php/chet/readline/rluserman.html#SEC9>`_
+<https://tiswww.cwru.edu/php/chet/readline/rluserman.html#Readline-Init-File>`_
 in the GNU Readline manual for information about the format and
 allowable constructs of that file, and the capabilities of the
 Readline library in general.

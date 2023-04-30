@@ -2191,10 +2191,6 @@ Loading and running tests
    .. versionadded:: 3.12
       Added *durations* keyword argument.
 
-   .. versionchanged:: 3.12
-      Subclasses should accept ``**kwargs`` to ensure compatibility as the
-      interface changes.
-
 .. data:: defaultTestLoader
 
    Instance of the :class:`TestLoader` class intended to be shared.  If no
@@ -2285,7 +2281,8 @@ Loading and running tests
 
    The *testRunner* argument can either be a test runner class or an already
    created instance of it. By default ``main`` calls :func:`sys.exit` with
-   an exit code indicating success or failure of the tests run.
+   an exit code indicating success (0) or failure (1) of the tests run.
+   An exit code of 5 indicates that no tests were run.
 
    The *testLoader* argument has to be a :class:`TestLoader` instance,
    and defaults to :data:`defaultTestLoader`.
