@@ -115,8 +115,6 @@ _Py_popcount32(uint32_t x)
     const uint32_t M2 = 0x33333333;
     // Binary: 0000 1111 0000 1111 ...
     const uint32_t M4 = 0x0F0F0F0F;
-    // 256**4 + 256**3 + 256**2 + 256**1
-    const uint32_t SUM = 0x01010101;
 
     // Put count of each 2 bits into those 2 bits
     x = x - ((x >> 1) & M1);
@@ -124,8 +122,20 @@ _Py_popcount32(uint32_t x)
     x = (x & M2) + ((x >> 2) & M2);
     // Put count of each 8 bits into those 8 bits
     x = (x + (x >> 4)) & M4;
-    // Sum of the 4 byte counts
-    return (uint32_t)((uint64_t)x * (uint64_t)SUM) >> 24;
+    // Sum of the 4 byte counts.
+    // Take care when considering changes to the next line. Portability and
+    // correctness are delicate here, thanks to C's "integer promotions" (C99
+    // §6.3.1.1p2). On machines where the `int` type has width greater than 32
+    // bits, `x` will be promoted to an `int`, and following C's "usual
+    // arithmetic conversions" (C99 §6.3.1.8), the multiplication will be
+    // performed as a multiplication of two `unsigned int` operands. In this
+    // case it's critical that we cast back to `uint32_t` in order to keep only
+    // the least significant 32 bits. On machines where the `int` type has
+    // width no greater than 32, the multiplication is of two 32-bit unsigned
+    // integer types, and the (uint32_t) cast is a no-op. In both cases, we
+    // avoid the risk of undefined behaviour due to overflow of a
+    // multiplication of signed integer types.
+    return (uint32_t)(x * 0x01010101U) >> 24;
 #endif
 }
 

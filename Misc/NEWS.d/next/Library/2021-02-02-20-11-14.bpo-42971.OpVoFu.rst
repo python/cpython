@@ -1,2 +1,0 @@
-Add definition of ``errno.EQFULL`` for platforms that define this constant
-(such as macOS).

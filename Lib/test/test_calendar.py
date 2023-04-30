@@ -8,6 +8,7 @@ import locale
 import sys
 import datetime
 import os
+import warnings
 
 # From https://en.wikipedia.org/wiki/Leap_year_starting_on_Saturday
 result_0_02_text = """\
@@ -490,6 +491,14 @@ class OutputTestCase(unittest.TestCase):
             self.assertEqual(out.getvalue().strip(), "1   2   3")
 
 class CalendarTestCase(unittest.TestCase):
+
+    def test_deprecation_warning(self):
+        with warnings.catch_warnings(record=True) as w:
+            calendar.January
+        self.assertEqual(len(w), 1)
+        self.assertEqual(w[0].category, DeprecationWarning)
+        self.assertIn("The 'January' attribute is deprecated, use 'JANUARY' instead", str(w[0].message))
+
     def test_isleap(self):
         # Make sure that the return is right for a few years, and
         # ensure that the return values are 1 or 0, not just true or
@@ -564,6 +573,23 @@ class CalendarTestCase(unittest.TestCase):
         new_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
         self.assertEqual(old_october, new_october)
 
+    def test_locale_calendar_formatweekday(self):
+        try:
+            # formatweekday uses different day names based on the available width.
+            cal = calendar.LocaleTextCalendar(locale='en_US')
+            # For really short widths, the abbreviated name is truncated.
+            self.assertEqual(cal.formatweekday(0, 1), "M")
+            self.assertEqual(cal.formatweekday(0, 2), "Mo")
+            # For short widths, a centered, abbreviated name is used.
+            self.assertEqual(cal.formatweekday(0, 3), "Mon")
+            self.assertEqual(cal.formatweekday(0, 5), " Mon ")
+            self.assertEqual(cal.formatweekday(0, 8), "  Mon   ")
+            # For long widths, the full day name is used.
+            self.assertEqual(cal.formatweekday(0, 9), "  Monday ")
+            self.assertEqual(cal.formatweekday(0, 10), "  Monday  ")
+        except locale.Error:
+            raise unittest.SkipTest('cannot set the en_US locale')
+
     def test_locale_html_calendar_custom_css_class_month_name(self):
         try:
             cal = calendar.LocaleHTMLCalendar(locale='')
@@ -618,6 +644,14 @@ class CalendarTestCase(unittest.TestCase):
                 days = list(cal.itermonthdays2(y, m))
                 self.assertEqual(days[0][1], firstweekday)
                 self.assertEqual(days[-1][1], (firstweekday - 1) % 7)
+
+    def test_iterweekdays(self):
+        week0 = list(range(7))
+        for firstweekday in range(7):
+            cal = calendar.Calendar(firstweekday)
+            week = list(cal.iterweekdays())
+            expected = week0[firstweekday:] + week0[:firstweekday]
+            self.assertEqual(week, expected)
 
 
 class MonthCalendarTestCase(unittest.TestCase):
@@ -859,7 +893,8 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertFailure('-L')
         self.assertFailure('--locale')
         self.assertFailure('-L', 'en')
-        lang, enc = locale.getdefaultlocale()
+
+        lang, enc = locale.getlocale()
         lang = lang or 'C'
         enc = enc or 'UTF-8'
         try:
@@ -935,8 +970,7 @@ class CommandLineTestCase(unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         not_exported = {
-            'mdays', 'January', 'February', 'EPOCH', 'MONDAY', 'TUESDAY',
-            'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY',
+            'mdays', 'January', 'February', 'EPOCH',
             'different_locale', 'c', 'prweek', 'week', 'format',
             'formatstring', 'main', 'monthlen', 'prevmonth', 'nextmonth'}
         support.check__all__(self, calendar, not_exported=not_exported)

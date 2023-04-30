@@ -1,10 +1,10 @@
 #include "Python.h"
 #ifdef MS_WINDOWS
-#include <winsock2.h>         /* struct timeval */
+#  include <winsock2.h>           // struct timeval
 #endif
 
 #if defined(__APPLE__)
-#include <mach/mach_time.h>   /* mach_absolute_time(), mach_timebase_info() */
+#  include <mach/mach_time.h>     // mach_absolute_time(), mach_timebase_info()
 
 #if defined(__APPLE__) && defined(__has_builtin)
 #  if __has_builtin(__builtin_available)
@@ -38,6 +38,14 @@
 #  define PY_TIME_T_MIN LONG_MIN
 #else
 #  error "unsupported time_t size"
+#endif
+
+#if PY_TIME_T_MAX + PY_TIME_T_MIN != -1
+#  error "time_t is not a two's complement integer type"
+#endif
+
+#if _PyTime_MIN + _PyTime_MAX != -1
+#  error "_PyTime_t is not a two's complement integer type"
 #endif
 
 
@@ -161,12 +169,11 @@ time_t
 _PyLong_AsTime_t(PyObject *obj)
 {
 #if SIZEOF_TIME_T == SIZEOF_LONG_LONG
-    long long val;
-    val = PyLong_AsLongLong(obj);
+    long long val = PyLong_AsLongLong(obj);
+#elif SIZEOF_TIME_T <= SIZEOF_LONG
+    long val = PyLong_AsLong(obj);
 #else
-    long val;
-    Py_BUILD_ASSERT(sizeof(time_t) <= sizeof(long));
-    val = PyLong_AsLong(obj);
+#   error "unsupported time_t size"
 #endif
     if (val == -1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
@@ -183,9 +190,10 @@ _PyLong_FromTime_t(time_t t)
 {
 #if SIZEOF_TIME_T == SIZEOF_LONG_LONG
     return PyLong_FromLongLong((long long)t);
-#else
-    Py_BUILD_ASSERT(sizeof(time_t) <= sizeof(long));
+#elif SIZEOF_TIME_T <= SIZEOF_LONG
     return PyLong_FromLong((long)t);
+#else
+#   error "unsupported time_t size"
 #endif
 }
 
@@ -293,7 +301,21 @@ pytime_double_to_denominator(double d, time_t *sec, long *numerator,
     }
     assert(0.0 <= floatpart && floatpart < denominator);
 
-    if (!_Py_InIntegralTypeRange(time_t, intpart)) {
+    /*
+       Conversion of an out-of-range value to time_t gives undefined behaviour
+       (C99 §6.3.1.4p1), so we must guard against it. However, checking that
+       `intpart` is in range is delicate: the obvious expression `intpart <=
+       PY_TIME_T_MAX` will first convert the value `PY_TIME_T_MAX` to a double,
+       potentially changing its value and leading to us failing to catch some
+       UB-inducing values. The code below works correctly under the mild
+       assumption that time_t is a two's complement integer type with no trap
+       representation, and that `PY_TIME_T_MIN` is within the representable
+       range of a C double.
+
+       Note: we want the `if` condition below to be true for NaNs; therefore,
+       resist any temptation to simplify by applying De Morgan's laws.
+    */
+    if (!((double)PY_TIME_T_MIN <= intpart && intpart < -(double)PY_TIME_T_MIN)) {
         pytime_time_t_overflow();
         return -1;
     }
@@ -348,7 +370,8 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         d = pytime_round(d, round);
         (void)modf(d, &intpart);
 
-        if (!_Py_InIntegralTypeRange(time_t, intpart)) {
+        /* See comments in pytime_double_to_denominator */
+        if (!((double)PY_TIME_T_MIN <= intpart && intpart < -(double)PY_TIME_T_MIN)) {
             pytime_time_t_overflow();
             return -1;
         }
@@ -385,10 +408,10 @@ _PyTime_t
 _PyTime_FromSeconds(int seconds)
 {
     /* ensure that integer overflow cannot happen, int type should have 32
-       bits, whereas _PyTime_t type has at least 64 bits (SEC_TO_MS takes 30
+       bits, whereas _PyTime_t type has at least 64 bits (SEC_TO_NS takes 30
        bits). */
-    Py_BUILD_ASSERT(INT_MAX <= _PyTime_MAX / SEC_TO_NS);
-    Py_BUILD_ASSERT(INT_MIN >= _PyTime_MIN / SEC_TO_NS);
+    static_assert(INT_MAX <= _PyTime_MAX / SEC_TO_NS, "_PyTime_t overflow");
+    static_assert(INT_MIN >= _PyTime_MIN / SEC_TO_NS, "_PyTime_t underflow");
 
     _PyTime_t t = (_PyTime_t)seconds;
     assert((t >= 0 && t <= _PyTime_MAX / SEC_TO_NS)
@@ -405,6 +428,14 @@ _PyTime_FromNanoseconds(_PyTime_t ns)
 }
 
 
+_PyTime_t
+_PyTime_FromMicrosecondsClamp(_PyTime_t us)
+{
+    _PyTime_t ns = _PyTime_Mul(us, US_TO_NS);
+    return pytime_from_nanoseconds(ns);
+}
+
+
 int
 _PyTime_FromNanosecondsObject(_PyTime_t *tp, PyObject *obj)
 {
@@ -415,7 +446,8 @@ _PyTime_FromNanosecondsObject(_PyTime_t *tp, PyObject *obj)
         return -1;
     }
 
-    Py_BUILD_ASSERT(sizeof(long long) == sizeof(_PyTime_t));
+    static_assert(sizeof(long long) == sizeof(_PyTime_t),
+                  "_PyTime_t is not long long");
     long long nsec = PyLong_AsLongLong(obj);
     if (nsec == -1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
@@ -436,7 +468,8 @@ pytime_fromtimespec(_PyTime_t *tp, struct timespec *ts, int raise_exc)
 {
     _PyTime_t t, tv_nsec;
 
-    Py_BUILD_ASSERT(sizeof(ts->tv_sec) <= sizeof(_PyTime_t));
+    static_assert(sizeof(ts->tv_sec) <= sizeof(_PyTime_t),
+                  "timespec.tv_sec is larger than _PyTime_t");
     t = (_PyTime_t)ts->tv_sec;
 
     int res1 = pytime_mul(&t, SEC_TO_NS);
@@ -465,7 +498,8 @@ _PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts)
 static int
 pytime_fromtimeval(_PyTime_t *tp, struct timeval *tv, int raise_exc)
 {
-    Py_BUILD_ASSERT(sizeof(tv->tv_sec) <= sizeof(_PyTime_t));
+    static_assert(sizeof(tv->tv_sec) <= sizeof(_PyTime_t),
+                  "timeval.tv_sec is larger than _PyTime_t");
     _PyTime_t t = (_PyTime_t)tv->tv_sec;
 
     int res1 = pytime_mul(&t, SEC_TO_NS);
@@ -503,8 +537,9 @@ pytime_from_double(_PyTime_t *tp, double value, _PyTime_round_t round,
     d *= (double)unit_to_ns;
     d = pytime_round(d, round);
 
-    if (!_Py_InIntegralTypeRange(_PyTime_t, d)) {
-        pytime_overflow();
+    /* See comments in pytime_double_to_denominator */
+    if (!((double)_PyTime_MIN <= d && d < -(double)_PyTime_MIN)) {
+        pytime_time_t_overflow();
         return -1;
     }
     _PyTime_t ns = (_PyTime_t)d;
@@ -536,7 +571,8 @@ pytime_from_object(_PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
             return -1;
         }
 
-        Py_BUILD_ASSERT(sizeof(long long) <= sizeof(_PyTime_t));
+        static_assert(sizeof(long long) <= sizeof(_PyTime_t),
+                      "_PyTime_t is smaller than long long");
         _PyTime_t ns = (_PyTime_t)sec;
         if (pytime_mul(&ns, unit_to_ns) < 0) {
             pytime_overflow();
@@ -588,7 +624,8 @@ PyObject *
 _PyTime_AsNanosecondsObject(_PyTime_t t)
 {
     _PyTime_t ns =  pytime_as_nanoseconds(t);
-    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(_PyTime_t));
+    static_assert(sizeof(long long) >= sizeof(_PyTime_t),
+                  "_PyTime_t is larger than long long");
     return PyLong_FromLongLong((long long)ns);
 }
 
@@ -896,7 +933,7 @@ py_get_system_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
         info->monotonic = 0;
         info->adjustable = 1;
         if (clock_getres(CLOCK_REALTIME, &res) == 0) {
-            info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+            info->resolution = (double)res.tv_sec + (double)res.tv_nsec * 1e-9;
         }
         else {
             info->resolution = 1e-9;
@@ -961,7 +998,7 @@ _PyTime_GetSystemClockWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
 }
 
 
-#if __APPLE__
+#ifdef __APPLE__
 static int
 py_mach_timebase_info(_PyTime_t *pnumer, _PyTime_t *pdenom, int raise)
 {
@@ -983,15 +1020,17 @@ py_mach_timebase_info(_PyTime_t *pnumer, _PyTime_t *pdenom, int raise)
        _PyTime_t. In practice, timebase uses uint32_t, so casting cannot
        overflow. At the end, only make sure that the type is uint32_t
        (_PyTime_t is 64-bit long). */
-    Py_BUILD_ASSERT(sizeof(timebase.numer) < sizeof(_PyTime_t));
-    Py_BUILD_ASSERT(sizeof(timebase.denom) < sizeof(_PyTime_t));
+    static_assert(sizeof(timebase.numer) <= sizeof(_PyTime_t),
+                  "timebase.numer is larger than _PyTime_t");
+    static_assert(sizeof(timebase.denom) <= sizeof(_PyTime_t),
+                  "timebase.denom is larger than _PyTime_t");
 
-    /* Make sure that (ticks * timebase.numer) cannot overflow in
-       _PyTime_MulDiv(), with ticks < timebase.denom.
+    /* Make sure that _PyTime_MulDiv(ticks, timebase_numer, timebase_denom)
+       cannot overflow.
 
        Known time bases:
 
-       * always (1, 1) on Intel
+       * (1, 1) on Intel
        * (1000000000, 33333335) or (1000000000, 25000000) on PowerPC
 
        None of these time bases can overflow with 64-bit _PyTime_t, but
@@ -1018,8 +1057,17 @@ py_get_monotonic_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 
 #if defined(MS_WINDOWS)
     ULONGLONG ticks = GetTickCount64();
-    Py_BUILD_ASSERT(sizeof(ticks) <= sizeof(_PyTime_t));
-    _PyTime_t t = (_PyTime_t)ticks;
+    static_assert(sizeof(ticks) <= sizeof(_PyTime_t),
+                  "ULONGLONG is larger than _PyTime_t");
+    _PyTime_t t;
+    if (ticks <= (ULONGLONG)_PyTime_MAX) {
+        t = (_PyTime_t)ticks;
+    }
+    else {
+        // GetTickCount64() maximum is larger than _PyTime_t maximum:
+        // ULONGLONG is unsigned, whereas _PyTime_t is signed.
+        t = _PyTime_MAX;
+    }
 
     int res = pytime_mul(&t, MS_TO_NS);
     *tp = t;
@@ -1210,7 +1258,8 @@ py_get_win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
     /* Make sure that casting LONGLONG to _PyTime_t cannot overflow,
        both types are signed */
     _PyTime_t ticks;
-    Py_BUILD_ASSERT(sizeof(ticksll) <= sizeof(ticks));
+    static_assert(sizeof(ticksll) <= sizeof(ticks),
+                  "LONGLONG is larger than _PyTime_t");
     ticks = (_PyTime_t)ticksll;
 
     _PyTime_t ns = _PyTime_MulDiv(ticks, SEC_TO_NS, (_PyTime_t)frequency);

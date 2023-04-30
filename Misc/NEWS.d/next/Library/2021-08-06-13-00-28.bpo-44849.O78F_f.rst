@@ -1,4 +1,0 @@
-Fix the :func:`os.set_inheritable` function on FreeBSD 14 for file descriptor
-opened with the :data:`~os.O_PATH` flag: ignore the :data:`~errno.EBADF`
-error on ``ioctl()``, fallback on the ``fcntl()`` implementation. Patch by
-Victor Stinner.

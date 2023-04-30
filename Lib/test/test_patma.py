@@ -2654,6 +2654,20 @@ class TestPatma(unittest.TestCase):
 
         self.assertEqual(y, 'bar')
 
+    def test_patma_249(self):
+        class C:
+            __attr = "eggs"  # mangled to _C__attr
+            _Outer__attr = "bacon"
+        class Outer:
+            def f(self, x):
+                match x:
+                    # looks up __attr, not _C__attr or _Outer__attr
+                    case C(__attr=y):
+                        return y
+        c = C()
+        setattr(c, "__attr", "spam")  # setattr is needed because we're in a class scope
+        self.assertEqual(Outer().f(c), "spam")
+
 
 class TestSyntaxErrors(unittest.TestCase):
 
@@ -3150,6 +3164,40 @@ class TestTracing(unittest.TestCase):
         self.assertListEqual(self._trace(f, "go n"), [1, 2, 3])
         self.assertListEqual(self._trace(f, "go x"), [1, 2, 3])
         self.assertListEqual(self._trace(f, "spam"), [1, 2, 3])
+
+    def test_unreachable_code(self):
+        def f(command):               # 0
+            match command:            # 1
+                case 1:               # 2
+                    if False:         # 3
+                        return 1      # 4
+                case _:               # 5
+                    if False:         # 6
+                        return 0      # 7
+
+        self.assertListEqual(self._trace(f, 1), [1, 2, 3])
+        self.assertListEqual(self._trace(f, 0), [1, 2, 5, 6])
+
+    def test_parser_deeply_nested_patterns(self):
+        # Deeply nested patterns can cause exponential backtracking when parsing.
+        # See gh-93671 for more information.
+
+        levels = 100
+
+        patterns = [
+            "A" + "(" * levels + ")" * levels,
+            "{1:" * levels + "1" + "}" * levels,
+            "[" * levels + "1" + "]" * levels,
+        ]
+
+        for pattern in patterns:
+            with self.subTest(pattern):
+                code = inspect.cleandoc("""
+                    match None:
+                        case {}:
+                            pass
+                """.format(pattern))
+                compile(code, "<string>", "exec")
 
 
 if __name__ == "__main__":

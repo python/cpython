@@ -1,3 +1,0 @@
-Fixed a regression in :func:`~shutil.copyfile`, :func:`~shutil.copy`,
-:func:`~shutil.copy2` raising :exc:`FileNotFoundError` when source is a
-directory, which should raise :exc:`IsADirectoryError`

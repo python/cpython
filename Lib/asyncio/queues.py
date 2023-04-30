@@ -2,6 +2,7 @@ __all__ = ('Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty')
 
 import collections
 import heapq
+from types import GenericAlias
 
 from . import locks
 from . import mixins
@@ -29,8 +30,7 @@ class Queue(mixins._LoopBoundMixin):
     interrupted between calling qsize() and doing an operation on the Queue.
     """
 
-    def __init__(self, maxsize=0, *, loop=mixins._marker):
-        super().__init__(loop=loop)
+    def __init__(self, maxsize=0):
         self._maxsize = maxsize
 
         # Futures.
@@ -69,8 +69,7 @@ class Queue(mixins._LoopBoundMixin):
     def __str__(self):
         return f'<{type(self).__name__} {self._format()}>'
 
-    def __class_getitem__(cls, type):
-        return cls
+    __class_getitem__ = classmethod(GenericAlias)
 
     def _format(self):
         result = f'maxsize={self._maxsize!r}'

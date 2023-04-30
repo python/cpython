@@ -1,3 +1,0 @@
-Add a new command line option, "-X frozen_modules=[on|off]" to opt out
-of (or into) using optional frozen modules.  This defaults to "on" (or
-"off" if it's a debug build).

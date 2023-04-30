@@ -1,2 +1,0 @@
-Improves pickling tests and docs of ``SharedMemory`` and ``SharableList``
-objects.

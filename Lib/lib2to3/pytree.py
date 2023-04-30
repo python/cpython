@@ -720,8 +720,8 @@ class WildcardPattern(BasePattern):
                         r[self.name] = nodes[:count]
                     yield count, r
             except RuntimeError:
-                # We fall back to the iterative pattern matching scheme if the recursive
-                # scheme hits the recursion limit.
+                # Fall back to the iterative pattern matching scheme if the
+                # recursive scheme hits the recursion limit (RecursionError).
                 for count, r in self._iterative_matches(nodes):
                     if self.name:
                         r[self.name] = nodes[:count]

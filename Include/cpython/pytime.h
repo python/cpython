@@ -53,6 +53,10 @@ functions and constants
 extern "C" {
 #endif
 
+#ifdef __clang__
+struct timeval;
+#endif
+
 /* _PyTime_t: Python timestamp with subsecond precision. It can be used to
    store a duration, and so indirectly a date (related to another date, like
    UNIX epoch). */
@@ -130,17 +134,21 @@ PyAPI_FUNC(_PyTime_t) _PyTime_FromSeconds(int seconds);
 /* Create a timestamp from a number of nanoseconds. */
 PyAPI_FUNC(_PyTime_t) _PyTime_FromNanoseconds(_PyTime_t ns);
 
+/* Create a timestamp from a number of microseconds.
+ * Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow. */
+PyAPI_FUNC(_PyTime_t) _PyTime_FromMicrosecondsClamp(_PyTime_t us);
+
 /* Create a timestamp from nanoseconds (Python int). */
 PyAPI_FUNC(int) _PyTime_FromNanosecondsObject(_PyTime_t *t,
     PyObject *obj);
 
-/* Convert a number of seconds (Python float or int) to a timetamp.
+/* Convert a number of seconds (Python float or int) to a timestamp.
    Raise an exception and return -1 on error, return 0 on success. */
 PyAPI_FUNC(int) _PyTime_FromSecondsObject(_PyTime_t *t,
     PyObject *obj,
     _PyTime_round_t round);
 
-/* Convert a number of milliseconds (Python float or int, 10^-3) to a timetamp.
+/* Convert a number of milliseconds (Python float or int, 10^-3) to a timestamp.
    Raise an exception and return -1 on error, return 0 on success. */
 PyAPI_FUNC(int) _PyTime_FromMillisecondsObject(_PyTime_t *t,
     PyObject *obj,

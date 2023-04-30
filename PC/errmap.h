@@ -1,5 +1,7 @@
-int
-winerror_to_errno(int winerror)
+// Window error codes are unsigned long (like E_POINTER 0x80000005).
+// We are limited with signed types, so use signed long long.
+long long
+winerror_to_errno(long long winerror)
 {
     // Unwrap FACILITY_WIN32 HRESULT errors.
     if ((winerror & 0xFFFF0000) == 0x80070000) {

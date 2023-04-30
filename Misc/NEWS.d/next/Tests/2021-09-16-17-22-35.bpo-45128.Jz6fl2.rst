@@ -1,2 +1,0 @@
-Fix ``test_multiprocessing_fork`` failure due to ``test_logging`` and
-``sys.modules`` manipulation.

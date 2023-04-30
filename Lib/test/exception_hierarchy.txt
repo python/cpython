@@ -1,10 +1,9 @@
 BaseException
- ├── SystemExit
- ├── KeyboardInterrupt
+ ├── BaseExceptionGroup
  ├── GeneratorExit
+ ├── KeyboardInterrupt
+ ├── SystemExit
  └── Exception
-      ├── StopIteration
-      ├── StopAsyncIteration
       ├── ArithmeticError
       │    ├── FloatingPointError
       │    ├── OverflowError
@@ -13,6 +12,7 @@ BaseException
       ├── AttributeError
       ├── BufferError
       ├── EOFError
+      ├── ExceptionGroup [BaseExceptionGroup]
       ├── ImportError
       │    └── ModuleNotFoundError
       ├── LookupError
@@ -41,6 +41,8 @@ BaseException
       ├── RuntimeError
       │    ├── NotImplementedError
       │    └── RecursionError
+      ├── StopAsyncIteration
+      ├── StopIteration
       ├── SyntaxError
       │    └── IndentationError
       │         └── TabError
@@ -52,14 +54,14 @@ BaseException
       │         ├── UnicodeEncodeError
       │         └── UnicodeTranslateError
       └── Warning
+           ├── BytesWarning
            ├── DeprecationWarning
-           ├── PendingDeprecationWarning
-           ├── RuntimeWarning
-           ├── SyntaxWarning
-           ├── UserWarning
+           ├── EncodingWarning
            ├── FutureWarning
            ├── ImportWarning
+           ├── PendingDeprecationWarning
+           ├── ResourceWarning
+           ├── RuntimeWarning
+           ├── SyntaxWarning
            ├── UnicodeWarning
-           ├── BytesWarning
-           ├── EncodingWarning
-           └── ResourceWarning
+           └── UserWarning

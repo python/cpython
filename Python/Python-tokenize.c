@@ -13,8 +13,9 @@ get_tokenize_state(PyObject *module) {
 }
 
 #define _tokenize_get_state_by_type(type) \
-    get_tokenize_state(_PyType_GetModuleByDef(type, &_tokenizemodule))
+    get_tokenize_state(PyType_GetModuleByDef(type, &_tokenizemodule))
 
+#include "pycore_runtime.h"
 #include "clinic/Python-tokenize.c.h"
 
 /*[clinic input]
@@ -47,7 +48,7 @@ tokenizeriter_new_impl(PyTypeObject *type, const char *source)
     if (filename == NULL) {
         return NULL;
     }
-    self->tok = PyTokenizer_FromUTF8(source, 1);
+    self->tok = _PyTokenizer_FromUTF8(source, 1);
     if (self->tok == NULL) {
         Py_DECREF(filename);
         return NULL;
@@ -59,9 +60,8 @@ tokenizeriter_new_impl(PyTypeObject *type, const char *source)
 static PyObject *
 tokenizeriter_next(tokenizeriterobject *it)
 {
-    const char *start;
-    const char *end;
-    int type = PyTokenizer_Get(it->tok, &start, &end);
+    struct token token;
+    int type = _PyTokenizer_Get(it->tok, &token);
     if (type == ERRORTOKEN && PyErr_Occurred()) {
         return NULL;
     }
@@ -70,11 +70,11 @@ tokenizeriter_next(tokenizeriterobject *it)
         return NULL;
     }
     PyObject *str = NULL;
-    if (start == NULL || end == NULL) {
+    if (token.start == NULL || token.end == NULL) {
         str = PyUnicode_FromString("");
     }
     else {
-        str = PyUnicode_FromStringAndSize(start, end - start);
+        str = PyUnicode_FromStringAndSize(token.start, token.end - token.start);
     }
     if (str == NULL) {
         return NULL;
@@ -86,16 +86,16 @@ tokenizeriter_next(tokenizeriterobject *it)
         Py_DECREF(str);
         return NULL;
     }
-    const char *line_start = type == STRING ? it->tok->multi_line_start : it->tok->line_start;
-    int lineno = type == STRING ? it->tok->first_lineno : it->tok->lineno;
+    const char *line_start = ISSTRINGLIT(type) ? it->tok->multi_line_start : it->tok->line_start;
+    int lineno = ISSTRINGLIT(type) ? it->tok->first_lineno : it->tok->lineno;
     int end_lineno = it->tok->lineno;
     int col_offset = -1;
     int end_col_offset = -1;
-    if (start != NULL && start >= line_start) {
-        col_offset = (int)(start - line_start);
+    if (token.start != NULL && token.start >= line_start) {
+        col_offset = (int)(token.start - line_start);
     }
-    if (end != NULL && end >= it->tok->line_start) {
-        end_col_offset = (int)(end - it->tok->line_start);
+    if (token.end != NULL && token.end >= it->tok->line_start) {
+        end_col_offset = (int)(token.end - it->tok->line_start);
     }
 
     return Py_BuildValue("(NiiiiiN)", str, type, lineno, end_lineno, col_offset, end_col_offset, line);
@@ -105,7 +105,7 @@ static void
 tokenizeriter_dealloc(tokenizeriterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
-    PyTokenizer_Free(it->tok);
+    _PyTokenizer_Free(it->tok);
     tp->tp_free(it);
     Py_DECREF(tp);
 }
@@ -150,7 +150,7 @@ static PyMethodDef tokenize_methods[] = {
 };
 
 static PyModuleDef_Slot tokenizemodule_slots[] = {
-    {Py_mod_exec, tokenizemodule_exec}, 
+    {Py_mod_exec, tokenizemodule_exec},
     {0, NULL}
 };
 

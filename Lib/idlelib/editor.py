@@ -27,6 +27,7 @@ from idlelib import query
 from idlelib import replace
 from idlelib import search
 from idlelib.tree import wheel_event
+from idlelib.util import py_extensions
 from idlelib import window
 
 # The default tab setting for a Text widget, in average-width characters.
@@ -37,12 +38,13 @@ darwin = sys.platform == 'darwin'
 def _sphinx_version():
     "Format sys.version_info to produce the Sphinx version string used to install the chm docs"
     major, minor, micro, level, serial = sys.version_info
-    release = '%s%s' % (major, minor)
-    release += '%s' % (micro,)
+    # TODO remove unneeded function since .chm no longer installed
+    release = f'{major}{minor}'
+    release += f'{micro}'
     if level == 'candidate':
-        release += 'rc%s' % (serial,)
+        release += f'rc{serial}'
     elif level != 'final':
-        release += '%s%s' % (level[0], serial)
+        release += f'{level[0]}{serial}'
     return release
 
 
@@ -85,10 +87,20 @@ class EditorWindow:
                     dochome = os.path.join(basepath, pyver,
                                            'Doc', 'index.html')
             elif sys.platform[:3] == 'win':
-                chmfile = os.path.join(sys.base_prefix, 'Doc',
-                                       'Python%s.chm' % _sphinx_version())
-                if os.path.isfile(chmfile):
-                    dochome = chmfile
+                import winreg  # Windows only, block only executed once.
+                docfile = ''
+                KEY = (rf"Software\Python\PythonCore\{sys.winver}"
+                        r"\Help\Main Python Documentation")
+                try:
+                    docfile = winreg.QueryValue(winreg.HKEY_CURRENT_USER, KEY)
+                except FileNotFoundError:
+                    try:
+                        docfile = winreg.QueryValue(winreg.HKEY_LOCAL_MACHINE,
+                                                    KEY)
+                    except FileNotFoundError:
+                        pass
+                if os.path.isfile(docfile):
+                    dochome = docfile
             elif sys.platform == 'darwin':
                 # documentation may be stored inside a python framework
                 dochome = os.path.join(sys.base_prefix,
@@ -757,7 +769,7 @@ class EditorWindow:
         if not filename or os.path.isdir(filename):
             return True
         base, ext = os.path.splitext(os.path.basename(filename))
-        if os.path.normcase(ext) in (".py", ".pyw"):
+        if os.path.normcase(ext) in py_extensions:
             return True
         line = self.text.get('1.0', '1.0 lineend')
         return line.startswith('#!') and 'python' in line
@@ -939,7 +951,7 @@ class EditorWindow:
         rf_list = []
         file_path = self.recent_files_path
         if file_path and os.path.exists(file_path):
-            with open(file_path, 'r',
+            with open(file_path,
                       encoding='utf_8', errors='replace') as rf_list_file:
                 rf_list = rf_list_file.readlines()
         if new_file:
@@ -1300,7 +1312,7 @@ class EditorWindow:
         want = ((have - 1) // self.indentwidth) * self.indentwidth
         # Debug prompt is multilined....
         ncharsdeleted = 0
-        while 1:
+        while True:
             chars = chars[:-1]
             ncharsdeleted = ncharsdeleted + 1
             have = len(chars.expandtabs(tabwidth))
@@ -1447,7 +1459,7 @@ class EditorWindow:
                     else:
                         self.reindent_to(y.compute_backslash_indent())
                 else:
-                    assert 0, "bogus continuation type %r" % (c,)
+                    assert 0, f"bogus continuation type {c!r}"
                 return "break"
 
             # This line starts a brand new statement; indent relative to

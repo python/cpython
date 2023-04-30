@@ -1,2 +1,0 @@
-Add test for nested queues when using ``multiprocessing`` shared objects
-``AutoProxy[Queue]`` inside ``ListProxy`` and ``DictProxy``

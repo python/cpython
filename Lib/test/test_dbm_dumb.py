@@ -42,6 +42,7 @@ class DumbDBMTestCase(unittest.TestCase):
             self.read_helper(f)
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
+    @os_helper.skip_unless_working_chmod
     def test_dumbdbm_creation_mode(self):
         try:
             old_umask = os.umask(0o002)
@@ -265,6 +266,7 @@ class DumbDBMTestCase(unittest.TestCase):
                                         "'r', 'w', 'c', or 'n'"):
                 dumbdbm.open(_fname, flag)
 
+    @os_helper.skip_unless_working_chmod
     def test_readonly_files(self):
         with os_helper.temp_dir() as dir:
             fname = os.path.join(dir, 'db')

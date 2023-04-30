@@ -1,1 +1,0 @@
-Match C and Python code formatting of unprintable exceptions and exceptions in the :mod:`__main__` module.

@@ -1,7 +1,7 @@
 import argparse
 import os
+import shlex
 import sys
-from test import support
 from test.support import os_helper
 
 
@@ -150,7 +150,6 @@ class Namespace(argparse.Namespace):
         self.single = False
         self.randomize = False
         self.fromfile = None
-        self.findleaks = 1
         self.fail_env_changed = False
         self.use_resources = None
         self.trace = False
@@ -208,6 +207,8 @@ def _create_parser():
     group.add_argument('-S', '--start', metavar='START',
                        help='the name of the test at which to start.' +
                             more_details)
+    group.add_argument('-p', '--python', metavar='PYTHON',
+                       help='Command to run Python test subprocesses with.')
 
     group = parser.add_argument_group('Verbosity')
     group.add_argument('-v', '--verbose', action='count',
@@ -267,9 +268,6 @@ def _create_parser():
                             '(instead of the Python stdlib test suite)')
 
     group = parser.add_argument_group('Special runs')
-    group.add_argument('-l', '--findleaks', action='store_const', const=2,
-                       default=1,
-                       help='deprecated alias to --fail-env-changed')
     group.add_argument('-L', '--runleaks', action='store_true',
                        help='run the leaks(1) command just before exit.' +
                             more_details)
@@ -371,13 +369,15 @@ def _parse_args(args, **kwargs):
             parser.error("unrecognized arguments: %s" % arg)
             sys.exit(1)
 
-    if ns.findleaks > 1:
-        # --findleaks implies --fail-env-changed
-        ns.fail_env_changed = True
     if ns.single and ns.fromfile:
         parser.error("-s and -f don't go together!")
     if ns.use_mp is not None and ns.trace:
         parser.error("-T and -j don't go together!")
+    if ns.python is not None:
+        if ns.use_mp is None:
+            parser.error("-p requires -j!")
+        # The "executable" may be two or more parts, e.g. "node python.js"
+        ns.python = shlex.split(ns.python)
     if ns.failfast and not (ns.verbose or ns.verbose3):
         parser.error("-G/--failfast needs either -v or -W")
     if ns.pgo and (ns.verbose or ns.verbose2 or ns.verbose3):

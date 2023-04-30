@@ -7,15 +7,22 @@ set the first day of the week (0=Monday, 6=Sunday)."""
 
 import sys
 import datetime
+from enum import IntEnum, global_enum
 import locale as _locale
 from itertools import repeat
+import warnings
 
 __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "firstweekday", "isleap", "leapdays", "weekday", "monthrange",
            "monthcalendar", "prmonth", "month", "prcal", "calendar",
            "timegm", "month_name", "month_abbr", "day_name", "day_abbr",
            "Calendar", "TextCalendar", "HTMLCalendar", "LocaleTextCalendar",
-           "LocaleHTMLCalendar", "weekheader"]
+           "LocaleHTMLCalendar", "weekheader",
+           "Day", "Month", "JANUARY", "FEBRUARY", "MARCH",
+           "APRIL", "MAY", "JUNE", "JULY",
+           "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER",
+           "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY",
+           "SATURDAY", "SUNDAY"]
 
 # Exception raised for bad input (with string parameter for details)
 error = ValueError
@@ -35,9 +42,47 @@ class IllegalWeekdayError(ValueError):
         return "bad weekday number %r; must be 0 (Monday) to 6 (Sunday)" % self.weekday
 
 
-# Constants for months referenced later
-January = 1
-February = 2
+def __getattr__(name):
+    if name in ('January', 'February'):
+        warnings.warn(f"The '{name}' attribute is deprecated, use '{name.upper()}' instead",
+                      DeprecationWarning, stacklevel=2)
+        if name == 'January':
+            return 1
+        else:
+            return 2
+
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
+# Constants for months
+@global_enum
+class Month(IntEnum):
+    JANUARY = 1
+    FEBRUARY = 2
+    MARCH = 3
+    APRIL = 4
+    MAY = 5
+    JUNE = 6
+    JULY = 7
+    AUGUST = 8
+    SEPTEMBER = 9
+    OCTOBER = 10
+    NOVEMBER = 11
+    DECEMBER = 12
+
+
+# Constants for days
+@global_enum
+class Day(IntEnum):
+    MONDAY = 0
+    TUESDAY = 1
+    WEDNESDAY = 2
+    THURSDAY = 3
+    FRIDAY = 4
+    SATURDAY = 5
+    SUNDAY = 6
+
+
 
 # Number of days per month (except for February in leap years)
 mdays = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -93,9 +138,6 @@ day_abbr = _localized_day('%a')
 month_name = _localized_month('%B')
 month_abbr = _localized_month('%b')
 
-# Constants for weekdays
-(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY) = range(7)
-
 
 def isleap(year):
     """Return True for leap years, False for non-leap years."""
@@ -123,12 +165,12 @@ def monthrange(year, month):
     if not 1 <= month <= 12:
         raise IllegalMonthError(month)
     day1 = weekday(year, month, 1)
-    ndays = mdays[month] + (month == February and isleap(year))
+    ndays = mdays[month] + (month == FEBRUARY and isleap(year))
     return day1, ndays
 
 
 def _monthlen(year, month):
-    return mdays[month] + (month == February and isleap(year))
+    return mdays[month] + (month == FEBRUARY and isleap(year))
 
 
 def _prevmonth(year, month):
@@ -258,10 +300,7 @@ class Calendar(object):
         Each month contains between 4 and 6 weeks and each week contains 1-7
         days. Days are datetime.date objects.
         """
-        months = [
-            self.monthdatescalendar(year, i)
-            for i in range(January, January+12)
-        ]
+        months = [self.monthdatescalendar(year, m) for m in Month]
         return [months[i:i+width] for i in range(0, len(months), width) ]
 
     def yeardays2calendar(self, year, width=3):
@@ -271,10 +310,7 @@ class Calendar(object):
         (day number, weekday number) tuples. Day numbers outside this month are
         zero.
         """
-        months = [
-            self.monthdays2calendar(year, i)
-            for i in range(January, January+12)
-        ]
+        months = [self.monthdays2calendar(year, m) for m in Month]
         return [months[i:i+width] for i in range(0, len(months), width) ]
 
     def yeardayscalendar(self, year, width=3):
@@ -283,10 +319,7 @@ class Calendar(object):
         yeardatescalendar()). Entries in the week lists are day numbers.
         Day numbers outside this month are zero.
         """
-        months = [
-            self.monthdayscalendar(year, i)
-            for i in range(January, January+12)
-        ]
+        months = [self.monthdayscalendar(year, m) for m in Month]
         return [months[i:i+width] for i in range(0, len(months), width) ]
 
 
@@ -507,7 +540,7 @@ class HTMLCalendar(Calendar):
         a('\n')
         a('<tr><th colspan="%d" class="%s">%s</th></tr>' % (
             width, self.cssclass_year_head, theyear))
-        for i in range(January, January+12, width):
+        for i in range(JANUARY, JANUARY+12, width):
             # months in this row
             months = range(i, min(i+width, 13))
             a('<tr>')
@@ -546,13 +579,26 @@ class HTMLCalendar(Calendar):
 class different_locale:
     def __init__(self, locale):
         self.locale = locale
+        self.oldlocale = None
 
     def __enter__(self):
-        self.oldlocale = _locale.getlocale(_locale.LC_TIME)
+        self.oldlocale = _locale.setlocale(_locale.LC_TIME, None)
         _locale.setlocale(_locale.LC_TIME, self.locale)
 
     def __exit__(self, *args):
+        if self.oldlocale is None:
+            return
         _locale.setlocale(_locale.LC_TIME, self.oldlocale)
+
+
+def _get_default_locale():
+    locale = _locale.setlocale(_locale.LC_TIME, None)
+    if locale == "C":
+        with different_locale(""):
+            # The LC_TIME locale does not seem to be configured:
+            # get the user preferred locale.
+            locale = _locale.setlocale(_locale.LC_TIME, None)
+    return locale
 
 
 class LocaleTextCalendar(TextCalendar):
@@ -564,7 +610,7 @@ class LocaleTextCalendar(TextCalendar):
     def __init__(self, firstweekday=0, locale=None):
         TextCalendar.__init__(self, firstweekday)
         if locale is None:
-            locale = _locale.getdefaultlocale()
+            locale = _get_default_locale()
         self.locale = locale
 
     def formatweekday(self, day, width):
@@ -584,7 +630,7 @@ class LocaleHTMLCalendar(HTMLCalendar):
     def __init__(self, firstweekday=0, locale=None):
         HTMLCalendar.__init__(self, firstweekday)
         if locale is None:
-            locale = _locale.getdefaultlocale()
+            locale = _get_default_locale()
         self.locale = locale
 
     def formatweekday(self, day):

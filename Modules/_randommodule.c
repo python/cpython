@@ -66,10 +66,19 @@
 
 /* ---------------------------------------------------------------*/
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_runtime.h"
 #ifdef HAVE_PROCESS_H
 #  include <process.h>            // getpid()
+#endif
+
+#ifdef MS_WINDOWS
+#  include <windows.h>
 #endif
 
 /* Period parameters -- These are all magic.  Don't change. */
@@ -95,7 +104,7 @@ get_random_state(PyObject *module)
 static struct PyModuleDef _randommodule;
 
 #define _randomstate_type(type) \
-    (get_random_state(_PyType_GetModuleByDef(type, &_randommodule)))
+    (get_random_state(PyType_GetModuleByDef(type, &_randommodule)))
 
 typedef struct {
     PyObject_HEAD
@@ -254,7 +263,13 @@ random_seed_time_pid(RandomObject *self)
     key[0] = (uint32_t)(now & 0xffffffffU);
     key[1] = (uint32_t)(now >> 32);
 
+#if defined(MS_WINDOWS) && !defined(MS_WINDOWS_DESKTOP) && !defined(MS_WINDOWS_SYSTEM)
+    key[2] = (uint32_t)GetCurrentProcessId();
+#elif defined(HAVE_GETPID)
     key[2] = (uint32_t)getpid();
+#else
+    key[2] = 0;
+#endif
 
     now = _PyTime_GetMonotonicClock();
     key[3] = (uint32_t)(now & 0xffffffffU);

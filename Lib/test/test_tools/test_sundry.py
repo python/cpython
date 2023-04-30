@@ -1,4 +1,4 @@
-"""Tests for scripts in the Tools directory.
+"""Tests for scripts in the Tools/scripts directory.
 
 This file contains extremely basic regression tests for the scripts found in
 the Tools directory of a Python checkout or tarball which don't have separate
@@ -6,7 +6,6 @@ tests of their own.
 """
 
 import os
-import sys
 import unittest
 from test.support import import_helper
 
@@ -18,18 +17,13 @@ class TestSundryScripts(unittest.TestCase):
     # At least make sure the rest don't have syntax errors.  When tests are
     # added for a script it should be added to the allowlist below.
 
-    # scripts that have independent tests.
-    allowlist = ['reindent', 'pdeps', 'gprof2html', 'md5sum']
-    # scripts that can't be imported without running
-    denylist = ['make_ctype']
-    # scripts that use windows-only modules
-    windows_only = ['win_add2path']
-    # denylisted for other reasons
-    other = ['analyze_dxp', '2to3']
+    skiplist = ['2to3']
 
-    skiplist = denylist + allowlist + windows_only + other
-
-    def test_sundry(self):
+    # import logging registers "atfork" functions which keep indirectly the
+    # logging module dictionary alive. Mock the function to be able to unload
+    # cleanly the logging module.
+    @import_helper.mock_register_at_fork
+    def test_sundry(self, mock_os):
         old_modules = import_helper.modules_setup()
         try:
             for fn in os.listdir(scriptsdir):
@@ -44,18 +38,6 @@ class TestSundryScripts(unittest.TestCase):
         finally:
             # Unload all modules loaded in this test
             import_helper.modules_cleanup(*old_modules)
-
-    @unittest.skipIf(sys.platform != "win32", "Windows-only test")
-    def test_sundry_windows(self):
-        for name in self.windows_only:
-            import_tool(name)
-
-    def test_analyze_dxp_import(self):
-        if hasattr(sys, 'getdxp'):
-            import_tool('analyze_dxp')
-        else:
-            with self.assertRaises(RuntimeError):
-                import_tool('analyze_dxp')
 
 
 if __name__ == '__main__':

@@ -250,11 +250,13 @@ at a more abstract level.  The :keyword:`!pass` is silently ignored::
 :keyword:`!match` Statements
 ============================
 
-A match statement takes an expression and compares its value to successive
+A :keyword:`match` statement takes an expression and compares its value to successive
 patterns given as one or more case blocks.  This is superficially
 similar to a switch statement in C, Java or JavaScript (and many
-other languages), but it can also extract components (sequence elements or
-object attributes) from the value into variables.
+other languages), but it's more similar to pattern matching in
+languages like Rust or Haskell. Only the first pattern that matches
+gets executed and it can also extract components (sequence elements
+or object attributes) from the value into variables.
 
 The simplest form compares a subject value against one or more literals::
 
@@ -378,7 +380,7 @@ Several other key features of this statement:
 - Mapping patterns: ``{"bandwidth": b, "latency": l}`` captures the
   ``"bandwidth"`` and ``"latency"`` values from a dictionary.  Unlike sequence
   patterns, extra keys are ignored.  An unpacking like ``**rest`` is also
-  supported.  (But ``**_`` would be redundant, so it not allowed.)
+  supported.  (But ``**_`` would be redundant, so it is not allowed.)
 
 - Subpatterns may be captured using the ``as`` keyword::
 
@@ -395,9 +397,11 @@ Several other key features of this statement:
 
       from enum import Enum
       class Color(Enum):
-          RED = 0
-          GREEN = 1
-          BLUE = 2
+          RED = 'red'
+          GREEN = 'green'
+          BLUE = 'blue'
+
+      color = Color(input("Enter your choice of 'red', 'blue' or 'green': "))
 
       match color:
           case Color.RED:
@@ -836,8 +840,9 @@ will always bind to the first parameter. For example::
 
 But using ``/`` (positional only arguments), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments::
 
-    def foo(name, /, **kwds):
-        return 'name' in kwds
+    >>> def foo(name, /, **kwds):
+    ...     return 'name' in kwds
+    ...
     >>> foo(1, **{'name': 2})
     True
 
@@ -882,7 +887,7 @@ zero or more normal arguments may occur. ::
        file.write(separator.join(args))
 
 
-Normally, these ``variadic`` arguments will be last in the list of formal
+Normally, these *variadic* arguments will be last in the list of formal
 parameters, because they scoop up all remaining input arguments that are
 passed to the function. Any formal parameters which occur after the ``*args``
 parameter are 'keyword-only' arguments, meaning that they can only be used as

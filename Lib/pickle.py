@@ -98,12 +98,6 @@ class _Stop(Exception):
     def __init__(self, value):
         self.value = value
 
-# Jython has PyStringMap; it's a dict subclass with string keys
-try:
-    from org.python.core import PyStringMap
-except ImportError:
-    PyStringMap = None
-
 # Pickle opcodes.  See pickletools.py for extensive docs.  The listing
 # here is in kind-of alphabetical order of 1-character pickle code.
 # pickletools groups them by purpose.
@@ -619,7 +613,7 @@ class _Pickler:
                     "persistent IDs in protocol 0 must be ASCII strings")
 
     def save_reduce(self, func, args, state=None, listitems=None,
-                    dictitems=None, state_setter=None, obj=None):
+                    dictitems=None, state_setter=None, *, obj=None):
         # This API is called by some subclasses
 
         if not isinstance(args, tuple):
@@ -972,8 +966,6 @@ class _Pickler:
         self._batch_setitems(obj.items())
 
     dispatch[dict] = save_dict
-    if PyStringMap is not None:
-        dispatch[PyStringMap] = save_dict
 
     def _batch_setitems(self, items):
         # Helper to batch up SETITEMS sequences; proto >= 1 only
@@ -1173,7 +1165,7 @@ class _Unpickler:
         used in Python 3.  The *encoding* and *errors* tell pickle how
         to decode 8-bit string instances pickled by Python 2; these
         default to 'ASCII' and 'strict', respectively. *encoding* can be
-        'bytes' to read theses 8-bit string instances as bytes objects.
+        'bytes' to read these 8-bit string instances as bytes objects.
         """
         self._buffers = iter(buffers) if buffers is not None else None
         self._file_readline = file.readline
@@ -1489,7 +1481,7 @@ class _Unpickler:
                 value = klass(*args)
             except TypeError as err:
                 raise TypeError("in constructor for %s: %s" %
-                                (klass.__name__, str(err)), sys.exc_info()[2])
+                                (klass.__name__, str(err)), err.__traceback__)
         else:
             value = klass.__new__(klass)
         self.append(value)

@@ -1,1 +1,0 @@
-In Unix operating systems, :func:`time.sleep` now uses the ``nanosleep()`` function, if ``clock_nanosleep()`` is not available but ``nanosleep()`` is available. ``nanosleep()`` allows to sleep with nanosecond precision.
