@@ -173,6 +173,14 @@ def main(opcode_py, outfile='Include/opcode.h', internaloutfile='Include/interna
             fobj.write(DEFINE.format(op, i))
 
         fobj.write("\n")
+        for i, op in enumerate(opcode["_intrinsic_1_descs"]):
+            fobj.write(DEFINE.format(op, i))
+
+        fobj.write("\n")
+        for i, op in enumerate(opcode["_intrinsic_2_descs"]):
+            fobj.write(DEFINE.format(op, i))
+
+        fobj.write("\n")
         fobj.write("/* Defined in Lib/opcode.py */\n")
         fobj.write(f"#define ENABLE_SPECIALIZATION {int(ENABLE_SPECIALIZATION)}")
 
