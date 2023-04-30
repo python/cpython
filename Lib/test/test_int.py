@@ -238,6 +238,8 @@ class IntTestCases(unittest.TestCase):
     def test_unicode(self):
         self.assertEqual(int("१२३४५६७८९०1234567890"), 12345678901234567890)
         self.assertEqual(int('١٢٣٤٥٦٧٨٩٠'), 1234567890)
+        self.assertEqual(int("१२३४५६७८९०1234567890", 0), 12345678901234567890)
+        self.assertEqual(int('١٢٣٤٥٦٧٨٩٠', 0), 1234567890)
 
     def test_underscores(self):
         for lit in VALID_UNDERSCORE_LITERALS:
