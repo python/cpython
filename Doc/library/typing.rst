@@ -2902,12 +2902,17 @@ Introspection helpers
    Get the unsubscripted version of a type: for a typing object of the form
    ``X[Y, Z, ...]`` return ``X``. If ``X`` is a generic alias for a builtin or
    :mod:`collections` class, it gets normalized to the original class.
+   If ``X`` is an instance of :class:``ParamSpecArgs`` or :class:``ParamSpecKwargs``,
+   return the underlying :class:``ParamSpec``.
    Return ``None`` for unsupported types.
    Examples::
 
       assert get_origin(str) is None
       assert get_origin(Dict[str, int]) is dict
       assert get_origin(Union[int, str]) is Union
+      P = ParamSpec('P')
+      assert get_origin(P.args) is P
+      assert get_origin(P.kwargs) is P
 
    .. versionadded:: 3.8
 
