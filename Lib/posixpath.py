@@ -527,8 +527,8 @@ def relpath(path, start=None):
         start_abs = abspath(normpath(start))
         path_abs = abspath(normpath(path))
 
-        _, start_root, _ = splitroot(start_abs)
-        _, path_root, _ = splitroot(path_abs)
+        _, start_root, start_rest = splitroot(start_abs)
+        _, path_root, path_rest = splitroot(path_abs)
 
         if start_root != path_root:
             raise ValueError(
