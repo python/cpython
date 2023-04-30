@@ -493,6 +493,7 @@ class OutputTestCase(unittest.TestCase):
 class CalendarTestCase(unittest.TestCase):
 
     def test_deprecation_warning(self):
+        warnings.resetwarnings()
         with warnings.catch_warnings(record=True) as w:
             calendar.January
         self.assertEqual(len(w), 1)
