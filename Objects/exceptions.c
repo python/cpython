@@ -1713,7 +1713,7 @@ oserror_parse_args(PyObject **p_args,
                 return -1;
             }
 
-            errcode = winerror_to_errno(winerrcode);
+            errcode = (long long)winerror_to_errno((int)winerrcode);
             *myerrno = PyLong_FromLongLong(errcode);
             if (!*myerrno)
                 return -1;
