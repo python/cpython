@@ -1,5 +1,5 @@
 // Window error codes are unsigned long (like E_POINTER 0x80000005).
-// We are limited with signed types, so use signed long long.
+// We are limited to signed types so use signed long long.
 long long
 winerror_to_errno(long long winerror)
 {
