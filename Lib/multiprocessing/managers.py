@@ -1146,10 +1146,10 @@ class ValueProxy(BaseProxy):
 
 
 BaseListProxy = MakeProxyType('BaseListProxy', (
-    '__add__', '__contains__', '__delitem__', '__getitem__', '__len__',
-    '__mul__', '__reversed__', '__rmul__', '__setitem__',
+    '__add__', '__contains__', '__delitem__', '__getitem__', '__imul__',
+    '__len__', '__mul__', '__reversed__', '__rmul__', '__setitem__',
     'append', 'clear', 'copy', 'count', 'extend', 'index', 'insert', 'pop',
-    'remove', 'reverse', 'sort', '__imul__'
+    'remove', 'reverse', 'sort',
     ))
 class ListProxy(BaseListProxy):
     def __iadd__(self, value):
@@ -1160,15 +1160,19 @@ class ListProxy(BaseListProxy):
         return self
 
 
-DictProxy = MakeProxyType('DictProxy', (
+BaseDictProxy = MakeProxyType('DictProxy', (
     '__contains__', '__delitem__', '__getitem__', '__ior__', '__iter__',
     '__len__', '__or__', '__reversed__', '__ror__', '__setitem__', 'clear',
     'copy', 'fromkeys', 'get', 'items', 'keys', 'pop', 'popitem',
-    'setdefault', 'update', 'values'
+    'setdefault', 'update', 'values',
     ))
-DictProxy._method_to_typeid_ = {
-    '__iter__': 'Iterator',
+class DictProxy(BaseDictProxy):
+    _method_to_typeid_ = {
+        '__iter__': 'Iterator',
     }
+    def __ior__(self, value):
+        self._callmethod('__ior__', (value,))
+        return self
 
 
 ArrayProxy = MakeProxyType('ArrayProxy', (

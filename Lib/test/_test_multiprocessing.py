@@ -5706,12 +5706,16 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertEqual(obj[0], 5)
         case.assertEqual(obj.count(5), 1)
         case.assertEqual(obj.index(5), 0)
+        obj += [7]
+        obj.extend(obj * 2 + obj.copy())
         obj.sort()
         obj.reverse()
         for x in obj:
             pass
-        case.assertEqual(len(obj), 1)
-        case.assertEqual(obj.pop(0), 5)
+        case.assertEqual(len(obj), 8)
+        case.assertEqual(obj.pop(0), 7)
+        obj.clear()
+        case.assertEqual(len(obj), 0)
 
     def test_list(self):
         o = self.manager.list()
@@ -5730,7 +5734,17 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertListEqual(list(obj.keys()), ['foo'])
         case.assertListEqual(list(obj.values()), [5])
         case.assertDictEqual(obj.copy(), {'foo': 5})
-        case.assertTupleEqual(obj.popitem(), ('foo', 5))
+        obj |= {'bar': 6}
+        case.assertListEqual(list(reversed(obj)), ['bar', 'foo'])
+        case.assertDictEqual({'bar': 7} | obj, {'foo': 5, 'bar': 6})
+        case.assertDictEqual(obj | {'bar': 7}, {'foo': 5, 'bar': 7})
+        case.assertDictEqual(obj.fromkeys(['bar'], 6), {'bar': 6})
+        case.assertTupleEqual(obj.popitem(), ('bar', 6))
+        obj.setdefault('bar', 0)
+        obj.update({'bar': 7})
+        case.assertEqual(obj.pop('bar'), 7)
+        obj.clear()
+        case.assertEqual(len(obj), 0)
 
     def test_dict(self):
         o = self.manager.dict()
