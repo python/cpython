@@ -3671,7 +3671,7 @@ class TestStringAnnotations(unittest.TestCase):
 ByMakeDataClass = make_dataclass('ByMakeDataClass', [('x', int)])
 ManualModuleMakeDataClass = make_dataclass('ManualModuleMakeDataClass',
                                            [('x', int)],
-                                           module='test.test_dataclasses')
+                                           module=__name__)
 WrongNameMakeDataclass = make_dataclass('Wrong', [('x', int)])
 WrongModuleMakeDataclass = make_dataclass('WrongModuleMakeDataclass',
                                           [('x', int)],
