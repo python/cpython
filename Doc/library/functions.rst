@@ -1987,7 +1987,6 @@ are always available.  They are listed here in alphabetical order.
 
    .. index::
       statement: import
-      module: imp
 
    .. note::
 
