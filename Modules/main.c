@@ -234,7 +234,7 @@ pymain_import_readline(const PyConfig *config)
 /* Strip common leading whitespace utf encoded string
  * returns a new PyBytes object that must be deallocated
  */
-PyObject* _pybytes_dedent(PyObject *bytes){
+PyObject* _utf_8_bytes_dedent(PyObject *bytes){
     char *input_data = PyBytes_AsString(bytes);
 
     // Security problem? what is the right way to do this?
@@ -364,7 +364,7 @@ pymain_run_command(wchar_t *command)
 
     // Only perform auto-dedent if the string starts with a newline
     if (strncmp(PyBytes_AsString(bytes), "\n", 1) == 0) {
-        PyObject *new_bytes = _pybytes_dedent(bytes);
+        PyObject *new_bytes = _utf_8_bytes_dedent(bytes);
         if (new_bytes == NULL) {
             goto error;
         }
