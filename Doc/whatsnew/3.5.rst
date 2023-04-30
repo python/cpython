@@ -2212,7 +2212,7 @@ for details.)
 The :c:member:`PyTypeObject.tp_finalize` slot is now part of the stable ABI.
 
 Windows builds now require Microsoft Visual C++ 14.0, which
-is available as part of `Visual Studio 2015 <https://web.archive.org/web/20150924233002/https://www.visualstudio.com//>`_.
+is available as part of `Visual Studio 2015 <https://visualstudio.microsoft.com/en/vs/older-downloads/#visual-studio-2015-and-other-products>`_.
 
 Extension modules now include a platform information tag in their filename on
 some platforms (the tag is optional, and CPython will import extensions without

@@ -265,7 +265,7 @@ linkcheck_allowed_redirects = {
     # bpo-NNNN -> BPO -> GH Issues
     r'https://bugs.python.org/issue\?@action=redirect&bpo=\d+': 'https://github.com/python/cpython/issues/\d+',
     # GH-NNNN used to refer to pull requests
-    r'https://github.com/python/cpython/issues/\d+': 'https://github.com/python/cpython/pull/\d+',
+    r'https://github.com/python/cpython/issues/\d+': r'https://github.com/python/cpython/pull/\d+',
     # :source:`something` linking files in the repository
     r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*',
     # Intentional HTTP use at Misc/NEWS.d/3.5.0a1.rst
@@ -278,7 +278,7 @@ linkcheck_allowed_redirects = {
     r'https://toml.io': 'https://toml.io/en/',
     r'https://www.redhat.com': 'https://www.redhat.com/en',
     # Other redirects
-    r'https://www.boost.org/libs/.+': 'https://www.boost.org/doc/libs/\d_\d+_\d/.+',
+    r'https://www.boost.org/libs/.+': r'https://www.boost.org/doc/libs/\d_\d+_\d/.+',
     r'https://support.microsoft.com/en-us/help/\d+': 'https://support.microsoft.com/en-us/topic/.+',
     r'https://perf.wiki.kernel.org$': 'https://perf.wiki.kernel.org/index.php/Main_Page',
     r'https://www.sqlite.org': 'https://www.sqlite.org/index.html',
