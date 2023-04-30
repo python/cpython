@@ -802,6 +802,31 @@ number, :class:`float`, or :class:`complex`::
            hash_value = -2
        return hash_value
 
+.. _typebool:
+
+Boolean Type - :class:`bool`
+============================
+
+Booleans represent truth values. The :class:`bool` type has exactly two
+constant instances ``True`` and ``False``.
+
+Other types can be cast to bool explicitly using the function :func:`bool`.
+Additionally, they are implicitly interpreted as bool in some contexts - see
+:ref:`truth`.
+
+For logical operations, use the :ref:`boolean operators <boolean>` ``and``,
+``or`` and ``not``.
+When applying the bitwise operators ``&``, ``|``, ``^`` to two booleans, they
+return a bool equivalent to the logical operations "and", "or", "xor". Still,
+for ``&`` and ``|``, the logical operators ``and`` and ``or`` are preferred.
+The use of the bitwise inversion operator ``~`` is deprecated and will raise
+an error in Python 3.14.
+
+:class:`bool` is a subclass of :class:`int` (see :ref:`typesnumeric`). In
+many numeric contexts, bools behave like the integers 0 and 1, respectively.
+However, relying on this is discouraged; explicitly convert using :func:`int`
+instead.
+
 .. _typeiter:
 
 Iterator Types
@@ -5399,20 +5424,13 @@ It is written as ``NotImplemented``.
 Boolean Values
 --------------
 
-Boolean values are the two constant objects ``False`` and ``True``.  They are
-used to represent truth values (although other values can also be considered
-false or true).  In numeric contexts (for example when used as the argument to
-an arithmetic operator), they behave like the integers 0 and 1, respectively.
-The built-in function :func:`bool` can be used to convert any value to a
-Boolean, if the value can be interpreted as a truth value (see section
-:ref:`truth` above).
+Boolean values are the two constant objects ``False`` and ``True``.  See
+:ref:`typebool` for more info.
 
 .. index::
    single: False
    single: True
    pair: Boolean; values
-
-They are written as ``False`` and ``True``, respectively.
 
 
 .. _typesinternal:
