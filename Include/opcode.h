@@ -253,6 +253,17 @@ extern "C" {
 #define NB_INPLACE_TRUE_DIVIDE                  24
 #define NB_INPLACE_XOR                          25
 
+#define INTRINSIC_INVALID                        0
+#define INTRINSIC_PRINT                          1
+#define INTRINSIC_IMPORT_STAR                    2
+#define INTRINSIC_STOPITERATION_ERROR            3
+#define INTRINSIC_ASYNC_GEN_WRAP                 4
+#define INTRINSIC_UNARY_POSITIVE                 5
+#define INTRINSIC_LIST_TO_TUPLE                  6
+
+#define INTRINSIC_INVALID                        0
+#define INTRINSIC_PREP_RERAISE_STAR              1
+
 /* Defined in Lib/opcode.py */
 #define ENABLE_SPECIALIZATION 1
 
