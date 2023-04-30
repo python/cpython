@@ -315,7 +315,7 @@ class MmapTests(unittest.TestCase):
 
         m.close()
         with self.assertRaises(ValueError):
-            m["abc"] # first CHECK_VALID will pick and raise ValueError
+            m["abc"]
 
     def test_unexpected_mmap_close_scenario_4(self):
         # See gh-103987
@@ -327,7 +327,7 @@ class MmapTests(unittest.TestCase):
 
             m = mmap.mmap(f.fileno(), n, access=mmap.ACCESS_READ)
 
-        m.close() # first CHECK_VALID will pick and raise ValueError
+        m.close()
         with self.assertRaises(ValueError):
             m[0:5] # should not crash
 
@@ -344,9 +344,9 @@ class MmapTests(unittest.TestCase):
                     m.close()
                     return 1
 
-            m = mmap.mmap(f.fileno(), n, access=mmap.ACCESS_READ)
+            m = mmap.mmap(f.fileno(), n, access=mmap.ACCESS_WRITE)
 
-        m.close() # first CHECK_VALID will pick and raise ValueError
+        m.close()
         with self.assertRaises(ValueError):
             m[X()] = 1 # should not crash
 
@@ -363,9 +363,9 @@ class MmapTests(unittest.TestCase):
                     m.close()
                     return 1
 
-            m = mmap.mmap(f.fileno(), n, access=mmap.ACCESS_READ)
+            m = mmap.mmap(f.fileno(), n, access=mmap.ACCESS_WRITE)
 
-        m.close() # first CHECK_VALID will pick and raise ValueError
+        m.close()
         with self.assertRaises(ValueError):
             m[X():5] = b'abcde' # should not crash
 
