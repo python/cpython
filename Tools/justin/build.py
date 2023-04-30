@@ -1,5 +1,3 @@
-import sys
-
 """The Justin(time) template JIT for CPython 3.12, based on copy-and-patch."""
 
 import collections
@@ -49,8 +47,6 @@ class ObjectParser:
         return lines
 
     def _parse_headers(self) -> typing.Generator[tuple[str, int, int, str], None, None]:
-        # lines = self._dump("--headers")
-        # print("\n".join(lines))
         lines = self._dump("--headers")
         line = next(lines, None)
         assert line == "Sections:"
@@ -69,10 +65,7 @@ class ObjectParser:
                 yield (name, int(size, 16), int(vma, 16), type)
 
     def _parse_syms(self) -> None:
-        # lines = self._dump("--syms", "--section", ".text")
-        # print("\n".join(lines))
         lines = self._dump("--syms", "--section", ".text")
-        # return
         assert next(lines) == "SYMBOL TABLE:"
         syms = {}
         pattern = r"([0-9a-f]+)\s+([\sa-zA-Z]*)\s+(\*ABS\*|\*UND\*|[\w\.,]+)(?:\s+([0-9a-f]+))?\s+(\w+)"
@@ -94,7 +87,6 @@ class ObjectParser:
                     assert flags == "g     F"
                     assert int(size, 16) == 0
                     assert int(value, 16) == 0
-                # print(name, int(size, 16))
         
         return syms
 
@@ -128,10 +120,6 @@ class ObjectParser:
         return relocs
 
     def _parse_full_contents(self, section, vma) -> bytes:
-        # lines = self._dump("--disassemble", "--reloc", "--section", section)
-        # print("\n".join(lines))
-        # lines = self._dump("--full-contents", "--section", section)
-        # print("\n".join(lines))
         lines = self._dump("--full-contents", "--section", section)
         line = next(lines, None)
         if line is None:
@@ -256,194 +244,66 @@ class Engine:
         "-mcmodel=large",
     ]
     _OFFSETOF_CO_CODE_ADAPTIVE = 192
-    _OPS = [
-        "BEFORE_ASYNC_WITH",
-        "BEFORE_WITH",
-        "BINARY_OP",
-        "BINARY_OP_ADD_FLOAT",
-        "BINARY_OP_ADD_INT",
-        "BINARY_OP_ADD_UNICODE",
-        "BINARY_OP_INPLACE_ADD_UNICODE",
-        "BINARY_OP_MULTIPLY_FLOAT",
-        "BINARY_OP_MULTIPLY_INT",
-        "BINARY_OP_SUBTRACT_FLOAT",
-        "BINARY_OP_SUBTRACT_INT",
-        "BINARY_SLICE",
-        "BINARY_SUBSCR",
-        "BINARY_SUBSCR_DICT",
-        "BINARY_SUBSCR_GETITEM",
-        "BINARY_SUBSCR_LIST_INT",
-        "BINARY_SUBSCR_TUPLE_INT",
-        "BUILD_CONST_KEY_MAP",
-        "BUILD_LIST",
-        "BUILD_MAP",
-        "BUILD_SET",
-        "BUILD_SLICE",
-        "BUILD_STRING",
-        "BUILD_TUPLE",
-        # "CACHE",
-        # "CALL",
-        # "CALL_BOUND_METHOD_EXACT_ARGS",
-        "CALL_BUILTIN_CLASS",
-        "CALL_BUILTIN_FAST_WITH_KEYWORDS",
-        # "CALL_FUNCTION_EX",
-        "CALL_INTRINSIC_1",
-        "CALL_INTRINSIC_2",
-        "CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS",
-        "CALL_NO_KW_BUILTIN_FAST",
-        "CALL_NO_KW_BUILTIN_O",
-        "CALL_NO_KW_ISINSTANCE",
-        "CALL_NO_KW_LEN",
-        "CALL_NO_KW_LIST_APPEND",
-        "CALL_NO_KW_METHOD_DESCRIPTOR_FAST",
-        "CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS",
-        "CALL_NO_KW_METHOD_DESCRIPTOR_O",
-        "CALL_NO_KW_STR_1",
-        "CALL_NO_KW_TUPLE_1",
-        "CALL_NO_KW_TYPE_1",
-        "CALL_PY_EXACT_ARGS",
-        "CALL_PY_WITH_DEFAULTS",
-        # "CHECK_EXC_MATCH",
-        # "CLEANUP_THROW",
-        "COMPARE_OP",
-        "COMPARE_OP_FLOAT",
-        "COMPARE_OP_INT",
-        "COMPARE_OP_STR",
-        "CONTAINS_OP",
-        "COPY",
-        "COPY_FREE_VARS",
-        "DELETE_ATTR",
-        # "DELETE_DEREF",
-        # "DELETE_FAST",
-        # "DELETE_GLOBAL",
-        # "DELETE_NAME",
-        "DELETE_SUBSCR",
-        # "DICT_MERGE",
-        "DICT_UPDATE",
-        # "END_ASYNC_FOR",
-        "END_FOR",
-        "END_SEND",
-        # "EXTENDED_ARG",
-        "FORMAT_VALUE",
-        # "FOR_ITER",
-        "FOR_ITER_GEN",
-        "FOR_ITER_LIST",
-        "FOR_ITER_RANGE",
-        "FOR_ITER_TUPLE",
-        "GET_AITER",
-        "GET_ANEXT",
-        # "GET_AWAITABLE",
-        "GET_ITER",
-        "GET_LEN",
-        "GET_YIELD_FROM_ITER",
-        # "IMPORT_FROM",
-        # "IMPORT_NAME",
-        # "INSTRUMENTED_CALL",
-        # "INSTRUMENTED_CALL_FUNCTION_EX",
-        # "INSTRUMENTED_END_FOR",
-        # "INSTRUMENTED_END_SEND",
-        # "INSTRUMENTED_FOR_ITER",
-        # "INSTRUMENTED_INSTRUCTION",
-        # "INSTRUMENTED_JUMP_BACKWARD",
-        # "INSTRUMENTED_JUMP_FORWARD",
-        # "INSTRUMENTED_LINE",
-        # "INSTRUMENTED_POP_JUMP_IF_FALSE",
-        # "INSTRUMENTED_POP_JUMP_IF_NONE",
-        # "INSTRUMENTED_POP_JUMP_IF_NOTE_NONE",
-        # "INSTRUMENTED_POP_JUMP_IF_TRUE",
-        # "INSTRUMENTED_RESUME",
-        # "INSTRUMENTED_RETURN_CONST",
-        # "INSTRUMENTED_RETURN_VALUE",
-        # "INSTRUMENTED_YIELD_VALUE",
-        # "INTERPRETER_EXIT",
-        "IS_OP",
-        # "JUMP_BACKWARD",  # XXX: Is this a problem?
-        # "JUMP_BACKWARD_INTO_TRACE",
-        # "JUMP_BACKWARD_NO_INTERRUPT",
-        "JUMP_BACKWARD_QUICK",
-        "JUMP_FORWARD",
-        # "KW_NAMES",
-        "LIST_APPEND",
-        "LIST_EXTEND",
-        "LOAD_ASSERTION_ERROR",
-        "LOAD_ATTR",
-        "LOAD_ATTR_CLASS",
-        "LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN",
-        "LOAD_ATTR_INSTANCE_VALUE",
-        "LOAD_ATTR_METHOD_LAZY_DICT",
-        "LOAD_ATTR_METHOD_NO_DICT",
-        "LOAD_ATTR_METHOD_WITH_VALUES",
-        "LOAD_ATTR_MODULE",
-        "LOAD_ATTR_PROPERTY",
-        "LOAD_ATTR_SLOT",
-        "LOAD_ATTR_WITH_HINT",
-        "LOAD_BUILD_CLASS",
-        # "LOAD_CLASSDEREF",
-        # "LOAD_CLOSURE",
-        "LOAD_CONST",
-        "LOAD_CONST__LOAD_FAST",
-        # "LOAD_DEREF",
-        "LOAD_FAST",
-        # "LOAD_FAST_CHECK",
-        "LOAD_FAST__LOAD_CONST",
-        "LOAD_FAST__LOAD_FAST",
-        # "LOAD_GLOBAL",
-        "LOAD_GLOBAL_BUILTIN",
-        "LOAD_GLOBAL_MODULE",
-        # "LOAD_NAME",
-        "MAKE_FUNCTION",
-        "MAP_ADD",
-        # "MATCH_CLASS",
-        # "MATCH_KEYS",
-        "MATCH_MAPPING",
-        "MATCH_SEQUENCE",
-        "NOP",
-        "POP_EXCEPT",
-        "POP_JUMP_IF_FALSE",
-        "POP_JUMP_IF_NONE",
-        "POP_JUMP_IF_NOT_NONE",
-        "POP_JUMP_IF_TRUE",
-        "POP_TOP",
-        "PUSH_EXC_INFO",
-        "PUSH_NULL",
-        # "RAISE_VARARGS",
-        # "RERAISE",
-        # "RESERVED",
-        "RESUME",
-        "RETURN_CONST",
-        "RETURN_GENERATOR",
-        "RETURN_VALUE",
-        # "SEND",
-        "SEND_GEN",
-        "SETUP_ANNOTATIONS",
-        "SET_ADD",
-        "SET_UPDATE",
-        "STORE_ATTR",
-        "STORE_ATTR_INSTANCE_VALUE",
-        "STORE_ATTR_SLOT",
-        # "STORE_ATTR_WITH_HINT",
-        "STORE_DEREF",
-        "STORE_FAST",
-        "STORE_FAST__LOAD_FAST",
-        "STORE_FAST__STORE_FAST",
-        "STORE_GLOBAL",
-        "STORE_NAME",
-        "STORE_SLICE",
-        "STORE_SUBSCR",
-        "STORE_SUBSCR_DICT",
-        "STORE_SUBSCR_LIST_INT",
-        "SWAP",
-        "UNARY_INVERT",
-        "UNARY_NEGATIVE",
-        "UNARY_NOT",
-        # "UNPACK_EX",
-        # "UNPACK_SEQUENCE",
-        "UNPACK_SEQUENCE_LIST",
-        "UNPACK_SEQUENCE_TUPLE",
-        "UNPACK_SEQUENCE_TWO_TUPLE",
-        "WITH_EXCEPT_START",
-        "YIELD_VALUE",
-    ]
+    _SKIP = frozenset(
+        {
+            "CACHE",
+            "CALL",
+            "CALL_BOUND_METHOD_EXACT_ARGS",
+            "CALL_FUNCTION_EX",
+            "CHECK_EG_MATCH",
+            "CHECK_EXC_MATCH",
+            "CLEANUP_THROW",
+            "DELETE_DEREF",
+            "DELETE_FAST",
+            "DELETE_GLOBAL",
+            "DELETE_NAME",
+            "DICT_MERGE",
+            "END_ASYNC_FOR",
+            "EXTENDED_ARG",
+            "FOR_ITER",
+            "GET_AWAITABLE",
+            "IMPORT_FROM",
+            "IMPORT_NAME",
+            "INSTRUMENTED_CALL",
+            "INSTRUMENTED_CALL_FUNCTION_EX",
+            "INSTRUMENTED_END_FOR",
+            "INSTRUMENTED_END_SEND",
+            "INSTRUMENTED_FOR_ITER",
+            "INSTRUMENTED_INSTRUCTION",
+            "INSTRUMENTED_JUMP_BACKWARD",
+            "INSTRUMENTED_JUMP_FORWARD",
+            "INSTRUMENTED_LINE",
+            "INSTRUMENTED_POP_JUMP_IF_FALSE",
+            "INSTRUMENTED_POP_JUMP_IF_NONE",
+            "INSTRUMENTED_POP_JUMP_IF_NOTE_NONE",
+            "INSTRUMENTED_POP_JUMP_IF_TRUE",
+            "INSTRUMENTED_RESUME",
+            "INSTRUMENTED_RETURN_CONST",
+            "INSTRUMENTED_RETURN_VALUE",
+            "INSTRUMENTED_YIELD_VALUE",
+            "INTERPRETER_EXIT",
+            "JUMP_BACKWARD",  # XXX: Is this a problem?
+            "JUMP_BACKWARD_INTO_TRACE",
+            "JUMP_BACKWARD_NO_INTERRUPT",
+            "KW_NAMES",
+            "LOAD_CLASSDEREF",
+            "LOAD_CLOSURE",
+            "LOAD_DEREF",
+            "LOAD_FAST_CHECK",
+            "LOAD_GLOBAL",
+            "LOAD_NAME",
+            "MAKE_CELL",
+            "MATCH_CLASS",
+            "MATCH_KEYS",
+            "RAISE_VARARGS",
+            "RERAISE",
+            "RESERVED",
+            "SEND",
+            "STORE_ATTR_WITH_HINT",
+            "UNPACK_EX",
+            "UNPACK_SEQUENCE",
+        }
+    )
 
     def __init__(self, *, verbose: bool = False) -> None:
         self._stencils_built = {}
@@ -451,9 +311,6 @@ class Engine:
         self._trampoline_built = None
         self._trampoline_loaded = None
         self._verbose = verbose
-        self._compiled_time = 0.0
-        self._compiling_time = 0.0
-        self._tracing_time = 0.0
 
     def _stderr(self, *args, **kwargs) -> None:
         if self._verbose:
@@ -469,8 +326,7 @@ class Engine:
 
     def _compile(self, opname, path) -> Stencil:
         self._stderr(f"Building stencil for {opname}.")
-        branches = int("JUMP_IF" in opname or "FOR_ITER" in opname or "SEND" in opname or "CALL" in opname or "RETURN" in opname or "YIELD" in opname)
-        defines = [f"-D_JUSTIN_CHECK={branches}", f"-D_JUSTIN_OPCODE={opname}"]
+        defines = [f"-D_JUSTIN_OPCODE={opname}"]
         with tempfile.NamedTemporaryFile(suffix=".o") as o, tempfile.NamedTemporaryFile(suffix=".ll") as ll:
             subprocess.run(
                 ["clang", *self._CPPFLAGS, *defines, *self._CFLAGS, "-emit-llvm", "-S", "-o", ll.name, path],
@@ -490,13 +346,13 @@ class Engine:
         for body, opname in re.findall(pattern, generated_cases):
             self._cases[opname] = body.replace(" " * 8, " " * 4)
         template = TOOLS_JUSTIN_TEMPLATE.read_text()
-        for opname in self._OPS:
+        for opname in sorted(self._cases.keys() - self._SKIP):
             body = template % self._cases[opname]
             with tempfile.NamedTemporaryFile("w", suffix=".c") as c:
                 c.write(body)
                 c.flush()
                 self._stencils_built[opname] = self._compile(opname, c.name)
-        self._trampoline_built = self._compile(("<trampoline>",), TOOLS_JUSTIN_TRAMPOLINE)
+        self._trampoline_built = self._compile("<trampoline>", TOOLS_JUSTIN_TRAMPOLINE)
 
     def dump(self) -> str:
         lines = []
