@@ -268,9 +268,12 @@ class TestTNavigator(VectorComparisonMixin, unittest.TestCase):
         self.assertAlmostEqual(self.nav.ycor(), -100)
 
     def test_teleport(self):
-        self.nav.teleport(20, -30)
+        self.nav.teleport(20, -30, fill_gap=True)
         self.assertAlmostEqual(self.nav.xcor(), 20)
         self.assertAlmostEqual(self.nav.ycor(), -30)
+        self.nav.teleport(-20, 30, fill_gap=False)
+        self.assertAlmostEqual(self.nav.xcor(), -20)
+        self.assertAlmostEqual(self.nav.ycor(), 30)
 
     def test_pos(self):
         self.assertEqual(self.nav.pos(), self.nav._position)
@@ -449,12 +452,13 @@ class TestTPen(unittest.TestCase):
 
         tpen = turtle.TPen()
 
-        tpen.penup()
-        tpen.teleport(100, 100)
-        self.assertTrue(not tpen.isdown())
-        tpen.pendown()
-        tpen.teleport(-100, -100)
-        self.assertTrue(tpen.isdown())
+        for fill_gap_value in [True, False]:
+            tpen.penup()
+            tpen.teleport(100, 100, fill_gap=fill_gap_value)
+            self.assertFalse(tpen.isdown())
+            tpen.pendown()
+            tpen.teleport(-100, -100, fill_gap=fill_gap_value)
+            self.assertTrue(tpen.isdown())
 
 
 if __name__ == '__main__':
