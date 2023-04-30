@@ -74,7 +74,7 @@ New built-in features:
 New standard library modules:
 
 * :pep:`680`: :mod:`tomllib` —
-  Support for parsing `TOML <https://toml.io>`_ in the Standard Library
+  Support for parsing `TOML <https://toml.io/>`_ in the Standard Library
 
 Interpreter improvements:
 
