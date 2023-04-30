@@ -4726,8 +4726,9 @@ class DeprecatedTests(BaseTestCase):
         overloads = get_overloads(h)
         self.assertEqual(len(overloads), 2)
         self.assertEqual(overloads[0].__deprecated__, "no more ints")
+        self.assertFalse(hasattr(overloads[1], "__deprecated__"))
 
-    def test_class(self):
+    def test_simple_class(self):
         @deprecated("A will go away soon")
         class A:
             pass
@@ -4737,6 +4738,7 @@ class DeprecatedTests(BaseTestCase):
         with self.assertRaises(TypeError), self.assertWarnsRegex(DeprecationWarning, "A will go away soon"):
             A(42)
 
+    def test_class_with_init(self):
         @deprecated("HasInit will go away soon")
         class HasInit:
             def __init__(self, x):
@@ -4746,6 +4748,7 @@ class DeprecatedTests(BaseTestCase):
             instance = HasInit(42)
         self.assertEqual(instance.x, 42)
 
+    def test_class_with_new(self):
         has_new_called = False
 
         @deprecated("HasNew will go away soon")
@@ -4762,6 +4765,8 @@ class DeprecatedTests(BaseTestCase):
             instance = HasNew(42)
         self.assertEqual(instance.x, 42)
         self.assertTrue(has_new_called)
+
+    def test_inherit_from_class_with_new(self):
         new_base_called = False
 
         class NewBase:
@@ -4781,6 +4786,35 @@ class DeprecatedTests(BaseTestCase):
             instance = HasInheritedNew(42)
         self.assertEqual(instance.x, 42)
         self.assertTrue(new_base_called)
+
+    def test_deprecated_base(self):
+        @deprecated("Base will go away soon")
+        class Base:
+            pass
+
+        class Child(Base):
+            pass
+
+        with self.assertWarnsRegex(DeprecationWarning, "Base will go away soon"):
+            Child()
+
+    def test_decorate_init(self):
+        class A:
+            @deprecated("cannot make any more As")
+            def __init__(self):
+                pass
+
+        with self.assertWarnsRegex(DeprecationWarning, "cannot make any more As"):
+            A()
+
+    def test_decorate_new(self):
+        class A:
+            @deprecated("cannot make any more As")
+            def __new__(cls):
+                return super().__new__(cls)
+
+        with self.assertWarnsRegex(DeprecationWarning, "cannot make any more As"):
+            A()
 
     def test_function(self):
         @deprecated("b will go away soon")
