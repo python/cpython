@@ -284,22 +284,29 @@ class MmapTests(unittest.TestCase):
             m[X()] # should not crash
 
         with self.assertRaises(ValueError):
-            m[X():5] # should not crash
-
-        with self.assertRaises(ValueError):
             m[X()] = 1
             m[X()] # should through ValueError
 
-        with self.assertRaises(ValueError):
-            m[X():5] = b'abcde'
-            m[X():5] # should through ValueError
-
-        m.close() # first CHECK_VALID will pick and raise ValueError
-        with self.assertRaises(ValueError):
-            m[0:5] # should not crash
-
-
     def test_unexpected_mmap_close_scenario_2(self):
+        # See gh-103987
+        with open(TESTFN, "wb+") as f:
+            data = b'aabaac\x00deef\x00\x00aa\x00'
+            n = len(data)
+            f.write(data)
+            f.flush()
+
+            class X:
+                def __index__(self):
+                    m.close()
+                    return 1
+
+            m = mmap.mmap(f.fileno(), n, access=mmap.ACCESS_READ)
+
+        self.assertEqual(m[1], 97)
+        with self.assertRaises(ValueError):
+            m[X():5] # should not crash
+
+    def test_unexpected_mmap_close_scenario_3(self):
 
         with open(TESTFN, "wb+") as f:
             data = b'aabaac\x00deef\x00\x00aa\x00'
@@ -313,6 +320,19 @@ class MmapTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             m["abc"] # first CHECK_VALID will pick and raise ValueError
 
+    def test_unexpected_mmap_close_scenario_4(self):
+
+        with open(TESTFN, "wb+") as f:
+            data = b'aabaac\x00deef\x00\x00aa\x00'
+            n = len(data)
+            f.write(data)
+            f.flush()
+
+            m = mmap.mmap(f.fileno(), n, access=mmap.ACCESS_READ)
+
+        m.close() # first CHECK_VALID will pick and raise ValueError
+        with self.assertRaises(ValueError):
+            m[0:5] # should not crash
 
 
     def test_tougher_find(self):
