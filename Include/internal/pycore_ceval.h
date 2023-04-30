@@ -162,6 +162,7 @@ extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 extern int _Py_HandlePending(PyThreadState *tstate);
 
 void _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
+_PyInterpreterFrame *_PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func, PyObject *locals, PyObject* const* args, size_t argcount, PyObject *kwnames);
 
 
 

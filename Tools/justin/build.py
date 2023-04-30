@@ -246,8 +246,6 @@ class Engine:
     _OFFSETOF_CO_CODE_ADAPTIVE = 192
     _SKIP = frozenset(
         {
-            "CACHE",
-            "CALL",
             "CALL_BOUND_METHOD_EXACT_ARGS",
             "CALL_FUNCTION_EX",
             "CHECK_EG_MATCH",
@@ -259,33 +257,33 @@ class Engine:
             "DELETE_NAME",
             "DICT_MERGE",
             "END_ASYNC_FOR",
-            "EXTENDED_ARG",
+            "EXTENDED_ARG",  # XXX
             "FOR_ITER",
             "GET_AWAITABLE",
             "IMPORT_FROM",
             "IMPORT_NAME",
-            "INSTRUMENTED_CALL",
-            "INSTRUMENTED_CALL_FUNCTION_EX",
-            "INSTRUMENTED_END_FOR",
-            "INSTRUMENTED_END_SEND",
-            "INSTRUMENTED_FOR_ITER",
-            "INSTRUMENTED_INSTRUCTION",
-            "INSTRUMENTED_JUMP_BACKWARD",
-            "INSTRUMENTED_JUMP_FORWARD",
-            "INSTRUMENTED_LINE",
-            "INSTRUMENTED_POP_JUMP_IF_FALSE",
-            "INSTRUMENTED_POP_JUMP_IF_NONE",
-            "INSTRUMENTED_POP_JUMP_IF_NOTE_NONE",
-            "INSTRUMENTED_POP_JUMP_IF_TRUE",
-            "INSTRUMENTED_RESUME",
-            "INSTRUMENTED_RETURN_CONST",
-            "INSTRUMENTED_RETURN_VALUE",
-            "INSTRUMENTED_YIELD_VALUE",
-            "INTERPRETER_EXIT",
+            "INSTRUMENTED_CALL", # XXX
+            "INSTRUMENTED_CALL_FUNCTION_EX", # XXX
+            "INSTRUMENTED_END_FOR", # XXX
+            "INSTRUMENTED_END_SEND", # XXX
+            "INSTRUMENTED_FOR_ITER", # XXX
+            "INSTRUMENTED_INSTRUCTION", # XXX
+            "INSTRUMENTED_JUMP_BACKWARD", # XXX
+            "INSTRUMENTED_JUMP_FORWARD", # XXX
+            "INSTRUMENTED_LINE", # XXX
+            "INSTRUMENTED_POP_JUMP_IF_FALSE", # XXX
+            "INSTRUMENTED_POP_JUMP_IF_NONE", # XXX
+            "INSTRUMENTED_POP_JUMP_IF_NOT_NONE", # XXX
+            "INSTRUMENTED_POP_JUMP_IF_TRUE", # XXX
+            "INSTRUMENTED_RESUME", # XXX
+            "INSTRUMENTED_RETURN_CONST", # XXX
+            "INSTRUMENTED_RETURN_VALUE", # XXX
+            "INSTRUMENTED_YIELD_VALUE", # XXX
+            "INTERPRETER_EXIT", # XXX
             "JUMP_BACKWARD",  # XXX: Is this a problem?
             "JUMP_BACKWARD_INTO_TRACE",
             "JUMP_BACKWARD_NO_INTERRUPT",
-            "KW_NAMES",
+            "KW_NAMES",  # XXX
             "LOAD_CLASSDEREF",
             "LOAD_CLOSURE",
             "LOAD_DEREF",
@@ -297,7 +295,6 @@ class Engine:
             "MATCH_KEYS",
             "RAISE_VARARGS",
             "RERAISE",
-            "RESERVED",
             "SEND",
             "STORE_ATTR_WITH_HINT",
             "UNPACK_EX",
