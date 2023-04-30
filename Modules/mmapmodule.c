@@ -954,6 +954,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        CHECK_VALID(NULL);
         slicelen = PySlice_AdjustIndices(self->size, &start, &stop, step);
 
         if (slicelen <= 0)
@@ -969,6 +970,8 @@ mmap_subscript(mmap_object *self, PyObject *item)
 
             if (result_buf == NULL)
                 return PyErr_NoMemory();
+            CHECK_VALID(NULL);
+
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++) {
                 result_buf[i] = self->data[cur];
