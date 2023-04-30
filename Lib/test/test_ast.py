@@ -802,6 +802,18 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse(code, feature_version=(3, 10))
 
+    def test_type_params_feature_version(self):
+        samples = [
+            "type X = int",
+            "class X[T]: pass",
+            "def f[T](): pass",
+        ]
+        for sample in samples:
+            with self.subTest(sample):
+                ast.parse(sample)
+                with self.assertRaises(SyntaxError):
+                    ast.parse(sample, feature_version=(3, 11))
+
     def test_invalid_major_feature_version(self):
         with self.assertRaises(ValueError):
             ast.parse('pass', feature_version=(2, 7))

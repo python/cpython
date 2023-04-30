@@ -640,7 +640,8 @@ type_alias[stmt_ty]:
 # Type parameter declaration
 # --------------------------
 
-type_params[asdl_typeparam_seq*]: '[' t=type_param_seq  ']' { t }
+type_params[asdl_typeparam_seq*]: '[' t=type_param_seq  ']' {
+        CHECK_VERSION(asdl_typeparam_seq *, 12, "Type parameter lists are", t) }
 
 type_param_seq[asdl_typeparam_seq*]: a[asdl_typeparam_seq*]=','.type_param+ [','] { a }
 

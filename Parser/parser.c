@@ -10684,7 +10684,7 @@ type_params_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ type_params[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'[' type_param_seq ']'"));
-            _res = t;
+            _res = CHECK_VERSION ( asdl_typeparam_seq* , 12 , "Type parameter lists are" , t );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
