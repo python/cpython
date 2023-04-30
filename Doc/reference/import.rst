@@ -1077,4 +1077,5 @@ methods to finders and loaders.
 .. [#fnpic] In legacy code, it is possible to find instances of
    :class:`imp.NullImporter` in the :data:`sys.path_importer_cache`.  It
    is recommended that code be changed to use ``None`` instead.  See
-   :ref:`portingpythoncode` for more details.
+   :ref:`portingpythoncode` for more details.  Note that the ``imp`` module
+   was removed in Python 3.12.

@@ -148,7 +148,7 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
                     PRIu64 "\n", i, j, val);
             }
         }
-        for(int j = 0; j < 256; j++) {
+        for (int j = 0; j < 256; j++) {
             if (stats[i].pair_count[j]) {
                 fprintf(out, "opcode[%d].pair_count[%d] : %" PRIu64 "\n",
                         i, j, stats[i].pair_count[j]);
