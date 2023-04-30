@@ -1,1 +1,2 @@
-improve handling and reporting of unsigned win32 error codes
+Improve handling and reporting of unsigned win32 error codes.
+Patch by Adam Meily.
