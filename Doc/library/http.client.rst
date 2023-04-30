@@ -299,12 +299,12 @@ HTTPConnection Objects
       a ``Host`` header must be provided to conform with
       :rfc:`2616#section-5.1.2`.
 
-      For example, to perform a ``GET`` request to ``https://xkcd.com/353/``::
+      For example, to perform a ``GET`` request to ``https://docs.python.org/3/``::
 
          >>> import http.client
-         >>> host = "xkcd.com"
+         >>> host = "docs.python.org"
          >>> conn = http.client.HTTPSConnection(host)
-         >>> conn.request("GET", "/353/", headers={"Host": host})
+         >>> conn.request("GET", "/3/", headers={"Host": host})
          >>> response = conn.getresponse()
          >>> print(response.status, response.reason)
          200 OK
