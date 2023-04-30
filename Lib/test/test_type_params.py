@@ -452,8 +452,18 @@ class TypeParamsTypeVarTest(unittest.TestCase):
 
 class TypeParamsTypeVarTupleTest(unittest.TestCase):
     def test_typevartuple_01(self):
-        code = """def func1[*A: str](): return (A, B, C)"""
-        check_syntax_error(self, code, r"expected '\('")
+        code = """def func1[*A: str](): pass"""
+        check_syntax_error(self, code, "cannot use bound with TypeVarTuple")
+        code = """def func1[*A: (int, str)](): pass"""
+        check_syntax_error(self, code, "cannot use constraints with TypeVarTuple")
+        code = """class X[*A: str]: pass"""
+        check_syntax_error(self, code, "cannot use bound with TypeVarTuple")
+        code = """class X[*A: (int, str)]: pass"""
+        check_syntax_error(self, code, "cannot use constraints with TypeVarTuple")
+        code = """type X[*A: str] = int"""
+        check_syntax_error(self, code, "cannot use bound with TypeVarTuple")
+        code = """type X[*A: (int, str)] = int"""
+        check_syntax_error(self, code, "cannot use constraints with TypeVarTuple")
 
     def test_typevartuple_02(self):
         def func1[*A]():
@@ -465,8 +475,18 @@ class TypeParamsTypeVarTupleTest(unittest.TestCase):
 
 class TypeParamsTypeVarParamSpec(unittest.TestCase):
     def test_paramspec_01(self):
-        code = """def func1[**A: str](): return (A, B, C)"""
-        check_syntax_error(self, code, r"expected '\('")
+        code = """def func1[**A: str](): pass"""
+        check_syntax_error(self, code, "cannot use bound with ParamSpec")
+        code = """def func1[**A: (int, str)](): pass"""
+        check_syntax_error(self, code, "cannot use constraints with ParamSpec")
+        code = """class X[**A: str]: pass"""
+        check_syntax_error(self, code, "cannot use bound with ParamSpec")
+        code = """class X[**A: (int, str)]: pass"""
+        check_syntax_error(self, code, "cannot use constraints with ParamSpec")
+        code = """type X[**A: str] = int"""
+        check_syntax_error(self, code, "cannot use bound with ParamSpec")
+        code = """type X[**A: (int, str)] = int"""
+        check_syntax_error(self, code, "cannot use constraints with ParamSpec")
 
     def test_paramspec_02(self):
         def func1[**A]():

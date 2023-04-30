@@ -10750,7 +10750,12 @@ type_param_seq_rule(Parser *p)
     return _res;
 }
 
-// type_param: NAME type_param_bound? | '*' NAME | '**' NAME
+// type_param:
+//     | NAME type_param_bound?
+//     | '*' NAME ":" expression
+//     | '*' NAME
+//     | '**' NAME ":" expression
+//     | '**' NAME
 static typeparam_ty
 type_param_rule(Parser *p)
 {
@@ -10813,6 +10818,39 @@ type_param_rule(Parser *p)
         D(fprintf(stderr, "%*c%s type_param[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME type_param_bound?"));
     }
+    { // '*' NAME ":" expression
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> type_param[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' NAME \":\" expression"));
+        Token * _literal;
+        expr_ty a;
+        Token * colon;
+        expr_ty e;
+        if (
+            (_literal = _PyPegen_expect_token(p, 16))  // token='*'
+            &&
+            (a = _PyPegen_name_token(p))  // NAME
+            &&
+            (colon = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (e = expression_rule(p))  // expression
+        )
+        {
+            D(fprintf(stderr, "%*c+ type_param[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' NAME \":\" expression"));
+            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( colon , e -> kind == Tuple_kind ? "cannot use constraints with TypeVarTuple" : "cannot use bound with TypeVarTuple" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s type_param[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*' NAME \":\" expression"));
+    }
     { // '*' NAME
         if (p->error_indicator) {
             p->level--;
@@ -10848,6 +10886,39 @@ type_param_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s type_param[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*' NAME"));
+    }
+    { // '**' NAME ":" expression
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> type_param[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'**' NAME \":\" expression"));
+        Token * _literal;
+        expr_ty a;
+        Token * colon;
+        expr_ty e;
+        if (
+            (_literal = _PyPegen_expect_token(p, 35))  // token='**'
+            &&
+            (a = _PyPegen_name_token(p))  // NAME
+            &&
+            (colon = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (e = expression_rule(p))  // expression
+        )
+        {
+            D(fprintf(stderr, "%*c+ type_param[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' NAME \":\" expression"));
+            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( colon , e -> kind == Tuple_kind ? "cannot use constraints with ParamSpec" : "cannot use bound with ParamSpec" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s type_param[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'**' NAME \":\" expression"));
     }
     { // '**' NAME
         if (p->error_indicator) {

@@ -646,7 +646,17 @@ type_param_seq[asdl_typeparam_seq*]: a[asdl_typeparam_seq*]=','.type_param+ [','
 
 type_param[typeparam_ty] (memo):
     | a=NAME b=[type_param_bound] { _PyAST_TypeVar(a->v.Name.id, b, EXTRA) }
+    | '*' a=NAME colon=":" e=expression {
+            RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
+                ? "cannot use constraints with TypeVarTuple"
+                : "cannot use bound with TypeVarTuple")
+        }
     | '*' a=NAME { _PyAST_TypeVarTuple(a->v.Name.id, EXTRA) }
+    | '**' a=NAME colon=":" e=expression {
+            RAISE_SYNTAX_ERROR_STARTING_FROM(colon, e->kind == Tuple_kind
+                ? "cannot use constraints with ParamSpec"
+                : "cannot use bound with ParamSpec")
+        }
     | '**' a=NAME { _PyAST_ParamSpec(a->v.Name.id, EXTRA) }
 
 type_param_bound[expr_ty]: ":" e=expression { e }
