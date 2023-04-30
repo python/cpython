@@ -810,7 +810,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertInBytecode(f, 'LOAD_FAST', "a73")
 
     def test_setting_lineno_no_undefined(self):
-        code = textwrap.dedent(f"""\
+        code = textwrap.dedent("""\
             def f():
                 x = y = 2
                 if not x:
@@ -842,7 +842,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertEqual(f.__code__.co_code, co_code)
 
     def test_setting_lineno_one_undefined(self):
-        code = textwrap.dedent(f"""\
+        code = textwrap.dedent("""\
             def f():
                 x = y = 2
                 if not x:
@@ -876,7 +876,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertEqual(f.__code__.co_code, co_code)
 
     def test_setting_lineno_two_undefined(self):
-        code = textwrap.dedent(f"""\
+        code = textwrap.dedent("""\
             def f():
                 x = y = 2
                 if not x:

@@ -154,7 +154,7 @@ class _ScriptTarget(str):
 
     @property
     def code(self):
-        with io.open(self) as fp:
+        with io.open_code(self) as fp:
             return f"exec(compile({fp.read()!r}, {self!r}, 'exec'))"
 
 

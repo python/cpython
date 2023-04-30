@@ -76,6 +76,13 @@ venvdir = os.getenv('VENVDIR')
 if venvdir is not None:
     exclude_patterns.append(venvdir + '/*')
 
+nitpick_ignore = [
+    # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
+    # be resolved, as the method is currently undocumented. For context, see
+    # https://github.com/python/cpython/pull/103289.
+    ('py:meth', '_SubParsersAction.add_parser'),
+]
+
 # Disable Docutils smartquotes for several translations
 smartquotes_excludes = {
     'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
@@ -107,12 +114,13 @@ if any('htmlhelp' in arg for arg in sys.argv):
 # Short title used e.g. for <title> HTML tags.
 html_short_title = '%s Documentation' % release
 
-# Deployment preview information, from Netlify
-# (See netlify.toml and https://docs.netlify.com/configure-builds/environment-variables/#git-metadata)
+# Deployment preview information
+# (See .readthedocs.yml and https://docs.readthedocs.io/en/stable/reference/environment-variables.html)
+repository_url = os.getenv("READTHEDOCS_GIT_CLONE_URL")
 html_context = {
-    "is_deployment_preview": os.getenv("IS_DEPLOYMENT_PREVIEW"),
-    "repository_url": os.getenv("REPOSITORY_URL"),
-    "pr_id": os.getenv("REVIEW_ID")
+    "is_deployment_preview": os.getenv("READTHEDOCS_VERSION_TYPE") == "external",
+    "repository_url": repository_url.removesuffix(".git") if repository_url else None,
+    "pr_id": os.getenv("READTHEDOCS_VERSION")
 }
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
@@ -262,6 +270,24 @@ linkcheck_allowed_redirects = {
     # :source:`something` linking files in the repository
     r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*'
 }
+
+linkcheck_anchors_ignore = [
+    # ignore anchors that start with a '/', e.g. Wikipedia media files:
+    # https://en.wikipedia.org/wiki/Walrus#/media/File:Pacific_Walrus_-_Bull_(8247646168).jpg
+    r'\/.*',
+]
+
+linkcheck_ignore = [
+    # The crawler gets "Anchor not found"
+    r'https://developer.apple.com/documentation/.+?#.*',
+    r'https://devguide.python.org.+?/#.*',
+    r'https://github.com.+?#.*',
+    # Robot crawlers not allowed: "403 Client Error: Forbidden"
+    r'https://support.enthought.com/hc/.*',
+    # SSLError CertificateError, even though it is valid
+    r'https://unix.org/version2/whatsnew/lp64_wp.html',
+]
+
 
 # Options for extensions
 # ----------------------

@@ -378,6 +378,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(end_lineno)
         STRUCT_FOR_ID(end_offset)
         STRUCT_FOR_ID(endpos)
+        STRUCT_FOR_ID(entrypoint)
         STRUCT_FOR_ID(env)
         STRUCT_FOR_ID(errors)
         STRUCT_FOR_ID(event)

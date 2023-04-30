@@ -98,6 +98,9 @@ annotations. These include:
     *Introducing* :data:`LiteralString`
 * :pep:`681`: Data Class Transforms
     *Introducing* the :func:`@dataclass_transform<dataclass_transform>` decorator
+* :pep:`692`: Using ``TypedDict`` for more precise ``**kwargs`` typing
+    *Introducing* a new way of typing ``**kwargs`` with :data:`Unpack` and
+    :data:`TypedDict`
 * :pep:`698`: Adding an override decorator to typing
     *Introducing* the :func:`@override<override>` decorator
 
@@ -1417,8 +1420,10 @@ These are not used in annotations. They are building blocks for creating generic
       tup: tuple[Unpack[Ts]]
 
    In fact, ``Unpack`` can be used interchangeably with ``*`` in the context
-   of types. You might see ``Unpack`` being used explicitly in older versions
-   of Python, where ``*`` couldn't be used in certain places::
+   of :class:`typing.TypeVarTuple <TypeVarTuple>` and
+   :class:`builtins.tuple <tuple>` types. You might see ``Unpack`` being used
+   explicitly in older versions of Python, where ``*`` couldn't be used in
+   certain places::
 
       # In older versions of Python, TypeVarTuple and Unpack
       # are located in the `typing_extensions` backports package.
@@ -1427,6 +1432,21 @@ These are not used in annotations. They are building blocks for creating generic
       Ts = TypeVarTuple('Ts')
       tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
       tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
+
+   ``Unpack`` can also be used along with :class:`typing.TypedDict` for typing
+   ``**kwargs`` in a function signature::
+
+      from typing import TypedDict, Unpack
+
+      class Movie(TypedDict):
+         name: str
+         year: int
+
+      # This function expects two keyword arguments - `name` of type `str`
+      # and `year` of type `int`.
+      def foo(**kwargs: Unpack[Movie]): ...
+
+   See :pep:`692` for more details on using ``Unpack`` for ``**kwargs`` typing.
 
    .. versionadded:: 3.11
 
