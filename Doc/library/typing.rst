@@ -2902,8 +2902,8 @@ Introspection helpers
    Get the unsubscripted version of a type: for a typing object of the form
    ``X[Y, Z, ...]`` return ``X``. If ``X`` is a generic alias for a builtin or
    :mod:`collections` class, it gets normalized to the original class.
-   If ``X`` is an instance of :class:``ParamSpecArgs`` or :class:``ParamSpecKwargs``,
-   return the underlying :class:``ParamSpec``.
+   If ``X`` is an instance of :class:`ParamSpecArgs` or :class:`ParamSpecKwargs`,
+   return the underlying :class:`ParamSpec`.
    Return ``None`` for unsupported types.
    Examples::
 
