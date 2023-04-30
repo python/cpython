@@ -11,7 +11,7 @@ from unittest import TestCase, mock
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from test.support import os_helper
-from test.support.script_helper import run_test_script, make_script
+from test.support.script_helper import run_test_script, make_script, run_python_until_end
 import os
 import token
 
@@ -1479,7 +1479,8 @@ class TestTokenize(TestCase):
             filename = os.path.join(temp_dir, "script.py")
             with open(filename, 'wb') as file:
                 file.write(script)
-            run_test_script(filename)
+            rs, _ = run_python_until_end(filename)
+            self.assertIn(b"SyntaxError", rs.err)
 
 
 class UntokenizeTest(TestCase):
