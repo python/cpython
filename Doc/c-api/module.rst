@@ -123,6 +123,12 @@ Module Objects
       unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
 
 
+.. c:function:: int PyModule_Callable(PyObject *module)
+
+   Return true if *module* is a module object, and has a
+   :attr:`~object.__call__` property that is also callable.
+
+
 .. _initializing-modules:
 
 Initializing C modules

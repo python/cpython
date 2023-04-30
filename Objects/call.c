@@ -181,13 +181,6 @@ _PyObject_MakeTpCall(PyThreadState *tstate, PyObject *callable,
      * temporary dictionary for keyword arguments (if any) */
     ternaryfunc call = Py_TYPE(callable)->tp_call;
     if (call == NULL) {
-        if (Py_TYPE(callable) == &PyModule_Type) {
-            PyObject* mod_call = PyObject_GetAttr(callable, &_Py_ID(__call__));
-            if (mod_call != NULL) {
-                return _PyObject_MakeTpCall(tstate, mod_call, args, nargs, keywords);
-            }
-        }
-
         _PyErr_Format(tstate, PyExc_TypeError,
                       "'%.200s' object is not callable",
                       Py_TYPE(callable)->tp_name);

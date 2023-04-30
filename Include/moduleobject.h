@@ -34,6 +34,7 @@ PyAPI_FUNC(int) _PyModuleSpec_IsInitializing(PyObject *);
 #endif
 PyAPI_FUNC(PyModuleDef*) PyModule_GetDef(PyObject*);
 PyAPI_FUNC(void*) PyModule_GetState(PyObject*);
+PyAPI_FUNC(int) PyModule_Callable(PyObject *);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 /* New in 3.5 */

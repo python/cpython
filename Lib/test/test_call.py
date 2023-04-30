@@ -950,7 +950,8 @@ class TestPEP590(unittest.TestCase):
         import sys
 
         self.assertFalse(callable(sys))
-        self.assertRaisesRegex(TypeError, "'module' object is not callable", sys)
+        self.assertFalse(hasattr(sys, "__call__"))
+        self.assertRaisesRegex(TypeError, "Module 'sys' is not callable", sys)
 
     def test_sys_add_callable(self):
         try:
@@ -959,6 +960,9 @@ class TestPEP590(unittest.TestCase):
 
             sys.__call__ = exponent
 
+            self.assertTrue(callable(sys))
+            self.assertTrue(hasattr(sys, "__call__"))
+
             self.assertEqual(sys(), 42)
             self.assertEqual(sys(3), 3)
             self.assertEqual(sys(power=2), 1764)
@@ -966,6 +970,23 @@ class TestPEP590(unittest.TestCase):
         finally:
             if hasattr(sys, "__call__"):
                 del sys.__call__
+
+    def test_callable_modules(self):
+        from . import callable_module_a, callable_module_b, callable_module_c
+
+        for name, module in (
+            ("via def __call__", callable_module_a),
+            ("via __call__ = func", callable_module_b),
+            ("via __getattr__", callable_module_c),
+        ):
+            with self.subTest(name):
+                self.assertTrue(callable(module))
+                self.assertTrue(hasattr(module, "__call__"))
+
+                self.assertEqual(module(), 42)
+                self.assertEqual(module(3), 3)
+                self.assertEqual(module(power=2), 1764)
+
 
 if __name__ == "__main__":
     unittest.main()

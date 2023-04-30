@@ -743,7 +743,16 @@ module_getattro(PyModuleObject *m, PyObject *name)
 {
     PyObject *attr, *mod_name, *getattr;
     attr = PyObject_GenericGetAttr((PyObject *)m, name);
-    if (attr || !PyErr_ExceptionMatches(PyExc_AttributeError)) {
+    if (attr) {
+        // If the module does not explicitly set __call__, do not return
+        // the generic method-wrapper for tp_call in its place
+        if (!(Py_TYPE(attr) == &_PyMethodWrapper_Type &&
+              _PyUnicode_EqualToASCIIString(name, "__call__")))
+        {
+            return attr;
+        }
+    }
+    else if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
         return attr;
     }
     PyErr_Clear();
@@ -928,6 +937,38 @@ exit:
     return ret;
 }
 
+int
+PyModule_Callable(PyObject *mod)
+{
+    if (PyModule_CheckExact(mod)) {
+        PyObject *mod_call = PyObject_GetAttr(mod, &_Py_ID(__call__));
+        if (mod_call) {
+            return PyCallable_Check(mod_call);
+        }
+        else if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+            return 0;
+        }
+    }
+
+    return 0;
+}
+
+static PyObject *
+module_call(PyModuleObject *mod, PyObject *args, PyObject *kwargs)
+{
+    PyObject *callable = PyObject_GetAttr((PyObject *)mod, &_Py_ID(__call__));
+    if (callable == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Format(PyExc_TypeError,
+                        "Module '%.200s' is not callable",
+                        PyModule_GetName((PyObject *)mod));
+        }
+        return NULL;
+    }
+
+    return PyObject_Call(callable, args, kwargs);
+}
 
 static PyGetSetDef module_getsets[] = {
     {"__annotations__", (getter)module_get_annotations, (setter)module_set_annotations},
@@ -949,7 +990,7 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
-    0,                                          /* tp_call */
+    (ternaryfunc)module_call,                   /* tp_call */
     0,                                          /* tp_str */
     (getattrofunc)module_getattro,              /* tp_getattro */
     PyObject_GenericSetAttr,                    /* tp_setattro */

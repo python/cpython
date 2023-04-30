@@ -1668,13 +1668,10 @@ PyCallable_Check(PyObject *x)
 {
     if (x == NULL)
         return 0;
-    if (Py_TYPE(x)->tp_call != NULL)
-        return 1;
-    if (Py_TYPE(x) == &PyModule_Type) {
-        PyObject* call = PyObject_GetAttr(x, &_Py_ID(__call__));
-        PyErr_Clear();
-        return PyCallable_Check(call);
+    if (PyModule_CheckExact(x)) {
+        return PyModule_Callable(x);
     }
+    return Py_TYPE(x)->tp_call != NULL;
 }
 
 
