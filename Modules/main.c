@@ -293,12 +293,12 @@ PyObject* _utf_8_bytes_dedent(PyObject *bytes){
     char *new_start_loc;
     Py_ssize_t new_line_len;
 
-    // Step 2: Remove N leading whitespace chars from each line We do this by
-    // creating a new string and copying over each line one at a time and not
-    // copying over the leading whitespace
+    // Step 2: Remove N leading whitespace chars from each line by copying data
+    // (except leading spaces) from the input buffer to the output buffer one
+    // line at a time.
 
     char *curr_dst = new_data;
-    while (curr_line_ptr != end_ptr) {
+    while (curr_line_ptr < end_ptr) {
         // Find the end of the current line.
         next_line_ptr = strstr(curr_line_ptr, "\n");
         if (next_line_ptr == NULL) {
