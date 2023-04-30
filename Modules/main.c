@@ -228,57 +228,134 @@ pymain_import_readline(const PyConfig *config)
     }
 }
 
+#ifdef MS_WINDOWS
+#  define WCSTOK wcstok_s
+#else
+#  define WCSTOK wcstok
+#endif
 
-/*_command_dedent(wchar_t *command)                                            */
-/*{                                                                            */
-/*    // NEW CODE:                                                             */
-/*    // Remove common leading whitespace from the string                      */
-/*    // Handle dedenting the command                                          */
-/*    //                                                                       */
-/*    int cmdlen = wcslen(command);                                            */
-/*    fprintf(stderr, "COMMAND: %ls\n", command);                              */
-/*    fprintf(stderr, "cmdlen: %d\n", cmdlen);                                 */
+//#define DEBUG_DEDENT
 
-/*    int num_newlines = 0;                                                    */
-/*    int num_spaces = 0;                                                      */
-/*    for (int i = 0; i < cmdlen; i++)                                         */
-/*    {                                                                        */
-/*        if (wcsncmp(command + i, L"\n", 1) == 0){                            */
-/*            num_newlines++;                                                  */
-/*        }                                                                    */
-/*    }                                                                        */
-/*    int* line_endloc = (int*) malloc(sizeof(int) * num_newlines + 1);        */
-/*    int* line_lens = (int*) malloc(sizeof(int) * num_newlines + 1);          */
-/*    int* line_nleadingspaces = (int*) malloc(sizeof(int) * num_newlines + 1);*/
+/* Strip common leading whitespace from an input command
+ * Sort of works?
+ * */
+wchar_t* _wcs_dedent(wchar_t *command)
+{
+    // Security problem, what is the right way to do this?
+    size_t nchars = wcslen(command);
 
-/*    int curr_line = 0;                                                       */
-/*    int curr_line = 0;                                                       */
-/*    for (int i = 0; i < cmdlen; i++)                                         */
-/*    {                                                                        */
-/*        if (wcsncmp(command + i, L"\n", 1) == 0){                            */
-/*            num_newlines++;                                                  */
-/*        }                                                                    */
-/*    }                                                                        */
+#ifdef DEBUG_DEDENT
+    fprintf(stderr, "\nSTART WCS_DEDENT\n");
+    fprintf(stderr, "command: '%ls'\n", command);
+    fprintf(stderr, "nchars: %d\n", nchars);
+#endif
 
-/*    for (int i = 0; i < cmdlen; i++)                                         */
-/*    {                                                                        */
-/*        if (wcsncmp(command + i, L"\n", 1) == 0){                            */
-/*            num_newlines++;                                                  */
-/*        }                                                                    */
-/*        if (wcsncmp(command + i, L" ", 1) == 0){                             */
-/*            num_spaces++;                                                    */
-/*        }                                                                    */
-/*        fprintf(stderr, "command[%d] = '%lc'\n", i, command[i]);             */
-/*    }                                                                        */
-/*    fprintf(stderr, "num_newlines: %d\n", num_newlines);                     */
-/*    fprintf(stderr, "num_spaces: %d\n", num_spaces);                         */
+    wchar_t *command_copy = (wchar_t *)PyMem_Malloc(nchars * sizeof(wchar_t));
+    // wcscpy has security problems, what is the workaround?
+    wcscpy(command_copy, command);
+    // fprintf(stderr, "command_copy: '%ls'\n", command_copy);
 
-/*}                                                                            */
+    size_t num_common_leading_spaces = nchars + 1;
+
+    // I wcstok has a problem because ignores multiple instances of the
+    // delimiter which may make programs behave differently if that newline
+    // belongs to a multiline string. However, it is ok if we just want to do a
+    // first pass over the data to find the common indentation on non-empty
+    // lines.
+    wchar_t *buffer;
+    wchar_t* line = WCSTOK(command_copy, L"\n", &buffer);
+    while (line) {
+
+        // Move the pointer up to the first non-space character
+        wchar_t *first_nonspace = line;
+        while (wcsncmp(first_nonspace, L" ", 1) == 0){
+            first_nonspace++;
+        }
+
+        // Only check lines that contain non-whitespace characters
+        if (wcsncmp(first_nonspace, L"\0", 1)) {
+
+            size_t num_leading_spaces = first_nonspace - line;
+            if (num_leading_spaces < num_common_leading_spaces) {
+                num_common_leading_spaces = num_leading_spaces;
+            }
+#ifdef DEBUG_DEDENT
+         fprintf(stderr, "==========\n");
+         fprintf(stderr, "line: '%ls'\n", line);
+         fprintf(stderr, "first_nonspace: '%ls'\n", first_nonspace);
+         fprintf(stderr, "num_common_leading_spaces: '%d'\n", num_common_leading_spaces);
+         fprintf(stderr, "num_leading_spaces: '%d'\n", num_leading_spaces);
+#endif
+        }
+        line = WCSTOK(NULL, L"\n", &buffer);
+    }
+    PyMem_Free(command_copy);
+
+    wchar_t *end_ptr = command + nchars;
+    wchar_t *curr_line_ptr = command;
+    wchar_t *next_line_ptr;
+    wchar_t *new_start_loc;
+    size_t new_line_len;
+
+    // What is the correct way to ensure this is null terminated
+    wchar_t *new_command = (wchar_t *)PyMem_Malloc((nchars + 1) * sizeof(wchar_t));
+    wmemset(new_command, NULL, nchars + 1);
+    wchar_t *curr_dst = new_command;
+
+    while (curr_line_ptr != end_ptr) {
+        // Find the end of the current line.
+        next_line_ptr = wcsstr(curr_line_ptr, L"\n");
+        if (next_line_ptr == NULL) {
+            next_line_ptr = end_ptr;
+        }
+        else {
+            next_line_ptr++;
+        }
+
+        size_t line_len = next_line_ptr - curr_line_ptr;
+
+        if (line_len > num_common_leading_spaces){
+            new_start_loc = curr_line_ptr + num_common_leading_spaces;
+            new_line_len = line_len - num_common_leading_spaces;
+        }
+        else {
+            new_start_loc = curr_line_ptr;
+            new_line_len = line_len;
+        }
+
+        int offset = curr_line_ptr - command;
+
+#ifdef DEBUG_DEDENT
+        fprintf(stderr, "line_len: '%d'\n", line_len);
+        fprintf(stderr, "offset: '%d'\n", offset);
+#endif
+
+        // Copy the part of the line we want to keep to the new location
+        wcsncpy(curr_dst, new_start_loc, new_line_len);
+        curr_dst += new_line_len;
+
+        curr_line_ptr = next_line_ptr;
+    }
+
+    // FIXME: I'm sure this is not the memory safe way to do this, but I dont
+    // know what is.
+    command = new_command;
+
+#ifdef DEBUG_DEDENT
+    fprintf(stderr, "new_command: '%ls'\n", new_command);
+    fprintf(stderr, "\nEND WCS_DEDENT\n");
+#endif
+    return command;
+
+}
 
 
 /* Strip common leading whitespace from an input command */
 PyObject* _unicode_dedent(PyObject *unicode)
 {
+    /*fprintf(stderr, "\nSTART unicode dedent\n");      */
+    /*PyObject_Print(PyObject_Repr(unicode), stderr, 0);*/
+    /*fprintf(stderr, "\n");                            */
 
     PyObject* space = PyUnicode_FromWideChar(L" ", -1);
     PyObject* emptystr = PyUnicode_FromWideChar(L"", -1);
@@ -350,6 +427,11 @@ PyObject* _unicode_dedent(PyObject *unicode)
     Py_DECREF(lines);
     Py_DECREF(space);
     Py_DECREF(emptystr);
+
+    /*PyObject_Print(PyObject_Repr(new_unicode), stderr, 0);*/
+    /*fprintf(stderr, "\nEND unicode dedent\n");            */
+    /*fprintf(stderr, "\n");                                */
+
     return new_unicode;
 }
 
@@ -361,7 +443,12 @@ pymain_run_command(wchar_t *command)
     int ret;
 
     // Should the input be modified here with pure C?
-    //_command_dedent(wchar_t *command)
+    if (wcsncmp(command, L"\n", 1) == 0) {
+        command = _wcs_dedent(command);
+        if (command == NULL) {
+            goto error;
+        }
+    }
 
     unicode = PyUnicode_FromWideChar(command, -1);
     if (unicode == NULL) {
@@ -373,10 +460,10 @@ pymain_run_command(wchar_t *command)
     }
 
     // Only perform auto-dedent if the string starts with a newline
-    if (wcsncmp(command, L"\n", 1) == 0) {
-        // Should the input be modified here with the Python C-API?
-        unicode = _unicode_dedent(unicode);
-    }
+    /*if (wcsncmp(command, L"\n", 1) == 0) {                         */
+    /*    // Should the input be modified here with the Python C-API?*/
+    /*    unicode = _unicode_dedent(unicode);                        */
+    /*}                                                              */
 
     bytes = PyUnicode_AsUTF8String(unicode);
     Py_DECREF(unicode);
