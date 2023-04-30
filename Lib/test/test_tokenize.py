@@ -1470,6 +1470,18 @@ class TestTokenize(TestCase):
             self.assertEqual(tok_name[tokens[i + 1].exact_type], tok_name[expected_tokens[i]])
         self.assertEqual(tok_name[tokens[-1].exact_type], tok_name[token.ENDMARKER])
 
+    def test_invalid_character_in_fstring_middle(self):
+        # See gh-103824
+        script = b'''F"""
+        \xe5"""'''
+
+        with os_helper.temp_dir() as temp_dir:
+            filename = os.path.join(temp_dir, "script.py")
+            with open(filename, 'wb') as file:
+                file.write(script)
+            run_test_script(filename)
+
+
 class UntokenizeTest(TestCase):
 
     def test_bad_input_order(self):
