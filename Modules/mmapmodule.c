@@ -1056,6 +1056,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
                             "in range(0, 256)");
             return -1;
         }
+        CHECK_VALID(-1);
         self->data[i] = (char) v;
         return 0;
     }
@@ -1081,6 +1082,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
             return -1;
         }
 
+        CHECK_VALID(-1);
         if (slicelen == 0) {
         }
         else if (step == 1) {
