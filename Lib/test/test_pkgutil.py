@@ -541,14 +541,6 @@ class ImportlibMigrationTests(unittest.TestCase):
              "Python 3.12; use 'importlib' instead",
              DeprecationWarning))
 
-    def test_importer_deprecated(self):
-        with self.check_deprecated():
-            pkgutil.ImpImporter("")
-
-    def test_loader_deprecated(self):
-        with self.check_deprecated():
-            pkgutil.ImpLoader("", "", "", "")
-
     def test_get_loader_avoids_emulation(self):
         with check_warnings() as w:
             self.assertIsNotNone(pkgutil.get_loader("sys"))

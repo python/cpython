@@ -347,7 +347,7 @@ test_pyobject_new(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *obj;
     PyTypeObject *type = &PyBaseObject_Type;
-    PyTypeObject *var_type = &PyLong_Type;
+    PyTypeObject *var_type = &PyBytes_Type;
 
     // PyObject_New()
     obj = PyObject_New(PyObject, type);

@@ -140,6 +140,54 @@ class Test_ErrSetAndRestore(unittest.TestCase):
             self.assertEqual(1, v.args[0])
             self.assertIs(tb, v.__traceback__.tb_next)
 
+    def test_set_object(self):
+
+        # new exception as obj is not an exception
+        with self.assertRaises(ValueError) as e:
+            _testcapi.exc_set_object(ValueError, 42)
+        self.assertEqual(e.exception.args, (42,))
+
+        # wraps the exception because unrelated types
+        with self.assertRaises(ValueError) as e:
+            _testcapi.exc_set_object(ValueError, TypeError(1,2,3))
+        wrapped = e.exception.args[0]
+        self.assertIsInstance(wrapped, TypeError)
+        self.assertEqual(wrapped.args, (1, 2, 3))
+
+        # is superclass, so does not wrap
+        with self.assertRaises(PermissionError) as e:
+            _testcapi.exc_set_object(OSError, PermissionError(24))
+        self.assertEqual(e.exception.args, (24,))
+
+        class Meta(type):
+            def __subclasscheck__(cls, sub):
+                1/0
+
+        class Broken(Exception, metaclass=Meta):
+            pass
+
+        with self.assertRaises(ZeroDivisionError) as e:
+            _testcapi.exc_set_object(Broken, Broken())
+
+    def test_set_object_and_fetch(self):
+        class Broken(Exception):
+            def __init__(self, *arg):
+                raise ValueError("Broken __init__")
+
+        exc = _testcapi.exc_set_object_fetch(Broken, 'abcd')
+        self.assertIsInstance(exc, ValueError)
+        self.assertEqual(exc.__notes__[0],
+                         "Normalization failed: type=Broken args='abcd'")
+
+        class BadArg:
+            def __repr__(self):
+                raise TypeError('Broken arg type')
+
+        exc = _testcapi.exc_set_object_fetch(Broken, BadArg())
+        self.assertIsInstance(exc, ValueError)
+        self.assertEqual(exc.__notes__[0],
+                         'Normalization failed: type=Broken args=<unknown>')
+
 
 if __name__ == "__main__":
     unittest.main()
