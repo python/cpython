@@ -79,6 +79,26 @@ jobs:
         # Build docs with the '-n' (nit-picky) option, convert warnings to errors (-W)
         make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n -W --keep-going" html 2>&1
 
+  # This build doesn't use problem matchers or check annotations
+  # It also does not run 'make check', as sphinx-lint is not installed into the
+  # environment.
+  build_doc_oldest_supported_sphinx:
+    name: 'Docs (Oldest Sphinx)'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v3
+    - name: 'Set up Python'
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'  # known to work with Sphinx 3.2
+        cache: 'pip'
+        cache-dependency-path: 'Doc/requirements-oldest-sphinx.txt'
+    - name: 'Install build dependencies'
+      run: make -C Doc/ venv REQUIREMENTS="requirements-oldest-sphinx.txt"
+    - name: 'Build HTML documentation'
+      run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
+
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
     name: 'Doctest'

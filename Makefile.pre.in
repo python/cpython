@@ -2043,16 +2043,26 @@ LIBSUBDIRS=	asyncio \
 		zoneinfo \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
-		test test/audiodata \
-		test/capath test/cjkencodings \
-		test/data test/decimaltestdata \
-		test/dtracedata test/eintrdata \
-		test/encoded_modules test/imghdrdata \
-		test/libregrtest test/sndhdrdata \
-		test/subprocessdata test/support \
+		test \
+		test/audiodata \
+		test/capath \
+		test/cjkencodings \
+		test/crashers \
+		test/data \
+		test/decimaltestdata \
+		test/dtracedata \
+		test/encoded_modules \
+		test/imghdrdata \
+		test/leakers \
+		test/libregrtest \
+		test/sndhdrdata \
+		test/subprocessdata \
+		test/support \
 		test/test_asyncio \
+		test/test_capi \
 		test/test_ctypes \
-		test/test_email test/test_email/data \
+		test/test_email \
+		test/test_email/data \
 		test/test_import \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
@@ -2111,16 +2121,39 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_lib2to3/data/fixers \
 		test/test_lib2to3/data/fixers/myfixes \
 		test/test_peg_generator \
+		test/test_sqlite3 \
 		test/test_tkinter \
+		test/test_tomllib \
+		test/test_tomllib/data \
+		test/test_tomllib/data/invalid \
+		test/test_tomllib/data/invalid/array \
+		test/test_tomllib/data/invalid/array-of-tables \
+		test/test_tomllib/data/invalid/boolean \
+		test/test_tomllib/data/invalid/dates-and-times \
+		test/test_tomllib/data/invalid/dotted-keys \
+		test/test_tomllib/data/invalid/inline-table \
+		test/test_tomllib/data/invalid/keys-and-vals \
+		test/test_tomllib/data/invalid/literal-str \
+		test/test_tomllib/data/invalid/multiline-basic-str \
+		test/test_tomllib/data/invalid/multiline-literal-str \
+		test/test_tomllib/data/invalid/table \
+		test/test_tomllib/data/valid \
+		test/test_tomllib/data/valid/array \
+		test/test_tomllib/data/valid/dates-and-times \
+		test/test_tomllib/data/valid/multiline-basic-str \
 		test/test_tools \
 		test/test_ttk \
-		test/test_warnings test/test_warnings/data \
+		test/test_unittest \
+		test/test_unittest/testmock \
+		test/test_warnings \
+		test/test_warnings/data \
 		test/test_zipfile \
-		test/test_zoneinfo test/test_zoneinfo/data \
-		test/test_unittest test/test_unittest/testmock \
+		test/test_zoneinfo \
+		test/test_zoneinfo/data \
 		test/tracedmodules \
 		test/typinganndata \
-		test/xmltestdata test/xmltestdata/c14n-20 \
+		test/xmltestdata \
+		test/xmltestdata/c14n-20 \
 		test/ziptestdata
 
 COMPILEALL_OPTS=-j0
