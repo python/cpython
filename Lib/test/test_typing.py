@@ -23,7 +23,7 @@ from typing import Generic, ClassVar, Final, final, Protocol
 from typing import assert_type, cast, runtime_checkable
 from typing import get_type_hints
 from typing import get_origin, get_args
-from typing import override
+from typing import override, deprecated
 from typing import is_typeddict
 from typing import reveal_type
 from typing import dataclass_transform
@@ -4697,6 +4697,152 @@ class OverrideDecoratorTests(BaseTestCase):
         self.assertTrue(instance.on_top.__override__)
         self.assertEqual(instance.on_bottom(1), 3)
         self.assertTrue(instance.on_bottom.__override__)
+
+
+class DeprecatedTests(BaseTestCase):
+    def test_dunder_deprecated(self):
+        @deprecated("A will go away soon")
+        class A:
+            pass
+
+        self.assertEqual(A.__deprecated__, "A will go away soon")
+        self.assertIsInstance(A, type)
+
+        @deprecated("b will go away soon")
+        def b():
+            pass
+
+        self.assertEqual(b.__deprecated__, "b will go away soon")
+        self.assertIsInstance(b, types.FunctionType)
+
+        @overload
+        @deprecated("no more ints")
+        def h(x: int) -> int: ...
+        @overload
+        def h(x: str) -> str: ...
+        def h(x):
+            return x
+
+        overloads = get_overloads(h)
+        self.assertEqual(len(overloads), 2)
+        self.assertEqual(overloads[0].__deprecated__, "no more ints")
+
+    def test_class(self):
+        @deprecated("A will go away soon")
+        class A:
+            pass
+
+        with self.assertWarnsRegex(DeprecationWarning, "A will go away soon"):
+            A()
+        with self.assertRaises(TypeError), self.assertWarnsRegex(DeprecationWarning, "A will go away soon"):
+            A(42)
+
+        @deprecated("HasInit will go away soon")
+        class HasInit:
+            def __init__(self, x):
+                self.x = x
+
+        with self.assertWarnsRegex(DeprecationWarning, "HasInit will go away soon"):
+            instance = HasInit(42)
+        self.assertEqual(instance.x, 42)
+
+        has_new_called = False
+
+        @deprecated("HasNew will go away soon")
+        class HasNew:
+            def __new__(cls, x):
+                nonlocal has_new_called
+                has_new_called = True
+                return super().__new__(cls)
+
+            def __init__(self, x) -> None:
+                self.x = x
+
+        with self.assertWarnsRegex(DeprecationWarning, "HasNew will go away soon"):
+            instance = HasNew(42)
+        self.assertEqual(instance.x, 42)
+        self.assertTrue(has_new_called)
+        new_base_called = False
+
+        class NewBase:
+            def __new__(cls, x):
+                nonlocal new_base_called
+                new_base_called = True
+                return super().__new__(cls)
+
+            def __init__(self, x) -> None:
+                self.x = x
+
+        @deprecated("HasInheritedNew will go away soon")
+        class HasInheritedNew(NewBase):
+            pass
+
+        with self.assertWarnsRegex(DeprecationWarning, "HasInheritedNew will go away soon"):
+            instance = HasInheritedNew(42)
+        self.assertEqual(instance.x, 42)
+        self.assertTrue(new_base_called)
+
+    def test_function(self):
+        @deprecated("b will go away soon")
+        def b():
+            pass
+
+        with self.assertWarnsRegex(DeprecationWarning, "b will go away soon"):
+            b()
+
+    def test_method(self):
+        class Capybara:
+            @deprecated("x will go away soon")
+            def x(self):
+                pass
+
+        instance = Capybara()
+        with self.assertWarnsRegex(DeprecationWarning, "x will go away soon"):
+            instance.x()
+
+    def test_property(self):
+        class Capybara:
+            @property
+            @deprecated("x will go away soon")
+            def x(self):
+                pass
+
+            @property
+            def no_more_setting(self):
+                return 42
+
+            @no_more_setting.setter
+            @deprecated("no more setting")
+            def no_more_setting(self, value):
+                pass
+
+        instance = Capybara()
+        with self.assertWarnsRegex(DeprecationWarning, "x will go away soon"):
+            instance.x
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            self.assertEqual(instance.no_more_setting, 42)
+
+        with self.assertWarnsRegex(DeprecationWarning, "no more setting"):
+            instance.no_more_setting = 42
+
+    def test_category(self):
+        @deprecated("c will go away soon", category=RuntimeWarning)
+        def c():
+            pass
+
+        with self.assertWarnsRegex(RuntimeWarning, "c will go away soon"):
+            c()
+
+    def test_turn_off_warnings(self):
+        @deprecated("d will go away soon", category=None)
+        def d():
+            pass
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            d()
 
 
 class CastTests(BaseTestCase):
