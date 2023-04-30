@@ -1,15 +1,15 @@
 import types
 import unittest
+from test.support import check_syntax_error
 
-from typing import Callable, TypeAliasType
+from typing import Callable, TypeAliasType, get_args, get_origin
 
 from .test_type_params import run_code
 
 
 class TypeParamsInvalidTest(unittest.TestCase):
     def test_name_collision_01(self):
-        with self.assertRaisesRegex(SyntaxError, "duplicate type parameter 'A'"):
-            run_code("""type TA1[A, **A] = None""")
+        check_syntax_error(self, """type TA1[A, **A] = None""", "duplicate type parameter 'A'")
 
     def test_name_non_collision_02(self):
         run_code("""type TA1[A] = lambda A: None""")
@@ -24,10 +24,10 @@ class TypeParamsInvalidTest(unittest.TestCase):
 
 class TypeParamsAccessTest(unittest.TestCase):
     def test_alias_access_01(self):
-        run_code("""\
-            type TA1[A, B] = dict[A, B]
-            """
-        )
+        ns = run_code("type TA1[A, B] = dict[A, B]")
+        alias = ns["TA1"]
+        self.assertIsInstance(alias, TypeAliasType)
+        self.assertEqual(alias.__type_params__, get_args(alias.__value__))
 
     def test_alias_access_02(self):
         run_code("""\

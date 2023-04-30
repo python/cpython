@@ -1,7 +1,7 @@
 import asyncio
 import textwrap
 import unittest
-from test.support import requires_working_socket
+from test.support import requires_working_socket, check_syntax_error
 
 from typing import Any, Sequence, TypeVar, TypeVarTuple, ParamSpec
 
@@ -14,8 +14,7 @@ def run_code(code: str) -> dict[str, Any]:
 
 class TypeParamsInvalidTest(unittest.TestCase):
     def test_name_collision_01(self):
-        with self.assertRaisesRegex(SyntaxError, "duplicate type parameter 'A'"):
-            run_code("""def func[**A, A](): ...""")
+        check_syntax_error(self, """def func[**A, A](): ...""")
 
     def test_name_non_collision_02(self):
         run_code("""def func[A](A): ...""")
@@ -95,28 +94,17 @@ class TypeParamsInvalidTest(unittest.TestCase):
         )
 
     def test_disallowed_expressions(self):
-        with self.assertRaises(SyntaxError):
-            run_code("type X = (yield)")
-        with self.assertRaises(SyntaxError):
-            run_code("type X = (yield from x)")
-        with self.assertRaises(SyntaxError):
-            run_code("type X = (await 42)")
-        with self.assertRaises(SyntaxError):
-            run_code("async def f(): type X = (yield)")
-        with self.assertRaises(SyntaxError):
-            run_code("type X = (y := 3)")
-        with self.assertRaises(SyntaxError):
-            run_code("class X[T: (yield)]: pass")
-        with self.assertRaises(SyntaxError):
-            run_code("class X[T: (yield from x)]: pass")
-        with self.assertRaises(SyntaxError):
-            run_code("class X[T: (await 42)]: pass")
-        with self.assertRaises(SyntaxError):
-            run_code("class X[T: (y := 3)]: pass")
-        with self.assertRaises(SyntaxError):
-            run_code("class X[T](y := Sequence[T]): pass")
-        with self.assertRaises(SyntaxError):
-            run_code("def f[T](y: (x := Sequence[T])): pass")
+        check_syntax_error(self, "type X = (yield)")
+        check_syntax_error(self, "type X = (yield from x)")
+        check_syntax_error(self, "type X = (await 42)")
+        check_syntax_error(self, "async def f(): type X = (yield)")
+        check_syntax_error(self, "type X = (y := 3)")
+        check_syntax_error(self, "class X[T: (yield)]: pass")
+        check_syntax_error(self, "class X[T: (yield from x)]: pass")
+        check_syntax_error(self, "class X[T: (await 42)]: pass")
+        check_syntax_error(self, "class X[T: (y := 3)]: pass")
+        check_syntax_error(self, "class X[T](y := Sequence[T]): pass")
+        check_syntax_error(self, "def f[T](y: (x := Sequence[T])): pass")
 
 
 class TypeParamsAccessTest(unittest.TestCase):
@@ -247,12 +235,10 @@ class TypeParamsAccessTest(unittest.TestCase):
     def test_nonlocal(self):
         code = """\
             def outer2[T]():
-
                 def inner1():
                     nonlocal T
         """
-        with self.assertRaisesRegex(SyntaxError, "nonlocal binding not allowed for type parameter 'T'"):
-            run_code(code)
+        check_syntax_error(self, textwrap.dedent(code))
 
     def test_reference_previous_typevar(self):
         def func[S, T: Sequence[S]]():
@@ -466,13 +452,8 @@ class TypeParamsTypeVarTest(unittest.TestCase):
 
 class TypeParamsTypeVarTupleTest(unittest.TestCase):
     def test_typevartuple_01(self):
-        code = """\
-            def func1[*A: str]():
-                return (A, B, C)
-            """
-
-        with self.assertRaisesRegex(SyntaxError, r"expected '\('"):
-            run_code(code)
+        code = """def func1[*A: str](): return (A, B, C)"""
+        check_syntax_error(self, code, r"expected '\('")
 
     def test_typevartuple_02(self):
         def func1[*A]():
@@ -484,13 +465,8 @@ class TypeParamsTypeVarTupleTest(unittest.TestCase):
 
 class TypeParamsTypeVarParamSpec(unittest.TestCase):
     def test_paramspec_01(self):
-        code = """\
-            def func1[**A: str]():
-                return (A, B, C)
-            """
-
-        with self.assertRaisesRegex(SyntaxError, r"expected '\('"):
-            run_code(code)
+        code = """def func1[**A: str](): return (A, B, C)"""
+        check_syntax_error(self, code, r"expected '\('")
 
     def test_paramspec_02(self):
         def func1[**A]():
