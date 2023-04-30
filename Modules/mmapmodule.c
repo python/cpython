@@ -936,7 +936,6 @@ mmap_subscript(mmap_object *self, PyObject *item)
     CHECK_VALID(NULL);
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
-        CHECK_VALID(NULL);
         if (i == -1 && PyErr_Occurred())
             return NULL;
         if (i < 0)
@@ -946,6 +945,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
                 "mmap index out of range");
             return NULL;
         }
+        CHECK_VALID(NULL);
         return PyLong_FromLong(Py_CHARMASK(self->data[i]));
     }
     else if (PySlice_Check(item)) {
