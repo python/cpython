@@ -286,6 +286,14 @@ class MmapTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             m[X():5] # should not crash
 
+        with self.assertRaises(ValueError):
+            m[X()] = 1
+            m[X()] # should through ValueError
+
+        with self.assertRaises(ValueError):
+            m[X():5] = b'abcde'
+            m[X():5] # should through ValueError
+
         m.close() # first CHECK_VALID will pick and raise ValueError
         with self.assertRaises(ValueError):
             m[0:5] # should not crash
