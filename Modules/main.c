@@ -250,6 +250,10 @@ wchar_t* _wcs_dedent(wchar_t *command)
     fprintf(stderr, "nchars: %d\n", nchars);
 #endif
 
+    // Step 1: Find N = the common number leading whitespace chars
+
+    // Create a copy of the command so we can use the descructive WCSTOK to
+    // tokenize it.
     wchar_t *command_copy = (wchar_t *)PyMem_Malloc(nchars * sizeof(wchar_t));
     // wcscpy has security problems, what is the workaround?
     wcscpy(command_copy, command);
@@ -283,8 +287,8 @@ wchar_t* _wcs_dedent(wchar_t *command)
          fprintf(stderr, "==========\n");
          fprintf(stderr, "line: '%ls'\n", line);
          fprintf(stderr, "first_nonspace: '%ls'\n", first_nonspace);
-         fprintf(stderr, "num_common_leading_spaces: '%d'\n", num_common_leading_spaces);
-         fprintf(stderr, "num_leading_spaces: '%d'\n", num_leading_spaces);
+         fprintf(stderr, "num_common_leading_spaces: '%zu'\n", num_common_leading_spaces);
+         fprintf(stderr, "num_leading_spaces: '%zu'\n", num_leading_spaces);
 #endif
         }
         line = WCSTOK(NULL, L"\n", &buffer);
@@ -297,9 +301,15 @@ wchar_t* _wcs_dedent(wchar_t *command)
     wchar_t *new_start_loc;
     size_t new_line_len;
 
+    // Step 2: Remove N leading whitespace chars from each line We do this by
+    // creating a new string and copying over each line one at a time and not
+    // copying over the leading whitespace
+
     // What is the correct way to ensure this is null terminated
+    // Is it ok that this is overallocated?
+    // Would we want to mutate the input pointer instead?
     wchar_t *new_command = (wchar_t *)PyMem_Malloc((nchars + 1) * sizeof(wchar_t));
-    wmemset(new_command, NULL, nchars + 1);
+    //wmemset(new_command, NULL, nchars + 1);
     wchar_t *curr_dst = new_command;
 
     while (curr_line_ptr != end_ptr) {
@@ -323,11 +333,8 @@ wchar_t* _wcs_dedent(wchar_t *command)
             new_line_len = line_len;
         }
 
-        int offset = curr_line_ptr - command;
-
 #ifdef DEBUG_DEDENT
-        fprintf(stderr, "line_len: '%d'\n", line_len);
-        fprintf(stderr, "offset: '%d'\n", offset);
+        fprintf(stderr, "line_len: '%zu'\n", line_len);
 #endif
 
         // Copy the part of the line we want to keep to the new location
@@ -336,6 +343,8 @@ wchar_t* _wcs_dedent(wchar_t *command)
 
         curr_line_ptr = next_line_ptr;
     }
+    // null terminate the string (is this sufficient?)
+    (*curr_dst) = NULL;
 
     // FIXME: I'm sure this is not the memory safe way to do this, but I dont
     // know what is.
