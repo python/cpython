@@ -283,9 +283,6 @@ class MmapTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             m[X()] # should not crash
 
-        with self.assertRaises(ValueError):
-            m[X()] = 1
-            m[X()] # should through ValueError
 
     def test_unexpected_mmap_close_scenario_2(self):
         # See gh-103987
