@@ -1,0 +1,2 @@
+Reduce objects creation while calling callback function on gc. Patch by
+Dong-hee Na.
