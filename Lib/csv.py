@@ -415,7 +415,7 @@ class Sniffer:
                 continue # skip rows that have irregular number of columns
 
             # checking if all col are strings
-            for cols in list(columnTypes.keys()):
+            for cols in columnTypes:
                 if row[cols].isnumeric():
                     col_are_strings = False
                     break
