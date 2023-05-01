@@ -4486,6 +4486,18 @@ clear_static_tp_subclasses(PyTypeObject *type)
     clear_subclasses(type);
 }
 
+static void
+clear_static_type_objects(PyInterpreterState *interp, PyTypeObject *type)
+{
+    if (_Py_IsMainInterpreter(interp)) {
+        Py_CLEAR(type->tp_dict);
+        Py_CLEAR(type->tp_bases);
+        Py_CLEAR(type->tp_mro);
+        Py_CLEAR(type->tp_cache);
+    }
+    clear_static_tp_subclasses(type);
+}
+
 void
 _PyStaticType_Dealloc(PyInterpreterState *interp, PyTypeObject *type)
 {
@@ -4493,11 +4505,7 @@ _PyStaticType_Dealloc(PyInterpreterState *interp, PyTypeObject *type)
 
     type_dealloc_common(type);
 
-    Py_CLEAR(type->tp_dict);
-    Py_CLEAR(type->tp_bases);
-    Py_CLEAR(type->tp_mro);
-    Py_CLEAR(type->tp_cache);
-    clear_static_tp_subclasses(type);
+    clear_static_type_objects(interp, type);
 
     // PyObject_ClearWeakRefs() raises an exception if Py_REFCNT() != 0
     if (Py_REFCNT(type) == 0) {
