@@ -357,7 +357,7 @@ static PyObject *dedent_utf8_bytes(PyObject *bytes) {
 
         p += new_line_len;
 
-        // this may always append '\n' at the end of the input
+        // this may always append '\n' at the end of `new_bytes`
         *p++ = '\n';
     }
 
@@ -365,6 +365,7 @@ static PyObject *dedent_utf8_bytes(PyObject *bytes) {
     if (new_bytes == NULL) {
         goto error;
     }
+    Py_DECREF(bytes);
     return new_bytes;
 
 error:
