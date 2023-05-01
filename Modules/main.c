@@ -231,17 +231,15 @@ pymain_import_readline(const PyConfig *config)
 
 // #define DEBUG_DEDENT
 
-/* Strip common leading whitespace utf encoded string
- * returns a new PyBytes object that must be deallocated
- */
+/* Strip common leading whitespace utf encoded string */
 PyObject* _utf_8_bytes_dedent(PyObject *bytes){
-    char *input_data = PyBytes_AsString(bytes);
+    char *input_data;
+    Py_ssize_t nchars;
 
-    // Security problem? what is the right way to do this?
-    Py_ssize_t nchars = strlen(input_data);
+    PyBytes_AsStringAndSize(bytes, &input_data, &nchars);
 
-    // Allocate new data for the output
-    PyBytesObject *new_bytes = PyBytes_FromStringAndSize(NULL, nchars);
+    // Allocate new data for the output as a copy of the input
+    PyBytesObject *new_bytes = PyBytes_FromStringAndSize(input_data, nchars);
     if (new_bytes == NULL) {
         return NULL;
     }
@@ -255,13 +253,11 @@ PyObject* _utf_8_bytes_dedent(PyObject *bytes){
 
     // Step 1: Find N = the common number leading whitespace chars
 
-    // Use the output array as a temporary buffer (because we haven't populated it yet)
     // so we can use the descructive strtok to tokenize the input.
-    strcpy(new_data, input_data);
-
     Py_ssize_t num_common_leading_spaces = nchars + 1;
 
     // Count the number of leading spaces on each line
+    // Use the output array as a temporary buffer (we will repopulate it later)
     char *line = strtok(new_data, "\n");
     while (line) {
         // Move the pointer up to the first non-space character
