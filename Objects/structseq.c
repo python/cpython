@@ -506,41 +506,47 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
                                        PyStructSequence_Desc *desc,
                                        unsigned long tp_flags)
 {
+    PyMemberDef *members = NULL;
+
     if (type->tp_flags & Py_TPFLAGS_READY) {
         assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
         if (_PyStaticType_InitBuiltin(type) < 0) {
-            goto failed_init_builtin;
+            PyErr_Format(PyExc_RuntimeError,
+                         "Can't initialize builtin type %s",
+                         desc->name);
+            goto error;
         }
         return 0;
     }
 
-    PyMemberDef *members;
     Py_ssize_t n_members, n_unnamed_members;
 
     n_members = count_members(desc, &n_unnamed_members);
     members = initialize_members(desc, n_members, n_unnamed_members);
     if (members == NULL) {
-        return -1;
+        goto error;
     }
     initialize_static_fields(type, desc, members, tp_flags);
 
     Py_INCREF(type);  // XXX It should be immortal.
     if (_PyStaticType_InitBuiltin(type) < 0) {
-        PyMem_Free(members);
-        goto failed_init_builtin;
+        PyErr_Format(PyExc_RuntimeError,
+                     "Can't initialize builtin type %s",
+                     desc->name);
+        goto error;
     }
 
     if (initialize_structseq_dict(
             desc, type->tp_dict, n_members, n_unnamed_members) < 0) {
-        PyMem_Free(members);
-        return -1;
+        goto error;
     }
+
     return 0;
 
-failed_init_builtin:
-    PyErr_Format(PyExc_RuntimeError,
-                 "Can't initialize builtin type %s",
-                 desc->name);
+error:
+    if (members != NULL) {
+        PyMem_Free(members);
+    }
     return -1;
 }
 
