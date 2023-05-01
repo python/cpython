@@ -1221,16 +1221,46 @@ def _add_slots(cls, is_frozen, weakref_slot):
 
     # And finally create the class.
     qualname = getattr(cls, '__qualname__', None)
-    cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
+    new_cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
     if qualname is not None:
-        cls.__qualname__ = qualname
+        new_cls.__qualname__ = qualname
 
     if is_frozen:
         # Need this for pickling frozen classes with slots.
-        cls.__getstate__ = _dataclass_getstate
-        cls.__setstate__ = _dataclass_setstate
+        new_cls.__getstate__ = _dataclass_getstate
+        new_cls.__setstate__ = _dataclass_setstate
 
-    return cls
+    # References to the old class may still be stored in class function __closure__s.
+    # Try and replace them with the new class so, for example, super() will work.
+    for cls_attribute in cls_dict.values():
+        # Unwrap classmethods, staticmethods, and decorators made using @functools.wraps.
+        cls_attribute = inspect.unwrap(cls_attribute)
+
+        if isinstance(cls_attribute, property):
+            # Special case to support property.
+            for func in (cls_attribute.fget, cls_attribute.fset, cls_attribute.fdel):
+                _update_class_cell(cls, new_cls, func)
+        else:
+            _update_class_cell(cls, new_cls, cls_attribute)
+
+    return new_cls
+
+
+def _update_class_cell(old_cls, new_cls, function):
+    # Ignore if the object isn't actually a function.
+    if not inspect.isfunction(function):
+        return
+
+    # Function does not use __class__ or super(), ignore.
+    if function.__closure__ is None:
+        return
+
+    # Look through function closure to find the __class__ cell, and update
+    # it with the new class if it previously contained the old class.
+    for name, cell in zip(function.__code__.co_freevars, function.__closure__):
+        if name == "__class__" and cell.cell_contents is old_cls:
+            cell.cell_contents = new_cls
+            break
 
 
 def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,

@@ -3331,6 +3331,100 @@ class TestSlots(unittest.TestCase):
         a_ref = weakref.ref(a)
         self.assertIs(a.__weakref__, a_ref)
 
+    def test_slots_super(self):
+        @dataclass(slots=True)
+        class Base:
+            a: int
+            def b(self):
+                return 2
+
+            def c(self):
+                return 3
+
+        @dataclass(slots=True)
+        class A(Base):
+            def b(self):
+                return super().b()
+
+            def d(self):
+                return 4
+
+        a = A(1)
+        self.assertEqual(a.a, 1)
+        self.assertEqual(a.b(), 2)
+        self.assertEqual(a.c(), 3)
+        self.assertEqual(a.d(), 4)
+
+    def test_slots_dunder_class(self):
+        class Base:
+            def foo(self):
+                return 1
+
+        class OtherClass(Base):
+            def foo(self):
+                return __class__
+
+        @dataclass(slots=True)
+        class A:
+            foo = OtherClass.foo
+
+            def bar(self):
+                return __class__
+
+        a = A()
+        self.assertEqual(a.foo(), OtherClass)
+        self.assertEqual(a.bar(), A)
+
+    def test_slots_dunder_class_decorated(self):
+        import functools
+
+        def deco(f):
+            @functools.wraps(f)
+            def wrapper(*args, **kwargs):
+                return f(*args, **kwargs)
+            return wrapper
+
+        @dataclass(slots=True)
+        class A():
+            @classmethod
+            @deco
+            def b(cls):
+                return __class__
+
+        a = A()
+        self.assertEqual(a.b(), A)
+
+    def test_slots_dunder_class_property_getter(self):
+        @dataclass(slots=True)
+        class A:
+            @property
+            def foo(slf):
+                return __class__
+
+        a = A()
+        self.assertEqual(a.foo, A)
+
+    def test_slots_dunder_class_property_setter(self):
+        @dataclass(slots=True)
+        class A:
+            foo = property()
+            @foo.setter
+            def foo(slf, val):
+                self.assertEqual(__class__, type(slf))
+
+        a = A()
+        a.foo = 4
+
+    def test_slots_dunder_class_property_deleter(self):
+        @dataclass(slots=True)
+        class A:
+            foo = property()
+            @foo.deleter
+            def foo(slf):
+                self.assertEqual(__class__, type(slf))
+
+        a = A()
+        del a.foo
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
