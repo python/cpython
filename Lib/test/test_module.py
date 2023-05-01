@@ -236,7 +236,7 @@ a = A(destroyed)"""
         # Yes, a class not an instance.
         m.__loader__ = FullLoader
         self.assertEqual(
-            repr(m), "<module 'foo' (<class 'test.test_module.FullLoader'>)>")
+            repr(m), f"<module 'foo' (<class '{__name__}.FullLoader'>)>")
 
     def test_module_repr_with_bare_loader_and_filename(self):
         m = ModuleType('foo')

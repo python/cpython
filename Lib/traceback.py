@@ -179,12 +179,12 @@ def _safe_string(value, what, func=str):
 # --
 
 def print_exc(limit=None, file=None, chain=True):
-    """Shorthand for 'print_exception(*sys.exc_info(), limit, file, chain)'."""
-    print_exception(*sys.exc_info(), limit=limit, file=file, chain=chain)
+    """Shorthand for 'print_exception(sys.exception(), limit, file, chain)'."""
+    print_exception(sys.exception(), limit=limit, file=file, chain=chain)
 
 def format_exc(limit=None, chain=True):
     """Like print_exc() but return a string."""
-    return "".join(format_exception(*sys.exc_info(), limit=limit, chain=chain))
+    return "".join(format_exception(sys.exception(), limit=limit, chain=chain))
 
 def print_last(limit=None, file=None, chain=True):
     """This is a shorthand for 'print_exception(sys.last_exc, limit, file, chain)'."""
@@ -852,12 +852,16 @@ class TracebackException:
             yield _format_final_exc_line(stype, self._str)
         else:
             yield from self._format_syntax_error(stype)
-        if isinstance(self.__notes__, collections.abc.Sequence):
+
+        if (
+            isinstance(self.__notes__, collections.abc.Sequence)
+            and not isinstance(self.__notes__, (str, bytes))
+        ):
             for note in self.__notes__:
                 note = _safe_string(note, 'note')
                 yield from [l + '\n' for l in note.split('\n')]
         elif self.__notes__ is not None:
-            yield _safe_string(self.__notes__, '__notes__', func=repr)
+            yield "{}\n".format(_safe_string(self.__notes__, '__notes__', func=repr))
 
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""

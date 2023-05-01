@@ -527,6 +527,42 @@ Running Tasks Concurrently
       and there is no running event loop.
 
 
+Eager Task Factory
+==================
+
+.. function:: eager_task_factory(loop, coro, *, name=None, context=None)
+
+    A task factory for eager task execution.
+
+    When using this factory (via :meth:`loop.set_task_factory(asyncio.eager_task_factory) <loop.set_task_factory>`),
+    coroutines begin execution synchronously during :class:`Task` construction.
+    Tasks are only scheduled on the event loop if they block.
+    This can be a performance improvement as the overhead of loop scheduling
+    is avoided for coroutines that complete synchronously.
+
+    A common example where this is beneficial is coroutines which employ
+    caching or memoization to avoid actual I/O when possible.
+
+    .. note::
+
+        Immediate execution of the coroutine is a semantic change.
+        If the coroutine returns or raises, the task is never scheduled
+        to the event loop. If the coroutine execution blocks, the task is
+        scheduled to the event loop. This change may introduce behavior
+        changes to existing applications. For example,
+        the application's task execution order is likely to change.
+
+    .. versionadded:: 3.12
+
+.. function:: create_eager_task_factory(custom_task_constructor)
+
+    Create an eager task factory, similar to :func:`eager_task_factory`,
+    using the provided *custom_task_constructor* when creating a new task instead
+    of the default :class:`Task`.
+
+    .. versionadded:: 3.12
+
+
 Shielding From Cancellation
 ===========================
 

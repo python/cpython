@@ -3492,13 +3492,13 @@ void
 _PySys_Fini(PyInterpreterState *interp)
 {
     if (_Py_IsMainInterpreter(interp)) {
-        _PyStructSequence_FiniType(&VersionInfoType);
-        _PyStructSequence_FiniType(&FlagsType);
+        _PyStructSequence_FiniBuiltin(&VersionInfoType);
+        _PyStructSequence_FiniBuiltin(&FlagsType);
 #if defined(MS_WINDOWS)
-        _PyStructSequence_FiniType(&WindowsVersionType);
+        _PyStructSequence_FiniBuiltin(&WindowsVersionType);
 #endif
-        _PyStructSequence_FiniType(&Hash_InfoType);
-        _PyStructSequence_FiniType(&AsyncGenHooksType);
+        _PyStructSequence_FiniBuiltin(&Hash_InfoType);
+        _PyStructSequence_FiniBuiltin(&AsyncGenHooksType);
 #ifdef __EMSCRIPTEN__
         Py_CLEAR(EmscriptenInfoType);
 #endif
