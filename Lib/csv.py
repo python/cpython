@@ -443,6 +443,7 @@ class Sniffer:
         if not columnTypes and col_are_strings and columns > 0:
             # dictionary now takes the average length of strings
             columnTypes[0] = int(average_size/columns)
+
         for col, colType in columnTypes.items():
             if isinstance(colType, int): # it's a length
                 if len(header[col]) != colType:
