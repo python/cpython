@@ -187,6 +187,7 @@ struct _gc_runtime_state {
        collections, and are awaiting to undergo a full collection for
        the first time. */
     Py_ssize_t long_lived_pending;
+    int advanced_stats;
 };
 
 

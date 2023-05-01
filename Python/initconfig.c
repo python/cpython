@@ -129,7 +129,11 @@ The following implementation-specific options are available:\n\
 \n\
 -X int_max_str_digits=number: limit the size of int<->str conversions.\n\
     This helps avoid denial of service attacks when parsing untrusted data.\n\
-    The default is sys.int_info.default_max_str_digits.  0 disables."
+    The default is sys.int_info.default_max_str_digits.  0 disables.\n\
+\n\
+-X gc_stats_file=filename: activates advance statistics for the Python garbage collector\n\
+    and writes the results to the specified file. If no file is provided (by writting\n\
+    -X gc_stats_file), the results are written to stderr. The default value is \"off\"."
 
 #ifdef Py_STATS
 "\n\
@@ -176,6 +180,8 @@ static const char usage_envvars[] =
 "   and end column offset) to every instruction in code objects. This is useful \n"
 "   when smaller code objects and pyc files are desired as well as suppressing the \n"
 "   extra visual location indicators when the interpreter displays tracebacks.\n"
+"PYTHONGCSTATSFILE: If this variable is set, it enables advance statistics for the \n"
+"   cycle garbage collector and writes them in file specified by the environment variable.\n"
 "These variables have equivalent command-line parameters (see --help for details):\n"
 "PYTHONDEBUG             : enable parser debug mode (-d)\n"
 "PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n"
@@ -703,6 +709,7 @@ config_check_consistency(const PyConfig *config)
     assert(config->_is_python_build >= 0);
     assert(config->safe_path >= 0);
     assert(config->int_max_str_digits >= 0);
+    assert(config->gc_stats_file != NULL);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
     return 1;
@@ -799,6 +806,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->int_max_str_digits = -1;
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
+    config->gc_stats_file = NULL;
 }
 
 
@@ -1026,6 +1034,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTRLIST(orig_argv);
     COPY_ATTR(_is_python_build);
     COPY_ATTR(int_max_str_digits);
+    COPY_WSTR_ATTR(gc_stats_file);
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -1133,6 +1142,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(safe_path);
     SET_ITEM_INT(_is_python_build);
     SET_ITEM_INT(int_max_str_digits);
+    SET_ITEM_WSTR(gc_stats_file);
 
     return dict;
 
@@ -1426,6 +1436,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(safe_path);
     GET_UINT(_is_python_build);
     GET_INT(int_max_str_digits);
+    GET_WSTR_OPT(gc_stats_file);
 
 #undef CHECK_VALUE
 #undef GET_UINT
@@ -1861,6 +1872,31 @@ config_init_pycache_prefix(PyConfig *config)
                               "PYTHONPYCACHEPREFIX");
 }
 
+static PyStatus
+config_init_gc_stats_file(PyConfig *config)
+{
+    assert(config->gc_stats_file == NULL);
+
+    const wchar_t *xoption = config_get_xoption(config, L"gc_stats_file");
+    if (xoption) {
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (sep && wcslen(sep) > 1) {
+            config->gc_stats_file = _PyMem_RawWcsdup(sep + 1);
+            if (config->gc_stats_file == NULL) {
+                return _PyStatus_NO_MEMORY();
+            }
+        }
+        else {
+            config->gc_stats_file = L"";
+        }
+        return _PyStatus_OK();
+    }
+
+    return CONFIG_GET_ENV_DUP(config, &config->gc_stats_file,
+                              L"PYTHONGCSTATSFILE",
+                              "PYTHONGCSTATSFILE");
+}
+
 
 static PyStatus
 config_read_complex_options(PyConfig *config)
@@ -1910,6 +1946,14 @@ config_read_complex_options(PyConfig *config)
             return status;
         }
     }
+
+    if (config->gc_stats_file == NULL) {
+        status = config_init_gc_stats_file(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
     return _PyStatus_OK();
 }
 

@@ -31,6 +31,7 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"     // _PyThreadState_GET()
 #include "pydtrace.h"
+#include "pystats.h"
 
 typedef struct _gc_runtime_state GCState;
 
@@ -38,6 +39,17 @@ typedef struct _gc_runtime_state GCState;
 module gc
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b5c9690ecc842d79]*/
+
+typedef struct _gc_stats {
+    size_t n_collections;
+    PyObject* generation_number;
+    PyObject* total_objects;
+    PyObject* uncollectable;
+    PyObject* collected_cycles;
+    PyObject* collection_time;
+} PyGCStats;
+
+PyGCStats _pygc_stats_struct = { 0 };
 
 
 #ifdef Py_DEBUG
@@ -135,6 +147,32 @@ get_gc_state(void)
     return &interp->gc;
 }
 
+static inline int
+is_main_interpreter(void)
+{
+    return (PyInterpreterState_Get() == PyInterpreterState_Main());
+}
+
+static int
+_PyInitGCStats() {
+    if (!is_main_interpreter()) {
+        return 0;
+    }
+#define INIT_FIELD(field) {\
+    _pygc_stats_struct.field = PyList_New(0);\
+    if (_pygc_stats_struct.field== NULL) {\
+        return -1; \
+    }\
+    _PyObject_GC_UNTRACK(_pygc_stats_struct.field); }
+
+    INIT_FIELD(generation_number);
+    INIT_FIELD(total_objects);
+    INIT_FIELD(uncollectable);
+    INIT_FIELD(collected_cycles);
+    INIT_FIELD(collection_time);
+#undef INIT_FIELD
+    return 0;
+}
 
 void
 _PyGC_InitState(GCState *gcstate)
@@ -151,8 +189,15 @@ _PyGC_InitState(GCState *gcstate)
     };
     gcstate->generation0 = GEN_HEAD(gcstate, 0);
     INIT_HEAD(gcstate->permanent_generation);
-
 #undef INIT_HEAD
+
+    char *s = Py_GETENV("PYTHONGCTHRESHOLD");
+    if (s) {
+        long n = atol(s);
+        if (n > 0) {
+            gcstate->generations[0].threshold = n;
+        }
+    }
 }
 
 
@@ -169,6 +214,13 @@ _PyGC_Init(PyInterpreterState *interp)
     gcstate->callbacks = PyList_New(0);
     if (gcstate->callbacks == NULL) {
         return _PyStatus_NO_MEMORY();
+    }
+
+    if (_Py_GetConfig()->gc_stats_file) {
+        if(_PyInitGCStats()) {
+            Py_FatalError("Could not initialize GC stats");
+        }
+        gcstate->advanced_stats = 1;
     }
 
     return _PyStatus_OK();
@@ -1205,6 +1257,13 @@ gc_collect_main(PyThreadState *tstate, int generation,
     PyGC_Head *gc;
     _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
     GCState *gcstate = &tstate->interp->gc;
+    _PyTime_t gc_t1 = 0;
+    _PyTime_t gc_t2 = 0;
+    Py_ssize_t t = 0;
+
+    if (gcstate->advanced_stats) {
+        gc_t1 = _PyTime_GetPerfCounter();
+    }
 
     // gc_collect_main() must not be called before _PyGC_Init
     // or after _PyGC_Fini()
@@ -1238,6 +1297,10 @@ gc_collect_main(PyThreadState *tstate, int generation,
     else
         old = young;
     validate_list(old, collecting_clear_unreachable_clear);
+
+    if (gcstate->advanced_stats) {
+        t = gc_list_size(young);
+    }
 
     deduce_unreachable(young, &unreachable);
 
@@ -1336,6 +1399,31 @@ gc_collect_main(PyThreadState *tstate, int generation,
         else {
             _PyErr_WriteUnraisableMsg("in garbage collection", NULL);
         }
+    }
+    if (gcstate->advanced_stats) {
+        gc_t2 = _PyTime_GetPerfCounter();
+#define ADD_ELEMENT(field, elem, converter_fn) \
+    { \
+        PyObject* item = converter_fn(elem); \
+        if (!item) { \
+            _PyErr_WriteUnraisableMsg("in garbage collection", NULL); \
+        } \
+        if (item && PyList_Append(_pygc_stats_struct.field, item) >= 0) { \
+            _PyErr_WriteUnraisableMsg("in garbage collection", NULL); \
+        } \
+        Py_XDECREF(item); \
+    } \
+
+        if (_pygc_stats_struct.generation_number) {
+            _pygc_stats_struct.n_collections++;
+            ADD_ELEMENT(generation_number, generation, PyLong_FromLong);
+            ADD_ELEMENT(total_objects, t, PyLong_FromSsize_t);
+            ADD_ELEMENT(uncollectable, n, PyLong_FromSsize_t);
+            ADD_ELEMENT(collected_cycles, m, PyLong_FromSsize_t);
+            double d = _PyTime_AsSecondsDouble(gc_t2 - gc_t1);
+            ADD_ELEMENT(collection_time, d, PyFloat_FromDouble);
+        }
+#undef ADD_ELEMENT
     }
 
     /* Update stats */
@@ -2190,11 +2278,66 @@ gc_fini_untrack(PyGC_Head *list)
     }
 }
 
+static void
+print_stats(FILE *out) {
+#define WRITE_ITEM(collection, index, type, converter_fn, str_format) { \
+        PyObject* item = PyList_GET_ITEM(_pygc_stats_struct.collection, index); \
+        if (!item) { \
+            _PyErr_WriteUnraisableMsg(" when writing gc stats", NULL); \
+        } \
+        type num = converter_fn(item); \
+        if (!num && PyErr_Occurred()) { \
+            _PyErr_WriteUnraisableMsg(" when writing gc stats", NULL); \
+        } \
+        fprintf(out, str_format, num); } \
+
+    fprintf(out, "collection,generation_number,total_objects,uncollectable,collected_cycles,collection_time\n");
+    for (size_t i = 0; i < _pygc_stats_struct.n_collections; i++) {
+        fprintf(out, "%zd", i);
+        WRITE_ITEM(generation_number, i, long, PyLong_AsLong, "%zd,");
+        WRITE_ITEM(total_objects, i, long, PyLong_AsLong, "%zd,");
+        WRITE_ITEM(uncollectable, i, long, PyLong_AsLong, "%zd,");
+        WRITE_ITEM(collected_cycles, i, long, PyLong_AsLong, "%zd,");
+        WRITE_ITEM(collection_time, i, double, PyFloat_AsDouble, "%f");
+        fprintf(out, "\n");
+    }
+}
+
+void
+_Py_PrintGCStats(int to_file)
+{
+    FILE *out = stderr;
+    wchar_t *filename = _Py_GetConfig()->gc_stats_file;
+    if (filename && wcslen(filename) != 0) {
+        // Open a file from the gc_stats_file (wchar)
+        out = _Py_wfopen(filename, L"wb");
+        if (!out) {
+            _PyErr_WriteUnraisableMsg(" when writing gc stats", NULL);
+            return;
+        }
+    }
+    else {
+        fprintf(out, "GC stats:\n");
+    }
+    print_stats(out);
+    if (out != stderr) {
+        fclose(out);
+    }
+
+    Py_CLEAR(_pygc_stats_struct.generation_number);
+    Py_CLEAR(_pygc_stats_struct.total_objects);
+    Py_CLEAR(_pygc_stats_struct.uncollectable);
+    Py_CLEAR(_pygc_stats_struct.collected_cycles);
+    Py_CLEAR(_pygc_stats_struct.collection_time);
+}
 
 void
 _PyGC_Fini(PyInterpreterState *interp)
 {
     GCState *gcstate = &interp->gc;
+    if (is_main_interpreter() && gcstate->advanced_stats) {
+        _Py_PrintGCStats(1);
+    }
     Py_CLEAR(gcstate->garbage);
     Py_CLEAR(gcstate->callbacks);
 

@@ -78,7 +78,6 @@ typedef struct _stats {
     ObjectStats object_stats;
 } PyStats;
 
-
 PyAPI_DATA(PyStats) _py_stats_struct;
 PyAPI_DATA(PyStats *) _py_stats;
 
