@@ -446,7 +446,7 @@ class Sniffer:
         # special case when all columns are strings and columnTypes has been emptied
         if not columnTypes and col_are_strings and columns > 0:
             # dictionary now takes the average length of strings
-            columnTypes[0] = int(average_size/columns)
+            columnTypes[0] = average_size // columns
 
         for col, colType in columnTypes.items():
             if isinstance(colType, int): # it's a length
