@@ -132,6 +132,8 @@ class DictReader:
         return d
 
     __class_getitem__ = classmethod(types.GenericAlias)
+
+
 class DictWriter:
     def __init__(self, f, fieldnames, restval="", extrasaction="raise",
                  dialect="excel", *args, **kwds):
@@ -139,7 +141,8 @@ class DictWriter:
             fieldnames = list(fieldnames)
         self.fieldnames = fieldnames    # list of keys for the dict
         self.restval = restval          # for writing short dicts
-        if extrasaction.lower() not in ("raise", "ignore"):
+        extrasaction = extrasaction.lower()
+        if extrasaction not in ("raise", "ignore"):
             raise ValueError("extrasaction (%s) must be 'raise' or 'ignore'"
                              % extrasaction)
         self.extrasaction = extrasaction
@@ -162,12 +165,9 @@ class DictWriter:
 
     def writerows(self, rowdicts):
         return self.writer.writerows(map(self._dict_to_list, rowdicts))
+
     __class_getitem__ = classmethod(types.GenericAlias)
-# Guard Sniffer's type checking against builds that exclude complex()
-try:
-    complex
-except NameError:
-    complex = float
+
 
 class Sniffer:
     '''
@@ -400,14 +400,15 @@ class Sniffer:
         rdr = reader(StringIO(sample), self.sniff(sample))
        
         header = next(rdr) # assume first row is header
+        
         columns = len(header)
         columnTypes = {}
         average_size = 0 
         col_are_strings = True
         for i in range(columns): columnTypes[i] = None
+        
         checked = 0
         for row in rdr:
-           
             # arbitrary number of rows to check, to keep it sane
             if checked > 20:
                 break
@@ -424,8 +425,6 @@ class Sniffer:
 
             for col in list(columnTypes.keys()):
                 thisType = complex
-                
-                
                 try:
                     thisType(row[col])
                     
@@ -443,9 +442,6 @@ class Sniffer:
                         # consideration
                         del columnTypes[col]
             
-
-                     
-
         # finally, compare results against first row and "vote"
         # on whether it's a header
         hasHeader = 0
