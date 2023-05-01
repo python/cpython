@@ -2,9 +2,8 @@
 import ast
 import types
 
-from test.support.bytecode_helper import AssemblerTestCase, CfgOptimizationTestCase
+from test.support.bytecode_helper import AssemblerTestCase
 
-from _testinternalcapi import compiler_codegen, optimize_cfg
 
 # Tests for the code-object creation stage of the compiler.
 
