@@ -506,34 +506,36 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
                                        PyStructSequence_Desc *desc,
                                        unsigned long tp_flags)
 {
+    Py_ssize_t n_unnamed_members;
+    Py_ssize_t n_members = count_members(desc, &n_unnamed_members);
     PyMemberDef *members = NULL;
 
-    if (type->tp_flags & Py_TPFLAGS_READY) {
-        assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
-        if (_PyStaticType_InitBuiltin(type) < 0) {
-            PyErr_Format(PyExc_RuntimeError,
-                         "Can't initialize builtin type %s",
-                         desc->name);
+    int initialized = 1;
+    if ((type->tp_flags & Py_TPFLAGS_READY) == 0) {
+        members = initialize_members(desc, n_members, n_unnamed_members);
+        if (members == NULL) {
             goto error;
         }
-        return 0;
+        initialize_static_fields(type, desc, members, tp_flags);
+
+        Py_INCREF(type);  // XXX It should be immortal.
+        initialized = 0;
     }
-
-    Py_ssize_t n_members, n_unnamed_members;
-
-    n_members = count_members(desc, &n_unnamed_members);
-    members = initialize_members(desc, n_members, n_unnamed_members);
-    if (members == NULL) {
-        goto error;
+#ifndef NDEBUG
+    else {
+        assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
     }
-    initialize_static_fields(type, desc, members, tp_flags);
+#endif
 
-    Py_INCREF(type);  // XXX It should be immortal.
     if (_PyStaticType_InitBuiltin(type) < 0) {
         PyErr_Format(PyExc_RuntimeError,
                      "Can't initialize builtin type %s",
                      desc->name);
         goto error;
+    }
+    // This should be dropped if tp_dict is made per-interpreter.
+    if (initialized) {
+        return 0;
     }
 
     if (initialize_structseq_dict(
