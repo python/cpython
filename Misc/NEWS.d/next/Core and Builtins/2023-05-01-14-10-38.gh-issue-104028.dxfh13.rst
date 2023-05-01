@@ -1,2 +1,2 @@
-Reduce objects creation while calling callback function on gc. Patch by
-Dong-hee Na.
+Reduce object creation while calling callback function from gc.
+Patch by Dong-hee Na.
