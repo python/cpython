@@ -1753,6 +1753,17 @@ def Unpack(self, parameters):
         Foo[*tuple[int, str]]
         class Bar(Generic[*Ts]): ...
 
+    The operator can also be used along with a `TypedDict` to annotate
+    `**kwargs` in a function signature. For instance:
+
+      class Movie(TypedDict):
+        name: str
+        year: int
+
+      # This function expects two keyword arguments - *name* of type `str` and
+      # *year* of type `int`.
+      def foo(**kwargs: Unpack[Movie]): ...
+
     Note that there is only some runtime checking of this operator. Not
     everything the runtime allows may be accepted by static type checkers.
 
@@ -1767,7 +1778,7 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):
         # `Unpack` only takes one argument, so __args__ should contain only
         # a single item.
-        return '*' + repr(self.__args__[0])
+        return f'typing.Unpack[{_type_repr(self.__args__[0])}]'
 
     def __getitem__(self, args):
         if self.__typing_is_unpacked_typevartuple__:
