@@ -43,12 +43,12 @@
 #ifdef Py_DEBUG
 static inline tokenizer_mode* TOK_GET_MODE(struct tok_state* tok) {
     assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index < MAXLEVEL);
+    assert(tok->tok_mode_stack_index < MAXFSTRINGLEVEL);
     return &(tok->tok_mode_stack[tok->tok_mode_stack_index]);
 }
 static inline tokenizer_mode* TOK_NEXT_MODE(struct tok_state* tok) {
     assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index < MAXLEVEL);
+    assert(tok->tok_mode_stack_index + 1 < MAXFSTRINGLEVEL); 
     return &(tok->tok_mode_stack[++tok->tok_mode_stack_index]);
 }
 #else
@@ -2235,6 +2235,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
         p_start = tok->start;
         p_end = tok->cur;
+        if (tok->tok_mode_stack_index + 1 >= MAXFSTRINGLEVEL) {
+            return MAKE_TOKEN(syntaxerror(tok, "too many nested f-strings"));
+        }
         tokenizer_mode *the_current_tok = TOK_NEXT_MODE(tok);
         the_current_tok->kind = TOK_FSTRING_MODE;
         the_current_tok->f_string_quote = quote;
