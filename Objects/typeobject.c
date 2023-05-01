@@ -4508,9 +4508,11 @@ _PyStaticType_Dealloc(PyInterpreterState *interp, PyTypeObject *type)
 
     clear_static_type_objects(interp, type);
 
-    type->tp_flags &= ~Py_TPFLAGS_READY;
-    type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-    type->tp_version_tag = 0;
+    if (_Py_IsMainInterpreter(interp)) {
+        type->tp_flags &= ~Py_TPFLAGS_READY;
+        type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
+        type->tp_version_tag = 0;
+    }
 
     _PyStaticType_ClearWeakRefs(interp, type);
     static_builtin_state_clear(interp, type);
@@ -7037,8 +7039,12 @@ _PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
     if (self->tp_flags & Py_TPFLAGS_READY) {
         assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
         assert(_PyType_CheckConsistency(self));
+        /* Per-interpreter tp_subclasses is done lazily.
+           Otherwise we would initialize it here. */
         return 0;
     }
+
+    assert(_Py_IsMainInterpreter(interp));
 
     self->tp_flags |= _Py_TPFLAGS_STATIC_BUILTIN;
     self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
