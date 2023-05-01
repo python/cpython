@@ -2228,7 +2228,7 @@
                         tstate, PY_MONITORING_EVENT_C_RETURN,
                         frame, next_instr-1, global_super, arg);
                     if (err < 0) {
-                        Py_CLEAR(res);
+                        Py_CLEAR(super);
                     }
                 }
             }
