@@ -15158,10 +15158,6 @@ unicode_is_finalizing(void)
 void
 _PyUnicode_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     _PyStaticType_Dealloc(interp, &EncodingMapType);
     _PyStaticType_Dealloc(interp, &PyFieldNameIter_Type);
     _PyStaticType_Dealloc(interp, &PyFormatterIter_Type);

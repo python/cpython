@@ -3493,12 +3493,8 @@ error:
 
 
 void
-_PySys_Fini(PyInterpreterState *interp)
+_PySys_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     _PyStructSequence_FiniBuiltin(interp, &VersionInfoType);
     _PyStructSequence_FiniBuiltin(interp, &FlagsType);
 #if defined(MS_WINDOWS)
@@ -3507,7 +3503,9 @@ _PySys_Fini(PyInterpreterState *interp)
     _PyStructSequence_FiniBuiltin(interp, &Hash_InfoType);
     _PyStructSequence_FiniBuiltin(interp, &AsyncGenHooksType);
 #ifdef __EMSCRIPTEN__
-    Py_CLEAR(EmscriptenInfoType);
+    if (_Py_IsMainInterpreter(interp)) {
+        Py_CLEAR(EmscriptenInfoType);
+    }
 #endif
 }
 

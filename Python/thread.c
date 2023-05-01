@@ -192,9 +192,5 @@ PyThread_GetInfo(void)
 void
 _PyThread_FiniType(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     _PyStructSequence_FiniBuiltin(interp, &ThreadInfoType);
 }

@@ -1666,7 +1666,7 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyIO_FiniTypes(interp);
 
     _PyUnicode_FiniTypes(interp);
-    _PySys_Fini(interp);
+    _PySys_FiniTypes(interp);
     _PyExc_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);

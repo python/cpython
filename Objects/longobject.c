@@ -7,7 +7,6 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_Init()
-#include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
@@ -6365,9 +6364,5 @@ _PyLong_InitTypes(PyInterpreterState *interp)
 void
 _PyLong_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     _PyStructSequence_FiniBuiltin(interp, &Int_InfoType);
 }

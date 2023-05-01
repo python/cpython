@@ -1354,10 +1354,6 @@ _PyErr_InitTypes(PyInterpreterState *interp)
 void
 _PyErr_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     _PyStructSequence_FiniBuiltin(interp, &UnraisableHookArgsType);
 }
 

@@ -2029,9 +2029,6 @@ _PyFloat_Fini(PyInterpreterState *interp)
 void
 _PyFloat_FiniType(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
     _PyStructSequence_FiniBuiltin(interp, &FloatInfoType);
 }
 

@@ -691,10 +691,6 @@ _PyIO_InitTypes(PyInterpreterState *interp)
 void
 _PyIO_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     // Deallocate types in the reverse order to deallocate subclasses before
     // their base classes.
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types) - 1; i >= 0; i--) {
