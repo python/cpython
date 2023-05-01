@@ -74,7 +74,7 @@ def write_int_array_from_ops(name, ops, out):
 
 def main(opcode_py, outfile='Include/opcode.h',
          internaloutfile='Include/internal/pycore_opcode.h',
-         intrinsicoutfile='Include/internal/pycore_intrinsics2.h'):
+         intrinsicoutfile='Include/internal/pycore_intrinsics.h'):
     opcode = {}
     if hasattr(tokenize, 'open'):
         fp = tokenize.open(opcode_py)   # Python 3.2+
