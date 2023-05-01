@@ -620,16 +620,13 @@ _PyStructSequence_FiniBuiltin(PyTypeObject *type)
         return;
     }
 
+    _PyStaticType_Dealloc(type);
+
     // Undo _PyStructSequence_InitBuiltinWithFlags().
     type->tp_name = NULL;
     PyMem_Free(type->tp_members);
     type->tp_members = NULL;
-
-    _PyStaticType_Dealloc(type);
-
-    // Make sure that _PyStructSequence_InitBuiltinWithFlags()
-    // will initialize the type again.
-    assert(type->tp_name == NULL);
+    type->tp_base = NULL;
 }
 
 
