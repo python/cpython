@@ -4501,7 +4501,7 @@ clear_static_type_objects(PyInterpreterState *interp, PyTypeObject *type)
 void
 _PyStaticType_Dealloc(PyInterpreterState *interp, PyTypeObject *type)
 {
-    assert(!(type->tp_flags & Py_TPFLAGS_HEAPTYPE));
+    assert(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
     assert(_Py_IsImmortal((PyObject *)type));
 
     type_dealloc_common(type);
@@ -4512,11 +4512,9 @@ _PyStaticType_Dealloc(PyInterpreterState *interp, PyTypeObject *type)
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
     type->tp_version_tag = 0;
 
-    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        _PyStaticType_ClearWeakRefs(interp, type);
-        static_builtin_state_clear(interp, type);
-        /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
-    }
+    _PyStaticType_ClearWeakRefs(interp, type);
+    static_builtin_state_clear(interp, type);
+    /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
 }
 
 
