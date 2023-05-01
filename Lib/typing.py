@@ -1760,8 +1760,8 @@ def Unpack(self, parameters):
         name: str
         year: int
 
-      # This function expects two keyword arguments - `name` of type `str` and
-      # `year` of type `int`.
+      # This function expects two keyword arguments - *name* of type `str` and
+      # *year* of type `int`.
       def foo(**kwargs: Unpack[Movie]): ...
 
     Note that there is only some runtime checking of this operator. Not
