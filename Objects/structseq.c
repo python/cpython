@@ -507,6 +507,7 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
                                        unsigned long tp_flags)
 {
     if (type->tp_flags & Py_TPFLAGS_READY) {
+        assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
         if (_PyStaticType_InitBuiltin(type) < 0) {
             goto failed_init_builtin;
         }
@@ -583,19 +584,25 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 }
 
 
+/* This is exposed in the internal API, not the public API.
+   It is only called on builtin static types, which are all
+   initialized via _PyStructSequence_InitBuiltinWithFlags(). */
+
 void
-_PyStructSequence_FiniType(PyTypeObject *type)
+_PyStructSequence_FiniBuiltin(PyTypeObject *type)
 {
     // Ensure that the type is initialized
     assert(type->tp_name != NULL);
     assert(type->tp_base == &PyTuple_Type);
+    assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
 
     // Cannot delete a type if it still has subclasses
     if (_PyType_HasSubclasses(type)) {
+        // XXX Shouldn't this be an error?
         return;
     }
 
-    // Undo PyStructSequence_NewType()
+    // Undo _PyStructSequence_InitBuiltinWithFlags().
     type->tp_name = NULL;
     PyMem_Free(type->tp_members);
 
