@@ -7,7 +7,6 @@ import copy
 import decimal
 import io
 import itertools
-import math
 import os
 import pickle
 import random
@@ -49,6 +48,8 @@ pickle_choices = [(pickle, pickle, proto)
                   for proto in range(pickle.HIGHEST_PROTOCOL + 1)]
 assert len(pickle_choices) == pickle.HIGHEST_PROTOCOL + 1
 
+EPOCH_NAIVE = datetime(1970, 1, 1, 0, 0)  # For calculating transitions
+
 # An arbitrary collection of objects of non-datetime types, for testing
 # mixed-type comparisons.
 OTHERSTUFF = (10, 34.5, "abc", {}, [], ())
@@ -57,28 +58,6 @@ OTHERSTUFF = (10, 34.5, "abc", {}, [], ())
 INF = float("inf")
 NAN = float("nan")
 
-
-def _utcfromtimestamp(klass, ts):
-    """Simple re-implementation of datetime.utcfromtimestamp.
-
-    utcfromtimestamp is deprecated because it returns a naïve datetime object
-    despite being aware that it is UTC. This sort of deliberately wrong object
-    happens to be useful when calculating transition times from a TZif file,
-    so this is a re-implementation of that.
-    """
-    frac, ts = math.modf(ts)
-
-    us = round(frac * 1e6)
-    if us >= 1000000:
-        ts += 1
-        us -= 1000000
-    elif us < 0:
-        ts -= 1
-        us += 1000000
-
-    y, m, d, hh, mm, ss, *_ = _time.gmtime(ts)
-
-    return klass(y, m, d, hh, mm, ss, us)
 
 #############################################################################
 # module tests
@@ -6125,7 +6104,7 @@ class ZoneInfo(tzinfo):
     def transitions(self):
         for (_, prev_ti), (t, ti) in pairs(zip(self.ut, self.ti)):
             shift = ti[0] - prev_ti[0]
-            yield _utcfromtimestamp(datetime, t), shift
+            yield (EPOCH_NAIVE + timedelta(seconds=t)), shift
 
     def nondst_folds(self):
         """Find all folds with the same value of isdst on both sides of the transition."""
