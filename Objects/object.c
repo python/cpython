@@ -1074,6 +1074,17 @@ _PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
             return 0;
         }
     }
+    else if (tp->tp_getattro == (getattrofunc)_Py_module_getattro) {
+        // optimization: suppress attribute error from module getattro method
+        *result = _Py_module_getattro_impl((PyModuleObject*)v, name, 1);
+        if (*result != NULL) {
+            return 1;
+        }
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
     else if (tp->tp_getattro != NULL) {
         *result = (*tp->tp_getattro)(v, name);
     }
