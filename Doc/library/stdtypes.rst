@@ -831,7 +831,7 @@ over ``&``, ``|`` and ``^``.
    raise an error in Python 3.14.
 
 :class:`bool` is a subclass of :class:`int` (see :ref:`typesnumeric`). In
-many numeric contexts, bools behave like the integers 0 and 1, respectively.
+many numeric contexts, ``False`` and ``True`` behave like the integers 0 and 1, respectively.
 However, relying on this is discouraged; explicitly convert using :func:`int`
 instead.
 
