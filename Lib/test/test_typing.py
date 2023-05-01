@@ -117,7 +117,7 @@ class AnyTests(BaseTestCase):
         class Sub(Any): pass
         self.assertEqual(
             repr(Sub),
-            "<class 'test.test_typing.AnyTests.test_repr.<locals>.Sub'>",
+            f"<class '{__name__}.AnyTests.test_repr.<locals>.Sub'>",
         )
 
     def test_errors(self):
