@@ -9,7 +9,7 @@
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
-#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
+#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
 #include <ctype.h>
 #include <float.h>
@@ -6367,5 +6367,5 @@ _PyLong_FiniTypes(PyInterpreterState *interp)
         return;
     }
 
-    _PyStructSequence_FiniType(&Int_InfoType);
+    _PyStructSequence_FiniBuiltin(&Int_InfoType);
 }
