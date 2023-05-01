@@ -1,6 +1,8 @@
 import re
 import sys
-from typing import NoReturn, Callable
+from typing import NewType
+from collections.abc import Callable
+
 
 TokenAndCondition = tuple[str, str]
 TokenStack = list[TokenAndCondition]
@@ -74,7 +76,7 @@ class Monitor:
         self.line_number += 1
         line = line.strip()
 
-        def pop_stack() -> TokenAndCondition | NoReturn:
+        def pop_stack() -> TokenAndCondition:
             if not self.stack:
                 self.fail("#" + token + " without matching #if / #ifdef / #ifndef!")
             return self.stack.pop()

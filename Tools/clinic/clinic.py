@@ -26,8 +26,9 @@ import textwrap
 import traceback
 import types
 
+from collections.abc import Callable
 from types import *
-from typing import TypeVar, Callable
+from typing import NamedTuple, TypeVar, Type
 
 # TODO:
 #
@@ -68,8 +69,13 @@ unknown = Unknown()
 
 sig_end_marker = '--'
 
+Appender = Callable[[str], None]
+Outputter = Callable[[None], str]
 
-_text_accumulator_nt = collections.namedtuple("_text_accumulator_nt", "text append output")
+class _TextAccumulator(NamedTuple):
+    text: list[str]
+    append: Appender
+    output: Outputter
 
 def _text_accumulator():
     text = []
@@ -77,10 +83,12 @@ def _text_accumulator():
         s = ''.join(text)
         text.clear()
         return s
-    return _text_accumulator_nt(text, text.append, output)
+    return _TextAccumulator(text, text.append, output)
 
 
-text_accumulator_nt = collections.namedtuple("text_accumulator_nt", "text append")
+class TextAccumulator(NamedTuple):
+    text: list[str]
+    append: Appender
 
 def text_accumulator():
     """
@@ -94,7 +102,7 @@ def text_accumulator():
        empties the accumulator.
     """
     text, append, output = _text_accumulator()
-    return text_accumulator_nt(append, output)
+    return TextAccumulator(append, output)
 
 
 def warn_or_fail(fail=False, *args, filename=None, line_number=None):
@@ -2553,8 +2561,6 @@ class CConverterAutoRegister(type):
     def __init__(cls, name, bases, classdict):
         add_c_converter(cls)
         add_default_legacy_c_converter(cls)
-
-from typing import Type
 
 class CConverter(metaclass=CConverterAutoRegister):
     """
