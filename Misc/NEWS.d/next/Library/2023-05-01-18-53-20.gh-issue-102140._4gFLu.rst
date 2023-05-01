@@ -1,0 +1,2 @@
+Added in the has_header() method, a condition that checks if all elements are strings type.
+ If it's true (in that case, the dictionnary is empty), then we compare the average length of all strings to the header's length in the vote at the end of the function.
