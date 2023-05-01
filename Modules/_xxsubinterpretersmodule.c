@@ -67,16 +67,7 @@ _release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
     }
     int res = _PyCrossInterpreterData_Release(data);
     if (res < 0) {
-        // XXX Fix this!
-        /* The owning interpreter is already destroyed.
-         * Ideally, this shouldn't ever happen.  (It's highly unlikely.)
-         * For now we hack around that to resolve refleaks, by decref'ing
-         * the released object here, even if its the wrong interpreter.
-         * The owning interpreter has already been destroyed
-         * so we should be okay, especially since the currently
-         * shareable types are all very basic, with no GC.
-         * That said, it becomes much messier once interpreters
-         * no longer share a GIL, so this needs to be fixed before then. */
+        /* The owning interpreter is already destroyed. */
         _PyCrossInterpreterData_Clear(NULL, data);
         if (ignoreexc) {
             // XXX Emit a warning?
@@ -481,7 +472,7 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
     }
 
     // Run the script.
-    _sharedexception exc;
+    _sharedexception exc = {NULL, NULL};
     int result = _run_script(interp, codestr, shared, &exc);
 
     // Switch back.
@@ -526,15 +517,20 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         ? (_PyInterpreterConfig)_PyInterpreterConfig_INIT
         : (_PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
     // XXX Possible GILState issues?
-    PyThreadState *tstate = _Py_NewInterpreterFromConfig(&config);
+    PyThreadState *tstate = NULL;
+    PyStatus status = _Py_NewInterpreterFromConfig(&tstate, &config);
     PyThreadState_Swap(save_tstate);
-    if (tstate == NULL) {
+    if (PyStatus_Exception(status)) {
         /* Since no new thread state was created, there is no exception to
            propagate; raise a fresh one after swapping in the old thread
            state. */
+        _PyErr_SetFromPyStatus(status);
+        PyObject *exc = PyErr_GetRaisedException();
         PyErr_SetString(PyExc_RuntimeError, "interpreter creation failed");
+        _PyErr_ChainExceptions1(exc);
         return NULL;
     }
+    assert(tstate != NULL);
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
     PyObject *idobj = _PyInterpreterState_GetIDObject(interp);
     if (idobj == NULL) {

@@ -1488,7 +1488,7 @@ static PyStructSequence_Desc windows_version_desc = {
 };
 
 static PyObject *
-_sys_getwindowsversion_from_kernel32()
+_sys_getwindowsversion_from_kernel32(void)
 {
 #ifndef MS_WINDOWS_DESKTOP
     return NULL;
@@ -1854,7 +1854,9 @@ static Py_ssize_t
 sys_gettotalrefcount_impl(PyObject *module)
 /*[clinic end generated code: output=4103886cf17c25bc input=53b744faa5d2e4f6]*/
 {
-    return _Py_GetRefTotal();
+    /* It may make sense to return the total for the current interpreter
+       or have a second function that does so. */
+    return _Py_GetGlobalRefTotal();
 }
 
 #endif /* Py_REF_DEBUG */
@@ -1869,9 +1871,23 @@ static Py_ssize_t
 sys_getallocatedblocks_impl(PyObject *module)
 /*[clinic end generated code: output=f0c4e873f0b6dcf7 input=dab13ee346a0673e]*/
 {
-    return _Py_GetAllocatedBlocks();
+    // It might make sense to return the count
+    // for just the current interpreter.
+    return _Py_GetGlobalAllocatedBlocks();
 }
 
+/*[clinic input]
+sys.getunicodeinternedsize -> Py_ssize_t
+
+Return the number of elements of the unicode interned dictionary
+[clinic start generated code]*/
+
+static Py_ssize_t
+sys_getunicodeinternedsize_impl(PyObject *module)
+/*[clinic end generated code: output=ad0e4c9738ed4129 input=726298eaa063347a]*/
+{
+    return _PyUnicode_InternedSize();
+}
 
 /*[clinic input]
 sys._getframe
@@ -2241,6 +2257,7 @@ static PyMethodDef sys_methods[] = {
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
+    SYS_GETUNICODEINTERNEDSIZE_METHODDEF
     SYS_GETFILESYSTEMENCODING_METHODDEF
     SYS_GETFILESYSTEMENCODEERRORS_METHODDEF
 #ifdef Py_TRACE_REFS
@@ -2670,11 +2687,13 @@ stderr -- standard error object; used for error messages\n\
   By assigning other file objects (or objects that behave like files)\n\
   to these, it is possible to redirect all of the interpreter's I/O.\n\
 \n\
+last_exc - the last uncaught exception\n\
+  Only available in an interactive session after a\n\
+  traceback has been printed.\n\
 last_type -- type of last uncaught exception\n\
 last_value -- value of last uncaught exception\n\
 last_traceback -- traceback of last uncaught exception\n\
-  These three are only available in an interactive session after a\n\
-  traceback has been printed.\n\
+  These three are the (deprecated) legacy representation of last_exc.\n\
 "
 )
 /* concatenating string here */
@@ -3147,10 +3166,8 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("float_info", PyFloat_GetInfo());
     SET_SYS("int_info", PyLong_GetInfo());
     /* initialize hash_info */
-    if (Hash_InfoType.tp_name == NULL) {
-        if (_PyStructSequence_InitBuiltin(&Hash_InfoType, &hash_info_desc) < 0) {
-            goto type_init_failed;
-        }
+    if (_PyStructSequence_InitBuiltin(&Hash_InfoType, &hash_info_desc) < 0) {
+        goto type_init_failed;
     }
     SET_SYS("hash_info", get_hash_info(tstate));
     SET_SYS("maxunicode", PyLong_FromLong(0x10FFFF));
@@ -3172,11 +3189,9 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 
 #define ENSURE_INFO_TYPE(TYPE, DESC) \
     do { \
-        if (TYPE.tp_name == NULL) { \
-            if (_PyStructSequence_InitBuiltinWithFlags( \
-                    &TYPE, &DESC, Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) { \
-                goto type_init_failed; \
-            } \
+        if (_PyStructSequence_InitBuiltinWithFlags( \
+                &TYPE, &DESC, Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) { \
+            goto type_init_failed; \
         } \
     } while (0)
 
@@ -3211,11 +3226,9 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("thread_info", PyThread_GetInfo());
 
     /* initialize asyncgen_hooks */
-    if (AsyncGenHooksType.tp_name == NULL) {
-        if (_PyStructSequence_InitBuiltin(
-                &AsyncGenHooksType, &asyncgen_hooks_desc) < 0) {
-            goto type_init_failed;
-        }
+    if (_PyStructSequence_InitBuiltin(
+            &AsyncGenHooksType, &asyncgen_hooks_desc) < 0) {
+        goto type_init_failed;
     }
 
 #ifdef __EMSCRIPTEN__
@@ -3405,6 +3418,7 @@ error:
     return _PyStatus_ERR("can't set preliminary stderr");
 }
 
+PyObject *_Py_CreateMonitoringObject(void);
 
 /* Create sys module without all attributes.
    _PySys_UpdateConfig() should be called later to add remaining attributes. */
@@ -3454,6 +3468,16 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         goto error;
     }
 
+    PyObject *monitoring = _Py_CreateMonitoringObject();
+    if (monitoring == NULL) {
+        goto error;
+    }
+    int err = PyDict_SetItemString(sysdict, "monitoring", monitoring);
+    Py_DECREF(monitoring);
+    if (err < 0) {
+        goto error;
+    }
+
     assert(!_PyErr_Occurred(tstate));
 
     *sysmod_p = sysmod;
@@ -3468,13 +3492,13 @@ void
 _PySys_Fini(PyInterpreterState *interp)
 {
     if (_Py_IsMainInterpreter(interp)) {
-        _PyStructSequence_FiniType(&VersionInfoType);
-        _PyStructSequence_FiniType(&FlagsType);
+        _PyStructSequence_FiniBuiltin(&VersionInfoType);
+        _PyStructSequence_FiniBuiltin(&FlagsType);
 #if defined(MS_WINDOWS)
-        _PyStructSequence_FiniType(&WindowsVersionType);
+        _PyStructSequence_FiniBuiltin(&WindowsVersionType);
 #endif
-        _PyStructSequence_FiniType(&Hash_InfoType);
-        _PyStructSequence_FiniType(&AsyncGenHooksType);
+        _PyStructSequence_FiniBuiltin(&Hash_InfoType);
+        _PyStructSequence_FiniBuiltin(&AsyncGenHooksType);
 #ifdef __EMSCRIPTEN__
         Py_CLEAR(EmscriptenInfoType);
 #endif

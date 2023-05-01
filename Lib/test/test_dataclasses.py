@@ -5,11 +5,13 @@
 from dataclasses import *
 
 import abc
+import io
 import pickle
 import inspect
 import builtins
 import types
 import weakref
+import traceback
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
@@ -282,6 +284,23 @@ class TestCase(unittest.TestCase):
             BUILTINS: int
         c = C(5)
         self.assertEqual(c.BUILTINS, 5)
+
+    def test_field_with_special_single_underscore_names(self):
+        # gh-98886
+
+        @dataclass
+        class X:
+            x: int = field(default_factory=lambda: 111)
+            _dflt_x: int = field(default_factory=lambda: 222)
+
+        X()
+
+        @dataclass
+        class Y:
+            y: int = field(default_factory=lambda: 111)
+            _HAS_DEFAULT_FACTORY: int = 222
+
+        assert Y(y=222).y == 222
 
     def test_field_named_like_builtin(self):
         # Attribute names can shadow built-in names
@@ -738,8 +757,8 @@ class TestCase(unittest.TestCase):
                 class Subclass(typ): pass
 
                 with self.assertRaisesRegex(ValueError,
-                                            f"mutable default .*Subclass'>"
-                                            ' for field z is not allowed'
+                                            "mutable default .*Subclass'>"
+                                            " for field z is not allowed"
                                             ):
                     @dataclass
                     class Point:
@@ -1526,6 +1545,16 @@ class TestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'dataclass type or instance'):
             fields(C())
 
+    def test_clean_traceback_from_fields_exception(self):
+        stdout = io.StringIO()
+        try:
+            fields(object)
+        except TypeError as exc:
+            traceback.print_exception(exc, file=stdout)
+        printed_traceback = stdout.getvalue()
+        self.assertNotIn("AttributeError", printed_traceback)
+        self.assertNotIn("__dataclass_fields__", printed_traceback)
+
     def test_helper_asdict(self):
         # Basic tests for asdict(), it should return a new dictionary.
         @dataclass
@@ -2267,6 +2296,19 @@ class TestDocString(unittest.TestCase):
             x: deque = field(default_factory=deque)
 
         self.assertDocStrEqual(C.__doc__, "C(x:collections.deque=<factory>)")
+
+    def test_docstring_with_no_signature(self):
+        # See https://github.com/python/cpython/issues/103449
+        class Meta(type):
+            __call__ = dict
+        class Base(metaclass=Meta):
+            pass
+
+        @dataclass
+        class C(Base):
+            pass
+
+        self.assertDocStrEqual(C.__doc__, "C")
 
 
 class TestInit(unittest.TestCase):
@@ -3142,6 +3184,74 @@ class TestSlots(unittest.TestCase):
                 self.assertIsNot(obj, p)
                 self.assertEqual(obj, p)
 
+    @dataclass(frozen=True, slots=True)
+    class FrozenSlotsGetStateClass:
+        foo: str
+        bar: int
+
+        getstate_called: bool = field(default=False, compare=False)
+
+        def __getstate__(self):
+            object.__setattr__(self, 'getstate_called', True)
+            return [self.foo, self.bar]
+
+    @dataclass(frozen=True, slots=True)
+    class FrozenSlotsSetStateClass:
+        foo: str
+        bar: int
+
+        setstate_called: bool = field(default=False, compare=False)
+
+        def __setstate__(self, state):
+            object.__setattr__(self, 'setstate_called', True)
+            object.__setattr__(self, 'foo', state[0])
+            object.__setattr__(self, 'bar', state[1])
+
+    @dataclass(frozen=True, slots=True)
+    class FrozenSlotsAllStateClass:
+        foo: str
+        bar: int
+
+        getstate_called: bool = field(default=False, compare=False)
+        setstate_called: bool = field(default=False, compare=False)
+
+        def __getstate__(self):
+            object.__setattr__(self, 'getstate_called', True)
+            return [self.foo, self.bar]
+
+        def __setstate__(self, state):
+            object.__setattr__(self, 'setstate_called', True)
+            object.__setattr__(self, 'foo', state[0])
+            object.__setattr__(self, 'bar', state[1])
+
+    def test_frozen_slots_pickle_custom_state(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj = self.FrozenSlotsGetStateClass('a', 1)
+                dumped = pickle.dumps(obj, protocol=proto)
+
+                self.assertTrue(obj.getstate_called)
+                self.assertEqual(obj, pickle.loads(dumped))
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj = self.FrozenSlotsSetStateClass('a', 1)
+                obj2 = pickle.loads(pickle.dumps(obj, protocol=proto))
+
+                self.assertTrue(obj2.setstate_called)
+                self.assertEqual(obj, obj2)
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj = self.FrozenSlotsAllStateClass('a', 1)
+                dumped = pickle.dumps(obj, protocol=proto)
+
+                self.assertTrue(obj.getstate_called)
+
+                obj2 = pickle.loads(dumped)
+                self.assertTrue(obj2.setstate_called)
+                self.assertEqual(obj, obj2)
+
     def test_slots_with_default_no_init(self):
         # Originally reported in bpo-44649.
         @dataclass(slots=True)
@@ -3629,7 +3739,7 @@ class TestStringAnnotations(unittest.TestCase):
 ByMakeDataClass = make_dataclass('ByMakeDataClass', [('x', int)])
 ManualModuleMakeDataClass = make_dataclass('ManualModuleMakeDataClass',
                                            [('x', int)],
-                                           module='test.test_dataclasses')
+                                           module=__name__)
 WrongNameMakeDataclass = make_dataclass('Wrong', [('x', int)])
 WrongModuleMakeDataclass = make_dataclass('WrongModuleMakeDataclass',
                                           [('x', int)],

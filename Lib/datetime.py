@@ -1801,6 +1801,13 @@ class datetime(date):
     @classmethod
     def utcfromtimestamp(cls, t):
         """Construct a naive UTC datetime from a POSIX timestamp."""
+        import warnings
+        warnings.warn("datetime.utcfromtimestamp() is deprecated and scheduled "
+                      "for removal in a future version. Use timezone-aware "
+                      "objects to represent datetimes in UTC: "
+                      "datetime.fromtimestamp(t, datetime.UTC).",
+                      DeprecationWarning,
+                      stacklevel=2)
         return cls._fromtimestamp(t, True, None)
 
     @classmethod
@@ -1812,8 +1819,15 @@ class datetime(date):
     @classmethod
     def utcnow(cls):
         "Construct a UTC datetime from time.time()."
+        import warnings
+        warnings.warn("datetime.utcnow() is deprecated and scheduled for "
+                      "removal in a future version. Instead, Use timezone-aware "
+                      "objects to represent datetimes in UTC: "
+                      "datetime.now(datetime.UTC).",
+                      DeprecationWarning,
+                      stacklevel=2)
         t = _time.time()
-        return cls.utcfromtimestamp(t)
+        return cls._fromtimestamp(t, True, None)
 
     @classmethod
     def combine(cls, date, time, tzinfo=True):
@@ -1965,6 +1979,11 @@ class datetime(date):
     def _local_timezone(self):
         if self.tzinfo is None:
             ts = self._mktime()
+            # Detect gap
+            ts2 = self.replace(fold=1-self.fold)._mktime()
+            if ts2 != ts: # This happens in a gap or a fold
+                if (ts2 > ts) == self.fold:
+                    ts = ts2
         else:
             ts = (self - _EPOCH) // timedelta(seconds=1)
         localtm = _time.localtime(ts)

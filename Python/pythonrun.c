@@ -18,7 +18,7 @@
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
-#include "pycore_pyerrors.h"      // _PyErr_Fetch, _Py_Offer_Suggestions
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException, _Py_Offer_Suggestions
 #include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
@@ -776,6 +776,10 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
     }
 
     if (set_sys_last_vars) {
+        if (_PySys_SetAttr(&_Py_ID(last_exc), exc) < 0) {
+            _PyErr_Clear(tstate);
+        }
+        /* Legacy version: */
         if (_PySys_SetAttr(&_Py_ID(last_type), typ) < 0) {
             _PyErr_Clear(tstate);
         }
@@ -1103,7 +1107,7 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
     if (notes == NULL) {
         return -1;
     }
-    if (!PySequence_Check(notes)) {
+    if (!PySequence_Check(notes) || PyUnicode_Check(notes) || PyBytes_Check(notes)) {
         int res = 0;
         if (write_indented_margin(ctx, f) < 0) {
             res = -1;
@@ -1118,6 +1122,9 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
             Py_DECREF(s);
         }
         Py_DECREF(notes);
+        if (PyFile_WriteString("\n", f) < 0) {
+            res = -1;
+        }
         return res;
     }
     Py_ssize_t num_notes = PySequence_Length(notes);

@@ -12,7 +12,7 @@
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
+#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
 #include <ctype.h>
 #include <float.h>
@@ -1990,20 +1990,10 @@ _PyFloat_InitState(PyInterpreterState *interp)
 PyStatus
 _PyFloat_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    if (PyType_Ready(&PyFloat_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize float type");
-    }
-
     /* Init float info */
-    if (FloatInfoType.tp_name == NULL) {
-        if (_PyStructSequence_InitBuiltin(&FloatInfoType,
-                                          &floatinfo_desc) < 0) {
-            return _PyStatus_ERR("can't init float info type");
-        }
+    if (_PyStructSequence_InitBuiltin(&FloatInfoType,
+                                      &floatinfo_desc) < 0) {
+        return _PyStatus_ERR("can't init float info type");
     }
 
     return _PyStatus_OK();
@@ -2039,7 +2029,7 @@ void
 _PyFloat_FiniType(PyInterpreterState *interp)
 {
     if (_Py_IsMainInterpreter(interp)) {
-        _PyStructSequence_FiniType(&FloatInfoType);
+        _PyStructSequence_FiniBuiltin(&FloatInfoType);
     }
 }
 

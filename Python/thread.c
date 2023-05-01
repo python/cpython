@@ -7,7 +7,7 @@
 
 #include "Python.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
+#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 #include "pycore_pythread.h"
 
 #ifndef DONT_HAVE_STDIO_H
@@ -137,10 +137,8 @@ PyThread_GetInfo(void)
     int len;
 #endif
 
-    if (ThreadInfoType.tp_name == 0) {
-        if (_PyStructSequence_InitBuiltin(&ThreadInfoType,
-                                          &threadinfo_desc) < 0)
-            return NULL;
+    if (_PyStructSequence_InitBuiltin(&ThreadInfoType, &threadinfo_desc) < 0) {
+        return NULL;
     }
 
     threadinfo = PyStructSequence_New(&ThreadInfoType);
@@ -197,5 +195,5 @@ _PyThread_FiniType(PyInterpreterState *interp)
         return;
     }
 
-    _PyStructSequence_FiniType(&ThreadInfoType);
+    _PyStructSequence_FiniBuiltin(&ThreadInfoType);
 }

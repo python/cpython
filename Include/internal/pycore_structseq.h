@@ -15,7 +15,7 @@ PyAPI_FUNC(PyTypeObject *) _PyStructSequence_NewType(
     PyStructSequence_Desc *desc,
     unsigned long tp_flags);
 
-PyAPI_FUNC(int) _PyStructSequence_InitBuiltinWithFlags(
+extern int _PyStructSequence_InitBuiltinWithFlags(
     PyTypeObject *type,
     PyStructSequence_Desc *desc,
     unsigned long tp_flags);
@@ -27,7 +27,7 @@ _PyStructSequence_InitBuiltin(PyTypeObject *type,
     return _PyStructSequence_InitBuiltinWithFlags(type, desc, 0);
 }
 
-extern void _PyStructSequence_FiniType(PyTypeObject *type);
+extern void _PyStructSequence_FiniBuiltin(PyTypeObject *type);
 
 #ifdef __cplusplus
 }

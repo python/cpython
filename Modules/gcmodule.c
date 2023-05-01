@@ -418,8 +418,20 @@ validate_list(PyGC_Head *head, enum flagstates flags)
 static void
 update_refs(PyGC_Head *containers)
 {
+    PyGC_Head *next;
     PyGC_Head *gc = GC_NEXT(containers);
-    for (; gc != containers; gc = GC_NEXT(gc)) {
+
+    while (gc != containers) {
+        next = GC_NEXT(gc);
+        /* Move any object that might have become immortal to the
+         * permanent generation as the reference count is not accurately
+         * reflecting the actual number of live references to this object
+         */
+        if (_Py_IsImmortal(FROM_GC(gc))) {
+           gc_list_move(gc, &get_gc_state()->permanent_generation.head);
+           gc = next;
+           continue;
+        }
         gc_reset_refs(gc, Py_REFCNT(FROM_GC(gc)));
         /* Python's cyclic gc should never see an incoming refcount
          * of 0:  if something decref'ed to 0, it should have been
@@ -440,6 +452,7 @@ update_refs(PyGC_Head *containers)
          * check instead of an assert?
          */
         _PyObject_ASSERT(FROM_GC(gc), gc_get_refs(gc) != 0);
+        gc = next;
     }
 }
 
@@ -1375,10 +1388,19 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
             return;
         }
     }
+
+    PyObject *phase_obj = PyUnicode_FromString(phase);
+    if (phase_obj == NULL) {
+        Py_XDECREF(info);
+        PyErr_WriteUnraisable(NULL);
+        return;
+    }
+
+    PyObject *stack[] = {phase_obj, info};
     for (Py_ssize_t i=0; i<PyList_GET_SIZE(gcstate->callbacks); i++) {
         PyObject *r, *cb = PyList_GET_ITEM(gcstate->callbacks, i);
         Py_INCREF(cb); /* make sure cb doesn't go away */
-        r = PyObject_CallFunction(cb, "sO", phase, info);
+        r = PyObject_Vectorcall(cb, stack, 2, NULL);
         if (r == NULL) {
             PyErr_WriteUnraisable(cb);
         }
@@ -1387,6 +1409,7 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
         }
         Py_DECREF(cb);
     }
+    Py_DECREF(phase_obj);
     Py_XDECREF(info);
     assert(!_PyErr_Occurred(tstate));
 }
@@ -2348,16 +2371,17 @@ PyVarObject *
 _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
     const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
+    const size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
     _PyObject_ASSERT((PyObject *)op, !_PyObject_GC_IS_TRACKED(op));
-    if (basicsize > (size_t)PY_SSIZE_T_MAX - sizeof(PyGC_Head)) {
+    if (basicsize > (size_t)PY_SSIZE_T_MAX - presize) {
         return (PyVarObject *)PyErr_NoMemory();
     }
-
-    PyGC_Head *g = AS_GC(op);
-    g = (PyGC_Head *)PyObject_Realloc(g,  sizeof(PyGC_Head) + basicsize);
-    if (g == NULL)
+    char *mem = (char *)op - presize;
+    mem = (char *)PyObject_Realloc(mem,  presize + basicsize);
+    if (mem == NULL) {
         return (PyVarObject *)PyErr_NoMemory();
-    op = (PyVarObject *) FROM_GC(g);
+    }
+    op = (PyVarObject *) (mem + presize);
     Py_SET_SIZE(op, nitems);
     return op;
 }

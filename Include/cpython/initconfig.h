@@ -25,6 +25,7 @@ PyAPI_FUNC(PyStatus) PyStatus_Exit(int exitcode);
 PyAPI_FUNC(int) PyStatus_IsError(PyStatus err);
 PyAPI_FUNC(int) PyStatus_IsExit(PyStatus err);
 PyAPI_FUNC(int) PyStatus_Exception(PyStatus err);
+PyAPI_FUNC(PyObject *) _PyErr_SetFromPyStatus(PyStatus status);
 
 /* --- PyWideStringList ------------------------------------------------ */
 
@@ -244,6 +245,8 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
 /* --- PyInterpreterConfig ------------------------------------ */
 
 typedef struct {
+    // XXX "allow_object_sharing"?  "own_objects"?
+    int use_main_obmalloc;
     int allow_fork;
     int allow_exec;
     int allow_threads;
@@ -253,6 +256,7 @@ typedef struct {
 
 #define _PyInterpreterConfig_INIT \
     { \
+        .use_main_obmalloc = 0, \
         .allow_fork = 0, \
         .allow_exec = 0, \
         .allow_threads = 1, \
@@ -262,6 +266,7 @@ typedef struct {
 
 #define _PyInterpreterConfig_LEGACY_INIT \
     { \
+        .use_main_obmalloc = 1, \
         .allow_fork = 1, \
         .allow_exec = 1, \
         .allow_threads = 1, \

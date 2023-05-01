@@ -836,7 +836,7 @@ long_lcm(PyObject *a, PyObject *b)
 {
     PyObject *g, *m, *f, *ab;
 
-    if (Py_SIZE(a) == 0 || Py_SIZE(b) == 0) {
+    if (_PyLong_IsZero((PyLongObject *)a) || _PyLong_IsZero((PyLongObject *)b)) {
         return PyLong_FromLong(0);
     }
     g = _PyLong_GCD(a, b);
@@ -1726,13 +1726,13 @@ math_isqrt(PyObject *module, PyObject *n)
         return NULL;
     }
 
-    if (_PyLong_Sign(n) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
         PyErr_SetString(
             PyExc_ValueError,
             "isqrt() argument must be nonnegative");
         goto error;
     }
-    if (_PyLong_Sign(n) == 0) {
+    if (_PyLong_IsZero((PyLongObject *)n)) {
         Py_DECREF(n);
         return PyLong_FromLong(0);
     }
@@ -2096,7 +2096,7 @@ math_trunc(PyObject *module, PyObject *x)
         return PyFloat_Type.tp_as_number->nb_int(x);
     }
 
-    if (Py_TYPE(x)->tp_dict == NULL) {
+    if (_PyType_IsReady(Py_TYPE(x))) {
         if (PyType_Ready(Py_TYPE(x)) < 0)
             return NULL;
     }
@@ -2254,7 +2254,7 @@ loghelper(PyObject* arg, double (*func)(double))
         Py_ssize_t e;
 
         /* Negative or zero inputs give a ValueError. */
-        if (Py_SIZE(arg) <= 0) {
+        if (!_PyLong_IsPositive((PyLongObject *)arg)) {
             PyErr_SetString(PyExc_ValueError,
                             "math domain error");
             return NULL;
@@ -2284,33 +2284,22 @@ loghelper(PyObject* arg, double (*func)(double))
 }
 
 
-/*[clinic input]
-math.log
-
-    x:    object
-    [
-    base: object(c_default="NULL") = math.e
-    ]
-    /
-
-Return the logarithm of x to the given base.
-
-If the base not specified, returns the natural logarithm (base e) of x.
-[clinic start generated code]*/
-
+/* AC: cannot convert yet, see gh-102839 and gh-89381, waiting
+   for support of multiple signatures */
 static PyObject *
-math_log_impl(PyObject *module, PyObject *x, int group_right_1,
-              PyObject *base)
-/*[clinic end generated code: output=7b5a39e526b73fc9 input=0f62d5726cbfebbd]*/
+math_log(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
     PyObject *num, *den;
     PyObject *ans;
 
-    num = loghelper(x, m_log);
-    if (num == NULL || base == NULL)
+    if (!_PyArg_CheckPositional("log", nargs, 1, 2))
+        return NULL;
+
+    num = loghelper(args[0], m_log);
+    if (num == NULL || nargs == 1)
         return num;
 
-    den = loghelper(base, m_log);
+    den = loghelper(args[1], m_log);
     if (den == NULL) {
         Py_DECREF(num);
         return NULL;
@@ -2322,6 +2311,10 @@ math_log_impl(PyObject *module, PyObject *x, int group_right_1,
     return ans;
 }
 
+PyDoc_STRVAR(math_log_doc,
+"log(x, [base=math.e])\n\
+Return the logarithm of x to the given base.\n\n\
+If the base is not specified, returns the natural logarithm (base e) of x.");
 
 /*[clinic input]
 math.log2
@@ -2447,9 +2440,8 @@ Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
 To minimize loss of information during the accumulation of fractional
 values, each term has a separate accumulator.  This also breaks up
 sequential dependencies in the inner loop so the CPU can maximize
-floating point throughput. [4]  On a 2.6 GHz Haswell, adding one
-dimension has an incremental cost of only 5ns -- for example when
-moving from hypot(x,y) to hypot(x,y,z).
+floating point throughput. [4]  On an Apple M1 Max, hypot(*vec)
+takes only 3.33 µsec when len(vec) == 1000.
 
 The square root differential correction is needed because a
 correctly rounded square root of a correctly rounded sum of
@@ -2473,7 +2465,7 @@ step is exact.  The Neumaier summation computes as if in doubled
 precision (106 bits) and has the advantage that its input squares
 are non-negative so that the condition number of the sum is one.
 The square root with a differential correction is likewise computed
-as if in double precision.
+as if in doubled precision.
 
 For n <= 1000, prior to the final addition that rounds the overall
 result, the internal accuracy of "h" together with its correction of
@@ -2498,7 +2490,7 @@ References:
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    double x, h, scale, oldcsum, csum = 1.0, frac1 = 0.0, frac2 = 0.0;
+    double x, h, scale, csum = 1.0, frac1 = 0.0, frac2 = 0.0;
     DoubleLength pr, sm;
     int max_e;
     Py_ssize_t i;
@@ -2513,49 +2505,37 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         return max;
     }
     frexp(max, &max_e);
-    if (max_e >= -1023) {
-        scale = ldexp(1.0, -max_e);
-        assert(max * scale >= 0.5);
-        assert(max * scale < 1.0);
+    if (max_e < -1023) {
+        /* When max_e < -1023, ldexp(1.0, -max_e) would overflow. */
         for (i=0 ; i < n ; i++) {
-            x = vec[i];
-            assert(Py_IS_FINITE(x) && fabs(x) <= max);
-
-            x *= scale;
-            assert(fabs(x) < 1.0);
-
-            pr = dl_mul(x, x);
-            assert(pr.hi <= 1.0);
-
-            sm = dl_fast_sum(csum, pr.hi);
-            csum = sm.hi;
-            frac1 += pr.lo;
-            frac2 += sm.lo;
+            vec[i] /= DBL_MIN;          // convert subnormals to normals
         }
-        h = sqrt(csum - 1.0 + (frac1 + frac2));
-        pr = dl_mul(-h, h);
-        sm = dl_fast_sum(csum, pr.hi);
-        csum = sm.hi;
-        frac1 += pr.lo;
-        frac2 += sm.lo;
-        x = csum - 1.0 + (frac1 + frac2);
-        return (h + x / (2.0 * h)) / scale;
+        return DBL_MIN * vector_norm(n, vec, max / DBL_MIN, found_nan);
     }
-    /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
-       So instead of multiplying by a scale, we just divide by *max*.
-    */
+    scale = ldexp(1.0, -max_e);
+    assert(max * scale >= 0.5);
+    assert(max * scale < 1.0);
     for (i=0 ; i < n ; i++) {
         x = vec[i];
         assert(Py_IS_FINITE(x) && fabs(x) <= max);
-        x /= max;
-        x = x*x;
-        assert(x <= 1.0);
-        assert(fabs(csum) >= fabs(x));
-        oldcsum = csum;
-        csum += x;
-        frac1 += (oldcsum - csum) + x;
+        x *= scale;                     // lossless scaling
+        assert(fabs(x) < 1.0);
+        pr = dl_mul(x, x);              // lossless squaring
+        assert(pr.hi <= 1.0);
+        sm = dl_fast_sum(csum, pr.hi);  // lossless addition
+        csum = sm.hi;
+        frac1 += pr.lo;                 // lossy addition
+        frac2 += sm.lo;                 // lossy addition
     }
-    return max * sqrt(csum - 1.0 + frac1);
+    h = sqrt(csum - 1.0 + (frac1 + frac2));
+    pr = dl_mul(-h, h);
+    sm = dl_fast_sum(csum, pr.hi);
+    csum = sm.hi;
+    frac1 += pr.lo;
+    frac2 += sm.lo;
+    x = csum - 1.0 + (frac1 + frac2);
+    h +=  x / (2.0 * h);                 // differential correction
+    return h / scale;
 }
 
 #define NUM_STACK_ELEMS 16
@@ -3736,12 +3716,12 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
     }
     assert(PyLong_CheckExact(n) && PyLong_CheckExact(k));
 
-    if (Py_SIZE(n) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
         PyErr_SetString(PyExc_ValueError,
                         "n must be a non-negative integer");
         goto error;
     }
-    if (Py_SIZE(k) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)k)) {
         PyErr_SetString(PyExc_ValueError,
                         "k must be a non-negative integer");
         goto error;
@@ -3828,12 +3808,12 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     }
     assert(PyLong_CheckExact(n) && PyLong_CheckExact(k));
 
-    if (Py_SIZE(n) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)n)) {
         PyErr_SetString(PyExc_ValueError,
                         "n must be a non-negative integer");
         goto error;
     }
-    if (Py_SIZE(k) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)k)) {
         PyErr_SetString(PyExc_ValueError,
                         "k must be a non-negative integer");
         goto error;
@@ -3865,7 +3845,8 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         if (temp == NULL) {
             goto error;
         }
-        if (Py_SIZE(temp) < 0) {
+        assert(PyLong_Check(temp));
+        if (_PyLong_IsNegative((PyLongObject *)temp)) {
             Py_DECREF(temp);
             result = PyLong_FromLong(0);
             goto done;
@@ -4058,7 +4039,7 @@ static PyMethodDef math_methods[] = {
     {"lcm",             _PyCFunction_CAST(math_lcm),       METH_FASTCALL,  math_lcm_doc},
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
-    MATH_LOG_METHODDEF
+    {"log",             _PyCFunction_CAST(math_log),       METH_FASTCALL,  math_log_doc},
     {"log1p",           math_log1p,     METH_O,         math_log1p_doc},
     MATH_LOG10_METHODDEF
     MATH_LOG2_METHODDEF
