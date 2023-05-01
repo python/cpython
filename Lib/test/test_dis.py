@@ -275,6 +275,43 @@ dis_intrinsic_1_6 = """\
            CALL_INTRINSIC_1         6 (INTRINSIC_LIST_TO_TUPLE)
            RETURN_VALUE
 """
+dis_intrinsic_2_1 = """\
+  0        RESUME                   0
+
+  1        RETURN_CONST             0 (None)
+           PUSH_EXC_INFO
+
+  2        BUILD_LIST               0
+           COPY                     2
+           LOAD_NAME                0 (Exception)
+           CHECK_EG_MATCH
+           COPY                     1
+           POP_JUMP_IF_NONE         8 (to 34)
+           POP_TOP
+           LOAD_NAME                1 (x)
+           POP_TOP
+           JUMP_FORWARD             3 (to 32)
+        >> LIST_APPEND              3
+           POP_TOP
+           JUMP_FORWARD             2 (to 36)
+        >> JUMP_FORWARD             1 (to 36)
+        >> POP_TOP
+        >> LIST_APPEND              1
+           CALL_INTRINSIC_2         1 (INTRINSIC_PREP_RERAISE_STAR)
+           COPY                     1
+           POP_JUMP_IF_NOT_NONE     3 (to 50)
+           POP_TOP
+           POP_EXCEPT
+           RETURN_CONST             0 (None)
+        >> SWAP                     2
+           POP_EXCEPT
+           RERAISE                  0
+        >> COPY                     3
+           POP_EXCEPT
+           RERAISE                  1
+ExceptionTable:
+3 rows
+"""
 
 _BIG_LINENO_FORMAT = """\
   1        RESUME                   0
@@ -973,9 +1010,12 @@ class DisTests(DisTestBase):
 
     def test_intrinsic_1(self):
         # Test that argrepr is displayed for CALL_INTRINSIC_1
-        self.do_disassembly_test('from math import *', dis_intrinsic_1_2)
-        self.do_disassembly_test('+a', dis_intrinsic_1_5)
-        self.do_disassembly_test('(*a,)', dis_intrinsic_1_6)
+        self.do_disassembly_test("from math import *", dis_intrinsic_1_2)
+        self.do_disassembly_test("+a", dis_intrinsic_1_5)
+        self.do_disassembly_test("(*a,)", dis_intrinsic_1_6)
+
+    def test_intrinsic_2(self):
+        self.do_disassembly_test("try: pass\nexcept* Exception: x", dis_intrinsic_2_1)
 
     def test_big_linenos(self):
         def func(count):
