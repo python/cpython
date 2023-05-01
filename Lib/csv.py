@@ -404,7 +404,6 @@ class Sniffer:
         average_size = 0 
         col_are_strings = True
         for i in range(columns): columnTypes[i] = None
-        
         checked = 0
         for row in rdr:
             # arbitrary number of rows to check, to keep it sane
