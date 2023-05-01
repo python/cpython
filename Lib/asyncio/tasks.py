@@ -44,13 +44,14 @@ def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
     if loop is None:
         loop = events.get_running_loop()
-    # capturing the set of eager tasks first, so if an eager task "graduates" to
-    # a regular task in another thread, we don't risk missing it
+    # capturing the set of eager tasks first, so if an eager task "graduates"
+    # to a regular task in another thread, we don't risk missing it.
     eager_tasks = list(_eager_tasks)
-    # Looping over the weak set isn't safe as it can be updated from another thread,
-    # therefore we cast to lists prior to filtering. The list cast itself requires
-    # iteration, so we repeat it several times ignoring RuntimeErrors (which are not
-    # very likely to occur). See issues 34970 and 36607 for details.
+    # Looping over the WeakSet isn't safe as it can be updated from another
+    # thread, therefore we cast it to list prior to filtering. The list cast
+    # itself requires iteration, so we repeat it several times ignoring
+    # RuntimeErrors (which are not very likely to occur).
+    # See issues 34970 and 36607 for details.
     scheduled_tasks = None
     i = 0
     while True:
