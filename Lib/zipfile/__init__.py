@@ -439,7 +439,7 @@ class ZipInfo (object):
         result.append('>')
         return ''.join(result)
 
-    def FileHeader(self, zip64):
+    def FileHeader(self, zip64=False):
         """Return the per-file header as a bytes object."""
         dt = self.date_time
         dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
