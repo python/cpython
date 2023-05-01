@@ -1,4 +1,4 @@
-from bdbx import Pdbx
+from pdbx import Pdbx
 import doctest
 import sys
 from test.test_doctest import _FakeInput
@@ -25,7 +25,7 @@ def test_pdbx_basic_commands():
     ...     return x
 
     >>> def test_function():
-    ...     import bdbx; bdbx.break_here()
+    ...     import pdbx; pdbx.break_here()
     ...     for i in range(5):
     ...         n = f(i)
     ...         pass
@@ -88,7 +88,7 @@ def test_pdbx_basic_breakpoint():
     ...     return x
 
     >>> def test_function():
-    ...     import bdbx; bdbx.break_here()
+    ...     import pdbx; pdbx.break_here()
     ...     for i in range(5):
     ...         n = f(i)
     ...         pass
@@ -132,7 +132,7 @@ def test_pdbx_where_command():
     """Test where command
 
     >>> def g():
-    ...     import bdbx; bdbx.break_here()
+    ...     import pdbx; pdbx.break_here()
     ...     pass
 
     >>> def f():
