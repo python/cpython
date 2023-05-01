@@ -7050,6 +7050,8 @@ _PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
         assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
         assert(self->tp_flags & Py_TPFLAGS_VALID_VERSION_TAG);
 
+        static_builtin_state_init(interp, self);
+
         /* Per-interpreter tp_subclasses is done lazily.
            Otherwise we would initialize it here. */
 
