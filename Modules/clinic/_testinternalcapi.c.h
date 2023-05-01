@@ -128,4 +128,66 @@ _testinternalcapi_optimize_cfg(PyObject *module, PyObject *const *args, Py_ssize
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=efe95836482fd542 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_testinternalcapi_assemble_code_object__doc__,
+"assemble_code_object($module, /, filename, instructions, metadata)\n"
+"--\n"
+"\n"
+"Create a code object for the given instructions.");
+
+#define _TESTINTERNALCAPI_ASSEMBLE_CODE_OBJECT_METHODDEF    \
+    {"assemble_code_object", _PyCFunction_CAST(_testinternalcapi_assemble_code_object), METH_FASTCALL|METH_KEYWORDS, _testinternalcapi_assemble_code_object__doc__},
+
+static PyObject *
+_testinternalcapi_assemble_code_object_impl(PyObject *module,
+                                            PyObject *filename,
+                                            PyObject *instructions,
+                                            PyObject *metadata);
+
+static PyObject *
+_testinternalcapi_assemble_code_object(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(filename), &_Py_ID(instructions), &_Py_ID(metadata), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"filename", "instructions", "metadata", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "assemble_code_object",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    PyObject *filename;
+    PyObject *instructions;
+    PyObject *metadata;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    filename = args[0];
+    instructions = args[1];
+    metadata = args[2];
+    return_value = _testinternalcapi_assemble_code_object_impl(module, filename, instructions, metadata);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=d5e08c9d67f9721f input=a9049054013a1b77]*/
