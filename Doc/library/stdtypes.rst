@@ -808,19 +808,26 @@ Boolean Type - :class:`bool`
 ============================
 
 Booleans represent truth values. The :class:`bool` type has exactly two
-constant instances ``True`` and ``False``.
+constant instances: ``True`` and ``False``.
 
-Other types can be cast to bool explicitly using the function :func:`bool`.
-Additionally, they are implicitly interpreted as bool in some contexts - see
-:ref:`truth`.
+.. index::
+   single: False
+   single: True
+   pair: Boolean; values
+
+The built-in function :func:`bool`  converts any value to a boolean, if the
+value can be interpreted as a truth value (see section :ref:`truth` above).
 
 For logical operations, use the :ref:`boolean operators <boolean>` ``and``,
 ``or`` and ``not``.
 When applying the bitwise operators ``&``, ``|``, ``^`` to two booleans, they
 return a bool equivalent to the logical operations "and", "or", "xor". Still,
 for ``&`` and ``|``, the logical operators ``and`` and ``or`` are preferred.
-The use of the bitwise inversion operator ``~`` is deprecated and will raise
-an error in Python 3.14.
+
+.. deprecated:: 3.12
+
+   The use of the bitwise inversion operator ``~`` is deprecated and will
+   raise an error in Python 3.14.
 
 :class:`bool` is a subclass of :class:`int` (see :ref:`typesnumeric`). In
 many numeric contexts, bools behave like the integers 0 and 1, respectively.
@@ -5417,20 +5424,6 @@ information.  There is exactly one ``NotImplemented`` object.
 ``type(NotImplemented)()`` produces the singleton instance.
 
 It is written as ``NotImplemented``.
-
-
-.. _bltin-boolean-values:
-
-Boolean Values
---------------
-
-Boolean values are the two constant objects ``False`` and ``True``.  See
-:ref:`typebool` for more info.
-
-.. index::
-   single: False
-   single: True
-   pair: Boolean; values
 
 
 .. _typesinternal:
