@@ -1778,7 +1778,7 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):
         # `Unpack` only takes one argument, so __args__ should contain only
         # a single item.
-        return f'typing.Unpack[{repr(self.__args__[0])}]'
+        return f'typing.Unpack[{_type_repr(self.__args__[0])}]'
 
     def __getitem__(self, args):
         if self.__typing_is_unpacked_typevartuple__:

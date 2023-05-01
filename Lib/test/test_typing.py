@@ -884,7 +884,7 @@ class UnpackTests(BaseTestCase):
         Movie = TypedDict('Movie', {'name': str, 'year': int})
         def foo(**kwargs: Unpack[Movie]): ...
         self.assertEqual(repr(foo.__annotations__['kwargs']),
-                         f"typing.Unpack[<class '{__name__}.Movie'>]")
+                         f"typing.Unpack[{__name__}.Movie]")
 
 class TypeVarTupleTests(BaseTestCase):
 
