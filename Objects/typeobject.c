@@ -4502,15 +4502,11 @@ void
 _PyStaticType_Dealloc(PyInterpreterState *interp, PyTypeObject *type)
 {
     assert(!(type->tp_flags & Py_TPFLAGS_HEAPTYPE));
+    assert(_Py_IsImmortal((PyObject *)type));
 
     type_dealloc_common(type);
 
     clear_static_type_objects(interp, type);
-
-    // PyObject_ClearWeakRefs() raises an exception if Py_REFCNT() != 0
-    if (Py_REFCNT(type) == 0) {
-        PyObject_ClearWeakRefs((PyObject *)type);
-    }
 
     type->tp_flags &= ~Py_TPFLAGS_READY;
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
