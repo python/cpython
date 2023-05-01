@@ -546,11 +546,11 @@ Eager Task Factory
     .. note::
 
         Immediate execution of the coroutine is a semantic change.
-        If the coroutine blocks, the task is never scheduled to the event loop.
-        If the coroutine execution returns or raises, the task is scheduled to
-        the event loop. This change may introduce behavior changes to existing
-        applications. For example, the application's task execution order is
-        likely to change.
+        If the coroutine returns or raises, the task is never scheduled
+        to the event loop. If the coroutine execution blocks, the task is
+        scheduled to the event loop. This change may introduce behavior
+        changes to existing applications. For example,
+        the application's task execution order is likely to change.
 
     .. versionadded:: 3.12
 
