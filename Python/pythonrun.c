@@ -1107,7 +1107,7 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
     if (notes == NULL) {
         return -1;
     }
-    if (!PySequence_Check(notes)) {
+    if (!PySequence_Check(notes) || PyUnicode_Check(notes) || PyBytes_Check(notes)) {
         int res = 0;
         if (write_indented_margin(ctx, f) < 0) {
             res = -1;
@@ -1122,6 +1122,9 @@ print_exception_notes(struct exception_print_context *ctx, PyObject *value)
             Py_DECREF(s);
         }
         Py_DECREF(notes);
+        if (PyFile_WriteString("\n", f) < 0) {
+            res = -1;
+        }
         return res;
     }
     Py_ssize_t num_notes = PySequence_Length(notes);

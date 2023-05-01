@@ -1539,11 +1539,11 @@ class BaseExceptionReportingTests:
 
         e.__notes__ = BadThing()
         notes_repr = 'bad repr'
-        self.assertEqual(self.get_report(e), vanilla + notes_repr)
+        self.assertEqual(self.get_report(e), vanilla + notes_repr + '\n')
 
         e.__notes__ = Unprintable()
         err_msg = '<__notes__ repr() failed>'
-        self.assertEqual(self.get_report(e), vanilla + err_msg)
+        self.assertEqual(self.get_report(e), vanilla + err_msg + '\n')
 
         # non-string item in the __notes__ sequence
         e.__notes__  = [BadThing(), 'Final Note']
@@ -1554,6 +1554,14 @@ class BaseExceptionReportingTests:
         e.__notes__  = [Unprintable(), 'Final Note']
         err_msg = '<note str() failed>'
         self.assertEqual(self.get_report(e), vanilla + err_msg + '\nFinal Note\n')
+
+        e.__notes__  = "please do not explode me"
+        err_msg = "'please do not explode me'"
+        self.assertEqual(self.get_report(e), vanilla + err_msg + '\n')
+
+        e.__notes__  = b"please do not show me as numbers"
+        err_msg = "b'please do not show me as numbers'"
+        self.assertEqual(self.get_report(e), vanilla + err_msg + '\n')
 
     def test_exception_with_note_with_multiple_notes(self):
         e = ValueError(42)

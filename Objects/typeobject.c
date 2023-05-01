@@ -8306,17 +8306,23 @@ _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name)
     if (getattribute == NULL ||
         (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
-         (void *)PyObject_GenericGetAttr))
-        res = PyObject_GenericGetAttr(self, name);
-    else {
+             (void *)PyObject_GenericGetAttr)) {
+        res = _PyObject_GenericGetAttrWithDict(self, name, NULL, 1);
+        /* if res == NULL with no exception set, then it must be an
+           AttributeError suppressed by us. */
+        if (res == NULL && !PyErr_Occurred()) {
+            res = call_attribute(self, getattr, name);
+        }
+    } else {
         Py_INCREF(getattribute);
         res = call_attribute(self, getattribute, name);
         Py_DECREF(getattribute);
+        if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+            res = call_attribute(self, getattr, name);
+        }
     }
-    if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
-        res = call_attribute(self, getattr, name);
-    }
+
     Py_DECREF(getattr);
     return res;
 }
