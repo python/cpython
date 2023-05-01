@@ -2552,8 +2552,9 @@ f_string_middle:
     while (end_quote_size != current_tok->f_string_quote_size) {
         int c = tok_nextc(tok);
         if (c == EOF || (current_tok->f_string_quote_size == 1 && c == '\n')) {
-            if (tok->decoding_erred)
+            if (tok->decoding_erred) {
                 return MAKE_TOKEN(ERRORTOKEN);
+            }
 
             assert(tok->multi_line_start != NULL);
             // shift the tok_state's location into
