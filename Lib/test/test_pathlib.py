@@ -33,7 +33,7 @@ class _BasePurePathSubclass(object):
         super().__init__(*args)
         self.session_id = session_id
 
-    def with_segments(self, *args):
+    def with_path(self, *args):
         return type(self)(*args, session_id=self.session_id)
 
 
@@ -122,7 +122,7 @@ class _BasePurePathTest(object):
         self._check_str_subclass('a/b.txt')
         self._check_str_subclass('/a/b.txt')
 
-    def test_with_segments_common(self):
+    def test_with_path_common(self):
         class P(_BasePurePathSubclass, self.cls):
             pass
         p = P('foo', 'bar', session_id=42)
@@ -132,7 +132,7 @@ class _BasePurePathTest(object):
         self.assertEqual(42, p.with_name('foo').session_id)
         self.assertEqual(42, p.with_stem('foo').session_id)
         self.assertEqual(42, p.with_suffix('.foo').session_id)
-        self.assertEqual(42, p.with_segments('foo').session_id)
+        self.assertEqual(42, p.with_path('foo').session_id)
         self.assertEqual(42, p.relative_to('foo').session_id)
         self.assertEqual(42, p.parent.session_id)
         for parent in p.parents:
@@ -1625,13 +1625,13 @@ class _BasePathTest(object):
             env['HOME'] = os.path.join(BASE, 'home')
             self._test_home(self.cls.home())
 
-    def test_with_segments(self):
+    def test_with_path(self):
         class P(_BasePurePathSubclass, self.cls):
             pass
         p = P(BASE, session_id=42)
         self.assertEqual(42, p.absolute().session_id)
         self.assertEqual(42, p.resolve().session_id)
-        self.assertEqual(42, p.with_segments('~').expanduser().session_id)
+        self.assertEqual(42, p.with_path('~').expanduser().session_id)
         self.assertEqual(42, (p / 'fileA').rename(p / 'fileB').session_id)
         self.assertEqual(42, (p / 'fileB').replace(p / 'fileA').session_id)
         if os_helper.can_symlink():
