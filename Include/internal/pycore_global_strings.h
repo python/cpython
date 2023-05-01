@@ -517,6 +517,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(memlimit)
         STRUCT_FOR_ID(message)
         STRUCT_FOR_ID(metaclass)
+        STRUCT_FOR_ID(metadata)
         STRUCT_FOR_ID(method)
         STRUCT_FOR_ID(mod)
         STRUCT_FOR_ID(mode)

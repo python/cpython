@@ -1029,6 +1029,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(memlimit));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(message));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(metaclass));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(metadata));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(method));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mod));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mode));
