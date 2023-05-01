@@ -692,8 +692,6 @@ def patch_pairindextypes(app) -> None:
         # pairindextypes.pop('statement', None)
         # pairindextypes.pop('builtin', None)
 
-        del pairindextypes
-
 
 def setup(app):
     app.add_role('issue', issue_role)
