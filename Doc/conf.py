@@ -114,12 +114,13 @@ if any('htmlhelp' in arg for arg in sys.argv):
 # Short title used e.g. for <title> HTML tags.
 html_short_title = '%s Documentation' % release
 
-# Deployment preview information, from Netlify
-# (See netlify.toml and https://docs.netlify.com/configure-builds/environment-variables/#git-metadata)
+# Deployment preview information
+# (See .readthedocs.yml and https://docs.readthedocs.io/en/stable/reference/environment-variables.html)
+repository_url = os.getenv("READTHEDOCS_GIT_CLONE_URL")
 html_context = {
-    "is_deployment_preview": os.getenv("IS_DEPLOYMENT_PREVIEW"),
-    "repository_url": os.getenv("REPOSITORY_URL"),
-    "pr_id": os.getenv("REVIEW_ID")
+    "is_deployment_preview": os.getenv("READTHEDOCS_VERSION_TYPE") == "external",
+    "repository_url": repository_url.removesuffix(".git") if repository_url else None,
+    "pr_id": os.getenv("READTHEDOCS_VERSION")
 }
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,

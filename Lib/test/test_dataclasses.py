@@ -3184,6 +3184,74 @@ class TestSlots(unittest.TestCase):
                 self.assertIsNot(obj, p)
                 self.assertEqual(obj, p)
 
+    @dataclass(frozen=True, slots=True)
+    class FrozenSlotsGetStateClass:
+        foo: str
+        bar: int
+
+        getstate_called: bool = field(default=False, compare=False)
+
+        def __getstate__(self):
+            object.__setattr__(self, 'getstate_called', True)
+            return [self.foo, self.bar]
+
+    @dataclass(frozen=True, slots=True)
+    class FrozenSlotsSetStateClass:
+        foo: str
+        bar: int
+
+        setstate_called: bool = field(default=False, compare=False)
+
+        def __setstate__(self, state):
+            object.__setattr__(self, 'setstate_called', True)
+            object.__setattr__(self, 'foo', state[0])
+            object.__setattr__(self, 'bar', state[1])
+
+    @dataclass(frozen=True, slots=True)
+    class FrozenSlotsAllStateClass:
+        foo: str
+        bar: int
+
+        getstate_called: bool = field(default=False, compare=False)
+        setstate_called: bool = field(default=False, compare=False)
+
+        def __getstate__(self):
+            object.__setattr__(self, 'getstate_called', True)
+            return [self.foo, self.bar]
+
+        def __setstate__(self, state):
+            object.__setattr__(self, 'setstate_called', True)
+            object.__setattr__(self, 'foo', state[0])
+            object.__setattr__(self, 'bar', state[1])
+
+    def test_frozen_slots_pickle_custom_state(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj = self.FrozenSlotsGetStateClass('a', 1)
+                dumped = pickle.dumps(obj, protocol=proto)
+
+                self.assertTrue(obj.getstate_called)
+                self.assertEqual(obj, pickle.loads(dumped))
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj = self.FrozenSlotsSetStateClass('a', 1)
+                obj2 = pickle.loads(pickle.dumps(obj, protocol=proto))
+
+                self.assertTrue(obj2.setstate_called)
+                self.assertEqual(obj, obj2)
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj = self.FrozenSlotsAllStateClass('a', 1)
+                dumped = pickle.dumps(obj, protocol=proto)
+
+                self.assertTrue(obj.getstate_called)
+
+                obj2 = pickle.loads(dumped)
+                self.assertTrue(obj2.setstate_called)
+                self.assertEqual(obj, obj2)
+
     def test_slots_with_default_no_init(self):
         # Originally reported in bpo-44649.
         @dataclass(slots=True)
@@ -3671,7 +3739,7 @@ class TestStringAnnotations(unittest.TestCase):
 ByMakeDataClass = make_dataclass('ByMakeDataClass', [('x', int)])
 ManualModuleMakeDataClass = make_dataclass('ManualModuleMakeDataClass',
                                            [('x', int)],
-                                           module='test.test_dataclasses')
+                                           module=__name__)
 WrongNameMakeDataclass = make_dataclass('Wrong', [('x', int)])
 WrongModuleMakeDataclass = make_dataclass('WrongModuleMakeDataclass',
                                           [('x', int)],
