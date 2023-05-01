@@ -43,12 +43,12 @@
 #ifdef Py_DEBUG
 static inline tokenizer_mode* TOK_GET_MODE(struct tok_state* tok) {
     assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index < MAXLEVEL);
+    assert(tok->tok_mode_stack_index + 1 < MAXLEVEL);
     return &(tok->tok_mode_stack[tok->tok_mode_stack_index]);
 }
 static inline tokenizer_mode* TOK_NEXT_MODE(struct tok_state* tok) {
     assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index < MAXLEVEL);
+    assert(tok->tok_mode_stack_index + 1 < MAXLEVEL);
     return &(tok->tok_mode_stack[++tok->tok_mode_stack_index]);
 }
 #else
@@ -2413,7 +2413,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     case '(':
     case '[':
     case '{':
-        if (tok->level >= MAXLEVEL) {
+        if (tok->level >= MAXLEVEL || tok->tok_mode_stack_index + 1 >= MAXLEVEL) {
             return MAKE_TOKEN(syntaxerror(tok, "too many nested parentheses"));
         }
         tok->parenstack[tok->level] = c;
