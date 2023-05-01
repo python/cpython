@@ -399,7 +399,6 @@ class Sniffer:
 
         rdr = reader(StringIO(sample), self.sniff(sample))
         header = next(rdr) # assume first row is header
-        
         columns = len(header)
         columnTypes = {}
         average_size = 0 
