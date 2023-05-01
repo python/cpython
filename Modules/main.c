@@ -229,7 +229,7 @@ pymain_import_readline(const PyConfig *config)
 }
 
 /* Strip common leading whitespace, just as textwrap.dedent.
-   It stoles 1 reference from bytes if succeeded, else it will return NULL. */
+   It steals 1 reference from bytes if succeeded, else it will return NULL. */
 static PyObject *dedent_utf8_bytes(PyObject *bytes) {
     if (bytes == NULL || !PyBytes_CheckExact(bytes)) {
         return NULL;
