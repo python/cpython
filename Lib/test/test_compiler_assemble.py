@@ -26,6 +26,9 @@ class IsolatedAssembleTests(AssemblerTestCase):
         return metadata
 
     def assemble_test(self, insts, metadata, expected):
+        metadata = self.complete_metadata(metadata)
+        insts = self.complete_insts_info(insts)
+
         co = self.get_code_object(metadata['filename'], insts, metadata)
         self.assertIsInstance(co, types.CodeType)
 
@@ -54,7 +57,6 @@ class IsolatedAssembleTests(AssemblerTestCase):
             'argcount' : 2,
             'varnames' : {'x' : 0, 'y' : 1},
         }
-        metadata = self.complete_metadata(metadata)
 
         # code for "return (x+y)/2"
         insts = [
@@ -66,7 +68,6 @@ class IsolatedAssembleTests(AssemblerTestCase):
             ('BINARY_OP', 11, 1),   # '/'
             ('RETURN_VALUE', 1),
         ]
-        insts = self.complete_insts_info(insts)
         expected = {(3, 4) : 3.5, (-100, 200) : 50, (10, 18) : 14}
         self.assemble_test(insts, metadata, expected)
 
