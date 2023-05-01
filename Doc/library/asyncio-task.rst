@@ -256,8 +256,9 @@ Creating Tasks
 
    .. note::
 
-      :meth:`asyncio.TaskGroup.create_task` is a newer alternative
-      that allows for convenient waiting for a group of related tasks.
+      :meth:`asyncio.TaskGroup.create_task` is a new alternative
+      leveraging structural concurrency; it allows for waiting
+      for a group of related tasks with strong safety guarantees.
 
    .. important::
 
@@ -300,13 +301,17 @@ in the task at the next opportunity.
 It is recommended that coroutines use ``try/finally`` blocks to robustly
 perform clean-up logic. In case :exc:`asyncio.CancelledError`
 is explicitly caught, it should generally be propagated when
-clean-up is complete. Most code can safely ignore :exc:`asyncio.CancelledError`.
+clean-up is complete. :exc:`asyncio.CancelledError` directly subclasses
+:exc:`BaseException` so most code will not need to be aware of it.
 
 The asyncio components that enable structured concurrency, like
 :class:`asyncio.TaskGroup` and :func:`asyncio.timeout`,
 are implemented using cancellation internally and might misbehave if
 a coroutine swallows :exc:`asyncio.CancelledError`. Similarly, user code
-should not call :meth:`uncancel <asyncio.Task.uncancel>`.
+should not generally call :meth:`uncancel <asyncio.Task.uncancel>`.
+However, in cases when suppressing :exc:`asyncio.CancelledError` is
+truly desired, it is necessary to also call ``uncancel()`` to completely
+remove the cancellation state.
 
 .. _taskgroups:
 
@@ -336,7 +341,7 @@ Example::
         async with asyncio.TaskGroup() as tg:
             task1 = tg.create_task(some_coro(...))
             task2 = tg.create_task(another_coro(...))
-        print("Both tasks have completed now.")
+        print(f"Both tasks have completed now: {task1.result()}, {task2.result()}")
 
 The ``async with`` statement will wait for all tasks in the group to finish.
 While waiting, new tasks may still be added to the group
@@ -455,8 +460,12 @@ Running Tasks Concurrently
    Tasks/Futures to be cancelled.
 
    .. note::
-      A more modern way to create and run tasks concurrently and
-      wait for their completion is :class:`asyncio.TaskGroup`.
+      A new alternative to create and run tasks concurrently and
+      wait for their completion is :class:`asyncio.TaskGroup`. *TaskGroup*
+      provides stronger safety guarantees than *gather* for scheduling a nesting of subtasks:
+      if a task (or a subtask, a task scheduled by a task)
+      raises an exception, *TaskGroup* will, while *gather* will not,
+      cancel the remaining scheduled tasks).
 
    .. _asyncio_example_gather:
 
@@ -620,32 +629,26 @@ Timeouts
     The context manager produced by :func:`asyncio.timeout` can be
     rescheduled to a different deadline and inspected.
 
-    .. class:: Timeout()
+    .. class:: Timeout(when)
 
        An :ref:`asynchronous context manager <async-context-managers>`
-       that limits time spent inside of it.
+       for cancelling overdue coroutines.
 
-        .. versionadded:: 3.11
+       ``when`` should be an absolute time at which the context should time out,
+       as measured by the event loop's clock:
+
+       - If ``when`` is ``None``, the timeout will never trigger.
+       - If ``when < loop.time()``, the timeout will trigger on the next
+         iteration of the event loop.
 
         .. method:: when() -> float | None
 
            Return the current deadline, or ``None`` if the current
            deadline is not set.
 
-           The deadline is a float, consistent with the time returned by
-           :meth:`loop.time`.
-
         .. method:: reschedule(when: float | None)
 
-            Change the time the timeout will trigger.
-
-            If *when* is ``None``, any current deadline will be removed, and the
-            context manager will wait indefinitely.
-
-            If *when* is a float, it is set as the new deadline.
-
-            if *when* is in the past, the timeout will trigger on the next
-            iteration of the event loop.
+            Reschedule the timeout.
 
         .. method:: expired() -> bool
 
@@ -804,6 +807,10 @@ Waiting Primitives
    .. versionchanged:: 3.11
       Passing coroutine objects to ``wait()`` directly is forbidden.
 
+   .. versionchanged:: 3.12
+      Added support for generators yielding tasks.
+
+
 .. function:: as_completed(aws, *, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
@@ -813,9 +820,6 @@ Waiting Primitives
 
    Raises :exc:`TimeoutError` if the timeout occurs before
    all Futures are done.
-
-   .. versionchanged:: 3.10
-      Removed the *loop* parameter.
 
    Example::
 
@@ -829,6 +833,9 @@ Waiting Primitives
    .. deprecated:: 3.10
       Deprecation warning is emitted if not all awaitable objects in the *aws*
       iterable are Future-like objects and there is no running event loop.
+
+   .. versionchanged:: 3.12
+      Added support for generators yielding tasks.
 
 
 Running in Threads
@@ -959,6 +966,13 @@ Introspection
    current loop.
 
    .. versionadded:: 3.7
+
+
+.. function:: iscoroutine(obj)
+
+   Return ``True`` if *obj* is a coroutine object.
+
+   .. versionadded:: 3.4
 
 
 Task Object
@@ -1147,7 +1161,9 @@ Task Object
       Therefore, unlike :meth:`Future.cancel`, :meth:`Task.cancel` does
       not guarantee that the Task will be cancelled, although
       suppressing cancellation completely is not common and is actively
-      discouraged.
+      discouraged.  Should the coroutine nevertheless decide to suppress
+      the cancellation, it needs to call :meth:`Task.uncancel` in addition
+      to catching the exception.
 
       .. versionchanged:: 3.9
          Added the *msg* parameter.
@@ -1236,6 +1252,10 @@ Task Object
       continue running even in case of the timeout.  This is implemented
       with :meth:`uncancel`.  :class:`TaskGroup` context managers use
       :func:`uncancel` in a similar fashion.
+
+      If end-user code is, for some reason, suppresing cancellation by
+      catching :exc:`CancelledError`, it needs to call this method to remove
+      the cancellation state.
 
    .. method:: cancelling()
 

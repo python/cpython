@@ -623,7 +623,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: filter(function, iterable)
 
    Construct an iterator from those elements of *iterable* for which *function*
-   returns true.  *iterable* may be either a sequence, a container which
+   is true.  *iterable* may be either a sequence, a container which
    supports iteration, or an iterator.  If *function* is ``None``, the identity
    function is assumed, that is, all elements of *iterable* that are false are
    removed.
@@ -634,7 +634,7 @@ are always available.  They are listed here in alphabetical order.
    ``None``.
 
    See :func:`itertools.filterfalse` for the complementary function that returns
-   elements of *iterable* for which *function* returns false.
+   elements of *iterable* for which *function* is false.
 
 
 .. class:: float(x=0.0)
@@ -1444,8 +1444,9 @@ are always available.  They are listed here in alphabetical order.
    arguments are converted to text strings, :func:`print` cannot be used with
    binary mode file objects.  For these, use ``file.write(...)`` instead.
 
-   Whether the output is buffered is usually determined by *file*, but if the
-   *flush* keyword argument is true, the stream is forcibly flushed.
+   Output buffering is usually determined by *file*.
+   However, if *flush* is true, the stream is forcibly flushed.
+
 
    .. versionchanged:: 3.3
       Added the *flush* keyword argument.
@@ -1680,7 +1681,7 @@ are always available.  They are listed here in alphabetical order.
 
       class C:
           @staticmethod
-          def f(arg1, arg2, ...): ...
+          def f(arg1, arg2, argN): ...
 
    The ``@staticmethod`` form is a function :term:`decorator` -- see
    :ref:`function` for details.
@@ -1986,7 +1987,6 @@ are always available.  They are listed here in alphabetical order.
 
    .. index::
       statement: import
-      module: imp
 
    .. note::
 

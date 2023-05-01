@@ -1145,7 +1145,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
     .. data:: Py_TPFLAGS_MANAGED_DICT
 
-       This bit indicates that instances of the class have a ``__dict___``
+       This bit indicates that instances of the class have a ``__dict__``
        attribute, and that the space for the dictionary is managed by the VM.
 
        If this flag is set, :const:`Py_TPFLAGS_HAVE_GC` should also be set.
