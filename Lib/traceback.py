@@ -852,12 +852,16 @@ class TracebackException:
             yield _format_final_exc_line(stype, self._str)
         else:
             yield from self._format_syntax_error(stype)
-        if isinstance(self.__notes__, collections.abc.Sequence):
+
+        if (
+            isinstance(self.__notes__, collections.abc.Sequence)
+            and not isinstance(self.__notes__, (str, bytes))
+        ):
             for note in self.__notes__:
                 note = _safe_string(note, 'note')
                 yield from [l + '\n' for l in note.split('\n')]
         elif self.__notes__ is not None:
-            yield _safe_string(self.__notes__, '__notes__', func=repr)
+            yield "{}\n".format(_safe_string(self.__notes__, '__notes__', func=repr))
 
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""
