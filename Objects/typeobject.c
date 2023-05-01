@@ -7041,16 +7041,23 @@ _PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
 {
     assert(_Py_IsImmortal((PyObject *)self));
     assert(!(self->tp_flags & Py_TPFLAGS_HEAPTYPE));
+    assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_DICT));
+    assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF));
 
+    int ismain = _Py_IsMainInterpreter(interp);
     if (self->tp_flags & Py_TPFLAGS_READY) {
+        assert(!ismain);
         assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
-        assert(_PyType_CheckConsistency(self));
+        assert(self->tp_flags & Py_TPFLAGS_VALID_VERSION_TAG);
+
         /* Per-interpreter tp_subclasses is done lazily.
            Otherwise we would initialize it here. */
+
+        assert(_PyType_CheckConsistency(self));
         return 0;
     }
 
-    assert(_Py_IsMainInterpreter(interp));
+    assert(ismain);
 
     self->tp_flags |= _Py_TPFLAGS_STATIC_BUILTIN;
     self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
