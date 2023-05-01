@@ -955,7 +955,7 @@ class CmdLineTest(unittest.TestCase):
             output2 = proc2.stdout.strip()
 
             self.assertEqual(output1, output2)
-            self.assertEqual(output1.replace(b'\r', b''), case['expected'])
+            self.assertEqual(output1.replace(b'\r\n', b'\n'), case['expected'])
 
     def test_cmd_dedent_failcase(self):
         # Mixing tabs and spaces is not allowed
