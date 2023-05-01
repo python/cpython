@@ -398,7 +398,6 @@ class Sniffer:
         # subtracting from the likelihood of the first row being a header.
 
         rdr = reader(StringIO(sample), self.sniff(sample))
-       
         header = next(rdr) # assume first row is header
         
         columns = len(header)
