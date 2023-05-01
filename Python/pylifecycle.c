@@ -1663,6 +1663,8 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyInterpreterState *interp)
 {
+    _PyIO_FiniTypes(interp);
+
     _PyUnicode_FiniTypes(interp);
     _PySys_Fini(interp);
     _PyExc_Fini(interp);
@@ -1705,8 +1707,6 @@ finalize_interp_clear(PyThreadState *tstate)
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
-
-    _PyIO_FiniTypes(tstate->interp);
 
     /* Clear all loghooks */
     /* Both _PySys_Audit function and users still need PyObject, such as tuple.
