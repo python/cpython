@@ -27,6 +27,7 @@ import traceback
 import types
 
 from types import *
+from typing import TypeVar, Callable
 
 # TODO:
 #
@@ -68,7 +69,7 @@ unknown = Unknown()
 sig_end_marker = '--'
 
 
-_text_accumulator_nt = collections.namedtuple("_text_accumulator", "text append output")
+_text_accumulator_nt = collections.namedtuple("_text_accumulator_nt", "text append output")
 
 def _text_accumulator():
     text = []
@@ -79,7 +80,7 @@ def _text_accumulator():
     return _text_accumulator_nt(text, text.append, output)
 
 
-text_accumulator_nt = collections.namedtuple("text_accumulator", "text append")
+text_accumulator_nt = collections.namedtuple("text_accumulator_nt", "text append")
 
 def text_accumulator():
     """
@@ -1915,8 +1916,11 @@ class Destination:
 # maps strings to Language objects.
 # "languages" maps the name of the language ("C", "Python").
 # "extensions" maps the file extension ("c", "py").
+L = TypeVar('L', bound=Language)
+LangDict = dict[str, L]
+
 languages = { 'C': CLanguage, 'Python': PythonLanguage }
-extensions = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx".split() }
+extensions: LangDict = { name: CLanguage for name in "c cc cpp cxx h hh hpp hxx".split() }
 extensions['py'] = PythonLanguage
 
 
@@ -2550,6 +2554,8 @@ class CConverterAutoRegister(type):
         add_c_converter(cls)
         add_default_legacy_c_converter(cls)
 
+from typing import Type
+
 class CConverter(metaclass=CConverterAutoRegister):
     """
     For the init function, self, name, function, and default
@@ -2558,15 +2564,15 @@ class CConverter(metaclass=CConverterAutoRegister):
     """
 
     # The C name to use for this variable.
-    name = None
+    name: str | None = None
 
     # The Python name to use for this variable.
-    py_name = None
+    py_name: str | None = None
 
     # The C type to use for this variable.
     # 'type' should be a Python string specifying the type, e.g. "int".
     # If this is a pointer type, the type string should end with ' *'.
-    type = None
+    type: str | None = None
 
     # The Python default value for this parameter, as a Python value.
     # Or the magic value "unspecified" if there is no default.
@@ -2577,15 +2583,15 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     # If not None, default must be isinstance() of this type.
     # (You can also specify a tuple of types.)
-    default_type = None
+    default_type: Type | tuple[Type, ...] | None = None
 
     # "default" converted into a C value, as a string.
     # Or None if there is no default.
-    c_default = None
+    c_default: str | None = None
 
     # "default" converted into a Python value, as a string.
     # Or None if there is no default.
-    py_default = None
+    py_default: str | None = None
 
     # The default value used to initialize the C variable when
     # there is no default, but not specifying a default may
@@ -2597,11 +2603,11 @@ class CConverter(metaclass=CConverterAutoRegister):
     #
     # This value is specified as a string.
     # Every non-abstract subclass should supply a valid value.
-    c_ignored_default = 'NULL'
+    c_ignored_default: str = 'NULL'
 
     # The C converter *function* to be used, if any.
     # (If this is not None, format_unit must be 'O&'.)
-    converter = None
+    converter: str | None = None
 
     # Should Argument Clinic add a '&' before the name of
     # the variable when passing it into the _impl function?
@@ -3414,7 +3420,7 @@ class robuffer: pass
 def str_converter_key(types, encoding, zeroes):
     return (frozenset(types), bool(encoding), bool(zeroes))
 
-str_converter_argument_map = {}
+str_converter_argument_map: dict[str, str] = {}
 
 class str_converter(CConverter):
     type = 'const char *'
