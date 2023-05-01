@@ -229,8 +229,6 @@ pymain_import_readline(const PyConfig *config)
 }
 
 
-// #define DEBUG_DEDENT
-
 /* Strip common leading whitespace utf encoded string */
 PyObject* _utf_8_bytes_dedent(PyObject *bytes){
     char *input_data;
@@ -244,12 +242,6 @@ PyObject* _utf_8_bytes_dedent(PyObject *bytes){
         return NULL;
     }
     char *new_data = PyBytes_AsString(new_bytes);
-
-#ifdef DEBUG_DEDENT
-    fprintf(stderr, "\nSTART DEDENT\n");
-    fprintf(stderr, "input_data: '%s'\n", input_data);
-    fprintf(stderr, "nchars: %d\n", nchars);
-#endif
 
     // Step 1: Find N = the common number leading whitespace chars
 
@@ -272,13 +264,6 @@ PyObject* _utf_8_bytes_dedent(PyObject *bytes){
             if (num_leading_spaces < num_common_leading_spaces) {
                 num_common_leading_spaces = num_leading_spaces;
             }
-#ifdef DEBUG_DEDENT
-         fprintf(stderr, "==========\n");
-         fprintf(stderr, "line: '%s'\n", line);
-         fprintf(stderr, "first_nonspace: '%s'\n", first_nonspace);
-         fprintf(stderr, "num_common_leading_spaces: '%zu'\n", num_common_leading_spaces);
-         fprintf(stderr, "num_leading_spaces: '%zu'\n", num_leading_spaces);
-#endif
         }
         line = strtok(NULL, "\n");
     }
@@ -315,9 +300,6 @@ PyObject* _utf_8_bytes_dedent(PyObject *bytes){
             new_line_len = line_len;
         }
 
-#ifdef DEBUG_DEDENT
-        fprintf(stderr, "line_len: '%zu'\n", line_len);
-#endif
         // Copy the part of the line we want to keep to the new location
         strncpy(curr_dst, new_start_loc, new_line_len);
         curr_dst += new_line_len;
@@ -327,13 +309,7 @@ PyObject* _utf_8_bytes_dedent(PyObject *bytes){
     // null terminate the string (is this sufficient?)
     (*curr_dst) = NULL;
 
-#ifdef DEBUG_DEDENT
-    fprintf(stderr, "new_data: '%s'\n", new_data);
-    fprintf(stderr, "\nEND WCS_DEDENT\n");
-#endif
     return new_bytes;
-
-
 }
 
 
