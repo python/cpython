@@ -70,4 +70,3 @@ class IsolatedAssembleTests(AssemblerTestCase):
         ]
         expected = {(3, 4) : 3.5, (-100, 200) : 50, (10, 18) : 14}
         self.assemble_test(insts, metadata, expected)
-

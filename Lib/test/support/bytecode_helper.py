@@ -141,5 +141,3 @@ class AssemblerTestCase(CompilationStepTestCase):
     def get_code_object(self, filename, insts, metadata):
         co = assemble_code_object(filename, insts, metadata)
         return co
-
-
