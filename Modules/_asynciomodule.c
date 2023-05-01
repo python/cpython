@@ -2643,6 +2643,9 @@ static void TaskObj_dealloc(PyObject *);  /* Needs Task_CheckExact */
 static int
 TaskObj_set_awaiter(TaskObj *task, PyObject *awaiter)
 {
+    if (task->task_coro == NULL) {
+        return 0;
+    }
     return _PyAwaitable_SetAwaiter(task->task_coro, awaiter);
 }
 
