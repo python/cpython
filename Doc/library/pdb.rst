@@ -263,7 +263,7 @@ the commands; the input is split at the first ``;;`` pair, even if it is in the
 middle of a quoted string. A workaround for strings with double semicolons
 is to use implicit string concatenation ``';'';'`` or ``";"";"``.
 
-To set a temporary global variable, use *convenience variable*. A *convenience
+To set a temporary global variable, use a *convenience variable*. A *convenience
 variable* is a variable whose name starts with ``$``.  For example, ``$foo = 1``
 sets a global variable ``$foo`` which you can use in the debugger session.  The
 *convenience variables* are cleared when the program resumes execution so it's
