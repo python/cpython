@@ -398,12 +398,15 @@ class Sniffer:
         # subtracting from the likelihood of the first row being a header.
 
         rdr = reader(StringIO(sample), self.sniff(sample))
+
         header = next(rdr) # assume first row is header
+
         columns = len(header)
         columnTypes = {}
         average_size = 0 
         col_are_strings = True
         for i in range(columns): columnTypes[i] = None
+
         checked = 0
         for row in rdr:
             # arbitrary number of rows to check, to keep it sane
@@ -427,6 +430,7 @@ class Sniffer:
                 except (ValueError, OverflowError):
                     # fallback to length of string
                     thisType = len(row[col])
+
                 if thisType != columnTypes[col]:
                     if columnTypes[col] is None: # add new column type
                         columnTypes[col] = thisType
