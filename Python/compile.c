@@ -149,7 +149,18 @@ enum {
     COMPILER_SCOPE_COMPREHENSION,
 };
 
-typedef _PyCompilerInstruction instruction;
+
+int
+_PyCompile_InstrSize(int opcode, int oparg)
+{
+    assert(!IS_PSEUDO_OPCODE(opcode));
+    assert(HAS_ARG(opcode) || oparg == 0);
+    int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
+    int caches = _PyOpcode_Caches[opcode];
+    return extended_args + 1 + caches;
+}
+
+typedef _PyCompile_Instruction instruction;
 typedef _PyCompile_InstructionSequence instr_sequence;
 
 #define INITIAL_INSTR_SEQUENCE_SIZE 100
@@ -296,7 +307,6 @@ instr_sequence_fini(instr_sequence *seq) {
     PyObject_Free(seq->s_instrs);
     seq->s_instrs = NULL;
 }
-
 
 static int
 instr_sequence_to_cfg(instr_sequence *seq, cfg_builder *g) {
@@ -6743,11 +6753,11 @@ _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj)
 
 
 static int *
-build_cellfixedoffsets(struct compiler_unit *u)
+build_cellfixedoffsets(_PyCompile_CodeUnitMetadata *umd)
 {
-    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(u->u_metadata.u_freevars);
+    int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(umd->u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(umd->u_freevars);
 
     int noffsets = ncellvars + nfreevars;
     int *fixed = PyMem_New(int, noffsets);
@@ -6761,8 +6771,8 @@ build_cellfixedoffsets(struct compiler_unit *u)
 
     PyObject *varname, *cellindex;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(u->u_metadata.u_cellvars, &pos, &varname, &cellindex)) {
-        PyObject *varindex = PyDict_GetItem(u->u_metadata.u_varnames, varname);
+    while (PyDict_Next(umd->u_cellvars, &pos, &varname, &cellindex)) {
+        PyObject *varindex = PyDict_GetItem(umd->u_varnames, varname);
         if (varindex != NULL) {
             assert(PyLong_AS_LONG(cellindex) < INT_MAX);
             assert(PyLong_AS_LONG(varindex) < INT_MAX);
@@ -6776,17 +6786,17 @@ build_cellfixedoffsets(struct compiler_unit *u)
 }
 
 static int
-insert_prefix_instructions(struct compiler_unit *u, basicblock *entryblock,
+insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock,
                            int *fixed, int nfreevars, int code_flags)
 {
-    assert(u->u_metadata.u_firstlineno > 0);
+    assert(umd->u_firstlineno > 0);
 
     /* Add the generator prefix instructions. */
     if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
         cfg_instr make_gen = {
             .i_opcode = RETURN_GENERATOR,
             .i_oparg = 0,
-            .i_loc = LOCATION(u->u_metadata.u_firstlineno, u->u_metadata.u_firstlineno, -1, -1),
+            .i_loc = LOCATION(umd->u_firstlineno, umd->u_firstlineno, -1, -1),
             .i_target = NULL,
         };
         RETURN_IF_ERROR(_PyBasicblock_InsertInstruction(entryblock, 0, &make_gen));
@@ -6800,12 +6810,12 @@ insert_prefix_instructions(struct compiler_unit *u, basicblock *entryblock,
     }
 
     /* Set up cells for any variable that escapes, to be put in a closure. */
-    const int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
+    const int ncellvars = (int)PyDict_GET_SIZE(umd->u_cellvars);
     if (ncellvars) {
-        // u->u_metadata.u_cellvars has the cells out of order so we sort them
+        // umd->u_cellvars has the cells out of order so we sort them
         // before adding the MAKE_CELL instructions.  Note that we
         // adjust for arg cells, which come first.
-        const int nvars = ncellvars + (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
+        const int nvars = ncellvars + (int)PyDict_GET_SIZE(umd->u_varnames);
         int *sorted = PyMem_RawCalloc(nvars, sizeof(int));
         if (sorted == NULL) {
             PyErr_NoMemory();
@@ -6849,11 +6859,11 @@ insert_prefix_instructions(struct compiler_unit *u, basicblock *entryblock,
 }
 
 static int
-fix_cell_offsets(struct compiler_unit *u, basicblock *entryblock, int *fixedmap)
+fix_cell_offsets(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock, int *fixedmap)
 {
-    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(u->u_metadata.u_freevars);
+    int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(umd->u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(umd->u_freevars);
     int noffsets = ncellvars + nfreevars;
 
     // First deal with duplicates (arg cells).
@@ -6895,30 +6905,30 @@ fix_cell_offsets(struct compiler_unit *u, basicblock *entryblock, int *fixedmap)
 
 
 static int
-prepare_localsplus(struct compiler_unit* u, cfg_builder *g, int code_flags)
+prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g, int code_flags)
 {
-    assert(PyDict_GET_SIZE(u->u_metadata.u_varnames) < INT_MAX);
-    assert(PyDict_GET_SIZE(u->u_metadata.u_cellvars) < INT_MAX);
-    assert(PyDict_GET_SIZE(u->u_metadata.u_freevars) < INT_MAX);
-    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(u->u_metadata.u_freevars);
+    assert(PyDict_GET_SIZE(umd->u_varnames) < INT_MAX);
+    assert(PyDict_GET_SIZE(umd->u_cellvars) < INT_MAX);
+    assert(PyDict_GET_SIZE(umd->u_freevars) < INT_MAX);
+    int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(umd->u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(umd->u_freevars);
     assert(INT_MAX - nlocals - ncellvars > 0);
     assert(INT_MAX - nlocals - ncellvars - nfreevars > 0);
     int nlocalsplus = nlocals + ncellvars + nfreevars;
-    int* cellfixedoffsets = build_cellfixedoffsets(u);
+    int* cellfixedoffsets = build_cellfixedoffsets(umd);
     if (cellfixedoffsets == NULL) {
         return ERROR;
     }
 
 
     // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(u, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
+    if (insert_prefix_instructions(umd, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
         PyMem_Free(cellfixedoffsets);
         return ERROR;
     }
 
-    int numdropped = fix_cell_offsets(u, g->g_entryblock, cellfixedoffsets);
+    int numdropped = fix_cell_offsets(umd, g->g_entryblock, cellfixedoffsets);
     PyMem_Free(cellfixedoffsets);  // At this point we're done with it.
     cellfixedoffsets = NULL;
     if (numdropped < 0) {
@@ -6968,12 +6978,8 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
         goto error;
     }
 
-    if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
-        goto error;
-    }
-
     /** Assembly **/
-    int nlocalsplus = prepare_localsplus(u, &g, code_flags);
+    int nlocalsplus = prepare_localsplus(&u->u_metadata, &g, code_flags);
     if (nlocalsplus < 0) {
         goto error;
     }
@@ -6990,15 +6996,15 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     if (_PyCfg_ResolveJumps(&g) < 0) {
         goto error;
     }
+
+    /* Can't modify the bytecode after computing jump offsets. */
+
     if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
         goto error;
     }
 
-
-    /* Can't modify the bytecode after computing jump offsets. */
-
     co = _PyAssemble_MakeCodeObject(&u->u_metadata, const_cache, consts,
-                                    maxdepth, g.g_entryblock, nlocalsplus,
+                                    maxdepth, &optimized_instrs, nlocalsplus,
                                     code_flags, filename);
 
 error:
@@ -7039,11 +7045,18 @@ cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq)
         RETURN_IF_ERROR(instr_sequence_use_label(seq, b->b_label.id));
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            int arg = HAS_TARGET(instr->i_opcode) ?
-                      instr->i_target->b_label.id :
-                      instr->i_oparg;
             RETURN_IF_ERROR(
-                instr_sequence_addop(seq, instr->i_opcode, arg, instr->i_loc));
+                instr_sequence_addop(seq, instr->i_opcode, instr->i_oparg, instr->i_loc));
+
+            _PyCompile_ExceptHandlerInfo *hi = &seq->s_instrs[seq->s_used-1].i_except_handler_info;
+            if (instr->i_except != NULL) {
+                hi->h_offset = instr->i_except->b_offset;
+                hi->h_startdepth = instr->i_except->b_startdepth;
+                hi->h_preserve_lasti = instr->i_except->b_preserve_lasti;
+            }
+            else {
+                hi->h_offset = -1;
+            }
         }
     }
     return SUCCESS;
@@ -7140,11 +7153,6 @@ instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
             goto error;
         }
         if (instr_sequence_addop(seq, opcode, oparg, loc) < 0) {
-            goto error;
-        }
-    }
-    if (seq->s_used && !IS_TERMINATOR_OPCODE(seq->s_instrs[seq->s_used-1].i_opcode)) {
-        if (instr_sequence_addop(seq, RETURN_VALUE, 0, NO_LOCATION) < 0) {
             goto error;
         }
     }
@@ -7312,6 +7320,67 @@ error:
     Py_DECREF(const_cache);
     _PyCfgBuilder_Fini(&g);
     return res;
+}
+
+int _PyCfg_JumpLabelsToTargets(basicblock *entryblock);
+
+PyCodeObject *
+_PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
+                    PyObject *instructions)
+{
+    PyCodeObject *co = NULL;
+    instr_sequence optimized_instrs;
+    memset(&optimized_instrs, 0, sizeof(instr_sequence));
+
+    PyObject *const_cache = PyDict_New();
+    if (const_cache == NULL) {
+        return NULL;
+    }
+
+    cfg_builder g;
+    if (instructions_to_cfg(instructions, &g) < 0) {
+        goto error;
+    }
+
+    if (_PyCfg_JumpLabelsToTargets(g.g_entryblock) < 0) {
+        goto error;
+    }
+
+    int code_flags = 0;
+    int nlocalsplus = prepare_localsplus(umd, &g, code_flags);
+    if (nlocalsplus < 0) {
+        goto error;
+    }
+
+    int maxdepth = _PyCfg_Stackdepth(g.g_entryblock, code_flags);
+    if (maxdepth < 0) {
+        goto error;
+    }
+
+    _PyCfg_ConvertExceptionHandlersToNops(g.g_entryblock);
+
+    /* Order of basic blocks must have been determined by now */
+
+    if (_PyCfg_ResolveJumps(&g) < 0) {
+        goto error;
+    }
+
+    /* Can't modify the bytecode after computing jump offsets. */
+
+    if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
+        goto error;
+    }
+
+    PyObject *consts = umd->u_consts;
+    co = _PyAssemble_MakeCodeObject(umd, const_cache,
+                                    consts, maxdepth, &optimized_instrs,
+                                    nlocalsplus, code_flags, filename);
+
+error:
+    Py_DECREF(const_cache);
+    _PyCfgBuilder_Fini(&g);
+    instr_sequence_fini(&optimized_instrs);
+    return co;
 }
 
 

@@ -877,6 +877,7 @@ extern "C" {
     INIT_ID(dst_dir_fd), \
     INIT_ID(duration), \
     INIT_ID(e), \
+    INIT_ID(eager_start), \
     INIT_ID(effective_ids), \
     INIT_ID(element_factory), \
     INIT_ID(encode), \
@@ -967,6 +968,7 @@ extern "C" {
     INIT_ID(instructions), \
     INIT_ID(intern), \
     INIT_ID(intersection), \
+    INIT_ID(is_running), \
     INIT_ID(isatty), \
     INIT_ID(isinstance), \
     INIT_ID(isoformat), \
@@ -1022,6 +1024,7 @@ extern "C" {
     INIT_ID(memlimit), \
     INIT_ID(message), \
     INIT_ID(metaclass), \
+    INIT_ID(metadata), \
     INIT_ID(method), \
     INIT_ID(mod), \
     INIT_ID(mode), \

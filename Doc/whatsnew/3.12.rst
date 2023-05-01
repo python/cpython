@@ -300,6 +300,12 @@ asyncio
   yielding tasks.
   (Contributed by Kumar Aditya in :gh:`78530`.)
 
+calendar
+--------
+
+* Add enums :data:`~calendar.Month` and :data:`~calendar.Day`.
+  (Contributed by Prince Roshan in :gh:`103636`.)
+
 csv
 ---
 
@@ -604,6 +610,14 @@ Optimizations
   replacement strings containing group references by 2--3 times.
   (Contributed by Serhiy Storchaka in :gh:`91524`.)
 
+* Speed up :class:`asyncio.Task` creation by deferring expensive string formatting.
+  (Contributed by Itamar O in :gh:`103793`.)
+
+* Added :func:`asyncio.eager_task_factory` and :func:`asyncio.create_eager_task_factory`
+  functions to allow opting an event loop in to eager task execution,
+  speeding up some use-cases by up to 50%.
+  (Contributed by Jacob Bower & Itamar O in :gh:`102853`)
+
 
 CPython bytecode changes
 ========================
@@ -692,6 +706,9 @@ Deprecated
   Python 3.14, when ``'data'`` filter will become the default.
   See :ref:`tarfile-extraction-filter` for details.
 
+* ``calendar.January`` and ``calendar.February`` constants are deprecated and
+  replaced by :data:`calendar.Month.JANUARY` and :data:`calendar.Month.FEBRUARY`.
+  (Contributed by Prince Roshan in :gh:`103636`.)
 
 Pending Removal in Python 3.13
 ------------------------------
@@ -961,10 +978,13 @@ Removed
   completed:
 
   * References to, and support for ``module_repr()`` has been eradicated.
-
+    (Contributed by Barry Warsaw in :gh:`97850`.)
 
 * ``importlib.util.set_package`` has been removed.
   (Contributed by Brett Cannon in :gh:`65961`.)
+
+* The ``imp`` module has been removed.  (Contributed by Barry Warsaw in
+  :gh:`98040`.)
 
 * Removed the ``suspicious`` rule from the documentation Makefile, and
   removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
