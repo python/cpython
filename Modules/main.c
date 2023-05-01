@@ -230,7 +230,8 @@ pymain_import_readline(const PyConfig *config)
 
 
 /* Strip common leading whitespace utf encoded string */
-PyObject* _utf_8_bytes_dedent(PyObject *bytes){
+static PyObject*
+_utf_8_bytes_dedent(PyObject *bytes){
     char *input_data;
     Py_ssize_t nchars;
 
