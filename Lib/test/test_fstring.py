@@ -1548,10 +1548,10 @@ x = (
                                 "f'{1=}{1;'",
                                 "f'{1=}{1;}'",
                             ])
-							
-	def test_nested_fstring_max_stack_level(self):
-		with self.assertRaises(SyntaxError):
-			compile('f"{1 1:' + ('{f"1:' * 199), "?", "exec")
+                            
+    def test_nested_fstring_max_stack_level(self):
+        with self.assertRaises(SyntaxError):
+            compile('f"{1 1:' + ('{f"1:' * 199), "?", "exec")
 
 if __name__ == '__main__':
     unittest.main()
