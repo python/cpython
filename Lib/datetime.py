@@ -1469,10 +1469,16 @@ class time:
                 return 2 # arbitrary non-zero value
             else:
                 raise TypeError("cannot compare naive and aware times")
-        myhhmm = self._hour * 60 + self._minute - myoff//timedelta(minutes=1)
-        othhmm = other._hour * 60 + other._minute - otoff//timedelta(minutes=1)
-        return _cmp((myhhmm, self._second, self._microsecond),
-                    (othhmm, other._second, other._microsecond))
+
+        mydelta = timedelta(
+            seconds=self._hour * 3600 + self._minute * 60 + self._second,
+            microseconds=self._microsecond
+            ) - myoff
+        otdelta = timedelta(
+            seconds=other._hour * 3600 + other._minute * 60 + other._second,
+            microseconds=other._microsecond
+            ) - otoff
+        return _cmp(mydelta, otdelta)
 
     def __hash__(self):
         """Hash."""

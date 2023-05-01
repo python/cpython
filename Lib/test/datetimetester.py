@@ -3889,6 +3889,22 @@ class TZInfoBase:
                         expected = 1
                     self.assertEqual(got, expected)
 
+        # Test tz offset with microseconds
+        d0 = base.replace(minute=5, tzinfo=timezone(timedelta(microseconds=3)))
+        d1 = base.replace(
+            minute=5, tzinfo=timezone(timedelta(microseconds=456)))
+        d2 = base.replace(
+            minute=5, tzinfo=timezone(timedelta(microseconds=98764)))
+        for x in d0, d1, d2:
+            for y in d0, d1, d2:
+                for op in lt, le, gt, ge, eq, ne:
+                    got = op(x, y)
+                    expected = op(
+                        -x.utcoffset().microseconds,
+                        -y.utcoffset().microseconds)
+                    self.assertEqual(got, expected)
+
+
 
 # Testing time objects with a non-None tzinfo.
 class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):

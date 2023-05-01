@@ -4473,22 +4473,24 @@ time_richcompare(PyObject *self, PyObject *other, int op)
     }
     /* The hard case: both aware with different UTC offsets */
     else if (offset1 != Py_None && offset2 != Py_None) {
-        int offsecs1, offsecs2;
+        int64_t offusecs1, offusecs2, diff64;
         assert(offset1 != offset2); /* else last "if" handled it */
-        offsecs1 = TIME_GET_HOUR(self) * 3600 +
-                   TIME_GET_MINUTE(self) * 60 +
-                   TIME_GET_SECOND(self) -
-                   GET_TD_DAYS(offset1) * 86400 -
-                   GET_TD_SECONDS(offset1);
-        offsecs2 = TIME_GET_HOUR(other) * 3600 +
-                   TIME_GET_MINUTE(other) * 60 +
-                   TIME_GET_SECOND(other) -
-                   GET_TD_DAYS(offset2) * 86400 -
-                   GET_TD_SECONDS(offset2);
-        diff = offsecs1 - offsecs2;
-        if (diff == 0)
-            diff = TIME_GET_MICROSECOND(self) -
-                   TIME_GET_MICROSECOND(other);
+        offusecs1 = TIME_GET_HOUR(self) * INT64_C(3600000000) +
+                    TIME_GET_MINUTE(self) * INT64_C(60000000) +
+                    TIME_GET_SECOND(self) * 1000000 +
+                    TIME_GET_MICROSECOND(self) -
+                    GET_TD_DAYS(offset1) * 86400000000 -
+                    GET_TD_SECONDS(offset1) * INT64_C(1000000) -
+                    GET_TD_MICROSECONDS(offset1);
+        offusecs2 = TIME_GET_HOUR(other) * INT64_C(3600000000) +
+                    TIME_GET_MINUTE(other) * INT64_C(60000000) +
+                    TIME_GET_SECOND(other) * 1000000 +
+                    TIME_GET_MICROSECOND(other) -
+                    GET_TD_DAYS(offset2) * 86400000000 -
+                    GET_TD_SECONDS(offset2) * INT64_C(1000000) -
+                    GET_TD_MICROSECONDS(offset2);
+        diff64 = offusecs1 - offusecs2;
+        diff = diff64 ? diff64 < 0 ? -1 : 1 : 0;  /* diff_to_bool needs int */
         result = diff_to_bool(diff, op);
     }
     else if (op == Py_EQ) {
