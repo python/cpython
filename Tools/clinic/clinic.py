@@ -1956,7 +1956,7 @@ def write_file(filename, new_contents):
 
     # Atomic write using a temporary file and os.replace()
     filename_new = f"{filename}.new"
-    with open(filename_new, "w", encoding="utf-8") as fp:
+    with open(filename_new, "w", encoding="utf-8", newline="\n") as fp:
         fp.write(new_contents)
 
     try:
