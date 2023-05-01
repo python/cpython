@@ -188,8 +188,7 @@ class EagerTaskFactoryLoopTests:
         self.run_coro(run())
 
     def test_context_vars(self):
-        cv = contextvars.ContextVar('cv')
-        cv.set(1)
+        cv = contextvars.ContextVar('cv', default=0)
 
         coro_first_step_ran = False
         coro_second_step_ran = False
@@ -208,6 +207,7 @@ class EagerTaskFactoryLoopTests:
             coro_second_step_ran = True
 
         async def run():
+            cv.set(1)
             t = self.loop.create_task(coro())
             self.assertTrue(coro_first_step_ran)
             self.assertFalse(coro_second_step_ran)
