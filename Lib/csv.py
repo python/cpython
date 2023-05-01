@@ -424,7 +424,6 @@ class Sniffer:
                 thisType = complex
                 try:
                     thisType(row[col])
-                    
                 except (ValueError, OverflowError):
                     # fallback to length of string
                     thisType = len(row[col])
