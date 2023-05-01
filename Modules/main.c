@@ -9,7 +9,6 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 /* Includes for exit_sigint() */
-#include <assert.h>
 #include <stdio.h>                // perror()
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>             // SIGINT
