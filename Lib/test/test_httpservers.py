@@ -418,6 +418,14 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.OK,
                                      data=os_helper.TESTFN_UNDECODABLE)
 
+    def test_undecodable_parameter(self):
+        # sanity check using a valid paramter
+        response = self.request(self.base_url + '/?x=123').read()
+        self.assertRegex(response, ('listing for %s/\?x=123' % self.base_url).encode('latin1'))
+        # now the bogus encoding
+        response = self.request(self.base_url + '/?x=%bb').read()
+        self.assertRegex(response, ('listing for %s/\?x=\xef\xbf\xbd' % self.base_url).encode('latin1'))
+
     def test_get_dir_redirect_location_domain_injection_bug(self):
         """Ensure //evil.co/..%2f../../X does not put //evil.co/ in Location.
 
