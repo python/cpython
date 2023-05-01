@@ -427,8 +427,6 @@ class Sniffer:
                 except (ValueError, OverflowError):
                     # fallback to length of string
                     thisType = len(row[col])
-                   
-                
                 if thisType != columnTypes[col]:
                     if columnTypes[col] is None: # add new column type
                         columnTypes[col] = thisType
