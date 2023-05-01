@@ -149,7 +149,18 @@ enum {
     COMPILER_SCOPE_COMPREHENSION,
 };
 
-typedef _PyCompilerInstruction instruction;
+
+int
+_PyCompile_InstrSize(int opcode, int oparg)
+{
+    assert(!IS_PSEUDO_OPCODE(opcode));
+    assert(HAS_ARG(opcode) || oparg == 0);
+    int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
+    int caches = _PyOpcode_Caches[opcode];
+    return extended_args + 1 + caches;
+}
+
+typedef _PyCompile_Instruction instruction;
 typedef _PyCompile_InstructionSequence instr_sequence;
 
 #define INITIAL_INSTR_SEQUENCE_SIZE 100
@@ -6972,10 +6983,6 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
         goto error;
     }
 
-    if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
-        goto error;
-    }
-
     /** Assembly **/
     int nlocalsplus = prepare_localsplus(u, &g, code_flags);
     if (nlocalsplus < 0) {
@@ -6994,15 +7001,15 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     if (_PyCfg_ResolveJumps(&g) < 0) {
         goto error;
     }
+
+    /* Can't modify the bytecode after computing jump offsets. */
+
     if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
         goto error;
     }
 
-
-    /* Can't modify the bytecode after computing jump offsets. */
-
     co = _PyAssemble_MakeCodeObject(&u->u_metadata, const_cache, consts,
-                                    maxdepth, g.g_entryblock, nlocalsplus,
+                                    maxdepth, &optimized_instrs, nlocalsplus,
                                     code_flags, filename);
 
 error:
@@ -7043,11 +7050,18 @@ cfg_to_instr_sequence(cfg_builder *g, instr_sequence *seq)
         RETURN_IF_ERROR(instr_sequence_use_label(seq, b->b_label.id));
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            int arg = HAS_TARGET(instr->i_opcode) ?
-                      instr->i_target->b_label.id :
-                      instr->i_oparg;
             RETURN_IF_ERROR(
-                instr_sequence_addop(seq, instr->i_opcode, arg, instr->i_loc));
+                instr_sequence_addop(seq, instr->i_opcode, instr->i_oparg, instr->i_loc));
+
+            _PyCompile_ExceptHandlerInfo *hi = &seq->s_instrs[seq->s_used-1].i_except_handler_info;
+            if (instr->i_except != NULL) {
+                hi->h_offset = instr->i_except->b_offset;
+                hi->h_startdepth = instr->i_except->b_startdepth;
+                hi->h_preserve_lasti = instr->i_except->b_preserve_lasti;
+            }
+            else {
+                hi->h_offset = -1;
+            }
         }
     }
     return SUCCESS;

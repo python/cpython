@@ -10,6 +10,7 @@ import datetime
 from enum import IntEnum, global_enum
 import locale as _locale
 from itertools import repeat
+import warnings
 
 __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "firstweekday", "isleap", "leapdays", "weekday", "monthrange",
@@ -39,6 +40,18 @@ class IllegalWeekdayError(ValueError):
         self.weekday = weekday
     def __str__(self):
         return "bad weekday number %r; must be 0 (Monday) to 6 (Sunday)" % self.weekday
+
+
+def __getattr__(name):
+    if name in ('January', 'February'):
+        warnings.warn(f"The '{name}' attribute is deprecated, use '{name.upper()}' instead",
+                      DeprecationWarning, stacklevel=2)
+        if name == 'January':
+            return 1
+        else:
+            return 2
+
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
 # Constants for months
