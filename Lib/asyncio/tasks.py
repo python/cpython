@@ -44,18 +44,18 @@ def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
     if loop is None:
         loop = events.get_running_loop()
-    # Looping over these sets isn't safe as they can be updated from another thread,
+    # capturing the set of eager tasks first, so if an eager task "graduates" to
+    # a regular task in another thread, we don't risk missing it
+    eager_tasks = list(_eager_tasks)
+    # Looping over the weak set isn't safe as it can be updated from another thread,
     # therefore we cast to lists prior to filtering. The list cast itself requires
     # iteration, so we repeat it several times ignoring RuntimeErrors (which are not
     # very likely to occur). See issues 34970 and 36607 for details.
     scheduled_tasks = None
-    eager_tasks = None
     i = 0
     while True:
         try:
-            if scheduled_tasks is None:
-                scheduled_tasks = list(_scheduled_tasks)
-            eager_tasks = list(_eager_tasks)
+            scheduled_tasks = list(_scheduled_tasks)
         except RuntimeError:
             i += 1
             if i >= 1000:
