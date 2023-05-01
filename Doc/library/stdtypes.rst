@@ -821,8 +821,9 @@ value can be interpreted as a truth value (see section :ref:`truth` above).
 For logical operations, use the :ref:`boolean operators <boolean>` ``and``,
 ``or`` and ``not``.
 When applying the bitwise operators ``&``, ``|``, ``^`` to two booleans, they
-return a bool equivalent to the logical operations "and", "or", "xor". Still,
-for ``&`` and ``|``, the logical operators ``and`` and ``or`` are preferred.
+return a bool equivalent to the logical operations "and", "or", "xor". However,
+the logical operators ``and``, ``or`` and ``!=`` should be preferred
+over ``&``, ``|`` and ``^``.
 
 .. deprecated:: 3.12
 
