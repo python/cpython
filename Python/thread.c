@@ -137,7 +137,8 @@ PyThread_GetInfo(void)
     int len;
 #endif
 
-    if (_PyStructSequence_InitBuiltin(&ThreadInfoType, &threadinfo_desc) < 0) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyStructSequence_InitBuiltin(interp, &ThreadInfoType, &threadinfo_desc) < 0) {
         return NULL;
     }
 
@@ -195,5 +196,5 @@ _PyThread_FiniType(PyInterpreterState *interp)
         return;
     }
 
-    _PyStructSequence_FiniBuiltin(&ThreadInfoType);
+    _PyStructSequence_FiniBuiltin(interp, &ThreadInfoType);
 }

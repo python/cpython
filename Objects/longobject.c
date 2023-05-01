@@ -6352,7 +6352,9 @@ PyStatus
 _PyLong_InitTypes(PyInterpreterState *interp)
 {
     /* initialize int_info */
-    if (_PyStructSequence_InitBuiltin(&Int_InfoType, &int_info_desc) < 0) {
+    if (_PyStructSequence_InitBuiltin(interp, &Int_InfoType,
+                                      &int_info_desc) < 0)
+    {
         return _PyStatus_ERR("can't init int info type");
     }
 
@@ -6367,5 +6369,5 @@ _PyLong_FiniTypes(PyInterpreterState *interp)
         return;
     }
 
-    _PyStructSequence_FiniBuiltin(&Int_InfoType);
+    _PyStructSequence_FiniBuiltin(interp, &Int_InfoType);
 }
