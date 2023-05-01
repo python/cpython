@@ -2738,7 +2738,7 @@ class RawTurtle(TPen, TNavigator):
         if not ((0 <= r <= 255) and (0 <= g <= 255) and (0 <= b <= 255)):
             raise TurtleGraphicsError("bad color sequence: %s" % str(args))
         return "#%02x%02x%02x" % (r, g, b)
-    
+
     def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
         """Instantly move turtle to an absolute position.
 
@@ -2750,14 +2750,14 @@ class RawTurtle(TPen, TNavigator):
         call: teleport(x, y)         # two coordinates
         --or: teleport(x)            # teleport to x position, keeping y as is
         --or: teleport(y=y)          # teleport to y position, keeping x as is
-        --or: teleport(x, y, fill_gap=True)          
+        --or: teleport(x, y, fill_gap=True)
                                      # teleport but fill the gap in between
 
         Move turtle to an absolute position. Unlike goto(x, y), a line will not
         be drawn. The turtle's orientation does not change. If currently
         filling, the polygon(s) teleported from will be filled after leaving,
         and filling will begin again after teleporting. This can be disabled
-        with fill_gap=True, which makes the imaginary line traveled during 
+        with fill_gap=True, which makes the imaginary line traveled during
         teleporting act as a fill barrier like in goto(x, y).
 
         Example (for a Turtle instance named turtle):
@@ -2785,7 +2785,7 @@ class RawTurtle(TPen, TNavigator):
         self._position = Vec2D(new_x, new_y)
         self.pen(pendown=pendown)
         if was_filling and not fill_gap:
-            self.begin_fill()   
+            self.begin_fill()
 
     def clone(self):
         """Create and return a clone of the turtle.
