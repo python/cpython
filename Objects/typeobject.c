@@ -144,7 +144,9 @@ static_builtin_state_clear(PyInterpreterState *interp, PyTypeObject *self)
     state->type = NULL;
     assert(state->tp_weaklist == NULL);  // It was already cleared out.
 
-    static_builtin_index_clear(self);
+    if (_Py_IsMainInterpreter(interp)) {
+        static_builtin_index_clear(self);
+    }
 
     assert(interp->types.num_builtins_initialized > 0);
     interp->types.num_builtins_initialized--;
