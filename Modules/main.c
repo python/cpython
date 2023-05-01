@@ -262,11 +262,11 @@ PyObject* _utf_8_bytes_dedent(PyObject *bytes){
     while (line) {
         // Move the pointer up to the first non-space character
         char *first_nonspace = line;
-        while (strncmp(first_nonspace, " ", 1) == 0){
+        while (*first_nonspace == ' '){
             first_nonspace++;
         }
         // Only check lines that contain non-whitespace characters
-        if (strncmp(first_nonspace, "\0", 1)) {
+        if (*first_nonspace != '\0') {
 
             Py_ssize_t num_leading_spaces = first_nonspace - line;
             if (num_leading_spaces < num_common_leading_spaces) {
@@ -359,7 +359,7 @@ pymain_run_command(wchar_t *command)
     }
 
     // Only perform auto-dedent if the string starts with a newline
-    if (strncmp(PyBytes_AsString(bytes), "\n", 1) == 0) {
+    if (*PyBytes_AsString(bytes) == '\n') {
         PyObject *new_bytes = _utf_8_bytes_dedent(bytes);
         if (new_bytes == NULL) {
             goto error;
