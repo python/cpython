@@ -2,7 +2,6 @@
 
 #include "Python.h"
 
-#include "pycore_bytesobject.h"   // _PyBytes_InitTypes()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_exceptions.h"    // _PyExc_InitTypes()
@@ -26,7 +25,6 @@
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
-#include "pycore_tuple.h"         // _PyTuple_InitTypes()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "opcode.h"
@@ -684,11 +682,6 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyBytes_InitTypes(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     status = _PyLong_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -700,11 +693,6 @@ pycore_init_types(PyInterpreterState *interp)
     }
 
     status = _PyFloat_InitTypes(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyTuple_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1675,8 +1663,10 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyInterpreterState *interp)
 {
+    _PyIO_FiniTypes(interp);
+
     _PyUnicode_FiniTypes(interp);
-    _PySys_Fini(interp);
+    _PySys_FiniTypes(interp);
     _PyExc_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
@@ -1717,8 +1707,6 @@ finalize_interp_clear(PyThreadState *tstate)
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
-
-    _PyIO_FiniTypes(tstate->interp);
 
     /* Clear all loghooks */
     /* Both _PySys_Audit function and users still need PyObject, such as tuple.
@@ -2185,10 +2173,9 @@ add_main_module(PyInterpreterState *interp)
         Py_DECREF(bimod);
     }
 
-    /* Main is a little special - imp.is_builtin("__main__") will return
-     * False, but BuiltinImporter is still the most appropriate initial
-     * setting for its __loader__ attribute. A more suitable value will
-     * be set if __main__ gets further initialized later in the startup
+    /* Main is a little special - BuiltinImporter is the most appropriate
+     * initial setting for its __loader__ attribute. A more suitable value
+     * will be set if __main__ gets further initialized later in the startup
      * process.
      */
     loader = _PyDict_GetItemStringWithError(d, "__loader__");

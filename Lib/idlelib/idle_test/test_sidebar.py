@@ -57,7 +57,7 @@ class LineNumbersTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.editwin.per.close()
-        cls.root.update()
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.text, cls.text_frame, cls.editwin, cls.root
 
@@ -699,7 +699,8 @@ class ShellSidebarTest(unittest.TestCase):
         else:
             sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
         yield
-        self.assertIsNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
+        if sys.platform != 'darwin':  # .update_idletasks() does not work.
+            self.assertIsNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
         # Scroll back down.
         if sidebar.canvas._windowingsystem == 'x11':

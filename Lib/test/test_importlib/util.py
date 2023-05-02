@@ -131,9 +131,8 @@ def uncache(*names):
 
     """
     for name in names:
-        if name in ('sys', 'marshal', 'imp'):
-            raise ValueError(
-                "cannot uncache {0}".format(name))
+        if name in ('sys', 'marshal'):
+            raise ValueError("cannot uncache {}".format(name))
         try:
             del sys.modules[name]
         except KeyError:
