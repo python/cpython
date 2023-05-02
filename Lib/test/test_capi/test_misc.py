@@ -1043,6 +1043,20 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(_testcapi.function_get_kw_defaults(some), None)
         self.assertEqual(some.__kwdefaults__, None)
 
+    def test_unstable_gc_new_with_extra_data(self):
+        class Data(_testcapi.ObjExtraData):
+            __slots__ = ('x', 'y')
+
+        d = Data()
+        d.x = 10
+        d.y = 20
+        d.extra = 30
+        self.assertEqual(d.x, 10)
+        self.assertEqual(d.y, 20)
+        self.assertEqual(d.extra, 30)
+        del d.extra
+        self.assertIsNone(d.extra)
+
 
 class TestPendingCalls(unittest.TestCase):
 

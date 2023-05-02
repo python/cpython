@@ -218,10 +218,10 @@ queen threatens another) and the Knight's Tour (a route that takes a knight to
 every square of an $NxN$ chessboard without visiting any square twice).
 
 The idea of generators comes from other programming languages, especially Icon
-(https://www.cs.arizona.edu/icon/), where the idea of generators is central.  In
+(https://www2.cs.arizona.edu/icon/), where the idea of generators is central.  In
 Icon, every expression and function call behaves like a generator.  One example
 from "An Overview of the Icon Programming Language" at
-https://www.cs.arizona.edu/icon/docs/ipd266.htm gives an idea of what this looks
+https://www2.cs.arizona.edu/icon/docs/ipd266.htm gives an idea of what this looks
 like::
 
    sentence := "Store it in the neighboring harbor"
@@ -1332,7 +1332,7 @@ complete list of changes, or look through the CVS logs for all the details.
   (Contributed by Kevin O'Connor.)
 
 * The IDLE integrated development environment has been updated using the code
-  from the IDLEfork project (http://idlefork.sourceforge.net).  The most notable feature is
+  from the IDLEfork project (https://idlefork.sourceforge.net).  The most notable feature is
   that the code being developed is now executed in a subprocess, meaning that
   there's no longer any need for manual ``reload()`` operations. IDLE's core code
   has been incorporated into the standard library as the :mod:`idlelib` package.
