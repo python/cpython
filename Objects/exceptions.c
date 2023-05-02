@@ -1421,7 +1421,12 @@ _PyExc_PrepReraiseStar(PyObject *orig, PyObject *excs)
         if (res < 0) {
             goto done;
         }
-        result = _PyExc_CreateExceptionGroup("", raised_list);
+        if (PyList_GET_SIZE(raised_list) > 1) {
+            result = _PyExc_CreateExceptionGroup("", raised_list);
+        }
+        else {
+            result = Py_NewRef(PyList_GetItem(raised_list, 0));
+        }
         if (result == NULL) {
             goto done;
         }
@@ -3591,13 +3596,9 @@ static struct static_exception static_exceptions[] = {
 int
 _PyExc_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return 0;
-    }
-
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_exceptions); i++) {
         PyTypeObject *exc = static_exceptions[i].exc;
-        if (_PyStaticType_InitBuiltin(exc) < 0) {
+        if (_PyStaticType_InitBuiltin(interp, exc) < 0) {
             return -1;
         }
     }
@@ -3608,13 +3609,9 @@ _PyExc_InitTypes(PyInterpreterState *interp)
 static void
 _PyExc_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_exceptions) - 1; i >= 0; i--) {
         PyTypeObject *exc = static_exceptions[i].exc;
-        _PyStaticType_Dealloc(exc);
+        _PyStaticType_Dealloc(interp, exc);
     }
 }
 

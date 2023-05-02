@@ -512,7 +512,7 @@ class Doc:
 
         basedir = os.path.normcase(basedir)
         if (isinstance(object, type(os)) and
-            (object.__name__ in ('errno', 'exceptions', 'gc', 'imp',
+            (object.__name__ in ('errno', 'exceptions', 'gc',
                                  'marshal', 'posix', 'signal', 'sys',
                                  '_thread', 'zipimport') or
              (file.startswith(basedir) and

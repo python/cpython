@@ -594,11 +594,11 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 /*
     It may help to have a big picture view of what happens
     when an extension is loaded.  This includes when it is imported
-    for the first time or via imp.load_dynamic().
+    for the first time.
 
-    Here's a summary, using imp.load_dynamic() as the starting point:
+    Here's a summary, using importlib._boostrap._load() as a starting point.
 
-    1.  imp.load_dynamic() -> importlib._bootstrap._load()
+    1.  importlib._bootstrap._load()
     2.    _load():  acquire import lock
     3.    _load() -> importlib._bootstrap._load_unlocked()
     4.      _load_unlocked() -> importlib._bootstrap.module_from_spec()
@@ -3794,7 +3794,7 @@ _imp_source_hash_impl(PyObject *module, long key, Py_buffer *source)
 
 
 PyDoc_STRVAR(doc_imp,
-"(Extremely) low-level import machinery bits as used by importlib and imp.");
+"(Extremely) low-level import machinery bits as used by importlib.");
 
 static PyMethodDef imp_methods[] = {
     _IMP_EXTENSION_SUFFIXES_METHODDEF
