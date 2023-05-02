@@ -1538,7 +1538,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 
     PyThreadState_Swap(NULL);
 
-    const _PyInterpreterConfig config = {
+    const PyInterpreterConfig config = {
         .use_main_obmalloc = use_main_obmalloc,
         .allow_fork = allow_fork,
         .allow_exec = allow_exec,
@@ -1546,7 +1546,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         .allow_daemon_threads = allow_daemon_threads,
         .check_multi_interp_extensions = check_multi_interp_extensions,
     };
-    PyStatus status = _Py_NewInterpreterFromConfig(&substate, &config);
+    PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
     if (PyStatus_Exception(status)) {
         /* Since no new thread state was created, there is no exception to
            propagate; raise a fresh one after swapping in the old thread
