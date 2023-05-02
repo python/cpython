@@ -978,8 +978,8 @@ class DisTests(DisTestBase):
         self.do_disassembly_test("(*a,)", dis_intrinsic_1_6)
 
     def test_intrinsic_2(self):
-        assert "CALL_INTRINSIC_2         1 (INTRINSIC_PREP_RERAISE_STAR)" \
-             in self.get_disassembly("try: pass\nexcept* Exception: x")
+        self.assertIn("CALL_INTRINSIC_2         1 (INTRINSIC_PREP_RERAISE_STAR)",
+                      self.get_disassembly("try: pass\nexcept* Exception: x"))
 
     def test_big_linenos(self):
         def func(count):
