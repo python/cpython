@@ -365,6 +365,10 @@ Any remaining exceptions that were not handled by any :keyword:`!except*`
 clause are re-raised at the end, combined into an exception group along with
 all exceptions that were raised from within :keyword:`!except*` clauses.
 
+From version 3.11.4, when the entire :exc:`ExceptionGroup` is handled and
+only one exception is raised from an :keyword:`!except*` clause, this
+exception is no longer wrapped to form a new :exc:`ExceptionGroup`.
+
 If the raised exception is not an exception group and its type matches
 one of the :keyword:`!except*` clauses, it is caught and wrapped by an
 exception group with an empty message string. ::
