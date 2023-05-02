@@ -1,0 +1,2 @@
+Silence a "comparison is always false" warning in timemodule.c on i686 by 
+clarifying datatype used in check_ticks_per_second
