@@ -239,7 +239,8 @@ Other Language Changes
 
 * When a ``try-except*`` construct handles the entire :exc:`ExceptionGroup`
   and raises one other exception, that exception is no longer wrapped in an
-  :exc:`ExceptionGroup`. (Contributed by Irit Katriel in :gh:`103590`.)
+  :exc:`ExceptionGroup`. Also changed in version 3.11.4. (Contributed by Irit
+  Katriel in :gh:`103590`.)
 
 
 New Modules
