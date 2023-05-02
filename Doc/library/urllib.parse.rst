@@ -324,9 +324,9 @@ or on combining URL components into a URL string.
    ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
    decomposed before parsing, no error will be raised.
 
-   Following the `WHATWG spec`_ that updates RFC 3986, leading and trailing C0
-   control and space characters are stripped from the URL. ``\n``, ``\r`` and
-   tab ``\t`` characters are removed from the URL at any position.
+   Following some of the `WHATWG spec`_ that updates RFC 3986, leading C0
+   control control and space characters are stripped from the URL. ``\n``,
+   ``\r`` and tab ``\t`` characters are removed from the URL at any position.
 
    .. versionchanged:: 3.6
       Out-of-range port numbers now raise :exc:`ValueError`, instead of
@@ -340,8 +340,7 @@ or on combining URL components into a URL string.
       ASCII newline and tab characters are stripped from the URL.
 
    .. versionchanged:: 3.12
-      Leading and trailing C0 control and space characters are stripped from
-      the URL.
+      Leading WHATWG C0 control and space characters are stripped from the URL.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
 

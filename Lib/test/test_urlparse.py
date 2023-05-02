@@ -679,6 +679,27 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.port, 80)
         self.assertEqual(p.geturl(), base_url.encode())
 
+        # Test that trailing space is preserved as some applications rely on
+        # this within query strings.
+        query_spaces_url = "https://www.python.org:88/doc/?query=    "
+        p = urllib.parse.urlsplit(noise.decode("utf-8") + query_spaces_url)
+        self.assertEqual(p.scheme, "https")
+        self.assertEqual(p.netloc, "www.python.org:88")
+        self.assertEqual(p.path, "/doc/")
+        self.assertEqual(p.query, "query=    ")
+        self.assertEqual(p.port, 88)
+        self.assertEqual(p.geturl(), query_spaces_url)
+
+        p = urllib.parse.urlsplit("www.pypi.org ")
+        # That "hostname" gets considered a "path" due to the
+        # trailing space and our existing logic...  YUCK...
+        # and re-assembles via geturl aka unurlsplit into the original.
+        # django.core.validators.URLValidator (at least through v3.2) relies on
+        # this, for better or worse, to catch it in a ValidationError via its
+        # regular expressions.
+        # Here we test the basic round trip concept of such a trailing space.
+        self.assertEqual(urllib.parse.urlunsplit(p), "www.pypi.org ")
+
         # with scheme as cache-key
         url = "//www.python.org/"
         scheme = noise.decode() + "https" + noise.decode()
