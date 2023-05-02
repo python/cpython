@@ -39,6 +39,7 @@ class ObjectParser:
 
     def _dump(self, *args) -> typing.Iterator[str]:
         args = ["llvm-objdump", *args, self._path]
+        # process = subprocess.run(args, check=True)
         process = subprocess.run(args, check=True, capture_output=True)
         lines = filter(None, process.stdout.decode().splitlines())
         line = next(lines, None)
@@ -140,7 +141,6 @@ class ObjectParser:
         # self._parse_syms()
         relocs = self._parse_reloc()
         offsets = {}
-        # breakpoint()
         body = b""
         holes = []
         for name, size, vma, type in self._parse_headers():
@@ -246,8 +246,14 @@ class Engine:
     _OFFSETOF_CO_CODE_ADAPTIVE = 192
     _SKIP = frozenset(
         {
+            "BEFORE_ASYNC_WITH", # XXX: Windows...
+            "BEFORE_WITH", # XXX: Windows...
+            "BUILD_CONST_KEY_MAP", # XXX: Windows...
             "CALL_BOUND_METHOD_EXACT_ARGS",
             "CALL_FUNCTION_EX",
+            "CALL_NO_KW_BUILTIN_O", # XXX: Windows...
+            "CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS", # XXX: Windows...
+            "CALL_NO_KW_METHOD_DESCRIPTOR_O", # XXX: Windows...
             "CHECK_EG_MATCH",
             "CHECK_EXC_MATCH",
             "CLEANUP_THROW",
@@ -256,10 +262,14 @@ class Engine:
             "DELETE_GLOBAL",
             "DELETE_NAME",
             "DICT_MERGE",
+            "DICT_UPDATE", # XXX: Windows...
             "END_ASYNC_FOR",
-            "EXTENDED_ARG",  # XXX
+            "EXTENDED_ARG",  # XXX: Only because we don't handle extended args correctly...
             "FOR_ITER",
+            "GET_AITER", # XXX: Windows...
+            "GET_ANEXT", # XXX: Windows...
             "GET_AWAITABLE",
+            "GET_YIELD_FROM_ITER", # XXX: Windows...
             "IMPORT_FROM",
             "IMPORT_NAME",
             "INSTRUMENTED_CALL", # XXX
@@ -283,7 +293,9 @@ class Engine:
             "JUMP_BACKWARD",  # XXX: Is this a problem?
             "JUMP_BACKWARD_INTO_TRACE",
             "JUMP_BACKWARD_NO_INTERRUPT",
-            "KW_NAMES",  # XXX
+            "KW_NAMES",  # XXX: Only because we don't handle kwnames correctly...
+            "LIST_EXTEND", # XXX: Windows...
+            "LOAD_BUILD_CLASS", # XXX: Windows...
             "LOAD_CLASSDEREF",
             "LOAD_CLOSURE",
             "LOAD_DEREF",
@@ -296,7 +308,9 @@ class Engine:
             "RAISE_VARARGS",
             "RERAISE",
             "SEND",
+            "SETUP_ANNOTATIONS", # XXX: Windows...
             "STORE_ATTR_WITH_HINT",
+            "STORE_NAME", # XXX: Windows...
             "UNPACK_EX",
             "UNPACK_SEQUENCE",
         }
@@ -329,7 +343,7 @@ class Engine:
                 ["clang", *self._CPPFLAGS, *defines, *self._CFLAGS, "-emit-llvm", "-S", "-o", ll.name, path],
                 check=True,
             )
-            self._use_ghccc(ll.name)
+            # self._use_ghccc(ll.name)  # XXX: Windows...
             subprocess.run(
                 ["clang", *self._CFLAGS, "-c", "-o", o.name, ll.name],
                 check=True,
