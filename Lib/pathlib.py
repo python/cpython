@@ -290,11 +290,11 @@ class PurePath(object):
         # to implement comparison methods like `__lt__()`.
         '_parts_normcase_cached',
 
-        # The `_lines_normcase_cached` and `_matcher_cached` slots store the
+        # The `_lines_cached` and `_matcher_cached` slots store the
         # string path with path separators and newlines swapped, and an
         # `re.Pattern` object derived thereof. These are used to implement
         # `match()`.
-        '_lines_normcase_cached',
+        '_lines_cached',
         '_matcher_cached',
 
         # The `_hash` slot stores the hash of the case-normalized string
@@ -451,15 +451,14 @@ class PurePath(object):
             return self._parts_normcase_cached
 
     @property
-    def _lines_normcase(self):
-        # Case-normalized path with separators and newlines swapped, for
-        # pattern matching.
+    def _lines(self):
+        # Path with separators and newlines swapped, for pattern matching.
         try:
-            return self._lines_normcase_cached
+            return self._lines_cached
         except AttributeError:
             trans = _SWAP_SEP_AND_NEWLINE[self._flavour.sep]
-            self._lines_normcase_cached = self._str_normcase.translate(trans)
-            return self._lines_normcase_cached
+            self._lines_cached = str(self).translate(trans)
+            return self._lines_cached
 
     @property
     def _matcher(self):
@@ -469,7 +468,7 @@ class PurePath(object):
             if not self.parts:
                 raise ValueError("empty pattern")
             parts = [r'\A' if self.drive or self.root else '^']
-            for part in self._lines_normcase.splitlines(keepends=True):
+            for part in self._lines.splitlines(keepends=True):
                 if part == '**\n':
                     part = r'[\s\S]*^'
                 elif part == '**':
@@ -480,7 +479,10 @@ class PurePath(object):
                     part = fnmatch.translate(part)[_FNMATCH_SLICE]
                 parts.append(part)
             parts.append(r'\Z')
-            self._matcher_cached = re.compile(''.join(parts), flags=re.MULTILINE)
+            flags = re.MULTILINE
+            if not _is_case_sensitive(self._flavour):
+                flags |= re.IGNORECASE
+            self._matcher_cached = re.compile(''.join(parts), flags=flags)
             return self._matcher_cached
 
     def __eq__(self, other):
@@ -740,7 +742,7 @@ class PurePath(object):
         """
         if not isinstance(path_pattern, PurePath) or self._flavour is not path_pattern._flavour:
             path_pattern = type(self)(path_pattern)
-        match = path_pattern._matcher.search(self._lines_normcase)
+        match = path_pattern._matcher.search(self._lines)
         return match is not None
 
 
