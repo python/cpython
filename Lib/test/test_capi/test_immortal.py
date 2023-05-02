@@ -5,14 +5,11 @@ _testcapi = import_helper.import_module('_testcapi')
 
 
 class TestCAPI(unittest.TestCase):
-    def test_immortal_bool(self):
-        _testcapi.test_immortal_bool()
+    def test_immortal_builtins(self):
+        _testcapi.test_immortal_builtins()
 
-    def test_immortal_none(self):
-        _testcapi.test_immortal_none()
-
-    def test_immortal_ellipsis(self):
-        _testcapi.test_immortal_ellipsis()
+    def test_immortal_small_ints(self):
+        _testcapi.test_immortal_small_ints()
 
 
 if __name__ == "__main__":

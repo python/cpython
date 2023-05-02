@@ -12,20 +12,13 @@ int verify_immortality(PyObject *object)
 }
 
 static PyObject *
-test_immortal_bool(PyObject *self, PyObject *Py_UNUSED(ignored))
+test_immortal_builtins(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *objects[] = {Py_True, Py_False};
+    PyObject *objects[] = {Py_True, Py_False, Py_None, Py_Ellipsis};
     Py_ssize_t n = Py_ARRAY_LENGTH(objects);
     for (Py_ssize_t i = 0; i < n; i++) {
         assert(verify_immortality(objects[i]));
     }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-test_immortal_none(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    assert(verify_immortality(Py_None));
     Py_RETURN_NONE;
 }
 
@@ -38,19 +31,9 @@ test_immortal_small_ints(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
-static PyObject *
-test_immortal_ellipsis(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    assert(verify_immortality(Py_Ellipsis));
-    Py_RETURN_NONE;
-}
-
-
 static PyMethodDef test_methods[] = {
-    {"test_immortal_bool",       test_immortal_bool,         METH_NOARGS},
-    {"test_immortal_none",       test_immortal_none,         METH_NOARGS},
+    {"test_immortal_builtins",   test_immortal_builtins,     METH_NOARGS},
     {"test_immortal_small_ints", test_immortal_small_ints,   METH_NOARGS},
-    {"test_immortal_ellipsis",   test_immortal_ellipsis,     METH_NOARGS},
     {NULL},
 };
 
