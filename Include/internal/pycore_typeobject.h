@@ -109,6 +109,20 @@ extern static_builtin_state * _PyStaticType_GetState(PyInterpreterState *, PyTyp
 extern void _PyStaticType_ClearWeakRefs(PyInterpreterState *, PyTypeObject *type);
 extern void _PyStaticType_Dealloc(PyInterpreterState *, PyTypeObject *);
 
+PyAPI_FUNC(PyObject *) _PyType_GetDict(PyTypeObject *);
+extern PyObject * _PyType_GetBases(PyTypeObject *type);
+extern PyObject * _PyType_GetMRO(PyTypeObject *type);
+extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
+extern int _PyType_HasSubclasses(PyTypeObject *);
+
+// PyType_Ready() must be called if _PyType_IsReady() is false.
+// See also the Py_TPFLAGS_READY flag.
+static inline int
+_PyType_IsReady(PyTypeObject *type)
+{
+    return _PyType_GetDict(type) != NULL;
+}
+
 PyObject *
 _Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress_missing_attribute);
 PyObject *
