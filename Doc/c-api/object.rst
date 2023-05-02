@@ -396,11 +396,11 @@ Object Protocol
 
    .. versionadded:: 3.10
 
-.. c:function:: PyObject* PyObject_GetTypeData(PyObject *o, PyTypeObject *cls)
+.. c:function:: void *PyObject_GetTypeData(PyObject *o, PyTypeObject *cls)
 
    Get a pointer to subclass-specific data reserved for *cls*.
 
-   The object *o* **must** be an instance of *cls*, and *cls* must have been
+   The object *o* must be an instance of *cls*, and *cls* must have been
    created using negative :c:member:`PyType_Spec.basicsize`.
    Python does not check this.
 
@@ -424,7 +424,7 @@ Object Protocol
 
    .. versionadded:: 3.12
 
-.. c:function:: PyObject* PyObject_GetItemData(PyObject *o)
+.. c:function:: void *PyObject_GetItemData(PyObject *o)
 
    Get a pointer to per-item data for a class with
    :const:`Py_TPFLAGS_ITEMS_AT_END`.

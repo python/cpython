@@ -3567,7 +3567,8 @@ static const PySlot_Offset pyslot_offsets[] = {
  * (like _Py_ALIGN_UP, but for a size rather than pointer)
  */
 static Py_ssize_t
-_align_up(Py_ssize_t size) {
+_align_up(Py_ssize_t size)
+{
     return (size + ALIGNOF_MAX_ALIGN_T - 1) & ~(ALIGNOF_MAX_ALIGN_T - 1);
 }
 
@@ -3711,13 +3712,13 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                     vectorcalloffset = memb->offset;
                 }
                 if (memb->flags & Py_RELATIVE_OFFSET) {
-                    if(spec->basicsize > 0) {
+                    if (spec->basicsize > 0) {
                         PyErr_SetString(
                             PyExc_SystemError,
                             "With Py_RELATIVE_OFFSET, basicsize must be negative.");
                         goto finally;
                     }
-                    if(memb->offset < 0 || memb->offset >= -spec->basicsize) {
+                    if (memb->offset < 0 || memb->offset >= -spec->basicsize) {
                         PyErr_SetString(
                             PyExc_SystemError,
                             "Member offset out of range (0..-basicsize)");
@@ -3945,9 +3946,10 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
                 memcpy(_PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
                 type->tp_members = _PyHeapType_GET_MEMBERS(res);
                 PyMemberDef *memb;
-                unsigned i;
+                Py_ssize_t i;
                 for (memb = _PyHeapType_GET_MEMBERS(res), i = nmembers;
-                        i > 0; ++memb, --i) {
+                     i > 0; ++memb, --i)
+                {
                     if (memb->flags & Py_RELATIVE_OFFSET) {
                         memb->flags &= ~Py_RELATIVE_OFFSET;
                         memb->offset += type_data_offset;

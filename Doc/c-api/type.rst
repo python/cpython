@@ -374,7 +374,7 @@ The following functions and structs are used to create
         directly.
       - With the :const:`Py_TPFLAGS_ITEMS_AT_END` flag.
 
-   .. c:member:: int flags
+   .. c:member:: unsigned int flags
 
       Type flags, used to set :c:member:`PyTypeObject.tp_flags`.
 

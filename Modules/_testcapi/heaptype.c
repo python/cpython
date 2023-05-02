@@ -1036,7 +1036,8 @@ HeapCCollection_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static int
-HeapCCollection_clear(PyObject *self) {
+HeapCCollection_clear(PyObject *self)
+{
     PyObject **data = PyObject_GetItemData(self);
     if (!data) {
         return -1;
@@ -1049,7 +1050,9 @@ HeapCCollection_clear(PyObject *self) {
     return 0;
 }
 
-static void HeapCCollection_dealloc(PyObject *self) {
+static void
+HeapCCollection_dealloc(PyObject *self)
+{
     PyTypeObject *tp = Py_TYPE(self);
     HeapCCollection_clear(self);
     PyObject_GC_UnTrack(self);
@@ -1064,17 +1067,17 @@ static PyType_Slot HeapCCollection_slots[] = {
     {Py_tp_traverse, HeapCCollection_traverse},
     {Py_tp_clear, HeapCCollection_clear},
     {Py_tp_dealloc, HeapCCollection_dealloc},
-    {Py_tp_doc, (char*)HeapCCollection_doc},
+    {Py_tp_doc, (void *)HeapCCollection_doc},
     {0, 0},
 };
 
 static PyType_Spec HeapCCollection_spec = {
-    "_testcapi.HeapCCollection",
-    sizeof(PyVarObject),
-    sizeof(PyObject*),
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC
-        | Py_TPFLAGS_ITEMS_AT_END,
-    HeapCCollection_slots
+    .name = "_testcapi.HeapCCollection",
+    .basicsize = sizeof(PyVarObject),
+    .itemsize = sizeof(PyObject*),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_ITEMS_AT_END),
+    .slots = HeapCCollection_slots,
 };
 
 int
@@ -1205,7 +1208,11 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
     if (HeapCCollection == NULL) {
         return -1;
     }
-    PyModule_AddObject(m, "HeapCCollection", HeapCCollection);
+    int rc = PyModule_AddType(m, (PyTypeObject *)HeapCCollection);
+    Py_DECREF(HeapCCollection);
+    if (rc < 0) {
+        return -1;
+    }
 
     return 0;
 }
