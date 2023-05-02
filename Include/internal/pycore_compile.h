@@ -19,6 +19,7 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     int optimize,
     struct _arena *arena);
 
+static const _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
 
 typedef struct {
     int optimize;
@@ -33,15 +34,21 @@ extern int _PyAST_Optimize(
     struct _arena *arena,
     _PyASTOptimizeState *state);
 
+typedef struct {
+    int h_offset;
+    int h_startdepth;
+    int h_preserve_lasti;
+} _PyCompile_ExceptHandlerInfo;
 
 typedef struct {
     int i_opcode;
     int i_oparg;
     _PyCompilerSrcLocation i_loc;
-} _PyCompilerInstruction;
+    _PyCompile_ExceptHandlerInfo i_except_handler_info;
+} _PyCompile_Instruction;
 
 typedef struct {
-    _PyCompilerInstruction *s_instrs;
+    _PyCompile_Instruction *s_instrs;
     int s_allocated;
     int s_used;
 
@@ -82,6 +89,8 @@ int _PyCompile_EnsureArrayLargeEnough(
 
 int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 
+int _PyCompile_InstrSize(int opcode, int oparg);
+
 /* Access compiler internals for unit testing */
 
 PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
@@ -93,6 +102,10 @@ PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
 PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
         PyObject *instructions,
         PyObject *consts);
+
+PyAPI_FUNC(PyCodeObject*)
+_PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
+                    PyObject *instructions);
 
 #ifdef __cplusplus
 }
