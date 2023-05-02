@@ -3103,6 +3103,25 @@ dummy_func(
                 }
             }
             else {
+                if (Py_TYPE(func) == &PyFunction_Type &&
+                    tstate->interp->eval_frame == NULL &&
+                    ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
+                    assert(PyTuple_CheckExact(callargs));
+                    Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
+                    int code_flags = ((PyCodeObject *)PyFunction_GET_CODE(func))->co_flags;
+                    PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(func));
+
+                    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit_Ex(tstate,
+                                                                                (PyFunctionObject *)func, locals,
+                                                                                nargs, callargs, kwargs);
+                    // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
+                    STACK_SHRINK(oparg + 3);
+                    if (new_frame == NULL) {
+                        goto error;
+                    }
+                    frame->return_offset = 0;
+                    DISPATCH_INLINED(new_frame);
+                }
                 result = PyObject_Call(func, callargs, kwargs);
             }
             DECREF_INPUTS();

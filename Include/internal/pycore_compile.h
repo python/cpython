@@ -103,6 +103,10 @@ PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
         PyObject *instructions,
         PyObject *consts);
 
+PyAPI_FUNC(PyCodeObject*)
+_PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
+                    PyObject *instructions);
+
 #ifdef __cplusplus
 }
 #endif

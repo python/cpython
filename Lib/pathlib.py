@@ -53,13 +53,18 @@ def _ignore_error(exception):
     return (getattr(exception, 'errno', None) in _IGNORED_ERRNOS or
             getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
 
-#
-# Globbing helpers
-#
+
+def _is_wildcard_pattern(pat):
+    # Whether this pattern needs actual matching using fnmatch, or can
+    # be looked up directly as a file.
+    return "*" in pat or "?" in pat or "[" in pat
 
 def _is_case_sensitive(flavour):
     return flavour.normcase('Aa') == 'Aa'
 
+#
+# Globbing helpers
+#
 
 @functools.lru_cache()
 def _make_selector(pattern_parts, case_sensitive):
@@ -69,10 +74,10 @@ def _make_selector(pattern_parts, case_sensitive):
         return _TerminatingSelector()
     if pat == '**':
         cls = _RecursiveWildcardSelector
-    elif '**' in pat:
-        raise ValueError("Invalid pattern: '**' can only be an entire path component")
     elif pat == '..':
         cls = _ParentSelector
+    elif '**' in pat:
+        raise ValueError("Invalid pattern: '**' can only be an entire path component")
     else:
         cls = _WildcardSelector
     return cls(pat, child_parts, case_sensitive)
@@ -112,9 +117,10 @@ class _ParentSelector(_Selector):
     def __init__(self, name, child_parts, case_sensitive):
         _Selector.__init__(self, child_parts, case_sensitive)
 
-    def _select_from(self, parent_path, scandir):
+    def _select_from(self,  parent_path, scandir):
         path = parent_path._make_child_relpath('..')
-        return self.successor._select_from(path, scandir)
+        for p in self.successor._select_from(path, scandir):
+            yield p
 
 
 class _WildcardSelector(_Selector):
@@ -290,18 +296,27 @@ class PurePath(object):
         return (self.__class__, self.parts)
 
     def __init__(self, *args):
-        if not args:
-            path = ''
-        elif len(args) == 1:
-            path = os.fspath(args[0])
+        paths = []
+        for arg in args:
+            if isinstance(arg, PurePath):
+                path = arg._raw_path
+            else:
+                try:
+                    path = os.fspath(arg)
+                except TypeError:
+                    path = arg
+                if not isinstance(path, str):
+                    raise TypeError(
+                        "argument should be a str or an os.PathLike "
+                        "object where __fspath__ returns a str, "
+                        f"not {type(path).__name__!r}")
+            paths.append(path)
+        if len(paths) == 0:
+            self._raw_path = ''
+        elif len(paths) == 1:
+            self._raw_path = paths[0]
         else:
-            path = self._flavour.join(*args)
-        if not isinstance(path, str):
-            raise TypeError(
-                "argument should be a str or an os.PathLike "
-                "object where __fspath__ returns a str, "
-                f"not {type(path).__name__!r}")
-        self._raw_path = path
+            self._raw_path = self._flavour.join(*paths)
 
     @classmethod
     def _parse_path(cls, path):
@@ -610,7 +625,7 @@ class PurePath(object):
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self.__class__(self._raw_path, *args)
+        return self.__class__(self, *args)
 
     def __truediv__(self, key):
         try:
@@ -620,7 +635,7 @@ class PurePath(object):
 
     def __rtruediv__(self, key):
         try:
-            return type(self)(key, self._raw_path)
+            return type(self)(key, self)
         except TypeError:
             return NotImplemented
 
@@ -858,7 +873,7 @@ class Path(PurePath):
             cwd = self._flavour.abspath(self.drive)
         else:
             cwd = os.getcwd()
-        return type(self)(cwd, self._raw_path)
+        return type(self)(cwd, self)
 
     def resolve(self, strict=False):
         """
