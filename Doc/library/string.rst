@@ -254,10 +254,10 @@ Some simple format string examples::
    "Units destroyed: {players[0]}"   # First element of keyword argument 'players'.
 
 The *conversion* field causes a type coercion before formatting.  Normally, the
-job of formatting a value is done by the :meth:`__format__` method of the value
+job of formatting a value is done by the :meth:`~object.__format__` method of the value
 itself.  However, in some cases it is desirable to force a type to be formatted
 as a string, overriding its own definition of formatting.  By converting the
-value to a string before calling :meth:`__format__`, the normal formatting logic
+value to a string before calling :meth:`~object.__format__`, the normal formatting logic
 is bypassed.
 
 Three conversion flags are currently supported: ``'!s'`` which calls :func:`str`

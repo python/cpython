@@ -1043,6 +1043,20 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(_testcapi.function_get_kw_defaults(some), None)
         self.assertEqual(some.__kwdefaults__, None)
 
+    def test_unstable_gc_new_with_extra_data(self):
+        class Data(_testcapi.ObjExtraData):
+            __slots__ = ('x', 'y')
+
+        d = Data()
+        d.x = 10
+        d.y = 20
+        d.extra = 30
+        self.assertEqual(d.x, 10)
+        self.assertEqual(d.y, 20)
+        self.assertEqual(d.extra, 30)
+        del d.extra
+        self.assertIsNone(d.extra)
+
 
 class TestPendingCalls(unittest.TestCase):
 
@@ -1211,20 +1225,25 @@ class SubinterpreterTest(unittest.TestCase):
         """
         import json
 
+        OBMALLOC = 1<<5
         EXTENSIONS = 1<<8
         THREADS = 1<<10
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
 
-        features = ['fork', 'exec', 'threads', 'daemon_threads', 'extensions']
+        features = ['obmalloc', 'fork', 'exec', 'threads', 'daemon_threads',
+                    'extensions']
         kwlist = [f'allow_{n}' for n in features]
+        kwlist[0] = 'use_main_obmalloc'
         kwlist[-1] = 'check_multi_interp_extensions'
+
+        # expected to work
         for config, expected in {
-            (True, True, True, True, True):
-                FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS,
-            (False, False, False, False, False): 0,
-            (False, False, True, False, True): THREADS | EXTENSIONS,
+            (True, True, True, True, True, True):
+                OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS,
+            (True, False, False, False, False, False): OBMALLOC,
+            (False, False, False, True, False, True): THREADS | EXTENSIONS,
         }.items():
             kwargs = dict(zip(kwlist, config))
             expected = {
@@ -1246,6 +1265,20 @@ class SubinterpreterTest(unittest.TestCase):
 
                 self.assertEqual(settings, expected)
 
+        # expected to fail
+        for config in [
+            (False, False, False, False, False, False),
+        ]:
+            kwargs = dict(zip(kwlist, config))
+            with self.subTest(config):
+                script = textwrap.dedent(f'''
+                    import _testinternalcapi
+                    _testinternalcapi.get_interp_settings()
+                    raise NotImplementedError('unreachable')
+                    ''')
+                with self.assertRaises(RuntimeError):
+                    support.run_in_subinterp_with_config(script, **kwargs)
+
     @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_overridden_setting_extensions_subinterp_check(self):
@@ -1257,13 +1290,15 @@ class SubinterpreterTest(unittest.TestCase):
         """
         import json
 
+        OBMALLOC = 1<<5
         EXTENSIONS = 1<<8
         THREADS = 1<<10
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
-        BASE_FLAGS = FORK | EXEC | THREADS | DAEMON_THREADS
+        BASE_FLAGS = OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS
         base_kwargs = {
+            'use_main_obmalloc': True,
             'allow_fork': True,
             'allow_exec': True,
             'allow_threads': True,
@@ -1400,7 +1435,7 @@ class TestThreadState(unittest.TestCase):
     @threading_helper.requires_working_threading()
     def test_gilstate_ensure_no_deadlock(self):
         # See https://github.com/python/cpython/issues/96071
-        code = textwrap.dedent(f"""
+        code = textwrap.dedent("""
             import _testcapi
 
             def callback():

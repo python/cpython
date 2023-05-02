@@ -1938,6 +1938,13 @@ if test "$Py_BOLT" = 'true' ; then
   DEF_MAKE_ALL_RULE="bolt-opt"
   DEF_MAKE_RULE="build_all"
 
+  AC_SUBST(READELF)
+  AC_CHECK_TOOLS(READELF, [readelf], "notfound")
+  if test "$READELF" == "notfound"
+  then
+    AC_MSG_ERROR([readelf is required for a --enable-bolt build but could not be found.])
+  fi
+      
   # -fno-reorder-blocks-and-partition is required for bolt to work.
   # Possibly GCC only.
   AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[

@@ -1564,7 +1564,7 @@ Basic customization
       This is intended to provide protection against a denial-of-service caused
       by carefully chosen inputs that exploit the worst case performance of a
       dict insertion, O(n\ :sup:`2`) complexity.  See
-      http://www.ocert.org/advisories/ocert-2011-003.html for details.
+      http://ocert.org/advisories/ocert-2011-003.html for details.
 
       Changing hash values affects the iteration order of sets.
       Python has never made guarantees about this ordering
@@ -2101,6 +2101,10 @@ Resolving MRO entries
 
    :func:`types.resolve_bases`
       Dynamically resolve bases that are not instances of :class:`type`.
+
+   :func:`types.get_original_bases`
+      Retrieve a class's "original bases" prior to modifications by
+      :meth:`~object.__mro_entries__`.
 
    :pep:`560`
       Core support for typing module and generic types.

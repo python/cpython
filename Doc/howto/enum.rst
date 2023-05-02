@@ -36,8 +36,10 @@ inherits from :class:`Enum` itself.
 
 .. note:: Case of Enum Members
 
-    Because Enums are used to represent constants we recommend using
-    UPPER_CASE names for members, and will be using that style in our examples.
+    Because Enums are used to represent constants, and to help avoid issues
+    with name clashes between mixin-class methods/attributes and enum names,
+    we strongly recommend using UPPER_CASE names for members, and will be using
+    that style in our examples.
 
 Depending on the nature of the enum a member's value may or may not be
 important, but either way that value can be used to get the corresponding
@@ -490,6 +492,10 @@ the :meth:`~Enum.__repr__` omits the inherited class' name.  For example::
 Use the :func:`!dataclass` argument ``repr=False``
 to use the standard :func:`repr`.
 
+.. versionchanged:: 3.12
+   Only the dataclass fields are shown in the value area, not the dataclass'
+   name.
+
 
 Pickling
 --------
@@ -865,17 +871,19 @@ Some rules:
 4. When another data type is mixed in, the :attr:`value` attribute is *not the
    same* as the enum member itself, although it is equivalent and will compare
    equal.
-5. %-style formatting:  ``%s`` and ``%r`` call the :class:`Enum` class's
+5. A ``data type`` is a mixin that defines :meth:`__new__`, or a
+   :class:`~dataclasses.dataclass`
+6. %-style formatting:  ``%s`` and ``%r`` call the :class:`Enum` class's
    :meth:`__str__` and :meth:`__repr__` respectively; other codes (such as
    ``%i`` or ``%h`` for IntEnum) treat the enum member as its mixed-in type.
-6. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
+7. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
    and :func:`format` will use the enum's :meth:`__str__` method.
 
 .. note::
 
    Because :class:`IntEnum`, :class:`IntFlag`, and :class:`StrEnum` are
    designed to be drop-in replacements for existing constants, their
-   :meth:`__str__` method has been reset to their data types
+   :meth:`__str__` method has been reset to their data types'
    :meth:`__str__` method.
 
 When to use :meth:`__new__` vs. :meth:`__init__`
@@ -990,7 +998,9 @@ but remain normal attributes.
 Enum members are instances of their enum class, and are normally accessed as
 ``EnumClass.member``.  In certain situations, such as writing custom enum
 behavior, being able to access one member directly from another is useful,
-and is supported.
+and is supported; however, in order to avoid name clashes between member names
+and attributes/methods from mixed-in classes, upper-case names are strongly
+recommended.
 
 .. versionchanged:: 3.5
 

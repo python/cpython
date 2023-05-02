@@ -299,18 +299,27 @@ class PurePath(object):
         return (self.__class__, self.parts)
 
     def __init__(self, *args):
-        if not args:
-            path = ''
-        elif len(args) == 1:
-            path = os.fspath(args[0])
+        paths = []
+        for arg in args:
+            if isinstance(arg, PurePath):
+                path = arg._raw_path
+            else:
+                try:
+                    path = os.fspath(arg)
+                except TypeError:
+                    path = arg
+                if not isinstance(path, str):
+                    raise TypeError(
+                        "argument should be a str or an os.PathLike "
+                        "object where __fspath__ returns a str, "
+                        f"not {type(path).__name__!r}")
+            paths.append(path)
+        if len(paths) == 0:
+            self._raw_path = ''
+        elif len(paths) == 1:
+            self._raw_path = paths[0]
         else:
-            path = self._flavour.join(*args)
-        if not isinstance(path, str):
-            raise TypeError(
-                "argument should be a str or an os.PathLike "
-                "object where __fspath__ returns a str, "
-                f"not {type(path).__name__!r}")
-        self._raw_path = path
+            self._raw_path = self._flavour.join(*paths)
 
     def with_path(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.
@@ -328,9 +337,14 @@ class PurePath(object):
         if altsep:
             path = path.replace(altsep, sep)
         drv, root, rel = cls._flavour.splitroot(path)
-        if drv.startswith(sep):
-            # pathlib assumes that UNC paths always have a root.
-            root = sep
+        if not root and drv.startswith(sep) and not drv.endswith(sep):
+            drv_parts = drv.split(sep)
+            if len(drv_parts) == 4 and drv_parts[2] not in '?.':
+                # e.g. //server/share
+                root = sep
+            elif len(drv_parts) == 6:
+                # e.g. //?/unc/server/share
+                root = sep
         parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
         return drv, root, parsed
 
@@ -619,7 +633,7 @@ class PurePath(object):
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self.with_path(self._raw_path, *pathsegments)
+        return self.with_path(self, *pathsegments)
 
     def __truediv__(self, key):
         try:
@@ -629,7 +643,7 @@ class PurePath(object):
 
     def __rtruediv__(self, key):
         try:
-            return self.with_path(key, self._raw_path)
+            return self.with_path(key, self)
         except TypeError:
             return NotImplemented
 
@@ -865,7 +879,7 @@ class Path(PurePath):
             cwd = self._flavour.abspath(self.drive)
         else:
             cwd = os.getcwd()
-        return self.with_path(cwd, self._raw_path)
+        return self.with_path(cwd, self)
 
     def resolve(self, strict=False):
         """
