@@ -1,0 +1,1 @@
+Fixed a security in flaw in the uu.decode() function that could allow for directory traversal.
