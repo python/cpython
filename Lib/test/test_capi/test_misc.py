@@ -1082,11 +1082,11 @@ class TestHeapTypeRelative(unittest.TestCase):
 
                 # we don't reserve (requested + alignment) or more data
                 self.assertLess(data_size - extra_size,
-                                _testcapi.alignof_max_align_t)
+                                _testcapi.ALIGNOF_MAX_ALIGN_T)
 
             # The offsets/sizes we calculated should be aligned.
-            self.assertEqual(data_offset % _testcapi.alignof_max_align_t, 0)
-            self.assertEqual(data_size % _testcapi.alignof_max_align_t, 0)
+            self.assertEqual(data_offset % _testcapi.ALIGNOF_MAX_ALIGN_T, 0)
+            self.assertEqual(data_size % _testcapi.ALIGNOF_MAX_ALIGN_T, 0)
 
         sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
                         object.__basicsize__,

@@ -281,7 +281,9 @@ _PyTestCapi_Init_HeaptypeRelative(PyObject *m) {
         return -1;
     }
 
-    PyModule_AddIntConstant(m, "alignof_max_align_t", ALIGNOF_MAX_ALIGN_T);
+    if (PyModule_AddIntMacro(m, ALIGNOF_MAX_ALIGN_T) < 0) {
+        return -1;
+    }
 
     return 0;
 }
