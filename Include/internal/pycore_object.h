@@ -272,8 +272,9 @@ _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
 {
     if (PyType_Check(op) &&
             ((PyTypeObject *)op)->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
         static_builtin_state *state = _PyStaticType_GetState(
-                                                        (PyTypeObject *)op);
+                                                interp, (PyTypeObject *)op);
         return _PyStaticType_GET_WEAKREFS_LISTPTR(state);
     }
     // Essentially _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET():
@@ -329,10 +330,6 @@ extern int _Py_CheckSlotResult(
     PyObject *obj,
     const char *slot_name,
     int success);
-
-// PyType_Ready() must be called if _PyType_IsReady() is false.
-// See also the Py_TPFLAGS_READY flag.
-#define _PyType_IsReady(type) ((type)->tp_dict != NULL)
 
 // Test if a type supports weak references
 static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
@@ -391,8 +388,6 @@ _PyDictOrValues_SetValues(PyDictOrValues *ptr, PyDictValues *values)
 extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
 extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
-extern int _PyType_HasSubclasses(PyTypeObject *);
-extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
 
 // Access macro to the members which are floating "behind" the object
 static inline PyMemberDef* _PyHeapType_GET_MEMBERS(PyHeapTypeObject *etype) {

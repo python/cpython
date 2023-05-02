@@ -541,7 +541,7 @@ Besides the standard CPython distribution, there are modified packages including
 additional functionality.  The following is a list of popular versions and their
 key features:
 
-`ActivePython <https://www.activestate.com/activepython/>`_
+`ActivePython <https://www.activestate.com/products/python/>`_
     Installer with multi-platform compatibility, documentation, PyWin32
 
 `Anaconda <https://www.anaconda.com/download/>`_
