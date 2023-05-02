@@ -3830,7 +3830,7 @@ check_basicsize_includes_size_and_offsets(PyTypeObject* type)
     return 1;
 }
 
-PyObject *
+static PyObject *
 _PyType_FromMetaclass_impl(
     PyTypeObject *metaclass, PyObject *module,
     PyType_Spec *spec, PyObject *bases_in, int _allow_tp_new)
