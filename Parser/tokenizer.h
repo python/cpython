@@ -10,8 +10,9 @@ extern "C" {
 
 #include "pycore_token.h" /* For token types */
 
-#define MAXINDENT 100   /* Max indentation level */
-#define MAXLEVEL 200    /* Max parentheses level */
+#define MAXINDENT 100       /* Max indentation level */
+#define MAXLEVEL 200        /* Max parentheses level */
+#define MAXFSTRINGLEVEL 150 /* Max f-string nesting level */
 
 enum decoding_state {
     STATE_INIT,
@@ -31,6 +32,7 @@ struct token {
     int level;
     int lineno, col_offset, end_lineno, end_col_offset;
     const char *start, *end;
+    PyObject *metadata;
 };
 
 enum tokenizer_mode_kind_t {
@@ -58,6 +60,7 @@ typedef struct _tokenizer_mode {
     Py_ssize_t last_expr_size;
     Py_ssize_t last_expr_end;
     char* last_expr_buffer;
+    int f_string_debug;
 } tokenizer_mode;
 
 /* Tokenizer state */
@@ -121,7 +124,7 @@ struct tok_state {
     enum interactive_underflow_t interactive_underflow;
     int report_warnings;
     // TODO: Factor this into its own thing
-    tokenizer_mode tok_mode_stack[MAXLEVEL];
+    tokenizer_mode tok_mode_stack[MAXFSTRINGLEVEL];
     int tok_mode_stack_index;
     int tok_report_warnings;
 #ifdef Py_DEBUG
