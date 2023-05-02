@@ -71,6 +71,8 @@ def _make_selector(pattern_parts, flavour):
         return _TerminatingSelector()
     if pat == '**':
         cls = _RecursiveWildcardSelector
+    elif pat == '..':
+        cls = _ParentSelector
     elif '**' in pat:
         raise ValueError("Invalid pattern: '**' can only be an entire path component")
     elif _is_wildcard_pattern(pat):
@@ -110,6 +112,16 @@ class _TerminatingSelector:
 
     def _select_from(self, parent_path, is_dir, exists, scandir, normcase):
         yield parent_path
+
+
+class _ParentSelector(_Selector):
+    def __init__(self, name, child_parts, case_sensitive):
+        _Selector.__init__(self, child_parts, case_sensitive)
+
+    def _select_from(self,  parent_path, is_dir, exists, scandir, normcase):
+        path = parent_path._make_child_relpath('..')
+        for p in self.successor._select_from(path, is_dir, exists, scandir, normcase):
+            yield p
 
 
 class _PreciseSelector(_Selector):
