@@ -692,6 +692,10 @@ def patch_pairindextypes(app) -> None:
         # pairindextypes.pop('statement', None)
         # pairindextypes.pop('builtin', None)
 
+        # there needs to be at least one statement in this block, will be
+        # removed when the first of the below is uncommented.
+        pass
+
 
 def setup(app):
     app.add_role('issue', issue_role)
