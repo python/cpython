@@ -785,8 +785,8 @@ functools
 
   (Contributed by Raymond Hettinger and incorporating design ideas from Jim
   Baker, Miki Tebeka, and Nick Coghlan; see `recipe 498245
-  <https://code.activestate.com/recipes/498245>`_\, `recipe 577479
-  <https://code.activestate.com/recipes/577479>`_\, :issue:`10586`, and
+  <https://code.activestate.com/recipes/498245/>`_\, `recipe 577479
+  <https://code.activestate.com/recipes/577479/>`_\, :issue:`10586`, and
   :issue:`10593`.)
 
 * The :func:`functools.wraps` decorator now adds a :attr:`__wrapped__` attribute
@@ -2603,7 +2603,7 @@ Also, there were a number of updates to the Mac OS X build, see
 for details.  For users running a 32/64-bit
 build, there is a known problem with the default Tcl/Tk on Mac OS X 10.6.
 Accordingly, we recommend installing an updated alternative such as
-`ActiveState Tcl/Tk 8.5.9 <https://www.activestate.com/activetcl/downloads>`_\.
+`ActiveState Tcl/Tk 8.5.9 <https://web.archive.org/web/20101208191259/https://www.activestate.com/activetcl/downloads>`_\.
 See https://www.python.org/download/mac/tcltk/ for additional details.
 
 Porting to Python 3.2
