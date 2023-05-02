@@ -1643,7 +1643,8 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
     Py_ssize_t blocknum = 0;
     // state[i - 64] == blocknum if local i is guaranteed to
     // be initialized, i.e., if it has had a previous LOAD_FAST or
-    // STORE_FAST within that basicblock (not followed by DELETE_FAST).
+    // STORE_FAST within that basicblock (not followed by
+    // DELETE_FAST/LOAD_FAST_AND_CLEAR/STORE_FAST_MAYBE_NULL).
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         blocknum++;
         for (int i = 0; i < b->b_iused; i++) {
