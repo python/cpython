@@ -170,6 +170,31 @@ static_builtin_state_clear(PyInterpreterState *interp, PyTypeObject *self)
 /* accessors for objects stored on PyTypeObject */
 
 static inline PyObject *
+lookup_tp_bases(PyTypeObject *self)
+{
+    return self->tp_bases;
+}
+
+PyObject *
+_PyType_GetBases(PyTypeObject *self)
+{
+    return lookup_tp_bases(self);
+}
+
+static inline void
+set_tp_bases(PyTypeObject *self, PyObject *bases)
+{
+    self->tp_bases = bases;
+}
+
+static inline void
+clear_tp_bases(PyTypeObject *self)
+{
+    Py_CLEAR(self->tp_bases);
+}
+
+
+static inline PyObject *
 lookup_tp_mro(PyTypeObject *self)
 {
     return self->tp_mro;
@@ -730,7 +755,7 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
         assert (type->tp_version_tag != 0);
     }
 
-    PyObject *bases = type->tp_bases;
+    PyObject *bases = lookup_tp_bases(type);
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
@@ -969,7 +994,7 @@ type_set_abstractmethods(PyTypeObject *type, PyObject *value, void *context)
 static PyObject *
 type_get_bases(PyTypeObject *type, void *context)
 {
-    return Py_NewRef(type->tp_bases);
+    return Py_NewRef(lookup_tp_bases(type));
 }
 
 static PyTypeObject *best_base(PyObject *);
@@ -1113,11 +1138,11 @@ type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
         return -1;
     }
 
-    PyObject *old_bases = type->tp_bases;
+    PyObject *old_bases = lookup_tp_bases(type);
     assert(old_bases != NULL);
     PyTypeObject *old_base = type->tp_base;
 
-    type->tp_bases = Py_NewRef(new_bases);
+    set_tp_bases(type, Py_NewRef(new_bases));
     type->tp_base = (PyTypeObject *)Py_NewRef(new_base);
 
     PyObject *temp = PyList_New(0);
@@ -1132,7 +1157,7 @@ type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
     /* Take no action in case if type->tp_bases has been replaced
        through reentrance.  */
     int res;
-    if (type->tp_bases == new_bases) {
+    if (lookup_tp_bases(type) == new_bases) {
         /* any base that was in __bases__ but now isn't, we
            need to remove |type| from its tp_subclasses.
            conversely, any class now in __bases__ that wasn't
@@ -1171,10 +1196,10 @@ type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
     Py_DECREF(temp);
 
   bail:
-    if (type->tp_bases == new_bases) {
+    if (lookup_tp_bases(type) == new_bases) {
         assert(type->tp_base == new_base);
 
-        type->tp_bases = old_bases;
+        set_tp_bases(type, old_bases);
         type->tp_base = old_base;
 
         Py_DECREF(new_bases);
@@ -2268,7 +2293,7 @@ mro_implementation(PyTypeObject *type)
             return NULL;
     }
 
-    PyObject *bases = type->tp_bases;
+    PyObject *bases = lookup_tp_bases(type);
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
@@ -2496,7 +2521,7 @@ mro_internal(PyTypeObject *type, PyObject **p_old_mro)
     type_mro_modified(type, new_mro);
     /* corner case: the super class might have been hidden
        from the custom MRO */
-    type_mro_modified(type, type->tp_bases);
+    type_mro_modified(type, lookup_tp_bases(type));
 
     // XXX Expand this to Py_TPFLAGS_IMMUTABLETYPE?
     if (!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN)) {
@@ -3098,7 +3123,7 @@ type_new_alloc(type_new_ctx *ctx)
     type->tp_as_mapping = &et->as_mapping;
     type->tp_as_buffer = &et->as_buffer;
 
-    type->tp_bases = Py_NewRef(ctx->bases);
+    set_tp_bases(type, Py_NewRef(ctx->bases));
     type->tp_base = (PyTypeObject *)Py_NewRef(ctx->base);
 
     type->tp_dealloc = subtype_dealloc;
@@ -3990,7 +4015,7 @@ PyType_FromMetaclass(PyTypeObject *metaclass, PyObject *module,
     /* Set slots we have prepared */
 
     type->tp_base = (PyTypeObject *)Py_NewRef(base);
-    type->tp_bases = bases;
+    set_tp_bases(type, bases);
     bases = NULL;  // We give our reference to bases to the type
 
     type->tp_doc = tp_doc;
@@ -4573,9 +4598,10 @@ _PyDictKeys_DecRef(PyDictKeysObject *keys);
 static void
 type_dealloc_common(PyTypeObject *type)
 {
-    if (type->tp_bases != NULL) {
+    PyObject *bases = lookup_tp_bases(type);
+    if (bases != NULL) {
         PyObject *exc = PyErr_GetRaisedException();
-        remove_all_subclasses(type, type->tp_bases);
+        remove_all_subclasses(type, bases);
         PyErr_SetRaisedException(exc);
     }
 }
@@ -4629,7 +4655,7 @@ clear_static_type_objects(PyInterpreterState *interp, PyTypeObject *type)
 {
     if (_Py_IsMainInterpreter(interp)) {
         Py_CLEAR(type->tp_dict);
-        Py_CLEAR(type->tp_bases);
+        clear_tp_bases(type);
         clear_tp_mro(type);
         Py_CLEAR(type->tp_cache);
     }
@@ -6652,7 +6678,7 @@ type_ready_set_bases(PyTypeObject *type)
     }
 
     /* Initialize tp_bases */
-    PyObject *bases = type->tp_bases;
+    PyObject *bases = lookup_tp_bases(type);
     if (bases == NULL) {
         PyTypeObject *base = type->tp_base;
         if (base == NULL) {
@@ -6664,7 +6690,7 @@ type_ready_set_bases(PyTypeObject *type)
         if (bases == NULL) {
             return -1;
         }
-        type->tp_bases = bases;
+        set_tp_bases(type, bases);
     }
     return 0;
 }
@@ -6913,7 +6939,7 @@ type_ready_set_hash(PyTypeObject *type)
 static int
 type_ready_add_subclasses(PyTypeObject *type)
 {
-    PyObject *bases = type->tp_bases;
+    PyObject *bases = lookup_tp_bases(type);
     Py_ssize_t nbase = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < nbase; i++) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
