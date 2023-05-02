@@ -117,8 +117,8 @@ class _TerminatingSelector:
 
 
 class _ParentSelector(_Selector):
-    def __init__(self, name, child_parts, case_sensitive):
-        _Selector.__init__(self, child_parts, case_sensitive)
+    def __init__(self, name, child_parts, flavour):
+        _Selector.__init__(self, child_parts, flavour)
 
     def _select_from(self,  parent_path, is_dir, exists, scandir):
         path = parent_path._make_child_relpath('..')
