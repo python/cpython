@@ -32,6 +32,22 @@
 #endif
 #endif
 
+typedef struct {
+    PyTypeObject *DictRemover_Type;
+    PyTypeObject *PyCArg_Type;
+    PyTypeObject *PyCField_Type;
+    PyTypeObject *PyCThunk_Type;
+    PyTypeObject *StructParam_Type;
+} ctypes_state;
+
+extern ctypes_state global_state;
+
+#define GLOBAL_STATE() (&global_state)
+
+extern PyType_Spec carg_spec;
+extern PyType_Spec cfield_spec;
+extern PyType_Spec cthunk_spec;
+
 typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;
 typedef PyObject *(* GETFUNC)(void *, Py_ssize_t size);
@@ -88,8 +104,7 @@ typedef struct {
     ffi_type *ffi_restype;
     ffi_type *atypes[1];
 } CThunkObject;
-extern PyTypeObject PyCThunk_Type;
-#define CThunk_CheckExact(v)        Py_IS_TYPE(v, &PyCThunk_Type)
+#define CThunk_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCThunk_Type)
 
 typedef struct {
     /* First part identical to tagCDataObject */
@@ -141,7 +156,6 @@ extern PyTypeObject PyCSimpleType_Type;
 #define PyCSimpleTypeObject_CheckExact(v)       Py_IS_TYPE(v, &PyCSimpleType_Type)
 #define PyCSimpleTypeObject_Check(v)    PyObject_TypeCheck(v, &PyCSimpleType_Type)
 
-extern PyTypeObject PyCField_Type;
 extern struct fielddesc *_ctypes_get_fielddesc(const char *fmt);
 
 
@@ -334,8 +348,7 @@ struct tagPyCArgObject {
     Py_ssize_t size; /* for the 'V' tag */
 };
 
-extern PyTypeObject PyCArg_Type;
-#define PyCArg_CheckExact(v)        Py_IS_TYPE(v, &PyCArg_Type)
+#define PyCArg_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCArg_Type)
 extern PyCArgObject *PyCArgObject_new(void);
 
 extern PyObject *

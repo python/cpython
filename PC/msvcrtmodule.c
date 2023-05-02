@@ -564,87 +564,80 @@ static struct PyMethodDef msvcrt_functions[] = {
     {NULL,                      NULL}
 };
 
-static void
-insertint(PyObject *d, char *name, int value)
-{
-    PyObject *v = PyLong_FromLong((long) value);
-    if (v == NULL) {
-        /* Don't bother reporting this error */
-        PyErr_Clear();
-    }
-    else {
-        PyDict_SetItemString(d, name, v);
-        Py_DECREF(v);
-    }
-}
-
-static void
-insertptr(PyObject *d, char *name, void *value)
+static int
+insertptr(PyObject *mod, char *name, void *value)
 {
     PyObject *v = PyLong_FromVoidPtr(value);
     if (v == NULL) {
-        /* Don't bother reporting this error */
-        PyErr_Clear();
+        return -1;
     }
-    else {
-        PyDict_SetItemString(d, name, v);
-        Py_DECREF(v);
-    }
+    int rc = PyModule_AddObjectRef(mod, name, v);
+    Py_DECREF(v);
+    return rc;
 }
+
+#define INSERTINT(MOD, NAME, VAL) do {                  \
+    if (PyModule_AddIntConstant(MOD, NAME, VAL) < 0) {  \
+        return -1;                                      \
+    }                                                   \
+} while (0)
+
+#define INSERTPTR(MOD, NAME, PTR) do {      \
+    if (insertptr(MOD, NAME, PTR) < 0) {    \
+        return -1;                          \
+    }                                       \
+} while (0)
+
+#define INSERTSTR(MOD, NAME, CONST) do {                    \
+    if (PyModule_AddStringConstant(MOD, NAME, CONST) < 0) { \
+        return -1;                                          \
+    }                                                       \
+} while (0)
 
 static int
 exec_module(PyObject* m)
 {
-    int st;
-    PyObject *d = PyModule_GetDict(m);  // Borrowed ref.
-
     /* constants for the locking() function's mode argument */
-    insertint(d, "LK_LOCK", _LK_LOCK);
-    insertint(d, "LK_NBLCK", _LK_NBLCK);
-    insertint(d, "LK_NBRLCK", _LK_NBRLCK);
-    insertint(d, "LK_RLCK", _LK_RLCK);
-    insertint(d, "LK_UNLCK", _LK_UNLCK);
+    INSERTINT(m, "LK_LOCK", _LK_LOCK);
+    INSERTINT(m, "LK_NBLCK", _LK_NBLCK);
+    INSERTINT(m, "LK_NBRLCK", _LK_NBRLCK);
+    INSERTINT(m, "LK_RLCK", _LK_RLCK);
+    INSERTINT(m, "LK_UNLCK", _LK_UNLCK);
 #ifdef MS_WINDOWS_DESKTOP
-    insertint(d, "SEM_FAILCRITICALERRORS", SEM_FAILCRITICALERRORS);
-    insertint(d, "SEM_NOALIGNMENTFAULTEXCEPT", SEM_NOALIGNMENTFAULTEXCEPT);
-    insertint(d, "SEM_NOGPFAULTERRORBOX", SEM_NOGPFAULTERRORBOX);
-    insertint(d, "SEM_NOOPENFILEERRORBOX", SEM_NOOPENFILEERRORBOX);
+    INSERTINT(m, "SEM_FAILCRITICALERRORS", SEM_FAILCRITICALERRORS);
+    INSERTINT(m, "SEM_NOALIGNMENTFAULTEXCEPT", SEM_NOALIGNMENTFAULTEXCEPT);
+    INSERTINT(m, "SEM_NOGPFAULTERRORBOX", SEM_NOGPFAULTERRORBOX);
+    INSERTINT(m, "SEM_NOOPENFILEERRORBOX", SEM_NOOPENFILEERRORBOX);
 #endif
 #ifdef _DEBUG
-    insertint(d, "CRT_WARN", _CRT_WARN);
-    insertint(d, "CRT_ERROR", _CRT_ERROR);
-    insertint(d, "CRT_ASSERT", _CRT_ASSERT);
-    insertint(d, "CRTDBG_MODE_DEBUG", _CRTDBG_MODE_DEBUG);
-    insertint(d, "CRTDBG_MODE_FILE", _CRTDBG_MODE_FILE);
-    insertint(d, "CRTDBG_MODE_WNDW", _CRTDBG_MODE_WNDW);
-    insertint(d, "CRTDBG_REPORT_MODE", _CRTDBG_REPORT_MODE);
-    insertptr(d, "CRTDBG_FILE_STDERR", _CRTDBG_FILE_STDERR);
-    insertptr(d, "CRTDBG_FILE_STDOUT", _CRTDBG_FILE_STDOUT);
-    insertptr(d, "CRTDBG_REPORT_FILE", _CRTDBG_REPORT_FILE);
+    INSERTINT(m, "CRT_WARN", _CRT_WARN);
+    INSERTINT(m, "CRT_ERROR", _CRT_ERROR);
+    INSERTINT(m, "CRT_ASSERT", _CRT_ASSERT);
+    INSERTINT(m, "CRTDBG_MODE_DEBUG", _CRTDBG_MODE_DEBUG);
+    INSERTINT(m, "CRTDBG_MODE_FILE", _CRTDBG_MODE_FILE);
+    INSERTINT(m, "CRTDBG_MODE_WNDW", _CRTDBG_MODE_WNDW);
+    INSERTINT(m, "CRTDBG_REPORT_MODE", _CRTDBG_REPORT_MODE);
+    INSERTPTR(m, "CRTDBG_FILE_STDERR", _CRTDBG_FILE_STDERR);
+    INSERTPTR(m, "CRTDBG_FILE_STDOUT", _CRTDBG_FILE_STDOUT);
+    INSERTPTR(m, "CRTDBG_REPORT_FILE", _CRTDBG_REPORT_FILE);
 #endif
+
+#undef INSERTINT
+#undef INSERTPTR
 
     /* constants for the crt versions */
 #ifdef _VC_ASSEMBLY_PUBLICKEYTOKEN
-    st = PyModule_AddStringConstant(m, "VC_ASSEMBLY_PUBLICKEYTOKEN",
-                                    _VC_ASSEMBLY_PUBLICKEYTOKEN);
-    if (st < 0) {
-        return -1;
-    }
+    INSERTSTR(m, "VC_ASSEMBLY_PUBLICKEYTOKEN", _VC_ASSEMBLY_PUBLICKEYTOKEN);
 #endif
 #ifdef _CRT_ASSEMBLY_VERSION
-    st = PyModule_AddStringConstant(m, "CRT_ASSEMBLY_VERSION",
-                                    _CRT_ASSEMBLY_VERSION);
-    if (st < 0) {
-        return -1;
-    }
+    INSERTSTR(m, "CRT_ASSEMBLY_VERSION", _CRT_ASSEMBLY_VERSION);
 #endif
 #ifdef __LIBRARIES_ASSEMBLY_NAME_PREFIX
-    st = PyModule_AddStringConstant(m, "LIBRARIES_ASSEMBLY_NAME_PREFIX",
-                                    __LIBRARIES_ASSEMBLY_NAME_PREFIX);
-    if (st < 0) {
-        return -1;
-    }
+    INSERTSTR(m, "LIBRARIES_ASSEMBLY_NAME_PREFIX",
+              __LIBRARIES_ASSEMBLY_NAME_PREFIX);
 #endif
+
+#undef INSERTSTR
 
     /* constants for the 2010 crt versions */
 #if defined(_VC_CRT_MAJOR_VERSION) && defined (_VC_CRT_MINOR_VERSION) && defined(_VC_CRT_BUILD_VERSION) && defined(_VC_CRT_RBUILD_VERSION)
@@ -656,14 +649,12 @@ exec_module(PyObject* m)
     if (version == NULL) {
         return -1;
     }
-    st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
+    int st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
     Py_DECREF(version);
     if (st < 0) {
         return -1;
     }
 #endif
-    /* make compiler warning quiet if st is unused */
-    (void)st;
 
     return 0;
 }

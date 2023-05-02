@@ -34,6 +34,7 @@ Lib/test/xmltestdata/*                     noeol
 
 # Shell scripts should have LF even on Windows because of Cygwin
 Lib/venv/scripts/common/activate text eol=lf
+Lib/venv/scripts/posix/* text eol=lf
 
 # CRLF files
 [attr]dos text eol=crlf

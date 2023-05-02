@@ -2,7 +2,6 @@
 
 #include "Python.h"
 
-#include "pycore_bytesobject.h"   // _PyBytes_InitTypes()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_exceptions.h"    // _PyExc_InitTypes()
@@ -26,7 +25,6 @@
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
-#include "pycore_tuple.h"         // _PyTuple_InitTypes()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "opcode.h"
@@ -547,10 +545,20 @@ pycore_init_runtime(_PyRuntimeState *runtime,
 }
 
 
-static void
+static PyStatus
 init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *config)
 {
     assert(interp->feature_flags == 0);
+
+    if (config->use_main_obmalloc) {
+        interp->feature_flags |= Py_RTFLAGS_USE_MAIN_OBMALLOC;
+    }
+    else if (!config->check_multi_interp_extensions) {
+        /* The reason: PyModuleDef.m_base.m_copy leaks objects between
+           interpreters. */
+        return _PyStatus_ERR("per-interpreter obmalloc does not support "
+                             "single-phase init extension modules");
+    }
 
     if (config->allow_fork) {
         interp->feature_flags |= Py_RTFLAGS_FORK;
@@ -570,6 +578,8 @@ init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *con
     if (config->check_multi_interp_extensions) {
         interp->feature_flags |= Py_RTFLAGS_MULTI_INTERP_EXTENSIONS;
     }
+
+    return _PyStatus_OK();
 }
 
 
@@ -622,7 +632,10 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     }
 
     const _PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
-    init_interp_settings(interp, &config);
+    status = init_interp_settings(interp, &config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     PyThreadState *tstate = _PyThreadState_New(interp);
     if (tstate == NULL) {
@@ -669,11 +682,6 @@ pycore_init_types(PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyBytes_InitTypes(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     status = _PyLong_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -685,11 +693,6 @@ pycore_init_types(PyInterpreterState *interp)
     }
 
     status = _PyFloat_InitTypes(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyTuple_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -807,11 +810,6 @@ pycore_interp_init(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     PyStatus status;
     PyObject *sysmod = NULL;
-
-    // This is a temporary fix until we have immortal objects.
-    // (See _PyType_InitCache() in typeobject.c.)
-    extern void _PyType_FixCacheRefcounts(void);
-    _PyType_FixCacheRefcounts();
 
     // Create singletons before the first PyType_Ready() call, since
     // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)
@@ -1665,14 +1663,18 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyInterpreterState *interp)
 {
+    _PyIO_FiniTypes(interp);
+
     _PyUnicode_FiniTypes(interp);
-    _PySys_Fini(interp);
+    _PySys_FiniTypes(interp);
     _PyExc_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
     _PyFloat_FiniType(interp);
     _PyLong_FiniTypes(interp);
     _PyThread_FiniType(interp);
+    // XXX fini collections module static types (_PyStaticType_Dealloc())
+    // XXX fini IO module static types (_PyStaticType_Dealloc())
     _PyErr_FiniTypes(interp);
     _PyTypes_FiniTypes(interp);
 
@@ -1705,8 +1707,6 @@ finalize_interp_clear(PyThreadState *tstate)
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
-
-    _PyIO_FiniTypes(tstate->interp);
 
     /* Clear all loghooks */
     /* Both _PySys_Audit function and users still need PyObject, such as tuple.
@@ -1941,6 +1941,7 @@ Py_FinalizeEx(void)
     }
     _Py_FinalizeRefTotal(runtime);
 #endif
+    _Py_FinalizeAllocatedBlocks(runtime);
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -2041,7 +2042,10 @@ new_interpreter(PyThreadState **tstate_p, const _PyInterpreterConfig *config)
         goto error;
     }
 
-    init_interp_settings(interp, config);
+    status = init_interp_settings(interp, config);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto error;
+    }
 
     status = init_interp_create_gil(tstate);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2169,10 +2173,9 @@ add_main_module(PyInterpreterState *interp)
         Py_DECREF(bimod);
     }
 
-    /* Main is a little special - imp.is_builtin("__main__") will return
-     * False, but BuiltinImporter is still the most appropriate initial
-     * setting for its __loader__ attribute. A more suitable value will
-     * be set if __main__ gets further initialized later in the startup
+    /* Main is a little special - BuiltinImporter is the most appropriate
+     * initial setting for its __loader__ attribute. A more suitable value
+     * will be set if __main__ gets further initialized later in the startup
      * process.
      */
     loader = _PyDict_GetItemStringWithError(d, "__loader__");
