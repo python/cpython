@@ -870,6 +870,16 @@ class CAPITest(unittest.TestCase):
                         Sub = _testcapi.make_heaptype_with_member(
                             extra_base_size, -extra_size, -1, True)
 
+    def test_pyobject_getitemdata_error(self):
+        """Test PyObject_GetItemData fails on unsupported types"""
+        with self.assertRaises(TypeError):
+            # None is not variable-length
+            _testcapi.pyobject_getitemdata(None)
+        with self.assertRaises(TypeError):
+            # int is variable-length, but doesn't have the
+            # Py_TPFLAGS_ITEMS_AT_END layout (and flag)
+            _testcapi.pyobject_getitemdata(0)
+
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
         small_number = 123
