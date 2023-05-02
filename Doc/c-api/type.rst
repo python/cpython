@@ -232,6 +232,15 @@ Type Objects
 
    .. versionadded:: 3.11
 
+.. c:function:: int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
+
+   Attempt to assign a version tag to the given type.
+
+   Returns 1 if the type already had a valid version tag or a new one was
+   assigned, or 0 if a new tag could not be assigned.
+
+   .. versionadded:: 3.12
+
 
 Creating Heap-Allocated Types
 .............................

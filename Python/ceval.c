@@ -21,6 +21,7 @@
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
 #include "pycore_dict.h"
@@ -53,8 +54,11 @@
 #undef Py_DECREF
 #define Py_DECREF(arg) \
     do { \
-        _Py_DECREF_STAT_INC(); \
         PyObject *op = _PyObject_CAST(arg); \
+        if (_Py_IsImmortal(op)) { \
+            break; \
+        } \
+        _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
             destructor dealloc = Py_TYPE(op)->tp_dealloc; \
             (*dealloc)(op); \
@@ -77,8 +81,11 @@
 #undef _Py_DECREF_SPECIALIZED
 #define _Py_DECREF_SPECIALIZED(arg, dealloc) \
     do { \
-        _Py_DECREF_STAT_INC(); \
         PyObject *op = _PyObject_CAST(arg); \
+        if (_Py_IsImmortal(op)) { \
+            break; \
+        } \
+        _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
             destructor d = (destructor)(dealloc); \
             d(op); \
@@ -205,6 +212,9 @@ static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames);
+static  _PyInterpreterFrame *
+_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
+    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs);
 static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
@@ -416,7 +426,7 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
             Py_ssize_t nargs, PyObject *kwargs)
 {
     if (!PyType_Check(type)) {
-        const char *e = "called match pattern must be a type";
+        const char *e = "called match pattern must be a class";
         _PyErr_Format(tstate, PyExc_TypeError, e);
         return NULL;
     }
@@ -672,7 +682,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         _PyCode_CODE(tstate->interp->interpreter_trampoline);
     entry_frame.stacktop = 0;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
-    entry_frame.yield_offset = 0;
+    entry_frame.return_offset = 0;
     /* Push frame */
     entry_frame.previous = prev_cframe->current_frame;
     frame->previous = &entry_frame;
@@ -881,6 +891,7 @@ exit_unwind:
     _PyInterpreterFrame *dying = frame;
     frame = cframe.current_frame = dying->previous;
     _PyEvalFrameClearAndPop(tstate, dying);
+    frame->return_offset = 0;
     if (frame == &entry_frame) {
         /* Restore previous cframe and exit */
         tstate->cframe = cframe.previous;
@@ -1490,6 +1501,49 @@ fail:
         }
     }
     PyErr_NoMemory();
+    return NULL;
+}
+
+/* Same as _PyEvalFramePushAndInit but takes an args tuple and kwargs dict.
+   Steals references to func, callargs and kwargs.
+*/
+static _PyInterpreterFrame *
+_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
+    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs)
+{
+    bool has_dict = (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0);
+    PyObject *kwnames = NULL;
+    PyObject *const *newargs;
+    if (has_dict) {
+        newargs = _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs), nargs, kwargs, &kwnames);
+        if (newargs == NULL) {
+            Py_DECREF(func);
+            goto error;
+        }
+    }
+    else {
+        newargs = &PyTuple_GET_ITEM(callargs, 0);
+        /* We need to incref all our args since the new frame steals the references. */
+        for (Py_ssize_t i = 0; i < nargs; ++i) {
+            Py_INCREF(PyTuple_GET_ITEM(callargs, i));
+        }
+    }
+    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
+        tstate, (PyFunctionObject *)func, locals,
+        newargs, nargs, kwnames
+    );
+    if (has_dict) {
+        _PyStack_UnpackDict_FreeNoDecRef(newargs, kwnames);
+    }
+    /* No need to decref func here because the reference has been stolen by
+       _PyEvalFramePushAndInit.
+    */
+    Py_DECREF(callargs);
+    Py_XDECREF(kwargs);
+    return new_frame;
+error:
+    Py_DECREF(callargs);
+    Py_XDECREF(kwargs);
     return NULL;
 }
 

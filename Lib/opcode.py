@@ -196,7 +196,7 @@ hasfree.append(138)
 def_op('DELETE_DEREF', 139)
 hasfree.append(139)
 jrel_op('JUMP_BACKWARD', 140)    # Number of words to skip (backwards)
-
+name_op('LOAD_SUPER_ATTR', 141)
 def_op('CALL_FUNCTION_EX', 142)  # Flags
 
 def_op('EXTENDED_ARG', 144)
@@ -264,6 +264,9 @@ pseudo_op('JUMP', 260, ['JUMP_FORWARD', 'JUMP_BACKWARD'])
 pseudo_op('JUMP_NO_INTERRUPT', 261, ['JUMP_FORWARD', 'JUMP_BACKWARD_NO_INTERRUPT'])
 
 pseudo_op('LOAD_METHOD', 262, ['LOAD_ATTR'])
+pseudo_op('LOAD_SUPER_METHOD', 263, ['LOAD_SUPER_ATTR'])
+pseudo_op('LOAD_ZERO_SUPER_METHOD', 264, ['LOAD_SUPER_ATTR'])
+pseudo_op('LOAD_ZERO_SUPER_ATTR', 265, ['LOAD_SUPER_ATTR'])
 
 MAX_PSEUDO_OPCODE = MIN_PSEUDO_OPCODE + len(_pseudo_ops) - 1
 
@@ -350,6 +353,9 @@ _specializations = {
         "FOR_ITER_RANGE",
         "FOR_ITER_GEN",
     ],
+    "LOAD_SUPER_ATTR": [
+        "LOAD_SUPER_ATTR_METHOD",
+    ],
     "LOAD_ATTR": [
         # These potentially push [NULL, bound method] onto the stack.
         "LOAD_ATTR_CLASS",
@@ -422,6 +428,12 @@ _cache_format = {
     },
     "FOR_ITER": {
         "counter": 1,
+    },
+    "LOAD_SUPER_ATTR": {
+        "counter": 1,
+        "class_version": 2,
+        "self_type_version": 2,
+        "method": 4,
     },
     "LOAD_ATTR": {
         "counter": 1,
