@@ -130,25 +130,21 @@ class _WildcardSelector(_Selector):
             # avoid exhausting file descriptors when globbing deep trees.
             with scandir(parent_path) as scandir_it:
                 entries = list(scandir_it)
+        except OSError:
+            pass
+        else:
             for entry in entries:
                 if self.dironly:
                     try:
-                        # "entry.is_dir()" can raise PermissionError
-                        # in some cases (see bpo-38894), which is not
-                        # among the errors ignored by _ignore_error()
                         if not entry.is_dir():
                             continue
-                    except OSError as e:
-                        if not _ignore_error(e):
-                            raise
+                    except OSError:
                         continue
                 name = entry.name
                 if self.match(name):
                     path = parent_path._make_child_relpath(name)
                     for p in self.successor._select_from(path, scandir):
                         yield p
-        except PermissionError:
-            return
 
 
 class _RecursiveWildcardSelector(_Selector):
@@ -163,34 +159,30 @@ class _RecursiveWildcardSelector(_Selector):
             # avoid exhausting file descriptors when globbing deep trees.
             with scandir(parent_path) as scandir_it:
                 entries = list(scandir_it)
+        except OSError:
+            pass
+        else:
             for entry in entries:
-                entry_is_dir = False
                 try:
-                    entry_is_dir = entry.is_dir()
-                except OSError as e:
-                    if not _ignore_error(e):
-                        raise
-                if entry_is_dir and not entry.is_symlink():
-                    path = parent_path._make_child_relpath(entry.name)
-                    for p in self._iterate_directories(path, scandir):
-                        yield p
-        except PermissionError:
-            return
+                    if not entry.is_dir(follow_symlinks=False):
+                        continue
+                except OSError:
+                    continue
+                path = parent_path._make_child_relpath(entry.name)
+                for p in self._iterate_directories(path, scandir):
+                    yield p
 
     def _select_from(self, parent_path, scandir):
+        yielded = set()
         try:
-            yielded = set()
-            try:
-                successor_select = self.successor._select_from
-                for starting_point in self._iterate_directories(parent_path, scandir):
-                    for p in successor_select(starting_point, scandir):
-                        if p not in yielded:
-                            yield p
-                            yielded.add(p)
-            finally:
-                yielded.clear()
-        except PermissionError:
-            return
+            successor_select = self.successor._select_from
+            for starting_point in self._iterate_directories(parent_path, scandir):
+                for p in successor_select(starting_point, scandir):
+                    if p not in yielded:
+                        yield p
+                        yielded.add(p)
+        finally:
+            yielded.clear()
 
 
 #
