@@ -245,6 +245,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     PyObject *(*create)(PyObject *, PyModuleDef*) = NULL;
     PyObject *nameobj;
     PyObject *m = NULL;
+    Py_ssize_t multiple_interpreters = -1;
     int has_execution_slots = 0;
     const char *name;
     int ret;
@@ -287,6 +288,16 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
             case Py_mod_exec:
                 has_execution_slots = 1;
                 break;
+            case Py_mod_multiple_interpreters:
+                if (multiple_interpreters >= 0) {
+                    PyErr_Format(
+                        PyExc_SystemError,
+                        "module %s has more than one 'multiple interpreters' slots",
+                        name);
+                    goto error;
+                }
+                multiple_interpreters = (Py_ssize_t)cur_slot->value;
+                break;
             default:
                 assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
                 PyErr_Format(
@@ -294,6 +305,20 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
                     "module %s uses unknown slot ID %i",
                     name, cur_slot->slot);
                 goto error;
+        }
+    }
+
+    /* By default, multi-phase init modules are expected
+       to work under multiple interpreters. */
+    if (multiple_interpreters < 0) {
+        multiple_interpreters = 1;
+    }
+    if (!multiple_interpreters) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if (!_Py_IsMainInterpreter(interp)
+            && _PyImport_CheckSubinterpIncompatibleExtensionAllowed(name) < 0)
+        {
+            goto error;
         }
     }
 
@@ -420,6 +445,9 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
                         name);
                     return -1;
                 }
+                break;
+            case Py_mod_multiple_interpreters:
+                /* handled in PyModule_FromDefAndSpec2 */
                 break;
             default:
                 PyErr_Format(
