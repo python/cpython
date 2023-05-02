@@ -1892,8 +1892,13 @@ class _BasePathTest(object):
         P = self.cls
         p = P(BASE)
         self.assertEqual(set(p.glob("..")), { P(BASE, "..") })
+        self.assertEqual(set(p.glob("../..")), { P(BASE, "..", "..") })
+        self.assertEqual(set(p.glob("dirA/..")), { P(BASE, "dirA", "..") })
         self.assertEqual(set(p.glob("dirA/../file*")), { P(BASE, "dirA/../fileA") })
+        self.assertEqual(set(p.glob("dirA/../file*/..")), set())
         self.assertEqual(set(p.glob("../xyzzy")), set())
+        self.assertEqual(set(p.glob("xyzzy/..")), set())
+        self.assertEqual(set(p.glob("/".join([".."] * 50))), { P(BASE, *[".."] * 50)})
 
     @os_helper.skip_unless_symlink
     def test_glob_permissions(self):
