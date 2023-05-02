@@ -1675,7 +1675,7 @@ Deprecated
   Python 3.12 (previously they were documented as deprecated in Python 3.4).
   (Contributed by Brett Cannon in :issue:`42135`.)
 
-* :class:`importlib.abc.Finder` is deprecated (including its sole method,
+* :class:`!importlib.abc.Finder` is deprecated (including its sole method,
   :meth:`!find_module`). Both
   :class:`importlib.abc.MetaPathFinder` and :class:`importlib.abc.PathEntryFinder`
   no longer inherit from the class. Users should inherit from one of these two

@@ -242,7 +242,7 @@ ABC hierarchy::
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.10
-      No longer a subclass of :class:`Finder`.
+      No longer a subclass of :class:`!Finder`.
 
    .. method:: find_spec(fullname, path, target=None)
 
@@ -278,7 +278,7 @@ ABC hierarchy::
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.10
-      No longer a subclass of :class:`Finder`.
+      No longer a subclass of :class:`!Finder`.
 
    .. method:: find_spec(fullname, target=None)
 
