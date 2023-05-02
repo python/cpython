@@ -1388,10 +1388,19 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
             return;
         }
     }
+
+    PyObject *phase_obj = PyUnicode_FromString(phase);
+    if (phase_obj == NULL) {
+        Py_XDECREF(info);
+        PyErr_WriteUnraisable(NULL);
+        return;
+    }
+
+    PyObject *stack[] = {phase_obj, info};
     for (Py_ssize_t i=0; i<PyList_GET_SIZE(gcstate->callbacks); i++) {
         PyObject *r, *cb = PyList_GET_ITEM(gcstate->callbacks, i);
         Py_INCREF(cb); /* make sure cb doesn't go away */
-        r = PyObject_CallFunction(cb, "sO", phase, info);
+        r = PyObject_Vectorcall(cb, stack, 2, NULL);
         if (r == NULL) {
             PyErr_WriteUnraisable(cb);
         }
@@ -1400,6 +1409,7 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
         }
         Py_DECREF(cb);
     }
+    Py_DECREF(phase_obj);
     Py_XDECREF(info);
     assert(!_PyErr_Occurred(tstate));
 }
@@ -2354,6 +2364,19 @@ _PyObject_GC_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
         return NULL;
     }
     _PyObject_InitVar(op, tp, nitems);
+    return op;
+}
+
+PyObject *
+PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
+{
+    size_t presize = _PyType_PreHeaderSize(tp);
+    PyObject *op = gc_alloc(_PyObject_SIZE(tp) + extra_size, presize);
+    if (op == NULL) {
+        return NULL;
+    }
+    memset(op, 0, _PyObject_SIZE(tp) + extra_size);
+    _PyObject_Init(op, tp);
     return op;
 }
 

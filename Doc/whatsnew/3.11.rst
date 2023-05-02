@@ -220,7 +220,7 @@ The copy of the :ref:`launcher` included with Python 3.11 has been significantly
 updated. It now supports company/tag syntax as defined in :pep:`514` using the
 ``-V:<company>/<tag>`` argument instead of the limited ``-<major>.<minor>``.
 This allows launching distributions other than ``PythonCore``,
-the one hosted on `python.org <https://python.org>`_.
+the one hosted on `python.org <https://www.python.org>`_.
 
 When using ``-V:`` selectors, either company or tag can be omitted, but all
 installs will be searched. For example, ``-V:OtherPython/`` will select the
@@ -666,19 +666,11 @@ enum
   for :meth:`~object.__str__` and :meth:`~object.__format__`
   (used by :func:`str`, :func:`format` and :term:`f-string`\s).
 
-* Changed :class:`~enum.IntEnum`, :class:`~enum.IntFlag` and :class:`~enum.StrEnum`
-  to now inherit from :class:`~enum.ReprEnum`,
-  so their :func:`str` output now matches :func:`format`
-  (both ``str(AnIntEnum.ONE)`` and ``format(AnIntEnum.ONE)`` return ``'1'``,
-  whereas before ``str(AnIntEnum.ONE)`` returned ``'AnIntEnum.ONE'``.
-
-* Changed :meth:`Enum.__format__() <enum.Enum.__format__>`
-  (the default for :func:`format`, :meth:`str.format` and :term:`f-string`\s)
-  of enums with mixed-in types (e.g. :class:`int`, :class:`str`)
-  to also include the class name in the output, not just the member's key.
-  This matches the existing behavior of :meth:`enum.Enum.__str__`,
-  returning e.g. ``'AnEnum.MEMBER'`` for an enum ``AnEnum(str, Enum)``
-  instead of just ``'MEMBER'``.
+* Changed :meth:`Enum.__format__() <enum.Enum.__format__>` (the default for
+  :func:`format`, :meth:`str.format` and :term:`f-string`\s) to always produce
+  the same result as :meth:`Enum.__str__()`:  for enums inheriting from
+  :class:`~enum.ReprEnum` it will be the member's value; for all other enums
+  it will be the enum and member name (e.g. ``Color.RED``).
 
 * Added a new *boundary* class parameter to :class:`~enum.Flag` enums
   and the :class:`~enum.FlagBoundary` enum with its options,
@@ -2489,7 +2481,7 @@ Porting to Python 3.11
       #endif
 
   Or use the `pythoncapi_compat project
-  <https://github.com/python/pythoncapi_compat>`__ to get these two
+  <https://github.com/python/pythoncapi-compat>`__ to get these two
   functions on older Python versions.
 
 * Changes of the :c:type:`PyThreadState` structure members:
@@ -2541,8 +2533,8 @@ Porting to Python 3.11
       }
       #endif
 
-  Or use `the pythoncapi_compat project
-  <https://github.com/python/pythoncapi_compat>`__ to get these functions
+  Or use `the pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat>`__ to get these functions
   on old Python functions.
 
 * Distributors are encouraged to build Python with the optimized Blake2
