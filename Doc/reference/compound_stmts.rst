@@ -363,7 +363,7 @@ one :keyword:`!except*` clause, the first that matches it. ::
 
 Any remaining exceptions that were not handled by any :keyword:`!except*`
 clause are re-raised at the end, along with all exceptions that were
-raised from the within :keyword:`!except*` clauses. If this list contains
+raised from within the :keyword:`!except*` clauses. If this list contains
 more than one exception to reraise, they are combined into an exception
 group.
 
