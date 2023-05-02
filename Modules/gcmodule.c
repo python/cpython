@@ -2367,6 +2367,19 @@ _PyObject_GC_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
     return op;
 }
 
+PyObject *
+PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
+{
+    size_t presize = _PyType_PreHeaderSize(tp);
+    PyObject *op = gc_alloc(_PyObject_SIZE(tp) + extra_size, presize);
+    if (op == NULL) {
+        return NULL;
+    }
+    memset(op, 0, _PyObject_SIZE(tp) + extra_size);
+    _PyObject_Init(op, tp);
+    return op;
+}
+
 PyVarObject *
 _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
