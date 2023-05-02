@@ -1296,7 +1296,7 @@ Porting to Python 3.12
   * :c:func:`PyType_FromModuleAndSpec`
 
   Creating classes whose metaclass overrides :c:member:`~PyTypeObject.tp_new`
-  is deprecated, and in Python 3.14+ it will be no longer allowed.
+  is deprecated, and in Python 3.14+ it will be disallowed.
   Note that these functions ignore ``tp_new`` of the metaclass, possibly
   allowing incomplete initialization.
 
@@ -1381,7 +1381,7 @@ Deprecated
 
 * Using :c:func:`PyType_FromSpec`, :c:func:`PyType_FromSpecWithBases`
   or :c:func:`PyType_FromModuleAndSpec` to create a class whose metaclass
-  overrides :c:member:`~PyTypeObject.tp_new`.
+  overrides :c:member:`~PyTypeObject.tp_new` is deprecated.
   Call the metaclass instead.
 
 Removed
