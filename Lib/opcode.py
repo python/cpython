@@ -307,7 +307,7 @@ _nb_ops = [
 ]
 
 _intrinsic_1_descs = [
-    "INTRINSIC_INVALID",
+    "INTRINSIC_1_INVALID",
     "INTRINSIC_PRINT",
     "INTRINSIC_IMPORT_STAR",
     "INTRINSIC_STOPITERATION_ERROR",
@@ -317,7 +317,7 @@ _intrinsic_1_descs = [
 ]
 
 _intrinsic_2_descs = [
-    'INTRINSIC_INVALID',
+    'INTRINSIC_2_INVALID',
     'INTRINSIC_PREP_RERAISE_STAR',
     ]
 
