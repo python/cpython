@@ -1,4 +1,4 @@
-name: 📝
+name: Docs
 
 on:
   workflow_call:

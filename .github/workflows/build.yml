@@ -97,6 +97,12 @@ jobs:
         run: |
           echo "run-docs=true" >> "${GITHUB_OUTPUT}"
 
+  check-docs:
+    name: Docs
+    needs: check_source
+    if: fromJSON(needs.check_source.outputs.run-docs)
+    uses: ./.github/workflows/reusable-docs.yml
+
   check_generated_files:
     name: 'Check if generated files are up to date'
     runs-on: ubuntu-latest
