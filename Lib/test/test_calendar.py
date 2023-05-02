@@ -493,11 +493,11 @@ class OutputTestCase(unittest.TestCase):
 class CalendarTestCase(unittest.TestCase):
 
     def test_deprecation_warning(self):
-        with warnings.catch_warnings(record=True) as w:
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "The 'January' attribute is deprecated, use 'JANUARY' instead"
+        ):
             calendar.January
-        self.assertEqual(len(w), 1)
-        self.assertEqual(w[0].category, DeprecationWarning)
-        self.assertIn("The 'January' attribute is deprecated, use 'JANUARY' instead", str(w[0].message))
 
     def test_isleap(self):
         # Make sure that the return is right for a few years, and

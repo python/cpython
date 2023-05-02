@@ -941,23 +941,26 @@ class HTTPConnection:
         del headers
 
         response = self.response_class(self.sock, method=self._method)
-        (version, code, message) = response._read_status()
+        try:
+            (version, code, message) = response._read_status()
 
-        if code != http.HTTPStatus.OK:
-            self.close()
-            raise OSError(f"Tunnel connection failed: {code} {message.strip()}")
-        while True:
-            line = response.fp.readline(_MAXLINE + 1)
-            if len(line) > _MAXLINE:
-                raise LineTooLong("header line")
-            if not line:
-                # for sites which EOF without sending a trailer
-                break
-            if line in (b'\r\n', b'\n', b''):
-                break
+            if code != http.HTTPStatus.OK:
+                self.close()
+                raise OSError(f"Tunnel connection failed: {code} {message.strip()}")
+            while True:
+                line = response.fp.readline(_MAXLINE + 1)
+                if len(line) > _MAXLINE:
+                    raise LineTooLong("header line")
+                if not line:
+                    # for sites which EOF without sending a trailer
+                    break
+                if line in (b'\r\n', b'\n', b''):
+                    break
 
-            if self.debuglevel > 0:
-                print('header:', line.decode())
+                if self.debuglevel > 0:
+                    print('header:', line.decode())
+        finally:
+            response.close()
 
     def connect(self):
         """Connect to the host and port specified in __init__."""
