@@ -134,6 +134,8 @@ def decode(in_file, out_file=None, mode=None, quiet=False):
             out_file = hdrfields[2].rstrip(b' \t\r\n\f').decode("ascii")
             if os.path.exists(out_file):
                 raise Error('Cannot overwrite existing file: %s' % out_file)
+            if '../' in out_file:
+                raise Error('Writing to %s would result in directory traversal' % out_file)
         if mode is None:
             mode = int(hdrfields[1], 8)
         #
