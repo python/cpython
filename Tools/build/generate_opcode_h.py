@@ -57,6 +57,13 @@ intrinsic_header = f"""
 
 """.lstrip()
 
+intrinsic_footer = """
+typedef PyObject *(*instrinsic_func1)(PyThreadState* tstate, PyObject *value);
+typedef PyObject *(*instrinsic_func2)(PyThreadState* tstate, PyObject *value1, PyObject *value2);
+extern const instrinsic_func1 _PyIntrinsics_UnaryFunctions[];
+extern const instrinsic_func2 _PyIntrinsics_BinaryFunctions[];
+"""
+
 DEFINE = "#define {:<38} {:>3}\n"
 
 UINT32_MASK = (1<<32)-1
@@ -195,17 +202,7 @@ def main(opcode_py, outfile='Include/opcode.h',
         nobj.write("\n")
         nobj.write(DEFINE.format("MAX_INTRINSIC_2", i))
 
-        nobj.write(
-            "typedef PyObject *(*instrinsic_func1)(PyThreadState* tstate, PyObject *value);"
-        )
-        nobj.write("\n")
-        nobj.write(
-            "typedef PyObject *(*instrinsic_func2)(PyThreadState* tstate, PyObject *value1, PyObject *value2);"
-        )
-        nobj.write("\n")
-        nobj.write("extern const instrinsic_func1 _PyIntrinsics_UnaryFunctions[];")
-        nobj.write("\n")
-        nobj.write("extern const instrinsic_func2 _PyIntrinsics_BinaryFunctions[];")
+        nobj.write(intrinsic_footer)
 
         fobj.write("\n")
         fobj.write("/* Defined in Lib/opcode.py */\n")

@@ -17,6 +17,7 @@
 #define INTRINSIC_PREP_RERAISE_STAR              1
 
 #define MAX_INTRINSIC_2                          1
+
 typedef PyObject *(*instrinsic_func1)(PyThreadState* tstate, PyObject *value);
 typedef PyObject *(*instrinsic_func2)(PyThreadState* tstate, PyObject *value1, PyObject *value2);
 extern const instrinsic_func1 _PyIntrinsics_UnaryFunctions[];
