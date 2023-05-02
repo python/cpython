@@ -452,7 +452,8 @@ _abc__abc_init(PyObject *module, PyObject *self)
      * their special status w.r.t. pattern matching. */
     if (PyType_Check(self)) {
         PyTypeObject *cls = (PyTypeObject *)self;
-        PyObject *flags = PyDict_GetItemWithError(cls->tp_dict,
+        PyObject *dict = _PyType_GetDict(cls);
+        PyObject *flags = PyDict_GetItemWithError(dict,
                                                   &_Py_ID(__abc_tpflags__));
         if (flags == NULL) {
             if (PyErr_Occurred()) {
@@ -471,7 +472,7 @@ _abc__abc_init(PyObject *module, PyObject *self)
                 }
                 ((PyTypeObject *)self)->tp_flags |= (val & COLLECTION_FLAGS);
             }
-            if (PyDict_DelItem(cls->tp_dict, &_Py_ID(__abc_tpflags__)) < 0) {
+            if (PyDict_DelItem(dict, &_Py_ID(__abc_tpflags__)) < 0) {
                 return NULL;
             }
         }
