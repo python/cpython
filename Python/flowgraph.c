@@ -166,16 +166,10 @@ _PyBasicblock_InsertInstruction(basicblock *block, int pos, cfg_instr *instr) {
     return SUCCESS;
 }
 
-int
-_PyCfg_InstrSize(cfg_instr *instruction)
+static int
+instr_size(cfg_instr *instruction)
 {
-    int opcode = instruction->i_opcode;
-    assert(!IS_PSEUDO_OPCODE(opcode));
-    int oparg = instruction->i_oparg;
-    assert(HAS_ARG(opcode) || oparg == 0);
-    int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
-    int caches = _PyOpcode_Caches[opcode];
-    return extended_args + 1 + caches;
+    return _PyCompile_InstrSize(instruction->i_opcode, instruction->i_oparg);
 }
 
 static int
@@ -183,7 +177,7 @@ blocksize(basicblock *b)
 {
     int size = 0;
     for (int i = 0; i < b->b_iused; i++) {
-        size += _PyCfg_InstrSize(&b->b_instr[i]);
+        size += instr_size(&b->b_instr[i]);
     }
     return size;
 }
@@ -229,6 +223,15 @@ dump_basicblock(const basicblock *b)
         }
     }
 }
+
+void
+_PyCfgBuilder_DumpGraph(const basicblock *entryblock)
+{
+    for (const basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        dump_basicblock(b);
+    }
+}
+
 #endif
 
 
@@ -492,7 +495,7 @@ resolve_jump_offsets(basicblock *entryblock)
             bsize = b->b_offset;
             for (int i = 0; i < b->b_iused; i++) {
                 cfg_instr *instr = &b->b_instr[i];
-                int isize = _PyCfg_InstrSize(instr);
+                int isize = instr_size(instr);
                 /* jump offsets are computed relative to
                  * the instruction pointer after fetching
                  * the jump instruction.
@@ -508,7 +511,7 @@ resolve_jump_offsets(basicblock *entryblock)
                         assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
                         instr->i_oparg -= bsize;
                     }
-                    if (_PyCfg_InstrSize(instr) != isize) {
+                    if (instr_size(instr) != isize) {
                         extended_arg_recompile = 1;
                     }
                 }
@@ -520,7 +523,7 @@ resolve_jump_offsets(basicblock *entryblock)
         with a better solution.
 
         The issue is that in the first loop blocksize() is called
-        which calls _PyCfg_InstrSize() which requires i_oparg be set
+        which calls instr_size() which requires i_oparg be set
         appropriately. There is a bootstrap problem because
         i_oparg is calculated in the second loop above.
 
@@ -598,6 +601,11 @@ translate_jump_labels_to_targets(basicblock *entryblock)
     return SUCCESS;
 }
 
+int
+_PyCfg_JumpLabelsToTargets(basicblock *entryblock)
+{
+    return translate_jump_labels_to_targets(entryblock);
+}
 
 static int
 mark_except_handlers(basicblock *entryblock) {
