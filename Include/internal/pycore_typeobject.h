@@ -104,10 +104,10 @@ _PyType_GetModuleState(PyTypeObject *type)
 }
 
 
-extern int _PyStaticType_InitBuiltin(PyTypeObject *type);
-extern static_builtin_state * _PyStaticType_GetState(PyTypeObject *);
-extern void _PyStaticType_ClearWeakRefs(PyTypeObject *type);
-extern void _PyStaticType_Dealloc(PyTypeObject *type);
+extern int _PyStaticType_InitBuiltin(PyInterpreterState *, PyTypeObject *type);
+extern static_builtin_state * _PyStaticType_GetState(PyInterpreterState *, PyTypeObject *);
+extern void _PyStaticType_ClearWeakRefs(PyInterpreterState *, PyTypeObject *type);
+extern void _PyStaticType_Dealloc(PyInterpreterState *, PyTypeObject *);
 
 PyObject *
 _Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress_missing_attribute);
