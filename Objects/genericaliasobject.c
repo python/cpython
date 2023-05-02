@@ -3,6 +3,8 @@
 #include "Python.h"
 #include "pycore_object.h"
 #include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
+#include "pycore_genericalias.h"  // _PyGenericAlias_Init, _PyGenericAlias_Fini
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "structmember.h"         // PyMemberDef
 
 #include <stdbool.h>
@@ -22,6 +24,14 @@ typedef struct {
     PyObject_HEAD
     PyObject *obj;  /* Set to NULL when iterator is exhausted */
 } gaiterobject;
+
+// Forward references:
+// -----
+
+PyObject *
+_Py_GenericAliasStarred(PyObject *origin, PyObject *args, bool starred);
+
+// -----
 
 static void
 ga_dealloc(PyObject *self)
@@ -527,8 +537,8 @@ ga_getitem(PyObject *self, PyObject *item)
         return NULL;
     }
 
-    PyObject *res = Py_GenericAlias(alias->origin, newargs);
-    ((gaobject *)res)->starred = alias->starred;
+    PyObject *res = _Py_GenericAliasStarred(alias->origin, newargs,
+                                            alias->starred);
 
     Py_DECREF(newargs);
     return res;
@@ -781,21 +791,34 @@ static PyGetSetDef ga_properties[] = {
     {0}
 };
 
-/* A helper function to create GenericAlias' args tuple and set its attributes.
- * Returns 1 on success, 0 on failure.
- */
-static inline int
-setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
-    if (!PyTuple_Check(args)) {
-        args = PyTuple_Pack(1, args);
-        if (args == NULL) {
-            return 0;
+/*
+A helper function to create GenericAlias' args tuple.
+
+Returns -1 on error,
+Returns 0 on no action,
+Returns 1 if args were modified.
+*/
+static int
+normalize_args(PyObject **args) {
+    PyObject *normalized;
+
+    if (!PyTuple_Check(*args)) {
+        normalized = PyTuple_Pack(1, *args);
+        if (normalized == NULL) {
+            return -1;
         }
-    }
-    else {
-        Py_INCREF(args);
+
+        *args = normalized;
+        return 1;
     }
 
+    Py_INCREF(*args);
+    return 0;
+}
+
+static inline void
+setup_ga(gaobject *alias, PyObject *origin, PyObject *args, bool starred) {
+    // Make sure to call `normalize_args` before calling `setup_ga`.
     alias->origin = Py_NewRef(origin);
     alias->args = args;
     alias->parameters = NULL;
@@ -808,7 +831,7 @@ setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
         alias->vectorcall = NULL;
     }
 
-    return 1;
+    alias->starred = starred;
 }
 
 static PyObject *
@@ -822,14 +845,16 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
     PyObject *arguments = PyTuple_GET_ITEM(args, 1);
+    int arg_res = normalize_args(&arguments);
+    if (arg_res < 0) {
+        return NULL;
+    }
     gaobject *self = (gaobject *)type->tp_alloc(type, 0);
     if (self == NULL) {
+        Py_DECREF(arguments);
         return NULL;
     }
-    if (!setup_ga(self, origin, arguments)) {
-        Py_DECREF(self);
-        return NULL;
-    }
+    setup_ga(self, origin, arguments, false);
     return (PyObject *)self;
 }
 
@@ -844,11 +869,11 @@ ga_iternext(gaiterobject *gi) {
         return NULL;
     }
     gaobject *alias = (gaobject *)gi->obj;
-    PyObject *starred_alias = Py_GenericAlias(alias->origin, alias->args);
+    PyObject *starred_alias = _Py_GenericAliasStarred(alias->origin,
+                                                      alias->args, true);
     if (starred_alias == NULL) {
         return NULL;
     }
-    ((gaobject *)starred_alias)->starred = true;
     Py_SETREF(gi->obj, NULL);
     return starred_alias;
 }
@@ -923,7 +948,6 @@ ga_iter(PyObject *self) {
 
 // TODO:
 // - argument clinic?
-// - cache?
 PyTypeObject Py_GenericAliasType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "types.GenericAlias",
@@ -950,17 +974,120 @@ PyTypeObject Py_GenericAliasType = {
     .tp_vectorcall_offset = offsetof(gaobject, vectorcall),
 };
 
-PyObject *
-Py_GenericAlias(PyObject *origin, PyObject *args)
-{
+static PyObject *
+_Py_GenericAlias_impl_nocache(PyObject *origin, PyObject *args, bool starred) {
+    // args must be normalized at this point.
     gaobject *alias = (gaobject*) PyType_GenericAlloc(
             (PyTypeObject *)&Py_GenericAliasType, 0);
     if (alias == NULL) {
         return NULL;
     }
-    if (!setup_ga(alias, origin, args)) {
-        Py_DECREF(alias);
-        return NULL;
-    }
+    setup_ga(alias, origin, args, starred);
     return (PyObject *)alias;
 }
+
+static PyObject *
+_Py_GenericAlias_impl(PyObject *origin, PyObject *args, bool starred) {
+    Py_hash_t hash;
+    bool unhashable = false;
+    PyObject *star = NULL;
+    PyObject *key = NULL;
+    PyObject *result = NULL;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    int arg_res = normalize_args(&args);
+    if (arg_res < 0) {
+        return NULL;
+    }
+
+    star = PyBool_FromLong(starred);
+    if (star == NULL) {
+        goto error;
+    }
+    key = PyTuple_Pack(3, origin, args, star);
+    if (key == NULL) {
+        goto error;
+    }
+
+    hash = PyObject_Hash(key);
+    if (hash == -1) {
+        // `key` contains unhashable objects, stop right here.
+        // Just return the object itself without setting cache.
+        PyErr_Clear();
+        unhashable = true;
+    } else {
+        result = _PyDict_GetItem_KnownHash(interp->genericalias_cache,
+                                           key, hash);
+        if (result) {
+            Py_INCREF(result);
+            Py_DECREF(args);
+            goto finally;
+        }
+        if (PyErr_Occurred()) {
+            goto error;
+        }
+    }
+
+    result = _Py_GenericAlias_impl_nocache(origin, args, starred);
+    if (result == NULL) {
+        goto error;
+    }
+    if (unhashable) {
+        goto finally;
+    }
+
+    if (_PyDict_SetItem_KnownHash(interp->genericalias_cache,
+                                  key, result, hash) < 0) {
+        Py_DECREF(origin);
+        goto error;
+    } else {
+        goto finally;
+    }
+
+error:
+    Py_XDECREF(result);
+    Py_DECREF(args);
+finally:
+    Py_XDECREF(key);
+    Py_XDECREF(star);
+    return result;
+}
+
+PyObject *
+Py_GenericAlias(PyObject *origin, PyObject *args) {
+    return _Py_GenericAlias_impl(origin, args, false);
+}
+
+// TODO: make this API public?
+PyObject *
+_Py_GenericAliasStarred(PyObject *origin, PyObject *args, bool starred) {
+    return _Py_GenericAlias_impl(origin, args, starred);
+}
+
+/* Runtime lifecycle */
+
+PyStatus
+_PyGenericAlias_Init(PyInterpreterState *interp) {
+    PyObject *cache;
+
+    if (PyType_Ready(&Py_GenericAliasType) < 0) {
+        return _PyStatus_ERR("Can't initialize 'types.GenericAlias' type");
+    }
+
+    cache = PyDict_New();
+    if (cache == NULL) {
+        return _PyStatus_ERR("Can't initialize 'types.GenericAlias' cache");
+    }
+
+    interp->genericalias_cache = cache;
+    return _PyStatus_OK();
+};
+
+void
+_PyGenericAlias_Fini(PyInterpreterState *interp) {
+    if (interp->genericalias_cache != NULL) {
+        PyObject *cache = interp->genericalias_cache;
+        Py_DECREF(cache);
+        interp->genericalias_cache = NULL;
+    }
+};

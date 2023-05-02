@@ -56,6 +56,8 @@ from weakref import WeakSet, ReferenceType, ref
 import typing
 from typing import Unpack
 
+from test import support
+
 from typing import TypeVar
 T = TypeVar('T')
 K = TypeVar('K')
@@ -94,8 +96,11 @@ _UNPACKED_TUPLES = [
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
-    generic_types = [type, tuple, list, dict, set, frozenset, enumerate,
-                     defaultdict, deque,
+    c_generic_types = [
+        tuple, list, dict, set, frozenset, enumerate,
+        defaultdict, deque,
+    ]
+    generic_types = [*c_generic_types,
                      SequenceMatcher,
                      dircmp,
                      FileInput,
@@ -172,6 +177,50 @@ class BaseTest(unittest.TestCase):
                     self.assertEqual(a['test'], d['test'])
                 else:
                     self.assertEqual(alias(iter((1, 2, 3))), t((1, 2, 3)))
+
+    @support.cpython_only
+    def test_c_genericaliases_are_cached(self):
+        for t in self.c_generic_types:
+            with self.subTest(t=t):
+                self.assertIs(t[int], t[int])
+                self.assertEqual(t[int], t[int])
+                self.assertIsNot(t[int], t[str])
+
+    @support.cpython_only
+    def test_c_genericaliases_uncachable_still_work(self):
+        for t in self.c_generic_types:
+            with self.subTest(t=t):
+                # Cache does not work for these args,
+                # but no error is present
+                self.assertIsNot(t[{}], t[{}])
+                self.assertEqual(t[{}], t[{}])
+
+    @support.cpython_only
+    def test_generic_alias_unpacks_are_cached(self):
+        self.assertIs((*tuple[int, str],)[0], (*tuple[int, str],)[0])
+        self.assertIsNot((*tuple[str, int],)[0], (*tuple[int, str],)[0])
+        self.assertIs((*tuple[T, ...],)[0], (*tuple[T, ...],)[0])
+        self.assertIsNot((*tuple[int, str],)[0], tuple[int, str])
+
+    @support.cpython_only
+    def test_generic_alias_unpacks_uncachable_still_work(self):
+        self.assertIsNot((*tuple[{}],)[0], (*tuple[{}],)[0])
+        self.assertEqual((*tuple[{}],)[0], (*tuple[{}],)[0])
+
+    @support.cpython_only
+    def test_genericalias_constructor_is_no_cached(self):
+        for t in self.generic_types:
+            if t is None:
+                continue
+            tname = t.__name__
+            with self.subTest(f"Testing {tname}"):
+                self.assertIsNot(GenericAlias(t, [int]), GenericAlias(t, [int]))
+
+    @support.cpython_only
+    def test_c_union_arg_order(self):
+        self.assertIsNot(int | str, str | int)
+        self.assertIsNot(int | str, int | None)
+        self.assertIsNot(int | str, int | str | None)
 
     def test_unbound_methods(self):
         t = list[int]

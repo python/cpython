@@ -3363,7 +3363,7 @@ test_gc_visit_objects_basic(PyObject *Py_UNUSED(self),
     }
     state.target = obj;
     state.found = 0;
-    
+
     PyUnstable_GC_VisitObjects(gc_visit_callback_basic, &state);
     Py_DECREF(obj);
     if (!state.found) {
@@ -4208,6 +4208,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_PyOS(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_GenericAlias(m) < 0) {
         return NULL;
     }
 

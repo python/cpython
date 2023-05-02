@@ -30,7 +30,7 @@ extern "C" {
 #include "pycore_object_state.h"   // struct _py_object_state
 #include "pycore_obmalloc.h"      // struct obmalloc_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
-#include "pycore_typeobject.h"    // struct type_cache
+#include "pycore_typeobject.h"    // struct types_state
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
 
@@ -141,6 +141,9 @@ struct _is {
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
     PySliceObject *slice_cache;
+
+    // Dict with existing generic alias objects:
+    PyObject* genericalias_cache;
 
     struct _Py_tuple_state tuple;
     struct _Py_list_state list;
