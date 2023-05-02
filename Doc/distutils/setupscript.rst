@@ -642,7 +642,7 @@ Notes:
 
 'long string'
     Multiple lines of plain text in reStructuredText format (see
-    http://docutils.sourceforge.net/).
+    https://docutils.sourceforge.io/).
 
 'list of strings'
     See below.
