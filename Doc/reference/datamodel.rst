@@ -1564,7 +1564,7 @@ Basic customization
       This is intended to provide protection against a denial-of-service caused
       by carefully chosen inputs that exploit the worst case performance of a
       dict insertion, O(n\ :sup:`2`) complexity.  See
-      http://www.ocert.org/advisories/ocert-2011-003.html for details.
+      http://ocert.org/advisories/ocert-2011-003.html for details.
 
       Changing hash values affects the iteration order of sets.
       Python has never made guarantees about this ordering
