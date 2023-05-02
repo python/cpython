@@ -69,13 +69,11 @@ static inline PyTypeObject * subclass_from_ref(PyObject *ref);
 
 /* helpers for for static builtin types */
 
-#ifndef NDEBUG
 static inline int
 static_builtin_index_is_set(PyTypeObject *self)
 {
     return self->tp_subclasses != NULL;
 }
-#endif
 
 static inline size_t
 static_builtin_index_get(PyTypeObject *self)
@@ -107,43 +105,46 @@ static_builtin_state_get(PyInterpreterState *interp, PyTypeObject *self)
 
 /* For static types we store some state in an array on each interpreter. */
 static_builtin_state *
-_PyStaticType_GetState(PyTypeObject *self)
+_PyStaticType_GetState(PyInterpreterState *interp, PyTypeObject *self)
 {
     assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     return static_builtin_state_get(interp, self);
 }
 
+/* Set the type's per-interpreter state. */
 static void
-static_builtin_state_init(PyTypeObject *self)
+static_builtin_state_init(PyInterpreterState *interp, PyTypeObject *self)
 {
-    /* Set the type's per-interpreter state. */
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!static_builtin_index_is_set(self)) {
+        static_builtin_index_set(self, interp->types.num_builtins_initialized);
+    }
+    static_builtin_state *state = static_builtin_state_get(interp, self);
 
     /* It should only be called once for each builtin type. */
-    assert(!static_builtin_index_is_set(self));
-
-    static_builtin_index_set(self, interp->types.num_builtins_initialized);
-    interp->types.num_builtins_initialized++;
-
-    static_builtin_state *state = static_builtin_state_get(interp, self);
+    assert(state->type == NULL);
     state->type = self;
+
     /* state->tp_subclasses is left NULL until init_subclasses() sets it. */
     /* state->tp_weaklist is left NULL until insert_head() or insert_after()
        (in weakrefobject.c) sets it. */
+
+    interp->types.num_builtins_initialized++;
 }
 
+/* Reset the type's per-interpreter state.
+   This basically undoes what static_builtin_state_init() did. */
 static void
-static_builtin_state_clear(PyTypeObject *self)
+static_builtin_state_clear(PyInterpreterState *interp, PyTypeObject *self)
 {
-    /* Reset the type's per-interpreter state.
-       This basically undoes what static_builtin_state_init() did. */
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-
     static_builtin_state *state = static_builtin_state_get(interp, self);
+
+    assert(state->type != NULL);
     state->type = NULL;
     assert(state->tp_weaklist == NULL);  // It was already cleared out.
-    static_builtin_index_clear(self);
+
+    if (_Py_IsMainInterpreter(interp)) {
+        static_builtin_index_clear(self);
+    }
 
     assert(interp->types.num_builtins_initialized > 0);
     interp->types.num_builtins_initialized--;
@@ -4491,33 +4492,37 @@ clear_static_tp_subclasses(PyTypeObject *type)
     clear_subclasses(type);
 }
 
-void
-_PyStaticType_Dealloc(PyTypeObject *type)
+static void
+clear_static_type_objects(PyInterpreterState *interp, PyTypeObject *type)
 {
-    assert(!(type->tp_flags & Py_TPFLAGS_HEAPTYPE));
+    if (_Py_IsMainInterpreter(interp)) {
+        Py_CLEAR(type->tp_dict);
+        Py_CLEAR(type->tp_bases);
+        Py_CLEAR(type->tp_mro);
+        Py_CLEAR(type->tp_cache);
+    }
+    clear_static_tp_subclasses(type);
+}
+
+void
+_PyStaticType_Dealloc(PyInterpreterState *interp, PyTypeObject *type)
+{
+    assert(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+    assert(_Py_IsImmortal((PyObject *)type));
 
     type_dealloc_common(type);
 
-    Py_CLEAR(type->tp_dict);
-    Py_CLEAR(type->tp_bases);
-    Py_CLEAR(type->tp_mro);
-    Py_CLEAR(type->tp_cache);
-    clear_static_tp_subclasses(type);
+    clear_static_type_objects(interp, type);
 
-    // PyObject_ClearWeakRefs() raises an exception if Py_REFCNT() != 0
-    if (Py_REFCNT(type) == 0) {
-        PyObject_ClearWeakRefs((PyObject *)type);
+    if (_Py_IsMainInterpreter(interp)) {
+        type->tp_flags &= ~Py_TPFLAGS_READY;
+        type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
+        type->tp_version_tag = 0;
     }
 
-    type->tp_flags &= ~Py_TPFLAGS_READY;
-    type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
-    type->tp_version_tag = 0;
-
-    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        _PyStaticType_ClearWeakRefs(type);
-        static_builtin_state_clear(type);
-        /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
-    }
+    _PyStaticType_ClearWeakRefs(interp, type);
+    static_builtin_state_clear(interp, type);
+    /* We leave _Py_TPFLAGS_STATIC_BUILTIN set on tp_flags. */
 }
 
 
@@ -4564,7 +4569,8 @@ static PyObject *
 lookup_subclasses(PyTypeObject *self)
 {
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        static_builtin_state *state = _PyStaticType_GetState(self);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        static_builtin_state *state = _PyStaticType_GetState(interp, self);
         assert(state != NULL);
         return state->tp_subclasses;
     }
@@ -4574,8 +4580,9 @@ lookup_subclasses(PyTypeObject *self)
 int
 _PyType_HasSubclasses(PyTypeObject *self)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN &&
-            _PyStaticType_GetState(self) == NULL) {
+            _PyStaticType_GetState(interp, self) == NULL) {
         return 0;
     }
     if (lookup_subclasses(self) == NULL) {
@@ -6938,7 +6945,8 @@ type_ready_post_checks(PyTypeObject *type)
     else if (type->tp_dictoffset < (Py_ssize_t)sizeof(PyObject)) {
         if (type->tp_dictoffset + type->tp_basicsize <= 0) {
             PyErr_Format(PyExc_SystemError,
-                         "type %s has a tp_dictoffset that is too small");
+                         "type %s has a tp_dictoffset that is too small",
+                         type->tp_name);
         }
     }
     return 0;
@@ -7029,16 +7037,31 @@ PyType_Ready(PyTypeObject *type)
 }
 
 int
-_PyStaticType_InitBuiltin(PyTypeObject *self)
+_PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
 {
     assert(_Py_IsImmortal((PyObject *)self));
     assert(!(self->tp_flags & Py_TPFLAGS_HEAPTYPE));
+    assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_DICT));
+    assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF));
 
+#ifndef NDEBUG
+    int ismain = _Py_IsMainInterpreter(interp);
+#endif
     if (self->tp_flags & Py_TPFLAGS_READY) {
+        assert(!ismain);
         assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+        assert(self->tp_flags & Py_TPFLAGS_VALID_VERSION_TAG);
+
+        static_builtin_state_init(interp, self);
+
+        /* Per-interpreter tp_subclasses is done lazily.
+           Otherwise we would initialize it here. */
+
         assert(_PyType_CheckConsistency(self));
         return 0;
     }
+
+    assert(ismain);
 
     self->tp_flags |= _Py_TPFLAGS_STATIC_BUILTIN;
     self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
@@ -7047,11 +7070,11 @@ _PyStaticType_InitBuiltin(PyTypeObject *self)
     self->tp_version_tag = NEXT_GLOBAL_VERSION_TAG++;
     self->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
 
-    static_builtin_state_init(self);
+    static_builtin_state_init(interp, self);
 
     int res = type_ready(self);
     if (res < 0) {
-        static_builtin_state_clear(self);
+        static_builtin_state_clear(interp, self);
     }
     return res;
 }
@@ -7065,7 +7088,8 @@ init_subclasses(PyTypeObject *self)
         return NULL;
     }
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        static_builtin_state *state = _PyStaticType_GetState(self);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        static_builtin_state *state = _PyStaticType_GetState(interp, self);
         state->tp_subclasses = subclasses;
         return subclasses;
     }
@@ -7080,7 +7104,8 @@ clear_subclasses(PyTypeObject *self)
        callers also test if tp_subclasses is NULL to check if a static type
        has no subclass. */
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        static_builtin_state *state = _PyStaticType_GetState(self);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        static_builtin_state *state = _PyStaticType_GetState(interp, self);
         Py_CLEAR(state->tp_subclasses);
         return;
     }

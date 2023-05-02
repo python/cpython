@@ -502,7 +502,8 @@ initialize_static_type(PyTypeObject *type, PyStructSequence_Desc *desc,
 }
 
 int
-_PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
+_PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
+                                       PyTypeObject *type,
                                        PyStructSequence_Desc *desc,
                                        unsigned long tp_flags)
 {
@@ -536,7 +537,7 @@ _PyStructSequence_InitBuiltinWithFlags(PyTypeObject *type,
     }
 #endif
 
-    if (_PyStaticType_InitBuiltin(type) < 0) {
+    if (_PyStaticType_InitBuiltin(interp, type) < 0) {
         PyErr_Format(PyExc_RuntimeError,
                      "Can't initialize builtin type %s",
                      desc->name);
@@ -606,7 +607,7 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
    initialized via _PyStructSequence_InitBuiltinWithFlags(). */
 
 void
-_PyStructSequence_FiniBuiltin(PyTypeObject *type)
+_PyStructSequence_FiniBuiltin(PyInterpreterState *interp, PyTypeObject *type)
 {
     // Ensure that the type is initialized
     assert(type->tp_name != NULL);
@@ -620,13 +621,15 @@ _PyStructSequence_FiniBuiltin(PyTypeObject *type)
         return;
     }
 
-    _PyStaticType_Dealloc(type);
+    _PyStaticType_Dealloc(interp, type);
 
-    // Undo _PyStructSequence_InitBuiltinWithFlags().
-    type->tp_name = NULL;
-    PyMem_Free(type->tp_members);
-    type->tp_members = NULL;
-    type->tp_base = NULL;
+    if (_Py_IsMainInterpreter(interp)) {
+        // Undo _PyStructSequence_InitBuiltinWithFlags().
+        type->tp_name = NULL;
+        PyMem_Free(type->tp_members);
+        type->tp_members = NULL;
+        type->tp_base = NULL;
+    }
 }
 
 

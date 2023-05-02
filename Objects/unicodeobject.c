@@ -14573,13 +14573,13 @@ _PyUnicode_InitGlobalObjects(PyInterpreterState *interp)
 PyStatus
 _PyUnicode_InitTypes(PyInterpreterState *interp)
 {
-    if (_PyStaticType_InitBuiltin(&EncodingMapType) < 0) {
+    if (_PyStaticType_InitBuiltin(interp, &EncodingMapType) < 0) {
         goto error;
     }
-    if (_PyStaticType_InitBuiltin(&PyFieldNameIter_Type) < 0) {
+    if (_PyStaticType_InitBuiltin(interp, &PyFieldNameIter_Type) < 0) {
         goto error;
     }
-    if (_PyStaticType_InitBuiltin(&PyFormatterIter_Type) < 0) {
+    if (_PyStaticType_InitBuiltin(interp, &PyFormatterIter_Type) < 0) {
         goto error;
     }
     return _PyStatus_OK();
@@ -15158,13 +15158,9 @@ unicode_is_finalizing(void)
 void
 _PyUnicode_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
-    _PyStaticType_Dealloc(&EncodingMapType);
-    _PyStaticType_Dealloc(&PyFieldNameIter_Type);
-    _PyStaticType_Dealloc(&PyFormatterIter_Type);
+    _PyStaticType_Dealloc(interp, &EncodingMapType);
+    _PyStaticType_Dealloc(interp, &PyFieldNameIter_Type);
+    _PyStaticType_Dealloc(interp, &PyFormatterIter_Type);
 }
 
 
