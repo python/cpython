@@ -404,7 +404,7 @@ _specializations = {
     ],
 }
 _specialized_instructions = [
-    opcode for family in _specializations.values() for opcode in family
+    opname for family in _specializations.values() for opname in family
 ]
 
 _cache_format = {
