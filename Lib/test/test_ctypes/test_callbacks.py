@@ -150,6 +150,18 @@ class Callbacks(unittest.TestCase):
                 gc.collect()
         CFUNCTYPE(None)(lambda x=Nasty(): None)
 
+    @need_symbol('WINFUNCTYPE')
+    def test_i38748_stackCorruption(self):
+        callback_funcType = WINFUNCTYPE(c_long, c_long, c_longlong)
+        @callback_funcType
+        def callback(a, b):
+            c = a + b
+            print(f"a={a}, b={b}, c={c}")
+            return c
+        dll = cdll[_ctypes_test.__file__]
+        # With no fix for i38748, the next line will raise OSError and cause the test to fail.
+        self.assertEqual(dll._test_i38748_runCallback(callback, 5, 10), 15)
+
 
 @need_symbol('WINFUNCTYPE')
 class StdcallCallbacks(Callbacks):

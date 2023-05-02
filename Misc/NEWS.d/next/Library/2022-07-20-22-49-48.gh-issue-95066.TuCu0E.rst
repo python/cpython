@@ -1,1 +1,0 @@
-Replaced assert with exception in :func:`ast.parse`, when ``feature_version`` has an invalid major version. Patch by Shantanu Jain.

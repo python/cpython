@@ -65,8 +65,8 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
         goto skip_optional_pos;
     }
     if (args[0]) {
-        blocking = _PyLong_AsInt(args[0]);
-        if (blocking == -1 && PyErr_Occurred()) {
+        blocking = PyObject_IsTrue(args[0]);
+        if (blocking < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -162,8 +162,8 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
         goto skip_optional_pos;
     }
     if (args[0]) {
-        blocking = _PyLong_AsInt(args[0]);
-        if (blocking == -1 && PyErr_Occurred()) {
+        blocking = PyObject_IsTrue(args[0]);
+        if (blocking < 0) {
             goto exit;
         }
         if (!--noptargs) {
@@ -275,8 +275,8 @@ _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    unlink = _PyLong_AsInt(fastargs[4]);
-    if (unlink == -1 && PyErr_Occurred()) {
+    unlink = PyObject_IsTrue(fastargs[4]);
+    if (unlink < 0) {
         goto exit;
     }
     return_value = _multiprocessing_SemLock_impl(type, kind, value, maxvalue, name, unlink);
@@ -542,4 +542,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=720d7d0066dc0954 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dae57a702cc01512 input=a9049054013a1b77]*/

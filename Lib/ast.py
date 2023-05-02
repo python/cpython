@@ -25,6 +25,7 @@
     :license: Python License.
 """
 import sys
+import re
 from _ast import *
 from contextlib import contextmanager, nullcontext
 from enum import IntEnum, auto, _simple_enum
@@ -54,10 +55,12 @@ def parse(source, filename='<unknown>', mode='exec', *,
 
 def literal_eval(node_or_string):
     """
-    Safely evaluate an expression node or a string containing a Python
+    Evaluate an expression node or a string containing only a Python
     expression.  The string or node provided may only consist of the following
     Python literal structures: strings, bytes, numbers, tuples, lists, dicts,
     sets, booleans, and None.
+
+    Caution: A complex expression can overflow the C stack and cause a crash.
     """
     if isinstance(node_or_string, str):
         node_or_string = parse(node_or_string.lstrip(" \t"), mode='eval')
@@ -235,6 +238,12 @@ def increment_lineno(node, n=1):
     location in a file.
     """
     for child in walk(node):
+        # TypeIgnore is a special case where lineno is not an attribute
+        # but rather a field of the node itself.
+        if isinstance(child, TypeIgnore):
+            child.lineno = getattr(child, 'lineno', 0) + n
+            continue
+
         if 'lineno' in child._attributes:
             child.lineno = getattr(child, 'lineno', 0) + n
         if (
@@ -297,28 +306,17 @@ def get_docstring(node, clean=True):
     return text
 
 
-def _splitlines_no_ff(source):
+_line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
+def _splitlines_no_ff(source, maxlines=None):
     """Split a string into lines ignoring form feed and other chars.
 
     This mimics how the Python parser splits source code.
     """
-    idx = 0
     lines = []
-    next_line = ''
-    while idx < len(source):
-        c = source[idx]
-        next_line += c
-        idx += 1
-        # Keep \r\n together
-        if c == '\r' and idx < len(source) and source[idx] == '\n':
-            next_line += '\n'
-            idx += 1
-        if c in '\r\n':
-            lines.append(next_line)
-            next_line = ''
-
-    if next_line:
-        lines.append(next_line)
+    for lineno, match in enumerate(_line_pattern.finditer(source), 1):
+        if maxlines is not None and lineno > maxlines:
+            break
+        lines.append(match[0])
     return lines
 
 
@@ -352,7 +350,7 @@ def get_source_segment(source, node, *, padded=False):
     except AttributeError:
         return None
 
-    lines = _splitlines_no_ff(source)
+    lines = _splitlines_no_ff(source, maxlines=end_lineno+1)
     if end_lineno == lineno:
         return lines[lineno].encode()[col_offset:end_col_offset].decode()
 

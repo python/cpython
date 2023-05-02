@@ -42,7 +42,7 @@ on what you're trying to do.
 .. XXX make sure these all work
 
 `Cython <https://cython.org>`_ and its relative `Pyrex
-<https://www.cosc.canterbury.ac.nz/greg.ewing/python/Pyrex/>`_ are compilers
+<https://www.csse.canterbury.ac.nz/greg.ewing/python/Pyrex/>`_ are compilers
 that accept a slightly modified form of Python and generate the corresponding
 C code.  Cython and Pyrex make it possible to write an extension without having
 to learn Python's C API.
@@ -51,7 +51,7 @@ If you need to interface to some C or C++ library for which no Python extension
 currently exists, you can try wrapping the library's data types and functions
 with a tool such as `SWIG <https://www.swig.org>`_.  `SIP
 <https://riverbankcomputing.com/software/sip/intro>`__, `CXX
-<http://cxx.sourceforge.net/>`_ `Boost
+<https://cxx.sourceforge.net/>`_ `Boost
 <https://www.boost.org/libs/python/doc/index.html>`_, or `Weave
 <https://github.com/scipy/weave>`_ are also
 alternatives for wrapping C++ libraries.

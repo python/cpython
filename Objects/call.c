@@ -1,20 +1,11 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgsTstate()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
+#include "pycore_dict.h"          // _PyDict_FromItems()
 #include "pycore_object.h"        // _PyCFunctionWithKeywords_TrampolineCall()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-
-
-static PyObject *const *
-_PyStack_UnpackDict(PyThreadState *tstate,
-                    PyObject *const *args, Py_ssize_t nargs,
-                    PyObject *kwargs, PyObject **p_kwnames);
-
-static void
-_PyStack_UnpackDict_Free(PyObject *const *stack, Py_ssize_t nargs,
-                         PyObject *kwnames);
 
 
 static PyObject *
@@ -964,7 +955,7 @@ _PyStack_AsDict(PyObject *const *values, PyObject *kwnames)
    The newly allocated argument vector supports PY_VECTORCALL_ARGUMENTS_OFFSET.
 
    When done, you must call _PyStack_UnpackDict_Free(stack, nargs, kwnames) */
-static PyObject *const *
+PyObject *const *
 _PyStack_UnpackDict(PyThreadState *tstate,
                     PyObject *const *args, Py_ssize_t nargs,
                     PyObject *kwargs, PyObject **p_kwnames)
@@ -1000,8 +991,7 @@ _PyStack_UnpackDict(PyThreadState *tstate,
 
     /* Copy positional arguments */
     for (Py_ssize_t i = 0; i < nargs; i++) {
-        Py_INCREF(args[i]);
-        stack[i] = args[i];
+        stack[i] = Py_NewRef(args[i]);
     }
 
     PyObject **kwstack = stack + nargs;
@@ -1013,10 +1003,8 @@ _PyStack_UnpackDict(PyThreadState *tstate,
     unsigned long keys_are_strings = Py_TPFLAGS_UNICODE_SUBCLASS;
     while (PyDict_Next(kwargs, &pos, &key, &value)) {
         keys_are_strings &= Py_TYPE(key)->tp_flags;
-        Py_INCREF(key);
-        Py_INCREF(value);
-        PyTuple_SET_ITEM(kwnames, i, key);
-        kwstack[i] = value;
+        PyTuple_SET_ITEM(kwnames, i, Py_NewRef(key));
+        kwstack[i] = Py_NewRef(value);
         i++;
     }
 
@@ -1036,7 +1024,7 @@ _PyStack_UnpackDict(PyThreadState *tstate,
     return stack;
 }
 
-static void
+void
 _PyStack_UnpackDict_Free(PyObject *const *stack, Py_ssize_t nargs,
                          PyObject *kwnames)
 {
@@ -1044,6 +1032,12 @@ _PyStack_UnpackDict_Free(PyObject *const *stack, Py_ssize_t nargs,
     for (Py_ssize_t i = 0; i < n; i++) {
         Py_DECREF(stack[i]);
     }
+    _PyStack_UnpackDict_FreeNoDecRef(stack, kwnames);
+}
+
+void
+_PyStack_UnpackDict_FreeNoDecRef(PyObject *const *stack, PyObject *kwnames)
+{
     PyMem_Free((PyObject **)stack - 1);
     Py_DECREF(kwnames);
 }

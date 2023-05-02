@@ -7,8 +7,28 @@
 Reference Counting
 ******************
 
-The macros in this section are used for managing reference counts of Python
-objects.
+The functions and macros in this section are used for managing reference counts
+of Python objects.
+
+
+.. c:function:: Py_ssize_t Py_REFCNT(PyObject *o)
+
+   Get the reference count of the Python object *o*.
+
+   Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
+
+   .. versionchanged:: 3.11
+      The parameter type is no longer :c:expr:`const PyObject*`.
+
+   .. versionchanged:: 3.10
+      :c:func:`Py_REFCNT()` is changed to the inline static function.
+
+
+.. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
+
+   Set the object *o* reference counter to *refcnt*.
+
+   .. versionadded:: 3.9
 
 
 .. c:function:: void Py_INCREF(PyObject *o)
@@ -109,6 +129,11 @@ objects.
    It is a good idea to use this macro whenever decrementing the reference
    count of an object that might be traversed during garbage collection.
 
+   .. versionchanged:: 3.12
+      The macro argument is now only evaluated once. If the argument has side
+      effects, these are no longer duplicated.
+
+
 .. c:function:: void Py_IncRef(PyObject *o)
 
    Increment the reference count for object *o*. A function version of :c:func:`Py_XINCREF`.
@@ -119,3 +144,40 @@ objects.
 
    Decrement the reference count for object *o*. A function version of :c:func:`Py_XDECREF`.
    It can be used for runtime dynamic embedding of Python.
+
+
+.. c:macro:: Py_SETREF(dst, src)
+
+   Macro safely decrementing the `dst` reference count and setting `dst` to
+   `src`.
+
+   As in case of :c:func:`Py_CLEAR`, "the obvious" code can be deadly::
+
+       Py_DECREF(dst);
+       dst = src;
+
+   The safe way is::
+
+        Py_SETREF(dst, src);
+
+   That arranges to set `dst` to `src` _before_ decrementing reference count of
+   *dst* old value, so that any code triggered as a side-effect of `dst`
+   getting torn down no longer believes `dst` points to a valid object.
+
+   .. versionadded:: 3.6
+
+   .. versionchanged:: 3.12
+      The macro arguments are now only evaluated once. If an argument has side
+      effects, these are no longer duplicated.
+
+
+.. c:macro:: Py_XSETREF(dst, src)
+
+   Variant of :c:macro:`Py_SETREF` macro that uses :c:func:`Py_XDECREF` instead
+   of :c:func:`Py_DECREF`.
+
+   .. versionadded:: 3.6
+
+   .. versionchanged:: 3.12
+      The macro arguments are now only evaluated once. If an argument has side
+      effects, these are no longer duplicated.
