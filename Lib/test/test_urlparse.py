@@ -653,7 +653,7 @@ class UrlParseTestCase(unittest.TestCase):
         noise = bytes(range(0, 0x20 + 1))
         base_url = "http://User:Pass@www.python.org:080/doc/?query=yes#frag"
 
-        url = noise.decode() + base_url + noise.decode()
+        url = noise.decode("utf-8") + base_url
         p = urllib.parse.urlsplit(url)
         self.assertEqual(p.scheme, "http")
         self.assertEqual(p.netloc, "User:Pass@www.python.org:080")
@@ -666,7 +666,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.port, 80)
         self.assertEqual(p.geturl(), base_url)
 
-        url = noise + base_url.encode() + noise
+        url = noise + base_url.encode("utf-8")
         p = urllib.parse.urlsplit(url)
         self.assertEqual(p.scheme, b"http")
         self.assertEqual(p.netloc, b"User:Pass@www.python.org:080")
@@ -677,7 +677,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.password, b"Pass")
         self.assertEqual(p.hostname, b"www.python.org")
         self.assertEqual(p.port, 80)
-        self.assertEqual(p.geturl(), base_url.encode())
+        self.assertEqual(p.geturl(), base_url.encode("utf-8"))
 
         # Test that trailing space is preserved as some applications rely on
         # this within query strings.
@@ -702,7 +702,7 @@ class UrlParseTestCase(unittest.TestCase):
 
         # with scheme as cache-key
         url = "//www.python.org/"
-        scheme = noise.decode() + "https" + noise.decode()
+        scheme = noise.decode("utf-8") + "https" + noise.decode("utf-8")
         for _ in range(2):
             p = urllib.parse.urlsplit(url, scheme=scheme)
             self.assertEqual(p.scheme, "https")
