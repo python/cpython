@@ -742,7 +742,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     Py_DECREF(ok);
 
     /* 4. Check if it's a direct subclass. */
-    PyObject *mro = ((PyTypeObject *)subclass)->tp_mro;
+    PyObject *mro = _PyType_GetMRO((PyTypeObject *)subclass);
     assert(PyTuple_Check(mro));
     for (pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
         PyObject *mro_item = PyTuple_GET_ITEM(mro, pos);

@@ -169,6 +169,31 @@ static_builtin_state_clear(PyInterpreterState *interp, PyTypeObject *self)
 
 /* accessors for objects stored on PyTypeObject */
 
+static inline PyObject *
+lookup_tp_mro(PyTypeObject *self)
+{
+    return self->tp_mro;
+}
+
+PyObject *
+_PyType_GetMRO(PyTypeObject *self)
+{
+    return lookup_tp_mro(self);
+}
+
+static inline void
+set_tp_mro(PyTypeObject *self, PyObject *mro)
+{
+    self->tp_mro = mro;
+}
+
+static inline void
+clear_tp_mro(PyTypeObject *self)
+{
+    Py_CLEAR(self->tp_mro);
+}
+
+
 static PyObject *
 init_tp_subclasses(PyTypeObject *self)
 {
@@ -201,7 +226,7 @@ clear_tp_subclasses(PyTypeObject *self)
     Py_CLEAR(self->tp_subclasses);
 }
 
-static PyObject *
+static inline PyObject *
 lookup_tp_subclasses(PyTypeObject *self)
 {
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
@@ -972,7 +997,7 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
         /* error / reentrance */
         return res;
     }
-    PyObject *new_mro = type->tp_mro;
+    PyObject *new_mro = lookup_tp_mro(type);
 
     PyObject *tuple;
     if (old_mro != NULL) {
@@ -991,7 +1016,7 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
     Py_XDECREF(tuple);
 
     if (res < 0) {
-        type->tp_mro = old_mro;
+        set_tp_mro(type, old_mro);
         Py_DECREF(new_mro);
         return -1;
     }
@@ -1070,7 +1095,8 @@ type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
                below), which in turn may cause an inheritance cycle
                through tp_base chain.  And this is definitely
                not what you want to ever happen.  */
-            (base->tp_mro != NULL && type_is_subtype_base_chain(base, type)))
+            (lookup_tp_mro(base) != NULL
+             && type_is_subtype_base_chain(base, type)))
         {
             PyErr_SetString(PyExc_TypeError,
                             "a __bases__ item causes an inheritance cycle");
@@ -1137,8 +1163,8 @@ type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
         PyArg_UnpackTuple(PyList_GET_ITEM(temp, i),
                           "", 2, 3, &cls, &new_mro, &old_mro);
         /* Do not rollback if cls has a newer version of MRO.  */
-        if (cls->tp_mro == new_mro) {
-            cls->tp_mro = Py_XNewRef(old_mro);
+        if (lookup_tp_mro(cls) == new_mro) {
+            set_tp_mro(cls, Py_XNewRef(old_mro));
             Py_DECREF(new_mro);
         }
     }
@@ -1858,7 +1884,7 @@ PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 {
     PyObject *mro;
 
-    mro = a->tp_mro;
+    mro = lookup_tp_mro(a);
     if (mro != NULL) {
         /* Deal with multiple inheritance without recursion
            by walking the MRO tuple */
@@ -2246,13 +2272,13 @@ mro_implementation(PyTypeObject *type)
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
-        if (base->tp_mro == NULL) {
+        if (lookup_tp_mro(base) == NULL) {
             PyErr_Format(PyExc_TypeError,
                          "Cannot extend an incomplete type '%.100s'",
                          base->tp_name);
             return NULL;
         }
-        assert(PyTuple_Check(base->tp_mro));
+        assert(PyTuple_Check(lookup_tp_mro(base)));
     }
 
     if (n == 1) {
@@ -2260,7 +2286,8 @@ mro_implementation(PyTypeObject *type)
          * is trivial.
          */
         PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, 0));
-        Py_ssize_t k = PyTuple_GET_SIZE(base->tp_mro);
+        PyObject *base_mro = lookup_tp_mro(base);
+        Py_ssize_t k = PyTuple_GET_SIZE(base_mro);
         PyObject *result = PyTuple_New(k + 1);
         if (result == NULL) {
             return NULL;
@@ -2269,7 +2296,7 @@ mro_implementation(PyTypeObject *type)
         ;
         PyTuple_SET_ITEM(result, 0, Py_NewRef(type));
         for (Py_ssize_t i = 0; i < k; i++) {
-            PyObject *cls = PyTuple_GET_ITEM(base->tp_mro, i);
+            PyObject *cls = PyTuple_GET_ITEM(base_mro, i);
             PyTuple_SET_ITEM(result, i + 1, Py_NewRef(cls));
         }
         return result;
@@ -2296,7 +2323,7 @@ mro_implementation(PyTypeObject *type)
 
     for (Py_ssize_t i = 0; i < n; i++) {
         PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
-        to_merge[i] = base->tp_mro;
+        to_merge[i] = lookup_tp_mro(base);
     }
     to_merge[n] = bases;
 
@@ -2451,9 +2478,9 @@ mro_internal(PyTypeObject *type, PyObject **p_old_mro)
     /* Keep a reference to be able to do a reentrancy check below.
        Don't let old_mro be GC'ed and its address be reused for
        another object, like (suddenly!) a new tp_mro.  */
-    old_mro = Py_XNewRef(type->tp_mro);
+    old_mro = Py_XNewRef(lookup_tp_mro(type));
     new_mro = mro_invoke(type);  /* might cause reentrance */
-    reent = (type->tp_mro != old_mro);
+    reent = (lookup_tp_mro(type) != old_mro);
     Py_XDECREF(old_mro);
     if (new_mro == NULL) {
         return -1;
@@ -2464,9 +2491,9 @@ mro_internal(PyTypeObject *type, PyObject **p_old_mro)
         return 0;
     }
 
-    type->tp_mro = new_mro;
+    set_tp_mro(type, new_mro);
 
-    type_mro_modified(type, type->tp_mro);
+    type_mro_modified(type, new_mro);
     /* corner case: the super class might have been hidden
        from the custom MRO */
     type_mro_modified(type, type->tp_bases);
@@ -4201,7 +4228,7 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 {
     assert(PyType_Check(type));
 
-    PyObject *mro = type->tp_mro;
+    PyObject *mro = lookup_tp_mro(type);
     // The type must be ready
     assert(mro != NULL);
     assert(PyTuple_Check(mro));
@@ -4250,14 +4277,14 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
     }
 
     /* Look in tp_dict of types in MRO */
-    PyObject *mro = type->tp_mro;
+    PyObject *mro = lookup_tp_mro(type);
     if (mro == NULL) {
         if ((type->tp_flags & Py_TPFLAGS_READYING) == 0) {
             if (PyType_Ready(type) < 0) {
                 *error = -1;
                 return NULL;
             }
-            mro = type->tp_mro;
+            mro = lookup_tp_mro(type);
         }
         if (mro == NULL) {
             *error = 1;
@@ -4603,7 +4630,7 @@ clear_static_type_objects(PyInterpreterState *interp, PyTypeObject *type)
     if (_Py_IsMainInterpreter(interp)) {
         Py_CLEAR(type->tp_dict);
         Py_CLEAR(type->tp_bases);
-        Py_CLEAR(type->tp_mro);
+        clear_tp_mro(type);
         Py_CLEAR(type->tp_cache);
     }
     clear_static_tp_subclasses(type);
@@ -6752,14 +6779,14 @@ type_ready_mro(PyTypeObject *type)
     if (mro_internal(type, NULL) < 0) {
         return -1;
     }
-    assert(type->tp_mro != NULL);
-    assert(PyTuple_Check(type->tp_mro));
+    PyObject *mro = lookup_tp_mro(type);
+    assert(mro != NULL);
+    assert(PyTuple_Check(mro));
 
     /* All bases of statically allocated type should be statically allocated,
        and static builtin types must have static builtin bases. */
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         assert(type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
-        PyObject *mro = type->tp_mro;
         Py_ssize_t n = PyTuple_GET_SIZE(mro);
         for (Py_ssize_t i = 0; i < n; i++) {
             PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(mro, i));
@@ -6820,8 +6847,8 @@ type_ready_inherit(PyTypeObject *type)
     }
 
     // Inherit slots
-    PyObject *mro = type->tp_mro;
-    Py_ssize_t n = PyTuple_GET_SIZE(type->tp_mro);
+    PyObject *mro = lookup_tp_mro(type);
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 1; i < n; i++) {
         PyObject *b = PyTuple_GET_ITEM(mro, i);
         if (PyType_Check(b)) {
@@ -7518,7 +7545,7 @@ static int
 hackcheck(PyObject *self, setattrofunc func, const char *what)
 {
     PyTypeObject *type = Py_TYPE(self);
-    PyObject *mro = type->tp_mro;
+    PyObject *mro = lookup_tp_mro(type);
     if (!mro) {
         /* Probably ok not to check the call in this case. */
         return 1;
@@ -9433,7 +9460,7 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
     PyObject *mro, *res;
     Py_ssize_t i, n;
 
-    mro = su_obj_type->tp_mro;
+    mro = lookup_tp_mro(su_obj_type);
     if (mro == NULL)
         return NULL;
 
