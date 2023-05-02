@@ -178,7 +178,7 @@ The "selectable" entry points were introduced in ``importlib_metadata``
 no parameters and always returned a dictionary of entry points, keyed
 by group. With ``importlib_metadata`` 5.0 and Python 3.12,
 ``entry_points`` always returns an ``EntryPoints`` object. See
-`backports.entry_points_selectable <https://pypi.org/project/backports.entry_points_selectable>`_
+`backports.entry_points_selectable <https://pypi.org/project/backports.entry-points-selectable>`_
 for compatibility options.
 
 
