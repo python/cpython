@@ -264,7 +264,7 @@ HTTPConnection Objects
             encode_chunked=False)
 
    This will send a request to the server using the HTTP request
-   method *method* and the request URI *url*. The provided URL must be 
+   method *method* and the request URI *url*. The provided *url* must be 
    an absolute path to conform with :rfc:`RFC 2616 §5.1.2 <2616#section-5.1.2>`
    when using most HTTP methods (like ``GET`` or ``POST``).
 
