@@ -29,7 +29,7 @@ Such constructors may be factory functions or class instances.
 
    Declares that *function* should be used as a "reduction" function for objects
    of type *type*.  *function* must return either a string or a tuple
-   containing two or five elements. See the :attr:`~pickle.Pickler.dispatch_table`
+   containing between two and six elements. See the :attr:`~pickle.Pickler.dispatch_table`
    for more details on the interface of *function*.
 
    The *constructor_ob* parameter is a legacy feature and is now ignored, but if
