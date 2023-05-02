@@ -226,10 +226,30 @@ get_memb_offset(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyLong_FromSsize_t(def->offset);
 }
 
+static PyObject *
+heaptype_with_member_get_memb_relative(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyMemberDef def = {"memb", Py_T_BYTE, sizeof(PyObject), Py_RELATIVE_OFFSET};
+    return PyMember_GetOne((const char *)self, &def);
+}
+
+static PyObject *
+heaptype_with_member_set_memb_relative(PyObject *self, PyObject *value)
+{
+    PyMemberDef def = {"memb", Py_T_BYTE, sizeof(PyObject), Py_RELATIVE_OFFSET};
+    int r = PyMember_SetOne((char *)self, &def, value);
+    if (r < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef heaptype_with_member_methods[] = {
     {"get_memb", heaptype_with_member_get_memb, METH_NOARGS},
     {"set_memb", heaptype_with_member_set_memb, METH_O},
     {"get_memb_offset", get_memb_offset, METH_NOARGS},
+    {"get_memb_relative", heaptype_with_member_get_memb_relative, METH_NOARGS},
+    {"set_memb_relative", heaptype_with_member_set_memb_relative, METH_O},
     {NULL},
 };
 

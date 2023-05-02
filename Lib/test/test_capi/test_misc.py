@@ -1152,6 +1152,10 @@ class TestHeapTypeRelative(unittest.TestCase):
                             self.assertEqual(instance.get_memb(), 14)
                             self.assertGreaterEqual(instance.get_memb_offset(), Base.__basicsize__)
                             self.assertLess(instance.get_memb_offset(), Sub.__basicsize__)
+                            with self.assertRaises(SystemError):
+                                instance.get_memb_relative()
+                            with self.assertRaises(SystemError):
+                                instance.set_memb_relative(0)
                         else:
                             with self.assertRaises(SystemError):
                                 Sub = _testcapi.make_heaptype_with_member(
@@ -1163,6 +1167,27 @@ class TestHeapTypeRelative(unittest.TestCase):
                     with self.assertRaises(SystemError):
                         Sub = _testcapi.make_heaptype_with_member(
                             extra_base_size, -extra_size, -1, True)
+
+    def test_heaptype_relative_members_errors(self):
+        with self.assertRaisesRegex(
+                SystemError,
+                r"With Py_RELATIVE_OFFSET, basicsize must be negative"):
+            _testcapi.make_heaptype_with_member(0, 1234, 0, True)
+        with self.assertRaisesRegex(
+                SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
+            _testcapi.make_heaptype_with_member(0, -8, 1234, True)
+        with self.assertRaisesRegex(
+                SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
+            _testcapi.make_heaptype_with_member(0, -8, -1, True)
+
+        Sub = _testcapi.make_heaptype_with_member(0, -8, 0, True)
+        instance = Sub()
+        with self.assertRaisesRegex(
+                SystemError, r"PyMember_GetOne used with Py_RELATIVE_OFFSET"):
+            instance.get_memb_relative()
+        with self.assertRaisesRegex(
+                SystemError, r"PyMember_SetOne used with Py_RELATIVE_OFFSET"):
+            instance.set_memb_relative(0)
 
     def test_pyobject_getitemdata_error(self):
         """Test PyObject_GetItemData fails on unsupported types"""
