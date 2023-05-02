@@ -69,13 +69,11 @@ static inline PyTypeObject * subclass_from_ref(PyObject *ref);
 
 /* helpers for for static builtin types */
 
-#ifndef NDEBUG
 static inline int
 static_builtin_index_is_set(PyTypeObject *self)
 {
     return self->tp_subclasses != NULL;
 }
-#endif
 
 static inline size_t
 static_builtin_index_get(PyTypeObject *self)
@@ -7046,7 +7044,9 @@ _PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
     assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_DICT));
     assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF));
 
+#ifndef NDEBUG
     int ismain = _Py_IsMainInterpreter(interp);
+#endif
     if (self->tp_flags & Py_TPFLAGS_READY) {
         assert(!ismain);
         assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
