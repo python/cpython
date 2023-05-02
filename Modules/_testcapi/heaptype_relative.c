@@ -141,6 +141,37 @@ subclass_var_heaptype(PyObject *module, PyObject *args)
     return result;
 }
 
+static PyObject *
+subclass_heaptype(PyObject *module, PyObject *args)
+{
+    PyObject *result = NULL;
+
+    PyObject *base; // borrowed from args
+    int basicsize, itemsize;
+
+    int r = PyArg_ParseTuple(args, "Oii", &base, &basicsize, &itemsize);
+    if (!r) {
+        goto finally;
+    }
+
+    PyType_Slot slots[] = {
+        {Py_tp_methods, var_heaptype_methods},
+        {0, NULL},
+    };
+
+    PyType_Spec sub_spec = {
+        .name = "_testcapi.Sub",
+        .basicsize = basicsize,
+        .itemsize = itemsize,
+        .flags = Py_TPFLAGS_DEFAULT,
+        .slots = slots,
+    };
+
+    result = PyType_FromMetaclass(NULL, module, &sub_spec, base);
+  finally:
+    return result;
+}
+
 static PyMemberDef *
 heaptype_with_member_extract_and_check_memb(PyObject *self)
 {
@@ -270,6 +301,7 @@ test_alignof_max_align_t(PyObject *module, PyObject *Py_UNUSED(ignored))
 static PyMethodDef TestMethods[] = {
     {"make_sized_heaptypes", make_sized_heaptypes, METH_VARARGS},
     {"subclass_var_heaptype", subclass_var_heaptype, METH_VARARGS},
+    {"subclass_heaptype", subclass_heaptype, METH_VARARGS},
     {"make_heaptype_with_member", make_heaptype_with_member, METH_VARARGS},
     {"test_alignof_max_align_t", test_alignof_max_align_t, METH_NOARGS},
     {NULL},

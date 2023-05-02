@@ -1122,6 +1122,12 @@ class TestHeapTypeRelative(unittest.TestCase):
                 self.assertGreaterEqual(len(mem), extra_size)
                 self.assertTrue(set(mem) <= {3}, f'got {mem!r}')
 
+    def test_heaptype_invalid_inheritance(self):
+        with self.assertRaises(SystemError,
+                               msg="Cannot extend variable-size class without "
+                               + "Py_TPFLAGS_ITEMS_AT_END"):
+            _testcapi.subclass_heaptype(int, -8, 0)
+
     def test_heaptype_relative_members(self):
         """Test HeapCCollection subclasses work properly"""
         sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
