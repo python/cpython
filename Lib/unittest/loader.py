@@ -6,7 +6,6 @@ import sys
 import traceback
 import types
 import functools
-import warnings
 
 from fnmatch import fnmatch, fnmatchcase
 

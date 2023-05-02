@@ -933,7 +933,7 @@ using it::
    parser.parse( 'hamlet.xml' )
 
 For more information, consult the Python documentation, or the XML HOWTO at
-http://pyxml.sourceforge.net/topics/howto/xml-howto.html.
+https://pyxml.sourceforge.net/topics/howto/xml-howto.html.
 
 
 DOM Support

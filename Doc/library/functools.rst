@@ -49,8 +49,13 @@ The :mod:`functools` module defines the following functions:
         >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
         479001600
 
-   The cache is threadsafe so the wrapped function can be used in multiple
-   threads.
+   The cache is threadsafe so that the wrapped function can be used in
+   multiple threads.  This means that the underlying data structure will
+   remain coherent during concurrent updates.
+
+   It is possible for the wrapped function to be called more than once if
+   another thread makes an additional call before the initial call has been
+   completed and cached.
 
    .. versionadded:: 3.9
 
@@ -86,17 +91,24 @@ The :mod:`functools` module defines the following functions:
    The cached value can be cleared by deleting the attribute.  This
    allows the *cached_property* method to run again.
 
+   The *cached_property* does not prevent a possible race condition in
+   multi-threaded usage. The getter function could run more than once on the
+   same instance, with the latest run setting the cached value. If the cached
+   property is idempotent or otherwise not harmful to run more than once on an
+   instance, this is fine. If synchronization is needed, implement the necessary
+   locking inside the decorated getter function or around the cached property
+   access.
+
    This decorator requires that the ``__dict__`` attribute on each instance be a
    mutable mapping. This means it will not work with some types, such as
    metaclasses (since the ``__dict__`` attributes on type instances are
    read-only proxies for the class namespace), and those that specify
    ``__slots__`` without including ``__dict__`` as one of the defined slots (as
-   such classes don't provide a ``__dict__`` attribute at all). Also, accessing
-   ``__dict__`` can cause object instances to use slightly more memory.
+   such classes don't provide a ``__dict__`` attribute at all).
 
    If a mutable mapping is not available, an effect similar to
-   :func:`cached_property` can be achieved by stacking :func:`property` on top
-   of :func:`cache`::
+   :func:`cached_property` can also be achieved by stacking :func:`property` on
+   top of :func:`cache`::
 
        class DataSet:
            def __init__(self, sequence_of_numbers):
@@ -108,6 +120,13 @@ The :mod:`functools` module defines the following functions:
                return statistics.stdev(self._data)
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.12
+      Prior to Python 3.12, ``cached_property`` included an undocumented lock to
+      ensure that in multi-threaded usage the getter function was guaranteed to
+      run only once per instance. However, the lock was per-property, not
+      per-instance, which could result in unacceptably high lock contention. In
+      Python 3.12+ this locking is removed.
 
 
 .. function:: cmp_to_key(func)
@@ -140,11 +159,16 @@ The :mod:`functools` module defines the following functions:
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
    function is periodically called with the same arguments.
 
-   The cache is threadsafe so the wrapped function can be used in multiple
-   threads.
+   The cache is threadsafe so that the wrapped function can be used in
+   multiple threads.  This means that the underlying data structure will
+   remain coherent during concurrent updates.
+
+   It is possible for the wrapped function to be called more than once if
+   another thread makes an additional call before the initial call has been
+   completed and cached.
 
    Since a dictionary is used to cache results, the positional and keyword
-   arguments to the function must be hashable.
+   arguments to the function must be :term:`hashable`.
 
    Distinct argument patterns may be considered to be distinct calls with
    separate cache entries.  For example, ``f(a=1, b=2)`` and ``f(b=2, a=1)``
@@ -214,7 +238,7 @@ The :mod:`functools` module defines the following functions:
         @lru_cache(maxsize=32)
         def get_pep(num):
             'Retrieve text of a Python Enhancement Proposal'
-            resource = 'https://peps.python.org/pep-%04d/' % num
+            resource = f'https://peps.python.org/pep-{num:04d}'
             try:
                 with urllib.request.urlopen(resource) as s:
                     return s.read()

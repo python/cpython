@@ -10,6 +10,7 @@ import unittest
 from contextlib import *  # Tests __all__
 from test import support
 from test.support import os_helper
+from test.support.testcase import ExceptionIsLikeMixin
 import weakref
 
 
@@ -1148,7 +1149,7 @@ class TestRedirectStderr(TestRedirectStream, unittest.TestCase):
     orig_stream = "stderr"
 
 
-class TestSuppress(unittest.TestCase):
+class TestSuppress(ExceptionIsLikeMixin, unittest.TestCase):
 
     @support.requires_docstrings
     def test_instance_docs(self):
@@ -1201,6 +1202,30 @@ class TestSuppress(unittest.TestCase):
             outer_continued = True
             1/0
         self.assertTrue(outer_continued)
+
+    def test_exception_groups(self):
+        eg_ve = lambda: ExceptionGroup(
+            "EG with ValueErrors only",
+            [ValueError("ve1"), ValueError("ve2"), ValueError("ve3")],
+        )
+        eg_all = lambda: ExceptionGroup(
+            "EG with many types of exceptions",
+            [ValueError("ve1"), KeyError("ke1"), ValueError("ve2"), KeyError("ke2")],
+        )
+        with suppress(ValueError):
+            raise eg_ve()
+        with suppress(ValueError, KeyError):
+            raise eg_all()
+        with self.assertRaises(ExceptionGroup) as eg1:
+            with suppress(ValueError):
+                raise eg_all()
+        self.assertExceptionIsLike(
+            eg1.exception,
+            ExceptionGroup(
+                "EG with many types of exceptions",
+                [KeyError("ke1"), KeyError("ke2")],
+            ),
+        )
 
 
 class TestChdir(unittest.TestCase):

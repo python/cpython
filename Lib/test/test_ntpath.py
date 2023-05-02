@@ -1,6 +1,7 @@
 import inspect
 import ntpath
 import os
+import string
 import sys
 import unittest
 import warnings
@@ -168,6 +169,7 @@ class TestNtpath(NtpathTestCase):
 
         # gh-81790: support device namespace, including UNC drives.
         tester('ntpath.splitroot("//?/c:")', ("//?/c:", "", ""))
+        tester('ntpath.splitroot("//./c:")', ("//./c:", "", ""))
         tester('ntpath.splitroot("//?/c:/")', ("//?/c:", "/", ""))
         tester('ntpath.splitroot("//?/c:/dir")', ("//?/c:", "/", "dir"))
         tester('ntpath.splitroot("//?/UNC")', ("//?/UNC", "", ""))
@@ -178,8 +180,12 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitroot("//?/VOLUME{00000000-0000-0000-0000-000000000000}/spam")',
                ('//?/VOLUME{00000000-0000-0000-0000-000000000000}', '/', 'spam'))
         tester('ntpath.splitroot("//?/BootPartition/")', ("//?/BootPartition", "/", ""))
+        tester('ntpath.splitroot("//./BootPartition/")', ("//./BootPartition", "/", ""))
+        tester('ntpath.splitroot("//./PhysicalDrive0")', ("//./PhysicalDrive0", "", ""))
+        tester('ntpath.splitroot("//./nul")', ("//./nul", "", ""))
 
         tester('ntpath.splitroot("\\\\?\\c:")', ("\\\\?\\c:", "", ""))
+        tester('ntpath.splitroot("\\\\.\\c:")', ("\\\\.\\c:", "", ""))
         tester('ntpath.splitroot("\\\\?\\c:\\")', ("\\\\?\\c:", "\\", ""))
         tester('ntpath.splitroot("\\\\?\\c:\\dir")', ("\\\\?\\c:", "\\", "dir"))
         tester('ntpath.splitroot("\\\\?\\UNC")', ("\\\\?\\UNC", "", ""))
@@ -192,6 +198,9 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitroot("\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}\\spam")',
                ('\\\\?\\VOLUME{00000000-0000-0000-0000-000000000000}', '\\', 'spam'))
         tester('ntpath.splitroot("\\\\?\\BootPartition\\")', ("\\\\?\\BootPartition", "\\", ""))
+        tester('ntpath.splitroot("\\\\.\\BootPartition\\")', ("\\\\.\\BootPartition", "\\", ""))
+        tester('ntpath.splitroot("\\\\.\\PhysicalDrive0")', ("\\\\.\\PhysicalDrive0", "", ""))
+        tester('ntpath.splitroot("\\\\.\\nul")', ("\\\\.\\nul", "", ""))
 
         # gh-96290: support partial/invalid UNC drives
         tester('ntpath.splitroot("//")', ("//", "", ""))  # empty server & missing share
@@ -199,6 +208,10 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitroot("///y")', ("///y", "", ""))  # empty server & non-empty share
         tester('ntpath.splitroot("//x")', ("//x", "", ""))  # non-empty server & missing share
         tester('ntpath.splitroot("//x/")', ("//x/", "", ""))  # non-empty server & empty share
+
+        # gh-101363: match GetFullPathNameW() drive letter parsing behaviour
+        tester('ntpath.splitroot(" :/foo")', (" :", "/", "foo"))
+        tester('ntpath.splitroot("/:/foo")', ("", "/", ":/foo"))
 
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
@@ -295,6 +308,11 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.join('//computer/share', 'a', 'b')", '//computer/share\\a\\b')
         tester("ntpath.join('//computer/share', 'a/b')", '//computer/share\\a/b')
 
+        tester("ntpath.join('\\\\', 'computer')", '\\\\computer')
+        tester("ntpath.join('\\\\computer\\', 'share')", '\\\\computer\\share')
+        tester("ntpath.join('\\\\computer\\share\\', 'a')", '\\\\computer\\share\\a')
+        tester("ntpath.join('\\\\computer\\share\\a\\', 'b')", '\\\\computer\\share\\a\\b')
+
     def test_normpath(self):
         tester("ntpath.normpath('A//////././//.//B')", r'A\B')
         tester("ntpath.normpath('A/./B')", r'A\B')
@@ -369,6 +387,12 @@ class TestNtpath(NtpathTestCase):
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1"), ABSTFN)
         self.assertPathEqual(ntpath.realpath(os.fsencode(ABSTFN + "1")),
                          os.fsencode(ABSTFN))
+
+        # gh-88013: call ntpath.realpath with binary drive name may raise a
+        # TypeError. The drive should not exist to reproduce the bug.
+        drives = {f"{c}:\\" for c in string.ascii_uppercase} - set(os.listdrives())
+        d = drives.pop().encode()
+        self.assertEqual(ntpath.realpath(d), d)
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')

@@ -41,9 +41,16 @@ For a summary of deprecated features and a deprecation timeline, please see
 
 .. seealso::
 
+   For a quick overview of type hints, refer to
+   `this cheat sheet <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_.
+
+   The "Type System Reference" section of https://mypy.readthedocs.io/ -- since
+   the Python typing system is standardised via PEPs, this reference should
+   broadly apply to most Python type checkers, although some parts may still be
+   specific to mypy.
+
    The documentation at https://typing.readthedocs.io/ serves as useful reference
    for type system features, useful typing related tools and typing best practices.
-
 
 .. _relevant-peps:
 
@@ -91,6 +98,11 @@ annotations. These include:
     *Introducing* :data:`LiteralString`
 * :pep:`681`: Data Class Transforms
     *Introducing* the :func:`@dataclass_transform<dataclass_transform>` decorator
+* :pep:`692`: Using ``TypedDict`` for more precise ``**kwargs`` typing
+    *Introducing* a new way of typing ``**kwargs`` with :data:`Unpack` and
+    :data:`TypedDict`
+* :pep:`698`: Adding an override decorator to typing
+    *Introducing* the :func:`@override<override>` decorator
 
 .. _type-aliases:
 
@@ -414,7 +426,7 @@ to this is that a list of types can be used to substitute a :class:`ParamSpec`::
    >>> class Z(Generic[T, P]): ...
    ...
    >>> Z[int, [dict, float]]
-   __main__.Z[int, (<class 'dict'>, <class 'float'>)]
+   __main__.Z[int, [dict, float]]
 
 
 Furthermore, a generic with only one parameter specification variable will accept
@@ -425,9 +437,9 @@ to the former, so the following are equivalent::
    >>> class X(Generic[P]): ...
    ...
    >>> X[int, str]
-   __main__.X[(<class 'int'>, <class 'str'>)]
+   __main__.X[[int, str]]
    >>> X[[int, str]]
-   __main__.X[(<class 'int'>, <class 'str'>)]
+   __main__.X[[int, str]]
 
 Do note that generics with :class:`ParamSpec` may not have correct
 ``__parameters__`` after substitution in some cases because they
@@ -439,7 +451,7 @@ are intended primarily for static type checking.
 
 A user-defined generic class can have ABCs as base classes without a metaclass
 conflict. Generic metaclasses are not supported. The outcome of parameterizing
-generics is cached, and most types in the typing module are hashable and
+generics is cached, and most types in the typing module are :term:`hashable` and
 comparable for equality.
 
 
@@ -1343,7 +1355,7 @@ These are not used in annotations. They are building blocks for creating generic
 
         x: Ts          # Not valid
         x: tuple[Ts]   # Not valid
-        x: tuple[*Ts]  # The correct way to to do it
+        x: tuple[*Ts]  # The correct way to do it
 
     Type variable tuples can be used in the same contexts as normal type
     variables. For example, in class definitions, arguments, and return types::
@@ -1408,8 +1420,10 @@ These are not used in annotations. They are building blocks for creating generic
       tup: tuple[Unpack[Ts]]
 
    In fact, ``Unpack`` can be used interchangeably with ``*`` in the context
-   of types. You might see ``Unpack`` being used explicitly in older versions
-   of Python, where ``*`` couldn't be used in certain places::
+   of :class:`typing.TypeVarTuple <TypeVarTuple>` and
+   :class:`builtins.tuple <tuple>` types. You might see ``Unpack`` being used
+   explicitly in older versions of Python, where ``*`` couldn't be used in
+   certain places::
 
       # In older versions of Python, TypeVarTuple and Unpack
       # are located in the `typing_extensions` backports package.
@@ -1418,6 +1432,21 @@ These are not used in annotations. They are building blocks for creating generic
       Ts = TypeVarTuple('Ts')
       tup: tuple[*Ts]         # Syntax error on Python <= 3.10!
       tup: tuple[Unpack[Ts]]  # Semantically equivalent, and backwards-compatible
+
+   ``Unpack`` can also be used along with :class:`typing.TypedDict` for typing
+   ``**kwargs`` in a function signature::
+
+      from typing import TypedDict, Unpack
+
+      class Movie(TypedDict):
+         name: str
+         year: int
+
+      # This function expects two keyword arguments - `name` of type `str`
+      # and `year` of type `int`.
+      def foo(**kwargs: Unpack[Movie]): ...
+
+   See :pep:`692` for more details on using ``Unpack`` for ``**kwargs`` typing.
 
    .. versionadded:: 3.11
 
@@ -1582,17 +1611,51 @@ These are not used in annotations. They are building blocks for creating generic
 
       assert isinstance(open('/some/file'), Closable)
 
+      @runtime_checkable
+      class Named(Protocol):
+          name: str
+
+      import threading
+      assert isinstance(threading.Thread(name='Bob'), Named)
+
    .. note::
 
-        :func:`runtime_checkable` will check only the presence of the required
-        methods, not their type signatures. For example, :class:`ssl.SSLObject`
+        :func:`!runtime_checkable` will check only the presence of the required
+        methods or attributes, not their type signatures or types.
+        For example, :class:`ssl.SSLObject`
         is a class, therefore it passes an :func:`issubclass`
         check against :data:`Callable`.  However, the
-        :meth:`ssl.SSLObject.__init__` method exists only to raise a
+        ``ssl.SSLObject.__init__`` method exists only to raise a
         :exc:`TypeError` with a more informative message, therefore making
         it impossible to call (instantiate) :class:`ssl.SSLObject`.
 
+   .. note::
+
+        An :func:`isinstance` check against a runtime-checkable protocol can be
+        surprisingly slow compared to an ``isinstance()`` check against
+        a non-protocol class. Consider using alternative idioms such as
+        :func:`hasattr` calls for structural checks in performance-sensitive
+        code.
+
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.12
+      The internal implementation of :func:`isinstance` checks against
+      runtime-checkable protocols now uses :func:`inspect.getattr_static`
+      to look up attributes (previously, :func:`hasattr` was used).
+      As a result, some objects which used to be considered instances
+      of a runtime-checkable protocol may no longer be considered instances
+      of that protocol on Python 3.12+, and vice versa.
+      Most users are unlikely to be affected by this change.
+
+   .. versionchanged:: 3.12
+      The members of a runtime-checkable protocol are now considered "frozen"
+      at runtime as soon as the class has been created. Monkey-patching
+      attributes onto a runtime-checkable protocol will still work, but will
+      have no impact on :func:`isinstance` checks comparing objects to the
+      protocol. See :ref:`"What's new in Python 3.12" <whatsnew-typing-py312>`
+      for more details.
+
 
 Other special directives
 """"""""""""""""""""""""
@@ -2421,14 +2484,15 @@ Functions and decorators
 
    Ask a static type checker to confirm that *val* has an inferred type of *typ*.
 
-   When the type checker encounters a call to ``assert_type()``, it
+   At runtime this does nothing: it returns the first argument unchanged with no
+   checks or side effects, no matter the actual type of the argument.
+
+   When a static type checker encounters a call to ``assert_type()``, it
    emits an error if the value is not of the specified type::
 
        def greet(name: str) -> None:
            assert_type(name, str)  # OK, inferred type of `name` is `str`
            assert_type(name, int)  # type checker error
-
-   At runtime this returns the first argument unchanged with no side effects.
 
    This function is useful for ensuring the type checker's understanding of a
    script is in line with the developer's intentions::
@@ -2721,6 +2785,42 @@ Functions and decorators
 
    This wraps the decorator with something that wraps the decorated
    function in :func:`no_type_check`.
+
+
+.. decorator:: override
+
+   A decorator for methods that indicates to type checkers that this method
+   should override a method or attribute with the same name on a base class.
+   This helps prevent bugs that may occur when a base class is changed without
+   an equivalent change to a child class.
+
+   For example::
+
+      class Base:
+           def log_status(self)
+
+      class Sub(Base):
+          @override
+          def log_status(self) -> None:  # Okay: overrides Base.log_status
+              ...
+
+          @override
+          def done(self) -> None:  # Error reported by type checker
+              ...
+
+   There is no runtime checking of this property.
+
+   The decorator will set the ``__override__`` attribute to ``True`` on
+   the decorated object. Thus, a check like
+   ``if getattr(obj, "__override__", False)`` can be used at runtime to determine
+   whether an object ``obj`` has been marked as an override.  If the decorated object
+   does not support setting attributes, the decorator returns the object unchanged
+   without raising an exception.
+
+   See :pep:`698` for more details.
+
+   .. versionadded:: 3.12
+
 
 .. decorator:: type_check_only
 

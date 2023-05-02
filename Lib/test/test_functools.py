@@ -2931,21 +2931,6 @@ class OptionallyCachedCostItem:
     cached_cost = py_functools.cached_property(get_cost)
 
 
-class CachedCostItemWait:
-
-    def __init__(self, event):
-        self._cost = 1
-        self.lock = py_functools.RLock()
-        self.event = event
-
-    @py_functools.cached_property
-    def cost(self):
-        self.event.wait(1)
-        with self.lock:
-            self._cost += 1
-        return self._cost
-
-
 class CachedCostItemWithSlots:
     __slots__ = ('_cost')
 
@@ -2969,27 +2954,6 @@ class TestCachedProperty(unittest.TestCase):
         self.assertEqual(item.cached_cost, 3)
         self.assertEqual(item.get_cost(), 4)
         self.assertEqual(item.cached_cost, 3)
-
-    @threading_helper.requires_working_threading()
-    def test_threaded(self):
-        go = threading.Event()
-        item = CachedCostItemWait(go)
-
-        num_threads = 3
-
-        orig_si = sys.getswitchinterval()
-        sys.setswitchinterval(1e-6)
-        try:
-            threads = [
-                threading.Thread(target=lambda: item.cost)
-                for k in range(num_threads)
-            ]
-            with threading_helper.start_threads(threads):
-                go.set()
-        finally:
-            sys.setswitchinterval(orig_si)
-
-        self.assertEqual(item.cost, 2)
 
     def test_object_with_slots(self):
         item = CachedCostItemWithSlots()
@@ -3016,7 +2980,7 @@ class TestCachedProperty(unittest.TestCase):
 
     def test_reuse_different_names(self):
         """Disallow this case because decorated function a would not be cached."""
-        with self.assertRaises(RuntimeError) as ctx:
+        with self.assertRaises(TypeError) as ctx:
             class ReusedCachedProperty:
                 @py_functools.cached_property
                 def a(self):
@@ -3025,7 +2989,7 @@ class TestCachedProperty(unittest.TestCase):
                 b = a
 
         self.assertEqual(
-            str(ctx.exception.__context__),
+            str(ctx.exception),
             str(TypeError("Cannot assign the same cached_property to two different names ('a' and 'b')."))
         )
 
