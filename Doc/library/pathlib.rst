@@ -873,10 +873,10 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
-   By default, this method matches paths using platform-specific casing rules:
-   case-sensitive on POSIX, and case-insensitive on Windows. The
-   *case_sensitive* keyword-only argument can be set to true or false to
-   override this behaviour.
+   By default, or when the *case_sensitive* keyword-only argument is set to
+   ``None``, this method matches paths using platform-specific casing rules:
+   case-sensitive on POSIX, and case-insensitive on Windows. Set
+   *case_sensitive* to ``True`` or ``False`` to override this behaviour.
 
    .. note::
       Using the "``**``" pattern in large directory trees may consume
@@ -1289,10 +1289,10 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
-   By default, this method matches paths using platform-specific casing rules:
-   case-sensitive on POSIX, and case-insensitive on Windows. The
-   *case_sensitive* keyword-only argument can be set to true or false to
-   override this behaviour.
+   By default, or when the *case_sensitive* keyword-only argument is set to
+   ``None``, this method matches paths using platform-specific casing rules:
+   case-sensitive on POSIX, and case-insensitive on Windows. Set
+   *case_sensitive* to ``True`` or ``False`` to override this behaviour.
 
    .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
