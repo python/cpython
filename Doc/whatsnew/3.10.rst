@@ -1686,8 +1686,8 @@ Deprecated
   :func:`importlib.util.set_package_wrapper`,
   :func:`importlib.util.set_loader_wrapper`,
   :func:`importlib.util.module_for_loader`,
-  :class:`pkgutil.ImpImporter`, and
-  :class:`pkgutil.ImpLoader` have all been updated to list Python 3.12 as the
+  :class:`!pkgutil.ImpImporter`, and
+  :class:`!pkgutil.ImpLoader` have all been updated to list Python 3.12 as the
   slated version of removal (they began raising :exc:`DeprecationWarning` in
   previous versions of Python).
   (Contributed by Brett Cannon in :issue:`43720`.)

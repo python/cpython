@@ -1892,8 +1892,8 @@ C APIs pending removal are
 * :func:`importlib.util.module_for_loader`
 * :func:`!importlib.util.set_loader_wrapper`
 * :func:`!importlib.util.set_package_wrapper`
-* :class:`pkgutil.ImpImporter`
-* :class:`pkgutil.ImpLoader`
+* :class:`!pkgutil.ImpImporter`
+* :class:`!pkgutil.ImpLoader`
 * :meth:`pathlib.Path.link_to`
 * :func:`!sqlite3.enable_shared_cache`
 * :func:`!sqlite3.OptimizedUnicode`
