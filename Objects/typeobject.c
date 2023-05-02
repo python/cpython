@@ -184,6 +184,7 @@ lookup_tp_dict(PyTypeObject *self)
 PyObject *
 _PyType_GetDict(PyTypeObject *self)
 {
+    /* It returns a borrowed reference. */
     return lookup_tp_dict(self);
 }
 
@@ -229,6 +230,7 @@ lookup_tp_bases(PyTypeObject *self)
 PyObject *
 _PyType_GetBases(PyTypeObject *self)
 {
+    /* It returns a borrowed reference. */
     return lookup_tp_bases(self);
 }
 
@@ -274,6 +276,7 @@ lookup_tp_mro(PyTypeObject *self)
 PyObject *
 _PyType_GetMRO(PyTypeObject *self)
 {
+    /* It returns a borrowed reference. */
     return lookup_tp_mro(self);
 }
 
