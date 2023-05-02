@@ -418,9 +418,13 @@ def copy(src, dst, *, follow_symlinks=True):
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
-    copyfile(src, dst, follow_symlinks=follow_symlinks)
-    copymode(src, dst, follow_symlinks=follow_symlinks)
-    return dst
+    try:
+        copyfile(src, dst, follow_symlinks=follow_symlinks)
+        copymode(src, dst, follow_symlinks=follow_symlinks)
+    except Exception as e:
+        print(f"DebugError:\n{e}")
+        print(f"SRC:\n{src}\nDST:\n{dst}")
+
 
 def copy2(src, dst, *, follow_symlinks=True):
     """Copy data and metadata. Return the file's destination.
