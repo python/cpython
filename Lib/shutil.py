@@ -1386,7 +1386,8 @@ elif _WINDOWS:
         Returned values is a named tuple with attributes 'total', 'used' and
         'free', which are the amount of total, used and free space, in bytes.
         """
-        total, free = os._getdiskusage(path)
+        total, free = nt._getdiskusage(path)
+        #need use nt moudle?
         used = total - free
         return _ntuple_diskusage(total, used, free)
 
