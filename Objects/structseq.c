@@ -511,7 +511,6 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
     Py_ssize_t n_members = count_members(desc, &n_unnamed_members);
     PyMemberDef *members = NULL;
 
-    int initialized = 1;
     if ((type->tp_flags & Py_TPFLAGS_READY) == 0) {
         assert(type->tp_name == NULL);
         assert(type->tp_members == NULL);
@@ -524,7 +523,6 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
         initialize_static_fields(type, desc, members, tp_flags);
 
         _Py_SetImmortal(type);
-        initialized = 0;
     }
 #ifndef NDEBUG
     else {
@@ -543,13 +541,10 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
                      desc->name);
         goto error;
     }
-    // This should be dropped if tp_dict is made per-interpreter.
-    if (initialized) {
-        return 0;
-    }
 
     if (initialize_structseq_dict(
-            desc, _PyType_GetDict(type), n_members, n_unnamed_members) < 0) {
+            desc, _PyType_GetDict(type), n_members, n_unnamed_members) < 0)
+    {
         goto error;
     }
 
