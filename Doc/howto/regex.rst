@@ -865,19 +865,28 @@ subgroups, from 1 up to however many there are. ::
    >>> m.groups()
    ('abc', 'b')
 
-Backreferences in a pattern allow you to specify that the contents of an earlier
-capturing group must also be found at the current location in the string.  For
-example, ``\1`` will succeed if the exact contents of group 1 can be found at
-the current position, and fails otherwise.  Remember that Python's string
-literals also use a backslash followed by numbers to allow including arbitrary
-characters in a string, so be sure to use a raw string when incorporating
-backreferences in a RE.
+Backreferences in a pattern allow you to specify that the contents of an
+earlier capturing group must also be found at the current location in the
+string. For example, ``\2`` will reference the substring matched by group 2,
+succeeding only if those exact contents are found at the current position
+within the string.
+
+(Remember that Python's string literals also use a backslash followed by
+numbers for including arbitrary characters in a string, so be sure to use a
+raw string when incorporating backreferences in a RE.)
 
 For example, the following RE detects doubled words in a string. ::
 
-   >>> p = re.compile(r'\b(\w+)\s+\1\b')
+   >>> p = re.compile(r'\b(\w+)\b\s+\1\b')
    >>> p.search('Paris in the the spring').group()
    'the the'
+
+The first part of the pattern, ``\b(\w+)\b``, will match an entire word and
+capture the word as group 1. The pattern then matches some whitespace with
+``\s+`` and checks for the word again with ``\1\b``. The second \b is
+necessary to ensure that the backreference is matching an entire word;
+without it, the pattern would match when word #2 contains word #1 as its
+beginning, as in the string "the theropod".
 
 Backreferences like this aren't often useful for just searching through a string
 --- there are few text formats which repeat data in this way --- but you'll soon
