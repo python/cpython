@@ -950,12 +950,14 @@ A more significant feature is named groups: instead of referring to them by
 numbers, groups can be referenced by a name.
 
 The syntax for a named group is one of the Python-specific extensions:
-``(?P<name>...)``.  *name* can be used to refer to the group in other contexts.  Named groups
-behave exactly like capturing groups, and additionally associate a name
-with a group.  The :ref:`match object <match-objects>` methods that deal with
-capturing groups all accept either integers that refer to the group by number
-or strings that contain the desired group's name.  Named groups are still
-given numbers, so you can retrieve information about a group in two ways::
+``(?P<name>...)``. Named groups behave exactly like capturing groups, and
+additionally associate *name* with the group so that *name* can be used to
+refer to the group in other contexts. Names should look like a Python
+identifier andonly contain letters, digits and underscores. The :ref:`match
+object <match-objects>` methods that deal with capturing groups all accept
+either integers that refer to the group by number or strings that contain the
+desired group's name. Named groups are still given numbers, so you can
+retrieve information about a group in two ways::
 
    >>> p = re.compile(r'(?P<word>\b\w+\b)')
    >>> m = p.search( '((( Lots of punctuation )))' )
