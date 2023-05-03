@@ -1482,6 +1482,7 @@ static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     const char *code;
+    int use_main_obmalloc = -1;
     int allow_fork = -1;
     int allow_exec = -1;
     int allow_threads = -1;
@@ -1493,6 +1494,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     PyCompilerFlags cflags = {0};
 
     static char *kwlist[] = {"code",
+                             "use_main_obmalloc",
                              "allow_fork",
                              "allow_exec",
                              "allow_threads",
@@ -1500,10 +1502,15 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
                              "check_multi_interp_extensions",
                              NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppppp:run_in_subinterp_with_config", kwlist,
-                    &code, &allow_fork, &allow_exec,
+                    "s$pppppp:run_in_subinterp_with_config", kwlist,
+                    &code, &use_main_obmalloc,
+                    &allow_fork, &allow_exec,
                     &allow_threads, &allow_daemon_threads,
                     &check_multi_interp_extensions)) {
+        return NULL;
+    }
+    if (use_main_obmalloc < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing use_main_obmalloc");
         return NULL;
     }
     if (allow_fork < 0) {
@@ -1531,22 +1538,27 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 
     PyThreadState_Swap(NULL);
 
-    const _PyInterpreterConfig config = {
+    const PyInterpreterConfig config = {
+        .use_main_obmalloc = use_main_obmalloc,
         .allow_fork = allow_fork,
         .allow_exec = allow_exec,
         .allow_threads = allow_threads,
         .allow_daemon_threads = allow_daemon_threads,
         .check_multi_interp_extensions = check_multi_interp_extensions,
     };
-    substate = _Py_NewInterpreterFromConfig(&config);
-    if (substate == NULL) {
+    PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
+    if (PyStatus_Exception(status)) {
         /* Since no new thread state was created, there is no exception to
            propagate; raise a fresh one after swapping in the old thread
            state. */
         PyThreadState_Swap(mainstate);
+        _PyErr_SetFromPyStatus(status);
+        PyObject *exc = PyErr_GetRaisedException();
         PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
+        _PyErr_ChainExceptions1(exc);
         return NULL;
     }
+    assert(substate != NULL);
     r = PyRun_SimpleStringFlags(code, &cflags);
     Py_EndInterpreter(substate);
 
@@ -2729,6 +2741,18 @@ type_get_version(PyObject *self, PyObject *type)
 }
 
 
+static PyObject *
+type_assign_version(PyObject *self, PyObject *type)
+{
+    if (!PyType_Check(type)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a type");
+        return NULL;
+    }
+    int res = PyUnstable_Type_AssignVersionTag((PyTypeObject *)type);
+    return PyLong_FromLong(res);
+}
+
+
 // Test PyThreadState C API
 static PyObject *
 test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
@@ -3310,6 +3334,196 @@ function_set_kw_defaults(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+struct gc_visit_state_basic {
+    PyObject *target;
+    int found;
+};
+
+static int
+gc_visit_callback_basic(PyObject *obj, void *arg)
+{
+    struct gc_visit_state_basic *state = (struct gc_visit_state_basic *)arg;
+    if (obj == state->target) {
+        state->found = 1;
+        return 0;
+    }
+    return 1;
+}
+
+static PyObject *
+test_gc_visit_objects_basic(PyObject *Py_UNUSED(self),
+                            PyObject *Py_UNUSED(ignored))
+{
+    PyObject *obj;
+    struct gc_visit_state_basic state;
+
+    obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+    state.target = obj;
+    state.found = 0;
+
+    PyUnstable_GC_VisitObjects(gc_visit_callback_basic, &state);
+    Py_DECREF(obj);
+    if (!state.found) {
+        PyErr_SetString(
+             PyExc_AssertionError,
+             "test_gc_visit_objects_basic: Didn't find live list");
+         return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static int
+gc_visit_callback_exit_early(PyObject *obj, void *arg)
+ {
+    int *visited_i = (int *)arg;
+    (*visited_i)++;
+    if (*visited_i == 2) {
+        return 0;
+    }
+    return 1;
+}
+
+static PyObject *
+test_gc_visit_objects_exit_early(PyObject *Py_UNUSED(self),
+                                 PyObject *Py_UNUSED(ignored))
+{
+    int visited_i = 0;
+    PyUnstable_GC_VisitObjects(gc_visit_callback_exit_early, &visited_i);
+    if (visited_i != 2) {
+        PyErr_SetString(
+            PyExc_AssertionError,
+            "test_gc_visit_objects_exit_early: did not exit when expected");
+    }
+    Py_RETURN_NONE;
+}
+
+typedef struct {
+    PyObject_HEAD
+} ObjExtraData;
+
+static PyObject *
+obj_extra_data_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    size_t extra_size = sizeof(PyObject *);
+    PyObject *obj = PyUnstable_Object_GC_NewWithExtraData(type, extra_size);
+    if (obj == NULL) {
+        return PyErr_NoMemory();
+    }
+    PyObject_GC_Track(obj);
+    return obj;
+}
+
+static PyObject **
+obj_extra_data_get_extra_storage(PyObject *self)
+{
+    return (PyObject **)((char *)self + Py_TYPE(self)->tp_basicsize);
+}
+
+static PyObject *
+obj_extra_data_get(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyObject **extra_storage = obj_extra_data_get_extra_storage(self);
+    PyObject *value = *extra_storage;
+    if (!value) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(value);
+}
+
+static int
+obj_extra_data_set(PyObject *self, PyObject *newval, void *Py_UNUSED(ignored))
+{
+    PyObject **extra_storage = obj_extra_data_get_extra_storage(self);
+    Py_CLEAR(*extra_storage);
+    if (newval) {
+        *extra_storage = Py_NewRef(newval);
+    }
+    return 0;
+}
+
+static PyGetSetDef obj_extra_data_getset[] = {
+    {"extra", (getter)obj_extra_data_get, (setter)obj_extra_data_set, NULL},
+    {NULL}
+};
+
+static int
+obj_extra_data_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    PyObject **extra_storage = obj_extra_data_get_extra_storage(self);
+    PyObject *value = *extra_storage;
+    Py_VISIT(value);
+    return 0;
+}
+
+static int
+obj_extra_data_clear(PyObject *self)
+{
+    PyObject **extra_storage = obj_extra_data_get_extra_storage(self);
+    Py_CLEAR(*extra_storage);
+    return 0;
+}
+
+static void
+obj_extra_data_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    obj_extra_data_clear(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot ObjExtraData_Slots[] = {
+    {Py_tp_getset, obj_extra_data_getset},
+    {Py_tp_dealloc, obj_extra_data_dealloc},
+    {Py_tp_traverse, obj_extra_data_traverse},
+    {Py_tp_clear, obj_extra_data_clear},
+    {Py_tp_new, obj_extra_data_new},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec ObjExtraData_TypeSpec = {
+    .name = "_testcapi.ObjExtraData",
+    .basicsize = sizeof(ObjExtraData),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .slots = ObjExtraData_Slots,
+};
+
+struct atexit_data {
+    int called;
+};
+
+static void
+callback(void *data)
+{
+    ((struct atexit_data *)data)->called += 1;
+}
+
+static PyObject *
+test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *oldts = PyThreadState_Swap(NULL);
+    PyThreadState *tstate = Py_NewInterpreter();
+
+    struct atexit_data data = {0};
+    int res = _Py_AtExit(tstate->interp, callback, (void *)&data);
+    Py_EndInterpreter(tstate);
+    PyThreadState_Swap(oldts);
+    if (res < 0) {
+        return NULL;
+    }
+    if (data.called == 0) {
+        PyErr_SetString(PyExc_RuntimeError, "atexit callback not called");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
 
 static PyMethodDef TestMethods[] = {
@@ -3428,6 +3642,7 @@ static PyMethodDef TestMethods[] = {
     {"test_py_is_macros", test_py_is_macros, METH_NOARGS},
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"type_get_version", type_get_version, METH_O, PyDoc_STR("type->tp_version_tag")},
+    {"type_assign_version", type_assign_version, METH_O, PyDoc_STR("PyUnstable_Type_AssignVersionTag")},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"frame_getlocals", frame_getlocals, METH_O, NULL},
     {"frame_getglobals", frame_getglobals, METH_O, NULL},
@@ -3452,6 +3667,9 @@ static PyMethodDef TestMethods[] = {
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
+    {"test_gc_visit_objects_basic", test_gc_visit_objects_basic, METH_NOARGS, NULL},
+    {"test_gc_visit_objects_exit_early", test_gc_visit_objects_exit_early, METH_NOARGS, NULL},
+    {"test_atexit", test_atexit, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3998,6 +4216,17 @@ PyInit__testcapi(void)
     Py_INCREF(&MethStatic_Type);
     PyModule_AddObject(m, "MethStatic", (PyObject *)&MethStatic_Type);
 
+    PyObject *ObjExtraData_Type = PyType_FromModuleAndSpec(
+        m, &ObjExtraData_TypeSpec, NULL);
+    if (ObjExtraData_Type == 0) {
+        return NULL;
+    }
+    int ret = PyModule_AddType(m, (PyTypeObject*)ObjExtraData_Type);
+    Py_DECREF(&ObjExtraData_Type);
+    if (ret < 0) {
+        return NULL;
+    }
+
     PyModule_AddObject(m, "CHAR_MAX", PyLong_FromLong(CHAR_MAX));
     PyModule_AddObject(m, "CHAR_MIN", PyLong_FromLong(CHAR_MIN));
     PyModule_AddObject(m, "UCHAR_MAX", PyLong_FromLong(UCHAR_MAX));
@@ -4079,6 +4308,12 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Code(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_PyOS(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Immortal(m) < 0) {
         return NULL;
     }
 

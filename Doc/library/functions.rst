@@ -147,7 +147,7 @@ are always available.  They are listed here in alphabetical order.
    or omitted, this returns ``False``; otherwise, it returns ``True``.  The
    :class:`bool` class is a subclass of :class:`int` (see :ref:`typesnumeric`).
    It cannot be subclassed further.  Its only instances are ``False`` and
-   ``True`` (see :ref:`bltin-boolean-values`).
+   ``True`` (see :ref:`typebool`).
 
    .. index:: pair: Boolean; type
 
@@ -1444,8 +1444,9 @@ are always available.  They are listed here in alphabetical order.
    arguments are converted to text strings, :func:`print` cannot be used with
    binary mode file objects.  For these, use ``file.write(...)`` instead.
 
-   Whether the output is buffered is usually determined by *file*, but if the
-   *flush* keyword argument is true, the stream is forcibly flushed.
+   Output buffering is usually determined by *file*.
+   However, if *flush* is true, the stream is forcibly flushed.
+
 
    .. versionchanged:: 3.3
       Added the *flush* keyword argument.
@@ -1680,7 +1681,7 @@ are always available.  They are listed here in alphabetical order.
 
       class C:
           @staticmethod
-          def f(arg1, arg2, ...): ...
+          def f(arg1, arg2, argN): ...
 
    The ``@staticmethod`` form is a function :term:`decorator` -- see
    :ref:`function` for details.
@@ -1986,7 +1987,7 @@ are always available.  They are listed here in alphabetical order.
 
    .. index::
       statement: import
-      module: imp
+      module: builtins
 
    .. note::
 

@@ -22,7 +22,7 @@ static PyObject *pytype_fromspec_meta(PyObject* self, PyObject *meta)
         "_testcapi.HeapCTypeViaMetaclass",
         sizeof(PyObject),
         0,
-        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
         HeapCTypeViaMetaclass_slots
     };
 
@@ -174,7 +174,7 @@ test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(
         }
         if (res == 0) {
             PyErr_SetString(PyExc_AssertionError,
-                    "TypeError did not inlclude expected message.");
+                    "TypeError did not include expected message.");
             goto finally;
         }
         result = Py_NewRef(Py_None);
@@ -265,7 +265,7 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     /* deallocate the spec (and all contents) */
 
-    // (Explicitly ovewrite memory before freeing,
+    // (Explicitly overwrite memory before freeing,
     // so bugs show themselves even without the debug allocator's help.)
     memset(spec, 0xdd, sizeof(PyType_Spec));
     PyMem_Del(spec);
@@ -385,6 +385,19 @@ make_immutable_type_with_base(PyObject *self, PyObject *base)
     return PyType_FromSpecWithBases(&ImmutableSubclass_spec, base);
 }
 
+static PyObject *
+make_type_with_base(PyObject *self, PyObject *base)
+{
+    assert(PyType_Check(base));
+    PyType_Spec ImmutableSubclass_spec = {
+        .name = "_testcapi.Subclass",
+        .basicsize = (int)((PyTypeObject*)base)->tp_basicsize,
+        .slots = empty_type_slots,
+        .flags = Py_TPFLAGS_DEFAULT,
+    };
+    return PyType_FromSpecWithBases(&ImmutableSubclass_spec, base);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
@@ -397,6 +410,7 @@ static PyMethodDef TestMethods[] = {
      test_from_spec_invalid_metatype_inheritance,
      METH_NOARGS},
     {"make_immutable_type_with_base", make_immutable_type_with_base, METH_O},
+    {"make_type_with_base", make_type_with_base, METH_O},
     {NULL},
 };
 

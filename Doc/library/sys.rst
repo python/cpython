@@ -220,6 +220,10 @@ always available.
 
    .. audit-event:: sys._current_exceptions "" sys._current_exceptions
 
+   .. versionchanged:: 3.12
+      Each value in the dictionary is now a single exception instance, rather
+      than a 3-tuple as returned from ``sys.exc_info()``.
+
 .. function:: breakpointhook()
 
    This hook function is called by built-in :func:`breakpoint`.  By default,
@@ -666,6 +670,13 @@ always available.
    .. versionadded:: 3.4
 
 
+.. function:: getunicodeinternedsize()
+
+   Return the number of unicode objects that have been interned.
+
+   .. versionadded:: 3.12
+
+
 .. function:: getandroidapilevel()
 
    Return the build time API version of Android as an integer.
@@ -697,7 +708,7 @@ always available.
    the encoding used with the :term:`filesystem error handler <filesystem
    encoding and error handler>` to convert between Unicode filenames and bytes
    filenames. The filesystem error handler is returned from
-   :func:`getfilesystemencoding`.
+   :func:`getfilesystemencodeerrors`.
 
    For best compatibility, str should be used for filenames in all cases,
    although representing filenames as bytes is also supported. Functions
@@ -781,7 +792,7 @@ always available.
    additional garbage collector overhead if the object is managed by the garbage
    collector.
 
-   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504>`_
+   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504/>`_
    for an example of using :func:`getsizeof` recursively to find the size of
    containers and all their contents.
 
@@ -1102,22 +1113,25 @@ always available.
 
    .. versionadded:: 3.5
 
+.. data:: last_exc
+
+   This variable is not always defined; it is set to the exception instance
+   when an exception is not handled and the interpreter prints an error message
+   and a stack traceback.  Its intended use is to allow an interactive user to
+   import a debugger module and engage in post-mortem debugging without having
+   to re-execute the command that caused the error.  (Typical use is
+   ``import pdb; pdb.pm()`` to enter the post-mortem debugger; see :mod:`pdb`
+   module for more information.)
+
+   .. versionadded:: 3.12
 
 .. data:: last_type
           last_value
           last_traceback
 
-   These three variables are not always defined; they are set when an exception is
-   not handled and the interpreter prints an error message and a stack traceback.
-   Their intended use is to allow an interactive user to import a debugger module
-   and engage in post-mortem debugging without having to re-execute the command
-   that caused the error.  (Typical use is ``import pdb; pdb.pm()`` to enter the
-   post-mortem debugger; see :mod:`pdb` module for
-   more information.)
-
-   The meaning of the variables is the same as that of the return values from
-   :func:`exc_info` above.
-
+   These three variables are deprecated; use :data:`sys.last_exc` instead.
+   They hold the legacy representation of ``sys.last_exc``, as returned
+   from :func:`exc_info` above.
 
 .. data:: maxsize
 
@@ -1163,7 +1177,7 @@ always available.
 
         :term:`Module specs <module spec>` were introduced in Python 3.4, by
         :pep:`451`. Earlier versions of Python looked for a method called
-        :meth:`~importlib.abc.MetaPathFinder.find_module`.
+        :meth:`!find_module`.
         This is still called as a fallback if a :data:`meta_path` entry doesn't
         have a :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
 
@@ -1238,10 +1252,6 @@ always available.
     stored.
 
     Originally specified in :pep:`302`.
-
-    .. versionchanged:: 3.3
-       ``None`` is stored instead of :class:`imp.NullImporter` when no finder
-       is found.
 
 
 .. data:: platform
@@ -1323,7 +1333,7 @@ always available.
 
    A string giving the site-specific directory prefix where the platform
    independent Python files are installed; on Unix, the default is
-   ``'/usr/local'``.  This can be set at build time with the ``--prefix``
+   :file:`/usr/local`. This can be set at build time with the :option:`--prefix`
    argument to the :program:`configure` script.  See
    :ref:`installation_paths` for derived paths.
 

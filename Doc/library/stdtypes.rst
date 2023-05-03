@@ -335,11 +335,10 @@ Notes:
       single: ceil() (in module math)
       single: trunc() (in module math)
       pair: numeric; conversions
-      pair: C; language
 
-   Conversion from floating point to integer may round or truncate
-   as in C; see functions :func:`math.floor` and :func:`math.ceil` for
-   well-defined conversions.
+   Conversion from :class:`float` to :class:`int` truncates, discarding the
+   fractional part. See functions :func:`math.floor` and :func:`math.ceil` for
+   alternative conversions.
 
 (4)
    float also accepts the strings "nan" and "inf" with an optional prefix "+"
@@ -802,6 +801,39 @@ number, :class:`float`, or :class:`complex`::
        if hash_value == -1:
            hash_value = -2
        return hash_value
+
+.. _typebool:
+
+Boolean Type - :class:`bool`
+============================
+
+Booleans represent truth values. The :class:`bool` type has exactly two
+constant instances: ``True`` and ``False``.
+
+.. index::
+   single: False
+   single: True
+   pair: Boolean; values
+
+The built-in function :func:`bool`  converts any value to a boolean, if the
+value can be interpreted as a truth value (see section :ref:`truth` above).
+
+For logical operations, use the :ref:`boolean operators <boolean>` ``and``,
+``or`` and ``not``.
+When applying the bitwise operators ``&``, ``|``, ``^`` to two booleans, they
+return a bool equivalent to the logical operations "and", "or", "xor". However,
+the logical operators ``and``, ``or`` and ``!=`` should be preferred
+over ``&``, ``|`` and ``^``.
+
+.. deprecated:: 3.12
+
+   The use of the bitwise inversion operator ``~`` is deprecated and will
+   raise an error in Python 3.14.
+
+:class:`bool` is a subclass of :class:`int` (see :ref:`typesnumeric`). In
+many numeric contexts, ``False`` and ``True`` behave like the integers 0 and 1, respectively.
+However, relying on this is discouraged; explicitly convert using :func:`int`
+instead.
 
 .. _typeiter:
 
@@ -1606,8 +1638,8 @@ expression support in the :mod:`re` module).
    converts it to ``"ss"``.
 
    The casefolding algorithm is
-   `described in section 3.13 of the Unicode Standard
-   <http://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G53253>`__.
+   `described in section 3.13 'Default Case Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
 
    .. versionadded:: 3.3
 
@@ -1769,8 +1801,9 @@ expression support in the :mod:`re` module).
    one character, ``False`` otherwise.  Alphabetic characters are those characters defined
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
-   from the `Alphabetic property defined in the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G91002>`_.
+   from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
+   Ideographic' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf>`_.
 
 
 .. method:: str.isascii()
@@ -1905,8 +1938,8 @@ expression support in the :mod:`re` module).
    lowercase.
 
    The lowercasing algorithm used is
-   `described in section 3.13 of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
+   `described in section 3.13 'Default Case Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
 
 
 .. method:: str.lstrip([chars])
@@ -2251,8 +2284,8 @@ expression support in the :mod:`re` module).
    titlecase).
 
    The uppercasing algorithm used is
-   `described in section 3.13 of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#G34078>`__.
+   `described in section 3.13 'Default Case Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
 
 
 .. method:: str.zfill(width)
@@ -3715,12 +3748,15 @@ copying.
    types such as :class:`bytes` and :class:`bytearray`, an element is a single
    byte, but other types such as :class:`array.array` may have bigger elements.
 
-   ``len(view)`` is equal to the length of :class:`~memoryview.tolist`.
-   If ``view.ndim = 0``, the length is 1. If ``view.ndim = 1``, the length
-   is equal to the number of elements in the view. For higher dimensions,
-   the length is equal to the length of the nested list representation of
-   the view. The :class:`~memoryview.itemsize` attribute will give you the
-   number of bytes in a single element.
+   ``len(view)`` is equal to the length of :class:`~memoryview.tolist`, which
+   is the nested list representation of the view. If ``view.ndim = 1``,
+   this is equal to the number of elements in the view.
+
+   .. versionchanged:: 3.12
+      If ``view.ndim == 0``, ``len(view)`` now raises :exc:`TypeError` instead of returning 1.
+
+   The :class:`~memoryview.itemsize` attribute will give you the number of
+   bytes in a single element.
 
    A :class:`memoryview` supports slicing and indexing to expose its data.
    One-dimensional slicing will result in a subview::
@@ -5389,27 +5425,6 @@ information.  There is exactly one ``NotImplemented`` object.
 ``type(NotImplemented)()`` produces the singleton instance.
 
 It is written as ``NotImplemented``.
-
-
-.. _bltin-boolean-values:
-
-Boolean Values
---------------
-
-Boolean values are the two constant objects ``False`` and ``True``.  They are
-used to represent truth values (although other values can also be considered
-false or true).  In numeric contexts (for example when used as the argument to
-an arithmetic operator), they behave like the integers 0 and 1, respectively.
-The built-in function :func:`bool` can be used to convert any value to a
-Boolean, if the value can be interpreted as a truth value (see section
-:ref:`truth` above).
-
-.. index::
-   single: False
-   single: True
-   pair: Boolean; values
-
-They are written as ``False`` and ``True``, respectively.
 
 
 .. _typesinternal:
