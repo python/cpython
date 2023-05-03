@@ -408,6 +408,14 @@ os.path
 * Add :func:`os.path.splitroot` to split a path into a triad
   ``(drive, root, tail)``. (Contributed by Barney Gale in :gh:`101000`.)
 
+pdb
+---
+
+* Add convenience variables to hold values temporarily for debug session
+  and provide quick access to values like the current frame or the return
+  value.
+  (Contributed by Tian Gao in :gh:`103693`.)
+
 shutil
 ------
 
