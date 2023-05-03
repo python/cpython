@@ -2097,8 +2097,8 @@ Deprecations in the Python API
   :meth:`importlib.abc.SourceLoader.exec_module`) and let the import system
   take care of the rest; and
   :meth:`!importlib.abc.Loader.module_repr`,
-  :meth:`importlib.util.module_for_loader`, :meth:`importlib.util.set_loader`,
-  and :meth:`importlib.util.set_package` are no longer needed because their
+  :meth:`!importlib.util.module_for_loader`, :meth:`!importlib.util.set_loader`,
+  and :meth:`!importlib.util.set_package` are no longer needed because their
   functions are now handled automatically by the import system.
 
 * The :mod:`!imp` module is pending deprecation. To keep compatibility with
@@ -2277,7 +2277,7 @@ Changes in the Python API
   in a backwards-compatible fashion, use e.g.
   ``getattr(module, '__loader__', None) is not None``.  (:issue:`17115`.)
 
-* :meth:`importlib.util.module_for_loader` now sets ``__loader__`` and
+* :meth:`!importlib.util.module_for_loader` now sets ``__loader__`` and
   ``__package__`` unconditionally to properly support reloading. If this is not
   desired then you will need to set these attributes manually. You can use
   :func:`importlib.util.module_to_load` for module management.
