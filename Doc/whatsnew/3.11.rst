@@ -1877,7 +1877,7 @@ C APIs pending removal are
 * The :class:`typing.re <typing.Pattern>` namespace
 * :func:`!cgi.log`
 * :func:`!importlib.find_loader`
-* :meth:`importlib.abc.Loader.module_repr`
+* :meth:`!importlib.abc.Loader.module_repr`
 * :meth:`!importlib.abc.MetaPathFinder.find_module`
 * :meth:`!importlib.abc.PathEntryFinder.find_loader`
 * :meth:`!importlib.abc.PathEntryFinder.find_module`
