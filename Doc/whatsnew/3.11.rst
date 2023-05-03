@@ -1872,28 +1872,28 @@ C APIs pending removal are
 * The :mod:`asynchat` module
 * The :mod:`asyncore` module
 * The :ref:`entire distutils package <distutils-deprecated>`
-* The :mod:`imp` module
+* The :mod:`!imp` module
 * The :class:`typing.io <typing.IO>` namespace
 * The :class:`typing.re <typing.Pattern>` namespace
 * :func:`!cgi.log`
-* :func:`importlib.find_loader`
-* :meth:`importlib.abc.Loader.module_repr`
-* :meth:`importlib.abc.MetaPathFinder.find_module`
-* :meth:`importlib.abc.PathEntryFinder.find_loader`
-* :meth:`importlib.abc.PathEntryFinder.find_module`
+* :func:`!importlib.find_loader`
+* :meth:`!importlib.abc.Loader.module_repr`
+* :meth:`!importlib.abc.MetaPathFinder.find_module`
+* :meth:`!importlib.abc.PathEntryFinder.find_loader`
+* :meth:`!importlib.abc.PathEntryFinder.find_module`
 * :meth:`!importlib.machinery.BuiltinImporter.find_module`
 * :meth:`!importlib.machinery.BuiltinLoader.module_repr`
 * :meth:`!importlib.machinery.FileFinder.find_loader`
 * :meth:`!importlib.machinery.FileFinder.find_module`
 * :meth:`!importlib.machinery.FrozenImporter.find_module`
 * :meth:`!importlib.machinery.FrozenLoader.module_repr`
-* :meth:`importlib.machinery.PathFinder.find_module`
+* :meth:`!importlib.machinery.PathFinder.find_module`
 * :meth:`!importlib.machinery.WindowsRegistryFinder.find_module`
-* :func:`importlib.util.module_for_loader`
+* :func:`!importlib.util.module_for_loader`
 * :func:`!importlib.util.set_loader_wrapper`
 * :func:`!importlib.util.set_package_wrapper`
-* :class:`pkgutil.ImpImporter`
-* :class:`pkgutil.ImpLoader`
+* :class:`!pkgutil.ImpImporter`
+* :class:`!pkgutil.ImpLoader`
 * :meth:`pathlib.Path.link_to`
 * :func:`!sqlite3.enable_shared_cache`
 * :func:`!sqlite3.OptimizedUnicode`

@@ -1477,25 +1477,25 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
             }
         }
     }
-    uint8_t new_line_tools = new_events.tools[PY_MONITORING_EVENT_LINE];
+
+    // GH-103845: We need to remove both the line and instruction instrumentation before
+    // adding new ones, otherwise we may remove the newly added instrumentation.
+
     uint8_t removed_line_tools = removed_events.tools[PY_MONITORING_EVENT_LINE];
-    if (new_line_tools | removed_line_tools) {
+    uint8_t removed_per_instruction_tools = removed_events.tools[PY_MONITORING_EVENT_INSTRUCTION];
+
+    if (removed_line_tools) {
         _PyCoLineInstrumentationData *line_data = code->_co_monitoring->lines;
         for (int i = code->_co_firsttraceable; i < code_len;) {
             if (line_data[i].original_opcode) {
                 if (removed_line_tools) {
                     remove_line_tools(code, i, removed_line_tools);
                 }
-                if (new_line_tools) {
-                    add_line_tools(code, i, new_line_tools);
-                }
             }
             i += instruction_length(code, i);
         }
     }
-    uint8_t new_per_instruction_tools = new_events.tools[PY_MONITORING_EVENT_INSTRUCTION];
-    uint8_t removed_per_instruction_tools = removed_events.tools[PY_MONITORING_EVENT_INSTRUCTION];
-    if (new_per_instruction_tools | removed_per_instruction_tools) {
+    if (removed_per_instruction_tools) {
         for (int i = code->_co_firsttraceable; i < code_len;) {
             int opcode = _Py_GetBaseOpcode(code, i);
             if (opcode == RESUME || opcode == END_FOR) {
@@ -1504,6 +1504,31 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
             }
             if (removed_per_instruction_tools) {
                 remove_per_instruction_tools(code, i, removed_per_instruction_tools);
+            }
+            i += instruction_length(code, i);
+        }
+    }
+
+    uint8_t new_line_tools = new_events.tools[PY_MONITORING_EVENT_LINE];
+    uint8_t new_per_instruction_tools = new_events.tools[PY_MONITORING_EVENT_INSTRUCTION];
+
+    if (new_line_tools) {
+        _PyCoLineInstrumentationData *line_data = code->_co_monitoring->lines;
+        for (int i = code->_co_firsttraceable; i < code_len;) {
+            if (line_data[i].original_opcode) {
+                if (new_line_tools) {
+                    add_line_tools(code, i, new_line_tools);
+                }
+            }
+            i += instruction_length(code, i);
+        }
+    }
+    if (new_per_instruction_tools) {
+        for (int i = code->_co_firsttraceable; i < code_len;) {
+            int opcode = _Py_GetBaseOpcode(code, i);
+            if (opcode == RESUME || opcode == END_FOR) {
+                i += instruction_length(code, i);
+                continue;
             }
             if (new_per_instruction_tools) {
                 add_per_instruction_tools(code, i, new_per_instruction_tools);

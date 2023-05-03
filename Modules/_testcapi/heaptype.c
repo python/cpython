@@ -22,7 +22,7 @@ static PyObject *pytype_fromspec_meta(PyObject* self, PyObject *meta)
         "_testcapi.HeapCTypeViaMetaclass",
         sizeof(PyObject),
         0,
-        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
         HeapCTypeViaMetaclass_slots
     };
 
@@ -371,7 +371,6 @@ create_type_from_repeated_slots(PyObject *self, PyObject *variant_obj)
 }
 
 
-
 static PyObject *
 make_immutable_type_with_base(PyObject *self, PyObject *base)
 {
@@ -386,6 +385,20 @@ make_immutable_type_with_base(PyObject *self, PyObject *base)
 }
 
 static PyObject *
+make_type_with_base(PyObject *self, PyObject *base)
+{
+    assert(PyType_Check(base));
+    PyType_Spec ImmutableSubclass_spec = {
+        .name = "_testcapi.Subclass",
+        .basicsize = (int)((PyTypeObject*)base)->tp_basicsize,
+        .slots = empty_type_slots,
+        .flags = Py_TPFLAGS_DEFAULT,
+    };
+    return PyType_FromSpecWithBases(&ImmutableSubclass_spec, base);
+}
+
+
+static PyObject *
 pyobject_getitemdata(PyObject *self, PyObject *o)
 {
     void *pointer = PyObject_GetItemData(o);
@@ -394,6 +407,7 @@ pyobject_getitemdata(PyObject *self, PyObject *o)
     }
     return PyLong_FromVoidPtr(pointer);
 }
+
 
 static PyMethodDef TestMethods[] = {
     {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
@@ -406,6 +420,7 @@ static PyMethodDef TestMethods[] = {
      test_from_spec_invalid_metatype_inheritance,
      METH_NOARGS},
     {"make_immutable_type_with_base", make_immutable_type_with_base, METH_O},
+    {"make_type_with_base", make_type_with_base, METH_O},
     {"pyobject_getitemdata", pyobject_getitemdata, METH_O},
     {NULL},
 };

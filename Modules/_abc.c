@@ -7,6 +7,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyType_GetSubclasses()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_typeobject.h"    // _PyType_GetMRO()
 #include "clinic/_abc.c.h"
 
 /*[clinic input]

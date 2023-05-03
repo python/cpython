@@ -918,13 +918,24 @@ PyObject_GetAttrString(PyObject *v, const char *name)
 int
 PyObject_HasAttrString(PyObject *v, const char *name)
 {
-    PyObject *res = PyObject_GetAttrString(v, name);
-    if (res != NULL) {
-        Py_DECREF(res);
-        return 1;
+    if (Py_TYPE(v)->tp_getattr != NULL) {
+        PyObject *res = (*Py_TYPE(v)->tp_getattr)(v, (char*)name);
+        if (res != NULL) {
+            Py_DECREF(res);
+            return 1;
+        }
+        PyErr_Clear();
+        return 0;
     }
-    PyErr_Clear();
-    return 0;
+
+    PyObject *attr_name = PyUnicode_FromString(name);
+    if (attr_name == NULL) {
+        PyErr_Clear();
+        return 0;
+    }
+    int ok = PyObject_HasAttr(v, attr_name);
+    Py_DECREF(attr_name);
+    return ok;
 }
 
 int

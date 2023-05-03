@@ -81,9 +81,9 @@ class _BasePurePathTest(object):
                    r"where __fspath__ returns a str, not 'bytes'")
         with self.assertRaisesRegex(TypeError, message):
             P(b'a')
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, message):
             P(b'a', 'b')
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, message):
             P('a', b'b')
         with self.assertRaises(TypeError):
             P('a').joinpath(b'b')
@@ -1700,6 +1700,8 @@ class _BasePathTest(object):
             self.assertIs(True, (p / 'linkB').exists())
             self.assertIs(True, (p / 'linkB' / 'fileB').exists())
             self.assertIs(False, (p / 'linkA' / 'bah').exists())
+            self.assertIs(False, (p / 'brokenLink').exists())
+            self.assertIs(True, (p / 'brokenLink').exists(follow_symlinks=False))
         self.assertIs(False, (p / 'foo').exists())
         self.assertIs(False, P('/xyzzy').exists())
         self.assertIs(False, P(BASE + '\udfff').exists())
@@ -1806,6 +1808,8 @@ class _BasePathTest(object):
             _check(p.glob("*/fileB"), ['dirB/fileB'])
         else:
             _check(p.glob("*/fileB"), ['dirB/fileB', 'linkB/fileB'])
+        if os_helper.can_symlink():
+            _check(p.glob("brokenLink"), ['brokenLink'])
 
         if not os_helper.can_symlink():
             _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE"])
@@ -1892,8 +1896,13 @@ class _BasePathTest(object):
         P = self.cls
         p = P(BASE)
         self.assertEqual(set(p.glob("..")), { P(BASE, "..") })
+        self.assertEqual(set(p.glob("../..")), { P(BASE, "..", "..") })
+        self.assertEqual(set(p.glob("dirA/..")), { P(BASE, "dirA", "..") })
         self.assertEqual(set(p.glob("dirA/../file*")), { P(BASE, "dirA/../fileA") })
+        self.assertEqual(set(p.glob("dirA/../file*/..")), set())
         self.assertEqual(set(p.glob("../xyzzy")), set())
+        self.assertEqual(set(p.glob("xyzzy/..")), set())
+        self.assertEqual(set(p.glob("/".join([".."] * 50))), { P(BASE, *[".."] * 50)})
 
     @os_helper.skip_unless_symlink
     def test_glob_permissions(self):
