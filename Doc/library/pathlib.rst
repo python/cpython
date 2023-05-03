@@ -755,7 +755,7 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.10
       The *follow_symlinks* parameter was added.
 
-.. method:: Path.exists(follow_symlinks=True)
+.. method:: Path.exists(*, follow_symlinks=True)
 
    Return ``True`` if the path points to an existing file or directory.
 
