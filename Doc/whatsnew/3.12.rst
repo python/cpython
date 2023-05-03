@@ -995,7 +995,7 @@ Removed
   * ``importlib.abc.Finder``, ``pkg.ImpImporter``, and ``pkg.ImpLoader`` have
     been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
 
-  * The ``imp`` module has been removed.  (Contributed by Barry Warsaw in
+  * The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
     :gh:`98040`.)
 
 * Removed the ``suspicious`` rule from the documentation Makefile, and
