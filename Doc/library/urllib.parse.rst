@@ -325,7 +325,7 @@ or on combining URL components into a URL string.
    decomposed before parsing, no error will be raised.
 
    Following some of the `WHATWG spec`_ that updates RFC 3986, leading C0
-   control control and space characters are stripped from the URL. ``\n``,
+   control and space characters are stripped from the URL. ``\n``,
    ``\r`` and tab ``\t`` characters are removed from the URL at any position.
 
    .. versionchanged:: 3.6
