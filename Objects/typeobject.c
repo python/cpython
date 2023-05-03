@@ -167,6 +167,49 @@ static_builtin_state_clear(PyInterpreterState *interp, PyTypeObject *self)
 /* end static builtin helpers */
 
 
+static inline void
+start_readying(PyTypeObject *type)
+{
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        static_builtin_state *state = static_builtin_state_get(interp, type);
+        assert(state != NULL);
+        assert(!state->readying);
+        state->readying = 1;
+        return;
+    }
+    assert((type->tp_flags & Py_TPFLAGS_READYING) == 0);
+    type->tp_flags |= Py_TPFLAGS_READYING;
+}
+
+static inline void
+stop_readying(PyTypeObject *type)
+{
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        static_builtin_state *state = static_builtin_state_get(interp, type);
+        assert(state != NULL);
+        assert(state->readying);
+        state->readying = 0;
+        return;
+    }
+    assert(type->tp_flags & Py_TPFLAGS_READYING);
+    type->tp_flags &= ~Py_TPFLAGS_READYING;
+}
+
+static inline int
+is_readying(PyTypeObject *type)
+{
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        static_builtin_state *state = static_builtin_state_get(interp, type);
+        assert(state != NULL);
+        return state->readying;
+    }
+    return (type->tp_flags & Py_TPFLAGS_READYING) != 0;
+}
+
+
 /* accessors for objects stored on PyTypeObject */
 
 static inline PyObject *
@@ -471,7 +514,7 @@ _PyType_CheckConsistency(PyTypeObject *type)
     CHECK(Py_REFCNT(type) >= 1);
     CHECK(PyType_Check(type));
 
-    CHECK(!(type->tp_flags & Py_TPFLAGS_READYING));
+    CHECK(!is_readying(type));
     CHECK(lookup_tp_dict(type) != NULL);
 
     if (type->tp_flags & Py_TPFLAGS_HAVE_GC) {
@@ -4419,7 +4462,7 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
     /* Look in tp_dict of types in MRO */
     PyObject *mro = lookup_tp_mro(type);
     if (mro == NULL) {
-        if ((type->tp_flags & Py_TPFLAGS_READYING) == 0) {
+        if (!is_readying(type)) {
             if (PyType_Ready(type) < 0) {
                 *error = -1;
                 return NULL;
@@ -7181,9 +7224,8 @@ type_ready_post_checks(PyTypeObject *type)
 static int
 type_ready(PyTypeObject *type, int rerunbuiltin)
 {
-    _PyObject_ASSERT((PyObject *)type,
-                     (type->tp_flags & Py_TPFLAGS_READYING) == 0);
-    type->tp_flags |= Py_TPFLAGS_READYING;
+    _PyObject_ASSERT((PyObject *)type, !is_readying(type));
+    start_readying(type);
 
     if (type_ready_pre_checks(type) < 0) {
         goto error;
@@ -7238,13 +7280,14 @@ type_ready(PyTypeObject *type, int rerunbuiltin)
     }
 
     /* All done -- set the ready flag */
-    type->tp_flags = (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
+    type->tp_flags = type->tp_flags | Py_TPFLAGS_READY;
+    stop_readying(type);
 
     assert(_PyType_CheckConsistency(type));
     return 0;
 
 error:
-    type->tp_flags &= ~Py_TPFLAGS_READYING;
+    stop_readying(type);
     return -1;
 }
 
