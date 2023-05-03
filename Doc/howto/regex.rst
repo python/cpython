@@ -365,14 +365,18 @@ for a complete listing.
 | ``search()``     | Scan through a string, looking for any        |
 |                  | location where this RE matches.               |
 +------------------+-----------------------------------------------+
+| ``fullmatch()``  | Determine if the RE matches the entire string |
+|                  | exactly.                                      |
++------------------+-----------------------------------------------+
 | ``findall()``    | Find all substrings where the RE matches, and |
 |                  | returns them as a list.                       |
 +------------------+-----------------------------------------------+
-| ``finditer()``   | Find all substrings where the RE matches, and |
-|                  | returns them as an :term:`iterator`.          |
+| ``finditer()``   | Find all matches for the RE, and returns      |
+|                  | an :term:`iterator` of                        |
+|                  | :ref:`match objects <match-objects>`.         |
 +------------------+-----------------------------------------------+
 
-:meth:`~re.Pattern.match` and :meth:`~re.Pattern.search` return ``None`` if no match can be found.  If
+:meth:`~re.Pattern.match`, :meth:`~re.Pattern.search`, and :meth:`~re.Pattern.fullmatch` return ``None`` if no match can be found.  If
 they're successful, a :ref:`match object <match-objects>` instance is returned,
 containing information about the match: where it starts and ends, the substring
 it matched, and more.
@@ -449,6 +453,16 @@ case. ::
    >>> m.span()
    (4, 11)
 
+The :meth:`~re.Pattern.fullmatch` method checks if the RE matches the entire
+string exactly::
+
+   >>> p = re.compile('[a-z]+')
+   >>> p.search(' words ')
+   <re.Match object; span=(1, 6), match='words'>
+   >>> p.fullmatch(' textual ')  # Fails to match and returns None
+   >>> p.fullmatch('textual')
+   <re.Match object; span=(0, 7), match='textual'>
+
 In actual programs, the most common style is to store the
 :ref:`match object <match-objects>` in a variable, and then check if it was
 ``None``.  This usually looks like::
@@ -493,7 +507,7 @@ Module-Level Functions
 
 You don't have to create a pattern object and call its methods; the
 :mod:`re` module also provides top-level functions called :func:`~re.match`,
-:func:`~re.search`, :func:`~re.findall`, :func:`~re.sub`, and so forth.  These functions
+:func:`~re.search`, :func:`~re.fullmatch`, :func:`~re.findall`, :func:`~re.sub`, and so forth.  These functions
 take the same arguments as the corresponding pattern method with
 the RE string added as the first argument, and still return either ``None`` or a
 :ref:`match object <match-objects>` instance. ::
