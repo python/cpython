@@ -1097,12 +1097,15 @@ class Path(PurePath):
 
     # Convenience functions for querying the stat results
 
-    def exists(self):
+    def exists(self, *, follow_symlinks=True):
         """
         Whether this path exists.
+
+        This method normally follows symlinks; to check whether a symlink exists,
+        add the argument follow_symlinks=False.
         """
         try:
-            self.stat()
+            self.stat(follow_symlinks=follow_symlinks)
         except OSError as e:
             if not _ignore_error(e):
                 raise
