@@ -227,6 +227,55 @@ dis_bug46724 = """\
        JUMP_FORWARD            -4 (to 0)
 """
 
+def func_w_kwargs(a, b, **c):
+    pass
+
+def wrap_func_w_kwargs():
+    func_w_kwargs(1, 2, c=5)
+
+dis_kw_names = """\
+%3d        RESUME                   0
+
+%3d        LOAD_GLOBAL              1 (NULL + func_w_kwargs)
+           LOAD_CONST               1 (1)
+           LOAD_CONST               2 (2)
+           LOAD_CONST               3 (5)
+           KW_NAMES                 4 (('c',))
+           CALL                     3
+           POP_TOP
+           RETURN_CONST             0 (None)
+""" % (wrap_func_w_kwargs.__code__.co_firstlineno,
+       wrap_func_w_kwargs.__code__.co_firstlineno + 1)
+
+dis_intrinsic_1_2 = """\
+  0        RESUME                   0
+
+  1        LOAD_CONST               0 (0)
+           LOAD_CONST               1 (('*',))
+           IMPORT_NAME              0 (math)
+           CALL_INTRINSIC_1         2 (INTRINSIC_IMPORT_STAR)
+           POP_TOP
+           RETURN_CONST             2 (None)
+"""
+
+dis_intrinsic_1_5 = """\
+  0        RESUME                   0
+
+  1        LOAD_NAME                0 (a)
+           CALL_INTRINSIC_1         5 (INTRINSIC_UNARY_POSITIVE)
+           RETURN_VALUE
+"""
+
+dis_intrinsic_1_6 = """\
+  0        RESUME                   0
+
+  1        BUILD_LIST               0
+           LOAD_NAME                0 (a)
+           LIST_EXTEND              1
+           CALL_INTRINSIC_1         6 (INTRINSIC_LIST_TO_TUPLE)
+           RETURN_VALUE
+"""
+
 _BIG_LINENO_FORMAT = """\
   1        RESUME                   0
 
@@ -479,8 +528,7 @@ dis_asyncwith = """\
            YIELD_VALUE              2
            RESUME                   3
            JUMP_BACKWARD_NO_INTERRUPT     5 (to 14)
-        >> SWAP                     2
-           POP_TOP
+        >> END_SEND
            POP_TOP
 
 %3d        LOAD_CONST               1 (1)
@@ -492,11 +540,11 @@ dis_asyncwith = """\
            CALL                     2
            GET_AWAITABLE            2
            LOAD_CONST               0 (None)
-        >> SEND                     3 (to 62)
+        >> SEND                     3 (to 60)
            YIELD_VALUE              2
            RESUME                   3
-           JUMP_BACKWARD_NO_INTERRUPT     5 (to 52)
-        >> POP_TOP
+           JUMP_BACKWARD_NO_INTERRUPT     5 (to 50)
+        >> END_SEND
            POP_TOP
 
 %3d        LOAD_CONST               2 (2)
@@ -504,21 +552,20 @@ dis_asyncwith = """\
            RETURN_CONST             0 (None)
 
 %3d     >> CLEANUP_THROW
-           JUMP_BACKWARD           26 (to 24)
+           JUMP_BACKWARD           25 (to 24)
         >> CLEANUP_THROW
-           JUMP_BACKWARD            9 (to 62)
+           JUMP_BACKWARD            9 (to 60)
         >> PUSH_EXC_INFO
            WITH_EXCEPT_START
            GET_AWAITABLE            2
            LOAD_CONST               0 (None)
-        >> SEND                     4 (to 100)
+        >> SEND                     4 (to 98)
            YIELD_VALUE              3
            RESUME                   3
-           JUMP_BACKWARD_NO_INTERRUPT     5 (to 88)
+           JUMP_BACKWARD_NO_INTERRUPT     5 (to 86)
         >> CLEANUP_THROW
-        >> SWAP                     2
-           POP_TOP
-           POP_JUMP_IF_TRUE         1 (to 108)
+        >> END_SEND
+           POP_JUMP_IF_TRUE         1 (to 104)
            RERAISE                  2
         >> POP_TOP
            POP_EXCEPT
@@ -531,7 +578,7 @@ dis_asyncwith = """\
         >> COPY                     3
            POP_EXCEPT
            RERAISE                  1
-        >> CALL_INTRINSIC_1         3
+        >> CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
            RERAISE                  1
 ExceptionTable:
 12 rows
@@ -863,6 +910,13 @@ class DisTests(DisTestBase):
         self.maxDiff = None
         got = self.get_disassembly(func, depth=0)
         self.do_disassembly_compare(got, expected, with_offsets)
+        # Add checks for dis.disco
+        if hasattr(func, '__code__'):
+            got_disco = io.StringIO()
+            with contextlib.redirect_stdout(got_disco):
+                dis.disco(func.__code__)
+            self.do_disassembly_compare(got_disco.getvalue(), expected,
+                                        with_offsets)
 
     def test_opmap(self):
         self.assertEqual(dis.opmap["NOP"], 9)
@@ -878,9 +932,9 @@ class DisTests(DisTestBase):
 
     def test_widths(self):
         long_opcodes = set(['JUMP_BACKWARD_NO_INTERRUPT',
-                           ])
+                            'INSTRUMENTED_CALL_FUNCTION_EX'])
         for opcode, opname in enumerate(dis.opname):
-            if opname in long_opcodes:
+            if opname in long_opcodes or opname.startswith("INSTRUMENTED"):
                 continue
             with self.subTest(opname=opname):
                 width = dis._OPNAME_WIDTH
@@ -912,6 +966,20 @@ class DisTests(DisTestBase):
     def test_bug_46724(self):
         # Test that negative operargs are handled properly
         self.do_disassembly_test(bug46724, dis_bug46724)
+
+    def test_kw_names(self):
+        # Test that value is displayed for KW_NAMES
+        self.do_disassembly_test(wrap_func_w_kwargs, dis_kw_names)
+
+    def test_intrinsic_1(self):
+        # Test that argrepr is displayed for CALL_INTRINSIC_1
+        self.do_disassembly_test("from math import *", dis_intrinsic_1_2)
+        self.do_disassembly_test("+a", dis_intrinsic_1_5)
+        self.do_disassembly_test("(*a,)", dis_intrinsic_1_6)
+
+    def test_intrinsic_2(self):
+        self.assertIn("CALL_INTRINSIC_2         1 (INTRINSIC_PREP_RERAISE_STAR)",
+                      self.get_disassembly("try: pass\nexcept* Exception: x"))
 
     def test_big_linenos(self):
         def func(count):
@@ -1068,6 +1136,13 @@ class DisTests(DisTestBase):
         check(dis_nested_2, depth=3)
         check(dis_nested_2, depth=None)
         check(dis_nested_2)
+
+    def test__try_compile_no_context_exc_on_error(self):
+        # see gh-102114
+        try:
+            dis._try_compile(")", "")
+        except Exception as e:
+            self.assertIsNone(e.__context__)
 
     @staticmethod
     def code_quicken(f, times=ADAPTIVE_WARMUP_DELAY):
@@ -1929,6 +2004,14 @@ class TestFinderMethods(unittest.TestCase):
         ]
 
         self.assertEqual(sorted(labels), sorted(jumps))
+
+    def test_findlinestarts(self):
+        def func():
+            pass
+
+        code = func.__code__
+        offsets = [linestart[0] for linestart in dis.findlinestarts(code)]
+        self.assertEqual(offsets, [0, 2])
 
 
 class TestDisTraceback(DisTestBase):

@@ -613,7 +613,7 @@ New and Improved Modules
   framework based on running embedded examples in docstrings and comparing the
   results against the expected output.  PyUnit, contributed by Steve Purcell, is a
   unit testing framework inspired by JUnit, which was in turn an adaptation of
-  Kent Beck's Smalltalk testing framework.  See http://pyunit.sourceforge.net/ for
+  Kent Beck's Smalltalk testing framework.  See https://pyunit.sourceforge.net/ for
   more information about PyUnit.
 
 * The :mod:`difflib` module contains a class, :class:`SequenceMatcher`, which

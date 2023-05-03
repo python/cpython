@@ -1681,7 +1681,7 @@ are always available.  They are listed here in alphabetical order.
 
       class C:
           @staticmethod
-          def f(arg1, arg2, ...): ...
+          def f(arg1, arg2, argN): ...
 
    The ``@staticmethod`` form is a function :term:`decorator` -- see
    :ref:`function` for details.
@@ -1987,7 +1987,6 @@ are always available.  They are listed here in alphabetical order.
 
    .. index::
       statement: import
-      module: imp
 
    .. note::
 
