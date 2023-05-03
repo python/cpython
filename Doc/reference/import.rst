@@ -706,7 +706,7 @@ Here are the exact rules used:
  * Otherwise, just use the module's ``__name__`` in the repr.
 
 .. versionchanged:: 3.12
-   Use of :meth:`module_repr`, having been deprecated since Python 3.4, was
+   Use of :meth:`!module_repr`, having been deprecated since Python 3.4, was
    removed in Python 3.12 and is no longer called during the resolution of a
    module's repr.
 
