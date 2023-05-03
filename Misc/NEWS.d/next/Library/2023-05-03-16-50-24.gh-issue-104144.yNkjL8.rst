@@ -1,0 +1,3 @@
+Optimize asyncio.gather when using eager tasks factory Skip creating
+gathering future and scheduling done callbacks when all futures finish
+without blocking - for up to 3x speedup
