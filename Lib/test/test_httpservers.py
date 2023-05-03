@@ -419,7 +419,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                                      data=os_helper.TESTFN_UNDECODABLE)
 
     def test_undecodable_parameter(self):
-        # sanity check using a valid paramter
+        # sanity check using a valid parameter
         response = self.request(self.base_url + '/?x=123').read()
         self.assertRegex(response, ('listing for %s/\?x=123' % self.base_url).encode('latin1'))
         # now the bogus encoding
