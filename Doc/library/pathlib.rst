@@ -837,7 +837,7 @@ call fails (for example because the path doesn't exist).
       >>> Path('nonexistentfile').exists()
       False
 
-   .. versionchanged:: 3.11
+   .. versionchanged:: 3.12
       The *follow_symlinks* parameter was added.
 
 .. method:: Path.expanduser()
