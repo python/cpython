@@ -710,6 +710,12 @@ Deprecated
   replaced by :data:`calendar.Month.JANUARY` and :data:`calendar.Month.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
+* The bitwise inversion operator (``~``) on bool is deprecated. It will throw an
+  error in Python 3.14. Use ``not`` for logical negation of bools instead.
+  In the rare case that you really need the bitwise inversion of the underlying
+  ``int``, convert to int explicitly with ``~int(x)``. (Contributed by Tim Hoffmann
+  in :gh:`103487`.)
+
 Pending Removal in Python 3.13
 ------------------------------
 
