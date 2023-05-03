@@ -586,6 +586,7 @@ of each one.
    If your system is configured properly and a French locale is selected,
    certain C functions will tell the program that the byte corresponding to
    ``é`` should also be considered a letter.
+
    Setting the :const:`LOCALE` flag when compiling a regular expression will cause
    the resulting compiled object to use these C functions for ``\w``; this is
    slower, but also enables ``\w+`` to match French words as you'd expect.
