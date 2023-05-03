@@ -23,20 +23,6 @@ ModuleInfo = namedtuple('ModuleInfo', 'module_finder name ispkg')
 ModuleInfo.__doc__ = 'A namedtuple with minimal info about a module.'
 
 
-def _get_spec(finder, name):
-    """Return the finder-specific module spec."""
-    # Works with legacy finders.
-    try:
-        find_spec = finder.find_spec
-    except AttributeError:
-        loader = finder.find_module(name)
-        if loader is None:
-            return None
-        return importlib.util.spec_from_loader(name, loader)
-    else:
-        return find_spec(name)
-
-
 def read_code(stream):
     # This helper is needed in order for the PEP 302 emulation to
     # correctly handle compiled files
