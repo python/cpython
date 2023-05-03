@@ -256,8 +256,13 @@ The following functions and structs are used to create
    The metaclass *metaclass* is used to construct the resulting type object.
    When *metaclass* is ``NULL``, the metaclass is derived from *bases*
    (or *Py_tp_base[s]* slots if *bases* is ``NULL``, see below).
-   Note that metaclasses that override
-   :c:member:`~PyTypeObject.tp_new` are not supported.
+
+   Metaclasses that override :c:member:`~PyTypeObject.tp_new` are not
+   supported.
+   (For backwards compatibility, other ``PyType_From*`` functions allow
+   such metaclasses. They ignore ``tp_new``, which may result in incomplete
+   initialization. This is deprecated and in Python 3.14+ such metaclasses will
+   not be supported.)
 
    The *bases* argument can be used to specify base classes; it can either
    be only one class or a tuple of classes.
@@ -305,6 +310,11 @@ The following functions and structs are used to create
       The function now finds and uses a metaclass corresponding to the provided
       base classes.  Previously, only :class:`type` instances were returned.
 
+      The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
+      which may result in incomplete initialization.
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
+      will be no longer allowed.
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
@@ -317,6 +327,12 @@ The following functions and structs are used to create
       The function now finds and uses a metaclass corresponding to the provided
       base classes.  Previously, only :class:`type` instances were returned.
 
+      The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
+      which may result in incomplete initialization.
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
+      will be no longer allowed.
+
 .. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
 
    Equivalent to ``PyType_FromMetaclass(NULL, NULL, spec, NULL)``.
@@ -326,6 +342,12 @@ The following functions and structs are used to create
       The function now finds and uses a metaclass corresponding to the
       base classes provided in *Py_tp_base[s]* slots.
       Previously, only :class:`type` instances were returned.
+
+      The :c:member:`~PyTypeObject.tp_new` of the metaclass is *ignored*.
+      which may result in incomplete initialization.
+      Creating classes whose metaclass overrides
+      :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
+      will be no longer allowed.
 
 .. c:type:: PyType_Spec
 
