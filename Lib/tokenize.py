@@ -652,7 +652,6 @@ def _tokenize_fstring_mode(line, tok_start, encoding):
 
 
 def _tokenize_fstring_middle(middle, start, line_number, line, encoding):
-    n_chars_in_curr_line = 0
     mid_token, mid_expr = '', ''
     curly_brackets = []
     end = (line_number, start)
@@ -664,36 +663,35 @@ def _tokenize_fstring_middle(middle, start, line_number, line, encoding):
                 # escaping the { character
                 if len(middle) >= position + 1 and middle[position + 1] == '{' and not escaping:
                     escaping = True
-                    continue
                 elif mid_token and not escaping:
-                    curly_brackets.append(c)
+                    curly_brackets.append((line_number, start))
                     mid_expr += c
                     yield TokenInfo(
                         type=FSTRING_MIDDLE,
                         string=mid_token,
                         start=end,
-                        end=(line_number, start + n_chars_in_curr_line),
+                        end=(line_number, start),
                         line=line)
                     mid_token = ''
-                    end = line_number, start + n_chars_in_curr_line
+                    end = line_number, start
                 elif escaping:
                     escaping = False
                     mid_token += c
                 else:
-                    curly_brackets.append(c)
+                    curly_brackets.append((line_number, start))
                     mid_expr += c
             case '}':
-                # if no opening { is seen before, this character is taken
-                # as part of the fstring middle token
-                # if there are remaining elements in the curly_brackets queue
-                # then the expression is not done yet
+                # If two }} are seen, then the first one is skipped and the
+                # second is added as part of the fstring_middle token
                 if escaping:
                     escaping = False
                     mid_token += c
                     continue
-                elif len(middle) >= position + 1 and middle[position + 1] == '}':
+                elif len(middle) > position + 1 and middle[position + 1] == '}':
                     escaping = True
+                    start += 1
                     continue
+
                 if curly_brackets:
                     curly_brackets.pop()
                 if mid_expr and not curly_brackets:
@@ -756,11 +754,11 @@ def _tokenize_fstring_middle(middle, start, line_number, line, encoding):
                         type=OP,
                         string='}',
                         start=end,
-                        end=(end[0], end[1] + 1),
+                        end=(line_number, start + 1),
                         line=line)
 
                     mid_expr = ''
-                    end = line_number, start + n_chars_in_curr_line + 1
+                    end = line_number, start + 1
                 else:
                     if mid_expr:
                         mid_expr += c
@@ -772,30 +770,33 @@ def _tokenize_fstring_middle(middle, start, line_number, line, encoding):
                 else:
                     mid_token += c
                 line_number += 1
-                start = 0
-                n_chars_in_curr_line = -1
+                start = -1
             case _:
                 if mid_expr:
                     mid_expr += c
                 else:
                     mid_token += c
-        n_chars_in_curr_line += 1
+        start += 1
 
     # once the end of the expression is reached, release what's left of
     # mid_token
-    start += n_chars_in_curr_line
     if mid_token:
         yield TokenInfo(
             type=FSTRING_MIDDLE,
             string=mid_token,
             start=end,
-            end=(line_number, start),
+            end=(line_number, end[1] + len(mid_token)),
             line=line)
-    end = line_number, start
+    end = line_number, end[1] + len(mid_token)
 
     if curly_brackets:
-        # TODO: handle syntax error of not matching {}
-        pass
+        lnum, pos = curly_brackets.pop()
+        yield TokenInfo(
+            type=ERRORTOKEN,
+            string=line.split('\n')[lnum - 1][pos],
+            start=(lnum, pos),
+            end=(lnum, pos+1),
+            line=line)
 
 
 def _is_fstring(tok):
