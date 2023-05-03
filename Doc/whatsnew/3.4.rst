@@ -2096,7 +2096,7 @@ Deprecations in the Python API
   :meth:`importlib.abc.InspectLoader.exec_module`
   :meth:`importlib.abc.SourceLoader.exec_module`) and let the import system
   take care of the rest; and
-  :meth:`importlib.abc.Loader.module_repr`,
+  :meth:`!importlib.abc.Loader.module_repr`,
   :meth:`importlib.util.module_for_loader`, :meth:`importlib.util.set_loader`,
   and :meth:`importlib.util.set_package` are no longer needed because their
   functions are now handled automatically by the import system.

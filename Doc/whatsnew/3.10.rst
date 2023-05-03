@@ -1612,7 +1612,7 @@ Deprecated
   (superseded by :meth:`~importlib.abc.Finder.find_spec`),
   :meth:`~importlib.abc.Loader.load_module`
   (superseded by :meth:`~importlib.abc.Loader.exec_module`),
-  :meth:`~importlib.abc.Loader.module_repr` (which the import system
+  :meth:`!module_repr` (which the import system
   takes care of for you), the ``__package__`` attribute
   (superseded by ``__spec__.parent``), the ``__loader__`` attribute
   (superseded by ``__spec__.loader``), and the ``__cached__`` attribute
@@ -1693,14 +1693,14 @@ Deprecated
   (Contributed by Brett Cannon in :issue:`43720`.)
 
 * The import system now uses the ``__spec__`` attribute on modules before
-  falling back on :meth:`~importlib.abc.Loader.module_repr` for a module's
+  falling back on :meth:`!module_repr` for a module's
   ``__repr__()`` method. Removal of the use of ``module_repr()`` is scheduled
   for Python 3.12.
   (Contributed by Brett Cannon in :issue:`42137`.)
 
-* :meth:`importlib.abc.Loader.module_repr`,
-  :meth:`importlib.machinery.FrozenLoader.module_repr`, and
-  :meth:`importlib.machinery.BuiltinLoader.module_repr` are deprecated and
+* :meth:`!importlib.abc.Loader.module_repr`,
+  :meth:`!importlib.machinery.FrozenLoader.module_repr`, and
+  :meth:`!importlib.machinery.BuiltinLoader.module_repr` are deprecated and
   slated for removal in Python 3.12.
   (Contributed by Brett Cannon in :issue:`42136`.)
 
