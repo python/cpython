@@ -410,7 +410,7 @@ Object Protocol
 
 .. c:function:: Py_ssize_t PyType_GetTypeDataSize(PyTypeObject *cls)
 
-   Return the size of the memory reserved for *cls*, i.e. the size of the
+   Return the size of the instance memory space reserved for *cls*, i.e. the size of the
    memory :c:func:`PyObject_GetTypeData` returns.
 
    This may be larger than requested using :c:member:`-PyType_Spec.basicsize <PyType_Spec.basicsize>`;

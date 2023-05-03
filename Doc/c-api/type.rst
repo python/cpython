@@ -354,7 +354,7 @@ The following functions and structs are used to create
 
    .. c:member:: int itemsize
 
-      Size of one element of a variable-size type, in bytes
+      Size of one element of a variable-size type, in bytes.
       Used to set :c:member:`PyTypeObject.tp_itemsize`.
       See ``tp_itemsize`` documentation for caveats.
 
