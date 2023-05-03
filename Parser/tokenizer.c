@@ -2301,8 +2301,12 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         /* Get rest of string */
         while (end_quote_size != quote_size) {
             c = tok_nextc(tok);
-            if (tok->done == E_DECODE)
+            if (tok->done == E_ERROR) {
+                return MAKE_TOKEN(ERRORTOKEN);
+            }
+            if (tok->done == E_DECODE) {
                 break;
+            }
             if (c == EOF || (quote_size == 1 && c == '\n')) {
                 assert(tok->multi_line_start != NULL);
                 // shift the tok_state's location into
