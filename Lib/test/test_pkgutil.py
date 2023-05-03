@@ -429,7 +429,7 @@ class ExtendPathTests(unittest.TestCase):
             importers = list(iter_importers(fullname))
             expected_importer = get_importer(pathitem)
             for finder in importers:
-                spec = pkgutil._get_spec(finder, fullname)
+                spec = finder.find_spec(fullname)
                 loader = spec.loader
                 try:
                     loader = loader.loader
@@ -441,7 +441,7 @@ class ExtendPathTests(unittest.TestCase):
                 self.assertEqual(finder, expected_importer)
                 self.assertIsInstance(loader,
                                       importlib.machinery.SourceFileLoader)
-                self.assertIsNone(pkgutil._get_spec(finder, pkgname))
+                self.assertIsNone(finder.find_spec(pkgname))
 
             with self.assertRaises(ImportError):
                 list(iter_importers('invalid.module'))
@@ -534,12 +534,6 @@ class ImportlibMigrationTests(unittest.TestCase):
     # With full PEP 302 support in the standard import machinery, the
     # PEP 302 emulation in this module is in the process of being
     # deprecated in favour of importlib proper
-
-    def check_deprecated(self):
-        return check_warnings(
-            ("This emulation is deprecated and slated for removal in "
-             "Python 3.12; use 'importlib' instead",
-             DeprecationWarning))
 
     def test_get_loader_avoids_emulation(self):
         with check_warnings() as w:

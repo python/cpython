@@ -2077,19 +2077,19 @@ Deprecations in the Python API
 ------------------------------
 
 * As mentioned in :ref:`whatsnew-pep-451`, a number of :mod:`importlib`
-  methods and functions are deprecated: :meth:`importlib.find_loader` is
+  methods and functions are deprecated: :meth:`!importlib.find_loader` is
   replaced by :func:`importlib.util.find_spec`;
-  :meth:`importlib.machinery.PathFinder.find_module` is replaced by
+  :meth:`!importlib.machinery.PathFinder.find_module` is replaced by
   :meth:`importlib.machinery.PathFinder.find_spec`;
-  :meth:`importlib.abc.MetaPathFinder.find_module` is replaced by
+  :meth:`!importlib.abc.MetaPathFinder.find_module` is replaced by
   :meth:`importlib.abc.MetaPathFinder.find_spec`;
-  :meth:`importlib.abc.PathEntryFinder.find_loader` and
-  :meth:`~importlib.abc.PathEntryFinder.find_module` are replaced by
+  :meth:`!importlib.abc.PathEntryFinder.find_loader` and
+  :meth:`!find_module` are replaced by
   :meth:`importlib.abc.PathEntryFinder.find_spec`; all of the ``xxxLoader`` ABC
-  ``load_module`` methods (:meth:`importlib.abc.Loader.load_module`,
-  :meth:`importlib.abc.InspectLoader.load_module`,
-  :meth:`importlib.abc.FileLoader.load_module`,
-  :meth:`importlib.abc.SourceLoader.load_module`) should no longer be
+  ``load_module`` methods (:meth:`!importlib.abc.Loader.load_module`,
+  :meth:`!importlib.abc.InspectLoader.load_module`,
+  :meth:`!importlib.abc.FileLoader.load_module`,
+  :meth:`!importlib.abc.SourceLoader.load_module`) should no longer be
   implemented, instead loaders should implement an
   ``exec_module`` method
   (:meth:`importlib.abc.Loader.exec_module`,
