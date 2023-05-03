@@ -1943,12 +1943,12 @@ legacy_converters = {}
 return_converters = {}
 
 
-def write_file(filename, new_contents):
+def write_file(filename, new_contents, force=False):
     try:
         with open(filename, 'r', encoding="utf-8") as fp:
             old_contents = fp.read()
 
-        if old_contents == new_contents:
+        if old_contents == new_contents and not force:
             # no change: avoid modifying the file modification time
             return
     except FileNotFoundError:
@@ -2112,6 +2112,8 @@ impl_definition block
                          traceback.format_exc().rstrip())
             printer.print_block(block)
 
+        clinic_out = []
+
         # these are destinations not buffers
         for name, destination in self.destinations.items():
             if destination.type == 'suppress':
@@ -2151,10 +2153,11 @@ impl_definition block
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
                     printer_2.print_block(block, core_includes=True)
-                    write_file(destination.filename, printer_2.f.getvalue())
+                    pair = destination.filename, printer_2.f.getvalue()
+                    clinic_out.append(pair)
                     continue
 
-        return printer.f.getvalue()
+        return printer.f.getvalue(), clinic_out
 
 
     def _module_and_class(self, fields):
@@ -2210,9 +2213,12 @@ def parse_file(filename, *, verify=True, output=None):
         return
 
     clinic = Clinic(language, verify=verify, filename=filename)
-    cooked = clinic.parse(raw)
+    src_out, clinic_out = clinic.parse(raw)
 
-    write_file(output, cooked)
+    force = bool(clinic_out)
+    write_file(output, src_out, force=force)
+    for fn, data in clinic_out:
+        write_file(fn, data)
 
 
 def compute_checksum(input, length=None):
