@@ -1103,7 +1103,7 @@ typedef union {
     };
 } id_128_to_ino;
 
-
+#  include <winbase.h>
 void
 _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
                            FILE_BASIC_INFO *basic_info, FILE_ID_INFO *id_info,
@@ -2812,8 +2812,12 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
     }
 
 #define GET_LOCALE_STRING(ATTR) PyUnicode_DecodeLocale(lc->ATTR, NULL)
-#else /* MS_WINDOWS */
-/* Use _W_* fields of Windows strcut lconv */
+#else /*MS_WINDOWS */
+    // Use _W_* fields of Windows strcut lconv 
+
+// #define _W_*
+// struct lconv *lc = localeconv();
+
 #define GET_LOCALE_STRING(ATTR) PyUnicode_FromWideChar(lc->_W_ ## ATTR, -1)
 #endif /* MS_WINDOWS */
 

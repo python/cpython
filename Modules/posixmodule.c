@@ -26,6 +26,7 @@
 
 #ifdef MS_WINDOWS
 #  include <windows.h>
+#  include <winbase.h>
 #  if !defined(MS_WINDOWS_GAMES) || defined(MS_WINDOWS_DESKTOP)
 #    include <pathcch.h>
 #  endif
@@ -675,6 +676,7 @@ void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *, ULONG,
 void _Py_stat_basic_info_to_stat(FILE_STAT_BASIC_INFORMATION *,
                                  struct _Py_stat_struct *);
 #endif
+
 
 
 #ifndef MS_WINDOWS
