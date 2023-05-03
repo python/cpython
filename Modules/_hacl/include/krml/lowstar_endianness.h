@@ -77,7 +77,7 @@
 #  define le64toh(x) (x)
 
 /* ... for Windows (GCC-like, e.g. mingw or clang) */
-#elif (defined(_WIN32) || defined(_WIN64)) &&                                  \
+#elif (defined(_WIN32) || defined(_WIN64) || defined(__EMSCRIPTEN__)) &&       \
     (defined(__GNUC__) || defined(__clang__))
 
 #  define htobe16(x) __builtin_bswap16(x)

@@ -195,10 +195,9 @@ _sha3_sha3_224_digest_impl(SHA3object *self)
 /*[clinic end generated code: output=fd531842e20b2d5b input=5b2a659536bbd248]*/
 {
     unsigned char digest[SHA3_MAX_DIGESTSIZE];
-    // The only potential error here is an API misuse, such as trying to specify
-    // a user-provided length when using a non-Shake algorithm. We thus ignore
-    // the return code.
-    Hacl_Streaming_Keccak_finish(self->hash_state, digest, 0);
+    // This function errors out if the algorithm is Shake. Here, we know this
+    // not to be the case, and therefore do not perform error checking.
+    Hacl_Streaming_Keccak_finish(self->hash_state, digest);
     return PyBytes_FromStringAndSize((const char *)digest,
         Hacl_Streaming_Keccak_hash_len(self->hash_state));
 }
@@ -215,7 +214,7 @@ _sha3_sha3_224_hexdigest_impl(SHA3object *self)
 /*[clinic end generated code: output=75ad03257906918d input=2d91bb6e0d114ee3]*/
 {
     unsigned char digest[SHA3_MAX_DIGESTSIZE];
-    Hacl_Streaming_Keccak_finish(self->hash_state, digest, 0);
+    Hacl_Streaming_Keccak_finish(self->hash_state, digest);
     return _Py_strhex((const char *)digest,
         Hacl_Streaming_Keccak_hash_len(self->hash_state));
 }
@@ -397,8 +396,12 @@ _SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
         return PyErr_NoMemory();
     }
 
-    /* Get the raw (binary) digest value */
-    Hacl_Streaming_Keccak_finish(self->hash_state, digest, digestlen);
+    /* Get the raw (binary) digest value. The HACL functions errors out if:
+     * - the algorith is not shake -- not the case here
+     * - the output length is zero -- we follow the existing behavior and return
+     *   an empty digest, without raising an error */
+    if (digestlen > 0)
+      Hacl_Streaming_Keccak_squeeze(self->hash_state, digest, digestlen);
     if (hex) {
          result = _Py_strhex((const char *)digest, digestlen);
     } else {
