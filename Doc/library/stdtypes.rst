@@ -5206,6 +5206,99 @@ instantiated from the type::
 .. versionadded:: 3.10
 
 
+.. _types-intersection:
+
+Intersection Type
+-----------------
+
+.. index::
+   object: Intersection
+   pair: intersection; type
+
+An intersection object holds the value of the ``&`` (bitwise and) operation on
+multiple :ref:`type objects <bltin-type-objects>`.  These types are intended
+primarily for :term:`type annotations <annotation>`.
+
+.. describe:: X & Y & ...
+
+   Defines an intersection object which holds types *X*, *Y*, and so forth. ``X & Y``
+   means both X and Y.
+   For example, the following function expects an argument of type
+   ``Resettable`` and ``Growable[str]``::
+
+      class Resettable(Protocol):
+          def reset() -> None: ...
+
+      class Growable(Protocol[T]):
+          def grow(t: T) -> None: ...
+
+      def f(x: Resettable & Growable[str]) -> None:
+          x.reset()
+          x.grow("first")
+
+.. describe:: intersection_object == other
+
+   Intersection objects can be tested for equality with other intersection objects.  Details:
+
+   * Intersections of intersections are flattened::
+
+       (A & B) & C == A & B & C
+
+   * Redundant types are removed::
+
+       A & B & A == A & B
+
+   * When comparing intersections, the order is ignored::
+
+      A & B == B & A
+
+.. describe:: isinstance(obj, intersection_object)
+.. describe:: issubclass(obj, intersection_object)
+
+   Calls to :func:`isinstance` and :func:`issubclass` are also supported with an
+   intersection object::
+
+      >>> isinstance("", object & str)
+      True
+
+   However, intersection objects containing :ref:`parameterized generics
+   <types-genericalias>` cannot be used::
+
+      >>> isinstance(1, int & list[int])
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      TypeError: isinstance() argument 2 cannot contain a parameterized generic
+
+The user-exposed type for the intersection object can be accessed from
+:data:`types.IntersectionType` and used for :func:`isinstance` checks.  An object can be
+instantiated from the type::
+
+   >>> import types
+   >>> isinstance(int & str, types.IntersectionType)
+   True
+   >>> types.IntersectionType(int, str)
+   int & str
+
+.. note::
+   The :meth:`__and__` method for type objects was added to support the syntax
+   ``X & Y``.  If a metaclass implements :meth:`__and__`, the Intersection may
+   override it::
+
+      >>> class M(type):
+      ...     def __and__(self, other):
+      ...         return "Hello"
+      ...
+      >>> class C(metaclass=M):
+      ...     pass
+      ...
+      >>> C & int
+      'Hello'
+      >>> int & C
+      int & __main__.C
+
+.. versionadded:: 3.13
+
+
 .. _typesother:
 
 Other Built-in Types

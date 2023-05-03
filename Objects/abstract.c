@@ -1,14 +1,15 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
-#include "pycore_object.h"        // _Py_CheckSlotResult()
-#include "pycore_long.h"          // _Py_IsNegative
-#include "pycore_pyerrors.h"      // _PyErr_Occurred()
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_unionobject.h"   // _PyUnion_Check()
+#include "pycore_abstract.h"            // _PyIndex_Check()
+#include "pycore_call.h"                // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"               // _Py_EnterRecursiveCallTstate()
+#include "pycore_object.h"              // _Py_CheckSlotResult()
+#include "pycore_long.h"                // _Py_IsNegative
+#include "pycore_pyerrors.h"            // _PyErr_Occurred()
+#include "pycore_pystate.h"             // _PyThreadState_GET()
+#include "pycore_unionobject.h"         // _PyUnion_Check()
+#include "pycore_intersectionobject.h"  // _PyInstance_Check()
 #include <ctype.h>
 #include <stddef.h>               // offsetof()
 
@@ -2586,7 +2587,7 @@ object_isinstance(PyObject *inst, PyObject *cls)
     }
     else {
         if (!check_class(cls,
-            "isinstance() arg 2 must be a type, a tuple of types, or a union"))
+            "isinstance() arg 2 must be a type, a tuple of types, a union, or an intersection."))
             return -1;
         retval = _PyObject_LookupAttr(inst, &_Py_ID(__class__), &icls);
         if (icls != NULL) {
@@ -2611,6 +2612,12 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
         return object_isinstance(inst, cls);
     }
 
+    int checking_intersection = 0;
+    if (_PyIntersection_Check(cls)) {
+        checking_intersection = 1;
+        cls = _Py_intersection_args(cls);
+    }
+
     if (_PyUnion_Check(cls)) {
         cls = _Py_union_args(cls);
     }
@@ -2626,7 +2633,12 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
         for (Py_ssize_t i = 0; i < n; ++i) {
             PyObject *item = PyTuple_GET_ITEM(cls, i);
             r = object_recursive_isinstance(tstate, inst, item);
-            if (r != 0) {
+            if (checking_intersection) {
+                if (r != 1) {
+                    /* either didn't find it, or got an error */
+                    return r;
+                }
+            } else if (r != 0) {
                 /* either found it, or got an error */
                 break;
             }
@@ -2682,9 +2694,9 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
                      "issubclass() arg 1 must be a class"))
         return -1;
 
-    if (!_PyUnion_Check(cls) && !check_class(cls,
+    if (!_PyUnion_Check(cls) && !_PyIntersection_Check(cls) && !check_class(cls,
                             "issubclass() arg 2 must be a class,"
-                            " a tuple of classes, or a union")) {
+                            " a tuple of classes, a union, or an intersection")) {
         return -1;
     }
 
@@ -2704,7 +2716,11 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
         return recursive_issubclass(derived, cls);
     }
 
-    if (_PyUnion_Check(cls)) {
+    int checking_intersection = 0
+    if (_PyIntersection_Check(cls)) {
+        checking_intersection = 1
+        cls = _Py_intersection_args(cls);
+    } else if (_PyUnion_Check(cls)) {
         cls = _Py_union_args(cls);
     }
 
@@ -2718,6 +2734,12 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
         for (Py_ssize_t i = 0; i < n; ++i) {
             PyObject *item = PyTuple_GET_ITEM(cls, i);
             r = object_issubclass(tstate, derived, item);
+            if (checking_intersection) {
+                if (r != 1) {
+                    /* either didn't find it, or got an error */
+                    return r
+                }
+            }
             if (r != 0)
                 /* either found it, or got an error */
                 break;

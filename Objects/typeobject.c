@@ -2,20 +2,21 @@
 
 #include "Python.h"
 #include "pycore_call.h"
-#include "pycore_code.h"          // CO_FAST_FREE
-#include "pycore_symtable.h"      // _Py_Mangle()
-#include "pycore_dict.h"          // _PyDict_KeysSize()
-#include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_moduleobject.h"  // _PyModule_GetDef()
-#include "pycore_object.h"        // _PyType_HasFeature()
-#include "pycore_long.h"          // _PyLong_IsNegative()
-#include "pycore_pyerrors.h"      // _PyErr_Occurred()
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_typeobject.h"    // struct type_cache
-#include "pycore_unionobject.h"   // _Py_union_type_or
-#include "pycore_frame.h"         // _PyInterpreterFrame
-#include "opcode.h"               // MAKE_CELL
-#include "structmember.h"         // PyMemberDef
+#include "pycore_code.h"                // CO_FAST_FREE
+#include "pycore_symtable.h"            // _Py_Mangle()
+#include "pycore_dict.h"                // _PyDict_KeysSize()
+#include "pycore_initconfig.h"          // _PyStatus_OK()
+#include "pycore_moduleobject.h"        // _PyModule_GetDef()
+#include "pycore_object.h"              // _PyType_HasFeature()
+#include "pycore_long.h"                // _PyLong_IsNegative()
+#include "pycore_pyerrors.h"            // _PyErr_Occurred()
+#include "pycore_pystate.h"             // _PyThreadState_GET()
+#include "pycore_typeobject.h"          // struct type_cache
+#include "pycore_unionobject.h"         // _Py_union_type_or
+#include "pycore_intersectionobject.h"  // _Py_intersection_type_and
+#include "pycore_frame.h"               // _PyInterpreterFrame
+#include "opcode.h"                     // MAKE_CELL
+#include "structmember.h"               // PyMemberDef
 
 #include <ctype.h>
 
@@ -5114,6 +5115,7 @@ type_is_gc(PyTypeObject *type)
 
 static PyNumberMethods type_as_number = {
         .nb_or = _Py_union_type_or, // Add __or__ function
+        .nb_and = _Py_union_type_and, // Add __and__ function
 };
 
 PyTypeObject PyType_Type = {

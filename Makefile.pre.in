@@ -461,6 +461,7 @@ OBJECT_OBJS=	\
 		Objects/frameobject.o \
 		Objects/funcobject.o \
 		Objects/interpreteridobject.o \
+		Objects/intersectionobject.o \
 		Objects/iterobject.o \
 		Objects/listobject.o \
 		Objects/longobject.o \
@@ -1704,6 +1705,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_interp.h \
 		$(srcdir)/Include/internal/pycore_interpreteridobject.h \
+		$(srcdir)/Include/internal/pycore_intersectionobject.h \
 		$(srcdir)/Include/internal/pycore_intrinsics.h \
 		$(srcdir)/Include/internal/pycore_list.h \
 		$(srcdir)/Include/internal/pycore_long.h \
