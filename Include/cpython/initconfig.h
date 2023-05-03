@@ -252,7 +252,7 @@ typedef struct {
     int allow_threads;
     int allow_daemon_threads;
     int check_multi_interp_extensions;
-} _PyInterpreterConfig;
+} PyInterpreterConfig;
 
 #define _PyInterpreterConfig_INIT \
     { \

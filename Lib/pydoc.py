@@ -2242,7 +2242,7 @@ class ModuleScanner:
                 callback(None, modname, '')
             else:
                 try:
-                    spec = pkgutil._get_spec(importer, modname)
+                    spec = importer.find_spec(modname)
                 except SyntaxError:
                     # raised by tests for bad coding cookies or BOM
                     continue

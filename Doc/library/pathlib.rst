@@ -819,9 +819,14 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.10
       The *follow_symlinks* parameter was added.
 
-.. method:: Path.exists()
+.. method:: Path.exists(*, follow_symlinks=True)
 
-   Whether the path points to an existing file or directory::
+   Return ``True`` if the path points to an existing file or directory.
+
+   This method normally follows symlinks; to check if a symlink exists, add
+   the argument ``follow_symlinks=False``.
+
+   ::
 
       >>> Path('.').exists()
       True
@@ -832,10 +837,8 @@ call fails (for example because the path doesn't exist).
       >>> Path('nonexistentfile').exists()
       False
 
-   .. note::
-      If the path points to a symlink, :meth:`exists` returns whether the
-      symlink *points to* an existing file or directory.
-
+   .. versionchanged:: 3.12
+      The *follow_symlinks* parameter was added.
 
 .. method:: Path.expanduser()
 
