@@ -1683,9 +1683,9 @@ Deprecated
   (Contributed by Brett Cannon in :issue:`42135`.)
 
 * The deprecations of :mod:`!imp`, :func:`!importlib.find_loader`,
-  :func:`importlib.util.set_package_wrapper`,
-  :func:`importlib.util.set_loader_wrapper`,
-  :func:`importlib.util.module_for_loader`,
+  :func:`!importlib.util.set_package_wrapper`,
+  :func:`!importlib.util.set_loader_wrapper`,
+  :func:`!importlib.util.module_for_loader`,
   :class:`!pkgutil.ImpImporter`, and
   :class:`!pkgutil.ImpLoader` have all been updated to list Python 3.12 as the
   slated version of removal (they began raising :exc:`DeprecationWarning` in
