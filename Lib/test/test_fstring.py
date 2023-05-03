@@ -16,6 +16,7 @@ import unittest
 from test import support
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure
+from test.support.warnings_helper import check_warnings
 
 a_global = 'global variable'
 
@@ -32,6 +33,11 @@ class TestCase(unittest.TestCase):
             with self.subTest(str=str):
                 with self.assertRaisesRegex(exception_type, regex):
                     eval(str)
+
+    def assertEqualWithDeprecationWarning(self, string, expected):
+        with check_warnings(('', DeprecationWarning), quiet=False):
+            s = eval(string)
+        self.assertEqual(s, expected)
 
     def test__format__lookup(self):
         # Make sure __format__ is looked up on the type, not the instance.
@@ -980,11 +986,11 @@ x = (
         self.assertEqual(fr'\"\'\"\'', '\\"\\\'\\"\\\'')
 
     def test_fstring_backslash_before_double_bracket(self):
-        self.assertEqual(f'\{{\}}', '\\{\\}')
-        self.assertEqual(f'\{{', '\\{')
-        self.assertEqual(f'\{{{1+1}', '\\{2')
-        self.assertEqual(f'\}}{1+1}', '\\}2')
-        self.assertEqual(f'{1+1}\}}', '2\\}')
+        self.assertEqualWithDeprecationWarning(r"f'\{{\}}'", '\\{\\}')
+        self.assertEqualWithDeprecationWarning(r"f'\{{'", '\\{')
+        self.assertEqualWithDeprecationWarning(r"f'\{{{1+1}'", '\\{2')
+        self.assertEqualWithDeprecationWarning(r"f'\}}{1+1}'", '\\}2')
+        self.assertEqualWithDeprecationWarning(r"f'{1+1}\}}'", '2\\}')
         self.assertEqual(fr'\{{\}}', '\\{\\}')
         self.assertEqual(fr'\{{', '\\{')
         self.assertEqual(fr'\{{{1+1}', '\\{2')
