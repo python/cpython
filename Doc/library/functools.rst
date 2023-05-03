@@ -113,7 +113,7 @@ The :mod:`functools` module defines the following functions:
    If a mutable mapping is not available or if space-efficient key sharing is
    desired, an effect similar to :func:`cached_property` can also be achieved by
    stacking :func:`property` on top of :func:`lru_cache`. See
-   :ref:`faq-cache-method-calls`
+   :ref:`faq-cache-method-calls` for more details on how this differs from :func:`cached_property`.
 
    .. versionadded:: 3.8
 
