@@ -422,8 +422,8 @@ class _PreciseSelector(_Selector):
     def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
             path = parent_path._make_child_relpath(self.name)
-            if ((self.dironly and is_dir(path)) or \
-                    (not self.dironly and exists(path, follow_symlinks=False))):
+            follow = is_dir(path) if self.dironly else exists(path, follow_symlinks=False)
+            if follow:
                 for p in self.successor._select_from(path, is_dir, exists, scandir):
                     yield p
         except PermissionError:
