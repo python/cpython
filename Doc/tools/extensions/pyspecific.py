@@ -684,6 +684,11 @@ def patch_pairindextypes(app) -> None:
     except ImportError:
         pass
     else:
+        # Sphinx checks if a 'pair' type entry on an index directive is one of
+        # the Sphinx-translated pairindextypes values. As we intend to move
+        # away from this, we need Sphinx to believe that these values don't
+        # exist, by deleting them when using the gettext builder.
+
         # pairindextypes.pop('module', None)
         # pairindextypes.pop('keyword', None)
         # pairindextypes.pop('operator', None)
