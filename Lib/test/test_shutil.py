@@ -32,7 +32,7 @@ except ImportError:
 
 from test import support
 from test.support import os_helper
-from test.support.os_helper import TESTFN, FakePath
+from test.support import TESTFN, FakePath
 from test.support import warnings_helper
 
 TESTFN2 = TESTFN + "2"
@@ -652,6 +652,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         write_file((src_dir, 'test_dir', 'test.txt'), '456')
 
         shutil.copytree(src_dir, dst_dir)
+        print("DebugTest:Tree",src_dir,dst_dir)
         self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'test.txt')))
         self.assertTrue(os.path.isdir(os.path.join(dst_dir, 'test_dir')))
         self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'test_dir',
