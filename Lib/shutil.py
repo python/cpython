@@ -39,7 +39,7 @@ if os.name == 'posix':
     import posix
 #Unknown nt moudle?
 elif _WINDOWS:
-    import ntpath
+    import nt
 
 if sys.platform == 'win32':
     import _winapi
