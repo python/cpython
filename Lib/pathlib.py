@@ -1281,7 +1281,7 @@ class Path(PurePath):
 
     # Convenience functions for querying the stat results
 
-    def exists(self, follow_symlinks=True):
+    def exists(self, *, follow_symlinks=True):
         """
         Whether this path exists.
 
