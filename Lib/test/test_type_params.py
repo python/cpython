@@ -247,6 +247,18 @@ class TypeParamsAccessTest(unittest.TestCase):
         S, T = func.__type_params__
         self.assertEqual(T.__bound__, Sequence[S])
 
+    def test_super(self):
+        class Base:
+            def meth(self):
+                return "base"
+
+        class Child(Base):
+            def meth[T](self) -> T:
+                return super().meth() + "child"
+
+        c = Child()
+        self.assertEqual(c.meth(), "basechild")
+
 
 def global_generic_func[T]():
     pass
