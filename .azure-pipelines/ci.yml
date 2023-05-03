@@ -1,6 +1,5 @@
 variables:
   coverage: false
-  hypothesis: true
 
 trigger: ['main', '3.11', '3.10', '3.9', '3.8', '3.7']
 
@@ -92,30 +91,6 @@ jobs:
       dependencies: apt
       coverage: true
 
-- job: Ubuntu_Hypothesis_CI_Tests
-  displayName: Ubuntu CI Tests (Hypothesis)
-  dependsOn: Prebuild
-  condition: |
-    and(
-      succeeded(),
-      eq(variables['hypothesis'], 'true'),
-      eq(dependencies.Prebuild.outputs['tests.run'], 'true'),
-      notIn(variables['Build.SourceBranchName'], '3.8', '3.9', '3.10', '3.11')
-    )
-
-  pool:
-    vmImage: ubuntu-22.04
-
-  variables:
-    testRunTitle: '$(Build.SourceBranchName)-linux-hypothesis'
-    testRunPlatform: linux-hypothesis
-    openssl_version: 1.1.1t
-
-  steps:
-  - template: ./posix-steps.yml
-    parameters:
-      dependencies: apt
-      hypothesis: true
 
 - job: Windows_CI_Tests
   displayName: Windows CI Tests

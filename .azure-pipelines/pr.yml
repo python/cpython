@@ -1,6 +1,5 @@
 variables:
   coverage: false
-  hypothesis: true
 
 pr: ['main', '3.11', '3.10', '3.9', '3.8', '3.7']
 
@@ -91,33 +90,6 @@ jobs:
     parameters:
       dependencies: apt
       coverage: true
-
-
-- job: Ubuntu_Hypothesis_PR_Tests
-  displayName: Ubuntu PR Tests (Hypothesis)
-  dependsOn: Prebuild
-  condition: |
-    and(
-      succeeded(),
-      eq(variables['hypothesis'], 'true'),
-      eq(dependencies.Prebuild.outputs['tests.run'], 'true'),
-      notIn(variables['System.PullRequest.targetBranchName'],
-            '3.8', '3.9', '3.10', '3.11')
-    )
-
-  pool:
-    vmImage: ubuntu-22.04
-
-  variables:
-    testRunTitle: '$(Build.SourceBranchName)-linux-hypothesis'
-    testRunPlatform: linux-hypothesis
-    openssl_version: 1.1.1t
-
-  steps:
-  - template: ./posix-steps.yml
-    parameters:
-      dependencies: apt
-      hypothesis: true
 
 
 - job: Windows_PR_Tests
