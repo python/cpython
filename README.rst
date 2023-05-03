@@ -1,5 +1,3 @@
-Test Git Push :This on TwhomeGH repositories
-
 This is Python version 3.12.0 alpha 7
 
 =====================================
