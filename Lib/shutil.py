@@ -37,6 +37,7 @@ _WINDOWS = os.name == 'nt'
 posix = nt = None
 if os.name == 'posix':
     import posix
+#Unknown nt moudle?
 elif _WINDOWS:
     import nt
 
@@ -59,7 +60,7 @@ __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "get_unpack_formats", "register_unpack_format",
            "unregister_unpack_format", "unpack_archive",
            "ignore_patterns", "chown", "which", "get_terminal_size",
-           "SameFileError"]
+           "SameFileError","OSName"]
            # disk_usage is added later, if available on the platform
 
 class Error(OSError):
@@ -418,8 +419,17 @@ def copy(src, dst, *, follow_symlinks=True):
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
-    copyfile(src, dst, follow_symlinks=follow_symlinks)
-    copymode(src, dst, follow_symlinks=follow_symlinks)
+    
+    try:
+        copyfile(src, dst, follow_symlinks=follow_symlinks)
+        copymode(src, dst, follow_symlinks=follow_symlinks)
+    except Exception as Error:
+        print("Error Message:",Error)
+        print("You src:",src)
+        print("You dst:",dst)
+        print("Follow_Symlinks",follow_symlinks)
+        #Maybe other os not support \n
+
     return dst
 
 def copy2(src, dst, *, follow_symlinks=True):
@@ -435,8 +445,16 @@ def copy2(src, dst, *, follow_symlinks=True):
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
-    copyfile(src, dst, follow_symlinks=follow_symlinks)
-    copystat(src, dst, follow_symlinks=follow_symlinks)
+    try:
+        copyfile(src, dst, follow_symlinks=follow_symlinks)
+        copystat(src, dst, follow_symlinks=follow_symlinks)
+    except Exception as Error:
+        print("Error Message:")
+        print(Error)
+        print("You src:",src)
+        print("You dst:",dst)
+        print("Follow_Symlinks",follow_symlinks)
+        #Maybe other os not support \n
     return dst
 
 def ignore_patterns(*patterns):
@@ -1368,7 +1386,7 @@ elif _WINDOWS:
         Returned values is a named tuple with attributes 'total', 'used' and
         'free', which are the amount of total, used and free space, in bytes.
         """
-        total, free = nt._getdiskusage(path)
+        total, free = os._getdiskusage(path)
         used = total - free
         return _ntuple_diskusage(total, used, free)
 
