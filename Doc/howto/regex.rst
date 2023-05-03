@@ -935,7 +935,7 @@ or strings that contain the desired group's name.  Named groups are still
 given numbers, so you can retrieve information about a group in two ways::
 
    >>> p = re.compile(r'(?P<word>\b\w+\b)')
-   >>> m = p.search( '(((( Lots of punctuation )))' )
+   >>> m = p.search( '((( Lots of punctuation )))' )
    >>> m.group('word')
    'Lots'
    >>> m.group(1)
