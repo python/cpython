@@ -1682,7 +1682,7 @@ Deprecated
   classes as appropriate instead.
   (Contributed by Brett Cannon in :issue:`42135`.)
 
-* The deprecations of :mod:`imp`, :func:`!importlib.find_loader`,
+* The deprecations of :mod:`!imp`, :func:`!importlib.find_loader`,
   :func:`importlib.util.set_package_wrapper`,
   :func:`importlib.util.set_loader_wrapper`,
   :func:`importlib.util.module_for_loader`,
