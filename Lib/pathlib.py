@@ -54,11 +54,6 @@ def _ignore_error(exception):
             getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
 
 
-def _is_wildcard_pattern(pat):
-    # Whether this pattern needs actual matching using fnmatch, or can
-    # be looked up directly as a file.
-    return "*" in pat or "?" in pat or "[" in pat
-
 def _is_case_sensitive(flavour):
     return flavour.normcase('Aa') == 'Aa'
 
