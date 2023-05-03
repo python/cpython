@@ -1872,7 +1872,7 @@ C APIs pending removal are
 * The :mod:`asynchat` module
 * The :mod:`asyncore` module
 * The :ref:`entire distutils package <distutils-deprecated>`
-* The :mod:`imp` module
+* The :mod:`!imp` module
 * The :class:`typing.io <typing.IO>` namespace
 * The :class:`typing.re <typing.Pattern>` namespace
 * :func:`!cgi.log`
