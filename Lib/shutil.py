@@ -421,6 +421,7 @@ def copy(src, dst, *, follow_symlinks=True):
         dst = os.path.join(dst, os.path.basename(src))
     
     try:
+        print("Start CopyFile!")
         copyfile(src, dst, follow_symlinks=follow_symlinks)
         copymode(src, dst, follow_symlinks=follow_symlinks)
     except Exception as Error:
@@ -446,11 +447,11 @@ def copy2(src, dst, *, follow_symlinks=True):
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
     try:
+        print("Start CopyFile!")
         copyfile(src, dst, follow_symlinks=follow_symlinks)
         copystat(src, dst, follow_symlinks=follow_symlinks)
     except Exception as Error:
-        print("Error Message:")
-        print(Error)
+        print("Error Message:",Error)
         print("You src:",src)
         print("You dst:",dst)
         print("Follow_Symlinks",follow_symlinks)
