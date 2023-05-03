@@ -2,7 +2,8 @@
 
 import os
 import sys
-from os.path import pardir, realpath
+import threading
+from os.path import realpath
 
 __all__ = [
     'get_config_h_filename',
@@ -56,7 +57,52 @@ _INSTALL_SCHEMES = {
         'scripts': '{base}/Scripts',
         'data': '{base}',
         },
+    # Downstream distributors can overwrite the default install scheme.
+    # This is done to support downstream modifications where distributors change
+    # the installation layout (eg. different site-packages directory).
+    # So, distributors will change the default scheme to one that correctly
+    # represents their layout.
+    # This presents an issue for projects/people that need to bootstrap virtual
+    # environments, like virtualenv. As distributors might now be customizing
+    # the default install scheme, there is no guarantee that the information
+    # returned by sysconfig.get_default_scheme/get_paths is correct for
+    # a virtual environment, the only guarantee we have is that it is correct
+    # for the *current* environment. When bootstrapping a virtual environment,
+    # we need to know its layout, so that we can place the files in the
+    # correct locations.
+    # The "*_venv" install scheme is a scheme to bootstrap virtual environments,
+    # essentially identical to the default posix_prefix/nt schemes.
+    # Downstream distributors who patch posix_prefix/nt scheme are encouraged to
+    # leave the following schemes unchanged
+    'posix_venv': {
+        'stdlib': '{installed_base}/{platlibdir}/python{py_version_short}',
+        'platstdlib': '{platbase}/{platlibdir}/python{py_version_short}',
+        'purelib': '{base}/lib/python{py_version_short}/site-packages',
+        'platlib': '{platbase}/{platlibdir}/python{py_version_short}/site-packages',
+        'include':
+            '{installed_base}/include/python{py_version_short}{abiflags}',
+        'platinclude':
+            '{installed_platbase}/include/python{py_version_short}{abiflags}',
+        'scripts': '{base}/bin',
+        'data': '{base}',
+        },
+    'nt_venv': {
+        'stdlib': '{installed_base}/Lib',
+        'platstdlib': '{base}/Lib',
+        'purelib': '{base}/Lib/site-packages',
+        'platlib': '{base}/Lib/site-packages',
+        'include': '{installed_base}/Include',
+        'platinclude': '{installed_base}/Include',
+        'scripts': '{base}/Scripts',
+        'data': '{base}',
+        },
     }
+
+# For the OS-native venv scheme, we essentially provide an alias:
+if os.name == 'nt':
+    _INSTALL_SCHEMES['venv'] = _INSTALL_SCHEMES['nt_venv']
+else:
+    _INSTALL_SCHEMES['venv'] = _INSTALL_SCHEMES['posix_venv']
 
 
 # NOTE: site.py has copy of this function.
@@ -66,8 +112,8 @@ def _getuserbase():
     if env_base:
         return env_base
 
-    # VxWorks has no home directories
-    if sys.platform == "vxworks":
+    # Emscripten, VxWorks, and WASI have no home directories
+    if sys.platform in {"emscripten", "vxworks", "wasi"}:
         return None
 
     def joinuser(*args):
@@ -127,7 +173,11 @@ _PREFIX = os.path.normpath(sys.prefix)
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
 _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
+# Mutex guarding initialization of _CONFIG_VARS.
+_CONFIG_VARS_LOCK = threading.RLock()
 _CONFIG_VARS = None
+# True iff _CONFIG_VARS has been fully initialized.
+_CONFIG_VARS_INITIALIZED = False
 _USER_BASE = None
 
 # Regexes needed for parsing Makefile (and similar syntaxes,
@@ -150,37 +200,38 @@ else:
     # unable to retrieve the real program name
     _PROJECT_BASE = _safe_realpath(os.getcwd())
 
-if (os.name == 'nt' and
-    _PROJECT_BASE.lower().endswith(('\\pcbuild\\win32', '\\pcbuild\\amd64'))):
-    _PROJECT_BASE = _safe_realpath(os.path.join(_PROJECT_BASE, pardir, pardir))
+# In a virtual environment, `sys._home` gives us the target directory
+# `_PROJECT_BASE` for the executable that created it when the virtual
+# python is an actual executable ('venv --copies' or Windows).
+_sys_home = getattr(sys, '_home', None)
+if _sys_home:
+    _PROJECT_BASE = _sys_home
+
+if os.name == 'nt':
+    # In a source build, the executable is in a subdirectory of the root
+    # that we want (<root>\PCbuild\<platname>).
+    # `_BASE_PREFIX` is used as the base installation is where the source
+    # will be.  The realpath is needed to prevent mount point confusion
+    # that can occur with just string comparisons.
+    if _safe_realpath(_PROJECT_BASE).startswith(
+            _safe_realpath(f'{_BASE_PREFIX}\\PCbuild')):
+        _PROJECT_BASE = _BASE_PREFIX
 
 # set for cross builds
 if "_PYTHON_PROJECT_BASE" in os.environ:
     _PROJECT_BASE = _safe_realpath(os.environ["_PYTHON_PROJECT_BASE"])
 
-def _is_python_source_dir(d):
+def is_python_build(check_home=None):
+    if check_home is not None:
+        import warnings
+        warnings.warn("check_home argument is deprecated and ignored.",
+                      DeprecationWarning, stacklevel=2)
     for fn in ("Setup", "Setup.local"):
-        if os.path.isfile(os.path.join(d, "Modules", fn)):
+        if os.path.isfile(os.path.join(_PROJECT_BASE, "Modules", fn)):
             return True
     return False
 
-_sys_home = getattr(sys, '_home', None)
-
-if os.name == 'nt':
-    def _fix_pcbuild(d):
-        if d and os.path.normcase(d).startswith(
-                os.path.normcase(os.path.join(_PREFIX, "PCbuild"))):
-            return _PREFIX
-        return d
-    _PROJECT_BASE = _fix_pcbuild(_PROJECT_BASE)
-    _sys_home = _fix_pcbuild(_sys_home)
-
-def is_python_build(check_home=False):
-    if check_home and _sys_home:
-        return _is_python_source_dir(_sys_home)
-    return _is_python_source_dir(_PROJECT_BASE)
-
-_PYTHON_BUILD = is_python_build(True)
+_PYTHON_BUILD = is_python_build()
 
 if _PYTHON_BUILD:
     for scheme in ('posix_prefix', 'posix_home'):
@@ -192,6 +243,7 @@ if _PYTHON_BUILD:
         scheme['headers'] = scheme['include']
         scheme['include'] = '{srcdir}/Include'
         scheme['platinclude'] = '{projectbase}/.'
+    del scheme
 
 
 def _subst_vars(s, local_vars):
@@ -216,6 +268,11 @@ def _expand_vars(scheme, vars):
     if vars is None:
         vars = {}
     _extend_dict(vars, get_config_vars())
+    if os.name == 'nt':
+        # On Windows we want to substitute 'lib' for schemes rather
+        # than the native value (without modifying vars, in case it
+        # was passed in)
+        vars = vars | {'platlibdir': 'lib'}
 
     for key, value in _INSTALL_SCHEMES[scheme].items():
         if os.name in ('posix', 'nt'):
@@ -245,6 +302,8 @@ def _get_preferred_schemes():
 
 
 def get_preferred_scheme(key):
+    if key == 'prefix' and sys.prefix != sys.base_prefix:
+        return 'venv'
     scheme = _get_preferred_schemes()[key]
     if scheme not in _INSTALL_SCHEMES:
         raise ValueError(
@@ -389,7 +448,7 @@ def _parse_makefile(filename, vars=None, keep_unresolved=True):
 def get_makefile_filename():
     """Return the path of the Makefile."""
     if _PYTHON_BUILD:
-        return os.path.join(_sys_home or _PROJECT_BASE, "Makefile")
+        return os.path.join(_PROJECT_BASE, "Makefile")
     if hasattr(sys, 'abiflags'):
         config_dir_name = f'config-{_PY_VERSION_SHORT}{sys.abiflags}'
     else:
@@ -485,7 +544,12 @@ def _init_non_posix(vars):
     vars['LIBDEST'] = get_path('stdlib')
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
-    vars['EXT_SUFFIX'] = _imp.extension_suffixes()[0]
+    try:
+        # GH-99201: _imp.extension_suffixes may be empty when
+        # HAVE_DYNAMIC_LOADING is not set. In this case, don't set EXT_SUFFIX.
+        vars['EXT_SUFFIX'] = _imp.extension_suffixes()[0]
+    except IndexError:
+        pass
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
@@ -534,9 +598,9 @@ def get_config_h_filename():
     """Return the path of pyconfig.h."""
     if _PYTHON_BUILD:
         if os.name == "nt":
-            inc_dir = os.path.join(_sys_home or _PROJECT_BASE, "PC")
+            inc_dir = os.path.join(_PROJECT_BASE, "PC")
         else:
-            inc_dir = _sys_home or _PROJECT_BASE
+            inc_dir = _PROJECT_BASE
     else:
         inc_dir = get_path('platinclude')
     return os.path.join(inc_dir, 'pyconfig.h')
@@ -572,6 +636,71 @@ def get_path(name, scheme=get_default_scheme(), vars=None, expand=True):
     return get_paths(scheme, vars, expand)[name]
 
 
+def _init_config_vars():
+    global _CONFIG_VARS
+    _CONFIG_VARS = {}
+    # Normalized versions of prefix and exec_prefix are handy to have;
+    # in fact, these are the standard versions used most places in the
+    # Distutils.
+    _CONFIG_VARS['prefix'] = _PREFIX
+    _CONFIG_VARS['exec_prefix'] = _EXEC_PREFIX
+    _CONFIG_VARS['py_version'] = _PY_VERSION
+    _CONFIG_VARS['py_version_short'] = _PY_VERSION_SHORT
+    _CONFIG_VARS['py_version_nodot'] = _PY_VERSION_SHORT_NO_DOT
+    _CONFIG_VARS['installed_base'] = _BASE_PREFIX
+    _CONFIG_VARS['base'] = _PREFIX
+    _CONFIG_VARS['installed_platbase'] = _BASE_EXEC_PREFIX
+    _CONFIG_VARS['platbase'] = _EXEC_PREFIX
+    _CONFIG_VARS['projectbase'] = _PROJECT_BASE
+    _CONFIG_VARS['platlibdir'] = sys.platlibdir
+    try:
+        _CONFIG_VARS['abiflags'] = sys.abiflags
+    except AttributeError:
+        # sys.abiflags may not be defined on all platforms.
+        _CONFIG_VARS['abiflags'] = ''
+    try:
+        _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
+    except AttributeError:
+        _CONFIG_VARS['py_version_nodot_plat'] = ''
+
+    if os.name == 'nt':
+        _init_non_posix(_CONFIG_VARS)
+        _CONFIG_VARS['VPATH'] = sys._vpath
+    if os.name == 'posix':
+        _init_posix(_CONFIG_VARS)
+    if _HAS_USER_BASE:
+        # Setting 'userbase' is done below the call to the
+        # init function to enable using 'get_config_var' in
+        # the init-function.
+        _CONFIG_VARS['userbase'] = _getuserbase()
+
+    # Always convert srcdir to an absolute path
+    srcdir = _CONFIG_VARS.get('srcdir', _PROJECT_BASE)
+    if os.name == 'posix':
+        if _PYTHON_BUILD:
+            # If srcdir is a relative path (typically '.' or '..')
+            # then it should be interpreted relative to the directory
+            # containing Makefile.
+            base = os.path.dirname(get_makefile_filename())
+            srcdir = os.path.join(base, srcdir)
+        else:
+            # srcdir is not meaningful since the installation is
+            # spread about the filesystem.  We choose the
+            # directory containing the Makefile since we know it
+            # exists.
+            srcdir = os.path.dirname(get_makefile_filename())
+    _CONFIG_VARS['srcdir'] = _safe_realpath(srcdir)
+
+    # OS X platforms require special customization to handle
+    # multi-architecture, multi-os-version installers
+    if sys.platform == 'darwin':
+        import _osx_support
+        _osx_support.customize_config_vars(_CONFIG_VARS)
+
+    global _CONFIG_VARS_INITIALIZED
+    _CONFIG_VARS_INITIALIZED = True
+
+
 def get_config_vars(*args):
     """With no arguments, return a dictionary of all configuration
     variables relevant for the current platform.
@@ -582,69 +711,16 @@ def get_config_vars(*args):
     With arguments, return a list of values that result from looking up
     each argument in the configuration variable dictionary.
     """
-    global _CONFIG_VARS
-    if _CONFIG_VARS is None:
-        _CONFIG_VARS = {}
-        # Normalized versions of prefix and exec_prefix are handy to have;
-        # in fact, these are the standard versions used most places in the
-        # Distutils.
-        _CONFIG_VARS['prefix'] = _PREFIX
-        _CONFIG_VARS['exec_prefix'] = _EXEC_PREFIX
-        _CONFIG_VARS['py_version'] = _PY_VERSION
-        _CONFIG_VARS['py_version_short'] = _PY_VERSION_SHORT
-        _CONFIG_VARS['py_version_nodot'] = _PY_VERSION_SHORT_NO_DOT
-        _CONFIG_VARS['installed_base'] = _BASE_PREFIX
-        _CONFIG_VARS['base'] = _PREFIX
-        _CONFIG_VARS['installed_platbase'] = _BASE_EXEC_PREFIX
-        _CONFIG_VARS['platbase'] = _EXEC_PREFIX
-        _CONFIG_VARS['projectbase'] = _PROJECT_BASE
-        _CONFIG_VARS['platlibdir'] = sys.platlibdir
-        try:
-            _CONFIG_VARS['abiflags'] = sys.abiflags
-        except AttributeError:
-            # sys.abiflags may not be defined on all platforms.
-            _CONFIG_VARS['abiflags'] = ''
-        try:
-            _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
-        except AttributeError:
-            _CONFIG_VARS['py_version_nodot_plat'] = ''
 
-        if os.name == 'nt':
-            _init_non_posix(_CONFIG_VARS)
-        if os.name == 'posix':
-            _init_posix(_CONFIG_VARS)
-        # For backward compatibility, see issue19555
-        SO = _CONFIG_VARS.get('EXT_SUFFIX')
-        if SO is not None:
-            _CONFIG_VARS['SO'] = SO
-        if _HAS_USER_BASE:
-            # Setting 'userbase' is done below the call to the
-            # init function to enable using 'get_config_var' in
-            # the init-function.
-            _CONFIG_VARS['userbase'] = _getuserbase()
-
-        # Always convert srcdir to an absolute path
-        srcdir = _CONFIG_VARS.get('srcdir', _PROJECT_BASE)
-        if os.name == 'posix':
-            if _PYTHON_BUILD:
-                # If srcdir is a relative path (typically '.' or '..')
-                # then it should be interpreted relative to the directory
-                # containing Makefile.
-                base = os.path.dirname(get_makefile_filename())
-                srcdir = os.path.join(base, srcdir)
-            else:
-                # srcdir is not meaningful since the installation is
-                # spread about the filesystem.  We choose the
-                # directory containing the Makefile since we know it
-                # exists.
-                srcdir = os.path.dirname(get_makefile_filename())
-        _CONFIG_VARS['srcdir'] = _safe_realpath(srcdir)
-
-        # OS X platforms require special customization to handle
-        # multi-architecture, multi-os-version installers
-        if sys.platform == 'darwin':
-            import _osx_support
-            _osx_support.customize_config_vars(_CONFIG_VARS)
+    # Avoid claiming the lock once initialization is complete.
+    if not _CONFIG_VARS_INITIALIZED:
+        with _CONFIG_VARS_LOCK:
+            # Test again with the lock held to avoid races. Note that
+            # we test _CONFIG_VARS here, not _CONFIG_VARS_INITIALIZED,
+            # to ensure that recursive calls to get_config_vars()
+            # don't re-enter init_config_vars().
+            if _CONFIG_VARS is None:
+                _init_config_vars()
 
     if args:
         vals = []
@@ -661,9 +737,6 @@ def get_config_var(name):
 
     Equivalent to get_config_vars().get(name)
     """
-    if name == 'SO':
-        import warnings
-        warnings.warn('SO is deprecated, use EXT_SUFFIX', DeprecationWarning, 2)
     return get_config_vars().get(name)
 
 

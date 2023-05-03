@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_compile.h"       // _PyASTOptimizeState
+#include "pycore_long.h"           // _PyLong
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_format.h"        // F_LJUST
 
@@ -152,7 +153,9 @@ check_complexity(PyObject *obj, Py_ssize_t limit)
 static PyObject *
 safe_multiply(PyObject *v, PyObject *w)
 {
-    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w)) {
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
+    ) {
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = _PyLong_NumBits(w);
         if (vbits == (size_t)-1 || wbits == (size_t)-1) {
@@ -198,7 +201,9 @@ safe_multiply(PyObject *v, PyObject *w)
 static PyObject *
 safe_power(PyObject *v, PyObject *w)
 {
-    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w) > 0) {
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && _PyLong_IsPositive((PyLongObject *)w)
+    ) {
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
         if (vbits == (size_t)-1 || wbits == (size_t)-1) {
@@ -215,7 +220,9 @@ safe_power(PyObject *v, PyObject *w)
 static PyObject *
 safe_lshift(PyObject *v, PyObject *w)
 {
-    if (PyLong_Check(v) && PyLong_Check(w) && Py_SIZE(v) && Py_SIZE(w)) {
+    if (PyLong_Check(v) && PyLong_Check(w) &&
+        !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
+    ) {
         size_t vbits = _PyLong_NumBits(v);
         size_t wbits = PyLong_AsSize_t(w);
         if (vbits == (size_t)-1 || wbits == (size_t)-1) {
@@ -268,15 +275,10 @@ parse_literal(PyObject *fmt, Py_ssize_t *ppos, PyArena *arena)
     PyObject *str = PyUnicode_Substring(fmt, start, pos);
     /* str = str.replace('%%', '%') */
     if (str && has_percents) {
-        _Py_static_string(PyId_double_percent, "%%");
-        _Py_static_string(PyId_percent, "%");
-        PyObject *double_percent = _PyUnicode_FromId(&PyId_double_percent);
-        PyObject *percent = _PyUnicode_FromId(&PyId_percent);
-        if (!double_percent || !percent) {
-            Py_DECREF(str);
-            return NULL;
-        }
-        Py_SETREF(str, PyUnicode_Replace(str, double_percent, percent, -1));
+        _Py_DECLARE_STR(percent, "%");
+        _Py_DECLARE_STR(dbl_percent, "%%");
+        Py_SETREF(str, PyUnicode_Replace(str, &_Py_STR(dbl_percent),
+                                         &_Py_STR(percent), -1));
     }
     if (!str) {
         return NULL;
@@ -315,6 +317,7 @@ simple_format_arg_parse(PyObject *fmt, Py_ssize_t *ppos,
             case ' ': *flags |= F_BLANK; continue;
             case '#': *flags |= F_ALT; continue;
             case '0': *flags |= F_ZERO; continue;
+            case 'z': *flags |= F_NO_NEG_0; continue;
         }
         break;
     }
@@ -537,8 +540,7 @@ make_const_tuple(asdl_expr_seq *elts)
     for (int i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
         PyObject *v = e->v.Constant.value;
-        Py_INCREF(v);
-        PyTuple_SET_ITEM(newval, i, v);
+        PyTuple_SET_ITEM(newval, i, Py_NewRef(v));
     }
     return newval;
 }
@@ -618,7 +620,6 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 
     ops = node->v.Compare.ops;
     args = node->v.Compare.comparators;
-    /* TODO: optimize cases with literal arguments. */
     /* Change literal list or set in 'in' or 'not in' into
        tuple or frozenset respectively. */
     i = asdl_seq_LEN(ops) - 1;
@@ -661,15 +662,6 @@ static int astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState 
     } \
 }
 
-#define CALL_INT_SEQ(FUNC, TYPE, ARG) { \
-    int i; \
-    asdl_int_seq *seq = (ARG); /* avoid variable capture */ \
-    for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        TYPE elt = (TYPE)asdl_seq_GET(seq, i); \
-        if (!FUNC(elt, ctx_, state)) \
-            return 0; \
-    } \
-}
 
 static int
 astfold_body(asdl_stmt_seq *stmts, PyArena *ctx_, _PyASTOptimizeState *state)
@@ -973,6 +965,12 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.orelse);
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.finalbody);
         break;
+    case TryStar_kind:
+        CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.body);
+        CALL_SEQ(astfold_excepthandler, excepthandler, node_->v.TryStar.handlers);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.orelse);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.finalbody);
+        break;
     case Assert_kind:
         CALL(astfold_expr, expr_ty, node_->v.Assert.test);
         CALL_OPT(astfold_expr, expr_ty, node_->v.Assert.msg);
@@ -1080,7 +1078,6 @@ astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #undef CALL
 #undef CALL_OPT
 #undef CALL_SEQ
-#undef CALL_INT_SEQ
 
 /* See comments in symtable.c. */
 #define COMPILER_STACK_FRAME_SCALE 3
@@ -1089,7 +1086,6 @@ int
 _PyAST_Optimize(mod_ty mod, PyArena *arena, _PyASTOptimizeState *state)
 {
     PyThreadState *tstate;
-    int recursion_limit = Py_GetRecursionLimit();
     int starting_recursion_depth;
 
     /* Setup recursion depth check counters */
@@ -1098,12 +1094,10 @@ _PyAST_Optimize(mod_ty mod, PyArena *arena, _PyASTOptimizeState *state)
         return 0;
     }
     /* Be careful here to prevent overflow. */
-    int recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
-    starting_recursion_depth = (recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_depth * COMPILER_STACK_FRAME_SCALE : recursion_depth;
+    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
     state->recursion_depth = starting_recursion_depth;
-    state->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
-        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
+    state->recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
 
     int ret = astfold_mod(mod, arena, state);
     assert(ret || PyErr_Occurred());

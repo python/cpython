@@ -1,1 +1,0 @@
-Fixed a crash when calling ``.with_traceback(None)`` on ``NameError``. This occurs internally in ``unittest.TestCase.assertRaises()``.

@@ -154,7 +154,7 @@ tuple may or may not yield the same object).
    single: , (comma)
 
 Note that tuples are not formed by the parentheses, but rather by use of the
-comma operator.  The exception is the empty tuple, for which parentheses *are*
+comma.  The exception is the empty tuple, for which parentheses *are*
 required --- allowing unparenthesized "nothing" in expressions would cause
 ambiguities and allow common typos to pass uncaught.
 
@@ -427,9 +427,9 @@ Yield expressions
 The yield expression is used when defining a :term:`generator` function
 or an :term:`asynchronous generator` function and
 thus can only be used in the body of a function definition.  Using a yield
-expression in a function's body causes that function to be a generator,
+expression in a function's body causes that function to be a generator function,
 and using it in an :keyword:`async def` function's body causes that
-coroutine function to be an asynchronous generator. For example::
+coroutine function to be an asynchronous generator function. For example::
 
     def gen():  # defines a generator function
         yield 123
@@ -454,7 +454,9 @@ generator.  That generator then controls the execution of the generator
 function.  The execution starts when one of the generator's methods is called.
 At that time, the execution proceeds to the first yield expression, where it is
 suspended again, returning the value of :token:`~python-grammar:expression_list`
-to the generator's caller.  By suspended, we mean that all local state is
+to the generator's caller,
+or ``None`` if :token:`~python-grammar:expression_list` is omitted.
+By suspended, we mean that all local state is
 retained, including the current bindings of local variables, the instruction
 pointer, the internal evaluation stack, and the state of any exception handling.
 When the execution is resumed by calling one of the generator's methods, the
@@ -561,13 +563,31 @@ is already executing raises a :exc:`ValueError` exception.
    could receive the value.
 
 
-.. method:: generator.throw(type[, value[, traceback]])
+.. method:: generator.throw(value)
+            generator.throw(type[, value[, traceback]])
 
-   Raises an exception of type ``type`` at the point where the generator was paused,
+   Raises an exception at the point where the generator was paused,
    and returns the next value yielded by the generator function.  If the generator
    exits without yielding another value, a :exc:`StopIteration` exception is
    raised.  If the generator function does not catch the passed-in exception, or
    raises a different exception, then that exception propagates to the caller.
+
+   In typical use, this is called with a single exception instance similar to the
+   way the :keyword:`raise` keyword is used.
+
+   For backwards compatibility, however, the second signature is
+   supported, following a convention from older versions of Python.
+   The *type* argument should be an exception class, and *value*
+   should be an exception instance. If the *value* is not provided, the
+   *type* constructor is called to get an instance. If *traceback*
+   is provided, it is set on the exception, otherwise any existing
+   :attr:`~BaseException.__traceback__` attribute stored in *value* may
+   be cleared.
+
+   .. versionchanged:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
 
 .. index:: exception: GeneratorExit
 
@@ -725,7 +745,8 @@ which are used to control the execution of a generator function.
    because there is no yield expression that could receive the value.
 
 
-.. coroutinemethod:: agen.athrow(type[, value[, traceback]])
+.. coroutinemethod:: agen.athrow(value)
+                     agen.athrow(type[, value[, traceback]])
 
    Returns an awaitable that raises an exception of type ``type`` at the point
    where the asynchronous generator was paused, and returns the next value
@@ -736,6 +757,11 @@ which are used to control the execution of a generator function.
    If the generator function does not catch the passed-in exception, or
    raises a different exception, then when the awaitable is run that exception
    propagates to the caller of the awaitable.
+
+   .. versionchanged:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
 
 .. index:: exception: GeneratorExit
 
@@ -815,30 +841,44 @@ Subscriptions
    object: dictionary
    pair: sequence; item
 
-Subscription of a sequence (string, tuple or list) or mapping (dictionary)
-object usually selects an item from the collection:
+The subscription of an instance of a :ref:`container class <sequence-types>`
+will generally select an element from the container. The subscription of a
+:term:`generic class <generic type>` will generally return a
+:ref:`GenericAlias <types-genericalias>` object.
 
 .. productionlist:: python-grammar
    subscription: `primary` "[" `expression_list` "]"
 
-The primary must evaluate to an object that supports subscription (lists or
-dictionaries for example).  User-defined objects can support subscription by
-defining a :meth:`__getitem__` method.
+When an object is subscripted, the interpreter will evaluate the primary and
+the expression list.
 
-For built-in objects, there are two types of objects that support subscription:
+The primary must evaluate to an object that supports subscription. An object
+may support subscription through defining one or both of
+:meth:`~object.__getitem__` and :meth:`~object.__class_getitem__`. When the
+primary is subscripted, the evaluated result of the expression list will be
+passed to one of these methods. For more details on when ``__class_getitem__``
+is called instead of ``__getitem__``, see :ref:`classgetitem-versus-getitem`.
 
-If the primary is a mapping, the expression list must evaluate to an object
-whose value is one of the keys of the mapping, and the subscription selects the
-value in the mapping that corresponds to that key.  (The expression list is a
-tuple except if it has exactly one item.)
+If the expression list contains at least one comma, it will evaluate to a
+:class:`tuple` containing the items of the expression list. Otherwise, the
+expression list will evaluate to the value of the list's sole member.
 
-If the primary is a sequence, the expression list must evaluate to an integer
-or a slice (as discussed in the following section).
+For built-in objects, there are two types of objects that support subscription
+via :meth:`~object.__getitem__`:
+
+1. Mappings. If the primary is a :term:`mapping`, the expression list must
+   evaluate to an object whose value is one of the keys of the mapping, and the
+   subscription selects the value in the mapping that corresponds to that key.
+   An example of a builtin mapping class is the :class:`dict` class.
+2. Sequences. If the primary is a :term:`sequence`, the expression list must
+   evaluate to an :class:`int` or a :class:`slice` (as discussed in the
+   following section). Examples of builtin sequence classes include the
+   :class:`str`, :class:`list` and :class:`tuple` classes.
 
 The formal syntax makes no special provision for negative indices in
-sequences; however, built-in sequences all provide a :meth:`__getitem__`
+:term:`sequences <sequence>`. However, built-in sequences all provide a :meth:`~object.__getitem__`
 method that interprets negative indices by adding the length of the sequence
-to the index (so that ``x[-1]`` selects the last item of ``x``).  The
+to the index so that, for example, ``x[-1]`` selects the last item of ``x``. The
 resulting value must be a nonnegative integer less than the number of items in
 the sequence, and the subscription selects the item whose index is that value
 (counting from zero). Since the support for negative indices and slicing
@@ -849,13 +889,9 @@ this method will need to explicitly add that support.
    single: character
    pair: string; item
 
-A string's items are characters.  A character is not a separate data type but a
+A :class:`string <str>` is a special kind of sequence whose items are
+*characters*. A character is not a separate data type but a
 string of exactly one character.
-
-Subscription of certain :term:`classes <class>` or :term:`types <type>`
-creates a :ref:`generic alias <types-genericalias>`.
-In this case, user-defined classes can support subscription by providing a
-:meth:`__class_getitem__` classmethod.
 
 
 .. _slicings:
@@ -1031,9 +1067,19 @@ used in the same call, so in practice this confusion does not often arise.
 
 If the syntax ``**expression`` appears in the function call, ``expression`` must
 evaluate to a :term:`mapping`, the contents of which are treated as
-additional keyword arguments.  If a keyword is already present
-(as an explicit keyword argument, or from another unpacking),
+additional keyword arguments. If a parameter matching a key has already been
+given a value (by an explicit keyword argument, or from another unpacking),
 a :exc:`TypeError` exception is raised.
+
+When ``**expression`` is used, each key in this mapping must be
+a string.
+Each value from the mapping is assigned to the first formal parameter
+eligible for keyword assignment whose name is equal to the key.
+A key need not be a Python identifier (e.g. ``"max-temp °F"`` is acceptable,
+although it will not match any formal parameter that could be declared).
+If there is no match to a formal parameter
+the key-value pair is collected by the ``**`` parameter, if there is one,
+or if there is not, a :exc:`TypeError` exception is raised.
 
 Formal parameters using the syntax ``*identifier`` or ``**identifier`` cannot be
 used as positional argument slots or as keyword argument names.
@@ -1518,7 +1564,7 @@ built-in types.
     true).
 
 * Mappings (instances of :class:`dict`) compare equal if and only if they have
-  equal `(key, value)` pairs. Equality comparison of the keys and values
+  equal ``(key, value)`` pairs. Equality comparison of the keys and values
   enforces reflexivity.
 
   Order comparisons (``<``, ``>``, ``<=``, and ``>=``) raise :exc:`TypeError`.
@@ -1697,6 +1743,12 @@ returns a boolean value regardless of the type of its argument
 (for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
 
 
+.. index::
+   single: := (colon equals)
+   single: assignment expression
+   single: walrus operator
+   single: named expression
+
 Assignment expressions
 ======================
 
@@ -1721,6 +1773,13 @@ Or, when processing a file stream in chunks:
 
    while chunk := file.read(9000):
        process(chunk)
+
+Assignment expressions must be surrounded by parentheses when used
+as sub-expressions in slicing, conditional, lambda,
+keyword-argument, and comprehension-if expressions
+and in ``assert`` and ``with`` statements.
+In all other places where they can be used, parentheses are not required,
+including in ``if`` and ``while`` statements.
 
 .. versionadded:: 3.8
    See :pep:`572` for more details about assignment expressions.
@@ -1856,7 +1915,7 @@ The following table summarizes the operator precedence in Python, from highest
 precedence (most binding) to lowest precedence (least binding).  Operators in
 the same box have the same precedence.  Unless the syntax is explicitly given,
 operators are binary.  Operators in the same box group left to right (except for
-exponentiation, which groups from right to left).
+exponentiation and conditional expressions, which group from right to left).
 
 Note that comparisons, membership tests, and identity tests, all have the same
 precedence and have a left-to-right chaining feature as described in the
@@ -1875,7 +1934,7 @@ precedence and have a left-to-right chaining feature as described in the
 | ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
 | ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`await` ``x``                        | Await expression                    |
+| :keyword:`await x <await>`                    | Await expression                    |
 +-----------------------------------------------+-------------------------------------+
 | ``**``                                        | Exponentiation [#]_                 |
 +-----------------------------------------------+-------------------------------------+
@@ -1899,7 +1958,7 @@ precedence and have a left-to-right chaining feature as described in the
 | :keyword:`is`, :keyword:`is not`, ``<``,      | tests and identity tests            |
 | ``<=``, ``>``, ``>=``, ``!=``, ``==``         |                                     |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`not` ``x``                          | Boolean NOT                         |
+| :keyword:`not x <not>`                        | Boolean NOT                         |
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`and`                                | Boolean AND                         |
 +-----------------------------------------------+-------------------------------------+

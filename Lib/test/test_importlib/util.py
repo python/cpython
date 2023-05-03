@@ -27,7 +27,7 @@ EXTENSIONS.path = None
 EXTENSIONS.ext = None
 EXTENSIONS.filename = None
 EXTENSIONS.file_path = None
-EXTENSIONS.name = '_testcapi'
+EXTENSIONS.name = '_testsinglephase'
 
 def _extension_details():
     global EXTENSIONS
@@ -131,9 +131,8 @@ def uncache(*names):
 
     """
     for name in names:
-        if name in ('sys', 'marshal', 'imp'):
-            raise ValueError(
-                "cannot uncache {0}".format(name))
+        if name in ('sys', 'marshal'):
+            raise ValueError("cannot uncache {}".format(name))
         try:
             del sys.modules[name]
         except KeyError:
@@ -298,7 +297,7 @@ def writes_bytecode_files(fxn):
     """Decorator to protect sys.dont_write_bytecode from mutation and to skip
     tests that require it to be set to False."""
     if sys.dont_write_bytecode:
-        return lambda *args, **kwargs: None
+        return unittest.skip("relies on writing bytecode")(fxn)
     @functools.wraps(fxn)
     def wrapper(*args, **kwargs):
         original = sys.dont_write_bytecode

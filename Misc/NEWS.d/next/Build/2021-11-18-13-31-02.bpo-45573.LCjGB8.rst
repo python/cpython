@@ -1,2 +1,0 @@
-Mandatory core modules, that are required to bootstrap Python, are now in
-``Modules/Setup.bootstrap``.
