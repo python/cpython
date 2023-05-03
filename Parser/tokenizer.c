@@ -2558,6 +2558,9 @@ f_string_middle:
 
     while (end_quote_size != current_tok->f_string_quote_size) {
         int c = tok_nextc(tok);
+        if (tok->done == E_ERROR) {
+            return MAKE_TOKEN(ERRORTOKEN);
+        }
         if (c == EOF || (current_tok->f_string_quote_size == 1 && c == '\n')) {
             if (tok->decoding_erred) {
                 return MAKE_TOKEN(ERRORTOKEN);
