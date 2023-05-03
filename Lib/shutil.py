@@ -37,8 +37,9 @@ _WINDOWS = os.name == 'nt'
 posix = nt = None
 if os.name == 'posix':
     import posix
-elif _WINDOWS:
-    import nt
+#elif _WINDOWS:
+#    import nt
+# nt can not import?!
 
 if sys.platform == 'win32':
     import _winapi
