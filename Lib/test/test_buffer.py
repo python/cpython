@@ -4473,11 +4473,13 @@ class TestPythonBufferProtocol(unittest.TestCase):
             def __init__(self):
                 self.held = False
                 self.ba = bytearray(b"hello")
+
             def __buffer__(self, flags):
                 if self.held:
                     raise TypeError("already held")
                 self.held = True
                 return memoryview(self.ba)
+
             def __release_buffer__(self, buffer):
                 self.held = False
 
@@ -4494,12 +4496,14 @@ class TestPythonBufferProtocol(unittest.TestCase):
                 self.held = False
                 self.ba = bytearray(b"hello")
                 self.created_mv = None
+
             def __buffer__(self, flags):
                 if self.held:
                     raise TypeError("already held")
                 self.held = True
                 self.created_mv = memoryview(self.ba)
                 return self.created_mv
+
             def __release_buffer__(self, buffer):
                 assert buffer is self.created_mv
                 self.held = False
