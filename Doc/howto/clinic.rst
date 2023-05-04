@@ -1066,15 +1066,15 @@ Currently Argument Clinic supports only a few return converters:
 .. code-block:: none
 
     bool
-    int
-    unsigned int
-    long
-    unsigned long
-    size_t
-    Py_ssize_t
-    float
     double
+    float
     init
+    int
+    long
+    Py_ssize_t
+    size_t
+    unsigned int
+    unsigned long
 
 None of these take parameters.  For the first three, return -1 to indicate
 error.
