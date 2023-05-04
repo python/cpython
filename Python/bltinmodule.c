@@ -3016,7 +3016,14 @@ static PyMethodDef builtin_methods[] = {
 PyDoc_STRVAR(builtin_doc,
 "Built-in functions, exceptions, and other objects.\n\
 \n\
-Noteworthy: None is the `nil' object; Ellipsis represents `...' in slices.");
+This module provides direct access to all 'built-in'\n\
+identifiers of Python; for example, `builtins.open` is\n\
+the full name for the built-in function `open()`.\n\
+\n\
+This module is not normally accessed explicitly by most\n\
+applications, but can be useful in modules that provide\n\
+objects with the same name as a built-in value, but in\n\
+which the built-in of that name is also needed.");
 
 static struct PyModuleDef builtinsmodule = {
     PyModuleDef_HEAD_INIT,
