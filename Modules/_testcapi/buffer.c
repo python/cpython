@@ -54,7 +54,7 @@ static int
 testbuf_getbuf(testBufObject *self, Py_buffer *view, int flags)
 {
     int buf = PyObject_GetBuffer(self->obj, view, flags);
-    Py_SETREF(view->obj, Py_NewRef((PyObject *)self));
+    Py_SETREF(view->obj, Py_NewRef(self));
     self->references++;
     return buf;
 }
@@ -72,7 +72,7 @@ static PyBufferProcs testbuf_as_buffer = {
 };
 
 static struct PyMemberDef testbuf_members[] = {
-    {"references", T_LONG, offsetof(testBufObject, references), READONLY},
+    {"references", T_PYSSIZET, offsetof(testBufObject, references), READONLY},
     {NULL},
 };
 
