@@ -468,8 +468,8 @@ class AST_Tests(unittest.TestCase):
                     # The argument is required.
                     continue
                 with self.subTest(item):
-                 with self.assertWarns(DeprecationWarning):
-                    x = item()
+                    with self.assertWarns(DeprecationWarning):
+                        x = item()
                 if isinstance(x, ast.AST):
                     self.assertEqual(type(x._fields), tuple)
 
