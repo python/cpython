@@ -55,8 +55,8 @@ The following functions are provided:
 .. function:: bisect_right(a, x, lo=0, hi=len(a), *, key=None)
               bisect(a, x, lo=0, hi=len(a), *, key=None)
 
-   Similar to :func:`bisect_left`, but returns an insertion point which comes
-   after (to the right of) any existing entries of *x* in *a*.
+   Similar to :py:func:`~bisect.bisect_left`, but returns an insertion point
+   which comes after (to the right of) any existing entries of *x* in *a*.
 
    The returned insertion point *ip* partitions the array *a* into two slices
    such that ``all(elem <= x for elem in a[lo : ip])`` is true for the left slice and
@@ -70,7 +70,8 @@ The following functions are provided:
 
    Insert *x* in *a* in sorted order.
 
-   This function first runs :func:`bisect_left` to locate an insertion point.
+   This function first runs :py:func:`~bisect.bisect_left` to locate an
+   insertion point.
    Next, it runs the :meth:`insert` method on *a* to insert *x* at the
    appropriate position to maintain sort order.
 
@@ -87,10 +88,11 @@ The following functions are provided:
 .. function:: insort_right(a, x, lo=0, hi=len(a), *, key=None)
               insort(a, x, lo=0, hi=len(a), *, key=None)
 
-   Similar to :func:`insort_left`, but inserting *x* in *a* after any existing
-   entries of *x*.
+   Similar to :py:func:`~bisect.insort_left`, but inserting *x* in *a* afte
+   any existing entries of *x*.
 
-   This function first runs :func:`bisect_right` to locate an insertion point.
+   This function first runs :py:func:`~bisect.bisect_right` to locate an
+   insertion point.
    Next, it runs the :meth:`insert` method on *a* to insert *x* at the
    appropriate position to maintain sort order.
 
@@ -120,7 +122,7 @@ thoughts in mind:
   they are used.  Consequently, if the search functions are used in a loop,
   the key function may be called again and again on the same array elements.
   If the key function isn't fast, consider wrapping it with
-  :func:`functools.cache` to avoid duplicate computations.  Alternatively,
+  :py:func:`functools.cache` to avoid duplicate computations.  Alternatively,
   consider searching an array of precomputed keys to locate the insertion
   point (as shown in the examples section below).
 
@@ -186,10 +188,10 @@ Examples
 
 .. _bisect-example:
 
-The :func:`.bisect` function can be useful for numeric table lookups. This
-example uses :func:`.bisect` to look up a letter grade for an exam score (say)
-based on a set of ordered numeric breakpoints: 90 and up is an 'A', 80 to 89 is
-a 'B', and so on::
+The :py:func:`~bisect.bisect` function can be useful for numeric table lookups.
+This example uses :py:func:`~bisect.bisect` to look up a letter grade for
+an exam score (say) based on a set of ordered numeric breakpoints:
+90 and up is an 'A', 80 to 89 is a 'B', and so on::
 
    >>> def grade(score, breakpoints=[60, 70, 80, 90], grades='FDCBA'):
    ...     i = bisect(breakpoints, score)
@@ -198,9 +200,9 @@ a 'B', and so on::
    >>> [grade(score) for score in [33, 99, 77, 70, 89, 90, 100]]
    ['F', 'A', 'C', 'C', 'B', 'A', 'A']
 
-The :func:`.bisect` and :func:`insort` functions also work with lists of
-tuples.  The *key* argument can serve to extract the field used for ordering
-records in a table::
+The :py:func:`~bisect.bisect` and :py:func:`~bisect.insort` functions also work
+with lists of tuples. The *key* argument can serve to extract the field used
+for ordering records in a table::
 
     >>> from collections import namedtuple
     >>> from operator import attrgetter
