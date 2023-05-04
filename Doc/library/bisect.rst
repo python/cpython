@@ -140,7 +140,7 @@ thoughts in mind:
 Searching Sorted Lists
 ----------------------
 
-The above :func:`bisect` functions are useful for finding insertion points but
+The above :func:`.bisect` functions are useful for finding insertion points but
 can be tricky or awkward to use for common searching tasks. The following five
 functions show how to transform them into the standard lookups for sorted
 lists::
@@ -186,8 +186,8 @@ Examples
 
 .. _bisect-example:
 
-The :func:`bisect` function can be useful for numeric table lookups. This
-example uses :func:`bisect` to look up a letter grade for an exam score (say)
+The :func:`.bisect` function can be useful for numeric table lookups. This
+example uses :func:`.bisect` to look up a letter grade for an exam score (say)
 based on a set of ordered numeric breakpoints: 90 and up is an 'A', 80 to 89 is
 a 'B', and so on::
 
@@ -198,7 +198,7 @@ a 'B', and so on::
    >>> [grade(score) for score in [33, 99, 77, 70, 89, 90, 100]]
    ['F', 'A', 'C', 'C', 'B', 'A', 'A']
 
-The :func:`bisect` and :func:`insort` functions also work with lists of
+The :func:`.bisect` and :func:`insort` functions also work with lists of
 tuples.  The *key* argument can serve to extract the field used for ordering
 records in a table::
 
