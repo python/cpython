@@ -784,7 +784,7 @@ handle_eval_breaker:
                next_instr points the current instruction without TARGET(). */
             opcode = next_instr->op.code;
             _PyErr_Format(tstate, PyExc_SystemError,
-                    PyUnstable_InterpreterFrame_GetLine(frame),  opcode);
+                          "%U:%d: unknown opcode %d",
                           frame->f_code->co_filename,
                           PyUnstable_InterpreterFrame_GetLine(frame),
                           opcode);
