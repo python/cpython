@@ -118,22 +118,24 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
     Py_DECREF(frame->f_code);
 }
 
-/* Limited API functions */
+/* Unstable API functions */
 
-PyCodeObject *_PyInterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
+PyCodeObject *
+PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
 {
     PyCodeObject *code = frame->f_code;
     Py_INCREF(code);
     return code;
 }
 
-int _PyInterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
+int
+PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
 {
     return _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
 }
 
 int
-_PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame)
+PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {
     int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
     return PyCode_Addr2Line(frame->f_code, addr);

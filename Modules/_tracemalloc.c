@@ -309,7 +309,7 @@ static void
 tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
 {
     frame->filename = &_Py_STR(anon_unknown);
-    int lineno = _PyInterpreterFrame_GetLine(pyframe);
+    int lineno = PyUnstable_InterpreterFrame_GetLine(pyframe);
     if (lineno < 0) {
         lineno = 0;
     }

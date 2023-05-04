@@ -4,6 +4,8 @@
 #  error "this header file must not be included directly"
 #endif
 
+struct _PyInterpreterFrame;
+
 /* Standard object interface */
 
 PyAPI_FUNC(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
@@ -33,12 +35,12 @@ PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 
 /* Returns the code object of the frame (strong reference).
  * Does not raise an exception. */
-PyAPI_FUNC(PyCodeObject *) _PyInterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
+PyAPI_FUNC(PyCodeObject *) PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
 
 /* Returns a byte ofsset into the last executed instruction.
  * Does not raise an exception. */
-PyAPI_FUNC(int) _PyInterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame);
+PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame);
 
 /* Returns the currently executing line number, or -1 if there is no line number.
  * Does not raise an exception. */
-PyAPI_FUNC(int) _PyInterpreterFrame_GetLine(struct _PyInterpreterFrame *frame);
+PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrame *frame);
