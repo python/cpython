@@ -1376,7 +1376,7 @@ regen-opcode:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_opcode_h.py \
 		$(srcdir)/Lib/opcode.py \
 		$(srcdir)/Include/opcode.h.new \
-		$(srcdir)/Include/internal/pycore_opcode.h.new
+		$(srcdir)/Include/internal/pycore_opcode.h.new \
 		$(srcdir)/Include/internal/pycore_intrinsics.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode.h $(srcdir)/Include/internal/pycore_opcode.h.new
