@@ -284,7 +284,7 @@ HTTPConnection Objects
    The *headers* argument should be a mapping of extra HTTP headers to send
    with the request. A :rfc:`Host header <2616#section-14.23>`
    must be provided to conform with :rfc:`RFC 2616 §5.1.2 <2616#section-5.1.2>`
-   (unless connecting to an HTTP proxy server or using the ``OPTIONS`` or 
+   (unless connecting to an HTTP proxy server or using the ``OPTIONS`` or
    ``CONNECT`` methods).
 
    If *headers* contains neither Content-Length nor Transfer-Encoding,
