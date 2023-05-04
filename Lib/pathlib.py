@@ -62,7 +62,7 @@ def _is_case_sensitive(flavour):
 #
 
 @functools.lru_cache()
-def _make_selector(pattern_parts, flavour):
+def _make_selector(pattern_parts, flavour, case_sensitive):
     pat = pattern_parts[0]
     child_parts = pattern_parts[1:]
     if not pat:
@@ -75,17 +75,17 @@ def _make_selector(pattern_parts, flavour):
         raise ValueError("Invalid pattern: '**' can only be an entire path component")
     else:
         cls = _WildcardSelector
-    return cls(pat, child_parts, flavour)
+    return cls(pat, child_parts, flavour, case_sensitive)
 
 
 class _Selector:
     """A selector matches a specific glob pattern part against the children
     of a given path."""
 
-    def __init__(self, child_parts, flavour):
+    def __init__(self, child_parts, flavour, case_sensitive):
         self.child_parts = child_parts
         if child_parts:
-            self.successor = _make_selector(child_parts, flavour)
+            self.successor = _make_selector(child_parts, flavour, case_sensitive)
             self.dironly = True
         else:
             self.successor = _TerminatingSelector()
@@ -108,8 +108,9 @@ class _TerminatingSelector:
 
 
 class _ParentSelector(_Selector):
-    def __init__(self, name, child_parts, flavour):
-        _Selector.__init__(self, child_parts, flavour)
+
+    def __init__(self, name, child_parts, flavour, case_sensitive):
+        _Selector.__init__(self, child_parts, flavour, case_sensitive)
 
     def _select_from(self,  parent_path, scandir):
         path = parent_path._make_child_relpath('..')
@@ -119,10 +120,13 @@ class _ParentSelector(_Selector):
 
 class _WildcardSelector(_Selector):
 
-    def __init__(self, pat, child_parts, flavour):
-        flags = re.NOFLAG if _is_case_sensitive(flavour) else re.IGNORECASE
+    def __init__(self, pat, child_parts, flavour, case_sensitive):
+        _Selector.__init__(self, child_parts, flavour, case_sensitive)
+        if case_sensitive is None:
+            # TODO: evaluate case-sensitivity of each directory in _select_from()
+            case_sensitive = _is_case_sensitive(flavour)
+        flags = re.NOFLAG if case_sensitive else re.IGNORECASE
         self.match = re.compile(fnmatch.translate(pat), flags=flags).fullmatch
-        _Selector.__init__(self, child_parts, flavour)
 
     def _select_from(self, parent_path, scandir):
         try:
@@ -153,8 +157,8 @@ class _WildcardSelector(_Selector):
 
 class _RecursiveWildcardSelector(_Selector):
 
-    def __init__(self, pat, child_parts, flavour):
-        _Selector.__init__(self, child_parts, flavour)
+    def __init__(self, pat, child_parts, flavour, case_sensitive):
+        _Selector.__init__(self, child_parts, flavour, case_sensitive)
 
     def _iterate_directories(self, parent_path, scandir):
         yield parent_path
@@ -819,7 +823,7 @@ class Path(PurePath):
         # includes scandir(), which is used to implement glob().
         return os.scandir(self)
 
-    def glob(self, pattern):
+    def glob(self, pattern, *, case_sensitive=None):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
@@ -831,11 +835,11 @@ class Path(PurePath):
             raise NotImplementedError("Non-relative patterns are unsupported")
         if pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
-        selector = _make_selector(tuple(pattern_parts), self._flavour)
+        selector = _make_selector(tuple(pattern_parts), self._flavour, case_sensitive)
         for p in selector.select_from(self):
             yield p
 
-    def rglob(self, pattern):
+    def rglob(self, pattern, *, case_sensitive=None):
         """Recursively yield all existing files (of any kind, including
         directories) matching the given relative pattern, anywhere in
         this subtree.
@@ -846,7 +850,7 @@ class Path(PurePath):
             raise NotImplementedError("Non-relative patterns are unsupported")
         if pattern and pattern[-1] in (self._flavour.sep, self._flavour.altsep):
             pattern_parts.append('')
-        selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour)
+        selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour, case_sensitive)
         for p in selector.select_from(self):
             yield p
 
