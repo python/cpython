@@ -177,6 +177,7 @@ ABC                            Inherits from          Abstract Methods        Mi
 :class:`AsyncIterable` [1]_                           ``__aiter__``
 :class:`AsyncIterator` [1]_    :class:`AsyncIterable` ``__anext__``           ``__aiter__``
 :class:`AsyncGenerator` [1]_   :class:`AsyncIterator` ``asend``, ``athrow``   ``aclose``, ``__aiter__``, ``__anext__``
+:class:`Buffer` [1]_                                  ``__buffer__``
 ============================== ====================== ======================= ====================================================
 
 
@@ -345,6 +346,13 @@ Collections Abstract Base Classes -- Detailed Descriptions
    defined in :pep:`525` and :pep:`492`.
 
    .. versionadded:: 3.6
+
+.. class:: Buffer
+
+   ABC for classes that provide the :meth:`~object.__buffer__` method,
+   implementing the :ref:`buffer protocol <bufferobjects>`. See :pep:`688`.
+
+   .. versionadded:: 3.12
 
 Examples and Recipes
 --------------------
