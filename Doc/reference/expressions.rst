@@ -71,7 +71,7 @@ An identifier occurring as an atom is a name.  See section :ref:`identifiers`
 for lexical definition and section :ref:`naming` for documentation of naming and
 binding.
 
-.. index:: exception: NameError
+.. index:: pair: exception; NameError
 
 When the name is bound to an object, evaluation of the atom yields that object.
 When a name is not bound, an attempt to evaluate it raises a :exc:`NameError`
@@ -534,7 +534,7 @@ be used to control the execution of a generator function.
 Note that calling any of the generator methods below when the generator
 is already executing raises a :exc:`ValueError` exception.
 
-.. index:: exception: StopIteration
+.. index:: pair: exception; StopIteration
 
 
 .. method:: generator.__next__()
@@ -589,7 +589,7 @@ is already executing raises a :exc:`ValueError` exception.
       The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
       may be removed in a future version of Python.
 
-.. index:: exception: GeneratorExit
+.. index:: pair: exception; GeneratorExit
 
 
 .. method:: generator.close()
@@ -711,7 +711,7 @@ This subsection describes the methods of an asynchronous generator iterator,
 which are used to control the execution of a generator function.
 
 
-.. index:: exception: StopAsyncIteration
+.. index:: pair: exception; StopAsyncIteration
 
 .. coroutinemethod:: agen.__anext__()
 
@@ -763,7 +763,7 @@ which are used to control the execution of a generator function.
       The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
       may be removed in a future version of Python.
 
-.. index:: exception: GeneratorExit
+.. index:: pair: exception; GeneratorExit
 
 
 .. coroutinemethod:: agen.aclose()
@@ -810,7 +810,7 @@ An attribute reference is a primary followed by a period and a name:
    attributeref: `primary` "." `identifier`
 
 .. index::
-   exception: AttributeError
+   pair: exception; AttributeError
    pair: object; module
    pair: object; list
 
@@ -1241,7 +1241,7 @@ applies to integral numbers or to custom objects that override the
 
 
 
-.. index:: exception: TypeError
+.. index:: pair: exception; TypeError
 
 In all three cases, if the argument does not have the proper type, a
 :exc:`TypeError` exception is raised.
@@ -1288,7 +1288,7 @@ builtin Python types implement this operator.
 .. versionadded:: 3.5
 
 .. index::
-   exception: ZeroDivisionError
+   pair: exception; ZeroDivisionError
    single: division
    pair: operator; / (slash)
    pair: operator; //
@@ -1377,7 +1377,7 @@ the left or right by the number of bits given by the second argument.
 This operation can be customized using the special :meth:`__lshift__` and
 :meth:`__rshift__` methods.
 
-.. index:: exception: ValueError
+.. index:: pair: exception; ValueError
 
 A right shift by *n* bits is defined as floor division by ``pow(2,n)``.  A left
 shift by *n* bits is defined as multiplication with ``pow(2,n)``.
