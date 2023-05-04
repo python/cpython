@@ -239,7 +239,8 @@ Other Language Changes
 
 * When a ``try-except*`` construct handles the entire :exc:`ExceptionGroup`
   and raises one other exception, that exception is no longer wrapped in an
-  :exc:`ExceptionGroup`. (Contributed by Irit Katriel in :gh:`103590`.)
+  :exc:`ExceptionGroup`. Also changed in version 3.11.4. (Contributed by Irit
+  Katriel in :gh:`103590`.)
 
 
 New Modules
@@ -407,6 +408,14 @@ os.path
 
 * Add :func:`os.path.splitroot` to split a path into a triad
   ``(drive, root, tail)``. (Contributed by Barney Gale in :gh:`101000`.)
+
+pdb
+---
+
+* Add convenience variables to hold values temporarily for debug session
+  and provide quick access to values like the current frame or the return
+  value.
+  (Contributed by Tian Gao in :gh:`103693`.)
 
 shutil
 ------
@@ -804,6 +813,11 @@ Pending Removal in Python 3.14
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
   and will be removed in 3.14.
 
+* :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
+  now raise :exc:`DeprecationWarning`;
+  use :func:`importlib.util.find_spec` instead.
+  (Contributed by Nikita Sobolev in :gh:`97850`.)
+
 Pending Removal in Future Versions
 ----------------------------------
 
@@ -983,14 +997,20 @@ Removed
 * Many previously deprecated cleanups in :mod:`importlib` have now been
   completed:
 
-  * References to, and support for ``module_repr()`` has been eradicated.
+  * References to, and support for :meth:`!module_repr()` has been removed.
     (Contributed by Barry Warsaw in :gh:`97850`.)
 
-* ``importlib.util.set_package`` has been removed.
-  (Contributed by Brett Cannon in :gh:`65961`.)
+  * ``importlib.util.set_package`` has been removed. (Contributed by Brett
+    Cannon in :gh:`65961`.)
 
-* The ``imp`` module has been removed.  (Contributed by Barry Warsaw in
-  :gh:`98040`.)
+  * Support for ``find_loader()`` and ``find_module()`` APIs have been
+    removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
+
+  * ``importlib.abc.Finder``, ``pkg.ImpImporter``, and ``pkg.ImpLoader`` have
+    been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
+
+  * The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
+    :gh:`98040`.)
 
 * Removed the ``suspicious`` rule from the documentation Makefile, and
   removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
@@ -1314,6 +1334,21 @@ Porting to Python 3.12
   available on debug builds.  If you happen to be using it then you'll
   need to start using ``_Py_GetGlobalRefTotal()``.
 
+* The following functions now select an appropriate metaclass for the newly
+  created type:
+
+  * :c:func:`PyType_FromSpec`
+  * :c:func:`PyType_FromSpecWithBases`
+  * :c:func:`PyType_FromModuleAndSpec`
+
+  Creating classes whose metaclass overrides :c:member:`~PyTypeObject.tp_new`
+  is deprecated, and in Python 3.14+ it will be disallowed.
+  Note that these functions ignore ``tp_new`` of the metaclass, possibly
+  allowing incomplete initialization.
+
+  Note that :c:func:`PyType_FromMetaclass` (added in Python 3.12)
+  already disallows creating classes whose metaclass overrides ``tp_new``.
+
 Deprecated
 ----------
 
@@ -1389,6 +1424,11 @@ Deprecated
 
 * ``_PyErr_ChainExceptions`` is deprecated. Use ``_PyErr_ChainExceptions1``
   instead. (Contributed by Irit Katriel in :gh:`102192`.)
+
+* Using :c:func:`PyType_FromSpec`, :c:func:`PyType_FromSpecWithBases`
+  or :c:func:`PyType_FromModuleAndSpec` to create a class whose metaclass
+  overrides :c:member:`~PyTypeObject.tp_new` is deprecated.
+  Call the metaclass instead.
 
 Removed
 -------
