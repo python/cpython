@@ -986,11 +986,18 @@ x = (
         self.assertEqual(fr'\"\'\"\'', '\\"\\\'\\"\\\'')
 
     def test_fstring_backslash_before_double_bracket(self):
-        self.assertEqualWithDeprecationWarning(r"f'\{{\}}'", '\\{\\}')
-        self.assertEqualWithDeprecationWarning(r"f'\{{'", '\\{')
-        self.assertEqualWithDeprecationWarning(r"f'\{{{1+1}'", '\\{2')
-        self.assertEqualWithDeprecationWarning(r"f'\}}{1+1}'", '\\}2')
-        self.assertEqualWithDeprecationWarning(r"f'{1+1}\}}'", '2\\}')
+        deprecated_cases = [
+            (r"f'\{{\}}'",   '\\{\\}'),
+            (r"f'\{{'",      '\\{'),
+            (r"f'\{{{1+1}'", '\\{2'),
+            (r"f'\}}{1+1}'", '\\}2'),
+            (r"f'{1+1}\}}'", '2\\}')
+        ]
+        for case, expected_result in deprecated_cases:
+            with self.subTest(case=case, expected_result=expected_result):
+                with self.assertWarns(DeprecationWarning):
+                    result = eval(case)
+                self.assertEqual(result, expected_result)
         self.assertEqual(fr'\{{\}}', '\\{\\}')
         self.assertEqual(fr'\{{', '\\{')
         self.assertEqual(fr'\{{{1+1}', '\\{2')
