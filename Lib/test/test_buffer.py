@@ -4559,6 +4559,8 @@ class TestPythonBufferProtocol(unittest.TestCase):
         mv = ba.__buffer__(0)
         self.assertEqual(mv.tobytes(), b"hello")
         ba.__release_buffer__(mv)
+        with self.assertRaises(OverflowError):
+            ba.__buffer__(sys.maxsize + 1)
 
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_c_buffer(self):

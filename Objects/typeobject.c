@@ -8072,6 +8072,11 @@ wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
     if (flags == -1 && PyErr_Occurred()) {
         return NULL;
     }
+    if (flags > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "buffer flags too large");
+        return NULL;
+    }
 
     return PyMemoryView_FromObjectAndFlags(self, Py_SAFE_DOWNCAST(flags, Py_ssize_t, int));
 }
