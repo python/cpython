@@ -466,7 +466,7 @@ Reference for a complete guide to file objects.
 Saving structured data with :mod:`json`
 ---------------------------------------
 
-.. index:: module: json
+.. index:: pair: module; json
 
 Strings can easily be written to and read from a file.  Numbers take a bit more
 effort, since the :meth:`read` method only returns strings, which will have to

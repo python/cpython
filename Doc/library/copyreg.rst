@@ -7,8 +7,8 @@
 **Source code:** :source:`Lib/copyreg.py`
 
 .. index::
-   module: pickle
-   module: copy
+   pair: module; pickle
+   pair: module; copy
 
 --------------
 
