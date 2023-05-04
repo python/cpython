@@ -32,8 +32,8 @@ Truth Value Testing
 ===================
 
 .. index::
-   statement: if
-   statement: while
+   pair: statement; if
+   pair: statement; while
    pair: truth; value
    pair: Boolean; operations
    single: false
@@ -1113,7 +1113,7 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
    triple: operations on; list; type
    pair: subscript; assignment
    pair: slice; assignment
-   statement: del
+   pair: statement; del
    single: append() (sequence method)
    single: clear() (sequence method)
    single: copy() (sequence method)
@@ -4371,7 +4371,7 @@ Mapping Types --- :class:`dict`
    pair: object; dictionary
    triple: operations on; mapping; types
    triple: operations on; dictionary; type
-   statement: del
+   pair: statement; del
    builtin: len
 
 A :term:`mapping` object maps :term:`hashable` values to arbitrary objects.

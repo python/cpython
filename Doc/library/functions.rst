@@ -1978,7 +1978,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: __import__(name, globals=None, locals=None, fromlist=(), level=0)
 
    .. index::
-      statement: import
+      pair: statement; import
       pair: module; builtins
 
    .. note::

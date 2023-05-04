@@ -727,7 +727,7 @@ Callable types
 
 Modules
    .. index::
-      statement: import
+      pair: statement; import
       pair: object; module
 
    Modules are a basic organizational unit of Python code, and are created by
@@ -1150,7 +1150,7 @@ Internal types
          single: tb_frame (traceback attribute)
          single: tb_lineno (traceback attribute)
          single: tb_lasti (traceback attribute)
-         statement: try
+         pair: statement; try
 
       Special read-only attributes:
       :attr:`tb_frame` points to the execution frame of the current level;
@@ -1309,7 +1309,7 @@ Basic customization
    .. index::
       single: destructor
       single: finalizer
-      statement: del
+      pair: statement; del
 
    Called when the instance is about to be destroyed.  This is also called a
    finalizer or (improperly) a destructor.  If a base class has a
@@ -2791,7 +2791,7 @@ execution of the block of code.  Context managers are normally invoked using the
 used by directly invoking their methods.
 
 .. index::
-   statement: with
+   pair: statement; with
    single: context manager
 
 Typical uses of context managers include saving and restoring various kinds of
