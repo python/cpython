@@ -85,9 +85,9 @@ struct PyModuleDef_Slot {
 #endif
 
 /* for Py_mod_multiple_interpreters: */
-#define Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED 0
-#define Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED 1
-#define Py_MOD_PER_INTERPRETER_GIL_SUPPORTED 2
+#define Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED ((void *)0)
+#define Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED ((void *)1)
+#define Py_MOD_PER_INTERPRETER_GIL_SUPPORTED ((void *)2)
 
 #endif /* New in 3.5 */
 

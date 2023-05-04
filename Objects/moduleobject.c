@@ -312,7 +312,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     /* By default, multi-phase init modules are expected
        to work under multiple interpreters. */
     if (multiple_interpreters < 0) {
-        multiple_interpreters = Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED;
+        multiple_interpreters = (Py_ssize_t)Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED;
     }
     if (!multiple_interpreters
         && !_Py_IsMainInterpreter(interp)
@@ -321,7 +321,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
         goto error;
     }
     // XXX This case needs a test.
-    else if ( multiple_interpreters != Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+    else if (multiple_interpreters != (Py_ssize_t)Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
              && interp->ceval.own_gil
              && !_Py_IsMainInterpreter(interp)
              && _PyImport_CheckSubinterpIncompatibleExtensionAllowed(name) < 0)
