@@ -1039,6 +1039,8 @@ class Path(PurePath):
             sys.audit('pathlib.Path.chown', self, owner, group)
 
             if owner is None:
+                if group is None:
+                    raise ValueError("user and/or group must be set")
                 owner = -1
             elif isinstance(owner, str):
                 try:
@@ -1055,9 +1057,6 @@ class Path(PurePath):
                     group = grp.getgrnam(group)[2]
                 except (ImportError, KeyError):
                     raise LookupError(f"no such group: {group!r}") from None
-
-            if owner == -1 and group == -1:
-                raise ValueError("user and/or group must be set")
 
             os.chown(self, owner, group)
 
