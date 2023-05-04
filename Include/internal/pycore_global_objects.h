@@ -20,24 +20,6 @@ extern "C" {
 #define _PY_NSMALLNEGINTS           5
 
 
-struct _Py_immortalized_object {
-    PyObject *obj;
-    int final_refcnt;
-    struct _Py_immortalized_object *next;
-};
-
-struct _Py_immortalized_objects {
-    Py_ssize_t count;
-    struct _Py_immortalized_object *head;
-    struct _Py_immortalized_object *last;
-#define _Py_IMMORTALIZED_ARRAY_SIZE 100
-    struct _Py_immortalized_object _objects[_Py_IMMORTALIZED_ARRAY_SIZE];
-};
-
-extern void _Py_EnsureImmortal(PyObject *);
-extern void _Py_ImmortalObjectsFini(void);
-
-
 // Only immutable objects should be considered runtime-global.
 // All others must be per-interpreter.
 

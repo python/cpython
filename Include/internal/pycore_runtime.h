@@ -150,8 +150,6 @@ typedef struct pyruntimestate {
     struct _Py_unicode_runtime_state unicode_state;
     struct _types_runtime_state types;
 
-    /* All non-static immortal objects (need to be cleaned up during fini). */
-    struct _Py_immortalized_objects immortalized_objects;
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_static_objects static_objects;
 
