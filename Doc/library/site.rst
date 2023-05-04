@@ -51,7 +51,7 @@ searched for site-packages; otherwise they will.
 
 .. index::
    single: # (hash); comment
-   statement: import
+   pair: statement; import
 
 A path configuration file is a file whose name has the form :file:`{name}.pth`
 and exists in one of the four directories mentioned above; its contents are
@@ -109,7 +109,7 @@ directory precedes the :file:`foo` directory because :file:`bar.pth` comes
 alphabetically before :file:`foo.pth`; and :file:`spam` is omitted because it is
 not mentioned in either path configuration file.
 
-.. index:: module: sitecustomize
+.. index:: pair: module; sitecustomize
 
 After these path manipulations, an attempt is made to import a module named
 :mod:`sitecustomize`, which can perform arbitrary site-specific customizations.
@@ -121,7 +121,7 @@ with :file:`pythonw.exe` on Windows (which is used by default to start IDLE),
 attempted output from :mod:`sitecustomize` is ignored.  Any other exception
 causes a silent and perhaps mysterious failure of the process.
 
-.. index:: module: usercustomize
+.. index:: pair: module; usercustomize
 
 After this, an attempt is made to import a module named :mod:`usercustomize`,
 which can perform arbitrary user-specific customizations, if

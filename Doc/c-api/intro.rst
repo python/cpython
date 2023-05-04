@@ -261,7 +261,7 @@ complete listing.
 Objects, Types and Reference Counts
 ===================================
 
-.. index:: object: type
+.. index:: pair: object; type
 
 Most Python/C API functions have one or more arguments as well as a return value
 of type :c:expr:`PyObject*`.  This type is a pointer to an opaque data type
@@ -705,9 +705,9 @@ interpreter can only be used after the interpreter has been initialized.
 
 .. index::
    single: Py_Initialize()
-   module: builtins
-   module: __main__
-   module: sys
+   pair: module; builtins
+   pair: module; __main__
+   pair: module; sys
    triple: module; search; path
    single: path (in module sys)
 

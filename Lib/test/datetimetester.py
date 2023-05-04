@@ -2,18 +2,19 @@
 
 See https://www.zope.dev/Members/fdrake/DateTimeWiki/TestCases
 """
-import io
-import itertools
 import bisect
 import copy
 import decimal
-import sys
+import io
+import itertools
 import os
 import pickle
 import random
 import re
 import struct
+import sys
 import unittest
+import warnings
 
 from array import array
 
@@ -39,6 +40,10 @@ except ImportError:
 
 # Needed by test_datetime
 import _strptime
+try:
+    import _pydatetime
+except ImportError:
+    pass
 #
 
 pickle_loads = {pickle.loads, pickle._loads}
@@ -47,10 +52,11 @@ pickle_choices = [(pickle, pickle, proto)
                   for proto in range(pickle.HIGHEST_PROTOCOL + 1)]
 assert len(pickle_choices) == pickle.HIGHEST_PROTOCOL + 1
 
+EPOCH_NAIVE = datetime(1970, 1, 1, 0, 0)  # For calculating transitions
+
 # An arbitrary collection of objects of non-datetime types, for testing
 # mixed-type comparisons.
 OTHERSTUFF = (10, 34.5, "abc", {}, [], ())
-
 
 # XXX Copied from test_float.
 INF = float("inf")
@@ -92,7 +98,7 @@ class TestModule(unittest.TestCase):
         if '_Fast' in self.__class__.__name__:
             self.skipTest('Only run for Pure Python implementation')
 
-        dar = datetime_module._divide_and_round
+        dar = _pydatetime._divide_and_round
 
         self.assertEqual(dar(-10, -3), 3)
         self.assertEqual(dar(5, -2), -2)
@@ -2437,7 +2443,8 @@ class TestDateTime(TestDate):
 
         ts = time.time()
         expected = time.gmtime(ts)
-        got = self.theclass.utcfromtimestamp(ts)
+        with self.assertWarns(DeprecationWarning):
+            got = self.theclass.utcfromtimestamp(ts)
         self.verify_field_equality(expected, got)
 
     # Run with US-style DST rules: DST begins 2 a.m. on second Sunday in
@@ -2483,8 +2490,12 @@ class TestDateTime(TestDate):
 
     @support.run_with_tz('MSK-03')  # Something east of Greenwich
     def test_microsecond_rounding(self):
+        def utcfromtimestamp(*args, **kwargs):
+            with self.assertWarns(DeprecationWarning):
+                return self.theclass.utcfromtimestamp(*args, **kwargs)
+
         for fts in [self.theclass.fromtimestamp,
-                    self.theclass.utcfromtimestamp]:
+                    utcfromtimestamp]:
             zero = fts(0)
             self.assertEqual(zero.second, 0)
             self.assertEqual(zero.microsecond, 0)
@@ -2581,10 +2592,11 @@ class TestDateTime(TestDate):
                     self.theclass.fromtimestamp(ts)
 
     def test_utcfromtimestamp_limits(self):
-        try:
-            self.theclass.utcfromtimestamp(-2**32 - 1)
-        except (OSError, OverflowError):
-            self.skipTest("Test not valid on this platform")
+        with self.assertWarns(DeprecationWarning):
+            try:
+                self.theclass.utcfromtimestamp(-2**32 - 1)
+            except (OSError, OverflowError):
+                self.skipTest("Test not valid on this platform")
 
         min_dt = self.theclass.min.replace(tzinfo=timezone.utc)
         min_ts = min_dt.timestamp()
@@ -2597,10 +2609,11 @@ class TestDateTime(TestDate):
                 ("maximum", max_ts, max_dt.replace(tzinfo=None)),
         ]:
             with self.subTest(test_name, ts=ts, expected=expected):
-                try:
-                    actual = self.theclass.utcfromtimestamp(ts)
-                except (OSError, OverflowError) as exc:
-                    self.skipTest(str(exc))
+                with self.assertWarns(DeprecationWarning):
+                    try:
+                        actual = self.theclass.utcfromtimestamp(ts)
+                    except (OSError, OverflowError) as exc:
+                        self.skipTest(str(exc))
 
                 self.assertEqual(actual, expected)
 
@@ -2615,9 +2628,10 @@ class TestDateTime(TestDate):
         for test_name, ts in test_cases:
             with self.subTest(test_name, ts=ts):
                 with self.assertRaises((ValueError, OverflowError)):
-                    # converting a Python int to C time_t can raise a
-                    # OverflowError, especially on 32-bit platforms.
-                    self.theclass.utcfromtimestamp(ts)
+                    with self.assertWarns(DeprecationWarning):
+                        # converting a Python int to C time_t can raise a
+                        # OverflowError, especially on 32-bit platforms.
+                        self.theclass.utcfromtimestamp(ts)
 
     def test_insane_fromtimestamp(self):
         # It's possible that some platform maps time_t to double,
@@ -2634,8 +2648,9 @@ class TestDateTime(TestDate):
         # exempt such platforms (provided they return reasonable
         # results!).
         for insane in -1e200, 1e200:
-            self.assertRaises(OverflowError, self.theclass.utcfromtimestamp,
-                              insane)
+            with self.assertWarns(DeprecationWarning):
+                self.assertRaises(OverflowError, self.theclass.utcfromtimestamp,
+                                  insane)
 
     @unittest.skipIf(sys.platform == "win32", "Windows doesn't accept negative timestamps")
     def test_negative_float_fromtimestamp(self):
@@ -2645,7 +2660,8 @@ class TestDateTime(TestDate):
 
     @unittest.skipIf(sys.platform == "win32", "Windows doesn't accept negative timestamps")
     def test_negative_float_utcfromtimestamp(self):
-        d = self.theclass.utcfromtimestamp(-1.05)
+        with self.assertWarns(DeprecationWarning):
+            d = self.theclass.utcfromtimestamp(-1.05)
         self.assertEqual(d, self.theclass(1969, 12, 31, 23, 59, 58, 950000))
 
     def test_utcnow(self):
@@ -2655,8 +2671,11 @@ class TestDateTime(TestDate):
         # a second of each other.
         tolerance = timedelta(seconds=1)
         for dummy in range(3):
-            from_now = self.theclass.utcnow()
-            from_timestamp = self.theclass.utcfromtimestamp(time.time())
+            with self.assertWarns(DeprecationWarning):
+                from_now = self.theclass.utcnow()
+
+            with self.assertWarns(DeprecationWarning):
+                from_timestamp = self.theclass.utcfromtimestamp(time.time())
             if abs(from_timestamp - from_now) <= tolerance:
                 break
             # Else try again a few times.
@@ -2956,7 +2975,11 @@ class TestDateTime(TestDate):
                                   constr_name=constr_name):
                     constructor = getattr(base_obj, constr_name)
 
-                    dt = constructor(*constr_args)
+                    if constr_name == "utcfromtimestamp":
+                        with self.assertWarns(DeprecationWarning):
+                            dt = constructor(*constr_args)
+                    else:
+                        dt = constructor(*constr_args)
 
                     # Test that it creates the right subclass
                     self.assertIsInstance(dt, DateTimeSubclass)
@@ -2986,7 +3009,11 @@ class TestDateTime(TestDate):
         for name, meth_name, kwargs in test_cases:
             with self.subTest(name):
                 constr = getattr(DateTimeSubclass, meth_name)
-                dt = constr(**kwargs)
+                if meth_name == "utcnow":
+                    with self.assertWarns(DeprecationWarning):
+                        dt = constr(**kwargs)
+                else:
+                    dt = constr(**kwargs)
 
                 self.assertIsInstance(dt, DateTimeSubclass)
                 self.assertEqual(dt.extra, 7)
@@ -4642,7 +4669,8 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
             for dummy in range(3):
                 now = datetime.now(weirdtz)
                 self.assertIs(now.tzinfo, weirdtz)
-                utcnow = datetime.utcnow().replace(tzinfo=utc)
+                with self.assertWarns(DeprecationWarning):
+                    utcnow = datetime.utcnow().replace(tzinfo=utc)
                 now2 = utcnow.astimezone(weirdtz)
                 if abs(now - now2) < timedelta(seconds=30):
                     break
@@ -4676,7 +4704,8 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
 
         # Try to make sure tz= actually does some conversion.
         timestamp = 1000000000
-        utcdatetime = datetime.utcfromtimestamp(timestamp)
+        with self.assertWarns(DeprecationWarning):
+            utcdatetime = datetime.utcfromtimestamp(timestamp)
         # In POSIX (epoch 1970), that's 2001-09-09 01:46:40 UTC, give or take.
         # But on some flavor of Mac, it's nowhere near that.  So we can't have
         # any idea here what time that actually is, we can only test that
@@ -4690,7 +4719,8 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
     def test_tzinfo_utcnow(self):
         meth = self.theclass.utcnow
         # Ensure it doesn't require tzinfo (i.e., that this doesn't blow up).
-        base = meth()
+        with self.assertWarns(DeprecationWarning):
+            base = meth()
         # Try with and without naming the keyword; for whatever reason,
         # utcnow() doesn't accept a tzinfo argument.
         off42 = FixedOffset(42, "42")
@@ -4702,12 +4732,15 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         meth = self.theclass.utcfromtimestamp
         ts = time.time()
         # Ensure it doesn't require tzinfo (i.e., that this doesn't blow up).
-        base = meth(ts)
+        with self.assertWarns(DeprecationWarning):
+            base = meth(ts)
         # Try with and without naming the keyword; for whatever reason,
         # utcfromtimestamp() doesn't accept a tzinfo argument.
         off42 = FixedOffset(42, "42")
-        self.assertRaises(TypeError, meth, ts, off42)
-        self.assertRaises(TypeError, meth, ts, tzinfo=off42)
+        with warnings.catch_warnings(category=DeprecationWarning):
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            self.assertRaises(TypeError, meth, ts, off42)
+            self.assertRaises(TypeError, meth, ts, tzinfo=off42)
 
     def test_tzinfo_timetuple(self):
         # TestDateTime tested most of this.  datetime adds a twist to the
@@ -5309,7 +5342,7 @@ class TestTimezoneConversions(unittest.TestCase):
 
     def test_fromutc(self):
         self.assertRaises(TypeError, Eastern.fromutc)   # not enough args
-        now = datetime.utcnow().replace(tzinfo=utc_real)
+        now = datetime.now(tz=utc_real)
         self.assertRaises(ValueError, Eastern.fromutc, now) # wrong tzinfo
         now = now.replace(tzinfo=Eastern)   # insert correct tzinfo
         enow = Eastern.fromutc(now)         # doesn't blow up
@@ -5411,9 +5444,11 @@ class Oddballs(unittest.TestCase):
         self.assertEqual(datetime_sc, as_datetime)
 
     def test_extra_attributes(self):
+        with self.assertWarns(DeprecationWarning):
+            utcnow = datetime.utcnow()
         for x in [date.today(),
                   time(),
-                  datetime.utcnow(),
+                  utcnow,
                   timedelta(),
                   tzinfo(),
                   timezone(timedelta())]:
@@ -6073,14 +6108,14 @@ class ZoneInfo(tzinfo):
     def transitions(self):
         for (_, prev_ti), (t, ti) in pairs(zip(self.ut, self.ti)):
             shift = ti[0] - prev_ti[0]
-            yield datetime.utcfromtimestamp(t), shift
+            yield (EPOCH_NAIVE + timedelta(seconds=t)), shift
 
     def nondst_folds(self):
         """Find all folds with the same value of isdst on both sides of the transition."""
         for (_, prev_ti), (t, ti) in pairs(zip(self.ut, self.ti)):
             shift = ti[0] - prev_ti[0]
             if shift < ZERO and ti[1] == prev_ti[1]:
-                yield datetime.utcfromtimestamp(t), -shift, prev_ti[2], ti[2]
+                yield _utcfromtimestamp(datetime, t,), -shift, prev_ti[2], ti[2]
 
     @classmethod
     def print_all_nondst_folds(cls, same_abbr=False, start_year=1):

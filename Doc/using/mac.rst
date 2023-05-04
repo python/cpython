@@ -66,7 +66,7 @@ number of standard Unix command line editors, :program:`vim` and
 :program:`BBEdit` or :program:`TextWrangler` from Bare Bones Software (see
 http://www.barebones.com/products/bbedit/index.html) are good choices, as is
 :program:`TextMate` (see https://macromates.com/). Other editors include
-:program:`Gvim` (https://macvim-dev.github.io/macvim/) and :program:`Aquamacs`
+:program:`Gvim` (https://macvim.org/macvim/) and :program:`Aquamacs`
 (http://aquamacs.org/).
 
 To run your script from the Terminal window you must make sure that
