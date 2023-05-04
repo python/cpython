@@ -137,6 +137,8 @@ _PyLong_IsCompact(const PyLongObject* op) {
     return op->long_value.lv_tag < (2 << NON_SIZE_BITS);
 }
 
+#define PyUnstable_Int_IsCompact _PyLong_IsCompact
+
 static inline int
 _PyLong_BothAreCompact(const PyLongObject* a, const PyLongObject* b) {
     assert(PyLong_Check(a));
@@ -158,6 +160,8 @@ _PyLong_CompactValue(const PyLongObject *op)
     Py_ssize_t sign = 1 - (op->long_value.lv_tag & SIGN_MASK);
     return sign * (Py_ssize_t)op->long_value.ob_digit[0];
 }
+
+#define PyUnstable_Int_CompactValue _PyLong_CompactValue
 
 static inline bool
 _PyLong_IsZero(const PyLongObject *op)

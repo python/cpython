@@ -6366,3 +6366,17 @@ _PyLong_FiniTypes(PyInterpreterState *interp)
 {
     _PyStructSequence_FiniBuiltin(interp, &Int_InfoType);
 }
+
+#undef PyUnstable_Int_IsCompact
+
+int
+PyUnstable_Int_IsCompact(const PyLongObject* op) {
+    return _PyLong_IsCompact(op);
+}
+
+#undef PyUnstable_Int_CompactValue
+
+Py_ssize_t
+PyUnstable_Int_CompactValue(const PyLongObject* op) {
+    return _PyLong_CompactValue(op);
+}

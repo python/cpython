@@ -93,3 +93,8 @@ PyAPI_FUNC(PyObject *) _PyLong_GCD(PyObject *, PyObject *);
 
 PyAPI_FUNC(PyObject *) _PyLong_Rshift(PyObject *, size_t);
 PyAPI_FUNC(PyObject *) _PyLong_Lshift(PyObject *, size_t);
+
+
+PyAPI_FUNC(int) PyUnstable_Int_IsCompact(const PyLongObject* op);
+PyAPI_FUNC(Py_ssize_t) PyUnstable_Int_CompactValue(const PyLongObject* op);
+
