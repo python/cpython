@@ -318,7 +318,7 @@ The following exceptions are the exceptions that are usually raised.
 .. exception:: OSError([arg])
                OSError(errno, strerror[, filename[, winerror[, filename2]]])
 
-   .. index:: module: errno
+   .. index:: pair: module; errno
 
    This exception is raised when a system function returns a system-related
    error, including I/O failures such as "file not found" or "disk full"
