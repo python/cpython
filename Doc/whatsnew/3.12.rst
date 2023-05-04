@@ -792,6 +792,11 @@ Pending Removal in Python 3.14
 
   (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
 
+* Deprecated :class:`collections.abc.ByteString`.
+  Prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
+  For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
+  (Contributed by Shantanu Jain in :gh:`91896`.)
+
 * Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases using the C API.
 
