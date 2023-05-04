@@ -561,10 +561,27 @@ x = (
                             ])
         self.assertRaises(SyntaxError, eval, "f'{" + "("*500 + "}'")
 
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_fstring_nested_too_deeply(self):
         self.assertAllRaise(SyntaxError,
                             "f-string: expressions nested too deeply",
                             ['f"{1+2:{1+2:{1+1:{1}}}}"'])
+
+        def create_nested_fstring(n):
+            if n == 0:
+                return "1+1"
+            prev = create_nested_fstring(n-1)
+            return f'f"{{{prev}}}"'
+
+        self.assertAllRaise(SyntaxError,
+                            "too many nested f-strings",
+                            [create_nested_fstring(160)])
+
+    def test_syntax_error_in_nested_fstring(self):
+        # See gh-104016 for more information on this crash
+        self.assertAllRaise(SyntaxError,
+                            "invalid syntax",
+                            ['f"{1 1:' + ('{f"1:' * 199)])
 
     def test_double_braces(self):
         self.assertEqual(f'{{', '{')

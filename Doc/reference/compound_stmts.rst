@@ -362,8 +362,10 @@ one :keyword:`!except*` clause, the first that matches it. ::
 
 
 Any remaining exceptions that were not handled by any :keyword:`!except*`
-clause are re-raised at the end, combined into an exception group along with
-all exceptions that were raised from within :keyword:`!except*` clauses.
+clause are re-raised at the end, along with all exceptions that were
+raised from within the :keyword:`!except*` clauses. If this list contains
+more than one exception to reraise, they are combined into an exception
+group.
 
 If the raised exception is not an exception group and its type matches
 one of the :keyword:`!except*` clauses, it is caught and wrapped by an

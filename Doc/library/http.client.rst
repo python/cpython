@@ -354,7 +354,7 @@ HTTPConnection Objects
    the CONNECT request.
 
    As HTTP/1.1 is used for HTTP CONNECT tunnelling request, `as per the RFC
-   <https://tools.ietf.org/html/rfc7231#section-4.3.6>`_, a HTTP ``Host:``
+   <https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.6>`_, a HTTP ``Host:``
    header must be provided, matching the authority-form of the request target
    provided as the destination for the CONNECT request. If a HTTP ``Host:``
    header is not provided via the headers argument, one is generated and
