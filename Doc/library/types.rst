@@ -365,6 +365,12 @@ Standard names are defined for the following types:
 
    .. versionadded:: 3.10
 
+.. class:: IntersectionType
+
+   The type of :ref:`intersection type expressions<types-intersection>`.
+
+   .. versionadded:: 3.13
+
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
    The type of traceback objects such as found in ``sys.exception().__traceback__``.

@@ -472,6 +472,12 @@ class _SpecialForm(_Final, _NotIterable, _root=True):
     def __ror__(self, other):
         return Union[other, self]
 
+    def __and__(self, other):
+        return types.IntersectionType(self, other)
+
+    def __rand__(self, other):
+        return types.IntersectionType(other, self)
+
     def __instancecheck__(self, obj):
         raise TypeError(f"{self} cannot be used with isinstance()")
 
@@ -903,6 +909,12 @@ class ForwardRef(_Final, _root=True):
     def __ror__(self, other):
         return Union[other, self]
 
+    def __and__(self, other):
+        return types.IntersectionType(self, other)
+
+    def __rand__(self, other):
+        return types.IntersectionType(other, self)
+
     def __repr__(self):
         if self.__forward_module__ is None:
             module_repr = ''
@@ -953,6 +965,12 @@ class _BoundVarianceMixin:
 
     def __ror__(self, left):
         return Union[left, self]
+
+    def __and__(self, right):
+        return types.IntersectionType(self, right)
+
+    def __rand__(self, left):
+        return types.IntersectionType(left, self)
 
     def __repr__(self):
         if self.__covariant__:
@@ -1389,6 +1407,12 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     def __ror__(self, left):
         return Union[left, self]
 
+    def __and__(self, right):
+        return types.IntersectionType(self, right)
+
+    def __rand__(self, left):
+        return types.IntersectionType(left, self)
+
     @_tp_cache
     def __getitem__(self, args):
         # Parameterizes an already-parameterized object.
@@ -1603,6 +1627,12 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
 
     def __ror__(self, left):
         return Union[left, self]
+
+    def __and__(self, right):
+        return types.IntersectionType(self, right)
+
+    def __rand__(self, left):
+        return types.IntersectionType(left, self)
 
 class _CallableGenericAlias(_NotIterable, _GenericAlias, _root=True):
     def __repr__(self):
@@ -3225,6 +3255,12 @@ class NewType:
 
     def __ror__(self, other):
         return Union[other, self]
+
+    def __and__(self, other):
+        return types.IntersectionType(self, other)
+
+    def __rand__(self, other):
+        return types.IntersectionType(other, self)
 
 
 # Python-version-specific alias (Python 2: unicode; Python 3: str)

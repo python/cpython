@@ -1027,6 +1027,329 @@ class UnionTests(unittest.TestCase):
         self.assertLessEqual(sys.gettotalrefcount() - before, leeway,
                              msg='Check for union reference leak.')
 
+class IntersectionTests(unittest.TestCase):
+
+    def test_and_types_operator(self):
+        self.assertEqual(int & type(None), int & None)
+        self.assertEqual(type(None) & int, None & int)
+        self.assertEqual(str & float & int & complex & int, (int & str) & (float & complex))
+        self.assertIs(int & int, int)
+        with self.assertRaises(TypeError):
+            int & 3
+        with self.assertRaises(TypeError):
+            3 & int
+        with self.assertRaises(TypeError):
+            Example() & int
+        x = int & str
+        self.assertEqual(x, int & str)
+        self.assertEqual(x, str & int)
+        self.assertNotEqual(x, {})  # should not raise exception
+
+    def test_hash(self):
+        self.assertEqual(hash(int & str), hash(str & int))
+
+    def test_instancecheck_and_subclasscheck(self):
+        x = int & str
+        with self.subTest(x=x):
+            self.assertIsInstance(1, x)
+            self.assertIsInstance(True, x)
+            self.assertIsInstance('a', x)
+            self.assertNotIsInstance(None, x)
+            self.assertTrue(issubclass(int, x))
+            self.assertTrue(issubclass(bool, x))
+            self.assertTrue(issubclass(str, x))
+            self.assertFalse(issubclass(type(None), x))
+
+        x = int & None
+        with self.subTest(x=x):
+            self.assertIsInstance(None, x)
+            self.assertTrue(issubclass(type(None), x))
+
+        x = int & collections.abc.Mapping
+        with self.subTest(x=x):
+            self.assertIsInstance({}, x)
+            self.assertNotIsInstance((), x)
+            self.assertTrue(issubclass(dict, x))
+            self.assertFalse(issubclass(list, x))
+
+    def test_distribution_equality(self):
+        self.assertEqual(int & (str | None), (int & str) | (int & None))
+
+    def test_instancecheck_and_subclasscheck_order(self):
+        T = typing.TypeVar('T')
+
+        will_resolve = int & T
+        x = will_resolve
+        with self.subTest(x=x):
+            self.assertIsInstance(1, x)
+            self.assertTrue(issubclass(int, x))
+
+        wont_resolve = T & int
+        x = wont_resolve
+        with self.subTest(x=x):
+            with self.assertRaises(TypeError):
+                issubclass(int, x)
+            with self.assertRaises(TypeError):
+                isinstance(1, x)
+
+        for x in (will_resolve, wont_resolve):
+            with self.subTest(x=x):
+                with self.assertRaises(TypeError):
+                    issubclass(object, x)
+                with self.assertRaises(TypeError):
+                    isinstance(object(), x)
+
+    def test_bad_instancecheck(self):
+        class BadMeta(type):
+            def __instancecheck__(cls, inst):
+                1/0
+        x = int & BadMeta('A', (), {})
+        self.assertTrue(isinstance(1, x))
+        self.assertRaises(ZeroDivisionError, isinstance, [], x)
+
+    def test_bad_subclasscheck(self):
+        class BadMeta(type):
+            def __subclasscheck__(cls, sub):
+                1/0
+        x = int & BadMeta('A', (), {})
+        self.assertTrue(issubclass(int, x))
+        self.assertRaises(ZeroDivisionError, issubclass, list, x)
+
+    def test_and_type_operator_with_TypeVar(self):
+        TV = typing.TypeVar('T')
+        self.assertIs((int & TV)[int], int)
+        self.assertIs((TV & int)[int], int)
+
+    def test_intersection_args(self):
+        def check(arg, expected):
+            clear_typing_caches()
+            self.assertEqual(arg.__args__, expected)
+
+        check(int & str, (int, str))
+        check((int & str) & list, (int, str, list))
+        check(int & (str & list), (int, str, list))
+        check((int & str) & int, (int, str))
+        check(int & (str & int), (int, str))
+        check((int & str) & (str & int), (int, str))
+        check((int & str) & (list & int), (int, str, list))
+        check(typing.Union[int, str] & (list & int), (int, str, list))
+        check((str & int) & (int & list), (str, int, list))
+        check(int & type(None), (int, type(None)))
+        check(type(None) & int, (type(None), int))
+
+        args = (int, list[int], typing.List[int],
+                typing.Tuple[int, int], typing.Callable[[int], int],
+                typing.Hashable, typing.TypeVar('T'))
+        for x in args:
+            with self.subTest(x):
+                check(x & None, (x, type(None)))
+                check(None & x, (type(None), x))
+
+    def test_intersection_parameter_chaining(self):
+        T = typing.TypeVar("T")
+        S = typing.TypeVar("S")
+
+        self.assertEqual((float & list[T])[int], float & list[int])
+        self.assertEqual(list[int & list[T]].__parameters__, (T,))
+        self.assertEqual(list[int & list[T]][str], list[int & list[str]])
+        self.assertEqual((list[T] & list[S]).__parameters__, (T, S))
+        self.assertEqual((list[T] & list[S])[int, T], list[int] & list[T])
+        self.assertEqual((list[T] & list[S])[int, int], list[int])
+
+    def test_intersection_parameter_substitution(self):
+        def eq(actual, expected, typed=True):
+            self.assertEqual(actual, expected)
+            if typed:
+                self.assertIs(type(actual), type(expected))
+
+        T = typing.TypeVar('T')
+        S = typing.TypeVar('S')
+        NT = typing.NewType('NT', str)
+        x = int & T & bytes
+
+        eq(x[str], int & str & bytes, typed=False)
+        eq(x[list[int]], int & list[int] & bytes, typed=False)
+        eq(x[typing.List], int & typing.List & bytes)
+        eq(x[typing.List[int]], int & typing.List[int] & bytes)
+        eq(x[typing.Hashable], int & typing.Hashable & bytes)
+        eq(x[collections.abc.Hashable],
+           int & collections.abc.Hashable & bytes, typed=False)
+        eq(x[typing.Callable[[int], str]],
+           int & typing.Callable[[int], str] & bytes)
+        eq(x[collections.abc.Callable[[int], str]],
+           int & collections.abc.Callable[[int], str] & bytes, typed=False)
+        eq(x[typing.Tuple[int, str]], int & typing.Tuple[int, str] & bytes)
+        eq(x[typing.Literal['none']], int & typing.Literal['none'] & bytes)
+        eq(x[str & list], int & str & list & bytes, typed=False)
+        eq(x[str & int], int & str & bytes, typed=False)
+        eq(x[NT], int & NT & bytes)
+        eq(x[S], int & S & bytes)
+
+    def test_intersection_pickle(self):
+        orig = list[T] & int
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(orig, proto)
+            loaded = pickle.loads(s)
+            self.assertEqual(loaded, orig)
+            self.assertEqual(loaded.__args__, orig.__args__)
+            self.assertEqual(loaded.__parameters__, orig.__parameters__)
+
+    def test_intersection_copy(self):
+        orig = list[T] & int
+        for copied in (copy.copy(orig), copy.deepcopy(orig)):
+            self.assertEqual(copied, orig)
+            self.assertEqual(copied.__args__, orig.__args__)
+            self.assertEqual(copied.__parameters__, orig.__parameters__)
+
+    def test_intersection_parameter_substitution_errors(self):
+        T = typing.TypeVar("T")
+        x = int & T
+        with self.assertRaises(TypeError):
+            x[int, str]
+
+    def test_and_type_operator_with_forward(self):
+        T = typing.TypeVar('T')
+        ForwardAfter = T & 'Forward'
+        ForwardBefore = 'Forward' & T
+        def forward_after(x: ForwardAfter[int]) -> None: ...
+        def forward_before(x: ForwardBefore[int]) -> None: ...
+        assert typing.get_args(typing.get_type_hints(forward_after)['x']) == (int, Forward)
+        assert typing.get_args(typing.get_type_hints(forward_before)['x']) == (int, Forward)
+
+    def test_and_type_operator_with_Protocol(self):
+        class Proto(typing.Protocol):
+            def meth(self) -> int:
+                ...
+        assert Proto & str == str & Proto
+
+    def test_and_type_operator_with_Alias(self):
+        assert list & str == str & list
+        assert typing.List & str == typing.List & str
+
+    def test_and_type_operator_with_NamedTuple(self):
+        NT=namedtuple('A', ['B', 'C', 'D'])
+        assert NT & str == str & NT
+
+    def test_and_type_operator_with_TypedDict(self):
+        class Point2D(typing.TypedDict):
+            x: int
+            y: int
+            label: str
+        assert Point2D & str == str & Point2D
+
+    def test_and_type_operator_with_NewType(self):
+        UserId = typing.NewType('UserId', int)
+        assert UserId & str == str & UserId
+
+    def test_and_type_operator_with_IO(self):
+        assert typing.IO & str == str & typing.IO
+
+    def test_and_type_operator_with_SpecialForm(self):
+        assert typing.Any & str == str & typing.Any
+        assert typing.NoReturn & str == str & typing.NoReturn
+        assert typing.Optional[int] & str == str & typing.Optional[int]
+        assert typing.Union[int, bool] & str == str & typing.Union[int, bool]
+
+    def test_and_type_operator_with_Literal(self):
+        Literal = typing.Literal
+        self.assertEqual((Literal[1] & Literal[2]).__args__,
+                         (Literal[1], Literal[2]))
+
+        self.assertEqual((Literal[0] & Literal[False]).__args__,
+                         (Literal[0], Literal[False]))
+        self.assertEqual((Literal[1] & Literal[True]).__args__,
+                         (Literal[1], Literal[True]))
+
+        self.assertEqual(Literal[1] & Literal[1], Literal[1])
+        self.assertEqual(Literal['a'] & Literal['a'], Literal['a'])
+
+        import enum
+        class Ints(enum.IntEnum):
+            A = 0
+            B = 1
+
+        self.assertEqual(Literal[Ints.A] & Literal[Ints.A], Literal[Ints.A])
+        self.assertEqual(Literal[Ints.B] & Literal[Ints.B], Literal[Ints.B])
+
+        self.assertEqual((Literal[Ints.B] & Literal[Ints.A]).__args__,
+                         (Literal[Ints.B], Literal[Ints.A]))
+
+        self.assertEqual((Literal[0] & Literal[Ints.A]).__args__,
+                         (Literal[0], Literal[Ints.A]))
+        self.assertEqual((Literal[1] & Literal[Ints.B]).__args__,
+                         (Literal[1], Literal[Ints.B]))
+
+    def test_and_type_repr(self):
+        assert repr(int & str) == "int & str"
+        assert repr((int & str) & list) == "int & str & list"
+        assert repr(int & (str & list)) == "int & str & list"
+        assert repr(int & None) == "int & None"
+        assert repr(int & type(None)) == "int & None"
+        assert repr(int & typing.GenericAlias(list, int)) == "int & list[int]"
+
+    def test_and_type_operator_with_genericalias(self):
+        a = list[int]
+        b = list[str]
+        c = dict[float, str]
+        class SubClass(types.GenericAlias): ...
+        d = SubClass(list, float)
+        # de-duplicate
+        self.assertEqual(a & c & b & b & a & c & d & d, a & b & c & d)
+        # order shouldn't matter
+        self.assertEqual(a & b & d, b & a & d)
+        self.assertEqual(repr(a & b & c & d),
+                         "list[int] & list[str] & dict[float, str] & list[float]")
+
+        class BadType(type):
+            def __eq__(self, other):
+                return 1 / 0
+
+        bt = BadType('bt', (), {})
+        # Comparison should fail and errors should propagate out for bad types.
+        with self.assertRaises(ZeroDivisionError):
+            list[int] & list[bt]
+
+        intersection_ga = (list[str] & int, collections.abc.Callable[..., str] & int,
+                    d & int)
+        # Raise error when isinstance(type, genericalias & type)
+        for type_ in intersection_ga:
+            with self.subTest(f"check isinstance/issubclass is invalid for {type_}"):
+                with self.assertRaises(TypeError):
+                    isinstance(1, type_)
+                with self.assertRaises(TypeError):
+                    issubclass(int, type_)
+
+    def test_and_type_operator_with_bad_module(self):
+        class BadMeta(type):
+            __qualname__ = 'TypeVar'
+            @property
+            def __module__(self):
+                1 / 0
+        TypeVar = BadMeta('TypeVar', (), {})
+        _SpecialForm = BadMeta('_SpecialForm', (), {})
+        # Crashes in Issue44483
+        with self.assertRaises((TypeError, ZeroDivisionError)):
+            str & TypeVar()
+        with self.assertRaises((TypeError, ZeroDivisionError)):
+            str & _SpecialForm()
+
+    @cpython_only
+    def test_and_type_operator_reference_cycle(self):
+        if not hasattr(sys, 'gettotalrefcount'):
+            self.skipTest('Cannot get total reference count.')
+        gc.collect()
+        before = sys.gettotalrefcount()
+        for _ in range(30):
+            T = typing.TypeVar('T')
+            U = int & list[T]
+            T.blah = U
+            del T
+            del U
+        gc.collect()
+        leeway = 15
+        self.assertLessEqual(sys.gettotalrefcount() - before, leeway,
+                             msg='Check for intersection reference leak.')
+
 
 class MappingProxyTests(unittest.TestCase):
     mappingproxy = types.MappingProxyType
