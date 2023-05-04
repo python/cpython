@@ -3141,6 +3141,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 {
     PyObject *version_info;
     int res;
+    PyInterpreterState *interp = tstate->interp;
 
     /* stdin/stdout/stderr are set in pylifecycle.c */
 
@@ -3166,10 +3167,10 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("float_info", PyFloat_GetInfo());
     SET_SYS("int_info", PyLong_GetInfo());
     /* initialize hash_info */
-    if (Hash_InfoType.tp_name == NULL) {
-        if (_PyStructSequence_InitBuiltin(&Hash_InfoType, &hash_info_desc) < 0) {
-            goto type_init_failed;
-        }
+    if (_PyStructSequence_InitBuiltin(interp, &Hash_InfoType,
+                                      &hash_info_desc) < 0)
+    {
+        goto type_init_failed;
     }
     SET_SYS("hash_info", get_hash_info(tstate));
     SET_SYS("maxunicode", PyLong_FromLong(0x10FFFF));
@@ -3191,11 +3192,9 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 
 #define ENSURE_INFO_TYPE(TYPE, DESC) \
     do { \
-        if (TYPE.tp_name == NULL) { \
-            if (_PyStructSequence_InitBuiltinWithFlags( \
-                    &TYPE, &DESC, Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) { \
-                goto type_init_failed; \
-            } \
+        if (_PyStructSequence_InitBuiltinWithFlags( \
+                interp, &TYPE, &DESC, Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) { \
+            goto type_init_failed; \
         } \
     } while (0)
 
@@ -3230,11 +3229,10 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("thread_info", PyThread_GetInfo());
 
     /* initialize asyncgen_hooks */
-    if (AsyncGenHooksType.tp_name == NULL) {
-        if (_PyStructSequence_InitBuiltin(
-                &AsyncGenHooksType, &asyncgen_hooks_desc) < 0) {
-            goto type_init_failed;
-        }
+    if (_PyStructSequence_InitBuiltin(interp, &AsyncGenHooksType,
+                                      &asyncgen_hooks_desc) < 0)
+    {
+        goto type_init_failed;
     }
 
 #ifdef __EMSCRIPTEN__
@@ -3495,20 +3493,20 @@ error:
 
 
 void
-_PySys_Fini(PyInterpreterState *interp)
+_PySys_FiniTypes(PyInterpreterState *interp)
 {
-    if (_Py_IsMainInterpreter(interp)) {
-        _PyStructSequence_FiniType(&VersionInfoType);
-        _PyStructSequence_FiniType(&FlagsType);
+    _PyStructSequence_FiniBuiltin(interp, &VersionInfoType);
+    _PyStructSequence_FiniBuiltin(interp, &FlagsType);
 #if defined(MS_WINDOWS)
-        _PyStructSequence_FiniType(&WindowsVersionType);
+    _PyStructSequence_FiniBuiltin(interp, &WindowsVersionType);
 #endif
-        _PyStructSequence_FiniType(&Hash_InfoType);
-        _PyStructSequence_FiniType(&AsyncGenHooksType);
+    _PyStructSequence_FiniBuiltin(interp, &Hash_InfoType);
+    _PyStructSequence_FiniBuiltin(interp, &AsyncGenHooksType);
 #ifdef __EMSCRIPTEN__
+    if (_Py_IsMainInterpreter(interp)) {
         Py_CLEAR(EmscriptenInfoType);
-#endif
     }
+#endif
 }
 
 

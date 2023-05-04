@@ -890,7 +890,7 @@ PyObject_Hash(PyObject *v)
      * an explicit call to PyType_Ready, we implicitly call
      * PyType_Ready here and then check the tp_hash slot again
      */
-    if (tp->tp_dict == NULL) {
+    if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0)
             return -1;
         if (tp->tp_hash != NULL)
@@ -918,13 +918,24 @@ PyObject_GetAttrString(PyObject *v, const char *name)
 int
 PyObject_HasAttrString(PyObject *v, const char *name)
 {
-    PyObject *res = PyObject_GetAttrString(v, name);
-    if (res != NULL) {
-        Py_DECREF(res);
-        return 1;
+    if (Py_TYPE(v)->tp_getattr != NULL) {
+        PyObject *res = (*Py_TYPE(v)->tp_getattr)(v, (char*)name);
+        if (res != NULL) {
+            Py_DECREF(res);
+            return 1;
+        }
+        PyErr_Clear();
+        return 0;
     }
-    PyErr_Clear();
-    return 0;
+
+    PyObject *attr_name = PyUnicode_FromString(name);
+    if (attr_name == NULL) {
+        PyErr_Clear();
+        return 0;
+    }
+    int ok = PyObject_HasAttr(v, attr_name);
+    Py_DECREF(attr_name);
+    return ok;
 }
 
 int
@@ -1385,7 +1396,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
     Py_INCREF(name);
 
-    if (tp->tp_dict == NULL) {
+    if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0)
             goto done;
     }
@@ -1507,8 +1518,9 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         return -1;
     }
 
-    if (tp->tp_dict == NULL && PyType_Ready(tp) < 0)
+    if (!_PyType_IsReady(tp) && PyType_Ready(tp) < 0) {
         return -1;
+    }
 
     Py_INCREF(name);
     Py_INCREF(tp);
@@ -2101,14 +2113,10 @@ static PyTypeObject* static_types[] = {
 PyStatus
 _PyTypes_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
     // All other static types (unless initialized elsewhere)
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
-        if (_PyStaticType_InitBuiltin(type) < 0) {
+        if (_PyStaticType_InitBuiltin(interp, type) < 0) {
             return _PyStatus_ERR("Can't initialize builtin type");
         }
         if (type == &PyType_Type) {
@@ -2131,15 +2139,11 @@ _PyTypes_InitTypes(PyInterpreterState *interp)
 void
 _PyTypes_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
     // Deallocate types in the reverse order to deallocate subclasses before
     // their base classes.
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_types)-1; i>=0; i--) {
         PyTypeObject *type = static_types[i];
-        _PyStaticType_Dealloc(type);
+        _PyStaticType_Dealloc(interp, type);
     }
 }
 

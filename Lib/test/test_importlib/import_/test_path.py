@@ -116,46 +116,6 @@ class FinderTests:
             if email is not missing:
                 sys.modules['email'] = email
 
-    def test_finder_with_find_module(self):
-        class TestFinder:
-            def find_module(self, fullname):
-                return self.to_return
-        failing_finder = TestFinder()
-        failing_finder.to_return = None
-        path = 'testing path'
-        with util.import_state(path_importer_cache={path: failing_finder}):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", ImportWarning)
-                self.assertIsNone(
-                    self.machinery.PathFinder.find_spec('whatever', [path]))
-        success_finder = TestFinder()
-        success_finder.to_return = __loader__
-        with util.import_state(path_importer_cache={path: success_finder}):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", ImportWarning)
-                spec = self.machinery.PathFinder.find_spec('whatever', [path])
-        self.assertEqual(spec.loader, __loader__)
-
-    def test_finder_with_find_loader(self):
-        class TestFinder:
-            loader = None
-            portions = []
-            def find_loader(self, fullname):
-                return self.loader, self.portions
-        path = 'testing path'
-        with util.import_state(path_importer_cache={path: TestFinder()}):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", ImportWarning)
-                self.assertIsNone(
-                    self.machinery.PathFinder.find_spec('whatever', [path]))
-        success_finder = TestFinder()
-        success_finder.loader = __loader__
-        with util.import_state(path_importer_cache={path: success_finder}):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", ImportWarning)
-                spec = self.machinery.PathFinder.find_spec('whatever', [path])
-        self.assertEqual(spec.loader, __loader__)
-
     def test_finder_with_find_spec(self):
         class TestFinder:
             spec = None
@@ -228,9 +188,9 @@ class FinderTests:
 
 class FindModuleTests(FinderTests):
     def find(self, *args, **kwargs):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            return self.machinery.PathFinder.find_module(*args, **kwargs)
+        spec = self.machinery.PathFinder.find_spec(*args, **kwargs)
+        return None if spec is None else spec.loader
+
     def check_found(self, found, importer):
         self.assertIs(found, importer)
 
@@ -255,16 +215,14 @@ class FindSpecTests(FinderTests):
 class PathEntryFinderTests:
 
     def test_finder_with_failing_find_spec(self):
-        # PathEntryFinder with find_module() defined should work.
-        # Issue #20763.
         class Finder:
-            path_location = 'test_finder_with_find_module'
+            path_location = 'test_finder_with_find_spec'
             def __init__(self, path):
                 if path != self.path_location:
                     raise ImportError
 
             @staticmethod
-            def find_module(fullname):
+            def find_spec(fullname, target=None):
                 return None
 
 
@@ -273,27 +231,6 @@ class PathEntryFinderTests:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", ImportWarning)
                 self.machinery.PathFinder.find_spec('importlib')
-
-    def test_finder_with_failing_find_module(self):
-        # PathEntryFinder with find_module() defined should work.
-        # Issue #20763.
-        class Finder:
-            path_location = 'test_finder_with_find_module'
-            def __init__(self, path):
-                if path != self.path_location:
-                    raise ImportError
-
-            @staticmethod
-            def find_module(fullname):
-                return None
-
-
-        with util.import_state(path=[Finder.path_location]+sys.path[:],
-                               path_hooks=[Finder]):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", ImportWarning)
-                warnings.simplefilter("ignore", DeprecationWarning)
-                self.machinery.PathFinder.find_module('importlib')
 
 
 (Frozen_PEFTests,
