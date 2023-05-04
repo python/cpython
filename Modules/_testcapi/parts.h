@@ -43,6 +43,7 @@ int _PyTestCapi_Init_Immortal(PyObject *module);
 
 #ifdef LIMITED_API_AVAILABLE
 int _PyTestCapi_Init_VectorcallLimited(PyObject *module);
+int _PyTestCapi_Init_HeaptypeRelative(PyObject *module);
 #endif // LIMITED_API_AVAILABLE
 
 #endif

@@ -10,7 +10,7 @@
    pair: HTTP; protocol
    single: HTTP; http.client (standard module)
 
-.. index:: module: urllib.request
+.. index:: pair: module; urllib.request
 
 --------------
 

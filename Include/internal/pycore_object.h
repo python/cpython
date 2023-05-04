@@ -389,11 +389,6 @@ extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
 extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
-// Access macro to the members which are floating "behind" the object
-static inline PyMemberDef* _PyHeapType_GET_MEMBERS(PyHeapTypeObject *etype) {
-    return (PyMemberDef*)((char*)etype + Py_TYPE(etype)->tp_basicsize);
-}
-
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
 
 /* C function call trampolines to mitigate bad function pointer casts.
