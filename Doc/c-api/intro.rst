@@ -261,7 +261,7 @@ complete listing.
 Objects, Types and Reference Counts
 ===================================
 
-.. index:: object: type
+.. index:: pair: object; type
 
 Most Python/C API functions have one or more arguments as well as a return value
 of type :c:expr:`PyObject*`.  This type is a pointer to an opaque data type

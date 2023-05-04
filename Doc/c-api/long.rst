@@ -5,8 +5,8 @@
 Integer Objects
 ---------------
 
-.. index:: object: long integer
-           object: integer
+.. index:: pair: object; long integer
+           pair: object; integer
 
 All integers are implemented as "long" integer objects of arbitrary size.
 
