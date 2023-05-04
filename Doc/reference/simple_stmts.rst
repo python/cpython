@@ -495,7 +495,7 @@ If an expression list is present, it is evaluated, else ``None`` is substituted.
 :keyword:`return` leaves the current function call with the expression list (or
 ``None``) as return value.
 
-.. index:: keyword: finally
+.. index:: pair: keyword; finally
 
 When :keyword:`return` passes control out of a :keyword:`try` statement with a
 :keyword:`finally` clause, that :keyword:`!finally` clause is executed before
@@ -679,7 +679,7 @@ The :keyword:`!break` statement
 :keyword:`while` loop, but not nested in a function or class definition within
 that loop.
 
-.. index:: keyword: else
+.. index:: pair: keyword; else
            pair: loop control; target
 
 It terminates the nearest enclosing loop, skipping the optional :keyword:`!else`
@@ -688,7 +688,7 @@ clause if the loop has one.
 If a :keyword:`for` loop is terminated by :keyword:`break`, the loop control
 target keeps its current value.
 
-.. index:: keyword: finally
+.. index:: pair: keyword; finally
 
 When :keyword:`break` passes control out of a :keyword:`try` statement with a
 :keyword:`finally` clause, that :keyword:`!finally` clause is executed before
@@ -705,7 +705,7 @@ The :keyword:`!continue` statement
    statement: for
    statement: while
    pair: loop; statement
-   keyword: finally
+   pair: keyword; finally
 
 .. productionlist:: python-grammar
    continue_stmt: "continue"
@@ -729,8 +729,8 @@ The :keyword:`!import` statement
    ! statement: import
    single: module; importing
    pair: name; binding
-   keyword: from
-   keyword: as
+   pair: keyword; from
+   pair: keyword; as
    exception: ImportError
    single: , (comma); import statement
 

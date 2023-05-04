@@ -689,17 +689,13 @@ def patch_pairindextypes(app) -> None:
         # away from this, we need Sphinx to believe that these values don't
         # exist, by deleting them when using the gettext builder.
 
-        # pairindextypes.pop('module', None)
-        # pairindextypes.pop('keyword', None)
-        # pairindextypes.pop('operator', None)
+        pairindextypes.pop('module', None)
+        pairindextypes.pop('keyword', None)
+        pairindextypes.pop('operator', None)
         # pairindextypes.pop('object', None)
         # pairindextypes.pop('exception', None)
         # pairindextypes.pop('statement', None)
         # pairindextypes.pop('builtin', None)
-
-        # there needs to be at least one statement in this block, will be
-        # removed when the first of the below is uncommented.
-        pass
 
 
 def setup(app):
