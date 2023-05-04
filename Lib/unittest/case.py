@@ -1216,11 +1216,7 @@ class TestCase(object):
             self.fail(msg)
 
     def assertMultiLineEqual(self, first, second, msg=None):
-        """Assert that two multi-line strings are equal.
-
-         If the assertion fails, provide an error message with a detailed
-         diff output.
-        """
+        """Assert that two multi-line strings are equal."""
         self.assertIsInstance(first, str, "First argument is not a string")
         self.assertIsInstance(second, str, "Second argument is not a string")
 
