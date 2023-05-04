@@ -1236,13 +1236,13 @@ class TestCase(object):
             # \n should be added
             first_presplit = first
             second_presplit = second
-            if first != '' and second != '':
+            if first and second:
                 if first[-1] != '\n' or second[-1] != '\n':
                     first_presplit += '\n'
                     second_presplit += '\n'
-            elif first == '' and second != '' and second[-1] != '\n':
+            elif second and second[-1] != '\n':
                 second_presplit += '\n'
-            elif second == '' and first != '' and first[-1] != '\n':
+            elif first and first[-1] != '\n':
                 first_presplit += '\n'
 
             firstlines = first_presplit.splitlines(keepends=True)
