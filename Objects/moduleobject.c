@@ -311,7 +311,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     /* By default, multi-phase init modules are expected
        to work under multiple interpreters. */
     if (multiple_interpreters < 0) {
-        multiple_interpreters = Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED;
+        multiple_interpreters = (Py_ssize_t)Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED;
     }
     if (!multiple_interpreters) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
