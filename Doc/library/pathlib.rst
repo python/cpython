@@ -819,6 +819,19 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.10
       The *follow_symlinks* parameter was added.
 
+.. method:: Path.chown(owner=None, group=None)
+
+   Change the *owner* and/or *group* of the path.
+
+   *owner* can be a system user name or a uid; the same applies to *group*.
+   At least one argument is required.
+
+   .. audit-event:: pathlib.Path.chown path,owner,group pathlib.Path.chown
+
+   .. availability:: Unix.
+
+   .. versionadded:: 3.12
+
 .. method:: Path.exists(*, follow_symlinks=True)
 
    Return ``True`` if the path points to an existing file or directory.
@@ -1442,6 +1455,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.path.abspath`                :meth:`Path.absolute` [#]_
 :func:`os.path.realpath`               :meth:`Path.resolve`
 :func:`os.chmod`                       :meth:`Path.chmod`
+:func:`os.chown`                       :meth:`Path.chown` [#]_
 :func:`os.mkdir`                       :meth:`Path.mkdir`
 :func:`os.makedirs`                    :meth:`Path.mkdir`
 :func:`os.rename`                      :meth:`Path.rename`
@@ -1476,4 +1490,5 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 .. rubric:: Footnotes
 
 .. [#] :func:`os.path.abspath` normalizes the resulting path, which may change its meaning in the presence of symlinks, while :meth:`Path.absolute` does not.
+.. [#] :meth:`Path.chown` supports owner and group names and IDs, whereas :func:`os.chown` only supports IDs.
 .. [#] :meth:`PurePath.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.

@@ -3078,6 +3078,67 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
                 self.fail("Bad file descriptor not handled.")
             raise
 
+    @unittest.skipUnless(pwd, "the pwd module is needed for this test")
+    @unittest.skipUnless(grp, "the grp module is needed for this test")
+    @unittest.skipUnless(hasattr(os, 'chown'), 'requires os.chown')
+    def test_chown(self):
+        dirname = self.cls(BASE)
+        filename = dirname / "fileA"
+
+        with self.assertRaises(ValueError):
+            filename.chown()
+
+        with self.assertRaises(LookupError):
+            filename.chown(user='non-existing username')
+
+        with self.assertRaises(LookupError):
+            filename.chown(group='non-existing groupname')
+
+        with self.assertRaises(TypeError):
+            filename.chown(b'spam')
+
+        with self.assertRaises(TypeError):
+            filename.chown(3.14)
+
+        uid = os.getuid()
+        gid = os.getgid()
+
+        def check_chown(path, uid=None, gid=None):
+            s = path.stat()
+            if uid is not None:
+                self.assertEqual(uid, s.st_uid)
+            if gid is not None:
+                self.assertEqual(gid, s.st_gid)
+
+        filename.chown(uid, gid)
+        check_chown(filename, uid, gid)
+        filename.chown(uid)
+        check_chown(filename, uid)
+        filename.chown(user=uid)
+        check_chown(filename, uid)
+        filename.chown(group=gid)
+        check_chown(filename, gid=gid)
+
+        dirname.chown(uid, gid)
+        check_chown(dirname, uid, gid)
+        dirname.chown(uid)
+        check_chown(dirname, uid)
+        dirname.chown(user=uid)
+        check_chown(dirname, uid)
+        dirname.chown(group=gid)
+        check_chown(dirname, gid=gid)
+
+        try:
+            user = pwd.getpwuid(uid)[0]
+            group = grp.getgrgid(gid)[0]
+        except KeyError:
+            # On some systems uid/gid cannot be resolved.
+            pass
+        else:
+            filename.chown(user, group)
+            check_chown(filename, uid, gid)
+            dirname.chown(user, group)
+            check_chown(dirname, uid, gid)
 
 @only_nt
 class WindowsPathTest(_BasePathTest, unittest.TestCase):

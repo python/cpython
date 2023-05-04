@@ -10,6 +10,7 @@ import stat
 import fnmatch
 import collections
 import errno
+import pathlib
 import warnings
 
 try:
@@ -1381,29 +1382,14 @@ def chown(path, user=None, group=None):
     """
     sys.audit('shutil.chown', path, user, group)
 
-    if user is None and group is None:
-        raise ValueError("user and/or group must be set")
+    if not isinstance(path, pathlib.Path):
+        path = os.fspath(path)
+        if isinstance(path, bytes):
+            path = os.fsdecode(path)
+        path = pathlib.Path(path)
 
-    _user = user
-    _group = group
+    path.chown(user, group)
 
-    # -1 means don't change it
-    if user is None:
-        _user = -1
-    # user can either be an int (the uid) or a string (the system username)
-    elif isinstance(user, str):
-        _user = _get_uid(user)
-        if _user is None:
-            raise LookupError("no such user: {!r}".format(user))
-
-    if group is None:
-        _group = -1
-    elif not isinstance(group, int):
-        _group = _get_gid(group)
-        if _group is None:
-            raise LookupError("no such group: {!r}".format(group))
-
-    os.chown(path, _user, _group)
 
 def get_terminal_size(fallback=(80, 24)):
     """Get the size of the terminal window.

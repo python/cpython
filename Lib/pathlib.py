@@ -1029,6 +1029,38 @@ class Path(PurePath):
         """
         self.chmod(mode, follow_symlinks=False)
 
+    if hasattr(os, 'chown'):
+        def chown(self, owner=None, group=None):
+            """Change the owner and/or group of the path.
+
+            owner and group can be the uid/gid or the user/group names, and
+            in that case, they are converted to their respective uid/gid.
+            """
+            sys.audit('pathlib.Path.chown', self, owner, group)
+
+            if owner is None:
+                owner = -1
+            elif isinstance(owner, str):
+                try:
+                    import pwd
+                    owner = pwd.getpwnam(owner)[2]
+                except (ImportError, KeyError):
+                    raise LookupError(f"no such user: {owner!r}") from None
+
+            if group is None:
+                group = -1
+            elif isinstance(group, str):
+                try:
+                    import grp
+                    group = grp.getgrnam(group)[2]
+                except (ImportError, KeyError):
+                    raise LookupError(f"no such group: {group!r}") from None
+
+            if owner == -1 and group == -1:
+                raise ValueError("user and/or group must be set")
+
+            os.chown(self, owner, group)
+
     def unlink(self, missing_ok=False):
         """
         Remove this file or link.

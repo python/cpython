@@ -1,0 +1,2 @@
+Add :meth:`pathlib.Path.chown`, which changes the owner and/or group of a
+path.
