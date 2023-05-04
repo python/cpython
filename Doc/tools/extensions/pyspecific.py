@@ -698,7 +698,7 @@ def patch_pairindextypes(app) -> None:
         pairindextypes.pop('keyword', None)
         pairindextypes.pop('operator', None)
         pairindextypes.pop('object', None)
-        # pairindextypes.pop('exception', None)
+        pairindextypes.pop('exception', None)
         # pairindextypes.pop('statement', None)
         # pairindextypes.pop('builtin', None)
 

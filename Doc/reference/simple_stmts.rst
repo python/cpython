@@ -398,7 +398,7 @@ The extended form, ``assert expression1, expression2``, is equivalent to ::
 
 .. index::
    single: __debug__
-   exception: AssertionError
+   pair: exception; AssertionError
 
 These equivalences assume that :const:`__debug__` and :exc:`AssertionError` refer to
 the built-in variables with those names.  In the current implementation, the
@@ -521,7 +521,7 @@ The :keyword:`!yield` statement
    single: generator; function
    single: generator; iterator
    single: function; generator
-   exception: StopIteration
+   pair: exception; StopIteration
 
 .. productionlist:: python-grammar
    yield_stmt: `yield_expression`
@@ -731,7 +731,7 @@ The :keyword:`!import` statement
    pair: name; binding
    pair: keyword; from
    pair: keyword; as
-   exception: ImportError
+   pair: exception; ImportError
    single: , (comma); import statement
 
 .. productionlist:: python-grammar
