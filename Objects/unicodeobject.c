@@ -15192,12 +15192,18 @@ static PyMethodDef _string_methods[] = {
     {NULL, NULL}
 };
 
+static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL}
+};
+
 static struct PyModuleDef _string_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_string",
     .m_doc = PyDoc_STR("string helper module"),
     .m_size = 0,
     .m_methods = _string_methods,
+    .m_slots = module_slots,
 };
 
 PyMODINIT_FUNC

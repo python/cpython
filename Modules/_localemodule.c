@@ -874,6 +874,7 @@ _locale_exec(PyObject *module)
 
 static struct PyModuleDef_Slot _locale_slots[] = {
     {Py_mod_exec, _locale_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

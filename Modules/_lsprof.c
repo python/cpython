@@ -885,6 +885,8 @@ _lsprof_exec(PyObject *module)
 
 static PyModuleDef_Slot _lsprofslots[] = {
     {Py_mod_exec, _lsprof_exec},
+    // XXX gh-103092: fix isolation.
+    //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
