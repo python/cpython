@@ -27,7 +27,7 @@ try:
 except ImportError:
     from sphinx.environment import NoUri
 from sphinx.locale import _ as sphinx_gettext
-from sphinx.util import status_iterator, logging
+from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
@@ -37,6 +37,12 @@ try:
 except ImportError:
     from sphinx.domains.python import PyClassmember as PyMethod
     from sphinx.domains.python import PyModulelevel as PyFunction
+try:
+    # Sphinx 6.1 onwards
+    from sphinx.util.display import status_iterator
+except ImportError:
+    # Before Sphinx 6.1
+    from sphinx.util import status_iterator
 
 
 ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
