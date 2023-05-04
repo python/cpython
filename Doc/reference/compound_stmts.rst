@@ -85,8 +85,8 @@ The :keyword:`!if` statement
 
 .. index::
    ! statement: if
-   keyword: elif
-   keyword: else
+   pair: keyword; elif
+   pair: keyword; else
    single: : (colon); compound statement
 
 The :keyword:`if` statement is used for conditional execution:
@@ -110,7 +110,7 @@ The :keyword:`!while` statement
 
 .. index::
    ! statement: while
-   keyword: else
+   pair: keyword; else
    pair: loop; statement
    single: : (colon); compound statement
 
@@ -143,8 +143,8 @@ The :keyword:`!for` statement
 
 .. index::
    ! statement: for
-   keyword: in
-   keyword: else
+   pair: keyword; in
+   pair: keyword; else
    pair: target; list
    pair: loop; statement
    object: sequence
@@ -206,10 +206,10 @@ The :keyword:`!try` statement
 
 .. index::
    ! statement: try
-   keyword: except
-   keyword: finally
-   keyword: else
-   keyword: as
+   pair: keyword; except
+   pair: keyword; finally
+   pair: keyword; else
+   pair: keyword; as
    single: : (colon); compound statement
 
 The :keyword:`!try` statement specifies exception handlers and/or cleanup code
@@ -326,7 +326,7 @@ stored in the :mod:`sys` module is reset to its previous value::
 
 
 .. index::
-   keyword: except_star
+   pair: keyword; except_star
 
 .. _except_star:
 
@@ -387,7 +387,7 @@ cannot appear in an :keyword:`!except*` clause.
 
 
 .. index::
-   keyword: else
+   pair: keyword; else
    statement: return
    statement: break
    statement: continue
@@ -404,7 +404,7 @@ the :keyword:`!else` clause are not handled by the preceding :keyword:`except`
 clauses.
 
 
-.. index:: keyword: finally
+.. index:: pair: keyword; finally
 
 .. _finally:
 
@@ -469,7 +469,7 @@ The :keyword:`!with` statement
 
 .. index::
    ! statement: with
-   keyword: as
+   pair: keyword; as
    single: as; with statement
    single: , (comma); with statement
    single: : (colon); compound statement
@@ -586,10 +586,10 @@ The :keyword:`!match` statement
 
 .. index::
    ! statement: match
-   ! keyword: case
+   ! pair: keyword; case
    ! single: pattern matching
-   keyword: if
-   keyword: as
+   pair: keyword; if
+   pair: keyword; as
    pair: match; case
    single: as; match statement
    single: : (colon); compound statement
@@ -1474,8 +1474,8 @@ Coroutine function definition
                 : ["->" `expression`] ":" `suite`
 
 .. index::
-   keyword: async
-   keyword: await
+   pair: keyword; async
+   pair: keyword; await
 
 Execution of Python coroutines can be suspended and resumed at many points
 (see :term:`coroutine`). :keyword:`await` expressions, :keyword:`async for` and
