@@ -19,7 +19,7 @@ all modern Unix systems, Windows, MacOS, and probably additional platforms.
 
 .. include:: ../includes/wasm-notavail.rst
 
-.. index:: object: socket
+.. index:: pair: object; socket
 
 The Python interface is a straightforward transliteration of the Unix system
 call and library interface for sockets to Python's object-oriented style: the
@@ -1916,7 +1916,7 @@ to sockets.
 .. method:: socket.setsockopt(level, optname, None, optlen: int)
    :noindex:
 
-   .. index:: module: struct
+   .. index:: pair: module; struct
 
    Set the value of the given socket option (see the Unix manual page
    :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in the
