@@ -51,7 +51,7 @@ searched for site-packages; otherwise they will.
 
 .. index::
    single: # (hash); comment
-   statement: import
+   pair: statement; import
 
 A path configuration file is a file whose name has the form :file:`{name}.pth`
 and exists in one of the four directories mentioned above; its contents are
