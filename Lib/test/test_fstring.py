@@ -16,7 +16,6 @@ import unittest
 from test import support
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure
-from test.support.warnings_helper import check_warnings
 
 a_global = 'global variable'
 
