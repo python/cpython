@@ -587,6 +587,7 @@ extern "C" {
     INIT_ID(__await__), \
     INIT_ID(__bases__), \
     INIT_ID(__bool__), \
+    INIT_ID(__buffer__), \
     INIT_ID(__build_class__), \
     INIT_ID(__builtins__), \
     INIT_ID(__bytes__), \
@@ -686,6 +687,7 @@ extern "C" {
     INIT_ID(__rdivmod__), \
     INIT_ID(__reduce__), \
     INIT_ID(__reduce_ex__), \
+    INIT_ID(__release_buffer__), \
     INIT_ID(__repr__), \
     INIT_ID(__reversed__), \
     INIT_ID(__rfloordiv__), \
@@ -1116,6 +1118,7 @@ extern "C" {
     INIT_ID(reducer_override), \
     INIT_ID(registry), \
     INIT_ID(rel_tol), \
+    INIT_ID(release), \
     INIT_ID(reload), \
     INIT_ID(repl), \
     INIT_ID(replace), \

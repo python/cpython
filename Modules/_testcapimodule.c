@@ -3959,7 +3959,6 @@ static PyTypeObject MyList_Type = {
     MyList_new,                                 /* tp_new */
 };
 
-
 /* Test PEP 560 */
 
 typedef struct {
@@ -4308,6 +4307,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Code(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Buffer(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_PyOS(m) < 0) {
