@@ -1853,6 +1853,30 @@ x: *b
     Traceback (most recent call last):
         ...
     SyntaxError: invalid syntax
+
+Invalid bytes literals:
+
+   >>> b"Ā"
+   Traceback (most recent call last):
+      ...
+       b"Ā"
+        ^^^
+   SyntaxError: bytes can only contain ASCII literal characters
+
+   >>> b"абвгде"
+   Traceback (most recent call last):
+      ...
+       b"абвгде"
+        ^^^^^^^^
+   SyntaxError: bytes can only contain ASCII literal characters
+
+   >>> b"abc ъющый"  # first 3 letters are ascii
+   Traceback (most recent call last):
+      ...
+       b"abc ъющый"
+        ^^^^^^^^^^^
+   SyntaxError: bytes can only contain ASCII literal characters
+
 """
 
 import re
@@ -1957,9 +1981,6 @@ class SyntaxTestCase(unittest.TestCase):
             """
         self._check_error(source, "parameter and nonlocal", lineno=3)
 
-    def test_break_outside_loop(self):
-        self._check_error("break", "outside loop")
-
     def test_yield_outside_function(self):
         self._check_error("if 0: yield",                "outside function")
         self._check_error("if 0: yield\nelse:  x=1",    "outside function")
@@ -1988,20 +2009,27 @@ class SyntaxTestCase(unittest.TestCase):
                           "outside function")
 
     def test_break_outside_loop(self):
-        self._check_error("if 0: break",             "outside loop")
-        self._check_error("if 0: break\nelse:  x=1",  "outside loop")
-        self._check_error("if 1: pass\nelse: break", "outside loop")
-        self._check_error("class C:\n  if 0: break", "outside loop")
+        msg = "outside loop"
+        self._check_error("break", msg, lineno=1)
+        self._check_error("if 0: break", msg, lineno=1)
+        self._check_error("if 0: break\nelse:  x=1", msg, lineno=1)
+        self._check_error("if 1: pass\nelse: break", msg, lineno=2)
+        self._check_error("class C:\n  if 0: break", msg, lineno=2)
         self._check_error("class C:\n  if 1: pass\n  else: break",
-                          "outside loop")
+                          msg, lineno=3)
+        self._check_error("with object() as obj:\n break",
+                          msg, lineno=2)
 
     def test_continue_outside_loop(self):
-        self._check_error("if 0: continue",             "not properly in loop")
-        self._check_error("if 0: continue\nelse:  x=1", "not properly in loop")
-        self._check_error("if 1: pass\nelse: continue", "not properly in loop")
-        self._check_error("class C:\n  if 0: continue", "not properly in loop")
+        msg = "not properly in loop"
+        self._check_error("if 0: continue", msg, lineno=1)
+        self._check_error("if 0: continue\nelse:  x=1", msg, lineno=1)
+        self._check_error("if 1: pass\nelse: continue", msg, lineno=2)
+        self._check_error("class C:\n  if 0: continue", msg, lineno=2)
         self._check_error("class C:\n  if 1: pass\n  else: continue",
-                          "not properly in loop")
+                          msg, lineno=3)
+        self._check_error("with object() as obj:\n    continue",
+                          msg, lineno=2)
 
     def test_unexpected_indent(self):
         self._check_error("foo()\n bar()\n", "unexpected indent",

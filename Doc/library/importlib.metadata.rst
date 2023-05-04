@@ -73,7 +73,7 @@ something into it:
 
 .. code-block:: shell-session
 
-    $ python3 -m venv example
+    $ python -m venv example
     $ source example/bin/activate
     (example) $ python -m pip install wheel
 
@@ -178,7 +178,7 @@ The "selectable" entry points were introduced in ``importlib_metadata``
 no parameters and always returned a dictionary of entry points, keyed
 by group. With ``importlib_metadata`` 5.0 and Python 3.12,
 ``entry_points`` always returns an ``EntryPoints`` object. See
-`backports.entry_points_selectable <https://pypi.org/project/backports.entry_points_selectable>`_
+`backports.entry_points_selectable <https://pypi.org/project/backports.entry-points-selectable>`_
 for compatibility options.
 
 
@@ -307,6 +307,10 @@ Python module or `Import Package <https://packaging.python.org/en/latest/glossar
 
     >>> packages_distributions()
     {'importlib_metadata': ['importlib-metadata'], 'yaml': ['PyYAML'], 'jaraco': ['jaraco.classes', 'jaraco.functools'], ...}
+
+Some editable installs, `do not supply top-level names
+<https://github.com/pypa/packaging-problems/issues/609>`_, and thus this
+function is not reliable with such installs.
 
 .. versionadded:: 3.10
 

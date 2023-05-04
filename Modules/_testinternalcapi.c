@@ -14,7 +14,7 @@
 #include "Python.h"
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
-#include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg
+#include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble
 #include "pycore_fileutils.h"    // _Py_normpath
 #include "pycore_frame.h"        // _PyInterpreterFrame
 #include "pycore_gc.h"           // PyGC_Head
@@ -27,6 +27,60 @@
 #include "osdefs.h"              // MAXPATHLEN
 
 #include "clinic/_testinternalcapi.c.h"
+
+
+#define MODULE_NAME "_testinternalcapi"
+
+
+static PyObject *
+_get_current_module(void)
+{
+    // We ensured it was imported in _run_script().
+    PyObject *name = PyUnicode_FromString(MODULE_NAME);
+    if (name == NULL) {
+        return NULL;
+    }
+    PyObject *mod = PyImport_GetModule(name);
+    Py_DECREF(name);
+    if (mod == NULL) {
+        return NULL;
+    }
+    assert(mod != Py_None);
+    return mod;
+}
+
+
+/* module state *************************************************************/
+
+typedef struct {
+    PyObject *record_list;
+} module_state;
+
+static inline module_state *
+get_module_state(PyObject *mod)
+{
+    assert(mod != NULL);
+    module_state *state = PyModule_GetState(mod);
+    assert(state != NULL);
+    return state;
+}
+
+static int
+traverse_module_state(module_state *state, visitproc visit, void *arg)
+{
+    Py_VISIT(state->record_list);
+    return 0;
+}
+
+static int
+clear_module_state(module_state *state)
+{
+    Py_CLEAR(state->record_list);
+    return 0;
+}
+
+
+/* module functions *********************************************************/
 
 /*[clinic input]
 module _testinternalcapi
@@ -496,13 +550,12 @@ decode_locale_ex(PyObject *self, PyObject *args)
     return res;
 }
 
-static PyObject *record_list = NULL;
-
 static PyObject *
 set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    module_state *state = get_module_state(self);
     _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState_Get(), _PyEval_EvalFrameDefault);
-    Py_CLEAR(record_list);
+    Py_CLEAR(state->record_list);
     Py_RETURN_NONE;
 }
 
@@ -510,7 +563,11 @@ static PyObject *
 record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 {
     if (PyFunction_Check(f->f_funcobj)) {
-        PyList_Append(record_list, ((PyFunctionObject *)f->f_funcobj)->func_name);
+        PyObject *module = _get_current_module();
+        assert(module != NULL);
+        module_state *state = get_module_state(module);
+        Py_DECREF(module);
+        PyList_Append(state->record_list, ((PyFunctionObject *)f->f_funcobj)->func_name);
     }
     return _PyEval_EvalFrameDefault(tstate, f, exc);
 }
@@ -519,11 +576,12 @@ record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 static PyObject *
 set_eval_frame_record(PyObject *self, PyObject *list)
 {
+    module_state *state = get_module_state(self);
     if (!PyList_Check(list)) {
         PyErr_SetString(PyExc_TypeError, "argument must be a list");
         return NULL;
     }
-    Py_XSETREF(record_list, Py_NewRef(list));
+    Py_XSETREF(state->record_list, Py_NewRef(list));
     _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState_Get(), record_eval);
     Py_RETURN_NONE;
 }
@@ -565,6 +623,68 @@ _testinternalcapi_optimize_cfg_impl(PyObject *module, PyObject *instructions,
 /*[clinic end generated code: output=5412aeafca683c8b input=7e8a3de86ebdd0f9]*/
 {
     return _PyCompile_OptimizeCfg(instructions, consts);
+}
+
+static int
+get_nonnegative_int_from_dict(PyObject *dict, const char *key) {
+    PyObject *obj = PyDict_GetItemString(dict, key);
+    if (obj == NULL) {
+        return -1;
+    }
+    return PyLong_AsLong(obj);
+}
+
+/*[clinic input]
+
+_testinternalcapi.assemble_code_object -> object
+
+  filename: object
+  instructions: object
+  metadata: object
+
+Create a code object for the given instructions.
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_assemble_code_object_impl(PyObject *module,
+                                            PyObject *filename,
+                                            PyObject *instructions,
+                                            PyObject *metadata)
+/*[clinic end generated code: output=38003dc16a930f48 input=e713ad77f08fb3a8]*/
+
+{
+    assert(PyDict_Check(metadata));
+    _PyCompile_CodeUnitMetadata umd;
+
+    umd.u_name = PyDict_GetItemString(metadata, "name");
+    umd.u_qualname = PyDict_GetItemString(metadata, "qualname");
+
+    assert(PyUnicode_Check(umd.u_name));
+    assert(PyUnicode_Check(umd.u_qualname));
+
+    umd.u_consts = PyDict_GetItemString(metadata, "consts");
+    umd.u_names = PyDict_GetItemString(metadata, "names");
+    umd.u_varnames = PyDict_GetItemString(metadata, "varnames");
+    umd.u_cellvars = PyDict_GetItemString(metadata, "cellvars");
+    umd.u_freevars = PyDict_GetItemString(metadata, "freevars");
+
+    assert(PyList_Check(umd.u_consts));
+    assert(PyDict_Check(umd.u_names));
+    assert(PyDict_Check(umd.u_varnames));
+    assert(PyDict_Check(umd.u_cellvars));
+    assert(PyDict_Check(umd.u_freevars));
+
+    umd.u_argcount = get_nonnegative_int_from_dict(metadata, "argcount");
+    umd.u_posonlyargcount = get_nonnegative_int_from_dict(metadata, "posonlyargcount");
+    umd.u_kwonlyargcount = get_nonnegative_int_from_dict(metadata, "kwonlyargcount");
+    umd.u_firstlineno = get_nonnegative_int_from_dict(metadata, "firstlineno");
+
+    assert(umd.u_argcount >= 0);
+    assert(umd.u_posonlyargcount >= 0);
+    assert(umd.u_kwonlyargcount >= 0);
+    assert(umd.u_firstlineno >= 0);
+
+    return (PyObject*)_PyCompile_Assemble(&umd, filename, instructions);
 }
 
 
@@ -613,7 +733,21 @@ get_interp_settings(PyObject *self, PyObject *args)
 }
 
 
-static PyMethodDef TestMethods[] = {
+static PyObject *
+clear_extension(PyObject *self, PyObject *args)
+{
+    PyObject *name = NULL, *filename = NULL;
+    if (!PyArg_ParseTuple(args, "OO:clear_extension", &name, &filename)) {
+        return NULL;
+    }
+    if (_PyImport_ClearExtension(name, filename) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
@@ -633,40 +767,72 @@ static PyMethodDef TestMethods[] = {
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
     _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
+    _TESTINTERNALCAPI_ASSEMBLE_CODE_OBJECT_METHODDEF
     {"get_interp_settings", get_interp_settings, METH_VARARGS, NULL},
+    {"clear_extension", clear_extension, METH_VARARGS, NULL},
     {NULL, NULL} /* sentinel */
 };
 
 
+/* initialization function */
+
+static int
+module_exec(PyObject *module)
+{
+    if (PyModule_AddObject(module, "SIZEOF_PYGC_HEAD",
+                           PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+static struct PyModuleDef_Slot module_slots[] = {
+    {Py_mod_exec, module_exec},
+    {0, NULL},
+};
+
+static int
+module_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    module_state *state = get_module_state(module);
+    assert(state != NULL);
+    traverse_module_state(state, visit, arg);
+    return 0;
+}
+
+static int
+module_clear(PyObject *module)
+{
+    module_state *state = get_module_state(module);
+    assert(state != NULL);
+    (void)clear_module_state(state);
+    return 0;
+}
+
+static void
+module_free(void *module)
+{
+    module_state *state = get_module_state(module);
+    assert(state != NULL);
+    (void)clear_module_state(state);
+}
+
 static struct PyModuleDef _testcapimodule = {
-    PyModuleDef_HEAD_INIT,
-    "_testinternalcapi",
-    NULL,
-    -1,
-    TestMethods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = MODULE_NAME,
+    .m_doc = NULL,
+    .m_size = sizeof(module_state),
+    .m_methods = module_functions,
+    .m_slots = module_slots,
+    .m_traverse = module_traverse,
+    .m_clear = module_clear,
+    .m_free = (freefunc)module_free,
 };
 
 
 PyMODINIT_FUNC
 PyInit__testinternalcapi(void)
 {
-    PyObject *module = PyModule_Create(&_testcapimodule);
-    if (module == NULL) {
-        return NULL;
-    }
-
-    if (PyModule_AddObject(module, "SIZEOF_PYGC_HEAD",
-                           PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
-        goto error;
-    }
-
-    return module;
-
-error:
-    Py_DECREF(module);
-    return NULL;
+    return PyModuleDef_Init(&_testcapimodule);
 }

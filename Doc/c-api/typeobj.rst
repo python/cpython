@@ -147,6 +147,8 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_vectorcall`        | :c:type:`vectorcallfunc`          |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | [:c:member:`~PyTypeObject.tp_watched`]         | char                              |                   |   |   |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
 
 .. [#slots]
 
@@ -450,6 +452,7 @@ slot typedefs
 |                             |                             |                      |
 |                             |    :c:type:`PyObject` *     |                      |
 |                             |    :c:type:`Py_ssize_t`     |                      |
+|                             |    :c:type:`PyObject` *     |                      |
 +-----------------------------+-----------------------------+----------------------+
 | :c:type:`objobjproc`        | .. line-block::             | int                  |
 |                             |                             |                      |
@@ -1142,7 +1145,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
     .. data:: Py_TPFLAGS_MANAGED_DICT
 
-       This bit indicates that instances of the class have a ``__dict___``
+       This bit indicates that instances of the class have a ``__dict__``
        attribute, and that the space for the dictionary is managed by the VM.
 
        If this flag is set, :const:`Py_TPFLAGS_HAVE_GC` should also be set.
@@ -1167,6 +1170,26 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       This flag is inherited unless the
       :c:member:`~PyTypeObject.tp_weaklistoffset` field is set in a superclass.
 
+
+   .. data:: Py_TPFLAGS_ITEMS_AT_END
+
+      Only usable with variable-size types, i.e. ones with non-zero
+      :c:member:`~PyObject.tp_itemsize`.
+
+      Indicates that the variable-sized portion of an instance of this type is
+      at the end of the instance's memory area, at an offset of
+      :c:expr:`Py_TYPE(obj)->tp_basicsize` (which may be different in each
+      subclass).
+
+      When setting this flag, be sure that all superclasses either
+      use this memory layout, or are not variable-sized.
+      Python does not check this.
+
+      .. versionadded:: 3.12
+
+      **Inheritance:**
+
+      This flag is inherited.
 
    .. XXX Document more flags here?
 
@@ -1308,6 +1331,16 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       .. seealso:: :pep:`634` -- Structural Pattern Matching: Specification
 
       .. versionadded:: 3.10
+
+
+   .. data:: Py_TPFLAGS_VALID_VERSION_TAG
+
+      Internal. Do not set or unset this flag.
+      To indicate that a class has changed call :c:func:`PyType_Modified`
+
+      .. warning::
+         This flag is present in header files, but is an internal feature and should
+         not be used. It will be removed in a future version of CPython
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
@@ -2090,6 +2123,13 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    .. versionadded:: 3.9 (the field exists since 3.8 but it's only used since 3.9)
 
 
+.. c:member:: char PyTypeObject.tp_watched
+
+   Internal. Do not use.
+
+   .. versionadded:: 3.12
+
+
 .. _static-types:
 
 Static Types
@@ -2624,7 +2664,7 @@ Slot Type typedefs
 
 .. c:type:: PyObject *(*ssizeargfunc)(PyObject *, Py_ssize_t)
 
-.. c:type:: int (*ssizeobjargproc)(PyObject *, Py_ssize_t)
+.. c:type:: int (*ssizeobjargproc)(PyObject *, Py_ssize_t, PyObject *)
 
 .. c:type:: int (*objobjproc)(PyObject *, PyObject *)
 

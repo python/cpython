@@ -8,7 +8,6 @@ import importlib.util
 import os
 import pickle
 import random
-import re
 import subprocess
 import sys
 import textwrap
@@ -17,12 +16,14 @@ import time
 import unittest
 import warnings
 import weakref
+import operator
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
 from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
-from test.support.script_helper import assert_python_failure, assert_python_ok
+from test.support import requires_limited_api
+from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
 try:
     import _posixsubprocess
 except ImportError:
@@ -31,6 +32,10 @@ try:
     import _testmultiphase
 except ImportError:
     _testmultiphase = None
+try:
+    import _testsinglephase
+except ImportError:
+    _testsinglephase = None
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
@@ -66,71 +71,22 @@ class CAPITest(unittest.TestCase):
 
     @support.requires_subprocess()
     def test_no_FatalError_infinite_loop(self):
-        with support.SuppressCrashReport():
-            p = subprocess.Popen([sys.executable, "-c",
-                                  'import _testcapi;'
-                                  '_testcapi.crash_no_current_thread()'],
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE,
-                                 text=True)
-        (out, err) = p.communicate()
-        self.assertEqual(out, '')
+        run_result, _cmd_line = run_python_until_end(
+            '-c', 'import _testcapi; _testcapi.crash_no_current_thread()',
+        )
+        _rc, out, err = run_result
+        self.assertEqual(out, b'')
         # This used to cause an infinite loop.
         msg = ("Fatal Python error: PyThreadState_Get: "
                "the function must be called with the GIL held, "
                "after Python initialization and before Python finalization, "
                "but the GIL is released "
-               "(the current Python thread state is NULL)")
+               "(the current Python thread state is NULL)").encode()
         self.assertTrue(err.rstrip().startswith(msg),
                         err)
 
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
-
-    def test_exception(self):
-        raised_exception = ValueError("5")
-        new_exc = TypeError("TEST")
-        try:
-            raise raised_exception
-        except ValueError as e:
-            orig_sys_exception = sys.exception()
-            orig_exception = _testcapi.set_exception(new_exc)
-            new_sys_exception = sys.exception()
-            new_exception = _testcapi.set_exception(orig_exception)
-            reset_sys_exception = sys.exception()
-
-            self.assertEqual(orig_exception, e)
-
-            self.assertEqual(orig_exception, raised_exception)
-            self.assertEqual(orig_sys_exception, orig_exception)
-            self.assertEqual(reset_sys_exception, orig_exception)
-            self.assertEqual(new_exception, new_exc)
-            self.assertEqual(new_sys_exception, new_exception)
-        else:
-            self.fail("Exception not raised")
-
-    def test_exc_info(self):
-        raised_exception = ValueError("5")
-        new_exc = TypeError("TEST")
-        try:
-            raise raised_exception
-        except ValueError as e:
-            tb = e.__traceback__
-            orig_sys_exc_info = sys.exc_info()
-            orig_exc_info = _testcapi.set_exc_info(new_exc.__class__, new_exc, None)
-            new_sys_exc_info = sys.exc_info()
-            new_exc_info = _testcapi.set_exc_info(*orig_exc_info)
-            reset_sys_exc_info = sys.exc_info()
-
-            self.assertEqual(orig_exc_info[1], e)
-
-            self.assertSequenceEqual(orig_exc_info, (raised_exception.__class__, raised_exception, tb))
-            self.assertSequenceEqual(orig_sys_exc_info, orig_exc_info)
-            self.assertSequenceEqual(reset_sys_exc_info, orig_exc_info)
-            self.assertSequenceEqual(new_exc_info, (new_exc.__class__, new_exc, None))
-            self.assertSequenceEqual(new_sys_exc_info, new_exc_info)
-        else:
-            self.assertTrue(False)
 
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_seq_bytes_to_charp_array(self):
@@ -323,42 +279,6 @@ class CAPITest(unittest.TestCase):
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
 
-    def test_set_nomemory(self):
-        code = """if 1:
-            import _testcapi
-
-            class C(): pass
-
-            # The first loop tests both functions and that remove_mem_hooks()
-            # can be called twice in a row. The second loop checks a call to
-            # set_nomemory() after a call to remove_mem_hooks(). The third
-            # loop checks the start and stop arguments of set_nomemory().
-            for outer_cnt in range(1, 4):
-                start = 10 * outer_cnt
-                for j in range(100):
-                    if j == 0:
-                        if outer_cnt != 3:
-                            _testcapi.set_nomemory(start)
-                        else:
-                            _testcapi.set_nomemory(start, start + 1)
-                    try:
-                        C()
-                    except MemoryError as e:
-                        if outer_cnt != 3:
-                            _testcapi.remove_mem_hooks()
-                        print('MemoryError', outer_cnt, j)
-                        _testcapi.remove_mem_hooks()
-                        break
-        """
-        rc, out, err = assert_python_ok('-c', code)
-        lines = out.splitlines()
-        for i, line in enumerate(lines, 1):
-            self.assertIn(b'MemoryError', out)
-            *_, count = line.split(b' ')
-            count = int(count)
-            self.assertLessEqual(count, i*5)
-            self.assertGreaterEqual(count, i*5-2)
-
     def test_mapping_keys_values_items(self):
         class Mapping1(dict):
             def keys(self):
@@ -451,11 +371,6 @@ class CAPITest(unittest.TestCase):
         with self.assertRaises(TypeError):
             _testcapi.sequence_set_slice(None, 1, 3, 'xy')
 
-        mapping = {1: 'a', 2: 'b', 3: 'c'}
-        with self.assertRaises(TypeError):
-            _testcapi.sequence_set_slice(mapping, 1, 3, 'xy')
-        self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
-
     def test_sequence_del_slice(self):
         # Correct case:
         data = [1, 2, 3, 4, 5]
@@ -491,7 +406,7 @@ class CAPITest(unittest.TestCase):
             _testcapi.sequence_del_slice(None, 1, 3)
 
         mapping = {1: 'a', 2: 'b', 3: 'c'}
-        with self.assertRaises(TypeError):
+        with self.assertRaises(KeyError):
             _testcapi.sequence_del_slice(mapping, 1, 3)
         self.assertEqual(mapping, {1: 'a', 2: 'b', 3: 'c'})
 
@@ -768,6 +683,20 @@ class CAPITest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             t = _testcapi.pytype_fromspec_meta(_testcapi.HeapCTypeMetaclassCustomNew)
 
+    def test_heaptype_with_custom_metaclass_deprecation(self):
+        # gh-103968: a metaclass with custom tp_new is deprecated, but still
+        # allowed for functions that existed in 3.11
+        # (PyType_FromSpecWithBases is used here).
+        class Base(metaclass=_testcapi.HeapCTypeMetaclassCustomNew):
+            pass
+
+        with warnings_helper.check_warnings(
+                ('.*custom tp_new.*in Python 3.14.*', DeprecationWarning),
+                ):
+            sub = _testcapi.make_type_with_base(Base)
+        self.assertTrue(issubclass(sub, Base))
+        self.assertIsInstance(sub, _testcapi.HeapCTypeMetaclassCustomNew)
+
     def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
 
         with self.assertRaises(TypeError):
@@ -843,7 +772,6 @@ class CAPITest(unittest.TestCase):
         MutableBase.meth = lambda self: 'changed'
         self.assertEqual(instance.meth(), 'changed')
 
-
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
         small_number = 123
@@ -873,46 +801,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, pynumber_tobase, 123.0, 10)
         self.assertRaises(TypeError, pynumber_tobase, '123', 10)
         self.assertRaises(SystemError, pynumber_tobase, 123, 0)
-
-    def check_fatal_error(self, code, expected, not_expected=()):
-        with support.SuppressCrashReport():
-            rc, out, err = assert_python_failure('-sSI', '-c', code)
-
-        err = decode_stderr(err)
-        self.assertIn('Fatal Python error: test_fatal_error: MESSAGE\n',
-                      err)
-
-        match = re.search(r'^Extension modules:(.*) \(total: ([0-9]+)\)$',
-                          err, re.MULTILINE)
-        if not match:
-            self.fail(f"Cannot find 'Extension modules:' in {err!r}")
-        modules = set(match.group(1).strip().split(', '))
-        total = int(match.group(2))
-
-        for name in expected:
-            self.assertIn(name, modules)
-        for name in not_expected:
-            self.assertNotIn(name, modules)
-        self.assertEqual(len(modules), total)
-
-    @support.requires_subprocess()
-    def test_fatal_error(self):
-        # By default, stdlib extension modules are ignored,
-        # but not test modules.
-        expected = ('_testcapi',)
-        not_expected = ('sys',)
-        code = 'import _testcapi, sys; _testcapi.fatal_error(b"MESSAGE")'
-        self.check_fatal_error(code, expected, not_expected)
-
-        # Mark _testcapi as stdlib module, but not sys
-        expected = ('sys',)
-        not_expected = ('_testcapi',)
-        code = textwrap.dedent('''
-            import _testcapi, sys
-            sys.stdlib_module_names = frozenset({"_testcapi"})
-            _testcapi.fatal_error(b"MESSAGE")
-        ''')
-        self.check_fatal_error(code, expected)
 
     def test_pyobject_repr_from_null(self):
         s = _testcapi.pyobject_repr_from_null()
@@ -1170,6 +1058,175 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(_testcapi.function_get_kw_defaults(some), None)
         self.assertEqual(some.__kwdefaults__, None)
 
+    def test_unstable_gc_new_with_extra_data(self):
+        class Data(_testcapi.ObjExtraData):
+            __slots__ = ('x', 'y')
+
+        d = Data()
+        d.x = 10
+        d.y = 20
+        d.extra = 30
+        self.assertEqual(d.x, 10)
+        self.assertEqual(d.y, 20)
+        self.assertEqual(d.extra, 30)
+        del d.extra
+        self.assertIsNone(d.extra)
+
+
+@requires_limited_api
+class TestHeapTypeRelative(unittest.TestCase):
+    """Test API for extending opaque types (PEP 697)"""
+
+    @requires_limited_api
+    def test_heaptype_relative_sizes(self):
+        # Test subclassing using "relative" basicsize, see PEP 697
+        def check(extra_base_size, extra_size):
+            Base, Sub, instance, data_ptr, data_offset, data_size = (
+                _testcapi.make_sized_heaptypes(
+                    extra_base_size, -extra_size))
+
+            # no alignment shenanigans when inheriting directly
+            if extra_size == 0:
+                self.assertEqual(Base.__basicsize__, Sub.__basicsize__)
+                self.assertEqual(data_size, 0)
+
+            else:
+                # The following offsets should be in increasing order:
+                offsets = [
+                    (0, 'start of object'),
+                    (Base.__basicsize__, 'end of base data'),
+                    (data_offset, 'subclass data'),
+                    (data_offset + extra_size, 'end of requested subcls data'),
+                    (data_offset + data_size, 'end of reserved subcls data'),
+                    (Sub.__basicsize__, 'end of object'),
+                ]
+                ordered_offsets = sorted(offsets, key=operator.itemgetter(0))
+                self.assertEqual(
+                    offsets, ordered_offsets,
+                    msg=f'Offsets not in expected order, got: {ordered_offsets}')
+
+                # end of reserved subcls data == end of object
+                self.assertEqual(Sub.__basicsize__, data_offset + data_size)
+
+                # we don't reserve (requested + alignment) or more data
+                self.assertLess(data_size - extra_size,
+                                _testcapi.ALIGNOF_MAX_ALIGN_T)
+
+            # The offsets/sizes we calculated should be aligned.
+            self.assertEqual(data_offset % _testcapi.ALIGNOF_MAX_ALIGN_T, 0)
+            self.assertEqual(data_size % _testcapi.ALIGNOF_MAX_ALIGN_T, 0)
+
+        sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
+                        object.__basicsize__,
+                        object.__basicsize__-1,
+                        object.__basicsize__+1})
+        for extra_base_size in sizes:
+            for extra_size in sizes:
+                args = dict(extra_base_size=extra_base_size,
+                            extra_size=extra_size)
+                with self.subTest(**args):
+                    check(**args)
+
+    def test_HeapCCollection(self):
+        """Make sure HeapCCollection works properly by itself"""
+        collection = _testcapi.HeapCCollection(1, 2, 3)
+        self.assertEqual(list(collection), [1, 2, 3])
+
+    def test_heaptype_inherit_itemsize(self):
+        """Test HeapCCollection subclasses work properly"""
+        sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
+                        object.__basicsize__,
+                        object.__basicsize__-1,
+                        object.__basicsize__+1})
+        for extra_size in sizes:
+            with self.subTest(extra_size=extra_size):
+                Sub = _testcapi.subclass_var_heaptype(
+                    _testcapi.HeapCCollection, -extra_size, 0, 0)
+                collection = Sub(1, 2, 3)
+                collection.set_data_to_3s()
+
+                self.assertEqual(list(collection), [1, 2, 3])
+                mem = collection.get_data()
+                self.assertGreaterEqual(len(mem), extra_size)
+                self.assertTrue(set(mem) <= {3}, f'got {mem!r}')
+
+    def test_heaptype_invalid_inheritance(self):
+        with self.assertRaises(SystemError,
+                               msg="Cannot extend variable-size class without "
+                               + "Py_TPFLAGS_ITEMS_AT_END"):
+            _testcapi.subclass_heaptype(int, -8, 0)
+
+    def test_heaptype_relative_members(self):
+        """Test HeapCCollection subclasses work properly"""
+        sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
+                        object.__basicsize__,
+                        object.__basicsize__-1,
+                        object.__basicsize__+1})
+        for extra_base_size in sizes:
+            for extra_size in sizes:
+                for offset in sizes:
+                    with self.subTest(extra_base_size=extra_base_size, extra_size=extra_size, offset=offset):
+                        if offset < extra_size:
+                            Sub = _testcapi.make_heaptype_with_member(
+                                extra_base_size, -extra_size, offset, True)
+                            Base = Sub.mro()[1]
+                            instance = Sub()
+                            self.assertEqual(instance.memb, instance.get_memb())
+                            instance.set_memb(13)
+                            self.assertEqual(instance.memb, instance.get_memb())
+                            self.assertEqual(instance.get_memb(), 13)
+                            instance.memb = 14
+                            self.assertEqual(instance.memb, instance.get_memb())
+                            self.assertEqual(instance.get_memb(), 14)
+                            self.assertGreaterEqual(instance.get_memb_offset(), Base.__basicsize__)
+                            self.assertLess(instance.get_memb_offset(), Sub.__basicsize__)
+                            with self.assertRaises(SystemError):
+                                instance.get_memb_relative()
+                            with self.assertRaises(SystemError):
+                                instance.set_memb_relative(0)
+                        else:
+                            with self.assertRaises(SystemError):
+                                Sub = _testcapi.make_heaptype_with_member(
+                                    extra_base_size, -extra_size, offset, True)
+                        with self.assertRaises(SystemError):
+                            Sub = _testcapi.make_heaptype_with_member(
+                                extra_base_size, extra_size, offset, True)
+                with self.subTest(extra_base_size=extra_base_size, extra_size=extra_size):
+                    with self.assertRaises(SystemError):
+                        Sub = _testcapi.make_heaptype_with_member(
+                            extra_base_size, -extra_size, -1, True)
+
+    def test_heaptype_relative_members_errors(self):
+        with self.assertRaisesRegex(
+                SystemError,
+                r"With Py_RELATIVE_OFFSET, basicsize must be negative"):
+            _testcapi.make_heaptype_with_member(0, 1234, 0, True)
+        with self.assertRaisesRegex(
+                SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
+            _testcapi.make_heaptype_with_member(0, -8, 1234, True)
+        with self.assertRaisesRegex(
+                SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
+            _testcapi.make_heaptype_with_member(0, -8, -1, True)
+
+        Sub = _testcapi.make_heaptype_with_member(0, -8, 0, True)
+        instance = Sub()
+        with self.assertRaisesRegex(
+                SystemError, r"PyMember_GetOne used with Py_RELATIVE_OFFSET"):
+            instance.get_memb_relative()
+        with self.assertRaisesRegex(
+                SystemError, r"PyMember_SetOne used with Py_RELATIVE_OFFSET"):
+            instance.set_memb_relative(0)
+
+    def test_pyobject_getitemdata_error(self):
+        """Test PyObject_GetItemData fails on unsupported types"""
+        with self.assertRaises(TypeError):
+            # None is not variable-length
+            _testcapi.pyobject_getitemdata(None)
+        with self.assertRaises(TypeError):
+            # int is variable-length, but doesn't have the
+            # Py_TPFLAGS_ITEMS_AT_END layout (and flag)
+            _testcapi.pyobject_getitemdata(0)
+
 
 class TestPendingCalls(unittest.TestCase):
 
@@ -1249,6 +1306,11 @@ class TestPendingCalls(unittest.TestCase):
         n = 64
         self.pendingcalls_submit(l, n)
         self.pendingcalls_wait(l, n)
+
+    def test_gen_get_code(self):
+        def genf(): yield
+        gen = genf()
+        self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
 
 
 class SubinterpreterTest(unittest.TestCase):
@@ -1333,17 +1395,25 @@ class SubinterpreterTest(unittest.TestCase):
         """
         import json
 
+        OBMALLOC = 1<<5
+        EXTENSIONS = 1<<8
         THREADS = 1<<10
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
 
-        features = ['fork', 'exec', 'threads', 'daemon_threads']
+        features = ['obmalloc', 'fork', 'exec', 'threads', 'daemon_threads',
+                    'extensions']
         kwlist = [f'allow_{n}' for n in features]
+        kwlist[0] = 'use_main_obmalloc'
+        kwlist[-1] = 'check_multi_interp_extensions'
+
+        # expected to work
         for config, expected in {
-            (True, True, True, True): FORK | EXEC | THREADS | DAEMON_THREADS,
-            (False, False, False, False): 0,
-            (False, False, True, False): THREADS,
+            (True, True, True, True, True, True):
+                OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS,
+            (True, False, False, False, False, False): OBMALLOC,
+            (False, False, False, True, False, True): THREADS | EXTENSIONS,
         }.items():
             kwargs = dict(zip(kwlist, config))
             expected = {
@@ -1358,11 +1428,108 @@ class SubinterpreterTest(unittest.TestCase):
                         json.dump(settings, stdin)
                     ''')
                 with os.fdopen(r) as stdout:
-                    support.run_in_subinterp_with_config(script, **kwargs)
+                    ret = support.run_in_subinterp_with_config(script, **kwargs)
+                    self.assertEqual(ret, 0)
                     out = stdout.read()
                 settings = json.loads(out)
 
                 self.assertEqual(settings, expected)
+
+        # expected to fail
+        for config in [
+            (False, False, False, False, False, False),
+        ]:
+            kwargs = dict(zip(kwlist, config))
+            with self.subTest(config):
+                script = textwrap.dedent(f'''
+                    import _testinternalcapi
+                    _testinternalcapi.get_interp_settings()
+                    raise NotImplementedError('unreachable')
+                    ''')
+                with self.assertRaises(RuntimeError):
+                    support.run_in_subinterp_with_config(script, **kwargs)
+
+    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_overridden_setting_extensions_subinterp_check(self):
+        """
+        PyInterpreterConfig.check_multi_interp_extensions can be overridden
+        with PyInterpreterState.override_multi_interp_extensions_check.
+        This verifies that the override works but does not modify
+        the underlying setting.
+        """
+        import json
+
+        OBMALLOC = 1<<5
+        EXTENSIONS = 1<<8
+        THREADS = 1<<10
+        DAEMON_THREADS = 1<<11
+        FORK = 1<<15
+        EXEC = 1<<16
+        BASE_FLAGS = OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS
+        base_kwargs = {
+            'use_main_obmalloc': True,
+            'allow_fork': True,
+            'allow_exec': True,
+            'allow_threads': True,
+            'allow_daemon_threads': True,
+        }
+
+        def check(enabled, override):
+            kwargs = dict(
+                base_kwargs,
+                check_multi_interp_extensions=enabled,
+            )
+            flags = BASE_FLAGS | EXTENSIONS if enabled else BASE_FLAGS
+            settings = {
+                'feature_flags': flags,
+            }
+
+            expected = {
+                'requested': override,
+                'override__initial': 0,
+                'override_after': override,
+                'override_restored': 0,
+                # The override should not affect the config or settings.
+                'settings__initial': settings,
+                'settings_after': settings,
+                'settings_restored': settings,
+                # These are the most likely values to be wrong.
+                'allowed__initial': not enabled,
+                'allowed_after': not ((override > 0) if override else enabled),
+                'allowed_restored': not enabled,
+            }
+
+            r, w = os.pipe()
+            script = textwrap.dedent(f'''
+                from test.test_capi.check_config import run_singlephase_check
+                run_singlephase_check({override}, {w})
+                ''')
+            with os.fdopen(r) as stdout:
+                ret = support.run_in_subinterp_with_config(script, **kwargs)
+                self.assertEqual(ret, 0)
+                out = stdout.read()
+            results = json.loads(out)
+
+            self.assertEqual(results, expected)
+
+        self.maxDiff = None
+
+        # setting: check disabled
+        with self.subTest('config: check disabled; override: disabled'):
+            check(False, -1)
+        with self.subTest('config: check disabled; override: use config'):
+            check(False, 0)
+        with self.subTest('config: check disabled; override: enabled'):
+            check(False, 1)
+
+        # setting: check enabled
+        with self.subTest('config: check enabled; override: disabled'):
+            check(True, -1)
+        with self.subTest('config: check enabled; override: use config'):
+            check(True, 0)
+        with self.subTest('config: check enabled; override: enabled'):
+            check(True, 1)
 
     def test_mutate_exception(self):
         """
@@ -1438,7 +1605,7 @@ class TestThreadState(unittest.TestCase):
     @threading_helper.requires_working_threading()
     def test_gilstate_ensure_no_deadlock(self):
         # See https://github.com/python/cpython/issues/96071
-        code = textwrap.dedent(f"""
+        code = textwrap.dedent("""
             import _testcapi
 
             def callback():
@@ -1448,6 +1615,9 @@ class TestThreadState(unittest.TestCase):
             """)
         ret = assert_python_ok('-X', 'tracemalloc', '-c', code)
         self.assertIn(b'callback called', ret.out)
+
+    def test_gilstate_matches_current(self):
+        _testcapi.test_current_tstate_matches()
 
 
 class Test_testcapi(unittest.TestCase):
@@ -1468,124 +1638,6 @@ class Test_testinternalcapi(unittest.TestCase):
     locals().update((name, getattr(_testinternalcapi, name))
                     for name in dir(_testinternalcapi)
                     if name.startswith('test_'))
-
-
-@support.requires_subprocess()
-class PyMemDebugTests(unittest.TestCase):
-    PYTHONMALLOC = 'debug'
-    # '0x04c06e0' or '04C06E0'
-    PTR_REGEX = r'(?:0x)?[0-9a-fA-F]+'
-
-    def check(self, code):
-        with support.SuppressCrashReport():
-            out = assert_python_failure(
-                '-c', code,
-                PYTHONMALLOC=self.PYTHONMALLOC,
-                # FreeBSD: instruct jemalloc to not fill freed() memory
-                # with junk byte 0x5a, see JEMALLOC(3)
-                MALLOC_CONF="junk:false",
-            )
-        stderr = out.err
-        return stderr.decode('ascii', 'replace')
-
-    def test_buffer_overflow(self):
-        out = self.check('import _testcapi; _testcapi.pymem_buffer_overflow()')
-        regex = (r"Debug memory block at address p={ptr}: API 'm'\n"
-                 r"    16 bytes originally requested\n"
-                 r"    The [0-9] pad bytes at p-[0-9] are FORBIDDENBYTE, as expected.\n"
-                 r"    The [0-9] pad bytes at tail={ptr} are not all FORBIDDENBYTE \(0x[0-9a-f]{{2}}\):\n"
-                 r"        at tail\+0: 0x78 \*\*\* OUCH\n"
-                 r"        at tail\+1: 0xfd\n"
-                 r"        at tail\+2: 0xfd\n"
-                 r"        .*\n"
-                 r"(    The block was made by call #[0-9]+ to debug malloc/realloc.\n)?"
-                 r"    Data at p: cd cd cd .*\n"
-                 r"\n"
-                 r"Enable tracemalloc to get the memory block allocation traceback\n"
-                 r"\n"
-                 r"Fatal Python error: _PyMem_DebugRawFree: bad trailing pad byte")
-        regex = regex.format(ptr=self.PTR_REGEX)
-        regex = re.compile(regex, flags=re.DOTALL)
-        self.assertRegex(out, regex)
-
-    def test_api_misuse(self):
-        out = self.check('import _testcapi; _testcapi.pymem_api_misuse()')
-        regex = (r"Debug memory block at address p={ptr}: API 'm'\n"
-                 r"    16 bytes originally requested\n"
-                 r"    The [0-9] pad bytes at p-[0-9] are FORBIDDENBYTE, as expected.\n"
-                 r"    The [0-9] pad bytes at tail={ptr} are FORBIDDENBYTE, as expected.\n"
-                 r"(    The block was made by call #[0-9]+ to debug malloc/realloc.\n)?"
-                 r"    Data at p: cd cd cd .*\n"
-                 r"\n"
-                 r"Enable tracemalloc to get the memory block allocation traceback\n"
-                 r"\n"
-                 r"Fatal Python error: _PyMem_DebugRawFree: bad ID: Allocated using API 'm', verified using API 'r'\n")
-        regex = regex.format(ptr=self.PTR_REGEX)
-        self.assertRegex(out, regex)
-
-    def check_malloc_without_gil(self, code):
-        out = self.check(code)
-        expected = ('Fatal Python error: _PyMem_DebugMalloc: '
-                    'Python memory allocator called without holding the GIL')
-        self.assertIn(expected, out)
-
-    def test_pymem_malloc_without_gil(self):
-        # Debug hooks must raise an error if PyMem_Malloc() is called
-        # without holding the GIL
-        code = 'import _testcapi; _testcapi.pymem_malloc_without_gil()'
-        self.check_malloc_without_gil(code)
-
-    def test_pyobject_malloc_without_gil(self):
-        # Debug hooks must raise an error if PyObject_Malloc() is called
-        # without holding the GIL
-        code = 'import _testcapi; _testcapi.pyobject_malloc_without_gil()'
-        self.check_malloc_without_gil(code)
-
-    def check_pyobject_is_freed(self, func_name):
-        code = textwrap.dedent(f'''
-            import gc, os, sys, _testcapi
-            # Disable the GC to avoid crash on GC collection
-            gc.disable()
-            try:
-                _testcapi.{func_name}()
-                # Exit immediately to avoid a crash while deallocating
-                # the invalid object
-                os._exit(0)
-            except _testcapi.error:
-                os._exit(1)
-        ''')
-        assert_python_ok(
-            '-c', code,
-            PYTHONMALLOC=self.PYTHONMALLOC,
-            MALLOC_CONF="junk:false",
-        )
-
-    def test_pyobject_null_is_freed(self):
-        self.check_pyobject_is_freed('check_pyobject_null_is_freed')
-
-    def test_pyobject_uninitialized_is_freed(self):
-        self.check_pyobject_is_freed('check_pyobject_uninitialized_is_freed')
-
-    def test_pyobject_forbidden_bytes_is_freed(self):
-        self.check_pyobject_is_freed('check_pyobject_forbidden_bytes_is_freed')
-
-    def test_pyobject_freed_is_freed(self):
-        self.check_pyobject_is_freed('check_pyobject_freed_is_freed')
-
-
-class PyMemMallocDebugTests(PyMemDebugTests):
-    PYTHONMALLOC = 'malloc_debug'
-
-
-@unittest.skipUnless(support.with_pymalloc(), 'need pymalloc')
-class PyMemPymallocDebugTests(PyMemDebugTests):
-    PYTHONMALLOC = 'pymalloc_debug'
-
-
-@unittest.skipUnless(support.Py_DEBUG, 'need Py_DEBUG')
-class PyMemDefaultTests(PyMemDebugTests):
-    # test default allocator of Python compiled in debug mode
-    PYTHONMALLOC = ''
 
 
 @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")

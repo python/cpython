@@ -542,6 +542,7 @@ class RangeTest(unittest.TestCase):
                        for start in limits
                        for end in limits
                        for step in (-2**63, -2**31, -2, -1, 1, 2)]
+        test_ranges += [(-2**63, 2**63-2, 1)] # regression test for gh-100810
 
         for start, end, step in test_ranges:
             iter1 = range(start, end, step)

@@ -418,6 +418,14 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.OK,
                                      data=os_helper.TESTFN_UNDECODABLE)
 
+    def test_undecodable_parameter(self):
+        # sanity check using a valid parameter
+        response = self.request(self.base_url + '/?x=123').read()
+        self.assertRegex(response, f'listing for {self.base_url}/\?x=123'.encode('latin1'))
+        # now the bogus encoding
+        response = self.request(self.base_url + '/?x=%bb').read()
+        self.assertRegex(response, f'listing for {self.base_url}/\?x=\xef\xbf\xbd'.encode('latin1'))
+
     def test_get_dir_redirect_location_domain_injection_bug(self):
         """Ensure //evil.co/..%2f../../X does not put //evil.co/ in Location.
 
@@ -489,6 +497,9 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
         response = self.request('/' + 'ThisDoesNotExist' + '/')
         self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
+        os.makedirs(os.path.join(self.tempdir, 'spam', 'index.html'))
+        response = self.request(self.base_url + '/spam/')
+        self.check_status_and_reason(response, HTTPStatus.OK)
 
         data = b"Dummy index file\r\n"
         with open(os.path.join(self.tempdir_name, 'index.html'), 'wb') as f:
