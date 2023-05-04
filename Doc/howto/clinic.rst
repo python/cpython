@@ -1068,7 +1068,6 @@ Currently Argument Clinic supports only a few return converters:
     bool
     double
     float
-    init
     int
     long
     Py_ssize_t
@@ -1076,10 +1075,8 @@ Currently Argument Clinic supports only a few return converters:
     unsigned int
     unsigned long
 
-None of these take parameters.  For the first three, return -1 to indicate
-error.
-The ``init`` converter is a special return converter for ``__init__``
-functions.
+None of these take parameters.
+Return ``-1`` to indicate error.
 
 To see all the return converters Argument Clinic supports, along with
 their parameters (if any),
