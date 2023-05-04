@@ -43,12 +43,12 @@
 #ifdef Py_DEBUG
 static inline tokenizer_mode* TOK_GET_MODE(struct tok_state* tok) {
     assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index < MAXLEVEL);
+    assert(tok->tok_mode_stack_index < MAXFSTRINGLEVEL);
     return &(tok->tok_mode_stack[tok->tok_mode_stack_index]);
 }
 static inline tokenizer_mode* TOK_NEXT_MODE(struct tok_state* tok) {
     assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index < MAXLEVEL);
+    assert(tok->tok_mode_stack_index + 1 < MAXFSTRINGLEVEL); 
     return &(tok->tok_mode_stack[++tok->tok_mode_stack_index]);
 }
 #else
@@ -1277,6 +1277,12 @@ _syntaxerror_range(struct tok_state *tok, const char *format,
                    int col_offset, int end_col_offset,
                    va_list vargs)
 {
+    // In release builds, we don't want to overwrite a previous error, but in debug builds we
+    // want to fail if we are not doing it so we can fix it.
+    assert(tok->done != E_ERROR);
+    if (tok->done == E_ERROR) {
+        return ERRORTOKEN;
+    }
     PyObject *errmsg, *errtext, *args;
     errmsg = PyUnicode_FromFormatV(format, vargs);
     if (!errmsg) {
@@ -2235,6 +2241,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
         p_start = tok->start;
         p_end = tok->cur;
+        if (tok->tok_mode_stack_index + 1 >= MAXFSTRINGLEVEL) {
+            return MAKE_TOKEN(syntaxerror(tok, "too many nested f-strings"));
+        }
         tokenizer_mode *the_current_tok = TOK_NEXT_MODE(tok);
         the_current_tok->kind = TOK_FSTRING_MODE;
         the_current_tok->f_string_quote = quote;
@@ -2298,8 +2307,12 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         /* Get rest of string */
         while (end_quote_size != quote_size) {
             c = tok_nextc(tok);
-            if (tok->done == E_DECODE)
+            if (tok->done == E_ERROR) {
+                return MAKE_TOKEN(ERRORTOKEN);
+            }
+            if (tok->done == E_DECODE) {
                 break;
+            }
             if (c == EOF || (quote_size == 1 && c == '\n')) {
                 assert(tok->multi_line_start != NULL);
                 // shift the tok_state's location into
@@ -2551,7 +2564,14 @@ f_string_middle:
 
     while (end_quote_size != current_tok->f_string_quote_size) {
         int c = tok_nextc(tok);
+        if (tok->done == E_ERROR) {
+            return MAKE_TOKEN(ERRORTOKEN);
+        }
         if (c == EOF || (current_tok->f_string_quote_size == 1 && c == '\n')) {
+            if (tok->decoding_erred) {
+                return MAKE_TOKEN(ERRORTOKEN);
+            }
+
             assert(tok->multi_line_start != NULL);
             // shift the tok_state's location into
             // the start of string, and report the error
