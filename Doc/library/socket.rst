@@ -509,6 +509,17 @@ Constants
    .. versionadded:: 3.9
 
 
+.. data:: AF_DIVERT
+          PF_DIVERT
+
+   These two constants, documented in the FreeBSD divert(4) manual page, are
+   also defined in the socket module.
+
+   .. availability:: FreeBSD >= 14.0.
+
+   .. versionadded:: 3.12
+
+
 .. data:: AF_PACKET
           PF_PACKET
           PACKET_*
