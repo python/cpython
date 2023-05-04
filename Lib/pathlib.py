@@ -17,7 +17,6 @@ import warnings
 from _collections_abc import Sequence
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
-from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
 
 __all__ = [
@@ -405,7 +404,8 @@ class PurePath(object):
             # It's a posix path => 'file:///etc/hosts'
             prefix = 'file://'
             path = str(self)
-        return prefix + urlquote_from_bytes(os.fsencode(path))
+        from urllib.parse import quote_from_bytes
+        return prefix + quote_from_bytes(os.fsencode(path))
 
     @property
     def _str_normcase(self):
