@@ -1069,16 +1069,17 @@ Currently Argument Clinic supports only a few return converters:
     int
     unsigned int
     long
-    unsigned int
+    unsigned long
     size_t
     Py_ssize_t
     float
     double
-    DecodeFSDefault
+    __init__
 
 None of these take parameters.  For the first three, return -1 to indicate
-error.  For ``DecodeFSDefault``, the return type is ``const char *``; return a ``NULL``
-pointer to indicate an error.
+error.
+The ``__init__`` converter is a special return converter for ``__init__``
+functions.
 
 To see all the return converters Argument Clinic supports, along with
 their parameters (if any),
