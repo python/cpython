@@ -68,13 +68,17 @@ Summary -- Release highlights
 
 New typing features:
 
+* :pep:`688`: Making the buffer protocol accessible in Python
+
 * :ref:`whatsnew312-pep692`
+
+* :pep:`698`: Override Decorator for Static Typing
 
 Important deprecations, removals or restrictions:
 
-* :pep:`623`, Remove wstr from Unicode
+* :pep:`623`: Remove wstr from Unicode
 
-* :pep:`632`, Remove the ``distutils`` package.
+* :pep:`632`: Remove the ``distutils`` package
 
 Improved Error Messages
 =======================
