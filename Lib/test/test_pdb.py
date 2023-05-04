@@ -746,6 +746,84 @@ def test_pdb_where_command():
     (Pdb) continue
     """
 
+def test_convenience_variables():
+    """Test convenience variables
+
+    >>> def util_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     try:
+    ...         raise Exception('test')
+    ...     except:
+    ...         pass
+    ...     return 1
+
+    >>> def test_function():
+    ...     util_function()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     '$_frame.f_lineno', # Check frame convenience variable
+    ...     '$a = 10',          # Set a convenience variable
+    ...     '$a',               # Print its value
+    ...     'p $a + 2',         # Do some calculation
+    ...     'u',                # Switch frame
+    ...     '$_frame.f_lineno', # Make sure the frame changed
+    ...     '$a',               # Make sure the value persists
+    ...     'd',                # Go back to the original frame
+    ...     'next',
+    ...     '$a',               # The value should be gone
+    ...     'next',
+    ...     '$_exception',      # Check exception convenience variable
+    ...     'next',
+    ...     '$_exception',      # Exception should be gone
+    ...     'return',
+    ...     '$_retval',         # Check return convenience variable
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_convenience_variables[0]>(3)util_function()
+    -> try:
+    (Pdb) $_frame.f_lineno
+    3
+    (Pdb) $a = 10
+    (Pdb) $a
+    10
+    (Pdb) p $a + 2
+    12
+    (Pdb) u
+    > <doctest test.test_pdb.test_convenience_variables[1]>(2)test_function()
+    -> util_function()
+    (Pdb) $_frame.f_lineno
+    2
+    (Pdb) $a
+    10
+    (Pdb) d
+    > <doctest test.test_pdb.test_convenience_variables[0]>(3)util_function()
+    -> try:
+    (Pdb) next
+    > <doctest test.test_pdb.test_convenience_variables[0]>(4)util_function()
+    -> raise Exception('test')
+    (Pdb) $a
+    *** KeyError: 'a'
+    (Pdb) next
+    Exception: test
+    > <doctest test.test_pdb.test_convenience_variables[0]>(4)util_function()
+    -> raise Exception('test')
+    (Pdb) $_exception
+    Exception('test')
+    (Pdb) next
+    > <doctest test.test_pdb.test_convenience_variables[0]>(5)util_function()
+    -> except:
+    (Pdb) $_exception
+    *** KeyError: '_exception'
+    (Pdb) return
+    --Return--
+    > <doctest test.test_pdb.test_convenience_variables[0]>(7)util_function()->1
+    -> return 1
+    (Pdb) $_retval
+    1
+    (Pdb) continue
+    """
+
 def test_post_mortem():
     """Test post mortem traceback debugging.
 

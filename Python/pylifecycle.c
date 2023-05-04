@@ -546,7 +546,8 @@ pycore_init_runtime(_PyRuntimeState *runtime,
 
 
 static PyStatus
-init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *config)
+init_interp_settings(PyInterpreterState *interp,
+                     const PyInterpreterConfig *config)
 {
     assert(interp->feature_flags == 0);
 
@@ -632,7 +633,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    _PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
+    PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
     // The main interpreter always has its own GIL.
     config.own_gil = 1;
     status = init_interp_settings(interp, &config);
@@ -1995,7 +1996,7 @@ Py_Finalize(void)
 */
 
 static PyStatus
-new_interpreter(PyThreadState **tstate_p, const _PyInterpreterConfig *config)
+new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
 {
     PyStatus status;
 
@@ -2092,8 +2093,8 @@ error:
 }
 
 PyStatus
-_Py_NewInterpreterFromConfig(PyThreadState **tstate_p,
-                             const _PyInterpreterConfig *config)
+Py_NewInterpreterFromConfig(PyThreadState **tstate_p,
+                            const PyInterpreterConfig *config)
 {
     return new_interpreter(tstate_p, config);
 }
@@ -2102,8 +2103,8 @@ PyThreadState *
 Py_NewInterpreter(void)
 {
     PyThreadState *tstate = NULL;
-    const _PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
-    PyStatus status = _Py_NewInterpreterFromConfig(&tstate, &config);
+    const PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
+    PyStatus status = new_interpreter(&tstate, &config);
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }
