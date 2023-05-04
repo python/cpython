@@ -344,7 +344,7 @@ list objects have methods called append, insert, remove, sort, and so on.
 However, in the following discussion, we'll use the term method exclusively to
 mean methods of class instance objects, unless explicitly stated otherwise.)
 
-.. index:: object: method
+.. index:: pair: object; method
 
 Valid method names of an instance object depend on its class.  By definition,
 all attributes of a class that are function  objects define corresponding

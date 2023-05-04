@@ -142,7 +142,7 @@ attributes.'  These are attributes that provide access to the implementation and
 are not intended for general use.  Their definition may change in the future.
 
 None
-   .. index:: object: None
+   .. index:: pair: object; None
 
    This type has a single value.  There is a single object with this value. This
    object is accessed through the built-in name ``None``. It is used to signify the
@@ -150,7 +150,7 @@ None
    don't explicitly return anything. Its truth value is false.
 
 NotImplemented
-   .. index:: object: NotImplemented
+   .. index:: pair: object; NotImplemented
 
    This type has a single value.  There is a single object with this value. This
    object is accessed through the built-in name ``NotImplemented``. Numeric methods
@@ -171,7 +171,7 @@ NotImplemented
 
 Ellipsis
    .. index::
-      object: Ellipsis
+      pair: object; Ellipsis
       single: ...; ellipsis literal
 
    This type has a single value.  There is a single object with this value. This
@@ -179,7 +179,7 @@ Ellipsis
    ``Ellipsis``.  Its truth value is true.
 
 :class:`numbers.Number`
-   .. index:: object: numeric
+   .. index:: pair: object; numeric
 
    These are created by numeric literals and returned as results by arithmetic
    operators and arithmetic built-in functions.  Numeric objects are immutable;
@@ -209,7 +209,7 @@ Ellipsis
    numbers:
 
    :class:`numbers.Integral`
-      .. index:: object: integer
+      .. index:: pair: object; integer
 
       These represent elements from the mathematical set of integers (positive and
       negative).
@@ -225,7 +225,7 @@ Ellipsis
 
       Booleans (:class:`bool`)
          .. index::
-            object: Boolean
+            pair: object; Boolean
             single: False
             single: True
 
@@ -242,7 +242,7 @@ Ellipsis
 
    :class:`numbers.Real` (:class:`float`)
       .. index::
-         object: floating point
+         pair: object; floating point
          pair: floating point; number
          pair: C; language
          pair: Java; language
@@ -257,7 +257,7 @@ Ellipsis
 
    :class:`numbers.Complex` (:class:`complex`)
       .. index::
-         object: complex
+         pair: object; complex
          pair: complex; number
 
       These represent complex numbers as a pair of machine-level double precision
@@ -268,7 +268,7 @@ Ellipsis
 Sequences
    .. index::
       builtin: len
-      object: sequence
+      pair: object; sequence
       single: index operation
       single: item selection
       single: subscription
@@ -293,8 +293,8 @@ Sequences
 
    Immutable sequences
       .. index::
-         object: immutable sequence
-         object: immutable
+         pair: object; immutable sequence
+         pair: object; immutable
 
       An object of an immutable sequence type cannot change once it is created.  (If
       the object contains references to other objects, these other objects may be
@@ -328,7 +328,7 @@ Sequences
 
       Tuples
          .. index::
-            object: tuple
+            pair: object; tuple
             pair: singleton; tuple
             pair: empty; tuple
 
@@ -350,8 +350,8 @@ Sequences
 
    Mutable sequences
       .. index::
-         object: mutable sequence
-         object: mutable
+         pair: object; mutable sequence
+         pair: object; mutable
          pair: assignment; statement
          single: subscription
          single: slicing
@@ -363,7 +363,7 @@ Sequences
       There are currently two intrinsic mutable sequence types:
 
       Lists
-         .. index:: object: list
+         .. index:: pair: object; list
 
          The items of a list are arbitrary Python objects.  Lists are formed by
          placing a comma-separated list of expressions in square brackets. (Note
@@ -385,7 +385,7 @@ Sequences
 Set types
    .. index::
       builtin: len
-      object: set type
+      pair: object; set type
 
    These represent unordered, finite sets of unique, immutable objects. As such,
    they cannot be indexed by any subscript. However, they can be iterated over, and
@@ -402,14 +402,14 @@ Set types
    There are currently two intrinsic set types:
 
    Sets
-      .. index:: object: set
+      .. index:: pair: object; set
 
       These represent a mutable set. They are created by the built-in :func:`set`
       constructor and can be modified afterwards by several methods, such as
       :meth:`~set.add`.
 
    Frozen sets
-      .. index:: object: frozenset
+      .. index:: pair: object; frozenset
 
       These represent an immutable set.  They are created by the built-in
       :func:`frozenset` constructor.  As a frozenset is immutable and
@@ -420,7 +420,7 @@ Mappings
    .. index::
       builtin: len
       single: subscription
-      object: mapping
+      pair: object; mapping
 
    These represent finite sets of objects indexed by arbitrary index sets. The
    subscript notation ``a[k]`` selects the item indexed by ``k`` from the mapping
@@ -431,7 +431,7 @@ Mappings
    There is currently a single intrinsic mapping type:
 
    Dictionaries
-      .. index:: object: dictionary
+      .. index:: pair: object; dictionary
 
       These represent finite sets of objects indexed by nearly arbitrary values.  The
       only types of values not acceptable as keys are values containing lists or
@@ -465,7 +465,7 @@ Mappings
 
 Callable types
    .. index::
-      object: callable
+      pair: object; callable
       pair: function; call
       single: invocation
       pair: function; argument
@@ -476,8 +476,8 @@ Callable types
    User-defined functions
       .. index::
          pair: user-defined; function
-         object: function
-         object: user-defined function
+         pair: object; function
+         pair: object; user-defined function
 
       A user-defined function object is created by a function definition (see
       section :ref:`function`).  It should be called with an argument list
@@ -580,8 +580,8 @@ Callable types
 
    Instance methods
       .. index::
-         object: method
-         object: user-defined method
+         pair: object; method
+         pair: object; user-defined method
          pair: user-defined; method
 
       An instance method object combines a class, a class instance and any
@@ -688,8 +688,8 @@ Callable types
 
    Built-in functions
       .. index::
-         object: built-in function
-         object: function
+         pair: object; built-in function
+         pair: object; function
          pair: C; language
 
       A built-in function object is a wrapper around a C function.  Examples of
@@ -703,8 +703,8 @@ Callable types
 
    Built-in methods
       .. index::
-         object: built-in method
-         object: method
+         pair: object; built-in method
+         pair: object; method
          pair: built-in; method
 
       This is really a different disguise of a built-in function, this time containing
@@ -728,7 +728,7 @@ Callable types
 Modules
    .. index::
       statement: import
-      object: module
+      pair: object; module
 
    Modules are a basic organizational unit of Python code, and are created by
    the :ref:`import system <importsystem>` as invoked either by the
@@ -805,12 +805,12 @@ Custom classes
    .. XXX: Could we add that MRO doc as an appendix to the language ref?
 
    .. index::
-      object: class
-      object: class instance
-      object: instance
+      pair: object; class
+      pair: object; class instance
+      pair: object; instance
       pair: class object; call
       single: container
-      object: dictionary
+      pair: object; dictionary
       pair: class; attribute
 
    When a class attribute reference (for class :class:`C`, say) would yield a
@@ -865,8 +865,8 @@ Custom classes
 
 Class instances
    .. index::
-      object: class instance
-      object: instance
+      pair: object; class instance
+      pair: object; instance
       pair: class; instance
       pair: class instance; attribute
 
@@ -892,9 +892,9 @@ Class instances
    dictionary directly.
 
    .. index::
-      object: numeric
-      object: sequence
-      object: mapping
+      pair: object; numeric
+      pair: object; sequence
+      pair: object; mapping
 
    Class instances can pretend to be numbers, sequences, or mappings if they have
    methods with certain special names.  See section :ref:`specialnames`.
@@ -995,7 +995,7 @@ Internal types
       required stack size; :attr:`co_flags` is an integer encoding a number
       of flags for the interpreter.
 
-      .. index:: object: generator
+      .. index:: pair: object; generator
 
       The following flag bits are defined for :attr:`co_flags`: bit ``0x04`` is set if
       the function uses the ``*arguments`` syntax to accept an arbitrary number of
@@ -1052,7 +1052,7 @@ Internal types
    .. _frame-objects:
 
    Frame objects
-      .. index:: object: frame
+      .. index:: pair: object; frame
 
       Frame objects represent execution frames.  They may occur in traceback objects
       (see below), and are also passed to registered trace functions.
@@ -1115,7 +1115,7 @@ Internal types
 
    Traceback objects
       .. index::
-         object: traceback
+         pair: object; traceback
          pair: stack; trace
          pair: exception; handler
          pair: execution; stack
@@ -1497,7 +1497,7 @@ Basic customization
 .. method:: object.__hash__(self)
 
    .. index::
-      object: dictionary
+      pair: object; dictionary
       builtin: hash
 
    Called by built-in function :func:`hash` and for operations on members of
@@ -2501,7 +2501,7 @@ through the object's keys; for sequences, it should iterate through the values.
    .. versionadded:: 3.4
 
 
-.. index:: object: slice
+.. index:: pair: object; slice
 
 .. note::
 

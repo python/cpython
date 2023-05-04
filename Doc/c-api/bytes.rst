@@ -8,7 +8,7 @@ Bytes Objects
 These functions raise :exc:`TypeError` when expecting a bytes parameter and
 called with a non-bytes parameter.
 
-.. index:: object: bytes
+.. index:: pair: object; bytes
 
 
 .. c:type:: PyBytesObject
