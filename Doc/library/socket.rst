@@ -19,7 +19,7 @@ all modern Unix systems, Windows, MacOS, and probably additional platforms.
 
 .. include:: ../includes/wasm-notavail.rst
 
-.. index:: object: socket
+.. index:: pair: object; socket
 
 The Python interface is a straightforward transliteration of the Unix system
 call and library interface for sockets to Python's object-oriented style: the
