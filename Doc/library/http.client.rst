@@ -266,7 +266,8 @@ HTTPConnection Objects
    This will send a request to the server using the HTTP request
    method *method* and the request URI *url*. The provided *url* must be
    an absolute path to conform with :rfc:`RFC 2616 §5.1.2 <2616#section-5.1.2>`
-   when using most HTTP methods (like ``GET`` or ``POST``).
+   (unless connecting to an HTTP proxy server or using the ``OPTIONS`` or
+   ``CONNECT`` methods).
 
    If *body* is specified, the specified data is sent after the headers are
    finished.  It may be a :class:`str`, a :term:`bytes-like object`, an
@@ -283,7 +284,8 @@ HTTPConnection Objects
    The *headers* argument should be a mapping of extra HTTP headers to send
    with the request. A :rfc:`Host header <2616#section-14.23>`
    must be provided to conform with :rfc:`RFC 2616 §5.1.2 <2616#section-5.1.2>`
-   when using most HTTP methods (like ``GET`` or ``POST``).
+   (unless connecting to an HTTP proxy server or using the ``OPTIONS`` or 
+   ``CONNECT`` methods).
 
    If *headers* contains neither Content-Length nor Transfer-Encoding,
    but there is a request body, one of those
