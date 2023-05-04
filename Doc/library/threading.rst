@@ -989,7 +989,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
       When the timeout argument is present and not ``None``, it should be a
       floating point number specifying a timeout for the operation in seconds
-      (or fractions thereof).
+      (or fractions thereof). When the timeout occurs, ``False`` will be returned.
 
       This method returns ``True`` if and only if the internal flag has been set to
       true, either before the wait call or after the wait starts, so it will
