@@ -54,7 +54,7 @@ expression).
 
 .. index::
    builtin: repr
-   object: None
+   pair: object; None
    pair: string; conversion
    single: output
    pair: standard; output
@@ -76,7 +76,7 @@ Assignment statements
    pair: assignment; statement
    pair: binding; name
    pair: rebinding; name
-   object: mutable
+   pair: object; mutable
    pair: attribute; assignment
 
 Assignment statements are used to (re)bind names to values and to modify
@@ -185,7 +185,7 @@ Assignment of an object to a single target is recursively defined as follows.
 
   .. index::
      pair: subscription; assignment
-     object: mutable
+     pair: object; mutable
 
 * If the target is a subscription: The primary expression in the reference is
   evaluated.  It should yield either a mutable sequence object (such as a list)
@@ -193,8 +193,8 @@ Assignment of an object to a single target is recursively defined as follows.
   evaluated.
 
   .. index::
-     object: sequence
-     object: list
+     pair: object; sequence
+     pair: object; list
 
   If the primary is a mutable sequence object (such as a list), the subscript
   must yield an integer.  If it is negative, the sequence's length is added to
@@ -204,8 +204,8 @@ Assignment of an object to a single target is recursively defined as follows.
   raised (assignment to a subscripted sequence cannot add new items to a list).
 
   .. index::
-     object: mapping
-     object: dictionary
+     pair: object; mapping
+     pair: object; dictionary
 
   If the primary is a mapping object (such as a dictionary), the subscript must
   have a type compatible with the mapping's key type, and the mapping is then
@@ -574,7 +574,7 @@ instantiating the class with no arguments.
 The :dfn:`type` of the exception is the exception instance's class, the
 :dfn:`value` is the instance itself.
 
-.. index:: object: traceback
+.. index:: pair: object; traceback
 
 A traceback object is normally created automatically when an exception is raised
 and attached to it as the :attr:`__traceback__` attribute, which is writable.

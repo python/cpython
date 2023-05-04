@@ -14,7 +14,7 @@ interpreter when it prints a stack trace.  This is useful when you want to print
 stack traces under program control, such as in a "wrapper" around the
 interpreter.
 
-.. index:: object: traceback
+.. index:: pair: object; traceback
 
 The module uses traceback objects --- these are objects of type :class:`types.TracebackType`,
 which are assigned to the ``__traceback__`` field of :class:`BaseException` instances.

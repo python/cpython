@@ -286,7 +286,7 @@ Reading and Writing Files
 
 .. index::
    builtin: open
-   object: file
+   pair: object; file
 
 :func:`open` returns a :term:`file object`, and is most commonly used with
 two positional arguments and one keyword argument:
