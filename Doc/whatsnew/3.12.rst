@@ -72,6 +72,8 @@ New typing features:
 
 * :ref:`whatsnew312-pep692`
 
+* :pep:`698`: Override Decorator for Static Typing
+
 Important deprecations, removals or restrictions:
 
 * :pep:`623`: Remove wstr from Unicode
