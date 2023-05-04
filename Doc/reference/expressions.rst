@@ -1171,7 +1171,7 @@ The power operator
 
 .. index::
    pair: power; operation
-   operator: **
+   pair: operator; **
 
 The power operator binds more tightly than unary operators on its left; it binds
 less tightly than unary operators on its right.  The syntax is:
@@ -1232,7 +1232,7 @@ operation can be overridden with the :meth:`__pos__` special method.
 
 .. index::
    single: inversion
-   operator: ~ (tilde)
+   pair: operator; ~ (tilde)
 
 The unary ``~`` (invert) operator yields the bitwise inversion of its integer
 argument.  The bitwise inversion of ``x`` is defined as ``-(x+1)``.  It only
@@ -1267,7 +1267,7 @@ operators and one for additive operators:
 
 .. index::
    single: multiplication
-   operator: * (asterisk)
+   pair: operator; * (asterisk)
 
 The ``*`` (multiplication) operator yields the product of its arguments.  The
 arguments must either both be numbers, or one argument must be an integer and
@@ -1280,7 +1280,7 @@ This operation can be customized using the special :meth:`__mul__` and
 
 .. index::
    single: matrix multiplication
-   operator: @ (at)
+   pair: operator; @ (at)
 
 The ``@`` (at) operator is intended to be used for matrix multiplication.  No
 builtin Python types implement this operator.
@@ -1290,8 +1290,8 @@ builtin Python types implement this operator.
 .. index::
    exception: ZeroDivisionError
    single: division
-   operator: / (slash)
-   operator: //
+   pair: operator; / (slash)
+   pair: operator; //
 
 The ``/`` (division) and ``//`` (floor division) operators yield the quotient of
 their arguments.  The numeric arguments are first converted to a common type.
@@ -1305,7 +1305,7 @@ This operation can be customized using the special :meth:`__truediv__` and
 
 .. index::
    single: modulo
-   operator: % (percent)
+   pair: operator; % (percent)
 
 The ``%`` (modulo) operator yields the remainder from the division of the first
 argument by the second.  The numeric arguments are first converted to a common
@@ -1363,8 +1363,8 @@ Shifting operations
 
 .. index::
    pair: shifting; operation
-   operator: <<
-   operator: >>
+   pair: operator; <<
+   pair: operator; >>
 
 The shifting operations have lower priority than the arithmetic operations:
 
@@ -1399,7 +1399,7 @@ Each of the three bitwise operations has a different priority level:
 
 .. index::
    pair: bitwise; and
-   operator: & (ampersand)
+   pair: operator; & (ampersand)
 
 The ``&`` operator yields the bitwise AND of its arguments, which must be
 integers or one of them must be a custom object overriding :meth:`__and__` or
@@ -1408,7 +1408,7 @@ integers or one of them must be a custom object overriding :meth:`__and__` or
 .. index::
    pair: bitwise; xor
    pair: exclusive; or
-   operator: ^ (caret)
+   pair: operator; ^ (caret)
 
 The ``^`` operator yields the bitwise XOR (exclusive OR) of its arguments, which
 must be integers or one of them must be a custom object overriding :meth:`__xor__` or
@@ -1417,7 +1417,7 @@ must be integers or one of them must be a custom object overriding :meth:`__xor_
 .. index::
    pair: bitwise; or
    pair: inclusive; or
-   operator: | (vertical bar)
+   pair: operator; | (vertical bar)
 
 The ``|`` operator yields the bitwise (inclusive) OR of its arguments, which
 must be integers or one of them must be a custom object overriding :meth:`__or__` or
@@ -1432,12 +1432,12 @@ Comparisons
 .. index::
    single: comparison
    pair: C; language
-   operator: < (less)
-   operator: > (greater)
-   operator: <=
-   operator: >=
-   operator: ==
-   operator: !=
+   pair: operator; < (less)
+   pair: operator; > (greater)
+   pair: operator; <=
+   pair: operator; >=
+   pair: operator; ==
+   pair: operator; !=
 
 Unlike C, all comparison operations in Python have the same priority, which is
 lower than that of any arithmetic, shifting or bitwise operation.  Also unlike
@@ -1669,8 +1669,8 @@ raises the :exc:`IndexError` exception.  (If any other exception is raised, it i
 if :keyword:`in` raised that exception).
 
 .. index::
-   operator: in
-   operator: not in
+   pair: operator; in
+   pair: operator; not in
    pair: membership; test
    object: sequence
 
@@ -1678,8 +1678,8 @@ The operator :keyword:`not in` is defined to have the inverse truth value of
 :keyword:`in`.
 
 .. index::
-   operator: is
-   operator: is not
+   pair: operator; is
+   pair: operator; is not
    pair: identity; test
 
 
@@ -1719,17 +1719,17 @@ control flow statements, the following values are interpreted as false:
 other values are interpreted as true.  User-defined objects can customize their
 truth value by providing a :meth:`__bool__` method.
 
-.. index:: operator: not
+.. index:: pair: operator; not
 
 The operator :keyword:`not` yields ``True`` if its argument is false, ``False``
 otherwise.
 
-.. index:: operator: and
+.. index:: pair: operator; and
 
 The expression ``x and y`` first evaluates *x*; if *x* is false, its value is
 returned; otherwise, *y* is evaluated and the resulting value is returned.
 
-.. index:: operator: or
+.. index:: pair: operator; or
 
 The expression ``x or y`` first evaluates *x*; if *x* is true, its value is
 returned; otherwise, *y* is evaluated and the resulting value is returned.
