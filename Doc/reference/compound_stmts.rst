@@ -147,7 +147,7 @@ The :keyword:`!for` statement
    pair: keyword; else
    pair: target; list
    pair: loop; statement
-   object: sequence
+   pair: object; sequence
    single: : (colon); compound statement
 
 The :keyword:`for` statement is used to iterate over the elements of a sequence
@@ -298,7 +298,7 @@ keeping all locals in that frame alive until the next garbage collection occurs.
 
 .. index::
    pair: module; sys
-   object: traceback
+   pair: object; traceback
 
 Before an :keyword:`!except` clause's suite is executed,
 the exception is stored in the :mod:`sys` module, where it can be accessed
@@ -1196,8 +1196,8 @@ Function definitions
    pair: function; definition
    pair: function; name
    pair: name; binding
-   object: user-defined function
-   object: function
+   pair: object; user-defined function
+   pair: object; function
    pair: function; name
    pair: name; binding
    single: () (parentheses); function definition
@@ -1365,7 +1365,7 @@ Class definitions
 =================
 
 .. index::
-   object: class
+   pair: object; class
    statement: class
    pair: class; definition
    pair: class; name
