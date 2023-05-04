@@ -140,10 +140,10 @@ thoughts in mind:
 Searching Sorted Lists
 ----------------------
 
-The above :func:`.bisect` functions are useful for finding insertion points but
-can be tricky or awkward to use for common searching tasks. The following five
-functions show how to transform them into the standard lookups for sorted
-lists::
+The above :py:mod:`bisect functions <bisect>` are useful for finding insertion
+points but can be tricky or awkward to use for common searching tasks. The
+following five functions show how to transform them into the standard lookups
+for sorted lists::
 
     def index(a, x):
         'Locate the leftmost value exactly equal to x'
