@@ -1074,11 +1074,11 @@ Currently Argument Clinic supports only a few return converters:
     Py_ssize_t
     float
     double
-    __init__
+    init
 
 None of these take parameters.  For the first three, return -1 to indicate
 error.
-The ``__init__`` converter is a special return converter for ``__init__``
+The ``init`` converter is a special return converter for ``__init__``
 functions.
 
 To see all the return converters Argument Clinic supports, along with
