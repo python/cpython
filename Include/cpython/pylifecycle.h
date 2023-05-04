@@ -62,9 +62,9 @@ PyAPI_FUNC(int) _Py_CoerceLegacyLocale(int warn);
 PyAPI_FUNC(int) _Py_LegacyLocaleDetected(int warn);
 PyAPI_FUNC(char *) _Py_SetLocaleFromEnv(int category);
 
-PyAPI_FUNC(PyStatus) _Py_NewInterpreterFromConfig(
+PyAPI_FUNC(PyStatus) Py_NewInterpreterFromConfig(
     PyThreadState **tstate_p,
-    const _PyInterpreterConfig *config);
+    const PyInterpreterConfig *config);
 
 typedef void (*atexit_datacallbackfunc)(void *);
 PyAPI_FUNC(int) _Py_AtExit(

@@ -17,7 +17,6 @@
 
 static PyMemberDef frame_memberlist[] = {
     {"f_trace_lines",   T_BOOL,         OFF(f_trace_lines), 0},
-    {"f_trace_opcodes", T_BOOL,         OFF(f_trace_opcodes), 0},
     {NULL}      /* Sentinel */
 };
 
@@ -104,24 +103,29 @@ frame_getback(PyFrameObject *f, void *closure)
     return res;
 }
 
-// Given the index of the effective opcode, scan back to construct the oparg
-// with EXTENDED_ARG. This only works correctly with *unquickened* code,
-// obtained via a call to _PyCode_GetCode!
-static unsigned int
-get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
+static PyObject *
+frame_gettrace_opcodes(PyFrameObject *f, void *closure)
 {
-    _Py_CODEUNIT word;
-    unsigned int oparg = codestr[i].op.arg;
-    if (i >= 1 && (word = codestr[i-1]).op.code == EXTENDED_ARG) {
-        oparg |= word.op.arg << 8;
-        if (i >= 2 && (word = codestr[i-2]).op.code == EXTENDED_ARG) {
-            oparg |= word.op.arg << 16;
-            if (i >= 3 && (word = codestr[i-3]).op.code == EXTENDED_ARG) {
-                oparg |= word.op.arg << 24;
-            }
-        }
+    PyObject *result = f->f_trace_opcodes ? Py_True : Py_False;
+    return Py_NewRef(result);
+}
+
+static int
+frame_settrace_opcodes(PyFrameObject *f, PyObject* value, void *Py_UNUSED(ignored))
+{
+    if (!PyBool_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "attribute value type must be bool");
+        return -1;
     }
-    return oparg;
+    if (value == Py_True) {
+        f->f_trace_opcodes = 1;
+        _PyInterpreterState_GET()->f_opcode_trace_set = true;
+    }
+    else {
+        f->f_trace_opcodes = 0;
+    }
+    return 0;
 }
 
 /* Model the evaluation stack, to determine which jumps
@@ -299,46 +303,52 @@ mark_stacks(PyCodeObject *code_obj, int len)
     while (todo) {
         todo = 0;
         /* Scan instructions */
-        for (i = 0; i < len; i++) {
+        for (i = 0; i < len;) {
             int64_t next_stack = stacks[i];
+            opcode = _Py_GetBaseOpcode(code_obj, i);
+            int oparg = 0;
+            while (opcode == EXTENDED_ARG) {
+                oparg = (oparg << 8) | code[i].op.arg;
+                i++;
+                opcode = _Py_GetBaseOpcode(code_obj, i);
+                stacks[i] = next_stack;
+            }
+            int next_i = i + _PyOpcode_Caches[opcode] + 1;
             if (next_stack == UNINITIALIZED) {
+                i = next_i;
                 continue;
             }
-            opcode = code[i].op.code;
+            oparg = (oparg << 8) | code[i].op.arg;
             switch (opcode) {
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
                 {
                     int64_t target_stack;
-                    int j = get_arg(code, i);
-                    j += i + 1;
+                    int j = next_i + oparg;
                     assert(j < len);
-                    if (stacks[j] == UNINITIALIZED && j < i) {
-                        todo = 1;
-                    }
                     next_stack = pop_value(next_stack);
                     target_stack = next_stack;
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
                     stacks[j] = target_stack;
-                    stacks[i+1] = next_stack;
+                    stacks[next_i] = next_stack;
                     break;
                 }
                 case SEND:
-                    j = get_arg(code, i) + i + INLINE_CACHE_ENTRIES_SEND + 1;
+                    j = oparg + i + INLINE_CACHE_ENTRIES_SEND + 1;
                     assert(j < len);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
                     stacks[j] = next_stack;
-                    stacks[i+1] = next_stack;
+                    stacks[next_i] = next_stack;
                     break;
                 case JUMP_FORWARD:
-                    j = get_arg(code, i) + i + 1;
+                    j = oparg + i + 1;
                     assert(j < len);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
                     stacks[j] = next_stack;
                     break;
                 case JUMP_BACKWARD:
                 case JUMP_BACKWARD_NO_INTERRUPT:
-                    j = i + 1 - get_arg(code, i);
+                    j = i + 1 - oparg;
                     assert(j >= 0);
                     assert(j < len);
                     if (stacks[j] == UNINITIALIZED && j < i) {
@@ -350,13 +360,13 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case GET_ITER:
                 case GET_AITER:
                     next_stack = push_value(pop_value(next_stack), Iterator);
-                    stacks[i+1] = next_stack;
+                    stacks[next_i] = next_stack;
                     break;
                 case FOR_ITER:
                 {
                     int64_t target_stack = push_value(next_stack, Object);
-                    stacks[i+1] = target_stack;
-                    j = get_arg(code, i) + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + i;
+                    stacks[next_i] = target_stack;
+                    j = oparg + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + i;
                     assert(j < len);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
                     stacks[j] = target_stack;
@@ -364,16 +374,16 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 }
                 case END_ASYNC_FOR:
                     next_stack = pop_value(pop_value(next_stack));
-                    stacks[i+1] = next_stack;
+                    stacks[next_i] = next_stack;
                     break;
                 case PUSH_EXC_INFO:
                     next_stack = push_value(next_stack, Except);
-                    stacks[i+1] = next_stack;
+                    stacks[next_i] = next_stack;
                     break;
                 case POP_EXCEPT:
                     assert(top_of_stack(next_stack) == Except);
                     next_stack = pop_value(next_stack);
-                    stacks[i+1] = next_stack;
+                    stacks[next_i] = next_stack;
                     break;
                 case RETURN_VALUE:
                     assert(pop_value(next_stack) == EMPTY_STACK);
@@ -389,57 +399,62 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     break;
                 case PUSH_NULL:
                     next_stack = push_value(next_stack, Null);
-                    stacks[i+1] = next_stack;
+                    stacks[next_i] = next_stack;
                     break;
                 case LOAD_GLOBAL:
                 {
-                    int j = get_arg(code, i);
+                    int j = oparg;
                     if (j & 1) {
                         next_stack = push_value(next_stack, Null);
                     }
                     next_stack = push_value(next_stack, Object);
-                    stacks[i+1] = next_stack;
+                    stacks[next_i] = next_stack;
                     break;
                 }
                 case LOAD_ATTR:
                 {
                     assert(top_of_stack(next_stack) == Object);
-                    int j = get_arg(code, i);
+                    int j = oparg;
                     if (j & 1) {
                         next_stack = pop_value(next_stack);
                         next_stack = push_value(next_stack, Null);
                         next_stack = push_value(next_stack, Object);
                     }
-                    stacks[i+1] = next_stack;
+                    stacks[next_i] = next_stack;
                     break;
                 }
                 case CALL:
                 {
-                    int args = get_arg(code, i);
+                    int args = oparg;
                     for (int j = 0; j < args+2; j++) {
                         next_stack = pop_value(next_stack);
                     }
                     next_stack = push_value(next_stack, Object);
-                    stacks[i+1] = next_stack;
+                    stacks[next_i] = next_stack;
                     break;
                 }
                 case SWAP:
                 {
-                    int n = get_arg(code, i);
+                    int n = oparg;
                     next_stack = stack_swap(next_stack, n);
-                    stacks[i+1] = next_stack;
+                    stacks[next_i] = next_stack;
                     break;
                 }
                 case COPY:
                 {
-                    int n = get_arg(code, i);
+                    int n = oparg;
                     next_stack = push_value(next_stack, peek(next_stack, n));
-                    stacks[i+1] = next_stack;
+                    stacks[next_i] = next_stack;
                     break;
+                }
+                case CACHE:
+                case RESERVED:
+                {
+                    assert(0);
                 }
                 default:
                 {
-                    int delta = PyCompile_OpcodeStackEffect(opcode, get_arg(code, i));
+                    int delta = PyCompile_OpcodeStackEffect(opcode, oparg);
                     assert(delta != PY_INVALID_STACK_EFFECT);
                     while (delta < 0) {
                         next_stack = pop_value(next_stack);
@@ -449,9 +464,10 @@ mark_stacks(PyCodeObject *code_obj, int len)
                         next_stack = push_value(next_stack, Object);
                         delta--;
                     }
-                    stacks[i+1] = next_stack;
+                    stacks[next_i] = next_stack;
                 }
             }
+            i = next_i;
         }
         /* Scan exception table */
         unsigned char *start = (unsigned char *)PyBytes_AS_STRING(code_obj->co_exceptiontable);
@@ -646,31 +662,43 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
      * In addition, jumps are forbidden when not tracing,
      * as this is a debugging feature.
      */
-    switch(PyThreadState_GET()->tracing_what) {
-        case PyTrace_EXCEPTION:
-            PyErr_SetString(PyExc_ValueError,
-                "can only jump from a 'line' trace event");
-            return -1;
-        case PyTrace_CALL:
+    int what_event = PyThreadState_GET()->what_event;
+    if (what_event < 0) {
+        PyErr_Format(PyExc_ValueError,
+                    "f_lineno can only be set in a trace function");
+        return -1;
+    }
+    switch (what_event) {
+        case PY_MONITORING_EVENT_PY_RESUME:
+        case PY_MONITORING_EVENT_JUMP:
+        case PY_MONITORING_EVENT_BRANCH:
+        case PY_MONITORING_EVENT_LINE:
+        case PY_MONITORING_EVENT_PY_YIELD:
+            /* Setting f_lineno is allowed for the above events */
+            break;
+        case PY_MONITORING_EVENT_PY_START:
             PyErr_Format(PyExc_ValueError,
                      "can't jump from the 'call' trace event of a new frame");
             return -1;
-        case PyTrace_LINE:
-            break;
-        case PyTrace_RETURN:
-            if (state == FRAME_SUSPENDED) {
-                break;
-            }
-            /* fall through */
-        default:
+        case PY_MONITORING_EVENT_CALL:
+        case PY_MONITORING_EVENT_C_RETURN:
             PyErr_SetString(PyExc_ValueError,
+                "can't jump during a call");
+            return -1;
+        case PY_MONITORING_EVENT_PY_RETURN:
+        case PY_MONITORING_EVENT_PY_UNWIND:
+        case PY_MONITORING_EVENT_PY_THROW:
+        case PY_MONITORING_EVENT_RAISE:
+        case PY_MONITORING_EVENT_C_RAISE:
+        case PY_MONITORING_EVENT_INSTRUCTION:
+        case PY_MONITORING_EVENT_EXCEPTION_HANDLED:
+            PyErr_Format(PyExc_ValueError,
                 "can only jump from a 'line' trace event");
             return -1;
-    }
-    if (!f->f_trace) {
-        PyErr_Format(PyExc_ValueError,
-                    "f_lineno can only be set by a trace function");
-        return -1;
+        default:
+            PyErr_SetString(PyExc_SystemError,
+                "unexpected event type");
+            return -1;
     }
 
     int new_lineno;
@@ -803,6 +831,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         start_stack = pop_value(start_stack);
     }
     /* Finally set the new lasti and return OK. */
+    f->f_last_traced_line = new_lineno;
     f->f_lineno = 0;
     f->f_frame->prev_instr = _PyCode_CODE(f->f_frame->f_code) + best_addr;
     return 0;
@@ -823,7 +852,10 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
     if (v == Py_None) {
         v = NULL;
     }
-    Py_XSETREF(f->f_trace, Py_XNewRef(v));
+    if (v != f->f_trace) {
+        Py_XSETREF(f->f_trace, Py_XNewRef(v));
+        f->f_last_traced_line = -1;
+    }
     return 0;
 }
 
@@ -838,6 +870,7 @@ static PyGetSetDef frame_getsetlist[] = {
     {"f_globals",       (getter)frame_getglobals, NULL, NULL},
     {"f_builtins",      (getter)frame_getbuiltins, NULL, NULL},
     {"f_code",          (getter)frame_getcode, NULL, NULL},
+    {"f_trace_opcodes", (getter)frame_gettrace_opcodes, (setter)frame_settrace_opcodes, NULL},
     {0}
 };
 
@@ -1023,6 +1056,7 @@ _PyFrame_New_NoTrack(PyCodeObject *code)
     f->f_trace_opcodes = 0;
     f->f_fast_as_locals = 0;
     f->f_lineno = 0;
+    f->f_last_traced_line = -1;
     return f;
 }
 
