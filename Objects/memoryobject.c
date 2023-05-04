@@ -982,16 +982,16 @@ memoryview_impl(PyTypeObject *type, PyObject *object)
 memoryview._from_flags
 
     object: object
-    _flags: int
+    flags: int
 
 Create a new memoryview object which references the given object.
 [clinic start generated code]*/
 
 static PyObject *
-memoryview__from_flags_impl(PyTypeObject *type, PyObject *object, int _flags)
-/*[clinic end generated code: output=bc1f4ba7d9b64525 input=860e7832e8edb1e5]*/
+memoryview__from_flags_impl(PyTypeObject *type, PyObject *object, int flags)
+/*[clinic end generated code: output=bf71f9906c266ee2 input=f5f82fd0e744356b]*/
 {
-    return PyMemoryView_FromObjectAndFlags(object, _flags);
+    return PyMemoryView_FromObjectAndFlags(object, flags);
 }
 
 

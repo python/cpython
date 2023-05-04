@@ -63,7 +63,7 @@ exit:
 }
 
 PyDoc_STRVAR(memoryview__from_flags__doc__,
-"_from_flags($type, /, object, _flags)\n"
+"_from_flags($type, /, object, flags)\n"
 "--\n"
 "\n"
 "Create a new memoryview object which references the given object.");
@@ -72,7 +72,7 @@ PyDoc_STRVAR(memoryview__from_flags__doc__,
     {"_from_flags", _PyCFunction_CAST(memoryview__from_flags), METH_FASTCALL|METH_KEYWORDS|METH_CLASS, memoryview__from_flags__doc__},
 
 static PyObject *
-memoryview__from_flags_impl(PyTypeObject *type, PyObject *object, int _flags);
+memoryview__from_flags_impl(PyTypeObject *type, PyObject *object, int flags);
 
 static PyObject *
 memoryview__from_flags(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -87,7 +87,7 @@ memoryview__from_flags(PyTypeObject *type, PyObject *const *args, Py_ssize_t nar
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(object), &_Py_ID(_flags), },
+        .ob_item = { &_Py_ID(object), &_Py_ID(flags), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -96,7 +96,7 @@ memoryview__from_flags(PyTypeObject *type, PyObject *const *args, Py_ssize_t nar
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"object", "_flags", NULL};
+    static const char * const _keywords[] = {"object", "flags", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "_from_flags",
@@ -105,18 +105,18 @@ memoryview__from_flags(PyTypeObject *type, PyObject *const *args, Py_ssize_t nar
     #undef KWTUPLE
     PyObject *argsbuf[2];
     PyObject *object;
-    int _flags;
+    int flags;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     object = args[0];
-    _flags = _PyLong_AsInt(args[1]);
-    if (_flags == -1 && PyErr_Occurred()) {
+    flags = _PyLong_AsInt(args[1]);
+    if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = memoryview__from_flags_impl(type, object, _flags);
+    return_value = memoryview__from_flags_impl(type, object, flags);
 
 exit:
     return return_value;
@@ -416,4 +416,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=31ed11a9a4ac95c4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=01613814112cedd7 input=a9049054013a1b77]*/
