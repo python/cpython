@@ -179,6 +179,15 @@ Object Protocol
    If *o1* and *o2* are the same object, :c:func:`PyObject_RichCompareBool`
    will always return ``1`` for :const:`Py_EQ` and ``0`` for :const:`Py_NE`.
 
+.. c:function:: PyObject* PyObject_Format(PyObject *obj, PyObject *format_spec)
+
+   Format *obj* using *format_spec*. This is equivalent to the Python
+   expression ``format(obj, format_spec)``.
+
+   *format_spec* may be ``NULL``. In this case the call is equivalent
+   to ``format(obj)``.
+   Returns the formatted string on success, ``NULL`` on failure.
+
 .. c:function:: PyObject* PyObject_Repr(PyObject *o)
 
    .. index:: builtin: repr
@@ -281,7 +290,7 @@ Object Protocol
 
 .. c:function:: Py_hash_t PyObject_HashNotImplemented(PyObject *o)
 
-   Set a :exc:`TypeError` indicating that ``type(o)`` is not hashable and return ``-1``.
+   Set a :exc:`TypeError` indicating that ``type(o)`` is not :term:`hashable` and return ``-1``.
    This function receives special treatment when stored in a ``tp_hash`` slot,
    allowing a type to explicitly indicate to the interpreter that it is not
    hashable.
@@ -310,7 +319,7 @@ Object Protocol
    is equivalent to the Python expression ``type(o)``. This function increments the
    reference count of the return value. There's really no reason to use this
    function instead of the :c:func:`Py_TYPE()` function, which returns a
-   pointer of type :c:type:`PyTypeObject*`, except when the incremented reference
+   pointer of type :c:expr:`PyTypeObject*`, except when the incremented reference
    count is needed.
 
 
@@ -386,3 +395,42 @@ Object Protocol
    returns ``NULL`` if the object cannot be iterated.
 
    .. versionadded:: 3.10
+
+.. c:function:: void *PyObject_GetTypeData(PyObject *o, PyTypeObject *cls)
+
+   Get a pointer to subclass-specific data reserved for *cls*.
+
+   The object *o* must be an instance of *cls*, and *cls* must have been
+   created using negative :c:member:`PyType_Spec.basicsize`.
+   Python does not check this.
+
+   On error, set an exception and return ``NULL``.
+
+   .. versionadded:: 3.12
+
+.. c:function:: Py_ssize_t PyType_GetTypeDataSize(PyTypeObject *cls)
+
+   Return the size of the instance memory space reserved for *cls*, i.e. the size of the
+   memory :c:func:`PyObject_GetTypeData` returns.
+
+   This may be larger than requested using :c:member:`-PyType_Spec.basicsize <PyType_Spec.basicsize>`;
+   it is safe to use this larger size (e.g. with :c:func:`!memset`).
+
+   The type *cls* **must** have been created using
+   negative :c:member:`PyType_Spec.basicsize`.
+   Python does not check this.
+
+   On error, set an exception and return a negative value.
+
+   .. versionadded:: 3.12
+
+.. c:function:: void *PyObject_GetItemData(PyObject *o)
+
+   Get a pointer to per-item data for a class with
+   :const:`Py_TPFLAGS_ITEMS_AT_END`.
+
+   On error, set an exception and return ``NULL``.
+   :py:exc:`TypeError` is raised if *o* does not have
+   :const:`Py_TPFLAGS_ITEMS_AT_END` set.
+
+   .. versionadded:: 3.12

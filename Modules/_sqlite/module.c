@@ -46,7 +46,8 @@ module _sqlite3
 PyDoc_STRVAR(module_connect_doc,
 "connect($module, /, database, timeout=5.0, detect_types=0,\n"
 "        isolation_level='', check_same_thread=True,\n"
-"        factory=ConnectionType, cached_statements=128, uri=False)\n"
+"        factory=ConnectionType, cached_statements=128, uri=False, *,\n"
+"        autocommit=sqlite3.LEGACY_TRANSACTION_CONTROL)\n"
 "--\n"
 "\n"
 "Opens a connection to the SQLite database file database.\n"
@@ -498,6 +499,49 @@ add_integer_constants(PyObject *module) {
 #if SQLITE_VERSION_NUMBER >= 3008007
     ADD_INT(SQLITE_LIMIT_WORKER_THREADS);
 #endif
+
+    /*
+     * Database connection configuration options.
+     * See https://www.sqlite.org/c3ref/c_dbconfig_defensive.html
+     */
+    ADD_INT(SQLITE_DBCONFIG_ENABLE_FKEY);
+    ADD_INT(SQLITE_DBCONFIG_ENABLE_TRIGGER);
+#if SQLITE_VERSION_NUMBER >= 3012002
+    ADD_INT(SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER);
+#endif
+#if SQLITE_VERSION_NUMBER >= 3013000
+    ADD_INT(SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION);
+#endif
+#if SQLITE_VERSION_NUMBER >= 3016000
+    ADD_INT(SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE);
+#endif
+#if SQLITE_VERSION_NUMBER >= 3020000
+    ADD_INT(SQLITE_DBCONFIG_ENABLE_QPSG);
+#endif
+#if SQLITE_VERSION_NUMBER >= 3022000
+    ADD_INT(SQLITE_DBCONFIG_TRIGGER_EQP);
+#endif
+#if SQLITE_VERSION_NUMBER >= 3024000
+    ADD_INT(SQLITE_DBCONFIG_RESET_DATABASE);
+#endif
+#if SQLITE_VERSION_NUMBER >= 3026000
+    ADD_INT(SQLITE_DBCONFIG_DEFENSIVE);
+#endif
+#if SQLITE_VERSION_NUMBER >= 3028000
+    ADD_INT(SQLITE_DBCONFIG_WRITABLE_SCHEMA);
+#endif
+#if SQLITE_VERSION_NUMBER >= 3029000
+    ADD_INT(SQLITE_DBCONFIG_DQS_DDL);
+    ADD_INT(SQLITE_DBCONFIG_DQS_DML);
+    ADD_INT(SQLITE_DBCONFIG_LEGACY_ALTER_TABLE);
+#endif
+#if SQLITE_VERSION_NUMBER >= 3030000
+    ADD_INT(SQLITE_DBCONFIG_ENABLE_VIEW);
+#endif
+#if SQLITE_VERSION_NUMBER >= 3031000
+    ADD_INT(SQLITE_DBCONFIG_LEGACY_FILE_FORMAT);
+    ADD_INT(SQLITE_DBCONFIG_TRUSTED_SCHEMA);
+#endif
 #undef ADD_INT
     return 0;
 }
@@ -703,6 +747,10 @@ module_exec(PyObject *module)
     }
 
     if (PyModule_AddStringConstant(module, "sqlite_version", sqlite3_libversion())) {
+        goto error;
+    }
+
+    if (PyModule_AddIntMacro(module, LEGACY_TRANSACTION_CONTROL) < 0) {
         goto error;
     }
 

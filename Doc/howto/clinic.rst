@@ -1,5 +1,7 @@
 .. highlight:: c
 
+.. _howto-clinic:
+
 **********************
 Argument Clinic How-To
 **********************
@@ -84,7 +86,7 @@ If you run that script, specifying a C file as an argument:
 
 .. code-block:: shell-session
 
-    $ python3 Tools/clinic/clinic.py foo.c
+    $ python Tools/clinic/clinic.py foo.c
 
 Argument Clinic will scan over the file looking for lines that
 look exactly like this:
@@ -539,7 +541,15 @@ Let's dive in!
         };
 
 
-16. Compile, then run the relevant portions of the regression-test suite.
+16. Argument Clinic may generate new instances of ``_Py_ID``. For example::
+
+        &_Py_ID(new_unique_py_id)
+
+    If it does, you'll have to run ``Tools/scripts/generate_global_objects.py``
+    to regenerate the list of precompiled identifiers at this point.
+
+
+17. Compile, then run the relevant portions of the regression-test suite.
     This change should not introduce any new compile-time warnings or errors,
     and there should be no externally visible change to Python's behavior.
 
@@ -1023,19 +1033,36 @@ you're not permitted to use:
 Using a return converter
 ------------------------
 
-By default the impl function Argument Clinic generates for you returns ``PyObject *``.
-But your C function often computes some C type, then converts it into the ``PyObject *``
+By default, the impl function Argument Clinic generates for you returns
+:c:type:`PyObject * <PyObject>`.
+But your C function often computes some C type,
+then converts it into the :c:type:`!PyObject *`
 at the last moment.  Argument Clinic handles converting your inputs from Python types
 into native C types—why not have it convert your return value from a native C type
 into a Python type too?
 
 That's what a "return converter" does.  It changes your impl function to return
 some C type, then adds code to the generated (non-impl) function to handle converting
-that value into the appropriate ``PyObject *``.
+that value into the appropriate :c:type:`!PyObject *`.
 
 The syntax for return converters is similar to that of parameter converters.
 You specify the return converter like it was a return annotation on the
-function itself.  Return converters behave much the same as parameter converters;
+function itself, using ``->`` notation.
+
+For example:
+
+.. code-block:: c
+
+   /*[clinic input]
+   add -> int
+
+       a: int
+       b: int
+       /
+
+   [clinic start generated code]*/
+
+Return converters behave much the same as parameter converters;
 they take arguments, the arguments are all keyword-only, and if you're not changing
 any of the default arguments you can omit the parentheses.
 
@@ -1056,19 +1083,17 @@ Currently Argument Clinic supports only a few return converters:
 .. code-block:: none
 
     bool
-    int
-    unsigned int
-    long
-    unsigned int
-    size_t
-    Py_ssize_t
-    float
     double
-    DecodeFSDefault
+    float
+    int
+    long
+    Py_ssize_t
+    size_t
+    unsigned int
+    unsigned long
 
-None of these take parameters.  For the first three, return -1 to indicate
-error.  For ``DecodeFSDefault``, the return type is ``const char *``; return a ``NULL``
-pointer to indicate an error.
+None of these take parameters.
+For all of these, return ``-1`` to indicate error.
 
 To see all the return converters Argument Clinic supports, along with
 their parameters (if any),

@@ -133,7 +133,17 @@ applies :func:`repr`::
    >>> print(f'My hovercraft is full of {animals!r}.')
    My hovercraft is full of 'eels'.
 
-For a reference on these format specifications, see
+The ``=`` specifier can be used to expand an expression to the text of the
+expression, an equal sign, then the representation of the evaluated expression:
+
+   >>> bugs = 'roaches'
+   >>> count = 13
+   >>> area = 'living room'
+   >>> print(f'Debugging {bugs=} {count=} {area=}')
+   Debugging bugs='roaches' count=13 area='living room'
+
+See :ref:`self-documenting expressions <bpo-36817-whatsnew>` for more information
+on the ``=`` specifier. For a reference on these format specifications, see
 the reference guide for the :ref:`formatspec`.
 
 .. _tut-string-format:
@@ -276,7 +286,7 @@ Reading and Writing Files
 
 .. index::
    builtin: open
-   object: file
+   pair: object; file
 
 :func:`open` returns a :term:`file object`, and is most commonly used with
 two positional arguments and one keyword argument:
@@ -456,7 +466,7 @@ Reference for a complete guide to file objects.
 Saving structured data with :mod:`json`
 ---------------------------------------
 
-.. index:: module: json
+.. index:: pair: module; json
 
 Strings can easily be written to and read from a file.  Numbers take a bit more
 effort, since the :meth:`read` method only returns strings, which will have to
@@ -468,7 +478,7 @@ becomes complicated.
 Rather than having users constantly writing and debugging code to save
 complicated data types to files, Python allows you to use the popular data
 interchange format called `JSON (JavaScript Object Notation)
-<http://json.org>`_.  The standard module called :mod:`json` can take Python
+<https://json.org>`_.  The standard module called :mod:`json` can take Python
 data hierarchies, and convert them to string representations; this process is
 called :dfn:`serializing`.  Reconstructing the data from the string representation
 is called :dfn:`deserializing`.  Between serializing and deserializing, the

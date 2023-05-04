@@ -5,7 +5,7 @@
 Complex Number Objects
 ----------------------
 
-.. index:: object: complex number
+.. index:: pair: object; complex number
 
 Python's complex number objects are implemented as two distinct types when
 viewed from the C API:  one is the Python object exposed to Python programs, and
@@ -115,12 +115,12 @@ Complex Numbers as Python Objects
 
 .. c:function:: double PyComplex_RealAsDouble(PyObject *op)
 
-   Return the real part of *op* as a C :c:type:`double`.
+   Return the real part of *op* as a C :c:expr:`double`.
 
 
 .. c:function:: double PyComplex_ImagAsDouble(PyObject *op)
 
-   Return the imaginary part of *op* as a C :c:type:`double`.
+   Return the imaginary part of *op* as a C :c:expr:`double`.
 
 
 .. c:function:: Py_complex PyComplex_AsCComplex(PyObject *op)

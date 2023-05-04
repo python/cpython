@@ -1,2 +1,0 @@
-Fix :mod:`fileinput` module didn't support ``errors`` option when
-``inplace`` is true.

@@ -20,6 +20,8 @@ class OpcodeTests(unittest.TestCase):
         # All defined opcodes
         has_arg = dis.hasarg
         for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
+            if code >= opcode.MIN_INSTRUMENTED_OPCODE:
+                continue
             with self.subTest(opname=name):
                 if code not in has_arg:
                     stack_effect(code)
@@ -34,13 +36,9 @@ class OpcodeTests(unittest.TestCase):
                 self.assertRaises(ValueError, stack_effect, code, 0)
 
     def test_stack_effect_jump(self):
-        JUMP_IF_TRUE_OR_POP = dis.opmap['JUMP_IF_TRUE_OR_POP']
-        self.assertEqual(stack_effect(JUMP_IF_TRUE_OR_POP, 0), 0)
-        self.assertEqual(stack_effect(JUMP_IF_TRUE_OR_POP, 0, jump=True), 0)
-        self.assertEqual(stack_effect(JUMP_IF_TRUE_OR_POP, 0, jump=False), -1)
         FOR_ITER = dis.opmap['FOR_ITER']
         self.assertEqual(stack_effect(FOR_ITER, 0), 1)
-        self.assertEqual(stack_effect(FOR_ITER, 0, jump=True), -1)
+        self.assertEqual(stack_effect(FOR_ITER, 0, jump=True), 1)
         self.assertEqual(stack_effect(FOR_ITER, 0, jump=False), 1)
         JUMP_FORWARD = dis.opmap['JUMP_FORWARD']
         self.assertEqual(stack_effect(JUMP_FORWARD, 0), 0)
@@ -51,6 +49,8 @@ class OpcodeTests(unittest.TestCase):
         has_exc = dis.hasexc
         has_jump = dis.hasjabs + dis.hasjrel
         for name, code in filter(lambda item: item[0] not in dis.deoptmap, dis.opmap.items()):
+            if code >= opcode.MIN_INSTRUMENTED_OPCODE:
+                continue
             with self.subTest(opname=name):
                 if code not in has_arg:
                     common = stack_effect(code)
@@ -69,12 +69,12 @@ class OpcodeTests(unittest.TestCase):
 
 class SpecializationStatsTests(unittest.TestCase):
     def test_specialization_stats(self):
-        stat_names = opcode._specialization_stats
-
+        stat_names = ["success", "failure", "hit", "deferred", "miss", "deopt"]
         specialized_opcodes = [
-            op[:-len("_ADAPTIVE")].lower() for
-            op in opcode._specialized_instructions
-            if op.endswith("_ADAPTIVE")]
+            op.lower()
+            for op in opcode._specializations
+            if opcode._inline_cache_entries[opcode.opmap[op]]
+        ]
         self.assertIn('load_attr', specialized_opcodes)
         self.assertIn('binary_subscr', specialized_opcodes)
 

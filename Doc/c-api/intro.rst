@@ -78,19 +78,19 @@ used by extension writers. Structure member names do not have a reserved prefix.
 
 The header files are typically installed with Python.  On Unix, these  are
 located in the directories :file:`{prefix}/include/pythonversion/` and
-:file:`{exec_prefix}/include/pythonversion/`, where :envvar:`prefix` and
-:envvar:`exec_prefix` are defined by the corresponding parameters to Python's
+:file:`{exec_prefix}/include/pythonversion/`, where :option:`prefix <--prefix>` and
+:option:`exec_prefix <--exec-prefix>` are defined by the corresponding parameters to Python's
 :program:`configure` script and *version* is
 ``'%d.%d' % sys.version_info[:2]``.  On Windows, the headers are installed
-in :file:`{prefix}/include`, where :envvar:`prefix` is the installation
+in :file:`{prefix}/include`, where ``prefix`` is the installation
 directory specified to the installer.
 
 To include the headers, place both directories (if different) on your compiler's
 search path for includes.  Do *not* place the parent directories on the search
 path and then use ``#include <pythonX.Y/Python.h>``; this will break on
 multi-platform builds since the platform independent headers under
-:envvar:`prefix` include the platform specific headers from
-:envvar:`exec_prefix`.
+:option:`prefix <--prefix>` include the platform specific headers from
+:option:`exec_prefix <--exec-prefix>`.
 
 C++ users should note that although the API is defined entirely using C, the
 header files properly declare the entry points to be ``extern "C"``. As a result,
@@ -261,16 +261,16 @@ complete listing.
 Objects, Types and Reference Counts
 ===================================
 
-.. index:: object: type
+.. index:: pair: object; type
 
 Most Python/C API functions have one or more arguments as well as a return value
-of type :c:type:`PyObject*`.  This type is a pointer to an opaque data type
+of type :c:expr:`PyObject*`.  This type is a pointer to an opaque data type
 representing an arbitrary Python object.  Since all Python object types are
 treated the same way by the Python language in most situations (e.g.,
 assignments, scope rules, and argument passing), it is only fitting that they
 should be represented by a single C type.  Almost all Python objects live on the
 heap: you never declare an automatic or static variable of type
-:c:type:`PyObject`, only pointer variables of type :c:type:`PyObject*` can  be
+:c:type:`PyObject`, only pointer variables of type :c:expr:`PyObject*` can  be
 declared.  The sole exception are the type objects; since these must never be
 deallocated, they are typically static :c:type:`PyTypeObject` objects.
 
@@ -530,8 +530,8 @@ Types
 -----
 
 There are few other data types that play a significant role in  the Python/C
-API; most are simple C types such as :c:type:`int`,  :c:type:`long`,
-:c:type:`double` and :c:type:`char*`.  A few structure types  are used to
+API; most are simple C types such as :c:expr:`int`,  :c:expr:`long`,
+:c:expr:`double` and :c:expr:`char*`.  A few structure types  are used to
 describe static tables used to list the functions exported  by a module or the
 data attributes of a new object type, and another is used to describe the value
 of a complex number.  These will  be discussed together with the functions that
@@ -705,9 +705,9 @@ interpreter can only be used after the interpreter has been initialized.
 
 .. index::
    single: Py_Initialize()
-   module: builtins
-   module: __main__
-   module: sys
+   pair: module; builtins
+   pair: module; __main__
+   pair: module; sys
    triple: module; search; path
    single: path (in module sys)
 

@@ -1,2 +1,0 @@
-Replace :c:expr:`_PyAccu` with :c:expr:`_PyUnicodeWriter` in JSON encoder
-and StringIO and remove the :c:expr:`_PyAccu` implementation.

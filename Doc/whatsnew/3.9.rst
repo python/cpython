@@ -2,8 +2,6 @@
   What's New In Python 3.9
 ****************************
 
-:Release: |release|
-:Date: |today|
 :Editor: Łukasz Langa
 
 .. Rules for maintenance:
@@ -500,7 +498,7 @@ Reedy in :issue:`40468`.)  Move the indent space setting from the Font tab to
 the new Windows tab.  (Contributed by Mark Roseman and Terry Jan Reedy in
 :issue:`33962`.)
 
-Apply syntax highlighting to `.pyi` files. (Contributed by Alex
+Apply syntax highlighting to ``.pyi`` files. (Contributed by Alex
 Waygood and Terry Jan Reedy in :issue:`45447`.)
 
 imaplib
@@ -773,7 +771,7 @@ Optimizations
   Stinner in :issue:`38061`.)
 
 * :c:func:`PyLong_FromDouble` is now up to 1.87x faster for values that
-  fit into :c:type:`long`.
+  fit into :c:expr:`long`.
   (Contributed by Sergey Fedoseev in :issue:`37986`.)
 
 * A number of Python builtins (:class:`range`, :class:`tuple`, :class:`set`,
@@ -851,7 +849,7 @@ in nanoseconds.  The benchmarks were measured on an
 `Intel® Core™ i7-4960HQ processor
 <https://ark.intel.com/content/www/us/en/ark/products/76088/intel-core-i7-4960hq-processor-6m-cache-up-to-3-80-ghz.html>`_
 running the macOS 64-bit builds found at
-`python.org <https://www.python.org/downloads/mac-osx/>`_.
+`python.org <https://www.python.org/downloads/macos/>`_.
 
 
 Deprecated

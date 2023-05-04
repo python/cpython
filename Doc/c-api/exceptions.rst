@@ -14,7 +14,7 @@ there is a global indicator (per thread) of the last error that occurred.  Most
 C API functions don't clear this on success, but will set it to indicate the
 cause of the error on failure.  Most C API functions also return an error
 indicator, usually ``NULL`` if they are supposed to return a pointer, or ``-1``
-if they return an integer (exception: the :c:func:`PyArg_\*` functions
+if they return an integer (exception: the ``PyArg_*`` functions
 return ``1`` for success and ``0`` for failure).
 
 Concretely, the error indicator consists of three object pointers: the
@@ -86,6 +86,12 @@ Printing and clearing
 
    An exception must be set when calling this function.
 
+.. c:function:: void PyErr_DisplayException(PyObject *exc)
+
+   Print the standard traceback display of ``exc`` to ``sys.stderr``, including
+   chained exceptions and notes.
+
+   .. versionadded:: 3.12
 
 Raising exceptions
 ==================
@@ -189,7 +195,7 @@ For convenience, some of these functions will always return a
 .. c:function:: PyObject* PyErr_SetFromWindowsErr(int ierr)
 
    This is a convenience function to raise :exc:`WindowsError`. If called with
-   *ierr* of :c:data:`0`, the error code returned by a call to :c:func:`GetLastError`
+   *ierr* of ``0``, the error code returned by a call to :c:func:`GetLastError`
    is used instead.  It calls the Win32 function :c:func:`FormatMessage` to retrieve
    the Windows description of error code given by *ierr* or :c:func:`GetLastError`,
    then it constructs a tuple object whose first item is the *ierr* value and whose
@@ -370,7 +376,7 @@ Querying the error indicator
 .. c:function:: PyObject* PyErr_Occurred()
 
    Test whether the error indicator is set.  If set, return the exception *type*
-   (the first argument to the last call to one of the :c:func:`PyErr_Set\*`
+   (the first argument to the last call to one of the ``PyErr_Set*``
    functions or to :c:func:`PyErr_Restore`).  If not set, return ``NULL``.  You do not
    own a reference to the return value, so you do not need to :c:func:`Py_DECREF`
    it.
@@ -400,7 +406,47 @@ Querying the error indicator
    recursively in subtuples) are searched for a match.
 
 
+.. c:function:: PyObject *PyErr_GetRaisedException(void)
+
+   Return the exception currently being raised, clearing the error indicator at
+   the same time.
+
+   This function is used by code that needs to catch exceptions,
+   or code that needs to save and restore the error indicator temporarily.
+
+   For example::
+
+      {
+         PyObject *exc = PyErr_GetRaisedException();
+
+         /* ... code that might produce other errors ... */
+
+         PyErr_SetRaisedException(exc);
+      }
+
+   .. seealso:: :c:func:`PyErr_GetHandledException`,
+                to save the exception currently being handled.
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: void PyErr_SetRaisedException(PyObject *exc)
+
+   Set *exc* as the exception currently being raised,
+   clearing the existing exception if one is set.
+
+   .. warning::
+
+      This call steals a reference to *exc*, which must be a valid exception.
+
+   .. versionadded:: 3.12
+
+
 .. c:function:: void PyErr_Fetch(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
+
+   .. deprecated:: 3.12
+
+      Use :c:func:`PyErr_GetRaisedException` instead.
 
    Retrieve the error indicator into three variables whose addresses are passed.
    If the error indicator is not set, set all three variables to ``NULL``.  If it is
@@ -409,8 +455,10 @@ Querying the error indicator
 
    .. note::
 
-      This function is normally only used by code that needs to catch exceptions or
-      by code that needs to save and restore the error indicator temporarily, e.g.::
+      This function is normally only used by legacy code that needs to catch
+      exceptions or save and restore the error indicator temporarily.
+
+      For example::
 
          {
             PyObject *type, *value, *traceback;
@@ -424,8 +472,14 @@ Querying the error indicator
 
 .. c:function:: void PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 
-   Set  the error indicator from the three objects.  If the error indicator is
-   already set, it is cleared first.  If the objects are ``NULL``, the error
+   .. deprecated:: 3.12
+
+      Use :c:func:`PyErr_SetRaisedException` instead.
+
+   Set the error indicator from the three objects,
+   *type*, *value*, and *traceback*,
+   clearing the existing exception if one is set.
+   If the objects are ``NULL``, the error
    indicator is cleared.  Do not pass a ``NULL`` type and non-``NULL`` value or
    traceback.  The exception type should be a class.  Do not pass an invalid
    exception type or value. (Violating these rules will cause subtle problems
@@ -436,12 +490,17 @@ Querying the error indicator
 
    .. note::
 
-      This function is normally only used by code that needs to save and restore the
-      error indicator temporarily.  Use :c:func:`PyErr_Fetch` to save the current
-      error indicator.
+      This function is normally only used by legacy code that needs to
+      save and restore the error indicator temporarily.
+      Use :c:func:`PyErr_Fetch` to save the current error indicator.
 
 
 .. c:function:: void PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
+
+   .. deprecated:: 3.12
+
+      Use :c:func:`PyErr_GetRaisedException` instead,
+      to avoid any possible de-normalization.
 
    Under certain circumstances, the values returned by :c:func:`PyErr_Fetch` below
    can be "unnormalized", meaning that ``*exc`` is a class object but ``*val`` is
@@ -543,7 +602,7 @@ Signal Handling
 .. c:function:: int PyErr_CheckSignals()
 
    .. index::
-      module: signal
+      pair: module; signal
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
@@ -574,7 +633,7 @@ Signal Handling
 .. c:function:: void PyErr_SetInterrupt()
 
    .. index::
-      module: signal
+      pair: module; signal
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
@@ -589,7 +648,7 @@ Signal Handling
 .. c:function:: int PyErr_SetInterruptEx(int signum)
 
    .. index::
-      module: signal
+      pair: module; signal
       single: KeyboardInterrupt (built-in exception)
 
    Simulate the effect of a signal arriving. The next time
@@ -702,6 +761,16 @@ Exception Objects
    instance or :const:`None`.  This steals a reference to *cause*.
 
    :attr:`__suppress_context__` is implicitly set to ``True`` by this function.
+
+
+.. c:function:: PyObject* PyException_GetArgs(PyObject *ex)
+
+   Return :attr:`~BaseException.args` of exception *ex*.
+
+
+.. c:function:: void PyException_SetArgs(PyObject *ex, PyObject *args)
+
+   Set :attr:`~BaseException.args` of exception *ex* to *args*.
 
 
 .. _unicodeexceptions:
@@ -848,7 +917,7 @@ Standard Exceptions
 
 All standard Python exceptions are available as global variables whose names are
 ``PyExc_`` followed by the Python exception name.  These have the type
-:c:type:`PyObject*`; they are all class objects.  For completeness, here are all
+:c:expr:`PyObject*`; they are all class objects.  For completeness, here are all
 the variables:
 
 .. index::
@@ -1068,7 +1137,7 @@ Standard Warning Categories
 
 All standard Python warning categories are available as global variables whose
 names are ``PyExc_`` followed by the Python exception name. These have the type
-:c:type:`PyObject*`; they are all class objects. For completeness, here are all
+:c:expr:`PyObject*`; they are all class objects. For completeness, here are all
 the variables:
 
 .. index::

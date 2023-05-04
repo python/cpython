@@ -142,7 +142,7 @@ static int fuzz_struct_unpack(const char* data, size_t size) {
 }
 
 
-#define MAX_JSON_TEST_SIZE 0x10000
+#define MAX_JSON_TEST_SIZE 0x100000
 
 PyObject* json_loads_method = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
@@ -335,7 +335,7 @@ static int fuzz_sre_match(const char* data, size_t size) {
     return 0;
 }
 
-#define MAX_CSV_TEST_SIZE 0x10000
+#define MAX_CSV_TEST_SIZE 0x100000
 PyObject* csv_module = NULL;
 PyObject* csv_error = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
@@ -393,7 +393,7 @@ static int fuzz_csv_reader(const char* data, size_t size) {
     return 0;
 }
 
-#define MAX_AST_LITERAL_EVAL_TEST_SIZE 0x10000
+#define MAX_AST_LITERAL_EVAL_TEST_SIZE 0x100000
 PyObject* ast_literal_eval_method = NULL;
 /* Called by LLVMFuzzerTestOneInput for initialization */
 static int init_ast_literal_eval(void) {
@@ -459,6 +459,9 @@ int LLVMFuzzerInitialize(int *argc, char ***argv) {
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
     config.install_signal_handlers = 0;
+    /* Raise the limit above the default allows exercising larger things
+     * now that we fall back to the _pylong module for large values. */
+    config.int_max_str_digits = 8086;
     PyStatus status;
     status = PyConfig_SetBytesString(&config, &config.program_name, *argv[0]);
     if (PyStatus_Exception(status)) {
@@ -523,13 +526,20 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_sre_compile)
     static int SRE_COMPILE_INITIALIZED = 0;
     if (!SRE_COMPILE_INITIALIZED && !init_sre_compile()) {
-        PyErr_Print();
-        abort();
+        if (!PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+            PyErr_Print();
+            abort();
+        }
+        else {
+            PyErr_Clear();
+        }
     } else {
         SRE_COMPILE_INITIALIZED = 1;
     }
 
-    rv |= _run_fuzz(data, size, fuzz_sre_compile);
+    if (SRE_COMPILE_INITIALIZED) {
+        rv |= _run_fuzz(data, size, fuzz_sre_compile);
+    }
 #endif
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_sre_match)
     static int SRE_MATCH_INITIALIZED = 0;
