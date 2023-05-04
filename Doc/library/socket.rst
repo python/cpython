@@ -1829,7 +1829,7 @@ to sockets.
 .. method:: socket.setsockopt(level, optname, None, optlen: int)
    :noindex:
 
-   .. index:: module: struct
+   .. index:: pair: module; struct
 
    Set the value of the given socket option (see the Unix manual page
    :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in the
