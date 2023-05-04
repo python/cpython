@@ -690,7 +690,7 @@ def patch_pairindextypes(app) -> None:
         # exist, by deleting them when using the gettext builder.
 
         # pairindextypes.pop('module', None)
-        # pairindextypes.pop('keyword', None)
+        pairindextypes.pop('keyword', None)
         # pairindextypes.pop('operator', None)
         # pairindextypes.pop('object', None)
         # pairindextypes.pop('exception', None)
