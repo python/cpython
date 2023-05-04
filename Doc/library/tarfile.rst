@@ -430,7 +430,7 @@ be finalized; only the internally used file object will be closed. See the
    are used to set the owner/group for the extracted files. Otherwise, the named
    values from the tarfile are used.
 
-   The *filter* argument, which was added in Python 3.11.4, specifies how
+   The *filter* argument, which was added in Python 3.10.12, specifies how
    ``members`` are modified or rejected before extraction.
    See :ref:`tarfile-extraction-filter` for details.
    It is recommended to set this explicitly depending on which *tar* features
@@ -452,7 +452,7 @@ be finalized; only the internally used file object will be closed. See the
    .. versionchanged:: 3.6
       The *path* parameter accepts a :term:`path-like object`.
 
-   .. versionchanged:: 3.11.4
+   .. versionchanged:: 3.10.12
       Added the *filter* parameter.
 
 
@@ -488,7 +488,7 @@ be finalized; only the internally used file object will be closed. See the
    .. versionchanged:: 3.6
       The *path* parameter accepts a :term:`path-like object`.
 
-   .. versionchanged:: 3.11.4
+   .. versionchanged:: 3.10.12
       Added the *filter* parameter.
 
 
@@ -526,7 +526,7 @@ be finalized; only the internally used file object will be closed. See the
 
 .. attribute:: TarFile.extraction_filter
 
-   .. versionadded:: 3.11.4
+   .. versionadded:: 3.10.12
 
    The :ref:`extraction filter <tarfile-extraction-filter>` used
    as a default for the *filter* argument of :meth:`~TarFile.extract`
@@ -648,7 +648,7 @@ Different :class:`TarInfo` methods handle ``None`` differently:
 - :meth:`~TarFile.list` will print a placeholder string.
 
 
-.. versionchanged:: 3.11.4
+.. versionchanged:: 3.10.12
    Added :meth:`~TarInfo.replace` and handling of ``None``.
 
 
@@ -700,7 +700,7 @@ A ``TarInfo`` object has the following public data attributes:
    Time of last modification in seconds since the :ref:`epoch <epoch>`,
    as in :attr:`os.stat_result.st_mtime`.
 
-   .. versionchanged:: 3.11.4
+   .. versionchanged:: 3.10.12
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
@@ -711,7 +711,7 @@ A ``TarInfo`` object has the following public data attributes:
 
    Permission bits, as for :func:`os.chmod`.
 
-   .. versionchanged:: 3.11.4
+   .. versionchanged:: 3.10.12
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
@@ -738,7 +738,7 @@ A ``TarInfo`` object has the following public data attributes:
 
    User ID of the user who originally stored this member.
 
-   .. versionchanged:: 3.11.4
+   .. versionchanged:: 3.10.12
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
@@ -749,7 +749,7 @@ A ``TarInfo`` object has the following public data attributes:
 
    Group ID of the user who originally stored this member.
 
-   .. versionchanged:: 3.11.4
+   .. versionchanged:: 3.10.12
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
@@ -760,7 +760,7 @@ A ``TarInfo`` object has the following public data attributes:
 
    User name.
 
-   .. versionchanged:: 3.11.4
+   .. versionchanged:: 3.10.12
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
@@ -771,7 +771,7 @@ A ``TarInfo`` object has the following public data attributes:
 
    Group name.
 
-   .. versionchanged:: 3.11.4
+   .. versionchanged:: 3.10.12
 
       Can be set to ``None`` for :meth:`~TarFile.extract` and
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
@@ -786,7 +786,7 @@ A ``TarInfo`` object has the following public data attributes:
                             uid=..., gid=..., uname=..., gname=...,
                             deep=True)
 
-   .. versionadded:: 3.11.4
+   .. versionadded:: 3.10.12
 
    Return a *new* copy of the :class:`!TarInfo` object with the given attributes
    changed. For example, to return a ``TarInfo`` with the group name set to
@@ -851,7 +851,7 @@ A :class:`TarInfo` object also provides some convenient query methods:
 Extraction filters
 ------------------
 
-.. versionadded:: 3.11.4
+.. versionadded:: 3.10.12
 
 The *tar* format is designed to capture all details of a UNIX-like filesystem,
 which makes it very powerful.
@@ -1175,7 +1175,7 @@ Command-line options
    Only string names are accepted (that is, ``fully_trusted``, ``tar``,
    and ``data``).
 
-   .. versionadded:: 3.11.4
+   .. versionadded:: 3.10.12
 
 .. _tar-examples:
 
