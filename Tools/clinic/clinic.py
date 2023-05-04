@@ -3876,6 +3876,7 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
     # The Python default value for this parameter, as a Python value.
     # Or the magic value "unspecified" if there is no default.
     default = None
+    retvar = "_return_value"
 
     def __init__(self, *, py_default=None, **kwargs):
         self.py_default = py_default
@@ -3888,15 +3889,15 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
     def return_converter_init(self):
         pass
 
-    def declare(self, data, name="_return_value"):
+    def declare(self, data):
         line = []
         add = line.append
         add(self.type)
         if not self.type.endswith('*'):
             add(' ')
-        add(name + ';')
+        add(self.retvar + ';')
         data.declarations.append(''.join(line))
-        data.return_value = name
+        data.return_value = self.retvar
 
     def err_occurred_if(self, expr, data):
         data.return_conversion.append('if (({}) && PyErr_Occurred()) {{\n    goto exit;\n}}\n'.format(expr))
@@ -3918,8 +3919,10 @@ class bool_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == -1", data)
-        data.return_conversion.append('return_value = PyBool_FromLong((long)_return_value);\n')
+        self.err_occurred_if(f"{self.retvar} == -1", data)
+        data.return_conversion.append(
+            f'return_value = PyBool_FromLong((long){self.retvar});\n'
+        )
 
 class long_return_converter(CReturnConverter):
     type = 'long'
@@ -3929,9 +3932,10 @@ class long_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == {}-1".format(self.unsigned_cast), data)
+        self.err_occurred_if(f"{self.retvar} == {self.unsigned_cast}-1", data)
         data.return_conversion.append(
-            ''.join(('return_value = ', self.conversion_fn, '(', self.cast, '_return_value);\n')))
+            f'return_value = {self.conversion_fn}({self.cast}{self.retvar});\n'
+        )
 
 class int_return_converter(long_return_converter):
     type = 'int'
@@ -3973,9 +3977,10 @@ class double_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if("_return_value == -1.0", data)
+        self.err_occurred_if(f"{self.retvar} == -1.0", data)
         data.return_conversion.append(
-            'return_value = PyFloat_FromDouble(' + self.cast + '_return_value);\n')
+            f'return_value = PyFloat_FromDouble({self.cast}{self.retvar});\n'
+        )
 
 class float_return_converter(double_return_converter):
     type = 'float'
