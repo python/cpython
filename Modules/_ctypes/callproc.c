@@ -1116,7 +1116,7 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
         progid);
     if (obj) {
         ctypes_state *st = GLOBAL_STATE();
-        PyErr_SetObject(st->PyComError_Type, obj);
+        PyErr_SetObject((PyObject *)st->PyComError_Type, obj);
         Py_DECREF(obj);
     }
     LocalFree(text);
