@@ -68,13 +68,17 @@ Summary -- Release highlights
 
 New typing features:
 
+* :pep:`688`: Making the buffer protocol accessible in Python
+
 * :ref:`whatsnew312-pep692`
+
+* :pep:`698`: Override Decorator for Static Typing
 
 Important deprecations, removals or restrictions:
 
-* :pep:`623`, Remove wstr from Unicode
+* :pep:`623`: Remove wstr from Unicode
 
-* :pep:`632`, Remove the ``distutils`` package.
+* :pep:`632`: Remove the ``distutils`` package
 
 Improved Error Messages
 =======================
@@ -149,6 +153,19 @@ New Features
   In Python 3.14, the default will switch to ``'data'``.
   (Contributed by Petr Viktorin in :pep:`706`.)
 
+PEP 688: Making the buffer protocol accessible in Python
+--------------------------------------------------------
+
+:pep:`688` introduces a way to use the :ref:`buffer protocol <bufferobjects>`
+from Python code. Classes that implement the :meth:`~object.__buffer__` method
+are now usable as buffer types.
+
+The new :class:`collections.abc.Buffer` ABC provides a standard
+way to represent buffer objects, for example in type annotations.
+The new :class:`inspect.BufferFlags` enum represents the flags that
+can be used to customize buffer creation.
+(Contributed by Jelle Zijlstra in :gh:`102500`.)
+
 New Features Related to Type Hints
 ==================================
 
@@ -178,7 +195,6 @@ typed dictionaries::
 See :pep:`692` for more details.
 
 (PEP written by Franek Magiera)
-
 
 Other Language Changes
 ======================
@@ -239,7 +255,8 @@ Other Language Changes
 
 * When a ``try-except*`` construct handles the entire :exc:`ExceptionGroup`
   and raises one other exception, that exception is no longer wrapped in an
-  :exc:`ExceptionGroup`. (Contributed by Irit Katriel in :gh:`103590`.)
+  :exc:`ExceptionGroup`. Also changed in version 3.11.4. (Contributed by Irit
+  Katriel in :gh:`103590`.)
 
 
 New Modules
@@ -779,6 +796,11 @@ Pending Removal in Python 3.14
 
   (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
 
+* Deprecated :class:`collections.abc.ByteString`.
+  Prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
+  For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
+  (Contributed by Shantanu Jain in :gh:`91896`.)
+
 * Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases using the C API.
 
@@ -811,6 +833,11 @@ Pending Removal in Python 3.14
 
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
   and will be removed in 3.14.
+
+* :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
+  now raise :exc:`DeprecationWarning`;
+  use :func:`importlib.util.find_spec` instead.
+  (Contributed by Nikita Sobolev in :gh:`97850`.)
 
 Pending Removal in Future Versions
 ----------------------------------
@@ -1152,6 +1179,21 @@ New Features
   API changes.
 
   (Contributed by Petr Viktorin in :gh:`101101`.)
+
+* :pep:`697`: Added API for extending types whose instance memory layout is
+  opaque:
+
+  - :c:member:`PyType_Spec.basicsize` can be zero or negative to specify
+    inheriting or extending the base class size.
+  - :c:func:`PyObject_GetTypeData` and :c:func:`PyType_GetTypeDataSize`
+    added to allow access to subclass-specific instance data.
+  - :const:`Py_TPFLAGS_ITEMS_AT_END` and :c:func:`PyObject_GetItemData`
+    added to allow safely extending certain variable-sized types, including
+    :c:var:`PyType_Type`.
+  - :c:macro:`Py_RELATIVE_OFFSET` added to allow defining
+    :c:type:`members <PyMemberDef>` in terms of a subclass-specific struct.
+
+  (Contributed by Petr Viktorin in :gh:`103509`.)
 
 * Added the new limited C API function :c:func:`PyType_FromMetaclass`,
   which generalizes the existing :c:func:`PyType_FromModuleAndSpec` using

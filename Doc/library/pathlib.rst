@@ -855,7 +855,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.glob(pattern)
+.. method:: Path.glob(pattern, *, case_sensitive=None)
 
    Glob the given relative *pattern* in the directory represented by this path,
    yielding all matching files (of any kind)::
@@ -877,6 +877,11 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
+   By default, or when the *case_sensitive* keyword-only argument is set to
+   ``None``, this method matches paths using platform-specific casing rules:
+   typically, case-sensitive on POSIX, and case-insensitive on Windows.
+   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
+
    .. note::
       Using the "``**``" pattern in large directory trees may consume
       an inordinate amount of time.
@@ -889,6 +894,9 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.12
       Support for the "``***``" wildcard was added.
+
+   .. versionadded:: 3.12
+      The *case_sensitive* argument.
 
 .. method:: Path.group()
 
@@ -1275,7 +1283,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.6
       The *strict* argument (pre-3.6 behavior is strict).
 
-.. method:: Path.rglob(pattern)
+.. method:: Path.rglob(pattern, *, case_sensitive=None)
 
    Glob the given relative *pattern* recursively.  This is like calling
    :func:`Path.glob` with "``**/``" added in front of the *pattern*, where
@@ -1288,6 +1296,11 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
+   By default, or when the *case_sensitive* keyword-only argument is set to
+   ``None``, this method matches paths using platform-specific casing rules:
+   typically, case-sensitive on POSIX, and case-insensitive on Windows.
+   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
+
    .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
    .. versionchanged:: 3.11
@@ -1296,6 +1309,9 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.12
       Support for the "``***``" wildcard was added.
+
+   .. versionadded:: 3.12
+      The *case_sensitive* argument.
 
 .. method:: Path.rmdir()
 
