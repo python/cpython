@@ -702,7 +702,11 @@ int
 _PyModuleSpec_IsInitializing(PyObject *spec)
 {
     if (spec != NULL) {
-        PyObject *value = PyObject_GetAttr(spec, &_Py_ID(_initializing));
+        PyObject *value;
+        int ok = _PyObject_LookupAttr(spec, &_Py_ID(_initializing), &value);
+        if (ok == 0) {
+            return 0;
+        }
         if (value != NULL) {
             int initializing = PyObject_IsTrue(value);
             Py_DECREF(value);
@@ -738,19 +742,37 @@ _PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
     return is_uninitialized;
 }
 
-static PyObject*
-module_getattro(PyModuleObject *m, PyObject *name)
+PyObject*
+_Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
 {
+    // When suppress=1, this function suppresses AttributeError.
     PyObject *attr, *mod_name, *getattr;
-    attr = PyObject_GenericGetAttr((PyObject *)m, name);
-    if (attr || !PyErr_ExceptionMatches(PyExc_AttributeError)) {
+    attr = _PyObject_GenericGetAttrWithDict((PyObject *)m, name, NULL, suppress);
+    if (attr) {
         return attr;
     }
-    PyErr_Clear();
+    if (suppress == 1) {
+        if (PyErr_Occurred()) {
+            // pass up non-AttributeError exception
+            return NULL;
+        }
+    }
+    else {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            // pass up non-AttributeError exception
+            return NULL;
+        }
+        PyErr_Clear();
+    }
     assert(m->md_dict != NULL);
     getattr = PyDict_GetItemWithError(m->md_dict, &_Py_ID(__getattr__));
     if (getattr) {
-        return PyObject_CallOneArg(getattr, name);
+        PyObject *result = PyObject_CallOneArg(getattr, name);
+        if (result == NULL && suppress == 1 && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            // suppress AttributeError
+            PyErr_Clear();
+        }
+        return result;
     }
     if (PyErr_Occurred()) {
         return NULL;
@@ -763,35 +785,46 @@ module_getattro(PyModuleObject *m, PyObject *name)
             Py_DECREF(mod_name);
             return NULL;
         }
-        Py_XINCREF(spec);
-        if (_PyModuleSpec_IsInitializing(spec)) {
-            PyErr_Format(PyExc_AttributeError,
-                            "partially initialized "
-                            "module '%U' has no attribute '%U' "
-                            "(most likely due to a circular import)",
-                            mod_name, name);
+        if (suppress != 1) {
+            Py_XINCREF(spec);
+            if (_PyModuleSpec_IsInitializing(spec)) {
+                PyErr_Format(PyExc_AttributeError,
+                                "partially initialized "
+                                "module '%U' has no attribute '%U' "
+                                "(most likely due to a circular import)",
+                                mod_name, name);
+            }
+            else if (_PyModuleSpec_IsUninitializedSubmodule(spec, name)) {
+                PyErr_Format(PyExc_AttributeError,
+                                "cannot access submodule '%U' of module '%U' "
+                                "(most likely due to a circular import)",
+                                name, mod_name);
+            }
+            else {
+                PyErr_Format(PyExc_AttributeError,
+                                "module '%U' has no attribute '%U'",
+                                mod_name, name);
+            }
+            Py_XDECREF(spec);
         }
-        else if (_PyModuleSpec_IsUninitializedSubmodule(spec, name)) {
-            PyErr_Format(PyExc_AttributeError,
-                            "cannot access submodule '%U' of module '%U' "
-                            "(most likely due to a circular import)",
-                            name, mod_name);
-        }
-        else {
-            PyErr_Format(PyExc_AttributeError,
-                            "module '%U' has no attribute '%U'",
-                            mod_name, name);
-        }
-        Py_XDECREF(spec);
         Py_DECREF(mod_name);
         return NULL;
     }
     else if (PyErr_Occurred()) {
         return NULL;
     }
-    PyErr_Format(PyExc_AttributeError,
-                "module has no attribute '%U'", name);
+    if (suppress != 1) {
+        PyErr_Format(PyExc_AttributeError,
+                    "module has no attribute '%U'", name);
+    }
     return NULL;
+}
+
+
+PyObject*
+_Py_module_getattro(PyModuleObject *m, PyObject *name)
+{
+    return _Py_module_getattro_impl(m, name, 0);
 }
 
 static int
@@ -951,7 +984,7 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
-    (getattrofunc)module_getattro,              /* tp_getattro */
+    (getattrofunc)_Py_module_getattro,          /* tp_getattro */
     PyObject_GenericSetAttr,                    /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
