@@ -237,7 +237,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(_finalizing)
         STRUCT_FOR_ID(_find_and_load)
         STRUCT_FOR_ID(_fix_up_module)
-        STRUCT_FOR_ID(_flags)
         STRUCT_FOR_ID(_flags_)
         STRUCT_FOR_ID(_get_sourcefile)
         STRUCT_FOR_ID(_handle_fromlist)

@@ -743,7 +743,6 @@ extern "C" {
     INIT_ID(_finalizing), \
     INIT_ID(_find_and_load), \
     INIT_ID(_fix_up_module), \
-    INIT_ID(_flags), \
     INIT_ID(_flags_), \
     INIT_ID(_get_sourcefile), \
     INIT_ID(_handle_fromlist), \

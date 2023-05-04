@@ -749,7 +749,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_finalizing));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_find_and_load));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_fix_up_module));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_flags));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_flags_));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_get_sourcefile));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_handle_fromlist));
