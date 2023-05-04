@@ -1291,6 +1291,12 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "clone_f2"):
             ac_tester.clone_f2(incorrect_arg)
 
+    def test_cloned_func_with_converter_exception_message(self):
+        for name in "clone_with_conv_f1", "clone_with_conv_f2":
+            with self.subTest(name=name):
+                func = getattr(ac_tester, name)
+                self.assertEqual(func(), name)
+
 
 if __name__ == "__main__":
     unittest.main()
