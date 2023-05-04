@@ -866,8 +866,9 @@ call fails (for example because the path doesn't exist).
       [PosixPath('docs/conf.py')]
 
    Patterns are the same as for :mod:`fnmatch`, with the addition of "``**``"
-   which means "this directory and all subdirectories, recursively".  In other
-   words, it enables recursive globbing::
+   which means "this directory and all subdirectories, recursively", and "``***``"
+   which additionally follows symlinks to directories.  These wildcards enable
+   recursive globbing::
 
       >>> sorted(Path('.').glob('**/*.py'))
       [PosixPath('build/lib/pathlib.py'),
@@ -885,6 +886,9 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.11
       Return only directories if *pattern* ends with a pathname components
       separator (:data:`~os.sep` or :data:`~os.altsep`).
+
+   .. versionchanged:: 3.12
+      Support for the "``***``" wildcard was added.
 
 .. method:: Path.group()
 
@@ -1289,6 +1293,9 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.11
       Return only directories if *pattern* ends with a pathname components
       separator (:data:`~os.sep` or :data:`~os.altsep`).
+
+   .. versionchanged:: 3.12
+      Support for the "``***``" wildcard was added.
 
 .. method:: Path.rmdir()
 

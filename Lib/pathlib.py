@@ -67,7 +67,7 @@ def _make_selector(pattern_parts, flavour):
     child_parts = pattern_parts[1:]
     if not pat:
         return _TerminatingSelector()
-    if pat == '**':
+    if pat == '**' or pat == '***':
         cls = _RecursiveWildcardSelector
     elif pat == '..':
         cls = _ParentSelector
@@ -154,6 +154,7 @@ class _WildcardSelector(_Selector):
 class _RecursiveWildcardSelector(_Selector):
 
     def __init__(self, pat, child_parts, flavour):
+        self.follow_symlinks = pat == '***'
         _Selector.__init__(self, child_parts, flavour)
 
     def _iterate_directories(self, parent_path, scandir):
@@ -166,11 +167,11 @@ class _RecursiveWildcardSelector(_Selector):
             for entry in entries:
                 entry_is_dir = False
                 try:
-                    entry_is_dir = entry.is_dir()
+                    entry_is_dir = entry.is_dir(follow_symlinks=self.follow_symlinks)
                 except OSError as e:
                     if not _ignore_error(e):
                         raise
-                if entry_is_dir and not entry.is_symlink():
+                if entry_is_dir:
                     path = parent_path._make_child_relpath(entry.name)
                     for p in self._iterate_directories(path, scandir):
                         yield p

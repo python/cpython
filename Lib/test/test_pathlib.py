@@ -1938,6 +1938,40 @@ class _BasePathTest(object):
             subdir.chmod(000)
             self.assertEqual(len(set(base.glob("*"))), 4)
 
+    def test_glob_recurse_symlinks(self):
+        def _check(glob, expected):
+            glob = {path for path in glob if "linkD" not in path.parts}
+            self.assertEqual(glob, { P(BASE, q) for q in expected })
+        P = self.cls
+
+        p = P(BASE)
+        if os_helper.can_symlink():
+            _check(p.glob("***/fileB"), ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB"])
+            _check(p.glob("***/*/fileA"), [])
+            _check(p.glob("***/*/fileB"), ["dirB/fileB", "linkB/fileB", "dirA/linkC/fileB"])
+            _check(p.glob("***/file*"), ["fileA", "dirA/linkC/fileB", "dirB/fileB", "dirC/fileC",
+                                         "dirC/dirD/fileD", "linkB/fileB"])
+            _check(p.glob("***/*/"), ["dirA", "dirA/linkC", "dirB", "dirC",
+                                      "dirC/dirD", "dirE", "linkB",])
+            _check(p.glob("***"), ["", "dirA", "dirA/linkC", "dirB", "dirC", "dirE", "dirC/dirD",
+                                   "linkB"])
+        else:
+            _check(p.glob("***/fileB"), ["dirB/fileB"])
+            _check(p.glob("***/*/fileA"), [])
+            _check(p.glob("***/*/fileB"), ["dirB/fileB"])
+            _check(p.glob("***/file*"), ["fileA", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD"])
+            _check(p.glob("***/*/"), ["dirA", "dirB", "dirC", "dirC/dirD", "dirE"])
+            _check(p.glob("***"), ["", "dirA", "dirB", "dirC", "dirE", "dirC/dirD"])
+
+        p = P(BASE, "dirC")
+        _check(p.glob("***/*"), ["dirC/fileC", "dirC/novel.txt", "dirC/dirD", "dirC/dirD/fileD"])
+        _check(p.glob("***/file*"), ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p.glob("***/*/*"), ["dirC/dirD/fileD"])
+        _check(p.glob("***/*/"), ["dirC/dirD"])
+        _check(p.glob("***"), ["dirC", "dirC/dirD"])
+        _check(p.glob("***/*.txt"), ["dirC/novel.txt"])
+        _check(p.glob("***/*.*"), ["dirC/novel.txt"])
+
     def _check_resolve(self, p, expected, strict=True):
         q = p.resolve(strict)
         self.assertEqual(q, expected)
