@@ -245,7 +245,7 @@ List displays
    pair: list; display
    pair: list; comprehensions
    pair: empty; list
-   object: list
+   pair: object; list
    single: [] (square brackets); list expression
    single: , (comma); expression list
 
@@ -270,7 +270,7 @@ Set displays
 .. index::
    pair: set; display
    pair: set; comprehensions
-   object: set
+   pair: object; set
    single: {} (curly brackets); set expression
    single: , (comma); expression list
 
@@ -299,7 +299,7 @@ Dictionary displays
    pair: dictionary; display
    pair: dictionary; comprehensions
    key, datum, key/datum pair
-   object: dictionary
+   pair: object; dictionary
    single: {} (curly brackets); dictionary expression
    single: : (colon); in dictionary expressions
    single: , (comma); in dictionary displays
@@ -361,7 +361,7 @@ Generator expressions
 
 .. index::
    pair: generator; expression
-   object: generator
+   pair: object; generator
    single: () (parentheses); generator expression
 
 A generator expression is a compact generator notation in parentheses:
@@ -522,7 +522,7 @@ on the right hand side of an assignment statement.
       The proposal that expanded on :pep:`492` by adding generator capabilities to
       coroutine functions.
 
-.. index:: object: generator
+.. index:: pair: object; generator
 .. _generator-methods:
 
 Generator-iterator methods
@@ -701,7 +701,7 @@ of a *finalizer* method see the implementation of
 The expression ``yield from <expr>`` is a syntax error when used in an
 asynchronous generator function.
 
-.. index:: object: asynchronous-generator
+.. index:: pair: object; asynchronous-generator
 .. _asynchronous-generator-methods:
 
 Asynchronous generator-iterator methods
@@ -811,8 +811,8 @@ An attribute reference is a primary followed by a period and a name:
 
 .. index::
    exception: AttributeError
-   object: module
-   object: list
+   pair: object; module
+   pair: object; list
 
 The primary must evaluate to an object of a type that supports attribute
 references, which most objects do.  This object is then asked to produce the
@@ -833,12 +833,12 @@ Subscriptions
    single: [] (square brackets); subscription
 
 .. index::
-   object: sequence
-   object: mapping
-   object: string
-   object: tuple
-   object: list
-   object: dictionary
+   pair: object; sequence
+   pair: object; mapping
+   pair: object; string
+   pair: object; tuple
+   pair: object; list
+   pair: object; dictionary
    pair: sequence; item
 
 The subscription of an instance of a :ref:`container class <sequence-types>`
@@ -906,10 +906,10 @@ Slicings
    single: , (comma); slicing
 
 .. index::
-   object: sequence
-   object: string
-   object: tuple
-   object: list
+   pair: object; sequence
+   pair: object; string
+   pair: object; tuple
+   pair: object; list
 
 A slicing selects a range of items in a sequence object (e.g., a string, tuple
 or list).  Slicings may be used as expressions or as targets in assignment or
@@ -950,7 +950,7 @@ substituting ``None`` for missing expressions.
 
 
 .. index::
-   object: callable
+   pair: object; callable
    single: call
    single: argument; call semantics
    single: () (parentheses); call
@@ -1100,8 +1100,8 @@ a user-defined function:
    .. index::
       pair: function; call
       triple: user-defined; function; call
-      object: user-defined function
-      object: function
+      pair: object; user-defined function
+      pair: object; function
 
    The code block for the function is executed, passing it the argument list.  The
    first thing the code block will do is bind the formal parameters to the
@@ -1115,25 +1115,25 @@ a built-in function or method:
       pair: built-in function; call
       pair: method; call
       pair: built-in method; call
-      object: built-in method
-      object: built-in function
-      object: method
-      object: function
+      pair: object; built-in method
+      pair: object; built-in function
+      pair: object; method
+      pair: object; function
 
    The result is up to the interpreter; see :ref:`built-in-funcs` for the
    descriptions of built-in functions and methods.
 
 a class object:
    .. index::
-      object: class
+      pair: object; class
       pair: class object; call
 
    A new instance of that class is returned.
 
 a class instance method:
    .. index::
-      object: class instance
-      object: instance
+      pair: object; class instance
+      pair: object; instance
       pair: class instance; call
 
    The corresponding user-defined function is called, with an argument list that is
@@ -1672,7 +1672,7 @@ if :keyword:`in` raised that exception).
    pair: operator; in
    pair: operator; not in
    pair: membership; test
-   object: sequence
+   pair: object; sequence
 
 The operator :keyword:`not in` is defined to have the inverse truth value of
 :keyword:`in`.
@@ -1854,7 +1854,7 @@ Expression lists
    starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
    starred_item: `assignment_expression` | "*" `or_expr`
 
-.. index:: object: tuple
+.. index:: pair: object; tuple
 
 Except when part of a list or set display, an expression list
 containing at least one comma yields a tuple.  The length of
