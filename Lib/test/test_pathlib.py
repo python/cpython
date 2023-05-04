@@ -3089,7 +3089,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             filename.chown()
 
         with self.assertRaises(LookupError):
-            filename.chown(user='non-existing username')
+            filename.chown(owner='non-existing username')
 
         with self.assertRaises(LookupError):
             filename.chown(group='non-existing groupname')
@@ -3114,7 +3114,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         check_chown(filename, uid, gid)
         filename.chown(uid)
         check_chown(filename, uid)
-        filename.chown(user=uid)
+        filename.chown(owner=uid)
         check_chown(filename, uid)
         filename.chown(group=gid)
         check_chown(filename, gid=gid)
@@ -3123,21 +3123,21 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         check_chown(dirname, uid, gid)
         dirname.chown(uid)
         check_chown(dirname, uid)
-        dirname.chown(user=uid)
+        dirname.chown(owner=uid)
         check_chown(dirname, uid)
         dirname.chown(group=gid)
         check_chown(dirname, gid=gid)
 
         try:
-            user = pwd.getpwuid(uid)[0]
+            owner = pwd.getpwuid(uid)[0]
             group = grp.getgrgid(gid)[0]
         except KeyError:
             # On some systems uid/gid cannot be resolved.
             pass
         else:
-            filename.chown(user, group)
+            filename.chown(owner, group)
             check_chown(filename, uid, gid)
-            dirname.chown(user, group)
+            dirname.chown(owner, group)
             check_chown(dirname, uid, gid)
 
 @only_nt
