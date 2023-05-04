@@ -376,7 +376,7 @@ The :keyword:`!assert` statement
 ================================
 
 .. index::
-   ! statement: assert
+   ! pair: statement; assert
    pair: debugging; assertions
    single: , (comma); expression list
 
@@ -419,7 +419,7 @@ The :keyword:`!pass` statement
 ==============================
 
 .. index::
-   statement: pass
+   pair: statement; pass
    pair: null; operation
            pair: null; operation
 
@@ -441,7 +441,7 @@ The :keyword:`!del` statement
 =============================
 
 .. index::
-   ! statement: del
+   ! pair: statement; del
    pair: deletion; target
    triple: deletion; target; list
 
@@ -454,7 +454,7 @@ Rather than spelling it out in full details, here are some hints.
 Deletion of a target list recursively deletes each target, from left to right.
 
 .. index::
-   statement: global
+   pair: statement; global
    pair: unbinding; name
 
 Deletion of a name removes the binding of that name from the local or global
@@ -480,7 +480,7 @@ The :keyword:`!return` statement
 ================================
 
 .. index::
-   ! statement: return
+   ! pair: statement; return
    pair: function; definition
    pair: class; definition
 
@@ -517,7 +517,7 @@ The :keyword:`!yield` statement
 ===============================
 
 .. index::
-   statement: yield
+   pair: statement; yield
    single: generator; function
    single: generator; iterator
    single: function; generator
@@ -553,7 +553,7 @@ The :keyword:`!raise` statement
 ===============================
 
 .. index::
-   ! statement: raise
+   ! pair: statement; raise
    single: exception
    pair: raising; exception
    single: __traceback__ (exception attribute)
@@ -667,9 +667,9 @@ The :keyword:`!break` statement
 ===============================
 
 .. index::
-   ! statement: break
-   statement: for
-   statement: while
+   ! pair: statement; break
+   pair: statement; for
+   pair: statement; while
    pair: loop; statement
 
 .. productionlist:: python-grammar
@@ -701,9 +701,9 @@ The :keyword:`!continue` statement
 ==================================
 
 .. index::
-   ! statement: continue
-   statement: for
-   statement: while
+   ! pair: statement; continue
+   pair: statement; for
+   pair: statement; while
    pair: loop; statement
    pair: keyword; finally
 
@@ -726,7 +726,7 @@ The :keyword:`!import` statement
 ================================
 
 .. index::
-   ! statement: import
+   ! pair: statement; import
    single: module; importing
    pair: name; binding
    pair: keyword; from
@@ -942,7 +942,7 @@ The :keyword:`!global` statement
 ================================
 
 .. index::
-   ! statement: global
+   ! pair: statement; global
    triple: global; name; binding
    single: , (comma); identifier list
 
@@ -988,7 +988,7 @@ call.  The same applies to the :func:`eval` and :func:`compile` functions.
 The :keyword:`!nonlocal` statement
 ==================================
 
-.. index:: statement: nonlocal
+.. index:: pair: statement; nonlocal
    single: , (comma); identifier list
 
 .. productionlist:: python-grammar
