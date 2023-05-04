@@ -627,9 +627,6 @@ class Index(slice):
 class ExtSlice(slice):
     """Deprecated AST node class. Use ast.Tuple instead."""
     def __new__(cls, dims=(), **kwargs):
-        import warnings
-        warnings.warn("ast.ExtSlice is deprecated; use ast.Tuple instead",
-                      DeprecationWarning, stacklevel=2)
         return Tuple(list(dims), Load(), **kwargs)
 
 # If the ast module is loaded more than once, only add deprecated methods once
@@ -1737,8 +1734,6 @@ _deprecated_globals = {
     for name in ('Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis')
 }
 _deprecated_globals['slice'] = globals().pop('slice'), ''
-_deprecated_globals['Index'] = globals().pop('Index'), ''
-_deprecated_globals['ExtSlice'] = globals().pop('ExtSlice'), '; use ast.Tuple instead'
 
 def __getattr__(name):
     if name in _deprecated_globals:
