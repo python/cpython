@@ -1277,6 +1277,12 @@ _syntaxerror_range(struct tok_state *tok, const char *format,
                    int col_offset, int end_col_offset,
                    va_list vargs)
 {
+    // In release builds, we don't want to overwrite a previous error, but in debug builds we
+    // want to fail if we are not doing it so we can fix it.
+    assert(tok->done != E_ERROR);
+    if (tok->done == E_ERROR) {
+        return ERRORTOKEN;
+    }
     PyObject *errmsg, *errtext, *args;
     errmsg = PyUnicode_FromFormatV(format, vargs);
     if (!errmsg) {
