@@ -1284,6 +1284,13 @@ class ClinicFunctionalTest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, expected_error):
             ac_tester.gh_99240_double_free('a', '\0b')
 
+    def test_cloned_func_exception_message(self):
+        incorrect_arg = -1  # f1() and f2() accept a single str
+        with self.assertRaisesRegex(TypeError, "clone_f1"):
+            ac_tester.clone_f1(incorrect_arg)
+        with self.assertRaisesRegex(TypeError, "clone_f2"):
+            ac_tester.clone_f2(incorrect_arg)
+
 
 if __name__ == "__main__":
     unittest.main()

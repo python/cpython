@@ -1117,6 +1117,33 @@ gh_99240_double_free_impl(PyObject *module, char *a, char *b)
 }
 
 
+/*[clinic input]
+_testclinic.clone_f1 as clone_f1
+   path: str
+
+[clinic start generated code]*/
+
+static PyObject *
+clone_f1_impl(PyObject *module, const char *path)
+/*[clinic end generated code: output=8c30b5620ba86715 input=c956032414f389b4]*/
+{
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
+_testclinic.clone_f2 as clone_f2 = _testclinic.clone_f1
+
+[clinic start generated code]*/
+
+static PyObject *
+clone_f2_impl(PyObject *module, const char *path)
+/*[clinic end generated code: output=6aa1c39bec3f5d9b input=cf854c3ad41ddd85]*/
+{
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef tester_methods[] = {
     TEST_EMPTY_FUNCTION_METHODDEF
     OBJECTS_CONVERTER_METHODDEF
@@ -1168,6 +1195,8 @@ static PyMethodDef tester_methods[] = {
     GH_32092_KW_PASS_METHODDEF
     GH_99233_REFCOUNT_METHODDEF
     GH_99240_DOUBLE_FREE_METHODDEF
+    CLONE_F1_METHODDEF
+    CLONE_F2_METHODDEF
     {NULL, NULL}
 };
 
