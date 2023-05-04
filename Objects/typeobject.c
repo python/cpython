@@ -8996,7 +8996,6 @@ PyTypeObject _PyBufferWrapper_Type = {
     .tp_name = "_buffer_wrapper",
     .tp_basicsize = sizeof(PyBufferWrapper),
     .tp_alloc = PyType_GenericAlloc,
-    .tp_new = PyType_GenericNew,
     .tp_free = PyObject_GC_Del,
     .tp_traverse = (traverseproc)bufferwrapper_traverse,
     .tp_dealloc = bufferwrapper_dealloc,
