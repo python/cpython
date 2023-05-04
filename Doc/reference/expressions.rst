@@ -415,8 +415,8 @@ Yield expressions
 -----------------
 
 .. index::
-   keyword: yield
-   keyword: from
+   pair: keyword; yield
+   pair: keyword; from
    pair: yield; expression
    pair: generator; function
 
@@ -1149,7 +1149,7 @@ a class instance:
    if that method was called.
 
 
-.. index:: keyword: await
+.. index:: pair: keyword; await
 .. _await:
 
 Await expression
