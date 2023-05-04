@@ -330,7 +330,7 @@ Notes:
 
 (3)
    .. index::
-      module: math
+      pair: module; math
       single: floor() (in module math)
       single: ceil() (in module math)
       single: trunc() (in module math)
@@ -1561,7 +1561,7 @@ String Methods
 --------------
 
 .. index::
-   module: re
+   pair: module; re
 
 Strings implement all of the :ref:`common <typesseq-common>` sequence
 operations, along with the additional methods described below.
@@ -2467,7 +2467,7 @@ Binary Sequence Types --- :class:`bytes`, :class:`bytearray`, :class:`memoryview
    object: bytes
    object: bytearray
    object: memoryview
-   module: array
+   pair: module; array
 
 The core built-in types for manipulating binary data are :class:`bytes` and
 :class:`bytearray`. They are supported by :class:`memoryview` which uses
@@ -5325,7 +5325,7 @@ Type Objects
 
 .. index::
    builtin: type
-   module: types
+   pair: module; types
 
 Type objects represent the various object types.  An object's type is accessed
 by the built-in function :func:`type`.  There are no special operations on

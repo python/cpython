@@ -233,9 +233,9 @@ Initializing and finalizing the interpreter
       single: PyEval_InitThreads()
       single: modules (in module sys)
       single: path (in module sys)
-      module: builtins
-      module: __main__
-      module: sys
+      pair: module; builtins
+      pair: module; __main__
+      pair: module; sys
       triple: module; search; path
       single: PySys_SetArgv()
       single: PySys_SetArgvEx()
@@ -942,7 +942,7 @@ code, or when embedding the Python interpreter:
 
    .. deprecated:: 3.9
 
-   .. index:: module: _thread
+   .. index:: pair: module; _thread
 
 
 .. c:function:: int PyEval_ThreadsInitialized()
@@ -1385,9 +1385,9 @@ function. You can create and destroy them using the following functions:
 .. c:function:: PyThreadState* Py_NewInterpreter()
 
    .. index::
-      module: builtins
-      module: __main__
-      module: sys
+      pair: module; builtins
+      pair: module; __main__
+      pair: module; sys
       single: stdout (in module sys)
       single: stderr (in module sys)
       single: stdin (in module sys)
