@@ -34,11 +34,6 @@ class TestCase(unittest.TestCase):
                 with self.assertRaisesRegex(exception_type, regex):
                     eval(str)
 
-    def assertEqualWithDeprecationWarning(self, string, expected):
-        with check_warnings(('', DeprecationWarning), quiet=False):
-            s = eval(string)
-        self.assertEqual(s, expected)
-
     def test__format__lookup(self):
         # Make sure __format__ is looked up on the type, not the instance.
         class X:
