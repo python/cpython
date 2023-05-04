@@ -297,7 +297,7 @@ traceback attached to them, they form a reference cycle with the stack frame,
 keeping all locals in that frame alive until the next garbage collection occurs.
 
 .. index::
-   module: sys
+   pair: module; sys
    object: traceback
 
 Before an :keyword:`!except` clause's suite is executed,

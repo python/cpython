@@ -451,8 +451,8 @@ Mappings
       section :ref:`dict`).
 
       .. index::
-         module: dbm.ndbm
-         module: dbm.gnu
+         pair: module; dbm.ndbm
+         pair: module; dbm.gnu
 
       The extension modules :mod:`dbm.ndbm` and :mod:`dbm.gnu` provide
       additional examples of mapping types, as does the :mod:`collections`
@@ -909,7 +909,7 @@ Class instances
 I/O objects (also known as file objects)
    .. index::
       builtin: open
-      module: io
+      pair: module; io
       single: popen() (in module os)
       single: makefile() (socket method)
       single: sys.stdin
