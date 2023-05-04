@@ -716,9 +716,10 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
         self->writenl = Py_NewRef(self->readnl);
     }
 
+    _PyIO_State *module_state = find_io_state_by_def(Py_TYPE(self));
     if (self->readuniversal) {
         self->decoder = PyObject_CallFunctionObjArgs(
-            (PyObject *)&PyIncrementalNewlineDecoder_Type,
+            (PyObject *)module_state->PyIncrementalNewlineDecoder_Type,
             Py_None, self->readtranslate ? Py_True : Py_False, NULL);
         if (self->decoder == NULL)
             return -1;
@@ -750,7 +751,7 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
         self->state = STATE_ACCUMULATING;
     }
     self->pos = 0;
-    self->module_state = find_io_state_by_def(Py_TYPE(self));
+    self->module_state = module_state;
     self->closed = 0;
     self->ok = 1;
     return 0;
