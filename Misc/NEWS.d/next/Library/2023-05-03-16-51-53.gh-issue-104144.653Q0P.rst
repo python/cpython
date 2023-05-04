@@ -1,2 +1,1 @@
-Optimize asyncio.TaskGroup when using eager tasks factory -- Skip scheduling
-done callbacks when all tasks finish without blocking - for up to 4x speedup
+Optimize :class:`asyncio.TaskGroup` when using :func:`asyncio.eager_task_factory`. Skip scheduling done callbacks when all tasks finish without blocking.
