@@ -546,7 +546,8 @@ pycore_init_runtime(_PyRuntimeState *runtime,
 
 
 static PyStatus
-init_interp_settings(PyInterpreterState *interp, const _PyInterpreterConfig *config)
+init_interp_settings(PyInterpreterState *interp,
+                     const PyInterpreterConfig *config)
 {
     assert(interp->feature_flags == 0);
 
@@ -631,7 +632,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    const _PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
+    const PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
     status = init_interp_settings(interp, &config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1302,8 +1303,7 @@ _Py_InitializeMain(void)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyThreadState *tstate = _PyThreadState_GET();
     return pyinit_main(tstate);
 }
 
@@ -1663,8 +1663,10 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyInterpreterState *interp)
 {
+    _PyIO_FiniTypes(interp);
+
     _PyUnicode_FiniTypes(interp);
-    _PySys_Fini(interp);
+    _PySys_FiniTypes(interp);
     _PyExc_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
@@ -1705,8 +1707,6 @@ finalize_interp_clear(PyThreadState *tstate)
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
-
-    _PyIO_FiniTypes(tstate->interp);
 
     /* Clear all loghooks */
     /* Both _PySys_Audit function and users still need PyObject, such as tuple.
@@ -1754,7 +1754,7 @@ Py_FinalizeEx(void)
     }
 
     /* Get current thread state and interpreter pointer */
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyThreadState *tstate = _PyThreadState_GET();
     // XXX assert(_Py_IsMainInterpreter(tstate->interp));
     // XXX assert(_Py_IsMainThread());
 
@@ -1991,7 +1991,7 @@ Py_Finalize(void)
 */
 
 static PyStatus
-new_interpreter(PyThreadState **tstate_p, const _PyInterpreterConfig *config)
+new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
 {
     PyStatus status;
 
@@ -2079,8 +2079,8 @@ error:
 }
 
 PyStatus
-_Py_NewInterpreterFromConfig(PyThreadState **tstate_p,
-                             const _PyInterpreterConfig *config)
+Py_NewInterpreterFromConfig(PyThreadState **tstate_p,
+                            const PyInterpreterConfig *config)
 {
     return new_interpreter(tstate_p, config);
 }
@@ -2089,8 +2089,8 @@ PyThreadState *
 Py_NewInterpreter(void)
 {
     PyThreadState *tstate = NULL;
-    const _PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
-    PyStatus status = _Py_NewInterpreterFromConfig(&tstate, &config);
+    const PyInterpreterConfig config = _PyInterpreterConfig_LEGACY_INIT;
+    PyStatus status = new_interpreter(&tstate, &config);
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }
@@ -2173,10 +2173,9 @@ add_main_module(PyInterpreterState *interp)
         Py_DECREF(bimod);
     }
 
-    /* Main is a little special - imp.is_builtin("__main__") will return
-     * False, but BuiltinImporter is still the most appropriate initial
-     * setting for its __loader__ attribute. A more suitable value will
-     * be set if __main__ gets further initialized later in the startup
+    /* Main is a little special - BuiltinImporter is the most appropriate
+     * initial setting for its __loader__ attribute. A more suitable value
+     * will be set if __main__ gets further initialized later in the startup
      * process.
      */
     loader = _PyDict_GetItemStringWithError(d, "__loader__");
@@ -2800,7 +2799,7 @@ fatal_error(int fd, int header, const char *prefix, const char *msg,
 
        tss_tstate != tstate if the current Python thread does not hold the GIL.
        */
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyThreadState *tstate = _PyThreadState_GET();
     PyInterpreterState *interp = NULL;
     PyThreadState *tss_tstate = PyGILState_GetThisThreadState();
     if (tstate != NULL) {

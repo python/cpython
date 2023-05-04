@@ -20,8 +20,8 @@ supports post-mortem debugging and can be called under program control.
 
 .. index::
    single: Pdb (class in pdb)
-   module: bdb
-   module: cmd
+   pair: module; bdb
+   pair: module; cmd
 
 The debugger is extensible -- it is actually defined as the class :class:`Pdb`.
 This is currently undocumented but easily understood by reading the source.  The
@@ -262,6 +262,21 @@ that is passed to the Python parser.)  No intelligence is applied to separating
 the commands; the input is split at the first ``;;`` pair, even if it is in the
 middle of a quoted string. A workaround for strings with double semicolons
 is to use implicit string concatenation ``';'';'`` or ``";"";"``.
+
+To set a temporary global variable, use a *convenience variable*. A *convenience
+variable* is a variable whose name starts with ``$``.  For example, ``$foo = 1``
+sets a global variable ``$foo`` which you can use in the debugger session.  The
+*convenience variables* are cleared when the program resumes execution so it's
+less likely to interfere with your program compared to using normal variables
+like ``foo = 1``.
+
+There are three preset *convenience variables*:
+
+* ``$_frame``: the current frame you are debugging
+* ``$_retval``: the return value if the frame is returning
+* ``$_exception``: the exception if the frame is raising an exception
+
+.. versionadded:: 3.12
 
 .. index::
    pair: .pdbrc; file

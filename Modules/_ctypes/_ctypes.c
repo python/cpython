@@ -139,10 +139,6 @@ static PyTypeObject Simple_Type;
    strong reference to _ctypes._unpickle() function */
 static PyObject *_unpickle;
 
-#ifdef MS_WIN32
-PyObject *ComError;  // Borrowed reference to: &PyComError_Type
-#endif
-
 
 /****************************************************************/
 
@@ -5480,46 +5476,38 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static PyTypeObject PyComError_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.COMError",         /* tp_name */
-    sizeof(PyBaseExceptionObject), /* tp_basicsize */
-    0,                          /* tp_itemsize */
-    0,                          /* tp_dealloc */
-    0,                          /* tp_vectorcall_offset */
-    0,                          /* tp_getattr */
-    0,                          /* tp_setattr */
-    0,                          /* tp_as_async */
-    0,                          /* tp_repr */
-    0,                          /* tp_as_number */
-    0,                          /* tp_as_sequence */
-    0,                          /* tp_as_mapping */
-    0,                          /* tp_hash */
-    0,                          /* tp_call */
-    0,                          /* tp_str */
-    0,                          /* tp_getattro */
-    0,                          /* tp_setattro */
-    0,                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    PyDoc_STR(comerror_doc),    /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /* tp_weaklistoffset */
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    0,                          /* tp_methods */
-    0,                          /* tp_members */
-    0,                          /* tp_getset */
-    0,                          /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    0,                          /* tp_dictoffset */
-    (initproc)comerror_init,    /* tp_init */
-    0,                          /* tp_alloc */
-    0,                          /* tp_new */
+static int
+comerror_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+static void
+comerror_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot comerror_slots[] = {
+    {Py_tp_doc, (void *)PyDoc_STR(comerror_doc)},
+    {Py_tp_init, comerror_init},
+    {Py_tp_traverse, comerror_traverse},
+    {Py_tp_dealloc, comerror_dealloc},
+    {0, NULL},
 };
+
+static PyType_Spec comerror_spec = {
+    .name = "_ctypes.COMError",
+    .basicsize = sizeof(PyBaseExceptionObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = comerror_slots,
+};
+
 #endif  // MS_WIN32
 
 static PyObject *
@@ -5661,8 +5649,9 @@ _ctypes_add_types(PyObject *mod)
         } \
     } while (0)
 
-#define CREATE_TYPE(MOD, TP, SPEC) do {                             \
-    PyObject *type = PyType_FromMetaclass(NULL, MOD, SPEC, NULL);   \
+#define CREATE_TYPE(MOD, TP, SPEC, BASE) do {                       \
+    PyObject *type = PyType_FromMetaclass(NULL, MOD, SPEC,          \
+                                          (PyObject *)BASE);        \
     if (type == NULL) {                                             \
         return -1;                                                  \
     }                                                               \
@@ -5675,8 +5664,8 @@ _ctypes_add_types(PyObject *mod)
        ob_type is the metatype (the 'type'), defaults to PyType_Type,
        tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
     */
-    CREATE_TYPE(mod, st->PyCArg_Type, &carg_spec);
-    CREATE_TYPE(mod, st->PyCThunk_Type, &cthunk_spec);
+    CREATE_TYPE(mod, st->PyCArg_Type, &carg_spec, NULL);
+    CREATE_TYPE(mod, st->PyCThunk_Type, &cthunk_spec, NULL);
     TYPE_READY(&PyCData_Type);
     /* StgDict is derived from PyDict_Type */
     TYPE_READY_BASE(&PyCStgDict_Type, &PyDict_Type);
@@ -5709,18 +5698,18 @@ _ctypes_add_types(PyObject *mod)
      * Simple classes
      */
 
-    CREATE_TYPE(mod, st->PyCField_Type, &cfield_spec);
+    CREATE_TYPE(mod, st->PyCField_Type, &cfield_spec, NULL);
 
     /*************************************************
      *
      * Other stuff
      */
 
-    CREATE_TYPE(mod, st->DictRemover_Type, &dictremover_spec);
-    CREATE_TYPE(mod, st->StructParam_Type, &structparam_spec);
+    CREATE_TYPE(mod, st->DictRemover_Type, &dictremover_spec, NULL);
+    CREATE_TYPE(mod, st->StructParam_Type, &structparam_spec, NULL);
 
 #ifdef MS_WIN32
-    TYPE_READY_BASE(&PyComError_Type, (PyTypeObject*)PyExc_Exception);
+    CREATE_TYPE(mod, st->PyComError_Type, &comerror_spec, PyExc_Exception);
 #endif
 
 #undef TYPE_READY
@@ -5750,7 +5739,8 @@ _ctypes_add_objects(PyObject *mod)
     MOD_ADD("_pointer_type_cache", Py_NewRef(_ctypes_ptrtype_cache));
 
 #ifdef MS_WIN32
-    MOD_ADD("COMError", Py_NewRef(ComError));
+    ctypes_state *st = GLOBAL_STATE();
+    MOD_ADD("COMError", Py_NewRef(st->PyComError_Type));
     MOD_ADD("FUNCFLAG_HRESULT", PyLong_FromLong(FUNCFLAG_HRESULT));
     MOD_ADD("FUNCFLAG_STDCALL", PyLong_FromLong(FUNCFLAG_STDCALL));
 #endif
@@ -5807,9 +5797,6 @@ _ctypes_mod_exec(PyObject *mod)
     if (_ctypes_add_types(mod) < 0) {
         return -1;
     }
-#ifdef MS_WIN32
-    ComError = (PyObject*)&PyComError_Type;
-#endif
 
     if (_ctypes_add_objects(mod) < 0) {
         return -1;
