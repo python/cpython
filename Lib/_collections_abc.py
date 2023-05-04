@@ -1071,8 +1071,27 @@ Sequence.register(str)
 Sequence.register(range)
 Sequence.register(memoryview)
 
+class _DeprecateByteStringMeta(ABCMeta):
+    def __new__(cls, name, bases, namespace, **kwargs):
+        if name != "ByteString":
+            import warnings
 
-class ByteString(Sequence):
+            warnings._deprecated(
+                "collections.abc.ByteString",
+                remove=(3, 14),
+            )
+        return super().__new__(cls, name, bases, namespace, **kwargs)
+
+    def __instancecheck__(cls, instance):
+        import warnings
+
+        warnings._deprecated(
+            "collections.abc.ByteString",
+            remove=(3, 14),
+        )
+        return super().__instancecheck__(instance)
+
+class ByteString(Sequence, metaclass=_DeprecateByteStringMeta):
     """This unifies bytes and bytearray.
 
     XXX Should add all their methods.
