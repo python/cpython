@@ -1,2 +1,2 @@
-Added support for compiler macro define args of the form '-Dname=definition' to 
-makesetup script. Patch by Michael Evans.
+Added support for compiler macro define args of the form
+``-Dname=definition`` to makesetup script. Patch by Michael Evans.
