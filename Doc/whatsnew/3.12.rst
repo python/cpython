@@ -348,6 +348,11 @@ inspect
 pathlib
 -------
 
+* Add support for subclassing :class:`pathlib.PurePath` and
+  :class:`~pathlib.Path`, plus their Posix- and Windows-specific variants.
+  Subclasses may override the :meth:`~pathlib.PurePath.with_segments` method
+  to pass information between path instances.
+
 * Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
   all file or directory names within them, similar to :func:`os.walk`.
   (Contributed by Stanislav Zmiev in :gh:`90385`.)
