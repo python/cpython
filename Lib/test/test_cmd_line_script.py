@@ -669,6 +669,19 @@ class CmdLineTest(unittest.TestCase):
                 ],
             )
 
+    def test_syntaxerror_null_bytes_in_multiline_string(self):
+        scripts = ["\n'''\nmultilinestring\0\n'''", "\nf'''\nmultilinestring\0\n'''"] # Both normal and f-strings
+        with os_helper.temp_dir() as script_dir:
+            for script in scripts:
+                script_name = _make_test_script(script_dir, 'script', script)
+                _, _, stderr = assert_python_failure(script_name)
+                self.assertEqual(
+                    stderr.splitlines()[-2:],
+                    [   b"    multilinestring",
+                        b'SyntaxError: source code cannot contain null bytes'
+                    ]
+                )
+
     def test_consistent_sys_path_for_direct_execution(self):
         # This test case ensures that the following all give the same
         # sys.path configuration:
