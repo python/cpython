@@ -43,7 +43,18 @@ version = '1'
 
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
-CLINIC_PREFIXED_ARGS = {"args"}
+CLINIC_PREFIXED_ARGS = {
+    "_keywords",
+    "_parser",
+    "args",
+    "argsbuf",
+    "fastargs",
+    "kwargs",
+    "kwnames",
+    "nargs",
+    "noptargs",
+    "return_value",
+}
 
 class Unspecified:
     def __repr__(self):
