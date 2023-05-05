@@ -99,8 +99,9 @@ class ClinicWholeFileTest(TestCase):
         # the last line of the block got corrupted.
         c = clinic.Clinic(clinic.CLanguage(None), filename="file")
         raw = "/*[clinic]\nfoo\n[clinic]*/"
-        cooked = c.parse(raw).splitlines()
-        end_line = cooked[2].rstrip()
+        cooked, _ = c.parse(raw)
+        lines = cooked.splitlines()
+        end_line = lines[2].rstrip()
         # this test is redundant, it's just here explicitly to catch
         # the regression test so we don't forget what it looked like
         self.assertNotEqual(end_line, "[clinic]*/[clinic]*/")
@@ -259,7 +260,7 @@ xyz
         c = clinic.Clinic(language, filename="file")
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
-        computed = c.parse(input)
+        computed, _ = c.parse(input)
         self.assertEqual(output, computed)
 
     def test_clinic_1(self):
