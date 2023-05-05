@@ -887,7 +887,7 @@ For an example of the usage of queues for interprocess communication see
       All blocked callers of put() will be unblocked, and also get()
       and join() if *immediate* is true.
 
-      .. versionadded:: 3.12
+      .. versionadded:: 3.13
 
    :class:`multiprocessing.Queue` has a few additional methods not found in
    :class:`queue.Queue`.  These methods are usually unnecessary for most
