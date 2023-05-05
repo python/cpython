@@ -9,8 +9,8 @@ extern "C" {
 #endif
 
 #include "pycore_opcode_utils.h"
+#include "pycore_compile.h"
 
-static const _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
 
 typedef struct {
     int i_opcode;
@@ -33,7 +33,8 @@ typedef struct {
 typedef struct _PyCfgBasicblock_ {
     /* Each basicblock in a compilation unit is linked via b_list in the
        reverse order that the block are allocated.  b_list points to the next
-       block, not to be confused with b_next, which is next by control flow. */
+       block in this list, not to be confused with b_next, which is next by
+       control flow. */
     struct _PyCfgBasicblock_ *b_list;
     /* The label of this block if it is a jump target, -1 otherwise */
     _PyCfgJumpTargetLabel b_label;
@@ -91,12 +92,10 @@ void _PyCfgBuilder_Fini(_PyCfgBuilder *g);
 
 _PyCfgInstruction* _PyCfg_BasicblockLastInstr(const _PyCfgBasicblock *b);
 int _PyCfg_OptimizeCodeUnit(_PyCfgBuilder *g, PyObject *consts, PyObject *const_cache,
-                            int code_flags, int nlocals, int nparams);
+                            int code_flags, int nlocals, int nparams, int firstlineno);
 int _PyCfg_Stackdepth(_PyCfgBasicblock *entryblock, int code_flags);
 void _PyCfg_ConvertExceptionHandlersToNops(_PyCfgBasicblock *entryblock);
-int _PyCfg_ResolveLineNumbers(_PyCfgBuilder *g, int firstlineno);
 int _PyCfg_ResolveJumps(_PyCfgBuilder *g);
-int _PyCfg_InstrSize(_PyCfgInstruction *instruction);
 
 
 static inline int
@@ -110,6 +109,10 @@ basicblock_nofallthrough(const _PyCfgBasicblock *b) {
 #define BB_NO_FALLTHROUGH(B) (basicblock_nofallthrough(B))
 #define BB_HAS_FALLTHROUGH(B) (!basicblock_nofallthrough(B))
 
+PyCodeObject *
+_PyAssemble_MakeCodeObject(_PyCompile_CodeUnitMetadata *u, PyObject *const_cache,
+                           PyObject *consts, int maxdepth, _PyCompile_InstructionSequence *instrs,
+                           int nlocalsplus, int code_flags, PyObject *filename);
 
 #ifdef __cplusplus
 }

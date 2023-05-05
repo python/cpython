@@ -978,6 +978,12 @@ PyDescr_NewMember(PyTypeObject *type, PyMemberDef *member)
 {
     PyMemberDescrObject *descr;
 
+    if (member->flags & Py_RELATIVE_OFFSET) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "PyDescr_NewMember used with Py_RELATIVE_OFFSET");
+        return NULL;
+    }
     descr = (PyMemberDescrObject *)descr_new(&PyMemberDescr_Type,
                                              type, member->name);
     if (descr != NULL)

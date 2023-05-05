@@ -81,9 +81,9 @@ class _BasePurePathTest(object):
                    r"where __fspath__ returns a str, not 'bytes'")
         with self.assertRaisesRegex(TypeError, message):
             P(b'a')
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, message):
             P(b'a', 'b')
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, message):
             P('a', b'b')
         with self.assertRaises(TypeError):
             P('a').joinpath(b'b')
@@ -810,6 +810,9 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         check(('c:/a',),                'c:', '\\', ('c:\\', 'a'))
         check(('/a',),                  '', '\\', ('\\', 'a'))
         # UNC paths.
+        check(('//',),                  '\\\\', '', ('\\\\',))
+        check(('//a',),                 '\\\\a', '', ('\\\\a',))
+        check(('//a/',),                '\\\\a\\', '', ('\\\\a\\',))
         check(('//a/b',),               '\\\\a\\b', '\\', ('\\\\a\\b\\',))
         check(('//a/b/',),              '\\\\a\\b', '\\', ('\\\\a\\b\\',))
         check(('//a/b/c',),             '\\\\a\\b', '\\', ('\\\\a\\b\\', 'c'))
@@ -823,12 +826,26 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         # UNC paths.
         check(('a', '//b/c//', 'd'),    '\\\\b\\c', '\\', ('\\\\b\\c\\', 'd'))
         # Extended paths.
+        check(('//./c:',),              '\\\\.\\c:', '', ('\\\\.\\c:',))
         check(('//?/c:/',),             '\\\\?\\c:', '\\', ('\\\\?\\c:\\',))
         check(('//?/c:/a',),            '\\\\?\\c:', '\\', ('\\\\?\\c:\\', 'a'))
         check(('//?/c:/a', '/b'),       '\\\\?\\c:', '\\', ('\\\\?\\c:\\', 'b'))
         # Extended UNC paths (format is "\\?\UNC\server\share").
+        check(('//?',),                 '\\\\?', '', ('\\\\?',))
+        check(('//?/',),                '\\\\?\\', '', ('\\\\?\\',))
+        check(('//?/UNC',),             '\\\\?\\UNC', '', ('\\\\?\\UNC',))
+        check(('//?/UNC/',),            '\\\\?\\UNC\\', '', ('\\\\?\\UNC\\',))
+        check(('//?/UNC/b',),           '\\\\?\\UNC\\b', '', ('\\\\?\\UNC\\b',))
+        check(('//?/UNC/b/',),          '\\\\?\\UNC\\b\\', '', ('\\\\?\\UNC\\b\\',))
         check(('//?/UNC/b/c',),         '\\\\?\\UNC\\b\\c', '\\', ('\\\\?\\UNC\\b\\c\\',))
+        check(('//?/UNC/b/c/',),        '\\\\?\\UNC\\b\\c', '\\', ('\\\\?\\UNC\\b\\c\\',))
         check(('//?/UNC/b/c/d',),       '\\\\?\\UNC\\b\\c', '\\', ('\\\\?\\UNC\\b\\c\\', 'd'))
+        # UNC device paths
+        check(('//./BootPartition/',),   '\\\\.\\BootPartition', '\\', ('\\\\.\\BootPartition\\',))
+        check(('//?/BootPartition/',),   '\\\\?\\BootPartition', '\\', ('\\\\?\\BootPartition\\',))
+        check(('//./PhysicalDrive0',),   '\\\\.\\PhysicalDrive0', '', ('\\\\.\\PhysicalDrive0',))
+        check(('//?/Volume{}/',),        '\\\\?\\Volume{}', '\\', ('\\\\?\\Volume{}\\',))
+        check(('//./nul',),              '\\\\.\\nul', '', ('\\\\.\\nul',))
         # Second part has a root but not drive.
         check(('a', '/b', 'c'),         '', '\\', ('\\', 'b', 'c'))
         check(('Z:/a', '/b', 'c'),      'Z:', '\\', ('Z:\\', 'b', 'c'))
@@ -1371,6 +1388,13 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(pp, P('C:/a/b/dd:s'))
         pp = p.joinpath(P('E:d:s'))
         self.assertEqual(pp, P('E:d:s'))
+        # Joining onto a UNC path with no root
+        pp = P('//').joinpath('server')
+        self.assertEqual(pp, P('//server'))
+        pp = P('//server').joinpath('share')
+        self.assertEqual(pp, P('//server/share'))
+        pp = P('//./BootPartition').joinpath('Windows')
+        self.assertEqual(pp, P('//./BootPartition/Windows'))
 
     def test_div(self):
         # Basically the same as joinpath().
@@ -1676,6 +1700,8 @@ class _BasePathTest(object):
             self.assertIs(True, (p / 'linkB').exists())
             self.assertIs(True, (p / 'linkB' / 'fileB').exists())
             self.assertIs(False, (p / 'linkA' / 'bah').exists())
+            self.assertIs(False, (p / 'brokenLink').exists())
+            self.assertIs(True, (p / 'brokenLink').exists(follow_symlinks=False))
         self.assertIs(False, (p / 'foo').exists())
         self.assertIs(False, P('/xyzzy').exists())
         self.assertIs(False, P(BASE + '\udfff').exists())
@@ -1782,11 +1808,25 @@ class _BasePathTest(object):
             _check(p.glob("*/fileB"), ['dirB/fileB'])
         else:
             _check(p.glob("*/fileB"), ['dirB/fileB', 'linkB/fileB'])
+        if os_helper.can_symlink():
+            _check(p.glob("brokenLink"), ['brokenLink'])
 
         if not os_helper.can_symlink():
             _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE"])
         else:
             _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE", "linkB"])
+
+    def test_glob_case_sensitive(self):
+        P = self.cls
+        def _check(path, pattern, case_sensitive, expected):
+            actual = {str(q) for q in path.glob(pattern, case_sensitive=case_sensitive)}
+            expected = {str(P(BASE, q)) for q in expected}
+            self.assertEqual(actual, expected)
+        path = P(BASE)
+        _check(path, "DIRB/FILE*", True, [])
+        _check(path, "DIRB/FILE*", False, ["dirB/fileB"])
+        _check(path, "dirb/file*", True, [])
+        _check(path, "dirb/file*", False, ["dirB/fileB"])
 
     def test_rglob_common(self):
         def _check(glob, expected):
@@ -1868,8 +1908,13 @@ class _BasePathTest(object):
         P = self.cls
         p = P(BASE)
         self.assertEqual(set(p.glob("..")), { P(BASE, "..") })
+        self.assertEqual(set(p.glob("../..")), { P(BASE, "..", "..") })
+        self.assertEqual(set(p.glob("dirA/..")), { P(BASE, "dirA", "..") })
         self.assertEqual(set(p.glob("dirA/../file*")), { P(BASE, "dirA/../fileA") })
+        self.assertEqual(set(p.glob("dirA/../file*/..")), set())
         self.assertEqual(set(p.glob("../xyzzy")), set())
+        self.assertEqual(set(p.glob("xyzzy/..")), set())
+        self.assertEqual(set(p.glob("/".join([".."] * 50))), { P(BASE, *[".."] * 50)})
 
     @os_helper.skip_unless_symlink
     def test_glob_permissions(self):
@@ -2678,20 +2723,20 @@ class WalkTests(unittest.TestCase):
             del self.sub2_tree[1][:1]
 
     def test_walk_topdown(self):
-        all = list(self.walk_path.walk())
-
-        self.assertEqual(len(all), 4)
-        # We can't know which order SUB1 and SUB2 will appear in.
-        # Not flipped:  TESTFN, SUB1, SUB11, SUB2
-        #     flipped:  TESTFN, SUB2, SUB1, SUB11
-        flipped = all[0][1][0] != "SUB1"
-        all[0][1].sort()
-        all[3 - 2 * flipped][-1].sort()
-        all[3 - 2 * flipped][1].sort()
-        self.assertEqual(all[0], (self.walk_path, ["SUB1", "SUB2"], ["tmp1"]))
-        self.assertEqual(all[1 + flipped], (self.sub1_path, ["SUB11"], ["tmp2"]))
-        self.assertEqual(all[2 + flipped], (self.sub11_path, [], []))
-        self.assertEqual(all[3 - 2 * flipped], self.sub2_tree)
+        walker = self.walk_path.walk()
+        entry = next(walker)
+        entry[1].sort()  # Ensure we visit SUB1 before SUB2
+        self.assertEqual(entry, (self.walk_path, ["SUB1", "SUB2"], ["tmp1"]))
+        entry = next(walker)
+        self.assertEqual(entry, (self.sub1_path, ["SUB11"], ["tmp2"]))
+        entry = next(walker)
+        self.assertEqual(entry, (self.sub11_path, [], []))
+        entry = next(walker)
+        entry[1].sort()
+        entry[2].sort()
+        self.assertEqual(entry, self.sub2_tree)
+        with self.assertRaises(StopIteration):
+            next(walker)
 
     def test_walk_prune(self, walk_path=None):
         if walk_path is None:
@@ -2715,24 +2760,37 @@ class WalkTests(unittest.TestCase):
         self.test_walk_prune(FakePath(self.walk_path).__fspath__())
 
     def test_walk_bottom_up(self):
-        all = list(self.walk_path.walk( top_down=False))
-
-        self.assertEqual(len(all), 4, all)
-        # We can't know which order SUB1 and SUB2 will appear in.
-        # Not flipped:  SUB11, SUB1, SUB2, TESTFN
-        #     flipped:  SUB2, SUB11, SUB1, TESTFN
-        flipped = all[3][1][0] != "SUB1"
-        all[3][1].sort()
-        all[2 - 2 * flipped][-1].sort()
-        all[2 - 2 * flipped][1].sort()
-        self.assertEqual(all[3],
-                         (self.walk_path, ["SUB1", "SUB2"], ["tmp1"]))
-        self.assertEqual(all[flipped],
-                         (self.sub11_path, [], []))
-        self.assertEqual(all[flipped + 1],
-                         (self.sub1_path, ["SUB11"], ["tmp2"]))
-        self.assertEqual(all[2 - 2 * flipped],
-                         self.sub2_tree)
+        seen_testfn = seen_sub1 = seen_sub11 = seen_sub2 = False
+        for path, dirnames, filenames in self.walk_path.walk(top_down=False):
+            if path == self.walk_path:
+                self.assertFalse(seen_testfn)
+                self.assertTrue(seen_sub1)
+                self.assertTrue(seen_sub2)
+                self.assertEqual(sorted(dirnames), ["SUB1", "SUB2"])
+                self.assertEqual(filenames, ["tmp1"])
+                seen_testfn = True
+            elif path == self.sub1_path:
+                self.assertFalse(seen_testfn)
+                self.assertFalse(seen_sub1)
+                self.assertTrue(seen_sub11)
+                self.assertEqual(dirnames, ["SUB11"])
+                self.assertEqual(filenames, ["tmp2"])
+                seen_sub1 = True
+            elif path == self.sub11_path:
+                self.assertFalse(seen_sub1)
+                self.assertFalse(seen_sub11)
+                self.assertEqual(dirnames, [])
+                self.assertEqual(filenames, [])
+                seen_sub11 = True
+            elif path == self.sub2_path:
+                self.assertFalse(seen_testfn)
+                self.assertFalse(seen_sub2)
+                self.assertEqual(sorted(dirnames), sorted(self.sub2_tree[1]))
+                self.assertEqual(sorted(filenames), sorted(self.sub2_tree[2]))
+                seen_sub2 = True
+            else:
+                raise AssertionError(f"Unexpected path: {path}")
+        self.assertTrue(seen_testfn)
 
     @os_helper.skip_unless_symlink
     def test_walk_follow_symlinks(self):
@@ -3076,7 +3134,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         self.assertEqual(set(p.glob("FILEa")), { P(BASE, "fileA") })
         self.assertEqual(set(p.glob("*a\\")), { P(BASE, "dirA") })
         self.assertEqual(set(p.glob("F*a")), { P(BASE, "fileA") })
-        self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\FILEa"})
+        self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\fileA"})
         self.assertEqual(set(map(str, p.glob("F*a"))), {f"{p}\\fileA"})
 
     def test_rglob(self):
@@ -3084,7 +3142,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         p = P(BASE, "dirC")
         self.assertEqual(set(p.rglob("FILEd")), { P(BASE, "dirC/dirD/fileD") })
         self.assertEqual(set(p.rglob("*\\")), { P(BASE, "dirC/dirD") })
-        self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\FILEd"})
+        self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\fileD"})
 
     def test_expanduser(self):
         P = self.cls

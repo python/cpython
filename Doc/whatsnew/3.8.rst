@@ -2229,7 +2229,7 @@ The benchmarks were measured on an
 `Intel® Core™ i7-4960HQ processor
 <https://ark.intel.com/content/www/us/en/ark/products/76088/intel-core-i7-4960hq-processor-6m-cache-up-to-3-80-ghz.html>`_
 running the macOS 64-bit builds found at
-`python.org <https://www.python.org/downloads/mac-osx/>`_.
+`python.org <https://www.python.org/downloads/macos/>`_.
 The benchmark script displays timings in nanoseconds.
 
 

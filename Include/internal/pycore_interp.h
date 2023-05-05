@@ -23,10 +23,12 @@ extern "C" {
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
-#include "pycore_import.h"        // struct _import_state
-#include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_global_objects.h"  // struct _Py_interp_static_objects
+#include "pycore_import.h"        // struct _import_state
+#include "pycore_instruments.h"   // PY_MONITORING_EVENTS
+#include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_object_state.h"   // struct _py_object_state
+#include "pycore_obmalloc.h"      // struct obmalloc_state
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct type_cache
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -36,7 +38,6 @@ extern "C" {
 struct _Py_long_state {
     int max_str_digits;
 };
-
 
 /* interpreter state */
 
@@ -48,6 +49,9 @@ struct _Py_long_state {
 struct _is {
 
     PyInterpreterState *next;
+
+    uint64_t monitoring_version;
+    uint64_t last_restart_version;
 
     struct pythreads {
         uint64_t next_unique_id;
@@ -78,6 +82,8 @@ struct _is {
        after allocation. */
     int _initialized;
     int finalizing;
+
+    struct _obmalloc_state obmalloc;
 
     struct _ceval_state ceval;
     struct _gc_runtime_state gc;
@@ -147,6 +153,15 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
     PyCodeObject *interpreter_trampoline;
+
+    _Py_Monitors monitors;
+    bool f_opcode_trace_set;
+    bool sys_profile_initialized;
+    bool sys_trace_initialized;
+    Py_ssize_t sys_profiling_threads; /* Count of threads with c_profilefunc set */
+    Py_ssize_t sys_tracing_threads; /* Count of threads with c_tracefunc set */
+    PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][PY_MONITORING_EVENTS];
+    PyObject *monitoring_tool_names[PY_MONITORING_TOOL_IDS];
 
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
