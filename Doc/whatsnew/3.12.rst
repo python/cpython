@@ -153,6 +153,30 @@ New Features
   In Python 3.14, the default will switch to ``'data'``.
   (Contributed by Petr Viktorin in :pep:`706`.)
 
+.. _whatsnew312-pep709:
+
+PEP 709: Comprehension inlining
+-------------------------------
+
+Dictionary, list, and set comprehensions are now inlined, rather than creating a
+new single-use function object for each execution of the comprehension. This
+speeds up execution of a comprehension by up to 2x.
+
+Comprehension iteration variables remain isolated; they don't overwrite a
+variable of the same name in the outer scope, nor are they visible after the
+comprehension. This isolation is now maintained via stack/locals manipulation,
+not via separate function scope.
+
+Inlining does result in a few visible behavior changes:
+
+* There is no longer a separate frame for the comprehension in tracebacks,
+  and tracing/profiling no longer shows the comprehension as a function call.
+* Calling :func:`locals` inside a comprehension now includes variables
+  from outside the comprehension, and no longer includes the synthetic `.0`
+  variable for the comprehension "argument".
+
+Contributed by Carl Meyer and Vladimir Matveev in :pep:`709`.
+
 PEP 688: Making the buffer protocol accessible in Python
 --------------------------------------------------------
 

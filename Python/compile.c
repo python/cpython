@@ -5011,7 +5011,9 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         if (symbol & DEF_LOCAL && ~symbol & DEF_NONLOCAL) {
             if (c->u->u_ste->ste_type != FunctionBlock) {
                 // non-function scope: override this name to use fast locals
-                PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_True);
+                if (PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_True) < 0) {
+                    return ERROR;
+                }
             }
             long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
             PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
@@ -5034,11 +5036,11 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                 // the outer version; we'll restore it after running the
                 // comprehension
                 Py_INCREF(outv);
-                if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v)) {
+                if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v) < 0) {
                     Py_DECREF(outv);
                     return ERROR;
                 }
-                if (PyDict_SetItem(state->temp_symbols, k, outv)) {
+                if (PyDict_SetItem(state->temp_symbols, k, outv) < 0) {
                     Py_DECREF(outv);
                     return ERROR;
                 }
@@ -5061,7 +5063,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                 if (scope == CELL) {
                     ADDOP_NAME(c, loc, MAKE_CELL, k, cellvars);
                 }
-                if (PyList_Append(state->pushed_locals, k)) {
+                if (PyList_Append(state->pushed_locals, k) < 0) {
                     return ERROR;
                 }
             }

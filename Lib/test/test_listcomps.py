@@ -92,7 +92,7 @@ Make sure that None is a valid return value
 
 
 class ListComprehensionTest(unittest.TestCase):
-    def _check_in_scopes(self, code, outputs, ns=None, scopes=None):
+    def _check_in_scopes(self, code, outputs=None, ns=None, scopes=None, raises=()):
         code = textwrap.dedent(code)
         scopes = scopes or ["module", "class", "function"]
         for scope in scopes:
@@ -118,9 +118,14 @@ class ListComprehensionTest(unittest.TestCase):
                     def get_output(moddict, name):
                         return moddict[name]
                 ns = ns or {}
-                exec(newcode, ns)
-                for k, v in outputs.items():
-                    self.assertEqual(get_output(ns, k), v)
+                try:
+                    exec(newcode, ns)
+                except raises as e:
+                    # We care about e.g. NameError vs UnboundLocalError
+                    self.assertIs(type(e), raises)
+                else:
+                    for k, v in (outputs or {}).items():
+                        self.assertEqual(get_output(ns, k), v)
 
     def test_lambdas_with_iteration_var_as_default(self):
         code = """
@@ -236,6 +241,29 @@ class ListComprehensionTest(unittest.TestCase):
         outputs = {"i": 20}
         self._check_in_scopes(code, outputs)
 
+    def test_nested(self):
+        code = """
+            l = [1, 2, 3]
+            y = [x*2 for x in [x for x in l]]
+        """
+        outputs = {"y": [2, 4, 6]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nameerror(self):
+        code = """
+            [x for x in [1]]
+            x
+        """
+
+        self._check_in_scopes(code, raises=NameError)
+
+    def test_dunder_name(self):
+        code = """
+            y = [__x for __x in [1]]
+        """
+        outputs = {"y": [1]}
+        self._check_in_scopes(code, outputs)
+
     def test_unbound_local_after_comprehension(self):
         def f():
             if False:
@@ -245,18 +273,6 @@ class ListComprehensionTest(unittest.TestCase):
 
         with self.assertRaises(UnboundLocalError):
             f()
-
-    def test_nameerror(self):
-        def f():
-            [x for x in [1]]
-            return x
-
-        with self.assertRaises(NameError) as ctx:
-            f()
-
-        # UnboundLocalError is a subtype of NameError; in this case we want to
-        # check that it is actually NameError
-        self.assertIs(type(ctx.exception), NameError)
 
     def test_unbound_local_inside_comprehension(self):
         def f():
