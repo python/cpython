@@ -2112,8 +2112,6 @@ impl_definition block
                          traceback.format_exc().rstrip())
             printer.print_block(block)
 
-        second_pass_replacements = {}
-
         # these are destinations not buffers
         for name, destination in self.destinations.items():
             if destination.type == 'suppress':
@@ -2155,23 +2153,8 @@ impl_definition block
                     printer_2.print_block(block, core_includes=True)
                     write_file(destination.filename, printer_2.f.getvalue())
                     continue
-        text = printer.f.getvalue()
 
-        if second_pass_replacements:
-            printer_2 = BlockPrinter(self.language)
-            parser_2 = BlockParser(text, self.language)
-            changed = False
-            for block in parser_2:
-                if block.dsl_name:
-                    for id, replacement in second_pass_replacements.items():
-                        if id in block.output:
-                            changed = True
-                            block.output = block.output.replace(id, replacement)
-                printer_2.print_block(block)
-            if changed:
-                text = printer_2.f.getvalue()
-
-        return text
+        return printer.f.getvalue()
 
 
     def _module_and_class(self, fields):

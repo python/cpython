@@ -14,7 +14,7 @@
 #include "Python.h"
 #include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
-#include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg
+#include "pycore_compile.h"      // _PyCompile_CodeGen, _PyCompile_OptimizeCfg, _PyCompile_Assemble
 #include "pycore_fileutils.h"    // _Py_normpath
 #include "pycore_frame.h"        // _PyInterpreterFrame
 #include "pycore_gc.h"           // PyGC_Head
@@ -625,6 +625,68 @@ _testinternalcapi_optimize_cfg_impl(PyObject *module, PyObject *instructions,
     return _PyCompile_OptimizeCfg(instructions, consts);
 }
 
+static int
+get_nonnegative_int_from_dict(PyObject *dict, const char *key) {
+    PyObject *obj = PyDict_GetItemString(dict, key);
+    if (obj == NULL) {
+        return -1;
+    }
+    return PyLong_AsLong(obj);
+}
+
+/*[clinic input]
+
+_testinternalcapi.assemble_code_object -> object
+
+  filename: object
+  instructions: object
+  metadata: object
+
+Create a code object for the given instructions.
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_assemble_code_object_impl(PyObject *module,
+                                            PyObject *filename,
+                                            PyObject *instructions,
+                                            PyObject *metadata)
+/*[clinic end generated code: output=38003dc16a930f48 input=e713ad77f08fb3a8]*/
+
+{
+    assert(PyDict_Check(metadata));
+    _PyCompile_CodeUnitMetadata umd;
+
+    umd.u_name = PyDict_GetItemString(metadata, "name");
+    umd.u_qualname = PyDict_GetItemString(metadata, "qualname");
+
+    assert(PyUnicode_Check(umd.u_name));
+    assert(PyUnicode_Check(umd.u_qualname));
+
+    umd.u_consts = PyDict_GetItemString(metadata, "consts");
+    umd.u_names = PyDict_GetItemString(metadata, "names");
+    umd.u_varnames = PyDict_GetItemString(metadata, "varnames");
+    umd.u_cellvars = PyDict_GetItemString(metadata, "cellvars");
+    umd.u_freevars = PyDict_GetItemString(metadata, "freevars");
+
+    assert(PyList_Check(umd.u_consts));
+    assert(PyDict_Check(umd.u_names));
+    assert(PyDict_Check(umd.u_varnames));
+    assert(PyDict_Check(umd.u_cellvars));
+    assert(PyDict_Check(umd.u_freevars));
+
+    umd.u_argcount = get_nonnegative_int_from_dict(metadata, "argcount");
+    umd.u_posonlyargcount = get_nonnegative_int_from_dict(metadata, "posonlyargcount");
+    umd.u_kwonlyargcount = get_nonnegative_int_from_dict(metadata, "kwonlyargcount");
+    umd.u_firstlineno = get_nonnegative_int_from_dict(metadata, "firstlineno");
+
+    assert(umd.u_argcount >= 0);
+    assert(umd.u_posonlyargcount >= 0);
+    assert(umd.u_kwonlyargcount >= 0);
+    assert(umd.u_firstlineno >= 0);
+
+    return (PyObject*)_PyCompile_Assemble(&umd, filename, instructions);
+}
+
 
 static PyObject *
 get_interp_settings(PyObject *self, PyObject *args)
@@ -705,6 +767,7 @@ static PyMethodDef module_functions[] = {
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
     _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
+    _TESTINTERNALCAPI_ASSEMBLE_CODE_OBJECT_METHODDEF
     {"get_interp_settings", get_interp_settings, METH_VARARGS, NULL},
     {"clear_extension", clear_extension, METH_VARARGS, NULL},
     {NULL, NULL} /* sentinel */
