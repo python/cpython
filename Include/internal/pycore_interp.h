@@ -178,6 +178,9 @@ struct _is {
        basis.  Also see _PyRuntimeState regarding the various mutex fields.
        */
 
+    /* The per-interpreter GIL, which might not be used. */
+    struct _gil_runtime_state _gil;
+
     /* the initial PyInterpreterState.threads.head */
     PyThreadState _initial_thread;
 };

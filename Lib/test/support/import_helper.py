@@ -115,6 +115,8 @@ def multi_interp_extensions_check(enabled=True):
     It overrides the PyInterpreterConfig.check_multi_interp_extensions
     setting (see support.run_in_subinterp_with_config() and
     _xxsubinterpreters.create()).
+
+    Also see importlib.utils.allowing_all_extensions().
     """
     old = _imp._override_multi_interp_extensions_check(1 if enabled else -1)
     try:

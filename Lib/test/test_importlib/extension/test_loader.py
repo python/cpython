@@ -348,6 +348,8 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
                 'exec_err',
                 'exec_raise',
                 'exec_unreported_exception',
+                'multiple_create_slots',
+                'multiple_multiple_interpreters_slots',
                 ]:
             with self.subTest(name_base):
                 name = self.name + '_' + name_base

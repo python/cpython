@@ -25,7 +25,6 @@ class CProfileTest(ProfileTest):
         with support.catch_unraisable_exception() as cm:
             obj = _lsprof.Profiler(lambda: int)
             obj.enable()
-            obj = _lsprof.Profiler(1)
             obj.disable()
             obj.clear()
 
@@ -37,10 +36,11 @@ class CProfileTest(ProfileTest):
         self.addCleanup(prof.disable)
 
         prof.enable()
-        self.assertIs(sys.getprofile(), prof)
+        self.assertEqual(
+            sys.monitoring.get_tool(sys.monitoring.PROFILER_ID), "cProfile")
 
         prof.disable()
-        self.assertIs(sys.getprofile(), None)
+        self.assertIs(sys.monitoring.get_tool(sys.monitoring.PROFILER_ID), None)
 
     def test_profile_as_context_manager(self):
         prof = self.profilerclass()
@@ -53,10 +53,19 @@ class CProfileTest(ProfileTest):
 
             # profile should be set as the global profiler inside the
             # with-block
-            self.assertIs(sys.getprofile(), prof)
+            self.assertEqual(
+                sys.monitoring.get_tool(sys.monitoring.PROFILER_ID), "cProfile")
 
         # profile shouldn't be set once we leave the with-block.
-        self.assertIs(sys.getprofile(), None)
+        self.assertIs(sys.monitoring.get_tool(sys.monitoring.PROFILER_ID), None)
+
+    def test_second_profiler(self):
+        pr = self.profilerclass()
+        pr2 = self.profilerclass()
+        pr.enable()
+        self.assertRaises(ValueError, pr2.enable)
+        pr.disable()
+
 
 class TestCommandLine(unittest.TestCase):
     def test_sort(self):

@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, reopened, labeled, unlabeled, synchronize]
 
+permissions:
+  issues: read
+  pull-requests: read
+
 jobs:
   label:
     name: DO-NOT-MERGE / unresolved review

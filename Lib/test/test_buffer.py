@@ -4579,6 +4579,176 @@ class TestPythonBufferProtocol(unittest.TestCase):
             buf.__release_buffer__(mv)
         self.assertEqual(buf.references, 0)
 
+    def test_inheritance(self):
+        class A(bytearray):
+            def __buffer__(self, flags):
+                return super().__buffer__(flags)
+
+        a = A(b"hello")
+        mv = memoryview(a)
+        self.assertEqual(mv.tobytes(), b"hello")
+
+    def test_inheritance_releasebuffer(self):
+        rb_call_count = 0
+        class B(bytearray):
+            def __buffer__(self, flags):
+                return super().__buffer__(flags)
+            def __release_buffer__(self, view):
+                nonlocal rb_call_count
+                rb_call_count += 1
+                super().__release_buffer__(view)
+
+        b = B(b"hello")
+        with memoryview(b) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            self.assertEqual(rb_call_count, 0)
+        self.assertEqual(rb_call_count, 1)
+
+    def test_inherit_but_return_something_else(self):
+        class A(bytearray):
+            def __buffer__(self, flags):
+                return memoryview(b"hello")
+
+        a = A(b"hello")
+        with memoryview(a) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+
+        rb_call_count = 0
+        rb_raised = False
+        class B(bytearray):
+            def __buffer__(self, flags):
+                return memoryview(b"hello")
+            def __release_buffer__(self, view):
+                nonlocal rb_call_count
+                rb_call_count += 1
+                try:
+                    super().__release_buffer__(view)
+                except ValueError:
+                    nonlocal rb_raised
+                    rb_raised = True
+
+        b = B(b"hello")
+        with memoryview(b) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            self.assertEqual(rb_call_count, 0)
+        self.assertEqual(rb_call_count, 1)
+        self.assertIs(rb_raised, True)
+
+    def test_override_only_release(self):
+        class C(bytearray):
+            def __release_buffer__(self, buffer):
+                super().__release_buffer__(buffer)
+
+        c = C(b"hello")
+        with memoryview(c) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+
+    def test_release_saves_reference(self):
+        smuggled_buffer = None
+
+        class C(bytearray):
+            def __release_buffer__(s, buffer: memoryview):
+                with self.assertRaises(ValueError):
+                    memoryview(buffer)
+                with self.assertRaises(ValueError):
+                    buffer.cast("b")
+                with self.assertRaises(ValueError):
+                    buffer.toreadonly()
+                with self.assertRaises(ValueError):
+                    buffer[:1]
+                with self.assertRaises(ValueError):
+                    buffer.__buffer__(0)
+                nonlocal smuggled_buffer
+                smuggled_buffer = buffer
+                self.assertEqual(buffer.tobytes(), b"hello")
+                super().__release_buffer__(buffer)
+
+        c = C(b"hello")
+        with memoryview(c) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+        c.clear()
+        with self.assertRaises(ValueError):
+            smuggled_buffer.tobytes()
+
+    def test_release_saves_reference_no_subclassing(self):
+        ba = bytearray(b"hello")
+
+        class C:
+            def __buffer__(self, flags):
+                return memoryview(ba)
+
+            def __release_buffer__(self, buffer):
+                self.buffer = buffer
+
+        c = C()
+        with memoryview(c) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+        self.assertEqual(c.buffer.tobytes(), b"hello")
+
+        with self.assertRaises(BufferError):
+            ba.clear()
+        c.buffer.release()
+        ba.clear()
+
+    def test_multiple_inheritance_buffer_last(self):
+        class A:
+            def __buffer__(self, flags):
+                return memoryview(b"hello A")
+
+        class B(A, bytearray):
+            def __buffer__(self, flags):
+                return super().__buffer__(flags)
+
+        b = B(b"hello")
+        with memoryview(b) as mv:
+            self.assertEqual(mv.tobytes(), b"hello A")
+
+        class Releaser:
+            def __release_buffer__(self, buffer):
+                self.buffer = buffer
+
+        class C(Releaser, bytearray):
+            def __buffer__(self, flags):
+                return super().__buffer__(flags)
+
+        c = C(b"hello C")
+        with memoryview(c) as mv:
+            self.assertEqual(mv.tobytes(), b"hello C")
+        c.clear()
+        with self.assertRaises(ValueError):
+            c.buffer.tobytes()
+
+    def test_multiple_inheritance_buffer_last(self):
+        class A:
+            def __buffer__(self, flags):
+                raise RuntimeError("should not be called")
+
+            def __release_buffer__(self, buffer):
+                raise RuntimeError("should not be called")
+
+        class B(bytearray, A):
+            def __buffer__(self, flags):
+                return super().__buffer__(flags)
+
+        b = B(b"hello")
+        with memoryview(b) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+
+        class Releaser:
+            buffer = None
+            def __release_buffer__(self, buffer):
+                self.buffer = buffer
+
+        class C(bytearray, Releaser):
+            def __buffer__(self, flags):
+                return super().__buffer__(flags)
+
+        c = C(b"hello")
+        with memoryview(c) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+        c.clear()
+        self.assertIs(c.buffer, None)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -49,7 +49,6 @@ struct _ceval_runtime_state {
        the main thread of the main interpreter can handle signals: see
        _Py_ThreadCanHandleSignals(). */
     _Py_atomic_int signals_pending;
-    struct _gil_runtime_state gil;
 };
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
@@ -83,6 +82,8 @@ struct _pending_calls {
 
 struct _ceval_state {
     int recursion_limit;
+    struct _gil_runtime_state *gil;
+    int own_gil;
     /* This single variable consolidates all requests to break out of
        the fast path in the eval loop. */
     _Py_atomic_int eval_breaker;

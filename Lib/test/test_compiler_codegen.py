@@ -25,6 +25,8 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('LOAD_CONST', 2, 1),
             exit_lbl,
             ('POP_TOP', None),
+            ('LOAD_CONST', 3),
+            ('RETURN_VALUE', None),
         ]
         self.codegen_test(snippet, expected)
 
@@ -46,5 +48,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('JUMP', loop_lbl),
             exit_lbl,
             ('END_FOR', None),
+            ('LOAD_CONST', 0),
+            ('RETURN_VALUE', None),
         ]
         self.codegen_test(snippet, expected)

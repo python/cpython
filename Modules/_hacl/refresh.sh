@@ -22,7 +22,7 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good.
-expected_hacl_star_rev=13e0c6721ac9206c4249ecc1dc04ed617ad1e262
+expected_hacl_star_rev=363eae2c2eb60e46f182ddd4bd1cd3f1d00b35c9
 
 hacl_dir="$(realpath "$1")"
 cd "$(dirname "$0")"
@@ -45,11 +45,14 @@ dist_files=(
   Hacl_Hash_SHA1.h
   internal/Hacl_Hash_SHA1.h
   Hacl_Hash_MD5.h
+  Hacl_Hash_SHA3.h
   internal/Hacl_Hash_MD5.h
+  internal/Hacl_Hash_SHA3.h
   internal/Hacl_SHA2_Generic.h
   Hacl_Streaming_SHA2.c
   Hacl_Hash_SHA1.c
   Hacl_Hash_MD5.c
+  Hacl_Hash_SHA3.c
 )
 
 declare -a include_files
@@ -134,9 +137,9 @@ $sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_n
 
 # Finally, we remove a bunch of ifdefs from target.h that are, again, useful in
 # the general case, but not exercised by the subset of HACL* that we vendor.
-$sed -z -i 's!#ifndef KRML_\(HOST_PRINTF\|HOST_EXIT\|PRE_ALIGN\|POST_ALIGN\|ALIGNED_MALLOC\|ALIGNED_FREE\|HOST_TIME\)\n\(\n\|#  [^\n]*\n\|[^#][^\n]*\n\)*#endif\n\n!!g' include/krml/internal/target.h
-$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#define KRML_\(EABORT\|EXIT\|CHECK_SIZE\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
+$sed -z -i 's!#ifndef KRML_\(PRE_ALIGN\|POST_ALIGN\|ALIGNED_MALLOC\|ALIGNED_FREE\|HOST_TIME\)\n\(\n\|#  [^\n]*\n\|[^#][^\n]*\n\)*#endif\n\n!!g' include/krml/internal/target.h
+$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#define KRML_\(EABORT\|EXIT\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
 $sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#define  KRML_\(EABORT\|EXIT\|CHECK_SIZE\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
-$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#  define _\?KRML_\(DEPRECATED\|CHECK_SIZE_PRAGMA\|HOST_EPRINTF\|HOST_SNPRINTF\)[^\n]*\n\([^#][^\n]*\n\|#el[^\n]*\n\|#  [^\n]*\n\)*#endif!!g' include/krml/internal/target.h
+$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#  define _\?KRML_\(DEPRECATED\|HOST_SNPRINTF\)[^\n]*\n\([^#][^\n]*\n\|#el[^\n]*\n\|#  [^\n]*\n\)*#endif!!g' include/krml/internal/target.h
 
 echo "Updated; verify all is okay using git diff and git status."

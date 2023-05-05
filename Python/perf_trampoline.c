@@ -253,7 +253,7 @@ perf_map_write_entry(void *state, const void *code_addr,
                                   NULL);
         return;
     }
-    fprintf(method_file, "%p %x py::%s:%s\n", code_addr, code_size, entry,
+    fprintf(method_file, "%" PRIxPTR " %x py::%s:%s\n", (uintptr_t) code_addr, code_size, entry,
             filename);
     fflush(method_file);
 }
