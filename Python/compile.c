@@ -5133,8 +5133,10 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
             // we set to False instead of clearing, so we can track which names
             // were temporarily fast-locals and should use CO_FAST_HIDDEN
             if (PyDict_SetItem(c->u->u_metadata.u_fasthidden, k, Py_False)) {
+                Py_DECREF(k);
                 return ERROR;
             }
+            Py_DECREF(k);
         }
         Py_CLEAR(state.fast_hidden);
     }
