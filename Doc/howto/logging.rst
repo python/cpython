@@ -87,8 +87,8 @@ described below (in increasing order of severity):
 +--------------+---------------------------------------------+
 
 The default level is ``WARNING``, which means that only events of this level
-and above will be tracked, unless the logging package is configured to do
-otherwise.
+of severity and above (``ERROR`` and ``CRITICAL``) will be tracked, unless the
+logging package is configured to do otherwise.
 
 Events that are tracked can be handled in different ways. The simplest way of
 handling tracked events is to print them to the console. Another common way
