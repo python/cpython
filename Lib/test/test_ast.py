@@ -792,7 +792,7 @@ class AST_Tests(unittest.TestCase):
             self.assertEqual(n.z, 'spam')
             self.assertIs(type(n), N)
             self.assertIsInstance(n, N)
-            self.assertIsinstance(n, ast.Num)
+            self.assertIsInstance(n, ast.Num)
             self.assertNotIsInstance(n, N2)
             self.assertNotIsInstance(ast.Num(42), N)
             n = N(n=42)
