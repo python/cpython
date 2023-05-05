@@ -68,13 +68,17 @@ Summary -- Release highlights
 
 New typing features:
 
+* :pep:`688`: Making the buffer protocol accessible in Python
+
 * :ref:`whatsnew312-pep692`
+
+* :pep:`698`: Override Decorator for Static Typing
 
 Important deprecations, removals or restrictions:
 
-* :pep:`623`, Remove wstr from Unicode
+* :pep:`623`: Remove wstr from Unicode
 
-* :pep:`632`, Remove the ``distutils`` package.
+* :pep:`632`: Remove the ``distutils`` package
 
 Improved Error Messages
 =======================
@@ -149,6 +153,19 @@ New Features
   In Python 3.14, the default will switch to ``'data'``.
   (Contributed by Petr Viktorin in :pep:`706`.)
 
+PEP 688: Making the buffer protocol accessible in Python
+--------------------------------------------------------
+
+:pep:`688` introduces a way to use the :ref:`buffer protocol <bufferobjects>`
+from Python code. Classes that implement the :meth:`~object.__buffer__` method
+are now usable as buffer types.
+
+The new :class:`collections.abc.Buffer` ABC provides a standard
+way to represent buffer objects, for example in type annotations.
+The new :class:`inspect.BufferFlags` enum represents the flags that
+can be used to customize buffer creation.
+(Contributed by Jelle Zijlstra in :gh:`102500`.)
+
 New Features Related to Type Hints
 ==================================
 
@@ -178,7 +195,6 @@ typed dictionaries::
 See :pep:`692` for more details.
 
 (PEP written by Franek Magiera)
-
 
 Other Language Changes
 ======================
@@ -780,6 +796,11 @@ Pending Removal in Python 3.14
 
   (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
 
+* Deprecated :class:`collections.abc.ByteString`.
+  Prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
+  For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
+  (Contributed by Shantanu Jain in :gh:`91896`.)
+
 * Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases using the C API.
 
@@ -837,7 +858,7 @@ although there is currently no date scheduled for their removal.
 
 * The following :mod:`ast` features have been deprecated in documentation since
   Python 3.8, now cause a :exc:`DeprecationWarning` to be emitted at runtime
-  when they are accessed or used, and may be removed in a future version of Python:
+  when they are accessed or used, and will be removed in Python 3.14.
 
   * :class:`!ast.Num`
   * :class:`!ast.Str`

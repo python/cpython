@@ -2865,6 +2865,47 @@ a :exc:`TypeError`.
       The specification for the Python ``match`` statement.
 
 
+.. _python-buffer-protocol:
+
+Emulating buffer types
+----------------------
+
+The :ref:`buffer protocol <bufferobjects>` provides a way for Python
+objects to expose efficient access to a low-level memory array. This protocol
+is implemented by builtin types such as :class:`bytes` and :class:`memoryview`,
+and third-party libraries may define additional buffer types.
+
+While buffer types are usually implemented in C, it is also possible to
+implement the protocol in Python.
+
+.. method:: object.__buffer__(self, flags)
+
+   Called when a buffer is requested from *self* (for example, by the
+   :class:`memoryview` constructor). The *flags* argument is an integer
+   representing the kind of buffer requested, affecting for example whether
+   the returned buffer is read-only or writable. :class:`inspect.BufferFlags`
+   provides a convenient way to interpret the flags. The method must return
+   a :class:`memoryview` object.
+
+.. method:: object.__release_buffer__(self, buffer)
+
+   Called when a buffer is no longer needed. The *buffer* argument is a
+   :class:`memoryview` object that was previously returned by
+   :meth:`~object.__buffer__`. The method must release any resources associated
+   with the buffer. This method should return ``None``.
+   Buffer objects that do not need to perform any cleanup are not required
+   to implement this method.
+
+.. versionadded:: 3.12
+
+.. seealso::
+
+   :pep:`688` - Making the buffer protocol accessible in Python
+      Introduces the Python ``__buffer__`` and ``__release_buffer__`` methods.
+
+   :class:`collections.abc.Buffer`
+      ABC for buffer types.
+
 .. _special-lookup:
 
 Special method lookup

@@ -38,6 +38,7 @@ int _PyTestCapi_Init_Float(PyObject *module);
 int _PyTestCapi_Init_Structmember(PyObject *module);
 int _PyTestCapi_Init_Exceptions(PyObject *module);
 int _PyTestCapi_Init_Code(PyObject *module);
+int _PyTestCapi_Init_Buffer(PyObject *module);
 int _PyTestCapi_Init_PyOS(PyObject *module);
 int _PyTestCapi_Init_Immortal(PyObject *module);
 

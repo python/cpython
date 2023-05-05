@@ -1149,6 +1149,66 @@ test case
             error = str(e).split('\n', 1)[1]
             self.assertEqual(sample_text_error, error)
 
+    def testAssertEqualwithEmptyString(self):
+        '''Verify when there is an empty string involved, the diff output
+         does not treat the empty string as a single empty line. It should
+         instead be handled as a non-line.
+        '''
+        sample_text = ''
+        revised_sample_text = 'unladen swallows fly quickly'
+        sample_text_error = '''\
++ unladen swallows fly quickly
+'''
+        try:
+            self.assertEqual(sample_text, revised_sample_text)
+        except self.failureException as e:
+            # need to remove the first line of the error message
+            error = str(e).split('\n', 1)[1]
+            self.assertEqual(sample_text_error, error)
+
+    def testAssertEqualMultipleLinesMissingNewlineTerminator(self):
+        '''Verifying format of diff output from assertEqual involving strings
+         with multiple lines, but missing the terminating newline on both.
+        '''
+        sample_text = 'laden swallows\nfly sloely'
+        revised_sample_text = 'laden swallows\nfly slowly'
+        sample_text_error = '''\
+  laden swallows
+- fly sloely
+?        ^
++ fly slowly
+?        ^
+'''
+        try:
+            self.assertEqual(sample_text, revised_sample_text)
+        except self.failureException as e:
+            # need to remove the first line of the error message
+            error = str(e).split('\n', 1)[1]
+            self.assertEqual(sample_text_error, error)
+
+    def testAssertEqualMultipleLinesMismatchedNewlinesTerminators(self):
+        '''Verifying format of diff output from assertEqual involving strings
+         with multiple lines and mismatched newlines. The output should
+         include a - on it's own line to indicate the newline difference
+         between the two strings
+        '''
+        sample_text = 'laden swallows\nfly sloely\n'
+        revised_sample_text = 'laden swallows\nfly slowly'
+        sample_text_error = '''\
+  laden swallows
+- fly sloely
+?        ^
++ fly slowly
+?        ^
+-\x20
+'''
+        try:
+            self.assertEqual(sample_text, revised_sample_text)
+        except self.failureException as e:
+            # need to remove the first line of the error message
+            error = str(e).split('\n', 1)[1]
+            self.assertEqual(sample_text_error, error)
+
     def testEqualityBytesWarning(self):
         if sys.flags.bytes_warning:
             def bytes_warning():
