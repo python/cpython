@@ -2424,7 +2424,6 @@ PyFloat_Unpack2(const char *data, int le)
     f |= *p;
 
     if (e == 0x1f) {
-#if _PY_SHORT_FLOAT_REPR == 0
         if (f == 0) {
             /* Infinity */
             return sign ? -Py_HUGE_VAL : Py_HUGE_VAL;
@@ -2433,16 +2432,6 @@ PyFloat_Unpack2(const char *data, int le)
             /* NaN */
             return sign ? -Py_NAN : Py_NAN;
         }
-#else  // _PY_SHORT_FLOAT_REPR == 1
-        if (f == 0) {
-            /* Infinity */
-            return _Py_dg_infinity(sign);
-        }
-        else {
-            /* NaN */
-            return _Py_dg_stdnan(sign);
-        }
-#endif  // _PY_SHORT_FLOAT_REPR == 1
     }
 
     x = (double)f / 1024.0;
