@@ -841,7 +841,7 @@ Pending Removal in Python 3.14
 
 * The following :mod:`ast` features have been deprecated in documentation since
   Python 3.8, now cause a :exc:`DeprecationWarning` to be emitted at runtime
-  when they are accessed or used, and will be removed in Python 3.14.
+  when they are accessed or used, and will be removed in Python 3.14:
 
   * :class:`!ast.Num`
   * :class:`!ast.Str`
