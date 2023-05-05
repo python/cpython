@@ -355,6 +355,7 @@ class CRenderData:
         # value from the parse function.  This is also where
         # you should check the _return_value for errors, and
         # "goto exit" if there are any.
+        self._return_value = "_return_value"
         self.return_conversion = []
 
         # The C statements required to do some operations
@@ -3876,7 +3877,6 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
     # The Python default value for this parameter, as a Python value.
     # Or the magic value "unspecified" if there is no default.
     default = None
-    retvar = "_return_value"
 
     def __init__(self, *, py_default=None, **kwargs):
         self.py_default = py_default
@@ -3895,9 +3895,11 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
         add(self.type)
         if not self.type.endswith('*'):
             add(' ')
-        add(self.retvar + ';')
+        add(data._return_value + ';')
         data.declarations.append(''.join(line))
-        data.return_value = self.retvar
+        # XXX Removing this hack breaks current generated code.
+        #     We should aim to get rid of this workaround.
+        data.return_value = data._return_value
 
     def err_occurred_if(self, expr, data):
         data.return_conversion.append('if (({}) && PyErr_Occurred()) {{\n    goto exit;\n}}\n'.format(expr))
@@ -3919,9 +3921,9 @@ class bool_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if(f"{self.retvar} == -1", data)
+        self.err_occurred_if(f"{data._return_value} == -1", data)
         data.return_conversion.append(
-            f'return_value = PyBool_FromLong((long){self.retvar});\n'
+            f'return_value = PyBool_FromLong((long){data._return_value});\n'
         )
 
 class long_return_converter(CReturnConverter):
@@ -3932,9 +3934,9 @@ class long_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if(f"{self.retvar} == {self.unsigned_cast}-1", data)
+        self.err_occurred_if(f"{data._return_value} == {self.unsigned_cast}-1", data)
         data.return_conversion.append(
-            f'return_value = {self.conversion_fn}({self.cast}{self.retvar});\n'
+            f'return_value = {self.conversion_fn}({self.cast}{data._return_value});\n'
         )
 
 class int_return_converter(long_return_converter):
@@ -3977,9 +3979,9 @@ class double_return_converter(CReturnConverter):
 
     def render(self, function, data):
         self.declare(data)
-        self.err_occurred_if(f"{self.retvar} == -1.0", data)
+        self.err_occurred_if(f"{data._return_value} == -1.0", data)
         data.return_conversion.append(
-            f'return_value = PyFloat_FromDouble({self.cast}{self.retvar});\n'
+            f'return_value = PyFloat_FromDouble({self.cast}{data._return_value});\n'
         )
 
 class float_return_converter(double_return_converter):
