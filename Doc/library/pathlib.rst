@@ -690,8 +690,8 @@ Pure paths provide the following methods and properties:
       from pathlib import PurePosixPath
 
       class MyPath(PurePosixPath):
-          def __init__(self, *args, session_id):
-              super().__init__(*args)
+          def __init__(self, *pathsegments, session_id):
+              super().__init__(*pathsegments)
               self.session_id = session_id
 
           def with_segments(self, *pathsegments):
