@@ -769,9 +769,9 @@ class AST_Tests(unittest.TestCase):
 
         class S(str): pass
         with assertStrDeprecated():
-            self.assertTrue(isinstance(Constant(S('42')), Str))
+            self.assertIsInstance(Constant(S('42')), Str)
         with assertNumDeprecated():
-            self.assertFalse(isinstance(Constant(S('42')), Num))
+            self.assertNotIsInstance(Constant(S('42')), Num)
 
     def test_constant_subclasses_deprecated(self):
         with warnings.catch_warnings():
@@ -790,14 +790,14 @@ class AST_Tests(unittest.TestCase):
             n = N(42)
             self.assertEqual(n.n, 42)
             self.assertEqual(n.z, 'spam')
-            self.assertEqual(type(n), N)
-            self.assertTrue(isinstance(n, N))
-            self.assertTrue(isinstance(n, ast.Num))
-            self.assertFalse(isinstance(n, N2))
-            self.assertFalse(isinstance(ast.Num(42), N))
+            self.assertIs(type(n), N)
+            self.assertIsInstance(n, N)
+            self.assertIsinstance(n, ast.Num)
+            self.assertNotIsInstance(n, N2)
+            self.assertNotIsInstance(ast.Num(42), N)
             n = N(n=42)
             self.assertEqual(n.n, 42)
-            self.assertEqual(type(n), N)
+            self.assertIs(type(n), N)
 
         self.assertEqual([str(w.message) for w in wlog], [
             'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
