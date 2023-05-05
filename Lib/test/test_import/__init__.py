@@ -1861,6 +1861,26 @@ class SubinterpImportTests(unittest.TestCase):
         with self.subTest(f'{modname}: not strict'):
             self.check_compatible_here(modname, filename, strict=False)
 
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_multi_init_extension_per_interpreter_gil_compat(self):
+        modname = '_test_shared_gil_only'
+        filename = _testmultiphase.__file__
+        loader = ExtensionFileLoader(modname, filename)
+        spec = importlib.util.spec_from_loader(modname, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        sys.modules[modname] = module
+
+        require_extension(module)
+        with self.subTest(f'{modname}: isolated, strict'):
+            self.check_incompatible_here(modname, filename, isolated=True)
+        with self.subTest(f'{modname}: not isolated, strict'):
+            self.check_compatible_here(modname, filename,
+                                       strict=True, isolated=False)
+        with self.subTest(f'{modname}: not isolated, not strict'):
+            self.check_compatible_here(modname, filename,
+                                       strict=False, isolated=False)
+
     def test_python_compat(self):
         module = 'threading'
         require_pure_python(module)

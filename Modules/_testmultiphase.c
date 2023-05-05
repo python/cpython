@@ -892,7 +892,7 @@ PyInit__test_module_state_shared(void)
 }
 
 
-/* multiple interpreters supports */
+/* multiple interpreters support */
 
 static PyModuleDef_Slot non_isolated_slots[] = {
     {Py_mod_exec, execfunc},
@@ -908,4 +908,21 @@ PyMODINIT_FUNC
 PyInit__test_non_isolated(void)
 {
     return PyModuleDef_Init(&non_isolated_def);
+}
+
+
+static PyModuleDef_Slot shared_gil_only_slots[] = {
+    {Py_mod_exec, execfunc},
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED},
+    {0, NULL},
+};
+
+static PyModuleDef shared_gil_only_def = TEST_MODULE_DEF("_test_shared_gil_only",
+                                                         shared_gil_only_slots,
+                                                         testexport_methods);
+
+PyMODINIT_FUNC
+PyInit__test_shared_gil_only(void)
+{
+    return PyModuleDef_Init(&shared_gil_only_def);
 }

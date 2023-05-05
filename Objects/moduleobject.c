@@ -323,7 +323,6 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
             goto error;
         }
     }
-    // XXX This case needs a test.
     else if (multiple_interpreters != Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
              && interp->ceval.own_gil
              && !_Py_IsMainInterpreter(interp)
