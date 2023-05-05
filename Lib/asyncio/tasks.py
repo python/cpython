@@ -813,9 +813,9 @@ def gather(*coros_or_futures, return_exceptions=False):
     children = []
     nfuts = 0
     nfinished = 0
+    done_futs = []
     loop = None
     outer = None  # bpo-46672
-    all_finished = True
     for arg in coros_or_futures:
         if arg not in arg_to_fut:
             fut = ensure_future(arg, loop=loop)
@@ -831,10 +831,8 @@ def gather(*coros_or_futures, return_exceptions=False):
             nfuts += 1
             arg_to_fut[arg] = fut
             if fut.done():
-                # call the callback immediately instead of scheduling it
-                _done_callback(fut)
+                done_futs.append(fut)
             else:
-                all_finished = False
                 fut.add_done_callback(_done_callback)
 
         else:
@@ -843,13 +841,14 @@ def gather(*coros_or_futures, return_exceptions=False):
 
         children.append(fut)
 
-    if all_finished:
-        # optimization: skip creating GatheringFuture if all children completed
-        # (e.g. when all coros are able to complete eagerly)
-        outer = futures.Future(loop=loop)
-        outer.set_result([c.result for c in children])
-    else:
-        outer = _GatheringFuture(children, loop=loop)
+    outer = _GatheringFuture(children, loop=loop)
+    # call the done callbacks for futures that finished eagerly, instead
+    # of scheduling the callbacks to be called later by the event loop
+    # optimization: in the special case that *all* futures finished eagerly,
+    # this will effectively complete the gather eagerly, with the last
+    # callback setting the result (or exception) on outer before returning it
+    for fut in done_futs:
+        _done_callback(fut)
     return outer
 
 
