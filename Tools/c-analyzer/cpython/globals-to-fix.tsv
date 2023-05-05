@@ -86,6 +86,7 @@ Objects/sliceobject.c	-	PyEllipsis_Type	-
 Objects/sliceobject.c	-	PySlice_Type	-
 Objects/tupleobject.c	-	PyTupleIter_Type	-
 Objects/tupleobject.c	-	PyTuple_Type	-
+Objects/typeobject.c	-	_PyBufferWrapper_Type	-
 Objects/typeobject.c	-	PyBaseObject_Type	-
 Objects/typeobject.c	-	PySuper_Type	-
 Objects/typeobject.c	-	PyType_Type	-
