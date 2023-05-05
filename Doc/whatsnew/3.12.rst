@@ -839,6 +839,19 @@ Pending Removal in Python 3.14
   use :func:`importlib.util.find_spec` instead.
   (Contributed by Nikita Sobolev in :gh:`97850`.)
 
+* The following :mod:`ast` features have been deprecated in documentation since
+  Python 3.8, now cause a :exc:`DeprecationWarning` to be emitted at runtime
+  when they are accessed or used, and will be removed in Python 3.14.
+
+  * :class:`!ast.Num`
+  * :class:`!ast.Str`
+  * :class:`!ast.Bytes`
+  * :class:`!ast.NameConstant`
+  * :class:`!ast.Ellipsis`
+
+  Use :class:`ast.Constant` instead.
+  (Contributed by Serhiy Storchaka in :gh:`90953`.)
+
 Pending Removal in Future Versions
 ----------------------------------
 
@@ -855,20 +868,6 @@ although there is currently no date scheduled for their removal.
   immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
   :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
   In a future release it will be changed to a syntax error. (:gh:`87999`)
-
-* The following :mod:`ast` features have been deprecated in documentation since
-  Python 3.8, now cause a :exc:`DeprecationWarning` to be emitted at runtime
-  when they are accessed or used, and will be removed in Python 3.14.
-
-  * :class:`!ast.Num`
-  * :class:`!ast.Str`
-  * :class:`!ast.Bytes`
-  * :class:`!ast.NameConstant`
-  * :class:`!ast.Ellipsis`
-
-  Use :class:`ast.Constant` instead.
-  (Contributed by Serhiy Storchaka in :gh:`90953`.)
-
 
 Removed
 =======
