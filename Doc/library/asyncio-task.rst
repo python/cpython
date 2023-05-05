@@ -1154,7 +1154,7 @@ Task Object
       Return the coroutine object wrapped by the :class:`Task`.
 
       .. note::
-        
+
         This will return ``None`` for Tasks which have already
         completed eagerly.
 
