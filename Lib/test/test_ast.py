@@ -440,9 +440,12 @@ class AST_Tests(unittest.TestCase):
 
     def test_import_deprecated(self):
         ast = import_fresh_module('ast')
+        depr_regex = (
+            r'ast\.{} is deprecated and will be removed in Python 3.14; '
+            r'use ast\.Constant instead'
+        )
         for name in 'Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis':
-            with self.assertWarnsRegex(DeprecationWarning,
-                    fr'ast\.{name} is deprecated; use ast\.Constant instead'):
+            with self.assertWarnsRegex(DeprecationWarning, depr_regex.format(name)):
                 getattr(ast, name)
         with self.assertWarnsRegex(DeprecationWarning,
                 r'ast\.slice is deprecated'):
@@ -559,29 +562,29 @@ class AST_Tests(unittest.TestCase):
             self.assertIs(ast.NameConstant(None).value, None)
 
         self.assertEqual([str(w.message) for w in wlog], [
-            'ast.Num is deprecated; use ast.Constant instead',
-            'Attribute n is deprecated; use value instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'Attribute n is deprecated; use value instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'Attribute n is deprecated; use value instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'Attribute n is deprecated; use value instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'Attribute n is deprecated; use value instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'Attribute n is deprecated; use value instead',
-            'ast.Str is deprecated; use ast.Constant instead',
-            'Attribute s is deprecated; use value instead',
-            'ast.Bytes is deprecated; use ast.Constant instead',
-            'Attribute s is deprecated; use value instead',
-            'ast.NameConstant is deprecated; use ast.Constant instead',
-            'ast.NameConstant is deprecated; use ast.Constant instead',
-            'ast.NameConstant is deprecated; use ast.Constant instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
+            'ast.Str is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'Attribute s is deprecated and will be removed in Python 3.14; use value instead',
+            'ast.Bytes is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'Attribute s is deprecated and will be removed in Python 3.14; use value instead',
+            'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
         ])
 
     def test_classattrs(self):
@@ -645,15 +648,15 @@ class AST_Tests(unittest.TestCase):
             self.assertEqual(type(ast.Ellipsis()), ast.Constant)
 
         self.assertEqual([str(w.message) for w in wlog], [
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Str is deprecated; use ast.Constant instead',
-            'ast.Bytes is deprecated; use ast.Constant instead',
-            'ast.NameConstant is deprecated; use ast.Constant instead',
-            'ast.NameConstant is deprecated; use ast.Constant instead',
-            'ast.NameConstant is deprecated; use ast.Constant instead',
-            'ast.Ellipsis is deprecated; use ast.Constant instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.Str is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.Bytes is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.Ellipsis is deprecated and will be removed in Python 3.14; use ast.Constant instead',
         ])
 
     def test_isinstance(self):
@@ -663,30 +666,27 @@ class AST_Tests(unittest.TestCase):
             warnings.filterwarnings('ignore', '', DeprecationWarning)
             from ast import Num, Str, Bytes, NameConstant, Ellipsis
 
+        cls_depr_msg = (
+            'ast.{} is deprecated and will be removed in Python 3.14; '
+            'use ast.Constant instead'
+        )
+
         assertNumDeprecated = partial(
-            self.assertWarnsRegex,
-            DeprecationWarning,
-            'ast.Num is deprecated; use ast.Constant instead'
+            self.assertWarnsRegex, DeprecationWarning, cls_depr_msg.format("Num")
         )
         assertStrDeprecated = partial(
-            self.assertWarnsRegex,
-            DeprecationWarning,
-            'ast.Str is deprecated; use ast.Constant instead'
+            self.assertWarnsRegex, DeprecationWarning, cls_depr_msg.format("Str")
         )
         assertBytesDeprecated = partial(
-            self.assertWarnsRegex,
-            DeprecationWarning,
-            'ast.Bytes is deprecated; use ast.Constant instead'
+            self.assertWarnsRegex, DeprecationWarning, cls_depr_msg.format("Bytes")
         )
         assertNameConstantDeprecated = partial(
             self.assertWarnsRegex,
             DeprecationWarning,
-            'ast.NameConstant is deprecated; use ast.Constant instead'
+            cls_depr_msg.format("NameConstant")
         )
         assertEllipsisDeprecated = partial(
-            self.assertWarnsRegex,
-            DeprecationWarning,
-            'ast.Ellipsis is deprecated; use ast.Constant instead'
+            self.assertWarnsRegex, DeprecationWarning, cls_depr_msg.format("Ellipsis")
         )
 
         for arg in 42, 4.2, 4.2j:
@@ -806,12 +806,12 @@ class AST_Tests(unittest.TestCase):
             self.assertEqual(type(n), N)
 
         self.assertEqual([str(w.message) for w in wlog], [
-            'Attribute n is deprecated; use value instead',
-            'Attribute n is deprecated; use value instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'Attribute n is deprecated; use value instead',
-            'Attribute n is deprecated; use value instead',
+            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
+            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
+            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
         ])
 
     def test_constant_subclasses(self):
@@ -1866,11 +1866,11 @@ class ASTValidatorTests(unittest.TestCase):
                 self.expr(ast.Num(obj), "invalid type", exc=TypeError)
 
         self.assertEqual([str(w.message) for w in wlog], [
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
         ])
 
     def test_attribute(self):
@@ -1922,7 +1922,7 @@ class ASTValidatorTests(unittest.TestCase):
             self.expr(ast.NameConstant(4))
 
         self.assertEqual([str(w.message) for w in wlog], [
-            'ast.NameConstant is deprecated; use ast.Constant instead',
+            'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
         ])
 
     def test_stdlib_validates(self):
@@ -2612,15 +2612,15 @@ class BaseNodeVisitorCases:
         ])
         self.assertEqual([str(w.message) for w in wlog], [
             'visit_Num is deprecated; add visit_Constant',
-            'Attribute n is deprecated; use value instead',
+            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
             'visit_Num is deprecated; add visit_Constant',
-            'Attribute n is deprecated; use value instead',
+            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
             'visit_Num is deprecated; add visit_Constant',
-            'Attribute n is deprecated; use value instead',
+            'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
             'visit_Str is deprecated; add visit_Constant',
-            'Attribute s is deprecated; use value instead',
+            'Attribute s is deprecated and will be removed in Python 3.14; use value instead',
             'visit_Bytes is deprecated; add visit_Constant',
-            'Attribute s is deprecated; use value instead',
+            'Attribute s is deprecated and will be removed in Python 3.14; use value instead',
             'visit_NameConstant is deprecated; add visit_Constant',
             'visit_NameConstant is deprecated; add visit_Constant',
             'visit_Ellipsis is deprecated; add visit_Constant',

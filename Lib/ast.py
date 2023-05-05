@@ -497,6 +497,15 @@ class NodeTransformer(NodeVisitor):
         return node
 
 
+_DEPRECATED_VALUE_ALIAS_MESSAGE = (
+    "{name} is deprecated and will be removed in Python {remove}; use value instead"
+)
+_DEPRECATED_CLASS_MESSAGE = (
+    "{name} is deprecated and will be removed in Python {remove}; "
+    "use ast.Constant instead"
+)
+
+
 # If the ast module is loaded more than once, only add deprecated methods once
 if not hasattr(Constant, 'n'):
     # The following code is for backward compatibility.
@@ -505,27 +514,31 @@ if not hasattr(Constant, 'n'):
     def _n_getter(self):
         """Deprecated. Use value instead."""
         import warnings
-        warnings.warn("Attribute n is deprecated; use value instead",
-                      DeprecationWarning, stacklevel=2)
+        warnings._deprecated(
+            "Attribute n", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
+        )
         return self.value
 
     def _n_setter(self, value):
         import warnings
-        warnings.warn("Attribute n is deprecated; use value instead",
-                      DeprecationWarning, stacklevel=2)
+        warnings._deprecated(
+            "Attribute n", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
+        )
         self.value = value
 
     def _s_getter(self):
         """Deprecated. Use value instead."""
         import warnings
-        warnings.warn("Attribute s is deprecated; use value instead",
-                      DeprecationWarning, stacklevel=2)
+        warnings._deprecated(
+            "Attribute s", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
+        )
         return self.value
 
     def _s_setter(self, value):
         import warnings
-        warnings.warn("Attribute s is deprecated; use value instead",
-                      DeprecationWarning, stacklevel=2)
+        warnings._deprecated(
+            "Attribute s", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
+        )
         self.value = value
 
     Constant.n = property(_n_getter, _n_setter)
@@ -539,8 +552,11 @@ class _ABC(type):
     def __instancecheck__(cls, inst):
         if cls in _const_types:
             import warnings
-            warnings.warn(f"ast.{cls.__qualname__} is deprecated; use ast.Constant instead",
-                          DeprecationWarning, stacklevel=2)
+            warnings._deprecated(
+                f"ast.{cls.__qualname__}",
+                message=_DEPRECATED_CLASS_MESSAGE,
+                remove=(3, 14)
+            )
         if not isinstance(inst, Constant):
             return False
         if cls in _const_types:
@@ -565,8 +581,9 @@ def _new(cls, *args, **kwargs):
             raise TypeError(f"{cls.__name__} got multiple values for argument {key!r}")
     if cls in _const_types:
         import warnings
-        warnings.warn(f"ast.{cls.__qualname__} is deprecated; use ast.Constant instead",
-                    DeprecationWarning, stacklevel=2)
+        warnings._deprecated(
+            f"ast.{cls.__qualname__}", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
+        )
         return Constant(*args, **kwargs)
     return Constant.__new__(cls, *args, **kwargs)
 
@@ -591,8 +608,9 @@ class Ellipsis(Constant, metaclass=_ABC):
     def __new__(cls, *args, **kwargs):
         if cls is _ast_Ellipsis:
             import warnings
-            warnings.warn("ast.Ellipsis is deprecated; use ast.Constant instead",
-                        DeprecationWarning, stacklevel=2)
+            warnings._deprecated(
+                f"ast.Ellipsis", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
+            )
             return Constant(..., *args, **kwargs)
         return Constant.__new__(cls, *args, **kwargs)
 
@@ -1744,8 +1762,9 @@ def __getattr__(name):
         value, details = _deprecated_globals[name]
         globals()[name] = value
         import warnings
-        warnings.warn(f"ast.{name} is deprecated{details}",
-                      DeprecationWarning, stacklevel=2)
+        warnings._deprecated(
+            f"ast.{name}", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
+        )
         return value
     raise AttributeError(f"module 'ast' has no attribute '{name}'")
 
