@@ -1,0 +1,3 @@
+Teach :func:`urllib.parse.unsplit` to retain the ``"//"`` when assembling
+``itms-services://?action=generate-bugs`` style `Apple Platform Deployment
+<https://support.apple.com/en-gb/guide/deployment/depce7cefc4d/web>`_ URLs.

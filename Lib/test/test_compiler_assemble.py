@@ -52,7 +52,7 @@ class IsolatedAssembleTests(AssemblerTestCase):
             'filename' : 'avg.py',
             'name'     : 'avg',
             'qualname' : 'stats.avg',
-            'consts'   : [2],
+            'consts'   : {2 : 0},
             'argcount' : 2,
             'varnames' : {'x' : 0, 'y' : 1},
         }
