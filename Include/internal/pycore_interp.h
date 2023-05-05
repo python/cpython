@@ -152,7 +152,6 @@ struct _is {
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
-    PyCodeObject *interpreter_trampoline;
 
     _Py_Monitors monitors;
     bool f_opcode_trace_set;

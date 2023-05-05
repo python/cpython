@@ -289,7 +289,7 @@ PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
 #define PY_EXECUTABLE_KIND_METHOD_DESCRIPTOR 4
 #define PY_EXECUTABLE_KINDS 5
 
-const PyAPI_DATA(PyTypeObject *) const PyUnstable_ExecutableKinds[PY_EXECUTABLE_KINDS+1];
+PyAPI_DATA(const PyTypeObject *) const PyUnstable_ExecutableKinds[PY_EXECUTABLE_KINDS+1];
 
 #ifdef __cplusplus
 }
