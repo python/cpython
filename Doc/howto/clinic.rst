@@ -1033,7 +1033,7 @@ you're not permitted to use:
 Using a return converter
 ------------------------
 
-By default the impl function Argument Clinic generates for you returns
+By default, the impl function Argument Clinic generates for you returns
 :c:type:`PyObject * <PyObject>`.
 But your C function often computes some C type, then converts it into the
 :c:type:`!PyObject *`
