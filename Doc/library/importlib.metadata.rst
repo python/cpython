@@ -173,10 +173,10 @@ for more information on entry points, their definition, and usage.
 
 *Compatibility Note*
 
-The "selectable" entry points were introduced in ``importlib.metadata``
+The "selectable" entry points were introduced in ``importlib_metadata``
 3.6 and Python 3.10. Prior to those changes, ``entry_points`` accepted
 no parameters and always returned a dictionary of entry points, keyed
-by group. With ``importlib.metadata`` 5.0 and Python 3.12,
+by group. With ``importlib_metadata`` 5.0 and Python 3.12,
 ``entry_points`` always returns an ``EntryPoints`` object. See
 `backports.entry_points_selectable <https://pypi.org/project/backports.entry_points_selectable>`_
 for compatibility options.
