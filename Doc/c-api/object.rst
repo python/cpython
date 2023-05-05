@@ -395,3 +395,42 @@ Object Protocol
    returns ``NULL`` if the object cannot be iterated.
 
    .. versionadded:: 3.10
+
+.. c:function:: void *PyObject_GetTypeData(PyObject *o, PyTypeObject *cls)
+
+   Get a pointer to subclass-specific data reserved for *cls*.
+
+   The object *o* must be an instance of *cls*, and *cls* must have been
+   created using negative :c:member:`PyType_Spec.basicsize`.
+   Python does not check this.
+
+   On error, set an exception and return ``NULL``.
+
+   .. versionadded:: 3.12
+
+.. c:function:: Py_ssize_t PyType_GetTypeDataSize(PyTypeObject *cls)
+
+   Return the size of the instance memory space reserved for *cls*, i.e. the size of the
+   memory :c:func:`PyObject_GetTypeData` returns.
+
+   This may be larger than requested using :c:member:`-PyType_Spec.basicsize <PyType_Spec.basicsize>`;
+   it is safe to use this larger size (e.g. with :c:func:`!memset`).
+
+   The type *cls* **must** have been created using
+   negative :c:member:`PyType_Spec.basicsize`.
+   Python does not check this.
+
+   On error, set an exception and return a negative value.
+
+   .. versionadded:: 3.12
+
+.. c:function:: void *PyObject_GetItemData(PyObject *o)
+
+   Get a pointer to per-item data for a class with
+   :const:`Py_TPFLAGS_ITEMS_AT_END`.
+
+   On error, set an exception and return ``NULL``.
+   :py:exc:`TypeError` is raised if *o* does not have
+   :const:`Py_TPFLAGS_ITEMS_AT_END` set.
+
+   .. versionadded:: 3.12

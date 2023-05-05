@@ -404,6 +404,7 @@ Modules/_testbuffer.c	ndarray_memoryview_from_buffer	strides	-
 Modules/_testbuffer.c	ndarray_memoryview_from_buffer	suboffsets	-
 Modules/_testbuffer.c	ndarray_push	kwlist	-
 Modules/_testbuffer.c	staticarray_init	kwlist	-
+Modules/_testcapi/buffer.c	-	testBufType	-
 Modules/_testcapi/code.c	get_code_extra_index	key	-
 Modules/_testcapi/datetime.c	-	test_run_counter	-
 Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-

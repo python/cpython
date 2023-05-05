@@ -448,7 +448,7 @@ def safeimport(path, forceload=0, cache={}):
                     # Prevent garbage collection.
                     cache[key] = sys.modules[key]
                     del sys.modules[key]
-        module = __import__(path)
+        module = importlib.import_module(path)
     except BaseException as err:
         # Did the error occur before or after the module was found?
         if path in sys.modules:
@@ -463,9 +463,6 @@ def safeimport(path, forceload=0, cache={}):
         else:
             # Some other error occurred during the importing process.
             raise ErrorDuringImport(path, err)
-    for part in path.split('.')[1:]:
-        try: module = getattr(module, part)
-        except AttributeError: return None
     return module
 
 # ---------------------------------------------------- formatter base class

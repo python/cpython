@@ -138,6 +138,8 @@ _Py_type_getattro(PyTypeObject *type, PyObject *name);
 PyObject *_Py_slot_tp_getattro(PyObject *self, PyObject *name);
 PyObject *_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
 
+PyAPI_DATA(PyTypeObject) _PyBufferWrapper_Type;
+
 PyObject *
 _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *meth_found);
 PyObject *

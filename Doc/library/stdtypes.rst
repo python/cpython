@@ -32,8 +32,8 @@ Truth Value Testing
 ===================
 
 .. index::
-   statement: if
-   statement: while
+   pair: statement; if
+   pair: statement; while
    pair: truth; value
    pair: Boolean; operations
    single: false
@@ -61,8 +61,8 @@ objects considered false:
   ``range(0)``
 
 .. index::
-   operator: or
-   operator: and
+   pair: operator; or
+   pair: operator; and
    single: False
    single: True
 
@@ -95,9 +95,9 @@ These are the Boolean operations, ordered by ascending priority:
 +-------------+---------------------------------+-------+
 
 .. index::
-   operator: and
-   operator: or
-   operator: not
+   pair: operator; and
+   pair: operator; or
+   pair: operator; not
 
 Notes:
 
@@ -122,14 +122,14 @@ Comparisons
 .. index::
    pair: chaining; comparisons
    pair: operator; comparison
-   operator: ==
-   operator: < (less)
-   operator: <=
-   operator: > (greater)
-   operator: >=
-   operator: !=
-   operator: is
-   operator: is not
+   pair: operator; ==
+   pair: operator; < (less)
+   pair: operator; <=
+   pair: operator; > (greater)
+   pair: operator; >=
+   pair: operator; !=
+   pair: operator; is
+   pair: operator; is not
 
 There are eight comparison operations in Python.  They all have the same
 priority (which is higher than that of the Boolean operations).  Comparisons can
@@ -192,8 +192,8 @@ customized; also they can be applied to any two objects and never raise an
 exception.
 
 .. index::
-   operator: in
-   operator: not in
+   pair: operator; in
+   pair: operator; not in
 
 Two more operations with the same syntactic priority, :keyword:`in` and
 :keyword:`not in`, are supported by types that are :term:`iterable` or
@@ -205,11 +205,11 @@ Numeric Types --- :class:`int`, :class:`float`, :class:`complex`
 ================================================================
 
 .. index::
-   object: numeric
-   object: Boolean
-   object: integer
-   object: floating point
-   object: complex number
+   pair: object; numeric
+   pair: object; Boolean
+   pair: object; integer
+   pair: object; floating point
+   pair: object; complex number
    pair: C; language
 
 There are three distinct numeric types: :dfn:`integers`, :dfn:`floating
@@ -253,11 +253,11 @@ and imaginary parts.
    single: operator; - (minus)
    single: - (minus); unary operator
    single: - (minus); binary operator
-   operator: * (asterisk)
-   operator: / (slash)
-   operator: //
-   operator: % (percent)
-   operator: **
+   pair: operator; * (asterisk)
+   pair: operator; / (slash)
+   pair: operator; //
+   pair: operator; % (percent)
+   pair: operator; **
 
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
 operands of different numeric types, the operand with the "narrower" type is
@@ -330,7 +330,7 @@ Notes:
 
 (3)
    .. index::
-      module: math
+      pair: module; math
       single: floor() (in module math)
       single: ceil() (in module math)
       single: trunc() (in module math)
@@ -392,12 +392,12 @@ Bitwise Operations on Integer Types
    pair: bitwise; operations
    pair: shifting; operations
    pair: masking; operations
-   operator: | (vertical bar)
-   operator: ^ (caret)
-   operator: & (ampersand)
-   operator: <<
-   operator: >>
-   operator: ~ (tilde)
+   pair: operator; | (vertical bar)
+   pair: operator; ^ (caret)
+   pair: operator; & (ampersand)
+   pair: operator; <<
+   pair: operator; >>
+   pair: operator; ~ (tilde)
 
 Bitwise operations only make sense for integers. The result of bitwise
 operations is calculated as though carried out in two's complement with an
@@ -927,7 +927,7 @@ described in dedicated sections.
 Common Sequence Operations
 --------------------------
 
-.. index:: object: sequence
+.. index:: pair: object; sequence
 
 The operations in the following table are supported by most sequence types,
 both mutable and immutable. The :class:`collections.abc.Sequence` ABC is
@@ -952,8 +952,8 @@ operations have the same priority as the corresponding numeric operations. [3]_
    pair: repetition; operation
    pair: subscript; operation
    pair: slice; operation
-   operator: in
-   operator: not in
+   pair: operator; in
+   pair: operator; not in
    single: count() (sequence method)
    single: index() (sequence method)
 
@@ -1112,7 +1112,7 @@ Immutable Sequence Types
 
 .. index::
    triple: immutable; sequence; types
-   object: tuple
+   pair: object; tuple
    builtin: hash
 
 The only operation that immutable sequence types generally implement that is
@@ -1134,8 +1134,8 @@ Mutable Sequence Types
 
 .. index::
    triple: mutable; sequence; types
-   object: list
-   object: bytearray
+   pair: object; list
+   pair: object; bytearray
 
 The operations in the following table are defined on mutable sequence types.
 The :class:`collections.abc.MutableSequence` ABC is provided to make it
@@ -1152,7 +1152,7 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
    triple: operations on; list; type
    pair: subscript; assignment
    pair: slice; assignment
-   statement: del
+   pair: statement; del
    single: append() (sequence method)
    single: clear() (sequence method)
    single: copy() (sequence method)
@@ -1252,7 +1252,7 @@ Notes:
 Lists
 -----
 
-.. index:: object: list
+.. index:: pair: object; list
 
 Lists are mutable sequences, typically used to store collections of
 homogeneous items (where the precise degree of similarity will vary by
@@ -1331,7 +1331,7 @@ application).
 Tuples
 ------
 
-.. index:: object: tuple
+.. index:: pair: object; tuple
 
 Tuples are immutable sequences, typically used to store collections of
 heterogeneous data (such as the 2-tuples produced by the :func:`enumerate`
@@ -1375,7 +1375,7 @@ choice than a simple tuple object.
 Ranges
 ------
 
-.. index:: object: range
+.. index:: pair: object; range
 
 The :class:`range` type represents an immutable sequence of numbers and is
 commonly used for looping a specific number of times in :keyword:`for`
@@ -1500,7 +1500,7 @@ objects that compare equal might have different :attr:`~range.start`,
 .. index::
    single: string; text sequence type
    single: str (built-in class); (see also string)
-   object: string
+   pair: object; string
 
 .. _textseq:
 
@@ -1534,7 +1534,7 @@ Since there is no separate "character" type, indexing a string produces
 strings of length 1. That is, for a non-empty string *s*, ``s[0] == s[0:1]``.
 
 .. index::
-   object: io.StringIO
+   pair: object; io.StringIO
 
 There is also no mutable string type, but :meth:`str.join` or
 :class:`io.StringIO` can be used to efficiently construct strings from
@@ -1600,7 +1600,7 @@ String Methods
 --------------
 
 .. index::
-   module: re
+   pair: module; re
 
 Strings implement all of the :ref:`common <typesseq-common>` sequence
 operations, along with the additional methods described below.
@@ -2508,10 +2508,10 @@ Binary Sequence Types --- :class:`bytes`, :class:`bytearray`, :class:`memoryview
 =================================================================================
 
 .. index::
-   object: bytes
-   object: bytearray
-   object: memoryview
-   module: array
+   pair: object; bytes
+   pair: object; bytearray
+   pair: object; memoryview
+   pair: module; array
 
 The core built-in types for manipulating binary data are :class:`bytes` and
 :class:`bytearray`. They are supported by :class:`memoryview` which uses
@@ -2526,7 +2526,7 @@ The :mod:`array` module supports efficient storage of basic data types like
 Bytes Objects
 -------------
 
-.. index:: object: bytes
+.. index:: pair: object; bytes
 
 Bytes objects are immutable sequences of single bytes. Since many major
 binary protocols are based on the ASCII text encoding, bytes objects offer
@@ -2633,7 +2633,7 @@ always convert a bytes object into a list of integers using ``list(b)``.
 Bytearray Objects
 -----------------
 
-.. index:: object: bytearray
+.. index:: pair: object; bytearray
 
 :class:`bytearray` objects are a mutable counterpart to :class:`bytes`
 objects.
@@ -4212,7 +4212,7 @@ copying.
 Set Types --- :class:`set`, :class:`frozenset`
 ==============================================
 
-.. index:: object: set
+.. index:: pair: object; set
 
 A :dfn:`set` object is an unordered collection of distinct :term:`hashable` objects.
 Common uses include membership testing, removing duplicates from a sequence, and
@@ -4414,11 +4414,11 @@ Mapping Types --- :class:`dict`
 ===============================
 
 .. index::
-   object: mapping
-   object: dictionary
+   pair: object; mapping
+   pair: object; dictionary
    triple: operations on; mapping; types
    triple: operations on; dictionary; type
-   statement: del
+   pair: statement; del
    builtin: len
 
 A :term:`mapping` object maps :term:`hashable` values to arbitrary objects.
@@ -4889,7 +4889,7 @@ Generic Alias Type
 ------------------
 
 .. index::
-   object: GenericAlias
+   pair: object; GenericAlias
    pair: Generic; Alias
 
 ``GenericAlias`` objects are generally created by
@@ -5144,7 +5144,7 @@ Union Type
 ----------
 
 .. index::
-   object: Union
+   pair: object; Union
    pair: union; type
 
 A union object holds the value of the ``|`` (bitwise or) operation on
@@ -5301,7 +5301,7 @@ See :ref:`function` for more information.
 Methods
 -------
 
-.. index:: object: method
+.. index:: pair: object; method
 
 Methods are functions that are called using the attribute notation. There are
 two flavors: built-in methods (such as :meth:`append` on lists) and class
@@ -5378,7 +5378,7 @@ Type Objects
 
 .. index::
    builtin: type
-   module: types
+   pair: module; types
 
 Type objects represent the various object types.  An object's type is accessed
 by the built-in function :func:`type`.  There are no special operations on

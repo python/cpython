@@ -1340,7 +1340,7 @@ are always available.  They are listed here in alphabetical order.
       single: I/O control; buffering
       single: binary mode
       single: text mode
-      module: sys
+      pair: module; sys
 
    See also the file handling modules, such as :mod:`fileinput`, :mod:`io`
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
@@ -1830,7 +1830,7 @@ are always available.  They are listed here in alphabetical order.
 .. class:: type(object)
            type(name, bases, dict, **kwds)
 
-   .. index:: object: type
+   .. index:: pair: object; type
 
    With one argument, return the type of an *object*.  The return value is a
    type object and generally the same object as returned by
@@ -1986,8 +1986,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: __import__(name, globals=None, locals=None, fromlist=(), level=0)
 
    .. index::
-      statement: import
-      module: builtins
+      pair: statement; import
+      pair: module; builtins
 
    .. note::
 

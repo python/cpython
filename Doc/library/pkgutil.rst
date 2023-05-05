@@ -64,6 +64,10 @@ support.
    .. versionchanged:: 3.4
       Updated to be based on :pep:`451`
 
+   .. deprecated-removed:: 3.12 3.14
+      Use :func:`importlib.util.find_spec` instead.
+
+
 .. function:: get_importer(path_item)
 
    Retrieve a :term:`finder` for the given *path_item*.
@@ -95,6 +99,9 @@ support.
 
    .. versionchanged:: 3.4
       Updated to be based on :pep:`451`
+
+   .. deprecated-removed:: 3.12 3.14
+      Use :func:`importlib.util.find_spec` instead.
 
 
 .. function:: iter_importers(fullname='')
