@@ -12193,6 +12193,7 @@ astmodule_exec(PyObject *m)
 
 static PyModuleDef_Slot astmodule_slots[] = {
     {Py_mod_exec, astmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

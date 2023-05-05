@@ -4693,6 +4693,7 @@ itertoolsmodule_exec(PyObject *mod)
 
 static struct PyModuleDef_Slot itertoolsmodule_slots[] = {
     {Py_mod_exec, itertoolsmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
