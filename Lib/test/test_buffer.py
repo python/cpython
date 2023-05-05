@@ -10,10 +10,14 @@
 # the same way as the original. Thus, a substantial part of the
 # memoryview tests is now in this module.
 #
+# Written and designed by Stefan Krah for Python 3.3.
+#
 
 import contextlib
 import unittest
 from test import support
+from test.support import os_helper
+import inspect
 from itertools import permutations, product
 from random import randrange, sample, choice
 import warnings
@@ -37,11 +41,16 @@ except ImportError:
     ctypes = None
 
 try:
-    with support.EnvironmentVarGuard() as os.environ, \
+    with os_helper.EnvironmentVarGuard() as os.environ, \
          warnings.catch_warnings():
         from numpy import ndarray as numpy_array
 except ImportError:
     numpy_array = None
+
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 
 SHORT_TEST = True
@@ -56,7 +65,7 @@ NATIVE = {
     '?':0, 'c':0, 'b':0, 'B':0,
     'h':0, 'H':0, 'i':0, 'I':0,
     'l':0, 'L':0, 'n':0, 'N':0,
-    'f':0, 'd':0, 'P':0
+    'e':0, 'f':0, 'd':0, 'P':0
 }
 
 # NumPy does not have 'n' or 'N':
@@ -81,7 +90,8 @@ STANDARD = {
     'i':(-(1<<31), 1<<31), 'I':(0, 1<<32),
     'l':(-(1<<31), 1<<31), 'L':(0, 1<<32),
     'q':(-(1<<63), 1<<63), 'Q':(0, 1<<64),
-    'f':(-(1<<63), 1<<63), 'd':(-(1<<1023), 1<<1023)
+    'e':(-65519, 65520),   'f':(-(1<<63), 1<<63),
+    'd':(-(1<<1023), 1<<1023)
 }
 
 def native_type_range(fmt):
@@ -90,6 +100,8 @@ def native_type_range(fmt):
         lh = (0, 256)
     elif fmt == '?':
         lh = (0, 2)
+    elif fmt == 'e':
+        lh = (-65519, 65520)
     elif fmt == 'f':
         lh = (-(1<<63), 1<<63)
     elif fmt == 'd':
@@ -117,7 +129,10 @@ if struct:
     for fmt in fmtdict['@']:
         fmtdict['@'][fmt] = native_type_range(fmt)
 
+# Format codes suppported by the memoryview object
 MEMORYVIEW = NATIVE.copy()
+
+# Format codes suppported by array.array
 ARRAY = NATIVE.copy()
 for k in NATIVE:
     if not k in "bBhHiIlLfd":
@@ -156,7 +171,7 @@ def randrange_fmt(mode, char, obj):
             x = b'\x01'
     if char == '?':
         x = bool(x)
-    if char == 'f' or char == 'd':
+    if char in 'efd':
         x = struct.pack(char, x)
         x = struct.unpack(char, x)[0]
     return x
@@ -761,12 +776,11 @@ class TestBufferProtocol(unittest.TestCase):
         # The suboffsets tests need sizeof(void *).
         self.sizeof_void_p = get_sizeof_void_p()
 
-    def verify(self, result, obj=-1,
-                     itemsize={1}, fmt=-1, readonly={1},
-                     ndim={1}, shape=-1, strides=-1,
-                     lst=-1, sliced=False, cast=False):
-        # Verify buffer contents against expected values. Default values
-        # are deliberately initialized to invalid types.
+    def verify(self, result, *, obj,
+                     itemsize, fmt, readonly,
+                     ndim, shape, strides,
+                     lst, sliced=False, cast=False):
+        # Verify buffer contents against expected values.
         if shape:
             expected_len = prod(shape)*itemsize
         else:
@@ -800,7 +814,7 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertEqual(result.nbytes, expected_len)
         self.assertEqual(result.itemsize, itemsize)
         self.assertEqual(result.format, fmt)
-        self.assertEqual(result.readonly, readonly)
+        self.assertIs(result.readonly, readonly)
         self.assertEqual(result.ndim, ndim)
         self.assertEqual(result.shape, tuple(shape))
         if not (sliced and suboffsets):
@@ -894,6 +908,15 @@ class TestBufferProtocol(unittest.TestCase):
                     y = ndarray(initlst, shape=shape, flags=ro, format=fmt)
                     self.assertEqual(memoryview(y), memoryview(result))
 
+                    contig_bytes = memoryview(result).tobytes()
+                    self.assertEqual(contig_bytes, contig)
+
+                    contig_bytes = memoryview(result).tobytes(order=None)
+                    self.assertEqual(contig_bytes, contig)
+
+                    contig_bytes = memoryview(result).tobytes(order='C')
+                    self.assertEqual(contig_bytes, contig)
+
                     # To 'F'
                     contig = py_buffer_to_contiguous(result, 'F', PyBUF_FULL_RO)
                     self.assertEqual(len(contig), nmemb * itemsize)
@@ -905,6 +928,9 @@ class TestBufferProtocol(unittest.TestCase):
                     y = ndarray(initlst, shape=shape, flags=ro|ND_FORTRAN,
                                 format=fmt)
                     self.assertEqual(memoryview(y), memoryview(result))
+
+                    contig_bytes = memoryview(result).tobytes(order='F')
+                    self.assertEqual(contig_bytes, contig)
 
                     # To 'A'
                     contig = py_buffer_to_contiguous(result, 'A', PyBUF_FULL_RO)
@@ -918,33 +944,43 @@ class TestBufferProtocol(unittest.TestCase):
                     y = ndarray(initlst, shape=shape, flags=f|ro, format=fmt)
                     self.assertEqual(memoryview(y), memoryview(result))
 
+                    contig_bytes = memoryview(result).tobytes(order='A')
+                    self.assertEqual(contig_bytes, contig)
+
         if is_memoryview_format(fmt):
             try:
                 m = memoryview(result)
             except BufferError: # re-exporter does not provide full information
                 return
             ex = result.obj if isinstance(result, memoryview) else result
-            self.assertIs(m.obj, ex)
-            self.assertEqual(m.nbytes, expected_len)
-            self.assertEqual(m.itemsize, itemsize)
-            self.assertEqual(m.format, fmt)
-            self.assertEqual(m.readonly, readonly)
-            self.assertEqual(m.ndim, ndim)
-            self.assertEqual(m.shape, tuple(shape))
-            if not (sliced and suboffsets):
-                self.assertEqual(m.strides, tuple(strides))
-            self.assertEqual(m.suboffsets, tuple(suboffsets))
 
-            n = 1 if ndim == 0 else len(lst)
-            self.assertEqual(len(m), n)
+            def check_memoryview(m, expected_readonly=readonly):
+                self.assertIs(m.obj, ex)
+                self.assertEqual(m.nbytes, expected_len)
+                self.assertEqual(m.itemsize, itemsize)
+                self.assertEqual(m.format, fmt)
+                self.assertEqual(m.readonly, expected_readonly)
+                self.assertEqual(m.ndim, ndim)
+                self.assertEqual(m.shape, tuple(shape))
+                if not (sliced and suboffsets):
+                    self.assertEqual(m.strides, tuple(strides))
+                self.assertEqual(m.suboffsets, tuple(suboffsets))
 
-            rep = result.tolist() if fmt else result.tobytes()
-            self.assertEqual(rep, lst)
-            self.assertEqual(m, result)
+                if ndim == 0:
+                    self.assertRaises(TypeError, len, m)
+                else:
+                    self.assertEqual(len(m), len(lst))
+
+                rep = result.tolist() if fmt else result.tobytes()
+                self.assertEqual(rep, lst)
+                self.assertEqual(m, result)
+
+            check_memoryview(m)
+            with m.toreadonly() as mm:
+                check_memoryview(mm, expected_readonly=True)
+            m.tobytes()  # Releasing mm didn't release m
 
     def verify_getbuf(self, orig_ex, ex, req, sliced=False):
-        def simple_fmt(ex):
-            return ex.format == '' or ex.format == 'B'
         def match(req, flag):
             return ((req&flag) == flag)
 
@@ -971,7 +1007,7 @@ class TestBufferProtocol(unittest.TestCase):
             lst = nd.tolist()
 
         # The consumer may have requested default values or a NULL format.
-        ro = 0 if match(req, PyBUF_WRITABLE) else ex.readonly
+        ro = False if match(req, PyBUF_WRITABLE) else ex.readonly
         fmt = ex.format
         itemsize = ex.itemsize
         ndim = ex.ndim
@@ -1277,7 +1313,7 @@ class TestBufferProtocol(unittest.TestCase):
             itemsize = struct.calcsize(fmt)
             nd = ndarray(scalar, shape=(), format=fmt)
             self.verify(nd, obj=None,
-                        itemsize=itemsize, fmt=fmt, readonly=1,
+                        itemsize=itemsize, fmt=fmt, readonly=True,
                         ndim=0, shape=(), strides=(),
                         lst=scalar)
 
@@ -1289,7 +1325,7 @@ class TestBufferProtocol(unittest.TestCase):
             for flags in (0, ND_PIL):
                 nd = ndarray(items, shape=[nitems], format=fmt, flags=flags)
                 self.verify(nd, obj=None,
-                            itemsize=itemsize, fmt=fmt, readonly=1,
+                            itemsize=itemsize, fmt=fmt, readonly=True,
                             ndim=1, shape=(nitems,), strides=(itemsize,),
                             lst=items)
 
@@ -1310,7 +1346,7 @@ class TestBufferProtocol(unittest.TestCase):
                     nd = ndarray(items, shape=shape, strides=strides,
                                  format=fmt, offset=offset, flags=flags)
                     self.verify(nd, obj=None,
-                                itemsize=itemsize, fmt=fmt, readonly=1,
+                                itemsize=itemsize, fmt=fmt, readonly=True,
                                 ndim=1, shape=shape, strides=strides,
                                 lst=items[::step])
 
@@ -1339,7 +1375,7 @@ class TestBufferProtocol(unittest.TestCase):
                     strides = strides_from_shape(ndim, shape, itemsize, 'C')
                     lst = carray(items, shape)
                     self.verify(nd, obj=None,
-                                itemsize=itemsize, fmt=fmt, readonly=1,
+                                itemsize=itemsize, fmt=fmt, readonly=True,
                                 ndim=ndim, shape=shape, strides=strides,
                                 lst=lst)
 
@@ -1350,7 +1386,7 @@ class TestBufferProtocol(unittest.TestCase):
                         self.assertTrue(nd.strides == ())
                         mv = nd.memoryview_from_buffer()
                         self.verify(mv, obj=None,
-                                    itemsize=itemsize, fmt=fmt, readonly=1,
+                                    itemsize=itemsize, fmt=fmt, readonly=True,
                                     ndim=ndim, shape=shape, strides=strides,
                                     lst=lst)
 
@@ -1361,7 +1397,7 @@ class TestBufferProtocol(unittest.TestCase):
                     strides = strides_from_shape(ndim, shape, itemsize, 'F')
                     lst = farray(items, shape)
                     self.verify(nd, obj=None,
-                                itemsize=itemsize, fmt=fmt, readonly=1,
+                                itemsize=itemsize, fmt=fmt, readonly=True,
                                 ndim=ndim, shape=shape, strides=strides,
                                 lst=lst)
 
@@ -1809,7 +1845,7 @@ class TestBufferProtocol(unittest.TestCase):
                             self.assertEqual(mv, nd)
                             self.assertIs(mverr, lsterr)
                             self.verify(mv, obj=ex,
-                              itemsize=nd.itemsize, fmt=fmt, readonly=0,
+                              itemsize=nd.itemsize, fmt=fmt, readonly=False,
                               ndim=nd.ndim, shape=nd.shape, strides=nd.strides,
                               lst=nd.tolist())
 
@@ -1883,7 +1919,7 @@ class TestBufferProtocol(unittest.TestCase):
                         continue # http://projects.scipy.org/numpy/ticket/1910
                     z = numpy_array_from_structure(items, fmt, t)
                     self.verify(x, obj=None,
-                                itemsize=z.itemsize, fmt=fmt, readonly=0,
+                                itemsize=z.itemsize, fmt=fmt, readonly=False,
                                 ndim=z.ndim, shape=z.shape, strides=z.strides,
                                 lst=z.tolist())
 
@@ -1968,12 +2004,12 @@ class TestBufferProtocol(unittest.TestCase):
                         # Slice assignment of overlapping structures
                         # is undefined in NumPy.
                         self.verify(xl, obj=None,
-                                    itemsize=zl.itemsize, fmt=fmt, readonly=0,
+                                    itemsize=zl.itemsize, fmt=fmt, readonly=False,
                                     ndim=zl.ndim, shape=zl.shape,
                                     strides=zl.strides, lst=zl.tolist())
 
                     self.verify(xr, obj=None,
-                                itemsize=zr.itemsize, fmt=fmt, readonly=0,
+                                itemsize=zr.itemsize, fmt=fmt, readonly=False,
                                 ndim=zr.ndim, shape=zr.shape,
                                 strides=zr.strides, lst=zr.tolist())
 
@@ -2219,7 +2255,7 @@ class TestBufferProtocol(unittest.TestCase):
         ###
         ###    Fortran output:
         ###    ---------------
-        ###       >>> fortran_buf = nd.tostring(order='F')
+        ###       >>> fortran_buf = nd.tobytes(order='F')
         ###       >>> fortran_buf
         ###       b'\x00\x04\x08\x01\x05\t\x02\x06\n\x03\x07\x0b'
         ###
@@ -2262,7 +2298,7 @@ class TestBufferProtocol(unittest.TestCase):
                 self.assertEqual(memoryview(y), memoryview(nd))
 
                 if numpy_array:
-                    self.assertEqual(b, na.tostring(order='C'))
+                    self.assertEqual(b, na.tobytes(order='C'))
 
             # 'F' request
             if f == 0: # 'C' to 'F'
@@ -2285,7 +2321,7 @@ class TestBufferProtocol(unittest.TestCase):
                 self.assertEqual(memoryview(y), memoryview(nd))
 
                 if numpy_array:
-                    self.assertEqual(b, na.tostring(order='F'))
+                    self.assertEqual(b, na.tobytes(order='F'))
 
             # 'A' request
             if f == ND_FORTRAN:
@@ -2309,7 +2345,7 @@ class TestBufferProtocol(unittest.TestCase):
                 self.assertEqual(memoryview(y), memoryview(nd))
 
                 if numpy_array:
-                    self.assertEqual(b, na.tostring(order='A'))
+                    self.assertEqual(b, na.tobytes(order='A'))
 
         # multi-dimensional, non-contiguous input
         nd = ndarray(list(range(12)), shape=[3, 4], flags=ND_WRITABLE|ND_PIL)
@@ -2351,14 +2387,14 @@ class TestBufferProtocol(unittest.TestCase):
             lst = carray(items, shape)
 
             self.verify(m, obj=ex,
-                        itemsize=1, fmt='B', readonly=1,
+                        itemsize=1, fmt='B', readonly=True,
                         ndim=ndim, shape=shape, strides=strides,
                         lst=lst)
 
             # From memoryview:
             m2 = memoryview(m)
             self.verify(m2, obj=ex,
-                        itemsize=1, fmt='B', readonly=1,
+                        itemsize=1, fmt='B', readonly=True,
                         ndim=ndim, shape=shape, strides=strides,
                         lst=lst)
 
@@ -2367,7 +2403,7 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertEqual(nd.strides, ())
             m = nd.memoryview_from_buffer()
             self.verify(m, obj=None,
-                        itemsize=1, fmt='B', readonly=1,
+                        itemsize=1, fmt='B', readonly=True,
                         ndim=ndim, shape=shape, strides=strides,
                         lst=lst)
 
@@ -2380,7 +2416,7 @@ class TestBufferProtocol(unittest.TestCase):
 
             lst = [items] if ndim == 0 else items
             self.verify(m, obj=None,
-                        itemsize=1, fmt='B', readonly=1,
+                        itemsize=1, fmt='B', readonly=True,
                         ndim=1, shape=[ex.nbytes], strides=(1,),
                         lst=lst)
 
@@ -2398,14 +2434,14 @@ class TestBufferProtocol(unittest.TestCase):
             lst = farray(items, shape)
 
             self.verify(m, obj=ex,
-                        itemsize=1, fmt='B', readonly=1,
+                        itemsize=1, fmt='B', readonly=True,
                         ndim=ndim, shape=shape, strides=strides,
                         lst=lst)
 
             # From memoryview:
             m2 = memoryview(m)
             self.verify(m2, obj=ex,
-                        itemsize=1, fmt='B', readonly=1,
+                        itemsize=1, fmt='B', readonly=True,
                         ndim=ndim, shape=shape, strides=strides,
                         lst=lst)
 
@@ -2420,14 +2456,14 @@ class TestBufferProtocol(unittest.TestCase):
             lst = carray(items, shape)
 
             self.verify(m, obj=ex,
-                        itemsize=1, fmt='B', readonly=1,
+                        itemsize=1, fmt='B', readonly=True,
                         ndim=ndim, shape=shape, strides=ex.strides,
                         lst=lst)
 
             # From memoryview:
             m2 = memoryview(m)
             self.verify(m2, obj=ex,
-                        itemsize=1, fmt='B', readonly=1,
+                        itemsize=1, fmt='B', readonly=True,
                         ndim=ndim, shape=shape, strides=ex.strides,
                         lst=lst)
 
@@ -2502,7 +2538,7 @@ class TestBufferProtocol(unittest.TestCase):
         values = [INT(9), IDX(9),
                   2.2+3j, Decimal("-21.1"), 12.2, Fraction(5, 2),
                   [1,2,3], {4,5,6}, {7:8}, (), (9,),
-                  True, False, None, NotImplemented,
+                  True, False, None, Ellipsis,
                   b'a', b'abc', bytearray(b'a'), bytearray(b'abc'),
                   'a', 'abc', r'a', r'abc',
                   f, lambda x: x]
@@ -2677,7 +2713,7 @@ class TestBufferProtocol(unittest.TestCase):
                 m2 = m.cast(bytefmt)
                 lst = to_bytelist(ex)
                 self.verify(m2, obj=ex,
-                            itemsize=1, fmt=bytefmt, readonly=0,
+                            itemsize=1, fmt=bytefmt, readonly=False,
                             ndim=1, shape=[31*srcsize], strides=(1,),
                             lst=lst, cast=True)
 
@@ -2685,7 +2721,7 @@ class TestBufferProtocol(unittest.TestCase):
                 self.assertEqual(m3, ex)
                 lst = ex.tolist()
                 self.verify(m3, obj=ex,
-                            itemsize=srcsize, fmt=fmt, readonly=0,
+                            itemsize=srcsize, fmt=fmt, readonly=False,
                             ndim=1, shape=[31], strides=(srcsize,),
                             lst=lst, cast=True)
 
@@ -2696,7 +2732,7 @@ class TestBufferProtocol(unittest.TestCase):
         m = memoryview(ex)
         m2 = m.cast('B')
         self.verify(m2, obj=ex,
-                    itemsize=1, fmt='B', readonly=1,
+                    itemsize=1, fmt='B', readonly=True,
                     ndim=1, shape=destshape, strides=(1,),
                     lst=destitems, cast=True)
 
@@ -2707,7 +2743,7 @@ class TestBufferProtocol(unittest.TestCase):
         m = memoryview(ex)
         m2 = m.cast('I', shape=[])
         self.verify(m2, obj=ex,
-                    itemsize=destsize, fmt='I', readonly=1,
+                    itemsize=destsize, fmt='I', readonly=True,
                     ndim=0, shape=(), strides=(),
                     lst=destitems, cast=True)
 
@@ -2728,6 +2764,10 @@ class TestBufferProtocol(unittest.TestCase):
         # be 1D, at least one format must be 'c', 'b' or 'B'.
         for _tshape in gencastshapes():
             for char in fmtdict['@']:
+                # Casts to _Bool are undefined if the source contains values
+                # other than 0 or 1.
+                if char == "?":
+                    continue
                 tfmt = ('', '@')[randrange(2)] + char
                 tsize = struct.calcsize(tfmt)
                 n = prod(_tshape) * tsize
@@ -2756,7 +2796,7 @@ class TestBufferProtocol(unittest.TestCase):
                     strides = nd.strides
                     lst = nd.tolist()
                     self.verify(m2, obj=ex,
-                                itemsize=tsize, fmt=tfmt, readonly=1,
+                                itemsize=tsize, fmt=tfmt, readonly=True,
                                 ndim=ndim, shape=tshape, strides=strides,
                                 lst=lst, cast=True)
 
@@ -2768,12 +2808,12 @@ class TestBufferProtocol(unittest.TestCase):
                     lst = ex.tolist()
 
                     self.verify(m3, obj=ex,
-                                itemsize=size, fmt=fmt, readonly=1,
+                                itemsize=size, fmt=fmt, readonly=True,
                                 ndim=ndim, shape=shape, strides=strides,
                                 lst=lst, cast=True)
 
                     self.verify(m4, obj=ex,
-                                itemsize=size, fmt=fmt, readonly=1,
+                                itemsize=size, fmt=fmt, readonly=True,
                                 ndim=ndim, shape=shape, strides=strides,
                                 lst=lst, cast=True)
 
@@ -2786,7 +2826,7 @@ class TestBufferProtocol(unittest.TestCase):
             m2 = m1.cast('B')
             self.assertEqual(m2.obj, point)
             self.assertEqual(m2.itemsize, 1)
-            self.assertEqual(m2.readonly, 0)
+            self.assertIs(m2.readonly, False)
             self.assertEqual(m2.ndim, 1)
             self.assertEqual(m2.shape, (m2.nbytes,))
             self.assertEqual(m2.strides, (1,))
@@ -2797,7 +2837,7 @@ class TestBufferProtocol(unittest.TestCase):
             m2 = m1.cast('c')
             self.assertEqual(m2.obj, x)
             self.assertEqual(m2.itemsize, 1)
-            self.assertEqual(m2.readonly, 0)
+            self.assertIs(m2.readonly, False)
             self.assertEqual(m2.ndim, 1)
             self.assertEqual(m2.shape, (m2.nbytes,))
             self.assertEqual(m2.strides, (1,))
@@ -2965,7 +3005,7 @@ class TestBufferProtocol(unittest.TestCase):
                      flags=ND_WRITABLE)
         m = memoryview(ex)
         m[1] = True
-        self.assertEqual(m[1], True)
+        self.assertIs(m[1], True)
 
         # pack_single() exceptions:
         nd = ndarray([b'x'], shape=[1], format='c', flags=ND_WRITABLE)
@@ -4299,7 +4339,7 @@ class TestBufferProtocol(unittest.TestCase):
         x = staticarray()
         y = memoryview(x)
         self.verify(y, obj=x,
-                    itemsize=1, fmt=fmt, readonly=1,
+                    itemsize=1, fmt=fmt, readonly=True,
                     ndim=1, shape=[12], strides=[1],
                     lst=lst)
         for i in range(12):
@@ -4319,7 +4359,7 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertIs(y.obj, x)
         self.assertIs(m.obj, z)
         self.verify(m, obj=z,
-                    itemsize=1, fmt=fmt, readonly=1,
+                    itemsize=1, fmt=fmt, readonly=True,
                     ndim=1, shape=[12], strides=[1],
                     lst=lst)
         del x, y, z, m
@@ -4332,7 +4372,7 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertIs(z.obj, x)
         self.assertIs(m.obj, x)
         self.verify(m, obj=x,
-                    itemsize=1, fmt=fmt, readonly=1,
+                    itemsize=1, fmt=fmt, readonly=True,
                     ndim=1, shape=[12], strides=[1],
                     lst=lst)
         del x, y, z, m
@@ -4341,7 +4381,7 @@ class TestBufferProtocol(unittest.TestCase):
         x = staticarray(legacy_mode=True)
         y = memoryview(x)
         self.verify(y, obj=None,
-                    itemsize=1, fmt=fmt, readonly=1,
+                    itemsize=1, fmt=fmt, readonly=True,
                     ndim=1, shape=[12], strides=[1],
                     lst=lst)
         for i in range(12):
@@ -4361,7 +4401,7 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertIs(y.obj, None)
         self.assertIs(m.obj, z)
         self.verify(m, obj=z,
-                    itemsize=1, fmt=fmt, readonly=1,
+                    itemsize=1, fmt=fmt, readonly=True,
                     ndim=1, shape=[12], strides=[1],
                     lst=lst)
         del x, y, z, m
@@ -4376,7 +4416,7 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertIs(z.obj, y)
         self.assertIs(m.obj, y)
         self.verify(m, obj=y,
-                    itemsize=1, fmt=fmt, readonly=1,
+                    itemsize=1, fmt=fmt, readonly=True,
                     ndim=1, shape=[12], strides=[1],
                     lst=lst)
         del x, y, z, m
@@ -4390,6 +4430,154 @@ class TestBufferProtocol(unittest.TestCase):
     def test_issue_7385(self):
         x = ndarray([1,2,3], shape=[3], flags=ND_GETBUF_FAIL)
         self.assertRaises(BufferError, memoryview, x)
+
+    @support.cpython_only
+    def test_pybuffer_size_from_format(self):
+        # basic tests
+        for format in ('', 'ii', '3s'):
+            self.assertEqual(_testcapi.PyBuffer_SizeFromFormat(format),
+                             struct.calcsize(format))
+
+
+class TestPythonBufferProtocol(unittest.TestCase):
+    def test_basic(self):
+        class MyBuffer:
+            def __buffer__(self, flags):
+                return memoryview(b"hello")
+
+        mv = memoryview(MyBuffer())
+        self.assertEqual(mv.tobytes(), b"hello")
+        self.assertEqual(bytes(MyBuffer()), b"hello")
+
+    def test_bad_buffer_method(self):
+        class MustReturnMV:
+            def __buffer__(self, flags):
+                return 42
+
+        self.assertRaises(TypeError, memoryview, MustReturnMV())
+
+        class NoBytesEither:
+            def __buffer__(self, flags):
+                return b"hello"
+
+        self.assertRaises(TypeError, memoryview, NoBytesEither())
+
+        class WrongArity:
+            def __buffer__(self):
+                return memoryview(b"hello")
+
+        self.assertRaises(TypeError, memoryview, WrongArity())
+
+    def test_release_buffer(self):
+        class WhatToRelease:
+            def __init__(self):
+                self.held = False
+                self.ba = bytearray(b"hello")
+
+            def __buffer__(self, flags):
+                if self.held:
+                    raise TypeError("already held")
+                self.held = True
+                return memoryview(self.ba)
+
+            def __release_buffer__(self, buffer):
+                self.held = False
+
+        wr = WhatToRelease()
+        self.assertFalse(wr.held)
+        with memoryview(wr) as mv:
+            self.assertTrue(wr.held)
+            self.assertEqual(mv.tobytes(), b"hello")
+        self.assertFalse(wr.held)
+
+    def test_same_buffer_returned(self):
+        class WhatToRelease:
+            def __init__(self):
+                self.held = False
+                self.ba = bytearray(b"hello")
+                self.created_mv = None
+
+            def __buffer__(self, flags):
+                if self.held:
+                    raise TypeError("already held")
+                self.held = True
+                self.created_mv = memoryview(self.ba)
+                return self.created_mv
+
+            def __release_buffer__(self, buffer):
+                assert buffer is self.created_mv
+                self.held = False
+
+        wr = WhatToRelease()
+        self.assertFalse(wr.held)
+        with memoryview(wr) as mv:
+            self.assertTrue(wr.held)
+            self.assertEqual(mv.tobytes(), b"hello")
+        self.assertFalse(wr.held)
+
+    def test_buffer_flags(self):
+        class PossiblyMutable:
+            def __init__(self, data, mutable) -> None:
+                self._data = bytearray(data)
+                self._mutable = mutable
+
+            def __buffer__(self, flags):
+                if flags & inspect.BufferFlags.WRITABLE:
+                    if not self._mutable:
+                        raise RuntimeError("not mutable")
+                    return memoryview(self._data)
+                else:
+                    return memoryview(bytes(self._data))
+
+        mutable = PossiblyMutable(b"hello", True)
+        immutable = PossiblyMutable(b"hello", False)
+        with memoryview._from_flags(mutable, inspect.BufferFlags.WRITABLE) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            mv[0] = ord(b'x')
+            self.assertEqual(mv.tobytes(), b"xello")
+        with memoryview._from_flags(mutable, inspect.BufferFlags.SIMPLE) as mv:
+            self.assertEqual(mv.tobytes(), b"xello")
+            with self.assertRaises(TypeError):
+                mv[0] = ord(b'h')
+            self.assertEqual(mv.tobytes(), b"xello")
+        with memoryview._from_flags(immutable, inspect.BufferFlags.SIMPLE) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            with self.assertRaises(TypeError):
+                mv[0] = ord(b'x')
+            self.assertEqual(mv.tobytes(), b"hello")
+
+        with self.assertRaises(RuntimeError):
+            memoryview._from_flags(immutable, inspect.BufferFlags.WRITABLE)
+        with memoryview(immutable) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            with self.assertRaises(TypeError):
+                mv[0] = ord(b'x')
+            self.assertEqual(mv.tobytes(), b"hello")
+
+    def test_call_builtins(self):
+        ba = bytearray(b"hello")
+        mv = ba.__buffer__(0)
+        self.assertEqual(mv.tobytes(), b"hello")
+        ba.__release_buffer__(mv)
+        with self.assertRaises(OverflowError):
+            ba.__buffer__(sys.maxsize + 1)
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_buffer(self):
+        buf = _testcapi.testBuf()
+        self.assertEqual(buf.references, 0)
+        mv = buf.__buffer__(0)
+        self.assertIsInstance(mv, memoryview)
+        self.assertEqual(mv.tobytes(), b"test")
+        self.assertEqual(buf.references, 1)
+        buf.__release_buffer__(mv)
+        self.assertEqual(buf.references, 0)
+        with self.assertRaises(ValueError):
+            mv.tobytes()
+        # Calling it again doesn't cause issues
+        with self.assertRaises(ValueError):
+            buf.__release_buffer__(mv)
+        self.assertEqual(buf.references, 0)
 
 
 if __name__ == "__main__":

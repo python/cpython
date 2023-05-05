@@ -2,17 +2,17 @@ import bdb
 import os
 
 from tkinter import *
-from tkinter.ttk import Scrollbar
+from tkinter.ttk import Frame, Scrollbar
 
 from idlelib import macosx
 from idlelib.scrolledlist import ScrolledList
-from idlelib.windows import ListedToplevel
+from idlelib.window import ListedToplevel
 
 
 class Idb(bdb.Bdb):
 
     def __init__(self, gui):
-        self.gui = gui
+        self.gui = gui  # An instance of Debugger or proxy of remote.
         bdb.Bdb.__init__(self)
 
     def user_line(self, frame):
@@ -40,7 +40,7 @@ class Idb(bdb.Bdb):
             prev_name = prev_frame.f_code.co_filename
             if 'idlelib' in prev_name and 'debugger' in prev_name:
                 # catch both idlelib/debugger.py and idlelib/debugger_r.py
-                # on both posix and windows
+                # on both Posix and Windows
                 return False
             return self.in_rpc_code(prev_frame)
 
@@ -49,9 +49,9 @@ class Idb(bdb.Bdb):
         filename = code.co_filename
         lineno = frame.f_lineno
         basename = os.path.basename(filename)
-        message = "%s:%s" % (basename, lineno)
+        message = f"{basename}:{lineno}"
         if code.co_name != "?":
-            message = "%s: %s()" % (message, code.co_name)
+            message = f"{message}: {code.co_name}()"
         return message
 
 
@@ -63,7 +63,7 @@ class Debugger:
         if idb is None:
             idb = Idb(self)
         self.pyshell = pyshell
-        self.idb = idb
+        self.idb = idb  # If passed, a proxy of remote instance.
         self.frame = None
         self.make_gui()
         self.interacting = 0
@@ -213,7 +213,8 @@ class Debugger:
                 m1 = "%s" % str(type)
             if value is not None:
                 try:
-                    m1 = "%s: %s" % (m1, str(value))
+                   # TODO redo entire section, tries not needed.
+                    m1 = f"{m1}: {value}"
                 except:
                     pass
             bg = "yellow"
@@ -542,3 +543,9 @@ class NamespaceViewer:
 
     def close(self):
         self.frame.destroy()
+
+if __name__ == "__main__":
+    from unittest import main
+    main('idlelib.idle_test.test_debugger', verbosity=2, exit=False)
+
+# TODO: htest?

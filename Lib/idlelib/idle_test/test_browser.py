@@ -1,20 +1,18 @@
-""" Test idlelib.browser.
+"Test browser, coverage 90%."
 
-Coverage: 88%
-(Higher, because should exclude 3 lines that .coveragerc won't exclude.)
-"""
-
-import os.path
-import unittest
-import pyclbr
-
-from idlelib import browser, filelist
-from idlelib.tree import TreeNode
+from idlelib import browser
 from test.support import requires
+import unittest
 from unittest import mock
-from tkinter import Tk
 from idlelib.idle_test.mock_idle import Func
+from idlelib.util import py_extensions
+
 from collections import deque
+import os.path
+import pyclbr
+from tkinter import Tk
+
+from idlelib.tree import TreeNode
 
 
 class ModuleBrowserTest(unittest.TestCase):
@@ -29,6 +27,7 @@ class ModuleBrowserTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.mb.close()
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root, cls.mb
 
@@ -38,6 +37,7 @@ class ModuleBrowserTest(unittest.TestCase):
         eq(mb.path, __file__)
         eq(pyclbr._modules, {})
         self.assertIsInstance(mb.node, TreeNode)
+        self.assertIsNotNone(browser.file_open)
 
     def test_settitle(self):
         mb = self.mb
@@ -58,20 +58,29 @@ class ModuleBrowserTest(unittest.TestCase):
         self.assertTrue(mb.node.destroy.called)
         del mb.top.destroy, mb.node.destroy
 
+    def test_is_browseable_extension(self):
+        path = "/path/to/file"
+        for ext in py_extensions:
+            with self.subTest(ext=ext):
+                filename = f'{path}{ext}'
+                actual = browser.is_browseable_extension(filename)
+                expected = ext not in browser.browseable_extension_blocklist
+                self.assertEqual(actual, expected)
+
 
 # Nested tree same as in test_pyclbr.py except for supers on C0. C1.
 mb = pyclbr
 module, fname = 'test', 'test.py'
-f0 = mb.Function(module, 'f0', fname, 1)
-f1 = mb._nest_function(f0, 'f1', 2)
-f2 = mb._nest_function(f1, 'f2', 3)
-c1 = mb._nest_class(f0, 'c1', 5)
-C0 = mb.Class(module, 'C0', ['base'], fname, 6)
-F1 = mb._nest_function(C0, 'F1', 8)
-C1 = mb._nest_class(C0, 'C1', 11, [''])
-C2 = mb._nest_class(C1, 'C2', 12)
-F3 = mb._nest_function(C2, 'F3', 14)
-mock_pyclbr_tree = {'f0': f0, 'C0': C0}
+C0 = mb.Class(module, 'C0', ['base'], fname, 1, end_lineno=9)
+F1 = mb._nest_function(C0, 'F1', 3, 5)
+C1 = mb._nest_class(C0, 'C1', 6, 9, [''])
+C2 = mb._nest_class(C1, 'C2', 7, 9)
+F3 = mb._nest_function(C2, 'F3', 9, 9)
+f0 = mb.Function(module, 'f0', fname, 11, end_lineno=15)
+f1 = mb._nest_function(f0, 'f1', 12, 14)
+f2 = mb._nest_function(f1, 'f2', 13, 13)
+c1 = mb._nest_class(f0, 'c1', 15, 15)
+mock_pyclbr_tree = {'C0': C0, 'f0': f0}
 
 # Adjust C0.name, C1.name so tests do not depend on order.
 browser.transform_children(mock_pyclbr_tree, 'test')  # C0(base)
@@ -88,12 +97,12 @@ class TransformChildrenTest(unittest.TestCase):
         transform = browser.transform_children
         # Parameter matches tree module.
         tcl = list(transform(mock_pyclbr_tree, 'test'))
-        eq(tcl, [f0, C0])
-        eq(tcl[0].name, 'f0')
-        eq(tcl[1].name, 'C0(base)')
+        eq(tcl, [C0, f0])
+        eq(tcl[0].name, 'C0(base)')
+        eq(tcl[1].name, 'f0')
         # Check that second call does not change suffix.
         tcl = list(transform(mock_pyclbr_tree, 'test'))
-        eq(tcl[1].name, 'C0(base)')
+        eq(tcl[0].name, 'C0(base)')
         # Nothing to traverse if parameter name isn't same as tree module.
         tcl = list(transform(mock_pyclbr_tree, 'different name'))
         eq(tcl, [])
@@ -151,10 +160,9 @@ class ModuleBrowserTreeItemTest(unittest.TestCase):
         self.assertEqual(sub0.name, 'f0')
         self.assertEqual(sub1.name, 'C0(base)')
 
-
-    def test_ondoubleclick(self):
+    @mock.patch('idlelib.browser.file_open')
+    def test_ondoubleclick(self, fopen):
         mbt = self.mbt
-        fopen = browser.file_open = mock.Mock()
 
         with mock.patch('os.path.exists', return_value=False):
             mbt.OnDoubleClick()
@@ -162,10 +170,7 @@ class ModuleBrowserTreeItemTest(unittest.TestCase):
 
         with mock.patch('os.path.exists', return_value=True):
             mbt.OnDoubleClick()
-            fopen.assert_called()
-            fopen.called_with(fname)
-
-        del browser.file_open
+            fopen.assert_called_once_with(fname)
 
 
 class ChildBrowserTreeItemTest(unittest.TestCase):
@@ -212,14 +217,13 @@ class ChildBrowserTreeItemTest(unittest.TestCase):
 
         eq(self.cbt_F1.GetSubList(), [])
 
-    def test_ondoubleclick(self):
-        fopen = browser.file_open = mock.Mock()
+    @mock.patch('idlelib.browser.file_open')
+    def test_ondoubleclick(self, fopen):
         goto = fopen.return_value.gotoline = mock.Mock()
         self.cbt_F1.OnDoubleClick()
         fopen.assert_called()
         goto.assert_called()
         goto.assert_called_with(self.cbt_F1.obj.lineno)
-        del browser.file_open
         # Failure test would have to raise OSError or AttributeError.
 
 

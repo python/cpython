@@ -6,7 +6,6 @@ XXX TO DO:
     (or recheck on window popup)
 - add popup menu with more options (e.g. doc strings, base classes, imports)
 - add base classes to class browser tree
-- finish removing limitation to x.py files (ModuleBrowserTreeItem)
 """
 
 import os
@@ -16,11 +15,21 @@ import sys
 from idlelib.config import idleConf
 from idlelib import pyshell
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
-from idlelib.windows import ListedToplevel
+from idlelib.util import py_extensions
+from idlelib.window import ListedToplevel
 
 
 file_open = None  # Method...Item and Class...Item use this.
 # Normally pyshell.flist.open, but there is no pyshell.flist for htest.
+
+# The browser depends on pyclbr and importlib which do not support .pyi files.
+browseable_extension_blocklist = ('.pyi',)
+
+
+def is_browseable_extension(path):
+    _, ext = os.path.splitext(path)
+    ext = os.path.normcase(ext)
+    return ext in py_extensions and ext not in browseable_extension_blocklist
 
 
 def transform_children(child_dict, modname=None):
@@ -29,9 +38,10 @@ def transform_children(child_dict, modname=None):
     The dictionary maps names to pyclbr information objects.
     Filter out imported objects.
     Augment class names with bases.
-    Sort objects by line number.
+    The insertion order of the dictionary is assumed to have been in line
+    number order, so sorting is not necessary.
 
-    The current tree only calls this once per child_dic as it saves
+    The current tree only calls this once per child_dict as it saves
     TreeItems once created.  A future tree and tests might violate this,
     so a check prevents multiple in-place augmentations.
     """
@@ -42,7 +52,7 @@ def transform_children(child_dict, modname=None):
                 # If obj.name != key, it has already been suffixed.
                 supers = []
                 for sup in obj.super:
-                    if type(sup) is type(''):
+                    if isinstance(sup, str):
                         sname = sup
                     else:
                         sname = sup.name
@@ -51,7 +61,7 @@ def transform_children(child_dict, modname=None):
                     supers.append(sname)
                 obj.name += '({})'.format(', '.join(supers))
             obs.append(obj)
-    return sorted(obs, key=lambda o: o.lineno)
+    return obs
 
 
 class ModuleBrowser:
@@ -75,13 +85,10 @@ class ModuleBrowser:
 
         Instance variables:
             name: Module name.
-            file: Full path and module with .py extension.  Used in
-                creating ModuleBrowserTreeItem as the rootnode for
+            file: Full path and module with supported extension.
+                Used in creating ModuleBrowserTreeItem as the rootnode for
                 the tree and subsequently in the children.
         """
-        global file_open
-        if not (_htest or _utest):
-            file_open = pyshell.flist.open
         self.master = master
         self.path = path
         self._htest = _htest
@@ -95,9 +102,13 @@ class ModuleBrowser:
 
     def init(self):
         "Create browser tkinter widgets, including the tree."
+        global file_open
         root = self.master
-        # reset pyclbr
+        flist = (pyshell.flist if not (self._htest or self._utest)
+                 else pyshell.PyShellFileList(root))
+        file_open = flist.open
         pyclbr._modules.clear()
+
         # create top
         self.top = top = ListedToplevel(root)
         top.protocol("WM_DELETE_WINDOW", self.close)
@@ -107,6 +118,7 @@ class ModuleBrowser:
                 (root.winfo_rootx(), root.winfo_rooty() + 200))
         self.settitle()
         top.focus_set()
+
         # create scrolled canvas
         theme = idleConf.CurrentTheme()
         background = idleConf.GetHighlight(theme, 'normal')['background']
@@ -158,22 +170,22 @@ class ModuleBrowserTreeItem(TreeItem):
 
     def OnDoubleClick(self):
         "Open a module in an editor window when double clicked."
-        if os.path.normcase(self.file[-3:]) != ".py":
+        if not is_browseable_extension(self.file):
             return
         if not os.path.exists(self.file):
             return
         file_open(self.file)
 
     def IsExpandable(self):
-        "Return True if Python (.py) file."
-        return os.path.normcase(self.file[-3:]) == ".py"
+        "Return True if Python file."
+        return is_browseable_extension(self.file)
 
     def listchildren(self):
         "Return sequenced classes and functions in the module."
-        dir, base = os.path.split(self.file)
-        name, ext = os.path.splitext(base)
-        if os.path.normcase(ext) != ".py":
+        if not is_browseable_extension(self.file):
             return []
+        dir, base = os.path.split(self.file)
+        name, _ = os.path.splitext(base)
         try:
             tree = pyclbr.readmodule_ex(name, [dir] + sys.path)
         except ImportError:
@@ -236,8 +248,6 @@ def _module_browser(parent): # htest #
             def nested_in_class(): pass
         def closure():
             class Nested_in_closure: pass
-    global file_open
-    file_open = pyshell.PyShellFileList(parent).open
     ModuleBrowser(parent, file, _htest=True)
 
 if __name__ == "__main__":

@@ -1,16 +1,17 @@
-"""Unittest for idlelib.hyperparser.py."""
+"Test hyperparser, coverage 98%."
+
+from idlelib.hyperparser import HyperParser
 import unittest
 from test.support import requires
 from tkinter import Tk, Text
 from idlelib.editor import EditorWindow
-from idlelib.hyperparser import HyperParser
 
 class DummyEditwin:
     def __init__(self, text):
         self.text = text
         self.indentwidth = 8
         self.tabwidth = 8
-        self.context_use_ps1 = True
+        self.prompt_last_line = '>>>'
         self.num_context_lines = 50, 500, 1000
 
     _build_char_in_string_func = EditorWindow._build_char_in_string_func
@@ -52,7 +53,7 @@ class HyperParserTest(unittest.TestCase):
 
     def tearDown(self):
         self.text.delete('1.0', 'end')
-        self.editwin.context_use_ps1 = True
+        self.editwin.prompt_last_line = '>>>'
 
     def get_parser(self, index):
         """
@@ -70,7 +71,7 @@ class HyperParserTest(unittest.TestCase):
         self.assertIn('precedes', str(ve.exception))
 
         # test without ps1
-        self.editwin.context_use_ps1 = False
+        self.editwin.prompt_last_line = ''
 
         # number of lines lesser than 50
         p = self.get_parser('end')
@@ -269,6 +270,7 @@ class HyperParserTest(unittest.TestCase):
             self.assertEqual(eat_id('+' * length, 0, length), 0)
             self.assertEqual(eat_id('2' + 'a' * (length - 1), 0, length), 0)
             self.assertEqual(eat_id('2' + 'é' * (length - 1), 0, length), 0)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

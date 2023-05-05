@@ -1,4 +1,5 @@
 import linecache
+import reprlib
 import traceback
 
 from . import base_futures
@@ -8,25 +9,42 @@ from . import coroutines
 def _task_repr_info(task):
     info = base_futures._future_repr_info(task)
 
-    if task._must_cancel:
+    if task.cancelling() and not task.done():
         # replace status
         info[0] = 'cancelling'
 
-    coro = coroutines._format_coroutine(task._coro)
-    info.insert(1, 'coro=<%s>' % coro)
+    info.insert(1, 'name=%r' % task.get_name())
 
     if task._fut_waiter is not None:
-        info.insert(2, 'wait_for=%r' % task._fut_waiter)
+        info.insert(2, f'wait_for={task._fut_waiter!r}')
+
+    if task._coro:
+        coro = coroutines._format_coroutine(task._coro)
+        info.insert(2, f'coro=<{coro}>')
+
     return info
+
+
+@reprlib.recursive_repr()
+def _task_repr(task):
+    info = ' '.join(_task_repr_info(task))
+    return f'<{task.__class__.__name__} {info}>'
 
 
 def _task_get_stack(task, limit):
     frames = []
-    try:
-        # 'async def' coroutines
+    if hasattr(task._coro, 'cr_frame'):
+        # case 1: 'async def' coroutines
         f = task._coro.cr_frame
-    except AttributeError:
+    elif hasattr(task._coro, 'gi_frame'):
+        # case 2: legacy coroutines
         f = task._coro.gi_frame
+    elif hasattr(task._coro, 'ag_frame'):
+        # case 3: async generators
+        f = task._coro.ag_frame
+    else:
+        # case 4: unknown objects
+        f = None
     if f is not None:
         while f is not None:
             if limit is not None:
@@ -61,15 +79,15 @@ def _task_print_stack(task, limit, file):
             linecache.checkcache(filename)
         line = linecache.getline(filename, lineno, f.f_globals)
         extracted_list.append((filename, lineno, name, line))
+
     exc = task._exception
     if not extracted_list:
-        print('No stack for %r' % task, file=file)
+        print(f'No stack for {task!r}', file=file)
     elif exc is not None:
-        print('Traceback for %r (most recent call last):' % task,
-              file=file)
+        print(f'Traceback for {task!r} (most recent call last):', file=file)
     else:
-        print('Stack for %r (most recent call last):' % task,
-              file=file)
+        print(f'Stack for {task!r} (most recent call last):', file=file)
+
     traceback.print_list(extracted_list, file=file)
     if exc is not None:
         for line in traceback.format_exception_only(exc.__class__, exc):
