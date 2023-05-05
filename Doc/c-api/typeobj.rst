@@ -1171,6 +1171,26 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       :c:member:`~PyTypeObject.tp_weaklistoffset` field is set in a superclass.
 
 
+   .. data:: Py_TPFLAGS_ITEMS_AT_END
+
+      Only usable with variable-size types, i.e. ones with non-zero
+      :c:member:`~PyObject.tp_itemsize`.
+
+      Indicates that the variable-sized portion of an instance of this type is
+      at the end of the instance's memory area, at an offset of
+      :c:expr:`Py_TYPE(obj)->tp_basicsize` (which may be different in each
+      subclass).
+
+      When setting this flag, be sure that all superclasses either
+      use this memory layout, or are not variable-sized.
+      Python does not check this.
+
+      .. versionadded:: 3.12
+
+      **Inheritance:**
+
+      This flag is inherited.
+
    .. XXX Document more flags here?
 
 

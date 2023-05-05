@@ -674,6 +674,30 @@ def process_audit_events(app, doctree, fromdocname):
         node.replace_self(table)
 
 
+def patch_pairindextypes(app) -> None:
+    if app.builder.name != 'gettext':
+        return
+
+    # allow translating deprecated index entries
+    try:
+        from sphinx.domains.python import pairindextypes
+    except ImportError:
+        pass
+    else:
+        # Sphinx checks if a 'pair' type entry on an index directive is one of
+        # the Sphinx-translated pairindextypes values. As we intend to move
+        # away from this, we need Sphinx to believe that these values don't
+        # exist, by deleting them when using the gettext builder.
+
+        pairindextypes.pop('module', None)
+        pairindextypes.pop('keyword', None)
+        pairindextypes.pop('operator', None)
+        pairindextypes.pop('object', None)
+        pairindextypes.pop('exception', None)
+        pairindextypes.pop('statement', None)
+        # pairindextypes.pop('builtin', None)
+
+
 def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('gh', gh_issue_role)
@@ -695,6 +719,7 @@ def setup(app):
     app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
+    app.connect('builder-inited', patch_pairindextypes)
     app.connect('doctree-resolved', process_audit_events)
     app.connect('env-merge-info', audit_events_merge)
     app.connect('env-purge-doc', audit_events_purge)

@@ -58,6 +58,9 @@ extern void _Py_DecRefTotal(PyInterpreterState *);
 // Increment reference count by n
 static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 {
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
 #ifdef Py_REF_DEBUG
     _Py_AddRefTotal(_PyInterpreterState_GET(), n);
 #endif
@@ -388,11 +391,6 @@ _PyDictOrValues_SetValues(PyDictOrValues *ptr, PyDictValues *values)
 extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
 extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
-
-// Access macro to the members which are floating "behind" the object
-static inline PyMemberDef* _PyHeapType_GET_MEMBERS(PyHeapTypeObject *etype) {
-    return (PyMemberDef*)((char*)etype + Py_TYPE(etype)->tp_basicsize);
-}
 
 PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
 
