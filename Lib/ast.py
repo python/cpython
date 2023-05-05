@@ -537,6 +537,10 @@ class _ABC(type):
         cls.__doc__ = """Deprecated AST node class. Use ast.Constant instead"""
 
     def __instancecheck__(cls, inst):
+        if cls in _const_types:
+            import warnings
+            warnings.warn(f"ast.{cls.__qualname__} is deprecated; use ast.Constant instead",
+                          DeprecationWarning, stacklevel=2)
         if not isinstance(inst, Constant):
             return False
         if cls in _const_types:

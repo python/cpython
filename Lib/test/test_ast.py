@@ -8,6 +8,7 @@ import types
 import unittest
 import warnings
 import weakref
+from functools import partial
 from textwrap import dedent
 
 from test import support
@@ -656,76 +657,127 @@ class AST_Tests(unittest.TestCase):
         ])
 
     def test_isinstance(self):
+        from ast import Constant
+
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', '', DeprecationWarning)
             from ast import Num, Str, Bytes, NameConstant, Ellipsis
 
-        with warnings.catch_warnings(record=True) as wlog:
-            warnings.filterwarnings('always', '', DeprecationWarning)
-            self.assertTrue(isinstance(ast.Num(42), ast.Num))
-            self.assertTrue(isinstance(ast.Num(4.2), ast.Num))
-            self.assertTrue(isinstance(ast.Num(4.2j), ast.Num))
-            self.assertTrue(isinstance(ast.Str('42'), ast.Str))
-            self.assertTrue(isinstance(ast.Bytes(b'42'), ast.Bytes))
-            self.assertTrue(isinstance(ast.NameConstant(True), ast.NameConstant))
-            self.assertTrue(isinstance(ast.NameConstant(False), ast.NameConstant))
-            self.assertTrue(isinstance(ast.NameConstant(None), ast.NameConstant))
-            self.assertTrue(isinstance(ast.Ellipsis(), ast.Ellipsis))
+        assertNumDeprecated = partial(
+            self.assertWarnsRegex,
+            DeprecationWarning,
+            'ast.Num is deprecated; use ast.Constant instead'
+        )
+        assertStrDeprecated = partial(
+            self.assertWarnsRegex,
+            DeprecationWarning,
+            'ast.Str is deprecated; use ast.Constant instead'
+        )
+        assertBytesDeprecated = partial(
+            self.assertWarnsRegex,
+            DeprecationWarning,
+            'ast.Bytes is deprecated; use ast.Constant instead'
+        )
+        assertNameConstantDeprecated = partial(
+            self.assertWarnsRegex,
+            DeprecationWarning,
+            'ast.NameConstant is deprecated; use ast.Constant instead'
+        )
+        assertEllipsisDeprecated = partial(
+            self.assertWarnsRegex,
+            DeprecationWarning,
+            'ast.Ellipsis is deprecated; use ast.Constant instead'
+        )
 
-            self.assertTrue(isinstance(ast.Constant(42), ast.Num))
-            self.assertTrue(isinstance(ast.Constant(4.2), ast.Num))
-            self.assertTrue(isinstance(ast.Constant(4.2j), ast.Num))
-            self.assertTrue(isinstance(ast.Constant('42'), ast.Str))
-            self.assertTrue(isinstance(ast.Constant(b'42'), ast.Bytes))
-            self.assertTrue(isinstance(ast.Constant(True), ast.NameConstant))
-            self.assertTrue(isinstance(ast.Constant(False), ast.NameConstant))
-            self.assertTrue(isinstance(ast.Constant(None), ast.NameConstant))
-            self.assertTrue(isinstance(ast.Constant(...), ast.Ellipsis))
+        for arg in 42, 4.2, 4.2j:
+            with self.subTest(arg=arg):
+                with assertNumDeprecated():
+                    n = Num(arg)
+                with assertNumDeprecated():
+                    self.assertIsInstance(n, Num)
 
-            self.assertFalse(isinstance(ast.Str('42'), ast.Num))
-            self.assertFalse(isinstance(ast.Num(42), ast.Str))
-            self.assertFalse(isinstance(ast.Str('42'), ast.Bytes))
-            self.assertFalse(isinstance(ast.Num(42), ast.NameConstant))
-            self.assertFalse(isinstance(ast.Num(42), ast.Ellipsis))
-            self.assertFalse(isinstance(ast.NameConstant(True), ast.Num))
-            self.assertFalse(isinstance(ast.NameConstant(False), ast.Num))
+        with assertStrDeprecated():
+            s = Str('42')
+        with assertStrDeprecated():
+            self.assertIsInstance(s, Str)
 
-            self.assertFalse(isinstance(ast.Constant('42'), ast.Num))
-            self.assertFalse(isinstance(ast.Constant(42), ast.Str))
-            self.assertFalse(isinstance(ast.Constant('42'), ast.Bytes))
-            self.assertFalse(isinstance(ast.Constant(42), ast.NameConstant))
-            self.assertFalse(isinstance(ast.Constant(42), ast.Ellipsis))
-            self.assertFalse(isinstance(ast.Constant(True), ast.Num))
-            self.assertFalse(isinstance(ast.Constant(False), ast.Num))
+        with assertBytesDeprecated():
+            b = Bytes(b'42')
+        with assertBytesDeprecated():
+            self.assertIsInstance(b, Bytes)
 
-            self.assertFalse(isinstance(ast.Constant(), ast.Num))
-            self.assertFalse(isinstance(ast.Constant(), ast.Str))
-            self.assertFalse(isinstance(ast.Constant(), ast.Bytes))
-            self.assertFalse(isinstance(ast.Constant(), ast.NameConstant))
-            self.assertFalse(isinstance(ast.Constant(), ast.Ellipsis))
+        for arg in True, False, None:
+            with self.subTest(arg=arg):
+                with assertNameConstantDeprecated():
+                    n = NameConstant(arg)
+                with assertNameConstantDeprecated():
+                    self.assertIsInstance(n, NameConstant)
 
-            class S(str): pass
-            self.assertTrue(isinstance(ast.Constant(S('42')), ast.Str))
-            self.assertFalse(isinstance(ast.Constant(S('42')), ast.Num))
+        with assertEllipsisDeprecated():
+            e = Ellipsis()
+        with assertEllipsisDeprecated():
+            self.assertIsInstance(e, Ellipsis)
 
-        self.assertEqual([str(w.message) for w in wlog], [
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Str is deprecated; use ast.Constant instead',
-            'ast.Bytes is deprecated; use ast.Constant instead',
-            'ast.NameConstant is deprecated; use ast.Constant instead',
-            'ast.NameConstant is deprecated; use ast.Constant instead',
-            'ast.NameConstant is deprecated; use ast.Constant instead',
-            'ast.Ellipsis is deprecated; use ast.Constant instead',
-            'ast.Str is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Str is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.Num is deprecated; use ast.Constant instead',
-            'ast.NameConstant is deprecated; use ast.Constant instead',
-            'ast.NameConstant is deprecated; use ast.Constant instead',
-        ])
+        for arg in 42, 4.2, 4.2j:
+            with self.subTest(arg=arg):
+                with assertNumDeprecated():
+                    self.assertIsInstance(Constant(arg), Num)
+
+        with assertStrDeprecated():
+            self.assertIsInstance(Constant('42'), Str)
+
+        with assertBytesDeprecated():
+            self.assertIsInstance(Constant(b'42'), Bytes)
+
+        for arg in True, False, None:
+            with self.subTest(arg=arg):
+                with assertNameConstantDeprecated():
+                    self.assertIsInstance(Constant(arg), NameConstant)
+
+        with assertEllipsisDeprecated():
+            self.assertIsInstance(Constant(...), Ellipsis)
+
+        with assertStrDeprecated():
+            s = Str('42')
+        assertNumDeprecated(self.assertNotIsInstance, s, Num)
+        assertBytesDeprecated(self.assertNotIsInstance, s, Bytes)
+
+        with assertNumDeprecated():
+            n = Num(42)
+        assertStrDeprecated(self.assertNotIsInstance, n, Str)
+        assertNameConstantDeprecated(self.assertNotIsInstance, n, NameConstant)
+        assertEllipsisDeprecated(self.assertNotIsInstance, n, Ellipsis)
+
+        with assertNameConstantDeprecated():
+            n = NameConstant(True)
+        with assertNumDeprecated():
+            self.assertNotIsInstance(n, Num)
+
+        with assertNameConstantDeprecated():
+            n = NameConstant(False)
+        with assertNumDeprecated():
+            self.assertNotIsInstance(n, Num)
+
+        for arg in '42', True, False:
+            with self.subTest(arg=arg):
+                with assertNumDeprecated():
+                    self.assertNotIsInstance(Constant(arg), Num)
+
+        assertStrDeprecated(self.assertNotIsInstance, Constant(42), Str)
+        assertBytesDeprecated(self.assertNotIsInstance, Constant('42'), Bytes)
+        assertNameConstantDeprecated(self.assertNotIsInstance, Constant(42), NameConstant)
+        assertEllipsisDeprecated(self.assertNotIsInstance, Constant(42), Ellipsis)
+        assertNumDeprecated(self.assertNotIsInstance, Constant(), Num)
+        assertStrDeprecated(self.assertNotIsInstance, Constant(), Str)
+        assertBytesDeprecated(self.assertNotIsInstance, Constant(), Bytes)
+        assertNameConstantDeprecated(self.assertNotIsInstance, Constant(), NameConstant)
+        assertEllipsisDeprecated(self.assertNotIsInstance, Constant(), Ellipsis)
+
+        class S(str): pass
+        with assertStrDeprecated():
+            self.assertTrue(isinstance(Constant(S('42')), Str))
+        with assertNumDeprecated():
+            self.assertFalse(isinstance(Constant(S('42')), Num))
 
     def test_constant_subclasses_deprecated(self):
         with warnings.catch_warnings():
@@ -756,6 +808,7 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual([str(w.message) for w in wlog], [
             'Attribute n is deprecated; use value instead',
             'Attribute n is deprecated; use value instead',
+            'ast.Num is deprecated; use ast.Constant instead',
             'ast.Num is deprecated; use ast.Constant instead',
             'Attribute n is deprecated; use value instead',
             'Attribute n is deprecated; use value instead',
