@@ -658,14 +658,9 @@ if not hasattr(Tuple, 'dims'):
 
     def _dims_getter(self):
         """Deprecated. Use elts instead."""
-        import warnings
-        warnings.warn("Attribute dims is deprecated; use elts instead",
-                      DeprecationWarning, stacklevel=2)
         return self.elts
 
     def _dims_setter(self, value):
-        warnings.warn("Attribute dims is deprecated, use elts instead",
-                      DeprecationWarning, stacklevel=2)
         self.elts = value
 
     Tuple.dims = property(_dims_getter, _dims_setter)
