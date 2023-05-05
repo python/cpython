@@ -1640,6 +1640,7 @@ class SubinterpImportTests(unittest.TestCase):
     )
     ISOLATED = dict(
         use_main_obmalloc=False,
+        own_gil=True,
     )
     NOT_ISOLATED = {k: not v for k, v in ISOLATED.items()}
 
