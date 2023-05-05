@@ -1750,7 +1750,6 @@ _deprecated_globals = {
     name: (globals().pop(name), '; use ast.Constant instead')
     for name in ('Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis')
 }
-_deprecated_globals['slice'] = globals().pop('slice'), ''
 
 def __getattr__(name):
     if name in _deprecated_globals:

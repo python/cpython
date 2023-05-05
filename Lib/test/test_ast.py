@@ -447,18 +447,13 @@ class AST_Tests(unittest.TestCase):
         for name in 'Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis':
             with self.assertWarnsRegex(DeprecationWarning, depr_regex.format(name)):
                 getattr(ast, name)
-        with self.assertWarnsRegex(DeprecationWarning,
-                r'ast\.slice is deprecated'):
-            ast.slice
 
     def test_field_attr_existence_deprecated(self):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', '', DeprecationWarning)
             from ast import Num, Str, Bytes, NameConstant, Ellipsis
-            from ast import slice
 
-        for name in ('Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis',
-                     'slice'):
+        for name in ('Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis'):
             item = getattr(ast, name)
             if self._is_ast_node(name, item):
                 with self.subTest(item):
@@ -470,8 +465,7 @@ class AST_Tests(unittest.TestCase):
     def test_field_attr_existence(self):
         for name, item in ast.__dict__.items():
             # These emit DeprecationWarnings
-            if name in {'Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis',
-                        'slice'}:
+            if name in {'Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis'}:
                 continue
             # constructor has a different signature
             if name == 'Index':
