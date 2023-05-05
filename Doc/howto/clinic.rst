@@ -1035,8 +1035,8 @@ Using a return converter
 
 By default, the impl function Argument Clinic generates for you returns
 :c:type:`PyObject * <PyObject>`.
-But your C function often computes some C type, then converts it into the
-:c:type:`!PyObject *`
+But your C function often computes some C type,
+then converts it into the :c:type:`!PyObject *`
 at the last moment.  Argument Clinic handles converting your inputs from Python types
 into native C types—why not have it convert your return value from a native C type
 into a Python type too?
