@@ -138,7 +138,7 @@ Internal Frames
 
 Unless using PEP 523, you will not need this.
 
-.. c:type:: struct _PyInterpreterFrame
+.. c:struct:: _PyInterpreterFrame
 
    The interpreter's internal frame representation.
 
