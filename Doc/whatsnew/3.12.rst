@@ -172,7 +172,7 @@ Inlining does result in a few visible behavior changes:
 * There is no longer a separate frame for the comprehension in tracebacks,
   and tracing/profiling no longer shows the comprehension as a function call.
 * Calling :func:`locals` inside a comprehension now includes variables
-  from outside the comprehension, and no longer includes the synthetic `.0`
+  from outside the comprehension, and no longer includes the synthetic ``.0``
   variable for the comprehension "argument".
 
 Contributed by Carl Meyer and Vladimir Matveev in :pep:`709`.
