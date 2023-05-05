@@ -98,7 +98,7 @@ The :mod:`queue` module defines the following classes and exceptions:
    Exception raised when :meth:`~Queue.put` or :meth:`~Queue.get` is called on
    a :class:`Queue` object which has been shut down.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.13
 
 
 .. _queueobjects:
@@ -247,7 +247,7 @@ them down.
    All blocked callers of put() will be unblocked, and also get()
    and join() if *immediate* is true.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.13
 
 
 SimpleQueue Objects
