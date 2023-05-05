@@ -245,9 +245,12 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     PyObject *(*create)(PyObject *, PyModuleDef*) = NULL;
     PyObject *nameobj;
     PyObject *m = NULL;
+    int has_multiple_interpreters_slot = 0;
+    void *multiple_interpreters = (void *)0;
     int has_execution_slots = 0;
     const char *name;
     int ret;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     PyModuleDef_Init(def);
 
@@ -287,6 +290,17 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
             case Py_mod_exec:
                 has_execution_slots = 1;
                 break;
+            case Py_mod_multiple_interpreters:
+                if (has_multiple_interpreters_slot) {
+                    PyErr_Format(
+                        PyExc_SystemError,
+                        "module %s has more than one 'multiple interpreters' slots",
+                        name);
+                    goto error;
+                }
+                multiple_interpreters = cur_slot->value;
+                has_multiple_interpreters_slot = 1;
+                break;
             default:
                 assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
                 PyErr_Format(
@@ -296,6 +310,20 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
                 goto error;
         }
     }
+
+    /* By default, multi-phase init modules are expected
+       to work under multiple interpreters. */
+    if (!has_multiple_interpreters_slot) {
+        multiple_interpreters = Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED;
+    }
+    if (multiple_interpreters == Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED) {
+        if (!_Py_IsMainInterpreter(interp)
+            && _PyImport_CheckSubinterpIncompatibleExtensionAllowed(name) < 0)
+        {
+            goto error;
+        }
+    }
+    // XXX Do a similar check once we have PyInterpreterState.ceval.own_gil.
 
     if (create) {
         m = create(spec, def);
@@ -420,6 +448,9 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
                         name);
                     return -1;
                 }
+                break;
+            case Py_mod_multiple_interpreters:
+                /* handled in PyModule_FromDefAndSpec2 */
                 break;
             default:
                 PyErr_Format(

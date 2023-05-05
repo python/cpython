@@ -1488,6 +1488,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     int allow_threads = -1;
     int allow_daemon_threads = -1;
     int check_multi_interp_extensions = -1;
+    int own_gil = -1;
     int r;
     PyThreadState *substate, *mainstate;
     /* only initialise 'cflags.cf_flags' to test backwards compatibility */
@@ -1500,13 +1501,15 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
                              "allow_threads",
                              "allow_daemon_threads",
                              "check_multi_interp_extensions",
+                             "own_gil",
                              NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$pppppp:run_in_subinterp_with_config", kwlist,
+                    "s$ppppppp:run_in_subinterp_with_config", kwlist,
                     &code, &use_main_obmalloc,
                     &allow_fork, &allow_exec,
                     &allow_threads, &allow_daemon_threads,
-                    &check_multi_interp_extensions)) {
+                    &check_multi_interp_extensions,
+                    &own_gil)) {
         return NULL;
     }
     if (use_main_obmalloc < 0) {
@@ -1523,6 +1526,10 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     if (allow_threads < 0) {
         PyErr_SetString(PyExc_ValueError, "missing allow_threads");
+        return NULL;
+    }
+    if (own_gil < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing own_gil");
         return NULL;
     }
     if (allow_daemon_threads < 0) {
@@ -1545,6 +1552,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         .allow_threads = allow_threads,
         .allow_daemon_threads = allow_daemon_threads,
         .check_multi_interp_extensions = check_multi_interp_extensions,
+        .own_gil = own_gil,
     };
     PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
     if (PyStatus_Exception(status)) {

@@ -38,7 +38,7 @@ PyFrame_GetLineNumber(PyFrameObject *f)
         return f->f_lineno;
     }
     else {
-        return _PyInterpreterFrame_GetLine(f->f_frame);
+        return PyUnstable_InterpreterFrame_GetLine(f->f_frame);
     }
 }
 
