@@ -169,6 +169,14 @@
 #    define HAVE_PWRITEV_RUNTIME (pwritev != NULL)
 #  endif
 
+#  ifdef HAVE_MKFIFOAT
+#    define HAVE_MKFIFOAT_RUNTIME (mkfifoat != NULL)
+#  endif
+
+#  ifdef HAVE_MKNODAT
+#    define HAVE_MKNODAT_RUNTIME (mknodat != NULL)
+#  endif
+
 #endif
 
 #ifdef HAVE_FUTIMESAT
