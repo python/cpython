@@ -1870,6 +1870,7 @@ marshal_module_exec(PyObject *mod)
 
 static PyModuleDef_Slot marshalmodule_slots[] = {
     {Py_mod_exec, marshal_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

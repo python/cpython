@@ -815,13 +815,11 @@ class CLanguage(Language):
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
         parser_body_fields = ()
-        parser_body_declarations = ''
         def parser_body(prototype, *fields, declarations=''):
-            nonlocal parser_body_fields, parser_body_declarations
+            nonlocal parser_body_fields
             add, output = text_accumulator()
             add(prototype)
             parser_body_fields = fields
-            parser_body_declarations = declarations
 
             fields = list(fields)
             fields.insert(0, normalize_snippet("""
