@@ -133,7 +133,7 @@ class TestAttrDict(PyTest):
         cached_module = sys.modules.get('json')
         sys.modules['json'] = self.json
         try:
-            for protocol in range(6):
+            for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
                 kepler_ad2 = pickle.loads(pickle.dumps(kepler_ad, protocol))
                 self.assertEqual(kepler_ad2, kepler_ad)
                 self.assertEqual(type(kepler_ad2), AttrDict)

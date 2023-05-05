@@ -1748,7 +1748,7 @@ _curses_window_touchline(PyCursesWindowObject *self, PyObject *args)
             }
             break;
         case 3:
-            if (!PyArg_ParseTuple(args, "iii:touchline", &start, &count, &changed)) {
+            if (!PyArg_ParseTuple(args, "iip:touchline", &start, &count, &changed)) {
                 goto exit;
             }
             group_right_1 = 1;
@@ -1941,8 +1941,8 @@ _curses_cbreak(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    flag = _PyLong_AsInt(args[0]);
-    if (flag == -1 && PyErr_Occurred()) {
+    flag = PyObject_IsTrue(args[0]);
+    if (flag < 0) {
         goto exit;
     }
 skip_optional:
@@ -2177,8 +2177,8 @@ _curses_echo(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    flag = _PyLong_AsInt(args[0]);
-    if (flag == -1 && PyErr_Occurred()) {
+    flag = PyObject_IsTrue(args[0]);
+    if (flag < 0) {
         goto exit;
     }
 skip_optional:
@@ -2900,8 +2900,8 @@ _curses_intrflush(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    flag = _PyLong_AsInt(arg);
-    if (flag == -1 && PyErr_Occurred()) {
+    flag = PyObject_IsTrue(arg);
+    if (flag < 0) {
         goto exit;
     }
     return_value = _curses_intrflush_impl(module, flag);
@@ -3064,8 +3064,8 @@ _curses_meta(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int yes;
 
-    yes = _PyLong_AsInt(arg);
-    if (yes == -1 && PyErr_Occurred()) {
+    yes = PyObject_IsTrue(arg);
+    if (yes < 0) {
         goto exit;
     }
     return_value = _curses_meta_impl(module, yes);
@@ -3308,8 +3308,8 @@ _curses_nl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    flag = _PyLong_AsInt(args[0]);
-    if (flag == -1 && PyErr_Occurred()) {
+    flag = PyObject_IsTrue(args[0]);
+    if (flag < 0) {
         goto exit;
     }
 skip_optional:
@@ -3540,8 +3540,8 @@ _curses_qiflush(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    flag = _PyLong_AsInt(args[0]);
-    if (flag == -1 && PyErr_Occurred()) {
+    flag = PyObject_IsTrue(args[0]);
+    if (flag < 0) {
         goto exit;
     }
 skip_optional:
@@ -3603,8 +3603,8 @@ _curses_raw(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    flag = _PyLong_AsInt(args[0]);
-    if (flag == -1 && PyErr_Occurred()) {
+    flag = PyObject_IsTrue(args[0]);
+    if (flag < 0) {
         goto exit;
     }
 skip_optional:
@@ -4164,8 +4164,8 @@ _curses_use_env(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    flag = _PyLong_AsInt(arg);
-    if (flag == -1 && PyErr_Occurred()) {
+    flag = PyObject_IsTrue(arg);
+    if (flag < 0) {
         goto exit;
     }
     return_value = _curses_use_env_impl(module, flag);
@@ -4313,4 +4313,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=b2e71e2012f16197 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=27a2364193b503c1 input=a9049054013a1b77]*/

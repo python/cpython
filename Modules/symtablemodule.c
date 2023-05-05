@@ -56,8 +56,7 @@ _symtable_symtable_impl(PyObject *module, PyObject *source,
     if (st == NULL) {
         return NULL;
     }
-    t = (PyObject *)st->st_top;
-    Py_INCREF(t);
+    t = Py_NewRef(st->st_top);
     _PySymtable_Free(st);
     return t;
 }
@@ -66,12 +65,6 @@ static PyMethodDef symtable_methods[] = {
     _SYMTABLE_SYMTABLE_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
-
-static int
-symtable_init_stentry_type(PyObject *m)
-{
-    return PyType_Ready(&PySTEntry_Type);
-}
 
 static int
 symtable_init_constants(PyObject *m)
@@ -106,7 +99,6 @@ symtable_init_constants(PyObject *m)
 }
 
 static PyModuleDef_Slot symtable_slots[] = {
-    {Py_mod_exec, symtable_init_stentry_type},
     {Py_mod_exec, symtable_init_constants},
     {0, NULL}
 };

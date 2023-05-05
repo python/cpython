@@ -1,1 +1,0 @@
-Clean up refleak on failed module initialisation in :mod:`_io`.

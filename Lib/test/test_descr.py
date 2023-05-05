@@ -3261,12 +3261,8 @@ order (MRO) for bases """
                 if otype:
                     otype = otype.__name__
                 return 'object=%s; type=%s' % (object, otype)
-        class OldClass:
+        class NewClass:
             __doc__ = DocDescr()
-        class NewClass(object):
-            __doc__ = DocDescr()
-        self.assertEqual(OldClass.__doc__, 'object=None; type=OldClass')
-        self.assertEqual(OldClass().__doc__, 'object=OldClass instance; type=OldClass')
         self.assertEqual(NewClass.__doc__, 'object=None; type=NewClass')
         self.assertEqual(NewClass().__doc__, 'object=NewClass instance; type=NewClass')
 
@@ -5006,6 +5002,32 @@ order (MRO) for bases """
         del Child
         gc.collect()
         self.assertEqual(Parent.__subclasses__(), [])
+
+    def test_attr_raise_through_property(self):
+        # test case for gh-103272
+        class A:
+            def __getattr__(self, name):
+                raise ValueError("FOO")
+
+            @property
+            def foo(self):
+                return self.__getattr__("asdf")
+
+        with self.assertRaisesRegex(ValueError, "FOO"):
+            A().foo
+
+        # test case for gh-103551
+        class B:
+            @property
+            def __getattr__(self, name):
+                raise ValueError("FOO")
+
+            @property
+            def foo(self):
+                raise NotImplementedError("BAR")
+
+        with self.assertRaisesRegex(NotImplementedError, "BAR"):
+            B().foo
 
 
 class DictProxyTests(unittest.TestCase):
