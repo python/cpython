@@ -1591,7 +1591,7 @@ static void
 FutureIter_dealloc(futureiterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
-    asyncio_state *state = get_asyncio_state_by_def((PyObject *)tp);
+    asyncio_state *state = get_asyncio_state_by_def((PyObject *)it);
     PyObject_GC_UnTrack(it);
     tp->tp_clear((PyObject *)it);
 
