@@ -8,7 +8,6 @@
 #include "pycore_runtime_init.h"  // _Py_ID()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
-#include "cpython/context.h"
 #include <stddef.h>               // offsetof()
 
 
