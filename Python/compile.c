@@ -1245,9 +1245,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
         /* Cook up an implicit __class__ cell. */
         int res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
-        assert(PyDict_GET_SIZE(u->u_metadata.u_cellvars) == 0);
-        res = PyDict_SetItem(u->u_metadata.u_cellvars, &_Py_ID(__class__),
-                             _PyLong_GetZero());
+        res = dict_add_o(u->u_metadata.u_cellvars, &_Py_ID(__class__));
         if (res < 0) {
             compiler_unit_free(u);
             return ERROR;
@@ -2245,7 +2243,6 @@ compiler_class(struct compiler *c, stmt_ty s)
                 compiler_exit_scope(c);
                 return ERROR;
             }
-            assert(i == 0);
             ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
             ADDOP_I(c, NO_LOCATION, COPY, 1);
             if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__classcell__), Store) < 0) {

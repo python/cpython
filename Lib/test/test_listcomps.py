@@ -143,6 +143,17 @@ class ListComprehensionTest(unittest.TestCase):
         outputs = {"y": [4, 4, 4, 4, 4]}
         self._check_in_scopes(code, outputs)
 
+    def test_class_scope_free_var_with_class_cell(self):
+        class C:
+            def method(self):
+                super()
+                return __class__
+            items = [(lambda: i) for i in range(5)]
+            y = [x() for x in items]
+
+        self.assertEqual(C.y, [4, 4, 4, 4, 4])
+        self.assertIs(C().method(), C)
+
     def test_inner_cell_shadows_outer(self):
         code = """
             items = [(lambda: i) for i in range(5)]
