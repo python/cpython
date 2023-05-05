@@ -1598,7 +1598,7 @@ FutureIter_dealloc(futureiterobject *it)
     if (state->fi_freelist_len < FI_FREELIST_MAXLEN) {
         state->fi_freelist_len++;
         it->future = (FutureObj*) state->fi_freelist;
-        state->fi_freelist = (futureiterobject *) it;
+        state->fi_freelist = it;
     }
     else {
         PyObject_GC_Del(it);
