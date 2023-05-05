@@ -163,9 +163,8 @@ class TaskGroup:
             task = self._loop.create_task(coro)
         else:
             task = self._loop.create_task(coro, context=context)
-        if name is not None:
-            tasks._set_task_name(task, name)
-        # optimization: Immediately call the done callback is the task is
+        tasks._set_task_name(task, name)
+        # optimization: Immediately call the done callback if the task is
         # already done (e.g. if the coro was able to complete eagerly),
         # and skip scheduling a done callback
         if task.done():
