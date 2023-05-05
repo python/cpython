@@ -451,6 +451,7 @@ class Test_TestResult(unittest.TestCase):
         stream = BufferedWriter()
         runner = unittest.TextTestRunner(stream=stream, failfast=True)
         def test(result):
+            result.testsRun += 1
             self.assertTrue(result.failfast)
         result = runner.run(test)
         stream.flush()

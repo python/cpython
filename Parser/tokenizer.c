@@ -43,12 +43,12 @@
 #ifdef Py_DEBUG
 static inline tokenizer_mode* TOK_GET_MODE(struct tok_state* tok) {
     assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index < MAXLEVEL);
+    assert(tok->tok_mode_stack_index < MAXFSTRINGLEVEL);
     return &(tok->tok_mode_stack[tok->tok_mode_stack_index]);
 }
 static inline tokenizer_mode* TOK_NEXT_MODE(struct tok_state* tok) {
     assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index < MAXLEVEL);
+    assert(tok->tok_mode_stack_index + 1 < MAXFSTRINGLEVEL); 
     return &(tok->tok_mode_stack[++tok->tok_mode_stack_index]);
 }
 #else
@@ -111,7 +111,7 @@ tok_new(void)
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
     tok->report_warnings = 1;
-    tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0};
+    tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0, .f_string_debug=0};
     tok->tok_mode_stack_index = 0;
     tok->tok_report_warnings = 1;
 #ifdef Py_DEBUG
@@ -388,6 +388,28 @@ restore_fstring_buffers(struct tok_state *tok)
         mode->f_string_start = tok->buf + mode->f_string_start_offset;
         mode->f_string_multi_line_start = tok->buf + mode->f_string_multi_line_start_offset;
     }
+}
+
+static int
+set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
+    assert(token != NULL);
+    assert(c == '}' || c == ':' || c == '!');
+    tokenizer_mode *tok_mode = TOK_GET_MODE(tok);
+
+    if (!tok_mode->f_string_debug || token->metadata) {
+        return 0;
+    }
+
+    PyObject *res = PyUnicode_DecodeUTF8(
+        tok_mode->last_expr_buffer,
+        tok_mode->last_expr_size - tok_mode->last_expr_end,
+        NULL
+    );
+    if (!res) {
+        return -1;
+    }
+    token->metadata = res;
+    return 0;
 }
 
 static int
@@ -1255,6 +1277,12 @@ _syntaxerror_range(struct tok_state *tok, const char *format,
                    int col_offset, int end_col_offset,
                    va_list vargs)
 {
+    // In release builds, we don't want to overwrite a previous error, but in debug builds we
+    // want to fail if we are not doing it so we can fix it.
+    assert(tok->done != E_ERROR);
+    if (tok->done == E_ERROR) {
+        return ERRORTOKEN;
+    }
     PyObject *errmsg, *errtext, *args;
     errmsg = PyUnicode_FromFormatV(format, vargs);
     if (!errmsg) {
@@ -2213,6 +2241,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
         p_start = tok->start;
         p_end = tok->cur;
+        if (tok->tok_mode_stack_index + 1 >= MAXFSTRINGLEVEL) {
+            return MAKE_TOKEN(syntaxerror(tok, "too many nested f-strings"));
+        }
         tokenizer_mode *the_current_tok = TOK_NEXT_MODE(tok);
         the_current_tok->kind = TOK_FSTRING_MODE;
         the_current_tok->f_string_quote = quote;
@@ -2224,6 +2255,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         the_current_tok->last_expr_buffer = NULL;
         the_current_tok->last_expr_size = 0;
         the_current_tok->last_expr_end = -1;
+        the_current_tok->f_string_debug = 0;
 
         switch (*tok->start) {
             case 'F':
@@ -2275,8 +2307,12 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         /* Get rest of string */
         while (end_quote_size != quote_size) {
             c = tok_nextc(tok);
-            if (tok->done == E_DECODE)
+            if (tok->done == E_ERROR) {
+                return MAKE_TOKEN(ERRORTOKEN);
+            }
+            if (tok->done == E_DECODE) {
                 break;
+            }
             if (c == EOF || (quote_size == 1 && c == '\n')) {
                 assert(tok->multi_line_start != NULL);
                 // shift the tok_state's location into
@@ -2350,9 +2386,11 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
          * by the `{` case, so for ensuring that we are on the 0th level, we need
          * to adjust it manually */
         int cursor = current_tok->curly_bracket_depth - (c != '{');
-
         if (cursor == 0 && !update_fstring_expr(tok, c)) {
             return MAKE_TOKEN(ENDMARKER);
+        }
+        if (cursor == 0 && c != '{' && set_fstring_expr(tok, token, c)) {
+            return MAKE_TOKEN(ERRORTOKEN);
         }
 
         if (c == ':' && cursor == current_tok->curly_bracket_expr_start_depth) {
@@ -2445,6 +2483,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             if (c == '}' && current_tok->curly_bracket_depth == current_tok->curly_bracket_expr_start_depth) {
                 current_tok->curly_bracket_expr_start_depth--;
                 current_tok->kind = TOK_FSTRING_MODE;
+                current_tok->f_string_debug = 0;
             }
         }
         break;
@@ -2456,6 +2495,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         char hex[9];
         (void)PyOS_snprintf(hex, sizeof(hex), "%04X", c);
         return MAKE_TOKEN(syntaxerror(tok, "invalid non-printable character U+%s", hex));
+    }
+
+    if( c == '=' && INSIDE_FSTRING_EXPR(current_tok)) {
+        current_tok->f_string_debug = 1;
     }
 
     /* Punctuation character */
@@ -2521,7 +2564,14 @@ f_string_middle:
 
     while (end_quote_size != current_tok->f_string_quote_size) {
         int c = tok_nextc(tok);
+        if (tok->done == E_ERROR) {
+            return MAKE_TOKEN(ERRORTOKEN);
+        }
         if (c == EOF || (current_tok->f_string_quote_size == 1 && c == '\n')) {
+            if (tok->decoding_erred) {
+                return MAKE_TOKEN(ERRORTOKEN);
+            }
+
             assert(tok->multi_line_start != NULL);
             // shift the tok_state's location into
             // the start of string, and report the error

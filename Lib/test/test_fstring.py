@@ -561,10 +561,27 @@ x = (
                             ])
         self.assertRaises(SyntaxError, eval, "f'{" + "("*500 + "}'")
 
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_fstring_nested_too_deeply(self):
         self.assertAllRaise(SyntaxError,
                             "f-string: expressions nested too deeply",
                             ['f"{1+2:{1+2:{1+1:{1}}}}"'])
+
+        def create_nested_fstring(n):
+            if n == 0:
+                return "1+1"
+            prev = create_nested_fstring(n-1)
+            return f'f"{{{prev}}}"'
+
+        self.assertAllRaise(SyntaxError,
+                            "too many nested f-strings",
+                            [create_nested_fstring(160)])
+
+    def test_syntax_error_in_nested_fstring(self):
+        # See gh-104016 for more information on this crash
+        self.assertAllRaise(SyntaxError,
+                            "invalid syntax",
+                            ['f"{1 1:' + ('{f"1:' * 199)])
 
     def test_double_braces(self):
         self.assertEqual(f'{{', '{')
@@ -963,11 +980,18 @@ x = (
         self.assertEqual(fr'\"\'\"\'', '\\"\\\'\\"\\\'')
 
     def test_fstring_backslash_before_double_bracket(self):
-        self.assertEqual(f'\{{\}}', '\\{\\}')
-        self.assertEqual(f'\{{', '\\{')
-        self.assertEqual(f'\{{{1+1}', '\\{2')
-        self.assertEqual(f'\}}{1+1}', '\\}2')
-        self.assertEqual(f'{1+1}\}}', '2\\}')
+        deprecated_cases = [
+            (r"f'\{{\}}'",   '\\{\\}'),
+            (r"f'\{{'",      '\\{'),
+            (r"f'\{{{1+1}'", '\\{2'),
+            (r"f'\}}{1+1}'", '\\}2'),
+            (r"f'{1+1}\}}'", '2\\}')
+        ]
+        for case, expected_result in deprecated_cases:
+            with self.subTest(case=case, expected_result=expected_result):
+                with self.assertWarns(DeprecationWarning):
+                    result = eval(case)
+                self.assertEqual(result, expected_result)
         self.assertEqual(fr'\{{\}}', '\\{\\}')
         self.assertEqual(fr'\{{', '\\{')
         self.assertEqual(fr'\{{{1+1}', '\\{2')
@@ -1534,6 +1558,20 @@ x = (
         self.assertAllRaise(SyntaxError, "unterminated f-string literal", ['f"', "f'"])
         self.assertAllRaise(SyntaxError, "unterminated triple-quoted f-string literal",
                             ['f"""', "f'''"])
+
+    def test_syntax_error_after_debug(self):
+        self.assertAllRaise(SyntaxError, "f-string: expecting a valid expression after '{'",
+                            [
+                                "f'{1=}{;'",
+                                "f'{1=}{+;'",
+                                "f'{1=}{2}{;'",
+                                "f'{1=}{3}{;'",
+                            ])
+        self.assertAllRaise(SyntaxError, "f-string: expecting '=', or '!', or ':', or '}'",
+                            [
+                                "f'{1=}{1;'",
+                                "f'{1=}{1;}'",
+                            ])
 
 if __name__ == '__main__':
     unittest.main()

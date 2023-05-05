@@ -306,6 +306,21 @@ _nb_ops = [
     ("NB_INPLACE_XOR", "^="),
 ]
 
+_intrinsic_1_descs = [
+    "INTRINSIC_1_INVALID",
+    "INTRINSIC_PRINT",
+    "INTRINSIC_IMPORT_STAR",
+    "INTRINSIC_STOPITERATION_ERROR",
+    "INTRINSIC_ASYNC_GEN_WRAP",
+    "INTRINSIC_UNARY_POSITIVE",
+    "INTRINSIC_LIST_TO_TUPLE",
+]
+
+_intrinsic_2_descs = [
+    'INTRINSIC_2_INVALID',
+    'INTRINSIC_PREP_RERAISE_STAR',
+    ]
+
 _specializations = {
     "BINARY_OP": [
         "BINARY_OP_ADD_FLOAT",
@@ -352,6 +367,9 @@ _specializations = {
         "FOR_ITER_TUPLE",
         "FOR_ITER_RANGE",
         "FOR_ITER_GEN",
+    ],
+    "LOAD_SUPER_ATTR": [
+        "LOAD_SUPER_ATTR_METHOD",
     ],
     "LOAD_ATTR": [
         # These potentially push [NULL, bound method] onto the stack.
@@ -425,6 +443,12 @@ _cache_format = {
     },
     "FOR_ITER": {
         "counter": 1,
+    },
+    "LOAD_SUPER_ATTR": {
+        "counter": 1,
+        "class_version": 2,
+        "self_type_version": 2,
+        "method": 4,
     },
     "LOAD_ATTR": {
         "counter": 1,
