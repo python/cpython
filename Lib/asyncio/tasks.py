@@ -932,16 +932,12 @@ def run_coroutine_threadsafe(coro, loop):
 
 def create_eager_task_factory(custom_task_constructor):
 
-    if "eager_start" not in inspect.signature(custom_task_constructor).parameters:
-        raise TypeError(
-            "Provided constructor does not support eager task execution")
-
     def factory(loop, coro, *, name=None, context=None):
         return custom_task_constructor(
             coro, loop=loop, name=name, context=context, eager_start=True)
 
-
     return factory
+
 
 eager_task_factory = create_eager_task_factory(Task)
 
