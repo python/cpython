@@ -858,7 +858,7 @@ although there is currently no date scheduled for their removal.
 
 * The following :mod:`ast` features have been deprecated in documentation since
   Python 3.8, now cause a :exc:`DeprecationWarning` to be emitted at runtime
-  when they are accessed or used, and may be removed in a future version of Python:
+  when they are accessed or used, and will be removed in Python 3.14.
 
   * :class:`!ast.Num`
   * :class:`!ast.Str`
