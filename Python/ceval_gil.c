@@ -500,9 +500,18 @@ PyEval_ThreadsInitialized(void)
 }
 
 PyStatus
-_PyEval_InitGIL(PyThreadState *tstate)
+_PyEval_InitGIL(PyThreadState *tstate, int own_gil)
 {
     assert(tstate->interp->ceval.gil == NULL);
+    if (!own_gil) {
+        PyInterpreterState *main_interp = _PyInterpreterState_Main();
+        assert(tstate->interp != main_interp);
+        struct _gil_runtime_state *gil = main_interp->ceval.gil;
+        assert(gil_created(gil));
+        tstate->interp->ceval.gil = gil;
+        tstate->interp->ceval.own_gil = 0;
+        return _PyStatus_OK();
+    }
 
     /* XXX per-interpreter GIL */
     struct _gil_runtime_state *gil = &tstate->interp->runtime->ceval.gil;
@@ -512,8 +521,11 @@ _PyEval_InitGIL(PyThreadState *tstate)
            and destroy it. */
         assert(gil_created(gil));
         tstate->interp->ceval.gil = gil;
+        // XXX For now we lie.
+        tstate->interp->ceval.own_gil = 1;
         return _PyStatus_OK();
     }
+    assert(own_gil);
 
     assert(!gil_created(gil));
 
@@ -521,6 +533,7 @@ _PyEval_InitGIL(PyThreadState *tstate)
     create_gil(gil);
     assert(gil_created(gil));
     tstate->interp->ceval.gil = gil;
+    tstate->interp->ceval.own_gil = 1;
     take_gil(tstate);
     return _PyStatus_OK();
 }
@@ -530,6 +543,14 @@ _PyEval_FiniGIL(PyInterpreterState *interp)
 {
     if (interp->ceval.gil == NULL) {
         /* It was already finalized (or hasn't been initialized yet). */
+        assert(!interp->ceval.own_gil);
+        return;
+    }
+    else if (!interp->ceval.own_gil) {
+        PyInterpreterState *main_interp = _PyInterpreterState_Main();
+        assert(interp != main_interp);
+        assert(interp->ceval.gil == main_interp->ceval.gil);
+        interp->ceval.gil = NULL;
         return;
     }
 

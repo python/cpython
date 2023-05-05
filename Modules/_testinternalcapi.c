@@ -729,6 +729,13 @@ get_interp_settings(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    /* "own GIL" */
+    PyObject *own_gil = interp->ceval.own_gil ? Py_True : Py_False;
+    if (PyDict_SetItemString(settings, "own_gil", own_gil) != 0) {
+        Py_DECREF(settings);
+        return NULL;
+    }
+
     return settings;
 }
 
