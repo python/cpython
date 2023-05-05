@@ -433,15 +433,26 @@ Directory and files operations
    When no *path* is specified, the results of :func:`os.environ` are used,
    returning either the "PATH" value or a fallback of :attr:`os.defpath`.
 
-   On Windows, the current directory is always prepended to the *path* whether
-   or not you use the default or provide your own, which is the behavior the
-   command shell uses when finding executables.  Additionally, when finding the
-   *cmd* in the *path*, the ``PATHEXT`` environment variable is checked.  For
-   example, if you call ``shutil.which("python")``, :func:`which` will search
-   ``PATHEXT`` to know that it should look for ``python.exe`` within the *path*
-   directories.  For example, on Windows::
+   On Windows, the current directory is prepended to the *path* if *mode* does
+   not include ``os.X_OK``. When the *mode* does include ``os.X_OK``, the
+   Windows API ``NeedCurrentDirectoryForExePathW`` will be consulted to
+   determine if the current directory should be prepended to *path*. To avoid
+   consulting the current working directory for executables: set the environment
+   variable ``NoDefaultCurrentDirectoryInExePath``.
+
+   Also on Windows, the ``PATHEXT`` variable is used to resolve commands
+   that may not already include an extension. For example, if you call
+   ``shutil.which("python")``, :func:`which` will search ``PATHEXT``
+   to know that it should look for ``python.exe`` within the *path*
+   directories. For example, on Windows::
 
       >>> shutil.which("python")
+      'C:\\Python33\\python.EXE'
+
+   This is also applied when *cmd* is a path that contains a directory
+   component::
+
+      >> shutil.which("C:\\Python33\\python")
       'C:\\Python33\\python.EXE'
 
    .. versionadded:: 3.3
@@ -449,6 +460,15 @@ Directory and files operations
    .. versionchanged:: 3.8
       The :class:`bytes` type is now accepted.  If *cmd* type is
       :class:`bytes`, the result type is also :class:`bytes`.
+
+   .. versionchanged:: 3.12
+      On Windows, the current directory is no longer prepended to the search
+      path if *mode* includes ``os.X_OK`` and WinAPI
+      ``NeedCurrentDirectoryForExePathW(cmd)`` is false, else the current
+      directory is prepended even if it is already in the search path;
+      ``PATHEXT`` is used now even when *cmd* includes a directory component
+      or ends with an extension that is in ``PATHEXT``; and filenames that
+      have no extension can now be found.
 
 .. exception:: Error
 
@@ -642,7 +662,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    Remove the archive format *name* from the list of supported formats.
 
 
-.. function:: unpack_archive(filename[, extract_dir[, format]])
+.. function:: unpack_archive(filename[, extract_dir[, format[, filter]]])
 
    Unpack an archive. *filename* is the full path of the archive.
 
@@ -656,6 +676,14 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    registered for that extension.  In case none is found,
    a :exc:`ValueError` is raised.
 
+   The keyword-only *filter* argument is passed to the underlying unpacking
+   function. For zip files, *filter* is not accepted.
+   For tar files, it is recommended to set it to ``'data'``,
+   unless using features specific to tar and UNIX-like filesystems.
+   (See :ref:`tarfile-extraction-filter` for details.)
+   The ``'data'`` filter will become the default for tar files
+   in Python 3.14.
+
    .. audit-event:: shutil.unpack_archive filename,extract_dir,format shutil.unpack_archive
 
    .. warning::
@@ -668,6 +696,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    .. versionchanged:: 3.7
       Accepts a :term:`path-like object` for *filename* and *extract_dir*.
 
+   .. versionchanged:: 3.12
+      Added the *filter* argument.
+
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
 
    Registers an unpack format. *name* is the name of the format and
@@ -675,11 +706,14 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    ``.zip`` for Zip files.
 
    *function* is the callable that will be used to unpack archives. The
-   callable will receive the path of the archive, followed by the directory
-   the archive must be extracted to.
+   callable will receive:
 
-   When provided, *extra_args* is a sequence of ``(name, value)`` tuples that
-   will be passed as keywords arguments to the callable.
+   - the path of the archive, as a positional argument;
+   - the directory the archive must be extracted to, as a positional argument;
+   - possibly a *filter* keyword argument, if it was given to
+     :func:`unpack_archive`;
+   - additional keyword arguments, specified by *extra_args* as a sequence
+     of ``(name, value)`` tuples.
 
    *description* can be provided to describe the format, and will be returned
    by the :func:`get_unpack_formats` function.

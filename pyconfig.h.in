@@ -19,6 +19,9 @@
 /* The normal alignment of `long', in bytes. */
 #undef ALIGNOF_LONG
 
+/* The normal alignment of `max_align_t', in bytes. */
+#undef ALIGNOF_MAX_ALIGN_T
+
 /* The normal alignment of `size_t', in bytes. */
 #undef ALIGNOF_SIZE_T
 

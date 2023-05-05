@@ -836,7 +836,6 @@ class BadFileZipImportTestCase(unittest.TestCase):
             self.assertRaises(TypeError, z.get_source, None)
 
             error = zipimport.ZipImportError
-            self.assertIsNone(z.find_module('abc'))
             self.assertIsNone(z.find_spec('abc'))
 
             with warnings.catch_warnings():

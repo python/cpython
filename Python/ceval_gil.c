@@ -467,7 +467,7 @@ void _PyEval_SetSwitchInterval(unsigned long microseconds)
     gil->interval = microseconds;
 }
 
-unsigned long _PyEval_GetSwitchInterval()
+unsigned long _PyEval_GetSwitchInterval(void)
 {
     struct _gil_runtime_state *gil = &_PyRuntime.ceval.gil;
     return gil->interval;
@@ -546,8 +546,7 @@ _PyEval_Fini(void)
 void
 PyEval_AcquireLock(void)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
 
     take_gil(tstate);
@@ -557,7 +556,7 @@ void
 PyEval_ReleaseLock(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyThreadState *tstate = _PyThreadState_GET();
     /* This function must succeed when the current thread state is NULL.
        We therefore avoid PyThreadState_Get() which dumps a fatal error
        in debug mode. */

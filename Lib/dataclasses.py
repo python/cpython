@@ -222,6 +222,29 @@ _POST_INIT_NAME = '__post_init__'
 # https://bugs.python.org/issue33453 for details.
 _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
+# Atomic immutable types which don't require any recursive handling and for which deepcopy
+# returns the same object. We can provide a fast-path for these types in asdict and astuple.
+_ATOMIC_TYPES = frozenset({
+    # Common JSON Serializable types
+    types.NoneType,
+    bool,
+    int,
+    float,
+    str,
+    # Other common types
+    complex,
+    bytes,
+    # Other types that are also unaffected by deepcopy
+    types.EllipsisType,
+    types.NotImplementedType,
+    types.CodeType,
+    types.BuiltinFunctionType,
+    types.FunctionType,
+    type,
+    range,
+    property,
+})
+
 # This function's logic is copied from "recursive_repr" function in
 # reprlib module to avoid dependency.
 def _recursive_repr(user_function):
@@ -1105,8 +1128,13 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
-        cls.__doc__ = (cls.__name__ +
-                       str(inspect.signature(cls)).replace(' -> None', ''))
+        try:
+            # In some cases fetching a signature is not possible.
+            # But, we surely should not fail in this case.
+            text_sig = str(inspect.signature(cls)).replace(' -> None', '')
+        except (TypeError, ValueError):
+            text_sig = ''
+        cls.__doc__ = (cls.__name__ + text_sig)
 
     if match_args:
         # I could probably compute this once
@@ -1199,8 +1227,10 @@ def _add_slots(cls, is_frozen, weakref_slot):
 
     if is_frozen:
         # Need this for pickling frozen classes with slots.
-        cls.__getstate__ = _dataclass_getstate
-        cls.__setstate__ = _dataclass_setstate
+        if '__getstate__' not in cls_dict:
+            cls.__getstate__ = _dataclass_getstate
+        if '__setstate__' not in cls_dict:
+            cls.__setstate__ = _dataclass_setstate
 
     return cls
 
@@ -1291,7 +1321,9 @@ def asdict(obj, *, dict_factory=dict):
 
 
 def _asdict_inner(obj, dict_factory):
-    if _is_dataclass_instance(obj):
+    if type(obj) in _ATOMIC_TYPES:
+        return obj
+    elif _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):
             value = _asdict_inner(getattr(obj, f.name), dict_factory)
@@ -1363,7 +1395,9 @@ def astuple(obj, *, tuple_factory=tuple):
 
 
 def _astuple_inner(obj, tuple_factory):
-    if _is_dataclass_instance(obj):
+    if type(obj) in _ATOMIC_TYPES:
+        return obj
+    elif _is_dataclass_instance(obj):
         result = []
         for f in fields(obj):
             value = _astuple_inner(getattr(obj, f.name), tuple_factory)

@@ -925,6 +925,35 @@ class UnionTests(unittest.TestCase):
         assert typing.Optional[int] | str == typing.Union[int, str, None]
         assert typing.Union[int, bool] | str == typing.Union[int, bool, str]
 
+    def test_or_type_operator_with_Literal(self):
+        Literal = typing.Literal
+        self.assertEqual((Literal[1] | Literal[2]).__args__,
+                         (Literal[1], Literal[2]))
+
+        self.assertEqual((Literal[0] | Literal[False]).__args__,
+                         (Literal[0], Literal[False]))
+        self.assertEqual((Literal[1] | Literal[True]).__args__,
+                         (Literal[1], Literal[True]))
+
+        self.assertEqual(Literal[1] | Literal[1], Literal[1])
+        self.assertEqual(Literal['a'] | Literal['a'], Literal['a'])
+
+        import enum
+        class Ints(enum.IntEnum):
+            A = 0
+            B = 1
+
+        self.assertEqual(Literal[Ints.A] | Literal[Ints.A], Literal[Ints.A])
+        self.assertEqual(Literal[Ints.B] | Literal[Ints.B], Literal[Ints.B])
+
+        self.assertEqual((Literal[Ints.B] | Literal[Ints.A]).__args__,
+                         (Literal[Ints.B], Literal[Ints.A]))
+
+        self.assertEqual((Literal[0] | Literal[Ints.A]).__args__,
+                         (Literal[0], Literal[Ints.A]))
+        self.assertEqual((Literal[1] | Literal[Ints.B]).__args__,
+                         (Literal[1], Literal[Ints.B]))
+
     def test_or_type_repr(self):
         assert repr(int | str) == "int | str"
         assert repr((int | str) | list) == "int | str | list"
@@ -1359,6 +1388,67 @@ class ClassCreationTests(unittest.TestCase):
         class C: pass
         D = types.new_class('D', (A(), C, B()), {})
         self.assertEqual(D.__bases__, (A1, A2, A3, C, B1, B2))
+
+    def test_get_original_bases(self):
+        T = typing.TypeVar('T')
+        class A: pass
+        class B(typing.Generic[T]): pass
+        class C(B[int]): pass
+        class D(B[str], float): pass
+        self.assertEqual(types.get_original_bases(A), (object,))
+        self.assertEqual(types.get_original_bases(B), (typing.Generic[T],))
+        self.assertEqual(types.get_original_bases(C), (B[int],))
+        self.assertEqual(types.get_original_bases(int), (object,))
+        self.assertEqual(types.get_original_bases(D), (B[str], float))
+
+        class E(list[T]): pass
+        class F(list[int]): pass
+
+        self.assertEqual(types.get_original_bases(E), (list[T],))
+        self.assertEqual(types.get_original_bases(F), (list[int],))
+
+        class ClassBasedNamedTuple(typing.NamedTuple):
+            x: int
+
+        class GenericNamedTuple(typing.NamedTuple, typing.Generic[T]):
+            x: T
+
+        CallBasedNamedTuple = typing.NamedTuple("CallBasedNamedTuple", [("x", int)])
+
+        self.assertIs(
+            types.get_original_bases(ClassBasedNamedTuple)[0], typing.NamedTuple
+        )
+        self.assertEqual(
+            types.get_original_bases(GenericNamedTuple),
+            (typing.NamedTuple, typing.Generic[T])
+        )
+        self.assertIs(
+            types.get_original_bases(CallBasedNamedTuple)[0], typing.NamedTuple
+        )
+
+        class ClassBasedTypedDict(typing.TypedDict):
+            x: int
+
+        class GenericTypedDict(typing.TypedDict, typing.Generic[T]):
+            x: T
+
+        CallBasedTypedDict = typing.TypedDict("CallBasedTypedDict", {"x": int})
+
+        self.assertIs(
+            types.get_original_bases(ClassBasedTypedDict)[0],
+            typing.TypedDict
+        )
+        self.assertEqual(
+            types.get_original_bases(GenericTypedDict),
+            (typing.TypedDict, typing.Generic[T])
+        )
+        self.assertIs(
+            types.get_original_bases(CallBasedTypedDict)[0],
+            typing.TypedDict
+        )
+
+        with self.assertRaisesRegex(TypeError, "Expected an instance of type"):
+            types.get_original_bases(object())
 
     # Many of the following tests are derived from test_descr.py
     def test_prepare_class(self):
