@@ -256,8 +256,9 @@ Creating Tasks
 
    .. note::
 
-      :meth:`asyncio.TaskGroup.create_task` is a newer alternative
-      that allows for convenient waiting for a group of related tasks.
+      :meth:`asyncio.TaskGroup.create_task` is a new alternative
+      leveraging structural concurrency; it allows for waiting
+      for a group of related tasks with strong safety guarantees.
 
    .. important::
 
@@ -340,7 +341,7 @@ Example::
         async with asyncio.TaskGroup() as tg:
             task1 = tg.create_task(some_coro(...))
             task2 = tg.create_task(another_coro(...))
-        print("Both tasks have completed now.")
+        print(f"Both tasks have completed now: {task1.result()}, {task2.result()}")
 
 The ``async with`` statement will wait for all tasks in the group to finish.
 While waiting, new tasks may still be added to the group
@@ -459,8 +460,12 @@ Running Tasks Concurrently
    Tasks/Futures to be cancelled.
 
    .. note::
-      A more modern way to create and run tasks concurrently and
-      wait for their completion is :class:`asyncio.TaskGroup`.
+      A new alternative to create and run tasks concurrently and
+      wait for their completion is :class:`asyncio.TaskGroup`. *TaskGroup*
+      provides stronger safety guarantees than *gather* for scheduling a nesting of subtasks:
+      if a task (or a subtask, a task scheduled by a task)
+      raises an exception, *TaskGroup* will, while *gather* will not,
+      cancel the remaining scheduled tasks).
 
    .. _asyncio_example_gather:
 
@@ -520,6 +525,42 @@ Running Tasks Concurrently
       Deprecation warning is emitted if no positional arguments are provided
       or not all positional arguments are Future-like objects
       and there is no running event loop.
+
+
+Eager Task Factory
+==================
+
+.. function:: eager_task_factory(loop, coro, *, name=None, context=None)
+
+    A task factory for eager task execution.
+
+    When using this factory (via :meth:`loop.set_task_factory(asyncio.eager_task_factory) <loop.set_task_factory>`),
+    coroutines begin execution synchronously during :class:`Task` construction.
+    Tasks are only scheduled on the event loop if they block.
+    This can be a performance improvement as the overhead of loop scheduling
+    is avoided for coroutines that complete synchronously.
+
+    A common example where this is beneficial is coroutines which employ
+    caching or memoization to avoid actual I/O when possible.
+
+    .. note::
+
+        Immediate execution of the coroutine is a semantic change.
+        If the coroutine returns or raises, the task is never scheduled
+        to the event loop. If the coroutine execution blocks, the task is
+        scheduled to the event loop. This change may introduce behavior
+        changes to existing applications. For example,
+        the application's task execution order is likely to change.
+
+    .. versionadded:: 3.12
+
+.. function:: create_eager_task_factory(custom_task_constructor)
+
+    Create an eager task factory, similar to :func:`eager_task_factory`,
+    using the provided *custom_task_constructor* when creating a new task instead
+    of the default :class:`Task`.
+
+    .. versionadded:: 3.12
 
 
 Shielding From Cancellation

@@ -227,6 +227,55 @@ dis_bug46724 = """\
        JUMP_FORWARD            -4 (to 0)
 """
 
+def func_w_kwargs(a, b, **c):
+    pass
+
+def wrap_func_w_kwargs():
+    func_w_kwargs(1, 2, c=5)
+
+dis_kw_names = """\
+%3d        RESUME                   0
+
+%3d        LOAD_GLOBAL              1 (NULL + func_w_kwargs)
+           LOAD_CONST               1 (1)
+           LOAD_CONST               2 (2)
+           LOAD_CONST               3 (5)
+           KW_NAMES                 4 (('c',))
+           CALL                     3
+           POP_TOP
+           RETURN_CONST             0 (None)
+""" % (wrap_func_w_kwargs.__code__.co_firstlineno,
+       wrap_func_w_kwargs.__code__.co_firstlineno + 1)
+
+dis_intrinsic_1_2 = """\
+  0        RESUME                   0
+
+  1        LOAD_CONST               0 (0)
+           LOAD_CONST               1 (('*',))
+           IMPORT_NAME              0 (math)
+           CALL_INTRINSIC_1         2 (INTRINSIC_IMPORT_STAR)
+           POP_TOP
+           RETURN_CONST             2 (None)
+"""
+
+dis_intrinsic_1_5 = """\
+  0        RESUME                   0
+
+  1        LOAD_NAME                0 (a)
+           CALL_INTRINSIC_1         5 (INTRINSIC_UNARY_POSITIVE)
+           RETURN_VALUE
+"""
+
+dis_intrinsic_1_6 = """\
+  0        RESUME                   0
+
+  1        BUILD_LIST               0
+           LOAD_NAME                0 (a)
+           LIST_EXTEND              1
+           CALL_INTRINSIC_1         6 (INTRINSIC_LIST_TO_TUPLE)
+           RETURN_VALUE
+"""
+
 _BIG_LINENO_FORMAT = """\
   1        RESUME                   0
 
@@ -529,7 +578,7 @@ dis_asyncwith = """\
         >> COPY                     3
            POP_EXCEPT
            RERAISE                  1
-        >> CALL_INTRINSIC_1         3
+        >> CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
            RERAISE                  1
 ExceptionTable:
 12 rows
@@ -861,6 +910,13 @@ class DisTests(DisTestBase):
         self.maxDiff = None
         got = self.get_disassembly(func, depth=0)
         self.do_disassembly_compare(got, expected, with_offsets)
+        # Add checks for dis.disco
+        if hasattr(func, '__code__'):
+            got_disco = io.StringIO()
+            with contextlib.redirect_stdout(got_disco):
+                dis.disco(func.__code__)
+            self.do_disassembly_compare(got_disco.getvalue(), expected,
+                                        with_offsets)
 
     def test_opmap(self):
         self.assertEqual(dis.opmap["NOP"], 9)
@@ -910,6 +966,20 @@ class DisTests(DisTestBase):
     def test_bug_46724(self):
         # Test that negative operargs are handled properly
         self.do_disassembly_test(bug46724, dis_bug46724)
+
+    def test_kw_names(self):
+        # Test that value is displayed for KW_NAMES
+        self.do_disassembly_test(wrap_func_w_kwargs, dis_kw_names)
+
+    def test_intrinsic_1(self):
+        # Test that argrepr is displayed for CALL_INTRINSIC_1
+        self.do_disassembly_test("from math import *", dis_intrinsic_1_2)
+        self.do_disassembly_test("+a", dis_intrinsic_1_5)
+        self.do_disassembly_test("(*a,)", dis_intrinsic_1_6)
+
+    def test_intrinsic_2(self):
+        self.assertIn("CALL_INTRINSIC_2         1 (INTRINSIC_PREP_RERAISE_STAR)",
+                      self.get_disassembly("try: pass\nexcept* Exception: x"))
 
     def test_big_linenos(self):
         def func(count):
@@ -1934,6 +2004,14 @@ class TestFinderMethods(unittest.TestCase):
         ]
 
         self.assertEqual(sorted(labels), sorted(jumps))
+
+    def test_findlinestarts(self):
+        def func():
+            pass
+
+        code = func.__code__
+        offsets = [linestart[0] for linestart in dis.findlinestarts(code)]
+        self.assertEqual(offsets, [0, 2])
 
 
 class TestDisTraceback(DisTestBase):

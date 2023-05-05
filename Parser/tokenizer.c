@@ -43,12 +43,12 @@
 #ifdef Py_DEBUG
 static inline tokenizer_mode* TOK_GET_MODE(struct tok_state* tok) {
     assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index < MAXLEVEL);
+    assert(tok->tok_mode_stack_index < MAXFSTRINGLEVEL);
     return &(tok->tok_mode_stack[tok->tok_mode_stack_index]);
 }
 static inline tokenizer_mode* TOK_NEXT_MODE(struct tok_state* tok) {
     assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index < MAXLEVEL);
+    assert(tok->tok_mode_stack_index + 1 < MAXFSTRINGLEVEL); 
     return &(tok->tok_mode_stack[++tok->tok_mode_stack_index]);
 }
 #else
@@ -111,7 +111,7 @@ tok_new(void)
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
     tok->report_warnings = 1;
-    tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0};
+    tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0, .f_string_debug=0};
     tok->tok_mode_stack_index = 0;
     tok->tok_report_warnings = 1;
 #ifdef Py_DEBUG
@@ -361,23 +361,55 @@ tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {
     return 0;
 }
 
-
-/* Traverse and update all f-string buffers with the value */
+/* Traverse and remember all f-string buffers, in order to be able to restore
+   them after reallocating tok->buf */
 static void
-update_fstring_buffers(struct tok_state *tok, char value, int regular, int multiline)
+remember_fstring_buffers(struct tok_state *tok)
 {
     int index;
     tokenizer_mode *mode;
 
     for (index = tok->tok_mode_stack_index; index >= 0; --index) {
         mode = &(tok->tok_mode_stack[index]);
-        if (regular && mode->f_string_start != NULL) {
-            mode->f_string_start += value;
-        }
-        if (multiline && mode->f_string_multi_line_start != NULL) {
-            mode->f_string_multi_line_start += value;
-        }
+        mode->f_string_start_offset = mode->f_string_start - tok->buf;
+        mode->f_string_multi_line_start_offset = mode->f_string_multi_line_start - tok->buf;
     }
+}
+
+/* Traverse and restore all f-string buffers after reallocating tok->buf */
+static void
+restore_fstring_buffers(struct tok_state *tok)
+{
+    int index;
+    tokenizer_mode *mode;
+
+    for (index = tok->tok_mode_stack_index; index >= 0; --index) {
+        mode = &(tok->tok_mode_stack[index]);
+        mode->f_string_start = tok->buf + mode->f_string_start_offset;
+        mode->f_string_multi_line_start = tok->buf + mode->f_string_multi_line_start_offset;
+    }
+}
+
+static int
+set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
+    assert(token != NULL);
+    assert(c == '}' || c == ':' || c == '!');
+    tokenizer_mode *tok_mode = TOK_GET_MODE(tok);
+
+    if (!tok_mode->f_string_debug || token->metadata) {
+        return 0;
+    }
+
+    PyObject *res = PyUnicode_DecodeUTF8(
+        tok_mode->last_expr_buffer,
+        tok_mode->last_expr_size - tok_mode->last_expr_end,
+        NULL
+    );
+    if (!res) {
+        return -1;
+    }
+    token->metadata = res;
+    return 0;
 }
 
 static int
@@ -476,7 +508,7 @@ tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
         Py_ssize_t start = tok->start == NULL ? -1 : tok->start - tok->buf;
         Py_ssize_t line_start = tok->start == NULL ? -1 : tok->line_start - tok->buf;
         Py_ssize_t multi_line_start = tok->multi_line_start - tok->buf;
-        update_fstring_buffers(tok, -*tok->buf, /*regular=*/1, /*multiline=*/1);
+        remember_fstring_buffers(tok);
         newbuf = (char *)PyMem_Realloc(newbuf, newsize);
         if (newbuf == NULL) {
             tok->done = E_NOMEM;
@@ -489,7 +521,7 @@ tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
         tok->start = start < 0 ? NULL : tok->buf + start;
         tok->line_start = line_start < 0 ? NULL : tok->buf + line_start;
         tok->multi_line_start = multi_line_start < 0 ? NULL : tok->buf + multi_line_start;
-        update_fstring_buffers(tok, *tok->buf, /*regular=*/1, /*multiline=*/1);
+        restore_fstring_buffers(tok);
     }
     return 1;
 }
@@ -1051,7 +1083,7 @@ tok_underflow_interactive(struct tok_state *tok) {
     }
     else if (tok->start != NULL) {
         Py_ssize_t cur_multi_line_start = tok->multi_line_start - tok->buf;
-        update_fstring_buffers(tok, -*tok->buf, /*regular=*/0, /*multiline=*/1);
+        remember_fstring_buffers(tok);
         size_t size = strlen(newtok);
         ADVANCE_LINENO();
         if (!tok_reserve_buf(tok, size + 1)) {
@@ -1064,9 +1096,10 @@ tok_underflow_interactive(struct tok_state *tok) {
         PyMem_Free(newtok);
         tok->inp += size;
         tok->multi_line_start = tok->buf + cur_multi_line_start;
-        update_fstring_buffers(tok, *tok->buf, /*regular=*/0, /*multiline=*/1);
+        restore_fstring_buffers(tok);
     }
     else {
+        remember_fstring_buffers(tok);
         ADVANCE_LINENO();
         PyMem_Free(tok->buf);
         tok->buf = newtok;
@@ -1074,6 +1107,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         tok->line_start = tok->buf;
         tok->inp = strchr(tok->buf, '\0');
         tok->end = tok->inp + 1;
+        restore_fstring_buffers(tok);
     }
     if (tok->done != E_OK) {
         if (tok->prompt != NULL) {
@@ -1243,6 +1277,12 @@ _syntaxerror_range(struct tok_state *tok, const char *format,
                    int col_offset, int end_col_offset,
                    va_list vargs)
 {
+    // In release builds, we don't want to overwrite a previous error, but in debug builds we
+    // want to fail if we are not doing it so we can fix it.
+    assert(tok->done != E_ERROR);
+    if (tok->done == E_ERROR) {
+        return ERRORTOKEN;
+    }
     PyObject *errmsg, *errtext, *args;
     errmsg = PyUnicode_FromFormatV(format, vargs);
     if (!errmsg) {
@@ -2201,15 +2241,21 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
         p_start = tok->start;
         p_end = tok->cur;
+        if (tok->tok_mode_stack_index + 1 >= MAXFSTRINGLEVEL) {
+            return MAKE_TOKEN(syntaxerror(tok, "too many nested f-strings"));
+        }
         tokenizer_mode *the_current_tok = TOK_NEXT_MODE(tok);
         the_current_tok->kind = TOK_FSTRING_MODE;
         the_current_tok->f_string_quote = quote;
         the_current_tok->f_string_quote_size = quote_size;
         the_current_tok->f_string_start = tok->start;
         the_current_tok->f_string_multi_line_start = tok->line_start;
+        the_current_tok->f_string_start_offset = -1;
+        the_current_tok->f_string_multi_line_start_offset = -1;
         the_current_tok->last_expr_buffer = NULL;
         the_current_tok->last_expr_size = 0;
         the_current_tok->last_expr_end = -1;
+        the_current_tok->f_string_debug = 0;
 
         switch (*tok->start) {
             case 'F':
@@ -2261,8 +2307,12 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         /* Get rest of string */
         while (end_quote_size != quote_size) {
             c = tok_nextc(tok);
-            if (tok->done == E_DECODE)
+            if (tok->done == E_ERROR) {
+                return MAKE_TOKEN(ERRORTOKEN);
+            }
+            if (tok->done == E_DECODE) {
                 break;
+            }
             if (c == EOF || (quote_size == 1 && c == '\n')) {
                 assert(tok->multi_line_start != NULL);
                 // shift the tok_state's location into
@@ -2336,9 +2386,11 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
          * by the `{` case, so for ensuring that we are on the 0th level, we need
          * to adjust it manually */
         int cursor = current_tok->curly_bracket_depth - (c != '{');
-
         if (cursor == 0 && !update_fstring_expr(tok, c)) {
             return MAKE_TOKEN(ENDMARKER);
+        }
+        if (cursor == 0 && c != '{' && set_fstring_expr(tok, token, c)) {
+            return MAKE_TOKEN(ERRORTOKEN);
         }
 
         if (c == ':' && cursor == current_tok->curly_bracket_expr_start_depth) {
@@ -2431,6 +2483,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             if (c == '}' && current_tok->curly_bracket_depth == current_tok->curly_bracket_expr_start_depth) {
                 current_tok->curly_bracket_expr_start_depth--;
                 current_tok->kind = TOK_FSTRING_MODE;
+                current_tok->f_string_debug = 0;
             }
         }
         break;
@@ -2442,6 +2495,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         char hex[9];
         (void)PyOS_snprintf(hex, sizeof(hex), "%04X", c);
         return MAKE_TOKEN(syntaxerror(tok, "invalid non-printable character U+%s", hex));
+    }
+
+    if( c == '=' && INSIDE_FSTRING_EXPR(current_tok)) {
+        current_tok->f_string_debug = 1;
     }
 
     /* Punctuation character */
@@ -2465,19 +2522,21 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
     // If we start with a bracket, we defer to the normal mode as there is nothing for us to tokenize
     // before it.
     int start_char = tok_nextc(tok);
-    int peek1 = tok_nextc(tok);
-    tok_backup(tok, peek1);
-    tok_backup(tok, start_char);
-
-    if ((start_char == '{' && peek1 != '{') || (start_char == '}' && peek1 != '}')) {
-        if (start_char == '{') {
+    if (start_char == '{') {
+        int peek1 = tok_nextc(tok);
+        tok_backup(tok, peek1);
+        tok_backup(tok, start_char);
+        if (peek1 != '{') {
             current_tok->curly_bracket_expr_start_depth++;
             if (current_tok->curly_bracket_expr_start_depth >= MAX_EXPR_NESTING) {
                 return MAKE_TOKEN(syntaxerror(tok, "f-string: expressions nested too deeply"));
             }
+            TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
+            return tok_get_normal_mode(tok, current_tok, token);
         }
-        TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
-        return tok_get_normal_mode(tok, current_tok, token);
+    }
+    else {
+        tok_backup(tok, start_char);
     }
 
     // Check if we are at the end of the string
@@ -2505,7 +2564,14 @@ f_string_middle:
 
     while (end_quote_size != current_tok->f_string_quote_size) {
         int c = tok_nextc(tok);
+        if (tok->done == E_ERROR) {
+            return MAKE_TOKEN(ERRORTOKEN);
+        }
         if (c == EOF || (current_tok->f_string_quote_size == 1 && c == '\n')) {
+            if (tok->decoding_erred) {
+                return MAKE_TOKEN(ERRORTOKEN);
+            }
+
             assert(tok->multi_line_start != NULL);
             // shift the tok_state's location into
             // the start of string, and report the error

@@ -66,11 +66,19 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+New typing features:
+
+* :pep:`688`: Making the buffer protocol accessible in Python
+
+* :ref:`whatsnew312-pep692`
+
+* :pep:`698`: Override Decorator for Static Typing
+
 Important deprecations, removals or restrictions:
 
-* :pep:`623`, Remove wstr from Unicode
+* :pep:`623`: Remove wstr from Unicode
 
-* :pep:`632`, Remove the ``distutils`` package.
+* :pep:`632`: Remove the ``distutils`` package
 
 Improved Error Messages
 =======================
@@ -137,7 +145,56 @@ New Features
   (Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
   with contributions from Gregory P. Smith [Google] and Mark Shannon
   in :gh:`96123`.)
+* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+  have a new a *filter* argument that allows limiting tar features than may be
+  surprising or dangerous, such as creating files outside the destination
+  directory.
+  See :ref:`tarfile-extraction-filter` for details.
+  In Python 3.14, the default will switch to ``'data'``.
+  (Contributed by Petr Viktorin in :pep:`706`.)
 
+PEP 688: Making the buffer protocol accessible in Python
+--------------------------------------------------------
+
+:pep:`688` introduces a way to use the :ref:`buffer protocol <bufferobjects>`
+from Python code. Classes that implement the :meth:`~object.__buffer__` method
+are now usable as buffer types.
+
+The new :class:`collections.abc.Buffer` ABC provides a standard
+way to represent buffer objects, for example in type annotations.
+The new :class:`inspect.BufferFlags` enum represents the flags that
+can be used to customize buffer creation.
+(Contributed by Jelle Zijlstra in :gh:`102500`.)
+
+New Features Related to Type Hints
+==================================
+
+This section covers major changes affecting :pep:`484` type hints and
+the :mod:`typing` module.
+
+.. _whatsnew312-pep692:
+
+PEP 692: Using ``TypedDict`` for more precise ``**kwargs`` typing
+-----------------------------------------------------------------
+
+Typing ``**kwargs`` in a function signature as introduced by :pep:`484` allowed
+for valid annotations only in cases where all of the ``**kwargs`` were of the
+same type.
+
+This PEP specifies a more precise way of typing ``**kwargs`` by relying on
+typed dictionaries::
+
+   from typing import TypedDict, Unpack
+
+   class Movie(TypedDict):
+     name: str
+     year: int
+
+   def foo(**kwargs: Unpack[Movie]): ...
+
+See :pep:`692` for more details.
+
+(PEP written by Franek Magiera)
 
 Other Language Changes
 ======================
@@ -195,6 +252,12 @@ Other Language Changes
 * Exceptions raised in a typeobject's ``__set_name__`` method are no longer
   wrapped by a :exc:`RuntimeError`. Context information is added to the
   exception as a :pep:`678` note. (Contributed by Irit Katriel in :gh:`77757`.)
+
+* When a ``try-except*`` construct handles the entire :exc:`ExceptionGroup`
+  and raises one other exception, that exception is no longer wrapped in an
+  :exc:`ExceptionGroup`. Also changed in version 3.11.4. (Contributed by Irit
+  Katriel in :gh:`103590`.)
+
 
 New Modules
 ===========
@@ -254,6 +317,12 @@ asyncio
   yielding tasks.
   (Contributed by Kumar Aditya in :gh:`78530`.)
 
+calendar
+--------
+
+* Add enums :data:`~calendar.Month` and :data:`~calendar.Day`.
+  (Contributed by Prince Roshan in :gh:`103636`.)
+
 csv
 ---
 
@@ -278,6 +347,11 @@ inspect
 
 pathlib
 -------
+
+* Add support for subclassing :class:`pathlib.PurePath` and
+  :class:`~pathlib.Path`, plus their Posix- and Windows-specific variants.
+  Subclasses may override the :meth:`~pathlib.PurePath.with_segments` method
+  to pass information between path instances.
 
 * Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
   all file or directory names within them, similar to :func:`os.walk`.
@@ -308,6 +382,13 @@ fractions
 
 * Objects of type :class:`fractions.Fraction` now support float-style
   formatting. (Contributed by Mark Dickinson in :gh:`100161`.)
+
+itertools
+---------
+
+* Added :class:`itertools.batched()` for collecting into even-sized
+  tuples where the last batch may be shorter than the rest.
+  (Contributed by Raymond Hettinger in :gh:`98363`.)
 
 math
 ----
@@ -348,6 +429,14 @@ os.path
 
 * Add :func:`os.path.splitroot` to split a path into a triad
   ``(drive, root, tail)``. (Contributed by Barney Gale in :gh:`101000`.)
+
+pdb
+---
+
+* Add convenience variables to hold values temporarily for debug session
+  and provide quick access to values like the current frame or the return
+  value.
+  (Contributed by Tian Gao in :gh:`103693`.)
 
 shutil
 ------
@@ -392,6 +481,16 @@ sqlite3
   :ref:`transaction handling <sqlite3-transaction-control-autocommit>`.
   (Contributed by Erlend E. Aasland in :gh:`83638`.)
 
+* Add *entrypoint* keyword-only parameter to
+  :meth:`~sqlite3.Connection.load_extension`,
+  for overriding the SQLite extension entry point.
+  (Contributed by Erlend E. Aasland in :gh:`103015`.)
+
+* Add :meth:`~sqlite3.Connection.getconfig` and
+  :meth:`~sqlite3.Connection.setconfig` to :class:`~sqlite3.Connection`
+  to make configuration changes to a database connection.
+  (Contributed by Erlend E. Aasland in :gh:`103489`.)
+
 threading
 ---------
 
@@ -399,6 +498,13 @@ threading
   :func:`threading.setprofile_all_threads` that allow to set tracing and
   profiling functions in all running threads in addition to the calling one.
   (Contributed by Pablo Galindo in :gh:`93503`.)
+
+types
+-----
+
+* Add :func:`types.get_original_bases` to allow for further introspection of
+  :ref:`user-defined-generics` when subclassed. (Contributed by
+  James Hilton-Balfe and Alex Waygood in :gh:`101827`.)
 
 unicodedata
 -----------
@@ -436,8 +542,10 @@ uuid
 tempfile
 --------
 
-The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
-*delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
+* The :class:`tempfile.NamedTemporaryFile` function has a new optional parameter
+  *delete_on_close* (Contributed by Evgeny Zorin in :gh:`58451`.)
+* :func:`tempfile.mkdtemp` now always returns an absolute path, even if the
+  argument provided to the *dir* parameter is a relative path.
 
 .. _whatsnew-typing-py312:
 
@@ -532,6 +640,14 @@ Optimizations
   replacement strings containing group references by 2--3 times.
   (Contributed by Serhiy Storchaka in :gh:`91524`.)
 
+* Speed up :class:`asyncio.Task` creation by deferring expensive string formatting.
+  (Contributed by Itamar O in :gh:`103793`.)
+
+* Added :func:`asyncio.eager_task_factory` and :func:`asyncio.create_eager_task_factory`
+  functions to allow opting an event loop in to eager task execution,
+  speeding up some use-cases by up to 50%.
+  (Contributed by Jacob Bower & Itamar O in :gh:`102853`)
+
 
 CPython bytecode changes
 ========================
@@ -616,6 +732,19 @@ Deprecated
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated as will be removed
   in Python 3.14. Use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
 
+* Extracting tar archives without specifying *filter* is deprecated until
+  Python 3.14, when ``'data'`` filter will become the default.
+  See :ref:`tarfile-extraction-filter` for details.
+
+* ``calendar.January`` and ``calendar.February`` constants are deprecated and
+  replaced by :data:`calendar.Month.JANUARY` and :data:`calendar.Month.FEBRUARY`.
+  (Contributed by Prince Roshan in :gh:`103636`.)
+
+* The bitwise inversion operator (``~``) on bool is deprecated. It will throw an
+  error in Python 3.14. Use ``not`` for logical negation of bools instead.
+  In the rare case that you really need the bitwise inversion of the underlying
+  ``int``, convert to int explicitly with ``~int(x)``. (Contributed by Tim Hoffmann
+  in :gh:`103487`.)
 
 Pending Removal in Python 3.13
 ------------------------------
@@ -672,6 +801,11 @@ Pending Removal in Python 3.14
 
   (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
 
+* Deprecated :class:`collections.abc.ByteString`.
+  Prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
+  For use in typing, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
+  (Contributed by Shantanu Jain in :gh:`91896`.)
+
 * Creating immutable types (:data:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases using the C API.
 
@@ -704,6 +838,11 @@ Pending Removal in Python 3.14
 
 * The *onerror* argument of :func:`shutil.rmtree` is deprecated in 3.12,
   and will be removed in 3.14.
+
+* :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
+  now raise :exc:`DeprecationWarning`;
+  use :func:`importlib.util.find_spec` instead.
+  (Contributed by Nikita Sobolev in :gh:`97850`.)
 
 Pending Removal in Future Versions
 ----------------------------------
@@ -884,11 +1023,20 @@ Removed
 * Many previously deprecated cleanups in :mod:`importlib` have now been
   completed:
 
-  * References to, and support for ``module_repr()`` has been eradicated.
+  * References to, and support for :meth:`!module_repr()` has been removed.
+    (Contributed by Barry Warsaw in :gh:`97850`.)
 
+  * ``importlib.util.set_package`` has been removed. (Contributed by Brett
+    Cannon in :gh:`65961`.)
 
-* ``importlib.util.set_package`` has been removed.
-  (Contributed by Brett Cannon in :gh:`65961`.)
+  * Support for ``find_loader()`` and ``find_module()`` APIs have been
+    removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
+
+  * ``importlib.abc.Finder``, ``pkg.ImpImporter``, and ``pkg.ImpLoader`` have
+    been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
+
+  * The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
+    :gh:`98040`.)
 
 * Removed the ``suspicious`` rule from the documentation Makefile, and
   removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
@@ -978,6 +1126,10 @@ Changes in the Python API
   exception instance, rather than to a ``(typ, exc, tb)`` tuple.
   (Contributed by Irit Katriel in :gh:`103176`.)
 
+* When extracting tar files using :mod:`tarfile` or
+  :func:`shutil.unpack_archive`, pass the *filter* argument to limit features
+  that may be surprising or dangerous.
+  See :ref:`tarfile-extraction-filter` for details.
 
 Build Changes
 =============
@@ -1032,6 +1184,21 @@ New Features
   API changes.
 
   (Contributed by Petr Viktorin in :gh:`101101`.)
+
+* :pep:`697`: Added API for extending types whose instance memory layout is
+  opaque:
+
+  - :c:member:`PyType_Spec.basicsize` can be zero or negative to specify
+    inheriting or extending the base class size.
+  - :c:func:`PyObject_GetTypeData` and :c:func:`PyType_GetTypeDataSize`
+    added to allow access to subclass-specific instance data.
+  - :const:`Py_TPFLAGS_ITEMS_AT_END` and :c:func:`PyObject_GetItemData`
+    added to allow safely extending certain variable-sized types, including
+    :c:var:`PyType_Type`.
+  - :c:macro:`Py_RELATIVE_OFFSET` added to allow defining
+    :c:type:`members <PyMemberDef>` in terms of a subclass-specific struct.
+
+  (Contributed by Petr Viktorin in :gh:`103509`.)
 
 * Added the new limited C API function :c:func:`PyType_FromMetaclass`,
   which generalizes the existing :c:func:`PyType_FromModuleAndSpec` using
@@ -1122,6 +1289,24 @@ New Features
   to replace the legacy-api :c:func:`!PyErr_Display`. (Contributed by
   Irit Katriel in :gh:`102755`).
 
+* :pep:`683`: Introduced Immortal Objects to Python which allows objects
+  to bypass reference counts and introduced changes to the C-API:
+
+  - ``_Py_IMMORTAL_REFCNT``: The reference count that defines an object
+      as immortal.
+  - ``_Py_IsImmortal`` Checks if an object has the immortal reference count.
+  - ``PyObject_HEAD_INIT`` This will now initialize reference count to
+      ``_Py_IMMORTAL_REFCNT`` when used with ``Py_BUILD_CORE``.
+  - ``SSTATE_INTERNED_IMMORTAL`` An identifier for interned unicode objects
+       that are immortal.
+  - ``SSTATE_INTERNED_IMMORTAL_STATIC`` An identifier for interned unicode
+       objects that are immortal and static
+  - ``sys.getunicodeinternedsize`` This returns the total number of unicode
+      objects that have been interned. This is now needed for refleak.py to
+      correctly track reference counts and allocated blocks
+
+  (Contributed by Eddie Elizondo in :gh:`84436`.)
+
 Porting to Python 3.12
 ----------------------
 
@@ -1189,6 +1374,21 @@ Porting to Python 3.12
   for ABI compabitility.  Note that it is an internal global and only
   available on debug builds.  If you happen to be using it then you'll
   need to start using ``_Py_GetGlobalRefTotal()``.
+
+* The following functions now select an appropriate metaclass for the newly
+  created type:
+
+  * :c:func:`PyType_FromSpec`
+  * :c:func:`PyType_FromSpecWithBases`
+  * :c:func:`PyType_FromModuleAndSpec`
+
+  Creating classes whose metaclass overrides :c:member:`~PyTypeObject.tp_new`
+  is deprecated, and in Python 3.14+ it will be disallowed.
+  Note that these functions ignore ``tp_new`` of the metaclass, possibly
+  allowing incomplete initialization.
+
+  Note that :c:func:`PyType_FromMetaclass` (added in Python 3.12)
+  already disallows creating classes whose metaclass overrides ``tp_new``.
 
 Deprecated
 ----------
@@ -1266,6 +1466,11 @@ Deprecated
 * ``_PyErr_ChainExceptions`` is deprecated. Use ``_PyErr_ChainExceptions1``
   instead. (Contributed by Irit Katriel in :gh:`102192`.)
 
+* Using :c:func:`PyType_FromSpec`, :c:func:`PyType_FromSpecWithBases`
+  or :c:func:`PyType_FromModuleAndSpec` to create a class whose metaclass
+  overrides :c:member:`~PyTypeObject.tp_new` is deprecated.
+  Call the metaclass instead.
+
 Removed
 -------
 
@@ -1286,8 +1491,7 @@ Removed
    * :c:func:`!PyUnicode_GetSize`
    * :c:func:`!PyUnicode_GET_DATA_SIZE`
 
-* Remove the ``PyUnicode_InternImmortal()`` function and the
-  ``SSTATE_INTERNED_IMMORTAL`` macro.
+* Remove the ``PyUnicode_InternImmortal()`` function macro.
   (Contributed by Victor Stinner in :gh:`85858`.)
 
 * Remove ``Jython`` compatibility hacks from several stdlib modules and tests.

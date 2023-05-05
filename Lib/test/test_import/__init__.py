@@ -1636,7 +1636,12 @@ class SubinterpImportTests(unittest.TestCase):
         allow_exec=False,
         allow_threads=True,
         allow_daemon_threads=False,
+        # Isolation-related config values aren't included here.
     )
+    ISOLATED = dict(
+        use_main_obmalloc=False,
+    )
+    NOT_ISOLATED = {k: not v for k, v in ISOLATED.items()}
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def pipe(self):
@@ -1669,6 +1674,7 @@ class SubinterpImportTests(unittest.TestCase):
     def run_here(self, name, *,
                  check_singlephase_setting=False,
                  check_singlephase_override=None,
+                 isolated=False,
                  ):
         """
         Try importing the named module in a subinterpreter.
@@ -1689,6 +1695,7 @@ class SubinterpImportTests(unittest.TestCase):
 
         kwargs = dict(
             **self.RUN_KWARGS,
+            **(self.ISOLATED if isolated else self.NOT_ISOLATED),
             check_multi_interp_extensions=check_singlephase_setting,
         )
 
@@ -1699,33 +1706,36 @@ class SubinterpImportTests(unittest.TestCase):
         self.assertEqual(ret, 0)
         return os.read(r, 100)
 
-    def check_compatible_here(self, name, *, strict=False):
+    def check_compatible_here(self, name, *, strict=False, isolated=False):
         # Verify that the named module may be imported in a subinterpreter.
         # (See run_here() for more info.)
         out = self.run_here(name,
                             check_singlephase_setting=strict,
+                            isolated=isolated,
                             )
         self.assertEqual(out, b'okay')
 
-    def check_incompatible_here(self, name):
+    def check_incompatible_here(self, name, *, isolated=False):
         # Differences from check_compatible_here():
         #  * verify that import fails
         #  * "strict" is always True
         out = self.run_here(name,
                             check_singlephase_setting=True,
+                            isolated=isolated,
                             )
         self.assertEqual(
             out.decode('utf-8'),
             f'ImportError: module {name} does not support loading in subinterpreters',
         )
 
-    def check_compatible_fresh(self, name, *, strict=False):
+    def check_compatible_fresh(self, name, *, strict=False, isolated=False):
         # Differences from check_compatible_here():
         #  * subinterpreter in a new process
         #  * module has never been imported before in that process
         #  * this tests importing the module for the first time
         kwargs = dict(
             **self.RUN_KWARGS,
+            **(self.ISOLATED if isolated else self.NOT_ISOLATED),
             check_multi_interp_extensions=strict,
         )
         _, out, err = script_helper.assert_python_ok('-c', textwrap.dedent(f'''
@@ -1743,12 +1753,13 @@ class SubinterpImportTests(unittest.TestCase):
         self.assertEqual(err, b'')
         self.assertEqual(out, b'okay')
 
-    def check_incompatible_fresh(self, name):
+    def check_incompatible_fresh(self, name, *, isolated=False):
         # Differences from check_compatible_fresh():
         #  * verify that import fails
         #  * "strict" is always True
         kwargs = dict(
             **self.RUN_KWARGS,
+            **(self.ISOLATED if isolated else self.NOT_ISOLATED),
             check_multi_interp_extensions=True,
         )
         _, out, err = script_helper.assert_python_ok('-c', textwrap.dedent(f'''
@@ -1854,6 +1865,14 @@ class SubinterpImportTests(unittest.TestCase):
         with self.subTest('config: check disabled; override: disabled'):
             check_compatible(False, -1)
 
+    def test_isolated_config(self):
+        module = 'threading'
+        require_pure_python(module)
+        with self.subTest(f'{module}: strict, not fresh'):
+            self.check_compatible_here(module, strict=True, isolated=True)
+        with self.subTest(f'{module}: strict, fresh'):
+            self.check_compatible_fresh(module, strict=True, isolated=True)
+
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):
 
@@ -1868,7 +1887,7 @@ class TestSinglePhaseSnapshot(ModuleSnapshot):
             self.init_count = mod.initialized_count()
         return self
 
-    SCRIPT_BODY = ModuleSnapshot.SCRIPT_BODY + textwrap.dedent(f'''
+    SCRIPT_BODY = ModuleSnapshot.SCRIPT_BODY + textwrap.dedent('''
         snapshot['module'].update(dict(
             int_const=mod.int_const,
             str_const=mod.str_const,

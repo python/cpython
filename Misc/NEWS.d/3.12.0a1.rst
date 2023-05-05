@@ -2028,8 +2028,8 @@ resources.
 .. nonce: NzdREm
 .. section: Library
 
-Remove deprecated :func:`importlib.utils.set_loader` and
-:func:`importlib.utils.module_for_loader` from :mod:`importlib.utils`.
+Remove deprecated :func:`!importlib.util.set_loader` and
+:func:`!importlib.util.module_for_loader` from :mod:`importlib.util`.
 
 ..
 

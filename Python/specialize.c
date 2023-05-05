@@ -96,6 +96,7 @@ _Py_GetSpecializationStats(void) {
         return NULL;
     }
     int err = 0;
+    err += add_stat_dict(stats, LOAD_SUPER_ATTR, "load_super_attr");
     err += add_stat_dict(stats, LOAD_ATTR, "load_attr");
     err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
     err += add_stat_dict(stats, BINARY_SUBSCR, "binary_subscr");
@@ -147,7 +148,7 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
                     PRIu64 "\n", i, j, val);
             }
         }
-        for(int j = 0; j < 256; j++) {
+        for (int j = 0; j < 256; j++) {
             if (stats[i].pair_count[j]) {
                 fprintf(out, "opcode[%d].pair_count[%d] : %" PRIu64 "\n",
                         i, j, stats[i].pair_count[j]);
@@ -319,6 +320,14 @@ _PyCode_Quicken(PyCodeObject *code)
 
 #define SPEC_FAIL_LOAD_GLOBAL_NON_DICT 17
 #define SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT 18
+
+/* Super */
+
+#define SPEC_FAIL_SUPER_NOT_LOAD_METHOD 9
+#define SPEC_FAIL_SUPER_BAD_CLASS 10
+#define SPEC_FAIL_SUPER_SHADOWED 11
+#define SPEC_FAIL_SUPER_NOT_METHOD 12
+#define SPEC_FAIL_SUPER_ERROR_OR_NOT_FOUND 13
 
 /* Attributes */
 
@@ -504,6 +513,54 @@ specialize_module_load_attr(
 
 
 /* Attribute specialization */
+
+void
+_Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls, PyObject *self,
+                             _Py_CODEUNIT *instr, PyObject *name, int load_method) {
+    assert(ENABLE_SPECIALIZATION);
+    assert(_PyOpcode_Caches[LOAD_SUPER_ATTR] == INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR);
+    _PySuperAttrCache *cache = (_PySuperAttrCache *)(instr + 1);
+    if (!load_method) {
+        SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_NOT_LOAD_METHOD);
+        goto fail;
+    }
+    if (global_super != (PyObject *)&PySuper_Type) {
+        SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_SHADOWED);
+        goto fail;
+    }
+    if (!PyType_Check(cls)) {
+        SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_BAD_CLASS);
+        goto fail;
+    }
+    PyTypeObject *tp = (PyTypeObject *)cls;
+    PyObject *res = _PySuper_LookupDescr(tp, self, name);
+    if (res == NULL) {
+        SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_ERROR_OR_NOT_FOUND);
+        PyErr_Clear();
+        goto fail;
+    }
+    if (_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+        write_u32(cache->class_version, tp->tp_version_tag);
+        write_u32(cache->self_type_version, Py_TYPE(self)->tp_version_tag);
+        write_obj(cache->method, res);  // borrowed
+        instr->op.code = LOAD_SUPER_ATTR_METHOD;
+        Py_DECREF(res);
+        goto success;
+    }
+    Py_DECREF(res);
+    SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_NOT_METHOD);
+
+fail:
+    STAT_INC(LOAD_SUPER_ATTR, failure);
+    assert(!PyErr_Occurred());
+    instr->op.code = LOAD_SUPER_ATTR;
+    cache->counter = adaptive_counter_backoff(cache->counter);
+    return;
+success:
+    STAT_INC(LOAD_SUPER_ATTR, success);
+    assert(!PyErr_Occurred());
+    cache->counter = adaptive_counter_cooldown();
+}
 
 typedef enum {
     OVERRIDING, /* Is an overriding descriptor, and will remain so. */
