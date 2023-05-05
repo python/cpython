@@ -3014,7 +3014,7 @@ static PyMethodDef builtin_methods[] = {
 };
 
 PyDoc_STRVAR(builtin_doc,
-"Built-in functions, exceptions, and other objects.\n\
+"Built-in functions, types, exceptions, and other objects.\n\
 \n\
 This module provides direct access to all 'built-in'\n\
 identifiers of Python; for example, `builtins.open` is\n\
