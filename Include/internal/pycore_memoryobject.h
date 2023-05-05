@@ -9,7 +9,8 @@ extern "C" {
 #endif
 
 PyObject *
-PyMemoryView_FromObjectAndFlags(PyObject *v, int flags);
+_PyMemoryView_FromBufferProc(PyObject *v, int flags,
+                             getbufferproc bufferproc);
 
 #ifdef __cplusplus
 }

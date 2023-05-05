@@ -144,8 +144,24 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
     Py_DECREF(frame->f_funcobj);
 }
 
+/* Unstable API functions */
+
+PyObject *
+PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
+{
+    PyObject *code = frame->f_executable;
+    Py_INCREF(code);
+    return code;
+}
+
 int
-_PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame)
+PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
+{
+    return _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
+}
+
+int
+PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {
     int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
     return PyCode_Addr2Line(_PyFrame_GetCode(frame), addr);

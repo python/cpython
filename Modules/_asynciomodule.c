@@ -8,7 +8,6 @@
 #include "pycore_runtime_init.h"  // _Py_ID()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
-#include "cpython/context.h"
 #include <stddef.h>               // offsetof()
 
 
@@ -2064,21 +2063,6 @@ swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
     return prev_task;
 }
 
-static int
-is_loop_running(PyObject *loop)
-{
-    PyObject *func = PyObject_GetAttr(loop, &_Py_ID(is_running));
-    if (func == NULL) {
-        PyErr_Format(PyExc_TypeError, "Loop missing is_running()");
-        return -1;
-    }
-    PyObject *res = PyObject_CallNoArgs(func);
-    int retval = Py_IsTrue(res);
-    Py_DECREF(func);
-    Py_DECREF(res);
-    return !!retval;
-}
-
 /* ----- Task */
 
 /*[clinic input]
@@ -2149,11 +2133,13 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     }
 
     if (eager_start) {
-        int loop_running = is_loop_running(self->task_loop);
-        if (loop_running == -1) {
+        PyObject *res = PyObject_CallMethodNoArgs(loop, &_Py_ID(is_running));
+        if (res == NULL) {
             return -1;
         }
-        if (loop_running) {
+        int is_loop_running = Py_IsTrue(res);
+        Py_DECREF(res);
+        if (is_loop_running) {
             if (task_eager_start(state, self)) {
                 return -1;
             }
@@ -3803,6 +3789,7 @@ module_exec(PyObject *mod)
 
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

@@ -425,8 +425,6 @@ init_runtime(_PyRuntimeState *runtime,
     runtime->open_code_userdata = open_code_userdata;
     runtime->audit_hook_head = audit_hook_head;
 
-    _PyEval_InitRuntimeState(&runtime->ceval);
-
     PyPreConfig_InitPythonConfig(&runtime->preconfig);
 
     PyThread_type_lock *lockptrs[NUMLOCKS] = {
@@ -682,7 +680,7 @@ init_interpreter(PyInterpreterState *interp,
         memcpy(&interp->obmalloc.pools.used, temp, sizeof(temp));
     }
 
-    _PyEval_InitState(&interp->ceval, pending_lock);
+    _PyEval_InitState(interp, pending_lock);
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
@@ -1862,17 +1860,11 @@ PyThreadState_Get(void)
 }
 
 
-PyThreadState *
-_PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
+static void
+_swap_thread_states(_PyRuntimeState *runtime,
+                    PyThreadState *oldts, PyThreadState *newts)
 {
-#if defined(Py_DEBUG)
-    /* This can be called from PyEval_RestoreThread(). Similar
-       to it, we need to ensure errno doesn't change.
-    */
-    int err = errno;
-#endif
-    PyThreadState *oldts = current_fast_get(runtime);
-
+    // XXX Do this only if oldts != NULL?
     current_fast_clear(runtime);
 
     if (oldts != NULL) {
@@ -1886,10 +1878,38 @@ _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
         current_fast_set(runtime, newts);
         tstate_activate(newts);
     }
+}
+
+PyThreadState *
+_PyThreadState_SwapNoGIL(PyThreadState *newts)
+{
+#if defined(Py_DEBUG)
+    /* This can be called from PyEval_RestoreThread(). Similar
+       to it, we need to ensure errno doesn't change.
+    */
+    int err = errno;
+#endif
+
+    PyThreadState *oldts = current_fast_get(&_PyRuntime);
+    _swap_thread_states(&_PyRuntime, oldts, newts);
 
 #if defined(Py_DEBUG)
     errno = err;
 #endif
+    return oldts;
+}
+
+PyThreadState *
+_PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
+{
+    PyThreadState *oldts = current_fast_get(runtime);
+    if (oldts != NULL) {
+        _PyEval_ReleaseLock(oldts);
+    }
+    _swap_thread_states(runtime, oldts, newts);
+    if (newts != NULL) {
+        _PyEval_AcquireLock(newts);
+    }
     return oldts;
 }
 
@@ -2185,7 +2205,7 @@ PyGILState_Ensure(void)
 
     /* Ensure that _PyEval_InitThreads() and _PyGILState_Init() have been
        called by Py_Initialize() */
-    assert(_PyEval_ThreadsInitialized(runtime));
+    assert(_PyEval_ThreadsInitialized());
     assert(gilstate_tss_initialized(runtime));
     assert(runtime->gilstate.autoInterpreterState != NULL);
 

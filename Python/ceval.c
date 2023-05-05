@@ -27,6 +27,7 @@
 #include "pycore_dict.h"
 #include "dictobject.h"
 #include "pycore_frame.h"
+#include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "opcode.h"
 #include "pydtrace.h"
 #include "setobject.h"
@@ -792,7 +793,7 @@ handle_eval_breaker:
             _PyErr_Format(tstate, PyExc_SystemError,
                           "%U:%d: unknown opcode %d",
                           _PyFrame_GetCode(frame)->co_filename,
-                          _PyInterpreterFrame_GetLine(frame),
+                          PyUnstable_InterpreterFrame_GetLine(frame),
                           opcode);
             goto error;
 

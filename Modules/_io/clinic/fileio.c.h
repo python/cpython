@@ -18,15 +18,19 @@ PyDoc_STRVAR(_io_FileIO_close__doc__,
 "called more than once without error.");
 
 #define _IO_FILEIO_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)_io_FileIO_close, METH_NOARGS, _io_FileIO_close__doc__},
+    {"close", _PyCFunction_CAST(_io_FileIO_close), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_FileIO_close__doc__},
 
 static PyObject *
-_io_FileIO_close_impl(fileio *self);
+_io_FileIO_close_impl(fileio *self, PyTypeObject *cls);
 
 static PyObject *
-_io_FileIO_close(fileio *self, PyObject *Py_UNUSED(ignored))
+_io_FileIO_close(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _io_FileIO_close_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "close() takes no arguments");
+        return NULL;
+    }
+    return _io_FileIO_close_impl(self, cls);
 }
 
 PyDoc_STRVAR(_io_FileIO___init____doc__,
@@ -466,4 +470,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=27f883807a6c29ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=29ed2ae6c451c139 input=a9049054013a1b77]*/

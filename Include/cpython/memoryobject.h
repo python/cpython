@@ -24,6 +24,7 @@ typedef struct {
 #define _Py_MEMORYVIEW_FORTRAN     0x004  /* Fortran contiguous layout */
 #define _Py_MEMORYVIEW_SCALAR      0x008  /* scalar: ndim = 0 */
 #define _Py_MEMORYVIEW_PIL         0x010  /* PIL-style layout */
+#define _Py_MEMORYVIEW_RESTRICTED  0x020  /* Disallow new references to the memoryview's buffer */
 
 typedef struct {
     PyObject_VAR_HEAD

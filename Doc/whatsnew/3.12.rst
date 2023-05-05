@@ -342,11 +342,17 @@ inspect
   (Contributed by Thomas Krennwallner in :issue:`35759`.)
 
 * The performance of :func:`inspect.getattr_static` has been considerably
-  improved. Most calls to the function should be around 2x faster than they
-  were in Python 3.11. (Contributed by Alex Waygood in :gh:`103193`.)
+  improved. Most calls to the function should be at least 2x faster than they
+  were in Python 3.11, and some may be 6x faster or more. (Contributed by Alex
+  Waygood in :gh:`103193`.)
 
 pathlib
 -------
+
+* Add support for subclassing :class:`pathlib.PurePath` and
+  :class:`~pathlib.Path`, plus their Posix- and Windows-specific variants.
+  Subclasses may override the :meth:`~pathlib.PurePath.with_segments` method
+  to pass information between path instances.
 
 * Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
   all file or directory names within them, similar to :func:`os.walk`.
@@ -592,7 +598,7 @@ typing
   :func:`runtime-checkable protocols <typing.runtime_checkable>` has changed
   significantly. Most ``isinstance()`` checks against protocols with only a few
   members should be at least 2x faster than in 3.11, and some may be 20x
-  faster or more. However, ``isinstance()`` checks against protocols with seven
+  faster or more. However, ``isinstance()`` checks against protocols with fourteen
   or more members may be slower than in Python 3.11. (Contributed by Alex
   Waygood in :gh:`74690` and :gh:`103193`.)
 
@@ -838,6 +844,19 @@ Pending Removal in Python 3.14
   now raise :exc:`DeprecationWarning`;
   use :func:`importlib.util.find_spec` instead.
   (Contributed by Nikita Sobolev in :gh:`97850`.)
+
+* The following :mod:`ast` features have been deprecated in documentation since
+  Python 3.8, now cause a :exc:`DeprecationWarning` to be emitted at runtime
+  when they are accessed or used, and will be removed in Python 3.14:
+
+  * :class:`!ast.Num`
+  * :class:`!ast.Str`
+  * :class:`!ast.Bytes`
+  * :class:`!ast.NameConstant`
+  * :class:`!ast.Ellipsis`
+
+  Use :class:`ast.Constant` instead.
+  (Contributed by Serhiy Storchaka in :gh:`90953`.)
 
 Pending Removal in Future Versions
 ----------------------------------
@@ -1149,6 +1168,14 @@ Build Changes
   ``compileall`` commands into a single command to build .pyc files for all
   optimization levels (0, 1, 2) at once.
   (Contributed by Victor Stinner in :gh:`99289`.)
+
+* Add platform triplets for 64-bit LoongArch:
+
+  * loongarch64-linux-gnusf
+  * loongarch64-linux-gnuf32
+  * loongarch64-linux-gnu
+
+  (Contributed by Zhang Na in :gh:`90656`.)
 
 
 C API Changes
