@@ -3017,8 +3017,8 @@ PyDoc_STRVAR(builtin_doc,
 "Built-in functions, types, exceptions, and other objects.\n\
 \n\
 This module provides direct access to all 'built-in'\n\
-identifiers of Python; for example, builtins.open is\n\
-the full name for the built-in function open().\n\
+identifiers of Python; for example, builtins.len is\n\
+the full name for the built-in function len().\n\
 \n\
 This module is not normally accessed explicitly by most\n\
 applications, but can be useful in modules that provide\n\
