@@ -249,6 +249,23 @@ class ListComprehensionTest(unittest.TestCase):
         outputs = {"y": [[0, 1], [0, 1, 4]]}
         self._check_in_scopes(code, outputs)
 
+    def test_nested_2(self):
+        code = """
+            l = [1, 2, 3]
+            x = 3
+            y = [x for [x ** x for x in range(x)][x - 1] in l]
+        """
+        outputs = {"y": [3, 3, 3]}
+        self._check_in_scopes(code, outputs)
+
+    def test_nested_3(self):
+        code = """
+            l = [(1, 2), (3, 4), (5, 6)]
+            y = [x for (x, [x ** x for x in range(x)][x - 1]) in l]
+        """
+        outputs = {"y": [1, 3, 5]}
+        self._check_in_scopes(code, outputs)
+
     def test_nameerror(self):
         code = """
             [x for x in [1]]
