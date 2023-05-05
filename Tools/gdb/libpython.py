@@ -1083,7 +1083,7 @@ class PyFramePtr:
         return self._f_special("f_executable", PyCodeObjectPtr.from_pyobject_ptr)
 
     def _f_executable(self):
-        return self._f_special("f_executable", PyObjectPtr.from_pyobject_ptr)
+        return self._f_special("f_executable")
 
     def _f_nlocalsplus(self):
         return self._f_special("nlocalsplus", int_from_int)

@@ -279,8 +279,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
-#define CONSTS() ((PyCodeObject *)frame->f_executable)->co_consts
-#define NAMES() ((PyCodeObject *)frame->f_executable)->co_names
+#define CONSTS() _PyFrame_GetCode(frame)->co_consts
+#define NAMES() _PyFrame_GetCode(frame)->co_names
 
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
