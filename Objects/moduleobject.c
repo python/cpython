@@ -250,6 +250,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     int has_execution_slots = 0;
     const char *name;
     int ret;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     PyModuleDef_Init(def);
 
@@ -316,13 +317,13 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
         multiple_interpreters = Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED;
     }
     if (multiple_interpreters == Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
         if (!_Py_IsMainInterpreter(interp)
             && _PyImport_CheckSubinterpIncompatibleExtensionAllowed(name) < 0)
         {
             goto error;
         }
     }
+    // XXX Do a similar check once we have PyInterpreterState.ceval.own_gil.
 
     if (create) {
         m = create(spec, def);
