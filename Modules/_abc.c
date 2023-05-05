@@ -7,6 +7,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyType_GetSubclasses()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_typeobject.h"    // _PyType_GetMRO()
 #include "clinic/_abc.c.h"
 
 /*[clinic input]
@@ -452,7 +453,8 @@ _abc__abc_init(PyObject *module, PyObject *self)
      * their special status w.r.t. pattern matching. */
     if (PyType_Check(self)) {
         PyTypeObject *cls = (PyTypeObject *)self;
-        PyObject *flags = PyDict_GetItemWithError(cls->tp_dict,
+        PyObject *dict = _PyType_GetDict(cls);
+        PyObject *flags = PyDict_GetItemWithError(dict,
                                                   &_Py_ID(__abc_tpflags__));
         if (flags == NULL) {
             if (PyErr_Occurred()) {
@@ -471,7 +473,7 @@ _abc__abc_init(PyObject *module, PyObject *self)
                 }
                 ((PyTypeObject *)self)->tp_flags |= (val & COLLECTION_FLAGS);
             }
-            if (PyDict_DelItem(cls->tp_dict, &_Py_ID(__abc_tpflags__)) < 0) {
+            if (PyDict_DelItem(dict, &_Py_ID(__abc_tpflags__)) < 0) {
                 return NULL;
             }
         }
@@ -742,7 +744,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     Py_DECREF(ok);
 
     /* 4. Check if it's a direct subclass. */
-    PyObject *mro = ((PyTypeObject *)subclass)->tp_mro;
+    PyObject *mro = _PyType_GetMRO((PyTypeObject *)subclass);
     assert(PyTuple_Check(mro));
     for (pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
         PyObject *mro_item = PyTuple_GET_ITEM(mro, pos);

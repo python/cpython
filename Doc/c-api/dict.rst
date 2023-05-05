@@ -5,7 +5,7 @@
 Dictionary Objects
 ------------------
 
-.. index:: object: dictionary
+.. index:: pair: object; dictionary
 
 
 .. c:type:: PyDictObject

@@ -942,17 +942,21 @@ class HTTPConnection:
         del headers
 
         response = self.response_class(self.sock, method=self._method)
-        (version, code, message) = response._read_status()
+        try:
+            (version, code, message) = response._read_status()
 
-        self._proxy_response_headers = parse_headers(response.fp)
+            self._proxy_response_headers = parse_headers(response.fp)
 
-        if self.debuglevel > 0:
-            for hdr, val in self._proxy_response_headers.items():
-                print("header:", hdr + ":", val)
+            if self.debuglevel > 0:
+                for hdr, val in self._proxy_response_headers.items():
+                    print("header:", hdr + ":", val)
 
-        if code != http.HTTPStatus.OK:
-            self.close()
-            raise OSError(f"Tunnel connection failed: {code} {message.strip()}")
+            if code != http.HTTPStatus.OK:
+                self.close()
+                raise OSError(f"Tunnel connection failed: {code} {message.strip()}")
+
+        finally:
+            response.close()
 
     def connect(self):
         """Connect to the host and port specified in __init__."""
