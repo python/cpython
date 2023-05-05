@@ -97,7 +97,7 @@ _PyEval_Vector(PyThreadState *tstate,
             PyObject *kwnames);
 
 extern int _PyEval_ThreadsInitialized(void);
-extern PyStatus _PyEval_InitGIL(PyThreadState *tstate);
+extern PyStatus _PyEval_InitGIL(PyThreadState *tstate, int own_gil);
 extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
 extern void _PyEval_ReleaseLock(PyThreadState *tstate);
