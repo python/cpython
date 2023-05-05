@@ -4222,7 +4222,7 @@ PyInit__testcapi(void)
         return NULL;
     }
     int ret = PyModule_AddType(m, (PyTypeObject*)ObjExtraData_Type);
-    Py_DECREF(&ObjExtraData_Type);
+    Py_DECREF(ObjExtraData_Type);
     if (ret < 0) {
         return NULL;
     }
