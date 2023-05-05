@@ -1656,9 +1656,9 @@ class SubinterpImportTests(unittest.TestCase):
         override_text = ''
         if check_override is not None:
             override_text = f'''
-            import _imp
-            _imp._override_multi_interp_extensions_check({check_override})
-            '''
+                import _imp
+                _imp._override_multi_interp_extensions_check({check_override})
+                '''
         if filename:
             return textwrap.dedent(f'''
                 from importlib.util import spec_from_loader, module_from_spec
