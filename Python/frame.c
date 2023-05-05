@@ -146,10 +146,10 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
 
 /* Unstable API functions */
 
-PyCodeObject *
+PyObject *
 PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
 {
-    PyCodeObject *code = frame->f_code;
+    PyObject *code = (PyObject *)frame->f_code;
     Py_INCREF(code);
     return code;
 }

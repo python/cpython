@@ -143,7 +143,7 @@ Unless using PEP 523, you will not need this.
    The interpreter's internal frame representation.
 
 
-.. c:function:: PyCodeObject* PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
+.. c:function:: PyObject* PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
 
     Return a :term:`strong reference` to the code object for the frame.
 
