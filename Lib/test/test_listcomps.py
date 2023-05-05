@@ -243,10 +243,10 @@ class ListComprehensionTest(unittest.TestCase):
 
     def test_nested(self):
         code = """
-            l = [1, 2, 3]
-            y = [x*2 for x in [x for x in l]]
+            l = [2, 3]
+            y = [[x ** 2 for x in range(x)] for x in l]
         """
-        outputs = {"y": [2, 4, 6]}
+        outputs = {"y": [[0, 1], [0, 1, 4]]}
         self._check_in_scopes(code, outputs)
 
     def test_nameerror(self):
