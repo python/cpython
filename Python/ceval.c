@@ -152,7 +152,7 @@ static void
 lltrace_resume_frame(_PyInterpreterFrame *frame)
 {
     PyObject *fobj = frame->f_funcobj;
-    if (frame->owner == FRAME_OWNED_BY_CSTACK ||
+    if (!PyCode_Check(frame->f_executable) ||
         fobj == NULL ||
         !PyFunction_Check(fobj)
     ) {
