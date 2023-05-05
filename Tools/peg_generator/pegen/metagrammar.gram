@@ -4,6 +4,7 @@ from ast import literal_eval
 from pegen.grammar import (
     Alt,
     Cut,
+    Forced,
     Gather,
     Group,
     Item,
@@ -56,13 +57,12 @@ rule[Rule]:
     | rulename memoflag? ":" alts NEWLINE { Rule(rulename[0], rulename[1], alts, memo=opt) }
 
 rulename[RuleName]:
-    | NAME '[' type=NAME '*' ']' { (name.string, type.string+"*") }
-    | NAME '[' type=NAME ']' { (name.string, type.string) }
+    | NAME annotation { (name.string, annotation) }
     | NAME { (name.string, None) }
 
 # In the future this may return something more complicated
 memoflag[str]:
-    | '(' 'memo' ')' { "memo" }
+    | '(' "memo" ')' { "memo" }
 
 alts[Rhs]:
     | alt "|" alts { Rhs([alt] + alts.alts)}
@@ -83,9 +83,14 @@ items[NamedItemList]:
     | named_item { [named_item] }
 
 named_item[NamedItem]:
+    | NAME annotation '=' ~ item {NamedItem(name.string, item, annotation)}
     | NAME '=' ~ item {NamedItem(name.string, item)}
     | item {NamedItem(None, item)}
+    | forced=forced_atom {NamedItem(None, forced)}
     | it=lookahead {NamedItem(None, it)}
+
+forced_atom[Forced]:
+    | '&''&' ~ atom {Forced(atom)}
 
 lookahead[LookaheadOrCut]:
     | '&' ~ atom {PositiveLookahead(atom)}
@@ -105,19 +110,22 @@ atom[Plain]:
     | NAME {NameLeaf(name.string) }
     | STRING {StringLeaf(string.string)}
 
-# Mini-grammar for the actions
+# Mini-grammar for the actions and annotations
 
 action[str]: "{" ~ target_atoms "}" { target_atoms }
+annotation[str]: "[" ~ target_atoms "]" { target_atoms }
 
 target_atoms[str]:
     | target_atom target_atoms { target_atom + " " + target_atoms }
     | target_atom { target_atom }
 
 target_atom[str]:
-    | "{" ~ target_atoms "}" { "{" + target_atoms + "}" }
+    | "{" ~ atoms=target_atoms? "}" { "{" + (atoms or "") + "}" }
+    | "[" ~ atoms=target_atoms? "]" { "[" + (atoms or "") + "]" }
+    | NAME "*" { name.string + "*" }
     | NAME { name.string }
     | NUMBER { number.string }
     | STRING { string.string }
     | "?" { "?" }
     | ":" { ":" }
-    | !"}" OP { op.string }
+    | !"}" !"]" OP { op.string }

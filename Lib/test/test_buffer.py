@@ -16,6 +16,8 @@
 import contextlib
 import unittest
 from test import support
+from test.support import os_helper
+import inspect
 from itertools import permutations, product
 from random import randrange, sample, choice
 import warnings
@@ -39,7 +41,7 @@ except ImportError:
     ctypes = None
 
 try:
-    with support.EnvironmentVarGuard() as os.environ, \
+    with os_helper.EnvironmentVarGuard() as os.environ, \
          warnings.catch_warnings():
         from numpy import ndarray as numpy_array
 except ImportError:
@@ -63,7 +65,7 @@ NATIVE = {
     '?':0, 'c':0, 'b':0, 'B':0,
     'h':0, 'H':0, 'i':0, 'I':0,
     'l':0, 'L':0, 'n':0, 'N':0,
-    'f':0, 'd':0, 'P':0
+    'e':0, 'f':0, 'd':0, 'P':0
 }
 
 # NumPy does not have 'n' or 'N':
@@ -88,7 +90,8 @@ STANDARD = {
     'i':(-(1<<31), 1<<31), 'I':(0, 1<<32),
     'l':(-(1<<31), 1<<31), 'L':(0, 1<<32),
     'q':(-(1<<63), 1<<63), 'Q':(0, 1<<64),
-    'f':(-(1<<63), 1<<63), 'd':(-(1<<1023), 1<<1023)
+    'e':(-65519, 65520),   'f':(-(1<<63), 1<<63),
+    'd':(-(1<<1023), 1<<1023)
 }
 
 def native_type_range(fmt):
@@ -97,6 +100,8 @@ def native_type_range(fmt):
         lh = (0, 256)
     elif fmt == '?':
         lh = (0, 2)
+    elif fmt == 'e':
+        lh = (-65519, 65520)
     elif fmt == 'f':
         lh = (-(1<<63), 1<<63)
     elif fmt == 'd':
@@ -124,7 +129,10 @@ if struct:
     for fmt in fmtdict['@']:
         fmtdict['@'][fmt] = native_type_range(fmt)
 
+# Format codes suppported by the memoryview object
 MEMORYVIEW = NATIVE.copy()
+
+# Format codes suppported by array.array
 ARRAY = NATIVE.copy()
 for k in NATIVE:
     if not k in "bBhHiIlLfd":
@@ -163,7 +171,7 @@ def randrange_fmt(mode, char, obj):
             x = b'\x01'
     if char == '?':
         x = bool(x)
-    if char == 'f' or char == 'd':
+    if char in 'efd':
         x = struct.pack(char, x)
         x = struct.unpack(char, x)[0]
     return x
@@ -958,8 +966,10 @@ class TestBufferProtocol(unittest.TestCase):
                     self.assertEqual(m.strides, tuple(strides))
                 self.assertEqual(m.suboffsets, tuple(suboffsets))
 
-                n = 1 if ndim == 0 else len(lst)
-                self.assertEqual(len(m), n)
+                if ndim == 0:
+                    self.assertRaises(TypeError, len, m)
+                else:
+                    self.assertEqual(len(m), len(lst))
 
                 rep = result.tolist() if fmt else result.tobytes()
                 self.assertEqual(rep, lst)
@@ -2245,7 +2255,7 @@ class TestBufferProtocol(unittest.TestCase):
         ###
         ###    Fortran output:
         ###    ---------------
-        ###       >>> fortran_buf = nd.tostring(order='F')
+        ###       >>> fortran_buf = nd.tobytes(order='F')
         ###       >>> fortran_buf
         ###       b'\x00\x04\x08\x01\x05\t\x02\x06\n\x03\x07\x0b'
         ###
@@ -2288,7 +2298,7 @@ class TestBufferProtocol(unittest.TestCase):
                 self.assertEqual(memoryview(y), memoryview(nd))
 
                 if numpy_array:
-                    self.assertEqual(b, na.tostring(order='C'))
+                    self.assertEqual(b, na.tobytes(order='C'))
 
             # 'F' request
             if f == 0: # 'C' to 'F'
@@ -2311,7 +2321,7 @@ class TestBufferProtocol(unittest.TestCase):
                 self.assertEqual(memoryview(y), memoryview(nd))
 
                 if numpy_array:
-                    self.assertEqual(b, na.tostring(order='F'))
+                    self.assertEqual(b, na.tobytes(order='F'))
 
             # 'A' request
             if f == ND_FORTRAN:
@@ -2335,7 +2345,7 @@ class TestBufferProtocol(unittest.TestCase):
                 self.assertEqual(memoryview(y), memoryview(nd))
 
                 if numpy_array:
-                    self.assertEqual(b, na.tostring(order='A'))
+                    self.assertEqual(b, na.tobytes(order='A'))
 
         # multi-dimensional, non-contiguous input
         nd = ndarray(list(range(12)), shape=[3, 4], flags=ND_WRITABLE|ND_PIL)
@@ -4427,6 +4437,147 @@ class TestBufferProtocol(unittest.TestCase):
         for format in ('', 'ii', '3s'):
             self.assertEqual(_testcapi.PyBuffer_SizeFromFormat(format),
                              struct.calcsize(format))
+
+
+class TestPythonBufferProtocol(unittest.TestCase):
+    def test_basic(self):
+        class MyBuffer:
+            def __buffer__(self, flags):
+                return memoryview(b"hello")
+
+        mv = memoryview(MyBuffer())
+        self.assertEqual(mv.tobytes(), b"hello")
+        self.assertEqual(bytes(MyBuffer()), b"hello")
+
+    def test_bad_buffer_method(self):
+        class MustReturnMV:
+            def __buffer__(self, flags):
+                return 42
+
+        self.assertRaises(TypeError, memoryview, MustReturnMV())
+
+        class NoBytesEither:
+            def __buffer__(self, flags):
+                return b"hello"
+
+        self.assertRaises(TypeError, memoryview, NoBytesEither())
+
+        class WrongArity:
+            def __buffer__(self):
+                return memoryview(b"hello")
+
+        self.assertRaises(TypeError, memoryview, WrongArity())
+
+    def test_release_buffer(self):
+        class WhatToRelease:
+            def __init__(self):
+                self.held = False
+                self.ba = bytearray(b"hello")
+
+            def __buffer__(self, flags):
+                if self.held:
+                    raise TypeError("already held")
+                self.held = True
+                return memoryview(self.ba)
+
+            def __release_buffer__(self, buffer):
+                self.held = False
+
+        wr = WhatToRelease()
+        self.assertFalse(wr.held)
+        with memoryview(wr) as mv:
+            self.assertTrue(wr.held)
+            self.assertEqual(mv.tobytes(), b"hello")
+        self.assertFalse(wr.held)
+
+    def test_same_buffer_returned(self):
+        class WhatToRelease:
+            def __init__(self):
+                self.held = False
+                self.ba = bytearray(b"hello")
+                self.created_mv = None
+
+            def __buffer__(self, flags):
+                if self.held:
+                    raise TypeError("already held")
+                self.held = True
+                self.created_mv = memoryview(self.ba)
+                return self.created_mv
+
+            def __release_buffer__(self, buffer):
+                assert buffer is self.created_mv
+                self.held = False
+
+        wr = WhatToRelease()
+        self.assertFalse(wr.held)
+        with memoryview(wr) as mv:
+            self.assertTrue(wr.held)
+            self.assertEqual(mv.tobytes(), b"hello")
+        self.assertFalse(wr.held)
+
+    def test_buffer_flags(self):
+        class PossiblyMutable:
+            def __init__(self, data, mutable) -> None:
+                self._data = bytearray(data)
+                self._mutable = mutable
+
+            def __buffer__(self, flags):
+                if flags & inspect.BufferFlags.WRITABLE:
+                    if not self._mutable:
+                        raise RuntimeError("not mutable")
+                    return memoryview(self._data)
+                else:
+                    return memoryview(bytes(self._data))
+
+        mutable = PossiblyMutable(b"hello", True)
+        immutable = PossiblyMutable(b"hello", False)
+        with memoryview._from_flags(mutable, inspect.BufferFlags.WRITABLE) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            mv[0] = ord(b'x')
+            self.assertEqual(mv.tobytes(), b"xello")
+        with memoryview._from_flags(mutable, inspect.BufferFlags.SIMPLE) as mv:
+            self.assertEqual(mv.tobytes(), b"xello")
+            with self.assertRaises(TypeError):
+                mv[0] = ord(b'h')
+            self.assertEqual(mv.tobytes(), b"xello")
+        with memoryview._from_flags(immutable, inspect.BufferFlags.SIMPLE) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            with self.assertRaises(TypeError):
+                mv[0] = ord(b'x')
+            self.assertEqual(mv.tobytes(), b"hello")
+
+        with self.assertRaises(RuntimeError):
+            memoryview._from_flags(immutable, inspect.BufferFlags.WRITABLE)
+        with memoryview(immutable) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            with self.assertRaises(TypeError):
+                mv[0] = ord(b'x')
+            self.assertEqual(mv.tobytes(), b"hello")
+
+    def test_call_builtins(self):
+        ba = bytearray(b"hello")
+        mv = ba.__buffer__(0)
+        self.assertEqual(mv.tobytes(), b"hello")
+        ba.__release_buffer__(mv)
+        with self.assertRaises(OverflowError):
+            ba.__buffer__(sys.maxsize + 1)
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_buffer(self):
+        buf = _testcapi.testBuf()
+        self.assertEqual(buf.references, 0)
+        mv = buf.__buffer__(0)
+        self.assertIsInstance(mv, memoryview)
+        self.assertEqual(mv.tobytes(), b"test")
+        self.assertEqual(buf.references, 1)
+        buf.__release_buffer__(mv)
+        self.assertEqual(buf.references, 0)
+        with self.assertRaises(ValueError):
+            mv.tobytes()
+        # Calling it again doesn't cause issues
+        with self.assertRaises(ValueError):
+            buf.__release_buffer__(mv)
+        self.assertEqual(buf.references, 0)
 
 
 if __name__ == "__main__":

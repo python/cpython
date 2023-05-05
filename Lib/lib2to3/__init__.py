@@ -3,6 +3,6 @@ import warnings
 
 warnings.warn(
     "lib2to3 package is deprecated and may not be able to parse Python 3.10+",
-    PendingDeprecationWarning,
+    DeprecationWarning,
     stacklevel=2,
 )

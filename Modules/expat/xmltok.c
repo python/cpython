@@ -7,7 +7,21 @@
                                  |_| XML parser
 
    Copyright (c) 1997-2000 Thai Open Source Software Center Ltd
-   Copyright (c) 2000-2017 Expat development team
+   Copyright (c) 2000      Clark Cooper <coopercc@users.sourceforge.net>
+   Copyright (c) 2001-2003 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
+   Copyright (c) 2002      Greg Stein <gstein@users.sourceforge.net>
+   Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
+   Copyright (c) 2005-2009 Steven Solie <steven@solie.ca>
+   Copyright (c) 2016-2022 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016      Pascal Cuoq <cuoq@trust-in-soft.com>
+   Copyright (c) 2016      Don Lewis <truckman@apache.org>
+   Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
+   Copyright (c) 2017      Alexander Bluhm <alexander.bluhm@gmx.net>
+   Copyright (c) 2017      Benbuck Nason <bnason@netflix.com>
+   Copyright (c) 2017      José Gutiérrez de la Concha <jose@zeroc.com>
+   Copyright (c) 2019      David Loffredo <loffredo@steptools.com>
+   Copyright (c) 2021      Dong-hee Na <donghee.na@python.org>
+   Copyright (c) 2022      Martin Ettl <ettl.martin78@googlemail.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -30,24 +44,14 @@
    USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifdef _WIN32
-#  include "winconfig.h"
-#else
-#  ifdef HAVE_EXPAT_CONFIG_H
-#    include <expat_config.h>
-#  endif
-#endif /* ndef _WIN32 */
+#include <expat_config.h>
 
 #include <stddef.h>
 #include <string.h> /* memcpy */
+#include <stdbool.h>
 
-#if defined(_MSC_VER) && (_MSC_VER <= 1700)
-/* for vs2012/11.0/1700 and earlier Visual Studio compilers */
-#  define bool int
-#  define false 0
-#  define true 1
-#else
-#  include <stdbool.h>
+#ifdef _WIN32
+#  include "winconfig.h"
 #endif
 
 #include "expat_external.h"
@@ -94,11 +98,6 @@
          << 3)                                                                 \
         + ((((byte)[1]) & 3) << 1) + ((((byte)[2]) >> 5) & 1)]                 \
    & (1u << (((byte)[2]) & 0x1F)))
-
-#define UTF8_GET_NAMING(pages, p, n)                                           \
-  ((n) == 2                                                                    \
-       ? UTF8_GET_NAMING2(pages, (const unsigned char *)(p))                   \
-       : ((n) == 3 ? UTF8_GET_NAMING3(pages, (const unsigned char *)(p)) : 0))
 
 /* Detection of invalid UTF-8 sequences is based on Table 3.1B
    of Unicode 3.2: http://www.unicode.org/unicode/reports/tr28/
@@ -269,8 +268,14 @@ sb_byteToAscii(const ENCODING *enc, const char *p) {
 
 #define IS_NAME_CHAR(enc, p, n) (AS_NORMAL_ENCODING(enc)->isName##n(enc, p))
 #define IS_NMSTRT_CHAR(enc, p, n) (AS_NORMAL_ENCODING(enc)->isNmstrt##n(enc, p))
-#define IS_INVALID_CHAR(enc, p, n)                                             \
-  (AS_NORMAL_ENCODING(enc)->isInvalid##n(enc, p))
+#ifdef XML_MIN_SIZE
+#  define IS_INVALID_CHAR(enc, p, n)                                           \
+    (AS_NORMAL_ENCODING(enc)->isInvalid##n                                     \
+     && AS_NORMAL_ENCODING(enc)->isInvalid##n(enc, p))
+#else
+#  define IS_INVALID_CHAR(enc, p, n)                                           \
+    (AS_NORMAL_ENCODING(enc)->isInvalid##n(enc, p))
+#endif
 
 #ifdef XML_MIN_SIZE
 #  define IS_NAME_CHAR_MINBPC(enc, p)                                          \
@@ -292,7 +297,7 @@ sb_charMatches(const ENCODING *enc, const char *p, int c) {
 }
 #else
 /* c is an ASCII character */
-#  define CHAR_MATCHES(enc, p, c) (*(p) == c)
+#  define CHAR_MATCHES(enc, p, c) (*(p) == (c))
 #endif
 
 #define PREFIX(ident) normal_##ident
@@ -589,13 +594,13 @@ static const struct normal_encoding ascii_encoding
 static int PTRFASTCALL
 unicode_byte_type(char hi, char lo) {
   switch ((unsigned char)hi) {
-  /* 0xD800–0xDBFF first 16-bit code unit or high surrogate (W1) */
+  /* 0xD800-0xDBFF first 16-bit code unit or high surrogate (W1) */
   case 0xD8:
   case 0xD9:
   case 0xDA:
   case 0xDB:
     return BT_LEAD4;
-  /* 0xDC00–0xDFFF second 16-bit code unit or low surrogate (W2) */
+  /* 0xDC00-0xDFFF second 16-bit code unit or low surrogate (W2) */
   case 0xDC:
   case 0xDD:
   case 0xDE:
@@ -736,7 +741,7 @@ DEFINE_UTF16_TO_UTF16(big2_)
   ((p)[1] == 0 ? ((struct normal_encoding *)(enc))->type[(unsigned char)*(p)]  \
                : unicode_byte_type((p)[1], (p)[0]))
 #define LITTLE2_BYTE_TO_ASCII(p) ((p)[1] == 0 ? (p)[0] : -1)
-#define LITTLE2_CHAR_MATCHES(p, c) ((p)[1] == 0 && (p)[0] == c)
+#define LITTLE2_CHAR_MATCHES(p, c) ((p)[1] == 0 && (p)[0] == (c))
 #define LITTLE2_IS_NAME_CHAR_MINBPC(p)                                         \
   UCS2_GET_NAMING(namePages, (unsigned char)p[1], (unsigned char)p[0])
 #define LITTLE2_IS_NMSTRT_CHAR_MINBPC(p)                                       \
@@ -871,7 +876,7 @@ static const struct normal_encoding internal_little2_encoding
        ? ((struct normal_encoding *)(enc))->type[(unsigned char)(p)[1]]        \
        : unicode_byte_type((p)[0], (p)[1]))
 #define BIG2_BYTE_TO_ASCII(p) ((p)[0] == 0 ? (p)[1] : -1)
-#define BIG2_CHAR_MATCHES(p, c) ((p)[0] == 0 && (p)[1] == c)
+#define BIG2_CHAR_MATCHES(p, c) ((p)[0] == 0 && (p)[1] == (c))
 #define BIG2_IS_NAME_CHAR_MINBPC(p)                                            \
   UCS2_GET_NAMING(namePages, (unsigned char)p[0], (unsigned char)p[1])
 #define BIG2_IS_NMSTRT_CHAR_MINBPC(p)                                          \

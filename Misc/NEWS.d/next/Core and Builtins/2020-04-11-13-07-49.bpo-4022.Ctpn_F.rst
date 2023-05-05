@@ -1,1 +1,0 @@
-Improve performance of generators by not raising internal StopIteration.
