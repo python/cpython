@@ -631,15 +631,15 @@ class AST_Tests(unittest.TestCase):
 
         with warnings.catch_warnings(record=True) as wlog:
             warnings.filterwarnings('always', '', DeprecationWarning)
-            self.assertEqual(type(ast.Num(42)), ast.Constant)
-            self.assertEqual(type(ast.Num(4.25)), ast.Constant)
-            self.assertEqual(type(ast.Num(4.25j)), ast.Constant)
-            self.assertEqual(type(ast.Str('42')), ast.Constant)
-            self.assertEqual(type(ast.Bytes(b'42')), ast.Constant)
-            self.assertEqual(type(ast.NameConstant(True)), ast.Constant)
-            self.assertEqual(type(ast.NameConstant(False)), ast.Constant)
-            self.assertEqual(type(ast.NameConstant(None)), ast.Constant)
-            self.assertEqual(type(ast.Ellipsis()), ast.Constant)
+            self.assertIs(type(ast.Num(42)), ast.Constant)
+            self.assertIs(type(ast.Num(4.25)), ast.Constant)
+            self.assertIs(type(ast.Num(4.25j)), ast.Constant)
+            self.assertIs(type(ast.Str('42')), ast.Constant)
+            self.assertIs(type(ast.Bytes(b'42')), ast.Constant)
+            self.assertIs(type(ast.NameConstant(True)), ast.Constant)
+            self.assertIs(type(ast.NameConstant(False)), ast.Constant)
+            self.assertIs(type(ast.NameConstant(None)), ast.Constant)
+            self.assertIs(type(ast.Ellipsis()), ast.Constant)
 
         self.assertEqual([str(w.message) for w in wlog], [
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
