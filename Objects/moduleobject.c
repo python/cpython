@@ -246,7 +246,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     PyObject *nameobj;
     PyObject *m = NULL;
     int has_multiple_interpreters_slot = 0;
-    void *multiple_interpreters;
+    void *multiple_interpreters = (void *)0;
     int has_execution_slots = 0;
     const char *name;
     int ret;
