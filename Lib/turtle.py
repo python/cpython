@@ -3446,7 +3446,7 @@ class RawTurtle(TPen, TNavigator):
             if size is None:
                 size = self._pensize + max(self._pensize, 4)
             color = self._colorstr(color)
-        # If screen were to gain a dot function, see GH PR #.
+        # If screen were to gain a dot function, see GH #104218.
         pen = self.pen()
         if self.undobuffer:
             self.undobuffer.push(["seq"])
