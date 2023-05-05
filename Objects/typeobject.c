@@ -6,6 +6,7 @@
 #include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_memoryobject.h"  // PyMemoryView_FromObjectAndFlags()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"        // _PyType_HasFeature()
 #include "pycore_long.h"          // _PyLong_IsNegative()
@@ -18,6 +19,7 @@
 #include "structmember.h"         // PyMemberDef
 
 #include <ctype.h>
+#include <stddef.h>               // ptrdiff_t
 
 /*[clinic input]
 class type "PyTypeObject *" "&PyType_Type"
@@ -1685,6 +1687,12 @@ PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 /* Helpers for subtyping */
+
+static inline PyMemberDef *
+_PyHeapType_GET_MEMBERS(PyHeapTypeObject* type)
+{
+    return PyObject_GetItemData((PyObject *)type);
+}
 
 static int
 traverse_slots(PyTypeObject *type, PyObject *self, visitproc visit, void *arg)
@@ -3873,6 +3881,15 @@ static const PySlot_Offset pyslot_offsets[] = {
 #include "typeslots.inc"
 };
 
+/* Align up to the nearest multiple of alignof(max_align_t)
+ * (like _Py_ALIGN_UP, but for a size rather than pointer)
+ */
+static Py_ssize_t
+_align_up(Py_ssize_t size)
+{
+    return (size + ALIGNOF_MAX_ALIGN_T - 1) & ~(ALIGNOF_MAX_ALIGN_T - 1);
+}
+
 /* Given a PyType_FromMetaclass `bases` argument (NULL, type, or tuple of
  * types), return a tuple of types.
  */
@@ -4012,6 +4029,20 @@ _PyType_FromMetaclass_impl(
                     assert(memb->type == T_PYSSIZET);
                     assert(memb->flags == READONLY);
                     vectorcalloffset = memb->offset;
+                }
+                if (memb->flags & Py_RELATIVE_OFFSET) {
+                    if (spec->basicsize > 0) {
+                        PyErr_SetString(
+                            PyExc_SystemError,
+                            "With Py_RELATIVE_OFFSET, basicsize must be negative.");
+                        goto finally;
+                    }
+                    if (memb->offset < 0 || memb->offset >= -spec->basicsize) {
+                        PyErr_SetString(
+                            PyExc_SystemError,
+                            "Member offset out of range (0..-basicsize)");
+                        goto finally;
+                    }
                 }
             }
             break;
@@ -4154,6 +4185,32 @@ _PyType_FromMetaclass_impl(
     // here we just check its work
     assert(_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE));
 
+    /* Calculate sizes */
+
+    Py_ssize_t basicsize = spec->basicsize;
+    Py_ssize_t type_data_offset = spec->basicsize;
+    if (basicsize == 0) {
+        /* Inherit */
+        basicsize = base->tp_basicsize;
+    }
+    else if (basicsize < 0) {
+        /* Extend */
+        type_data_offset = _align_up(base->tp_basicsize);
+        basicsize = type_data_offset + _align_up(-spec->basicsize);
+
+        /* Inheriting variable-sized types is limited */
+        if (base->tp_itemsize
+            && !((base->tp_flags | spec->flags) & Py_TPFLAGS_ITEMS_AT_END))
+        {
+            PyErr_SetString(
+                PyExc_SystemError,
+                "Cannot extend variable-size class without Py_TPFLAGS_ITEMS_AT_END.");
+            goto finally;
+        }
+    }
+
+    Py_ssize_t itemsize = spec->itemsize;
+
     /* Allocate the new type
      *
      * Between here and PyType_Ready, we should limit:
@@ -4201,8 +4258,8 @@ _PyType_FromMetaclass_impl(
 
     /* Copy the sizes */
 
-    type->tp_basicsize = spec->basicsize;
-    type->tp_itemsize = spec->itemsize;
+    type->tp_basicsize = basicsize;
+    type->tp_itemsize = itemsize;
 
     /* Copy all the ordinary slots */
 
@@ -4219,6 +4276,16 @@ _PyType_FromMetaclass_impl(
                 size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
                 memcpy(_PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
                 type->tp_members = _PyHeapType_GET_MEMBERS(res);
+                PyMemberDef *memb;
+                Py_ssize_t i;
+                for (memb = _PyHeapType_GET_MEMBERS(res), i = nmembers;
+                     i > 0; ++memb, --i)
+                {
+                    if (memb->flags & Py_RELATIVE_OFFSET) {
+                        memb->flags &= ~Py_RELATIVE_OFFSET;
+                        memb->offset += type_data_offset;
+                    }
+                }
             }
             break;
         default:
@@ -4227,6 +4294,7 @@ _PyType_FromMetaclass_impl(
                 PySlot_Offset slotoffsets = pyslot_offsets[slot->slot];
                 short slot_offset = slotoffsets.slot_offset;
                 if (slotoffsets.subslot_offset == -1) {
+                    /* Set a slot in the main PyTypeObject */
                     *(void**)((char*)res_start + slot_offset) = slot->pfunc;
                 }
                 else {
@@ -4461,6 +4529,34 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
     return NULL;
 }
 
+void *
+PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls)
+{
+    assert(PyObject_TypeCheck(obj, cls));
+    return (char *)obj + _align_up(cls->tp_base->tp_basicsize);
+}
+
+Py_ssize_t
+PyType_GetTypeDataSize(PyTypeObject *cls)
+{
+    ptrdiff_t result = cls->tp_basicsize - _align_up(cls->tp_base->tp_basicsize);
+    if (result < 0) {
+        return 0;
+    }
+    return result;
+}
+
+void *
+PyObject_GetItemData(PyObject *obj)
+{
+    if (!PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_ITEMS_AT_END)) {
+        PyErr_Format(PyExc_TypeError,
+                     "type '%s' does not have Py_TPFLAGS_ITEMS_AT_END",
+                     Py_TYPE(obj)->tp_name);
+        return NULL;
+    }
+    return (char *)obj + Py_TYPE(obj)->tp_basicsize;
+}
 
 /* Internal API to look for a name through the MRO, bypassing the method cache.
    This returns a borrowed reference, and might set an exception.
@@ -5158,7 +5254,8 @@ PyTypeObject PyType_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
     Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TYPE_SUBCLASS |
-    Py_TPFLAGS_HAVE_VECTORCALL,                 /* tp_flags */
+    Py_TPFLAGS_HAVE_VECTORCALL |
+    Py_TPFLAGS_ITEMS_AT_END,                    /* tp_flags */
     type_doc,                                   /* tp_doc */
     (traverseproc)type_traverse,                /* tp_traverse */
     (inquiry)type_clear,                        /* tp_clear */
@@ -6572,8 +6669,13 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
     else if (PyType_IsSubtype(base, &PyDict_Type)) {
         type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
     }
+
+    /* Setup some inheritable flags */
     if (PyType_HasFeature(base, _Py_TPFLAGS_MATCH_SELF)) {
         type->tp_flags |= _Py_TPFLAGS_MATCH_SELF;
+    }
+    if (PyType_HasFeature(base, Py_TPFLAGS_ITEMS_AT_END)) {
+        type->tp_flags |= Py_TPFLAGS_ITEMS_AT_END;
     }
 }
 
@@ -7959,6 +8061,58 @@ wrap_descr_delete(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static PyObject *
+wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
+{
+    PyObject *arg = NULL;
+
+    if (!PyArg_UnpackTuple(args, "", 1, 1, &arg)) {
+        return NULL;
+    }
+    Py_ssize_t flags = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
+    if (flags == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (flags > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "buffer flags too large");
+        return NULL;
+    }
+
+    return PyMemoryView_FromObjectAndFlags(self, Py_SAFE_DOWNCAST(flags, Py_ssize_t, int));
+}
+
+static PyObject *
+wrap_releasebuffer(PyObject *self, PyObject *args, void *wrapped)
+{
+    PyObject *arg = NULL;
+    if (!PyArg_UnpackTuple(args, "", 1, 1, &arg)) {
+        return NULL;
+    }
+    if (!PyMemoryView_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "expected a memoryview object");
+        return NULL;
+    }
+    PyMemoryViewObject *mview = (PyMemoryViewObject *)arg;
+    if (mview->view.obj != self) {
+        PyErr_SetString(PyExc_ValueError,
+                        "memoryview's buffer is not this object");
+        return NULL;
+    }
+    if (mview->flags & _Py_MEMORYVIEW_RELEASED) {
+        PyErr_SetString(PyExc_ValueError,
+                        "memoryview's buffer has already been released");
+        return NULL;
+    }
+    PyObject *res = PyObject_CallMethodNoArgs((PyObject *)mview, &_Py_ID(release));
+    if (res == NULL) {
+        return NULL;
+    }
+    Py_DECREF(res);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 wrap_init(PyObject *self, PyObject *args, void *wrapped, PyObject *kwds)
 {
     initproc func = (initproc)wrapped;
@@ -8794,6 +8948,132 @@ slot_tp_finalize(PyObject *self)
     PyErr_SetRaisedException(exc);
 }
 
+typedef struct _PyBufferWrapper {
+    PyObject_HEAD
+    PyObject *mv;
+    PyObject *obj;
+} PyBufferWrapper;
+
+static int
+bufferwrapper_traverse(PyBufferWrapper *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->mv);
+    Py_VISIT(self->obj);
+    return 0;
+}
+
+static void
+bufferwrapper_dealloc(PyObject *self)
+{
+    PyBufferWrapper *bw = (PyBufferWrapper *)self;
+
+    _PyObject_GC_UNTRACK(self);
+    Py_XDECREF(bw->mv);
+    Py_XDECREF(bw->obj);
+    Py_TYPE(self)->tp_free(self);
+}
+
+static void
+bufferwrapper_releasebuf(PyObject *self, Py_buffer *view)
+{
+    PyBufferWrapper *bw = (PyBufferWrapper *)self;
+
+    assert(PyMemoryView_Check(bw->mv));
+    Py_TYPE(bw->mv)->tp_as_buffer->bf_releasebuffer(bw->mv, view);
+    if (Py_TYPE(bw->obj)->tp_as_buffer != NULL
+        && Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer != NULL) {
+        Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer(bw->obj, view);
+    }
+}
+
+static PyBufferProcs bufferwrapper_as_buffer = {
+    .bf_releasebuffer = bufferwrapper_releasebuf,
+};
+
+
+PyTypeObject _PyBufferWrapper_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "_buffer_wrapper",
+    .tp_basicsize = sizeof(PyBufferWrapper),
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_free = PyObject_GC_Del,
+    .tp_traverse = (traverseproc)bufferwrapper_traverse,
+    .tp_dealloc = bufferwrapper_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_as_buffer = &bufferwrapper_as_buffer,
+};
+
+static int
+slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
+{
+    PyObject *flags_obj = PyLong_FromLong(flags);
+    if (flags_obj == NULL) {
+        return -1;
+    }
+    PyBufferWrapper *wrapper = NULL;
+    PyObject *stack[2] = {self, flags_obj};
+    PyObject *ret = vectorcall_method(&_Py_ID(__buffer__), stack, 2);
+    if (ret == NULL) {
+        goto fail;
+    }
+    if (!PyMemoryView_Check(ret)) {
+        PyErr_Format(PyExc_TypeError,
+                     "__buffer__ returned non-memoryview object");
+        goto fail;
+    }
+
+    if (PyObject_GetBuffer(ret, buffer, flags) < 0) {
+        goto fail;
+    }
+    assert(buffer->obj == ret);
+
+    wrapper = PyObject_GC_New(PyBufferWrapper, &_PyBufferWrapper_Type);
+    if (wrapper == NULL) {
+        goto fail;
+    }
+    wrapper->mv = ret;
+    wrapper->obj = Py_NewRef(self);
+    _PyObject_GC_TRACK(wrapper);
+
+    buffer->obj = (PyObject *)wrapper;
+    Py_DECREF(ret);
+    Py_DECREF(flags_obj);
+    return 0;
+
+fail:
+    Py_XDECREF(wrapper);
+    Py_XDECREF(ret);
+    Py_DECREF(flags_obj);
+    return -1;
+}
+
+static void
+slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
+{
+    PyObject *mv;
+    if (Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type) {
+        // Make sure we pass the same memoryview to
+        // __release_buffer__() that __buffer__() returned.
+        mv = Py_NewRef(((PyBufferWrapper *)buffer->obj)->mv);
+    }
+    else {
+        mv = PyMemoryView_FromBuffer(buffer);
+        if (mv == NULL) {
+            PyErr_WriteUnraisable(self);
+            return;
+        }
+    }
+    PyObject *stack[2] = {self, mv};
+    PyObject *ret = vectorcall_method(&_Py_ID(__release_buffer__), stack, 2);
+    Py_DECREF(mv);
+    if (ret == NULL) {
+        PyErr_WriteUnraisable(self);
+    }
+    else {
+        Py_DECREF(ret);
+    }
+}
+
 static PyObject *
 slot_am_await(PyObject *self)
 {
@@ -8861,6 +9141,7 @@ an all-zero entry.
 
 #undef TPSLOT
 #undef FLSLOT
+#undef BUFSLOT
 #undef AMSLOT
 #undef ETSLOT
 #undef SQSLOT
@@ -8880,6 +9161,8 @@ an all-zero entry.
 #define ETSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     {#NAME, offsetof(PyHeapTypeObject, SLOT), (void *)(FUNCTION), WRAPPER, \
      PyDoc_STR(DOC), .name_strobj = &_Py_ID(NAME) }
+#define BUFSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
+    ETSLOT(NAME, as_buffer.SLOT, FUNCTION, WRAPPER, DOC)
 #define AMSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
     ETSLOT(NAME, as_async.SLOT, FUNCTION, WRAPPER, DOC)
 #define SQSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
@@ -8960,6 +9243,13 @@ static pytype_slotdef slotdefs[] = {
            "__new__(type, /, *args, **kwargs)\n--\n\n"
            "Create and return new object.  See help(type) for accurate signature."),
     TPSLOT(__del__, tp_finalize, slot_tp_finalize, (wrapperfunc)wrap_del, ""),
+
+    BUFSLOT(__buffer__, bf_getbuffer, slot_bf_getbuffer, wrap_buffer,
+            "__buffer__($self, flags, /)\n--\n\n"
+            "Return a buffer object that exposes the underlying memory of the object."),
+    BUFSLOT(__release_buffer__, bf_releasebuffer, slot_bf_releasebuffer, wrap_releasebuffer,
+            "__release_buffer__($self, /)\n--\n\n"
+            "Release the buffer object that exposes the underlying memory of the object."),
 
     AMSLOT(__await__, am_await, slot_am_await, wrap_unaryfunc,
            "__await__($self, /)\n--\n\nReturn an iterator to be used in await expression."),
@@ -9107,8 +9397,12 @@ slotptr(PyTypeObject *type, int ioffset)
 
     /* Note: this depends on the order of the members of PyHeapTypeObject! */
     assert(offset >= 0);
-    assert((size_t)offset < offsetof(PyHeapTypeObject, as_buffer));
-    if ((size_t)offset >= offsetof(PyHeapTypeObject, as_sequence)) {
+    assert((size_t)offset < offsetof(PyHeapTypeObject, ht_name));
+    if ((size_t)offset >= offsetof(PyHeapTypeObject, as_buffer)) {
+        ptr = (char *)type->tp_as_buffer;
+        offset -= offsetof(PyHeapTypeObject, as_buffer);
+    }
+    else if ((size_t)offset >= offsetof(PyHeapTypeObject, as_sequence)) {
         ptr = (char *)type->tp_as_sequence;
         offset -= offsetof(PyHeapTypeObject, as_sequence);
     }

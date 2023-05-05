@@ -486,6 +486,22 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
    Emit an ``object.__getattr__`` :ref:`audit event <audit-events>`
    before reading.
 
+.. c:macro:: Py_RELATIVE_OFFSET
+
+   Indicates that the :c:member:`~PyMemberDef.offset` of this ``PyMemberDef``
+   entry indicates an offset from the subclass-specific data, rather than
+   from ``PyObject``.
+
+   Can only be used as part of :c:member:`Py_tp_members <PyTypeObject.tp_members>`
+   :c:type:`slot <PyTypeSlot>` when creating a class using negative
+   :c:member:`~PyTypeDef.basicsize`.
+   It is mandatory in that case.
+
+   This flag is only used in :c:type:`PyTypeSlot`.
+   When setting :c:member:`~PyTypeObject.tp_members` during
+   class creation, Python clears it and sets
+   :c:member:`PyMemberDef.offset` to the offset from the ``PyObject`` struct.
+
 .. index::
    single: READ_RESTRICTED
    single: WRITE_RESTRICTED

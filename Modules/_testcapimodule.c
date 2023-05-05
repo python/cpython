@@ -3959,7 +3959,6 @@ static PyTypeObject MyList_Type = {
     MyList_new,                                 /* tp_new */
 };
 
-
 /* Test PEP 560 */
 
 typedef struct {
@@ -4222,7 +4221,7 @@ PyInit__testcapi(void)
         return NULL;
     }
     int ret = PyModule_AddType(m, (PyTypeObject*)ObjExtraData_Type);
-    Py_DECREF(&ObjExtraData_Type);
+    Py_DECREF(ObjExtraData_Type);
     if (ret < 0) {
         return NULL;
     }
@@ -4248,6 +4247,7 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "ULLONG_MAX", PyLong_FromUnsignedLongLong(ULLONG_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
+    PyModule_AddObject(m, "SIZEOF_WCHAR_T", PyLong_FromSsize_t(sizeof(wchar_t)));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
     PyModule_AddObject(m, "Py_Version", PyLong_FromUnsignedLong(Py_Version));
     Py_INCREF(&PyInstanceMethod_Type);
@@ -4310,6 +4310,9 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_Code(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_Buffer(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_PyOS(m) < 0) {
         return NULL;
     }
@@ -4322,6 +4325,9 @@ PyInit__testcapi(void)
 #else
     PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_True);
     if (_PyTestCapi_Init_VectorcallLimited(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_HeaptypeRelative(m) < 0) {
         return NULL;
     }
 #endif

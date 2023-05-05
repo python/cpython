@@ -1809,7 +1809,7 @@ int
 PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     /* Although the GIL is held, a few C API functions can be called
      * without the GIL held, and in particular some that create and

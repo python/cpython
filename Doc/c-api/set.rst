@@ -9,8 +9,8 @@ Set Objects
 
 
 .. index::
-   object: set
-   object: frozenset
+   pair: object; set
+   pair: object; frozenset
 
 This section details the public API for :class:`set` and :class:`frozenset`
 objects.  Any functionality not listed below is best accessed using either

@@ -1816,6 +1816,18 @@ class _BasePathTest(object):
         else:
             _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE", "linkB"])
 
+    def test_glob_case_sensitive(self):
+        P = self.cls
+        def _check(path, pattern, case_sensitive, expected):
+            actual = {str(q) for q in path.glob(pattern, case_sensitive=case_sensitive)}
+            expected = {str(P(BASE, q)) for q in expected}
+            self.assertEqual(actual, expected)
+        path = P(BASE)
+        _check(path, "DIRB/FILE*", True, [])
+        _check(path, "DIRB/FILE*", False, ["dirB/fileB"])
+        _check(path, "dirb/file*", True, [])
+        _check(path, "dirb/file*", False, ["dirB/fileB"])
+
     def test_rglob_common(self):
         def _check(glob, expected):
             self.assertEqual(set(glob), { P(BASE, q) for q in expected })
