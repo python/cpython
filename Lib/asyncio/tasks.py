@@ -842,8 +842,8 @@ def gather(*coros_or_futures, return_exceptions=False):
         children.append(fut)
 
     outer = _GatheringFuture(children, loop=loop)
-    # call the done callbacks for futures that finished eagerly, instead
-    # of scheduling the callbacks to be called later by the event loop
+    # Run done callbacks after GatheringFuture created so any post-processing
+    # can be performed at this point
     # optimization: in the special case that *all* futures finished eagerly,
     # this will effectively complete the gather eagerly, with the last
     # callback setting the result (or exception) on outer before returning it
