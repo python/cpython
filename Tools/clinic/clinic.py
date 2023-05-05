@@ -2215,6 +2215,7 @@ def parse_file(filename, *, verify=True, output=None):
     clinic = Clinic(language, verify=verify, filename=filename)
     src_out, clinic_out = clinic.parse(raw)
 
+    # If clinic output changed, force updating the source file as well.
     force = bool(clinic_out)
     write_file(output, src_out, force=force)
     for fn, data in clinic_out:
