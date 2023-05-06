@@ -1538,7 +1538,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 
     PyThreadState_Swap(NULL);
 
-    const _PyInterpreterConfig config = {
+    const PyInterpreterConfig config = {
         .use_main_obmalloc = use_main_obmalloc,
         .allow_fork = allow_fork,
         .allow_exec = allow_exec,
@@ -1546,7 +1546,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         .allow_daemon_threads = allow_daemon_threads,
         .check_multi_interp_extensions = check_multi_interp_extensions,
     };
-    PyStatus status = _Py_NewInterpreterFromConfig(&substate, &config);
+    PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
     if (PyStatus_Exception(status)) {
         /* Since no new thread state was created, there is no exception to
            propagate; raise a fresh one after swapping in the old thread
@@ -3959,7 +3959,6 @@ static PyTypeObject MyList_Type = {
     MyList_new,                                 /* tp_new */
 };
 
-
 /* Test PEP 560 */
 
 typedef struct {
@@ -4222,7 +4221,7 @@ PyInit__testcapi(void)
         return NULL;
     }
     int ret = PyModule_AddType(m, (PyTypeObject*)ObjExtraData_Type);
-    Py_DECREF(&ObjExtraData_Type);
+    Py_DECREF(ObjExtraData_Type);
     if (ret < 0) {
         return NULL;
     }
@@ -4248,6 +4247,7 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "ULLONG_MAX", PyLong_FromUnsignedLongLong(ULLONG_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
+    PyModule_AddObject(m, "SIZEOF_WCHAR_T", PyLong_FromSsize_t(sizeof(wchar_t)));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
     PyModule_AddObject(m, "Py_Version", PyLong_FromUnsignedLong(Py_Version));
     Py_INCREF(&PyInstanceMethod_Type);
@@ -4310,6 +4310,9 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_Code(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_Buffer(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_PyOS(m) < 0) {
         return NULL;
     }
@@ -4322,6 +4325,9 @@ PyInit__testcapi(void)
 #else
     PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_True);
     if (_PyTestCapi_Init_VectorcallLimited(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_HeaptypeRelative(m) < 0) {
         return NULL;
     }
 #endif

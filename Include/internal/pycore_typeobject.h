@@ -44,6 +44,13 @@ struct type_cache {
 
 typedef struct {
     PyTypeObject *type;
+    int readying;
+    int ready;
+    // XXX tp_dict, tp_bases, and tp_mro can probably be statically
+    // allocated, instead of dynamically and stored on the interpreter.
+    PyObject *tp_dict;
+    PyObject *tp_bases;
+    PyObject *tp_mro;
     PyObject *tp_subclasses;
     /* We never clean up weakrefs for static builtin types since
        they will effectively never get triggered.  However, there
@@ -130,6 +137,8 @@ _Py_type_getattro(PyTypeObject *type, PyObject *name);
 
 PyObject *_Py_slot_tp_getattro(PyObject *self, PyObject *name);
 PyObject *_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
+
+PyAPI_DATA(PyTypeObject) _PyBufferWrapper_Type;
 
 PyObject *
 _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *meth_found);

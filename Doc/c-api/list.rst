@@ -5,7 +5,7 @@
 List Objects
 ------------
 
-.. index:: object: list
+.. index:: pair: object; list
 
 
 .. c:type:: PyListObject
