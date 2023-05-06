@@ -348,6 +348,11 @@ inspect
 pathlib
 -------
 
+* Add support for subclassing :class:`pathlib.PurePath` and
+  :class:`~pathlib.Path`, plus their Posix- and Windows-specific variants.
+  Subclasses may override the :meth:`~pathlib.PurePath.with_segments` method
+  to pass information between path instances.
+
 * Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
   all file or directory names within them, similar to :func:`os.walk`.
   (Contributed by Stanislav Zmiev in :gh:`90385`.)
@@ -838,6 +843,19 @@ Pending Removal in Python 3.14
   now raise :exc:`DeprecationWarning`;
   use :func:`importlib.util.find_spec` instead.
   (Contributed by Nikita Sobolev in :gh:`97850`.)
+
+* The following :mod:`ast` features have been deprecated in documentation since
+  Python 3.8, now cause a :exc:`DeprecationWarning` to be emitted at runtime
+  when they are accessed or used, and will be removed in Python 3.14:
+
+  * :class:`!ast.Num`
+  * :class:`!ast.Str`
+  * :class:`!ast.Bytes`
+  * :class:`!ast.NameConstant`
+  * :class:`!ast.Ellipsis`
+
+  Use :class:`ast.Constant` instead.
+  (Contributed by Serhiy Storchaka in :gh:`90953`.)
 
 Pending Removal in Future Versions
 ----------------------------------

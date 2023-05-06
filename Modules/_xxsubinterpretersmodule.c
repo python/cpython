@@ -513,6 +513,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
 
     // Create and initialize the new interpreter.
     PyThreadState *save_tstate = _PyThreadState_GET();
+    assert(save_tstate != NULL);
     const PyInterpreterConfig config = isolated
         ? (PyInterpreterConfig)_PyInterpreterConfig_INIT
         : (PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
@@ -821,6 +822,7 @@ error:
 
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

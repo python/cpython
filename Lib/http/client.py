@@ -858,6 +858,7 @@ class HTTPConnection:
         self._tunnel_host = None
         self._tunnel_port = None
         self._tunnel_headers = {}
+        self._proxy_response_headers = None
 
         (self.host, self.port) = self._get_hostport(host, port)
 
@@ -944,21 +945,16 @@ class HTTPConnection:
         try:
             (version, code, message) = response._read_status()
 
+            self._proxy_response_headers = parse_headers(response.fp)
+
+            if self.debuglevel > 0:
+                for hdr, val in self._proxy_response_headers.items():
+                    print("header:", hdr + ":", val)
+
             if code != http.HTTPStatus.OK:
                 self.close()
                 raise OSError(f"Tunnel connection failed: {code} {message.strip()}")
-            while True:
-                line = response.fp.readline(_MAXLINE + 1)
-                if len(line) > _MAXLINE:
-                    raise LineTooLong("header line")
-                if not line:
-                    # for sites which EOF without sending a trailer
-                    break
-                if line in (b'\r\n', b'\n', b''):
-                    break
 
-                if self.debuglevel > 0:
-                    print('header:', line.decode())
         finally:
             response.close()
 
