@@ -143,8 +143,6 @@ extern PyModuleDef _PyIO_Module;
 
 typedef struct {
     int initialized;
-    PyObject *locale_module;
-
     PyObject *unsupported_operation;
 
     /* Types */

@@ -499,42 +499,66 @@ PyEval_ThreadsInitialized(void)
     return _PyEval_ThreadsInitialized();
 }
 
+static inline int
+current_thread_holds_gil(struct _gil_runtime_state *gil, PyThreadState *tstate)
+{
+    if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) != tstate) {
+        return 0;
+    }
+    return _Py_atomic_load_relaxed(&gil->locked);
+}
+
+static void
+init_shared_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
+{
+    assert(gil_created(gil));
+    interp->ceval.gil = gil;
+    interp->ceval.own_gil = 0;
+}
+
+static void
+init_own_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
+{
+    assert(!gil_created(gil));
+    create_gil(gil);
+    assert(gil_created(gil));
+    interp->ceval.gil = gil;
+    interp->ceval.own_gil = 1;
+}
+
 PyStatus
 _PyEval_InitGIL(PyThreadState *tstate, int own_gil)
 {
     assert(tstate->interp->ceval.gil == NULL);
+    int locked;
     if (!own_gil) {
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
         assert(tstate->interp != main_interp);
         struct _gil_runtime_state *gil = main_interp->ceval.gil;
-        assert(gil_created(gil));
-        tstate->interp->ceval.gil = gil;
-        tstate->interp->ceval.own_gil = 0;
-        return _PyStatus_OK();
+        init_shared_gil(tstate->interp, gil);
+        locked = current_thread_holds_gil(gil, tstate);
     }
-
     /* XXX per-interpreter GIL */
-    struct _gil_runtime_state *gil = &tstate->interp->runtime->ceval.gil;
-    if (!_Py_IsMainInterpreter(tstate->interp)) {
+    else if (!_Py_IsMainInterpreter(tstate->interp)) {
         /* Currently, the GIL is shared by all interpreters,
            and only the main interpreter is responsible to create
            and destroy it. */
-        assert(gil_created(gil));
-        tstate->interp->ceval.gil = gil;
+        struct _gil_runtime_state *main_gil = _PyInterpreterState_Main()->ceval.gil;
+        init_shared_gil(tstate->interp, main_gil);
         // XXX For now we lie.
         tstate->interp->ceval.own_gil = 1;
-        return _PyStatus_OK();
+        locked = current_thread_holds_gil(main_gil, tstate);
     }
-    assert(own_gil);
+    else {
+        PyThread_init_thread();
+        // XXX per-interpreter GIL: switch to interp->_gil.
+        init_own_gil(tstate->interp, &tstate->interp->runtime->ceval.gil);
+        locked = 0;
+    }
+    if (!locked) {
+        take_gil(tstate);
+    }
 
-    assert(!gil_created(gil));
-
-    PyThread_init_thread();
-    create_gil(gil);
-    assert(gil_created(gil));
-    tstate->interp->ceval.gil = gil;
-    tstate->interp->ceval.own_gil = 1;
-    take_gil(tstate);
     return _PyStatus_OK();
 }
 
@@ -612,8 +636,16 @@ PyEval_ReleaseLock(void)
 }
 
 void
+_PyEval_AcquireLock(PyThreadState *tstate)
+{
+    _Py_EnsureTstateNotNULL(tstate);
+    take_gil(tstate);
+}
+
+void
 _PyEval_ReleaseLock(PyThreadState *tstate)
 {
+    _Py_EnsureTstateNotNULL(tstate);
     struct _ceval_state *ceval = &tstate->interp->ceval;
     drop_gil(ceval, tstate);
 }
@@ -625,7 +657,7 @@ PyEval_AcquireThread(PyThreadState *tstate)
 
     take_gil(tstate);
 
-    if (_PyThreadState_Swap(tstate->interp->runtime, tstate) != NULL) {
+    if (_PyThreadState_SwapNoGIL(tstate) != NULL) {
         Py_FatalError("non-NULL old thread state");
     }
 }
@@ -635,8 +667,7 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 {
     assert(is_tstate_valid(tstate));
 
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    PyThreadState *new_tstate = _PyThreadState_Swap(runtime, NULL);
+    PyThreadState *new_tstate = _PyThreadState_SwapNoGIL(NULL);
     if (new_tstate != tstate) {
         Py_FatalError("wrong thread state");
     }
@@ -684,8 +715,7 @@ _PyEval_SignalAsyncExc(PyInterpreterState *interp)
 PyThreadState *
 PyEval_SaveThread(void)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyThreadState_Swap(runtime, NULL);
+    PyThreadState *tstate = _PyThreadState_SwapNoGIL(NULL);
     _Py_EnsureTstateNotNULL(tstate);
 
     struct _ceval_state *ceval = &tstate->interp->ceval;
@@ -701,7 +731,7 @@ PyEval_RestoreThread(PyThreadState *tstate)
 
     take_gil(tstate);
 
-    _PyThreadState_Swap(tstate->interp->runtime, tstate);
+    _PyThreadState_SwapNoGIL(tstate);
 }
 
 
@@ -1005,7 +1035,7 @@ _Py_HandlePending(PyThreadState *tstate)
     /* GIL drop request */
     if (_Py_atomic_load_relaxed_int32(&interp_ceval_state->gil_drop_request)) {
         /* Give another thread a chance */
-        if (_PyThreadState_Swap(runtime, NULL) != tstate) {
+        if (_PyThreadState_SwapNoGIL(NULL) != tstate) {
             Py_FatalError("tstate mix-up");
         }
         drop_gil(interp_ceval_state, tstate);
@@ -1014,7 +1044,7 @@ _Py_HandlePending(PyThreadState *tstate)
 
         take_gil(tstate);
 
-        if (_PyThreadState_Swap(runtime, tstate) != NULL) {
+        if (_PyThreadState_SwapNoGIL(tstate) != NULL) {
             Py_FatalError("orphan tstate");
         }
     }
