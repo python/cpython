@@ -1655,16 +1655,10 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
 static int
 compiler_codegen(struct compiler *c, mod_ty mod)
 {
-    _Py_DECLARE_STR(anon_module, "<module>");
-    RETURN_IF_ERROR(
-        compiler_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
-                             mod, 1));
-
     location loc = LOCATION(1, 1, 0, 0);
     switch (mod->kind) {
     case Module_kind:
         if (compiler_body(c, loc, mod->v.Module.body) < 0) {
-            compiler_exit_scope(c);
             return ERROR;
         }
         break;
@@ -1691,6 +1685,11 @@ static PyCodeObject *
 compiler_mod(struct compiler *c, mod_ty mod)
 {
     int addNone = mod->kind != Expression_kind;
+    _Py_DECLARE_STR(anon_module, "<module>");
+    if (compiler_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
+                             mod, 1) < 0) {
+        return NULL;
+    }
     if (compiler_codegen(c, mod) < 0) {
         return NULL;
     }
@@ -7261,27 +7260,33 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
                    int optimize)
 {
     PyObject *res = NULL;
+    struct compiler *c = NULL;
+    PyArena *arena = NULL;
 
     if (!PyAST_Check(ast)) {
         PyErr_SetString(PyExc_TypeError, "expected an AST");
         return NULL;
     }
 
-    PyArena *arena = _PyArena_New();
+    arena = _PyArena_New();
     if (arena == NULL) {
-        return NULL;
+        goto end;
     }
 
     mod_ty mod = PyAST_obj2mod(ast, arena, 0 /* exec */);
     if (mod == NULL || !_PyAST_Validate(mod)) {
-        _PyArena_Free(arena);
-        return NULL;
+        goto end;
     }
 
-    struct compiler *c = new_compiler(mod, filename, pflags, optimize, arena);
+    c = new_compiler(mod, filename, pflags, optimize, arena);
     if (c == NULL) {
-        _PyArena_Free(arena);
-        return NULL;
+        goto end;
+    }
+
+    _Py_DECLARE_STR(anon_module, "<module>");
+    if (compiler_enter_scope(c, &_Py_STR(anon_module), COMPILER_SCOPE_MODULE,
+                             mod, 1) < 0) {
+        goto end;
     }
 
     if (compiler_codegen(c, mod) < 0) {
@@ -7292,8 +7297,13 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 
 finally:
     compiler_exit_scope(c);
-    compiler_free(c);
-    _PyArena_Free(arena);
+end:
+    if (c != NULL) {
+        compiler_free(c);
+    }
+    if (arena != NULL) {
+        _PyArena_Free(arena);
+    }
     return res;
 }
 
