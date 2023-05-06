@@ -1464,7 +1464,7 @@ Basic customization
    ``x.__ne__(y)``, ``x>y`` calls ``x.__gt__(y)``, and ``x>=y`` calls
    ``x.__ge__(y)``.
 
-   A rich comparison method may return the singleton ``NotImplemented`` if it does
+   A rich comparison method may return the singleton :const:`NotImplemented` if it does
    not implement the operation for a given pair of arguments. By convention,
    ``False`` and ``True`` are returned for a successful comparison. However, these
    methods can return any value, so if the comparison operator is used in a Boolean
@@ -2651,7 +2651,7 @@ left undefined.
    function is to be supported.
 
    If one of those methods does not support the operation with the supplied
-   arguments, it should return ``NotImplemented``.
+   arguments, it should return :const:`NotImplemented`.
 
 
 .. method:: object.__radd__(self, other)
@@ -2681,7 +2681,7 @@ left undefined.
    types. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
    an instance of a class that has an :meth:`__rsub__` method,
    ``type(y).__rsub__(y, x)`` is called if ``type(x).__sub__(x, y)`` returns
-   *NotImplemented*.
+   :const:`NotImplemented`.
 
    .. index:: builtin: pow
 
@@ -3175,7 +3175,7 @@ An example of an asynchronous context manager class::
    the behavior that ``None`` is not callable.
 
 .. [#] "Does not support" here means that the class has no such method, or
-   the method returns ``NotImplemented``.  Do not set the method to
+   the method returns :const:`NotImplemented`.  Do not set the method to
    ``None`` if you want to force fallback to the right operand's reflected
    method—that will instead have the opposite effect of explicitly
    *blocking* such fallback.
