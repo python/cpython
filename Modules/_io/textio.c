@@ -3216,6 +3216,9 @@ static PyMethodDef textiowrapper_methods[] = {
     _IO_TEXTIOWRAPPER_SEEK_METHODDEF
     _IO_TEXTIOWRAPPER_TELL_METHODDEF
     _IO_TEXTIOWRAPPER_TRUNCATE_METHODDEF
+
+    {"__reduce__", cannot_pickle, METH_VARARGS},
+    {"__reduce_ex__", cannot_pickle, METH_VARARGS},
     {NULL, NULL}
 };
 

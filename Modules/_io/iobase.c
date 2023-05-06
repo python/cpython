@@ -225,8 +225,9 @@ iobase_check_writable(PyObject *self, PyObject *args)
     return _PyIOBase_check_writable(state, self, args);
 }
 
-static PyObject *
-iobase_reduce(PyObject *self, PyObject *args) {
+PyObject *
+cannot_pickle(PyObject *self, PyObject *args)
+{
     PyErr_Format(PyExc_TypeError,
         "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
     return NULL;
@@ -848,9 +849,6 @@ static PyMethodDef iobase_methods[] = {
     _IO__IOBASE_READLINE_METHODDEF
     _IO__IOBASE_READLINES_METHODDEF
     _IO__IOBASE_WRITELINES_METHODDEF
-
-    {"__reduce__", iobase_reduce, METH_VARARGS},
-    {"__reduce_ex__", iobase_reduce, METH_VARARGS},
 
     {NULL, NULL}
 };

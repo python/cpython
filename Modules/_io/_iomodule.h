@@ -184,6 +184,8 @@ extern PyObject* _PyIOBase_check_writable(_PyIO_State *state, PyObject *self, Py
 extern PyObject* _PyIOBase_check_seekable(_PyIO_State *state, PyObject *self, PyObject *args);
 extern PyObject* _PyIOBase_check_closed(PyObject *self, PyObject *args);
 
+extern PyObject *cannot_pickle(PyObject *self, PyObject *args);
+
 #ifdef HAVE_WINDOWS_CONSOLE_IO
 extern char _PyIO_get_console_type(PyObject *);
 #endif
