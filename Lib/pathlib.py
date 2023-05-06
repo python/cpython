@@ -873,10 +873,11 @@ class Path(PurePath):
             cwd = self._flavour.abspath(self.drive)
         else:
             cwd = os.getcwd()
-            # Fast path for "empty" paths, e.g. Path.cwd(), Path("."), Path().
+            # Fast path for "empty" paths, e.g. Path("."), Path("") or Path().
             # We pass only one argument to with_segments() to avoid the cost
             # of joining, and we exploit the fact that getcwd() returns a
-            # fully-normalized string by storing it in _str.
+            # fully-normalized string by storing it in _str. This is used to
+            # implement Path.cwd().
             if not self.root and not self._tail:
                 result = self.with_segments(cwd)
                 result._str = cwd
