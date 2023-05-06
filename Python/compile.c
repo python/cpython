@@ -7257,7 +7257,7 @@ error:
 
 PyObject *
 _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
-                   int optimize)
+                   int optimize, int compile_mode)
 {
     PyObject *res = NULL;
     struct compiler *c = NULL;
@@ -7273,7 +7273,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         goto end;
     }
 
-    mod_ty mod = PyAST_obj2mod(ast, arena, 0 /* exec */);
+    mod_ty mod = PyAST_obj2mod(ast, arena, compile_mode);
     if (mod == NULL || !_PyAST_Validate(mod)) {
         goto end;
     }
@@ -7291,6 +7291,10 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 
     if (compiler_codegen(c, mod) < 0) {
         goto finally;
+    }
+    int addNone = mod->kind != Expression_kind;
+    if (add_return_at_end(c, addNone) < 0) {
+        return NULL;
     }
 
     res = instr_sequence_to_instructions(INSTR_SEQUENCE(c));
