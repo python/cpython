@@ -68,7 +68,12 @@ def _make_selector(pattern_parts, flavour, case_sensitive):
     if not pat:
         return _TerminatingSelector()
     if pat == '**':
-        cls = _RecursiveWildcardSelector
+        while child_parts and child_parts[0] == '**':
+            child_parts = child_parts[1:]
+        if '**' in child_parts:
+            cls = _DoubleRecursiveWildcardSelector
+        else:
+            cls = _RecursiveWildcardSelector
     elif pat == '..':
         cls = _ParentSelector
     elif '**' in pat:
@@ -183,18 +188,30 @@ class _RecursiveWildcardSelector(_Selector):
 
     def _select_from(self, parent_path, scandir):
         try:
-            yielded = set()
-            try:
-                successor_select = self.successor._select_from
-                for starting_point in self._iterate_directories(parent_path, scandir):
-                    for p in successor_select(starting_point, scandir):
-                        if p not in yielded:
-                            yield p
-                            yielded.add(p)
-            finally:
-                yielded.clear()
+            successor_select = self.successor._select_from
+            for starting_point in self._iterate_directories(parent_path, scandir):
+                for p in successor_select(starting_point, scandir):
+                    yield p
         except PermissionError:
             return
+
+
+class _DoubleRecursiveWildcardSelector(_RecursiveWildcardSelector):
+    """
+    Like _RecursiveWildcardSelector, but also de-duplicates results from
+    successive selectors. This is necessary if the pattern contains
+    multiple non-adjacent '**' segments.
+    """
+
+    def _select_from(self, parent_path, scandir):
+        yielded = set()
+        try:
+            for p in super()._select_from(parent_path, scandir):
+                if p not in yielded:
+                    yield p
+                    yielded.add(p)
+        finally:
+            yielded.clear()
 
 
 #
