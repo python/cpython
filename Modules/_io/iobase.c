@@ -226,7 +226,7 @@ iobase_check_writable(PyObject *self, PyObject *args)
 }
 
 PyObject *
-cannot_pickle(PyObject *self, PyObject *args)
+_PyIOBase_cannot_pickle(PyObject *self, PyObject *args)
 {
     PyErr_Format(PyExc_TypeError,
         "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
