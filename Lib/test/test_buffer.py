@@ -4604,6 +4604,36 @@ class TestPythonBufferProtocol(unittest.TestCase):
             self.assertEqual(rb_call_count, 0)
         self.assertEqual(rb_call_count, 1)
 
+    def test_inherit_but_return_something_else(self):
+        class A(bytearray):
+            def __buffer__(self, flags):
+                return memoryview(b"hello")
+
+        a = A(b"hello")
+        with memoryview(a) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+
+        rb_call_count = 0
+        rb_raised = False
+        class B(bytearray):
+            def __buffer__(self, flags):
+                return memoryview(b"hello")
+            def __release_buffer__(self, view):
+                nonlocal rb_call_count
+                rb_call_count += 1
+                try:
+                    super().__release_buffer__(view)
+                except ValueError:
+                    nonlocal rb_raised
+                    rb_raised = True
+
+        b = B(b"hello")
+        with memoryview(b) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            self.assertEqual(rb_call_count, 0)
+        self.assertEqual(rb_call_count, 1)
+        self.assertIs(rb_raised, True)
+
 
 if __name__ == "__main__":
     unittest.main()
