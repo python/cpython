@@ -2720,7 +2720,7 @@ left undefined.
    augmented assignment falls back to the normal methods.  For instance, if *x*
    is an instance of a class with an :meth:`__iadd__` method, ``x += y`` is
    equivalent to ``x = x.__iadd__(y)`` . Otherwise, or if ``x.__iadd__(y)``
-   returns NotImplemented, ``x.__add__(y)`` and
+   returns :const:`NotImplemented`, ``x.__add__(y)`` and
    ``y.__radd__(x)`` are considered, as with the evaluation of ``x + y``. In
    certain situations, augmented assignment can result in unexpected errors (see
    :ref:`faq-augmented-assignment-tuple-error`), but this behavior is in fact
