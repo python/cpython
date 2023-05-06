@@ -609,7 +609,7 @@ class Ellipsis(Constant, metaclass=_ABC):
         if cls is _ast_Ellipsis:
             import warnings
             warnings._deprecated(
-                f"ast.Ellipsis", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
+                "ast.Ellipsis", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
             )
             return Constant(..., *args, **kwargs)
         return Constant.__new__(cls, *args, **kwargs)
