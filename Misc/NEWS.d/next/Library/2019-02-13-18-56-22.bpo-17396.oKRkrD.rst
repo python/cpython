@@ -1,2 +1,0 @@
-:mod:`modulefinder` no longer crashes when encountering syntax errors in followed imports.
-Patch by Brandt Bucher.

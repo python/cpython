@@ -42,7 +42,7 @@ if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable &
 call "%PCBUILD%\find_python.bat" "%PYTHON%"
 if ERRORLEVEL 1 (echo Cannot locate python.exe on PATH or as PYTHON variable & exit /b 3)
 
-call "%PCBUILD%\get_externals.bat" --openssl-src %ORG_SETTING%
+call "%PCBUILD%\get_externals.bat" --openssl-src --no-openssl %ORG_SETTING%
 
 if "%PERL%" == "" where perl > "%TEMP%\perl.loc" 2> nul && set /P PERL= <"%TEMP%\perl.loc" & del "%TEMP%\perl.loc"
 if "%PERL%" == "" (echo Cannot locate perl.exe on PATH or as PERL variable & exit /b 4)
@@ -50,5 +50,9 @@ if "%PERL%" == "" (echo Cannot locate perl.exe on PATH or as PERL variable & exi
 %MSBUILD% "%PCBUILD%\openssl.vcxproj" /p:Configuration=Release /p:Platform=Win32
 if errorlevel 1 exit /b
 %MSBUILD% "%PCBUILD%\openssl.vcxproj" /p:Configuration=Release /p:Platform=x64
+if errorlevel 1 exit /b
+%MSBUILD% "%PCBUILD%\openssl.vcxproj" /p:Configuration=Release /p:Platform=ARM
+if errorlevel 1 exit /b
+%MSBUILD% "%PCBUILD%\openssl.vcxproj" /p:Configuration=Release /p:Platform=ARM64
 if errorlevel 1 exit /b
 

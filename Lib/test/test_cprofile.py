@@ -1,13 +1,13 @@
 """Test suite for the cProfile module."""
 
 import sys
-from test.support import run_unittest, TESTFN, unlink
 import unittest
 
 # rip off all interesting stuff from test_profile
 import cProfile
 from test.test_profile import ProfileTest, regenerate_expected_output
-from test.support.script_helper import assert_python_failure, assert_python_ok
+from test.support.script_helper import assert_python_failure
+from test import support
 
 
 class CProfileTest(ProfileTest):
@@ -18,24 +18,17 @@ class CProfileTest(ProfileTest):
     def get_expected_output(self):
         return _ProfileOutput
 
-    # Issue 3895.
     def test_bad_counter_during_dealloc(self):
+        # bpo-3895
         import _lsprof
-        # Must use a file as StringIO doesn't trigger the bug.
-        orig_stderr = sys.stderr
-        try:
-            with open(TESTFN, 'w') as file:
-                sys.stderr = file
-                try:
-                    obj = _lsprof.Profiler(lambda: int)
-                    obj.enable()
-                    obj = _lsprof.Profiler(1)
-                    obj.disable()
-                    obj.clear()
-                finally:
-                    sys.stderr = orig_stderr
-        finally:
-            unlink(TESTFN)
+
+        with support.catch_unraisable_exception() as cm:
+            obj = _lsprof.Profiler(lambda: int)
+            obj.enable()
+            obj.disable()
+            obj.clear()
+
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
 
     def test_profile_enable_disable(self):
         prof = self.profilerclass()
@@ -43,10 +36,11 @@ class CProfileTest(ProfileTest):
         self.addCleanup(prof.disable)
 
         prof.enable()
-        self.assertIs(sys.getprofile(), prof)
+        self.assertEqual(
+            sys.monitoring.get_tool(sys.monitoring.PROFILER_ID), "cProfile")
 
         prof.disable()
-        self.assertIs(sys.getprofile(), None)
+        self.assertIs(sys.monitoring.get_tool(sys.monitoring.PROFILER_ID), None)
 
     def test_profile_as_context_manager(self):
         prof = self.profilerclass()
@@ -59,10 +53,19 @@ class CProfileTest(ProfileTest):
 
             # profile should be set as the global profiler inside the
             # with-block
-            self.assertIs(sys.getprofile(), prof)
+            self.assertEqual(
+                sys.monitoring.get_tool(sys.monitoring.PROFILER_ID), "cProfile")
 
         # profile shouldn't be set once we leave the with-block.
-        self.assertIs(sys.getprofile(), None)
+        self.assertIs(sys.monitoring.get_tool(sys.monitoring.PROFILER_ID), None)
+
+    def test_second_profiler(self):
+        pr = self.profilerclass()
+        pr2 = self.profilerclass()
+        pr.enable()
+        self.assertRaises(ValueError, pr2.enable)
+        pr.disable()
+
 
 class TestCommandLine(unittest.TestCase):
     def test_sort(self):
@@ -70,12 +73,10 @@ class TestCommandLine(unittest.TestCase):
         self.assertGreater(rc, 0)
         self.assertIn(b"option -s: invalid choice: 'demo'", err)
 
-def test_main():
-    run_unittest(CProfileTest, TestCommandLine)
 
 def main():
     if '-r' not in sys.argv:
-        test_main()
+        unittest.main()
     else:
         regenerate_expected_output(__file__, CProfileTest)
 
@@ -108,7 +109,7 @@ profilee.py:88(helper2)                           <-       6    0.234    0.300  
 profilee.py:98(subhelper)                         <-       8    0.064    0.080  profilee.py:88(helper2)
 {built-in method builtins.hasattr}                <-       4    0.000    0.004  profilee.py:73(helper1)
                                                            8    0.000    0.008  profilee.py:88(helper2)
-{built-in method sys.exc_info}                    <-       4    0.000    0.000  profilee.py:73(helper1)
+{built-in method sys.exception}                   <-       4    0.000    0.000  profilee.py:73(helper1)
 {method 'append' of 'list' objects}               <-       4    0.000    0.000  profilee.py:73(helper1)"""
 _ProfileOutput['print_callees'] = """\
 <string>:1(<module>)                              ->       1    0.270    1.000  profilee.py:25(testfunc)

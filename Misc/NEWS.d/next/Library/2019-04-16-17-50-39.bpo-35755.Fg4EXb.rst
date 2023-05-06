@@ -1,5 +1,0 @@
-:func:`shutil.which` and :func:`distutils.spawn.find_executable` now use
-``os.confstr("CS_PATH")`` if available instead of :data:`os.defpath`, if the
-``PATH`` environment variable is not set. Moreover, don't use
-``os.confstr("CS_PATH")`` nor :data:`os.defpath` if the ``PATH`` environment
-variable is set to an empty string.

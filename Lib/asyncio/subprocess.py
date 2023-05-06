@@ -25,6 +25,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         self._transport = None
         self._process_exited = False
         self._pipe_fds = []
+        self._stdin_closed = self._loop.create_future()
 
     def __repr__(self):
         info = [self.__class__.__name__]
@@ -76,6 +77,10 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
             if pipe is not None:
                 pipe.close()
             self.connection_lost(exc)
+            if exc is None:
+                self._stdin_closed.set_result(None)
+            else:
+                self._stdin_closed.set_exception(exc)
             return
         if fd == 1:
             reader = self.stdout
@@ -101,6 +106,10 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         if len(self._pipe_fds) == 0 and self._process_exited:
             self._transport.close()
             self._transport = None
+
+    def _get_close_waiter(self, stream):
+        if stream is self.stdin:
+            return self._stdin_closed
 
 
 class Process:
@@ -135,10 +144,11 @@ class Process:
 
     async def _feed_stdin(self, input):
         debug = self._loop.get_debug()
-        self.stdin.write(input)
-        if debug:
-            logger.debug(
-                '%r communicate: feed stdin (%s bytes)', self, len(input))
+        if input is not None:
+            self.stdin.write(input)
+            if debug:
+                logger.debug(
+                    '%r communicate: feed stdin (%s bytes)', self, len(input))
         try:
             await self.stdin.drain()
         except (BrokenPipeError, ConnectionResetError) as exc:
@@ -171,7 +181,7 @@ class Process:
         return output
 
     async def communicate(self, input=None):
-        if input is not None:
+        if self.stdin is not None:
             stdin = self._feed_stdin(input)
         else:
             stdin = self._noop()
@@ -183,17 +193,14 @@ class Process:
             stderr = self._read_stream(2)
         else:
             stderr = self._noop()
-        stdin, stdout, stderr = await tasks.gather(stdin, stdout, stderr,
-                                                   loop=self._loop)
+        stdin, stdout, stderr = await tasks.gather(stdin, stdout, stderr)
         await self.wait()
         return (stdout, stderr)
 
 
 async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
-                                  loop=None, limit=streams._DEFAULT_LIMIT,
-                                  **kwds):
-    if loop is None:
-        loop = events.get_event_loop()
+                                  limit=streams._DEFAULT_LIMIT, **kwds):
+    loop = events.get_running_loop()
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop)
     transport, protocol = await loop.subprocess_shell(
@@ -204,10 +211,9 @@ async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
 
 
 async def create_subprocess_exec(program, *args, stdin=None, stdout=None,
-                                 stderr=None, loop=None,
-                                 limit=streams._DEFAULT_LIMIT, **kwds):
-    if loop is None:
-        loop = events.get_event_loop()
+                                 stderr=None, limit=streams._DEFAULT_LIMIT,
+                                 **kwds):
+    loop = events.get_running_loop()
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop)
     transport, protocol = await loop.subprocess_exec(

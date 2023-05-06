@@ -173,7 +173,7 @@ Update Unicode databases to version 12.0.0.
 .. nonce: dZemNt
 .. section: Core and Builtins
 
-Fix a segfault occuring when sorting a list of heterogeneous values. Patch
+Fix a segfault occurring when sorting a list of heterogeneous values. Patch
 contributed by Rémi Lapeyre and Elliot Gorokhovsky.
 
 ..
@@ -830,7 +830,8 @@ Refactor class variables to instance variables in colorizer.
 .. nonce: WbaRJW
 .. section: IDLE
 
-Increase test coverage of idlelib.autocomplete by 30%.
+Increase test coverage of idlelib.autocomplete by 30%. Patch by Louie
+Lu
 
 ..
 

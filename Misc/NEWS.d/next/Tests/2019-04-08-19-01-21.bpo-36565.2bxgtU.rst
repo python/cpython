@@ -1,2 +1,0 @@
-Fix reference hunting (``python3 -m test -R 3:3``) when Python has no
-built-in abc module.

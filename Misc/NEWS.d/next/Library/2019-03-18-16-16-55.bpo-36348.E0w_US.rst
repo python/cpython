@@ -1,2 +1,0 @@
-The :meth:`imap.IMAP4.logout` method no longer ignores silently arbitrary
-exceptions.

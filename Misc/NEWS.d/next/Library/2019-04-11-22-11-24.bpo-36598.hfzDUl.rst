@@ -1,2 +1,0 @@
-Fix ``isinstance`` check for Mock objects with spec when the code is
-executed under tracing. Patch by Karthikeyan Singaravelan.

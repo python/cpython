@@ -6,6 +6,7 @@
 .. module:: email.message
    :synopsis: The base class representing email messages in a fashion
               backward compatible with Python 3.2
+   :noindex:
 
 
 The :class:`Message` class is very similar to the
@@ -22,7 +23,7 @@ policy :attr:`~email.policy.Compat32`.  If you are going to use another policy,
 you should be using the :class:`~email.message.EmailMessage` class instead.
 
 An email message consists of *headers* and a *payload*.  Headers must be
-:rfc:`5233` style names and values, where the field name and value are
+:rfc:`5322` style names and values, where the field name and value are
 separated by a colon.  The colon is not part of either the field name or the
 field value.  The payload may be a simple text message, or a binary object, or
 a structured sequence of sub-messages each with their own set of headers and
@@ -82,7 +83,7 @@ Here are the methods of the :class:`Message` class:
       Note that this method is provided as a convenience and may not always
       format the message the way you want.  For example, by default it does
       not do the mangling of lines that begin with ``From`` that is
-      required by the unix mbox format.  For more flexibility, instantiate a
+      required by the Unix mbox format.  For more flexibility, instantiate a
       :class:`~email.generator.Generator` instance and use its
       :meth:`~email.generator.Generator.flatten` method directly.  For example::
 
@@ -124,7 +125,7 @@ Here are the methods of the :class:`Message` class:
       Note that this method is provided as a convenience and may not always
       format the message the way you want.  For example, by default it does
       not do the mangling of lines that begin with ``From`` that is
-      required by the unix mbox format.  For more flexibility, instantiate a
+      required by the Unix mbox format.  For more flexibility, instantiate a
       :class:`~email.generator.BytesGenerator` instance and use its
       :meth:`~email.generator.BytesGenerator.flatten` method directly.
       For example::
@@ -297,7 +298,7 @@ Here are the methods of the :class:`Message` class:
    In a model generated from bytes, any header values that (in contravention of
    the RFCs) contain non-ASCII bytes will, when retrieved through this
    interface, be represented as :class:`~email.header.Header` objects with
-   a charset of `unknown-8bit`.
+   a charset of ``unknown-8bit``.
 
 
    .. method:: __len__()
@@ -307,7 +308,7 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: __contains__(name)
 
-      Return true if the message object has a field named *name*. Matching is
+      Return ``True`` if the message object has a field named *name*. Matching is
       done case-insensitively and *name* should not include the trailing colon.
       Used for the ``in`` operator, e.g.::
 
