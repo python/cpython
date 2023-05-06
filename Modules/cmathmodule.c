@@ -829,7 +829,7 @@ cmath_sqrt_impl(PyObject *module, Py_complex z)
     ax = fabs(z.real);
     ay = fabs(z.imag);
 
-    if (ax < DBL_MIN && ay < DBL_MIN && (ax > 0. || ay > 0.)) {
+    if (ax < DBL_MIN && ay < DBL_MIN) {
         /* here we catch cases where hypot(ax, ay) is subnormal */
         ax = ldexp(ax, CM_SCALE_UP);
         s = ldexp(sqrt(ax + hypot(ax, ldexp(ay, CM_SCALE_UP))),
@@ -957,12 +957,12 @@ cmath.log
 
 log(z[, base]) -> the logarithm of z to the given base.
 
-If the base not specified, returns the natural logarithm (base e) of z.
+If the base is not specified, returns the natural logarithm (base e) of z.
 [clinic start generated code]*/
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
-/*[clinic end generated code: output=4effdb7d258e0d94 input=230ed3a71ecd000a]*/
+/*[clinic end generated code: output=4effdb7d258e0d94 input=e1f81d4fcfd26497]*/
 {
     Py_complex y;
 
@@ -1013,7 +1013,7 @@ cmath_phase_impl(PyObject *module, Py_complex z)
     double phi;
 
     errno = 0;
-    phi = c_atan2(z);
+    phi = c_atan2(z); /* should not cause any exception */
     if (errno != 0)
         return math_error();
     else
@@ -1411,6 +1411,7 @@ cmath_exec(PyObject *mod)
 
 static PyModuleDef_Slot cmath_slots[] = {
     {Py_mod_exec, cmath_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

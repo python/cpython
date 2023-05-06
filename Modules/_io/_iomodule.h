@@ -4,6 +4,10 @@
 
 #include "exports.h"
 
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "structmember.h"
+
 /* ABCs */
 extern PyTypeObject PyIOBase_Type;
 extern PyTypeObject PyRawIOBase_Type;
@@ -11,23 +15,21 @@ extern PyTypeObject PyBufferedIOBase_Type;
 extern PyTypeObject PyTextIOBase_Type;
 
 /* Concrete classes */
-extern PyTypeObject PyFileIO_Type;
-extern PyTypeObject PyBytesIO_Type;
-extern PyTypeObject PyStringIO_Type;
-extern PyTypeObject PyBufferedReader_Type;
-extern PyTypeObject PyBufferedWriter_Type;
-extern PyTypeObject PyBufferedRWPair_Type;
-extern PyTypeObject PyBufferedRandom_Type;
-extern PyTypeObject PyTextIOWrapper_Type;
 extern PyTypeObject PyIncrementalNewlineDecoder_Type;
 
-#ifndef Py_LIMITED_API
-#ifdef MS_WINDOWS
+/* Type specs */
+extern PyType_Spec bufferedrandom_spec;
+extern PyType_Spec bufferedreader_spec;
+extern PyType_Spec bufferedrwpair_spec;
+extern PyType_Spec bufferedwriter_spec;
+extern PyType_Spec bytesio_spec;
+extern PyType_Spec fileio_spec;
+extern PyType_Spec stringio_spec;
+extern PyType_Spec textiowrapper_spec;
+
+#ifdef HAVE_WINDOWS_CONSOLE_IO
 extern PyTypeObject PyWindowsConsoleIO_Type;
-PyAPI_DATA(PyObject *) _PyWindowsConsoleIO_Type;
-#define PyWindowsConsoleIO_Check(op) (PyObject_TypeCheck((op), (PyTypeObject*)_PyWindowsConsoleIO_Type))
-#endif /* MS_WINDOWS */
-#endif /* Py_LIMITED_API */
+#endif /* HAVE_WINDOWS_CONSOLE_IO */
 
 /* These functions are used as METH_NOARGS methods, are normally called
  * with args=NULL, and return a new reference.
@@ -144,14 +146,53 @@ typedef struct {
     PyObject *locale_module;
 
     PyObject *unsupported_operation;
+
+    /* Types */
+    PyTypeObject *PyIncrementalNewlineDecoder_Type;
+    PyTypeObject *PyRawIOBase_Type;
+    PyTypeObject *PyBufferedIOBase_Type;
+    PyTypeObject *PyBufferedRWPair_Type;
+    PyTypeObject *PyBufferedRandom_Type;
+    PyTypeObject *PyBufferedReader_Type;
+    PyTypeObject *PyBufferedWriter_Type;
+    PyTypeObject *PyBytesIOBuffer_Type;
+    PyTypeObject *PyBytesIO_Type;
+    PyTypeObject *PyFileIO_Type;
+    PyTypeObject *PyStringIO_Type;
+    PyTypeObject *PyTextIOBase_Type;
+    PyTypeObject *PyTextIOWrapper_Type;
 } _PyIO_State;
 
 #define IO_MOD_STATE(mod) ((_PyIO_State *)PyModule_GetState(mod))
 #define IO_STATE() _PyIO_get_module_state()
 
+static inline _PyIO_State *
+get_io_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (_PyIO_State *)state;
+}
+
+static inline _PyIO_State *
+get_io_state_by_cls(PyTypeObject *cls)
+{
+    void *state = _PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return (_PyIO_State *)state;
+}
+
+static inline _PyIO_State *
+find_io_state_by_def(PyTypeObject *type)
+{
+    PyObject *mod = PyType_GetModuleByDef(type, &_PyIO_Module);
+    assert(mod != NULL);
+    return get_io_state(mod);
+}
+
 extern _PyIO_State *_PyIO_get_module_state(void);
 
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
 extern char _PyIO_get_console_type(PyObject *);
 #endif
 

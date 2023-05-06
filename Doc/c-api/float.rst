@@ -5,7 +5,7 @@
 Floating Point Objects
 ----------------------
 
-.. index:: object: floating point
+.. index:: pair: object; floating point
 
 
 .. c:type:: PyFloatObject
