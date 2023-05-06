@@ -805,7 +805,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: reprfunc PyTypeObject.tp_repr
 
-   .. index:: builtin: repr
+   .. index:: pair: built-in function; repr
 
    An optional pointer to a function that implements the built-in function
    :func:`repr`.
@@ -870,7 +870,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: hashfunc PyTypeObject.tp_hash
 
-   .. index:: builtin: hash
+   .. index:: pair: built-in function; hash
 
    An optional pointer to a function that implements the built-in function
    :func:`hash`.
