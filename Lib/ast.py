@@ -1750,14 +1750,13 @@ def unparse(ast_obj):
 
 
 _deprecated_globals = {
-    name: (globals().pop(name), '; use ast.Constant instead')
+    name: globals().pop(name)
     for name in ('Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis')
 }
 
 def __getattr__(name):
     if name in _deprecated_globals:
-        value, details = _deprecated_globals[name]
-        globals()[name] = value
+        globals()[name] = value = _deprecated_globals[name]
         import warnings
         warnings._deprecated(
             f"ast.{name}", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
