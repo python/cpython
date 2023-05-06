@@ -754,6 +754,7 @@ class Path(PurePath):
         """
         return self.stat(follow_symlinks=False)
 
+
     # Convenience functions for querying the stat results
 
     def exists(self, *, follow_symlinks=True):
