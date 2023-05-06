@@ -1,0 +1,2 @@
+Fix integer overflow in processing of Bluetooth addresses.
+Patch by Michele Orrù.
