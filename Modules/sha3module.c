@@ -136,6 +136,8 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
         sha3_update(self->hash_state, buf.buf, buf.len);
     }
 
+    PyBuffer_Release(&buf);
+
     return (PyObject *)self;
 
   error:
