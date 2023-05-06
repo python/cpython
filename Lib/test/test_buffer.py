@@ -4579,6 +4579,15 @@ class TestPythonBufferProtocol(unittest.TestCase):
             buf.__release_buffer__(mv)
         self.assertEqual(buf.references, 0)
 
+    def test_inheritance(self):
+        class A(bytearray):
+            def __buffer__(self, flags):
+                return super().__buffer__(flags)
+
+        a = A(b"hello")
+        mv = memoryview(a)
+        self.assertEqual(mv.tobytes(), b"hello")
+
 
 if __name__ == "__main__":
     unittest.main()

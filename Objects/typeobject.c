@@ -6,7 +6,7 @@
 #include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_memoryobject.h"  // PyMemoryView_FromObjectAndFlags()
+#include "pycore_memoryobject.h"  // _PyMemoryView_FromBufferProc()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"        // _PyType_HasFeature()
 #include "pycore_long.h"          // _PyLong_IsNegative()
@@ -56,6 +56,8 @@ typedef struct PySlot_Offset {
     short slot_offset;
 } PySlot_Offset;
 
+static void
+slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer);
 
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
@@ -8078,7 +8080,8 @@ wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
         return NULL;
     }
 
-    return PyMemoryView_FromObjectAndFlags(self, Py_SAFE_DOWNCAST(flags, Py_ssize_t, int));
+    return _PyMemoryView_FromBufferProc(self, Py_SAFE_DOWNCAST(flags, Py_ssize_t, int),
+                                        (getbufferproc)wrapped);
 }
 
 static PyObject *
@@ -8980,8 +8983,10 @@ bufferwrapper_releasebuf(PyObject *self, Py_buffer *view)
 
     assert(PyMemoryView_Check(bw->mv));
     Py_TYPE(bw->mv)->tp_as_buffer->bf_releasebuffer(bw->mv, view);
+    // We only need to call bf_releasebuffer if it's a Python function. If it's a C
+    // bf_releasebuf, it will be called when the memoryview is released.
     if (Py_TYPE(bw->obj)->tp_as_buffer != NULL
-        && Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer != NULL) {
+        && Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer == slot_bf_releasebuffer) {
         Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer(bw->obj, view);
     }
 }
