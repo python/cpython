@@ -347,7 +347,7 @@ method.
 
 .. data:: METH_CLASS
 
-   .. index:: builtin: classmethod
+   .. index:: pair: built-in function; classmethod
 
    The method will be passed the type object as the first parameter rather
    than an instance of the type.  This is used to create *class methods*,
@@ -357,7 +357,7 @@ method.
 
 .. data:: METH_STATIC
 
-   .. index:: builtin: staticmethod
+   .. index:: pair: built-in function; staticmethod
 
    The method will be passed ``NULL`` as the first parameter rather than an
    instance of the type.  This is used to create *static methods*, similar to

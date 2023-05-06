@@ -149,7 +149,7 @@ done.  This can be done using the :c:func:`PyErr_Fetch` and
 
 .. index::
    single: string; object representation
-   builtin: repr
+   pair: built-in function; repr
 
 Object Presentation
 -------------------
