@@ -933,6 +933,7 @@ def run_coroutine_threadsafe(coro, loop):
 def create_eager_task_factory(custom_task_constructor):
     """
     Creates a function suitable for use as a task factory on an event-loop.
+    
     The tasks created will be started immediately (rather than being first
     scheduled to an event loop). The constructor argument can be any callable
     that returns a ``Task`` compatible object and has a signature compatible
