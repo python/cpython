@@ -913,6 +913,9 @@ PyInit__test_non_isolated(void)
 
 static PyModuleDef_Slot shared_gil_only_slots[] = {
     {Py_mod_exec, execfunc},
+    /* Note that Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED is the default.
+       We put it here explicitly to draw attention to the contrast
+       with Py_MOD_PER_INTERPRETER_GIL_SUPPORTED. */
     {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED},
     {0, NULL},
 };
