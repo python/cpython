@@ -26,10 +26,11 @@ python_version = sys.version_info[:2]
 
 def load_tests(loader, tests, ignore):
     tests.addTests(doctest.DocTestSuite(enum))
-    if os.path.exists('../../Doc/library/enum.rst'):
+    if os.path.exists(f"{os.path.dirname(__file__)}/../../Doc/library/enum.rst"):
         tests.addTests(doctest.DocFileSuite(
                 '../../Doc/library/enum.rst',
                 optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
+                module_relative=True
                 ))
     return tests
 
