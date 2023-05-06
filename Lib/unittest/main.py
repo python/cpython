@@ -9,6 +9,7 @@ from . import loader, runner
 from .signals import installHandler
 
 __unittest = True
+_NO_TESTS_EXITCODE = 5
 
 MAIN_EXAMPLES = """\
 Examples:
@@ -279,6 +280,12 @@ class TestProgram(object):
             testRunner = self.testRunner
         self.result = testRunner.run(self.test)
         if self.exit:
-            sys.exit(not self.result.wasSuccessful())
+            if self.result.testsRun == 0:
+                sys.exit(_NO_TESTS_EXITCODE)
+            elif self.result.wasSuccessful():
+                sys.exit(0)
+            else:
+                sys.exit(1)
+
 
 main = TestProgram

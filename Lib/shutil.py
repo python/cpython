@@ -332,7 +332,7 @@ if hasattr(os, 'listxattr'):
                 os.setxattr(dst, name, value, follow_symlinks=follow_symlinks)
             except OSError as e:
                 if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA,
-                                   errno.EINVAL):
+                                   errno.EINVAL, errno.EACCES):
                     raise
 else:
     def _copyxattr(*args, **kwargs):

@@ -380,7 +380,7 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 static const _PyRuntimeState initial = _PyRuntimeState_INIT(_PyRuntime);
 _Py_COMP_DIAG_POP
 
-#define NUMLOCKS 4
+#define NUMLOCKS 5
 
 static int
 alloc_for_runtime(PyThread_type_lock locks[NUMLOCKS])
@@ -434,6 +434,7 @@ init_runtime(_PyRuntimeState *runtime,
         &runtime->xidregistry.mutex,
         &runtime->getargs.mutex,
         &runtime->unicode_state.ids.lock,
+        &runtime->imports.extensions.mutex,
     };
     for (int i = 0; i < NUMLOCKS; i++) {
         assert(locks[i] != NULL);
@@ -518,6 +519,7 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
         &runtime->xidregistry.mutex,
         &runtime->getargs.mutex,
         &runtime->unicode_state.ids.lock,
+        &runtime->imports.extensions.mutex,
     };
     for (int i = 0; i < NUMLOCKS; i++) {
         FREE_LOCK(*lockptrs[i]);
@@ -546,6 +548,7 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
         &runtime->xidregistry.mutex,
         &runtime->getargs.mutex,
         &runtime->unicode_state.ids.lock,
+        &runtime->imports.extensions.mutex,
     };
     int reinit_err = 0;
     for (int i = 0; i < NUMLOCKS; i++) {
@@ -683,11 +686,11 @@ init_interpreter(PyInterpreterState *interp,
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
-    for(int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
+    for (int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
     for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
-        for(int e = 0; e < PY_MONITORING_EVENTS; e++) {
+        for (int e = 0; e < PY_MONITORING_EVENTS; e++) {
             interp->monitoring_callables[t][e] = NULL;
 
         }
@@ -831,11 +834,11 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
-    for(int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
+    for (int i = 0; i < PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
     for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
-        for(int e = 0; e < PY_MONITORING_EVENTS; e++) {
+        for (int e = 0; e < PY_MONITORING_EVENTS; e++) {
             Py_CLEAR(interp->monitoring_callables[t][e]);
         }
     }
@@ -1806,7 +1809,7 @@ int
 PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     /* Although the GIL is held, a few C API functions can be called
      * without the GIL held, and in particular some that create and
@@ -1860,17 +1863,11 @@ PyThreadState_Get(void)
 }
 
 
-PyThreadState *
-_PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
+static void
+_swap_thread_states(_PyRuntimeState *runtime,
+                    PyThreadState *oldts, PyThreadState *newts)
 {
-#if defined(Py_DEBUG)
-    /* This can be called from PyEval_RestoreThread(). Similar
-       to it, we need to ensure errno doesn't change.
-    */
-    int err = errno;
-#endif
-    PyThreadState *oldts = current_fast_get(runtime);
-
+    // XXX Do this only if oldts != NULL?
     current_fast_clear(runtime);
 
     if (oldts != NULL) {
@@ -1884,10 +1881,38 @@ _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
         current_fast_set(runtime, newts);
         tstate_activate(newts);
     }
+}
+
+PyThreadState *
+_PyThreadState_SwapNoGIL(PyThreadState *newts)
+{
+#if defined(Py_DEBUG)
+    /* This can be called from PyEval_RestoreThread(). Similar
+       to it, we need to ensure errno doesn't change.
+    */
+    int err = errno;
+#endif
+
+    PyThreadState *oldts = current_fast_get(&_PyRuntime);
+    _swap_thread_states(&_PyRuntime, oldts, newts);
 
 #if defined(Py_DEBUG)
     errno = err;
 #endif
+    return oldts;
+}
+
+PyThreadState *
+_PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
+{
+    PyThreadState *oldts = current_fast_get(runtime);
+    if (oldts != NULL) {
+        _PyEval_ReleaseLock(oldts);
+    }
+    _swap_thread_states(runtime, oldts, newts);
+    if (newts != NULL) {
+        _PyEval_AcquireLock(newts);
+    }
     return oldts;
 }
 
@@ -2183,7 +2208,7 @@ PyGILState_Ensure(void)
 
     /* Ensure that _PyEval_InitThreads() and _PyGILState_Init() have been
        called by Py_Initialize() */
-    assert(_PyEval_ThreadsInitialized(runtime));
+    assert(_PyEval_ThreadsInitialized());
     assert(gilstate_tss_initialized(runtime));
     assert(runtime->gilstate.autoInterpreterState != NULL);
 

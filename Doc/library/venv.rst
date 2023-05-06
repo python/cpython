@@ -55,7 +55,7 @@ point to the directories of the virtual environment,
 whereas :data:`sys.base_prefix` and :data:`sys.base_exec_prefix`
 point to those of the base Python used to create the environment.
 It is sufficient to check
-``sys.prefix == sys.base_prefix`` to determine if the current interpreter is
+``sys.prefix != sys.base_prefix`` to determine if the current interpreter is
 running from a virtual environment.
 
 A virtual environment may be "activated" using a script in its binary directory

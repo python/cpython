@@ -29,11 +29,12 @@ except ImportError:
 #
 
 class _BasePurePathSubclass(object):
-    init_called = False
+    def __init__(self, *pathsegments, session_id):
+        super().__init__(*pathsegments)
+        self.session_id = session_id
 
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.init_called = True
+    def with_segments(self, *pathsegments):
+        return type(self)(*pathsegments, session_id=self.session_id)
 
 
 class _BasePurePathTest(object):
@@ -81,9 +82,9 @@ class _BasePurePathTest(object):
                    r"where __fspath__ returns a str, not 'bytes'")
         with self.assertRaisesRegex(TypeError, message):
             P(b'a')
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, message):
             P(b'a', 'b')
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, message):
             P('a', b'b')
         with self.assertRaises(TypeError):
             P('a').joinpath(b'b')
@@ -121,20 +122,21 @@ class _BasePurePathTest(object):
         self._check_str_subclass('a/b.txt')
         self._check_str_subclass('/a/b.txt')
 
-    def test_init_called_common(self):
+    def test_with_segments_common(self):
         class P(_BasePurePathSubclass, self.cls):
             pass
-        p = P('foo', 'bar')
-        self.assertTrue((p / 'foo').init_called)
-        self.assertTrue(('foo' / p).init_called)
-        self.assertTrue(p.joinpath('foo').init_called)
-        self.assertTrue(p.with_name('foo').init_called)
-        self.assertTrue(p.with_stem('foo').init_called)
-        self.assertTrue(p.with_suffix('.foo').init_called)
-        self.assertTrue(p.relative_to('foo').init_called)
-        self.assertTrue(p.parent.init_called)
+        p = P('foo', 'bar', session_id=42)
+        self.assertEqual(42, (p / 'foo').session_id)
+        self.assertEqual(42, ('foo' / p).session_id)
+        self.assertEqual(42, p.joinpath('foo').session_id)
+        self.assertEqual(42, p.with_name('foo').session_id)
+        self.assertEqual(42, p.with_stem('foo').session_id)
+        self.assertEqual(42, p.with_suffix('.foo').session_id)
+        self.assertEqual(42, p.with_segments('foo').session_id)
+        self.assertEqual(42, p.relative_to('foo').session_id)
+        self.assertEqual(42, p.parent.session_id)
         for parent in p.parents:
-            self.assertTrue(parent.init_called)
+            self.assertEqual(42, parent.session_id)
 
     def _get_drive_root_parts(self, parts):
         path = self.cls(*parts)
@@ -1647,6 +1649,26 @@ class _BasePathTest(object):
             env['HOME'] = os.path.join(BASE, 'home')
             self._test_home(self.cls.home())
 
+    def test_with_segments(self):
+        class P(_BasePurePathSubclass, self.cls):
+            pass
+        p = P(BASE, session_id=42)
+        self.assertEqual(42, p.absolute().session_id)
+        self.assertEqual(42, p.resolve().session_id)
+        self.assertEqual(42, p.with_segments('~').expanduser().session_id)
+        self.assertEqual(42, (p / 'fileA').rename(p / 'fileB').session_id)
+        self.assertEqual(42, (p / 'fileB').replace(p / 'fileA').session_id)
+        if os_helper.can_symlink():
+            self.assertEqual(42, (p / 'linkA').readlink().session_id)
+        for path in p.iterdir():
+            self.assertEqual(42, path.session_id)
+        for path in p.glob('*'):
+            self.assertEqual(42, path.session_id)
+        for path in p.rglob('*'):
+            self.assertEqual(42, path.session_id)
+        for dirpath, dirnames, filenames in p.walk():
+            self.assertEqual(42, dirpath.session_id)
+
     def test_samefile(self):
         fileA_path = os.path.join(BASE, 'fileA')
         fileB_path = os.path.join(BASE, 'dirB', 'fileB')
@@ -1700,6 +1722,8 @@ class _BasePathTest(object):
             self.assertIs(True, (p / 'linkB').exists())
             self.assertIs(True, (p / 'linkB' / 'fileB').exists())
             self.assertIs(False, (p / 'linkA' / 'bah').exists())
+            self.assertIs(False, (p / 'brokenLink').exists())
+            self.assertIs(True, (p / 'brokenLink').exists(follow_symlinks=False))
         self.assertIs(False, (p / 'foo').exists())
         self.assertIs(False, P('/xyzzy').exists())
         self.assertIs(False, P(BASE + '\udfff').exists())
@@ -1806,11 +1830,25 @@ class _BasePathTest(object):
             _check(p.glob("*/fileB"), ['dirB/fileB'])
         else:
             _check(p.glob("*/fileB"), ['dirB/fileB', 'linkB/fileB'])
+        if os_helper.can_symlink():
+            _check(p.glob("brokenLink"), ['brokenLink'])
 
         if not os_helper.can_symlink():
             _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE"])
         else:
             _check(p.glob("*/"), ["dirA", "dirB", "dirC", "dirE", "linkB"])
+
+    def test_glob_case_sensitive(self):
+        P = self.cls
+        def _check(path, pattern, case_sensitive, expected):
+            actual = {str(q) for q in path.glob(pattern, case_sensitive=case_sensitive)}
+            expected = {str(P(BASE, q)) for q in expected}
+            self.assertEqual(actual, expected)
+        path = P(BASE)
+        _check(path, "DIRB/FILE*", True, [])
+        _check(path, "DIRB/FILE*", False, ["dirB/fileB"])
+        _check(path, "dirb/file*", True, [])
+        _check(path, "dirb/file*", False, ["dirB/fileB"])
 
     def test_rglob_common(self):
         def _check(glob, expected):
@@ -1892,8 +1930,13 @@ class _BasePathTest(object):
         P = self.cls
         p = P(BASE)
         self.assertEqual(set(p.glob("..")), { P(BASE, "..") })
+        self.assertEqual(set(p.glob("../..")), { P(BASE, "..", "..") })
+        self.assertEqual(set(p.glob("dirA/..")), { P(BASE, "dirA", "..") })
         self.assertEqual(set(p.glob("dirA/../file*")), { P(BASE, "dirA/../fileA") })
+        self.assertEqual(set(p.glob("dirA/../file*/..")), set())
         self.assertEqual(set(p.glob("../xyzzy")), set())
+        self.assertEqual(set(p.glob("xyzzy/..")), set())
+        self.assertEqual(set(p.glob("/".join([".."] * 50))), { P(BASE, *[".."] * 50)})
 
     @os_helper.skip_unless_symlink
     def test_glob_permissions(self):
@@ -3113,7 +3156,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         self.assertEqual(set(p.glob("FILEa")), { P(BASE, "fileA") })
         self.assertEqual(set(p.glob("*a\\")), { P(BASE, "dirA") })
         self.assertEqual(set(p.glob("F*a")), { P(BASE, "fileA") })
-        self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\FILEa"})
+        self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\fileA"})
         self.assertEqual(set(map(str, p.glob("F*a"))), {f"{p}\\fileA"})
 
     def test_rglob(self):
@@ -3121,7 +3164,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         p = P(BASE, "dirC")
         self.assertEqual(set(p.rglob("FILEd")), { P(BASE, "dirC/dirD/fileD") })
         self.assertEqual(set(p.rglob("*\\")), { P(BASE, "dirC/dirD") })
-        self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\FILEd"})
+        self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\fileD"})
 
     def test_expanduser(self):
         P = self.cls

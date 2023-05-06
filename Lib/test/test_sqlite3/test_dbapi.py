@@ -577,6 +577,30 @@ class ConnectionTests(unittest.TestCase):
                                    cx.executemany, "insert into t values(?)",
                                    ((v,) for v in range(3)))
 
+    def test_connection_config(self):
+        op = sqlite.SQLITE_DBCONFIG_ENABLE_FKEY
+        with memory_database() as cx:
+            with self.assertRaisesRegex(ValueError, "unknown"):
+                cx.getconfig(-1)
+
+            # Toggle and verify.
+            old = cx.getconfig(op)
+            new = not old
+            cx.setconfig(op, new)
+            self.assertEqual(cx.getconfig(op), new)
+
+            cx.setconfig(op)  # defaults to True
+            self.assertTrue(cx.getconfig(op))
+
+            # Check that foreign key support was actually enabled.
+            with cx:
+                cx.executescript("""
+                    create table t(t integer primary key);
+                    create table u(u, foreign key(u) references t(t));
+                """)
+            with self.assertRaisesRegex(sqlite.IntegrityError, "constraint"):
+                cx.execute("insert into u values(0)")
+
 
 class UninitialisedConnectionTests(unittest.TestCase):
     def setUp(self):
