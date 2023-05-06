@@ -567,6 +567,8 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg)
     _PyIO_State *state = get_io_state(mod);
     Py_VISIT(state->unsupported_operation);
 
+    Py_VISIT(state->PyIncrementalNewlineDecoder_Type);
+    Py_VISIT(state->PyRawIOBase_Type);
     Py_VISIT(state->PyBufferedIOBase_Type);
     Py_VISIT(state->PyBufferedRWPair_Type);
     Py_VISIT(state->PyBufferedRandom_Type);
@@ -576,8 +578,6 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->PyBytesIO_Type);
     Py_VISIT(state->PyFileIO_Type);
     Py_VISIT(state->PyIOBase_Type);
-    Py_VISIT(state->PyIncrementalNewlineDecoder_Type);
-    Py_VISIT(state->PyRawIOBase_Type);
     Py_VISIT(state->PyStringIO_Type);
     Py_VISIT(state->PyTextIOBase_Type);
     Py_VISIT(state->PyTextIOWrapper_Type);
@@ -594,6 +594,8 @@ iomodule_clear(PyObject *mod)
     _PyIO_State *state = get_io_state(mod);
     Py_CLEAR(state->unsupported_operation);
 
+    Py_CLEAR(state->PyIncrementalNewlineDecoder_Type);
+    Py_CLEAR(state->PyRawIOBase_Type);
     Py_CLEAR(state->PyBufferedIOBase_Type);
     Py_CLEAR(state->PyBufferedRWPair_Type);
     Py_CLEAR(state->PyBufferedRandom_Type);
@@ -603,8 +605,6 @@ iomodule_clear(PyObject *mod)
     Py_CLEAR(state->PyBytesIO_Type);
     Py_CLEAR(state->PyFileIO_Type);
     Py_CLEAR(state->PyIOBase_Type);
-    Py_CLEAR(state->PyIncrementalNewlineDecoder_Type);
-    Py_CLEAR(state->PyRawIOBase_Type);
     Py_CLEAR(state->PyStringIO_Type);
     Py_CLEAR(state->PyTextIOBase_Type);
     Py_CLEAR(state->PyTextIOWrapper_Type);

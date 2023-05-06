@@ -132,6 +132,8 @@ typedef struct {
     PyObject *unsupported_operation;
 
     /* Types */
+    PyTypeObject *PyIncrementalNewlineDecoder_Type;
+    PyTypeObject *PyRawIOBase_Type;
     PyTypeObject *PyBufferedIOBase_Type;
     PyTypeObject *PyBufferedRWPair_Type;
     PyTypeObject *PyBufferedRandom_Type;
@@ -141,8 +143,6 @@ typedef struct {
     PyTypeObject *PyBytesIO_Type;
     PyTypeObject *PyFileIO_Type;
     PyTypeObject *PyIOBase_Type;
-    PyTypeObject *PyIncrementalNewlineDecoder_Type;
-    PyTypeObject *PyRawIOBase_Type;
     PyTypeObject *PyStringIO_Type;
     PyTypeObject *PyTextIOBase_Type;
     PyTypeObject *PyTextIOWrapper_Type;
