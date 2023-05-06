@@ -1640,6 +1640,7 @@ class SubinterpImportTests(unittest.TestCase):
     )
     ISOLATED = dict(
         use_main_obmalloc=False,
+        own_gil=True,
     )
     NOT_ISOLATED = {k: not v for k, v in ISOLATED.items()}
 
@@ -1652,26 +1653,44 @@ class SubinterpImportTests(unittest.TestCase):
             os.set_blocking(r, False)
         return (r, w)
 
-    def import_script(self, name, fd, check_override=None):
+    def import_script(self, name, fd, filename=None, check_override=None):
         override_text = ''
         if check_override is not None:
             override_text = f'''
-            import _imp
-            _imp._override_multi_interp_extensions_check({check_override})
-            '''
-        return textwrap.dedent(f'''
-            import os, sys
-            {override_text}
-            try:
-                import {name}
-            except ImportError as exc:
-                text = 'ImportError: ' + str(exc)
-            else:
-                text = 'okay'
-            os.write({fd}, text.encode('utf-8'))
-            ''')
+                import _imp
+                _imp._override_multi_interp_extensions_check({check_override})
+                '''
+        if filename:
+            return textwrap.dedent(f'''
+                from importlib.util import spec_from_loader, module_from_spec
+                from importlib.machinery import ExtensionFileLoader
+                import os, sys
+                {override_text}
+                loader = ExtensionFileLoader({name!r}, {filename!r})
+                spec = spec_from_loader({name!r}, loader)
+                try:
+                    module = module_from_spec(spec)
+                    loader.exec_module(module)
+                except ImportError as exc:
+                    text = 'ImportError: ' + str(exc)
+                else:
+                    text = 'okay'
+                os.write({fd}, text.encode('utf-8'))
+                ''')
+        else:
+            return textwrap.dedent(f'''
+                import os, sys
+                {override_text}
+                try:
+                    import {name}
+                except ImportError as exc:
+                    text = 'ImportError: ' + str(exc)
+                else:
+                    text = 'okay'
+                os.write({fd}, text.encode('utf-8'))
+                ''')
 
-    def run_here(self, name, *,
+    def run_here(self, name, filename=None, *,
                  check_singlephase_setting=False,
                  check_singlephase_override=None,
                  isolated=False,
@@ -1700,26 +1719,30 @@ class SubinterpImportTests(unittest.TestCase):
         )
 
         r, w = self.pipe()
-        script = self.import_script(name, w, check_singlephase_override)
+        script = self.import_script(name, w, filename,
+                                    check_singlephase_override)
 
         ret = run_in_subinterp_with_config(script, **kwargs)
         self.assertEqual(ret, 0)
         return os.read(r, 100)
 
-    def check_compatible_here(self, name, *, strict=False, isolated=False):
+    def check_compatible_here(self, name, filename=None, *,
+                              strict=False,
+                              isolated=False,
+                              ):
         # Verify that the named module may be imported in a subinterpreter.
         # (See run_here() for more info.)
-        out = self.run_here(name,
+        out = self.run_here(name, filename,
                             check_singlephase_setting=strict,
                             isolated=isolated,
                             )
         self.assertEqual(out, b'okay')
 
-    def check_incompatible_here(self, name, *, isolated=False):
+    def check_incompatible_here(self, name, filename=None, *, isolated=False):
         # Differences from check_compatible_here():
         #  * verify that import fails
         #  * "strict" is always True
-        out = self.run_here(name,
+        out = self.run_here(name, filename,
                             check_singlephase_setting=True,
                             isolated=isolated,
                             )
@@ -1819,6 +1842,24 @@ class SubinterpImportTests(unittest.TestCase):
             self.check_compatible_here(module, strict=True)
         with self.subTest(f'{module}: strict, fresh'):
             self.check_compatible_fresh(module, strict=True)
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_multi_init_extension_non_isolated_compat(self):
+        modname = '_test_non_isolated'
+        filename = _testmultiphase.__file__
+        loader = ExtensionFileLoader(modname, filename)
+        spec = importlib.util.spec_from_loader(modname, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        sys.modules[modname] = module
+
+        require_extension(module)
+        with self.subTest(f'{modname}: isolated'):
+            self.check_incompatible_here(modname, filename, isolated=True)
+        with self.subTest(f'{modname}: not isolated'):
+            self.check_incompatible_here(modname, filename, isolated=False)
+        with self.subTest(f'{modname}: not strict'):
+            self.check_compatible_here(modname, filename, strict=False)
 
     def test_python_compat(self):
         module = 'threading'

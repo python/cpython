@@ -583,13 +583,18 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
     Py_VISIT(state->locale_module);
     Py_VISIT(state->unsupported_operation);
 
+    Py_VISIT(state->PyIncrementalNewlineDecoder_Type);
+    Py_VISIT(state->PyRawIOBase_Type);
+    Py_VISIT(state->PyBufferedIOBase_Type);
     Py_VISIT(state->PyBufferedRWPair_Type);
     Py_VISIT(state->PyBufferedRandom_Type);
     Py_VISIT(state->PyBufferedReader_Type);
     Py_VISIT(state->PyBufferedWriter_Type);
+    Py_VISIT(state->PyBytesIOBuffer_Type);
     Py_VISIT(state->PyBytesIO_Type);
     Py_VISIT(state->PyFileIO_Type);
     Py_VISIT(state->PyStringIO_Type);
+    Py_VISIT(state->PyTextIOBase_Type);
     Py_VISIT(state->PyTextIOWrapper_Type);
     return 0;
 }
@@ -604,13 +609,18 @@ iomodule_clear(PyObject *mod) {
         Py_CLEAR(state->locale_module);
     Py_CLEAR(state->unsupported_operation);
 
+    Py_CLEAR(state->PyIncrementalNewlineDecoder_Type);
+    Py_CLEAR(state->PyRawIOBase_Type);
+    Py_CLEAR(state->PyBufferedIOBase_Type);
     Py_CLEAR(state->PyBufferedRWPair_Type);
     Py_CLEAR(state->PyBufferedRandom_Type);
     Py_CLEAR(state->PyBufferedReader_Type);
     Py_CLEAR(state->PyBufferedWriter_Type);
+    Py_CLEAR(state->PyBytesIOBuffer_Type);
     Py_CLEAR(state->PyBytesIO_Type);
     Py_CLEAR(state->PyFileIO_Type);
     Py_CLEAR(state->PyStringIO_Type);
+    Py_CLEAR(state->PyTextIOBase_Type);
     Py_CLEAR(state->PyTextIOWrapper_Type);
     return 0;
 }
@@ -749,24 +759,33 @@ PyInit__io(void)
         }
     }
 
+    // Base classes
+    state->PyIncrementalNewlineDecoder_Type = (PyTypeObject *)Py_NewRef(&PyIncrementalNewlineDecoder_Type);
+
+    // PyIOBase_Type subclasses
+    state->PyRawIOBase_Type = (PyTypeObject *)Py_NewRef(&PyRawIOBase_Type);
+    state->PyBufferedIOBase_Type = (PyTypeObject *)Py_NewRef(&PyBufferedIOBase_Type);
+    state->PyTextIOBase_Type = (PyTypeObject *)Py_NewRef(&PyTextIOBase_Type);
+
     // PyBufferedIOBase_Type(PyIOBase_Type) subclasses
-    ADD_TYPE(m, state->PyBytesIO_Type, &bytesio_spec, &PyBufferedIOBase_Type);
+    ADD_TYPE(m, state->PyBytesIO_Type, &bytesio_spec, state->PyBufferedIOBase_Type);
     ADD_TYPE(m, state->PyBufferedWriter_Type, &bufferedwriter_spec,
-             &PyBufferedIOBase_Type);
+             state->PyBufferedIOBase_Type);
     ADD_TYPE(m, state->PyBufferedReader_Type, &bufferedreader_spec,
-             &PyBufferedIOBase_Type);
+             state->PyBufferedIOBase_Type);
     ADD_TYPE(m, state->PyBufferedRWPair_Type, &bufferedrwpair_spec,
-             &PyBufferedIOBase_Type);
+             state->PyBufferedIOBase_Type);
     ADD_TYPE(m, state->PyBufferedRandom_Type, &bufferedrandom_spec,
-             &PyBufferedIOBase_Type);
+             state->PyBufferedIOBase_Type);
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
-    ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, &PyRawIOBase_Type);
+    state->PyBytesIOBuffer_Type = (PyTypeObject *)Py_NewRef(&_PyBytesIOBuffer_Type);
+    ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, state->PyRawIOBase_Type);
 
     // PyTextIOBase_Type(PyIOBase_Type) subclasses
-    ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, &PyTextIOBase_Type);
+    ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, state->PyTextIOBase_Type);
     ADD_TYPE(m, state->PyTextIOWrapper_Type, &textiowrapper_spec,
-             &PyTextIOBase_Type);
+             state->PyTextIOBase_Type);
 
     state->initialized = 1;
 

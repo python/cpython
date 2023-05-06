@@ -441,6 +441,7 @@ static int execfunc(PyObject *m)
 
 static PyModuleDef_Slot main_slots[] = {
     {Py_mod_exec, execfunc},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 
@@ -745,6 +746,7 @@ PyInit__testmultiphase_create_unreported_exception(void)
 static PyModuleDef_Slot slots_nonmodule_with_exec_slots[] = {
     {Py_mod_create, createfunc_nonmodule},
     {Py_mod_exec, execfunc},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 
@@ -765,6 +767,7 @@ execfunc_err(PyObject *mod)
 
 static PyModuleDef_Slot slots_exec_err[] = {
     {Py_mod_exec, execfunc_err},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 
@@ -786,6 +789,7 @@ execfunc_raise(PyObject *spec)
 
 static PyModuleDef_Slot slots_exec_raise[] = {
     {Py_mod_exec, execfunc_raise},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 
@@ -807,6 +811,7 @@ execfunc_unreported_exception(PyObject *mod)
 
 static PyModuleDef_Slot slots_exec_unreported_exception[] = {
     {Py_mod_exec, execfunc_unreported_exception},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 
@@ -845,6 +850,7 @@ meth_state_access_exec(PyObject *m)
 
 static PyModuleDef_Slot meth_state_access_slots[] = {
     {Py_mod_exec, meth_state_access_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
@@ -883,4 +889,23 @@ PyInit__test_module_state_shared(void)
         return NULL;
     }
     return module;
+}
+
+
+/* multiple interpreters supports */
+
+static PyModuleDef_Slot non_isolated_slots[] = {
+    {Py_mod_exec, execfunc},
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    {0, NULL},
+};
+
+static PyModuleDef non_isolated_def = TEST_MODULE_DEF("_test_non_isolated",
+                                                      non_isolated_slots,
+                                                      testexport_methods);
+
+PyMODINIT_FUNC
+PyInit__test_non_isolated(void)
+{
+    return PyModuleDef_Init(&non_isolated_def);
 }

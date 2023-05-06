@@ -306,6 +306,21 @@ _nb_ops = [
     ("NB_INPLACE_XOR", "^="),
 ]
 
+_intrinsic_1_descs = [
+    "INTRINSIC_1_INVALID",
+    "INTRINSIC_PRINT",
+    "INTRINSIC_IMPORT_STAR",
+    "INTRINSIC_STOPITERATION_ERROR",
+    "INTRINSIC_ASYNC_GEN_WRAP",
+    "INTRINSIC_UNARY_POSITIVE",
+    "INTRINSIC_LIST_TO_TUPLE",
+]
+
+_intrinsic_2_descs = [
+    'INTRINSIC_2_INVALID',
+    'INTRINSIC_PREP_RERAISE_STAR',
+    ]
+
 _specializations = {
     "BINARY_OP": [
         "BINARY_OP_ADD_FLOAT",

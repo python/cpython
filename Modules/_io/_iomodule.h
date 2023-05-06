@@ -5,6 +5,7 @@
 #include "exports.h"
 
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 #include "structmember.h"
 
 /* ABCs */
@@ -147,13 +148,18 @@ typedef struct {
     PyObject *unsupported_operation;
 
     /* Types */
+    PyTypeObject *PyIncrementalNewlineDecoder_Type;
+    PyTypeObject *PyRawIOBase_Type;
+    PyTypeObject *PyBufferedIOBase_Type;
     PyTypeObject *PyBufferedRWPair_Type;
     PyTypeObject *PyBufferedRandom_Type;
     PyTypeObject *PyBufferedReader_Type;
     PyTypeObject *PyBufferedWriter_Type;
+    PyTypeObject *PyBytesIOBuffer_Type;
     PyTypeObject *PyBytesIO_Type;
     PyTypeObject *PyFileIO_Type;
     PyTypeObject *PyStringIO_Type;
+    PyTypeObject *PyTextIOBase_Type;
     PyTypeObject *PyTextIOWrapper_Type;
 } _PyIO_State;
 
@@ -164,6 +170,14 @@ static inline _PyIO_State *
 get_io_state(PyObject *module)
 {
     void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (_PyIO_State *)state;
+}
+
+static inline _PyIO_State *
+get_io_state_by_cls(PyTypeObject *cls)
+{
+    void *state = _PyType_GetModuleState(cls);
     assert(state != NULL);
     return (_PyIO_State *)state;
 }
