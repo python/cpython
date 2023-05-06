@@ -614,6 +614,9 @@ class Ellipsis(Constant, metaclass=_ABC):
             return Constant(..., *args, **kwargs)
         return Constant.__new__(cls, *args, **kwargs)
 
+# Keep another reference to Ellipsis in the global namespace
+# so it can be referenced in Ellipsis.__new__
+# (The original "Ellipsis" name is removed from the global namespace later on)
 _ast_Ellipsis = Ellipsis
 
 _const_types = {
