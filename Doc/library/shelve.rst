@@ -6,7 +6,7 @@
 
 **Source code:** :source:`Lib/shelve.py`
 
-.. index:: module: pickle
+.. index:: pair: module; pickle
 
 --------------
 
@@ -95,8 +95,8 @@ Restrictions
 ------------
 
   .. index::
-     module: dbm.ndbm
-     module: dbm.gnu
+     pair: module; dbm.ndbm
+     pair: module; dbm.gnu
 
 * The choice of which database package will be used (such as :mod:`dbm.ndbm` or
   :mod:`dbm.gnu`) depends on which interface is available.  Therefore it is not

@@ -978,6 +978,12 @@ PyDescr_NewMember(PyTypeObject *type, PyMemberDef *member)
 {
     PyMemberDescrObject *descr;
 
+    if (member->flags & Py_RELATIVE_OFFSET) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "PyDescr_NewMember used with Py_RELATIVE_OFFSET");
+        return NULL;
+    }
     descr = (PyMemberDescrObject *)descr_new(&PyMemberDescr_Type,
                                              type, member->name);
     if (descr != NULL)
@@ -1712,7 +1718,9 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
     if (new == NULL)
         return NULL;
 
-    Py_XSETREF(((propertyobject *) new)->prop_name, Py_XNewRef(pold->prop_name));
+    if (PyObject_TypeCheck((new), &PyProperty_Type)) {
+        Py_XSETREF(((propertyobject *) new)->prop_name, Py_XNewRef(pold->prop_name));
+    }
     return new;
 }
 

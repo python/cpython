@@ -5,7 +5,9 @@
 
 /* Windows socket errors (WSA*)  */
 #ifdef MS_WINDOWS
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 /* The following constants were added to errno.h in VS2010 but have
    preferred WSA equivalents. */
@@ -938,6 +940,7 @@ errno_exec(PyObject *module)
 
 static PyModuleDef_Slot errno_slots[] = {
     {Py_mod_exec, errno_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

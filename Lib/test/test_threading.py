@@ -20,6 +20,7 @@ import subprocess
 import signal
 import textwrap
 import traceback
+import warnings
 
 from unittest import mock
 from test import lock_tests
@@ -563,7 +564,7 @@ class ThreadTests(BaseTestCase):
         # Issue #14308: a dummy thread in the active list doesn't mess up
         # the after-fork mechanism.
         code = """if 1:
-            import _thread, threading, os, time
+            import _thread, threading, os, time, warnings
 
             def background_thread(evt):
                 # Creates and registers the _DummyThread instance
@@ -575,11 +576,16 @@ class ThreadTests(BaseTestCase):
             _thread.start_new_thread(background_thread, (evt,))
             evt.wait()
             assert threading.active_count() == 2, threading.active_count()
-            if os.fork() == 0:
-                assert threading.active_count() == 1, threading.active_count()
-                os._exit(0)
-            else:
-                os.wait()
+            with warnings.catch_warnings(record=True) as ws:
+                warnings.filterwarnings(
+                        "always", category=DeprecationWarning)
+                if os.fork() == 0:
+                    assert threading.active_count() == 1, threading.active_count()
+                    os._exit(0)
+                else:
+                    assert ws[0].category == DeprecationWarning, ws[0]
+                    assert 'fork' in str(ws[0].message), ws[0]
+                    os.wait()
         """
         _, out, err = assert_python_ok("-c", code)
         self.assertEqual(out, b'')
@@ -598,13 +604,15 @@ class ThreadTests(BaseTestCase):
         for i in range(20):
             t = threading.Thread(target=lambda: None)
             t.start()
-            pid = os.fork()
-            if pid == 0:
-                os._exit(11 if t.is_alive() else 10)
-            else:
-                t.join()
+            # Ignore the warning about fork with threads.
+            with warnings.catch_warnings(category=DeprecationWarning,
+                                         action="ignore"):
+                if (pid := os.fork()) == 0:
+                    os._exit(11 if t.is_alive() else 10)
+                else:
+                    t.join()
 
-                support.wait_process(pid, exitcode=10)
+                    support.wait_process(pid, exitcode=10)
 
     def test_main_thread(self):
         main = threading.main_thread()
@@ -645,21 +653,26 @@ class ThreadTests(BaseTestCase):
     @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
     def test_main_thread_after_fork_from_nonmain_thread(self):
         code = """if 1:
-            import os, threading, sys
+            import os, threading, sys, warnings
             from test import support
 
             def func():
-                pid = os.fork()
-                if pid == 0:
-                    main = threading.main_thread()
-                    print(main.name)
-                    print(main.ident == threading.current_thread().ident)
-                    print(main.ident == threading.get_ident())
-                    # stdout is fully buffered because not a tty,
-                    # we have to flush before exit.
-                    sys.stdout.flush()
-                else:
-                    support.wait_process(pid, exitcode=0)
+                with warnings.catch_warnings(record=True) as ws:
+                    warnings.filterwarnings(
+                            "always", category=DeprecationWarning)
+                    pid = os.fork()
+                    if pid == 0:
+                        main = threading.main_thread()
+                        print(main.name)
+                        print(main.ident == threading.current_thread().ident)
+                        print(main.ident == threading.get_ident())
+                        # stdout is fully buffered because not a tty,
+                        # we have to flush before exit.
+                        sys.stdout.flush()
+                    else:
+                        assert ws[0].category == DeprecationWarning, ws[0]
+                        assert 'fork' in str(ws[0].message), ws[0]
+                        support.wait_process(pid, exitcode=0)
 
             th = threading.Thread(target=func)
             th.start()
@@ -667,7 +680,7 @@ class ThreadTests(BaseTestCase):
         """
         _, out, err = assert_python_ok("-c", code)
         data = out.decode().replace('\r', '')
-        self.assertEqual(err, b"")
+        self.assertEqual(err.decode('utf-8'), "")
         self.assertEqual(data, "Thread-1 (func)\nTrue\nTrue\n")
 
     def test_main_thread_during_shutdown(self):
@@ -1173,15 +1186,18 @@ class ThreadJoinOnShutdown(BaseTestCase):
             else:
                 os._exit(50)
 
-        # start a bunch of threads that will fork() child processes
-        threads = []
-        for i in range(16):
-            t = threading.Thread(target=do_fork_and_wait)
-            threads.append(t)
-            t.start()
+        # Ignore the warning about fork with threads.
+        with warnings.catch_warnings(category=DeprecationWarning,
+                                     action="ignore"):
+            # start a bunch of threads that will fork() child processes
+            threads = []
+            for i in range(16):
+                t = threading.Thread(target=do_fork_and_wait)
+                threads.append(t)
+                t.start()
 
-        for t in threads:
-            t.join()
+            for t in threads:
+                t.join()
 
     @support.requires_fork()
     def test_clear_threads_states_after_fork(self):
@@ -1194,18 +1210,22 @@ class ThreadJoinOnShutdown(BaseTestCase):
             threads.append(t)
             t.start()
 
-        pid = os.fork()
-        if pid == 0:
-            # check that threads states have been cleared
-            if len(sys._current_frames()) == 1:
-                os._exit(51)
-            else:
-                os._exit(52)
-        else:
-            support.wait_process(pid, exitcode=51)
-
-        for t in threads:
-            t.join()
+        try:
+            # Ignore the warning about fork with threads.
+            with warnings.catch_warnings(category=DeprecationWarning,
+                                         action="ignore"):
+                pid = os.fork()
+                if pid == 0:
+                    # check that threads states have been cleared
+                    if len(sys._current_frames()) == 1:
+                        os._exit(51)
+                    else:
+                        os._exit(52)
+                else:
+                    support.wait_process(pid, exitcode=51)
+        finally:
+            for t in threads:
+                t.join()
 
 
 class SubinterpThreadingTests(BaseTestCase):
@@ -1323,10 +1343,13 @@ class SubinterpThreadingTests(BaseTestCase):
             import test.support
             test.support.run_in_subinterp_with_config(
                 {subinterp_code!r},
+                use_main_obmalloc=True,
                 allow_fork=True,
                 allow_exec=True,
                 allow_threads={allowed},
                 allow_daemon_threads={daemon_allowed},
+                check_multi_interp_extensions=False,
+                own_gil=False,
             )
             """)
         with test.support.SuppressCrashReport():
@@ -1501,6 +1524,37 @@ class ThreadingExceptionTests(BaseTestCase):
         rc, out, err = assert_python_ok("-c", script)
         self.assertEqual(out, b'')
         self.assertNotIn("Unhandled exception", err.decode())
+
+    def test_print_exception_gh_102056(self):
+        # This used to crash. See gh-102056.
+        script = r"""if True:
+            import time
+            import threading
+            import _thread
+
+            def f():
+                try:
+                    f()
+                except RecursionError:
+                    f()
+
+            def g():
+                try:
+                    raise ValueError()
+                except* ValueError:
+                    f()
+
+            def h():
+                time.sleep(1)
+                _thread.interrupt_main()
+
+            t = threading.Thread(target=h)
+            t.start()
+            g()
+            t.join()
+            """
+
+        assert_python_failure("-c", script)
 
     def test_bare_raise_in_brand_new_thread(self):
         def bare_raise():

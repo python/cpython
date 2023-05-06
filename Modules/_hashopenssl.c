@@ -32,12 +32,11 @@
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
-#include <openssl/crypto.h>
+#include <openssl/crypto.h>       // FIPS_mode()
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
 #include <openssl/err.h>
 
-#include <openssl/crypto.h>       // FIPS_mode()
 
 #ifndef OPENSSL_THREADS
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
@@ -356,7 +355,7 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
         }
     }
     if (digest == NULL) {
-        _setException(PyExc_ValueError, "unsupported hash type %s", name);
+        _setException(state->unsupported_digestmod_error, "unsupported hash type %s", name);
         return NULL;
     }
     return digest;
@@ -2261,6 +2260,7 @@ static PyModuleDef_Slot hashlib_slots[] = {
     {Py_mod_exec, hashlib_md_meth_names},
     {Py_mod_exec, hashlib_init_constructors},
     {Py_mod_exec, hashlib_exception},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

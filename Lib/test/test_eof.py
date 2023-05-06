@@ -4,6 +4,7 @@ import sys
 from test import support
 from test.support import os_helper
 from test.support import script_helper
+from test.support import warnings_helper
 import unittest
 
 class EOFTestCase(unittest.TestCase):
@@ -36,10 +37,11 @@ class EOFTestCase(unittest.TestCase):
             rc, out, err = script_helper.assert_python_failure(file_name)
         self.assertIn(b'unterminated triple-quoted string literal (detected at line 3)', err)
 
+    @warnings_helper.ignore_warnings(category=SyntaxWarning)
     def test_eof_with_line_continuation(self):
         expect = "unexpected EOF while parsing (<string>, line 1)"
         try:
-            compile('"\\xhh" \\',  '<string>', 'exec', dont_inherit=True)
+            compile('"\\Xhh" \\', '<string>', 'exec')
         except SyntaxError as msg:
             self.assertEqual(str(msg), expect)
         else:

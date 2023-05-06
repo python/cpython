@@ -5,9 +5,9 @@
 
 /*[clinic input]
 module _io
-class _io.BytesIO "bytesio *" "&PyBytesIO_Type"
+class _io.BytesIO "bytesio *" "clinic_state()->PyBytesIO_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7f50ec034f5c0b26]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=48ede2f330f847c3]*/
 
 typedef struct {
     PyObject_HEAD
@@ -308,14 +308,18 @@ _io_BytesIO_flush_impl(bytesio *self)
 /*[clinic input]
 _io.BytesIO.getbuffer
 
+    cls: defining_class
+    /
+
 Get a read-write view over the contents of the BytesIO object.
 [clinic start generated code]*/
 
 static PyObject *
-_io_BytesIO_getbuffer_impl(bytesio *self)
-/*[clinic end generated code: output=72cd7c6e13aa09ed input=8f738ef615865176]*/
+_io_BytesIO_getbuffer_impl(bytesio *self, PyTypeObject *cls)
+/*[clinic end generated code: output=045091d7ce87fe4e input=0668fbb48f95dffa]*/
 {
-    PyTypeObject *type = &_PyBytesIOBuffer_Type;
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    PyTypeObject *type = state->PyBytesIOBuffer_Type;
     bytesiobuf *buf;
     PyObject *view;
 
@@ -881,6 +885,7 @@ bytesio_setstate(bytesio *self, PyObject *state)
 static void
 bytesio_dealloc(bytesio *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     if (self->exports > 0) {
         PyErr_SetString(PyExc_SystemError,
@@ -891,7 +896,8 @@ bytesio_dealloc(bytesio *self)
     Py_CLEAR(self->dict);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
-    Py_TYPE(self)->tp_free(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -957,22 +963,21 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
 static PyObject *
 bytesio_sizeof(bytesio *self, void *unused)
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(self));
+    size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->buf && !SHARED_BUF(self)) {
-        Py_ssize_t s = _PySys_GetSizeOf(self->buf);
-        if (s == -1) {
+        size_t s = _PySys_GetSizeOf(self->buf);
+        if (s == (size_t)-1) {
             return NULL;
         }
         res += s;
     }
-    return PyLong_FromSsize_t(res);
+    return PyLong_FromSize_t(res);
 }
 
 static int
 bytesio_traverse(bytesio *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }
@@ -985,7 +990,9 @@ bytesio_clear(bytesio *self)
 }
 
 
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/bytesio.c.h"
+#undef clinic_state
 
 static PyGetSetDef bytesio_getsetlist[] = {
     {"closed",  (getter)bytesio_get_closed, NULL,
@@ -1018,48 +1025,34 @@ static struct PyMethodDef bytesio_methods[] = {
     {NULL, NULL}        /* sentinel */
 };
 
-PyTypeObject PyBytesIO_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io.BytesIO",                             /*tp_name*/
-    sizeof(bytesio),                     /*tp_basicsize*/
-    0,                                         /*tp_itemsize*/
-    (destructor)bytesio_dealloc,               /*tp_dealloc*/
-    0,                                         /*tp_vectorcall_offset*/
-    0,                                         /*tp_getattr*/
-    0,                                         /*tp_setattr*/
-    0,                                         /*tp_as_async*/
-    0,                                         /*tp_repr*/
-    0,                                         /*tp_as_number*/
-    0,                                         /*tp_as_sequence*/
-    0,                                         /*tp_as_mapping*/
-    0,                                         /*tp_hash*/
-    0,                                         /*tp_call*/
-    0,                                         /*tp_str*/
-    0,                                         /*tp_getattro*/
-    0,                                         /*tp_setattro*/
-    0,                                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-    Py_TPFLAGS_HAVE_GC,                        /*tp_flags*/
-    _io_BytesIO___init____doc__,               /*tp_doc*/
-    (traverseproc)bytesio_traverse,            /*tp_traverse*/
-    (inquiry)bytesio_clear,                    /*tp_clear*/
-    0,                                         /*tp_richcompare*/
-    offsetof(bytesio, weakreflist),      /*tp_weaklistoffset*/
-    PyObject_SelfIter,                         /*tp_iter*/
-    (iternextfunc)bytesio_iternext,            /*tp_iternext*/
-    bytesio_methods,                           /*tp_methods*/
-    0,                                         /*tp_members*/
-    bytesio_getsetlist,                        /*tp_getset*/
-    0,                                         /*tp_base*/
-    0,                                         /*tp_dict*/
-    0,                                         /*tp_descr_get*/
-    0,                                         /*tp_descr_set*/
-    offsetof(bytesio, dict),             /*tp_dictoffset*/
-    _io_BytesIO___init__,                      /*tp_init*/
-    0,                                         /*tp_alloc*/
-    bytesio_new,                               /*tp_new*/
+static PyMemberDef bytesio_members[] = {
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(bytesio, weakreflist), READONLY},
+    {"__dictoffset__", T_PYSSIZET, offsetof(bytesio, dict), READONLY},
+    {NULL}
 };
 
+static PyType_Slot bytesio_slots[] = {
+    {Py_tp_dealloc, bytesio_dealloc},
+    {Py_tp_doc, (void *)_io_BytesIO___init____doc__},
+    {Py_tp_traverse, bytesio_traverse},
+    {Py_tp_clear, bytesio_clear},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, bytesio_iternext},
+    {Py_tp_methods, bytesio_methods},
+    {Py_tp_members, bytesio_members},
+    {Py_tp_getset, bytesio_getsetlist},
+    {Py_tp_init, _io_BytesIO___init__},
+    {Py_tp_new, bytesio_new},
+    {0, NULL},
+};
+
+PyType_Spec bytesio_spec = {
+    .name = "_io.BytesIO",
+    .basicsize = sizeof(bytesio),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = bytesio_slots,
+};
 
 /*
  * Implementation of the small intermediate object used by getbuffer().

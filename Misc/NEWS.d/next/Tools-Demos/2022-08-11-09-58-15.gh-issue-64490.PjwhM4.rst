@@ -1,7 +1,0 @@
-Argument Clinic varargs bugfixes
-
-* Fix out-of-bounds error in :c:func:`!_PyArg_UnpackKeywordsWithVararg`.
-* Fix incorrect check which allowed more than one varargs in clinic.py.
-* Fix miscalculation of ``noptargs`` in generated code.
-* Do not generate ``noptargs`` when there is a vararg argument and no optional argument.
-

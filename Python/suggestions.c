@@ -41,10 +41,8 @@ substitution_cost(char a, char b)
 static Py_ssize_t
 levenshtein_distance(const char *a, size_t a_size,
                      const char *b, size_t b_size,
-                     size_t max_cost)
+                     size_t max_cost, size_t *buffer)
 {
-    static size_t buffer[MAX_STRING_SIZE];
-
     // Both strings are the same (by identity)
     if (a == b) {
         return 0;
@@ -147,12 +145,16 @@ calculate_suggestions(PyObject *dir,
     if (name_str == NULL) {
         return NULL;
     }
-
+    size_t *buffer = PyMem_New(size_t, MAX_STRING_SIZE);
+    if (buffer == NULL) {
+        return PyErr_NoMemory();
+    }
     for (int i = 0; i < dir_size; ++i) {
         PyObject *item = PyList_GET_ITEM(dir, i);
         Py_ssize_t item_size;
         const char *item_str = PyUnicode_AsUTF8AndSize(item, &item_size);
         if (item_str == NULL) {
+            PyMem_Free(buffer);
             return NULL;
         }
         if (PyUnicode_CompareWithASCIIString(name, item_str) == 0) {
@@ -163,8 +165,8 @@ calculate_suggestions(PyObject *dir,
         // Don't take matches we've already beaten.
         max_distance = Py_MIN(max_distance, suggestion_distance - 1);
         Py_ssize_t current_distance =
-            levenshtein_distance(name_str, name_size,
-                                 item_str, item_size, max_distance);
+            levenshtein_distance(name_str, name_size, item_str,
+                                 item_size, max_distance, buffer);
         if (current_distance > max_distance) {
             continue;
         }
@@ -173,6 +175,7 @@ calculate_suggestions(PyObject *dir,
             suggestion_distance = current_distance;
         }
     }
+    PyMem_Free(buffer);
     return Py_XNewRef(suggestion);
 }
 
@@ -238,7 +241,7 @@ get_suggestions_for_name_error(PyObject* name, PyFrameObject* frame)
         if (!self) {
             goto error;
         }
-        
+
         if (PyObject_HasAttr(self, name)) {
             Py_DECREF(dir);
             return PyUnicode_FromFormat("self.%S", name);
@@ -401,6 +404,14 @@ _Py_UTF8_Edit_Cost(PyObject *a, PyObject *b, Py_ssize_t max_cost)
     if (max_cost == -1) {
         max_cost = MOVE_COST * Py_MAX(size_a, size_b);
     }
-    return levenshtein_distance(utf8_a, size_a, utf8_b, size_b, max_cost);
+    size_t *buffer = PyMem_New(size_t, MAX_STRING_SIZE);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    Py_ssize_t res = levenshtein_distance(utf8_a, size_a,
+                                    utf8_b, size_b, max_cost, buffer);
+    PyMem_Free(buffer);
+    return res;
 }
 

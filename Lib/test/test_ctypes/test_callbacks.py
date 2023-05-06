@@ -1,4 +1,3 @@
-import sys
 import functools
 import unittest
 from test import support
