@@ -541,7 +541,7 @@ _PyEval_InitGIL(PyThreadState *tstate, int own_gil)
     }
     else {
         PyThread_init_thread();
-        // XXX per-interpreter GIL: switch to interp->ceval._gil.
+        // XXX per-interpreter GIL: switch to interp->_gil.
         init_own_gil(tstate->interp, &tstate->interp->runtime->ceval.gil);
         locked = 0;
     }
