@@ -3582,7 +3582,17 @@ def deprecated(
     When this decorator is applied to an object, the type checker
     will generate a diagnostic on usage of the deprecated object.
 
-    No runtime warning is issued. The decorator sets the ``__deprecated__``
+    If the deprecated object is a type, a warning will be
+    issued on instantiation, and if it is a callable, a warning
+    will be issued on calls. By default, the warning is a
+    ``DeprecationWarning``, but the *category* argument
+    can be used to issue a different warning class. If *category*
+    is ``None``, no warning is issued.
+    If *stacklevel* is 1 (the default), the warning is issued at
+    the immediate call site. To issue the warning higher in the stack,
+    *stacklevel* can be set to a different value.
+
+    The decorator sets the ``__deprecated__``
     attribute on the decorated object to the deprecation message
     passed to the decorator. If applied to an overload, the decorator
     must be after the ``@overload`` decorator for the attribute to
