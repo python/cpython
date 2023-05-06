@@ -300,18 +300,26 @@ _PyDict_DebugMallocStats(FILE *out)
 
 static void free_keys_object(PyInterpreterState *interp, PyDictKeysObject *keys);
 
+// XXX Switch to Py_INCREF()?
 static inline void
 dictkeys_incref(PyDictKeysObject *dk)
 {
+    if (dk->dk_refcnt == _Py_IMMORTAL_REFCNT) {
+        return;
+    }
 #ifdef Py_REF_DEBUG
     _Py_IncRefTotal(_PyInterpreterState_GET());
 #endif
     dk->dk_refcnt++;
 }
 
+// XXX Switch to Py_DECREF()?
 static inline void
 dictkeys_decref(PyInterpreterState *interp, PyDictKeysObject *dk)
 {
+    if (dk->dk_refcnt == _Py_IMMORTAL_REFCNT) {
+        return;
+    }
     assert(dk->dk_refcnt > 0);
 #ifdef Py_REF_DEBUG
     _Py_DecRefTotal(_PyInterpreterState_GET());
@@ -447,7 +455,7 @@ estimate_log2_keysize(Py_ssize_t n)
  * (which cannot fail and thus can do no allocation).
  */
 static PyDictKeysObject empty_keys_struct = {
-        1, /* dk_refcnt */
+        _Py_IMMORTAL_REFCNT, /* dk_refcnt */
         0, /* dk_log2_size */
         0, /* dk_log2_index_bytes */
         DICT_KEYS_UNICODE, /* dk_kind */
