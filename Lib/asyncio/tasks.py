@@ -935,8 +935,8 @@ def create_eager_task_factory(custom_task_constructor):
     Creates a function suitable for use as a task factory on an event-loop.
     The tasks created will be started immediately (rather than being first
     scheduled to an event loop). The constructor argument can be any callable
-    that constructs a Task-compatible object and supports the eager_start
-    keyword argument.
+    that returns a ``Task`` compatible object and has a signature compatible
+    with ``Task.__init__``, including the ``eager_start`` keyword argument.
     """
 
     def factory(loop, coro, *, name=None, context=None):
