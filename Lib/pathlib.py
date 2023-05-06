@@ -664,7 +664,7 @@ class PurePath(object):
         # ntpath.isabs() is defective - see GH-44626 .
         if self._flavour is ntpath:
             return bool(self.drive and self.root)
-        return self._flavour.isabs(self)
+        return self._flavour.isabs(self._raw_path)
 
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
@@ -873,6 +873,15 @@ class Path(PurePath):
             cwd = self._flavour.abspath(self.drive)
         else:
             cwd = os.getcwd()
+            # Fast path for "empty" paths, e.g. Path("."), Path("") or Path().
+            # We pass only one argument to with_segments() to avoid the cost
+            # of joining, and we exploit the fact that getcwd() returns a
+            # fully-normalized string by storing it in _str. This is used to
+            # implement Path.cwd().
+            if not self.root and not self._tail:
+                result = self.with_segments(cwd)
+                result._str = cwd
+                return result
         return self.with_segments(cwd, self)
 
     def resolve(self, strict=False):
