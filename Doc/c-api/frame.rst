@@ -140,27 +140,26 @@ Unless using PEP 523, you will not need this.
 
 .. c:type:: struct _PyInterpreterFrame
 
-   This C structure for internal frames.
+   The interpreter's internal frame representation.
 
 
 .. c:function:: PyCodeObject* PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
 
-    Get the code object for the frame
-    Returns a :term:`strong reference`.
+    Return a :term:`strong reference` to the code object for the frame.
 
    .. versionadded:: 3.12
 
 
 .. c:function:: int PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame);
 
-   Gets the byte offset into the last executed instruction.
+   Return the byte offset into the last executed instruction.
 
    .. versionadded:: 3.12
 
 
 .. c:function:: int PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrame *frame);
 
-   Gets the  currently executing line number, or -1 if there is no line number.
+   Return the  currently executing line number, or -1 if there is no line number.
 
    .. versionadded:: 3.12
 
