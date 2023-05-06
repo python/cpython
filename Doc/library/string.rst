@@ -227,7 +227,8 @@ See also the :ref:`formatspec` section.
 
 The *field_name* itself begins with an *arg_name* that is either a number or a
 keyword.  If it's a number, it refers to a positional argument, and if it's a keyword,
-it refers to a named keyword argument. A key is treated as a number if it starts with a digit.
+it refers to a named keyword argument. A key is treated as a number if
+``str(key).isdecimal()`` would evaluate to true.
 If the numerical arg_names in a format string
 are 0, 1, 2, ... in sequence, they can all be omitted (not just some)
 and the numbers 0, 1, 2, ... will be automatically inserted in that order.
