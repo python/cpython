@@ -547,9 +547,11 @@ _PyEval_FiniGIL(PyInterpreterState *interp)
         return;
     }
     else if (!interp->ceval.own_gil) {
+#ifdef Py_DEBUG
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
         assert(interp != main_interp);
         assert(interp->ceval.gil == main_interp->ceval.gil);
+#endif
         interp->ceval.gil = NULL;
         return;
     }
