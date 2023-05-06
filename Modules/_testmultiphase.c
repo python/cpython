@@ -915,6 +915,23 @@ PyInit__test_module_state_shared(void)
 
 /* multiple interpreters support */
 
+static PyModuleDef_Slot slots_multiple_multiple_interpreters_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL},
+};
+
+static PyModuleDef def_multiple_multiple_interpreters_slots = TEST_MODULE_DEF(
+    "_testmultiphase_multiple_multiple_interpreters_slots",
+    slots_multiple_multiple_interpreters_slots,
+    NULL);
+
+PyMODINIT_FUNC
+PyInit__testmultiphase_multiple_multiple_interpreters_slots(void)
+{
+    return PyModuleDef_Init(&def_multiple_multiple_interpreters_slots);
+}
+
 static PyModuleDef_Slot non_isolated_slots[] = {
     {Py_mod_exec, execfunc},
     {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
