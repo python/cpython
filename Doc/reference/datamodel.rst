@@ -21,8 +21,8 @@ conformance to Von Neumann's model of a "stored program computer", code is also
 represented by objects.)
 
 .. index::
-   builtin: id
-   builtin: type
+   pair: built-in function; id
+   pair: built-in function; type
    single: identity of an object
    single: value of an object
    single: type of an object
@@ -267,7 +267,7 @@ Ellipsis
 
 Sequences
    .. index::
-      builtin: len
+      pair: built-in function; len
       pair: object; sequence
       single: index operation
       single: item selection
@@ -308,8 +308,8 @@ Sequences
 
       Strings
          .. index::
-            builtin: chr
-            builtin: ord
+            pair: built-in function; chr
+            pair: built-in function; ord
             single: character
             single: integer
             single: Unicode
@@ -384,7 +384,7 @@ Sequences
 
 Set types
    .. index::
-      builtin: len
+      pair: built-in function; len
       pair: object; set type
 
    These represent unordered, finite sets of unique, immutable objects. As such,
@@ -418,7 +418,7 @@ Set types
 
 Mappings
    .. index::
-      builtin: len
+      pair: built-in function; len
       single: subscription
       pair: object; mapping
 
@@ -908,7 +908,7 @@ Class instances
 
 I/O objects (also known as file objects)
    .. index::
-      builtin: open
+      pair: built-in function; open
       pair: module; io
       single: popen() (in module os)
       single: makefile() (socket method)
@@ -1176,7 +1176,7 @@ Internal types
          and the ``tb_next`` attribute of existing instances can be updated.
 
    Slice objects
-      .. index:: builtin: slice
+      .. index:: pair: built-in function; slice
 
       Slice objects are used to represent slices for
       :meth:`~object.__getitem__`
@@ -1410,7 +1410,7 @@ Basic customization
 
 .. method:: object.__bytes__(self)
 
-   .. index:: builtin: bytes
+   .. index:: pair: built-in function; bytes
 
    Called by :ref:`bytes <func-bytes>` to compute a byte-string representation
    of an object. This should return a :class:`bytes` object.
@@ -1418,7 +1418,7 @@ Basic customization
    .. index::
       single: string; __format__() (object method)
       pair: string; conversion
-      builtin: print
+      pair: built-in function; print
 
 
 .. method:: object.__format__(self, format_spec)
@@ -1498,7 +1498,7 @@ Basic customization
 
    .. index::
       pair: object; dictionary
-      builtin: hash
+      pair: built-in function; hash
 
    Called by built-in function :func:`hash` and for operations on members of
    hashed collections including :class:`set`, :class:`frozenset`, and
@@ -2049,7 +2049,7 @@ Metaclasses
 
 .. index::
    single: metaclass
-   builtin: type
+   pair: built-in function; type
    single: = (equals); class definition
 
 By default, classes are constructed using :func:`type`. The class body is
@@ -2472,7 +2472,7 @@ through the object's keys; for sequences, it should iterate through the values.
 .. method:: object.__len__(self)
 
    .. index::
-      builtin: len
+      pair: built-in function; len
       single: __bool__() (object method)
 
    Called to implement the built-in function :func:`len`.  Should return the length
@@ -2630,9 +2630,9 @@ left undefined.
             object.__or__(self, other)
 
    .. index::
-      builtin: divmod
-      builtin: pow
-      builtin: pow
+      pair: built-in function; divmod
+      pair: built-in function; pow
+      pair: built-in function; pow
 
    These methods are called to implement the binary arithmetic operations
    (``+``, ``-``, ``*``, ``@``, ``/``, ``//``, ``%``, :func:`divmod`,
@@ -2665,8 +2665,8 @@ left undefined.
             object.__ror__(self, other)
 
    .. index::
-      builtin: divmod
-      builtin: pow
+      pair: built-in function; divmod
+      pair: built-in function; pow
 
    These methods are called to implement the binary arithmetic operations
    (``+``, ``-``, ``*``, ``@``, ``/``, ``//``, ``%``, :func:`divmod`,
@@ -2678,7 +2678,7 @@ left undefined.
    ``type(y).__rsub__(y, x)`` is called if ``type(x).__sub__(x, y)`` returns
    *NotImplemented*.
 
-   .. index:: builtin: pow
+   .. index:: pair: built-in function; pow
 
    Note that ternary :func:`pow` will not try calling :meth:`__rpow__` (the
    coercion rules would become too complicated).
@@ -2725,7 +2725,7 @@ left undefined.
             object.__abs__(self)
             object.__invert__(self)
 
-   .. index:: builtin: abs
+   .. index:: pair: built-in function; abs
 
    Called to implement the unary arithmetic operations (``-``, ``+``, :func:`abs`
    and ``~``).
@@ -2736,9 +2736,9 @@ left undefined.
             object.__float__(self)
 
    .. index::
-      builtin: complex
-      builtin: int
-      builtin: float
+      pair: built-in function; complex
+      pair: built-in function; int
+      pair: built-in function; float
 
    Called to implement the built-in functions :func:`complex`,
    :func:`int` and :func:`float`.  Should return a value
@@ -2763,7 +2763,7 @@ left undefined.
             object.__floor__(self)
             object.__ceil__(self)
 
-   .. index:: builtin: round
+   .. index:: pair: built-in function; round
 
    Called to implement the built-in function :func:`round` and :mod:`math`
    functions :func:`~math.trunc`, :func:`~math.floor` and :func:`~math.ceil`.
