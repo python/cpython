@@ -403,7 +403,7 @@ class Sniffer:
 
         columns = len(header)
         columnTypes = {}
-        average_size = 0 
+        average_size = 0
         col_are_strings = True
         for i in range(columns): columnTypes[i] = None
 
@@ -439,7 +439,7 @@ class Sniffer:
                         # type is inconsistent, remove column from
                         # consideration
                         del columnTypes[col]
-        
+
         # finally, compare results against first row and "vote"
         # on whether it's a header
         hasHeader = 0
