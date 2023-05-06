@@ -149,7 +149,6 @@ Doc/library/http.cookiejar.rst
 Doc/library/http.cookies.rst
 Doc/library/http.server.rst
 Doc/library/idle.rst
-Doc/library/imp.rst
 Doc/library/importlib.resources.abc.rst
 Doc/library/importlib.resources.rst
 Doc/library/importlib.rst

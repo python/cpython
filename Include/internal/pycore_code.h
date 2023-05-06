@@ -226,7 +226,7 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
 /* Specialization functions */
 
-extern void _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *class, PyObject *self,
+extern void _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls, PyObject *self,
                                          _Py_CODEUNIT *instr, PyObject *name, int load_method);
 extern void _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr,
                                     PyObject *name);

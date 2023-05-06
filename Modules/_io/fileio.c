@@ -144,9 +144,7 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
 /*[clinic end generated code: output=c30cbe9d1f23ca58 input=70da49e63db7c64d]*/
 {
     PyObject *res;
-    PyObject *exc;
     int rc;
-
     _PyIO_State *state = get_io_state_by_cls(cls);
     res = PyObject_CallMethodOneArg((PyObject*)state->PyRawIOBase_Type,
                                      &_Py_ID(close), (PyObject *)self);
@@ -154,6 +152,8 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
         self->fd = -1;
         return res;
     }
+
+    PyObject *exc;
     if (res == NULL) {
         exc = PyErr_GetRaisedException();
     }

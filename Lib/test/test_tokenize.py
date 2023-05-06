@@ -11,7 +11,7 @@ from unittest import TestCase, mock
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from test.support import os_helper
-from test.support.script_helper import run_test_script, make_script
+from test.support.script_helper import run_test_script, make_script, run_python_until_end
 import os
 import token
 
@@ -1469,6 +1469,19 @@ class TestTokenize(TestCase):
         for i in range(6):
             self.assertEqual(tok_name[tokens[i + 1].exact_type], tok_name[expected_tokens[i]])
         self.assertEqual(tok_name[tokens[-1].exact_type], tok_name[token.ENDMARKER])
+
+    def test_invalid_character_in_fstring_middle(self):
+        # See gh-103824
+        script = b'''F"""
+        \xe5"""'''
+
+        with os_helper.temp_dir() as temp_dir:
+            filename = os.path.join(temp_dir, "script.py")
+            with open(filename, 'wb') as file:
+                file.write(script)
+            rs, _ = run_python_until_end(filename)
+            self.assertIn(b"SyntaxError", rs.err)
+
 
 class UntokenizeTest(TestCase):
 

@@ -107,6 +107,7 @@ Turtle motion
       | :func:`right` | :func:`rt`
       | :func:`left` | :func:`lt`
       | :func:`goto` | :func:`setpos` | :func:`setposition`
+      | :func:`teleport`
       | :func:`setx`
       | :func:`sety`
       | :func:`setheading` | :func:`seth`
@@ -372,6 +373,44 @@ Turtle motion
        (0.00,0.00)
 
 
+.. function:: teleport(x, y=None, *, fill_gap=False)
+
+   :param x: a number or ``None``
+   :param y: a number or ``None``
+   :param fill_gap: a boolean
+
+   Move turtle to an absolute position. Unlike goto(x, y), a line will not
+   be drawn. The turtle's orientation does not change. If currently
+   filling, the polygon(s) teleported from will be filled after leaving,
+   and filling will begin again after teleporting. This can be disabled
+   with fill_gap=True, which makes the imaginary line traveled during
+   teleporting act as a fill barrier like in goto(x, y).
+
+   .. doctest::
+      :skipif: _tkinter is None
+      :hide:
+
+      >>> turtle.goto(0, 0)
+
+   .. doctest::
+      :skipif: _tkinter is None
+
+       >>> tp = turtle.pos()
+       >>> tp
+       (0.00,0.00)
+       >>> turtle.teleport(60)
+       >>> turtle.pos()
+       (60.00,0.00)
+       >>> turtle.teleport(y=10)
+       >>> turtle.pos()
+       (60.00,10.00)
+       >>> turtle.teleport(20, 30)
+       >>> turtle.pos()
+       (20.00,30.00)
+
+   .. versionadded: 3.12
+
+
 .. function:: setx(x)
 
    :param x: a number (integer or float)
@@ -537,8 +576,7 @@ Turtle motion
       :skipif: _tkinter is None
 
       >>> turtle.color("blue")
-      >>> turtle.stamp()
-      11
+      >>> stamp_id = turtle.stamp()
       >>> turtle.fd(50)
 
 
@@ -575,15 +613,8 @@ Turtle motion
    .. doctest::
 
       >>> for i in range(8):
-      ...     turtle.stamp(); turtle.fd(30)
-      13
-      14
-      15
-      16
-      17
-      18
-      19
-      20
+      ...     unused_stamp_id = turtle.stamp()
+      ...     turtle.fd(30)
       >>> turtle.clearstamps(2)
       >>> turtle.clearstamps(-2)
       >>> turtle.clearstamps()

@@ -1169,9 +1169,9 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
 
     self->buffer = Py_NewRef(buffer);
 
+    /* Build the decoder object */
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->state = state;
-    /* Build the decoder object */
     if (_textiowrapper_set_decoder(self, codec_info, PyUnicode_AsUTF8(errors)) != 0)
         goto error;
 
@@ -1217,7 +1217,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     if (_textiowrapper_fix_encoder_state(self) < 0) {
         goto error;
     }
-    
+
     self->ok = 1;
     return 0;
 

@@ -653,8 +653,8 @@ iomodule_exec(PyObject *m)
     if (state->unsupported_operation == NULL) {
         return -1;
     }
-    if (PyModule_AddObject(m, "UnsupportedOperation",
-                           Py_NewRef(state->unsupported_operation)) < 0)
+    if (PyModule_AddObjectRef(m, "UnsupportedOperation",
+                              state->unsupported_operation) < 0)
     {
         return -1;
     }
@@ -701,7 +701,8 @@ do {                                                                     \
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
     base = state->PyRawIOBase_Type;
     ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, base);
-    ADD_TYPE(m, state->PyBytesIOBuffer_Type, &bytesiobuf_spec, NULL);  // XXX: should be subclass of PyRawIOBase_Type?
+    // XXX: should PyBytesIOBuffer_Type be subclass of PyRawIOBase_Type?
+    ADD_TYPE(m, state->PyBytesIOBuffer_Type, &bytesiobuf_spec, NULL);
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
     ADD_TYPE(m, state->PyWindowsConsoleIO_Type, &winconsoleio_spec, base);

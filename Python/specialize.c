@@ -148,7 +148,7 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
                     PRIu64 "\n", i, j, val);
             }
         }
-        for(int j = 0; j < 256; j++) {
+        for (int j = 0; j < 256; j++) {
             if (stats[i].pair_count[j]) {
                 fprintf(out, "opcode[%d].pair_count[%d] : %" PRIu64 "\n",
                         i, j, stats[i].pair_count[j]);
@@ -515,7 +515,7 @@ specialize_module_load_attr(
 /* Attribute specialization */
 
 void
-_Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *class, PyObject *self,
+_Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *cls, PyObject *self,
                              _Py_CODEUNIT *instr, PyObject *name, int load_method) {
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[LOAD_SUPER_ATTR] == INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR);
@@ -528,11 +528,11 @@ _Py_Specialize_LoadSuperAttr(PyObject *global_super, PyObject *class, PyObject *
         SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_SHADOWED);
         goto fail;
     }
-    if (!PyType_Check(class)) {
+    if (!PyType_Check(cls)) {
         SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_BAD_CLASS);
         goto fail;
     }
-    PyTypeObject *tp = (PyTypeObject *)class;
+    PyTypeObject *tp = (PyTypeObject *)cls;
     PyObject *res = _PySuper_LookupDescr(tp, self, name);
     if (res == NULL) {
         SPECIALIZATION_FAIL(LOAD_SUPER_ATTR, SPEC_FAIL_SUPER_ERROR_OR_NOT_FOUND);
