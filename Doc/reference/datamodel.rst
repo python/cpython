@@ -2716,7 +2716,7 @@ left undefined.
    ``>>=``, ``&=``, ``^=``, ``|=``).  These methods should attempt to do the
    operation in-place (modifying *self*) and return the result (which could be,
    but does not have to be, *self*).  If a specific method is not defined, or if
-   that method returns NotImplemented, the
+   that method returns :const:`NotImplemented`, the
    augmented assignment falls back to the normal methods.  For instance, if *x*
    is an instance of a class with an :meth:`__iadd__` method, ``x += y`` is
    equivalent to ``x = x.__iadd__(y)`` . Otherwise, or if ``x.__iadd__(y)``
