@@ -682,6 +682,27 @@ PyInit__testmultiphase_export_unreported_exception(void)
 }
 
 static PyObject*
+createfunc_noop(PyObject *spec, PyModuleDef *def)
+{
+    return PyModule_New("spam");
+}
+
+static PyModuleDef_Slot slots_multiple_create_slots[] = {
+    {Py_mod_create, createfunc_noop},
+    {Py_mod_create, createfunc_noop},
+    {0, NULL},
+};
+
+static PyModuleDef def_multiple_create_slots = TEST_MODULE_DEF(
+    "_testmultiphase_multiple_create_slots", slots_multiple_create_slots, NULL);
+
+PyMODINIT_FUNC
+PyInit__testmultiphase_multiple_create_slots(void)
+{
+    return PyModuleDef_Init(&def_multiple_create_slots);
+}
+
+static PyObject*
 createfunc_null(PyObject *spec, PyModuleDef *def)
 {
     return NULL;
