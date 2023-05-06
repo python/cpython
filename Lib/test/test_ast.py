@@ -460,7 +460,7 @@ class AST_Tests(unittest.TestCase):
                     with self.assertWarns(DeprecationWarning):
                         x = item()
                 if isinstance(x, ast.AST):
-                    self.assertEqual(type(x._fields), tuple)
+                    self.assertIs(type(x._fields), tuple)
 
     def test_field_attr_existence(self):
         for name, item in ast.__dict__.items():
@@ -473,7 +473,7 @@ class AST_Tests(unittest.TestCase):
             if self._is_ast_node(name, item):
                 x = item()
                 if isinstance(x, ast.AST):
-                    self.assertEqual(type(x._fields), tuple)
+                    self.assertIs(type(x._fields), tuple)
 
     def test_arguments(self):
         x = ast.arguments()
