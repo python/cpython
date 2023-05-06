@@ -27,6 +27,8 @@ struct _Py_dict_state {
     uint64_t global_version;
     uint32_t next_keys_version;
 
+//    PyDictKeysObject empty_keys_struct;
+
 #if PyDict_MAXFREELIST > 0
     /* Dictionary reuse scheme to save calls to malloc and free */
     PyDictObject *free_list[PyDict_MAXFREELIST];
@@ -37,6 +39,11 @@ struct _Py_dict_state {
 
     PyDict_WatchCallback watchers[DICT_MAX_WATCHERS];
 };
+
+#define _dict_state_INIT \
+    { \
+        .next_keys_version = 2, \
+    }
 
 
 #ifdef __cplusplus
