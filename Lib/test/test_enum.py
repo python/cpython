@@ -2,6 +2,7 @@ import copy
 import enum
 import doctest
 import inspect
+import os
 import pydoc
 import sys
 import unittest
@@ -25,11 +26,11 @@ python_version = sys.version_info[:2]
 
 def load_tests(loader, tests, ignore):
     tests.addTests(doctest.DocTestSuite(enum))
-    tests.addTests(doctest.DocFileSuite(
-        '../../Doc/library/enum.rst',
-        optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
-        module_relative=True
-        ))
+    if os.path.exists('../../Doc/library/enum.rst'):
+        tests.addTests(doctest.DocFileSuite(
+                '../../Doc/library/enum.rst',
+                optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
+                ))
     return tests
 
 MODULE = __name__
