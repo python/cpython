@@ -1,0 +1,1 @@
+Add :class:`multiprocessing.Queue` and :class:`multiprocessing.JoinableQueue` termination with ``shutdown`` method.
