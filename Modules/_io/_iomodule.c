@@ -596,6 +596,9 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
     Py_VISIT(state->PyStringIO_Type);
     Py_VISIT(state->PyTextIOBase_Type);
     Py_VISIT(state->PyTextIOWrapper_Type);
+#ifdef HAVE_WINDOWS_CONSOLE_IO
+    Py_VISIT(state->PyWindowsConsoleIO_Type);
+#endif
     return 0;
 }
 
@@ -622,6 +625,9 @@ iomodule_clear(PyObject *mod) {
     Py_CLEAR(state->PyStringIO_Type);
     Py_CLEAR(state->PyTextIOBase_Type);
     Py_CLEAR(state->PyTextIOWrapper_Type);
+#ifdef HAVE_WINDOWS_CONSOLE_IO
+    Py_CLEAR(state->PyWindowsConsoleIO_Type);
+#endif
     return 0;
 }
 
