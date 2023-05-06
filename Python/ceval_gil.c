@@ -499,6 +499,15 @@ PyEval_ThreadsInitialized(void)
     return _PyEval_ThreadsInitialized();
 }
 
+static inline int
+current_thread_holds_gil(struct _gil_runtime_state *gil, PyThreadState *tstate)
+{
+    if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) != tstate) {
+        return 0;
+    }
+    return _Py_atomic_load_relaxed(&gil->locked);
+}
+
 static void
 init_shared_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
 {
@@ -525,8 +534,9 @@ _PyEval_InitGIL(PyThreadState *tstate, int own_gil)
     if (!own_gil) {
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
         assert(tstate->interp != main_interp);
-        init_shared_gil(tstate->interp, main_interp->ceval.gil);
-        locked = _Py_atomic_load_relaxed(&main_interp->ceval.gil->locked);
+        struct _gil_runtime_state *gil = main_interp->ceval.gil;
+        init_shared_gil(tstate->interp, gil);
+        locked = current_thread_holds_gil(gil, tstate);
     }
     /* XXX per-interpreter GIL */
     else if (!_Py_IsMainInterpreter(tstate->interp)) {
@@ -537,7 +547,7 @@ _PyEval_InitGIL(PyThreadState *tstate, int own_gil)
         init_shared_gil(tstate->interp, main_gil);
         // XXX For now we lie.
         tstate->interp->ceval.own_gil = 1;
-        locked = _Py_atomic_load_relaxed(&main_gil->locked);
+        locked = current_thread_holds_gil(main_gil, tstate);
     }
     else {
         PyThread_init_thread();
