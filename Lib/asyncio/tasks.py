@@ -813,6 +813,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     children = []
     nfuts = 0
     nfinished = 0
+    done_futs = []
     loop = None
     outer = None  # bpo-46672
     for arg in coros_or_futures:
@@ -829,7 +830,10 @@ def gather(*coros_or_futures, return_exceptions=False):
 
             nfuts += 1
             arg_to_fut[arg] = fut
-            fut.add_done_callback(_done_callback)
+            if fut.done():
+                done_futs.append(fut)
+            else:
+                fut.add_done_callback(_done_callback)
 
         else:
             # There's a duplicate Future object in coros_or_futures.
@@ -838,6 +842,13 @@ def gather(*coros_or_futures, return_exceptions=False):
         children.append(fut)
 
     outer = _GatheringFuture(children, loop=loop)
+    # Run done callbacks after GatheringFuture created so any post-processing
+    # can be performed at this point
+    # optimization: in the special case that *all* futures finished eagerly,
+    # this will effectively complete the gather eagerly, with the last
+    # callback setting the result (or exception) on outer before returning it
+    for fut in done_futs:
+        _done_callback(fut)
     return outer
 
 
