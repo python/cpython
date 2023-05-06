@@ -203,10 +203,10 @@ class DemoWindow(object):
 
 
     def onResize(self, event):
-        cwidth = self._canvas.winfo_width()
-        cheight = self._canvas.winfo_height()
-        self._canvas.xview_moveto(0.5*(self.canvwidth-cwidth)/self.canvwidth)
-        self._canvas.yview_moveto(0.5*(self.canvheight-cheight)/self.canvheight)
+        cwidth = self.canvas.winfo_width()
+        cheight = self.canvas.winfo_height()
+        self.canvas.xview_moveto(0.5*(self.canvwidth-cwidth)/self.canvwidth)
+        self.canvas.yview_moveto(0.5*(self.canvheight-cheight)/self.canvheight)
 
     def makeTextFrame(self, root):
         self.text_frame = text_frame = Frame(root)
@@ -237,19 +237,23 @@ class DemoWindow(object):
         return text_frame
 
     def makeGraphFrame(self, root):
+        # t._Screen is a singleton class instantiated or retrieved
+        # by calling Screen.  Since tdemo canvas needs a different
+        # configuration, we manually set class attributes before
+        # calling Screen and manually call superclass init after.
         turtle._Screen._root = root
+
         self.canvwidth = 1000
         self.canvheight = 800
-        turtle._Screen._canvas = self._canvas = canvas = turtle.ScrolledCanvas(
+        turtle._Screen._canvas = self.canvas = canvas = turtle.ScrolledCanvas(
                 root, 800, 600, self.canvwidth, self.canvheight)
         canvas.adjustScrolls()
         canvas._rootwindow.bind('<Configure>', self.onResize)
         canvas._canvas['borderwidth'] = 0
 
-        self.screen = _s_ = turtle.Screen()
-        turtle.TurtleScreen.__init__(_s_, _s_._canvas)
-        self.scanvas = _s_._canvas
-        turtle.RawTurtle.screens = [_s_]
+        self.screen = screen = turtle.Screen()
+        turtle.TurtleScreen.__init__(screen, canvas)
+        turtle.RawTurtle.screens = [screen]
         return canvas
 
     def set_txtsize(self, size):
@@ -373,7 +377,7 @@ class DemoWindow(object):
     def clearCanvas(self):
         self.refreshCanvas()
         self.screen._delete("all")
-        self.scanvas.config(cursor="")
+        self.canvas.config(cursor="")
         self.configGUI(NORMAL, DISABLED, DISABLED)
 
     def stopIt(self):
