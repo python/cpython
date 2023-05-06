@@ -1852,9 +1852,7 @@ class _BasePathTest(object):
 
     def test_rglob_common(self):
         def _check(glob, expected):
-            actual = list(glob)
-            self.assertEqual(set(actual), { P(BASE, q) for q in expected })
-            self.assertEqual(len(actual), len(expected))
+            self.assertEqual(sorted(glob), sorted(P(BASE, q) for q in expected))
         P = self.cls
         p = P(BASE)
         it = p.rglob("fileA")
