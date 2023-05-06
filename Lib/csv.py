@@ -439,6 +439,7 @@ class Sniffer:
                         # type is inconsistent, remove column from
                         # consideration
                         del columnTypes[col]
+        
         # finally, compare results against first row and "vote"
         # on whether it's a header
         hasHeader = 0
