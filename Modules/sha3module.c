@@ -400,10 +400,11 @@ _SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
      * - the algorith is not shake -- not the case here
      * - the output length is zero -- we follow the existing behavior and return
      *   an empty digest, without raising an error */
-    if (digestlen > 0)
-      Hacl_Streaming_Keccak_squeeze(self->hash_state, digest, digestlen);
+    if (digestlen > 0) {
+        Hacl_Streaming_Keccak_squeeze(self->hash_state, digest, digestlen);
+    }
     if (hex) {
-         result = _Py_strhex((const char *)digest, digestlen);
+        result = _Py_strhex((const char *)digest, digestlen);
     } else {
         result = PyBytes_FromStringAndSize((const char *)digest,
                                            digestlen);
