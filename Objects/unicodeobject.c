@@ -14354,7 +14354,8 @@ unicode_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
         unicode = PyUnicode_FromEncodedObject(x, encoding, errors);
     }
 
-    if (unicode != NULL && type != &PyUnicode_Type) {
+    if (unicode != NULL &&
+        (type != &PyUnicode_Type || unicode->ob_type != type)) {
         Py_SETREF(unicode, unicode_subtype_new(type, unicode));
     }
     return unicode;

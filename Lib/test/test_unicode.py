@@ -2396,7 +2396,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(str(StrSubclassToStr("bar")), "foo")
         s = str(StrSubclassToStrSubclass("foo"))
         self.assertEqual(s, "foofoo")
-        self.assertIs(type(s), StrSubclassToStrSubclass)
+        self.assertIs(type(s), str)
         s = StrSubclass(StrSubclassToStrSubclass("foo"))
         self.assertEqual(s, "foofoo")
         self.assertIs(type(s), StrSubclass)

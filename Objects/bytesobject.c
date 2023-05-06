@@ -2645,7 +2645,7 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
         bytes = PyBytes_FromObject(x);
     }
 
-    if (bytes != NULL && type != &PyBytes_Type) {
+    if (bytes != NULL && (type != &PyBytes_Type || bytes->ob_type != type)) {
         Py_SETREF(bytes, bytes_subtype_new(type, bytes));
     }
 
