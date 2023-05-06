@@ -4588,6 +4588,22 @@ class TestPythonBufferProtocol(unittest.TestCase):
         mv = memoryview(a)
         self.assertEqual(mv.tobytes(), b"hello")
 
+    def test_inheritance_releasebuffer(self):
+        rb_call_count = 0
+        class B(bytearray):
+            def __buffer__(self, flags):
+                return super().__buffer__(flags)
+            def __release_buffer__(self, view):
+                nonlocal rb_call_count
+                rb_call_count += 1
+                super().__release_buffer__(view)
+
+        b = B(b"hello")
+        with memoryview(b) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+            self.assertEqual(rb_call_count, 0)
+        self.assertEqual(rb_call_count, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

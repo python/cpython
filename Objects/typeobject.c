@@ -59,6 +59,9 @@ typedef struct PySlot_Offset {
 static void
 slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer);
 
+static void
+releasebuffer_call_python(PyObject *self, Py_buffer *buffer);
+
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
@@ -8097,6 +8100,10 @@ wrap_releasebuffer(PyObject *self, PyObject *args, void *wrapped)
         return NULL;
     }
     PyMemoryViewObject *mview = (PyMemoryViewObject *)arg;
+    if (mview->view.obj == NULL) {
+        // Already released, ignore
+        Py_RETURN_NONE;
+    }
     if (mview->view.obj != self) {
         PyErr_SetString(PyExc_ValueError,
                         "memoryview's buffer is not this object");
@@ -8985,9 +8992,10 @@ bufferwrapper_releasebuf(PyObject *self, Py_buffer *view)
     Py_TYPE(bw->mv)->tp_as_buffer->bf_releasebuffer(bw->mv, view);
     // We only need to call bf_releasebuffer if it's a Python function. If it's a C
     // bf_releasebuf, it will be called when the memoryview is released.
-    if (Py_TYPE(bw->obj)->tp_as_buffer != NULL
-        && Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer == slot_bf_releasebuffer) {
-        Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer(bw->obj, view);
+    if (((PyMemoryViewObject *)bw->mv)->view.obj != bw->obj
+            && Py_TYPE(bw->obj)->tp_as_buffer != NULL
+            && Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer == slot_bf_releasebuffer) {
+        releasebuffer_call_python(bw->obj, view);
     }
 }
 
@@ -9052,8 +9060,51 @@ fail:
     return -1;
 }
 
+static int
+releasebuffer_maybe_call_super(PyObject *self, Py_buffer *buffer)
+{
+    PyTypeObject *self_type = Py_TYPE(self);
+    PyObject *mro = lookup_tp_mro(self_type);
+    if (mro == NULL) {
+        return -1;
+    }
+
+    assert(PyTuple_Check(mro));
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    Py_ssize_t i;
+
+    /* No need to check the last one: it's gonna be skipped anyway.  */
+    for (i = 0; i+1 < n; i++) {
+        if ((PyObject *)(self_type) == PyTuple_GET_ITEM(mro, i))
+            break;
+    }
+    i++;  /* skip self_type */
+    if (i >= n)
+        return -1;
+
+    releasebufferproc base_releasebuffer = NULL;
+    for (; i < n; i++) {
+        PyObject *obj = PyTuple_GET_ITEM(mro, i);
+        if (!PyType_Check(obj)) {
+            continue;
+        }
+        PyTypeObject *base_type = (PyTypeObject *)obj;
+        if (base_type->tp_as_buffer != NULL
+            && base_type->tp_as_buffer->bf_releasebuffer != NULL
+            && base_type->tp_as_buffer->bf_releasebuffer != slot_bf_releasebuffer) {
+            base_releasebuffer = base_type->tp_as_buffer->bf_releasebuffer;
+            break;
+        }
+    }
+
+    if (base_releasebuffer != NULL) {
+        base_releasebuffer(self, buffer);
+    }
+    return 0;
+}
+
 static void
-slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
+releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
 {
     PyObject *mv;
     if (Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type) {
@@ -9077,6 +9128,28 @@ slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
     else {
         Py_DECREF(ret);
     }
+}
+
+/*
+ * bf_releasebuffer is very delicate, because we need to ensure that
+ * C bf_releasebuffer slots are called correctly (or we'll leak memory),
+ * but we cannot trust any __release_buffer__ implemented in Python to
+ * do so correctly. Therefore, if a base class has a C bf_releasebuffer
+ * slot, we call it directly here. That is safe because this function
+ * only gets called from C callers of the bf_releasebuffer slot. Python
+ * code that calls __release_buffer__ directly instead goes through
+ * wrap_releasebuffer(), which doesn't call the bf_releasebuffer slot
+ * directly but instead simply releases the associated memoryview.
+ */
+static void
+slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
+{
+    if (releasebuffer_maybe_call_super(self, buffer) < 0) {
+        if (PyErr_Occurred()) {
+            PyErr_WriteUnraisable(self);
+        }
+    }
+    releasebuffer_call_python(self, buffer);
 }
 
 static PyObject *
