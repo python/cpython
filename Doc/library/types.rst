@@ -146,7 +146,7 @@ Standard names are defined for the following types:
 
 .. class:: CodeType(**kwargs)
 
-   .. index:: builtin: compile
+   .. index:: pair: built-in function; compile
 
    The type for code objects such as returned by :func:`compile`.
 
