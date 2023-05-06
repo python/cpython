@@ -2602,9 +2602,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
     def _print_message(self, message, file=None):
         if message:
-            if file is None:
-                file = _sys.stderr
-            file.write(message)
+            file = file or _sys.stderr
+            try:
+                file.write(message)
+            except (AttributeError, OSError):
+                pass
 
     # ===============
     # Exiting methods
