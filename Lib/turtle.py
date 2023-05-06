@@ -21,7 +21,6 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-
 """
 Turtle graphics is a popular way for introducing programming to
 kids. It was part of the original Logo programming language developed
@@ -97,12 +96,7 @@ Roughly it has the following features added:
 
 Behind the scenes there are some features included with possible
 extensions in mind. These will be commented and documented elsewhere.
-
 """
-
-_ver = "turtle 1.1b- - for Python 3.1   -  4. 5. 2009"
-
-# print(_ver)
 
 import tkinter as TK
 import types
@@ -141,7 +135,7 @@ _tg_turtle_functions = ['back', 'backward', 'begin_fill', 'begin_poly', 'bk',
 _tg_utilities = ['write_docstringdict', 'done']
 
 __all__ = (_tg_classes + _tg_screen_functions + _tg_turtle_functions +
-           _tg_utilities + ['Terminator']) # + _math_functions)
+           _tg_utilities + ['Terminator'])
 
 _alias_list = ['addshape', 'backward', 'bk', 'fd', 'ht', 'lt', 'pd', 'pos',
                'pu', 'rt', 'seth', 'setpos', 'setposition', 'st',
@@ -597,9 +591,6 @@ class TurtleScreenBase(object):
                                         fill = pencolor, font = font)
         x0, y0, x1, y1 = self.cv.bbox(item)
         return item, x1-1
-
-##    def _dot(self, pos, size, color):
-##        """may be implemented for some other graphics toolkit"""
 
     def _onclick(self, item, fun, num=1, add=None):
         """Bind fun to mouse-click event on turtle.
@@ -2726,7 +2717,7 @@ class RawTurtle(TPen, TNavigator):
         if not ((0 <= r <= 255) and (0 <= g <= 255) and (0 <= b <= 255)):
             raise TurtleGraphicsError("bad color sequence: %s" % str(args))
         return "#%02x%02x%02x" % (r, g, b)
-    
+
     def teleport(self, x=None, y=None, *, fill_gap: bool = False) -> None:
         """Instantly move turtle to an absolute position.
 
@@ -2738,14 +2729,14 @@ class RawTurtle(TPen, TNavigator):
         call: teleport(x, y)         # two coordinates
         --or: teleport(x)            # teleport to x position, keeping y as is
         --or: teleport(y=y)          # teleport to y position, keeping x as is
-        --or: teleport(x, y, fill_gap=True)          
+        --or: teleport(x, y, fill_gap=True)
                                      # teleport but fill the gap in between
 
         Move turtle to an absolute position. Unlike goto(x, y), a line will not
         be drawn. The turtle's orientation does not change. If currently
         filling, the polygon(s) teleported from will be filled after leaving,
         and filling will begin again after teleporting. This can be disabled
-        with fill_gap=True, which makes the imaginary line traveled during 
+        with fill_gap=True, which makes the imaginary line traveled during
         teleporting act as a fill barrier like in goto(x, y).
 
         Example (for a Turtle instance named turtle):
@@ -2773,7 +2764,7 @@ class RawTurtle(TPen, TNavigator):
         self._position = Vec2D(new_x, new_y)
         self.pen(pendown=pendown)
         if was_filling and not fill_gap:
-            self.begin_fill()   
+            self.begin_fill()
 
     def clone(self):
         """Create and return a clone of the turtle.
@@ -3455,27 +3446,22 @@ class RawTurtle(TPen, TNavigator):
             if size is None:
                 size = self._pensize + max(self._pensize, 4)
             color = self._colorstr(color)
-        if hasattr(self.screen, "_dot"):
-            item = self.screen._dot(self._position, size, color)
-            self.items.append(item)
-            if self.undobuffer:
-                self.undobuffer.push(("dot", item))
-        else:
-            pen = self.pen()
-            if self.undobuffer:
-                self.undobuffer.push(["seq"])
-                self.undobuffer.cumulate = True
-            try:
-                if self.resizemode() == 'auto':
-                    self.ht()
-                self.pendown()
-                self.pensize(size)
-                self.pencolor(color)
-                self.forward(0)
-            finally:
-                self.pen(pen)
-            if self.undobuffer:
-                self.undobuffer.cumulate = False
+        # If screen were to gain a dot function, see GH #104218.
+        pen = self.pen()
+        if self.undobuffer:
+            self.undobuffer.push(["seq"])
+            self.undobuffer.cumulate = True
+        try:
+            if self.resizemode() == 'auto':
+                self.ht()
+            self.pendown()
+            self.pensize(size)
+            self.pencolor(color)
+            self.forward(0)
+        finally:
+            self.pen(pen)
+        if self.undobuffer:
+            self.undobuffer.cumulate = False
 
     def _write(self, txt, align, font):
         """Performs the writing for write()
@@ -3751,11 +3737,6 @@ class _Screen(TurtleScreen):
     _title = _CFG["title"]
 
     def __init__(self):
-        # XXX there is no need for this code to be conditional,
-        # as there will be only a single _Screen instance, anyway
-        # XXX actually, the turtle demo is injecting root window,
-        # so perhaps the conditional creation of a root should be
-        # preserved (perhaps by passing it as an optional parameter)
         if _Screen._root is None:
             _Screen._root = self._root = _Root()
             self._root.title(_Screen._title)

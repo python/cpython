@@ -8,7 +8,6 @@
 #include "pycore_runtime_init.h"  // _Py_ID()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
-#include "cpython/context.h"
 #include <stddef.h>               // offsetof()
 
 
@@ -3803,6 +3802,7 @@ module_exec(PyObject *mod)
 
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

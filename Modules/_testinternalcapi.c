@@ -729,6 +729,13 @@ get_interp_settings(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    /* "own GIL" */
+    PyObject *own_gil = interp->ceval.own_gil ? Py_True : Py_False;
+    if (PyDict_SetItemString(settings, "own_gil", own_gil) != 0) {
+        Py_DECREF(settings);
+        return NULL;
+    }
+
     return settings;
 }
 
@@ -789,6 +796,7 @@ module_exec(PyObject *module)
 
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

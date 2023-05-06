@@ -188,7 +188,7 @@ those made in the suite of the for-loop::
 
 
 .. index::
-   builtin: range
+   pair: built-in function; range
 
 Names in the target list are not deleted when the loop is finished, but if the
 sequence is empty, they will not have been assigned to at all by the loop.  Hint:

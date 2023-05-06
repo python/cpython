@@ -1,0 +1,1 @@
+Remove unneeded comments and code in turtle.py.
