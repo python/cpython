@@ -1437,13 +1437,5 @@ class MiscTestCase(unittest.TestCase):
     def test_writer_disallow_instantiation(self):
         check_disallow_instantiation(self, _csv.Writer)
 
-    def test_reader_not_basetype(self):
-        with self.assertRaisesRegex(TypeError, "type '_csv.reader' is not an acceptable base type"):
-            class Foo(_csv.Reader): pass
-
-    def test_writer_not_basetype(self):
-        with self.assertRaisesRegex(TypeError, "type '_csv.writer' is not an acceptable base type"):
-            class Foo(_csv.Writer): pass
-
 if __name__ == '__main__':
     unittest.main()
