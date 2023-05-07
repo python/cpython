@@ -3902,8 +3902,6 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
             add(' ')
         add(data.converter_retval + ';')
         data.declarations.append(''.join(line))
-        # XXX Removing this hack breaks current generated code.
-        #     We should aim to get rid of this workaround.
         data.return_value = data.converter_retval
 
     def err_occurred_if(self, expr, data):
