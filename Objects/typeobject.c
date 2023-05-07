@@ -8993,13 +8993,8 @@ bufferwrapper_releasebuf(PyObject *self, Py_buffer *view)
         return;
     }
 
-    PyObject *mv = Py_NewRef(bw->mv);
-    PyObject *obj = Py_NewRef(bw->obj);
-
-    // Clear these fields first, in case we somehow get called
-    // recursively.
-    Py_CLEAR(bw->mv);
-    Py_CLEAR(bw->obj);
+    PyObject *mv = bw->mv;
+    PyObject *obj = bw->obj;
 
     assert(PyMemoryView_Check(mv));
     Py_TYPE(mv)->tp_as_buffer->bf_releasebuffer(mv, view);
@@ -9011,8 +9006,8 @@ bufferwrapper_releasebuf(PyObject *self, Py_buffer *view)
         releasebuffer_call_python(obj, view);
     }
 
-    Py_DECREF(mv);
-    Py_DECREF(obj);
+    Py_CLEAR(bw->mv);
+    Py_CLEAR(bw->obj);
 }
 
 static PyBufferProcs bufferwrapper_as_buffer = {
