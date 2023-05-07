@@ -1,1 +1,0 @@
-Fix a :mod:`!_csv` module regression where :class:`!_csv.Reader` and :class:`!_csv.Writer` types became directly instantiable which led to their improper initialization and subsequent crashes. The regression was introduced in 3.10.0a4 with PR 23224 (:issue:`14935`).
