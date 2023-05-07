@@ -61,7 +61,6 @@ def _is_case_sensitive(flavour):
 # Globbing helpers
 #
 
-
 @functools.lru_cache()
 def _make_selector(pattern_parts, flavour, case_sensitive):
     pat = pattern_parts[0]
