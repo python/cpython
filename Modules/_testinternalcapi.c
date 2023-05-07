@@ -593,17 +593,19 @@ _testinternalcapi.compiler_codegen -> object
   ast: object
   filename: object
   optimize: int
+  compile_mode: int = 0
 
 Apply compiler code generation to an AST.
 [clinic start generated code]*/
 
 static PyObject *
 _testinternalcapi_compiler_codegen_impl(PyObject *module, PyObject *ast,
-                                        PyObject *filename, int optimize)
-/*[clinic end generated code: output=fbbbbfb34700c804 input=e9fbe6562f7f75e4]*/
+                                        PyObject *filename, int optimize,
+                                        int compile_mode)
+/*[clinic end generated code: output=40a68f6e13951cc8 input=a0e00784f1517cd7]*/
 {
     PyCompilerFlags *flags = NULL;
-    return _PyCompile_CodeGen(ast, filename, flags, optimize);
+    return _PyCompile_CodeGen(ast, filename, flags, optimize, compile_mode);
 }
 
 
@@ -725,6 +727,13 @@ get_interp_settings(PyObject *self, PyObject *args)
     int res = PyDict_SetItemString(settings, "feature_flags", flags);
     Py_DECREF(flags);
     if (res != 0) {
+        Py_DECREF(settings);
+        return NULL;
+    }
+
+    /* "own GIL" */
+    PyObject *own_gil = interp->ceval.own_gil ? Py_True : Py_False;
+    if (PyDict_SetItemString(settings, "own_gil", own_gil) != 0) {
         Py_DECREF(settings);
         return NULL;
     }
