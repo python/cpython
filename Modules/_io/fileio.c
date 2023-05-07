@@ -130,6 +130,9 @@ internal_close(fileio *self)
 /*[clinic input]
 _io.FileIO.close
 
+    cls: defining_class
+    /
+
 Close the file.
 
 A closed file cannot be used for further I/O operations.  close() may be
@@ -137,18 +140,20 @@ called more than once without error.
 [clinic start generated code]*/
 
 static PyObject *
-_io_FileIO_close_impl(fileio *self)
-/*[clinic end generated code: output=7737a319ef3bad0b input=f35231760d54a522]*/
+_io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
+/*[clinic end generated code: output=c30cbe9d1f23ca58 input=70da49e63db7c64d]*/
 {
     PyObject *res;
-    PyObject *exc;
     int rc;
-    res = PyObject_CallMethodOneArg((PyObject*)&PyRawIOBase_Type,
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    res = PyObject_CallMethodOneArg((PyObject*)state->PyRawIOBase_Type,
                                      &_Py_ID(close), (PyObject *)self);
     if (!self->closefd) {
         self->fd = -1;
         return res;
     }
+
+    PyObject *exc;
     if (res == NULL) {
         exc = PyErr_GetRaisedException();
     }

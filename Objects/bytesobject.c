@@ -705,7 +705,6 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 case ' ': flags |= F_BLANK; continue;
                 case '#': flags |= F_ALT; continue;
                 case '0': flags |= F_ZERO; continue;
-                case 'z': flags |= F_NO_NEG_0; continue;
                 }
                 break;
             }
@@ -3067,7 +3066,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         PyObject_Realloc(v, PyBytesObject_SIZE + newsize);
     if (*pv == NULL) {
 #ifdef Py_REF_DEBUG
-        _Py_DecRefTotal();
+        _Py_DecRefTotal(_PyInterpreterState_GET());
 #endif
         PyObject_Free(v);
         PyErr_NoMemory();
@@ -3087,25 +3086,6 @@ error:
     Py_DECREF(v);
     PyErr_BadInternalCall();
     return -1;
-}
-
-
-PyStatus
-_PyBytes_InitTypes(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    if (PyType_Ready(&PyBytes_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize bytes type");
-    }
-
-    if (PyType_Ready(&PyBytesIter_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize bytes iterator type");
-    }
-
-    return _PyStatus_OK();
 }
 
 
