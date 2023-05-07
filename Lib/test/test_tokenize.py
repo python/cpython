@@ -400,9 +400,9 @@ c"""', """\
     OP         '{'           (1, 6) (1, 7)
     NAME       'b'           (1, 7) (1, 8)
     OP         '!'           (1, 8) (1, 9)
-    FSTRING_MIDDLE 'r'           (1, 9) (1, 10)
-    OP         '}'           (1, 10) (1, 12)
-    FSTRING_MIDDLE '}c'          (1, 12) (1, 14)
+    NAME       'r'           (1, 9) (1, 10)
+    OP         '}'           (1, 10) (1, 11)
+    FSTRING_MIDDLE '}c'          (1, 11) (1, 14)
     FSTRING_END '"'           (1, 14) (1, 15)
     """)
         self.check_tokenize('f"{{{1+1}}}"', """\
@@ -412,8 +412,8 @@ c"""', """\
     NUMBER     '1'           (1, 5) (1, 6)
     OP         '+'           (1, 6) (1, 7)
     NUMBER     '1'           (1, 7) (1, 8)
-    OP         '}'           (1, 8) (1, 10)
-    FSTRING_MIDDLE '}'           (1, 10) (1, 11)
+    OP         '}'           (1, 8) (1, 9)
+    FSTRING_MIDDLE '}'           (1, 9) (1, 11)
     FSTRING_END '"'           (1, 11) (1, 12)
     """)
         self.check_tokenize('f"{1+1"', """\

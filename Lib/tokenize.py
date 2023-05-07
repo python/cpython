@@ -682,88 +682,88 @@ def _tokenize_fstring_middle(middle, start, line_number, line, encoding):
                     mid_expr += c
             case '}':
                 # If two }} are seen, then the first one is skipped and the
-                # second is added as part of the fstring_middle token
-                if escaping:
-                    escaping = False
-                    mid_token += c
-                    continue
-                elif len(middle) > position + 1 and middle[position + 1] == '}':
-                    escaping = True
-                    start += 1
-                    continue
-
-                if curly_brackets:
-                    curly_brackets.pop()
-                if mid_expr and not curly_brackets:
-                    yield TokenInfo(
-                        type=OP,
-                        string='{',
-                        start=end,
-                        end=(line_number, end[1] + 1),
-                        line=line)
-                    end = line_number, end[1] + 1
-
-                    mid_expr += c
-
-                    mid_expr = mid_expr[1:-1]
-
-                    # Find any first level : or !
-                    curly_level = 0
-                    break_char_index = -1
-                    for char_index, char in enumerate(mid_expr):
-                        if char == '{':
-                            curly_level += 1
-                        elif char == '}':
-                            curly_level -= 1
-                        elif char in {'!', ':'} and not curly_level:
-                            break_char_index = char_index
-                            break
-
-                    expression_chunk = mid_expr
-                    if break_char_index != -1:
-                        expression_chunk = mid_expr[:break_char_index+1]
-
-                    if encoding is not None:
-                        buffer = BytesIO(expression_chunk.encode()).readline
-                    else:
-                        buffer = StringIO(expression_chunk).readline
-                    for t in _tokenize(buffer, encoding, fstring_mode=True):
-                        yield TokenInfo(
-                            type=t.type,
-                            string=t.string,
-                            start=(t.start[0] - 1 + end[0], t.start[1] + end[1]),
-                            end=(t.end[0] - 1 + end[0], t.end[1] + end[1]),
-                            line=line
-                        )
-
-                    end = t.end[0] - 1 + end[0], t.end[1] + end[1]
-
-                    if break_char_index != -1:
-                        formatting_chunk = mid_expr[break_char_index+1:]
-                        for t in _tokenize_fstring_middle(
-                            middle=formatting_chunk,
-                            start=end[1],
-                            line_number=line_number,
-                            line=line,
-                            encoding=encoding):
-
-                            yield t
-                            end = t.end
-
-                    yield TokenInfo(
-                        type=OP,
-                        string='}',
-                        start=end,
-                        end=(line_number, start + 1),
-                        line=line)
-
-                    mid_expr = ''
-                    end = line_number, start + 1
-                else:
-                    if mid_expr:
-                        mid_expr += c
+                # second is added as part of the fstring_middle token.
+                # This is only applied when parsing fstring_middle tokens,
+                # not when parsing an expression.
+                if not mid_expr:
+                    if escaping:
+                        escaping = False
+                        mid_token += c
+                    elif len(middle) > position + 1 and middle[position + 1] == '}':
+                        escaping = True
                     else:
                         mid_token += c
+                else:
+                    # parsing an expression
+                    if curly_brackets:
+                        curly_brackets.pop()
+                    if not curly_brackets:
+                        yield TokenInfo(
+                            type=OP,
+                            string='{',
+                            start=end,
+                            end=(line_number, end[1] + 1),
+                            line=line)
+                        end = line_number, end[1] + 1
+
+                        mid_expr += c
+
+                        mid_expr = mid_expr[1:-1]
+
+                        # Find any first level : or !
+                        curly_level = 0
+                        break_char_index = -1
+                        for char_index, char in enumerate(mid_expr):
+                            if char == '{':
+                                curly_level += 1
+                            elif char == '}':
+                                curly_level -= 1
+                            elif char in {':'} and not curly_level:
+                                break_char_index = char_index
+                                break
+
+                        expression_chunk = mid_expr
+                        if break_char_index != -1:
+                            expression_chunk = mid_expr[:break_char_index+1]
+
+                        if encoding is not None:
+                            buffer = BytesIO(expression_chunk.encode()).readline
+                        else:
+                            buffer = StringIO(expression_chunk).readline
+                        for t in _tokenize(buffer, encoding, fstring_mode=True):
+                            yield TokenInfo(
+                                type=t.type,
+                                string=t.string,
+                                start=(t.start[0] - 1 + end[0], t.start[1] + end[1]),
+                                end=(t.end[0] - 1 + end[0], t.end[1] + end[1]),
+                                line=line
+                            )
+
+                        end = t.end[0] - 1 + end[0], t.end[1] + end[1]
+
+                        if break_char_index != -1:
+                            formatting_chunk = mid_expr[break_char_index+1:]
+                            for t in _tokenize_fstring_middle(
+                                middle=formatting_chunk,
+                                start=end[1],
+                                line_number=line_number,
+                                line=line,
+                                encoding=encoding):
+
+                                yield t
+                                end = t.end
+
+                        yield TokenInfo(
+                            type=OP,
+                            string='}',
+                            start=end,
+                            end=(line_number, start + 1),
+                            line=line)
+
+                        mid_expr = ''
+                        end = line_number, start + 1
+                    else:
+                        mid_expr += c
             case '\n':
                 if mid_expr:
                     mid_expr += c
@@ -785,9 +785,9 @@ def _tokenize_fstring_middle(middle, start, line_number, line, encoding):
             type=FSTRING_MIDDLE,
             string=mid_token,
             start=end,
-            end=(line_number, end[1] + len(mid_token)),
+            end=(line_number, start),
             line=line)
-    end = line_number, end[1] + len(mid_token)
+    end = line_number, start
 
     if curly_brackets:
         lnum, pos = curly_brackets.pop()
