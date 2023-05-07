@@ -724,7 +724,9 @@ static struct PyModuleDef_Slot iomodule_slots[] = {
     {Py_mod_exec, iomodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
-}; struct PyModuleDef _PyIO_Module = {
+};
+
+struct PyModuleDef _PyIO_Module = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "io",
     .m_doc = module_doc,
