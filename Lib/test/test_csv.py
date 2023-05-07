@@ -11,7 +11,7 @@ import _csv
 import gc
 import pickle
 from test import support
-from test.support import warnings_helper
+from test.support import warnings_helper, check_disallow_instantiation
 from itertools import permutations
 from textwrap import dedent
 from collections import OrderedDict
@@ -1431,13 +1431,17 @@ class MiscTestCase(unittest.TestCase):
         # issue 44089
         class Foo(csv.Error): ...
 
-    def test_issue104265(self):
-        with self.assertRaisesRegex(TypeError, "cannot create '_csv.reader' instances"):
-            _csv.Reader()
-        with self.assertRaisesRegex(TypeError, "cannot create '_csv.writer' instances"):
-            _csv.Writer()
+    def test_reader_disallow_instantiation(self):
+        check_disallow_instantiation(self, _csv.Reader)
+
+    def test_writer_disallow_instantiation(self):
+        check_disallow_instantiation(self, _csv.Writer)
+
+    def test_reader_not_basetype(self):
         with self.assertRaisesRegex(TypeError, "type '_csv.reader' is not an acceptable base type"):
             class Foo(_csv.Reader): pass
+
+    def test_writer_not_basetype(self):
         with self.assertRaisesRegex(TypeError, "type '_csv.writer' is not an acceptable base type"):
             class Foo(_csv.Writer): pass
 
