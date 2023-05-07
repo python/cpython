@@ -807,7 +807,7 @@ dummy_func(
             PREDICT(LOAD_CONST);
         }
 
-        family(for_iter, INLINE_CACHE_ENTRIES_FOR_ITER) = {
+        family(send, INLINE_CACHE_ENTRIES_SEND) = {
             SEND,
             SEND_GEN,
         };
@@ -860,7 +860,7 @@ dummy_func(
             Py_DECREF(v);
         }
 
-        inst(SEND_GEN, (unused/1, receiver, v -- receiver)) {
+        inst(SEND_GEN, (unused/1, receiver, v -- receiver, retval)) {
             PyGenObject *gen = (PyGenObject *)receiver;
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type &&
                      Py_TYPE(gen) != &PyCoro_Type, SEND);
