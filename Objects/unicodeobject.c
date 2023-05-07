@@ -14385,8 +14385,6 @@ formatfloat(PyObject *v, struct unicode_format_arg_t *arg,
 
     if (arg->flags & F_ALT)
         dtoa_flags |= Py_DTSF_ALT;
-    if (arg->flags & F_NO_NEG_0)
-        dtoa_flags |= Py_DTSF_NO_NEG_0;
     p = PyOS_double_to_string(x, arg->ch, prec, dtoa_flags, NULL);
     if (p == NULL)
         return -1;
