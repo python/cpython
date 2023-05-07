@@ -64,17 +64,25 @@ def _is_case_sensitive(flavour):
 @functools.lru_cache()
 def _make_selector(pattern_parts, flavour, case_sensitive):
     pat = pattern_parts[0]
-    child_parts = pattern_parts[1:]
     if not pat:
         return _TerminatingSelector()
     if pat == '**':
-        cls = _RecursiveWildcardSelector
-    elif pat == '..':
-        cls = _ParentSelector
-    elif '**' in pat:
-        raise ValueError("Invalid pattern: '**' can only be an entire path component")
+        child_parts_idx = 1
+        while child_parts_idx < len(pattern_parts) and pattern_parts[child_parts_idx] == '**':
+            child_parts_idx += 1
+        child_parts = pattern_parts[child_parts_idx:]
+        if '**' in child_parts:
+            cls = _DoubleRecursiveWildcardSelector
+        else:
+            cls = _RecursiveWildcardSelector
     else:
-        cls = _WildcardSelector
+        child_parts = pattern_parts[1:]
+        if pat == '..':
+            cls = _ParentSelector
+        elif '**' in pat:
+            raise ValueError("Invalid pattern: '**' can only be an entire path component")
+        else:
+            cls = _WildcardSelector
     return cls(pat, child_parts, flavour, case_sensitive)
 
 
@@ -183,18 +191,30 @@ class _RecursiveWildcardSelector(_Selector):
 
     def _select_from(self, parent_path, scandir):
         try:
-            yielded = set()
-            try:
-                successor_select = self.successor._select_from
-                for starting_point in self._iterate_directories(parent_path, scandir):
-                    for p in successor_select(starting_point, scandir):
-                        if p not in yielded:
-                            yield p
-                            yielded.add(p)
-            finally:
-                yielded.clear()
+            successor_select = self.successor._select_from
+            for starting_point in self._iterate_directories(parent_path, scandir):
+                for p in successor_select(starting_point, scandir):
+                    yield p
         except PermissionError:
             return
+
+
+class _DoubleRecursiveWildcardSelector(_RecursiveWildcardSelector):
+    """
+    Like _RecursiveWildcardSelector, but also de-duplicates results from
+    successive selectors. This is necessary if the pattern contains
+    multiple non-adjacent '**' segments.
+    """
+
+    def _select_from(self, parent_path, scandir):
+        yielded = set()
+        try:
+            for p in super()._select_from(parent_path, scandir):
+                if p not in yielded:
+                    yield p
+                    yielded.add(p)
+        finally:
+            yielded.clear()
 
 
 #

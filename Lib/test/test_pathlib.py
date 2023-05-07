@@ -1853,13 +1853,14 @@ class _BasePathTest(object):
 
     def test_rglob_common(self):
         def _check(glob, expected):
-            self.assertEqual(set(glob), { P(BASE, q) for q in expected })
+            self.assertEqual(sorted(glob), sorted(P(BASE, q) for q in expected))
         P = self.cls
         p = P(BASE)
         it = p.rglob("fileA")
         self.assertIsInstance(it, collections.abc.Iterator)
         _check(it, ["fileA"])
         _check(p.rglob("fileB"), ["dirB/fileB"])
+        _check(p.rglob("**/fileB"), ["dirB/fileB"])
         _check(p.rglob("*/fileA"), [])
         if not os_helper.can_symlink():
             _check(p.rglob("*/fileB"), ["dirB/fileB"])
@@ -1883,9 +1884,12 @@ class _BasePathTest(object):
         _check(p.rglob("*"), ["dirC/fileC", "dirC/novel.txt",
                               "dirC/dirD", "dirC/dirD/fileD"])
         _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p.rglob("**/file*"), ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p.rglob("dir*/**"), ["dirC/dirD"])
         _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
         _check(p.rglob("*/"), ["dirC/dirD"])
         _check(p.rglob(""), ["dirC", "dirC/dirD"])
+        _check(p.rglob("**"), ["dirC", "dirC/dirD"])
         # gh-91616, a re module regression
         _check(p.rglob("*.txt"), ["dirC/novel.txt"])
         _check(p.rglob("*.*"), ["dirC/novel.txt"])
