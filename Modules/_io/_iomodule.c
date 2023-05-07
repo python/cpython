@@ -678,6 +678,7 @@ do {                                                                     \
 
     // Concrete classes
     ADD_TYPE(m, state->PyIncrementalNewlineDecoder_Type, &nldecoder_spec, NULL);
+    ADD_TYPE(m, state->PyBytesIOBuffer_Type, &bytesiobuf_spec, NULL);
 
     // Base classes
     ADD_TYPE(m, state->PyIOBase_Type, &iobase_spec, NULL);
