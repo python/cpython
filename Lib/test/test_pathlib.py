@@ -1655,7 +1655,8 @@ class _BasePathTest(object):
         p = P(BASE, session_id=42)
         self.assertEqual(42, p.absolute().session_id)
         self.assertEqual(42, p.resolve().session_id)
-        self.assertEqual(42, p.with_segments('~').expanduser().session_id)
+        if not is_wasi:  # WASI has no user accounts.
+            self.assertEqual(42, p.with_segments('~').expanduser().session_id)
         self.assertEqual(42, (p / 'fileA').rename(p / 'fileB').session_id)
         self.assertEqual(42, (p / 'fileB').replace(p / 'fileA').session_id)
         if os_helper.can_symlink():
