@@ -4670,6 +4670,26 @@ class TestPythonBufferProtocol(unittest.TestCase):
         with self.assertRaises(ValueError):
             smuggled_buffer.tobytes()
 
+    def test_release_saves_reference_no_subclassing(self):
+        ba = bytearray(b"hello")
+
+        class C:
+            def __buffer__(self, flags):
+                return memoryview(ba)
+
+            def __release_buffer__(self, buffer):
+                self.buffer = buffer
+
+        c = C()
+        with memoryview(c) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+        self.assertEqual(c.buffer.tobytes(), b"hello")
+
+        with self.assertRaises(BufferError):
+            ba.clear()
+        c.buffer.release()
+        ba.clear()
+
 
 if __name__ == "__main__":
     unittest.main()
