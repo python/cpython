@@ -9085,7 +9085,7 @@ releasebuffer_maybe_call_super(PyObject *self, Py_buffer *buffer)
     Py_ssize_t i;
 
     /* No need to check the last one: it's gonna be skipped anyway.  */
-    for (i = 0; i+1 < n; i++) {
+    for (i = 0;  i < n -1; i++) {
         if ((PyObject *)(self_type) == PyTuple_GET_ITEM(mro, i))
             break;
     }
