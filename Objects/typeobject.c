@@ -8988,15 +8988,31 @@ bufferwrapper_releasebuf(PyObject *self, Py_buffer *view)
 {
     PyBufferWrapper *bw = (PyBufferWrapper *)self;
 
-    assert(PyMemoryView_Check(bw->mv));
-    Py_TYPE(bw->mv)->tp_as_buffer->bf_releasebuffer(bw->mv, view);
+    if (bw->mv == NULL || bw->obj == NULL) {
+        // Already released
+        return;
+    }
+
+    PyObject *mv = Py_NewRef(bw->mv);
+    PyObject *obj = Py_NewRef(bw->obj);
+
+    // Clear these fields first, in case we somehow get called
+    // recursively.
+    Py_CLEAR(bw->mv);
+    Py_CLEAR(bw->obj);
+
+    assert(PyMemoryView_Check(mv));
+    Py_TYPE(mv)->tp_as_buffer->bf_releasebuffer(mv, view);
     // We only need to call bf_releasebuffer if it's a Python function. If it's a C
     // bf_releasebuf, it will be called when the memoryview is released.
-    if (((PyMemoryViewObject *)bw->mv)->view.obj != bw->obj
-            && Py_TYPE(bw->obj)->tp_as_buffer != NULL
-            && Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer == slot_bf_releasebuffer) {
-        releasebuffer_call_python(bw->obj, view);
+    if (((PyMemoryViewObject *)mv)->view.obj != obj
+            && Py_TYPE(obj)->tp_as_buffer != NULL
+            && Py_TYPE(obj)->tp_as_buffer->bf_releasebuffer == slot_bf_releasebuffer) {
+        releasebuffer_call_python(obj, view);
     }
+
+    Py_DECREF(mv);
+    Py_DECREF(obj);
 }
 
 static PyBufferProcs bufferwrapper_as_buffer = {
@@ -9111,7 +9127,11 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
     if (Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type) {
         // Make sure we pass the same memoryview to
         // __release_buffer__() that __buffer__() returned.
-        mv = Py_NewRef(((PyBufferWrapper *)buffer->obj)->mv);
+        PyBufferWrapper *bw = (PyBufferWrapper *)buffer->obj;
+        if (bw->mv == NULL) {
+            return;
+        }
+        mv = Py_NewRef(bw->mv);
     }
     else {
         // This means we are not dealing with a memoryview returned
