@@ -562,8 +562,7 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
 }
 
 static int
-iomodule_traverse(PyObject *mod, visitproc visit, void *arg)
-{
+iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
     _PyIO_State *state = get_io_state(mod);
     Py_VISIT(state->unsupported_operation);
 
@@ -589,8 +588,7 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg)
 
 
 static int
-iomodule_clear(PyObject *mod)
-{
+iomodule_clear(PyObject *mod) {
     _PyIO_State *state = get_io_state(mod);
     Py_CLEAR(state->unsupported_operation);
 
@@ -685,33 +683,38 @@ do {                                                                     \
     ADD_TYPE(m, state->PyIOBase_Type, &iobase_spec, NULL);
 
     // PyIOBase_Type subclasses
-    PyTypeObject *base = state->PyIOBase_Type;
-    ADD_TYPE(m, state->PyTextIOBase_Type, &textiobase_spec, base);
-    ADD_TYPE(m, state->PyBufferedIOBase_Type, &bufferediobase_spec, base);
-    ADD_TYPE(m, state->PyRawIOBase_Type, &rawiobase_spec, base);
+    ADD_TYPE(m, state->PyTextIOBase_Type, &textiobase_spec,
+             state->PyIOBase_Type);
+    ADD_TYPE(m, state->PyBufferedIOBase_Type, &bufferediobase_spec,
+             state->PyIOBase_Type);
+    ADD_TYPE(m, state->PyRawIOBase_Type, &rawiobase_spec,
+             state->PyIOBase_Type);
 
     // PyBufferedIOBase_Type(PyIOBase_Type) subclasses
-    base = state->PyBufferedIOBase_Type;
-    ADD_TYPE(m, state->PyBytesIO_Type, &bytesio_spec, base);
-    ADD_TYPE(m, state->PyBufferedWriter_Type, &bufferedwriter_spec, base);
-    ADD_TYPE(m, state->PyBufferedReader_Type, &bufferedreader_spec, base);
-    ADD_TYPE(m, state->PyBufferedRWPair_Type, &bufferedrwpair_spec, base);
-    ADD_TYPE(m, state->PyBufferedRandom_Type, &bufferedrandom_spec, base);
+    ADD_TYPE(m, state->PyBytesIO_Type, &bytesio_spec, state->PyBufferedIOBase_Type);
+    ADD_TYPE(m, state->PyBufferedWriter_Type, &bufferedwriter_spec,
+             state->PyBufferedIOBase_Type);
+    ADD_TYPE(m, state->PyBufferedReader_Type, &bufferedreader_spec,
+             state->PyBufferedIOBase_Type);
+    ADD_TYPE(m, state->PyBufferedRWPair_Type, &bufferedrwpair_spec,
+             state->PyBufferedIOBase_Type);
+    ADD_TYPE(m, state->PyBufferedRandom_Type, &bufferedrandom_spec,
+             state->PyBufferedIOBase_Type);
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
-    base = state->PyRawIOBase_Type;
-    ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, base);
+    ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, state->PyRawIOBase_Type);
     // XXX: should PyBytesIOBuffer_Type be subclass of PyRawIOBase_Type?
     ADD_TYPE(m, state->PyBytesIOBuffer_Type, &bytesiobuf_spec, NULL);
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
-    ADD_TYPE(m, state->PyWindowsConsoleIO_Type, &winconsoleio_spec, base);
+    ADD_TYPE(m, state->PyWindowsConsoleIO_Type, &winconsoleio_spec,
+             state->PyRawIOBase_Type);
 #endif
 
     // PyTextIOBase_Type(PyIOBase_Type) subclasses
-    base = state->PyTextIOBase_Type;
-    ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, base);
-    ADD_TYPE(m, state->PyTextIOWrapper_Type, &textiowrapper_spec, base);
+    ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, state->PyTextIOBase_Type);
+    ADD_TYPE(m, state->PyTextIOWrapper_Type, &textiowrapper_spec,
+             state->PyTextIOBase_Type);
 
 #undef ADD_TYPE
     return 0;

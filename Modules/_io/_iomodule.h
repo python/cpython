@@ -23,9 +23,10 @@ extern PyType_Spec rawiobase_spec;
 extern PyType_Spec stringio_spec;
 extern PyType_Spec textiobase_spec;
 extern PyType_Spec textiowrapper_spec;
+
 #ifdef HAVE_WINDOWS_CONSOLE_IO
 extern PyType_Spec winconsoleio_spec;
-#endif /* HAVE_WINDOWS_CONSOLE_IO */
+#endif
 
 /* Helper for finalization.
    This function will revive an object ready to be deallocated and try to
