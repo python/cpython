@@ -92,6 +92,20 @@ isolation_level_converter(PyObject *str_or_none, const char **result)
     return 1;
 }
 
+static int
+sqlite3_int64_converter(PyObject *obj, sqlite3_int64 *result)
+{
+    if (!PyLong_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError, "expected 'int'");
+        return 0;
+    }
+    *result = _pysqlite_long_as_int64(obj);
+    if (PyErr_Occurred()) {
+        return 0;
+    }
+    return 1;
+}
+
 #define clinic_state() (pysqlite_get_state_by_type(Py_TYPE(self)))
 #include "clinic/connection.c.h"
 #undef clinic_state
@@ -137,8 +151,12 @@ class IsolationLevel_converter(CConverter):
     type = "const char *"
     converter = "isolation_level_converter"
 
+class sqlite3_int64_converter(CConverter):
+    type = "sqlite3_int64"
+    converter = "sqlite3_int64_converter"
+
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=cbcfe85b253061c2]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=e9bee126e0500e61]*/
 
 // NB: This needs to be in sync with the sqlite3.connect docstring
 /*[clinic input]
@@ -401,7 +419,7 @@ _sqlite3.Connection.blobopen as blobopen
         Table name.
     column as col: str
         Column name.
-    row: int
+    row: sqlite3_int64
         Row index.
     /
     *
@@ -415,8 +433,8 @@ Open and return a BLOB object.
 
 static PyObject *
 blobopen_impl(pysqlite_Connection *self, const char *table, const char *col,
-              int row, int readonly, const char *name)
-/*[clinic end generated code: output=0c8e2e58516d0b5c input=1e7052516acfc94d]*/
+              sqlite3_int64 row, int readonly, const char *name)
+/*[clinic end generated code: output=6a02d43efb885d1c input=4180b11a0591d80d]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
