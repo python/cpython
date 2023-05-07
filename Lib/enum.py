@@ -1185,7 +1185,7 @@ class Enum(metaclass=EnumType):
                     DeprecationWarning,
                     stacklevel=3,
                     )
-            for v in last_values:
+            for v in reversed(last_values):
                 try:
                     return v + 1
                 except TypeError:
