@@ -1,0 +1,2 @@
+Do not expose the local on-disk location in directory indexes
+produced by :class:`http.client.SimpleHTTPRequestHandler`.

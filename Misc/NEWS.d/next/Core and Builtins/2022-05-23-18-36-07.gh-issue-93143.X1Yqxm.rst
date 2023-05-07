@@ -1,1 +1,0 @@
-Avoid ``NULL`` checks for uninitialized local variables by determining at compile time which variables must be initialized.

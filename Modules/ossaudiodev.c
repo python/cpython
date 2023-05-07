@@ -20,7 +20,6 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -535,16 +534,13 @@ oss_close(oss_audio_t *self, PyObject *unused)
 static PyObject *
 oss_self(PyObject *self, PyObject *unused)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
 oss_exit(PyObject *self, PyObject *unused)
 {
-    _Py_IDENTIFIER(close);
-
-    PyObject *ret = _PyObject_CallMethodIdNoArgs(self, &PyId_close);
+    PyObject *ret = PyObject_CallMethod(self, "close", NULL);
     if (!ret)
         return NULL;
     Py_DECREF(ret);
@@ -573,7 +569,7 @@ oss_setparameters(oss_audio_t *self, PyObject *args)
     if (!_is_fd_valid(self->fd))
         return NULL;
 
-    if (!PyArg_ParseTuple(args, "iii|i:setparameters",
+    if (!PyArg_ParseTuple(args, "iii|p:setparameters",
                           &wanted_fmt, &wanted_channels, &wanted_rate,
                           &strict))
         return NULL;
@@ -1138,10 +1134,8 @@ PyInit_ossaudiodev(void)
                                        NULL, NULL);
     if (OSSAudioError) {
         /* Each call to PyModule_AddObject decrefs it; compensate: */
-        Py_INCREF(OSSAudioError);
-        Py_INCREF(OSSAudioError);
-        PyModule_AddObject(m, "error", OSSAudioError);
-        PyModule_AddObject(m, "OSSAudioError", OSSAudioError);
+        PyModule_AddObject(m, "error", Py_NewRef(OSSAudioError));
+        PyModule_AddObject(m, "OSSAudioError", Py_NewRef(OSSAudioError));
     }
 
     /* Build 'control_labels' and 'control_names' lists and add them

@@ -98,9 +98,16 @@ typedef struct {
     Py_ssize_t length;          /* Number of code points in the string */
     Py_hash_t hash;             /* Hash value; -1 if not set */
     struct {
-        /* If interned is set, the two references from the
-           dictionary to this object are *not* counted in ob_refcnt. */
-        unsigned int interned:1;
+        /* If interned is non-zero, the two references from the
+           dictionary to this object are *not* counted in ob_refcnt.
+           The possible values here are:
+               0: Not Interned
+               1: Interned
+               2: Interned and Immortal
+               3: Interned, Immortal, and Static
+           This categorization allows the runtime to determine the right
+           cleanup mechanism at runtime shutdown. */
+        unsigned int interned:2;
         /* Character size:
 
            - PyUnicode_1BYTE_KIND (1):
@@ -183,6 +190,8 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 /* Interning state. */
 #define SSTATE_NOT_INTERNED 0
 #define SSTATE_INTERNED_MORTAL 1
+#define SSTATE_INTERNED_IMMORTAL 2
+#define SSTATE_INTERNED_IMMORTAL_STATIC 3
 
 /* Use only if you know it's a string */
 static inline unsigned int PyUnicode_CHECK_INTERNED(PyObject *op) {
@@ -231,9 +240,7 @@ enum PyUnicode_Kind {
 // new compiler warnings on "kind < PyUnicode_KIND(str)" (compare signed and
 // unsigned numbers) where kind type is an int or on
 // "unsigned int kind = PyUnicode_KIND(str)" (cast signed to unsigned).
-// Only declare the function as static inline function in the limited C API
-// version 3.12 which is stricter.
-#define PyUnicode_KIND(op) (_PyASCIIObject_CAST(op)->state.kind)
+#define PyUnicode_KIND(op) _Py_RVALUE(_PyASCIIObject_CAST(op)->state.kind)
 
 /* Return a void pointer to the raw unicode buffer. */
 static inline void* _PyUnicode_COMPACT_DATA(PyObject *op) {
@@ -945,7 +952,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
    and where the hash values are equal (i.e. a very probable match) */
 PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
 
-/* Equality check. Returns -1 on failure. */
+/* Equality check. */
 PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);
 
 PyAPI_FUNC(int) _PyUnicode_WideCharString_Converter(PyObject *, void *);

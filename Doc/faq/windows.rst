@@ -167,7 +167,7 @@ How can I embed Python into a Windows application?
 
 Embedding the Python interpreter in a Windows app can be summarized as follows:
 
-1. Do _not_ build Python into your .exe file directly.  On Windows, Python must
+1. Do **not** build Python into your .exe file directly.  On Windows, Python must
    be a DLL to handle importing modules that are themselves DLL's.  (This is the
    first key undocumented fact.)  Instead, link to :file:`python{NN}.dll`; it is
    typically installed in ``C:\Windows\System``.  *NN* is the Python version, a
@@ -191,7 +191,7 @@ Embedding the Python interpreter in a Windows app can be summarized as follows:
 2. If you use SWIG, it is easy to create a Python "extension module" that will
    make the app's data and methods available to Python.  SWIG will handle just
    about all the grungy details for you.  The result is C code that you link
-   *into* your .exe file (!)  You do _not_ have to create a DLL file, and this
+   *into* your .exe file (!)  You do **not** have to create a DLL file, and this
    also simplifies linking.
 
 3. SWIG will create an init function (a C function) whose name depends on the
@@ -218,10 +218,10 @@ Embedding the Python interpreter in a Windows app can be summarized as follows:
 5. There are two problems with Python's C API which will become apparent if you
    use a compiler other than MSVC, the compiler used to build pythonNN.dll.
 
-   Problem 1: The so-called "Very High Level" functions that take FILE *
+   Problem 1: The so-called "Very High Level" functions that take ``FILE *``
    arguments will not work in a multi-compiler environment because each
-   compiler's notion of a struct FILE will be different.  From an implementation
-   standpoint these are very _low_ level functions.
+   compiler's notion of a ``struct FILE`` will be different.  From an implementation
+   standpoint these are very low level functions.
 
    Problem 2: SWIG generates the following code when generating wrappers to void
    functions:

@@ -18,10 +18,13 @@ class RegressionTestResult(unittest.TextTestResult):
         self.buffer = True
         if self.USE_XML:
             from xml.etree import ElementTree as ET
-            from datetime import datetime
+            from datetime import datetime, UTC
             self.__ET = ET
             self.__suite = ET.Element('testsuite')
-            self.__suite.set('start', datetime.utcnow().isoformat(' '))
+            self.__suite.set('start',
+                             datetime.now(UTC)
+                                     .replace(tzinfo=None)
+                                     .isoformat(' '))
             self.__e = None
         self.__start_time = None
 

@@ -210,10 +210,10 @@ records in a table::
     >>> Movie = namedtuple('Movie', ('name', 'released', 'director'))
 
     >>> movies = [
-    ...     Movie('Jaws', 1975, 'Speilberg'),
+    ...     Movie('Jaws', 1975, 'Spielberg'),
     ...     Movie('Titanic', 1997, 'Cameron'),
     ...     Movie('The Birds', 1963, 'Hitchcock'),
-    ...     Movie('Aliens', 1986, 'Scott')
+    ...     Movie('Aliens', 1986, 'Cameron')
     ... ]
 
     >>> # Find the first movie released after 1960
@@ -228,8 +228,8 @@ records in a table::
     >>> pprint(movies)
     [Movie(name='The Birds', released=1963, director='Hitchcock'),
      Movie(name='Love Story', released=1970, director='Hiller'),
-     Movie(name='Jaws', released=1975, director='Speilberg'),
-     Movie(name='Aliens', released=1986, director='Scott'),
+     Movie(name='Jaws', released=1975, director='Spielberg'),
+     Movie(name='Aliens', released=1986, director='Cameron'),
      Movie(name='Titanic', released=1997, director='Cameron')]
 
 If the key function is expensive, it is possible to avoid repeated function

@@ -225,7 +225,22 @@ class GeneratorTest(unittest.TestCase):
         gi = f()
         self.assertIsNone(gi.gi_frame.f_back)
 
+    def test_issue103488(self):
 
+        def gen_raises():
+            yield
+            raise ValueError()
+
+        def loop():
+            try:
+                for _ in gen_raises():
+                    if True is False:
+                        return
+            except ValueError:
+                pass
+
+        #This should not raise
+        loop()
 
 class ExceptionTest(unittest.TestCase):
     # Tests for the issue #23353: check that the currently handled exception
@@ -234,16 +249,16 @@ class ExceptionTest(unittest.TestCase):
     def test_except_throw(self):
         def store_raise_exc_generator():
             try:
-                self.assertEqual(sys.exc_info()[0], None)
+                self.assertIsNone(sys.exception())
                 yield
             except Exception as exc:
                 # exception raised by gen.throw(exc)
-                self.assertEqual(sys.exc_info()[0], ValueError)
+                self.assertIsInstance(sys.exception(), ValueError)
                 self.assertIsNone(exc.__context__)
                 yield
 
                 # ensure that the exception is not lost
-                self.assertEqual(sys.exc_info()[0], ValueError)
+                self.assertIsInstance(sys.exception(), ValueError)
                 yield
 
                 # we should be able to raise back the ValueError
@@ -265,11 +280,11 @@ class ExceptionTest(unittest.TestCase):
             next(make)
         self.assertIsNone(cm.exception.__context__)
 
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_except_next(self):
         def gen():
-            self.assertEqual(sys.exc_info()[0], ValueError)
+            self.assertIsInstance(sys.exception(), ValueError)
             yield "done"
 
         g = gen()
@@ -277,23 +292,23 @@ class ExceptionTest(unittest.TestCase):
             raise ValueError
         except Exception:
             self.assertEqual(next(g), "done")
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_except_gen_except(self):
         def gen():
             try:
-                self.assertEqual(sys.exc_info()[0], None)
+                self.assertIsNone(sys.exception())
                 yield
                 # we are called from "except ValueError:", TypeError must
                 # inherit ValueError in its context
                 raise TypeError()
             except TypeError as exc:
-                self.assertEqual(sys.exc_info()[0], TypeError)
+                self.assertIsInstance(sys.exception(), TypeError)
                 self.assertEqual(type(exc.__context__), ValueError)
             # here we are still called from the "except ValueError:"
-            self.assertEqual(sys.exc_info()[0], ValueError)
+            self.assertIsInstance(sys.exception(), ValueError)
             yield
-            self.assertIsNone(sys.exc_info()[0])
+            self.assertIsNone(sys.exception())
             yield "done"
 
         g = gen()
@@ -304,25 +319,45 @@ class ExceptionTest(unittest.TestCase):
             next(g)
 
         self.assertEqual(next(g), "done")
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
+
+    def test_nested_gen_except_loop(self):
+        def gen():
+            for i in range(100):
+                self.assertIsInstance(sys.exception(), TypeError)
+                yield "doing"
+
+        def outer():
+            try:
+                raise TypeError
+            except:
+                for x in gen():
+                    yield x
+
+        try:
+            raise ValueError
+        except Exception:
+            for x in outer():
+                self.assertEqual(x, "doing")
+        self.assertEqual(sys.exception(), None)
 
     def test_except_throw_exception_context(self):
         def gen():
             try:
                 try:
-                    self.assertEqual(sys.exc_info()[0], None)
+                    self.assertIsNone(sys.exception())
                     yield
                 except ValueError:
                     # we are called from "except ValueError:"
-                    self.assertEqual(sys.exc_info()[0], ValueError)
+                    self.assertIsInstance(sys.exception(), ValueError)
                     raise TypeError()
             except Exception as exc:
-                self.assertEqual(sys.exc_info()[0], TypeError)
+                self.assertIsInstance(sys.exception(), TypeError)
                 self.assertEqual(type(exc.__context__), ValueError)
             # we are still called from "except ValueError:"
-            self.assertEqual(sys.exc_info()[0], ValueError)
+            self.assertIsInstance(sys.exception(), ValueError)
             yield
-            self.assertIsNone(sys.exc_info()[0])
+            self.assertIsNone(sys.exception())
             yield "done"
 
         g = gen()
@@ -333,7 +368,7 @@ class ExceptionTest(unittest.TestCase):
             g.throw(exc)
 
         self.assertEqual(next(g), "done")
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
     def test_except_throw_bad_exception(self):
         class E(Exception):

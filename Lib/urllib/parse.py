@@ -167,12 +167,11 @@ class _NetlocResultMixinBase(object):
     def port(self):
         port = self._hostinfo[1]
         if port is not None:
-            try:
-                port = int(port, 10)
-            except ValueError:
-                message = f'Port could not be cast to integer value as {port!r}'
-                raise ValueError(message) from None
-            if not ( 0 <= port <= 65535):
+            if port.isdigit() and port.isascii():
+                port = int(port)
+            else:
+                raise ValueError(f"Port could not be cast to integer value as {port!r}")
+            if not (0 <= port <= 65535):
                 raise ValueError("Port out of range 0-65535")
         return port
 
@@ -461,7 +460,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
     allow_fragments = bool(allow_fragments)
     netloc = query = fragment = ''
     i = url.find(':')
-    if i > 0:
+    if i > 0 and url[0].isascii() and url[0].isalpha():
         for c in url[:i]:
             if c not in scheme_chars:
                 break
@@ -601,6 +600,9 @@ _hextobyte = None
 
 def unquote_to_bytes(string):
     """unquote_to_bytes('abc%20def') -> b'abc def'."""
+    return bytes(_unquote_impl(string))
+
+def _unquote_impl(string: bytes | bytearray | str) -> bytes | bytearray:
     # Note: strings are encoded as UTF-8. This is only an issue if it contains
     # unescaped non-ASCII characters, which URIs should not.
     if not string:
@@ -612,8 +614,8 @@ def unquote_to_bytes(string):
     bits = string.split(b'%')
     if len(bits) == 1:
         return string
-    res = [bits[0]]
-    append = res.append
+    res = bytearray(bits[0])
+    append = res.extend
     # Delay the initialization of the table to not waste memory
     # if the function is never called
     global _hextobyte
@@ -627,9 +629,19 @@ def unquote_to_bytes(string):
         except KeyError:
             append(b'%')
             append(item)
-    return b''.join(res)
+    return res
 
 _asciire = re.compile('([\x00-\x7f]+)')
+
+def _generate_unquoted_parts(string, encoding, errors):
+    previous_match_end = 0
+    for ascii_match in _asciire.finditer(string):
+        start, end = ascii_match.span()
+        yield string[previous_match_end:start]  # Non-ASCII
+        # The ascii_match[1] group == string[start:end].
+        yield _unquote_impl(ascii_match[1]).decode(encoding, errors)
+        previous_match_end = end
+    yield string[previous_match_end:]  # Non-ASCII tail
 
 def unquote(string, encoding='utf-8', errors='replace'):
     """Replace %xx escapes by their single-character equivalent. The optional
@@ -642,21 +654,16 @@ def unquote(string, encoding='utf-8', errors='replace'):
     unquote('abc%20def') -> 'abc def'.
     """
     if isinstance(string, bytes):
-        return unquote_to_bytes(string).decode(encoding, errors)
+        return _unquote_impl(string).decode(encoding, errors)
     if '%' not in string:
+        # Is it a string-like object?
         string.split
         return string
     if encoding is None:
         encoding = 'utf-8'
     if errors is None:
         errors = 'replace'
-    bits = _asciire.split(string)
-    res = [bits[0]]
-    append = res.append
-    for i in range(1, len(bits), 2):
-        append(unquote_to_bytes(bits[i]).decode(encoding, errors))
-        append(bits[i + 1])
-    return ''.join(res)
+    return ''.join(_generate_unquoted_parts(string, encoding, errors))
 
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
@@ -1132,15 +1139,15 @@ def splitnport(host, defport=-1):
 def _splitnport(host, defport=-1):
     """Split host and port, returning numeric port.
     Return given default port if no ':' found; defaults to -1.
-    Return numerical port if a valid number are found after ':'.
+    Return numerical port if a valid number is found after ':'.
     Return None if ':' but not a valid number."""
     host, delim, port = host.rpartition(':')
     if not delim:
         host = port
     elif port:
-        try:
+        if port.isdigit() and port.isascii():
             nport = int(port)
-        except ValueError:
+        else:
             nport = None
         return host, nport
     return host, defport

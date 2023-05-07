@@ -2,7 +2,6 @@
 
 from test import support
 import unittest
-from unittest.mock import MagicMock
 import sys
 import difflib
 import gc
@@ -346,7 +345,7 @@ class TraceTestCase(unittest.TestCase):
         return Tracer()
 
     def compare_events(self, line_offset, events, expected_events):
-        events = [(l - line_offset, e) for (l, e) in events]
+        events = [(l - line_offset if l is not None else None, e) for (l, e) in events]
         if events != expected_events:
             self.fail(
                 "events did not match expectation:\n" +
@@ -834,9 +833,8 @@ class TraceTestCase(unittest.TestCase):
              (5, 'line'),
              (6, 'line'),
              (7, 'line'),
-             (10, 'line'),
-             (13, 'line'),
-             (13, 'return')])
+             (10, 'line')] +
+             ([(13, 'line'), (13, 'return')] if __debug__ else [(10, 'return')]))
 
     def test_continue_through_finally(self):
 
@@ -871,9 +869,8 @@ class TraceTestCase(unittest.TestCase):
              (6, 'line'),
              (7, 'line'),
              (10, 'line'),
-             (3, 'line'),
-             (13, 'line'),
-             (13, 'return')])
+             (3, 'line')] +
+             ([(13, 'line'), (13, 'return')] if __debug__ else [(3, 'return')]))
 
     def test_return_through_finally(self):
 
@@ -2798,12 +2795,8 @@ class TestEdgeCases(unittest.TestCase):
                 sys.settrace(bar)
 
         sys.settrace(A())
-        with support.catch_unraisable_exception() as cm:
-            sys.settrace(foo)
-            self.assertEqual(cm.unraisable.object, A.__del__)
-            self.assertIsInstance(cm.unraisable.exc_value, RuntimeError)
-
-        self.assertEqual(sys.gettrace(), foo)
+        sys.settrace(foo)
+        self.assertEqual(sys.gettrace(), bar)
 
 
     def test_same_object(self):
@@ -2813,6 +2806,66 @@ class TestEdgeCases(unittest.TestCase):
         sys.settrace(foo)
         del foo
         sys.settrace(sys.gettrace())
+
+
+class TestLinesAfterTraceStarted(TraceTestCase):
+
+    def test_events(self):
+        tracer = Tracer()
+        sys._getframe().f_trace = tracer.trace
+        sys.settrace(tracer.trace)
+        line = 4
+        line = 5
+        sys.settrace(None)
+        self.compare_events(
+            TestLinesAfterTraceStarted.test_events.__code__.co_firstlineno,
+            tracer.events, [
+                (4, 'line'),
+                (5, 'line'),
+                (6, 'line')])
+
+
+class TestSetLocalTrace(TraceTestCase):
+
+    def test_with_branches(self):
+
+        def tracefunc(frame, event, arg):
+            if frame.f_code.co_name == "func":
+                frame.f_trace = tracefunc
+                line = frame.f_lineno - frame.f_code.co_firstlineno
+                events.append((line, event))
+            return tracefunc
+
+        def func(arg = 1):
+            N = 1
+            if arg >= 2:
+                not_reached = 3
+            else:
+                reached = 5
+            if arg >= 3:
+                not_reached = 7
+            else:
+                reached = 9
+            the_end = 10
+
+        EXPECTED_EVENTS = [
+            (0, 'call'),
+            (1, 'line'),
+            (2, 'line'),
+            (5, 'line'),
+            (6, 'line'),
+            (9, 'line'),
+            (10, 'line'),
+            (10, 'return'),
+        ]
+
+        events = []
+        sys.settrace(tracefunc)
+        sys._getframe().f_trace = tracefunc
+        func()
+        self.assertEqual(events, EXPECTED_EVENTS)
+        sys.settrace(None)
+
 
 
 if __name__ == "__main__":

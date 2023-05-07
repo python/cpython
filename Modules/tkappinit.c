@@ -18,18 +18,10 @@
 
 #include "tkinter.h"
 
-#ifdef TKINTER_PROTECT_LOADTK
-/* See Tkapp_TkInit in _tkinter.c for the usage of tk_load_faile */
-static int tk_load_failed;
-#endif
-
 int
 Tcl_AppInit(Tcl_Interp *interp)
 {
     const char *_tkinter_skip_tk_init;
-#ifdef TKINTER_PROTECT_LOADTK
-    const char *_tkinter_tk_failed;
-#endif
 
 #ifdef TK_AQUA
 #ifndef MAX_PATH_LEN
@@ -90,23 +82,7 @@ Tcl_AppInit(Tcl_Interp *interp)
         return TCL_OK;
     }
 
-#ifdef TKINTER_PROTECT_LOADTK
-    _tkinter_tk_failed = Tcl_GetVar(interp,
-                    "_tkinter_tk_failed", TCL_GLOBAL_ONLY);
-
-    if (tk_load_failed || (
-                            _tkinter_tk_failed != NULL &&
-                            strcmp(_tkinter_tk_failed, "1") == 0)) {
-        Tcl_SetResult(interp, TKINTER_LOADTK_ERRMSG, TCL_STATIC);
-        return TCL_ERROR;
-    }
-#endif
-
     if (Tk_Init(interp) == TCL_ERROR) {
-#ifdef TKINTER_PROTECT_LOADTK
-        tk_load_failed = 1;
-        Tcl_SetVar(interp, "_tkinter_tk_failed", "1", TCL_GLOBAL_ONLY);
-#endif
         return TCL_ERROR;
     }
 

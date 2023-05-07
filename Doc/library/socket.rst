@@ -19,7 +19,7 @@ all modern Unix systems, Windows, MacOS, and probably additional platforms.
 
 .. include:: ../includes/wasm-notavail.rst
 
-.. index:: object: socket
+.. index:: pair: object; socket
 
 The Python interface is a straightforward transliteration of the Unix system
 call and library interface for sockets to Python's object-oriented style: the
@@ -189,8 +189,11 @@ created.  Socket addresses are represented as follows:
   ``(ifname, proto[, pkttype[, hatype[, addr]]])`` where:
 
   - *ifname* - String specifying the device name.
-  - *proto* - An in network-byte-order integer specifying the Ethernet
-    protocol number.
+  - *proto* - The Ethernet protocol number.
+    May be :data:`ETH_P_ALL` to capture all protocols,
+    one of the :ref:`ETHERTYPE_* constants <socket-ethernet-types>`
+    or any other Ethernet protocol number.
+    Value must be in network-byte-order.
   - *pkttype* - Optional integer specifying the packet type:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
@@ -425,7 +428,15 @@ Constants
    .. versionchanged:: 3.12
       Added ``SO_RTABLE`` and ``SO_USER_COOKIE``. On OpenBSD
       and FreeBSD respectively those constants can be used in the same way that
-      ``SO_MARK`` is used on Linux.
+      ``SO_MARK`` is used on Linux. Also added missing TCP socket options from
+      Linux: ``TCP_MD5SIG``, ``TCP_THIN_LINEAR_TIMEOUTS``, ``TCP_THIN_DUPACK``,
+      ``TCP_REPAIR``, ``TCP_REPAIR_QUEUE``, ``TCP_QUEUE_SEQ``,
+      ``TCP_REPAIR_OPTIONS``, ``TCP_TIMESTAMP``, ``TCP_CC_INFO``,
+      ``TCP_SAVE_SYN``, ``TCP_SAVED_SYN``, ``TCP_REPAIR_WINDOW``,
+      ``TCP_FASTOPEN_CONNECT``, ``TCP_ULP``, ``TCP_MD5SIG_EXT``,
+      ``TCP_FASTOPEN_KEY``, ``TCP_FASTOPEN_NO_COOKIE``,
+      ``TCP_ZEROCOPY_RECEIVE``, ``TCP_INQ``, ``TCP_TX_DELAY``.
+      Added ``IP_PKTINFO``.
 
 .. data:: AF_CAN
           PF_CAN
@@ -498,6 +509,17 @@ Constants
    .. versionadded:: 3.9
 
 
+.. data:: AF_DIVERT
+          PF_DIVERT
+
+   These two constants, documented in the FreeBSD divert(4) manual page, are
+   also defined in the socket module.
+
+   .. availability:: FreeBSD >= 14.0.
+
+   .. versionadded:: 3.12
+
+
 .. data:: AF_PACKET
           PF_PACKET
           PACKET_*
@@ -506,6 +528,19 @@ Constants
    also defined in the socket module.
 
    .. availability:: Linux >= 2.2.
+
+
+.. data:: ETH_P_ALL
+
+   :data:`!ETH_P_ALL` can be used in the :class:`~socket.socket`
+   constructor as *proto* for the :const:`AF_PACKET` family in order to
+   capture every packet, regardless of protocol.
+
+   For more information, see the :manpage:`packet(7)` manpage.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
 
 
 .. data:: AF_RDS
@@ -638,6 +673,22 @@ Constants
 
    .. versionadded:: 3.12
 
+.. _socket-ethernet-types:
+
+.. data:: ETHERTYPE_ARP
+          ETHERTYPE_IP
+          ETHERTYPE_IPV6
+          ETHERTYPE_VLAN
+
+   `IEEE 802.3 protocol number
+   <https://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.txt>`_.
+   constants.
+
+   .. availability:: Linux, FreeBSD, macOS.
+
+   .. versionadded:: 3.12
+
+
 Functions
 ^^^^^^^^^
 
@@ -764,8 +815,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    ``(host, port)``) and returns the socket object.
 
    *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
-   *backlog* is the queue size passed to :meth:`socket.listen`; when ``0``
-   a default reasonable value is chosen.
+   *backlog* is the queue size passed to :meth:`socket.listen`; if not specified
+   , a default reasonable value is chosen.
    *reuse_port* dictates whether to set the :data:`SO_REUSEPORT` socket option.
 
    If *dualstack_ipv6* is true and the platform supports it the socket will
@@ -1735,7 +1786,7 @@ to sockets.
    much data, if any, was successfully sent.
 
    .. versionchanged:: 3.5
-      The socket timeout is no more reset each time data is sent successfully.
+      The socket timeout is no longer reset each time data is sent successfully.
       The socket timeout is now the maximum total duration to send all data.
 
    .. versionchanged:: 3.5
@@ -1876,7 +1927,7 @@ to sockets.
 .. method:: socket.setsockopt(level, optname, None, optlen: int)
    :noindex:
 
-   .. index:: module: struct
+   .. index:: pair: module; struct
 
    Set the value of the given socket option (see the Unix manual page
    :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in the
@@ -1958,8 +2009,8 @@ can be changed by calling :func:`setdefaulttimeout`.
 
 * In *non-blocking mode*, operations fail (with an error that is unfortunately
   system-dependent) if they cannot be completed immediately: functions from the
-  :mod:`select` can be used to know when and whether a socket is available for
-  reading or writing.
+  :mod:`select` module can be used to know when and whether a socket is available
+  for reading or writing.
 
 * In *timeout mode*, operations fail if they cannot be completed within the
   timeout specified for the socket (they raise a :exc:`timeout` exception)
@@ -2148,7 +2199,7 @@ manager protocol instead, open a socket with::
     socket.socket(socket.AF_CAN, socket.SOCK_DGRAM, socket.CAN_BCM)
 
 After binding (:const:`CAN_RAW`) or connecting (:const:`CAN_BCM`) the socket, you
-can use the :meth:`socket.send`, and the :meth:`socket.recv` operations (and
+can use the :meth:`socket.send` and :meth:`socket.recv` operations (and
 their counterparts) on the socket object as usual.
 
 This last example might require special privileges::

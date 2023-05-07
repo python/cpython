@@ -320,9 +320,11 @@ Writing and reading a bzip2-compressed file in binary mode:
     >>> with bz2.open("myfile.bz2", "wb") as f:
     ...     # Write compressed data to file
     ...     unused = f.write(data)
+    ...
     >>> with bz2.open("myfile.bz2", "rb") as f:
     ...     # Decompress data from file
     ...     content = f.read()
+    ...
     >>> content == data  # Check equality to original object after round-trip
     True
 

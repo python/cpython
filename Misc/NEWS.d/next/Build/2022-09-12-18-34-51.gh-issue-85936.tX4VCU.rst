@@ -1,2 +1,0 @@
-CPython now uses the ThinLTO option as the default policy if the Clang
-compiler accepts the flag. Patch by Dong-hee Na.

@@ -2305,7 +2305,7 @@ class Tk(Misc, Wm):
 
     def __init__(self, screenName=None, baseName=None, className='Tk',
                  useTk=True, sync=False, use=None):
-        """Return a new Toplevel widget on screen SCREENNAME. A new Tcl interpreter will
+        """Return a new top level widget on screen SCREENNAME. A new Tcl interpreter will
         be created. BASENAME will be used for the identification of the profile file (see
         readprofile).
         It is constructed from sys.argv[0] without extensions if None is given. CLASSNAME
@@ -2400,6 +2400,7 @@ class Tk(Misc, Wm):
         should when sys.stderr is None."""
         import traceback
         print("Exception in Tkinter callback", file=sys.stderr)
+        sys.last_exc = val
         sys.last_type = exc
         sys.last_value = val
         sys.last_traceback = tb
@@ -3429,8 +3430,7 @@ class Menu(Widget):
     def index(self, index):
         """Return the index of a menu item identified by INDEX."""
         i = self.tk.call(self._w, 'index', index)
-        if i == 'none': return None
-        return self.tk.getint(i)
+        return None if i in ('', 'none') else self.tk.getint(i)  # GH-103685.
 
     def invoke(self, index):
         """Invoke a menu item identified by INDEX and execute
@@ -3648,7 +3648,7 @@ class Text(Widget, XView, YView):
         "lines", "xpixels" and "ypixels". There is an additional possible
         option "update", which if given then all subsequent options ensure
         that any possible out of date information is recalculated."""
-        args = ['-%s' % arg for arg in args if not arg.startswith('-')]
+        args = ['-%s' % arg for arg in args]
         args += [index1, index2]
         res = self.tk.call(self._w, 'count', *args) or None
         if res is not None and len(args) <= 3:

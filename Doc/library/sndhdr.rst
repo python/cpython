@@ -54,3 +54,51 @@ be the sample size in bits or ``'A'`` for A-LAW or ``'U'`` for u-LAW.
    .. versionchanged:: 3.5
       Result changed from a tuple to a namedtuple.
 
+The following sound header types are recognized, as listed below with the return value
+from :func:`whathdr`: and :func:`what`:
+
++------------+------------------------------------+
+| Value      | Sound header format                |
++============+====================================+
+| ``'aifc'`` | Compressed Audio Interchange Files |
++------------+------------------------------------+
+| ``'aiff'`` | Audio Interchange Files            |
++------------+------------------------------------+
+| ``'au'``   | Au Files                           |
++------------+------------------------------------+
+| ``'hcom'`` | HCOM Files                         |
++------------+------------------------------------+
+| ``'sndt'`` | Sndtool Sound Files                |
++------------+------------------------------------+
+| ``'voc'``  | Creative Labs Audio Files          |
++------------+------------------------------------+
+| ``'wav'``  | Waveform Audio File Format Files   |
++------------+------------------------------------+
+| ``'8svx'`` | 8-Bit Sampled Voice Files          |
++------------+------------------------------------+
+| ``'sb'``   | Signed Byte Audio Data Files       |
++------------+------------------------------------+
+| ``'ub'``   | UB Files                           |
++------------+------------------------------------+
+| ``'ul'``   | uLAW Audio Files                   |
++------------+------------------------------------+
+
+.. data:: tests
+
+   A list of functions performing the individual tests.  Each function takes two
+   arguments: the byte-stream and an open file-like object. When :func:`what` is
+   called with a byte-stream, the file-like object will be ``None``.
+
+   The test function should return a string describing the image type if the test
+   succeeded, or ``None`` if it failed.
+
+Example:
+
+.. code-block:: pycon
+
+   >>> import sndhdr
+   >>> imghdr.what('bass.wav')
+   'wav'
+   >>> imghdr.whathdr('bass.wav')
+   'wav'
+
