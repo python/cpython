@@ -20,6 +20,7 @@ extern PyType_Spec bufferedreader_spec;
 extern PyType_Spec bufferedrwpair_spec;
 extern PyType_Spec bufferedwriter_spec;
 extern PyType_Spec bytesio_spec;
+extern PyType_Spec bytesiobuf_spec;
 extern PyType_Spec fileio_spec;
 extern PyType_Spec nldecoder_spec;
 extern PyType_Spec stringio_spec;
@@ -194,5 +195,3 @@ extern _PyIO_State *_PyIO_get_module_state(void);
 #ifdef HAVE_WINDOWS_CONSOLE_IO
 extern char _PyIO_get_console_type(PyObject *);
 #endif
-
-extern Py_EXPORTED_SYMBOL PyTypeObject _PyBytesIOBuffer_Type;
