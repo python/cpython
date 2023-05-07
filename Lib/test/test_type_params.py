@@ -347,6 +347,15 @@ class TypeParamsClassScopeTest(unittest.TestCase):
             assert U.__bound__ == "class"
         """)
 
+    def test_modified_later(self):
+        class X:
+            T = int
+            def foo[U: T](self): ...
+            type Alias = T
+        X.T = float
+        self.assertIs(X.foo.__type_params__[0].__bound__, float)
+        self.assertIs(X.Alias.__value__, float)
+
 
 class ManglingTest(unittest.TestCase):
     def test_mangling(self):

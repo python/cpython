@@ -42,7 +42,6 @@ typedef struct {
     PyObject *func_module;      /* The __module__ attribute, can be anything */
     PyObject *func_annotations; /* Annotations, a dict or NULL */
     PyObject *func_typeparams;  /* Tuple of active type variables or NULL */
-    PyObject *func_class_dict;  /* Class dict, a dict or NULL */
     vectorcallfunc vectorcall;
     /* Version number for use by specializer.
      * Can set to non-zero when we want to specialize.
@@ -101,11 +100,6 @@ static inline PyObject* PyFunction_GET_GLOBALS(PyObject *func) {
     return _PyFunction_CAST(func)->func_globals;
 }
 #define PyFunction_GET_GLOBALS(func) PyFunction_GET_GLOBALS(_PyObject_CAST(func))
-
-static inline PyObject* PyFunction_GET_CLASS_DICT(PyObject *func) {
-    return _PyFunction_CAST(func)->func_class_dict;
-}
-#define PyFunction_GET_CLASS_DICT(func) PyFunction_GET_CLASS_DICT(_PyObject_CAST(func))
 
 static inline PyObject* PyFunction_GET_MODULE(PyObject *func) {
     return _PyFunction_CAST(func)->func_module;

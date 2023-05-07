@@ -66,6 +66,8 @@ typedef struct _symtable_entry {
     unsigned ste_needs_class_closure : 1; /* for class scopes, true if a
                                              closure over __class__
                                              should be created */
+    unsigned ste_needs_classdict : 1; /* for class scopes, true if a closure
+                                         over the class dict should be created */
     unsigned ste_comp_iter_target : 1; /* true if visiting comprehension target */
     unsigned ste_type_params_in_class : 1; /* true if this is a type parameters block
                                               inside a class */

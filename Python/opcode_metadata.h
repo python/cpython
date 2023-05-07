@@ -164,7 +164,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case LOAD_NAME:
             return 0+2;
         case LOAD_CLASSDICT_OR_GLOBAL:
-            return 0+2;
+            return 1+2;
         case LOAD_GLOBAL:
             return 0;
         case LOAD_GLOBAL_MODULE:
@@ -180,7 +180,7 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case LOAD_CLASSDEREF:
             return 0+1;
         case LOAD_CLASSDICT_OR_DEREF:
-            return 0+1;
+            return 1+1;
         case LOAD_DEREF:
             return 0;
         case STORE_DEREF:

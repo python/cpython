@@ -118,6 +118,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_comp_iter_target = 0;
     ste->ste_type_params_in_class = 0;
     ste->ste_comp_iter_expr = 0;
+    ste->ste_needs_classdict = 0;
 
     ste->ste_symbols = PyDict_New();
     ste->ste_varnames = PyList_New(0);
@@ -650,6 +651,11 @@ drop_class_free(PySTEntryObject *ste, PyObject *free)
         return 0;
     if (res)
         ste->ste_needs_class_closure = 1;
+    res = PySet_Discard(free, &_Py_ID(__classdict__));
+    if (res < 0)
+        return 0;
+    if (res)
+        ste->ste_needs_classdict = 1;
     return 1;
 }
 
@@ -854,12 +860,16 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         Py_DECREF(temp);
     }
     else {
-        /* Special-case __class__ */
+        /* Special-case __class__ and __classdict__ */
         PyObject *flags = PyLong_FromLong(0);
         if (flags == NULL) {
             goto error;
         }
         if (PyDict_SetItem(newbound, &_Py_ID(__class__), flags) < 0) {
+            Py_DECREF(flags);
+            goto error;
+        }
+        if (PyDict_SetItem(newbound, &_Py_ID(__classdict__), flags) < 0) {
             Py_DECREF(flags);
             goto error;
         }
@@ -1172,13 +1182,7 @@ symtable_enter_typeparam_block(struct symtable *st, identifier name,
     }
     if (current_type == ClassBlock) {
         st->st_cur->ste_type_params_in_class = 1;
-        _Py_DECLARE_STR(class_dict, ".class_dict");
-        if (!symtable_add_def(st, &_Py_STR(class_dict),
-                              DEF_PARAM, lineno, col_offset, end_lineno, end_col_offset)) {
-            return 0;
-        }
-        if (!symtable_add_def(st, &_Py_STR(class_dict),
-                              USE, lineno, col_offset, end_lineno, end_col_offset)) {
+        if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, lineno, col_offset, end_lineno, end_col_offset)) {
             return 0;
         }
     }
@@ -1420,6 +1424,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                   (void *)s, LOCATION(s)))
             VISIT_QUIT(st, 0);
         st->st_cur->ste_type_params_in_class = is_in_class;
+        if (is_in_class && !symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(s->v.TypeAlias.value))) {
+            VISIT_QUIT(st, 0);
+        }
         VISIT(st, expr, s->v.TypeAlias.value);
         if (!symtable_exit_block(st))
             VISIT_QUIT(st, 0);
@@ -1962,6 +1969,9 @@ symtable_visit_typeparam(struct symtable *st, typeparam_ty tp)
                                       LOCATION(tp)))
                 VISIT_QUIT(st, 0);
             st->st_cur->ste_type_params_in_class = is_in_class;
+            if (is_in_class && !symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(tp->v.TypeVar.bound))) {
+                VISIT_QUIT(st, 0);
+            }
             VISIT(st, expr, tp->v.TypeVar.bound);
             if (!symtable_exit_block(st))
                 VISIT_QUIT(st, 0);

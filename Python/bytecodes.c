@@ -1170,20 +1170,8 @@ dummy_func(
             }
         }
 
-        op(_LOAD_CLASSDICT_OR_GLOBAL_INTRO, (-- mad_or_class_dict, name)) {
+        op(_LOAD_CLASSDICT_OR_GLOBAL_INTRO, (mad_or_class_dict -- mad_or_class_dict, name)) {
             name = GETITEM(frame->f_code->co_names, oparg);
-            PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
-            if (func == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no function defined when loading %R from class dict", name);
-                goto error;
-            }
-            mad_or_class_dict = func->func_class_dict;
-            if (mad_or_class_dict == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no class dict set when loading %R", name);
-                goto error;
-            }
         }
 
         op(_LOAD_NAME_COMMON, (mad_or_class_dict, name -- v)) {
@@ -1368,19 +1356,7 @@ dummy_func(
             class_dict = LOCALS();
         }
 
-        op(_LOAD_CLASSDICT_OR_DEREF_INTRO, (-- class_dict)) {
-            PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
-            if (func == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no function defined when loading from class dict");
-                goto error;
-            }
-            class_dict = func->func_class_dict;
-            if (class_dict == NULL) {
-                _PyErr_Format(tstate, PyExc_SystemError,
-                              "no class dict set when loading from class dict");
-                goto error;
-            }
+        op(_LOAD_CLASSDICT_OR_DEREF_INTRO, (class_dict -- class_dict)) {
         }
 
         op(_LOAD_CLASSDEREF_COMMON, (class_dict -- value)) {

@@ -232,6 +232,7 @@ instr_sequence_next_inst(instr_sequence *seq) {
                                           &seq->s_allocated,
                                           INITIAL_INSTR_SEQUENCE_SIZE,
                                           sizeof(instruction)));
+    assert(seq->s_allocated >= 0);
     assert(seq->s_used < seq->s_allocated);
     return seq->s_used++;
 }
@@ -1263,6 +1264,18 @@ compiler_enter_scope(struct compiler *c, identifier name,
             return ERROR;
         }
     }
+    if (u->u_ste->ste_needs_classdict) {
+        /* Cook up an implicit __classdict__ cell. */
+        int res;
+        assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
+        PyObject *index = u->u_ste->ste_needs_class_closure ? _PyLong_GetOne() : _PyLong_GetZero();
+        res = PyDict_SetItem(u->u_metadata.u_cellvars, &_Py_ID(__classdict__),
+                             index);
+        if (res < 0) {
+            compiler_unit_free(u);
+            return ERROR;
+        }
+    }
 
     u->u_metadata.u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
                                PyDict_GET_SIZE(u->u_metadata.u_cellvars));
@@ -1723,8 +1736,10 @@ get_ref_type(struct compiler *c, PyObject *name)
 {
     int scope;
     if (c->u->u_scope_type == COMPILER_SCOPE_CLASS &&
-        _PyUnicode_EqualToASCIIString(name, "__class__"))
+        (_PyUnicode_EqualToASCIIString(name, "__class__") ||
+         _PyUnicode_EqualToASCIIString(name, "__classdict__"))) {
         return CELL;
+    }
     scope = _PyST_GetScope(c->u->u_ste, name);
     if (scope == 0) {
         PyErr_Format(PyExc_SystemError,
@@ -2121,10 +2136,6 @@ compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
                     return ERROR;
                 }
                 Py_DECREF(co);
-                if (c->u->u_ste->ste_type_params_in_class) {
-                    ADDOP_I(c, loc, LOAD_FAST, 0);
-                    ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_CLASS_DICT);
-                }
 
                 int intrinsic = bound->kind == Tuple_kind
                     ? INTRINSIC_TYPEVAR_WITH_CONSTRAINTS
@@ -2315,10 +2326,6 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             return ERROR;
         }
         Py_DECREF(co);
-        if (is_typeparams_in_class) {
-            ADDOP(c, loc, LOAD_LOCALS);
-            ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_CLASS_DICT);
-        }
         ADDOP_I(c, loc, SWAP, num_typeparam_args + 2);
         ADDOP(c, loc, POP_TOP);
         ADDOP_I(c, loc, CALL, num_typeparam_args);
@@ -2415,12 +2422,33 @@ compiler_class(struct compiler *c, stmt_ty s)
                 return ERROR;
             }
         }
+        if (c->u->u_ste->ste_needs_classdict) {
+            ADDOP(c, loc, LOAD_LOCALS);
+            if (compiler_nameop(c, loc, &_Py_ID(__classdict__), Store) < 0) {
+                compiler_exit_scope(c);
+                return ERROR;
+            }
+        }
         /* compile the body proper */
         if (compiler_body(c, loc, s->v.ClassDef.body) < 0) {
             compiler_exit_scope(c);
             return ERROR;
         }
         /* The following code is artificial */
+        /* Set __classdictcell__ if necessary */
+        if (c->u->u_ste->ste_needs_classdict) {
+            /* Store __classdictcell__ into class namespace */
+            i = compiler_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__classdict__));
+            if (i < 0) {
+                compiler_exit_scope(c);
+                return ERROR;
+            }
+            ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
+            if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__classdictcell__), Store) < 0) {
+                compiler_exit_scope(c);
+                return ERROR;
+            }
+        }
         /* Return __classcell__ if it is referenced, otherwise return None */
         if (c->u->u_ste->ste_needs_class_closure) {
             /* Store __classcell__ into class namespace & return it */
@@ -2439,7 +2467,8 @@ compiler_class(struct compiler *c, stmt_ty s)
         }
         else {
             /* No methods referenced __class__, so just return None */
-            assert(PyDict_GET_SIZE(c->u->u_metadata.u_cellvars) == 0);
+            assert(PyDict_GET_SIZE(c->u->u_metadata.u_cellvars) ==
+                   c->u->u_ste->ste_needs_classdict ? 1 : 0);
             ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
         }
         ADDOP_IN_SCOPE(c, NO_LOCATION, RETURN_VALUE);
@@ -2493,9 +2522,6 @@ compiler_class(struct compiler *c, stmt_ty s)
                                              bases,
                                              s->v.ClassDef.keywords));
 
-        // Must be before we exit the scope
-        int is_typeparams_in_class = c->u->u_ste->ste_type_params_in_class;
-        c->u->u_metadata.u_argcount = is_typeparams_in_class;
         PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
@@ -2506,12 +2532,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(co);
-        if (is_typeparams_in_class) {
-            ADDOP(c, loc, LOAD_LOCALS);
-            ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_CLASS_DICT);
-            ADDOP(c, loc, LOAD_LOCALS);
-        }
-        ADDOP_I(c, loc, CALL, is_typeparams_in_class);
+        ADDOP_I(c, loc, CALL, 0);
     } else {
         RETURN_IF_ERROR(compiler_call_helper(c, loc, 2,
                                             s->v.ClassDef.bases,
@@ -2560,7 +2581,6 @@ compiler_typealias(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(compiler_add_const(c->c_const_cache, c->u, Py_None));
     VISIT_IN_SCOPE(c, expr, s->v.TypeAlias.value);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
-    int is_in_class = c->u->u_ste->ste_type_params_in_class;
     PyCodeObject *co = optimize_and_assemble(c, 0);
     compiler_exit_scope(c);
     if (co == NULL) {
@@ -2571,21 +2591,9 @@ compiler_typealias(struct compiler *c, stmt_ty s)
         return ERROR;
     }
     Py_DECREF(co);
-    if (is_in_class) {
-        if (is_generic) {
-            ADDOP_I(c, loc, LOAD_FAST, 0);
-        }
-        else {
-            ADDOP(c, loc, LOAD_LOCALS);
-        }
-        ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_CLASS_DICT);
-    }
     ADDOP_I(c, loc, BUILD_TUPLE, 3);
     ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEALIAS);
     if (is_generic) {
-        // Must be before we exit the scope
-        int is_typeparams_in_class = c->u->u_ste->ste_type_params_in_class;
-        c->u->u_metadata.u_argcount = is_typeparams_in_class;
         PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
@@ -2596,12 +2604,7 @@ compiler_typealias(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(co);
-        if (is_typeparams_in_class) {
-            ADDOP(c, loc, LOAD_LOCALS);
-            ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_CLASS_DICT);
-            ADDOP(c, loc, LOAD_LOCALS);
-        }
-        ADDOP_I(c, loc, CALL, is_typeparams_in_class);
+        ADDOP_I(c, loc, CALL, 0);
     }
     RETURN_IF_ERROR(compiler_nameop(c, loc, name, Store));
     return SUCCESS;
@@ -4030,7 +4033,13 @@ compiler_nameop(struct compiler *c, location loc,
 
     op = 0;
     optype = OP_NAME;
-    scope = _PyST_GetScope(c->u->u_ste, mangled);
+    if (c->u->u_scope_type == COMPILER_SCOPE_CLASS &&
+        _PyUnicode_EqualToASCIIString(name, "__classdict__")) {
+        scope = CELL;
+    }
+    else {
+        scope = _PyST_GetScope(c->u->u_ste, mangled);
+    }
     switch (scope) {
     case FREE:
         dict = c->u->u_metadata.u_freevars;
@@ -4068,6 +4077,11 @@ compiler_nameop(struct compiler *c, location loc,
             }
             else if (c->u->u_ste->ste_type_params_in_class) {
                 op = LOAD_CLASSDICT_OR_DEREF;
+                // First load the classdict
+                if (compiler_addop_o(c->u, loc, LOAD_DEREF,
+                                     c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
+                    return ERROR;
+                }
             }
             else {
                 op = LOAD_DEREF;
@@ -4090,6 +4104,11 @@ compiler_nameop(struct compiler *c, location loc,
         case Load:
             if (c->u->u_ste->ste_type_params_in_class) {
                 op = LOAD_CLASSDICT_OR_GLOBAL;
+                // First load the classdict
+                if (compiler_addop_o(c->u, loc, LOAD_DEREF,
+                                     c->u->u_metadata.u_freevars, &_Py_ID(__classdict__)) < 0) {
+                    return ERROR;
+                }
             } else {
                 op = LOAD_GLOBAL;
             }
