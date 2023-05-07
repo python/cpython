@@ -193,6 +193,20 @@ PyTypeObject _PyManagedBuffer_Type = {
         return -1;                                                \
     }
 
+#define CHECK_RESTRICTED(mv) \
+    if (((PyMemoryViewObject *)(mv))->flags & _Py_MEMORYVIEW_RESTRICTED) { \
+        PyErr_SetString(PyExc_ValueError,                                  \
+            "cannot create new view on restricted memoryview");            \
+        return NULL;                                                       \
+    }
+
+#define CHECK_RESTRICTED_INT(mv) \
+    if (((PyMemoryViewObject *)(mv))->flags & _Py_MEMORYVIEW_RESTRICTED) { \
+        PyErr_SetString(PyExc_ValueError,                                  \
+            "cannot create new view on restricted memoryview");            \
+        return -1;                                                       \
+    }
+
 /* See gh-92888. These macros signal that we need to check the memoryview
    again due to possible read after frees. */
 #define CHECK_RELEASED_AGAIN(mv) CHECK_RELEASED(mv)
@@ -789,6 +803,7 @@ PyMemoryView_FromObjectAndFlags(PyObject *v, int flags)
     if (PyMemoryView_Check(v)) {
         PyMemoryViewObject *mv = (PyMemoryViewObject *)v;
         CHECK_RELEASED(mv);
+        CHECK_RESTRICTED(mv);
         return mbuf_add_view(mv->mbuf, &mv->view);
     }
     else if (PyObject_CheckBuffer(v)) {
@@ -1421,6 +1436,7 @@ memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
     Py_ssize_t ndim = 1;
 
     CHECK_RELEASED(self);
+    CHECK_RESTRICTED(self);
 
     if (!MV_C_CONTIGUOUS(self->flags)) {
         PyErr_SetString(PyExc_TypeError,
@@ -1476,6 +1492,7 @@ memoryview_toreadonly_impl(PyMemoryViewObject *self)
 /*[clinic end generated code: output=2c7e056f04c99e62 input=dc06d20f19ba236f]*/
 {
     CHECK_RELEASED(self);
+    CHECK_RESTRICTED(self);
     /* Even if self is already readonly, we still need to create a new
      * object for .release() to work correctly.
      */
@@ -1498,6 +1515,7 @@ memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
     int baseflags = self->flags;
 
     CHECK_RELEASED_INT(self);
+    CHECK_RESTRICTED_INT(self);
 
     /* start with complete information */
     *view = *base;
@@ -2559,6 +2577,7 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
         return memory_item(self, index);
     }
     else if (PySlice_Check(key)) {
+        CHECK_RESTRICTED(self);
         PyMemoryViewObject *sliced;
 
         sliced = (PyMemoryViewObject *)mbuf_add_view(self->mbuf, view);

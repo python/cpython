@@ -4634,6 +4634,42 @@ class TestPythonBufferProtocol(unittest.TestCase):
         self.assertEqual(rb_call_count, 1)
         self.assertIs(rb_raised, True)
 
+    def test_override_only_release(self):
+        class C(bytearray):
+            def __release_buffer__(self, buffer):
+                super().__release_buffer__(buffer)
+
+        c = C(b"hello")
+        with memoryview(c) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+
+    def test_release_saves_reference(self):
+        smuggled_buffer = None
+
+        class C(bytearray):
+            def __release_buffer__(s, buffer: memoryview):
+                with self.assertRaises(ValueError):
+                    memoryview(buffer)
+                with self.assertRaises(ValueError):
+                    buffer.cast("b")
+                with self.assertRaises(ValueError):
+                    buffer.toreadonly()
+                with self.assertRaises(ValueError):
+                    buffer[:1]
+                with self.assertRaises(ValueError):
+                    buffer.__buffer__(0)
+                nonlocal smuggled_buffer
+                smuggled_buffer = buffer
+                self.assertEqual(buffer.tobytes(), b"hello")
+                super().__release_buffer__(buffer)
+
+        c = C(b"hello")
+        with memoryview(c) as mv:
+            self.assertEqual(mv.tobytes(), b"hello")
+        c.clear()
+        with self.assertRaises(ValueError):
+            smuggled_buffer.tobytes()
+
 
 if __name__ == "__main__":
     unittest.main()

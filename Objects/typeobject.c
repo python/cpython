@@ -9107,27 +9107,39 @@ static void
 releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
 {
     PyObject *mv;
+    bool is_buffer_wrapper = Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type;
     if (Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type) {
         // Make sure we pass the same memoryview to
         // __release_buffer__() that __buffer__() returned.
         mv = Py_NewRef(((PyBufferWrapper *)buffer->obj)->mv);
     }
     else {
+        // This means we are not dealing with a memoryview returned
+        // from a Python __buffer__ function.
         mv = PyMemoryView_FromBuffer(buffer);
         if (mv == NULL) {
             PyErr_WriteUnraisable(self);
             return;
         }
+        // Set the memoryview to restricted mode, which forbids
+        // users from saving any reference to the underlying buffer
+        // (e.g., by doing .cast()). This is necessary to ensure
+        // no Python code retains a reference to the to-be-released
+        // buffer.
+        ((PyMemoryViewObject *)mv)->flags |= _Py_MEMORYVIEW_RESTRICTED;
     }
     PyObject *stack[2] = {self, mv};
     PyObject *ret = vectorcall_method(&_Py_ID(__release_buffer__), stack, 2);
-    Py_DECREF(mv);
     if (ret == NULL) {
         PyErr_WriteUnraisable(self);
     }
     else {
         Py_DECREF(ret);
     }
+    if (!is_buffer_wrapper) {
+        PyObject_CallMethodNoArgs(mv, &_Py_ID(release));
+    }
+    Py_DECREF(mv);
 }
 
 /*
@@ -9144,12 +9156,12 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
 static void
 slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
 {
+    releasebuffer_call_python(self, buffer);
     if (releasebuffer_maybe_call_super(self, buffer) < 0) {
         if (PyErr_Occurred()) {
             PyErr_WriteUnraisable(self);
         }
     }
-    releasebuffer_call_python(self, buffer);
 }
 
 static PyObject *
