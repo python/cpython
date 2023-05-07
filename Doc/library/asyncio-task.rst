@@ -561,7 +561,7 @@ Eager Task Factory
     of the default :class:`Task`.
 
     *custom_task_constructor* must be a *callable* with the signature matching
-    ``(coro, *, loop=None, name=None, context=None, eager_start=False)``.
+    the signature of :class:`Task.__init__ <Task>`.
     The callable must return a :class:`asyncio.Task`-compatible object.
 
     This function returns a *callable* intended to be used as a task factory of an
