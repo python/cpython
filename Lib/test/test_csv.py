@@ -7,11 +7,10 @@ import unittest
 from io import StringIO
 from tempfile import TemporaryFile
 import csv
-import _csv
 import gc
 import pickle
 from test import support
-from test.support import warnings_helper, check_disallow_instantiation
+from test.support import warnings_helper, import_helper, check_disallow_instantiation
 from itertools import permutations
 from textwrap import dedent
 from collections import OrderedDict
@@ -1431,11 +1430,12 @@ class MiscTestCase(unittest.TestCase):
         # issue 44089
         class Foo(csv.Error): ...
 
-    def test_reader_disallow_instantiation(self):
-        check_disallow_instantiation(self, _csv.Reader)
-
-    def test_writer_disallow_instantiation(self):
-        check_disallow_instantiation(self, _csv.Writer)
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        _csv = import_helper.import_module("_csv")
+        for tp in _csv.Reader, _csv.Writer:
+            with self.subTest(tp=tp):
+                check_disallow_instantiation(self, tp)
 
 if __name__ == '__main__':
     unittest.main()
