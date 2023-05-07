@@ -329,7 +329,7 @@ elif os.name == "posix":
 
         def _findLib_musl(name):
             # fallback for musl libc, which does not have ldconfig -p
-            # See issue #21622
+            # See GH-65821
 
             from _ctypes import get_interp
             interp = get_interp()
