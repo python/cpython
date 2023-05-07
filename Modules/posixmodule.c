@@ -175,6 +175,14 @@
 #    define HAVE_PWRITEV_RUNTIME (pwritev != NULL)
 #  endif
 
+#  ifdef HAVE_MKFIFOAT
+#    define HAVE_MKFIFOAT_RUNTIME (mkfifoat != NULL)
+#  endif
+
+#  ifdef HAVE_MKNODAT
+#    define HAVE_MKNODAT_RUNTIME (mknodat != NULL)
+#  endif
+
 #endif
 
 #ifdef HAVE_FUTIMESAT
@@ -4802,7 +4810,7 @@ os__path_isdir_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {    
+    if (_path.wide) {
         if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
@@ -4899,7 +4907,7 @@ os__path_isfile_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {    
+    if (_path.wide) {
         if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
@@ -4995,7 +5003,7 @@ os__path_exists_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {    
+    if (_path.wide) {
         if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
@@ -5082,7 +5090,7 @@ os__path_islink_impl(PyObject *module, PyObject *path)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {    
+    if (_path.wide) {
         if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
                                          &statInfo, sizeof(statInfo))) {
             slow_path = FALSE;
@@ -16785,6 +16793,7 @@ posixmodule_exec(PyObject *m)
 
 static PyModuleDef_Slot posixmodile_slots[] = {
     {Py_mod_exec, posixmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
