@@ -1050,7 +1050,7 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
             def __bytes__(self):
                 return OtherBytesSubclass(b'abc')
         self.assertEqual(bytes(A()), b'abc')
-        self.assertIs(type(bytes(A())), OtherBytesSubclass)
+        self.assertIs(type(bytes(A())), bytes)
         self.assertEqual(BytesSubclass(A()), b'abc')
         self.assertIs(type(BytesSubclass(A())), BytesSubclass)
 
