@@ -353,7 +353,7 @@ elif os.name == "posix":
             # search LD_LIBRARY_PATH list and default musl libc locations
             paths = os.environ.get('LD_LIBRARY_PATH', '').split(':')
             try:
-                with open('/etc/ld-musl-%s.path' % ldarch) as f:
+                with open(f'/etc/ld-musl-{ldarch}.path') as f:
                     paths.extend(re.split(':|\n', f.read()))
             except OSError:
                 paths.extend(['/lib', '/usr/local/lib', '/usr/lib'])
