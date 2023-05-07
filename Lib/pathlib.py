@@ -5,6 +5,7 @@ paths with operations that have semantics appropriate for different
 operating systems.
 """
 
+import contextlib
 import fnmatch
 import functools
 import io
@@ -729,14 +730,11 @@ class PureWindowsPath(PurePath):
 # Filesystem-accessing classes
 
 
-class Path(PurePath):
-    """PurePath subclass that can make system calls.
+class _AbstractPath(PurePath):
+    """PurePath subclass that can traverse directories and open files.
 
-    Path represents a filesystem path but unlike PurePath, also offers
-    methods to do system calls on path objects. Depending on your system,
-    instantiating a Path will return either a PosixPath or a WindowsPath
-    object. You can also instantiate a PosixPath or WindowsPath directly,
-    but cannot instantiate a WindowsPath on a POSIX system or vice versa.
+    The `stat()`, `open()` and `iterdir()` methods are abstract; all other
+    methods are defined in terms of these three.
     """
     __slots__ = ()
 
@@ -745,7 +743,7 @@ class Path(PurePath):
         Return the result of the stat() system call on this path, like
         os.stat() does.
         """
-        return os.stat(self, follow_symlinks=follow_symlinks)
+        raise NotImplementedError
 
     def lstat(self):
         """
@@ -775,12 +773,12 @@ class Path(PurePath):
             return False
         return True
 
-    def is_dir(self):
+    def is_dir(self, *, follow_symlinks=True):
         """
         Whether this path is a directory.
         """
         try:
-            return S_ISDIR(self.stat().st_mode)
+            return S_ISDIR(self.stat(follow_symlinks=follow_symlinks).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -812,7 +810,21 @@ class Path(PurePath):
         """
         Check if this path is a mount point
         """
-        return self._flavour.ismount(self)
+        # Need to exist and be a dir
+        if not self.exists() or not self.is_dir():
+            return False
+
+        try:
+            parent_dev = self.parent.stat().st_dev
+        except OSError:
+            return False
+
+        dev = self.stat().st_dev
+        if dev != parent_dev:
+            return True
+        ino = self.stat().st_ino
+        parent_ino = self.parent.stat().st_ino
+        return ino == parent_ino
 
     def is_symlink(self):
         """
@@ -833,7 +845,15 @@ class Path(PurePath):
         """
         Whether this path is a junction.
         """
-        return self._flavour.isjunction(self)
+        import stat
+        try:
+            return self.lstat().st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
+        except OSError as e:
+            if not _ignore_error(e):
+                raise
+            return False
+        except (ValueError, AttributeError):
+            return False
 
     def is_block_device(self):
         """
@@ -916,9 +936,7 @@ class Path(PurePath):
         Open the file pointed by this path and return a file object, as
         the built-in open() function does.
         """
-        if "b" not in mode:
-            encoding = io.text_encoding(encoding)
-        return io.open(self, mode, buffering, encoding, errors, newline)
+        raise NotImplementedError
 
     def read_bytes(self):
         """
@@ -961,14 +979,10 @@ class Path(PurePath):
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        for name in os.listdir(self):
-            yield self._make_child_relpath(name)
+        raise NotImplementedError
 
     def _scandir(self):
-        # bpo-24132: a future version of pathlib will support subclassing of
-        # pathlib.Path to customize how the filesystem is accessed. This
-        # includes scandir(), which is used to implement glob().
-        return os.scandir(self)
+        return contextlib.nullcontext(list(self.iterdir()))
 
     def _make_child_relpath(self, name):
         path_str = str(self)
@@ -1034,13 +1048,13 @@ class Path(PurePath):
             # blow up for a minor reason when (say) a thousand readable
             # directories are still left to visit. That logic is copied here.
             try:
-                scandir_it = path._scandir()
+                scandir_obj = path._scandir()
             except OSError as error:
                 if on_error is not None:
                     on_error(error)
                 continue
 
-            with scandir_it:
+            with scandir_obj as scandir_it:
                 dirnames = []
                 filenames = []
                 for entry in scandir_it:
@@ -1061,6 +1075,18 @@ class Path(PurePath):
                 paths.append((path, dirnames, filenames))
 
             paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
+
+
+class Path(_AbstractPath):
+    """PurePath subclass that can make system calls.
+
+    Path represents a filesystem path but unlike PurePath, also offers
+    methods to do system calls on path objects. Depending on your system,
+    instantiating a Path will return either a PosixPath or a WindowsPath
+    object. You can also instantiate a PosixPath or WindowsPath directly,
+    but cannot instantiate a WindowsPath on a POSIX system or vice versa.
+    """
+    __slots__ = ()
 
     def __init__(self, *args, **kwargs):
         if kwargs:
@@ -1092,6 +1118,47 @@ class Path(PurePath):
         pass
 
     # Public API
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+        return os.stat(self, follow_symlinks=follow_symlinks)
+
+    def is_mount(self):
+        """
+        Check if this path is a mount point
+        """
+        return self._flavour.ismount(self)
+
+    def is_junction(self):
+        """
+        Whether this path is a junction.
+        """
+        return self._flavour.isjunction(self)
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+        return io.open(self, mode, buffering, encoding, errors, newline)
+
+    def iterdir(self):
+        """Yield path objects of the directory contents.
+
+        The children are yielded in arbitrary order, and the
+        special entries '.' and '..' are not included.
+        """
+        for name in os.listdir(self):
+            yield self._make_child_relpath(name)
+
+    def _scandir(self):
+        return os.scandir(self)
 
     @classmethod
     def cwd(cls):
