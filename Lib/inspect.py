@@ -1794,6 +1794,7 @@ def _check_class(klass, attr):
             return entry.__dict__[attr]
     return _sentinel
 
+@functools.lru_cache()
 def _shadowed_dict(klass):
     for entry in _static_getmro(klass):
         dunder_dict = _get_dunder_dict_of_class(entry)
