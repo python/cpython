@@ -1458,7 +1458,7 @@ type_get_annotations(PyTypeObject *type, void *context)
 static PyObject *
 type_get_type_params(PyTypeObject *type, void *context)
 {
-    PyObject *params = PyDict_GetItem(type->tp_dict, &_Py_ID(__type_params__));
+    PyObject *params = PyDict_GetItem(lookup_tp_dict(type), &_Py_ID(__type_params__));
 
     if (params) {
         return Py_NewRef(params);
