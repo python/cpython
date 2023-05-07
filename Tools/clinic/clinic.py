@@ -27,7 +27,6 @@ import traceback
 import types
 
 from types import *
-NoneType = type(None)
 
 # TODO:
 #
@@ -42,10 +41,20 @@ NoneType = type(None)
 
 version = '1'
 
-NoneType = type(None)
 NO_VARARG = "PY_SSIZE_T_MAX"
 CLINIC_PREFIX = "__clinic_"
-CLINIC_PREFIXED_ARGS = {"args"}
+CLINIC_PREFIXED_ARGS = {
+    "_keywords",
+    "_parser",
+    "args",
+    "argsbuf",
+    "fastargs",
+    "kwargs",
+    "kwnames",
+    "nargs",
+    "noptargs",
+    "return_value",
+}
 
 class Unspecified:
     def __repr__(self):
@@ -805,13 +814,11 @@ class CLanguage(Language):
         # parser_body_fields remembers the fields passed in to the
         # previous call to parser_body. this is used for an awful hack.
         parser_body_fields = ()
-        parser_body_declarations = ''
         def parser_body(prototype, *fields, declarations=''):
-            nonlocal parser_body_fields, parser_body_declarations
+            nonlocal parser_body_fields
             add, output = text_accumulator()
             add(prototype)
             parser_body_fields = fields
-            parser_body_declarations = declarations
 
             fields = list(fields)
             fields.insert(0, normalize_snippet("""
@@ -962,12 +969,16 @@ class CLanguage(Language):
                     if not new_or_init:
                         parser_code.append(normalize_snippet("""
                             %s = PyTuple_New(%s);
+                            if (!%s) {{
+                                goto exit;
+                            }}
                             for (Py_ssize_t i = 0; i < %s; ++i) {{
                                 PyTuple_SET_ITEM(%s, i, Py_NewRef(args[%d + i]));
                             }}
                             """ % (
                                 p.converter.parser_name,
                                 left_args,
+                                p.converter.parser_name,
                                 left_args,
                                 p.converter.parser_name,
                                 max_pos
@@ -1172,6 +1183,7 @@ class CLanguage(Language):
                 raise ValueError("Slot methods cannot access their defining class.")
 
             if not parses_keywords:
+                declarations = '{base_type_ptr}'
                 fields.insert(0, normalize_snippet("""
                     if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs)) {{
                         goto exit;
@@ -1185,7 +1197,7 @@ class CLanguage(Language):
                         """, indent=4))
 
             parser_definition = parser_body(parser_prototype, *fields,
-                                            declarations=parser_body_declarations)
+                                            declarations=declarations)
 
 
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
@@ -1940,12 +1952,12 @@ legacy_converters = {}
 return_converters = {}
 
 
-def write_file(filename, new_contents):
+def write_file(filename, new_contents, force=False):
     try:
         with open(filename, 'r', encoding="utf-8") as fp:
             old_contents = fp.read()
 
-        if old_contents == new_contents:
+        if old_contents == new_contents and not force:
             # no change: avoid modifying the file modification time
             return
     except FileNotFoundError:
@@ -2109,7 +2121,7 @@ impl_definition block
                          traceback.format_exc().rstrip())
             printer.print_block(block)
 
-        second_pass_replacements = {}
+        clinic_out = []
 
         # these are destinations not buffers
         for name, destination in self.destinations.items():
@@ -2150,25 +2162,11 @@ impl_definition block
                     block.input = 'preserve\n'
                     printer_2 = BlockPrinter(self.language)
                     printer_2.print_block(block, core_includes=True)
-                    write_file(destination.filename, printer_2.f.getvalue())
+                    pair = destination.filename, printer_2.f.getvalue()
+                    clinic_out.append(pair)
                     continue
-        text = printer.f.getvalue()
 
-        if second_pass_replacements:
-            printer_2 = BlockPrinter(self.language)
-            parser_2 = BlockParser(text, self.language)
-            changed = False
-            for block in parser_2:
-                if block.dsl_name:
-                    for id, replacement in second_pass_replacements.items():
-                        if id in block.output:
-                            changed = True
-                            block.output = block.output.replace(id, replacement)
-                printer_2.print_block(block)
-            if changed:
-                text = printer_2.f.getvalue()
-
-        return text
+        return printer.f.getvalue(), clinic_out
 
 
     def _module_and_class(self, fields):
@@ -2224,9 +2222,13 @@ def parse_file(filename, *, verify=True, output=None):
         return
 
     clinic = Clinic(language, verify=verify, filename=filename)
-    cooked = clinic.parse(raw)
+    src_out, clinic_out = clinic.parse(raw)
 
-    write_file(output, cooked)
+    # If clinic output changed, force updating the source file as well.
+    force = bool(clinic_out)
+    write_file(output, src_out, force=force)
+    for fn, data in clinic_out:
+        write_file(fn, data)
 
 
 def compute_checksum(input, length=None):
@@ -2830,7 +2832,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         The C statements required to modify this variable after parsing.
         Returns a string containing this code indented at column 0.
-        If no initialization is necessary, returns an empty string.
+        If no modification is necessary, returns an empty string.
         """
         return ""
 
@@ -3837,20 +3839,21 @@ class self_converter(CConverter):
         cls = self.function.cls
 
         if ((kind in (METHOD_NEW, METHOD_INIT)) and cls and cls.typedef):
-            type_object = self.function.cls.type_object
-            prefix = (type_object[1:] + '.' if type_object[0] == '&' else
-                      type_object + '->')
             if kind == METHOD_NEW:
-                type_check = ('({0} == {1} ||\n        '
-                              ' {0}->tp_init == {2}tp_init)'
-                             ).format(self.name, type_object, prefix)
+                type_check = (
+                    '({0} == base_tp || {0}->tp_init == base_tp->tp_init)'
+                 ).format(self.name)
             else:
-                type_check = ('(Py_IS_TYPE({0}, {1}) ||\n        '
-                              ' Py_TYPE({0})->tp_new == {2}tp_new)'
-                             ).format(self.name, type_object, prefix)
+                type_check = ('(Py_IS_TYPE({0}, base_tp) ||\n        '
+                              ' Py_TYPE({0})->tp_new == base_tp->tp_new)'
+                             ).format(self.name)
 
             line = '{} &&\n        '.format(type_check)
             template_dict['self_type_check'] = line
+
+            type_object = self.function.cls.type_object
+            type_ptr = f'PyTypeObject *base_tp = {type_object};'
+            template_dict['base_type_ptr'] = type_ptr
 
 
 
@@ -5212,10 +5215,6 @@ clinic = None
 
 def main(argv):
     import sys
-
-    if sys.version_info.major < 3 or sys.version_info.minor < 3:
-        sys.exit("Error: clinic.py requires Python 3.3 or greater.")
-
     import argparse
     cmdline = argparse.ArgumentParser(
         description="""Preprocessor for CPython C files.

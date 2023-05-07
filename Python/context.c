@@ -1309,7 +1309,7 @@ _PyContext_Init(PyInterpreterState *interp)
 
     PyObject *missing = get_token_missing();
     if (PyDict_SetItemString(
-        PyContextToken_Type.tp_dict, "MISSING", missing))
+        _PyType_GetDict(&PyContextToken_Type), "MISSING", missing))
     {
         Py_DECREF(missing);
         return _PyStatus_ERR("can't init context types");

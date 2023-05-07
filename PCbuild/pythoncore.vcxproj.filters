@@ -498,6 +498,9 @@
     <ClInclude Include="..\Include\internal\pycore_ast_state.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_atexit.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_atomic.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -517,6 +520,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_ceval.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_ceval_state.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_code.h">
@@ -546,13 +552,22 @@
     <ClInclude Include="..\Include\internal\pycore_exceptions.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_faulthandler.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_fileutils.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_fileutils_windows.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_floatobject.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_format.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_function.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_gc.h">
@@ -591,6 +606,9 @@
     <ClInclude Include="..\Include\internal\pycore_interpreteridobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_intrinsics.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_list.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -604,6 +622,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_object_state.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_obmalloc.h">
@@ -636,6 +657,9 @@
     <ClInclude Include="..\Include\internal\pycore_pystate.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pythread.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_range.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -663,10 +687,16 @@
     <ClInclude Include="..\Include\internal\pycore_symtable.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_time.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_token.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_traceback.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_tracemalloc.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_tuple.h">
@@ -827,6 +857,9 @@
     <ClCompile Include="..\Modules\mathmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_MD5.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\md5module.c">
       <Filter>Modules</Filter>
     </ClCompile>
@@ -842,13 +875,16 @@
     <ClCompile Include="..\Modules\rotatingtree.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA1.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\sha1module.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\sha256module.c">
+    <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_SHA2.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\sha512module.c">
+    <ClCompile Include="..\Modules\sha2module.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\signalmodule.c">
@@ -1058,6 +1094,9 @@
     <ClCompile Include="..\Python\asdl.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\assemble.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\ast.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1089,6 +1128,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\fileutils.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\flowgraph.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\formatter_unicode.c">
@@ -1132,6 +1174,15 @@
     </ClCompile>
     <ClCompile Include="..\Python\initconfig.c">
       <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\intrinsics.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\instrumentation.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\legacy_tracing.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\marshal.c">
       <Filter>Python</Filter>
@@ -1296,6 +1347,9 @@
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_xxinterpchannelsmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\string_parser.c">

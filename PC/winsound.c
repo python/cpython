@@ -202,42 +202,15 @@ static struct PyMethodDef sound_methods[] =
     {NULL,  NULL}
 };
 
-static void
-add_define(PyObject *dict, const char *key, long value)
+#define ADD_DEFINE(CONST) do {                                  \
+    if (PyModule_AddIntConstant(module, #CONST, CONST) < 0) {   \
+        return -1;                                              \
+    }                                                           \
+} while (0)
+
+static int
+exec_module(PyObject *module)
 {
-    PyObject *k = PyUnicode_FromString(key);
-    PyObject *v = PyLong_FromLong(value);
-    if (v && k) {
-        PyDict_SetItem(dict, k, v);
-    }
-    Py_XDECREF(k);
-    Py_XDECREF(v);
-}
-
-#define ADD_DEFINE(tok) add_define(dict,#tok,tok)
-
-
-static struct PyModuleDef winsoundmodule = {
-    PyModuleDef_HEAD_INIT,
-    "winsound",
-    sound_module_doc,
-    -1,
-    sound_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit_winsound(void)
-{
-    PyObject *dict;
-    PyObject *module = PyModule_Create(&winsoundmodule);
-    if (module == NULL)
-        return NULL;
-    dict = PyModule_GetDict(module);
-
     ADD_DEFINE(SND_ASYNC);
     ADD_DEFINE(SND_NODEFAULT);
     ADD_DEFINE(SND_NOSTOP);
@@ -254,5 +227,28 @@ PyInit_winsound(void)
     ADD_DEFINE(MB_ICONEXCLAMATION);
     ADD_DEFINE(MB_ICONHAND);
     ADD_DEFINE(MB_ICONQUESTION);
-    return module;
+
+#undef ADD_DEFINE
+
+    return 0;
+}
+
+static PyModuleDef_Slot sound_slots[] = {
+    {Py_mod_exec, exec_module},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL}
+};
+
+static struct PyModuleDef winsoundmodule = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "winsound",
+    .m_doc = sound_module_doc,
+    .m_methods = sound_methods,
+    .m_slots = sound_slots,
+};
+
+PyMODINIT_FUNC
+PyInit_winsound(void)
+{
+    return PyModuleDef_Init(&winsoundmodule);
 }

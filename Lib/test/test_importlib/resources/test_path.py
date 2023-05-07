@@ -14,9 +14,12 @@ class CommonTests(util.CommonTests, unittest.TestCase):
 
 class PathTests:
     def test_reading(self):
-        # Path should be readable.
-        # Test also implicitly verifies the returned object is a pathlib.Path
-        # instance.
+        """
+        Path should be readable.
+
+        Test also implicitly verifies the returned object is a pathlib.Path
+        instance.
+        """
         target = resources.files(self.data) / 'utf-8.file'
         with resources.as_file(target) as path:
             self.assertTrue(path.name.endswith("utf-8.file"), repr(path))
@@ -51,8 +54,10 @@ class PathMemoryTests(PathTests, unittest.TestCase):
 
 class PathZipTests(PathTests, util.ZipSetup, unittest.TestCase):
     def test_remove_in_context_manager(self):
-        # It is not an error if the file that was temporarily stashed on the
-        # file system is removed inside the `with` stanza.
+        """
+        It is not an error if the file that was temporarily stashed on the
+        file system is removed inside the `with` stanza.
+        """
         target = resources.files(self.data) / 'utf-8.file'
         with resources.as_file(target) as path:
             path.unlink()
