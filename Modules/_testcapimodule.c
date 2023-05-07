@@ -1488,6 +1488,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     int allow_threads = -1;
     int allow_daemon_threads = -1;
     int check_multi_interp_extensions = -1;
+    int own_gil = -1;
     int r;
     PyThreadState *substate, *mainstate;
     /* only initialise 'cflags.cf_flags' to test backwards compatibility */
@@ -1500,13 +1501,15 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
                              "allow_threads",
                              "allow_daemon_threads",
                              "check_multi_interp_extensions",
+                             "own_gil",
                              NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$pppppp:run_in_subinterp_with_config", kwlist,
+                    "s$ppppppp:run_in_subinterp_with_config", kwlist,
                     &code, &use_main_obmalloc,
                     &allow_fork, &allow_exec,
                     &allow_threads, &allow_daemon_threads,
-                    &check_multi_interp_extensions)) {
+                    &check_multi_interp_extensions,
+                    &own_gil)) {
         return NULL;
     }
     if (use_main_obmalloc < 0) {
@@ -1523,6 +1526,10 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     if (allow_threads < 0) {
         PyErr_SetString(PyExc_ValueError, "missing allow_threads");
+        return NULL;
+    }
+    if (own_gil < 0) {
+        PyErr_SetString(PyExc_ValueError, "missing own_gil");
         return NULL;
     }
     if (allow_daemon_threads < 0) {
@@ -1545,6 +1552,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         .allow_threads = allow_threads,
         .allow_daemon_threads = allow_daemon_threads,
         .check_multi_interp_extensions = check_multi_interp_extensions,
+        .own_gil = own_gil,
     };
     PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
     if (PyStatus_Exception(status)) {
@@ -3959,7 +3967,6 @@ static PyTypeObject MyList_Type = {
     MyList_new,                                 /* tp_new */
 };
 
-
 /* Test PEP 560 */
 
 typedef struct {
@@ -4222,7 +4229,7 @@ PyInit__testcapi(void)
         return NULL;
     }
     int ret = PyModule_AddType(m, (PyTypeObject*)ObjExtraData_Type);
-    Py_DECREF(&ObjExtraData_Type);
+    Py_DECREF(ObjExtraData_Type);
     if (ret < 0) {
         return NULL;
     }
@@ -4248,6 +4255,7 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "ULLONG_MAX", PyLong_FromUnsignedLongLong(ULLONG_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
+    PyModule_AddObject(m, "SIZEOF_WCHAR_T", PyLong_FromSsize_t(sizeof(wchar_t)));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
     PyModule_AddObject(m, "Py_Version", PyLong_FromUnsignedLong(Py_Version));
     Py_INCREF(&PyInstanceMethod_Type);
@@ -4310,6 +4318,9 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_Code(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_Buffer(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_PyOS(m) < 0) {
         return NULL;
     }
@@ -4322,6 +4333,9 @@ PyInit__testcapi(void)
 #else
     PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_True);
     if (_PyTestCapi_Init_VectorcallLimited(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_HeaptypeRelative(m) < 0) {
         return NULL;
     }
 #endif

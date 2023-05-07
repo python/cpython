@@ -20,8 +20,8 @@ supports post-mortem debugging and can be called under program control.
 
 .. index::
    single: Pdb (class in pdb)
-   module: bdb
-   module: cmd
+   pair: module; bdb
+   pair: module; cmd
 
 The debugger is extensible -- it is actually defined as the class :class:`Pdb`.
 This is currently undocumented but easily understood by reading the source.  The
