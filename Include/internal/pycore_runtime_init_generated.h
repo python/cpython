@@ -841,6 +841,7 @@ extern "C" {
     INIT_ID(code), \
     INIT_ID(command), \
     INIT_ID(comment_factory), \
+    INIT_ID(compile_mode), \
     INIT_ID(consts), \
     INIT_ID(context), \
     INIT_ID(cookie), \
