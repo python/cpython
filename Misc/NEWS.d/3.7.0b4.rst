@@ -174,7 +174,6 @@ Patch by Stéphane Blondon.
 
 Fixed regression when running pydoc with the :option:`-m` switch. (The
 regression was introduced in 3.7.0b3 by the resolution of :issue:`33053`)
-
 This fix also changed pydoc to add ``os.getcwd()`` to :data:`sys.path` when
 necessary, rather than adding ``"."``.
 

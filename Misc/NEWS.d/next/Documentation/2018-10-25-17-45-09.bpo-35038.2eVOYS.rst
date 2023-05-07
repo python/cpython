@@ -1,2 +1,0 @@
-Fix the documentation about an unexisting `f_restricted` attribute in the
-frame object. Patch by Stéphane Wirtel

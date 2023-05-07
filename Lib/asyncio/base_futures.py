@@ -59,3 +59,9 @@ def _future_repr_info(future):
         frame = future._source_traceback[-1]
         info.append(f'created at {frame[0]}:{frame[1]}')
     return info
+
+
+@reprlib.recursive_repr()
+def _future_repr(future):
+    info = ' '.join(_future_repr_info(future))
+    return f'<{future.__class__.__name__} {info}>'

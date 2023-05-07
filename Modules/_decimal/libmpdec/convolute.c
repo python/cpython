@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,15 +27,14 @@
 
 
 #include "mpdecimal.h"
-#include <stdio.h>
 #include "bits.h"
 #include "constants.h"
+#include "convolute.h"
 #include "fnt.h"
 #include "fourstep.h"
 #include "numbertheory.h"
 #include "sixstep.h"
 #include "umodarith.h"
-#include "convolute.h"
 
 
 /* Bignum: Fast convolution using the Number Theoretic Transform. Used for
@@ -170,5 +169,3 @@ fnt_autoconvolute(mpd_uint_t *c1, mpd_size_t n, int modnum)
 
     return 1;
 }
-
-

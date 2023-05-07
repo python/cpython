@@ -1,11 +1,11 @@
 # line 1
 'A module docstring.'
 
-import sys, inspect
+import inspect
 # line 5
 
 # line 7
-def spam(a, b, c, d=3, e=4, f=5, *g, **h):
+def spam(a, /, b, c, d=3, e=4, f=5, *g, **h):
     eggs(b + d, c + f)
 
 # line 11
@@ -41,8 +41,8 @@ class StupidGit:
     def argue(self, a, b, c):
         try:
             spam(a, b, c)
-        except:
-            self.ex = sys.exc_info()
+        except BaseException as e:
+            self.ex = e
             self.tr = inspect.trace()
 
     @property
@@ -78,5 +78,38 @@ async def lobbest(grenade):
 currentframe = inspect.currentframe()
 try:
     raise Exception()
-except:
-    tb = sys.exc_info()[2]
+except BaseException as e:
+    tb = e.__traceback__
+
+class Callable:
+    def __call__(self, *args):
+        return args
+
+    def as_method_of(self, obj):
+        from types import MethodType
+        return MethodType(self, obj)
+
+custom_method = Callable().as_method_of(42)
+del Callable
+
+# line 95
+class WhichComments:
+  # line 97
+    # before f
+    def f(self):
+      # line 100
+        # start f
+        return 1
+        # line 103
+        # end f
+       # line 105
+    # after f
+
+    # before asyncf - line 108
+    async def asyncf(self):
+        # start asyncf
+        return 2
+        # end asyncf
+       # after asyncf - line 113
+    # end of WhichComments - line 114
+  # after WhichComments - line 115

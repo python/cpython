@@ -1,3 +1,6 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 #include <Python.h>
 #include <ffi.h>
 #ifdef MS_WIN32
@@ -19,6 +22,7 @@
 #define BLOCKSIZE _pagesize
 
 /* #define MALLOC_CLOSURE_DEBUG */ /* enable for some debugging output */
+
 
 /******************************************************************/
 
@@ -76,7 +80,7 @@ static void more_core(void)
 
 #ifdef MALLOC_CLOSURE_DEBUG
     printf("block at %p allocated (%d bytes), %d ITEMs\n",
-           item, count * sizeof(ITEM), count);
+           item, count * (int)sizeof(ITEM), count);
 #endif
     /* put them into the free list */
     for (i = 0; i < count; ++i) {
@@ -89,16 +93,43 @@ static void more_core(void)
 /******************************************************************/
 
 /* put the item back into the free list */
-void ffi_closure_free(void *p)
+void Py_ffi_closure_free(void *p)
 {
+#ifdef HAVE_FFI_CLOSURE_ALLOC
+#ifdef USING_APPLE_OS_LIBFFI
+# ifdef HAVE_BUILTIN_AVAILABLE
+    if (__builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)) {
+#  else
+    if (ffi_closure_free != NULL) {
+#  endif
+#endif
+        ffi_closure_free(p);
+        return;
+#ifdef USING_APPLE_OS_LIBFFI
+    }
+#endif
+#endif
     ITEM *item = (ITEM *)p;
     item->next = free_list;
     free_list = item;
 }
 
 /* return one item from the free list, allocating more if needed */
-void *ffi_closure_alloc(size_t ignored, void** codeloc)
+void *Py_ffi_closure_alloc(size_t size, void** codeloc)
 {
+#ifdef HAVE_FFI_CLOSURE_ALLOC
+#ifdef USING_APPLE_OS_LIBFFI
+# ifdef HAVE_BUILTIN_AVAILABLE
+    if (__builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)) {
+# else
+    if (ffi_closure_alloc != NULL) {
+#  endif
+#endif
+        return ffi_closure_alloc(size, codeloc);
+#ifdef USING_APPLE_OS_LIBFFI
+    }
+#endif
+#endif
     ITEM *item;
     if (!free_list)
         more_core();
@@ -106,6 +137,11 @@ void *ffi_closure_alloc(size_t ignored, void** codeloc)
         return NULL;
     item = free_list;
     free_list = item->next;
+#ifdef _M_ARM
+    // set Thumb bit so that blx is called correctly
+    *codeloc = (ITEM*)((uintptr_t)item | 1);
+#else
     *codeloc = (void *)item;
+#endif
     return (void *)item;
 }

@@ -1,5 +1,5 @@
 ;
-; Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+; Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
 ;
 ; Redistribution and use in source and binary forms, with or without
 ; modification, are permitted provided that the following conditions
@@ -149,7 +149,7 @@
 
 (defthmd addmod-correct
   (implies (and (< 0 m) (< m base)
-		(< a m) (<= b m)
+                (< a m) (<= b m)
                 (natp m) (natp base)
                 (natp a) (natp b))
            (equal (addmod a b m base)
@@ -179,7 +179,7 @@
 
 (defthmd submod-correct
   (implies (and (< 0 m) (< m base)
-		(< a m) (<= b m)
+                (< a m) (<= b m)
                 (natp m) (natp base)
                 (natp a) (natp b))
            (equal (submod a b m base)
@@ -200,7 +200,7 @@
 
 (defthm submod-2-correct
   (implies (and (< 0 m) (< m base)
-		(< a m) (<= b m)
+                (< a m) (<= b m)
                 (natp m) (natp base)
                 (natp a) (natp b))
            (equal (submod-2 a b m base)
@@ -231,7 +231,7 @@
 
 (defthmd ext-submod-ext-submod-2-equal
   (implies (and (< 0 m) (< m base)
-		(< a (* 2 m)) (< b (* 2 m))
+                (< a (* 2 m)) (< b (* 2 m))
                 (natp m) (natp base)
                 (natp a) (natp b))
            (equal (ext-submod a b m base)
@@ -239,7 +239,7 @@
 
 (defthmd ext-submod-2-correct
   (implies (and (< 0 m) (< m base)
-		(< a (* 2 m)) (< b (* 2 m))
+                (< a (* 2 m)) (< b (* 2 m))
                 (natp m) (natp base)
                 (natp a) (natp b))
            (equal (ext-submod-2 a b m base)
@@ -257,7 +257,7 @@
 
 (defthmd dw-reduce-correct
   (implies (and (< 0 m) (< m base)
-		(< hi base) (< lo base)
+                (< hi base) (< lo base)
                 (natp m) (natp base)
                 (natp hi) (natp lo))
            (equal (dw-reduce hi lo m base)
@@ -322,7 +322,7 @@
 (defthmd dw-submod-correct
   (implies (and (< 0 m) (< m base)
                 (natp a) (< a m)
-		(< hi base) (< lo base)
+                (< hi base) (< lo base)
                 (natp m) (natp base)
                 (natp hi) (natp lo))
            (equal (dw-submod a hi lo m base)

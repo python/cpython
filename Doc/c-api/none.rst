@@ -1,11 +1,11 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _noneobject:
 
 The ``None`` Object
 -------------------
 
-.. index:: object: None
+.. index:: pair: object; None
 
 Note that the :c:type:`PyTypeObject` for ``None`` is not directly exposed in the
 Python/C API.  Since ``None`` is a singleton, testing for object identity (using

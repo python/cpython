@@ -1,2 +1,0 @@
-Expose several missing constants in zlib and fix corresponding
-documentation.

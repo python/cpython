@@ -1,2 +1,0 @@
-The :meth:`mmap.flush() <mmap.mmap.flush>` method now returns ``None`` on
-success, raises an exception on error under all platforms.

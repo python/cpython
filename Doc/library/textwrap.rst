@@ -17,20 +17,30 @@ If you're just wrapping or filling one or two text strings, the convenience
 functions should be good enough; otherwise, you should use an instance of
 :class:`TextWrapper` for efficiency.
 
-.. function:: wrap(text, width=70, **kwargs)
+.. function:: wrap(text, width=70, *, initial_indent="", \
+                   subsequent_indent="", expand_tabs=True, \
+                   replace_whitespace=True, fix_sentence_endings=False, \
+                   break_long_words=True, drop_whitespace=True, \
+                   break_on_hyphens=True, tabsize=8, max_lines=None, \
+                   placeholder=' [...]')
 
    Wraps the single paragraph in *text* (a string) so every line is at most
    *width* characters long.  Returns a list of output lines, without final
    newlines.
 
    Optional keyword arguments correspond to the instance attributes of
-   :class:`TextWrapper`, documented below.  *width* defaults to ``70``.
+   :class:`TextWrapper`, documented below.
 
    See the :meth:`TextWrapper.wrap` method for additional details on how
    :func:`wrap` behaves.
 
 
-.. function:: fill(text, width=70, **kwargs)
+.. function:: fill(text, width=70, *, initial_indent="", \
+                   subsequent_indent="", expand_tabs=True, \
+                   replace_whitespace=True, fix_sentence_endings=False, \
+                   break_long_words=True, drop_whitespace=True, \
+                   break_on_hyphens=True, tabsize=8, \
+                   max_lines=None, placeholder=' [...]')
 
    Wraps the single paragraph in *text*, and returns a single string containing the
    wrapped paragraph.  :func:`fill` is shorthand for  ::
@@ -41,7 +51,9 @@ functions should be good enough; otherwise, you should use an instance of
    :func:`wrap`.
 
 
-.. function:: shorten(text, width, **kwargs)
+.. function:: shorten(text, width, *, fix_sentence_endings=False, \
+                      break_long_words=True, break_on_hyphens=True, \
+                      placeholder=' [...]')
 
    Collapse and truncate the given *text* to fit in the given *width*.
 
@@ -65,7 +77,6 @@ functions should be good enough; otherwise, you should use an instance of
 
    .. versionadded:: 3.4
 
-
 .. function:: dedent(text)
 
    Remove any common leading whitespace from every line in *text*.
@@ -76,6 +87,9 @@ functions should be good enough; otherwise, you should use an instance of
    Note that tabs and spaces are both treated as whitespace, but they are not
    equal: the lines ``"  hello"`` and ``"\thello"`` are considered to have no
    common leading whitespace.
+
+   Lines containing only whitespace are ignored in the input and normalized to a
+   single newline character in the output.
 
    For example::
 
@@ -236,7 +250,7 @@ hyphenated words; only then will long words be broken if necessary, unless
       :attr:`fix_sentence_endings` is false by default.
 
       Since the sentence detection algorithm relies on ``string.lowercase`` for
-      the definition of "lowercase letter," and a convention of using two spaces
+      the definition of "lowercase letter", and a convention of using two spaces
       after a period to separate sentences on the same line, it is specific to
       English-language texts.
 
@@ -267,6 +281,8 @@ hyphenated words; only then will long words be broken if necessary, unless
 
       .. versionadded:: 3.4
 
+
+   .. index:: single: ...; placeholder
 
    .. attribute:: placeholder
 

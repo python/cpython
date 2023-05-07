@@ -1,2 +1,0 @@
-Fix an off-by-one in the recursive call pruning feature of traceback
-formatting.
