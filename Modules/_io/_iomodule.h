@@ -14,9 +14,6 @@ extern PyTypeObject PyRawIOBase_Type;
 extern PyTypeObject PyBufferedIOBase_Type;
 extern PyTypeObject PyTextIOBase_Type;
 
-/* Concrete classes */
-extern PyTypeObject PyIncrementalNewlineDecoder_Type;
-
 /* Type specs */
 extern PyType_Spec bufferedrandom_spec;
 extern PyType_Spec bufferedreader_spec;
@@ -24,6 +21,7 @@ extern PyType_Spec bufferedrwpair_spec;
 extern PyType_Spec bufferedwriter_spec;
 extern PyType_Spec bytesio_spec;
 extern PyType_Spec fileio_spec;
+extern PyType_Spec nldecoder_spec;
 extern PyType_Spec stringio_spec;
 extern PyType_Spec textiowrapper_spec;
 
