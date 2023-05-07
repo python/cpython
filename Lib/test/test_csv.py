@@ -7,6 +7,7 @@ import unittest
 from io import StringIO
 from tempfile import TemporaryFile
 import csv
+import _csv
 import gc
 import pickle
 from test import support
@@ -1429,6 +1430,16 @@ class MiscTestCase(unittest.TestCase):
     def test_subclassable(self):
         # issue 44089
         class Foo(csv.Error): ...
+
+    def test_issue104265(self):
+        with self.assertRaisesRegex(TypeError, "cannot create '_csv.reader' instances"):
+            _csv.Reader()
+        with self.assertRaisesRegex(TypeError, "cannot create '_csv.writer' instances"):
+            _csv.Writer()
+        with self.assertRaisesRegex(TypeError, "type '_csv.reader' is not an acceptable base type"):
+            class Foo(_csv.Reader): pass
+        with self.assertRaisesRegex(TypeError, "type '_csv.writer' is not an acceptable base type"):
+            class Foo(_csv.Writer): pass
 
 if __name__ == '__main__':
     unittest.main()
