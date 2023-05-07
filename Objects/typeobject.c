@@ -10140,18 +10140,6 @@ _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *me
     return res;
 }
 
-PyObject *
-_PySuper_LookupDescr(PyTypeObject *su_type, PyObject *su_obj, PyObject *name)
-{
-    PyTypeObject *su_obj_type = supercheck(su_type, su_obj);
-    if (su_obj_type == NULL) {
-        return NULL;
-    }
-    PyObject *res = _super_lookup_descr(su_type, su_obj_type, name);
-    Py_DECREF(su_obj_type);
-    return res;
-}
-
 static PyObject *
 super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
