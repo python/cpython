@@ -597,6 +597,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__await__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__bases__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__bool__));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__buffer__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__build_class__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__builtins__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__bytes__));
@@ -698,6 +699,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__rdivmod__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__reduce__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__reduce_ex__));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__release_buffer__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__repr__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__reversed__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__rfloordiv__));
@@ -1137,6 +1139,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(reducer_override));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(registry));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(rel_tol));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(release));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(reload));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(repl));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(replace));

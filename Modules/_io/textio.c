@@ -18,10 +18,10 @@
 
 /*[clinic input]
 module _io
-class _io.IncrementalNewlineDecoder "nldecoder_object *" "&PyIncrementalNewlineDecoder_Type"
+class _io.IncrementalNewlineDecoder "nldecoder_object *" "clinic_state()->PyIncrementalNewlineDecoder_Type"
 class _io.TextIOWrapper "textio *" "clinic_state()->TextIOWrapper_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d3f032e90f74c8f2]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=81f67cf54eaa6001]*/
 
 /* TextIOBase */
 
@@ -872,8 +872,9 @@ _textiowrapper_set_decoder(textio *self, PyObject *codec_info,
         return -1;
 
     if (self->readuniversal) {
+        _PyIO_State *state = self->state;
         PyObject *incrementalDecoder = PyObject_CallFunctionObjArgs(
-            (PyObject *)&PyIncrementalNewlineDecoder_Type,
+            (PyObject *)state->PyIncrementalNewlineDecoder_Type,
             self->decoder, self->readtranslate ? Py_True : Py_False, NULL);
         if (incrementalDecoder == NULL)
             return -1;
@@ -884,11 +885,12 @@ _textiowrapper_set_decoder(textio *self, PyObject *codec_info,
 }
 
 static PyObject*
-_textiowrapper_decode(PyObject *decoder, PyObject *bytes, int eof)
+_textiowrapper_decode(_PyIO_State *state, PyObject *decoder, PyObject *bytes,
+                      int eof)
 {
     PyObject *chars;
 
-    if (Py_IS_TYPE(decoder, &PyIncrementalNewlineDecoder_Type))
+    if (Py_IS_TYPE(decoder, state->PyIncrementalNewlineDecoder_Type))
         chars = _PyIncrementalNewlineDecoder_decode(decoder, bytes, eof);
     else
         chars = PyObject_CallMethodObjArgs(decoder, &_Py_ID(decode), bytes,
@@ -1167,6 +1169,8 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     self->buffer = Py_NewRef(buffer);
 
     /* Build the decoder object */
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    self->state = state;
     if (_textiowrapper_set_decoder(self, codec_info, PyUnicode_AsUTF8(errors)) != 0)
         goto error;
 
@@ -1177,7 +1181,6 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     /* Finished sorting out the codec details */
     Py_CLEAR(codec_info);
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     if (Py_IS_TYPE(buffer, state->PyBufferedReader_Type) ||
         Py_IS_TYPE(buffer, state->PyBufferedWriter_Type) ||
         Py_IS_TYPE(buffer, state->PyBufferedRandom_Type))
@@ -1214,7 +1217,6 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         goto error;
     }
 
-    self->state = state;
     self->ok = 1;
     return 0;
 
@@ -1843,7 +1845,8 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
     nbytes = input_chunk_buf.len;
     eof = (nbytes == 0);
 
-    decoded_chars = _textiowrapper_decode(self->decoder, input_chunk, eof);
+    decoded_chars = _textiowrapper_decode(self->state, self->decoder,
+                                          input_chunk, eof);
     PyBuffer_Release(&input_chunk_buf);
     if (decoded_chars == NULL)
         goto fail;
@@ -1913,7 +1916,8 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         if (bytes == NULL)
             goto fail;
 
-        if (Py_IS_TYPE(self->decoder, &PyIncrementalNewlineDecoder_Type))
+        _PyIO_State *state = self->state;
+        if (Py_IS_TYPE(self->decoder, state->PyIncrementalNewlineDecoder_Type))
             decoded = _PyIncrementalNewlineDecoder_decode(self->decoder,
                                                           bytes, 1);
         else

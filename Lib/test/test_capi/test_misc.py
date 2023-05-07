@@ -16,11 +16,13 @@ import time
 import unittest
 import warnings
 import weakref
+import operator
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
 from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
+from test.support import requires_limited_api
 from test.support.script_helper import assert_python_failure, assert_python_ok, run_python_until_end
 try:
     import _posixsubprocess
@@ -681,6 +683,20 @@ class CAPITest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             t = _testcapi.pytype_fromspec_meta(_testcapi.HeapCTypeMetaclassCustomNew)
 
+    def test_heaptype_with_custom_metaclass_deprecation(self):
+        # gh-103968: a metaclass with custom tp_new is deprecated, but still
+        # allowed for functions that existed in 3.11
+        # (PyType_FromSpecWithBases is used here).
+        class Base(metaclass=_testcapi.HeapCTypeMetaclassCustomNew):
+            pass
+
+        with warnings_helper.check_warnings(
+                ('.*custom tp_new.*in Python 3.14.*', DeprecationWarning),
+                ):
+            sub = _testcapi.make_type_with_base(Base)
+        self.assertTrue(issubclass(sub, Base))
+        self.assertIsInstance(sub, _testcapi.HeapCTypeMetaclassCustomNew)
+
     def test_multiple_inheritance_ctypes_with_weakref_or_dict(self):
 
         with self.assertRaises(TypeError):
@@ -755,7 +771,6 @@ class CAPITest(unittest.TestCase):
         # Can change the method on the mutable base
         MutableBase.meth = lambda self: 'changed'
         self.assertEqual(instance.meth(), 'changed')
-
 
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
@@ -1058,6 +1073,161 @@ class CAPITest(unittest.TestCase):
         self.assertIsNone(d.extra)
 
 
+@requires_limited_api
+class TestHeapTypeRelative(unittest.TestCase):
+    """Test API for extending opaque types (PEP 697)"""
+
+    @requires_limited_api
+    def test_heaptype_relative_sizes(self):
+        # Test subclassing using "relative" basicsize, see PEP 697
+        def check(extra_base_size, extra_size):
+            Base, Sub, instance, data_ptr, data_offset, data_size = (
+                _testcapi.make_sized_heaptypes(
+                    extra_base_size, -extra_size))
+
+            # no alignment shenanigans when inheriting directly
+            if extra_size == 0:
+                self.assertEqual(Base.__basicsize__, Sub.__basicsize__)
+                self.assertEqual(data_size, 0)
+
+            else:
+                # The following offsets should be in increasing order:
+                offsets = [
+                    (0, 'start of object'),
+                    (Base.__basicsize__, 'end of base data'),
+                    (data_offset, 'subclass data'),
+                    (data_offset + extra_size, 'end of requested subcls data'),
+                    (data_offset + data_size, 'end of reserved subcls data'),
+                    (Sub.__basicsize__, 'end of object'),
+                ]
+                ordered_offsets = sorted(offsets, key=operator.itemgetter(0))
+                self.assertEqual(
+                    offsets, ordered_offsets,
+                    msg=f'Offsets not in expected order, got: {ordered_offsets}')
+
+                # end of reserved subcls data == end of object
+                self.assertEqual(Sub.__basicsize__, data_offset + data_size)
+
+                # we don't reserve (requested + alignment) or more data
+                self.assertLess(data_size - extra_size,
+                                _testcapi.ALIGNOF_MAX_ALIGN_T)
+
+            # The offsets/sizes we calculated should be aligned.
+            self.assertEqual(data_offset % _testcapi.ALIGNOF_MAX_ALIGN_T, 0)
+            self.assertEqual(data_size % _testcapi.ALIGNOF_MAX_ALIGN_T, 0)
+
+        sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
+                        object.__basicsize__,
+                        object.__basicsize__-1,
+                        object.__basicsize__+1})
+        for extra_base_size in sizes:
+            for extra_size in sizes:
+                args = dict(extra_base_size=extra_base_size,
+                            extra_size=extra_size)
+                with self.subTest(**args):
+                    check(**args)
+
+    def test_HeapCCollection(self):
+        """Make sure HeapCCollection works properly by itself"""
+        collection = _testcapi.HeapCCollection(1, 2, 3)
+        self.assertEqual(list(collection), [1, 2, 3])
+
+    def test_heaptype_inherit_itemsize(self):
+        """Test HeapCCollection subclasses work properly"""
+        sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
+                        object.__basicsize__,
+                        object.__basicsize__-1,
+                        object.__basicsize__+1})
+        for extra_size in sizes:
+            with self.subTest(extra_size=extra_size):
+                Sub = _testcapi.subclass_var_heaptype(
+                    _testcapi.HeapCCollection, -extra_size, 0, 0)
+                collection = Sub(1, 2, 3)
+                collection.set_data_to_3s()
+
+                self.assertEqual(list(collection), [1, 2, 3])
+                mem = collection.get_data()
+                self.assertGreaterEqual(len(mem), extra_size)
+                self.assertTrue(set(mem) <= {3}, f'got {mem!r}')
+
+    def test_heaptype_invalid_inheritance(self):
+        with self.assertRaises(SystemError,
+                               msg="Cannot extend variable-size class without "
+                               + "Py_TPFLAGS_ITEMS_AT_END"):
+            _testcapi.subclass_heaptype(int, -8, 0)
+
+    def test_heaptype_relative_members(self):
+        """Test HeapCCollection subclasses work properly"""
+        sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
+                        object.__basicsize__,
+                        object.__basicsize__-1,
+                        object.__basicsize__+1})
+        for extra_base_size in sizes:
+            for extra_size in sizes:
+                for offset in sizes:
+                    with self.subTest(extra_base_size=extra_base_size, extra_size=extra_size, offset=offset):
+                        if offset < extra_size:
+                            Sub = _testcapi.make_heaptype_with_member(
+                                extra_base_size, -extra_size, offset, True)
+                            Base = Sub.mro()[1]
+                            instance = Sub()
+                            self.assertEqual(instance.memb, instance.get_memb())
+                            instance.set_memb(13)
+                            self.assertEqual(instance.memb, instance.get_memb())
+                            self.assertEqual(instance.get_memb(), 13)
+                            instance.memb = 14
+                            self.assertEqual(instance.memb, instance.get_memb())
+                            self.assertEqual(instance.get_memb(), 14)
+                            self.assertGreaterEqual(instance.get_memb_offset(), Base.__basicsize__)
+                            self.assertLess(instance.get_memb_offset(), Sub.__basicsize__)
+                            with self.assertRaises(SystemError):
+                                instance.get_memb_relative()
+                            with self.assertRaises(SystemError):
+                                instance.set_memb_relative(0)
+                        else:
+                            with self.assertRaises(SystemError):
+                                Sub = _testcapi.make_heaptype_with_member(
+                                    extra_base_size, -extra_size, offset, True)
+                        with self.assertRaises(SystemError):
+                            Sub = _testcapi.make_heaptype_with_member(
+                                extra_base_size, extra_size, offset, True)
+                with self.subTest(extra_base_size=extra_base_size, extra_size=extra_size):
+                    with self.assertRaises(SystemError):
+                        Sub = _testcapi.make_heaptype_with_member(
+                            extra_base_size, -extra_size, -1, True)
+
+    def test_heaptype_relative_members_errors(self):
+        with self.assertRaisesRegex(
+                SystemError,
+                r"With Py_RELATIVE_OFFSET, basicsize must be negative"):
+            _testcapi.make_heaptype_with_member(0, 1234, 0, True)
+        with self.assertRaisesRegex(
+                SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
+            _testcapi.make_heaptype_with_member(0, -8, 1234, True)
+        with self.assertRaisesRegex(
+                SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
+            _testcapi.make_heaptype_with_member(0, -8, -1, True)
+
+        Sub = _testcapi.make_heaptype_with_member(0, -8, 0, True)
+        instance = Sub()
+        with self.assertRaisesRegex(
+                SystemError, r"PyMember_GetOne used with Py_RELATIVE_OFFSET"):
+            instance.get_memb_relative()
+        with self.assertRaisesRegex(
+                SystemError, r"PyMember_SetOne used with Py_RELATIVE_OFFSET"):
+            instance.set_memb_relative(0)
+
+    def test_pyobject_getitemdata_error(self):
+        """Test PyObject_GetItemData fails on unsupported types"""
+        with self.assertRaises(TypeError):
+            # None is not variable-length
+            _testcapi.pyobject_getitemdata(None)
+        with self.assertRaises(TypeError):
+            # int is variable-length, but doesn't have the
+            # Py_TPFLAGS_ITEMS_AT_END layout (and flag)
+            _testcapi.pyobject_getitemdata(0)
+
+
 class TestPendingCalls(unittest.TestCase):
 
     def pendingcalls_submit(self, l, n):
@@ -1231,23 +1401,37 @@ class SubinterpreterTest(unittest.TestCase):
         DAEMON_THREADS = 1<<11
         FORK = 1<<15
         EXEC = 1<<16
+        ALL_FLAGS = (OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS
+                     | EXTENSIONS);
 
-        features = ['obmalloc', 'fork', 'exec', 'threads', 'daemon_threads',
-                    'extensions']
+        features = [
+            'obmalloc',
+            'fork',
+            'exec',
+            'threads',
+            'daemon_threads',
+            'extensions',
+            'own_gil',
+        ]
         kwlist = [f'allow_{n}' for n in features]
         kwlist[0] = 'use_main_obmalloc'
-        kwlist[-1] = 'check_multi_interp_extensions'
+        kwlist[-2] = 'check_multi_interp_extensions'
+        kwlist[-1] = 'own_gil'
 
         # expected to work
         for config, expected in {
-            (True, True, True, True, True, True):
-                OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS | EXTENSIONS,
-            (True, False, False, False, False, False): OBMALLOC,
-            (False, False, False, True, False, True): THREADS | EXTENSIONS,
+            (True, True, True, True, True, True, True):
+                (ALL_FLAGS, True),
+            (True, False, False, False, False, False, False):
+                (OBMALLOC, False),
+            (False, False, False, True, False, True, False):
+                (THREADS | EXTENSIONS, False),
         }.items():
             kwargs = dict(zip(kwlist, config))
+            exp_flags, exp_gil = expected
             expected = {
-                'feature_flags': expected,
+                'feature_flags': exp_flags,
+                'own_gil': exp_gil,
             }
             with self.subTest(config):
                 r, w = os.pipe()
@@ -1267,7 +1451,7 @@ class SubinterpreterTest(unittest.TestCase):
 
         # expected to fail
         for config in [
-            (False, False, False, False, False, False),
+            (False, False, False, False, False, False, False),
         ]:
             kwargs = dict(zip(kwlist, config))
             with self.subTest(config):
@@ -1303,6 +1487,7 @@ class SubinterpreterTest(unittest.TestCase):
             'allow_exec': True,
             'allow_threads': True,
             'allow_daemon_threads': True,
+            'own_gil': False,
         }
 
         def check(enabled, override):
@@ -1313,6 +1498,7 @@ class SubinterpreterTest(unittest.TestCase):
             flags = BASE_FLAGS | EXTENSIONS if enabled else BASE_FLAGS
             settings = {
                 'feature_flags': flags,
+                'own_gil': False,
             }
 
             expected = {

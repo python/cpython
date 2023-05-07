@@ -728,7 +728,7 @@ module:
 
 Importer objects must have a single method, ``find_module(fullname,
 path=None)``.  *fullname* will be a module or package name, e.g. ``string`` or
-``distutils.core``.  :meth:`find_module` must return a loader object that has a
+``distutils.core``.  :meth:`!find_module` must return a loader object that has a
 single method, ``load_module(fullname)``, that creates and returns the
 corresponding module object.
 
