@@ -58,6 +58,9 @@ extern void _Py_DecRefTotal(PyInterpreterState *);
 // Increment reference count by n
 static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 {
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
 #ifdef Py_REF_DEBUG
     _Py_AddRefTotal(_PyInterpreterState_GET(), n);
 #endif
