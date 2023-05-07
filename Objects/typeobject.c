@@ -9119,7 +9119,7 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
 {
     PyObject *mv;
     bool is_buffer_wrapper = Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type;
-    if (Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type) {
+    if (is_buffer_wrapper) {
         // Make sure we pass the same memoryview to
         // __release_buffer__() that __buffer__() returned.
         PyBufferWrapper *bw = (PyBufferWrapper *)buffer->obj;
