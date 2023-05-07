@@ -1230,25 +1230,18 @@ cmath_exec(PyObject *mod)
         return -1;
     }
 
-    Py_complex infj = {0.0, Py_HUGE_VAL};
+    Py_complex infj = {0.0, Py_INFINITY};
     if (PyModule_AddObject(mod, "infj",
                            PyComplex_FromCComplex(infj)) < 0) {
         return -1;
     }
-#if _PY_SHORT_FLOAT_REPR == 1
-    /* 
-     * NaN exposure is guarded by having IEEE doubles via _PY_SHORT_FLOAT_REPR.
-     * This is probably an overly restrictive guard.
-     */
     if (PyModule_AddObject(mod, "nan", PyFloat_FromDouble(Py_NAN)) < 0) {
         return -1;
     }
     Py_complex nanj = {0.0, Py_NAN};
-    if (PyModule_AddObject(mod, "nanj",
-                           PyComplex_FromCComplex(nanj)) < 0) {
+    if (PyModule_AddObject(mod, "nanj", PyComplex_FromCComplex(nanj)) < 0) {
         return -1;
     }
-#endif
 
     /* initialize special value tables */
 

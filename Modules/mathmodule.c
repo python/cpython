@@ -3946,18 +3946,12 @@ math_exec(PyObject *module)
     if (PyModule_AddObject(module, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(Py_HUGE_VAL)) < 0) {
+    if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(Py_INFINITY)) < 0) {
         return -1;
     }
-#if _PY_SHORT_FLOAT_REPR == 1
-    /* 
-     * NaN exposure is guarded by having IEEE doubles via _PY_SHORT_FLOAT_REPR.
-     * This is probably an overly restrictive guard.
-     */
     if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(Py_NAN)) < 0) {
         return -1;
     }
-#endif
     return 0;
 }
 
