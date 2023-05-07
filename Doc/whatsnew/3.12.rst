@@ -342,8 +342,9 @@ inspect
   (Contributed by Thomas Krennwallner in :issue:`35759`.)
 
 * The performance of :func:`inspect.getattr_static` has been considerably
-  improved. Most calls to the function should be around 2x faster than they
-  were in Python 3.11. (Contributed by Alex Waygood in :gh:`103193`.)
+  improved. Most calls to the function should be at least 2x faster than they
+  were in Python 3.11, and some may be 6x faster or more. (Contributed by Alex
+  Waygood in :gh:`103193`.)
 
 pathlib
 -------
@@ -597,7 +598,7 @@ typing
   :func:`runtime-checkable protocols <typing.runtime_checkable>` has changed
   significantly. Most ``isinstance()`` checks against protocols with only a few
   members should be at least 2x faster than in 3.11, and some may be 20x
-  faster or more. However, ``isinstance()`` checks against protocols with seven
+  faster or more. However, ``isinstance()`` checks against protocols with fourteen
   or more members may be slower than in Python 3.11. (Contributed by Alex
   Waygood in :gh:`74690` and :gh:`103193`.)
 
