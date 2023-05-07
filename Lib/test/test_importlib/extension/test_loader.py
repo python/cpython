@@ -113,12 +113,6 @@ class SinglePhaseExtensionModuleTests(abc.LoaderTests):
         self.loader = self.machinery.ExtensionFileLoader(
             self.name, self.spec.origin)
 
-    def tearDown(self):
-        try:
-            del sys.modules[self.name]
-        except KeyError:
-            pass
-
     def load_module(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
@@ -199,12 +193,6 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
         assert self.spec
         self.loader = self.machinery.ExtensionFileLoader(
             self.name, self.spec.origin)
-
-    def tearDown(self):
-        try:
-            del sys.modules[self.name]
-        except KeyError:
-            pass
 
     def load_module(self):
         # Load the module from the test extension.
