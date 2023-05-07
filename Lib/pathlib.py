@@ -64,22 +64,25 @@ def _is_case_sensitive(flavour):
 @functools.lru_cache()
 def _make_selector(pattern_parts, flavour, case_sensitive):
     pat = pattern_parts[0]
-    child_parts = pattern_parts[1:]
     if not pat:
         return _TerminatingSelector()
     if pat == '**':
-        while child_parts and child_parts[0] == '**':
-            child_parts = child_parts[1:]
+        child_parts_idx = 1
+        while child_parts_idx < len(pattern_parts) and pattern_parts[child_parts_idx] == '**':
+            child_parts_idx += 1
+        child_parts = pattern_parts[child_parts_idx:]
         if '**' in child_parts:
             cls = _DoubleRecursiveWildcardSelector
         else:
             cls = _RecursiveWildcardSelector
-    elif pat == '..':
-        cls = _ParentSelector
-    elif '**' in pat:
-        raise ValueError("Invalid pattern: '**' can only be an entire path component")
     else:
-        cls = _WildcardSelector
+        child_parts = pattern_parts[1:]
+        if pat == '..':
+            cls = _ParentSelector
+        elif '**' in pat:
+            raise ValueError("Invalid pattern: '**' can only be an entire path component")
+        else:
+            cls = _WildcardSelector
     return cls(pat, child_parts, flavour, case_sensitive)
 
 
