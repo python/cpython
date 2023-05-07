@@ -1014,7 +1014,7 @@ Introspection
 Task Object
 ===========
 
-.. class:: Task(coro, *, loop=None, name=None)
+.. class:: Task(coro, *, loop=None, name=None, context=None)
 
    A :class:`Future-like <Future>` object that runs a Python
    :ref:`coroutine <coroutine>`.  Not thread-safe.
@@ -1049,9 +1049,10 @@ Task Object
    APIs except :meth:`Future.set_result` and
    :meth:`Future.set_exception`.
 
-   Tasks support the :mod:`contextvars` module.  When a Task
-   is created it copies the current context and later runs its
-   coroutine in the copied context.
+   An optional keyword-only *context* argument allows specifying a
+   custom :class:`contextvars.Context` for the *coro* to run in.
+   If no *context* is provided, the Task copies the current context
+   and later runs its coroutine in the copied context.
 
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.
@@ -1062,6 +1063,9 @@ Task Object
    .. deprecated:: 3.10
       Deprecation warning is emitted if *loop* is not specified
       and there is no running event loop.
+
+   .. versionchanged:: 3.11
+      Added the *context* parameter.
 
    .. method:: done()
 
