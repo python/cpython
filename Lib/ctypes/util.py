@@ -348,7 +348,7 @@ elif os.name == "posix":
                 suffixes = [ '.[0-9]*' ]
                 libname = name
             else:
-                suffixes = ['.so', '.so.[0-9]*', '.musl-%s.so.[0-9]*' % ldarch]
+                suffixes = ['.so', '.so.[0-9]*', f'.musl-{ldarch}.so.[0-9]*']
                 libname = 'lib'+name
             # search LD_LIBRARY_PATH list and default musl libc locations
             paths = os.environ.get('LD_LIBRARY_PATH', '').split(':')
