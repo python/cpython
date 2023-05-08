@@ -2130,13 +2130,8 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: ByteString(Sequence[int])
 
-   A generic version of :class:`collections.abc.ByteString`.
-
    This type represents the types :class:`bytes`, :class:`bytearray`,
    and :class:`memoryview` of byte sequences.
-
-   As a shorthand for this type, :class:`bytes` can be used to
-   annotate arguments of any of the types mentioned above.
 
    .. deprecated:: 3.9
       Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
