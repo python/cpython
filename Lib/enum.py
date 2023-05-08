@@ -190,6 +190,8 @@ class property(DynamicClassAttribute):
     """
 
     member = None
+    _attr_type = None
+    _cls_type = None
 
     def __get__(self, instance, ownerclass=None):
         if instance is None:
@@ -199,33 +201,36 @@ class property(DynamicClassAttribute):
                 raise AttributeError(
                         '%r has no attribute %r' % (ownerclass, self.name)
                         )
-        else:
-            if self.fget is None:
-                # look for a member by this name.
-                try:
-                    return ownerclass._member_map_[self.name]
-                except KeyError:
-                    raise AttributeError(
-                            '%r has no attribute %r' % (ownerclass, self.name)
-                            ) from None
-            else:
-                return self.fget(instance)
+        if self.fget is not None:
+            # use previous enum.property
+            return self.fget(instance)
+        elif self._attr_type == 'attr':
+            # look up previous attibute
+            return getattr(self._cls_type, self.name)
+        elif self._attr_type == 'desc':
+            # use previous descriptor
+            return getattr(instance._value_, self.name)
+        # look for a member by this name.
+        try:
+            return ownerclass._member_map_[self.name]
+        except KeyError:
+            raise AttributeError(
+                    '%r has no attribute %r' % (ownerclass, self.name)
+                    ) from None
 
     def __set__(self, instance, value):
-        if self.fset is None:
-            raise AttributeError(
-                    "<enum %r> cannot set attribute %r" % (self.clsname, self.name)
-                    )
-        else:
+        if self.fset is not None:
             return self.fset(instance, value)
+        raise AttributeError(
+                "<enum %r> cannot set attribute %r" % (self.clsname, self.name)
+                )
 
     def __delete__(self, instance):
-        if self.fdel is None:
-            raise AttributeError(
-                    "<enum %r> cannot delete attribute %r" % (self.clsname, self.name)
-                    )
-        else:
+        if self.fdel is not None:
             return self.fdel(instance)
+        raise AttributeError(
+                "<enum %r> cannot delete attribute %r" % (self.clsname, self.name)
+                )
 
     def __set_name__(self, ownerclass, name):
         self.name = name
@@ -313,27 +318,38 @@ class _proto_member:
                 enum_class._member_names_.append(member_name)
         # if necessary, get redirect in place and then add it to _member_map_
         found_descriptor = None
+        descriptor_type = None
+        class_type = None
         for base in enum_class.__mro__[1:]:
-            descriptor = base.__dict__.get(member_name)
-            if descriptor is not None:
-                if isinstance(descriptor, (property, DynamicClassAttribute)):
-                    found_descriptor = descriptor
+            attr = base.__dict__.get(member_name)
+            if attr is not None:
+                if isinstance(attr, (property, DynamicClassAttribute)):
+                    found_descriptor = attr
+                    class_type = base
+                    descriptor_type = 'enum'
                     break
-                elif (
-                        hasattr(descriptor, 'fget') and
-                        hasattr(descriptor, 'fset') and
-                        hasattr(descriptor, 'fdel')
-                    ):
-                    found_descriptor = descriptor
+                elif _is_descriptor(attr):
+                    found_descriptor = attr
+                    descriptor_type = descriptor_type or 'desc'
+                    class_type = class_type or base
                     continue
+                else:
+                    descriptor_type = 'attr'
+                    class_type = base
         if found_descriptor:
             redirect = property()
             redirect.member = enum_member
             redirect.__set_name__(enum_class, member_name)
-            # earlier descriptor found; copy fget, fset, fdel to this one.
-            redirect.fget = found_descriptor.fget
-            redirect.fset = found_descriptor.fset
-            redirect.fdel = found_descriptor.fdel
+            if descriptor_type in ('enum','desc'):
+                # earlier descriptor found; copy fget, fset, fdel to this one.
+                redirect.fget = getattr(found_descriptor, 'fget', None)
+                redirect._get = getattr(found_descriptor, '__get__', None)
+                redirect.fset = getattr(found_descriptor, 'fset', None)
+                redirect._set = getattr(found_descriptor, '__set__', None)
+                redirect.fdel = getattr(found_descriptor, 'fdel', None)
+                redirect._del = getattr(found_descriptor, '__delete__', None)
+            redirect._attr_type = descriptor_type
+            redirect._cls_type = class_type
             setattr(enum_class, member_name, redirect)
         else:
             setattr(enum_class, member_name, enum_member)

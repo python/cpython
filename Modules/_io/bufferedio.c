@@ -2231,7 +2231,7 @@ bufferedrwpair_close(rwpair *self, PyObject *Py_UNUSED(ignored))
     }
     else {
         Py_DECREF(ret);
-    } 
+    }
     ret = _forward_call(self->reader, &_Py_ID(close), NULL);
     if (exc != NULL) {
         _PyErr_ChainExceptions1(exc);

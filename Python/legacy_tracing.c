@@ -324,7 +324,7 @@ sys_trace_exception_handled(
 
 
 PyTypeObject _PyLegacyEventHandler_Type = {
-    _PyVarObject_IMMORTAL_INIT(&PyType_Type, 0),
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "sys.legacy_event_handler",
     sizeof(_PyLegacyEventHandler),
     .tp_dealloc = (destructor)PyObject_Free,
