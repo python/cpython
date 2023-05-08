@@ -5293,7 +5293,7 @@ topics = {'assert': 'The "assert" statement\n'
              'with \n'
              'a "global" statement on the same line, e.g.:\n'
              '\n'
-             '      (Pdb) global list_options; list_options = ['-l']\n'
+             "      (Pdb) global list_options; list_options = ['-l']\n"
              '      (Pdb)\n'
              '\n'
              'run [args ...]\n'
