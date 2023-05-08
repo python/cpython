@@ -1903,6 +1903,11 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         /* RDS sockets use sockaddr_in: fall-through */
 #endif /* AF_RDS */
 
+#ifdef AF_DIVERT
+    case AF_DIVERT:
+        /* FreeBSD divert(4) sockets use sockaddr_in: fall-through */
+#endif /* AF_DIVERT */
+
     case AF_INET:
     {
         struct maybe_idna host = {NULL, NULL};
@@ -7683,6 +7688,14 @@ socket_exec(PyObject *m)
     ADD_INT_MACRO(m, AF_SYSTEM);
 #endif
 
+/* FreeBSD divert(4) */
+#ifdef PF_DIVERT
+    PyModule_AddIntMacro(m, PF_DIVERT);
+#endif
+#ifdef AF_DIVERT
+    PyModule_AddIntMacro(m, AF_DIVERT);
+#endif
+
 #ifdef AF_PACKET
     ADD_INT_MACRO(m, AF_PACKET);
 #endif
@@ -8418,6 +8431,18 @@ socket_exec(PyObject *m)
 #ifdef IP_BIND_ADDRESS_NO_PORT
     ADD_INT_MACRO(m, IP_BIND_ADDRESS_NO_PORT);
 #endif
+#ifdef IP_UNBLOCK_SOURCE
+    ADD_INT_MACRO(m, IP_UNBLOCK_SOURCE);
+#endif
+#ifdef IP_BLOCK_SOURCE
+    ADD_INT_MACRO(m, IP_BLOCK_SOURCE);
+#endif
+#ifdef IP_ADD_SOURCE_MEMBERSHIP
+    ADD_INT_MACRO(m, IP_ADD_SOURCE_MEMBERSHIP);
+#endif
+#ifdef IP_DROP_SOURCE_MEMBERSHIP
+    ADD_INT_MACRO(m, IP_DROP_SOURCE_MEMBERSHIP);
+#endif
 
     /* IPv6 [gs]etsockopt options, defined in RFC2553 */
 #ifdef  IPV6_JOIN_GROUP
@@ -8845,6 +8870,7 @@ error:
 
 static struct PyModuleDef_Slot socket_slots[] = {
     {Py_mod_exec, socket_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

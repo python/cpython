@@ -155,6 +155,16 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
         return -1;
     }
 
+    parser_token->metadata = NULL;
+    if (new_token->metadata != NULL) {
+        if (_PyArena_AddPyObject(p->arena, new_token->metadata) < 0) {
+            Py_DECREF(parser_token->metadata);
+            return -1;
+        }
+        parser_token->metadata = new_token->metadata;
+        new_token->metadata = NULL;
+    }
+
     parser_token->level = new_token->level;
     parser_token->lineno = new_token->lineno;
     parser_token->col_offset = p->tok->lineno == p->starting_lineno ? p->starting_col_offset + new_token->col_offset
@@ -198,6 +208,7 @@ int
 _PyPegen_fill_token(Parser *p)
 {
     struct token new_token;
+    new_token.metadata = NULL;
     int type = _PyTokenizer_Get(p->tok, &new_token);
 
     // Record and skip '# type: ignore' comments
@@ -206,14 +217,14 @@ _PyPegen_fill_token(Parser *p)
         char *tag = PyMem_Malloc(len + 1);
         if (tag == NULL) {
             PyErr_NoMemory();
-            return -1;
+            goto error;
         }
         strncpy(tag, new_token.start, len);
         tag[len] = '\0';
         // Ownership of tag passes to the growable array
         if (!growable_comment_array_add(&p->type_ignore_comments, p->tok->lineno, tag)) {
             PyErr_NoMemory();
-            return -1;
+            goto error;
         }
         type = _PyTokenizer_Get(p->tok, &new_token);
     }
@@ -234,11 +245,14 @@ _PyPegen_fill_token(Parser *p)
 
     // Check if we are at the limit of the token array capacity and resize if needed
     if ((p->fill == p->size) && (_resize_tokens_array(p) != 0)) {
-        return -1;
+        goto error;
     }
 
     Token *t = p->tokens[p->fill];
     return initialize_token(p, t, &new_token, type);
+error:
+    Py_XDECREF(new_token.metadata);
+    return -1;
 }
 
 #if defined(Py_DEBUG)

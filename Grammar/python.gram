@@ -881,14 +881,13 @@ fstring_middle[expr_ty]:
     | fstring_replacement_field
     | t=FSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
 fstring_replacement_field[expr_ty]:
-    | '{' a=(yield_expr | star_expressions) debug_expr="="? conversion=[fstring_conversion] format=[fstring_full_format_spec] '}' {
-        _PyPegen_formatted_value(p, a, debug_expr, conversion, format, EXTRA)
-    }
+    | '{' a=(yield_expr | star_expressions) debug_expr="="? conversion=[fstring_conversion] format=[fstring_full_format_spec] rbrace='}' {
+        _PyPegen_formatted_value(p, a, debug_expr, conversion, format, rbrace, EXTRA) }
     | invalid_replacement_field
-fstring_conversion[expr_ty]:
+fstring_conversion[ResultTokenWithMetadata*]:
     | conv_token="!" conv=NAME { _PyPegen_check_fstring_conversion(p, conv_token, conv) }
-fstring_full_format_spec[expr_ty]:
-    | ':' spec=fstring_format_spec* { spec ? _PyAST_JoinedStr((asdl_expr_seq*)spec, EXTRA) : NULL }
+fstring_full_format_spec[ResultTokenWithMetadata*]:
+    | colon=':' spec=fstring_format_spec* { _PyPegen_setup_full_format_spec(p, colon, (asdl_expr_seq *) spec, EXTRA) }
 fstring_format_spec[expr_ty]:
     | t=FSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
     | fstring_replacement_field

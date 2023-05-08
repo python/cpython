@@ -356,7 +356,7 @@ class CodeTest(unittest.TestCase):
         foo.__code__ = foo.__code__.replace(
             co_code=b'\xe5' + foo.__code__.co_code[1:])
 
-        msg = f"unknown opcode 229"
+        msg = "unknown opcode 229"
         with self.assertRaisesRegex(SystemError, msg):
             foo()
 

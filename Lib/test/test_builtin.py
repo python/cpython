@@ -28,7 +28,7 @@ from textwrap import dedent
 from types import AsyncGeneratorType, FunctionType, CellType
 from operator import neg
 from test import support
-from test.support import (swap_attr, maybe_get_event_loop_policy)
+from test.support import (cpython_only, swap_attr, maybe_get_event_loop_policy)
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
 from test.support.warnings_helper import check_warnings
@@ -2368,6 +2368,35 @@ class ShutdownTest(unittest.TestCase):
         rc, out, err = assert_python_ok("-c", code,
                                         PYTHONIOENCODING="ascii")
         self.assertEqual(["before", "after"], out.decode().splitlines())
+
+
+@cpython_only
+class ImmortalTests(unittest.TestCase):
+
+    if sys.maxsize < (1 << 32):
+        IMMORTAL_REFCOUNT = (1 << 30) - 1
+    else:
+        IMMORTAL_REFCOUNT = (1 << 32) - 1
+
+    IMMORTALS = (None, True, False, Ellipsis, NotImplemented, *range(-5, 257))
+
+    def assert_immortal(self, immortal):
+        with self.subTest(immortal):
+            self.assertEqual(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT)
+
+    def test_immortals(self):
+        for immortal in self.IMMORTALS:
+            self.assert_immortal(immortal)
+
+    def test_list_repeat_respect_immortality(self):
+        refs = list(self.IMMORTALS) * 42
+        for immortal in self.IMMORTALS:
+            self.assert_immortal(immortal)
+
+    def test_tuple_repeat_respect_immortality(self):
+        refs = tuple(self.IMMORTALS) * 42
+        for immortal in self.IMMORTALS:
+            self.assert_immortal(immortal)
 
 
 class TestType(unittest.TestCase):
