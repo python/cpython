@@ -560,6 +560,13 @@ Eager Task Factory
     using the provided *custom_task_constructor* when creating a new task instead
     of the default :class:`Task`.
 
+    *custom_task_constructor* must be a *callable* with the signature matching
+    the signature of :class:`Task.__init__ <Task>`.
+    The callable must return a :class:`asyncio.Task`-compatible object.
+
+    This function returns a *callable* intended to be used as a task factory of an
+    event loop via :meth:`loop.set_task_factory(factory) <loop.set_task_factory>`).
+
     .. versionadded:: 3.12
 
 
@@ -1014,7 +1021,7 @@ Introspection
 Task Object
 ===========
 
-.. class:: Task(coro, *, loop=None, name=None)
+.. class:: Task(coro, *, loop=None, name=None, context=None, eager_start=False)
 
    A :class:`Future-like <Future>` object that runs a Python
    :ref:`coroutine <coroutine>`.  Not thread-safe.
@@ -1049,9 +1056,17 @@ Task Object
    APIs except :meth:`Future.set_result` and
    :meth:`Future.set_exception`.
 
-   Tasks support the :mod:`contextvars` module.  When a Task
-   is created it copies the current context and later runs its
-   coroutine in the copied context.
+   An optional keyword-only *context* argument allows specifying a
+   custom :class:`contextvars.Context` for the *coro* to run in.
+   If no *context* is provided, the Task copies the current context
+   and later runs its coroutine in the copied context.
+
+   An optional keyword-only *eager_start* argument allows eagerly starting
+   the execution of the :class:`asyncio.Task` at task creation time.
+   If set to ``True`` and the event loop is running, the task will start
+   executing the coroutine immediately, until the first time the coroutine
+   blocks. If the coroutine returns or raises without blocking, the task
+   will be finished eagerly and will skip scheduling to the event loop.
 
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.
@@ -1062,6 +1077,12 @@ Task Object
    .. deprecated:: 3.10
       Deprecation warning is emitted if *loop* is not specified
       and there is no running event loop.
+
+   .. versionchanged:: 3.11
+      Added the *context* parameter.
+
+   .. versionchanged:: 3.12
+      Added the *eager_start* parameter.
 
    .. method:: done()
 

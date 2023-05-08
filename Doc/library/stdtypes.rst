@@ -244,9 +244,9 @@ and imaginary parts.
 
 .. index::
    single: arithmetic
-   builtin: int
-   builtin: float
-   builtin: complex
+   pair: built-in function; int
+   pair: built-in function; float
+   pair: built-in function; complex
    single: operator; + (plus)
    single: + (plus); unary operator
    single: + (plus); binary operator
@@ -945,9 +945,9 @@ operations have the same priority as the corresponding numeric operations. [3]_
 
 .. index::
    triple: operations on; sequence; types
-   builtin: len
-   builtin: min
-   builtin: max
+   pair: built-in function; len
+   pair: built-in function; min
+   pair: built-in function; max
    pair: concatenation; operation
    pair: repetition; operation
    pair: subscript; operation
@@ -1113,7 +1113,7 @@ Immutable Sequence Types
 .. index::
    triple: immutable; sequence; types
    pair: object; tuple
-   builtin: hash
+   pair: built-in function; hash
 
 The only operation that immutable sequence types generally implement that is
 not also implemented by mutable sequence types is support for the :func:`hash`
@@ -4419,7 +4419,7 @@ Mapping Types --- :class:`dict`
    triple: operations on; mapping; types
    triple: operations on; dictionary; type
    pair: statement; del
-   builtin: len
+   pair: built-in function; len
 
 A :term:`mapping` object maps :term:`hashable` values to arbitrary objects.
 Mappings are mutable objects.  There is currently only one standard mapping
@@ -5348,7 +5348,7 @@ Code Objects
 ------------
 
 .. index::
-   builtin: compile
+   pair: built-in function; compile
    single: __code__ (function object attribute)
 
 Code objects are used by the implementation to represent "pseudo-compiled"
@@ -5362,8 +5362,8 @@ Accessing ``__code__`` raises an :ref:`auditing event <auditing>`
 ``object.__getattr__`` with arguments ``obj`` and ``"__code__"``.
 
 .. index::
-   builtin: exec
-   builtin: eval
+   pair: built-in function; exec
+   pair: built-in function; eval
 
 A code object can be executed or evaluated by passing it (instead of a source
 string) to the :func:`exec` or :func:`eval`  built-in functions.
@@ -5377,7 +5377,7 @@ Type Objects
 ------------
 
 .. index::
-   builtin: type
+   pair: built-in function; type
    pair: module; types
 
 Type objects represent the various object types.  An object's type is accessed

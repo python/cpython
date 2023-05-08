@@ -1794,8 +1794,9 @@ def _check_class(klass, attr):
             return entry.__dict__[attr]
     return _sentinel
 
-def _shadowed_dict(klass):
-    for entry in _static_getmro(klass):
+@functools.lru_cache()
+def _shadowed_dict_from_mro_tuple(mro):
+    for entry in mro:
         dunder_dict = _get_dunder_dict_of_class(entry)
         if '__dict__' in dunder_dict:
             class_dict = dunder_dict['__dict__']
@@ -1804,6 +1805,9 @@ def _shadowed_dict(klass):
                     class_dict.__objclass__ is entry):
                 return class_dict
     return _sentinel
+
+def _shadowed_dict(klass):
+    return _shadowed_dict_from_mro_tuple(_static_getmro(klass))
 
 def getattr_static(obj, attr, default=_sentinel):
     """Retrieve attributes without triggering dynamic lookup via the

@@ -12,7 +12,7 @@ PyDoc_STRVAR(py_sha3_new__doc__,
 "sha3_224(data=b\'\', /, *, usedforsecurity=True)\n"
 "--\n"
 "\n"
-"Return a new BLAKE2b hash object.");
+"Return a new SHA3 hash object.");
 
 static PyObject *
 py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity);
@@ -193,4 +193,4 @@ _sha3_shake_128_hexdigest(SHA3object *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=747c3f34ddd14063 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=907cb475f3dc9ee0 input=a9049054013a1b77]*/

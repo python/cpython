@@ -53,7 +53,7 @@ An expression statement evaluates the expression list (which may be a single
 expression).
 
 .. index::
-   builtin: repr
+   pair: built-in function; repr
    pair: object; None
    pair: string; conversion
    single: output
@@ -970,9 +970,9 @@ annotation.
    them or silently change the meaning of the program.
 
 .. index::
-   builtin: exec
-   builtin: eval
-   builtin: compile
+   pair: built-in function; exec
+   pair: built-in function; eval
+   pair: built-in function; compile
 
 **Programmer's note:** :keyword:`global` is a directive to the parser.  It
 applies only to code parsed at the same time as the :keyword:`!global` statement.
