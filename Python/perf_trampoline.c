@@ -458,7 +458,7 @@ _PyPerfTrampoline_AfterFork_Child(void)
     // Restart trampoline in file in child.
     int was_active = _PyIsPerfTrampolineActive();
     _PyPerfTrampoline_Fini();
-    _PyOS_PerfMapState_Fini();
+    PyUnstable_PerfMapState_Fini();
     if (was_active) {
         _PyPerfTrampoline_Init(1);
     }
