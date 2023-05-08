@@ -282,6 +282,11 @@ asyncio
   writing to sockets and uses :meth:`~socket.socket.sendmsg` if the platform
   supports it. (Contributed by Kumar Aditya in :gh:`91166`.)
 
+* Added :func:`asyncio.eager_task_factory` and :func:`asyncio.create_eager_task_factory`
+  functions to allow opting an event loop in to eager task execution,
+  making some use-cases 2x to 5x faster.
+  (Contributed by Jacob Bower & Itamar O in :gh:`102853`, :gh:`104140`, and :gh:`104138`)
+
 * On Linux, :mod:`asyncio` uses :class:`~asyncio.PidfdChildWatcher` by default
   if :func:`os.pidfd_open` is available and functional instead of
   :class:`~asyncio.ThreadedChildWatcher`.
@@ -643,11 +648,6 @@ Optimizations
 
 * Speed up :class:`asyncio.Task` creation by deferring expensive string formatting.
   (Contributed by Itamar O in :gh:`103793`.)
-
-* Added :func:`asyncio.eager_task_factory` and :func:`asyncio.create_eager_task_factory`
-  functions to allow opting an event loop in to eager task execution,
-  speeding up some use-cases by up to 50%.
-  (Contributed by Jacob Bower & Itamar O in :gh:`102853`)
 
 
 CPython bytecode changes
