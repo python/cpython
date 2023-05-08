@@ -300,7 +300,12 @@ _PyDict_DebugMallocStats(FILE *out)
 
 static void free_keys_object(PyInterpreterState *interp, PyDictKeysObject *keys);
 
-// XXX Switch to Py_INCREF()?
+/* We might consider modifying PyDictKeysObject so we could use
+   Py_INCREF() instead of dictkeys_incref() (and likewise with
+   Py_DECREF() and dictkeys_decref()).  However, there doesn't
+   seem to be enough benefit (performance or otherwise) to justify
+   the change. */
+
 static inline void
 dictkeys_incref(PyDictKeysObject *dk)
 {
@@ -313,7 +318,6 @@ dictkeys_incref(PyDictKeysObject *dk)
     dk->dk_refcnt++;
 }
 
-// XXX Switch to Py_DECREF()?
 static inline void
 dictkeys_decref(PyInterpreterState *interp, PyDictKeysObject *dk)
 {
