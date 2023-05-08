@@ -6011,9 +6011,9 @@ class CollectionsAbcTests(BaseTestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertIsInstance(bytearray(b''), ByteString)
         with self.assertWarns(DeprecationWarning):
-            class Foo(ByteString):
-                def __len__(self): return 42
-                def __getitem__(self, n): return 42
+            class Foo(ByteString): ...
+        with self.assertWarns(DeprecationWarning):
+            class Bar(ByteString, typing.Awaitable): ...
 
     def test_list(self):
         self.assertIsSubclass(list, typing.List)
