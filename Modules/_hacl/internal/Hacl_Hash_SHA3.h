@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __Hacl_Streaming_Types_H
-#define __Hacl_Streaming_Types_H
+#ifndef __internal_Hacl_Hash_SHA3_H
+#define __internal_Hacl_Hash_SHA3_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -35,42 +35,31 @@ extern "C" {
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
-#define Spec_Hash_Definitions_SHA2_224 0
-#define Spec_Hash_Definitions_SHA2_256 1
-#define Spec_Hash_Definitions_SHA2_384 2
-#define Spec_Hash_Definitions_SHA2_512 3
-#define Spec_Hash_Definitions_SHA1 4
-#define Spec_Hash_Definitions_MD5 5
-#define Spec_Hash_Definitions_Blake2S 6
-#define Spec_Hash_Definitions_Blake2B 7
-#define Spec_Hash_Definitions_SHA3_256 8
-#define Spec_Hash_Definitions_SHA3_224 9
-#define Spec_Hash_Definitions_SHA3_384 10
-#define Spec_Hash_Definitions_SHA3_512 11
-#define Spec_Hash_Definitions_Shake128 12
-#define Spec_Hash_Definitions_Shake256 13
+#include "../Hacl_Hash_SHA3.h"
 
-typedef uint8_t Spec_Hash_Definitions_hash_alg;
+void
+Hacl_Hash_SHA3_update_multi_sha3(
+  Spec_Hash_Definitions_hash_alg a,
+  uint64_t *s,
+  uint8_t *blocks,
+  uint32_t n_blocks
+);
 
-typedef struct Hacl_Streaming_MD_state_32_s
-{
-  uint32_t *block_state;
-  uint8_t *buf;
-  uint64_t total_len;
-}
-Hacl_Streaming_MD_state_32;
+void
+Hacl_Hash_SHA3_update_last_sha3(
+  Spec_Hash_Definitions_hash_alg a,
+  uint64_t *s,
+  uint8_t *input,
+  uint32_t input_len
+);
 
-typedef struct Hacl_Streaming_MD_state_64_s
-{
-  uint64_t *block_state;
-  uint8_t *buf;
-  uint64_t total_len;
-}
-Hacl_Streaming_MD_state_64;
+void Hacl_Impl_SHA3_state_permute(uint64_t *s);
+
+void Hacl_Impl_SHA3_loadState(uint32_t rateInBytes, uint8_t *input, uint64_t *s);
 
 #if defined(__cplusplus)
 }
 #endif
 
-#define __Hacl_Streaming_Types_H_DEFINED
+#define __internal_Hacl_Hash_SHA3_H_DEFINED
 #endif
