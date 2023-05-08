@@ -2111,6 +2111,28 @@ class TestGetattrStatic(unittest.TestCase):
         self.assertEqual(inspect.getattr_static(foo, 'a'), 3)
         self.assertFalse(test.called)
 
+    def test_mutated_mro(self):
+        test = self
+        test.called = False
+
+        class Foo(dict):
+            a = 3
+            @property
+            def __dict__(self):
+                test.called = True
+                return {}
+
+        class Bar(dict):
+            a = 4
+
+        class Baz(Bar): pass
+
+        baz = Baz()
+        self.assertEqual(inspect.getattr_static(baz, 'a'), 4)
+        Baz.__bases__ = (Foo,)
+        self.assertEqual(inspect.getattr_static(baz, 'a'), 3)
+        self.assertFalse(test.called)
+
     def test_custom_object_dict(self):
         test = self
         test.called = False
