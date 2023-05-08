@@ -787,6 +787,7 @@ clone_combined_dict_keys(PyDictObject *orig)
     assert(PyDict_Check(orig));
     assert(Py_TYPE(orig)->tp_iter == (getiterfunc)dict_iter);
     assert(orig->ma_values == NULL);
+    assert(orig->ma_keys != Py_EMPTY_KEYS);
     assert(orig->ma_keys->dk_refcnt == 1);
 
     size_t keys_size = _PyDict_KeysSize(orig->ma_keys);
@@ -1540,11 +1541,7 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
 #ifdef Py_REF_DEBUG
         _Py_DecRefTotal(_PyInterpreterState_GET());
 #endif
-        if (oldkeys == Py_EMPTY_KEYS) {
-            oldkeys->dk_refcnt--;
-            assert(oldkeys->dk_refcnt > 0);
-        }
-        else {
+        if (oldkeys != Py_EMPTY_KEYS) {
             assert(oldkeys->dk_kind != DICT_KEYS_SPLIT);
             assert(oldkeys->dk_refcnt == 1);
 #if PyDict_MAXFREELIST > 0
@@ -2088,8 +2085,8 @@ PyDict_Clear(PyObject *op)
         dictkeys_decref(interp, oldkeys);
     }
     else {
-       assert(oldkeys->dk_refcnt == 1);
-       dictkeys_decref(interp, oldkeys);
+        assert(oldkeys->dk_refcnt == 1 || oldkeys == Py_EMPTY_KEYS);
+        dictkeys_decref(interp, oldkeys);
     }
     ASSERT_CONSISTENT(mp);
 }
@@ -3573,7 +3570,7 @@ _PyDict_SizeOf(PyDictObject *mp)
     }
     /* If the dictionary is split, the keys portion is accounted-for
        in the type object. */
-    if (mp->ma_keys->dk_refcnt == 1) {
+    if (mp->ma_keys->dk_refcnt == 1 || mp->ma_keys == Py_EMPTY_KEYS) {
         res += _PyDict_KeysSize(mp->ma_keys);
     }
     assert(res <= (size_t)PY_SSIZE_T_MAX);
