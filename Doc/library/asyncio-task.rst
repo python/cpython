@@ -1178,12 +1178,13 @@ Task Object
 
       .. note::
 
-        This will return ``None`` for Tasks which have already
-        completed eagerly. See the :ref:`Eager Task Factory <eager-task-factory>`.
+         This will return ``None`` for Tasks which have already
+         completed eagerly. See the :ref:`Eager Task Factory <eager-task-factory>`.
 
       .. versionadded:: 3.8
 
       .. versionchanged:: 3.12
+
          Added note on specific eager task execution behavior.
 
    .. method:: get_context()
