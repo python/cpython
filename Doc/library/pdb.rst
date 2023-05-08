@@ -604,7 +604,7 @@ can be overridden by the local file.
    The exclamation point can be omitted unless the first word of the statement
    resembles a debugger command, e.g.:
 
-.. code-block:: none
+   .. code-block:: none
 
       (Pdb) !next(some_iterator)
       42
@@ -613,7 +613,7 @@ can be overridden by the local file.
    To set a global variable, you can prefix the assignment command with a
    :keyword:`global` statement on the same line, e.g.:
 
-.. code-block:: none
+   .. code-block:: none
 
       (Pdb) global list_options; list_options = ['-l']
       (Pdb)
