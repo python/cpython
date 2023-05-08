@@ -425,8 +425,6 @@ init_runtime(_PyRuntimeState *runtime,
     runtime->open_code_userdata = open_code_userdata;
     runtime->audit_hook_head = audit_hook_head;
 
-    _PyEval_InitRuntimeState(&runtime->ceval);
-
     PyPreConfig_InitPythonConfig(&runtime->preconfig);
 
     PyThread_type_lock *lockptrs[NUMLOCKS] = {
@@ -682,7 +680,7 @@ init_interpreter(PyInterpreterState *interp,
         memcpy(&interp->obmalloc.pools.used, temp, sizeof(temp));
     }
 
-    _PyEval_InitState(&interp->ceval, pending_lock);
+    _PyEval_InitState(interp, pending_lock);
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
