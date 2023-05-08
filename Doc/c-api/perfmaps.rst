@@ -16,29 +16,29 @@ kernel/git/torvalds/linux.git/tree/tools/perf/Documentation/jit-interface.txt>`_
 In Python, these helper APIs can be used by libraries and features that rely
 on generating machine code on the fly.
 
-.. c:function:: int _PyOS_PerfMapState_Init(void)
+.. c:function:: int PyUnstable_PerfMapState_Init(void)
 
    Open the ``/tmp/perf-$pid.map`` file, unless it's already opened, and create
    a lock to ensure thread-safe writes to the file (provided the writes are
-   done through :c:func:`PyOS_WritePerfMapEntry`). Normally, there's no need
-   to call this explicitly, and it is safe to directly use :c:func:`PyOS_WritePerfMapEntry`
+   done through :c:func:`PyUnstable_WritePerfMapEntry`). Normally, there's no need
+   to call this explicitly, and it is safe to directly use :c:func:`PyUnstable_WritePerfMapEntry`
    in your code. If the state isn't already initialized, it will be created on
    the first call.
 
-.. c:function:: int PyOS_WritePerfMapEntry(const void *code_addr, unsigned int code_size, const char *entry_name)
+.. c:function:: int PyUnstable_WritePerfMapEntry(const void *code_addr, unsigned int code_size, const char *entry_name)
 
    Write one single entry to the ``/tmp/perf-$pid.map`` file. This function is
    thread safe. Here is what an example entry looks like::
 
       # address      size  name
-      0x7f3529fcf759 b     py::bar:/run/t.py
+      0x7f3529fcf759 11     py::bar:/run/t.py
 
    Extensions are encouraged to directly call this API when needed, instead of
-   separately initializing the state by calling :c:func:`_PyOS_PerfMapState_Init`.
+   separately initializing the state by calling :c:func:`PyUnstable_PerfMapState_Init`.
 
-.. c:function:: int _PyOS_PerfMapState_Fini(void)
+.. c:function:: int PyUnstable_PerfMapState_Fini(void)
 
-   Close the perf map file, which was opened in ``_PyOS_PerfMapState_Init``. This
+   Close the perf map file, which was opened in ``PyUnstable_PerfMapState_Init``. This
    API is called by the runtime itself, during interpreter shut-down. In general,
    there shouldn't be a reason to explicitly call this, except to handle specific
    scenarios such as forking.
