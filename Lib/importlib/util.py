@@ -132,8 +132,8 @@ class allowing_all_extensions:
     disable the check for compatible extension modules.
     """
 
-    def __init__(self, enabled):
-        self.enabled = enabled
+    def __init__(self, disable_check=True):
+        self.disable_check = disable_check
 
     def __enter__(self):
         self.old = _imp._override_multi_interp_extensions_check(self.override)
@@ -146,7 +146,7 @@ class allowing_all_extensions:
 
     @property
     def override(self):
-        return 1 if self.enabled else 0
+        return -1 if self.disable_check else 1
 
 
 class _LazyModule(types.ModuleType):
