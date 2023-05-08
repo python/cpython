@@ -1158,7 +1158,6 @@ Build Changes
 * Add platform triplets for ``LoongArch64``.
   (Contributed by Zhang Na in :gh:`90656`.)
 
-
 C API Changes
 =============
 
