@@ -8,7 +8,7 @@
 .github/**                    @ezio-melotti @hugovk
 
 # pre-commit
-.pre-commit-config.yaml       @hugovk
+.pre-commit-config.yaml       @hugovk @AlexWaygood
 
 # asyncio
 **/*asyncio*                  @1st1 @asvetlov
