@@ -31,7 +31,7 @@ on generating machine code on the fly.
    thread safe. Here is what an example entry looks like::
 
       # address      size  name
-      0x7f3529fcf759 11     py::bar:/run/t.py
+      7f3529fcf759 b     py::bar:/run/t.py
 
    Extensions are encouraged to directly call this API when needed, instead of
    separately initializing the state by calling :c:func:`PyUnstable_PerfMapState_Init`.
