@@ -269,7 +269,6 @@ def _walk(top_down, on_error, follow_symlinks, use_fd, actions):
                 on_error(error)
 
 
-
 #
 # Public API
 #
@@ -1096,39 +1095,6 @@ class Path(PurePath):
         actions = [(_WalkAction.WALK, (self, None, None))]
         return _walk(top_down, on_error, follow_symlinks, False, actions)
 
-    if {os.stat, os.open} <= os.supports_dir_fd and {os.stat, os.scandir} <= os.supports_fd:
-        def fwalk(self, top_down=True, *, on_error=None, follow_symlinks=False, dir_fd=None):
-            """Walk the directory tree from this directory, similar to os.fwalk()."""
-            sys.audit("pathlib.Path.fwalk", self, on_error, follow_symlinks, dir_fd)
-            actions = [(_WalkAction.WALK, (self, dir_fd, None))]
-            try:
-                return _walk(top_down, on_error, follow_symlinks, True, actions)
-            finally:
-                for action, value in reversed(actions):
-                    if action is _WalkAction.CLOSE:
-                        try:
-                            os.close(value)
-                        except OSError:
-                            pass
-
-        def _scandir_fwalk(self, follow_symlinks, actions, dir_fd, entry):
-            name = self if dir_fd is None else self.name
-            if follow_symlinks:
-                fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
-                actions.append((_WalkAction.CLOSE, fd))
-            else:
-                # Note: To guard against symlink races, we use the standard
-                # lstat()/open()/fstat() trick.
-                if entry is None:
-                    orig_st = os.stat(name, follow_symlinks=False, dir_fd=dir_fd)
-                else:
-                    orig_st = entry.stat(follow_symlinks=False)
-                fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
-                actions.append((_WalkAction.CLOSE, fd))
-                if not os.path.samestat(orig_st, os.stat(fd)):
-                    raise NotADirectoryError("Cannot walk into a symbolic link")
-            return lambda: os.scandir(fd), fd
-
     def __init__(self, *args, **kwargs):
         if kwargs:
             msg = ("support for supplying keyword arguments to pathlib.PurePath "
@@ -1383,6 +1349,39 @@ class Path(PurePath):
             return self._from_parsed_parts(drv, root, tail + self._tail[1:])
 
         return self
+
+    if {os.stat, os.open} <= os.supports_dir_fd and {os.stat, os.scandir} <= os.supports_fd:
+        def fwalk(self, top_down=True, *, on_error=None, follow_symlinks=False, dir_fd=None):
+            """Walk the directory tree from this directory, similar to os.fwalk()."""
+            sys.audit("pathlib.Path.fwalk", self, on_error, follow_symlinks, dir_fd)
+            actions = [(_WalkAction.WALK, (self, dir_fd, None))]
+            try:
+                return _walk(top_down, on_error, follow_symlinks, True, actions)
+            finally:
+                for action, value in reversed(actions):
+                    if action is _WalkAction.CLOSE:
+                        try:
+                            os.close(value)
+                        except OSError:
+                            pass
+
+        def _scandir_fwalk(self, follow_symlinks, actions, dir_fd, entry):
+            name = self if dir_fd is None else self.name
+            if follow_symlinks:
+                fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
+                actions.append((_WalkAction.CLOSE, fd))
+            else:
+                # Note: To guard against symlink races, we use the standard
+                # lstat()/open()/fstat() trick.
+                if entry is None:
+                    orig_st = os.stat(name, follow_symlinks=False, dir_fd=dir_fd)
+                else:
+                    orig_st = entry.stat(follow_symlinks=False)
+                fd = os.open(name, os.O_RDONLY, dir_fd=dir_fd)
+                actions.append((_WalkAction.CLOSE, fd))
+                if not os.path.samestat(orig_st, os.stat(fd)):
+                    raise NotADirectoryError("Cannot walk into a symbolic link")
+            return lambda: os.scandir(fd), fd
 
 
 class PosixPath(Path, PurePosixPath):
