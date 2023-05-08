@@ -1,5 +1,5 @@
 # This file must be used with "source bin/activate" *from bash*
-# you cannot run it directly
+# You cannot run it directly
 
 deactivate () {
     # reset old environment variables
