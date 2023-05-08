@@ -208,7 +208,7 @@ perf_map_write_entry(void *state, const void *code_addr,
     }
     char perf_map_entry[500];
     snprintf(perf_map_entry, sizeof(perf_map_entry), "py::%s:%s", entry, filename);
-    PyOS_WritePerfMapEntry(code_addr, code_size, perf_map_entry);
+    PyUnstable_WritePerfMapEntry(code_addr, code_size, perf_map_entry);
 }
 
 _PyPerf_Callbacks _Py_perfmap_callbacks = {
