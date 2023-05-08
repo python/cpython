@@ -1226,7 +1226,7 @@ cmath_exec(PyObject *mod)
     if (PyModule_AddObject(mod, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(mod, "inf", PyFloat_FromDouble(Py_HUGE_VAL)) < 0) {
+    if (PyModule_AddObject(mod, "inf", PyFloat_FromDouble(Py_INFINITY)) < 0) {
         return -1;
     }
 
