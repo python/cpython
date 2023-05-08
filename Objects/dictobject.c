@@ -3574,7 +3574,7 @@ _PyDict_SizeOf(PyDictObject *mp)
     }
     /* If the dictionary is split, the keys portion is accounted-for
        in the type object. */
-    if (mp->ma_keys->dk_refcnt == 1 || mp->ma_keys == Py_EMPTY_KEYS) {
+    if (mp->ma_keys->dk_refcnt == 1) {
         res += _PyDict_KeysSize(mp->ma_keys);
     }
     assert(res <= (size_t)PY_SSIZE_T_MAX);
