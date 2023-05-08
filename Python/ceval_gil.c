@@ -464,8 +464,7 @@ _ready:
 
 void _PyEval_SetSwitchInterval(unsigned long microseconds)
 {
-    /* XXX per-interpreter GIL */
-    PyInterpreterState *interp = _PyInterpreterState_Main();
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     struct _gil_runtime_state *gil = interp->ceval.gil;
     assert(gil != NULL);
     gil->interval = microseconds;
@@ -473,8 +472,7 @@ void _PyEval_SetSwitchInterval(unsigned long microseconds)
 
 unsigned long _PyEval_GetSwitchInterval(void)
 {
-    /* XXX per-interpreter GIL */
-    PyInterpreterState *interp = _PyInterpreterState_Main();
+    PyInterpreterState *interp = _PyInterpreterState_Get();
     struct _gil_runtime_state *gil = interp->ceval.gil;
     assert(gil != NULL);
     return gil->interval;
@@ -484,7 +482,9 @@ unsigned long _PyEval_GetSwitchInterval(void)
 int
 _PyEval_ThreadsInitialized(void)
 {
-    /* XXX per-interpreter GIL */
+    /* XXX This is only needed for an assert in PyGILState_Ensure(),
+     * which currently does not work with subinterpreters.
+     * Thus we only use the main interpreter. */
     PyInterpreterState *interp = _PyInterpreterState_Main();
     if (interp == NULL) {
         return 0;
@@ -532,27 +532,16 @@ _PyEval_InitGIL(PyThreadState *tstate, int own_gil)
     assert(tstate->interp->ceval.gil == NULL);
     int locked;
     if (!own_gil) {
+        /* The interpreter will share the main interpreter's instead. */
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
         assert(tstate->interp != main_interp);
         struct _gil_runtime_state *gil = main_interp->ceval.gil;
         init_shared_gil(tstate->interp, gil);
         locked = current_thread_holds_gil(gil, tstate);
     }
-    /* XXX per-interpreter GIL */
-    else if (!_Py_IsMainInterpreter(tstate->interp)) {
-        /* Currently, the GIL is shared by all interpreters,
-           and only the main interpreter is responsible to create
-           and destroy it. */
-        struct _gil_runtime_state *main_gil = _PyInterpreterState_Main()->ceval.gil;
-        init_shared_gil(tstate->interp, main_gil);
-        // XXX For now we lie.
-        tstate->interp->ceval.own_gil = 1;
-        locked = current_thread_holds_gil(main_gil, tstate);
-    }
     else {
         PyThread_init_thread();
-        // XXX per-interpreter GIL: switch to interp->_gil.
-        init_own_gil(tstate->interp, &tstate->interp->runtime->ceval.gil);
+        init_own_gil(tstate->interp, &tstate->interp->_gil);
         locked = 0;
     }
     if (!locked) {
@@ -565,7 +554,8 @@ _PyEval_InitGIL(PyThreadState *tstate, int own_gil)
 void
 _PyEval_FiniGIL(PyInterpreterState *interp)
 {
-    if (interp->ceval.gil == NULL) {
+    struct _gil_runtime_state *gil = interp->ceval.gil;
+    if (gil == NULL) {
         /* It was already finalized (or hasn't been initialized yet). */
         assert(!interp->ceval.own_gil);
         return;
@@ -573,20 +563,9 @@ _PyEval_FiniGIL(PyInterpreterState *interp)
     else if (!interp->ceval.own_gil) {
 #ifdef Py_DEBUG
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
-        assert(interp != main_interp);
+        assert(main_interp != NULL && interp != main_interp);
         assert(interp->ceval.gil == main_interp->ceval.gil);
 #endif
-        interp->ceval.gil = NULL;
-        return;
-    }
-
-    /* XXX per-interpreter GIL */
-    struct _gil_runtime_state *gil = &interp->runtime->ceval.gil;
-    if (!_Py_IsMainInterpreter(interp)) {
-        /* Currently, the GIL is shared by all interpreters,
-           and only the main interpreter is responsible to create
-           and destroy it. */
-        assert(interp->ceval.gil == gil);
         interp->ceval.gil = NULL;
         return;
     }
@@ -974,21 +953,13 @@ Py_MakePendingCalls(void)
     return 0;
 }
 
-/* The interpreter's recursion limit */
-
 void
-_PyEval_InitRuntimeState(struct _ceval_runtime_state *ceval)
+_PyEval_InitState(PyInterpreterState *interp, PyThread_type_lock pending_lock)
 {
-    /* XXX per-interpreter GIL */
-    _gil_initialize(&ceval->gil);
-}
+    _gil_initialize(&interp->_gil);
 
-void
-_PyEval_InitState(struct _ceval_state *ceval, PyThread_type_lock pending_lock)
-{
-    struct _pending_calls *pending = &ceval->pending;
+    struct _pending_calls *pending = &interp->ceval.pending;
     assert(pending->lock == NULL);
-
     pending->lock = pending_lock;
 }
 
