@@ -876,6 +876,42 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func3', 34),
             ('line', 'check_events', 11)])
 
+    def test_with_restart(self):
+        def func1():
+            line1 = 1
+            line2 = 2
+            line3 = 3
+
+        self.check_events(func1, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('line', 'func1', 1),
+            ('instruction', 'func1', 2),
+            ('instruction', 'func1', 4),
+            ('line', 'func1', 2),
+            ('instruction', 'func1', 6),
+            ('instruction', 'func1', 8),
+            ('line', 'func1', 3),
+            ('instruction', 'func1', 10),
+            ('instruction', 'func1', 12),
+            ('instruction', 'func1', 14),
+            ('line', 'check_events', 11)])
+
+        sys.monitoring.restart_events()
+
+        self.check_events(func1, recorders = LINE_AND_INSTRUCTION_RECORDERS, expected = [
+            ('line', 'check_events', 10),
+            ('line', 'func1', 1),
+            ('instruction', 'func1', 2),
+            ('instruction', 'func1', 4),
+            ('line', 'func1', 2),
+            ('instruction', 'func1', 6),
+            ('instruction', 'func1', 8),
+            ('line', 'func1', 3),
+            ('instruction', 'func1', 10),
+            ('instruction', 'func1', 12),
+            ('instruction', 'func1', 14),
+            ('line', 'check_events', 11)])
+
 class TestInstallIncrementallly(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, must_include, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):

@@ -1227,8 +1227,10 @@ def _add_slots(cls, is_frozen, weakref_slot):
 
     if is_frozen:
         # Need this for pickling frozen classes with slots.
-        cls.__getstate__ = _dataclass_getstate
-        cls.__setstate__ = _dataclass_setstate
+        if '__getstate__' not in cls_dict:
+            cls.__getstate__ = _dataclass_getstate
+        if '__setstate__' not in cls_dict:
+            cls.__setstate__ = _dataclass_setstate
 
     return cls
 

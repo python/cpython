@@ -21,11 +21,13 @@
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 
 #include "pycore_dict.h"
 #include "dictobject.h"
 #include "pycore_frame.h"
+#include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "opcode.h"
 #include "pydtrace.h"
 #include "setobject.h"
@@ -211,6 +213,9 @@ static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
                         PyObject *locals, PyObject* const* args,
                         size_t argcount, PyObject *kwnames);
+static  _PyInterpreterFrame *
+_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
+    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs);
 static void
 _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
@@ -781,7 +786,7 @@ handle_eval_breaker:
             _PyErr_Format(tstate, PyExc_SystemError,
                           "%U:%d: unknown opcode %d",
                           frame->f_code->co_filename,
-                          _PyInterpreterFrame_GetLine(frame),
+                          PyUnstable_InterpreterFrame_GetLine(frame),
                           opcode);
             goto error;
 
@@ -1497,6 +1502,49 @@ fail:
         }
     }
     PyErr_NoMemory();
+    return NULL;
+}
+
+/* Same as _PyEvalFramePushAndInit but takes an args tuple and kwargs dict.
+   Steals references to func, callargs and kwargs.
+*/
+static _PyInterpreterFrame *
+_PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
+    PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs)
+{
+    bool has_dict = (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0);
+    PyObject *kwnames = NULL;
+    PyObject *const *newargs;
+    if (has_dict) {
+        newargs = _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs), nargs, kwargs, &kwnames);
+        if (newargs == NULL) {
+            Py_DECREF(func);
+            goto error;
+        }
+    }
+    else {
+        newargs = &PyTuple_GET_ITEM(callargs, 0);
+        /* We need to incref all our args since the new frame steals the references. */
+        for (Py_ssize_t i = 0; i < nargs; ++i) {
+            Py_INCREF(PyTuple_GET_ITEM(callargs, i));
+        }
+    }
+    _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
+        tstate, (PyFunctionObject *)func, locals,
+        newargs, nargs, kwnames
+    );
+    if (has_dict) {
+        _PyStack_UnpackDict_FreeNoDecRef(newargs, kwnames);
+    }
+    /* No need to decref func here because the reference has been stolen by
+       _PyEvalFramePushAndInit.
+    */
+    Py_DECREF(callargs);
+    Py_XDECREF(kwargs);
+    return new_frame;
+error:
+    Py_DECREF(callargs);
+    Py_XDECREF(kwargs);
     return NULL;
 }
 

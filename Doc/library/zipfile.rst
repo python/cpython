@@ -128,7 +128,7 @@ The module defines the following items:
       Documentation on the ZIP file format by Phil Katz, the creator of the format and
       algorithms used.
 
-   `Info-ZIP Home Page <http://www.info-zip.org/>`_
+   `Info-ZIP Home Page <https://infozip.sourceforge.net/>`_
       Information about the Info-ZIP project's ZIP archive programs and development
       libraries.
 

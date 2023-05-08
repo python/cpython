@@ -4102,3 +4102,172 @@ exit:
 static PyObject *
 test_paramname_module_impl(PyObject *module, PyObject *mod)
 /*[clinic end generated code: output=4a2a849ecbcc8b53 input=afefe259667f13ba]*/
+
+/*[clinic input]
+mangle1
+
+    args: object
+    kwnames: object
+    return_value: object
+    _keywords: object
+    _parser: object
+    argsbuf: object
+    fastargs: object
+    nargs: object
+    noptargs: object
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(mangle1__doc__,
+"mangle1($module, /, args, kwnames, return_value, _keywords, _parser,\n"
+"        argsbuf, fastargs, nargs, noptargs)\n"
+"--\n"
+"\n");
+
+#define MANGLE1_METHODDEF    \
+    {"mangle1", _PyCFunction_CAST(mangle1), METH_FASTCALL|METH_KEYWORDS, mangle1__doc__},
+
+static PyObject *
+mangle1_impl(PyObject *module, PyObject *args, PyObject *kwnames,
+             PyObject *return_value, PyObject *_keywords, PyObject *_parser,
+             PyObject *argsbuf, PyObject *fastargs, PyObject *nargs,
+             PyObject *noptargs);
+
+static PyObject *
+mangle1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 9
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(args), &_Py_ID(kwnames), &_Py_ID(return_value), &_Py_ID(_keywords), &_Py_ID(_parser), &_Py_ID(argsbuf), &_Py_ID(fastargs), &_Py_ID(nargs), &_Py_ID(noptargs), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"args", "kwnames", "return_value", "_keywords", "_parser", "argsbuf", "fastargs", "nargs", "noptargs", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "mangle1",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[9];
+    PyObject *__clinic_args;
+    PyObject *__clinic_kwnames;
+    PyObject *__clinic_return_value;
+    PyObject *__clinic__keywords;
+    PyObject *__clinic__parser;
+    PyObject *__clinic_argsbuf;
+    PyObject *__clinic_fastargs;
+    PyObject *__clinic_nargs;
+    PyObject *__clinic_noptargs;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 9, 9, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    __clinic_args = args[0];
+    __clinic_kwnames = args[1];
+    __clinic_return_value = args[2];
+    __clinic__keywords = args[3];
+    __clinic__parser = args[4];
+    __clinic_argsbuf = args[5];
+    __clinic_fastargs = args[6];
+    __clinic_nargs = args[7];
+    __clinic_noptargs = args[8];
+    return_value = mangle1_impl(module, __clinic_args, __clinic_kwnames, __clinic_return_value, __clinic__keywords, __clinic__parser, __clinic_argsbuf, __clinic_fastargs, __clinic_nargs, __clinic_noptargs);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+mangle1_impl(PyObject *module, PyObject *args, PyObject *kwnames,
+             PyObject *return_value, PyObject *_keywords, PyObject *_parser,
+             PyObject *argsbuf, PyObject *fastargs, PyObject *nargs,
+             PyObject *noptargs)
+/*[clinic end generated code: output=083e5076be9987c3 input=a3ed51bdedf8a3c7]*/
+
+/*[clinic input]
+mangle2
+
+    args: object
+    kwargs: object
+    return_value: object
+
+[clinic start generated code]*/
+
+PyDoc_STRVAR(mangle2__doc__,
+"mangle2($module, /, args, kwargs, return_value)\n"
+"--\n"
+"\n");
+
+#define MANGLE2_METHODDEF    \
+    {"mangle2", _PyCFunction_CAST(mangle2), METH_FASTCALL|METH_KEYWORDS, mangle2__doc__},
+
+static PyObject *
+mangle2_impl(PyObject *module, PyObject *args, PyObject *kwargs,
+             PyObject *return_value);
+
+static PyObject *
+mangle2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(args), &_Py_ID(kwargs), &_Py_ID(return_value), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"args", "kwargs", "return_value", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "mangle2",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    PyObject *__clinic_args;
+    PyObject *__clinic_kwargs;
+    PyObject *__clinic_return_value;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    __clinic_args = args[0];
+    __clinic_kwargs = args[1];
+    __clinic_return_value = args[2];
+    return_value = mangle2_impl(module, __clinic_args, __clinic_kwargs, __clinic_return_value);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+mangle2_impl(PyObject *module, PyObject *args, PyObject *kwargs,
+             PyObject *return_value)
+/*[clinic end generated code: output=2ebb62aaefe7590a input=391766fee51bad7a]*/

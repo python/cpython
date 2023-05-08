@@ -21,10 +21,10 @@ extern "C" {
 #include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pyhash.h"          // struct pyhash_runtime_state
 #include "pycore_pythread.h"        // struct _pythread_runtime_state
-#include "pycore_obmalloc.h"        // struct obmalloc_state
 #include "pycore_signal.h"          // struct _signals_runtime_state
 #include "pycore_time.h"            // struct _time_runtime_state
 #include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
+#include "pycore_typeobject.h"      // struct types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_ids
 
 struct _getargs_runtime_state {
@@ -87,7 +87,7 @@ typedef struct pyruntimestate {
     _Py_atomic_address _finalizing;
 
     struct _pymem_allocators allocators;
-    struct _obmalloc_state obmalloc;
+    struct _obmalloc_global_state obmalloc;
     struct pyhash_runtime_state pyhash_state;
     struct _time_runtime_state time;
     struct _pythread_runtime_state threads;
@@ -119,9 +119,6 @@ typedef struct pyruntimestate {
 
     unsigned long main_thread;
 
-    /* Assuming the current thread holds the GIL, this is the
-       PyThreadState for the current thread. */
-    _Py_atomic_address tstate_current;
     /* Used for the thread state bound to the current thread. */
     Py_tss_t autoTSSkey;
 
@@ -153,13 +150,7 @@ typedef struct pyruntimestate {
     struct _py_object_runtime_state object_state;
     struct _Py_float_runtime_state float_state;
     struct _Py_unicode_runtime_state unicode_state;
-
-    struct {
-        /* Used to set PyTypeObject.tp_version_tag */
-        // bpo-42745: next_version_tag remains shared by all interpreters
-        // because of static types.
-        unsigned int next_version_tag;
-    } types;
+    struct _types_runtime_state types;
 
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_static_objects static_objects;
