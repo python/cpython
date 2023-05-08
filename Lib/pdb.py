@@ -1638,13 +1638,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     do_h = do_help
 
     def help_exec(self):
-        """(!) statement
+        """(!)statement
 
         Execute the (one-line) statement in the context of the current
         stack frame.  The exclamation point can be omitted unless the
-        first word of the statement resembles a debugger command.  To
-        assign to a global variable you must always prefix the command
-        with a 'global' command, e.g.:
+        first word of the statement resembles a debugger command, e.g.:
+        (Pdb) !next(some_iterator)
+        42
+        (Pdb)
+
+        To assign to a global variable you must always prefix the command with
+        a 'global' command, e.g.:
         (Pdb) global list_options; list_options = ['-l']
         (Pdb)
         """
