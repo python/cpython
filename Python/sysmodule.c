@@ -3262,6 +3262,53 @@ err_occurred:
     return _PyStatus_ERR("can't initialize sys module");
 }
 
+#ifdef HAVE_FORK
+extern int _PyIO_buffered_at_fork_reinit(PyObject *);
+
+static int
+stream_at_fork_reinit(PyObject *stream)
+{
+    if (stream == NULL || Py_IsNone(stream)) {
+        return 0;
+    }
+
+    /* The buffer attribute is not part of the TextIOBase API
+     * and may not exist in some implementations. If not present,
+     * we have no locks to reinitialize. */
+    PyObject *buffer = PyObject_GetAttr(stream, &_Py_ID(buffer));
+    if (buffer == NULL) {
+        PyErr_Clear();
+        return 0;
+    }
+
+    /* Reinitialize buffer->lock */
+    int ret = _PyIO_buffered_at_fork_reinit(buffer);
+    Py_DECREF(buffer);
+    return ret;
+}
+
+/* This function is called from PyOS_AfterFork_Child() to ensure that newly
+   created child processes do not share locks with the parent. */
+PyStatus
+_PySys_ReInitStdio(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    PyObject *sys_stdin  = _PySys_GetAttr(tstate, &_Py_ID(stdin));
+    PyObject *sys_stdout = _PySys_GetAttr(tstate, &_Py_ID(stdout));
+    PyObject *sys_stderr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+
+    int reinit_stdin  = stream_at_fork_reinit(sys_stdin);
+    int reinit_stdout = stream_at_fork_reinit(sys_stdout);
+    int reinit_stderr = stream_at_fork_reinit(sys_stderr);
+
+    if (reinit_stdin < 0 || reinit_stdout < 0 || reinit_stderr < 0) {
+        return _PyStatus_ERR("Failed to reinitialize standard streams");
+    }
+    return _PyStatus_OK();
+}
+#endif
+
 static int
 sys_add_xoption(PyObject *opts, const wchar_t *s)
 {

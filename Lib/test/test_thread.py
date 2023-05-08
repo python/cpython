@@ -1,4 +1,6 @@
+import io
 import os
+import sys
 import unittest
 import random
 from test import support
@@ -273,6 +275,108 @@ class TestForkInThread(unittest.TestCase):
         except OSError:
             pass
 
+
+class TestStdioAtForkReInit(unittest.TestCase):
+
+    class MockStdio(io.TextIOWrapper):
+        def __init__(self):
+            import _io, tempfile
+            self._file = tempfile.mktemp()
+            raw = _io.FileIO(self._file, mode='wb')
+            buffer = _io.BufferedWriter(raw)
+            super().__init__(buffer)
+
+        def __del__(self):
+            try:
+                self.close()
+                os.remove(self._file)
+            except:
+                pass
+
+        def isatty(self):
+            # pretend to be a tty, so _PySys_ReInitStdio
+            # will attempt to reinitialize our buffer lock.
+            return True
+
+    def setUp(self):
+        # Replace stdout & stderr with mock objects with the
+        # same underlying buffer type to avoid polluting the
+        # test output stream.
+        self._saved_stdout = sys.stdout
+        self._saved_stderr = sys.stderr
+        sys.stdout = self.MockStdio()
+        sys.stderr = self.MockStdio()
+
+    def tearDown(self):
+        sys.stdout = self._saved_stdout
+        sys.stderr = self._saved_stderr
+
+    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork')
+    @threading_helper.reap_threads
+    def test_stdio_at_fork_reinit(self):
+
+        # bpo-46210: Added _PySys_ReInitStdio to prevent children
+        # from deadlocking here if printer_thread held the stdout
+        # (or stderr) buffer's lock when one of the children forked.
+
+        num_prints = 100
+        num_forks = 100
+        msg = 'hello'*10
+
+        def printer_thread(stdio):
+            for n in range(num_prints):
+                print(msg, file=stdio)
+                stdio.flush()
+
+        def fork_processes(stdio):
+            pids = []
+            for n in range(num_forks):
+                if pid := os.fork():
+                    pids.append(pid)
+                else:
+                    print(msg, file=stdio)
+                    stdio.flush()
+                    os._exit(0)
+
+            return pids
+
+        def main(stdio):
+            thread.start_new_thread(printer_thread, (stdio,))
+            pids = fork_processes(stdio)
+            for pid in pids:
+                support.wait_process(pid, exitcode=0)
+            return
+
+        # Forking below is not necessary to illustrate the bug
+        # in bpo-46210 and its fix. The issue in bpo-46210 is
+        # that calling main(sys.stdout) or main(sys.stderr)
+        # is sufficient to cause a deadlock in print. We fork
+        # here only to allow us to give a single timeout to the
+        # main() call, since its failure mode (absent the fix)
+        # is for some subset of the forked child processes to
+        # deadlock at the moment when they try to print, rather
+        # than to raise an exception. Therefore, simply looping
+        # over the child pids and calling support.wait_process
+        # with a separate nonzero timeout for each child leads
+        # to a rather unpredictable total wait time, whereas
+        # forking again here at the top (though not necessary
+        # to illustrate the bug) allows us to give a predictable
+        # timeout to the process of waiting for the children.
+        #
+        # bpo-46210 is present if and only if one or more of the
+        # children forked by main() deadlock when they call print.
+        #
+        # pr-30310 proposes a fix following the example of the
+        # import lock, by providing a function _PySys_ReInitStdio
+        # that is called alongside the other preexisting lock
+        # reinitialization functions in PyOS_AfterFork_Child.
+        for stdio in (sys.stdout, sys.stderr):
+            with threading_helper.wait_threads_exit():
+                if main_pid := os.fork():
+                    support.wait_process(main_pid, exitcode=0, timeout=5)
+                else:
+                    main(stdio)
+                    os._exit(0)
 
 if __name__ == "__main__":
     unittest.main()

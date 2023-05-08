@@ -416,6 +416,20 @@ buffered_clear(buffered *self)
     return 0;
 }
 
+#ifdef HAVE_FORK
+int
+_PyIO_buffered_at_fork_reinit(PyObject *self)
+{
+    if (!Py_IS_TYPE(self, &PyBufferedWriter_Type) &&
+        !Py_IS_TYPE(self, &PyBufferedReader_Type)) {
+        return 0;
+    }
+    buffered *buffer = (buffered *)self;
+    buffer->owner = 0;
+    return _PyThread_at_fork_reinit(&buffer->lock);
+}
+#endif
+
 /* Because this can call arbitrary code, it shouldn't be called when
    the refcount is 0 (that is, not directly from tp_dealloc unless
    the refcount has been temporarily re-incremented). */
