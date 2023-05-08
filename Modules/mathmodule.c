@@ -3909,7 +3909,7 @@ math_ulp_impl(PyObject *module, double x)
     if (Py_IS_INFINITY(x)) {
         return x;
     }
-    double inf = Py_HUGE_VAL;
+    double inf = Py_INFINITY;
     double x2 = nextafter(x, inf);
     if (Py_IS_INFINITY(x2)) {
         /* special case: x is the largest positive representable float */
