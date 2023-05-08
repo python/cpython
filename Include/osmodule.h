@@ -17,11 +17,11 @@ typedef struct {
     PyThread_type_lock map_lock;
 } PerfMapState;
 
-PyAPI_FUNC(int) _PyOS_PerfMapState_Init(void);
+PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void);
 
-PyAPI_FUNC(int) PyOS_WritePerfMapEntry(const void *code_addr, unsigned int code_size, const char *entry_name);
+PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(const void *code_addr, unsigned int code_size, const char *entry_name);
 
-PyAPI_FUNC(void) _PyOS_PerfMapState_Fini(void);
+PyAPI_FUNC(void) PyUnstable_PerfMapState_Fini(void);
 #endif
 
 #ifdef __cplusplus
