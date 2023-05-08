@@ -1155,6 +1155,9 @@ Build Changes
   optimization levels (0, 1, 2) at once.
   (Contributed by Victor Stinner in :gh:`99289`.)
 
+* Add platform triplets for ``LoongArch64``.
+  (Contributed by Zhang Na in :gh:`90656`.)
+
 
 C API Changes
 =============

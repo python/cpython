@@ -1,1 +1,7 @@
-Add platform triplets for LoongArch64
+Add platform triplets for ``LoongArch64``:
+
+- ``loongarch64-linux-gnusf``
+- ``loongarch64-linux-gnuf32``
+- ``loongarch64-linux-gnu``
+
+Patch by Zhang Na.
