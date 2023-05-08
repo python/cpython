@@ -494,7 +494,9 @@ build_filter_spec(const lzma_filter *f)
         case LZMA_FILTER_ARMTHUMB:
         case LZMA_FILTER_SPARC: {
             lzma_options_bcj *options = f->options;
-            ADD_FIELD(options, start_offset);
+            if (options) {
+                ADD_FIELD(options, start_offset);
+            }
             break;
         }
         default:
@@ -1495,7 +1497,9 @@ _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
 
     /* We use vanilla free() here instead of PyMem_Free() - filter.options was
        allocated by lzma_properties_decode() using the default allocator. */
-    free(filter.options);
+    if (filter.options) {
+        free(filter.options);
+    }
     return result;
 }
 
