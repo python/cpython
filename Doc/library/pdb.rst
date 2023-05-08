@@ -598,7 +598,7 @@ can be overridden by the local file.
 
    Delete the specified alias *name*.
 
-.. pdbcommand:: ! statement
+.. pdbcommand:: !statement
 
    Execute the (one-line) *statement* in the context of the current stack frame.
    The exclamation point can be omitted unless the first word of the statement
