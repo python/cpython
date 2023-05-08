@@ -206,9 +206,11 @@ perf_map_write_entry(void *state, const void *code_addr,
     if (co->co_filename != NULL) {
         filename = PyUnicode_AsUTF8(co->co_filename);
     }
-    char perf_map_entry[500];
-    snprintf(perf_map_entry, sizeof(perf_map_entry), "py::%s:%s", entry, filename);
+    size_t perf_map_entry_size = snprintf(NULL, 0, "py::%s:%s", entry, filename) + 1;
+    char* perf_map_entry = (char*) malloc(perf_map_entry_size);
+    snprintf(perf_map_entry, perf_map_entry_size, "py::%s:%s", entry, filename);
     PyUnstable_WritePerfMapEntry(code_addr, code_size, perf_map_entry);
+    free(perf_map_entry);
 }
 
 _PyPerf_Callbacks _Py_perfmap_callbacks = {
