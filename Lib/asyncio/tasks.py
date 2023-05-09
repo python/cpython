@@ -943,10 +943,10 @@ def create_eager_task_factory(custom_task_constructor):
 	    that returns a Task-compatible object and has a signature compatible
 	    with `Task.__init__`; it must have the `eager_start` keyword argument.
 	    
-	    Most applications will use `Task` for `my_task_constructor` and in this
-	    case there's no need to call `create_eager_task_factory()` directly.
-	    Instead the  global `eager_task_factory` instance can be used. E.g.
-	    `loop.set_task_factory(asyncio.eager_task_factory)`.
+	    Most applications will use `Task` for `custom_task_constructor` and in
+        this case there's no need to call `create_eager_task_factory()`
+        directly. Instead the  global `eager_task_factory` instance can be
+        used. E.g. `loop.set_task_factory(asyncio.eager_task_factory)`.
 	    """
 
     def factory(loop, coro, *, name=None, context=None):
