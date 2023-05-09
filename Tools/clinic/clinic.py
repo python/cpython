@@ -4558,10 +4558,8 @@ class DSLParser:
                     c_default = "NULL"
                 elif (isinstance(expr, ast.BinOp) or
                     (isinstance(expr, ast.UnaryOp) and
-                     not (isinstance(expr.operand, ast.Num) or
-                          (hasattr(ast, 'Constant') and
-                           isinstance(expr.operand, ast.Constant) and
-                           type(expr.operand.value) in (int, float, complex)))
+                     not (isinstance(expr.operand, ast.Constant) and
+                          type(expr.operand.value) in {int, float, complex})
                     )):
                     c_default = kwargs.get("c_default")
                     if not (isinstance(c_default, str) and c_default):
@@ -4658,13 +4656,9 @@ class DSLParser:
         self.function.parameters[key] = p
 
     def parse_converter(self, annotation):
-        if (hasattr(ast, 'Constant') and
-            isinstance(annotation, ast.Constant) and
+        if (isinstance(annotation, ast.Constant) and
             type(annotation.value) is str):
             return annotation.value, True, {}
-
-        if isinstance(annotation, ast.Str):
-            return annotation.s, True, {}
 
         if isinstance(annotation, ast.Name):
             return annotation.id, False, {}
