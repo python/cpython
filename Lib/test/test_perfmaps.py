@@ -14,6 +14,6 @@ class TestPerfMapWriting(unittest.TestCase):
         self.assertEqual(write_perf_map_entry(0x2345, 6789, "entry2"), 0)
         with open(f"/tmp/perf-{os.getpid()}.map") as f:
             perf_file_contents = f.read()
-            self.assertIn("0x1234 5678 entry1", perf_file_contents)
-            self.assertIn("0x2345 6789 entry2", perf_file_contents)
+            self.assertIn("1234 162e entry1", perf_file_contents)
+            self.assertIn("2345 1a85 entry2", perf_file_contents)
         perf_map_state_teardown()
