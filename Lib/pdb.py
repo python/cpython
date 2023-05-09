@@ -440,7 +440,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.message(repr(obj))
 
     def default(self, line):
-        if line[:1] == '!': line = line[1:]
+        if line[:1] == '!': line = line[1:].lstrip()
         locals = self.curframe_locals
         globals = self.curframe.f_globals
         try:
