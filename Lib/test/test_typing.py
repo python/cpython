@@ -56,10 +56,6 @@ CANNOT_SUBCLASS_TYPE = 'Cannot subclass special typing classes'
 CANNOT_SUBCLASS_INSTANCE = 'Cannot subclass an instance of %s'
 
 
-def tearDownModule():
-    inspect._shadowed_dict_from_mro_tuple.cache_clear()
-
-
 class BaseTestCase(TestCase):
 
     def assertIsSubclass(self, cls, class_or_tuple, msg=None):
