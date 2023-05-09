@@ -25,6 +25,10 @@ class Full(Exception):
     pass
 
 
+class ShutDown(Exception):
+    '''Raised when put/get with shut-down queue.'''
+
+
 class Queue:
     '''Create a queue object with a given maximum size.
 
