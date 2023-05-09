@@ -90,9 +90,9 @@ type_check(PyObject *arg, const char *msg)
  * Return a typing.Union. This is used as the nb_or (|) operator for
  * TypeVar and ParamSpec. We use this rather than _Py_union_type_or
  * (which would produce a types.Union) because historically TypeVar
- * supported unions with forward references, and we want to preserve
- * that behavior. _Py_union_type_or only allows a small set of
- * types.
+ * supported unions with string forward references, and we want to
+ * preserve that behavior. _Py_union_type_or only allows a small set
+ * of types.
  */
 static PyObject *
 make_union(PyObject *self, PyObject *other)
@@ -1273,7 +1273,7 @@ typealias_dealloc(PyObject *self)
 }
 
 static PyObject *
-typealias_evaluate(typealiasobject *ta)
+typealias_get_value(typealiasobject *ta)
 {
     if (ta->value != NULL) {
         return Py_NewRef(ta->value);
@@ -1299,11 +1299,12 @@ typealias_repr(PyObject *self)
 
     typealiasobject *ta = (typealiasobject *)self;
     PyObject *value_repr = NULL;
-    PyObject *value = typealias_evaluate(ta);
+    PyObject *value = typealias_get_value(ta);
     if (value == NULL) {
         PyErr_Clear();
         value_repr = PyUnicode_FromString("<evaluation failed>");
     }
+    // Show "int" instead of "<class 'int'>"
     else if (PyType_Check(value) && Py_TYPE(value)->tp_repr == PyType_Type.tp_repr
              && ((PyTypeObject *)value)->tp_name != NULL) {
         value_repr = PyUnicode_FromString(((PyTypeObject *)value)->tp_name);
@@ -1384,7 +1385,7 @@ static PyObject *
 typealias_value(PyObject *self, void *unused)
 {
     typealiasobject *ta = (typealiasobject *)self;
-    return typealias_evaluate(ta);
+    return typealias_get_value(ta);
 }
 
 static PyObject *
