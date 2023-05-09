@@ -207,7 +207,8 @@ _PyIOBase_check_closed(PyObject *self, PyObject *args)
 static PyObject *
 iobase_check_seekable(PyObject *self, PyObject *args)
 {
-    return _PyIOBase_check_seekable(self, args);
+    _PyIO_State *state = IO_STATE();
+    return _PyIOBase_check_seekable(state, self, args);
 }
 
 static PyObject *
@@ -390,14 +391,13 @@ _io__IOBase_seekable_impl(PyObject *self)
 }
 
 PyObject *
-_PyIOBase_check_seekable(PyObject *self, PyObject *args)
+_PyIOBase_check_seekable(_PyIO_State *state, PyObject *self, PyObject *args)
 {
     PyObject *res  = PyObject_CallMethodNoArgs(self, &_Py_ID(seekable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        _PyIO_State *state = IO_STATE();
         iobase_unsupported(state, "File or stream is not seekable.");
         return NULL;
     }

@@ -1224,8 +1224,10 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
 
     CHECK_CLOSED(self, "seek of closed file")
 
-    if (_PyIOBase_check_seekable(self->raw, Py_True) == NULL)
+    _PyIO_State *state = IO_STATE();
+    if (_PyIOBase_check_seekable(state, self->raw, Py_True) == NULL) {
         return NULL;
+    }
 
     target = PyNumber_AsOff_t(targetobj, PyExc_ValueError);
     if (target == -1 && PyErr_Occurred())
@@ -2293,8 +2295,10 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     self->ok = 0;
     self->detached = 0;
 
-    if (_PyIOBase_check_seekable(raw, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_seekable(state, raw, Py_True) == NULL) {
         return -1;
+    }
     if (_PyIOBase_check_readable(raw, Py_True) == NULL)
         return -1;
     if (_PyIOBase_check_writable(raw, Py_True) == NULL)
@@ -2312,7 +2316,6 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     _bufferedwriter_reset_buf(self);
     self->pos = 0;
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->fast_closed_checks = (Py_IS_TYPE(self, state->PyBufferedRandom_Type) &&
                                 Py_IS_TYPE(raw, state->PyFileIO_Type));
 
