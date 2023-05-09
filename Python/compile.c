@@ -2120,7 +2120,7 @@ compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
                                         (void *)typeparam, bound->lineno) == -1) {
                     return ERROR;
                 }
-                VISIT(c, expr, bound);
+                VISIT_IN_SCOPE(c, expr, bound);
                 ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
                 PyCodeObject *co = optimize_and_assemble(c, 1);
                 compiler_exit_scope(c);
@@ -2212,14 +2212,14 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
     location loc = LOC(s);
 
-    int is_typeparams_in_class = c->u->u_ste->ste_type == ClassBlock;
+    int is_in_class = c->u->u_ste->ste_type == ClassBlock;
     int is_generic = asdl_seq_LEN(typeparams) > 0;
 
     if (is_generic) {
         ADDOP(c, loc, PUSH_NULL);
         // We'll swap in the callable here later.
         ADDOP_LOAD_CONST(c, loc, Py_None);
-        if (is_typeparams_in_class) {
+        if (is_in_class) {
             ADDOP(c, loc, LOAD_LOCALS);
         }
     }
@@ -2243,15 +2243,15 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             return ERROR;
         }
         Py_DECREF(typeparams_name);
-        if (is_typeparams_in_class) {
+        if (is_in_class) {
             num_typeparam_args += 1;
         }
         if ((funcflags & 0x01) || (funcflags & 0x02)) {
-            ADDOP_I(c, loc, LOAD_FAST, 0 + is_typeparams_in_class);
+            ADDOP_I(c, loc, LOAD_FAST, 0 + is_in_class);
             num_typeparam_args += 1;
         }
         if ((funcflags & 0x01) && (funcflags & 0x02)) {
-            ADDOP_I(c, loc, LOAD_FAST, 1 + is_typeparams_in_class);
+            ADDOP_I(c, loc, LOAD_FAST, 1 + is_in_class);
             num_typeparam_args += 1;
         }
         RETURN_IF_ERROR(compiler_type_params(c, typeparams));
@@ -2303,15 +2303,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Load));
         ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS);
 
-        if (is_typeparams_in_class) {
-            c->u->u_metadata.u_argcount += 1;
-        }
-        if (funcflags & 0x02) {
-            c->u->u_metadata.u_argcount += 1;
-        }
-        if (funcflags & 0x01) {
-            c->u->u_metadata.u_argcount += 1;
-        }
+        c->u->u_metadata.u_argcount = num_typeparam_args;
         PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
         if (co == NULL) {
