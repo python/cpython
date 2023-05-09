@@ -1254,11 +1254,9 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
-        int res;
+        Py_ssize_t res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
-        assert(PyDict_GET_SIZE(u->u_metadata.u_cellvars) == 0);
-        res = PyDict_SetItem(u->u_metadata.u_cellvars, &_Py_ID(__class__),
-                             _PyLong_GetZero());
+        res = dict_add_o(u->u_metadata.u_cellvars, &_Py_ID(__class__));
         if (res < 0) {
             compiler_unit_free(u);
             return ERROR;
@@ -1266,11 +1264,9 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     if (u->u_ste->ste_needs_classdict) {
         /* Cook up an implicit __classdict__ cell. */
-        int res;
+        Py_ssize_t res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
-        PyObject *index = u->u_ste->ste_needs_class_closure ? _PyLong_GetOne() : _PyLong_GetZero();
-        res = PyDict_SetItem(u->u_metadata.u_cellvars, &_Py_ID(__classdict__),
-                             index);
+        res = dict_add_o(u->u_metadata.u_cellvars, &_Py_ID(__classdict__));
         if (res < 0) {
             compiler_unit_free(u);
             return ERROR;
