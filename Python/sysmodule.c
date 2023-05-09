@@ -2247,7 +2247,7 @@ sys__getframemodulename_impl(PyObject *module, int depth)
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
+
 static PerfMapState perf_map_state;
 
 PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
