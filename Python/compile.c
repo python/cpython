@@ -2267,16 +2267,12 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
     location loc = LOC(s);
 
-    int is_in_class = c->u->u_ste->ste_type == ClassBlock;
     int is_generic = asdl_seq_LEN(typeparams) > 0;
 
     if (is_generic) {
         ADDOP(c, loc, PUSH_NULL);
         // We'll swap in the callable here later.
         ADDOP_LOAD_CONST(c, loc, Py_None);
-        if (is_in_class) {
-            ADDOP(c, loc, LOAD_LOCALS);
-        }
     }
 
     funcflags = compiler_default_arguments(c, loc, args);
@@ -2298,15 +2294,12 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             return ERROR;
         }
         Py_DECREF(typeparams_name);
-        if (is_in_class) {
-            num_typeparam_args += 1;
-        }
         if ((funcflags & 0x01) || (funcflags & 0x02)) {
-            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 0 + is_in_class, loc));
+            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 0, loc));
             num_typeparam_args += 1;
         }
         if ((funcflags & 0x01) && (funcflags & 0x02)) {
-            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 1 + is_in_class, loc));
+            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 1, loc));
             num_typeparam_args += 1;
         }
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, typeparams));
