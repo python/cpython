@@ -53,7 +53,7 @@ typedef struct {
 #include "clinic/typevarobject.c.h"
 
 static PyObject *
-call_typing_func_object(const char *name, PyObject *args)
+call_typing_func_object(const char *name, PyObject **args, size_t nargs)
 {
     PyObject *typing = PyImport_ImportModule("typing");
     if (typing == NULL) {
@@ -64,7 +64,7 @@ call_typing_func_object(const char *name, PyObject *args)
         Py_DECREF(typing);
         return NULL;
     }
-    PyObject *result = PyObject_CallObject(func, args);
+    PyObject *result = PyObject_Vectorcall(func, args, nargs, NULL);
     Py_DECREF(func);
     Py_DECREF(typing);
     return result;
@@ -81,12 +81,8 @@ type_check(PyObject *arg, const char *msg)
     if (message_str == NULL) {
         return NULL;
     }
-    PyObject *args = PyTuple_Pack(2, arg, message_str);
-    if (args == NULL) {
-        return NULL;
-    }
-    PyObject *result = call_typing_func_object("_type_check", args);
-    Py_DECREF(args);
+    PyObject *args[2] = {arg, message_str};
+    PyObject *result = call_typing_func_object("_type_check", args, 2);
     return result;
 }
 
@@ -101,12 +97,8 @@ type_check(PyObject *arg, const char *msg)
 static PyObject *
 make_union(PyObject *self, PyObject *other)
 {
-    PyObject *args = PyTuple_Pack(2, self, other);
-    if (args == NULL) {
-        return NULL;
-    }
-    PyObject *result = call_typing_func_object("_make_union", args);
-    Py_DECREF(args);
+    PyObject *args[2] = {self, other};
+    PyObject *result = call_typing_func_object("_make_union", args, 2);
     return result;
 }
 
@@ -419,12 +411,8 @@ static PyObject *
 typevar_typing_subst_impl(typevarobject *self, PyObject *arg)
 /*[clinic end generated code: output=c76ced134ed8f4e1 input=6b70a4bb2da838de]*/
 {
-    PyObject *args = PyTuple_Pack(2, self, arg);
-    if (args == NULL) {
-        return NULL;
-    }
-    PyObject *result = call_typing_func_object("_typevar_subst", args);
-    Py_DECREF(args);
+    PyObject *args[2] = {(PyObject *)self, arg};
+    PyObject *result = call_typing_func_object("_typevar_subst", args, 2);
     return result;
 }
 
@@ -908,12 +896,8 @@ static PyObject *
 paramspec_typing_subst_impl(paramspecobject *self, PyObject *arg)
 /*[clinic end generated code: output=803e1ade3f13b57d input=4e0005d24023e896]*/
 {
-    PyObject *args = PyTuple_Pack(2, self, arg);
-    if (args == NULL) {
-        return NULL;
-    }
-    PyObject *result = call_typing_func_object("_paramspec_subst", args);
-    Py_DECREF(args);
+    PyObject *args[2] = {(PyObject *)self, arg};
+    PyObject *result = call_typing_func_object("_paramspec_subst", args, 2);
     return result;
 }
 
@@ -930,12 +914,9 @@ paramspec_typing_prepare_subst_impl(paramspecobject *self, PyObject *alias,
                                     PyObject *args)
 /*[clinic end generated code: output=95449d630a2adb9a input=4375e2ffcb2ad635]*/
 {
-    PyObject *args_tuple = PyTuple_Pack(3, self, alias, args);
-    if (args_tuple == NULL) {
-        return NULL;
-    }
-    PyObject *result = call_typing_func_object("_paramspec_prepare_subst", args_tuple);
-    Py_DECREF(args_tuple);
+    PyObject *args_array[3] = {(PyObject *)self, alias, args};
+    PyObject *result = call_typing_func_object(
+        "_paramspec_prepare_subst", args_array, 3);
     return result;
 }
 
@@ -1159,12 +1140,9 @@ typevartuple_typing_prepare_subst_impl(typevartupleobject *self,
                                        PyObject *alias, PyObject *args)
 /*[clinic end generated code: output=ff999bc5b02036c1 input=a211b05f2eeb4306]*/
 {
-    PyObject *args_tuple = PyTuple_Pack(3, self, alias, args);
-    if (args_tuple == NULL) {
-        return NULL;
-    }
-    PyObject *result = call_typing_func_object("_typevartuple_prepare_subst", args_tuple);
-    Py_DECREF(args_tuple);
+    PyObject *args_array[3] = {(PyObject *)self, alias, args};
+    PyObject *result = call_typing_func_object(
+        "_typevartuple_prepare_subst", args_array, 3);
     return result;
 }
 
@@ -1640,12 +1618,8 @@ _Py_subscript_generic(PyThreadState* unused, PyObject *params)
         PyErr_SetString(PyExc_SystemError, "Cannot find Generic type");
         return NULL;
     }
-    PyObject *args = PyTuple_Pack(2, interp->cached_objects.generic_type, params);
-    if (args == NULL) {
-        return NULL;
-    }
-    PyObject *result = call_typing_func_object("_generic_class_getitem", args);
-    Py_DECREF(args);
+    PyObject *args[2] = {(PyObject *)interp->cached_objects.generic_type, params};
+    PyObject *result = call_typing_func_object("_generic_class_getitem", args, 2);
     Py_DECREF(params);
     return result;
 }
