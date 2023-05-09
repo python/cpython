@@ -773,7 +773,6 @@ write_perf_map_entry(PyObject *self, PyObject *args)
     return Py_BuildValue("i", ret);
 }
 
-	
 static PyObject *
 perf_map_state_teardown(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
