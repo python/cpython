@@ -147,7 +147,7 @@ are always available.  They are listed here in alphabetical order.
    or omitted, this returns ``False``; otherwise, it returns ``True``.  The
    :class:`bool` class is a subclass of :class:`int` (see :ref:`typesnumeric`).
    It cannot be subclassed further.  Its only instances are ``False`` and
-   ``True`` (see :ref:`bltin-boolean-values`).
+   ``True`` (see :ref:`typebool`).
 
    .. index:: pair: Boolean; type
 
@@ -562,7 +562,7 @@ are always available.  They are listed here in alphabetical order.
       Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
       as the argument. Code compilation events may also be raised.
 
-.. index:: builtin: exec
+.. index:: pair: built-in function; exec
 
 .. function:: exec(object, globals=None, locals=None, /, *, closure=None)
 
@@ -623,7 +623,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: filter(function, iterable)
 
    Construct an iterator from those elements of *iterable* for which *function*
-   returns true.  *iterable* may be either a sequence, a container which
+   is true.  *iterable* may be either a sequence, a container which
    supports iteration, or an iterator.  If *function* is ``None``, the identity
    function is assumed, that is, all elements of *iterable* that are false are
    removed.
@@ -634,7 +634,7 @@ are always available.  They are listed here in alphabetical order.
    ``None``.
 
    See :func:`itertools.filterfalse` for the complementary function that returns
-   elements of *iterable* for which *function* returns false.
+   elements of *iterable* for which *function* is false.
 
 
 .. class:: float(x=0.0)
@@ -1340,7 +1340,7 @@ are always available.  They are listed here in alphabetical order.
       single: I/O control; buffering
       single: binary mode
       single: text mode
-      module: sys
+      pair: module; sys
 
    See also the file handling modules, such as :mod:`fileinput`, :mod:`io`
    (where :func:`open` is declared), :mod:`os`, :mod:`os.path`, :mod:`tempfile`,
@@ -1444,8 +1444,9 @@ are always available.  They are listed here in alphabetical order.
    arguments are converted to text strings, :func:`print` cannot be used with
    binary mode file objects.  For these, use ``file.write(...)`` instead.
 
-   Whether the output is buffered is usually determined by *file*, but if the
-   *flush* keyword argument is true, the stream is forcibly flushed.
+   Output buffering is usually determined by *file*.
+   However, if *flush* is true, the stream is forcibly flushed.
+
 
    .. versionchanged:: 3.3
       Added the *flush* keyword argument.
@@ -1635,6 +1636,9 @@ are always available.  They are listed here in alphabetical order.
    example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See
    :func:`itertools.islice` for an alternate version that returns an iterator.
 
+   .. versionchanged:: 3.12
+      Slice objects are now :term:`hashable` (provided :attr:`~slice.start`,
+      :attr:`~slice.stop`, and :attr:`~slice.step` are hashable).
 
 .. function:: sorted(iterable, /, *, key=None, reverse=False)
 
@@ -1677,7 +1681,7 @@ are always available.  They are listed here in alphabetical order.
 
       class C:
           @staticmethod
-          def f(arg1, arg2, ...): ...
+          def f(arg1, arg2, argN): ...
 
    The ``@staticmethod`` form is a function :term:`decorator` -- see
    :ref:`function` for details.
@@ -1826,7 +1830,7 @@ are always available.  They are listed here in alphabetical order.
 .. class:: type(object)
            type(name, bases, dict, **kwds)
 
-   .. index:: object: type
+   .. index:: pair: object; type
 
    With one argument, return the type of an *object*.  The return value is a
    type object and generally the same object as returned by
@@ -1982,8 +1986,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: __import__(name, globals=None, locals=None, fromlist=(), level=0)
 
    .. index::
-      statement: import
-      module: imp
+      pair: statement; import
+      pair: module; builtins
 
    .. note::
 

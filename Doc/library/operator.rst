@@ -327,7 +327,7 @@ expect a function argument.
           return g
 
    The items can be any type accepted by the operand's :meth:`__getitem__`
-   method.  Dictionaries accept any hashable value.  Lists, tuples, and
+   method.  Dictionaries accept any :term:`hashable` value.  Lists, tuples, and
    strings accept an index or a slice:
 
       >>> itemgetter(1)('ABCDEFG')

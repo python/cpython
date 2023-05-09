@@ -345,21 +345,22 @@ class HelpFormatter(object):
                 def get_lines(parts, indent, prefix=None):
                     lines = []
                     line = []
+                    indent_length = len(indent)
                     if prefix is not None:
                         line_len = len(prefix) - 1
                     else:
-                        line_len = len(indent) - 1
+                        line_len = indent_length - 1
                     for part in parts:
                         if line_len + 1 + len(part) > text_width and line:
                             lines.append(indent + ' '.join(line))
                             line = []
-                            line_len = len(indent) - 1
+                            line_len = indent_length - 1
                         line.append(part)
                         line_len += len(part) + 1
                     if line:
                         lines.append(indent + ' '.join(line))
                     if prefix is not None:
-                        lines[0] = lines[0][len(indent):]
+                        lines[0] = lines[0][indent_length:]
                     return lines
 
                 # if prog is short, follow it with optionals or positionals
@@ -403,10 +404,18 @@ class HelpFormatter(object):
             except ValueError:
                 continue
             else:
-                end = start + len(group._group_actions)
+                group_action_count = len(group._group_actions)
+                end = start + group_action_count
                 if actions[start:end] == group._group_actions:
+
+                    suppressed_actions_count = 0
                     for action in group._group_actions:
                         group_actions.add(action)
+                        if action.help is SUPPRESS:
+                            suppressed_actions_count += 1
+
+                    exposed_actions_count = group_action_count - suppressed_actions_count
+
                     if not group.required:
                         if start in inserts:
                             inserts[start] += ' ['
@@ -416,7 +425,7 @@ class HelpFormatter(object):
                             inserts[end] += ']'
                         else:
                             inserts[end] = ']'
-                    else:
+                    elif exposed_actions_count > 1:
                         if start in inserts:
                             inserts[start] += ' ('
                         else:
@@ -490,7 +499,6 @@ class HelpFormatter(object):
         text = _re.sub(r'(%s) ' % open, r'\1', text)
         text = _re.sub(r' (%s)' % close, r'\1', text)
         text = _re.sub(r'%s *%s' % (open, close), r'', text)
-        text = _re.sub(r'\(([^|]*)\)', r'\1', text)
         text = text.strip()
 
         # return the text
@@ -2598,9 +2606,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
     def _print_message(self, message, file=None):
         if message:
-            if file is None:
-                file = _sys.stderr
-            file.write(message)
+            file = file or _sys.stderr
+            try:
+                file.write(message)
+            except (AttributeError, OSError):
+                pass
 
     # ===============
     # Exiting methods

@@ -362,7 +362,7 @@ class OrderedDictTests:
         OrderedDict = self.OrderedDict
         od = OrderedDict([('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)])
         self.assertEqual(repr(od),
-            "OrderedDict([('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)])")
+            "OrderedDict({'c': 1, 'b': 2, 'a': 3, 'd': 4, 'e': 5, 'f': 6})")
         self.assertEqual(eval(repr(od)), od)
         self.assertEqual(repr(OrderedDict()), "OrderedDict()")
 
@@ -372,7 +372,7 @@ class OrderedDictTests:
         od = OrderedDict.fromkeys('abc')
         od['x'] = od
         self.assertEqual(repr(od),
-            "OrderedDict([('a', None), ('b', None), ('c', None), ('x', ...)])")
+            "OrderedDict({'a': None, 'b': None, 'c': None, 'x': ...})")
 
     def test_repr_recursive_values(self):
         OrderedDict = self.OrderedDict

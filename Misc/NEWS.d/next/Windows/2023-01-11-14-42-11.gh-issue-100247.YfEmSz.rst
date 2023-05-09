@@ -1,2 +1,0 @@
-Restores support for the :file:`py.exe` launcher finding shebang commands in
-its configuration file using the full command name.

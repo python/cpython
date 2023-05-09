@@ -1,2 +1,0 @@
-Adapt the ``_elementtree`` extension module to multi-phase init (:pep:`489`).
-Patches by Erlend E. Aasland.
