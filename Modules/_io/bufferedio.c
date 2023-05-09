@@ -1224,7 +1224,7 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
 
     CHECK_CLOSED(self, "seek of closed file")
 
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     if (_PyIOBase_check_seekable(state, self->raw, Py_True) == NULL) {
         return NULL;
     }
