@@ -1186,11 +1186,10 @@ symtable_enter_typeparam_block(struct symtable *st, identifier name,
             return 0;
         }
     }
-    if (kind == AsyncFunctionDef_kind || kind == FunctionDef_kind || kind == ClassDef_kind) {
+    if (kind == ClassDef_kind) {
         _Py_DECLARE_STR(type_params, ".type_params");
         // It gets "set" when we create the type params tuple and
-        // "used" when we build up the bases (for classes) or set the
-        // type_params attribute (for functions).
+        // "used" when we build up the bases.
         if (!symtable_add_def(st, &_Py_STR(type_params), DEF_LOCAL,
                               lineno, col_offset, end_lineno, end_col_offset)) {
             return 0;

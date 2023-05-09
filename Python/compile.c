@@ -2281,7 +2281,6 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     int num_typeparam_args = 0;
-    _Py_DECLARE_STR(type_params, ".type_params");
 
     if (is_generic) {
         PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>", name);
@@ -2294,6 +2293,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             return ERROR;
         }
         Py_DECREF(typeparams_name);
+        RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, typeparams));
         if ((funcflags & 0x01) || (funcflags & 0x02)) {
             RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 0, loc));
             num_typeparam_args += 1;
@@ -2302,8 +2302,6 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 1, loc));
             num_typeparam_args += 1;
         }
-        RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, typeparams));
-        RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Store));
     }
 
     annotations = compiler_visit_annotations(c, loc, args, returns);
@@ -2325,7 +2323,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     if (is_generic) {
-        RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Load));
+        RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(
+            INSTR_SEQUENCE(c), SWAP, 2, loc));
         RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(
             INSTR_SEQUENCE(c), CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS, loc));
 
