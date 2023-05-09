@@ -24,7 +24,8 @@ functions to appear in the output of the ``perf`` profiler. When this mode is
 enabled, the interpreter will interpose a small piece of code compiled on the
 fly before the execution of every Python function and it will teach ``perf`` the
 relationship between this piece of code and the associated Python function using
-`perf map files`_.
+`perf map files`_. If you're an extension author interested in having your extension
+write to the perf map files, refer to :doc:`the C-API <../c-api/perfmaps.rst>`.
 
 .. note::
 

@@ -1,3 +1,5 @@
 Introduced :c:func:`PyUnstable_WritePerfMapEntry`, :c:func:`PyUnstable_PerfMapState_Init` and
 :c:func:`PyUnstable_PerfMapState_Fini`. These allow extension modules (JIT compilers in
-particular) to write to perf-map files in a thread safe manner.
+particular) to write to perf-map files in a thread safe manner. The
+:doc:`perf profiling feature <../howto/perf_profiling.rst>` also uses these APIs to write
+entries in the perf-map file.
