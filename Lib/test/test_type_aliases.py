@@ -92,7 +92,7 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         self.assertEqual(len(Parent.__parameters__), 1)
         a, = Parent.__parameters__
         b, = Parent.TA1.__parameters__
-        self.assertEqual(Parent.__parameters__, (a,))
+        self.assertEqual(Parent.__type_params__, (a,))
         self.assertEqual(Parent.TA1.__type_params__, (b,))
         self.assertEqual(Parent.TA1.__value__, dict[a, b])
 
@@ -108,6 +108,7 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         b = o.__parameters__[0]
         self.assertEqual(o.__type_params__, (b,))
 
+    def test_alias_value_04(self):
         def more_generic[T, *Ts, **P]():
             type TA[T2, *Ts2, **P2] = tuple[Callable[P, tuple[T, *Ts]], Callable[P2, tuple[T2, *Ts2]]]
             return TA
