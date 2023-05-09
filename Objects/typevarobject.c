@@ -71,14 +71,17 @@ call_typing_func_object(const char *name, PyObject *args)
 }
 
 static PyObject *
-type_check(PyObject *arg)
+type_check(PyObject *arg, const char *msg)
 {
     // Calling typing.py here leads to bootstrapping problems
     if (Py_IsNone(arg)) {
         return Py_NewRef(Py_TYPE(arg));
     }
-    // TODO: real error message
-    PyObject *args = PyTuple_Pack(2, arg, Py_None);
+    PyObject *message_str = PyUnicode_FromString(msg);
+    if (message_str == NULL) {
+        return NULL;
+    }
+    PyObject *args = PyTuple_Pack(2, arg, message_str);
     if (args == NULL) {
         return NULL;
     }
@@ -365,7 +368,7 @@ typevar_new_impl(PyTypeObject *type, const char *name, PyObject *constraints,
         bound = NULL;
     }
     if (bound != NULL) {
-        bound = type_check(bound);
+        bound = type_check(bound, "Bound must be a type.");
         if (bound == NULL) {
             return NULL;
         }
@@ -876,7 +879,7 @@ paramspec_new_impl(PyTypeObject *type, const char *name, PyObject *bound,
         return NULL;
     }
     if (bound != NULL) {
-        bound = type_check(bound);
+        bound = type_check(bound, "Bound must be a type.");
         if (bound == NULL) {
             return NULL;
         }

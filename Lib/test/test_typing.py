@@ -443,6 +443,9 @@ class TypeVarTests(BaseTestCase):
             TypeVar('X', bound=Union)
         with self.assertRaises(TypeError):
             TypeVar('X', str, float, bound=Employee)
+        with self.assertRaisesRegex(TypeError,
+                                    r"Bound must be a type\. Got \(1, 2\)\."):
+            TypeVar('X', bound=(1, 2))
 
     def test_missing__name__(self):
         # See bpo-39942
