@@ -1780,8 +1780,10 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     self->ok = 0;
     self->detached = 0;
 
-    if (_PyIOBase_check_writable(raw, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_writable(state, raw, Py_True) == NULL) {
         return -1;
+    }
 
     Py_INCREF(raw);
     Py_XSETREF(self->raw, raw);
@@ -1794,7 +1796,6 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     _bufferedwriter_reset_buf(self);
     self->pos = 0;
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->fast_closed_checks = (
         Py_IS_TYPE(self, state->PyBufferedWriter_Type) &&
         Py_IS_TYPE(raw, state->PyFileIO_Type)
@@ -2102,8 +2103,9 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
     if (_PyIOBase_check_readable(state, reader, Py_True) == NULL) {
         return -1;
     }
-    if (_PyIOBase_check_writable(writer, Py_True) == NULL)
+    if (_PyIOBase_check_writable(state, writer, Py_True) == NULL) {
         return -1;
+    }
 
     self->reader = (buffered *) PyObject_CallFunction(
             (PyObject *)state->PyBufferedReader_Type,
@@ -2304,8 +2306,9 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     if (_PyIOBase_check_readable(state, raw, Py_True) == NULL) {
         return -1;
     }
-    if (_PyIOBase_check_writable(raw, Py_True) == NULL)
+    if (_PyIOBase_check_writable(state, raw, Py_True) == NULL) {
         return -1;
+    }
 
     Py_INCREF(raw);
     Py_XSETREF(self->raw, raw);

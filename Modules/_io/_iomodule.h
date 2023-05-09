@@ -37,7 +37,8 @@ extern PyType_Spec winconsoleio_spec;
 struct _io_state;  // Forward decl.
 extern PyObject* _PyIOBase_check_readable(struct _io_state *state,
                                           PyObject *self, PyObject *args);
-extern PyObject* _PyIOBase_check_writable(PyObject *self, PyObject *args);
+extern PyObject* _PyIOBase_check_writable(struct _io_state *state,
+                                          PyObject *self, PyObject *args);
 extern PyObject* _PyIOBase_check_seekable(struct _io_state *state,
                                           PyObject *self, PyObject *args);
 extern PyObject* _PyIOBase_check_closed(PyObject *self, PyObject *args);

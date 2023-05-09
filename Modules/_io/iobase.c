@@ -221,7 +221,8 @@ iobase_check_readable(PyObject *self, PyObject *args)
 static PyObject *
 iobase_check_writable(PyObject *self, PyObject *args)
 {
-    return _PyIOBase_check_writable(self, args);
+    _PyIO_State *state = IO_STATE();
+    return _PyIOBase_check_writable(state, self, args);
 }
 
 /* XXX: IOBase thinks it has to maintain its own internal state in
@@ -458,14 +459,13 @@ _io__IOBase_writable_impl(PyObject *self)
 
 /* May be called with any object */
 PyObject *
-_PyIOBase_check_writable(PyObject *self, PyObject *args)
+_PyIOBase_check_writable(_PyIO_State *state, PyObject *self, PyObject *args)
 {
     PyObject *res = PyObject_CallMethodNoArgs(self, &_Py_ID(writable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        _PyIO_State *state = IO_STATE();
         iobase_unsupported(state, "File or stream is not writable.");
         return NULL;
     }
