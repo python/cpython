@@ -3284,9 +3284,14 @@ class TestExtractionFilters(unittest.TestCase):
         path = pathlib.Path(os.path.normpath(self.destdir / name))
         self.assertIn(path, self.expected_paths)
         self.expected_paths.remove(path)
-        if mode is not None:
+
+        # When checking mode, ignore Windows (which can only set user read and
+        # user write bits). Newer versions of Python use `os_helper.can_chmod()`
+        # instead of hardcoding Windows.
+        if mode is not None and sys.platform != 'win32':
             got = stat.filemode(stat.S_IMODE(path.stat().st_mode))
             self.assertEqual(got, mode)
+
         if type is None and isinstance(name, str) and name.endswith('/'):
             type = tarfile.DIRTYPE
         if symlink_to is not None:
