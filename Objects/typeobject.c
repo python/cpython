@@ -3606,7 +3606,7 @@ type_new_set_classdictcell(PyTypeObject *type)
         return 0;
     }
 
-    /* At least one method requires a reference to its defining class */
+    /* At least one method requires a reference to the dict of its defining class */
     if (!PyCell_Check(cell)) {
         PyErr_Format(PyExc_TypeError,
                      "__classdictcell__ must be a nonlocal cell, not %.200R",
