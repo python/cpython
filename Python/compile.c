@@ -7309,7 +7309,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 #undef SET_MATADATA_ITEM
 
 #define SET_MATADATA_INT(key, value) do { \
-        PyObject *v = PyLong_FromLong(value); \
+        PyObject *v = PyLong_FromLong((long)value); \
         if (v == NULL) goto finally; \
         int res = PyDict_SetItemString(metadata, key, v); \
         Py_XDECREF(v); \
