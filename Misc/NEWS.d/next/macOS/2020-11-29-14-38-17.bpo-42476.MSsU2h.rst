@@ -1,2 +1,1 @@
-allow cross building on macOS
-
+Allow cross building on macOS.
