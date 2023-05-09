@@ -560,7 +560,8 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
 }
 
 static int
-is_free_in_any_child(PySTEntryObject *entry, PyObject *key) {
+is_free_in_any_child(PySTEntryObject *entry, PyObject *key)
+{
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(entry->ste_children); i++) {
         PySTEntryObject *child_ste = (PySTEntryObject *)PyList_GET_ITEM(
             entry->ste_children, i);
@@ -604,7 +605,8 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                 return 0;
             }
             SET_SCOPE(scopes, k, scope);
-        } else {
+        }
+        else {
             // free vars in comprehension that are locals in outer scope can
             // now simply be locals, unless they are free in comp children
             if ((PyLong_AsLong(existing) & DEF_BOUND) &&
@@ -902,7 +904,9 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
                                  &child_free))
+        {
             goto error;
+        }
         if (inline_comp) {
             if (!inline_comprehension(ste, entry, scopes, child_free)) {
                 Py_DECREF(child_free);
@@ -927,8 +931,9 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         assert(c && PySTEntry_Check(c));
         entry = (PySTEntryObject*)c;
         if (entry->ste_comp_inlined &&
-                PyList_SetSlice(ste->ste_children, i, i + 1,
-                                entry->ste_children) < 0) {
+            PyList_SetSlice(ste->ste_children, i, i + 1,
+                            entry->ste_children) < 0)
+        {
             goto error;
         }
     }

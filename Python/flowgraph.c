@@ -1989,7 +1989,8 @@ _PyCfg_ConvertPseudoOps(basicblock *entryblock)
             cfg_instr *instr = &b->b_instr[i];
             if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
                 INSTR_SET_OP0(instr, NOP);
-            } else if (instr->i_opcode == STORE_FAST_MAYBE_NULL) {
+            }
+            else if (instr->i_opcode == STORE_FAST_MAYBE_NULL) {
                 instr->i_opcode = STORE_FAST;
             }
         }
