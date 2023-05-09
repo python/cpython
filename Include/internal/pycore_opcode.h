@@ -173,6 +173,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [LOAD_CONST__LOAD_FAST] = LOAD_CONST,
     [LOAD_DEREF] = LOAD_DEREF,
     [LOAD_FAST] = LOAD_FAST,
+    [LOAD_FAST_AND_CLEAR] = LOAD_FAST_AND_CLEAR,
     [LOAD_FAST_CHECK] = LOAD_FAST_CHECK,
     [LOAD_FAST__LOAD_CONST] = LOAD_FAST,
     [LOAD_FAST__LOAD_FAST] = LOAD_FAST,
@@ -239,7 +240,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif   // NEED_OPCODE_TABLES
 
 #ifdef Py_DEBUG
-static const char *const _PyOpcode_OpName[266] = {
+static const char *const _PyOpcode_OpName[267] = {
     [CACHE] = "CACHE",
     [POP_TOP] = "POP_TOP",
     [PUSH_NULL] = "PUSH_NULL",
@@ -383,7 +384,7 @@ static const char *const _PyOpcode_OpName[266] = {
     [JUMP_BACKWARD] = "JUMP_BACKWARD",
     [LOAD_SUPER_ATTR] = "LOAD_SUPER_ATTR",
     [CALL_FUNCTION_EX] = "CALL_FUNCTION_EX",
-    [STORE_FAST__LOAD_FAST] = "STORE_FAST__LOAD_FAST",
+    [LOAD_FAST_AND_CLEAR] = "LOAD_FAST_AND_CLEAR",
     [EXTENDED_ARG] = "EXTENDED_ARG",
     [LIST_APPEND] = "LIST_APPEND",
     [SET_ADD] = "SET_ADD",
@@ -393,21 +394,21 @@ static const char *const _PyOpcode_OpName[266] = {
     [YIELD_VALUE] = "YIELD_VALUE",
     [RESUME] = "RESUME",
     [MATCH_CLASS] = "MATCH_CLASS",
+    [STORE_FAST__LOAD_FAST] = "STORE_FAST__LOAD_FAST",
     [STORE_FAST__STORE_FAST] = "STORE_FAST__STORE_FAST",
-    [STORE_SUBSCR_DICT] = "STORE_SUBSCR_DICT",
     [FORMAT_VALUE] = "FORMAT_VALUE",
     [BUILD_CONST_KEY_MAP] = "BUILD_CONST_KEY_MAP",
     [BUILD_STRING] = "BUILD_STRING",
+    [STORE_SUBSCR_DICT] = "STORE_SUBSCR_DICT",
     [STORE_SUBSCR_LIST_INT] = "STORE_SUBSCR_LIST_INT",
     [UNPACK_SEQUENCE_LIST] = "UNPACK_SEQUENCE_LIST",
     [UNPACK_SEQUENCE_TUPLE] = "UNPACK_SEQUENCE_TUPLE",
-    [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
     [LIST_EXTEND] = "LIST_EXTEND",
     [SET_UPDATE] = "SET_UPDATE",
     [DICT_MERGE] = "DICT_MERGE",
     [DICT_UPDATE] = "DICT_UPDATE",
+    [UNPACK_SEQUENCE_TWO_TUPLE] = "UNPACK_SEQUENCE_TWO_TUPLE",
     [SEND_GEN] = "SEND_GEN",
-    [167] = "<167>",
     [168] = "<168>",
     [169] = "<169>",
     [170] = "<170>",
@@ -506,11 +507,11 @@ static const char *const _PyOpcode_OpName[266] = {
     [LOAD_SUPER_METHOD] = "LOAD_SUPER_METHOD",
     [LOAD_ZERO_SUPER_METHOD] = "LOAD_ZERO_SUPER_METHOD",
     [LOAD_ZERO_SUPER_ATTR] = "LOAD_ZERO_SUPER_ATTR",
+    [STORE_FAST_MAYBE_NULL] = "STORE_FAST_MAYBE_NULL",
 };
 #endif
 
 #define EXTRA_CASES \
-    case 167: \
     case 168: \
     case 169: \
     case 170: \
