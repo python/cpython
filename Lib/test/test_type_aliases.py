@@ -2,7 +2,7 @@ import types
 import unittest
 from test.support import check_syntax_error
 
-from typing import Callable, TypeAliasType, get_args, get_origin
+from typing import Callable, TypeAliasType, get_args
 
 from .test_type_params import run_code
 
@@ -12,14 +12,20 @@ class TypeParamsInvalidTest(unittest.TestCase):
         check_syntax_error(self, """type TA1[A, **A] = None""", "duplicate type parameter 'A'")
 
     def test_name_non_collision_02(self):
-        run_code("""type TA1[A] = lambda A: None""")
+        ns = run_code("""type TA1[A] = lambda A: A""")
+        self.assertIsInstance(ns["TA1"], TypeAliasType)
+        self.assertTrue(callable(ns["TA1"].__value__))
+        self.assertEqual("arg", ns["TA1"].__value__("arg"))
 
     def test_name_non_collision_03(self):
-        run_code("""\
+        ns = run_code("""
             class Outer[A]:
                 type TA1[A] = None
             """
         )
+        outer_A, = ns["Outer"].__type_params__
+        inner_A, = ns["Outer"].TA1.__type_params__
+        self.assertIsNot(outer_A, inner_A)
 
 
 class TypeParamsAccessTest(unittest.TestCase):
@@ -30,18 +36,33 @@ class TypeParamsAccessTest(unittest.TestCase):
         self.assertEqual(alias.__type_params__, get_args(alias.__value__))
 
     def test_alias_access_02(self):
-        run_code("""\
+        ns = run_code("""
             type TA1[A, B] = TA1[A, B] | int
             """
         )
+        alias = ns["TA1"]
+        self.assertIsInstance(alias, TypeAliasType)
+        A, B = alias.__type_params__
+        self.assertEqual(alias.__value__, alias[A, B] | int)
 
     def test_alias_access_03(self):
-        run_code("""\
+        ns = run_code("""
             class Outer[A]:
                 def inner[B](self):
                     type TA1[C] = TA1[A, B] | int
+                    return TA1
             """
         )
+        cls = ns["Outer"]
+        A, = cls.__type_params__
+        B, = cls.inner.__type_params__
+        alias = cls.inner(None)
+        self.assertIsInstance(alias, TypeAliasType)
+        alias2 = cls.inner(None)
+        self.assertIsNot(alias, alias2)
+        self.assertEqual(len(alias.__type_params__), 1)
+
+        self.assertEqual(alias.__value__, alias[A, B] | int)
 
 
 class TypeParamsAliasValueTest(unittest.TestCase):
