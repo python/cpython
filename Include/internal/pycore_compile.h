@@ -97,11 +97,16 @@ PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
         PyObject *ast,
         PyObject *filename,
         PyCompilerFlags *flags,
-        int optimize);
+        int optimize,
+        int compile_mode);
 
 PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
         PyObject *instructions,
         PyObject *consts);
+
+PyAPI_FUNC(PyCodeObject*)
+_PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
+                    PyObject *instructions);
 
 #ifdef __cplusplus
 }

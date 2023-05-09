@@ -247,6 +247,35 @@ dis_kw_names = """\
 """ % (wrap_func_w_kwargs.__code__.co_firstlineno,
        wrap_func_w_kwargs.__code__.co_firstlineno + 1)
 
+dis_intrinsic_1_2 = """\
+  0        RESUME                   0
+
+  1        LOAD_CONST               0 (0)
+           LOAD_CONST               1 (('*',))
+           IMPORT_NAME              0 (math)
+           CALL_INTRINSIC_1         2 (INTRINSIC_IMPORT_STAR)
+           POP_TOP
+           RETURN_CONST             2 (None)
+"""
+
+dis_intrinsic_1_5 = """\
+  0        RESUME                   0
+
+  1        LOAD_NAME                0 (a)
+           CALL_INTRINSIC_1         5 (INTRINSIC_UNARY_POSITIVE)
+           RETURN_VALUE
+"""
+
+dis_intrinsic_1_6 = """\
+  0        RESUME                   0
+
+  1        BUILD_LIST               0
+           LOAD_NAME                0 (a)
+           LIST_EXTEND              1
+           CALL_INTRINSIC_1         6 (INTRINSIC_LIST_TO_TUPLE)
+           RETURN_VALUE
+"""
+
 _BIG_LINENO_FORMAT = """\
   1        RESUME                   0
 
@@ -549,7 +578,7 @@ dis_asyncwith = """\
         >> COPY                     3
            POP_EXCEPT
            RERAISE                  1
-        >> CALL_INTRINSIC_1         3
+        >> CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
            RERAISE                  1
 ExceptionTable:
 12 rows
@@ -941,6 +970,16 @@ class DisTests(DisTestBase):
     def test_kw_names(self):
         # Test that value is displayed for KW_NAMES
         self.do_disassembly_test(wrap_func_w_kwargs, dis_kw_names)
+
+    def test_intrinsic_1(self):
+        # Test that argrepr is displayed for CALL_INTRINSIC_1
+        self.do_disassembly_test("from math import *", dis_intrinsic_1_2)
+        self.do_disassembly_test("+a", dis_intrinsic_1_5)
+        self.do_disassembly_test("(*a,)", dis_intrinsic_1_6)
+
+    def test_intrinsic_2(self):
+        self.assertIn("CALL_INTRINSIC_2         1 (INTRINSIC_PREP_RERAISE_STAR)",
+                      self.get_disassembly("try: pass\nexcept* Exception: x"))
 
     def test_big_linenos(self):
         def func(count):

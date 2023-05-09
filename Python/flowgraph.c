@@ -223,6 +223,15 @@ dump_basicblock(const basicblock *b)
         }
     }
 }
+
+void
+_PyCfgBuilder_DumpGraph(const basicblock *entryblock)
+{
+    for (const basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        dump_basicblock(b);
+    }
+}
+
 #endif
 
 
@@ -592,6 +601,11 @@ translate_jump_labels_to_targets(basicblock *entryblock)
     return SUCCESS;
 }
 
+int
+_PyCfg_JumpLabelsToTargets(basicblock *entryblock)
+{
+    return translate_jump_labels_to_targets(entryblock);
+}
 
 static int
 mark_except_handlers(basicblock *entryblock) {

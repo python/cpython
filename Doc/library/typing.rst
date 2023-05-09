@@ -2130,17 +2130,11 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: ByteString(Sequence[int])
 
-   A generic version of :class:`collections.abc.ByteString`.
-
    This type represents the types :class:`bytes`, :class:`bytearray`,
    and :class:`memoryview` of byte sequences.
 
-   As a shorthand for this type, :class:`bytes` can be used to
-   annotate arguments of any of the types mentioned above.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.ByteString` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
+   .. deprecated-removed:: 3.9 3.14
+      Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
 
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
@@ -2484,14 +2478,15 @@ Functions and decorators
 
    Ask a static type checker to confirm that *val* has an inferred type of *typ*.
 
-   When the type checker encounters a call to ``assert_type()``, it
+   At runtime this does nothing: it returns the first argument unchanged with no
+   checks or side effects, no matter the actual type of the argument.
+
+   When a static type checker encounters a call to ``assert_type()``, it
    emits an error if the value is not of the specified type::
 
        def greet(name: str) -> None:
            assert_type(name, str)  # OK, inferred type of `name` is `str`
            assert_type(name, int)  # type checker error
-
-   At runtime this returns the first argument unchanged with no side effects.
 
    This function is useful for ensuring the type checker's understanding of a
    script is in line with the developer's intentions::
@@ -2976,6 +2971,8 @@ convenience. This is subject to change, and not all deprecations are listed.
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
 |  collections                     |               |                   |                |
++----------------------------------+---------------+-------------------+----------------+
+|  ``typing.ByteString``           | 3.9           | 3.14              | :gh:`91896`    |
 +----------------------------------+---------------+-------------------+----------------+
 |  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
 +----------------------------------+---------------+-------------------+----------------+

@@ -308,7 +308,6 @@ instr_sequence_fini(instr_sequence *seq) {
     seq->s_instrs = NULL;
 }
 
-
 static int
 instr_sequence_to_cfg(instr_sequence *seq, cfg_builder *g) {
     memset(g, 0, sizeof(cfg_builder));
@@ -6754,11 +6753,11 @@ _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj)
 
 
 static int *
-build_cellfixedoffsets(struct compiler_unit *u)
+build_cellfixedoffsets(_PyCompile_CodeUnitMetadata *umd)
 {
-    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(u->u_metadata.u_freevars);
+    int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(umd->u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(umd->u_freevars);
 
     int noffsets = ncellvars + nfreevars;
     int *fixed = PyMem_New(int, noffsets);
@@ -6772,8 +6771,8 @@ build_cellfixedoffsets(struct compiler_unit *u)
 
     PyObject *varname, *cellindex;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(u->u_metadata.u_cellvars, &pos, &varname, &cellindex)) {
-        PyObject *varindex = PyDict_GetItem(u->u_metadata.u_varnames, varname);
+    while (PyDict_Next(umd->u_cellvars, &pos, &varname, &cellindex)) {
+        PyObject *varindex = PyDict_GetItem(umd->u_varnames, varname);
         if (varindex != NULL) {
             assert(PyLong_AS_LONG(cellindex) < INT_MAX);
             assert(PyLong_AS_LONG(varindex) < INT_MAX);
@@ -6787,17 +6786,17 @@ build_cellfixedoffsets(struct compiler_unit *u)
 }
 
 static int
-insert_prefix_instructions(struct compiler_unit *u, basicblock *entryblock,
+insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock,
                            int *fixed, int nfreevars, int code_flags)
 {
-    assert(u->u_metadata.u_firstlineno > 0);
+    assert(umd->u_firstlineno > 0);
 
     /* Add the generator prefix instructions. */
     if (code_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
         cfg_instr make_gen = {
             .i_opcode = RETURN_GENERATOR,
             .i_oparg = 0,
-            .i_loc = LOCATION(u->u_metadata.u_firstlineno, u->u_metadata.u_firstlineno, -1, -1),
+            .i_loc = LOCATION(umd->u_firstlineno, umd->u_firstlineno, -1, -1),
             .i_target = NULL,
         };
         RETURN_IF_ERROR(_PyBasicblock_InsertInstruction(entryblock, 0, &make_gen));
@@ -6811,12 +6810,12 @@ insert_prefix_instructions(struct compiler_unit *u, basicblock *entryblock,
     }
 
     /* Set up cells for any variable that escapes, to be put in a closure. */
-    const int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
+    const int ncellvars = (int)PyDict_GET_SIZE(umd->u_cellvars);
     if (ncellvars) {
-        // u->u_metadata.u_cellvars has the cells out of order so we sort them
+        // umd->u_cellvars has the cells out of order so we sort them
         // before adding the MAKE_CELL instructions.  Note that we
         // adjust for arg cells, which come first.
-        const int nvars = ncellvars + (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
+        const int nvars = ncellvars + (int)PyDict_GET_SIZE(umd->u_varnames);
         int *sorted = PyMem_RawCalloc(nvars, sizeof(int));
         if (sorted == NULL) {
             PyErr_NoMemory();
@@ -6860,11 +6859,11 @@ insert_prefix_instructions(struct compiler_unit *u, basicblock *entryblock,
 }
 
 static int
-fix_cell_offsets(struct compiler_unit *u, basicblock *entryblock, int *fixedmap)
+fix_cell_offsets(_PyCompile_CodeUnitMetadata *umd, basicblock *entryblock, int *fixedmap)
 {
-    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(u->u_metadata.u_freevars);
+    int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(umd->u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(umd->u_freevars);
     int noffsets = ncellvars + nfreevars;
 
     // First deal with duplicates (arg cells).
@@ -6906,30 +6905,30 @@ fix_cell_offsets(struct compiler_unit *u, basicblock *entryblock, int *fixedmap)
 
 
 static int
-prepare_localsplus(struct compiler_unit* u, cfg_builder *g, int code_flags)
+prepare_localsplus(_PyCompile_CodeUnitMetadata *umd, cfg_builder *g, int code_flags)
 {
-    assert(PyDict_GET_SIZE(u->u_metadata.u_varnames) < INT_MAX);
-    assert(PyDict_GET_SIZE(u->u_metadata.u_cellvars) < INT_MAX);
-    assert(PyDict_GET_SIZE(u->u_metadata.u_freevars) < INT_MAX);
-    int nlocals = (int)PyDict_GET_SIZE(u->u_metadata.u_varnames);
-    int ncellvars = (int)PyDict_GET_SIZE(u->u_metadata.u_cellvars);
-    int nfreevars = (int)PyDict_GET_SIZE(u->u_metadata.u_freevars);
+    assert(PyDict_GET_SIZE(umd->u_varnames) < INT_MAX);
+    assert(PyDict_GET_SIZE(umd->u_cellvars) < INT_MAX);
+    assert(PyDict_GET_SIZE(umd->u_freevars) < INT_MAX);
+    int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(umd->u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(umd->u_freevars);
     assert(INT_MAX - nlocals - ncellvars > 0);
     assert(INT_MAX - nlocals - ncellvars - nfreevars > 0);
     int nlocalsplus = nlocals + ncellvars + nfreevars;
-    int* cellfixedoffsets = build_cellfixedoffsets(u);
+    int* cellfixedoffsets = build_cellfixedoffsets(umd);
     if (cellfixedoffsets == NULL) {
         return ERROR;
     }
 
 
     // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(u, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
+    if (insert_prefix_instructions(umd, g->g_entryblock, cellfixedoffsets, nfreevars, code_flags)) {
         PyMem_Free(cellfixedoffsets);
         return ERROR;
     }
 
-    int numdropped = fix_cell_offsets(u, g->g_entryblock, cellfixedoffsets);
+    int numdropped = fix_cell_offsets(umd, g->g_entryblock, cellfixedoffsets);
     PyMem_Free(cellfixedoffsets);  // At this point we're done with it.
     cellfixedoffsets = NULL;
     if (numdropped < 0) {
@@ -6980,7 +6979,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     }
 
     /** Assembly **/
-    int nlocalsplus = prepare_localsplus(u, &g, code_flags);
+    int nlocalsplus = prepare_localsplus(&u->u_metadata, &g, code_flags);
     if (nlocalsplus < 0) {
         goto error;
     }
@@ -7157,11 +7156,6 @@ instructions_to_instr_sequence(PyObject *instructions, instr_sequence *seq)
             goto error;
         }
     }
-    if (seq->s_used && !IS_TERMINATOR_OPCODE(seq->s_instrs[seq->s_used-1].i_opcode)) {
-        if (instr_sequence_addop(seq, RETURN_VALUE, 0, NO_LOCATION) < 0) {
-            goto error;
-        }
-    }
     PyMem_Free(is_target);
     return SUCCESS;
 error:
@@ -7264,9 +7258,10 @@ error:
 
 PyObject *
 _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
-                   int optimize)
+                   int optimize, int compile_mode)
 {
     PyObject *res = NULL;
+    PyObject *metadata = NULL;
 
     if (!PyAST_Check(ast)) {
         PyErr_SetString(PyExc_TypeError, "expected an AST");
@@ -7278,7 +7273,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         return NULL;
     }
 
-    mod_ty mod = PyAST_obj2mod(ast, arena, 0 /* exec */);
+    mod_ty mod = PyAST_obj2mod(ast, arena, compile_mode);
     if (mod == NULL || !_PyAST_Validate(mod)) {
         _PyArena_Free(arena);
         return NULL;
@@ -7294,9 +7289,52 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         goto finally;
     }
 
-    res = instr_sequence_to_instructions(INSTR_SEQUENCE(c));
+    _PyCompile_CodeUnitMetadata *umd = &c->u->u_metadata;
+    metadata = PyDict_New();
+    if (metadata == NULL) {
+        goto finally;
+    }
+#define SET_MATADATA_ITEM(key, value) \
+    if (value != NULL) { \
+        if (PyDict_SetItemString(metadata, key, value) < 0) goto finally; \
+    }
+
+    SET_MATADATA_ITEM("name", umd->u_name);
+    SET_MATADATA_ITEM("qualname", umd->u_qualname);
+    SET_MATADATA_ITEM("consts", umd->u_consts);
+    SET_MATADATA_ITEM("names", umd->u_names);
+    SET_MATADATA_ITEM("varnames", umd->u_varnames);
+    SET_MATADATA_ITEM("cellvars", umd->u_cellvars);
+    SET_MATADATA_ITEM("freevars", umd->u_freevars);
+#undef SET_MATADATA_ITEM
+
+#define SET_MATADATA_INT(key, value) do { \
+        PyObject *v = PyLong_FromLong((long)value); \
+        if (v == NULL) goto finally; \
+        int res = PyDict_SetItemString(metadata, key, v); \
+        Py_XDECREF(v); \
+        if (res < 0) goto finally; \
+    } while (0);
+
+    SET_MATADATA_INT("argcount", umd->u_argcount);
+    SET_MATADATA_INT("posonlyargcount", umd->u_posonlyargcount);
+    SET_MATADATA_INT("kwonlyargcount", umd->u_kwonlyargcount);
+#undef SET_MATADATA_INT
+
+    int addNone = mod->kind != Expression_kind;
+    if (add_return_at_end(c, addNone) < 0) {
+        goto finally;
+    }
+
+    PyObject *insts = instr_sequence_to_instructions(INSTR_SEQUENCE(c));
+    if (insts == NULL) {
+        goto finally;
+    }
+    res = PyTuple_Pack(2, insts, metadata);
+    Py_DECREF(insts);
 
 finally:
+    Py_XDECREF(metadata);
     compiler_exit_scope(c);
     compiler_free(c);
     _PyArena_Free(arena);
@@ -7326,6 +7364,71 @@ error:
     Py_DECREF(const_cache);
     _PyCfgBuilder_Fini(&g);
     return res;
+}
+
+int _PyCfg_JumpLabelsToTargets(basicblock *entryblock);
+
+PyCodeObject *
+_PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
+                    PyObject *instructions)
+{
+    PyCodeObject *co = NULL;
+    instr_sequence optimized_instrs;
+    memset(&optimized_instrs, 0, sizeof(instr_sequence));
+
+    PyObject *const_cache = PyDict_New();
+    if (const_cache == NULL) {
+        return NULL;
+    }
+
+    cfg_builder g;
+    if (instructions_to_cfg(instructions, &g) < 0) {
+        goto error;
+    }
+
+    if (_PyCfg_JumpLabelsToTargets(g.g_entryblock) < 0) {
+        goto error;
+    }
+
+    int code_flags = 0;
+    int nlocalsplus = prepare_localsplus(umd, &g, code_flags);
+    if (nlocalsplus < 0) {
+        goto error;
+    }
+
+    int maxdepth = _PyCfg_Stackdepth(g.g_entryblock, code_flags);
+    if (maxdepth < 0) {
+        goto error;
+    }
+
+    _PyCfg_ConvertExceptionHandlersToNops(g.g_entryblock);
+
+    /* Order of basic blocks must have been determined by now */
+
+    if (_PyCfg_ResolveJumps(&g) < 0) {
+        goto error;
+    }
+
+    /* Can't modify the bytecode after computing jump offsets. */
+
+    if (cfg_to_instr_sequence(&g, &optimized_instrs) < 0) {
+        goto error;
+    }
+
+    PyObject *consts = consts_dict_keys_inorder(umd->u_consts);
+    if (consts == NULL) {
+        goto error;
+    }
+    co = _PyAssemble_MakeCodeObject(umd, const_cache,
+                                    consts, maxdepth, &optimized_instrs,
+                                    nlocalsplus, code_flags, filename);
+    Py_DECREF(consts);
+
+error:
+    Py_DECREF(const_cache);
+    _PyCfgBuilder_Fini(&g);
+    instr_sequence_fini(&optimized_instrs);
+    return co;
 }
 
 
