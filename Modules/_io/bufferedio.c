@@ -106,11 +106,9 @@ _io__BufferedIOBase_readinto1_impl(PyObject *self, Py_buffer *buffer)
 }
 
 static PyObject *
-bufferediobase_unsupported(const char *message)
+bufferediobase_unsupported(_PyIO_State *state, const char *message)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_SetString(state->unsupported_operation, message);
+    PyErr_SetString(state->unsupported_operation, message);
     return NULL;
 }
 
@@ -127,7 +125,8 @@ static PyObject *
 _io__BufferedIOBase_detach_impl(PyObject *self)
 /*[clinic end generated code: output=754977c8d10ed88c input=822427fb58fe4169]*/
 {
-    return bufferediobase_unsupported("detach");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "detach");
 }
 
 PyDoc_STRVAR(bufferediobase_read_doc,
@@ -151,7 +150,8 @@ PyDoc_STRVAR(bufferediobase_read_doc,
 static PyObject *
 bufferediobase_read(PyObject *self, PyObject *args)
 {
-    return bufferediobase_unsupported("read");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "read");
 }
 
 PyDoc_STRVAR(bufferediobase_read1_doc,
@@ -164,7 +164,8 @@ PyDoc_STRVAR(bufferediobase_read1_doc,
 static PyObject *
 bufferediobase_read1(PyObject *self, PyObject *args)
 {
-    return bufferediobase_unsupported("read1");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "read1");
 }
 
 PyDoc_STRVAR(bufferediobase_write_doc,
@@ -179,7 +180,8 @@ PyDoc_STRVAR(bufferediobase_write_doc,
 static PyObject *
 bufferediobase_write(PyObject *self, PyObject *args)
 {
-    return bufferediobase_unsupported("write");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "write");
 }
 
 
@@ -1298,7 +1300,8 @@ _io__Buffered_truncate_impl(buffered *self, PyObject *pos)
     CHECK_INITIALIZED(self)
     CHECK_CLOSED(self, "truncate of closed file")
     if (!self->writable) {
-        return bufferediobase_unsupported("truncate");
+        _PyIO_State *state = IO_STATE();
+        return bufferediobase_unsupported(state, "truncate");
     }
     if (!ENTER_BUFFERED(self))
         return NULL;
