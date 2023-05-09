@@ -2089,7 +2089,7 @@ PyDict_Clear(PyObject *op)
         dictkeys_decref(interp, oldkeys);
     }
     else {
-        assert(oldkeys->dk_refcnt == 1 || oldkeys == Py_EMPTY_KEYS);
+        assert(oldkeys->dk_refcnt == 1);
         dictkeys_decref(interp, oldkeys);
     }
     ASSERT_CONSISTENT(mp);
