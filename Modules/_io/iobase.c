@@ -204,6 +204,12 @@ _PyIOBase_check_closed(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+iobase_check_seekable(PyObject *self, PyObject *args)
+{
+    return _PyIOBase_check_seekable(self, args);
+}
+
 /* XXX: IOBase thinks it has to maintain its own internal state in
    `__IOBase_closed` and call flush() by itself, but it is redundant with
    whatever behaviour a non-trivial derived class will implement. */
@@ -802,7 +808,7 @@ static PyMethodDef iobase_methods[] = {
     _IO__IOBASE_WRITABLE_METHODDEF
 
     {"_checkClosed",   _PyIOBase_check_closed, METH_NOARGS},
-    {"_checkSeekable", _PyIOBase_check_seekable, METH_NOARGS},
+    {"_checkSeekable", iobase_check_seekable, METH_NOARGS},
     {"_checkReadable", _PyIOBase_check_readable, METH_NOARGS},
     {"_checkWritable", _PyIOBase_check_writable, METH_NOARGS},
 
