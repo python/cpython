@@ -1124,15 +1124,17 @@ codegen_addop_j(instr_sequence *seq, location loc,
     return instr_sequence_addop(seq, opcode, target.id, loc);
 }
 
-#define ADDOP(C, LOC, OP) \
-    RETURN_IF_ERROR(codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
-
-#define ADDOP_IN_SCOPE(C, LOC, OP) { \
-    if (codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)) < 0) { \
-        compiler_exit_scope(C); \
+#define RETURN_IF_ERROR_IN_SCOPE(C, CALL) { \
+    if ((CALL) < 0) { \
+        compiler_exit_scope((C)); \
         return ERROR; \
     } \
 }
+
+#define ADDOP(C, LOC, OP) \
+    RETURN_IF_ERROR(codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
+
+#define ADDOP_IN_SCOPE(C, LOC, OP) RETURN_IF_ERROR_IN_SCOPE((C), codegen_addop_noarg(INSTR_SEQUENCE(C), (OP), (LOC)))
 
 #define ADDOP_LOAD_CONST(C, LOC, O) \
     RETURN_IF_ERROR(compiler_addop_load_const((C)->c_const_cache, (C)->u, (LOC), (O)))
@@ -1193,12 +1195,8 @@ codegen_addop_j(instr_sequence *seq, location loc,
 #define VISIT(C, TYPE, V) \
     RETURN_IF_ERROR(compiler_visit_ ## TYPE((C), (V)));
 
-#define VISIT_IN_SCOPE(C, TYPE, V) {\
-    if (compiler_visit_ ## TYPE((C), (V)) < 0) { \
-        compiler_exit_scope(C); \
-        return ERROR; \
-    } \
-}
+#define VISIT_IN_SCOPE(C, TYPE, V) \
+    RETURN_IF_ERROR_IN_SCOPE((C), compiler_visit_ ## TYPE((C), (V)))
 
 #define VISIT_SEQ(C, TYPE, SEQ) { \
     int _i; \
@@ -2163,19 +2161,82 @@ compiler_type_params(struct compiler *c, asdl_typeparam_seq *typeparams)
 }
 
 static int
+compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags,
+                       int firstlineno)
+{
+    PyObject *docstring = NULL;
+    arguments_ty args;
+    identifier name;
+    asdl_stmt_seq *body;
+    int scope_type;
+
+    if (is_async) {
+        assert(s->kind == AsyncFunctionDef_kind);
+
+        args = s->v.AsyncFunctionDef.args;
+        name = s->v.AsyncFunctionDef.name;
+        body = s->v.AsyncFunctionDef.body;
+
+        scope_type = COMPILER_SCOPE_ASYNC_FUNCTION;
+    } else {
+        assert(s->kind == FunctionDef_kind);
+
+        args = s->v.FunctionDef.args;
+        name = s->v.FunctionDef.name;
+        body = s->v.FunctionDef.body;
+
+        scope_type = COMPILER_SCOPE_FUNCTION;
+    }
+
+    RETURN_IF_ERROR(
+        compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno));
+
+    /* if not -OO mode, add docstring */
+    if (c->c_optimize < 2) {
+        docstring = _PyAST_GetDocString(body);
+    }
+    if (compiler_add_const(c->c_const_cache, c->u, docstring ? docstring : Py_None) < 0) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
+
+    c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
+    c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
+    c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
+    for (Py_ssize_t i = docstring ? 1 : 0; i < asdl_seq_LEN(body); i++) {
+        VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
+    }
+    if (c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator) {
+        if (wrap_in_stopiteration_handler(c) < 0) {
+            compiler_exit_scope(c);
+            return ERROR;
+        }
+    }
+    PyCodeObject *co = optimize_and_assemble(c, 1);
+    compiler_exit_scope(c);
+    if (co == NULL) {
+        Py_XDECREF(co);
+        return ERROR;
+    }
+    location loc = LOC(s);
+    if (compiler_make_closure(c, loc, co, funcflags) < 0) {
+        Py_DECREF(co);
+        return ERROR;
+    }
+    Py_DECREF(co);
+    return SUCCESS;
+}
+
+static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
-    PyCodeObject *co;
-    PyObject *docstring = NULL;
     arguments_ty args;
     expr_ty returns;
     identifier name;
     asdl_expr_seq *decos;
-    asdl_stmt_seq *body;
     asdl_typeparam_seq *typeparams;
-    Py_ssize_t i, funcflags;
+    Py_ssize_t funcflags;
     int annotations;
-    int scope_type;
     int firstlineno;
 
     if (is_async) {
@@ -2185,10 +2246,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         returns = s->v.AsyncFunctionDef.returns;
         decos = s->v.AsyncFunctionDef.decorator_list;
         name = s->v.AsyncFunctionDef.name;
-        body = s->v.AsyncFunctionDef.body;
         typeparams = s->v.AsyncFunctionDef.typeparams;
-
-        scope_type = COMPILER_SCOPE_ASYNC_FUNCTION;
     } else {
         assert(s->kind == FunctionDef_kind);
 
@@ -2196,10 +2254,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         returns = s->v.FunctionDef.returns;
         decos = s->v.FunctionDef.decorator_list;
         name = s->v.FunctionDef.name;
-        body = s->v.FunctionDef.body;
         typeparams = s->v.FunctionDef.typeparams;
-
-        scope_type = COMPILER_SCOPE_FUNCTION;
     }
 
     RETURN_IF_ERROR(compiler_check_debug_args(c, args));
@@ -2247,61 +2302,32 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             num_typeparam_args += 1;
         }
         if ((funcflags & 0x01) || (funcflags & 0x02)) {
-            ADDOP_I(c, loc, LOAD_FAST, 0 + is_in_class);
+            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 0 + is_in_class, loc));
             num_typeparam_args += 1;
         }
         if ((funcflags & 0x01) && (funcflags & 0x02)) {
-            ADDOP_I(c, loc, LOAD_FAST, 1 + is_in_class);
+            RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 1 + is_in_class, loc));
             num_typeparam_args += 1;
         }
-        RETURN_IF_ERROR(compiler_type_params(c, typeparams));
-        RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Store));
+        RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, typeparams));
+        RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Store));
     }
 
     annotations = compiler_visit_annotations(c, loc, args, returns);
-    RETURN_IF_ERROR(annotations);
+    if (annotations < 0) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
     if (annotations > 0) {
         funcflags |= 0x04;
     }
 
-    RETURN_IF_ERROR(
-        compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno));
+    RETURN_IF_ERROR_IN_SCOPE(c, compiler_function_body(c, s, is_async, funcflags, firstlineno));
 
-    /* if not -OO mode, add docstring */
-    if (c->c_optimize < 2) {
-        docstring = _PyAST_GetDocString(body);
-    }
-    if (compiler_add_const(c->c_const_cache, c->u, docstring ? docstring : Py_None) < 0) {
-        compiler_exit_scope(c);
-        return ERROR;
-    }
-
-    c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
-    c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
-    c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
-    for (i = docstring ? 1 : 0; i < asdl_seq_LEN(body); i++) {
-        VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
-    }
-    if (c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator) {
-        if (wrap_in_stopiteration_handler(c) < 0) {
-            compiler_exit_scope(c);
-            return ERROR;
-        }
-    }
-    co = optimize_and_assemble(c, 1);
-    compiler_exit_scope(c);
-    if (co == NULL) {
-        Py_XDECREF(co);
-        return ERROR;
-    }
-    if (compiler_make_closure(c, loc, co, funcflags) < 0) {
-        Py_DECREF(co);
-        return ERROR;
-    }
-    Py_DECREF(co);
     if (is_generic) {
-        RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Load));
-        ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS);
+        RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Load));
+        RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(
+            INSTR_SEQUENCE(c), CALL_INTRINSIC_2, INTRINSIC_SET_FUNCTION_TYPE_PARAMS, loc));
 
         c->u->u_metadata.u_argcount = num_typeparam_args;
         PyCodeObject *co = optimize_and_assemble(c, 0);
