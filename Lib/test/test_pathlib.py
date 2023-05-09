@@ -29,11 +29,12 @@ except ImportError:
 #
 
 class _BasePurePathSubclass(object):
-    init_called = False
+    def __init__(self, *pathsegments, session_id):
+        super().__init__(*pathsegments)
+        self.session_id = session_id
 
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.init_called = True
+    def with_segments(self, *pathsegments):
+        return type(self)(*pathsegments, session_id=self.session_id)
 
 
 class _BasePurePathTest(object):
@@ -121,20 +122,21 @@ class _BasePurePathTest(object):
         self._check_str_subclass('a/b.txt')
         self._check_str_subclass('/a/b.txt')
 
-    def test_init_called_common(self):
+    def test_with_segments_common(self):
         class P(_BasePurePathSubclass, self.cls):
             pass
-        p = P('foo', 'bar')
-        self.assertTrue((p / 'foo').init_called)
-        self.assertTrue(('foo' / p).init_called)
-        self.assertTrue(p.joinpath('foo').init_called)
-        self.assertTrue(p.with_name('foo').init_called)
-        self.assertTrue(p.with_stem('foo').init_called)
-        self.assertTrue(p.with_suffix('.foo').init_called)
-        self.assertTrue(p.relative_to('foo').init_called)
-        self.assertTrue(p.parent.init_called)
+        p = P('foo', 'bar', session_id=42)
+        self.assertEqual(42, (p / 'foo').session_id)
+        self.assertEqual(42, ('foo' / p).session_id)
+        self.assertEqual(42, p.joinpath('foo').session_id)
+        self.assertEqual(42, p.with_name('foo').session_id)
+        self.assertEqual(42, p.with_stem('foo').session_id)
+        self.assertEqual(42, p.with_suffix('.foo').session_id)
+        self.assertEqual(42, p.with_segments('foo').session_id)
+        self.assertEqual(42, p.relative_to('foo').session_id)
+        self.assertEqual(42, p.parent.session_id)
         for parent in p.parents:
-            self.assertTrue(parent.init_called)
+            self.assertEqual(42, parent.session_id)
 
     def _get_drive_root_parts(self, parts):
         path = self.cls(*parts)
@@ -1647,6 +1649,27 @@ class _BasePathTest(object):
             env['HOME'] = os.path.join(BASE, 'home')
             self._test_home(self.cls.home())
 
+    def test_with_segments(self):
+        class P(_BasePurePathSubclass, self.cls):
+            pass
+        p = P(BASE, session_id=42)
+        self.assertEqual(42, p.absolute().session_id)
+        self.assertEqual(42, p.resolve().session_id)
+        if not is_wasi:  # WASI has no user accounts.
+            self.assertEqual(42, p.with_segments('~').expanduser().session_id)
+        self.assertEqual(42, (p / 'fileA').rename(p / 'fileB').session_id)
+        self.assertEqual(42, (p / 'fileB').replace(p / 'fileA').session_id)
+        if os_helper.can_symlink():
+            self.assertEqual(42, (p / 'linkA').readlink().session_id)
+        for path in p.iterdir():
+            self.assertEqual(42, path.session_id)
+        for path in p.glob('*'):
+            self.assertEqual(42, path.session_id)
+        for path in p.rglob('*'):
+            self.assertEqual(42, path.session_id)
+        for dirpath, dirnames, filenames in p.walk():
+            self.assertEqual(42, dirpath.session_id)
+
     def test_samefile(self):
         fileA_path = os.path.join(BASE, 'fileA')
         fileB_path = os.path.join(BASE, 'dirB', 'fileB')
@@ -1830,13 +1853,14 @@ class _BasePathTest(object):
 
     def test_rglob_common(self):
         def _check(glob, expected):
-            self.assertEqual(set(glob), { P(BASE, q) for q in expected })
+            self.assertEqual(sorted(glob), sorted(P(BASE, q) for q in expected))
         P = self.cls
         p = P(BASE)
         it = p.rglob("fileA")
         self.assertIsInstance(it, collections.abc.Iterator)
         _check(it, ["fileA"])
         _check(p.rglob("fileB"), ["dirB/fileB"])
+        _check(p.rglob("**/fileB"), ["dirB/fileB"])
         _check(p.rglob("*/fileA"), [])
         if not os_helper.can_symlink():
             _check(p.rglob("*/fileB"), ["dirB/fileB"])
@@ -1860,9 +1884,12 @@ class _BasePathTest(object):
         _check(p.rglob("*"), ["dirC/fileC", "dirC/novel.txt",
                               "dirC/dirD", "dirC/dirD/fileD"])
         _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p.rglob("**/file*"), ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p.rglob("dir*/**"), ["dirC/dirD"])
         _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
         _check(p.rglob("*/"), ["dirC/dirD"])
         _check(p.rglob(""), ["dirC", "dirC/dirD"])
+        _check(p.rglob("**"), ["dirC", "dirC/dirD"])
         # gh-91616, a re module regression
         _check(p.rglob("*.txt"), ["dirC/novel.txt"])
         _check(p.rglob("*.*"), ["dirC/novel.txt"])
