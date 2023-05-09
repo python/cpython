@@ -1542,10 +1542,10 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
 
         // We can not use free_keys_object here because key's reference
         // are moved already.
-#ifdef Py_REF_DEBUG
-        _Py_DecRefTotal(_PyInterpreterState_GET());
-#endif
         if (oldkeys != Py_EMPTY_KEYS) {
+#ifdef Py_REF_DEBUG
+            _Py_DecRefTotal(_PyInterpreterState_GET());
+#endif
             assert(oldkeys->dk_kind != DICT_KEYS_SPLIT);
             assert(oldkeys->dk_refcnt == 1);
 #if PyDict_MAXFREELIST > 0
