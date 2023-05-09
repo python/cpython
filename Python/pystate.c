@@ -948,7 +948,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 
     zapthreads(interp);
 
-    _PyEval_FiniState(&interp->ceval);
+    _PyEval_FiniState(interp);
 
     // XXX These two calls should be done at the end of clear_interpreter(),
     // but currently some objects get decref'ed after that.

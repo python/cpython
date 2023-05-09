@@ -964,13 +964,15 @@ _PyEval_InitState(PyInterpreterState *interp, PyThread_type_lock pending_lock)
 }
 
 void
-_PyEval_FiniState(struct _ceval_state *ceval)
+_PyEval_FiniState(PyInterpreterState *interp)
 {
-    struct _pending_calls *pending = &ceval->pending;
+    struct _pending_calls *pending = &interp->ceval.pending;
     if (pending->lock != NULL) {
         PyThread_free_lock(pending->lock);
         pending->lock = NULL;
     }
+
+    _PyEval_FiniGIL(interp);
 }
 
 /* Handle signals, pending calls, GIL drop request

@@ -22,7 +22,7 @@ struct _ceval_runtime_state;
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
 extern void _PyEval_InitState(PyInterpreterState *, PyThread_type_lock);
-extern void _PyEval_FiniState(struct _ceval_state *ceval);
+extern void _PyEval_FiniState(PyInterpreterState *interp);
 PyAPI_FUNC(void) _PyEval_SignalReceived(PyInterpreterState *interp);
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyInterpreterState *interp,

@@ -589,11 +589,6 @@ init_interp_create_gil(PyThreadState *tstate, int own_gil)
 {
     PyStatus status;
 
-    /* finalize_interp_delete() comment explains why _PyEval_FiniGIL() is
-       only called here. */
-    // XXX This is broken with a per-interpreter GIL.
-    _PyEval_FiniGIL(tstate->interp);
-
     /* Auto-thread-state API */
     status = _PyGILState_SetTstate(tstate);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1736,12 +1731,6 @@ finalize_interp_delete(PyInterpreterState *interp)
 {
     /* Cleanup auto-thread-state */
     _PyGILState_Fini(interp);
-
-    /* We can't call _PyEval_FiniGIL() here because destroying the GIL lock can
-       fail when it is being awaited by another running daemon thread (see
-       bpo-9901). Instead pycore_create_interpreter() destroys the previously
-       created GIL, which ensures that Py_Initialize / Py_FinalizeEx can be
-       called multiple times. */
 
     PyInterpreterState_Delete(interp);
 }
