@@ -200,7 +200,7 @@ class _NetlocResultMixinStr(_NetlocResultMixinBase, _ResultMixinStr):
         _, _, hostinfo = netloc.rpartition('@')
         _, have_open_br, bracketed = hostinfo.partition('[')
         if have_open_br:
-            hostname, _, port = bracketed.rpartition(']')
+            hostname, _, port = bracketed.partition(']')
             _, _, port = port.partition(':')
         else:
             hostname, _, port = hostinfo.partition(':')
@@ -230,7 +230,7 @@ class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
         _, _, hostinfo = netloc.rpartition(b'@')
         _, have_open_br, bracketed = hostinfo.partition(b'[')
         if have_open_br:
-            hostname, _, port = bracketed.rpartition(b']')
+            hostname, _, port = bracketed.partition(b']')
             _, _, port = port.partition(b':')
         else:
             hostname, _, port = hostinfo.partition(b':')
@@ -427,7 +427,9 @@ def _checknetloc(netloc):
         if c in netloc2:
             raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
-        
+
+# Valid bracketed hosts are defined in
+# https://www.rfc-editor.org/rfc/rfc3986#page-49 and https://url.spec.whatwg.org/
 def _check_bracketed_host(hostname):
     if hostname.startswith('v'):
         if not re.match(r"\Av[a-fA-F0-9]+\..+\Z", hostname):
@@ -482,7 +484,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
                 (']' in netloc and '[' not in netloc)):
             raise ValueError("Invalid IPv6 URL")
         if '[' in netloc and ']' in netloc:
-            bracketed_host = netloc.partition('[')[2].rpartition(']')[0]
+            bracketed_host = netloc.partition('[')[2].partition(']')[0]
             _check_bracketed_host(bracketed_host)
     if allow_fragments and '#' in url:
         url, fragment = url.split('#', 1)
