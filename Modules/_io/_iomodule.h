@@ -144,7 +144,7 @@ extern Py_off_t PyNumber_AsOff_t(PyObject *item, PyObject *err);
 
 extern PyModuleDef _PyIO_Module;
 
-typedef struct _io_state {
+struct _io_state {
     int initialized;
     PyObject *unsupported_operation;
 
@@ -165,7 +165,7 @@ typedef struct _io_state {
 #ifdef MS_WINDOWS
     PyTypeObject *PyWindowsConsoleIO_Type;
 #endif
-} _PyIO_State;
+};
 
 #define IO_MOD_STATE(mod) ((_PyIO_State *)PyModule_GetState(mod))
 #define IO_STATE() _PyIO_get_module_state()
