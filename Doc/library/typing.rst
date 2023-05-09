@@ -2094,7 +2094,7 @@ Corresponding to collections in :mod:`collections.abc`
    and :class:`memoryview` of byte sequences.
 
    .. deprecated-removed:: 3.9 3.14
-      Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
+      Prefer ``typing_extensions.Buffer``, or a union like ``bytes | bytearray | memoryview``.
 
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
