@@ -1185,7 +1185,7 @@ Task Object
 
       .. versionchanged:: 3.12
 
-        Newly added eager task execution means result may be ``None``.
+         Newly added eager task execution means result may be ``None``.
 
    .. method:: get_context()
 
