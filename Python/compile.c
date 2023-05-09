@@ -5147,7 +5147,8 @@ compiler_comprehension_iter(struct compiler *c, location loc,
     VISIT(c, expr, comp->iter);
     if (comp->is_async) {
         ADDOP(c, loc, GET_AITER);
-    } else {
+    }
+    else {
         ADDOP(c, loc, GET_ITER);
     }
     return SUCCESS;
@@ -5180,7 +5181,8 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
             goto error;
         }
-    } else {
+    }
+    else {
         if (compiler_enter_scope(c, name, COMPILER_SCOPE_COMPREHENSION,
                                 (void *)e, e->lineno) < 0)
         {
