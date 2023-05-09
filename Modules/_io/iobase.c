@@ -214,7 +214,8 @@ iobase_check_seekable(PyObject *self, PyObject *args)
 static PyObject *
 iobase_check_readable(PyObject *self, PyObject *args)
 {
-    return _PyIOBase_check_readable(self, args);
+    _PyIO_State *state = IO_STATE();
+    return _PyIOBase_check_readable(state, self, args);
 }
 
 static PyObject *
@@ -424,14 +425,13 @@ _io__IOBase_readable_impl(PyObject *self)
 
 /* May be called with any object */
 PyObject *
-_PyIOBase_check_readable(PyObject *self, PyObject *args)
+_PyIOBase_check_readable(_PyIO_State *state, PyObject *self, PyObject *args)
 {
     PyObject *res = PyObject_CallMethodNoArgs(self, &_Py_ID(readable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        _PyIO_State *state = IO_STATE();
         iobase_unsupported(state, "File or stream is not readable.");
         return NULL;
     }
