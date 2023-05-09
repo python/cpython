@@ -2322,7 +2322,12 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         funcflags |= 0x04;
     }
 
-    RETURN_IF_ERROR_IN_SCOPE(c, compiler_function_body(c, s, is_async, funcflags, firstlineno));
+    if (compiler_function_body(c, s, is_async, funcflags, firstlineno) < 0) {
+        if (is_generic) {
+            compiler_exit_scope(c);
+        }
+        return ERROR;
+    }
 
     if (is_generic) {
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Load));
@@ -2359,15 +2364,134 @@ compiler_set_type_params_in_class(struct compiler *c, location loc)
 }
 
 static int
+compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
+{
+    /* ultimately generate code for:
+         <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
+       where:
+         <func> is a zero arg function/closure created from the class body.
+            It mutates its locals to build the class namespace.
+         <name> is the class name
+         <bases> is the positional arguments and *varargs argument
+         <keywords> is the keyword arguments and **kwds argument
+       This borrows from compiler_call.
+    */
+
+    /* 1. compile the class body into a code object */
+    RETURN_IF_ERROR(
+        compiler_enter_scope(c, s->v.ClassDef.name,
+                             COMPILER_SCOPE_CLASS, (void *)s, firstlineno));
+
+    location loc = LOCATION(firstlineno, firstlineno, 0, 0);
+    /* use the class name for name mangling */
+    Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
+    /* load (global) __name__ ... */
+    if (compiler_nameop(c, loc, &_Py_ID(__name__), Load) < 0) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
+    /* ... and store it as __module__ */
+    if (compiler_nameop(c, loc, &_Py_ID(__module__), Store) < 0) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
+    assert(c->u->u_metadata.u_qualname);
+    ADDOP_LOAD_CONST(c, loc, c->u->u_metadata.u_qualname);
+    if (compiler_nameop(c, loc, &_Py_ID(__qualname__), Store) < 0) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
+    asdl_typeparam_seq *typeparams = s->v.ClassDef.typeparams;
+    if (asdl_seq_LEN(typeparams) > 0) {
+        if (!compiler_set_type_params_in_class(c, loc)) {
+            compiler_exit_scope(c);
+            return ERROR;
+        }
+    }
+    if (c->u->u_ste->ste_needs_classdict) {
+        ADDOP(c, loc, LOAD_LOCALS);
+        if (compiler_nameop(c, loc, &_Py_ID(__classdict__), Store) < 0) {
+            compiler_exit_scope(c);
+            return ERROR;
+        }
+    }
+    /* compile the body proper */
+    if (compiler_body(c, loc, s->v.ClassDef.body) < 0) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
+    /* The following code is artificial */
+    /* Set __classdictcell__ if necessary */
+    if (c->u->u_ste->ste_needs_classdict) {
+        /* Store __classdictcell__ into class namespace */
+        int i = compiler_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__classdict__));
+        if (i < 0) {
+            compiler_exit_scope(c);
+            return ERROR;
+        }
+        ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
+        if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__classdictcell__), Store) < 0) {
+            compiler_exit_scope(c);
+            return ERROR;
+        }
+    }
+    /* Return __classcell__ if it is referenced, otherwise return None */
+    if (c->u->u_ste->ste_needs_class_closure) {
+        /* Store __classcell__ into class namespace & return it */
+        int i = compiler_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__class__));
+        if (i < 0) {
+            compiler_exit_scope(c);
+            return ERROR;
+        }
+        assert(i == 0);
+        ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
+        ADDOP_I(c, NO_LOCATION, COPY, 1);
+        if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__classcell__), Store) < 0) {
+            compiler_exit_scope(c);
+            return ERROR;
+        }
+    }
+    else {
+        /* No methods referenced __class__, so just return None */
+        assert(PyDict_GET_SIZE(c->u->u_metadata.u_cellvars) ==
+                c->u->u_ste->ste_needs_classdict ? 1 : 0);
+        ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
+    }
+    ADDOP_IN_SCOPE(c, NO_LOCATION, RETURN_VALUE);
+    /* create the code object */
+    PyCodeObject *co = optimize_and_assemble(c, 1);
+
+    /* leave the new scope */
+    compiler_exit_scope(c);
+    if (co == NULL) {
+        return ERROR;
+    }
+
+    /* 2. load the 'build_class' function */
+    ADDOP(c, loc, PUSH_NULL);
+    ADDOP(c, loc, LOAD_BUILD_CLASS);
+
+    /* 3. load a function (or closure) made from the code object */
+    if (compiler_make_closure(c, loc, co, 0) < 0) {
+        Py_DECREF(co);
+        return ERROR;
+    }
+    Py_DECREF(co);
+
+    /* 4. load class name */
+    ADDOP_LOAD_CONST(c, loc, s->v.ClassDef.name);
+
+    return SUCCESS;
+}
+
+static int
 compiler_class(struct compiler *c, stmt_ty s)
 {
-    PyCodeObject *co;
-    int i, firstlineno;
     asdl_expr_seq *decos = s->v.ClassDef.decorator_list;
 
     RETURN_IF_ERROR(compiler_decorators(c, decos));
 
-    firstlineno = s->lineno;
+    int firstlineno = s->lineno;
     if (asdl_seq_LEN(decos)) {
         firstlineno = ((expr_ty)asdl_seq_GET(decos, 0))->lineno;
     }
@@ -2389,138 +2513,36 @@ compiler_class(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(typeparams_name);
-        RETURN_IF_ERROR(compiler_type_params(c, typeparams));
+        RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, typeparams));
         _Py_DECLARE_STR(type_params, ".type_params");
-        RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Store));
+        RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Store));
     }
 
-    /* ultimately generate code for:
-         <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
-       where:
-         <func> is a zero arg function/closure created from the class body.
-            It mutates its locals to build the class namespace.
-         <name> is the class name
-         <bases> is the positional arguments and *varargs argument
-         <keywords> is the keyword arguments and **kwds argument
-       This borrows from compiler_call.
-    */
-    /* 1. compile the class body into a code object */
-    RETURN_IF_ERROR(
-        compiler_enter_scope(c, s->v.ClassDef.name,
-                             COMPILER_SCOPE_CLASS, (void *)s, firstlineno));
-
-    /* this block represents what we do in the new scope */
-    {
-        location loc = LOCATION(firstlineno, firstlineno, 0, 0);
-        /* use the class name for name mangling */
-        Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
-        /* load (global) __name__ ... */
-        if (compiler_nameop(c, loc, &_Py_ID(__name__), Load) < 0) {
+    if (compiler_class_body(c, s, firstlineno) < 0) {
+        if (is_generic) {
             compiler_exit_scope(c);
-            return ERROR;
         }
-        /* ... and store it as __module__ */
-        if (compiler_nameop(c, loc, &_Py_ID(__module__), Store) < 0) {
-            compiler_exit_scope(c);
-            return ERROR;
-        }
-        assert(c->u->u_metadata.u_qualname);
-        ADDOP_LOAD_CONST(c, loc, c->u->u_metadata.u_qualname);
-        if (compiler_nameop(c, loc, &_Py_ID(__qualname__), Store) < 0) {
-            compiler_exit_scope(c);
-            return ERROR;
-        }
-        if (asdl_seq_LEN(typeparams) > 0) {
-            if (!compiler_set_type_params_in_class(c, loc)) {
-                compiler_exit_scope(c);
-                return ERROR;
-            }
-        }
-        if (c->u->u_ste->ste_needs_classdict) {
-            ADDOP(c, loc, LOAD_LOCALS);
-            if (compiler_nameop(c, loc, &_Py_ID(__classdict__), Store) < 0) {
-                compiler_exit_scope(c);
-                return ERROR;
-            }
-        }
-        /* compile the body proper */
-        if (compiler_body(c, loc, s->v.ClassDef.body) < 0) {
-            compiler_exit_scope(c);
-            return ERROR;
-        }
-        /* The following code is artificial */
-        /* Set __classdictcell__ if necessary */
-        if (c->u->u_ste->ste_needs_classdict) {
-            /* Store __classdictcell__ into class namespace */
-            i = compiler_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__classdict__));
-            if (i < 0) {
-                compiler_exit_scope(c);
-                return ERROR;
-            }
-            ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
-            if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__classdictcell__), Store) < 0) {
-                compiler_exit_scope(c);
-                return ERROR;
-            }
-        }
-        /* Return __classcell__ if it is referenced, otherwise return None */
-        if (c->u->u_ste->ste_needs_class_closure) {
-            /* Store __classcell__ into class namespace & return it */
-            i = compiler_lookup_arg(c->u->u_metadata.u_cellvars, &_Py_ID(__class__));
-            if (i < 0) {
-                compiler_exit_scope(c);
-                return ERROR;
-            }
-            assert(i == 0);
-            ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
-            ADDOP_I(c, NO_LOCATION, COPY, 1);
-            if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__classcell__), Store) < 0) {
-                compiler_exit_scope(c);
-                return ERROR;
-            }
-        }
-        else {
-            /* No methods referenced __class__, so just return None */
-            assert(PyDict_GET_SIZE(c->u->u_metadata.u_cellvars) ==
-                   c->u->u_ste->ste_needs_classdict ? 1 : 0);
-            ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
-        }
-        ADDOP_IN_SCOPE(c, NO_LOCATION, RETURN_VALUE);
-        /* create the code object */
-        co = optimize_and_assemble(c, 1);
-    }
-    /* leave the new scope */
-    compiler_exit_scope(c);
-    if (co == NULL) {
         return ERROR;
     }
 
-    /* 2. load the 'build_class' function */
-    ADDOP(c, loc, PUSH_NULL);
-    ADDOP(c, loc, LOAD_BUILD_CLASS);
-
-    /* 3. load a function (or closure) made from the code object */
-    if (compiler_make_closure(c, loc, co, 0) < 0) {
-        Py_DECREF(co);
-        return ERROR;
-    }
-    Py_DECREF(co);
-
-    /* 4. load class name */
-    ADDOP_LOAD_CONST(c, loc, s->v.ClassDef.name);
-
-    /* 5. generate the rest of the code for the call */
+    /* generate the rest of the code for the call */
 
     if (is_generic) {
         _Py_DECLARE_STR(type_params, ".type_params");
         _Py_DECLARE_STR(generic_base, ".generic_base");
-        RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(type_params), Load));
-        ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_SUBSCRIPT_GENERIC);
-        RETURN_IF_ERROR(compiler_nameop(c, loc, &_Py_STR(generic_base), Store));
+        RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Load));
+        RETURN_IF_ERROR_IN_SCOPE(
+            c, codegen_addop_i(INSTR_SEQUENCE(c), CALL_INTRINSIC_1, INTRINSIC_SUBSCRIPT_GENERIC, loc)
+        )
+        RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(generic_base), Store));
 
         Py_ssize_t original_len = asdl_seq_LEN(s->v.ClassDef.bases);
         asdl_expr_seq *bases = _Py_asdl_expr_seq_new(
             original_len + 1, c->c_arena);
+        if (bases == NULL) {
+            compiler_exit_scope(c);
+            return ERROR;
+        }
         for (Py_ssize_t i = 0; i < original_len; i++) {
             asdl_seq_SET(bases, i, asdl_seq_GET(s->v.ClassDef.bases, i));
         }
@@ -2529,12 +2551,13 @@ compiler_class(struct compiler *c, stmt_ty s)
             loc.lineno, loc.col_offset, loc.end_lineno, loc.end_col_offset, c->c_arena
         );
         if (name_node == NULL) {
+            compiler_exit_scope(c);
             return ERROR;
         }
         asdl_seq_SET(bases, original_len, name_node);
-        RETURN_IF_ERROR(compiler_call_helper(c, loc, 2,
-                                             bases,
-                                             s->v.ClassDef.keywords));
+        RETURN_IF_ERROR_IN_SCOPE(c, compiler_call_helper(c, loc, 2,
+                                                         bases,
+                                                         s->v.ClassDef.keywords));
 
         PyCodeObject *co = optimize_and_assemble(c, 0);
         compiler_exit_scope(c);
