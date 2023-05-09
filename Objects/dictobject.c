@@ -846,7 +846,7 @@ PyObject *
 PyDict_New(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    dictkeys_incref(Py_EMPTY_KEYS);
+    /* We don't incref Py_EMPTY_KEYS here because it is immortal. */
     return new_dict(interp, Py_EMPTY_KEYS, NULL, 0, 0);
 }
 
@@ -1344,7 +1344,7 @@ insert_to_emptydict(PyInterpreterState *interp, PyDictObject *mp,
         Py_DECREF(value);
         return -1;
     }
-    dictkeys_decref(interp, Py_EMPTY_KEYS);
+    /* We don't decref Py_EMPTY_KEYS here because it is immortal. */
     mp->ma_keys = newkeys;
     mp->ma_values = NULL;
 
