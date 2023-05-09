@@ -34,6 +34,7 @@ extern PyType_Spec winconsoleio_spec;
  * with args=NULL, and return a new reference.
  * BUT when args=Py_True is passed, they return a borrowed reference.
  */
+struct _io_state;  // Forward decl.
 extern PyObject* _PyIOBase_check_readable(PyObject *self, PyObject *args);
 extern PyObject* _PyIOBase_check_writable(PyObject *self, PyObject *args);
 extern PyObject* _PyIOBase_check_seekable(PyObject *self, PyObject *args);
@@ -140,7 +141,7 @@ extern Py_off_t PyNumber_AsOff_t(PyObject *item, PyObject *err);
 
 extern PyModuleDef _PyIO_Module;
 
-typedef struct {
+typedef struct _io_state {
     int initialized;
     PyObject *unsupported_operation;
 
