@@ -527,6 +527,8 @@ Running Tasks Concurrently
       and there is no running event loop.
 
 
+.. _eager-task-factory:
+
 Eager Task Factory
 ==================
 
@@ -1174,7 +1176,16 @@ Task Object
 
       Return the coroutine object wrapped by the :class:`Task`.
 
+      .. note::
+
+         This will return ``None`` for Tasks which have already
+         completed eagerly. See the :ref:`Eager Task Factory <eager-task-factory>`.
+
       .. versionadded:: 3.8
+
+      .. versionchanged:: 3.12
+
+         Newly added eager task execution means result may be ``None``.
 
    .. method:: get_context()
 
