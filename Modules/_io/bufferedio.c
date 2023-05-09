@@ -106,11 +106,9 @@ _io__BufferedIOBase_readinto1_impl(PyObject *self, Py_buffer *buffer)
 }
 
 static PyObject *
-bufferediobase_unsupported(const char *message)
+bufferediobase_unsupported(_PyIO_State *state, const char *message)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_SetString(state->unsupported_operation, message);
+    PyErr_SetString(state->unsupported_operation, message);
     return NULL;
 }
 
@@ -127,7 +125,8 @@ static PyObject *
 _io__BufferedIOBase_detach_impl(PyObject *self)
 /*[clinic end generated code: output=754977c8d10ed88c input=822427fb58fe4169]*/
 {
-    return bufferediobase_unsupported("detach");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "detach");
 }
 
 PyDoc_STRVAR(bufferediobase_read_doc,
@@ -151,7 +150,8 @@ PyDoc_STRVAR(bufferediobase_read_doc,
 static PyObject *
 bufferediobase_read(PyObject *self, PyObject *args)
 {
-    return bufferediobase_unsupported("read");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "read");
 }
 
 PyDoc_STRVAR(bufferediobase_read1_doc,
@@ -164,7 +164,8 @@ PyDoc_STRVAR(bufferediobase_read1_doc,
 static PyObject *
 bufferediobase_read1(PyObject *self, PyObject *args)
 {
-    return bufferediobase_unsupported("read1");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "read1");
 }
 
 PyDoc_STRVAR(bufferediobase_write_doc,
@@ -179,7 +180,8 @@ PyDoc_STRVAR(bufferediobase_write_doc,
 static PyObject *
 bufferediobase_write(PyObject *self, PyObject *args)
 {
-    return bufferediobase_unsupported("write");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "write");
 }
 
 
@@ -1222,8 +1224,10 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
 
     CHECK_CLOSED(self, "seek of closed file")
 
-    if (_PyIOBase_check_seekable(self->raw, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_seekable(state, self->raw, Py_True) == NULL) {
         return NULL;
+    }
 
     target = PyNumber_AsOff_t(targetobj, PyExc_ValueError);
     if (target == -1 && PyErr_Occurred())
@@ -1298,7 +1302,8 @@ _io__Buffered_truncate_impl(buffered *self, PyObject *pos)
     CHECK_INITIALIZED(self)
     CHECK_CLOSED(self, "truncate of closed file")
     if (!self->writable) {
-        return bufferediobase_unsupported("truncate");
+        _PyIO_State *state = IO_STATE();
+        return bufferediobase_unsupported(state, "truncate");
     }
     if (!ENTER_BUFFERED(self))
         return NULL;
@@ -1419,8 +1424,10 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
     self->ok = 0;
     self->detached = 0;
 
-    if (_PyIOBase_check_readable(raw, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_readable(state, raw, Py_True) == NULL) {
         return -1;
+    }
 
     Py_XSETREF(self->raw, Py_NewRef(raw));
     self->buffer_size = buffer_size;
@@ -1431,7 +1438,6 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
         return -1;
     _bufferedreader_reset_buf(self);
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->fast_closed_checks = (
         Py_IS_TYPE(self, state->PyBufferedReader_Type) &&
         Py_IS_TYPE(raw, state->PyFileIO_Type)
@@ -1774,8 +1780,10 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     self->ok = 0;
     self->detached = 0;
 
-    if (_PyIOBase_check_writable(raw, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_writable(state, raw, Py_True) == NULL) {
         return -1;
+    }
 
     Py_INCREF(raw);
     Py_XSETREF(self->raw, raw);
@@ -1788,7 +1796,6 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     _bufferedwriter_reset_buf(self);
     self->pos = 0;
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->fast_closed_checks = (
         Py_IS_TYPE(self, state->PyBufferedWriter_Type) &&
         Py_IS_TYPE(raw, state->PyFileIO_Type)
@@ -2092,12 +2099,14 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
                                  PyObject *writer, Py_ssize_t buffer_size)
 /*[clinic end generated code: output=327e73d1aee8f984 input=620d42d71f33a031]*/
 {
-    if (_PyIOBase_check_readable(reader, Py_True) == NULL)
-        return -1;
-    if (_PyIOBase_check_writable(writer, Py_True) == NULL)
-        return -1;
-
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_readable(state, reader, Py_True) == NULL) {
+        return -1;
+    }
+    if (_PyIOBase_check_writable(state, writer, Py_True) == NULL) {
+        return -1;
+    }
+
     self->reader = (buffered *) PyObject_CallFunction(
             (PyObject *)state->PyBufferedReader_Type,
             "On", reader, buffer_size);
@@ -2290,12 +2299,16 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     self->ok = 0;
     self->detached = 0;
 
-    if (_PyIOBase_check_seekable(raw, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_seekable(state, raw, Py_True) == NULL) {
         return -1;
-    if (_PyIOBase_check_readable(raw, Py_True) == NULL)
+    }
+    if (_PyIOBase_check_readable(state, raw, Py_True) == NULL) {
         return -1;
-    if (_PyIOBase_check_writable(raw, Py_True) == NULL)
+    }
+    if (_PyIOBase_check_writable(state, raw, Py_True) == NULL) {
         return -1;
+    }
 
     Py_INCREF(raw);
     Py_XSETREF(self->raw, raw);
@@ -2309,7 +2322,6 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     _bufferedwriter_reset_buf(self);
     self->pos = 0;
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->fast_closed_checks = (Py_IS_TYPE(self, state->PyBufferedRandom_Type) &&
                                 Py_IS_TYPE(raw, state->PyFileIO_Type));
 
