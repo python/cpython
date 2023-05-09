@@ -1235,10 +1235,10 @@ cmath_exec(PyObject *mod)
                            PyComplex_FromCComplex(infj)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(mod, "nan", PyFloat_FromDouble(Py_NAN)) < 0) {
+    if (PyModule_AddObject(mod, "nan", PyFloat_FromDouble(fabs(Py_NAN))) < 0) {
         return -1;
     }
-    Py_complex nanj = {0.0, Py_NAN};
+    Py_complex nanj = {0.0, fabs(Py_NAN)};
     if (PyModule_AddObject(mod, "nanj", PyComplex_FromCComplex(nanj)) < 0) {
         return -1;
     }

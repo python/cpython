@@ -3949,7 +3949,7 @@ math_exec(PyObject *module)
     if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(Py_INFINITY)) < 0) {
         return -1;
     }
-    if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(Py_NAN)) < 0) {
+    if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(fabs(Py_NAN))) < 0) {
         return -1;
     }
     return 0;

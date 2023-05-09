@@ -52,16 +52,11 @@
 #  define Py_HUGE_VAL HUGE_VAL
 #endif
 
-// Py_NAN: Value that evaluates to a quiet and positive Not-a-Number (NaN).
+/* Py_NAN: Value that evaluates to a quiet Not-a-Number (NaN).  The sign is
+ * undefined and normally not relevant, but e.g. fixed for float("nan").
+ */
 #if !defined(Py_NAN)
-#  if _Py__has_builtin(__builtin_nan)
-     // Built-in implementation of the ISO C99 function nan(): quiet NaN.
-#    define Py_NAN (__builtin_nan(""))
-#else
-     // Use C99 NAN constant: quiet Not-A-Number.
-     // NAN is a float, Py_NAN is a double: cast to double.
 #    define Py_NAN ((double)NAN)
-#  endif
 #endif
 
 #endif /* Py_PYMATH_H */

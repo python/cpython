@@ -46,7 +46,7 @@ _Py_parse_inf_or_nan(const char *p, char **endptr)
     }
     else if (case_insensitive_match(s, "nan")) {
         s += 3;
-        retval = negate ? -Py_NAN : Py_NAN;
+        retval = negate ? -fabs(Py_NAN) : fabs(Py_NAN);
     }
     else {
         s = p;

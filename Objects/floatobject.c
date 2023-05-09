@@ -2430,7 +2430,7 @@ PyFloat_Unpack2(const char *data, int le)
         }
         else {
             /* NaN */
-            return sign ? -Py_NAN : Py_NAN;
+            return sign ? -fabs(Py_NAN) : fabs(Py_NAN);
         }
     }
 
