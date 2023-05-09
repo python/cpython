@@ -2315,7 +2315,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
     annotations = compiler_visit_annotations(c, loc, args, returns);
     if (annotations < 0) {
-        compiler_exit_scope(c);
+        if (is_generic) {
+            compiler_exit_scope(c);
+        }
         return ERROR;
     }
     if (annotations > 0) {
