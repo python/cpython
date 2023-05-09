@@ -1896,7 +1896,7 @@ class Generic:
                         base.__origin__ is Generic):
                     if gvars is not None:
                         raise TypeError(
-                            "Cannot inherit from Generic[...] multiple types.")
+                            "Cannot inherit from Generic[...] multiple times.")
                     gvars = base.__parameters__
             if gvars is not None:
                 tvarset = set(tvars)
