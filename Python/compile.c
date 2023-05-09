@@ -2421,7 +2421,17 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     }
     if (c->u->u_ste->ste_needs_classdict) {
         ADDOP(c, loc, LOAD_LOCALS);
-        if (compiler_nameop(c, loc, &_Py_ID(__classdict__), Store) < 0) {
+
+        // We can't use compiler_nameop here because we need to generate a
+        // STORE_DEREF in a class namespace, and compiler_nameop() won't do
+        // that by default.
+        PyObject *cellvars = c->u->u_metadata.u_cellvars;
+        int arg = dict_add_o(cellvars, &_Py_ID(__classdict__));
+        if (arg < 0) {
+            compiler_exit_scope(c);
+            return ERROR;
+        }
+        if (codegen_addop_i(INSTR_SEQUENCE(c), STORE_DEREF, arg, loc) < 0) {
             compiler_exit_scope(c);
             return ERROR;
         }
@@ -4099,13 +4109,7 @@ compiler_nameop(struct compiler *c, location loc,
 
     op = 0;
     optype = OP_NAME;
-    if (c->u->u_scope_type == COMPILER_SCOPE_CLASS &&
-        _PyUnicode_EqualToASCIIString(name, "__classdict__")) {
-        scope = CELL;
-    }
-    else {
-        scope = _PyST_GetScope(c->u->u_ste, mangled);
-    }
+    scope = _PyST_GetScope(c->u->u_ste, mangled);
     switch (scope) {
     case FREE:
         dict = c->u->u_metadata.u_freevars;
