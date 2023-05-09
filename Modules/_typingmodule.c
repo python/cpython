@@ -36,6 +36,7 @@ PyDoc_STRVAR(typing_doc,
 "Accelerators for the typing module.\n");
 
 static struct PyModuleDef_Slot _typingmodule_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

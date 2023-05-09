@@ -7,9 +7,8 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_Init()
-#include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
-#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
+#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
 #include <ctype.h>
 #include <float.h>
@@ -6352,7 +6351,9 @@ PyStatus
 _PyLong_InitTypes(PyInterpreterState *interp)
 {
     /* initialize int_info */
-    if (_PyStructSequence_InitBuiltin(&Int_InfoType, &int_info_desc) < 0) {
+    if (_PyStructSequence_InitBuiltin(interp, &Int_InfoType,
+                                      &int_info_desc) < 0)
+    {
         return _PyStatus_ERR("can't init int info type");
     }
 
@@ -6363,9 +6364,5 @@ _PyLong_InitTypes(PyInterpreterState *interp)
 void
 _PyLong_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
-    _PyStructSequence_FiniType(&Int_InfoType);
+    _PyStructSequence_FiniBuiltin(interp, &Int_InfoType);
 }
