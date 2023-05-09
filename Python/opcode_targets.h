@@ -142,7 +142,11 @@ static void *opcode_targets[256] = {
     &&TARGET_JUMP_BACKWARD,
     &&TARGET_LOAD_SUPER_ATTR,
     &&TARGET_CALL_FUNCTION_EX,
+<<<<<<< HEAD
     &&TARGET_STORE_ATTR_WITH_HINT,
+=======
+    &&TARGET_LOAD_FAST_AND_CLEAR,
+>>>>>>> upstream/main
     &&TARGET_EXTENDED_ARG,
     &&TARGET_LIST_APPEND,
     &&TARGET_SET_ADD,

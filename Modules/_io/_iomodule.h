@@ -14,22 +14,21 @@ extern PyTypeObject PyRawIOBase_Type;
 extern PyTypeObject PyBufferedIOBase_Type;
 extern PyTypeObject PyTextIOBase_Type;
 
-/* Concrete classes */
-extern PyTypeObject PyIncrementalNewlineDecoder_Type;
-
 /* Type specs */
 extern PyType_Spec bufferedrandom_spec;
 extern PyType_Spec bufferedreader_spec;
 extern PyType_Spec bufferedrwpair_spec;
 extern PyType_Spec bufferedwriter_spec;
 extern PyType_Spec bytesio_spec;
+extern PyType_Spec bytesiobuf_spec;
 extern PyType_Spec fileio_spec;
+extern PyType_Spec nldecoder_spec;
 extern PyType_Spec stringio_spec;
 extern PyType_Spec textiowrapper_spec;
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
-extern PyTypeObject PyWindowsConsoleIO_Type;
-#endif /* HAVE_WINDOWS_CONSOLE_IO */
+extern PyType_Spec winconsoleio_spec;
+#endif
 
 /* These functions are used as METH_NOARGS methods, are normally called
  * with args=NULL, and return a new reference.
@@ -159,6 +158,9 @@ typedef struct {
     PyTypeObject *PyStringIO_Type;
     PyTypeObject *PyTextIOBase_Type;
     PyTypeObject *PyTextIOWrapper_Type;
+#ifdef MS_WINDOWS
+    PyTypeObject *PyWindowsConsoleIO_Type;
+#endif
 } _PyIO_State;
 
 #define IO_MOD_STATE(mod) ((_PyIO_State *)PyModule_GetState(mod))
@@ -193,5 +195,3 @@ extern _PyIO_State *_PyIO_get_module_state(void);
 #ifdef HAVE_WINDOWS_CONSOLE_IO
 extern char _PyIO_get_console_type(PyObject *);
 #endif
-
-extern Py_EXPORTED_SYMBOL PyTypeObject _PyBytesIOBuffer_Type;

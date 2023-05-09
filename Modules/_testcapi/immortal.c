@@ -1,6 +1,6 @@
 #include "parts.h"
 
-int verify_immortality(PyObject *object) 
+int verify_immortality(PyObject *object)
 {
     assert(_Py_IsImmortal(object));
     Py_ssize_t old_count = Py_REFCNT(object);

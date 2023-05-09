@@ -32,8 +32,6 @@ struct _getargs_runtime_state {
     struct _PyArg_Parser *static_parsers;
 };
 
-/* ceval state */
-
 /* GIL state */
 
 struct _gilstate_runtime_state {

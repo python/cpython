@@ -321,7 +321,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 #ifdef HAVE_WINDOWS_CONSOLE_IO
         const PyConfig *config = _Py_GetConfig();
         if (!config->legacy_windows_stdio && _PyIO_get_console_type(path_or_fd) != '\0') {
-            RawIO_class = (PyObject *)&PyWindowsConsoleIO_Type;
+            RawIO_class = (PyObject *)state->PyWindowsConsoleIO_Type;
             encoding = "utf-8";
         }
 #endif
@@ -595,6 +595,9 @@ iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
     Py_VISIT(state->PyStringIO_Type);
     Py_VISIT(state->PyTextIOBase_Type);
     Py_VISIT(state->PyTextIOWrapper_Type);
+#ifdef HAVE_WINDOWS_CONSOLE_IO
+    Py_VISIT(state->PyWindowsConsoleIO_Type);
+#endif
     return 0;
 }
 
@@ -619,6 +622,9 @@ iomodule_clear(PyObject *mod) {
     Py_CLEAR(state->PyStringIO_Type);
     Py_CLEAR(state->PyTextIOBase_Type);
     Py_CLEAR(state->PyTextIOWrapper_Type);
+#ifdef HAVE_WINDOWS_CONSOLE_IO
+    Py_CLEAR(state->PyWindowsConsoleIO_Type);
+#endif
     return 0;
 }
 
@@ -660,31 +666,17 @@ struct PyModuleDef _PyIO_Module = {
 static PyTypeObject* static_types[] = {
     // Base classes
     &PyIOBase_Type,
-    &PyIncrementalNewlineDecoder_Type,
 
     // PyIOBase_Type subclasses
     &PyBufferedIOBase_Type,
     &PyRawIOBase_Type,
     &PyTextIOBase_Type,
-
-    // PyRawIOBase_Type(PyIOBase_Type) subclasses
-    &_PyBytesIOBuffer_Type,
-#ifdef HAVE_WINDOWS_CONSOLE_IO
-    &PyWindowsConsoleIO_Type,
-#endif
 };
 
 
 PyStatus
 _PyIO_InitTypes(PyInterpreterState *interp)
 {
-#ifdef HAVE_WINDOWS_CONSOLE_IO
-    if (_Py_IsMainInterpreter(interp)) {
-        // Set type base classes
-        PyWindowsConsoleIO_Type.tp_base = &PyRawIOBase_Type;
-    }
-#endif
-
     for (size_t i=0; i < Py_ARRAY_LENGTH(static_types); i++) {
         PyTypeObject *type = static_types[i];
         if (_PyStaticType_InitBuiltin(interp, type) < 0) {
@@ -757,7 +749,8 @@ PyInit__io(void)
     }
 
     // Base classes
-    state->PyIncrementalNewlineDecoder_Type = (PyTypeObject *)Py_NewRef(&PyIncrementalNewlineDecoder_Type);
+    ADD_TYPE(m, state->PyIncrementalNewlineDecoder_Type, &nldecoder_spec, NULL);
+    ADD_TYPE(m, state->PyBytesIOBuffer_Type, &bytesiobuf_spec, NULL);
 
     // PyIOBase_Type subclasses
     state->PyRawIOBase_Type = (PyTypeObject *)Py_NewRef(&PyRawIOBase_Type);
@@ -776,8 +769,11 @@ PyInit__io(void)
              state->PyBufferedIOBase_Type);
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
-    state->PyBytesIOBuffer_Type = (PyTypeObject *)Py_NewRef(&_PyBytesIOBuffer_Type);
     ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, state->PyRawIOBase_Type);
+#ifdef MS_WINDOWS
+    ADD_TYPE(m, state->PyWindowsConsoleIO_Type, &winconsoleio_spec,
+             state->PyRawIOBase_Type);
+#endif
 
     // PyTextIOBase_Type(PyIOBase_Type) subclasses
     ADD_TYPE(m, state->PyStringIO_Type, &stringio_spec, state->PyTextIOBase_Type);

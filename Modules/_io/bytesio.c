@@ -1091,8 +1091,16 @@ bytesiobuf_releasebuffer(bytesiobuf *obj, Py_buffer *view)
 }
 
 static int
+bytesiobuf_clear(bytesiobuf *self)
+{
+    Py_CLEAR(self->source);
+    return 0;
+}
+
+static int
 bytesiobuf_traverse(bytesiobuf *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->source);
     return 0;
 }
@@ -1100,54 +1108,29 @@ bytesiobuf_traverse(bytesiobuf *self, visitproc visit, void *arg)
 static void
 bytesiobuf_dealloc(bytesiobuf *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    Py_CLEAR(self->source);
-    Py_TYPE(self)->tp_free(self);
+    (void)bytesiobuf_clear(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
-static PyBufferProcs bytesiobuf_as_buffer = {
-    (getbufferproc) bytesiobuf_getbuffer,
-    (releasebufferproc) bytesiobuf_releasebuffer,
+static PyType_Slot bytesiobuf_slots[] = {
+    {Py_tp_dealloc, bytesiobuf_dealloc},
+    {Py_tp_traverse, bytesiobuf_traverse},
+    {Py_tp_clear, bytesiobuf_clear},
+
+    // Buffer protocol
+    {Py_bf_getbuffer, bytesiobuf_getbuffer},
+    {Py_bf_releasebuffer, bytesiobuf_releasebuffer},
+    {0, NULL},
 };
 
-Py_EXPORTED_SYMBOL PyTypeObject _PyBytesIOBuffer_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io._BytesIOBuffer",                      /*tp_name*/
-    sizeof(bytesiobuf),                        /*tp_basicsize*/
-    0,                                         /*tp_itemsize*/
-    (destructor)bytesiobuf_dealloc,            /*tp_dealloc*/
-    0,                                         /*tp_vectorcall_offset*/
-    0,                                         /*tp_getattr*/
-    0,                                         /*tp_setattr*/
-    0,                                         /*tp_as_async*/
-    0,                                         /*tp_repr*/
-    0,                                         /*tp_as_number*/
-    0,                                         /*tp_as_sequence*/
-    0,                                         /*tp_as_mapping*/
-    0,                                         /*tp_hash*/
-    0,                                         /*tp_call*/
-    0,                                         /*tp_str*/
-    0,                                         /*tp_getattro*/
-    0,                                         /*tp_setattro*/
-    &bytesiobuf_as_buffer,                     /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
-    0,                                         /*tp_doc*/
-    (traverseproc)bytesiobuf_traverse,         /*tp_traverse*/
-    0,                                         /*tp_clear*/
-    0,                                         /*tp_richcompare*/
-    0,                                         /*tp_weaklistoffset*/
-    0,                                         /*tp_iter*/
-    0,                                         /*tp_iternext*/
-    0,                                         /*tp_methods*/
-    0,                                         /*tp_members*/
-    0,                                         /*tp_getset*/
-    0,                                         /*tp_base*/
-    0,                                         /*tp_dict*/
-    0,                                         /*tp_descr_get*/
-    0,                                         /*tp_descr_set*/
-    0,                                         /*tp_dictoffset*/
-    0,                                         /*tp_init*/
-    0,                                         /*tp_alloc*/
-    0,                                         /*tp_new*/
+PyType_Spec bytesiobuf_spec = {
+    .name = "_io._BytesIOBuffer",
+    .basicsize = sizeof(bytesiobuf),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
+    .slots = bytesiobuf_slots,
 };
