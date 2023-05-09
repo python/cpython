@@ -2,10 +2,12 @@
 #include "pycore_fileutils.h"     // _Py_write_noraise()
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_object.h"        // _PyType_PreHeaderSize
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_traceback.h"
 #include <pycore_frame.h>
+#include "frameobject.h"          // _PyInterpreterFrame_GetLine
 
 #include <stdlib.h>               // malloc()
 
@@ -256,7 +258,7 @@ static void
 tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
 {
     frame->filename = &_Py_STR(anon_unknown);
-    int lineno = _PyInterpreterFrame_GetLine(pyframe);
+    int lineno = PyUnstable_InterpreterFrame_GetLine(pyframe);
     if (lineno < 0) {
         lineno = 0;
     }
@@ -1400,20 +1402,16 @@ _tracemalloc__get_object_traceback(PyObject *module, PyObject *obj)
 /*[clinic end generated code: output=41ee0553a658b0aa input=29495f1b21c53212]*/
 {
     PyTypeObject *type;
-    void *ptr;
     traceback_t *traceback;
 
     type = Py_TYPE(obj);
-    if (PyType_IS_GC(type)) {
-        ptr = (void *)((char *)obj - sizeof(PyGC_Head));
-    }
-    else {
-        ptr = (void *)obj;
-    }
+    const size_t presize = _PyType_PreHeaderSize(type);
+    uintptr_t ptr = (uintptr_t)((char *)obj - presize);
 
-    traceback = tracemalloc_get_traceback(DEFAULT_DOMAIN, (uintptr_t)ptr);
-    if (traceback == NULL)
+    traceback = tracemalloc_get_traceback(DEFAULT_DOMAIN, ptr);
+    if (traceback == NULL) {
         Py_RETURN_NONE;
+    }
 
     return traceback_to_pyobject(traceback, NULL);
 }
@@ -1723,14 +1721,9 @@ _PyTraceMalloc_NewReference(PyObject *op)
         return -1;
     }
 
-    uintptr_t ptr;
     PyTypeObject *type = Py_TYPE(op);
-    if (PyType_IS_GC(type)) {
-        ptr = (uintptr_t)((char *)op - sizeof(PyGC_Head));
-    }
-    else {
-        ptr = (uintptr_t)op;
-    }
+    const size_t presize = _PyType_PreHeaderSize(type);
+    uintptr_t ptr = (uintptr_t)((char *)op - presize);
 
     int res = -1;
 

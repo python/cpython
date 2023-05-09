@@ -46,6 +46,11 @@ else:
     _collections_abc.MutableSequence.register(deque)
 
 try:
+    from _collections import _deque_iterator
+except ImportError:
+    pass
+
+try:
     from _collections import defaultdict
 except ImportError:
     pass
@@ -267,7 +272,7 @@ class OrderedDict(dict):
         'od.__repr__() <==> repr(od)'
         if not self:
             return '%s()' % (self.__class__.__name__,)
-        return '%s(%r)' % (self.__class__.__name__, list(self.items()))
+        return '%s(%r)' % (self.__class__.__name__, dict(self.items()))
 
     def __reduce__(self):
         'Return state information for pickling'

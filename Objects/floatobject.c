@@ -12,7 +12,7 @@
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
+#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
 #include <ctype.h>
 #include <float.h>
@@ -1546,12 +1546,10 @@ float_fromhex(PyTypeObject *type, PyObject *string)
 /*[clinic input]
 float.as_integer_ratio
 
-Return integer ratio.
+Return a pair of integers, whose ratio is exactly equal to the original float.
 
-Return a pair of integers, whose ratio is exactly equal to the original float
-and with a positive denominator.
-
-Raise OverflowError on infinities and a ValueError on NaNs.
+The ratio is in lowest terms and has a positive denominator.  Raise
+OverflowError on infinities and a ValueError on NaNs.
 
 >>> (10.0).as_integer_ratio()
 (10, 1)
@@ -1563,7 +1561,7 @@ Raise OverflowError on infinities and a ValueError on NaNs.
 
 static PyObject *
 float_as_integer_ratio_impl(PyObject *self)
-/*[clinic end generated code: output=65f25f0d8d30a712 input=e21d08b4630c2e44]*/
+/*[clinic end generated code: output=65f25f0d8d30a712 input=d5ba7765655d75bd]*/
 {
     double self_double;
     double float_part;
@@ -1992,20 +1990,11 @@ _PyFloat_InitState(PyInterpreterState *interp)
 PyStatus
 _PyFloat_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    if (PyType_Ready(&PyFloat_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize float type");
-    }
-
     /* Init float info */
-    if (FloatInfoType.tp_name == NULL) {
-        if (_PyStructSequence_InitBuiltin(&FloatInfoType,
-                                          &floatinfo_desc) < 0) {
-            return _PyStatus_ERR("can't init float info type");
-        }
+    if (_PyStructSequence_InitBuiltin(interp, &FloatInfoType,
+                                      &floatinfo_desc) < 0)
+    {
+        return _PyStatus_ERR("can't init float info type");
     }
 
     return _PyStatus_OK();
@@ -2040,9 +2029,7 @@ _PyFloat_Fini(PyInterpreterState *interp)
 void
 _PyFloat_FiniType(PyInterpreterState *interp)
 {
-    if (_Py_IsMainInterpreter(interp)) {
-        _PyStructSequence_FiniType(&FloatInfoType);
-    }
+    _PyStructSequence_FiniBuiltin(interp, &FloatInfoType);
 }
 
 /* Print summary info about the state of the optimized allocator */

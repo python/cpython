@@ -64,6 +64,7 @@ typedef struct _symtable_entry {
     unsigned ste_needs_class_closure : 1; /* for class scopes, true if a
                                              closure over __class__
                                              should be created */
+    unsigned ste_comp_inlined : 1; /* true if this comprehension is inlined */
     unsigned ste_comp_iter_target : 1; /* true if visiting comprehension target */
     int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
     int ste_lineno;          /* first line of block */
@@ -89,6 +90,8 @@ extern struct symtable* _PySymtable_Build(
 PyAPI_FUNC(PySTEntryObject *) PySymtable_Lookup(struct symtable *, void *);
 
 extern void _PySymtable_Free(struct symtable *);
+
+extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 
 /* Flags for def-use information */
 
@@ -127,6 +130,11 @@ extern struct symtable* _Py_SymtableStringObjectFlags(
     PyObject *filename,
     int start,
     PyCompilerFlags *flags);
+
+int _PyFuture_FromAST(
+    struct _mod * mod,
+    PyObject *filename,
+    PyFutureFeatures* futures);
 
 #ifdef __cplusplus
 }

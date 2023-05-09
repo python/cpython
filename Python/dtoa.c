@@ -119,7 +119,7 @@
 
 #include "Python.h"
 #include "pycore_dtoa.h"          // _PY_SHORT_FLOAT_REPR
-#include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include <stdlib.h>               // exit()
 
 /* if _PY_SHORT_FLOAT_REPR == 0, then don't even try to compile
@@ -339,9 +339,9 @@ typedef struct Bigint Bigint;
    Bfree to PyMem_Free.  Investigate whether this has any significant
    performance on impact. */
 
-#define freelist _PyRuntime.dtoa.freelist
-#define private_mem _PyRuntime.dtoa.preallocated
-#define pmem_next _PyRuntime.dtoa.preallocated_next
+#define freelist interp->dtoa.freelist
+#define private_mem interp->dtoa.preallocated
+#define pmem_next interp->dtoa.preallocated_next
 
 /* Allocate space for a Bigint with up to 1<<k digits */
 
@@ -351,6 +351,7 @@ Balloc(int k)
     int x;
     Bigint *rv;
     unsigned int len;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     if (k <= Bigint_Kmax && (rv = freelist[k]))
         freelist[k] = rv->next;
@@ -385,6 +386,7 @@ Bfree(Bigint *v)
         if (v->k > Bigint_Kmax)
             FREE((void*)v);
         else {
+            PyInterpreterState *interp = _PyInterpreterState_GET();
             v->next = freelist[v->k];
             freelist[v->k] = v;
         }
@@ -692,7 +694,8 @@ pow5mult(Bigint *b, int k)
 
     if (!(k >>= 2))
         return b;
-    p5 = _PyRuntime.dtoa.p5s;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    p5 = interp->dtoa.p5s;
     if (!p5) {
         /* first time */
         p5 = i2b(625);
@@ -700,7 +703,7 @@ pow5mult(Bigint *b, int k)
             Bfree(b);
             return NULL;
         }
-        _PyRuntime.dtoa.p5s = p5;
+        interp->dtoa.p5s = p5;
         p5->next = 0;
     }
     for(;;) {

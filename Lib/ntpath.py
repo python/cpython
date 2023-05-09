@@ -142,7 +142,7 @@ def join(path, *paths):
             result_path = result_path + p_path
         ## add separator between UNC and non-absolute path
         if (result_path and not result_root and
-            result_drive and result_drive[-1:] != colon):
+            result_drive and result_drive[-1:] not in colon + seps):
             return result_drive + sep + result_path
         return result_drive + result_root + result_path
     except (TypeError, AttributeError, BytesWarning):
@@ -275,19 +275,6 @@ def basename(p):
 def dirname(p):
     """Returns the directory component of a pathname"""
     return split(p)[0]
-
-# Is a path a symbolic link?
-# This will always return false on systems where os.lstat doesn't exist.
-
-def islink(path):
-    """Test whether a path is a symbolic link.
-    This will always return false for Windows prior to 6.0.
-    """
-    try:
-        st = os.lstat(path)
-    except (OSError, ValueError, AttributeError):
-        return False
-    return stat.S_ISLNK(st.st_mode)
 
 
 # Is a path a junction?
@@ -683,7 +670,7 @@ else:
 
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.
-        tail = ''
+        tail = path[:0]
         while path:
             try:
                 path = _getfinalpathname(path)
@@ -870,11 +857,13 @@ def commonpath(paths):
 
 
 try:
-    # The genericpath.isdir implementation uses os.stat and checks the mode
-    # attribute to tell whether or not the path is a directory.
-    # This is overkill on Windows - just pass the path to GetFileAttributes
-    # and check the attribute from there.
-    from nt import _isdir as isdir
+    # The isdir(), isfile(), islink() and exists() implementations in
+    # genericpath use os.stat(). This is overkill on Windows. Use simpler
+    # builtin functions if they are available.
+    from nt import _path_isdir as isdir
+    from nt import _path_isfile as isfile
+    from nt import _path_islink as islink
+    from nt import _path_exists as exists
 except ImportError:
-    # Use genericpath.isdir as imported above.
+    # Use genericpath.* as imported above
     pass
