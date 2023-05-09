@@ -1243,7 +1243,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
     if (u->u_ste->ste_needs_class_closure) {
         /* Cook up an implicit __class__ cell. */
-        int res;
+        Py_ssize_t res;
         assert(u->u_scope_type == COMPILER_SCOPE_CLASS);
         res = dict_add_o(u->u_metadata.u_cellvars, &_Py_ID(__class__));
         if (res < 0) {
@@ -5006,7 +5006,7 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         // at all; DEF_LOCAL | DEF_NONLOCAL can occur in the case of an
         // assignment expression to a nonlocal in the comprehension, these don't
         // need handling here since they shouldn't be isolated
-        if (symbol & DEF_LOCAL && ~symbol & DEF_NONLOCAL) {
+        if (symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) {
             if (c->u->u_ste->ste_type != FunctionBlock) {
                 // non-function scope: override this name to use fast locals
                 PyObject *orig = PyDict_GetItem(c->u->u_metadata.u_fasthidden, k);
