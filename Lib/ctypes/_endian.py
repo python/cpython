@@ -37,7 +37,7 @@ class _swapped_union_meta(_swapped_meta, type(Union)): pass
 ################################################################
 
 # Note: The Structure metaclass checks for the *presence* (not the
-# value!) of a _swapped_bytes_ attribute to determine the bit order in
+# value!) of a _swappedbytes_ attribute to determine the bit order in
 # structures containing bit fields.
 
 if sys.byteorder == "little":

@@ -1,3 +1,0 @@
-Fix a bug in the tokenizer that could cause infinite recursion when showing
-syntax warnings that happen in the first line of the source. Patch by Pablo
-Galindo

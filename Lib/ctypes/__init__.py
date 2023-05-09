@@ -344,6 +344,8 @@ class CDLL(object):
                  use_errno=False,
                  use_last_error=False,
                  winmode=None):
+        if name:
+            name = _os.fspath(name)
         self._name = name
         flags = self._func_flags_
         if use_errno:
@@ -444,7 +446,10 @@ class LibraryLoader(object):
     def __getattr__(self, name):
         if name[0] == '_':
             raise AttributeError(name)
-        dll = self._dlltype(name)
+        try:
+            dll = self._dlltype(name)
+        except OSError:
+            raise AttributeError(name)
         setattr(self, name, dll)
         return dll
 
