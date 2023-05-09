@@ -690,6 +690,9 @@ _curses_panel_exec(PyObject *mod)
 
 static PyModuleDef_Slot _curses_slots[] = {
     {Py_mod_exec, _curses_panel_exec},
+    // XXX gh-103092: fix isolation.
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
