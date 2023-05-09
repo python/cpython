@@ -1160,23 +1160,23 @@ dummy_func(
             }
         }
 
-        op(_LOAD_NAME_INTRO, (-- mad_or_class_dict, name)) {
+        op(_LOAD_NAME_INTRO, (-- mod_or_class_dict, name)) {
             name = GETITEM(frame->f_code->co_names, oparg);
-            mad_or_class_dict = LOCALS();
-            if (mad_or_class_dict == NULL) {
+            mod_or_class_dict = LOCALS();
+            if (mod_or_class_dict == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals when loading %R", name);
                 goto error;
             }
         }
 
-        op(_LOAD_CLASSDICT_OR_GLOBAL_INTRO, (mad_or_class_dict -- mad_or_class_dict, name)) {
+        op(_LOAD_CLASSDICT_OR_GLOBAL_INTRO, (mod_or_class_dict -- mod_or_class_dict, name)) {
             name = GETITEM(frame->f_code->co_names, oparg);
         }
 
-        op(_LOAD_NAME_COMMON, (mad_or_class_dict, name -- v)) {
-            if (PyDict_CheckExact(mad_or_class_dict)) {
-                v = PyDict_GetItemWithError(mad_or_class_dict, name);
+        op(_LOAD_NAME_COMMON, (mod_or_class_dict, name -- v)) {
+            if (PyDict_CheckExact(mod_or_class_dict)) {
+                v = PyDict_GetItemWithError(mod_or_class_dict, name);
                 if (v != NULL) {
                     Py_INCREF(v);
                 }
@@ -1185,7 +1185,7 @@ dummy_func(
                 }
             }
             else {
-                v = PyObject_GetItem(mad_or_class_dict, name);
+                v = PyObject_GetItem(mod_or_class_dict, name);
                 if (v == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
                         goto error;

@@ -1616,27 +1616,27 @@
             PyObject *_tmp_1;
             PyObject *_tmp_2;
             {
-                PyObject *mad_or_class_dict;
+                PyObject *mod_or_class_dict;
                 PyObject *name;
                 #line 1164 "Python/bytecodes.c"
                 name = GETITEM(frame->f_code->co_names, oparg);
-                mad_or_class_dict = LOCALS();
-                if (mad_or_class_dict == NULL) {
+                mod_or_class_dict = LOCALS();
+                if (mod_or_class_dict == NULL) {
                     _PyErr_Format(tstate, PyExc_SystemError,
                                   "no locals when loading %R", name);
                     goto error;
                 }
                 #line 1630 "Python/generated_cases.c.h"
-                _tmp_2 = mad_or_class_dict;
+                _tmp_2 = mod_or_class_dict;
                 _tmp_1 = name;
             }
             {
                 PyObject *name = _tmp_1;
-                PyObject *mad_or_class_dict = _tmp_2;
+                PyObject *mod_or_class_dict = _tmp_2;
                 PyObject *v;
                 #line 1178 "Python/bytecodes.c"
-                if (PyDict_CheckExact(mad_or_class_dict)) {
-                    v = PyDict_GetItemWithError(mad_or_class_dict, name);
+                if (PyDict_CheckExact(mod_or_class_dict)) {
+                    v = PyDict_GetItemWithError(mod_or_class_dict, name);
                     if (v != NULL) {
                         Py_INCREF(v);
                     }
@@ -1645,7 +1645,7 @@
                     }
                 }
                 else {
-                    v = PyObject_GetItem(mad_or_class_dict, name);
+                    v = PyObject_GetItem(mod_or_class_dict, name);
                     if (v == NULL) {
                         if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
                             goto error;
@@ -1698,21 +1698,21 @@
             PyObject *_tmp_1;
             PyObject *_tmp_2 = stack_pointer[-1];
             {
-                PyObject *mad_or_class_dict = _tmp_2;
+                PyObject *mod_or_class_dict = _tmp_2;
                 PyObject *name;
                 #line 1174 "Python/bytecodes.c"
                 name = GETITEM(frame->f_code->co_names, oparg);
                 #line 1706 "Python/generated_cases.c.h"
-                _tmp_2 = mad_or_class_dict;
+                _tmp_2 = mod_or_class_dict;
                 _tmp_1 = name;
             }
             {
                 PyObject *name = _tmp_1;
-                PyObject *mad_or_class_dict = _tmp_2;
+                PyObject *mod_or_class_dict = _tmp_2;
                 PyObject *v;
                 #line 1178 "Python/bytecodes.c"
-                if (PyDict_CheckExact(mad_or_class_dict)) {
-                    v = PyDict_GetItemWithError(mad_or_class_dict, name);
+                if (PyDict_CheckExact(mod_or_class_dict)) {
+                    v = PyDict_GetItemWithError(mod_or_class_dict, name);
                     if (v != NULL) {
                         Py_INCREF(v);
                     }
@@ -1721,7 +1721,7 @@
                     }
                 }
                 else {
-                    v = PyObject_GetItem(mad_or_class_dict, name);
+                    v = PyObject_GetItem(mod_or_class_dict, name);
                     if (v == NULL) {
                         if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
                             goto error;
