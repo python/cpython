@@ -454,6 +454,43 @@ class ManglingTest(unittest.TestCase):
         self.assertEqual(Foo.Alias.__value__, (T, V))
 
 
+class ComplexCallsTest(unittest.TestCase):
+    def test_defaults(self):
+        # Generic functions with both defaults and kwdefaults trigger a specific code path
+        # in the compiler.
+        def func[T](a: T = "a", *, b: T = "b"):
+            return (a, b)
+
+        T, = func.__type_params__
+        self.assertIs(func.__annotations__["a"], T)
+        self.assertIs(func.__annotations__["b"], T)
+        self.assertEqual(func(), ("a", "b"))
+        self.assertEqual(func(1), (1, "b"))
+        self.assertEqual(func(b=2), ("a", 2))
+
+    def test_complex_base(self):
+        class Base:
+            def __init_subclass__(cls, **kwargs) -> None:
+                cls.kwargs = kwargs
+
+        kwargs = {"c": 3}
+        # Base classes with **kwargs trigger a different code path in the compiler.
+        class C[T](Base, a=1, b=2, **kwargs):
+            pass
+
+        T, = C.__type_params__
+        self.assertEqual(T.__name__, "T")
+        self.assertEqual(C.kwargs, {"a": 1, "b": 2, "c": 3})
+
+        bases = (Base,)
+        class C2[T](*bases, **kwargs):
+            pass
+
+        T, = C2.__type_params__
+        self.assertEqual(T.__name__, "T")
+        self.assertEqual(C2.kwargs, {"c": 3})
+
+
 class TypeParamsTraditionalTypeVars(unittest.TestCase):
     def test_traditional_01(self):
         code = """
