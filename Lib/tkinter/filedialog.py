@@ -312,13 +312,13 @@ class _Dialog(commondialog.Dialog):
 
     def _fixresult(self, widget, result):
         if result:
-            # keep directory and filename until next time
             # convert Tcl path objects to strings
             try:
                 result = result.string
             except AttributeError:
                 # it already is a string
                 pass
+            # keep directory and filename until next time
             path, file = os.path.split(result)
             self.options["initialdir"] = path
             self.options["initialfile"] = file
