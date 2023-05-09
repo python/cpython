@@ -7261,6 +7261,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
                    int optimize, int compile_mode)
 {
     PyObject *res = NULL;
+    PyObject *metadata = NULL;
 
     if (!PyAST_Check(ast)) {
         PyErr_SetString(PyExc_TypeError, "expected an AST");
@@ -7287,14 +7288,53 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
     if (compiler_codegen(c, mod) < 0) {
         goto finally;
     }
-    int addNone = mod->kind != Expression_kind;
-    if (add_return_at_end(c, addNone) < 0) {
-        return NULL;
+
+    _PyCompile_CodeUnitMetadata *umd = &c->u->u_metadata;
+    metadata = PyDict_New();
+    if (metadata == NULL) {
+        goto finally;
+    }
+#define SET_MATADATA_ITEM(key, value) \
+    if (value != NULL) { \
+        if (PyDict_SetItemString(metadata, key, value) < 0) goto finally; \
     }
 
-    res = instr_sequence_to_instructions(INSTR_SEQUENCE(c));
+    SET_MATADATA_ITEM("name", umd->u_name);
+    SET_MATADATA_ITEM("qualname", umd->u_qualname);
+    SET_MATADATA_ITEM("consts", umd->u_consts);
+    SET_MATADATA_ITEM("names", umd->u_names);
+    SET_MATADATA_ITEM("varnames", umd->u_varnames);
+    SET_MATADATA_ITEM("cellvars", umd->u_cellvars);
+    SET_MATADATA_ITEM("freevars", umd->u_freevars);
+#undef SET_MATADATA_ITEM
+
+#define SET_MATADATA_INT(key, value) do { \
+        PyObject *v = PyLong_FromLong((long)value); \
+        if (v == NULL) goto finally; \
+        int res = PyDict_SetItemString(metadata, key, v); \
+        Py_XDECREF(v); \
+        if (res < 0) goto finally; \
+    } while (0);
+
+    SET_MATADATA_INT("argcount", umd->u_argcount);
+    SET_MATADATA_INT("posonlyargcount", umd->u_posonlyargcount);
+    SET_MATADATA_INT("kwonlyargcount", umd->u_kwonlyargcount);
+#undef SET_MATADATA_INT
+
+    int addNone = mod->kind != Expression_kind;
+    if (add_return_at_end(c, addNone) < 0) {
+        goto finally;
+    }
+
+    PyObject *insts = instr_sequence_to_instructions(INSTR_SEQUENCE(c));
+    if (insts == NULL) {
+        goto finally;
+    }
+    res = PyTuple_Pack(2, insts, metadata);
+    Py_DECREF(insts);
 
 finally:
+    Py_XDECREF(metadata);
     compiler_exit_scope(c);
     compiler_free(c);
     _PyArena_Free(arena);
@@ -7375,10 +7415,14 @@ _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
         goto error;
     }
 
-    PyObject *consts = umd->u_consts;
+    PyObject *consts = consts_dict_keys_inorder(umd->u_consts);
+    if (consts == NULL) {
+        goto error;
+    }
     co = _PyAssemble_MakeCodeObject(umd, const_cache,
                                     consts, maxdepth, &optimized_instrs,
                                     nlocalsplus, code_flags, filename);
+    Py_DECREF(consts);
 
 error:
     Py_DECREF(const_cache);
