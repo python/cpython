@@ -194,6 +194,12 @@ dummy_func(
             Py_INCREF(value);
         }
 
+        inst(LOAD_FAST_AND_CLEAR, (-- value)) {
+            value = GETLOCAL(oparg);
+            // do not use SETLOCAL here, it decrefs the old value
+            GETLOCAL(oparg) = NULL;
+        }
+
         inst(LOAD_CONST, (-- value)) {
             value = GETITEM(frame->f_code->co_consts, oparg);
             Py_INCREF(value);

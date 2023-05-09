@@ -345,21 +345,22 @@ class HelpFormatter(object):
                 def get_lines(parts, indent, prefix=None):
                     lines = []
                     line = []
+                    indent_length = len(indent)
                     if prefix is not None:
                         line_len = len(prefix) - 1
                     else:
-                        line_len = len(indent) - 1
+                        line_len = indent_length - 1
                     for part in parts:
                         if line_len + 1 + len(part) > text_width and line:
                             lines.append(indent + ' '.join(line))
                             line = []
-                            line_len = len(indent) - 1
+                            line_len = indent_length - 1
                         line.append(part)
                         line_len += len(part) + 1
                     if line:
                         lines.append(indent + ' '.join(line))
                     if prefix is not None:
-                        lines[0] = lines[0][len(indent):]
+                        lines[0] = lines[0][indent_length:]
                     return lines
 
                 # if prog is short, follow it with optionals or positionals

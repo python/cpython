@@ -6,7 +6,7 @@
 #include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_memoryobject.h"  // PyMemoryView_FromObjectAndFlags()
+#include "pycore_memoryobject.h"  // _PyMemoryView_FromBufferProc()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"        // _PyType_HasFeature()
 #include "pycore_long.h"          // _PyLong_IsNegative()
@@ -56,6 +56,11 @@ typedef struct PySlot_Offset {
     short slot_offset;
 } PySlot_Offset;
 
+static void
+slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer);
+
+static void
+releasebuffer_call_python(PyObject *self, Py_buffer *buffer);
 
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
@@ -8078,7 +8083,8 @@ wrap_buffer(PyObject *self, PyObject *args, void *wrapped)
         return NULL;
     }
 
-    return PyMemoryView_FromObjectAndFlags(self, Py_SAFE_DOWNCAST(flags, Py_ssize_t, int));
+    return _PyMemoryView_FromBufferProc(self, Py_SAFE_DOWNCAST(flags, Py_ssize_t, int),
+                                        (getbufferproc)wrapped);
 }
 
 static PyObject *
@@ -8094,6 +8100,10 @@ wrap_releasebuffer(PyObject *self, PyObject *args, void *wrapped)
         return NULL;
     }
     PyMemoryViewObject *mview = (PyMemoryViewObject *)arg;
+    if (mview->view.obj == NULL) {
+        // Already released, ignore
+        Py_RETURN_NONE;
+    }
     if (mview->view.obj != self) {
         PyErr_SetString(PyExc_ValueError,
                         "memoryview's buffer is not this object");
@@ -8978,12 +8988,26 @@ bufferwrapper_releasebuf(PyObject *self, Py_buffer *view)
 {
     PyBufferWrapper *bw = (PyBufferWrapper *)self;
 
-    assert(PyMemoryView_Check(bw->mv));
-    Py_TYPE(bw->mv)->tp_as_buffer->bf_releasebuffer(bw->mv, view);
-    if (Py_TYPE(bw->obj)->tp_as_buffer != NULL
-        && Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer != NULL) {
-        Py_TYPE(bw->obj)->tp_as_buffer->bf_releasebuffer(bw->obj, view);
+    if (bw->mv == NULL || bw->obj == NULL) {
+        // Already released
+        return;
     }
+
+    PyObject *mv = bw->mv;
+    PyObject *obj = bw->obj;
+
+    assert(PyMemoryView_Check(mv));
+    Py_TYPE(mv)->tp_as_buffer->bf_releasebuffer(mv, view);
+    // We only need to call bf_releasebuffer if it's a Python function. If it's a C
+    // bf_releasebuf, it will be called when the memoryview is released.
+    if (((PyMemoryViewObject *)mv)->view.obj != obj
+            && Py_TYPE(obj)->tp_as_buffer != NULL
+            && Py_TYPE(obj)->tp_as_buffer->bf_releasebuffer == slot_bf_releasebuffer) {
+        releasebuffer_call_python(obj, view);
+    }
+
+    Py_CLEAR(bw->mv);
+    Py_CLEAR(bw->obj);
 }
 
 static PyBufferProcs bufferwrapper_as_buffer = {
@@ -9047,30 +9071,111 @@ fail:
     return -1;
 }
 
+static int
+releasebuffer_maybe_call_super(PyObject *self, Py_buffer *buffer)
+{
+    PyTypeObject *self_type = Py_TYPE(self);
+    PyObject *mro = lookup_tp_mro(self_type);
+    if (mro == NULL) {
+        return -1;
+    }
+
+    assert(PyTuple_Check(mro));
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    Py_ssize_t i;
+
+    /* No need to check the last one: it's gonna be skipped anyway.  */
+    for (i = 0;  i < n -1; i++) {
+        if ((PyObject *)(self_type) == PyTuple_GET_ITEM(mro, i))
+            break;
+    }
+    i++;  /* skip self_type */
+    if (i >= n)
+        return -1;
+
+    releasebufferproc base_releasebuffer = NULL;
+    for (; i < n; i++) {
+        PyObject *obj = PyTuple_GET_ITEM(mro, i);
+        if (!PyType_Check(obj)) {
+            continue;
+        }
+        PyTypeObject *base_type = (PyTypeObject *)obj;
+        if (base_type->tp_as_buffer != NULL
+            && base_type->tp_as_buffer->bf_releasebuffer != NULL
+            && base_type->tp_as_buffer->bf_releasebuffer != slot_bf_releasebuffer) {
+            base_releasebuffer = base_type->tp_as_buffer->bf_releasebuffer;
+            break;
+        }
+    }
+
+    if (base_releasebuffer != NULL) {
+        base_releasebuffer(self, buffer);
+    }
+    return 0;
+}
+
 static void
-slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
+releasebuffer_call_python(PyObject *self, Py_buffer *buffer)
 {
     PyObject *mv;
-    if (Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type) {
+    bool is_buffer_wrapper = Py_TYPE(buffer->obj) == &_PyBufferWrapper_Type;
+    if (is_buffer_wrapper) {
         // Make sure we pass the same memoryview to
         // __release_buffer__() that __buffer__() returned.
-        mv = Py_NewRef(((PyBufferWrapper *)buffer->obj)->mv);
+        PyBufferWrapper *bw = (PyBufferWrapper *)buffer->obj;
+        if (bw->mv == NULL) {
+            return;
+        }
+        mv = Py_NewRef(bw->mv);
     }
     else {
+        // This means we are not dealing with a memoryview returned
+        // from a Python __buffer__ function.
         mv = PyMemoryView_FromBuffer(buffer);
         if (mv == NULL) {
             PyErr_WriteUnraisable(self);
             return;
         }
+        // Set the memoryview to restricted mode, which forbids
+        // users from saving any reference to the underlying buffer
+        // (e.g., by doing .cast()). This is necessary to ensure
+        // no Python code retains a reference to the to-be-released
+        // buffer.
+        ((PyMemoryViewObject *)mv)->flags |= _Py_MEMORYVIEW_RESTRICTED;
     }
     PyObject *stack[2] = {self, mv};
     PyObject *ret = vectorcall_method(&_Py_ID(__release_buffer__), stack, 2);
-    Py_DECREF(mv);
     if (ret == NULL) {
         PyErr_WriteUnraisable(self);
     }
     else {
         Py_DECREF(ret);
+    }
+    if (!is_buffer_wrapper) {
+        PyObject_CallMethodNoArgs(mv, &_Py_ID(release));
+    }
+    Py_DECREF(mv);
+}
+
+/*
+ * bf_releasebuffer is very delicate, because we need to ensure that
+ * C bf_releasebuffer slots are called correctly (or we'll leak memory),
+ * but we cannot trust any __release_buffer__ implemented in Python to
+ * do so correctly. Therefore, if a base class has a C bf_releasebuffer
+ * slot, we call it directly here. That is safe because this function
+ * only gets called from C callers of the bf_releasebuffer slot. Python
+ * code that calls __release_buffer__ directly instead goes through
+ * wrap_releasebuffer(), which doesn't call the bf_releasebuffer slot
+ * directly but instead simply releases the associated memoryview.
+ */
+static void
+slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
+{
+    releasebuffer_call_python(self, buffer);
+    if (releasebuffer_maybe_call_super(self, buffer) < 0) {
+        if (PyErr_Occurred()) {
+            PyErr_WriteUnraisable(self);
+        }
     }
 }
 
