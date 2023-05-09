@@ -2280,9 +2280,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     int is_generic = asdl_seq_LEN(typeparams) > 0;
 
     if (is_generic) {
+        // Used by the CALL to the type parameters function.
         ADDOP(c, loc, PUSH_NULL);
-        // We'll swap in the callable here later.
-        ADDOP_LOAD_CONST(c, loc, Py_None);
     }
 
     funcflags = compiler_default_arguments(c, loc, args);
@@ -2293,6 +2292,15 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     int num_typeparam_args = 0;
 
     if (is_generic) {
+        if (funcflags & 0x01) {
+            num_typeparam_args += 1;
+        }
+        if (funcflags & 0x02) {
+            num_typeparam_args += 1;
+        }
+        if (num_typeparam_args == 2) {
+            ADDOP_I(c, loc, SWAP, 2);
+        }
         PyObject *typeparams_name = PyUnicode_FromFormat("<generic parameters of %U>", name);
         if (!typeparams_name) {
             return ERROR;
@@ -2306,11 +2314,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, typeparams));
         if ((funcflags & 0x01) || (funcflags & 0x02)) {
             RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 0, loc));
-            num_typeparam_args += 1;
         }
         if ((funcflags & 0x01) && (funcflags & 0x02)) {
             RETURN_IF_ERROR_IN_SCOPE(c, codegen_addop_i(INSTR_SEQUENCE(c), LOAD_FAST, 1, loc));
-            num_typeparam_args += 1;
         }
     }
 
@@ -2349,8 +2355,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
             return ERROR;
         }
         Py_DECREF(co);
-        ADDOP_I(c, loc, SWAP, num_typeparam_args + 2);
-        ADDOP(c, loc, POP_TOP);
+        if (num_typeparam_args > 0) {
+            ADDOP_I(c, loc, SWAP, num_typeparam_args + 1);
+        }
         ADDOP_I(c, loc, CALL, num_typeparam_args);
     }
 
