@@ -300,11 +300,12 @@ _PyDict_DebugMallocStats(FILE *out)
 
 static void free_keys_object(PyInterpreterState *interp, PyDictKeysObject *keys);
 
-/* We might consider modifying PyDictKeysObject so we could use
-   Py_INCREF() instead of dictkeys_incref() (and likewise with
-   Py_DECREF() and dictkeys_decref()).  However, there doesn't
-   seem to be enough benefit (performance or otherwise) to justify
-   the change. */
+/* PyDictKeysObject has refcounts like PyObject does, so we have the
+   following two functions to mirror what Py_INCREF() and Py_DECREF() do.
+   (Keep in mind that PyDictKeysObject isn't actually a PyObject.)
+   Likewise a PyDictKeysObject can be immortal (e.g. Py_EMPTY_KEYS),
+   so we apply a naive version of what Py_INCREF() and Py_DECREF() do
+   for immortal objects. */
 
 static inline void
 dictkeys_incref(PyDictKeysObject *dk)
