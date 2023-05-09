@@ -131,6 +131,7 @@ struct callable_cache {
 // Note that these all fit within a byte, as do combinations.
 // Later, we will use the smaller numbers to differentiate the different
 // kinds of locals (e.g. pos-only arg, varkwargs, local-only).
+#define CO_FAST_HIDDEN  0x10
 #define CO_FAST_LOCAL   0x20
 #define CO_FAST_CELL    0x40
 #define CO_FAST_FREE    0x80
