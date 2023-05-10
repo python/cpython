@@ -154,7 +154,7 @@ dis_bug708901 = """\
 
 
 def bug1333982(x=[]):
-    assert 0, ([s for s in x] +
+    assert 0, ((s for s in x) +
               1)
     pass
 
@@ -162,7 +162,7 @@ dis_bug1333982 = """\
 %3d        RESUME                   0
 
 %3d        LOAD_ASSERTION_ERROR
-           LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
+           LOAD_CONST               1 (<code object <genexpr> at 0x..., file "%s", line %d>)
            MAKE_FUNCTION            0
            LOAD_FAST                0 (x)
            GET_ITER
@@ -675,7 +675,7 @@ async def _co(x):
 def _h(y):
     def foo(x):
         '''funcdoc'''
-        return [x + z for z in y]
+        return list(x + z for z in y)
     return foo
 
 dis_nested_0 = """\
@@ -705,13 +705,15 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
 
 %3d        RESUME                   0
 
-%3d        LOAD_CLOSURE             0 (x)
+%3d        LOAD_GLOBAL              1 (NULL + list)
+           LOAD_CLOSURE             0 (x)
            BUILD_TUPLE              1
-           LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
+           LOAD_CONST               1 (<code object <genexpr> at 0x..., file "%s", line %d>)
            MAKE_FUNCTION            8 (closure)
            LOAD_DEREF               1 (y)
            GET_ITER
            CALL                     0
+           CALL                     1
            RETURN_VALUE
 """ % (dis_nested_0,
        __file__,
@@ -723,21 +725,28 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
 )
 
 dis_nested_2 = """%s
-Disassembly of <code object <listcomp> at 0x..., file "%s", line %d>:
+Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
            COPY_FREE_VARS           1
 
-%3d        RESUME                   0
-           BUILD_LIST               0
+%3d        RETURN_GENERATOR
+           POP_TOP
+           RESUME                   0
            LOAD_FAST                0 (.0)
-        >> FOR_ITER                 7 (to 26)
+        >> FOR_ITER                 9 (to 32)
            STORE_FAST               1 (z)
            LOAD_DEREF               2 (x)
            LOAD_FAST                1 (z)
            BINARY_OP                0 (+)
-           LIST_APPEND              2
-           JUMP_BACKWARD            9 (to 8)
+           YIELD_VALUE              1
+           RESUME                   1
+           POP_TOP
+           JUMP_BACKWARD           11 (to 10)
         >> END_FOR
-           RETURN_VALUE
+           RETURN_CONST             0 (None)
+        >> CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
+           RERAISE                  1
+ExceptionTable:
+1 row
 """ % (dis_nested_1,
        __file__,
        _h.__code__.co_firstlineno + 3,

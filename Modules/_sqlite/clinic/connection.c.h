@@ -228,7 +228,7 @@ PyDoc_STRVAR(blobopen__doc__,
 
 static PyObject *
 blobopen_impl(pysqlite_Connection *self, const char *table, const char *col,
-              int row, int readonly, const char *name);
+              sqlite3_int64 row, int readonly, const char *name);
 
 static PyObject *
 blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -263,7 +263,7 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     const char *table;
     const char *col;
-    int row;
+    sqlite3_int64 row;
     int readonly = 0;
     const char *name = "main";
 
@@ -297,8 +297,7 @@ blobopen(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyO
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    row = _PyLong_AsInt(args[2]);
-    if (row == -1 && PyErr_Occurred()) {
+    if (!sqlite3_int64_converter(args[2], &row)) {
         goto exit;
     }
     if (!noptargs) {
@@ -1666,4 +1665,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=8b03149c115ee6da input=a9049054013a1b77]*/
+/*[clinic end generated code: output=834a99827555bf1a input=a9049054013a1b77]*/
