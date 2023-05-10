@@ -746,7 +746,7 @@ _io__WindowsConsoleIO_readinto_impl(winconsoleio *self, PyTypeObject *cls,
                                     Py_buffer *buffer)
 /*[clinic end generated code: output=96717c74f6204b79 input=4b0627c3b1645f78]*/
 {
-    _PyIO_State *state = IO_STATE();
+    _PyIO_State *state = get_io_state_by_cls(cls);
     Py_ssize_t len = readinto(state, self, buffer->buf, buffer->len);
     if (len < 0)
         return NULL;
@@ -923,7 +923,7 @@ _io__WindowsConsoleIO_read_impl(winconsoleio *self, PyTypeObject *cls,
     if (self->fd == -1)
         return err_closed();
     if (!self->readable) {
-        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+        _PyIO_State *state = get_io_state_by_cls(cls);
         return err_mode(state, "reading");
     }
 
@@ -938,7 +938,7 @@ _io__WindowsConsoleIO_read_impl(winconsoleio *self, PyTypeObject *cls,
     if (bytes == NULL)
         return NULL;
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    _PyIO_State *state = get_io_state_by_cls(cls);
     bytes_size = readinto(state, self, PyBytes_AS_STRING(bytes),
                           PyBytes_GET_SIZE(bytes));
     if (bytes_size < 0) {
@@ -981,7 +981,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
     if (self->fd == -1)
         return err_closed();
     if (!self->writable) {
-        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+        _PyIO_State *state = get_io_state_by_cls(cls);
         return err_mode(state, "writing");
     }
 
