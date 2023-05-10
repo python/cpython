@@ -1379,20 +1379,21 @@ end:
 
 /*[clinic input]
 _io._Buffered.truncate
+    cls: defining_class
     pos: object = None
     /
 [clinic start generated code]*/
 
 static PyObject *
-_io__Buffered_truncate_impl(buffered *self, PyObject *pos)
-/*[clinic end generated code: output=667ca03c60c270de input=8a1be34d57cca2d3]*/
+_io__Buffered_truncate_impl(buffered *self, PyTypeObject *cls, PyObject *pos)
+/*[clinic end generated code: output=fe3882fbffe79f1a input=f5b737d97d76303f]*/
 {
     PyObject *res = NULL;
 
     CHECK_INITIALIZED(self)
     CHECK_CLOSED(self, "truncate of closed file")
     if (!self->writable) {
-        _PyIO_State *state = IO_STATE();
+        _PyIO_State *state = get_io_state_by_cls(cls);
         return bufferediobase_unsupported(state, "truncate");
     }
     if (!ENTER_BUFFERED(self))
