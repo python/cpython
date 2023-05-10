@@ -648,9 +648,8 @@ iomodule_exec(PyObject *m)
     state->unsupported_operation = PyObject_CallFunction(
         (PyObject *)&PyType_Type, "s(OO){}",
         "UnsupportedOperation", PyExc_OSError, PyExc_ValueError);
-    if (state->unsupported_operation == NULL) {
+    if (state->unsupported_operation == NULL)
         return -1;
-    }
     if (PyModule_AddObjectRef(m, "UnsupportedOperation",
                               state->unsupported_operation) < 0)
     {
@@ -659,8 +658,7 @@ iomodule_exec(PyObject *m)
 
     /* BlockingIOError, for compatibility */
     if (PyModule_AddObjectRef(m, "BlockingIOError",
-                              (PyObject *) PyExc_BlockingIOError) < 0)
-    {
+                              (PyObject *) PyExc_BlockingIOError) < 0) {
         return -1;
     }
 
