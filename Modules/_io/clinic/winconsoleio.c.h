@@ -20,15 +20,19 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_close__doc__,
 "close() may be called more than once without error.");
 
 #define _IO__WINDOWSCONSOLEIO_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)_io__WindowsConsoleIO_close, METH_NOARGS, _io__WindowsConsoleIO_close__doc__},
+    {"close", _PyCFunction_CAST(_io__WindowsConsoleIO_close), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__WindowsConsoleIO_close__doc__},
 
 static PyObject *
-_io__WindowsConsoleIO_close_impl(winconsoleio *self);
+_io__WindowsConsoleIO_close_impl(winconsoleio *self, PyTypeObject *cls);
 
 static PyObject *
-_io__WindowsConsoleIO_close(winconsoleio *self, PyObject *Py_UNUSED(ignored))
+_io__WindowsConsoleIO_close(winconsoleio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _io__WindowsConsoleIO_close_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "close() takes no arguments");
+        return NULL;
+    }
+    return _io__WindowsConsoleIO_close_impl(self, cls);
 }
 
 #endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
@@ -407,4 +411,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=163e934aa9b0ef16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=613612aca1861781 input=a9049054013a1b77]*/
