@@ -195,6 +195,7 @@ find_io_state_by_def(PyTypeObject *type)
 }
 
 extern _PyIO_State *_PyIO_get_module_state(void);
+extern PyObject *_PyIOBase_cannot_pickle(PyObject *self, PyObject *args);
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
 extern char _PyIO_get_console_type(PyObject *);

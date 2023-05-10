@@ -2446,6 +2446,9 @@ static PyMethodDef bufferedreader_methods[] = {
     {"tell", (PyCFunction)buffered_tell, METH_NOARGS},
     _IO__BUFFERED_TRUNCATE_METHODDEF
     {"__sizeof__", (PyCFunction)buffered_sizeof, METH_NOARGS},
+
+    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
     {NULL, NULL}
 };
 
@@ -2503,6 +2506,9 @@ static PyMethodDef bufferedwriter_methods[] = {
     _IO__BUFFERED_SEEK_METHODDEF
     {"tell", (PyCFunction)buffered_tell, METH_NOARGS},
     {"__sizeof__", (PyCFunction)buffered_sizeof, METH_NOARGS},
+
+    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
     {NULL, NULL}
 };
 
@@ -2618,6 +2624,9 @@ static PyMethodDef bufferedrandom_methods[] = {
     _IO__BUFFERED_PEEK_METHODDEF
     _IO_BUFFEREDWRITER_WRITE_METHODDEF
     {"__sizeof__", (PyCFunction)buffered_sizeof, METH_NOARGS},
+
+    {"__reduce__", _PyIOBase_cannot_pickle, METH_VARARGS},
+    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_VARARGS},
     {NULL, NULL}
 };
 

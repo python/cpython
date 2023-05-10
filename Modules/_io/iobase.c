@@ -225,6 +225,13 @@ iobase_check_writable(PyObject *self, PyObject *args)
     return _PyIOBase_check_writable(state, self, args);
 }
 
+PyObject *
+_PyIOBase_cannot_pickle(PyObject *self, PyObject *args)
+{
+    return PyErr_Format(PyExc_TypeError, "cannot pickle '%.100s' instances",
+                        _PyType_Name(Py_TYPE(self)));
+}
+
 /* XXX: IOBase thinks it has to maintain its own internal state in
    `__IOBase_closed` and call flush() by itself, but it is redundant with
    whatever behaviour a non-trivial derived class will implement. */
