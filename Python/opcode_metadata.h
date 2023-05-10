@@ -510,7 +510,7 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case SEND:
             return 2;
         case SEND_GEN:
-            return 1;
+            return 2;
         case INSTRUMENTED_YIELD_VALUE:
             return 1;
         case YIELD_VALUE:
