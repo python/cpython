@@ -2454,7 +2454,7 @@ provided.
      available.
 
    .. versionchanged:: 3.7
-      :class:`SSLObject` instances must to created with
+      :class:`SSLObject` instances must be created with
       :meth:`~SSLContext.wrap_bio`. In earlier versions, it was possible to
       create instances directly. This was never documented or officially
       supported.
