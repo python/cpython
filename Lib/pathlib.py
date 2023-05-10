@@ -826,13 +826,6 @@ class Path(PurePath):
         kind, including directories) matching the given relative pattern.
         """
         sys.audit("pathlib.Path.glob", self, pattern)
-        if follow_symlinks is None:
-            msg = ("pathlib.Path.glob(pattern, follow_symlinks=None) is "
-                   "deprecated and scheduled for removal in Python {remove}. "
-                   "The follow_symlinks keyword-only argument should be set "
-                   "to either True or False.")
-            warnings._deprecated("pathlib.Path.glob(pattern, follow_symlinks=None)",
-                                 msg, remove=(3, 14))
         if not pattern:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
         drv, root, pattern_parts = self._parse_path(pattern)
@@ -850,13 +843,6 @@ class Path(PurePath):
         this subtree.
         """
         sys.audit("pathlib.Path.rglob", self, pattern)
-        if follow_symlinks is None:
-            msg = ("pathlib.Path.rglob(pattern, follow_symlinks=None) is "
-                   "deprecated and scheduled for removal in Python {remove}. "
-                   "The follow_symlinks keyword-only argument should be set "
-                   "to either True or False.")
-            warnings._deprecated("pathlib.Path.rglob(pattern, follow_symlinks=None)", msg,
-                                 remove=(3, 14))
         drv, root, pattern_parts = self._parse_path(pattern)
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
