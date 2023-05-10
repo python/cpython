@@ -2464,7 +2464,6 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
             compiler_exit_scope(c);
             return ERROR;
         }
-        assert(i == 0);
         ADDOP_I(c, NO_LOCATION, LOAD_CLOSURE, i);
         ADDOP_I(c, NO_LOCATION, COPY, 1);
         if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__classcell__), Store) < 0) {
@@ -2474,8 +2473,6 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
     }
     else {
         /* No methods referenced __class__, so just return None */
-        assert(PyDict_GET_SIZE(c->u->u_metadata.u_cellvars) ==
-                c->u->u_ste->ste_needs_classdict ? 1 : 0);
         ADDOP_LOAD_CONST(c, NO_LOCATION, Py_None);
     }
     ADDOP_IN_SCOPE(c, NO_LOCATION, RETURN_VALUE);

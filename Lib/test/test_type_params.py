@@ -344,11 +344,13 @@ class TypeParamsAccessTest(unittest.TestCase):
                 return "base"
 
         class Child(Base):
-            def meth[T](self) -> T:
+            # Having int in the annotation ensures the class gets cells for both
+            # __class__ and __classdict__
+            def meth[T](self, arg: int) -> T:
                 return super().meth() + "child"
 
         c = Child()
-        self.assertEqual(c.meth(), "basechild")
+        self.assertEqual(c.meth(1), "basechild")
 
 
 def global_generic_func[T]():
