@@ -967,8 +967,7 @@ class HTTPConnection:
     def get_proxy_response_headers(self):
         """
         Returns a dictionary with the headers of the response
-        received from the proxy server to the CONNECT request
-        sent to set the tunnel.
+        received from the proxy server to the CONNECT request.
 
         If the CONNECT request was not sent, the method returns
         an empty dictionary.
