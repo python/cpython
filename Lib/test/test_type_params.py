@@ -116,15 +116,14 @@ class TypeParamsInvalidTest(unittest.TestCase):
         self.assertIs(cls.__annotations__["X"], int)
 
     def test_name_non_collision_11(self):
-        ns = run_code("""
+        code = """
             def outer():
                 X = 1
                 def inner[X]():
                     nonlocal X
                 return X
             """
-        )
-        self.assertEqual(ns["outer"](), 1)
+        check_syntax_error(self, code)
 
     def test_name_non_collision_13(self):
         ns = run_code("""
@@ -313,6 +312,24 @@ class TypeParamsAccessTest(unittest.TestCase):
                     nonlocal T
         """
         check_syntax_error(self, textwrap.dedent(code))
+
+    def test_shadowing_nonlocal(self):
+        ns = run_code("""
+            def outer[T]():
+                T = "outer"
+                def inner():
+                    nonlocal T
+                    T = "inner"
+                    return T
+                return lambda: T, inner
+        """)
+        outer = ns["outer"]
+        T, = outer.__type_params__
+        self.assertEqual(T.__name__, "T")
+        getter, inner = outer()
+        self.assertEqual(getter(), "outer")
+        self.assertEqual(inner(), "inner")
+        self.assertEqual(getter(), "inner")
 
     def test_reference_previous_typevar(self):
         def func[S, T: Sequence[S]]():

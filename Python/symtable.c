@@ -519,7 +519,7 @@ error_at_directive(PySTEntryObject *ste, PyObject *name)
 static int
 analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
              PyObject *bound, PyObject *local, PyObject *free,
-             PyObject *global)
+             PyObject *global, PyObject *typeparams)
 {
     if (flags & DEF_GLOBAL) {
         if (flags & DEF_NONLOCAL) {
@@ -548,12 +548,12 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
 
             return error_at_directive(ste, name);
         }
-        // if (PyLong_AsLong(flags) & DEF_TYPE_PARAM) {
-        //     PyErr_Format(PyExc_SyntaxError,
-        //                  "nonlocal binding not allowed for type parameter '%U'",
-        //                  name);
-        //     return error_at_directive(ste, name);
-        // }
+        if (PySet_Contains(typeparams, name)) {
+            PyErr_Format(PyExc_SyntaxError,
+                         "nonlocal binding not allowed for type parameter '%U'",
+                         name);
+            return error_at_directive(ste, name);
+        }
         SET_SCOPE(scopes, name, FREE);
         ste->ste_free = 1;
         return PySet_Add(free, name) >= 0;
@@ -564,6 +564,14 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
             return 0;
         if (PySet_Discard(global, name) < 0)
             return 0;
+        if (flags & DEF_TYPE_PARAM) {
+            if (PySet_Add(typeparams, name) < 0)
+                return 0;
+        }
+        else {
+            if (PySet_Discard(typeparams, name) < 0)
+                return 0;
+        }
         return 1;
     }
     /* If an enclosing block has a binding for this name, it
@@ -824,11 +832,11 @@ error:
 
 static int
 analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
-                    PyObject *global, PyObject **child_free);
+                    PyObject *global, PyObject *typeparams, PyObject **child_free);
 
 static int
 analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
-              PyObject *global)
+              PyObject *global, PyObject *typeparams)
 {
     PyObject *name, *v, *local = NULL, *scopes = NULL, *newbound = NULL;
     PyObject *newglobal = NULL, *newfree = NULL;
@@ -888,7 +896,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     while (PyDict_Next(ste->ste_symbols, &pos, &name, &v)) {
         long flags = PyLong_AS_LONG(v);
         if (!analyze_name(ste, scopes, name, flags,
-                          bound, local, free, global))
+                          bound, local, free, global, typeparams))
             goto error;
     }
 
@@ -943,7 +951,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             !entry->ste_generator;
 
         if (!analyze_child_block(entry, newbound, newfree, newglobal,
-                                 &child_free))
+                                 typeparams, &child_free))
         {
             goto error;
         }
@@ -1006,9 +1014,10 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 
 static int
 analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
-                    PyObject *global, PyObject** child_free)
+                    PyObject *global, PyObject *typeparams, PyObject** child_free)
 {
     PyObject *temp_bound = NULL, *temp_global = NULL, *temp_free = NULL;
+    PyObject *temp_typeparams = NULL;
 
     /* Copy the bound/global/free sets.
 
@@ -1026,8 +1035,11 @@ analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
     temp_global = PySet_New(global);
     if (!temp_global)
         goto error;
+    temp_typeparams = PySet_New(typeparams);
+    if (!temp_typeparams)
+        goto error;
 
-    if (!analyze_block(entry, temp_bound, temp_free, temp_global))
+    if (!analyze_block(entry, temp_bound, temp_free, temp_global, temp_typeparams))
         goto error;
     *child_free = temp_free;
     Py_DECREF(temp_bound);
@@ -1037,13 +1049,14 @@ analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
     Py_XDECREF(temp_bound);
     Py_XDECREF(temp_free);
     Py_XDECREF(temp_global);
+    Py_XDECREF(temp_typeparams);
     return 0;
 }
 
 static int
 symtable_analyze(struct symtable *st)
 {
-    PyObject *free, *global;
+    PyObject *free, *global, *typeparams;
     int r;
 
     free = PySet_New(NULL);
@@ -1054,9 +1067,16 @@ symtable_analyze(struct symtable *st)
         Py_DECREF(free);
         return 0;
     }
-    r = analyze_block(st->st_top, NULL, free, global);
+    typeparams = PySet_New(NULL);
+    if (!typeparams) {
+        Py_DECREF(free);
+        Py_DECREF(global);
+        return 0;
+    }
+    r = analyze_block(st->st_top, NULL, free, global, typeparams);
     Py_DECREF(free);
     Py_DECREF(global);
+    Py_DECREF(typeparams);
     return r;
 }
 
