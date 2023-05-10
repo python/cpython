@@ -2223,11 +2223,6 @@
             // handle any case whose performance we care about
             PyObject *stack[] = {class, self};
             PyObject *super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
-            #line 2227 "Python/generated_cases.c.h"
-            Py_DECREF(global_super);
-            Py_DECREF(class);
-            Py_DECREF(self);
-            #line 1603 "Python/bytecodes.c"
             if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
                 PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
                 if (super == NULL) {
@@ -2244,6 +2239,11 @@
                     }
                 }
             }
+            #line 2243 "Python/generated_cases.c.h"
+            Py_DECREF(global_super);
+            Py_DECREF(class);
+            Py_DECREF(self);
+            #line 1619 "Python/bytecodes.c"
             if (super == NULL) goto pop_3_error;
             res = PyObject_GetAttr(super, name);
             Py_DECREF(super);
