@@ -1,0 +1,2 @@
+:mod:`zipfile` now knows that old zip files were saved in cp437 (OEM-US),
+not in ASCII.
