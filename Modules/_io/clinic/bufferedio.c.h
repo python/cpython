@@ -83,7 +83,7 @@ exit:
 }
 
 PyDoc_STRVAR(_io__BufferedIOBase_detach__doc__,
-"detach($self, /, *args)\n"
+"detach($self, /)\n"
 "--\n"
 "\n"
 "Disconnect this buffer from its underlying raw stream and return it.\n"
@@ -95,39 +95,16 @@ PyDoc_STRVAR(_io__BufferedIOBase_detach__doc__,
     {"detach", _PyCFunction_CAST(_io__BufferedIOBase_detach), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__BufferedIOBase_detach__doc__},
 
 static PyObject *
-_io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls,
-                                PyObject *args);
+_io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
 _io__BufferedIOBase_detach(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "detach",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject *__clinic_args = NULL;
-
-    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
-    if (!args) {
-        goto exit;
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "detach() takes no arguments");
+        return NULL;
     }
-    __clinic_args = args[0];
-    return_value = _io__BufferedIOBase_detach_impl(self, cls, __clinic_args);
-
-exit:
-    Py_XDECREF(__clinic_args);
-    return return_value;
+    return _io__BufferedIOBase_detach_impl(self, cls);
 }
 
 PyDoc_STRVAR(_io__BufferedIOBase_read__doc__,
@@ -900,4 +877,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b32416f845f6a9a5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a9f3647aef80aa5c input=a9049054013a1b77]*/

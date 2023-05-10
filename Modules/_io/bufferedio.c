@@ -117,7 +117,6 @@ _io._BufferedIOBase.detach
 
     cls: defining_class
     /
-    *args: object
 
 Disconnect this buffer from its underlying raw stream and return it.
 
@@ -126,9 +125,8 @@ state.
 [clinic start generated code]*/
 
 static PyObject *
-_io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls,
-                                PyObject *args)
-/*[clinic end generated code: output=f713c93ded3dd685 input=fb1ce27699f480eb]*/
+_io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=b87b135d67cd4448 input=0b61a7b4357c1ea7]*/
 {
     _PyIO_State *state = IO_STATE();
     return bufferediobase_unsupported(state, "detach");
