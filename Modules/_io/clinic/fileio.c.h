@@ -215,27 +215,45 @@ PyDoc_STRVAR(_io_FileIO_readinto__doc__,
 "Same as RawIOBase.readinto().");
 
 #define _IO_FILEIO_READINTO_METHODDEF    \
-    {"readinto", (PyCFunction)_io_FileIO_readinto, METH_O, _io_FileIO_readinto__doc__},
+    {"readinto", _PyCFunction_CAST(_io_FileIO_readinto), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_FileIO_readinto__doc__},
 
 static PyObject *
-_io_FileIO_readinto_impl(fileio *self, Py_buffer *buffer);
+_io_FileIO_readinto_impl(fileio *self, PyTypeObject *cls, Py_buffer *buffer);
 
 static PyObject *
-_io_FileIO_readinto(fileio *self, PyObject *arg)
+_io_FileIO_readinto(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "readinto",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_buffer buffer = {NULL, NULL};
 
-    if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &buffer, PyBUF_WRITABLE) < 0) {
         PyErr_Clear();
-        _PyArg_BadArgument("readinto", "argument", "read-write bytes-like object", arg);
+        _PyArg_BadArgument("readinto", "argument 1", "read-write bytes-like object", args[0]);
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto", "argument", "contiguous buffer", arg);
+        _PyArg_BadArgument("readinto", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    return_value = _io_FileIO_readinto_impl(self, &buffer);
+    return_value = _io_FileIO_readinto_impl(self, cls, &buffer);
 
 exit:
     /* Cleanup for buffer */
@@ -470,4 +488,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=29ed2ae6c451c139 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3bdbb95958e7357b input=a9049054013a1b77]*/

@@ -628,6 +628,7 @@ _io_FileIO_seekable_impl(fileio *self)
 
 /*[clinic input]
 _io.FileIO.readinto
+    cls: defining_class
     buffer: Py_buffer(accept={rwbuffer})
     /
 
@@ -635,8 +636,8 @@ Same as RawIOBase.readinto().
 [clinic start generated code]*/
 
 static PyObject *
-_io_FileIO_readinto_impl(fileio *self, Py_buffer *buffer)
-/*[clinic end generated code: output=b01a5a22c8415cb4 input=4721d7b68b154eaf]*/
+_io_FileIO_readinto_impl(fileio *self, PyTypeObject *cls, Py_buffer *buffer)
+/*[clinic end generated code: output=97f0f3d69534db34 input=fd20323e18ce1ec8]*/
 {
     Py_ssize_t n;
     int err;
@@ -644,7 +645,7 @@ _io_FileIO_readinto_impl(fileio *self, Py_buffer *buffer)
     if (self->fd < 0)
         return err_closed();
     if (!self->readable) {
-        _PyIO_State *state = IO_STATE();
+        _PyIO_State *state = get_io_state_by_cls(cls);
         return err_mode(state, "reading");
     }
 
