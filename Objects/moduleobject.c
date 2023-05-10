@@ -323,7 +323,13 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
             goto error;
         }
     }
-    // XXX Do a similar check once we have PyInterpreterState.ceval.own_gil.
+    else if (multiple_interpreters != Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+             && interp->ceval.own_gil
+             && !_Py_IsMainInterpreter(interp)
+             && _PyImport_CheckSubinterpIncompatibleExtensionAllowed(name) < 0)
+    {
+        goto error;
+    }
 
     if (create) {
         m = create(spec, def);
