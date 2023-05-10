@@ -142,12 +142,12 @@ _io._BufferedIOBase.read
 Read and return up to n bytes.
 
 If the argument is omitted, None, or negative, read and
-return all data until EOF
+return all data until EOF.
 
 If the argument is positive, and the underlying raw stream is
 not 'interactive', multiple raw reads may be issued to satisfy
 the byte count (unless EOF is reached first).
-But for interactive raw streams (as well as sockets and pipes),
+However, for interactive raw streams (as well as sockets and pipes),
 at most one raw read will be issued, and a short result does not
 imply that EOF is imminent.
 
@@ -160,7 +160,7 @@ mode and no data is available at the moment.
 static PyObject *
 _io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls,
                               PyObject *args)
-/*[clinic end generated code: output=4521b30940fd7b67 input=83f4490585256485]*/
+/*[clinic end generated code: output=4521b30940fd7b67 input=390205758adc8510]*/
 {
     _PyIO_State *state = IO_STATE();
     return bufferediobase_unsupported(state, "read");

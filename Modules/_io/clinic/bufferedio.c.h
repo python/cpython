@@ -114,12 +114,12 @@ PyDoc_STRVAR(_io__BufferedIOBase_read__doc__,
 "Read and return up to n bytes.\n"
 "\n"
 "If the argument is omitted, None, or negative, read and\n"
-"return all data until EOF\n"
+"return all data until EOF.\n"
 "\n"
 "If the argument is positive, and the underlying raw stream is\n"
 "not \'interactive\', multiple raw reads may be issued to satisfy\n"
 "the byte count (unless EOF is reached first).\n"
-"But for interactive raw streams (as well as sockets and pipes),\n"
+"However, for interactive raw streams (as well as sockets and pipes),\n"
 "at most one raw read will be issued, and a short result does not\n"
 "imply that EOF is imminent.\n"
 "\n"
@@ -877,4 +877,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e9f0d997b78ca1ec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c4ea041ccc91b5d2 input=a9049054013a1b77]*/
