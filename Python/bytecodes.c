@@ -1599,7 +1599,6 @@ dummy_func(
             // handle any case whose performance we care about
             PyObject *stack[] = {class, self};
             PyObject *super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
-            DECREF_INPUTS();
             if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
                 PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
                 if (super == NULL) {
@@ -1616,6 +1615,7 @@ dummy_func(
                     }
                 }
             }
+            DECREF_INPUTS();
             ERROR_IF(super == NULL, error);
             res = PyObject_GetAttr(super, name);
             Py_DECREF(super);
