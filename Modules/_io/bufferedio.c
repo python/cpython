@@ -117,6 +117,7 @@ _io._BufferedIOBase.detach
 
     cls: defining_class
     /
+    *args: object
 
 Disconnect this buffer from its underlying raw stream and return it.
 
@@ -125,8 +126,9 @@ state.
 [clinic start generated code]*/
 
 static PyObject *
-_io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=b87b135d67cd4448 input=0b61a7b4357c1ea7]*/
+_io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls,
+                                PyObject *args)
+/*[clinic end generated code: output=f713c93ded3dd685 input=fb1ce27699f480eb]*/
 {
     _PyIO_State *state = IO_STATE();
     return bufferediobase_unsupported(state, "detach");
@@ -137,6 +139,7 @@ _io._BufferedIOBase.read
 
     cls: defining_class
     /
+    *args: object
 
 Read and return up to n bytes.
 
@@ -157,8 +160,9 @@ mode and no data is available at the moment.
 [clinic start generated code]*/
 
 static PyObject *
-_io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=905b1b6ea25c0aa5 input=52e347baff1c191c]*/
+_io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls,
+                              PyObject *args)
+/*[clinic end generated code: output=4521b30940fd7b67 input=7e26b448274234a0]*/
 {
     _PyIO_State *state = IO_STATE();
     return bufferediobase_unsupported(state, "read");
@@ -169,6 +173,7 @@ _io._BufferedIOBase.read1
 
     cls: defining_class
     /
+    *args: object
 
 Read and return up to n bytes, with at most one read() call to the underlying raw stream.
 
@@ -177,8 +182,9 @@ A short result does not imply that EOF is imminent.
 [clinic start generated code]*/
 
 static PyObject *
-_io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=999785c4a78817bf input=c38f07e1be5ee79d]*/
+_io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls,
+                               PyObject *args)
+/*[clinic end generated code: output=636fd241c21e050a input=ef546a1238c5b41c]*/
 {
     _PyIO_State *state = IO_STATE();
     return bufferediobase_unsupported(state, "read1");
@@ -189,6 +195,7 @@ _io._BufferedIOBase.write
 
     cls: defining_class
     /
+    *args: object
 
 Write the given buffer to the IO stream.
 
@@ -200,8 +207,9 @@ underlying raw stream cannot accept more data at the moment.
 [clinic start generated code]*/
 
 static PyObject *
-_io__BufferedIOBase_write_impl(PyObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=be944cf83e6f7356 input=02b37c30f28e4882]*/
+_io__BufferedIOBase_write_impl(PyObject *self, PyTypeObject *cls,
+                               PyObject *args)
+/*[clinic end generated code: output=d51feea4bcac9892 input=f79b72c4dccb3dc2]*/
 {
     _PyIO_State *state = IO_STATE();
     return bufferediobase_unsupported(state, "write");
