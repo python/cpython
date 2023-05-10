@@ -637,14 +637,13 @@ error:
 
 
 static Py_ssize_t
-readinto(winconsoleio *self, char *buf, Py_ssize_t len)
+readinto(_PyIO_State *state, winconsoleio *self, char *buf, Py_ssize_t len)
 {
     if (self->fd == -1) {
         err_closed();
         return -1;
     }
     if (!self->readable) {
-        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
         err_mode(state, "reading");
         return -1;
     }
@@ -747,7 +746,8 @@ _io__WindowsConsoleIO_readinto_impl(winconsoleio *self, PyTypeObject *cls,
                                     Py_buffer *buffer)
 /*[clinic end generated code: output=96717c74f6204b79 input=4b0627c3b1645f78]*/
 {
-    Py_ssize_t len = readinto(self, buffer->buf, buffer->len);
+    _PyIO_State *state = IO_STATE();
+    Py_ssize_t len = readinto(state, self, buffer->buf, buffer->len);
     if (len < 0)
         return NULL;
 
@@ -938,7 +938,9 @@ _io__WindowsConsoleIO_read_impl(winconsoleio *self, PyTypeObject *cls,
     if (bytes == NULL)
         return NULL;
 
-    bytes_size = readinto(self, PyBytes_AS_STRING(bytes), PyBytes_GET_SIZE(bytes));
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    bytes_size = readinto(state, self, PyBytes_AS_STRING(bytes),
+                          PyBytes_GET_SIZE(bytes));
     if (bytes_size < 0) {
         Py_CLEAR(bytes);
         return NULL;
