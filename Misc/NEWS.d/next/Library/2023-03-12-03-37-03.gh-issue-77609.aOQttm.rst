@@ -1,3 +1,2 @@
 Add *follow_symlinks* argument to :meth:`pathlib.Path.glob` and
-:meth:`~pathlib.Path.rglob`. The default value, ``None``, causes
-a deprecation warning to be emitted.
+:meth:`~pathlib.Path.rglob`, defaulting to false.
