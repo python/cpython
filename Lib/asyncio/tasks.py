@@ -942,17 +942,30 @@ def run_coroutine_threadsafe(coro, loop):
 
 
 def create_eager_task_factory(custom_task_constructor):
+    """Create a function suitable for use as a task factory on an event-loop.
 
-    if "eager_start" not in inspect.signature(custom_task_constructor).parameters:
-        raise TypeError(
-            "Provided constructor does not support eager task execution")
+	    Example usage:
+
+	        loop.set_task_factory(
+	            asyncio.create_eager_task_factory(my_task_constructor))
+
+	    Now, tasks created will be started immediately (rather than being first
+	    scheduled to an event loop). The constructor argument can be any callable
+	    that returns a Task-compatible object and has a signature compatible
+	    with `Task.__init__`; it must have the `eager_start` keyword argument.
+
+	    Most applications will use `Task` for `custom_task_constructor` and in
+        this case there's no need to call `create_eager_task_factory()`
+        directly. Instead the  global `eager_task_factory` instance can be
+        used. E.g. `loop.set_task_factory(asyncio.eager_task_factory)`.
+	    """
 
     def factory(loop, coro, *, name=None, context=None):
         return custom_task_constructor(
             coro, loop=loop, name=name, context=context, eager_start=True)
 
-
     return factory
+
 
 eager_task_factory = create_eager_task_factory(Task)
 

@@ -153,6 +153,30 @@ New Features
   In Python 3.14, the default will switch to ``'data'``.
   (Contributed by Petr Viktorin in :pep:`706`.)
 
+.. _whatsnew312-pep709:
+
+PEP 709: Comprehension inlining
+-------------------------------
+
+Dictionary, list, and set comprehensions are now inlined, rather than creating a
+new single-use function object for each execution of the comprehension. This
+speeds up execution of a comprehension by up to 2x.
+
+Comprehension iteration variables remain isolated; they don't overwrite a
+variable of the same name in the outer scope, nor are they visible after the
+comprehension. This isolation is now maintained via stack/locals manipulation,
+not via separate function scope.
+
+Inlining does result in a few visible behavior changes:
+
+* There is no longer a separate frame for the comprehension in tracebacks,
+  and tracing/profiling no longer shows the comprehension as a function call.
+* Calling :func:`locals` inside a comprehension now includes variables
+  from outside the comprehension, and no longer includes the synthetic ``.0``
+  variable for the comprehension "argument".
+
+Contributed by Carl Meyer and Vladimir Matveev in :pep:`709`.
+
 PEP 688: Making the buffer protocol accessible in Python
 --------------------------------------------------------
 
@@ -281,6 +305,11 @@ asyncio
   significantly improved. ``asyncio`` now avoids unnecessary copying when
   writing to sockets and uses :meth:`~socket.socket.sendmsg` if the platform
   supports it. (Contributed by Kumar Aditya in :gh:`91166`.)
+
+* Added :func:`asyncio.eager_task_factory` and :func:`asyncio.create_eager_task_factory`
+  functions to allow opting an event loop in to eager task execution,
+  making some use-cases 2x to 5x faster.
+  (Contributed by Jacob Bower & Itamar O in :gh:`102853`, :gh:`104140`, and :gh:`104138`)
 
 * On Linux, :mod:`asyncio` uses :class:`~asyncio.PidfdChildWatcher` by default
   if :func:`os.pidfd_open` is available and functional instead of
@@ -643,11 +672,6 @@ Optimizations
 
 * Speed up :class:`asyncio.Task` creation by deferring expensive string formatting.
   (Contributed by Itamar O in :gh:`103793`.)
-
-* Added :func:`asyncio.eager_task_factory` and :func:`asyncio.create_eager_task_factory`
-  functions to allow opting an event loop in to eager task execution,
-  speeding up some use-cases by up to 50%.
-  (Contributed by Jacob Bower & Itamar O in :gh:`102853`)
 
 
 CPython bytecode changes
@@ -1168,6 +1192,14 @@ Build Changes
   ``compileall`` commands into a single command to build .pyc files for all
   optimization levels (0, 1, 2) at once.
   (Contributed by Victor Stinner in :gh:`99289`.)
+
+* Add platform triplets for 64-bit LoongArch:
+
+  * loongarch64-linux-gnusf
+  * loongarch64-linux-gnuf32
+  * loongarch64-linux-gnu
+
+  (Contributed by Zhang Na in :gh:`90656`.)
 
 
 C API Changes

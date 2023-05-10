@@ -674,7 +674,14 @@ def process_audit_events(app, doctree, fromdocname):
         node.replace_self(table)
 
 
-def patch_pairindextypes(app) -> None:
+def patch_pairindextypes(app, _env) -> None:
+    """Remove all entries from ``pairindextypes`` before writing POT files.
+
+    We want to run this just before writing output files, as the check to
+    circumvent is in ``I18nBuilder.write_doc()``.
+    As such, we link this to ``env-check-consistency``, even though it has
+    nothing to do with the environment consistency check.
+    """
     if app.builder.name != 'gettext':
         return
 
@@ -688,14 +695,7 @@ def patch_pairindextypes(app) -> None:
         # the Sphinx-translated pairindextypes values. As we intend to move
         # away from this, we need Sphinx to believe that these values don't
         # exist, by deleting them when using the gettext builder.
-
-        pairindextypes.pop('module', None)
-        pairindextypes.pop('keyword', None)
-        pairindextypes.pop('operator', None)
-        pairindextypes.pop('object', None)
-        pairindextypes.pop('exception', None)
-        pairindextypes.pop('statement', None)
-        pairindextypes.pop('builtin', None)
+        pairindextypes.clear()
 
 
 def setup(app):
@@ -719,7 +719,7 @@ def setup(app):
     app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
-    app.connect('builder-inited', patch_pairindextypes)
+    app.connect('env-check-consistency', patch_pairindextypes)
     app.connect('doctree-resolved', process_audit_events)
     app.connect('env-merge-info', audit_events_merge)
     app.connect('env-purge-doc', audit_events_purge)

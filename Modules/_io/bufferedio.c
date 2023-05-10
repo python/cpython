@@ -106,16 +106,17 @@ _io__BufferedIOBase_readinto1_impl(PyObject *self, Py_buffer *buffer)
 }
 
 static PyObject *
-bufferediobase_unsupported(const char *message)
+bufferediobase_unsupported(_PyIO_State *state, const char *message)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_SetString(state->unsupported_operation, message);
+    PyErr_SetString(state->unsupported_operation, message);
     return NULL;
 }
 
 /*[clinic input]
 _io._BufferedIOBase.detach
+
+    cls: defining_class
+    /
 
 Disconnect this buffer from its underlying raw stream and return it.
 
@@ -124,62 +125,92 @@ state.
 [clinic start generated code]*/
 
 static PyObject *
-_io__BufferedIOBase_detach_impl(PyObject *self)
-/*[clinic end generated code: output=754977c8d10ed88c input=822427fb58fe4169]*/
+_io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=b87b135d67cd4448 input=0b61a7b4357c1ea7]*/
 {
-    return bufferediobase_unsupported("detach");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "detach");
 }
 
-PyDoc_STRVAR(bufferediobase_read_doc,
-    "Read and return up to n bytes.\n"
-    "\n"
-    "If the argument is omitted, None, or negative, reads and\n"
-    "returns all data until EOF.\n"
-    "\n"
-    "If the argument is positive, and the underlying raw stream is\n"
-    "not 'interactive', multiple raw reads may be issued to satisfy\n"
-    "the byte count (unless EOF is reached first).  But for\n"
-    "interactive raw streams (as well as sockets and pipes), at most\n"
-    "one raw read will be issued, and a short result does not imply\n"
-    "that EOF is imminent.\n"
-    "\n"
-    "Returns an empty bytes object on EOF.\n"
-    "\n"
-    "Returns None if the underlying raw stream was open in non-blocking\n"
-    "mode and no data is available at the moment.\n");
+/*[clinic input]
+_io._BufferedIOBase.read
+
+    cls: defining_class
+    /
+    *args: object
+
+Read and return up to n bytes.
+
+If the argument is omitted, None, or negative, read and
+return all data until EOF.
+
+If the argument is positive, and the underlying raw stream is
+not 'interactive', multiple raw reads may be issued to satisfy
+the byte count (unless EOF is reached first).
+However, for interactive raw streams (as well as sockets and pipes),
+at most one raw read will be issued, and a short result does not
+imply that EOF is imminent.
+
+Return an empty bytes object on EOF.
+
+Return None if the underlying raw stream was open in non-blocking
+mode and no data is available at the moment.
+[clinic start generated code]*/
 
 static PyObject *
-bufferediobase_read(PyObject *self, PyObject *args)
+_io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls,
+                              PyObject *args)
+/*[clinic end generated code: output=4521b30940fd7b67 input=390205758adc8510]*/
 {
-    return bufferediobase_unsupported("read");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "read");
 }
 
-PyDoc_STRVAR(bufferediobase_read1_doc,
-    "Read and return up to n bytes, with at most one read() call\n"
-    "to the underlying raw stream. A short result does not imply\n"
-    "that EOF is imminent.\n"
-    "\n"
-    "Returns an empty bytes object on EOF.\n");
+/*[clinic input]
+_io._BufferedIOBase.read1
+
+    cls: defining_class
+    /
+    *args: object
+
+Read and return up to n bytes, with at most one read() call to the underlying raw stream.
+
+Return an empty bytes object on EOF.
+A short result does not imply that EOF is imminent.
+[clinic start generated code]*/
 
 static PyObject *
-bufferediobase_read1(PyObject *self, PyObject *args)
+_io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls,
+                               PyObject *args)
+/*[clinic end generated code: output=636fd241c21e050a input=ef546a1238c5b41c]*/
 {
-    return bufferediobase_unsupported("read1");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "read1");
 }
 
-PyDoc_STRVAR(bufferediobase_write_doc,
-    "Write the given buffer to the IO stream.\n"
-    "\n"
-    "Returns the number of bytes written, which is always the length of b\n"
-    "in bytes.\n"
-    "\n"
-    "Raises BlockingIOError if the buffer is full and the\n"
-    "underlying raw stream cannot accept more data at the moment.\n");
+/*[clinic input]
+_io._BufferedIOBase.write
+
+    cls: defining_class
+    /
+    *args: object
+
+Write the given buffer to the IO stream.
+
+Return the number of bytes written, which is always
+the length of b in bytes.
+
+Raise BlockingIOError if the buffer is full and the
+underlying raw stream cannot accept more data at the moment.
+[clinic start generated code]*/
 
 static PyObject *
-bufferediobase_write(PyObject *self, PyObject *args)
+_io__BufferedIOBase_write_impl(PyObject *self, PyTypeObject *cls,
+                               PyObject *args)
+/*[clinic end generated code: output=d51feea4bcac9892 input=f79b72c4dccb3dc2]*/
 {
-    return bufferediobase_unsupported("write");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "write");
 }
 
 
@@ -1222,8 +1253,10 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
 
     CHECK_CLOSED(self, "seek of closed file")
 
-    if (_PyIOBase_check_seekable(self->raw, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_seekable(state, self->raw, Py_True) == NULL) {
         return NULL;
+    }
 
     target = PyNumber_AsOff_t(targetobj, PyExc_ValueError);
     if (target == -1 && PyErr_Occurred())
@@ -1298,7 +1331,8 @@ _io__Buffered_truncate_impl(buffered *self, PyObject *pos)
     CHECK_INITIALIZED(self)
     CHECK_CLOSED(self, "truncate of closed file")
     if (!self->writable) {
-        return bufferediobase_unsupported("truncate");
+        _PyIO_State *state = IO_STATE();
+        return bufferediobase_unsupported(state, "truncate");
     }
     if (!ENTER_BUFFERED(self))
         return NULL;
@@ -1419,8 +1453,10 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
     self->ok = 0;
     self->detached = 0;
 
-    if (_PyIOBase_check_readable(raw, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_readable(state, raw, Py_True) == NULL) {
         return -1;
+    }
 
     Py_XSETREF(self->raw, Py_NewRef(raw));
     self->buffer_size = buffer_size;
@@ -1431,7 +1467,6 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
         return -1;
     _bufferedreader_reset_buf(self);
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->fast_closed_checks = (
         Py_IS_TYPE(self, state->PyBufferedReader_Type) &&
         Py_IS_TYPE(raw, state->PyFileIO_Type)
@@ -1774,8 +1809,10 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     self->ok = 0;
     self->detached = 0;
 
-    if (_PyIOBase_check_writable(raw, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_writable(state, raw, Py_True) == NULL) {
         return -1;
+    }
 
     Py_INCREF(raw);
     Py_XSETREF(self->raw, raw);
@@ -1788,7 +1825,6 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     _bufferedwriter_reset_buf(self);
     self->pos = 0;
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->fast_closed_checks = (
         Py_IS_TYPE(self, state->PyBufferedWriter_Type) &&
         Py_IS_TYPE(raw, state->PyFileIO_Type)
@@ -2092,12 +2128,14 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
                                  PyObject *writer, Py_ssize_t buffer_size)
 /*[clinic end generated code: output=327e73d1aee8f984 input=620d42d71f33a031]*/
 {
-    if (_PyIOBase_check_readable(reader, Py_True) == NULL)
-        return -1;
-    if (_PyIOBase_check_writable(writer, Py_True) == NULL)
-        return -1;
-
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_readable(state, reader, Py_True) == NULL) {
+        return -1;
+    }
+    if (_PyIOBase_check_writable(state, writer, Py_True) == NULL) {
+        return -1;
+    }
+
     self->reader = (buffered *) PyObject_CallFunction(
             (PyObject *)state->PyBufferedReader_Type,
             "On", reader, buffer_size);
@@ -2290,12 +2328,16 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     self->ok = 0;
     self->detached = 0;
 
-    if (_PyIOBase_check_seekable(raw, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_seekable(state, raw, Py_True) == NULL) {
         return -1;
-    if (_PyIOBase_check_readable(raw, Py_True) == NULL)
+    }
+    if (_PyIOBase_check_readable(state, raw, Py_True) == NULL) {
         return -1;
-    if (_PyIOBase_check_writable(raw, Py_True) == NULL)
+    }
+    if (_PyIOBase_check_writable(state, raw, Py_True) == NULL) {
         return -1;
+    }
 
     Py_INCREF(raw);
     Py_XSETREF(self->raw, raw);
@@ -2309,7 +2351,6 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     _bufferedwriter_reset_buf(self);
     self->pos = 0;
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->fast_closed_checks = (Py_IS_TYPE(self, state->PyBufferedRandom_Type) &&
                                 Py_IS_TYPE(raw, state->PyFileIO_Type));
 
@@ -2324,11 +2365,11 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
 
 static PyMethodDef bufferediobase_methods[] = {
     _IO__BUFFEREDIOBASE_DETACH_METHODDEF
-    {"read", bufferediobase_read, METH_VARARGS, bufferediobase_read_doc},
-    {"read1", bufferediobase_read1, METH_VARARGS, bufferediobase_read1_doc},
+    _IO__BUFFEREDIOBASE_READ_METHODDEF
+    _IO__BUFFEREDIOBASE_READ1_METHODDEF
     _IO__BUFFEREDIOBASE_READINTO_METHODDEF
     _IO__BUFFEREDIOBASE_READINTO1_METHODDEF
-    {"write", bufferediobase_write, METH_VARARGS, bufferediobase_write_doc},
+    _IO__BUFFEREDIOBASE_WRITE_METHODDEF
     {NULL, NULL}
 };
 
