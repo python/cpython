@@ -531,11 +531,7 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
         SET_SCOPE(scopes, name, GLOBAL_EXPLICIT);
         if (PySet_Add(global, name) < 0)
             return 0;
-        if (!bound)
-            return 1;
-        if (!PyDict_Contains(bound, name))
-            return 1;
-        if (PyDict_DelItem(bound, name) < 0)
+        if (bound && (PySet_Discard(bound, name) < 0))
             return 0;
         return 1;
     }
@@ -545,34 +541,27 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
                          "nonlocal declaration not allowed at module level");
             return error_at_directive(ste, name);
         }
-        PyObject *flags = PyDict_GetItem(bound, name);
-        if (flags == NULL) {
+        if (!PySet_Contains(bound, name)) {
             PyErr_Format(PyExc_SyntaxError,
                          "no binding for nonlocal '%U' found",
                          name);
 
             return error_at_directive(ste, name);
         }
-        if (PyLong_AsLong(flags) & DEF_TYPE_PARAM) {
-            PyErr_Format(PyExc_SyntaxError,
-                         "nonlocal binding not allowed for type parameter '%U'",
-                         name);
-            return error_at_directive(ste, name);
-        }
+        // if (PyLong_AsLong(flags) & DEF_TYPE_PARAM) {
+        //     PyErr_Format(PyExc_SyntaxError,
+        //                  "nonlocal binding not allowed for type parameter '%U'",
+        //                  name);
+        //     return error_at_directive(ste, name);
+        // }
         SET_SCOPE(scopes, name, FREE);
         ste->ste_free = 1;
         return PySet_Add(free, name) >= 0;
     }
     if (flags & DEF_BOUND) {
         SET_SCOPE(scopes, name, LOCAL);
-        PyObject *flags_obj = PyLong_FromLong(flags);
-        if (flags_obj == NULL)
+        if (PySet_Add(local, name) < 0)
             return 0;
-        if (PyDict_SetItem(local, name, flags_obj) < 0) {
-            Py_DECREF(flags_obj);
-            return 0;
-        }
-        Py_DECREF(flags_obj);
         if (PySet_Discard(global, name) < 0)
             return 0;
         return 1;
@@ -582,7 +571,7 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
        Note that having a non-NULL bound implies that the block
        is nested.
     */
-    if (bound && PyDict_Contains(bound, name)) {
+    if (bound && PySet_Contains(bound, name)) {
         SET_SCOPE(scopes, name, FREE);
         ste->ste_free = 1;
         return PySet_Add(free, name) >= 0;
@@ -793,7 +782,7 @@ update_symbols(PyObject *symbols, PyObject *scopes,
             goto error;
         }
         /* Handle global symbol */
-        if (bound && !PyDict_Contains(bound, name)) {
+        if (bound && !PySet_Contains(bound, name)) {
             Py_DECREF(name);
             continue;       /* it's a global */
         }
@@ -847,7 +836,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     int success = 0;
     Py_ssize_t i, pos = 0;
 
-    local = PyDict_New();  /* collect new names bound in block */
+    local = PySet_New(NULL);  /* collect new names bound in block */
     if (!local)
         goto error;
     scopes = PyDict_New();  /* collect scopes defined for each name */
@@ -871,7 +860,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     newfree = PySet_New(NULL);
     if (!newfree)
         goto error;
-    newbound = PyDict_New();
+    newbound = PySet_New(NULL);
     if (!newbound)
         goto error;
 
@@ -888,9 +877,11 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         Py_DECREF(temp);
         /* Pass down previously bound symbols */
         if (bound) {
-            if (PyDict_Update(newbound, bound) < 0) {
+            temp = PyNumber_InPlaceOr(newbound, bound);
+            if (!temp) {
                 goto error;
             }
+            Py_DECREF(temp);
         }
     }
 
@@ -905,15 +896,19 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     if (ste->ste_type != ClassBlock) {
         /* Add function locals to bound set */
         if (_PyST_IsFunctionLike(ste)) {
-            if (PyDict_Update(newbound, local) < 0) {
+            temp = PyNumber_InPlaceOr(newbound, local);
+            if (!temp) {
                 goto error;
             }
+            Py_DECREF(temp);
         }
         /* Pass down previously bound symbols */
         if (bound) {
-            if (PyDict_Update(newbound, bound) < 0) {
+            temp = PyNumber_InPlaceOr(newbound, bound);
+            if (!temp) {
                 goto error;
             }
+            Py_DECREF(temp);
         }
         /* Pass down known globals */
         temp = PyNumber_InPlaceOr(newglobal, global);
@@ -923,19 +918,10 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     }
     else {
         /* Special-case __class__ and __classdict__ */
-        PyObject *flags = PyLong_FromLong(0);
-        if (flags == NULL) {
+        if (PySet_Add(newbound, &_Py_ID(__class__)) < 0)
             goto error;
-        }
-        if (PyDict_SetItem(newbound, &_Py_ID(__class__), flags) < 0) {
-            Py_DECREF(flags);
+        if (PySet_Add(newbound, &_Py_ID(__classdict__)) < 0)
             goto error;
-        }
-        if (PyDict_SetItem(newbound, &_Py_ID(__classdict__), flags) < 0) {
-            Py_DECREF(flags);
-            goto error;
-        }
-        Py_DECREF(flags);
     }
 
     /* Recursively call analyze_child_block() on each child block.
@@ -1031,7 +1017,7 @@ analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
        sets.
 
     */
-    temp_bound = PyDict_Copy(bound);
+    temp_bound = PySet_New(bound);
     if (!temp_bound)
         goto error;
     temp_free = PySet_New(free);
