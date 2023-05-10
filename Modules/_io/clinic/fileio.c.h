@@ -473,26 +473,41 @@ PyDoc_STRVAR(_io_FileIO_truncate__doc__,
 "The current file position is changed to the value of size.");
 
 #define _IO_FILEIO_TRUNCATE_METHODDEF    \
-    {"truncate", _PyCFunction_CAST(_io_FileIO_truncate), METH_FASTCALL, _io_FileIO_truncate__doc__},
+    {"truncate", _PyCFunction_CAST(_io_FileIO_truncate), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_FileIO_truncate__doc__},
 
 static PyObject *
-_io_FileIO_truncate_impl(fileio *self, PyObject *posobj);
+_io_FileIO_truncate_impl(fileio *self, PyTypeObject *cls, PyObject *posobj);
 
 static PyObject *
-_io_FileIO_truncate(fileio *self, PyObject *const *args, Py_ssize_t nargs)
+_io_FileIO_truncate(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "truncate",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     PyObject *posobj = Py_None;
 
-    if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
     posobj = args[0];
-skip_optional:
-    return_value = _io_FileIO_truncate_impl(self, posobj);
+skip_optional_posonly:
+    return_value = _io_FileIO_truncate_impl(self, cls, posobj);
 
 exit:
     return return_value;
@@ -521,4 +536,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=58ebd74e61e9c53d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bef47b31b644996a input=a9049054013a1b77]*/

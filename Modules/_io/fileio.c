@@ -1000,6 +1000,7 @@ _io_FileIO_tell_impl(fileio *self)
 #ifdef HAVE_FTRUNCATE
 /*[clinic input]
 _io.FileIO.truncate
+    cls: defining_class
     size as posobj: object = None
     /
 
@@ -1010,8 +1011,8 @@ The current file position is changed to the value of size.
 [clinic start generated code]*/
 
 static PyObject *
-_io_FileIO_truncate_impl(fileio *self, PyObject *posobj)
-/*[clinic end generated code: output=e49ca7a916c176fa input=b0ac133939823875]*/
+_io_FileIO_truncate_impl(fileio *self, PyTypeObject *cls, PyObject *posobj)
+/*[clinic end generated code: output=d936732a49e8d5a2 input=c367fb45d6bb2c18]*/
 {
     Py_off_t pos;
     int ret;
@@ -1021,7 +1022,7 @@ _io_FileIO_truncate_impl(fileio *self, PyObject *posobj)
     if (fd < 0)
         return err_closed();
     if (!self->writable) {
-        _PyIO_State *state = IO_STATE();
+        _PyIO_State *state = get_io_state_by_cls(cls);
         return err_mode(state, "writing");
     }
 
