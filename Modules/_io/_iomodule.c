@@ -730,9 +730,11 @@ PyInit__io(void)
         "UnsupportedOperation", PyExc_OSError, PyExc_ValueError);
     if (state->unsupported_operation == NULL)
         goto fail;
-    if (PyModule_AddObject(m, "UnsupportedOperation",
-                           Py_NewRef(state->unsupported_operation)) < 0)
+    if (PyModule_AddObjectRef(m, "UnsupportedOperation",
+                              state->unsupported_operation) < 0)
+    {
         goto fail;
+    }
 
     /* BlockingIOError, for compatibility */
     if (PyModule_AddObjectRef(m, "BlockingIOError",
@@ -785,7 +787,6 @@ PyInit__io(void)
     return m;
 
   fail:
-    Py_XDECREF(state->unsupported_operation);
     Py_DECREF(m);
     return NULL;
 }
