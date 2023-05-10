@@ -18,10 +18,10 @@
 
 /*[clinic input]
 module _io
-class _io.IncrementalNewlineDecoder "nldecoder_object *" "&PyIncrementalNewlineDecoder_Type"
+class _io.IncrementalNewlineDecoder "nldecoder_object *" "clinic_state()->PyIncrementalNewlineDecoder_Type"
 class _io.TextIOWrapper "textio *" "clinic_state()->TextIOWrapper_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d3f032e90f74c8f2]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=81f67cf54eaa6001]*/
 
 /* TextIOBase */
 
@@ -248,12 +248,32 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
     return 0;
 }
 
-static void
-incrementalnewlinedecoder_dealloc(nldecoder_object *self)
+static int
+incrementalnewlinedecoder_traverse(nldecoder_object *self, visitproc visit,
+                                   void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->decoder);
+    Py_VISIT(self->errors);
+    return 0;
+}
+
+static int
+incrementalnewlinedecoder_clear(nldecoder_object *self)
 {
     Py_CLEAR(self->decoder);
     Py_CLEAR(self->errors);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    return 0;
+}
+
+static void
+incrementalnewlinedecoder_dealloc(nldecoder_object *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    _PyObject_GC_UNTRACK(self);
+    (void)incrementalnewlinedecoder_clear(self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -872,8 +892,9 @@ _textiowrapper_set_decoder(textio *self, PyObject *codec_info,
         return -1;
 
     if (self->readuniversal) {
+        _PyIO_State *state = self->state;
         PyObject *incrementalDecoder = PyObject_CallFunctionObjArgs(
-            (PyObject *)&PyIncrementalNewlineDecoder_Type,
+            (PyObject *)state->PyIncrementalNewlineDecoder_Type,
             self->decoder, self->readtranslate ? Py_True : Py_False, NULL);
         if (incrementalDecoder == NULL)
             return -1;
@@ -884,11 +905,12 @@ _textiowrapper_set_decoder(textio *self, PyObject *codec_info,
 }
 
 static PyObject*
-_textiowrapper_decode(PyObject *decoder, PyObject *bytes, int eof)
+_textiowrapper_decode(_PyIO_State *state, PyObject *decoder, PyObject *bytes,
+                      int eof)
 {
     PyObject *chars;
 
-    if (Py_IS_TYPE(decoder, &PyIncrementalNewlineDecoder_Type))
+    if (Py_IS_TYPE(decoder, state->PyIncrementalNewlineDecoder_Type))
         chars = _PyIncrementalNewlineDecoder_decode(decoder, bytes, eof);
     else
         chars = PyObject_CallMethodObjArgs(decoder, &_Py_ID(decode), bytes,
@@ -1167,6 +1189,8 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     self->buffer = Py_NewRef(buffer);
 
     /* Build the decoder object */
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    self->state = state;
     if (_textiowrapper_set_decoder(self, codec_info, PyUnicode_AsUTF8(errors)) != 0)
         goto error;
 
@@ -1177,7 +1201,6 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     /* Finished sorting out the codec details */
     Py_CLEAR(codec_info);
 
-    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     if (Py_IS_TYPE(buffer, state->PyBufferedReader_Type) ||
         Py_IS_TYPE(buffer, state->PyBufferedWriter_Type) ||
         Py_IS_TYPE(buffer, state->PyBufferedRandom_Type))
@@ -1214,7 +1237,6 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         goto error;
     }
 
-    self->state = state;
     self->ok = 1;
     return 0;
 
@@ -1843,7 +1865,8 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
     nbytes = input_chunk_buf.len;
     eof = (nbytes == 0);
 
-    decoded_chars = _textiowrapper_decode(self->decoder, input_chunk, eof);
+    decoded_chars = _textiowrapper_decode(self->state, self->decoder,
+                                          input_chunk, eof);
     PyBuffer_Release(&input_chunk_buf);
     if (decoded_chars == NULL)
         goto fail;
@@ -1913,7 +1936,8 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         if (bytes == NULL)
             goto fail;
 
-        if (Py_IS_TYPE(self->decoder, &PyIncrementalNewlineDecoder_Type))
+        _PyIO_State *state = self->state;
+        if (Py_IS_TYPE(self->decoder, state->PyIncrementalNewlineDecoder_Type))
             decoded = _PyIncrementalNewlineDecoder_decode(self->decoder,
                                                           bytes, 1);
         else
@@ -3172,45 +3196,23 @@ static PyGetSetDef incrementalnewlinedecoder_getset[] = {
     {NULL}
 };
 
-PyTypeObject PyIncrementalNewlineDecoder_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io.IncrementalNewlineDecoder", /*tp_name*/
-    sizeof(nldecoder_object), /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    (destructor)incrementalnewlinedecoder_dealloc, /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /*tp_flags*/
-    _io_IncrementalNewlineDecoder___init____doc__, /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /*tp_weaklistoffset*/
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    incrementalnewlinedecoder_methods, /* tp_methods */
-    0,                          /* tp_members */
-    incrementalnewlinedecoder_getset, /* tp_getset */
-    0,                          /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    0,                          /* tp_dictoffset */
-    _io_IncrementalNewlineDecoder___init__, /* tp_init */
-    0,                          /* tp_alloc */
-    PyType_GenericNew,          /* tp_new */
+static PyType_Slot nldecoder_slots[] = {
+    {Py_tp_dealloc, incrementalnewlinedecoder_dealloc},
+    {Py_tp_doc, (void *)_io_IncrementalNewlineDecoder___init____doc__},
+    {Py_tp_methods, incrementalnewlinedecoder_methods},
+    {Py_tp_getset, incrementalnewlinedecoder_getset},
+    {Py_tp_traverse, incrementalnewlinedecoder_traverse},
+    {Py_tp_clear, incrementalnewlinedecoder_clear},
+    {Py_tp_init, _io_IncrementalNewlineDecoder___init__},
+    {0, NULL},
+};
+
+PyType_Spec nldecoder_spec = {
+    .name = "_io.IncrementalNewlineDecoder",
+    .basicsize = sizeof(nldecoder_object),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = nldecoder_slots,
 };
 
 

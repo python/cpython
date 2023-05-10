@@ -530,10 +530,10 @@ Pure paths provide the following methods and properties:
    unintended effects.
 
 
-.. method:: PurePath.joinpath(*other)
+.. method:: PurePath.joinpath(*pathsegments)
 
    Calling this method is equivalent to combining the path with each of
-   the *other* arguments in turn::
+   the given *pathsegments* in turn::
 
       >>> PurePosixPath('/etc').joinpath('passwd')
       PurePosixPath('/etc/passwd')
@@ -678,6 +678,30 @@ Pure paths provide the following methods and properties:
       >>> p = PureWindowsPath('README.txt')
       >>> p.with_suffix('')
       PureWindowsPath('README')
+
+
+.. method:: PurePath.with_segments(*pathsegments)
+
+   Create a new path object of the same type by combining the given
+   *pathsegments*. This method is called whenever a derivative path is created,
+   such as from :attr:`parent` and :meth:`relative_to`. Subclasses may
+   override this method to pass information to derivative paths, for example::
+
+      from pathlib import PurePosixPath
+
+      class MyPath(PurePosixPath):
+          def __init__(self, *pathsegments, session_id):
+              super().__init__(*pathsegments)
+              self.session_id = session_id
+
+          def with_segments(self, *pathsegments):
+              return type(self)(*pathsegments, session_id=self.session_id)
+
+      etc = MyPath('/etc', session_id=42)
+      hosts = etc / 'hosts'
+      print(hosts.session_id)  # 42
+
+   .. versionadded:: 3.12
 
 
 .. _concrete-paths:

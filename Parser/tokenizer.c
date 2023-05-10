@@ -48,7 +48,7 @@ static inline tokenizer_mode* TOK_GET_MODE(struct tok_state* tok) {
 }
 static inline tokenizer_mode* TOK_NEXT_MODE(struct tok_state* tok) {
     assert(tok->tok_mode_stack_index >= 0);
-    assert(tok->tok_mode_stack_index + 1 < MAXFSTRINGLEVEL); 
+    assert(tok->tok_mode_stack_index + 1 < MAXFSTRINGLEVEL);
     return &(tok->tok_mode_stack[++tok->tok_mode_stack_index]);
 }
 #else
