@@ -175,14 +175,15 @@ class _RecursiveWildcardSelector(_Selector):
             pass
         else:
             for entry in entries:
+                entry_is_dir = False
                 try:
-                    if not entry.is_dir(follow_symlinks=False):
-                        continue
+                    entry_is_dir = entry.is_dir(follow_symlinks=False)
                 except OSError:
-                    continue
-                path = parent_path._make_child_relpath(entry.name)
-                for p in self._iterate_directories(path, scandir):
-                    yield p
+                    pass
+                if entry_is_dir:
+                    path = parent_path._make_child_relpath(entry.name)
+                    for p in self._iterate_directories(path, scandir):
+                        yield p
 
     def _select_from(self, parent_path, scandir):
         successor_select = self.successor._select_from
