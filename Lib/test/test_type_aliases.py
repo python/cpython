@@ -140,38 +140,12 @@ class TypeParamsAliasValueTest(unittest.TestCase):
 
     def test_repr(self):
         type Simple = int
-        self.assertEqual(repr(Simple), "<type alias Simple: int>")
-
-        class FancyRepr:
-            def __repr__(self):
-                return "<fancy>"
-        type Fancy = FancyRepr()
-        self.assertEqual(repr(Fancy), "<type alias Fancy: <fancy>>")
-
-        class FancyMeta(type):
-            def __repr__(self):
-                return f"<fancy class {self.__name__!r}>"
-        class FancyCls(metaclass=FancyMeta):
-            pass
-        type Fancy2 = FancyCls
-        self.assertEqual(repr(Fancy2), "<type alias Fancy2: <fancy class 'FancyCls'>>")
-
-        type NoRepr = 1 / 0
-        self.assertEqual(repr(NoRepr), "<type alias NoRepr: <evaluation failed>>")
-
-        class FailingRepr:
-            def __repr__(self):
-                raise ValueError("nope")
-        type Failing = FailingRepr()
-        self.assertEqual(repr(Failing), "<type alias Failing: <value repr() failed>>")
-
-        type Generic[T, *Ts, **P] = int
-        self.assertEqual(repr(Generic), "<type alias Generic[T, *Ts, **P]: int>")
+        self.assertEqual(repr(Simple), "Simple")
 
     def test_recursive_repr(self):
         type Recursive = Recursive
-        self.assertEqual(repr(Recursive), "<type alias Recursive: ...>")
+        self.assertEqual(repr(Recursive), "Recursive")
 
         type X = list[Y]
         type Y = list[X]
-        self.assertEqual(repr(X), "<type alias X: list[<type alias Y: list[...]>]>")
+        self.assertEqual(repr(X), "X")
