@@ -113,13 +113,20 @@ PyDoc_STRVAR(_io__BufferedIOBase_read__doc__,
 "\n"
 "Read and return up to n bytes.\n"
 "\n"
-"If the argument is omitted, None, or negative, reads and returns all data until EOF.\n"
+"If the argument is omitted, None, or negative, reads and\n"
+"returns all data until EOF\n"
 "\n"
-"If the argument is positive, and the underlying raw stream is not \'interactive\', multiple raw reads may be issued to satisfy the byte count (unless EOF is reached first). But for interactive raw streams (as well as sockets and pipes), at most one raw read will be issued, and a short result does not imply that EOF is imminent.\n"
+"If the argument is positive, and the underlying raw stream is\n"
+"not \'interactive\', multiple raw reads may be issued to satisfy\n"
+"the byte count (unless EOF is reached first).\n"
+"But for interactive raw streams (as well as sockets and pipes),\n"
+"at most one raw read will be issued, and a short result does not\n"
+"imply that EOF is imminent.\n"
 "\n"
 "Return an empty bytes object on EOF.\n"
 "\n"
-"Return None if the underlying raw stream was open in non-blocking mode and no data is available at the moment.");
+"Return None if the underlying raw stream was open in non-blocking\n"
+"mode and no data is available at the moment.");
 
 #define _IO__BUFFEREDIOBASE_READ_METHODDEF    \
     {"read", _PyCFunction_CAST(_io__BufferedIOBase_read), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__BufferedIOBase_read__doc__},
@@ -141,9 +148,10 @@ PyDoc_STRVAR(_io__BufferedIOBase_read1__doc__,
 "read1($self, /)\n"
 "--\n"
 "\n"
-"Read and return up to n bytes, with at most one read() call to the underlying raw stream. A short result does not imply that EOF is imminent.\n"
+"Read and return up to n bytes, with at most one read() call to the underlying raw stream.\n"
 "\n"
-"Return an empty bytes object on EOF.");
+"Return an empty bytes object on EOF.\n"
+"A short result does not imply that EOF is imminent.");
 
 #define _IO__BUFFEREDIOBASE_READ1_METHODDEF    \
     {"read1", _PyCFunction_CAST(_io__BufferedIOBase_read1), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__BufferedIOBase_read1__doc__},
@@ -167,9 +175,11 @@ PyDoc_STRVAR(_io__BufferedIOBase_write__doc__,
 "\n"
 "Write the given buffer to the IO stream.\n"
 "\n"
-"Return the number of bytes written, which is always the length of b in bytes.\n"
+"Return the number of bytes written, which is always\n"
+"the length of b in bytes.\n"
 "\n"
-"Raise BlockingIOError if the buffer is full and the underlying raw stream cannot accept more data at the moment.");
+"Raise BlockingIOError if the buffer is full and the\n"
+"underlying raw stream cannot accept more data at the moment.");
 
 #define _IO__BUFFEREDIOBASE_WRITE_METHODDEF    \
     {"write", _PyCFunction_CAST(_io__BufferedIOBase_write), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__BufferedIOBase_write__doc__},
@@ -798,4 +808,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=86cfa7f53e470cd9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1fedc6b2cd054528 input=a9049054013a1b77]*/
