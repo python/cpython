@@ -549,13 +549,10 @@ err_closed(void)
 }
 
 static PyObject *
-err_mode(const char *action)
+err_mode(_PyIO_State *state, const char *action)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_Format(state->unsupported_operation,
-                     "File not open for %s", action);
-    return NULL;
+    return PyErr_Format(state->unsupported_operation,
+                        "File not open for %s", action);
 }
 
 /*[clinic input]
@@ -646,8 +643,10 @@ _io_FileIO_readinto_impl(fileio *self, Py_buffer *buffer)
 
     if (self->fd < 0)
         return err_closed();
-    if (!self->readable)
-        return err_mode("reading");
+    if (!self->readable) {
+        _PyIO_State *state = IO_STATE();
+        return err_mode(state, "reading");
+    }
 
     n = _Py_read(self->fd, buffer->buf, buffer->len);
     /* copy errno because PyBuffer_Release() can indirectly modify it */
@@ -804,8 +803,10 @@ _io_FileIO_read_impl(fileio *self, Py_ssize_t size)
 
     if (self->fd < 0)
         return err_closed();
-    if (!self->readable)
-        return err_mode("reading");
+    if (!self->readable) {
+        _PyIO_State *state = IO_STATE();
+        return err_mode(state, "reading");
+    }
 
     if (size < 0)
         return _io_FileIO_readall_impl(self);
@@ -862,8 +863,10 @@ _io_FileIO_write_impl(fileio *self, Py_buffer *b)
 
     if (self->fd < 0)
         return err_closed();
-    if (!self->writable)
-        return err_mode("writing");
+    if (!self->writable) {
+        _PyIO_State *state = IO_STATE();
+        return err_mode(state, "writing");
+    }
 
     n = _Py_write(self->fd, b->buf, b->len);
     /* copy errno because PyBuffer_Release() can indirectly modify it */
@@ -1014,8 +1017,10 @@ _io_FileIO_truncate_impl(fileio *self, PyObject *posobj)
     fd = self->fd;
     if (fd < 0)
         return err_closed();
-    if (!self->writable)
-        return err_mode("writing");
+    if (!self->writable) {
+        _PyIO_State *state = IO_STATE();
+        return err_mode(state, "writing");
+    }
 
     if (posobj == Py_None) {
         /* Get the current position. */
