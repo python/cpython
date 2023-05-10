@@ -2187,6 +2187,35 @@ class TestGetattrStatic(unittest.TestCase):
             inspect.getattr_static(Thing, "spam")
         self.assertFalse(Thing.executed)
 
+    def test_custom___getattr__(self):
+        test = self
+        test.called = False
+
+        class Foo:
+            def __getattr__(self, attr):
+                test.called = True
+                return {}
+
+        with self.assertRaises(AttributeError):
+            inspect.getattr_static(Foo(), 'whatever')
+
+        self.assertFalse(test.called)
+
+    def test_custom___getattribute__(self):
+        test = self
+        test.called = False
+
+        class Foo:
+            def __getattribute__(self, attr):
+                test.called = True
+                return {}
+
+        with self.assertRaises(AttributeError):
+            inspect.getattr_static(Foo(), 'really_could_be_anything')
+
+        self.assertFalse(test.called)
+
+
 class TestGetGeneratorState(unittest.TestCase):
 
     def setUp(self):
@@ -4251,14 +4280,14 @@ class TestSignatureBind(unittest.TestCase):
 
     @cpython_only
     def test_signature_bind_implicit_arg(self):
-        # Issue #19611: getcallargs should work with set comprehensions
+        # Issue #19611: getcallargs should work with comprehensions
         def make_set():
-            return {z * z for z in range(5)}
-        setcomp_code = make_set.__code__.co_consts[1]
-        setcomp_func = types.FunctionType(setcomp_code, {})
+            return set(z * z for z in range(5))
+        gencomp_code = make_set.__code__.co_consts[1]
+        gencomp_func = types.FunctionType(gencomp_code, {})
 
         iterator = iter(range(5))
-        self.assertEqual(self.call(setcomp_func, iterator), {0, 1, 4, 9, 16})
+        self.assertEqual(set(self.call(gencomp_func, iterator)), {0, 1, 4, 9, 16})
 
     def test_signature_bind_posonly_kwargs(self):
         def foo(bar, /, **kwargs):
