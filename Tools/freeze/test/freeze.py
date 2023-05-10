@@ -6,9 +6,9 @@ import shutil
 import subprocess
 
 
-TESTS_DIR = os.path.dirname(__file__)
-TOOL_ROOT = os.path.dirname(TESTS_DIR)
-SRCDIR = os.path.dirname(os.path.dirname(TOOL_ROOT))
+TESTS_DIR  = os.path.dirname(__file__)
+TOOL_ROOT  = os.path.dirname(TESTS_DIR)
+SOURCE_DIR = os.path.dirname(os.path.dirname(TOOL_ROOT))
 
 MAKE = shutil.which('make')
 FREEZE = os.path.join(TOOL_ROOT, 'freeze.py')
@@ -77,7 +77,7 @@ def ensure_opt(args, name, value):
 def copy_source_tree(newroot, oldroot):
     print(f'copying the source tree into {newroot}...')
     if os.path.exists(newroot):
-        if newroot == SRCDIR:
+        if newroot == SOURCE_DIR:
             raise Exception('this probably isn\'t what you wanted')
         shutil.rmtree(newroot)
 
@@ -96,9 +96,9 @@ def copy_source_tree(newroot, oldroot):
     if os.path.exists(os.path.join(newroot, 'Makefile')):
         _run_quiet([MAKE, 'clean'], newroot)
 
-def get_makefile_var(builddir, name):
+def get_makefile_var(final_dir, name):
     regex = re.compile(rf'^{name} *=\s*(.*?)\s*$')
-    filename = os.path.join(builddir, 'Makefile')
+    filename = os.path.join(final_dir, 'Makefile')
     try:
         infile = open(filename, encoding='utf-8')
     except FileNotFoundError:
@@ -112,8 +112,8 @@ def get_makefile_var(builddir, name):
     return None
 
 
-def get_config_var(builddir, name):
-    python = os.path.join(builddir, 'python')
+def get_config_var(final_dir, name):
+    python = os.path.join(final_dir, 'python')
     if os.path.isfile(python):
         cmd = [python, '-c',
                f'import sysconfig; print(sysconfig.get_config_var("{name}"))']
@@ -121,7 +121,7 @@ def get_config_var(builddir, name):
             return _run_stdout(cmd)
         except subprocess.CalledProcessError:
             pass
-    return get_makefile_var(builddir, name)
+    return get_makefile_var(final_dir, name)
 
 
 ##################################
@@ -141,23 +141,23 @@ def prepare(script=None, outdir=None):
 
     # Make a copy of the repo to avoid affecting the current build
     # (e.g. changing PREFIX).
-    srcdir = os.path.join(outdir, 'cpython')
-    copy_source_tree(srcdir, SRCDIR)
+    interim_dir = os.path.join(outdir, 'cpython')
+    copy_source_tree(interim_dir, SOURCE_DIR)
 
-    # We use an out-of-tree build (instead of srcdir).
-    builddir = os.path.join(outdir, 'python-build')
-    os.makedirs(builddir, exist_ok=True)
+    # We use an out-of-tree build (instead of interim_dir).
+    final_dir = os.path.join(outdir, 'python-build')
+    os.makedirs(final_dir, exist_ok=True)
 
     # Run configure.
-    print(f'configuring python in {builddir}...')
+    print(f'configuring python in {final_dir}...')
     cmd = [
-        os.path.join(srcdir, 'configure'),
-        *shlex.split(get_config_var(SRCDIR, 'CONFIG_ARGS') or ''),
+        os.path.join(interim_dir, 'configure'),
+        *shlex.split(get_config_var(SOURCE_DIR, 'CONFIG_ARGS') or ''),
     ]
     ensure_opt(cmd, 'cache-file', os.path.join(outdir, 'python-config.cache'))
     prefix = os.path.join(outdir, 'python-installation')
     ensure_opt(cmd, 'prefix', prefix)
-    _run_quiet(cmd, builddir)
+    _run_quiet(cmd, final_dir)
 
     if not MAKE:
         raise UnsupportedError('make')
@@ -172,15 +172,15 @@ def prepare(script=None, outdir=None):
         parallel = '-j2'
 
     # Build python.
-    print(f'building python {parallel=} in {builddir}...')
-    if os.path.exists(os.path.join(srcdir, 'Makefile')):
-        # Out-of-tree builds require a clean srcdir.
-        _run_quiet([MAKE, '-C', srcdir, 'clean'])
-    _run_quiet([MAKE, '-C', builddir, parallel])
+    print(f'building python {parallel=} in {final_dir}...')
+    if os.path.exists(os.path.join(interim_dir, 'Makefile')):
+        # Out-of-tree builds require a clean interim_dir.
+        _run_quiet([MAKE, '-C', interim_dir, 'clean'])
+    _run_quiet([MAKE, '-C', final_dir, parallel])
 
     # Install the build.
     print(f'installing python into {prefix}...')
-    _run_quiet([MAKE, '-C', builddir, 'install'])
+    _run_quiet([MAKE, '-C', final_dir, 'install'])
     python = os.path.join(prefix, 'bin', 'python3')
 
     return outdir, scriptfile, python
