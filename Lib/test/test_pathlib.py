@@ -1949,33 +1949,28 @@ class _BasePathTest(object):
         P = self.cls
         base = P(BASE) / 'permissions'
         base.mkdir()
+        self.addCleanup(os_helper.rmtree, base)
 
-        file1 = base / "file1"
-        file1.touch()
-        file2 = base / "file2"
-        file2.touch()
+        for i in range(100):
+            link = base / f"link{i}"
+            if i % 2:
+                link.symlink_to(P(BASE, "dirE", "nonexistent"))
+            else:
+                link.symlink_to(P(BASE, "dirC"))
 
-        subdir = base / "subdir"
+        self.assertEqual(len(set(base.glob("*"))), 100)
+        self.assertEqual(len(set(base.glob("*/"))), 50)
+        self.assertEqual(len(set(base.glob("*/fileC"))), 50)
+        self.assertEqual(len(set(base.glob("*/file*"))), 50)
 
-        file3 = base / "file3"
-        file3.symlink_to(subdir / "other")
-
-        # Patching is needed to avoid relying on the filesystem
-        # to return the order of the files as the error will not
-        # happen if the symlink is the last item.
-        real_scandir = os.scandir
-        def my_scandir(path):
-            with real_scandir(path) as scandir_it:
-                entries = list(scandir_it)
-            entries.sort(key=lambda entry: entry.name)
-            return contextlib.nullcontext(entries)
-
-        with mock.patch("os.scandir", my_scandir):
-            self.assertEqual(len(set(base.glob("*"))), 3)
-            subdir.mkdir()
-            self.assertEqual(len(set(base.glob("*"))), 4)
-            subdir.chmod(000)
-            self.assertEqual(len(set(base.glob("*"))), 4)
+    @os_helper.skip_unless_symlink
+    def test_glob_long_symlink(self):
+        # See gh-87695
+        base = self.cls(BASE) / 'long_symlink'
+        base.mkdir()
+        bad_link = base / 'bad_link'
+        bad_link.symlink_to("bad" * 200)
+        self.assertEqual(sorted(base.glob('**/*')), [bad_link])
 
     def _check_resolve(self, p, expected, strict=True):
         q = p.resolve(strict)

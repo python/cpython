@@ -228,6 +228,8 @@ def kind_to_text(kind, defines, opname):
         return pretty(defines[kind][0])
     if opname.endswith("ATTR"):
         opname = "ATTR"
+    if opname in ("FOR_ITER", "SEND"):
+        opname = "ITER"
     if opname.endswith("SUBSCR"):
         opname = "SUBSCR"
     for name in defines[kind]:

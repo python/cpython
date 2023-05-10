@@ -262,15 +262,16 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
 
     def test_try_registration(self):
         # Assert that the PyState_{Find,Add,Remove}Module C API doesn't work.
-        module = self.load_module()
-        with self.subTest('PyState_FindModule'):
-            self.assertEqual(module.call_state_registration_func(0), None)
-        with self.subTest('PyState_AddModule'):
-            with self.assertRaises(SystemError):
-                module.call_state_registration_func(1)
-        with self.subTest('PyState_RemoveModule'):
-            with self.assertRaises(SystemError):
-                module.call_state_registration_func(2)
+        with util.uncache(self.name):
+            module = self.load_module()
+            with self.subTest('PyState_FindModule'):
+                self.assertEqual(module.call_state_registration_func(0), None)
+            with self.subTest('PyState_AddModule'):
+                with self.assertRaises(SystemError):
+                    module.call_state_registration_func(1)
+            with self.subTest('PyState_RemoveModule'):
+                with self.assertRaises(SystemError):
+                    module.call_state_registration_func(2)
 
     def test_load_submodule(self):
         # Test loading a simulated submodule.

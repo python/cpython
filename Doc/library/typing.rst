@@ -2876,24 +2876,37 @@ Introspection helpers
       if a default value equal to ``None`` was set.
       Now the annotation is returned unchanged.
 
-.. function:: get_args(tp)
 .. function:: get_origin(tp)
 
-   Provide basic introspection for generic types and special typing forms.
-
-   For a typing object of the form ``X[Y, Z, ...]`` these functions return
-   ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
+   Get the unsubscripted version of a type: for a typing object of the form
+   ``X[Y, Z, ...]`` return ``X``. If ``X`` is a generic alias for a builtin or
    :mod:`collections` class, it gets normalized to the original class.
+   If ``X`` is an instance of :class:`ParamSpecArgs` or :class:`ParamSpecKwargs`,
+   return the underlying :class:`ParamSpec`.
+   Return ``None`` for unsupported objects.
+   Examples::
+
+      assert get_origin(str) is None
+      assert get_origin(Dict[str, int]) is dict
+      assert get_origin(Union[int, str]) is Union
+      P = ParamSpec('P')
+      assert get_origin(P.args) is P
+      assert get_origin(P.kwargs) is P
+
+   .. versionadded:: 3.8
+
+.. function:: get_args(tp)
+
+   Get type arguments with all substitutions performed: for a typing object
+   of the form ``X[Y, Z, ...]`` return ``(Y, Z, ...)``.
    If ``X`` is a union or :class:`Literal` contained in another
    generic type, the order of ``(Y, Z, ...)`` may be different from the order
    of the original arguments ``[Y, Z, ...]`` due to type caching.
-   For unsupported objects return ``None`` and ``()`` correspondingly.
+   Return ``()`` for unsupported objects.
    Examples::
 
-      assert get_origin(Dict[str, int]) is dict
+      assert get_args(int) == ()
       assert get_args(Dict[int, str]) == (int, str)
-
-      assert get_origin(Union[int, str]) is Union
       assert get_args(Union[int, str]) == (int, str)
 
    .. versionadded:: 3.8
