@@ -1,0 +1,2 @@
+Improve performance of :func:`inspect.getattr_static`. Patch by Alex
+Waygood.

@@ -23,6 +23,7 @@ else:
     import _posixshmem
     _USE_POSIX = True
 
+from . import resource_tracker
 
 _O_CREX = os.O_CREAT | os.O_EXCL
 
@@ -76,6 +77,8 @@ class SharedMemory:
             raise ValueError("'size' must be a positive integer")
         if create:
             self._flags = _O_CREX | os.O_RDWR
+            if size == 0:
+                raise ValueError("'size' must be a positive number different from zero")
         if name is None and not self._flags & os.O_EXCL:
             raise ValueError("'name' can only be None if create=True")
 
@@ -114,8 +117,7 @@ class SharedMemory:
                 self.unlink()
                 raise
 
-            from .resource_tracker import register
-            register(self._name, "shared_memory")
+            resource_tracker.register(self._name, "shared_memory")
 
         else:
 
@@ -171,7 +173,10 @@ class SharedMemory:
                     )
                 finally:
                     _winapi.CloseHandle(h_map)
-                size = _winapi.VirtualQuerySize(p_buf)
+                try:
+                    size = _winapi.VirtualQuerySize(p_buf)
+                finally:
+                    _winapi.UnmapViewOfFile(p_buf)
                 self._mmap = mmap.mmap(-1, size, tagname=name)
 
         self._size = size
@@ -235,9 +240,8 @@ class SharedMemory:
         called once (and only once) across all processes which have access
         to the shared memory block."""
         if _USE_POSIX and self._name:
-            from .resource_tracker import unregister
             _posixshmem.shm_unlink(self._name)
-            unregister(self._name, "shared_memory")
+            resource_tracker.unregister(self._name, "shared_memory")
 
 
 _encoding = "utf8"

@@ -70,6 +70,9 @@ class LocaleTime_Tests(unittest.TestCase):
         self.assertEqual(self.LT_ins.am_pm[position], strftime_output,
                          "AM/PM representation in the wrong position within the tuple")
 
+    @unittest.skipIf(
+        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_timezone(self):
         # Make sure timezone is correct
         timezone = time.strftime("%Z", self.time_tuple).lower()
@@ -239,6 +242,16 @@ class StrptimeTests(unittest.TestCase):
         # 5. Julian/ordinal day (%j) is specified with %G, but not %Y
         with self.assertRaises(ValueError):
             _strptime._strptime("1999 256", "%G %j")
+        # 6. Invalid ISO weeks
+        invalid_iso_weeks = [
+            "2019-00-1",
+            "2019-54-1",
+            "2021-53-1",
+        ]
+        for invalid_iso_dtstr in invalid_iso_weeks:
+            with self.subTest(invalid_iso_dtstr):
+                with self.assertRaises(ValueError):
+                    _strptime._strptime(invalid_iso_dtstr, "%G-%V-%u")
 
 
     def test_strptime_exception_context(self):
@@ -368,6 +381,9 @@ class StrptimeTests(unittest.TestCase):
         self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
 
     @skip_if_buggy_ucrt_strfptime
+    @unittest.skipIf(
+        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
+    )
     def test_timezone(self):
         # Test timezone directives.
         # When gmtime() is used with %Z, entire result of strftime() is empty.
@@ -390,6 +406,9 @@ class StrptimeTests(unittest.TestCase):
                             "LocaleTime().timezone has duplicate values and "
                              "time.daylight but timezone value not set to -1")
 
+    @unittest.skipUnless(
+        hasattr(time, "tzset"), "time module has no attribute tzset"
+        )
     def test_bad_timezone(self):
         # Explicitly test possibility of bad timezone;
         # when time.tzname[0] == time.tzname[1] and time.daylight

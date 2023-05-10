@@ -13,9 +13,24 @@ sys.path.append(os.path.abspath('includes'))
 # General configuration
 # ---------------------
 
-extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
-              'pyspecific', 'c_annotations', 'escape4chm',
-              'asdl_highlight']
+extensions = [
+    'asdl_highlight',
+    'c_annotations',
+    'escape4chm',
+    'glossary_search',
+    'peg_highlight',
+    'pyspecific',
+    'sphinx.ext.coverage',
+    'sphinx.ext.doctest',
+]
+
+# Skip if downstream redistributors haven't installed it
+try:
+    import sphinxext.opengraph
+except ImportError:
+    pass
+else:
+    extensions.append('sphinxext.opengraph')
 
 
 doctest_global_setup = '''
@@ -23,6 +38,11 @@ try:
     import _tkinter
 except ImportError:
     _tkinter = None
+# Treat warnings as errors, done here to prevent warnings in Sphinx code from
+# causing spurious test failures.
+import warnings
+warnings.simplefilter('error')
+del warnings
 '''
 
 manpages_url = 'https://manpages.debian.org/{path}'
@@ -46,13 +66,22 @@ today_fmt = '%B %d, %Y'
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '1.8'
+needs_sphinx = '3.2'
 
+# Ignore any .rst files in the includes/ directory;
+# they're embedded in pages but not rendered individually.
 # Ignore any .rst files in the venv/ directory.
-exclude_patterns = ['venv/*', 'README.rst']
+exclude_patterns = ['includes/*.rst', 'venv/*', 'README.rst']
 venvdir = os.getenv('VENVDIR')
 if venvdir is not None:
     exclude_patterns.append(venvdir + '/*')
+
+nitpick_ignore = [
+    # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
+    # be resolved, as the method is currently undocumented. For context, see
+    # https://github.com/python/cpython/pull/103289.
+    ('py:meth', '_SubParsersAction.add_parser'),
+]
 
 # Disable Docutils smartquotes for several translations
 smartquotes_excludes = {
@@ -62,6 +91,11 @@ smartquotes_excludes = {
 # Avoid a warning with Sphinx >= 2.0
 master_doc = 'contents'
 
+# Allow translation of index directives
+gettext_additional_targets = [
+    'index',
+]
+
 # Options for HTML output
 # -----------------------
 
@@ -70,12 +104,29 @@ html_theme = 'python_docs_theme'
 html_theme_path = ['tools']
 html_theme_options = {
     'collapsiblesidebar': True,
-    'issues_url': 'https://docs.python.org/3/bugs.html',
+    'issues_url': '/bugs.html',
+    'license_url': '/license.html',
     'root_include_title': False   # We use the version switcher instead.
 }
 
+# Override stylesheet fingerprinting for Windows CHM htmlhelp to fix GH-91207
+# https://github.com/python/cpython/issues/91207
+if any('htmlhelp' in arg for arg in sys.argv):
+    html_style = 'pydoctheme.css'
+    print("\nWARNING: Windows CHM Help is no longer supported.")
+    print("It may be removed in the future\n")
+
 # Short title used e.g. for <title> HTML tags.
 html_short_title = '%s Documentation' % release
+
+# Deployment preview information
+# (See .readthedocs.yml and https://docs.readthedocs.io/en/stable/reference/environment-variables.html)
+repository_url = os.getenv("READTHEDOCS_GIT_CLONE_URL")
+html_context = {
+    "is_deployment_preview": os.getenv("READTHEDOCS_VERSION_TYPE") == "external",
+    "repository_url": repository_url.removesuffix(".git") if repository_url else None,
+    "pr_id": os.getenv("READTHEDOCS_VERSION")
+}
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -86,7 +137,7 @@ templates_path = ['tools/templates']
 
 # Custom sidebar templates, filenames relative to this file.
 html_sidebars = {
-    # Defaults taken from http://www.sphinx-doc.org/en/stable/config.html#confval-html_sidebars
+    # Defaults taken from https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_sidebars
     # Removes the quick search block
     '**': ['localtoc.html', 'relations.html', 'customsourcelink.html'],
     'index': ['indexsidebar.html'],
@@ -102,7 +153,7 @@ html_additional_pages = {
 html_use_opensearch = 'https://docs.python.org/' + version
 
 # Additional static files.
-html_static_path = ['tools/static']
+html_static_path = ['_static', 'tools/static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'python' + release.replace('.', '')
@@ -139,7 +190,7 @@ latex_elements['pointsize'] = '10pt'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
-_stdauthor = r'Guido van Rossum\\and the Python development team'
+_stdauthor = 'Guido van Rossum and the Python development team'
 latex_documents = [
     ('c-api/index', 'c-api.tex',
      'The Python/C API', _stdauthor, 'manual'),
@@ -185,7 +236,6 @@ epub_publisher = 'Python Software Foundation'
 coverage_ignore_modules = [
     r'[T|t][k|K]',
     r'Tix',
-    r'distutils.*',
 ]
 
 coverage_ignore_functions = [
@@ -217,14 +267,64 @@ coverage_ignore_c_items = {
 # Options for the link checker
 # ----------------------------
 
-# Ignore certain URLs.
-linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+',
-                    # Ignore PEPs for now, they all have permanent redirects.
-                    r'http://www.python.org/dev/peps/pep-\d+']
+linkcheck_allowed_redirects = {
+    # bpo-NNNN -> BPO -> GH Issues
+    r'https://bugs.python.org/issue\?@action=redirect&bpo=\d+': r'https://github.com/python/cpython/issues/\d+',
+    # GH-NNNN used to refer to pull requests
+    r'https://github.com/python/cpython/issues/\d+': r'https://github.com/python/cpython/pull/\d+',
+    # :source:`something` linking files in the repository
+    r'https://github.com/python/cpython/tree/.*': 'https://github.com/python/cpython/blob/.*',
+    # Intentional HTTP use at Misc/NEWS.d/3.5.0a1.rst
+    r'http://www.python.org/$': 'https://www.python.org/$',
+    # Used in license page, keep as is
+    r'https://www.zope.org/': r'https://www.zope.dev/',
+    # Microsoft's redirects to learn.microsoft.com
+    r'https://msdn.microsoft.com/.*': 'https://learn.microsoft.com/.*',
+    r'https://docs.microsoft.com/.*': 'https://learn.microsoft.com/.*',
+    r'https://go.microsoft.com/fwlink/\?LinkID=\d+': 'https://learn.microsoft.com/.*',
+    # Language redirects
+    r'https://toml.io': 'https://toml.io/en/',
+    r'https://www.redhat.com': 'https://www.redhat.com/en',
+    # Other redirects
+    r'https://www.boost.org/libs/.+': r'https://www.boost.org/doc/libs/\d_\d+_\d/.+',
+    r'https://support.microsoft.com/en-us/help/\d+': 'https://support.microsoft.com/en-us/topic/.+',
+    r'https://perf.wiki.kernel.org$': 'https://perf.wiki.kernel.org/index.php/Main_Page',
+    r'https://www.sqlite.org': 'https://www.sqlite.org/index.html',
+    r'https://mitpress.mit.edu/sicp$': 'https://mitpress.mit.edu/9780262510875/structure-and-interpretation-of-computer-programs/',
+    r'https://www.python.org/psf/': 'https://www.python.org/psf-landing/',
+}
+
+linkcheck_anchors_ignore = [
+    # ignore anchors that start with a '/', e.g. Wikipedia media files:
+    # https://en.wikipedia.org/wiki/Walrus#/media/File:Pacific_Walrus_-_Bull_(8247646168).jpg
+    r'\/.*',
+]
+
+linkcheck_ignore = [
+    # The crawler gets "Anchor not found"
+    r'https://developer.apple.com/documentation/.+?#.*',
+    r'https://devguide.python.org.+?/#.*',
+    r'https://github.com.+?#.*',
+    # Robot crawlers not allowed: "403 Client Error: Forbidden"
+    r'https://support.enthought.com/hc/.*',
+    # SSLError CertificateError, even though it is valid
+    r'https://unix.org/version2/whatsnew/lp64_wp.html',
+]
 
 
 # Options for extensions
 # ----------------------
 
-# Relative filename of the reference count data file.
+# Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
+stable_abi_file = 'data/stable_abi.dat'
+
+# sphinxext-opengraph config
+ogp_site_url = 'https://docs.python.org/3/'
+ogp_site_name = 'Python documentation'
+ogp_image = '_static/og-image.png'
+ogp_custom_meta_tags = [
+    '<meta property="og:image:width" content="200" />',
+    '<meta property="og:image:height" content="200" />',
+    '<meta name="theme-color" content="#3776ab" />',
+]

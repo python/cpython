@@ -1,2 +1,0 @@
-:func:`hashlib.compare_digest` uses OpenSSL's ``CRYPTO_memcmp()`` function
-when OpenSSL is available.

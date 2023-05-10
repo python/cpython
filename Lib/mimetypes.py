@@ -27,6 +27,12 @@ import os
 import sys
 import posixpath
 import urllib.parse
+
+try:
+    from _winapi import _mimetypes_read_windows_registry
+except ImportError:
+    _mimetypes_read_windows_registry = None
+
 try:
     import winreg as _winreg
 except ImportError:
@@ -135,25 +141,23 @@ class MimeTypes:
                 type = 'text/plain'
             return type, None           # never compressed, so encoding is None
         base, ext = posixpath.splitext(url)
-        while ext in self.suffix_map:
-            base, ext = posixpath.splitext(base + self.suffix_map[ext])
+        while (ext_lower := ext.lower()) in self.suffix_map:
+            base, ext = posixpath.splitext(base + self.suffix_map[ext_lower])
+        # encodings_map is case sensitive
         if ext in self.encodings_map:
             encoding = self.encodings_map[ext]
             base, ext = posixpath.splitext(base)
         else:
             encoding = None
+        ext = ext.lower()
         types_map = self.types_map[True]
         if ext in types_map:
             return types_map[ext], encoding
-        elif ext.lower() in types_map:
-            return types_map[ext.lower()], encoding
         elif strict:
             return None, encoding
         types_map = self.types_map[False]
         if ext in types_map:
             return types_map[ext], encoding
-        elif ext.lower() in types_map:
-            return types_map[ext.lower()], encoding
         else:
             return None, encoding
 
@@ -169,7 +173,7 @@ class MimeTypes:
         but non-standard types.
         """
         type = type.lower()
-        extensions = self.types_map_inv[True].get(type, [])
+        extensions = list(self.types_map_inv[True].get(type, []))
         if not strict:
             for ext in self.types_map_inv[False].get(type, []):
                 if ext not in extensions:
@@ -213,10 +217,7 @@ class MimeTypes:
         list of standard types, else to the list of non-standard
         types.
         """
-        while 1:
-            line = fp.readline()
-            if not line:
-                break
+        while line := fp.readline():
             words = line.split()
             for i in range(len(words)):
                 if words[i][0] == '#':
@@ -237,10 +238,21 @@ class MimeTypes:
         types.
         """
 
-        # Windows only
-        if not _winreg:
+        if not _mimetypes_read_windows_registry and not _winreg:
             return
 
+        add_type = self.add_type
+        if strict:
+            add_type = lambda type, ext: self.add_type(type, ext, True)
+
+        # Accelerated function if it is available
+        if _mimetypes_read_windows_registry:
+            _mimetypes_read_windows_registry(add_type)
+        elif _winreg:
+            self._read_windows_registry(add_type)
+
+    @classmethod
+    def _read_windows_registry(cls, add_type):
         def enum_types(mimedb):
             i = 0
             while True:
@@ -265,7 +277,7 @@ class MimeTypes:
                             subkey, 'Content Type')
                         if datatype != _winreg.REG_SZ:
                             continue
-                        self.add_type(mimetype, subkeyname, strict)
+                        add_type(mimetype, subkeyname)
                 except OSError:
                     continue
 
@@ -349,8 +361,8 @@ def init(files=None):
 
     if files is None or _db is None:
         db = MimeTypes()
-        if _winreg:
-            db.read_windows_registry()
+        # Quick return if not supported
+        db.read_windows_registry()
 
         if files is None:
             files = knownfiles
@@ -372,7 +384,7 @@ def init(files=None):
 
 def read_mime_types(file):
     try:
-        f = open(file)
+        f = open(file, encoding='utf-8')
     except OSError:
         return None
     with f:
@@ -412,13 +424,15 @@ def _default_mime_types():
     # Make sure the entry with the preferred file extension for a particular mime type
     # appears before any others of the same mimetype.
     types_map = _types_map_default = {
-        '.js'     : 'application/javascript',
-        '.mjs'    : 'application/javascript',
+        '.js'     : 'text/javascript',
+        '.mjs'    : 'text/javascript',
         '.json'   : 'application/json',
         '.webmanifest': 'application/manifest+json',
         '.doc'    : 'application/msword',
         '.dot'    : 'application/msword',
         '.wiz'    : 'application/msword',
+        '.nq'     : 'application/n-quads',
+        '.nt'     : 'application/n-triples',
         '.bin'    : 'application/octet-stream',
         '.a'      : 'application/octet-stream',
         '.dll'    : 'application/octet-stream',
@@ -432,6 +446,7 @@ def _default_mime_types():
         '.ps'     : 'application/postscript',
         '.ai'     : 'application/postscript',
         '.eps'    : 'application/postscript',
+        '.trig'   : 'application/trig',
         '.m3u'    : 'application/vnd.apple.mpegurl',
         '.m3u8'   : 'application/vnd.apple.mpegurl',
         '.xls'    : 'application/vnd.ms-excel',
@@ -448,6 +463,7 @@ def _default_mime_types():
         '.dvi'    : 'application/x-dvi',
         '.gtar'   : 'application/x-gtar',
         '.hdf'    : 'application/x-hdf',
+        '.h5'     : 'application/x-hdf5',
         '.latex'  : 'application/x-latex',
         '.mif'    : 'application/x-mif',
         '.cdf'    : 'application/x-netcdf',
@@ -480,28 +496,39 @@ def _default_mime_types():
         '.wsdl'   : 'application/xml',
         '.xpdl'   : 'application/xml',
         '.zip'    : 'application/zip',
+        '.3gp'    : 'audio/3gpp',
+        '.3gpp'   : 'audio/3gpp',
+        '.3g2'    : 'audio/3gpp2',
+        '.3gpp2'  : 'audio/3gpp2',
+        '.aac'    : 'audio/aac',
+        '.adts'   : 'audio/aac',
+        '.loas'   : 'audio/aac',
+        '.ass'    : 'audio/aac',
         '.au'     : 'audio/basic',
         '.snd'    : 'audio/basic',
         '.mp3'    : 'audio/mpeg',
         '.mp2'    : 'audio/mpeg',
+        '.opus'   : 'audio/opus',
         '.aif'    : 'audio/x-aiff',
         '.aifc'   : 'audio/x-aiff',
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/x-wav',
+        '.avif'   : 'image/avif',
         '.bmp'    : 'image/bmp',
         '.gif'    : 'image/gif',
         '.ief'    : 'image/ief',
         '.jpg'    : 'image/jpeg',
         '.jpe'    : 'image/jpeg',
         '.jpeg'   : 'image/jpeg',
+        '.heic'   : 'image/heic',
+        '.heif'   : 'image/heif',
         '.png'    : 'image/png',
         '.svg'    : 'image/svg+xml',
         '.tiff'   : 'image/tiff',
         '.tif'    : 'image/tiff',
         '.ico'    : 'image/vnd.microsoft.icon',
         '.ras'    : 'image/x-cmu-raster',
-        '.bmp'    : 'image/x-ms-bmp',
         '.pnm'    : 'image/x-portable-anymap',
         '.pbm'    : 'image/x-portable-bitmap',
         '.pgm'    : 'image/x-portable-graymap',
@@ -518,14 +545,17 @@ def _default_mime_types():
         '.csv'    : 'text/csv',
         '.html'   : 'text/html',
         '.htm'    : 'text/html',
+        '.n3'     : 'text/n3',
         '.txt'    : 'text/plain',
         '.bat'    : 'text/plain',
         '.c'      : 'text/plain',
         '.h'      : 'text/plain',
         '.ksh'    : 'text/plain',
         '.pl'     : 'text/plain',
+        '.srt'    : 'text/plain',
         '.rtx'    : 'text/richtext',
         '.tsv'    : 'text/tab-separated-values',
+        '.vtt'    : 'text/vtt',
         '.py'     : 'text/x-python',
         '.etx'    : 'text/x-setext',
         '.sgm'    : 'text/x-sgml',
@@ -557,6 +587,7 @@ def _default_mime_types():
         '.pict': 'image/pict',
         '.pct' : 'image/pict',
         '.pic' : 'image/pict',
+        '.webp': 'image/webp',
         '.xul' : 'text/xul',
         }
 
