@@ -113,8 +113,8 @@ PyDoc_STRVAR(_io__BufferedIOBase_read__doc__,
 "\n"
 "Read and return up to n bytes.\n"
 "\n"
-"If the argument is omitted, None, or negative, reads and\n"
-"returns all data until EOF\n"
+"If the argument is omitted, None, or negative, read and\n"
+"return all data until EOF\n"
 "\n"
 "If the argument is positive, and the underlying raw stream is\n"
 "not \'interactive\', multiple raw reads may be issued to satisfy\n"
@@ -877,4 +877,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a9f3647aef80aa5c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e9f0d997b78ca1ec input=a9049054013a1b77]*/
