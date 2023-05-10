@@ -2426,12 +2426,8 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         // STORE_DEREF in a class namespace, and compiler_nameop() won't do
         // that by default.
         PyObject *cellvars = c->u->u_metadata.u_cellvars;
-        int arg = dict_add_o(cellvars, &_Py_ID(__classdict__));
-        if (arg < 0) {
-            compiler_exit_scope(c);
-            return ERROR;
-        }
-        if (codegen_addop_i(INSTR_SEQUENCE(c), STORE_DEREF, arg, loc) < 0) {
+        if (compiler_addop_o(c->u, loc, STORE_DEREF, cellvars,
+                             &_Py_ID(__classdict__)) < 0) {
             compiler_exit_scope(c);
             return ERROR;
         }
