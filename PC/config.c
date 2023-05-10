@@ -20,8 +20,7 @@ extern PyObject* PyInit_nt(void);
 extern PyObject* PyInit__operator(void);
 extern PyObject* PyInit__signal(void);
 extern PyObject* PyInit__sha1(void);
-extern PyObject* PyInit__sha256(void);
-extern PyObject* PyInit__sha512(void);
+extern PyObject* PyInit__sha2(void);
 extern PyObject* PyInit__sha3(void);
 extern PyObject* PyInit__statistics(void);
 extern PyObject* PyInit__typing(void);
@@ -44,10 +43,14 @@ extern PyObject* PyInit__collections(void);
 extern PyObject* PyInit__heapq(void);
 extern PyObject* PyInit__bisect(void);
 extern PyObject* PyInit__symtable(void);
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_GAMES)
 extern PyObject* PyInit_mmap(void);
+#endif
 extern PyObject* PyInit__csv(void);
 extern PyObject* PyInit__sre(void);
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
 extern PyObject* PyInit_winreg(void);
+#endif
 extern PyObject* PyInit__struct(void);
 extern PyObject* PyInit__datetime(void);
 extern PyObject* PyInit__functools(void);
@@ -98,8 +101,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_signal", PyInit__signal},
     {"_md5", PyInit__md5},
     {"_sha1", PyInit__sha1},
-    {"_sha256", PyInit__sha256},
-    {"_sha512", PyInit__sha512},
+    {"_sha2", PyInit__sha2},
     {"_sha3", PyInit__sha3},
     {"_blake2", PyInit__blake2},
     {"time", PyInit_time},
@@ -124,10 +126,14 @@ struct _inittab _PyImport_Inittab[] = {
     {"itertools", PyInit_itertools},
     {"_collections", PyInit__collections},
     {"_symtable", PyInit__symtable},
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_GAMES)
     {"mmap", PyInit_mmap},
+#endif
     {"_csv", PyInit__csv},
     {"_sre", PyInit__sre},
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
     {"winreg", PyInit_winreg},
+#endif
     {"_struct", PyInit__struct},
     {"_datetime", PyInit__datetime},
     {"_functools", PyInit__functools},

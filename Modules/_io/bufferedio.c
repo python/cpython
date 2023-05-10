@@ -18,12 +18,12 @@
 module _io
 class _io._BufferedIOBase "PyObject *" "&PyBufferedIOBase_Type"
 class _io._Buffered "buffered *" "&PyBufferedIOBase_Type"
-class _io.BufferedReader "buffered *" "&PyBufferedReader_Type"
-class _io.BufferedWriter "buffered *" "&PyBufferedWriter_Type"
-class _io.BufferedRWPair "rwpair *" "&PyBufferedRWPair_Type"
-class _io.BufferedRandom "buffered *" "&PyBufferedRandom_Type"
+class _io.BufferedReader "buffered *" "clinic_state()->PyBufferedReader_Type"
+class _io.BufferedWriter "buffered *" "clinic_state()->PyBufferedWriter_Type"
+class _io.BufferedRWPair "rwpair *" "clinic_state()->PyBufferedRWPair_Type"
+class _io.BufferedRandom "buffered *" "clinic_state()->PyBufferedRandom_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=59460b9c5639984d]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=abd685b9d94b9888]*/
 
 /*
  * BufferedIOBase class, inherits from IOBase.
@@ -106,16 +106,17 @@ _io__BufferedIOBase_readinto1_impl(PyObject *self, Py_buffer *buffer)
 }
 
 static PyObject *
-bufferediobase_unsupported(const char *message)
+bufferediobase_unsupported(_PyIO_State *state, const char *message)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_SetString(state->unsupported_operation, message);
+    PyErr_SetString(state->unsupported_operation, message);
     return NULL;
 }
 
 /*[clinic input]
 _io._BufferedIOBase.detach
+
+    cls: defining_class
+    /
 
 Disconnect this buffer from its underlying raw stream and return it.
 
@@ -124,62 +125,92 @@ state.
 [clinic start generated code]*/
 
 static PyObject *
-_io__BufferedIOBase_detach_impl(PyObject *self)
-/*[clinic end generated code: output=754977c8d10ed88c input=822427fb58fe4169]*/
+_io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=b87b135d67cd4448 input=0b61a7b4357c1ea7]*/
 {
-    return bufferediobase_unsupported("detach");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "detach");
 }
 
-PyDoc_STRVAR(bufferediobase_read_doc,
-    "Read and return up to n bytes.\n"
-    "\n"
-    "If the argument is omitted, None, or negative, reads and\n"
-    "returns all data until EOF.\n"
-    "\n"
-    "If the argument is positive, and the underlying raw stream is\n"
-    "not 'interactive', multiple raw reads may be issued to satisfy\n"
-    "the byte count (unless EOF is reached first).  But for\n"
-    "interactive raw streams (as well as sockets and pipes), at most\n"
-    "one raw read will be issued, and a short result does not imply\n"
-    "that EOF is imminent.\n"
-    "\n"
-    "Returns an empty bytes object on EOF.\n"
-    "\n"
-    "Returns None if the underlying raw stream was open in non-blocking\n"
-    "mode and no data is available at the moment.\n");
+/*[clinic input]
+_io._BufferedIOBase.read
+
+    cls: defining_class
+    /
+    *args: object
+
+Read and return up to n bytes.
+
+If the argument is omitted, None, or negative, read and
+return all data until EOF.
+
+If the argument is positive, and the underlying raw stream is
+not 'interactive', multiple raw reads may be issued to satisfy
+the byte count (unless EOF is reached first).
+However, for interactive raw streams (as well as sockets and pipes),
+at most one raw read will be issued, and a short result does not
+imply that EOF is imminent.
+
+Return an empty bytes object on EOF.
+
+Return None if the underlying raw stream was open in non-blocking
+mode and no data is available at the moment.
+[clinic start generated code]*/
 
 static PyObject *
-bufferediobase_read(PyObject *self, PyObject *args)
+_io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls,
+                              PyObject *args)
+/*[clinic end generated code: output=4521b30940fd7b67 input=390205758adc8510]*/
 {
-    return bufferediobase_unsupported("read");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "read");
 }
 
-PyDoc_STRVAR(bufferediobase_read1_doc,
-    "Read and return up to n bytes, with at most one read() call\n"
-    "to the underlying raw stream. A short result does not imply\n"
-    "that EOF is imminent.\n"
-    "\n"
-    "Returns an empty bytes object on EOF.\n");
+/*[clinic input]
+_io._BufferedIOBase.read1
+
+    cls: defining_class
+    /
+    *args: object
+
+Read and return up to n bytes, with at most one read() call to the underlying raw stream.
+
+Return an empty bytes object on EOF.
+A short result does not imply that EOF is imminent.
+[clinic start generated code]*/
 
 static PyObject *
-bufferediobase_read1(PyObject *self, PyObject *args)
+_io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls,
+                               PyObject *args)
+/*[clinic end generated code: output=636fd241c21e050a input=ef546a1238c5b41c]*/
 {
-    return bufferediobase_unsupported("read1");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "read1");
 }
 
-PyDoc_STRVAR(bufferediobase_write_doc,
-    "Write the given buffer to the IO stream.\n"
-    "\n"
-    "Returns the number of bytes written, which is always the length of b\n"
-    "in bytes.\n"
-    "\n"
-    "Raises BlockingIOError if the buffer is full and the\n"
-    "underlying raw stream cannot accept more data at the moment.\n");
+/*[clinic input]
+_io._BufferedIOBase.write
+
+    cls: defining_class
+    /
+    *args: object
+
+Write the given buffer to the IO stream.
+
+Return the number of bytes written, which is always
+the length of b in bytes.
+
+Raise BlockingIOError if the buffer is full and the
+underlying raw stream cannot accept more data at the moment.
+[clinic start generated code]*/
 
 static PyObject *
-bufferediobase_write(PyObject *self, PyObject *args)
+_io__BufferedIOBase_write_impl(PyObject *self, PyTypeObject *cls,
+                               PyObject *args)
+/*[clinic end generated code: output=d51feea4bcac9892 input=f79b72c4dccb3dc2]*/
 {
-    return bufferediobase_unsupported("write");
+    _PyIO_State *state = IO_STATE();
+    return bufferediobase_unsupported(state, "write");
 }
 
 
@@ -366,6 +397,7 @@ _enter_buffered_busy(buffered *self)
 static void
 buffered_dealloc(buffered *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
@@ -383,7 +415,8 @@ buffered_dealloc(buffered *self)
         self->lock = NULL;
     }
     Py_CLEAR(self->dict);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -399,6 +432,7 @@ buffered_sizeof(buffered *self, PyObject *Py_UNUSED(ignored))
 static int
 buffered_traverse(buffered *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->raw);
     Py_VISIT(self->dict);
     return 0;
@@ -469,12 +503,13 @@ buffered_closed_get(buffered *self, void *context)
 static PyObject *
 buffered_close(buffered *self, PyObject *args)
 {
-    PyObject *res = NULL, *exc = NULL, *val, *tb;
+    PyObject *res = NULL;
     int r;
 
     CHECK_INITIALIZED(self)
-    if (!ENTER_BUFFERED(self))
+    if (!ENTER_BUFFERED(self)) {
         return NULL;
+    }
 
     r = buffered_closed(self);
     if (r < 0)
@@ -494,12 +529,16 @@ buffered_close(buffered *self, PyObject *args)
     /* flush() will most probably re-take the lock, so drop it first */
     LEAVE_BUFFERED(self)
     res = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(flush));
-    if (!ENTER_BUFFERED(self))
+    if (!ENTER_BUFFERED(self)) {
         return NULL;
-    if (res == NULL)
-        PyErr_Fetch(&exc, &val, &tb);
-    else
+    }
+    PyObject *exc = NULL;
+    if (res == NULL) {
+        exc = PyErr_GetRaisedException();
+    }
+    else {
         Py_DECREF(res);
+    }
 
     res = PyObject_CallMethodNoArgs(self->raw, &_Py_ID(close));
 
@@ -509,7 +548,7 @@ buffered_close(buffered *self, PyObject *args)
     }
 
     if (exc != NULL) {
-        _PyErr_ChainExceptions(exc, val, tb);
+        _PyErr_ChainExceptions1(exc);
         Py_CLEAR(res);
     }
 
@@ -634,17 +673,14 @@ _set_BlockingIOError(const char *msg, Py_ssize_t written)
 static Py_ssize_t *
 _buffered_check_blocking_error(void)
 {
-    PyObject *t, *v, *tb;
-    PyOSErrorObject *err;
-
-    PyErr_Fetch(&t, &v, &tb);
-    if (v == NULL || !PyErr_GivenExceptionMatches(v, PyExc_BlockingIOError)) {
-        PyErr_Restore(t, v, tb);
+    PyObject *exc = PyErr_GetRaisedException();
+    if (exc == NULL || !PyErr_GivenExceptionMatches(exc, PyExc_BlockingIOError)) {
+        PyErr_SetRaisedException(exc);
         return NULL;
     }
-    err = (PyOSErrorObject *) v;
+    PyOSErrorObject *err = (PyOSErrorObject *)exc;
     /* TODO: sanity check (err->written >= 0) */
-    PyErr_Restore(t, v, tb);
+    PyErr_SetRaisedException(exc);
     return &err->written;
 }
 
@@ -746,13 +782,11 @@ _buffered_init(buffered *self)
 int
 _PyIO_trap_eintr(void)
 {
-    PyObject *typ, *val, *tb;
-    PyOSErrorObject *env_err;
-    if (!PyErr_ExceptionMatches(PyExc_OSError))
+    if (!PyErr_ExceptionMatches(PyExc_OSError)) {
         return 0;
-    PyErr_Fetch(&typ, &val, &tb);
-    PyErr_NormalizeException(&typ, &val, &tb);
-    env_err = (PyOSErrorObject *) val;
+    }
+    PyObject *exc = PyErr_GetRaisedException();
+    PyOSErrorObject *env_err = (PyOSErrorObject *)exc;
     assert(env_err != NULL);
     if (env_err->myerrno != NULL) {
         assert(EINTR > 0 && EINTR < INT_MAX);
@@ -761,14 +795,12 @@ _PyIO_trap_eintr(void)
         int myerrno = PyLong_AsLongAndOverflow(env_err->myerrno, &overflow);
         PyErr_Clear();
         if (myerrno == EINTR) {
-            Py_DECREF(typ);
-            Py_DECREF(val);
-            Py_XDECREF(tb);
+            Py_DECREF(exc);
             return 1;
         }
     }
     /* This silences any error set by PyObject_RichCompareBool() */
-    PyErr_Restore(typ, val, tb);
+    PyErr_SetRaisedException(exc);
     return 0;
 }
 
@@ -1221,8 +1253,10 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
 
     CHECK_CLOSED(self, "seek of closed file")
 
-    if (_PyIOBase_check_seekable(self->raw, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_seekable(state, self->raw, Py_True) == NULL) {
         return NULL;
+    }
 
     target = PyNumber_AsOff_t(targetobj, PyExc_ValueError);
     if (target == -1 && PyErr_Occurred())
@@ -1297,7 +1331,8 @@ _io__Buffered_truncate_impl(buffered *self, PyObject *pos)
     CHECK_INITIALIZED(self)
     CHECK_CLOSED(self, "truncate of closed file")
     if (!self->writable) {
-        return bufferediobase_unsupported("truncate");
+        _PyIO_State *state = IO_STATE();
+        return bufferediobase_unsupported(state, "truncate");
     }
     if (!ENTER_BUFFERED(self))
         return NULL;
@@ -1328,9 +1363,11 @@ buffered_iternext(buffered *self)
 
     CHECK_INITIALIZED(self);
 
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     tp = Py_TYPE(self);
-    if (tp == &PyBufferedReader_Type ||
-        tp == &PyBufferedRandom_Type) {
+    if (Py_IS_TYPE(tp, state->PyBufferedReader_Type) ||
+        Py_IS_TYPE(tp, state->PyBufferedRandom_Type))
+    {
         /* Skip method call overhead for speed */
         line = _buffered_readline(self, -1);
     }
@@ -1416,8 +1453,10 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
     self->ok = 0;
     self->detached = 0;
 
-    if (_PyIOBase_check_readable(raw, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_readable(state, raw, Py_True) == NULL) {
         return -1;
+    }
 
     Py_XSETREF(self->raw, Py_NewRef(raw));
     self->buffer_size = buffer_size;
@@ -1428,8 +1467,10 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
         return -1;
     _bufferedreader_reset_buf(self);
 
-    self->fast_closed_checks = (Py_IS_TYPE(self, &PyBufferedReader_Type) &&
-                                Py_IS_TYPE(raw, &PyFileIO_Type));
+    self->fast_closed_checks = (
+        Py_IS_TYPE(self, state->PyBufferedReader_Type) &&
+        Py_IS_TYPE(raw, state->PyFileIO_Type)
+    );
 
     self->ok = 1;
     return 0;
@@ -1736,7 +1777,6 @@ _bufferedreader_peek_unlocked(buffered *self)
     self->pos = 0;
     return PyBytes_FromStringAndSize(self->buffer, r);
 }
-
 
 
 /*
@@ -1769,8 +1809,10 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     self->ok = 0;
     self->detached = 0;
 
-    if (_PyIOBase_check_writable(raw, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_writable(state, raw, Py_True) == NULL) {
         return -1;
+    }
 
     Py_INCREF(raw);
     Py_XSETREF(self->raw, raw);
@@ -1783,8 +1825,10 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     _bufferedwriter_reset_buf(self);
     self->pos = 0;
 
-    self->fast_closed_checks = (Py_IS_TYPE(self, &PyBufferedWriter_Type) &&
-                                Py_IS_TYPE(raw, &PyFileIO_Type));
+    self->fast_closed_checks = (
+        Py_IS_TYPE(self, state->PyBufferedWriter_Type) &&
+        Py_IS_TYPE(raw, state->PyFileIO_Type)
+    );
 
     self->ok = 1;
     return 0;
@@ -2043,7 +2087,6 @@ error:
     LEAVE_BUFFERED(self)
     return res;
 }
-
 
 
 /*
@@ -2085,18 +2128,23 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
                                  PyObject *writer, Py_ssize_t buffer_size)
 /*[clinic end generated code: output=327e73d1aee8f984 input=620d42d71f33a031]*/
 {
-    if (_PyIOBase_check_readable(reader, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_readable(state, reader, Py_True) == NULL) {
         return -1;
-    if (_PyIOBase_check_writable(writer, Py_True) == NULL)
+    }
+    if (_PyIOBase_check_writable(state, writer, Py_True) == NULL) {
         return -1;
+    }
 
     self->reader = (buffered *) PyObject_CallFunction(
-            (PyObject *) &PyBufferedReader_Type, "On", reader, buffer_size);
+            (PyObject *)state->PyBufferedReader_Type,
+            "On", reader, buffer_size);
     if (self->reader == NULL)
         return -1;
 
     self->writer = (buffered *) PyObject_CallFunction(
-            (PyObject *) &PyBufferedWriter_Type, "On", writer, buffer_size);
+            (PyObject *)state->PyBufferedWriter_Type,
+            "On", writer, buffer_size);
     if (self->writer == NULL) {
         Py_CLEAR(self->reader);
         return -1;
@@ -2108,6 +2156,7 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
 static int
 bufferedrwpair_traverse(rwpair *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }
@@ -2124,13 +2173,15 @@ bufferedrwpair_clear(rwpair *self)
 static void
 bufferedrwpair_dealloc(rwpair *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
     Py_CLEAR(self->reader);
     Py_CLEAR(self->writer);
     Py_CLEAR(self->dict);
-    Py_TYPE(self)->tp_free((PyObject *) self);
+    tp->tp_free((PyObject *) self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -2211,15 +2262,17 @@ bufferedrwpair_writable(rwpair *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 bufferedrwpair_close(rwpair *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *exc = NULL, *val, *tb;
+    PyObject *exc = NULL;
     PyObject *ret = _forward_call(self->writer, &_Py_ID(close), NULL);
-    if (ret == NULL)
-        PyErr_Fetch(&exc, &val, &tb);
-    else
+    if (ret == NULL) {
+        exc = PyErr_GetRaisedException();
+    }
+    else {
         Py_DECREF(ret);
+    }
     ret = _forward_call(self->reader, &_Py_ID(close), NULL);
     if (exc != NULL) {
-        _PyErr_ChainExceptions(exc, val, tb);
+        _PyErr_ChainExceptions1(exc);
         Py_CLEAR(ret);
     }
     return ret;
@@ -2249,7 +2302,6 @@ bufferedrwpair_closed_get(rwpair *self, void *context)
     }
     return PyObject_GetAttr((PyObject *) self->writer, &_Py_ID(closed));
 }
-
 
 
 /*
@@ -2276,12 +2328,16 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     self->ok = 0;
     self->detached = 0;
 
-    if (_PyIOBase_check_seekable(raw, Py_True) == NULL)
+    _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+    if (_PyIOBase_check_seekable(state, raw, Py_True) == NULL) {
         return -1;
-    if (_PyIOBase_check_readable(raw, Py_True) == NULL)
+    }
+    if (_PyIOBase_check_readable(state, raw, Py_True) == NULL) {
         return -1;
-    if (_PyIOBase_check_writable(raw, Py_True) == NULL)
+    }
+    if (_PyIOBase_check_writable(state, raw, Py_True) == NULL) {
         return -1;
+    }
 
     Py_INCREF(raw);
     Py_XSETREF(self->raw, raw);
@@ -2295,23 +2351,25 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     _bufferedwriter_reset_buf(self);
     self->pos = 0;
 
-    self->fast_closed_checks = (Py_IS_TYPE(self, &PyBufferedRandom_Type) &&
-                                Py_IS_TYPE(raw, &PyFileIO_Type));
+    self->fast_closed_checks = (Py_IS_TYPE(self, state->PyBufferedRandom_Type) &&
+                                Py_IS_TYPE(raw, state->PyFileIO_Type));
 
     self->ok = 1;
     return 0;
 }
 
+#define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/bufferedio.c.h"
+#undef clinic_state
 
 
 static PyMethodDef bufferediobase_methods[] = {
     _IO__BUFFEREDIOBASE_DETACH_METHODDEF
-    {"read", bufferediobase_read, METH_VARARGS, bufferediobase_read_doc},
-    {"read1", bufferediobase_read1, METH_VARARGS, bufferediobase_read1_doc},
+    _IO__BUFFEREDIOBASE_READ_METHODDEF
+    _IO__BUFFEREDIOBASE_READ1_METHODDEF
     _IO__BUFFEREDIOBASE_READINTO_METHODDEF
     _IO__BUFFEREDIOBASE_READINTO1_METHODDEF
-    {"write", bufferediobase_write, METH_VARARGS, bufferediobase_write_doc},
+    _IO__BUFFEREDIOBASE_WRITE_METHODDEF
     {NULL, NULL}
 };
 
@@ -2394,6 +2452,8 @@ static PyMethodDef bufferedreader_methods[] = {
 static PyMemberDef bufferedreader_members[] = {
     {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
     {"_finalizing", T_BOOL, offsetof(buffered, finalizing), 0},
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(buffered, weakreflist), READONLY},
+    {"__dictoffset__", T_PYSSIZET, offsetof(buffered, dict), READONLY},
     {NULL}
 };
 
@@ -2405,58 +2465,27 @@ static PyGetSetDef bufferedreader_getset[] = {
 };
 
 
-PyTypeObject PyBufferedReader_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io.BufferedReader",       /*tp_name*/
-    sizeof(buffered),           /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    (destructor)buffered_dealloc,     /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    (reprfunc)buffered_repr,    /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
-    _io_BufferedReader___init____doc__, /* tp_doc */
-    (traverseproc)buffered_traverse, /* tp_traverse */
-    (inquiry)buffered_clear,    /* tp_clear */
-    0,                          /* tp_richcompare */
-    offsetof(buffered, weakreflist), /*tp_weaklistoffset*/
-    0,                          /* tp_iter */
-    (iternextfunc)buffered_iternext, /* tp_iternext */
-    bufferedreader_methods,     /* tp_methods */
-    bufferedreader_members,     /* tp_members */
-    bufferedreader_getset,      /* tp_getset */
-    0,                          /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    offsetof(buffered, dict), /* tp_dictoffset */
-    _io_BufferedReader___init__, /* tp_init */
-    0,                          /* tp_alloc */
-    PyType_GenericNew,          /* tp_new */
-    0,                          /* tp_free */
-    0,                          /* tp_is_gc */
-    0,                          /* tp_bases */
-    0,                          /* tp_mro */
-    0,                          /* tp_cache */
-    0,                          /* tp_subclasses */
-    0,                          /* tp_weaklist */
-    0,                          /* tp_del */
-    0,                          /* tp_version_tag */
-    0,                          /* tp_finalize */
+static PyType_Slot bufferedreader_slots[] = {
+    {Py_tp_dealloc, buffered_dealloc},
+    {Py_tp_repr, buffered_repr},
+    {Py_tp_doc, (void *)_io_BufferedReader___init____doc__},
+    {Py_tp_traverse, buffered_traverse},
+    {Py_tp_clear, buffered_clear},
+    {Py_tp_iternext, buffered_iternext},
+    {Py_tp_methods, bufferedreader_methods},
+    {Py_tp_members, bufferedreader_members},
+    {Py_tp_getset, bufferedreader_getset},
+    {Py_tp_init, _io_BufferedReader___init__},
+    {0, NULL},
 };
 
+PyType_Spec bufferedreader_spec = {
+    .name = "_io.BufferedReader",
+    .basicsize = sizeof(buffered),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = bufferedreader_slots,
+};
 
 static PyMethodDef bufferedwriter_methods[] = {
     /* BufferedIOMixin methods */
@@ -2480,6 +2509,8 @@ static PyMethodDef bufferedwriter_methods[] = {
 static PyMemberDef bufferedwriter_members[] = {
     {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
     {"_finalizing", T_BOOL, offsetof(buffered, finalizing), 0},
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(buffered, weakreflist), READONLY},
+    {"__dictoffset__", T_PYSSIZET, offsetof(buffered, dict), READONLY},
     {NULL}
 };
 
@@ -2491,58 +2522,26 @@ static PyGetSetDef bufferedwriter_getset[] = {
 };
 
 
-PyTypeObject PyBufferedWriter_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io.BufferedWriter",       /*tp_name*/
-    sizeof(buffered),           /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    (destructor)buffered_dealloc,     /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    (reprfunc)buffered_repr,    /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
-    _io_BufferedWriter___init____doc__, /* tp_doc */
-    (traverseproc)buffered_traverse, /* tp_traverse */
-    (inquiry)buffered_clear,    /* tp_clear */
-    0,                          /* tp_richcompare */
-    offsetof(buffered, weakreflist), /*tp_weaklistoffset*/
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    bufferedwriter_methods,     /* tp_methods */
-    bufferedwriter_members,     /* tp_members */
-    bufferedwriter_getset,      /* tp_getset */
-    0,                          /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    offsetof(buffered, dict),   /* tp_dictoffset */
-    _io_BufferedWriter___init__, /* tp_init */
-    0,                          /* tp_alloc */
-    PyType_GenericNew,          /* tp_new */
-    0,                          /* tp_free */
-    0,                          /* tp_is_gc */
-    0,                          /* tp_bases */
-    0,                          /* tp_mro */
-    0,                          /* tp_cache */
-    0,                          /* tp_subclasses */
-    0,                          /* tp_weaklist */
-    0,                          /* tp_del */
-    0,                          /* tp_version_tag */
-    0,                          /* tp_finalize */
+static PyType_Slot bufferedwriter_slots[] = {
+    {Py_tp_dealloc, buffered_dealloc},
+    {Py_tp_repr, buffered_repr},
+    {Py_tp_doc, (void *)_io_BufferedWriter___init____doc__},
+    {Py_tp_traverse, buffered_traverse},
+    {Py_tp_clear, buffered_clear},
+    {Py_tp_methods, bufferedwriter_methods},
+    {Py_tp_members, bufferedwriter_members},
+    {Py_tp_getset, bufferedwriter_getset},
+    {Py_tp_init, _io_BufferedWriter___init__},
+    {0, NULL},
 };
 
+PyType_Spec bufferedwriter_spec = {
+    .name = "_io.BufferedWriter",
+    .basicsize = sizeof(buffered),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = bufferedwriter_slots,
+};
 
 static PyMethodDef bufferedrwpair_methods[] = {
     {"read", (PyCFunction)bufferedrwpair_read, METH_VARARGS},
@@ -2563,61 +2562,35 @@ static PyMethodDef bufferedrwpair_methods[] = {
     {NULL, NULL}
 };
 
+static PyMemberDef bufferedrwpair_members[] = {
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(rwpair, weakreflist), READONLY},
+    {"__dictoffset__", T_PYSSIZET, offsetof(rwpair, dict), READONLY},
+    {NULL}
+};
+
 static PyGetSetDef bufferedrwpair_getset[] = {
     {"closed", (getter)bufferedrwpair_closed_get, NULL, NULL},
     {NULL}
 };
 
-PyTypeObject PyBufferedRWPair_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io.BufferedRWPair",       /*tp_name*/
-    sizeof(rwpair),            /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    (destructor)bufferedrwpair_dealloc,     /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC,   /* tp_flags */
-    _io_BufferedRWPair___init____doc__, /* tp_doc */
-    (traverseproc)bufferedrwpair_traverse, /* tp_traverse */
-    (inquiry)bufferedrwpair_clear, /* tp_clear */
-    0,                          /* tp_richcompare */
-    offsetof(rwpair, weakreflist), /*tp_weaklistoffset*/
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    bufferedrwpair_methods,     /* tp_methods */
-    0,                          /* tp_members */
-    bufferedrwpair_getset,      /* tp_getset */
-    0,                          /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    offsetof(rwpair, dict),     /* tp_dictoffset */
-    _io_BufferedRWPair___init__, /* tp_init */
-    0,                          /* tp_alloc */
-    PyType_GenericNew,          /* tp_new */
-    0,                          /* tp_free */
-    0,                          /* tp_is_gc */
-    0,                          /* tp_bases */
-    0,                          /* tp_mro */
-    0,                          /* tp_cache */
-    0,                          /* tp_subclasses */
-    0,                          /* tp_weaklist */
-    0,                          /* tp_del */
-    0,                          /* tp_version_tag */
-    0,                          /* tp_finalize */
+static PyType_Slot bufferedrwpair_slots[] = {
+    {Py_tp_dealloc, bufferedrwpair_dealloc},
+    {Py_tp_doc, (void *)_io_BufferedRWPair___init____doc__},
+    {Py_tp_traverse, bufferedrwpair_traverse},
+    {Py_tp_clear, bufferedrwpair_clear},
+    {Py_tp_methods, bufferedrwpair_methods},
+    {Py_tp_members, bufferedrwpair_members},
+    {Py_tp_getset, bufferedrwpair_getset},
+    {Py_tp_init, _io_BufferedRWPair___init__},
+    {0, NULL},
+};
+
+PyType_Spec bufferedrwpair_spec = {
+    .name = "_io.BufferedRWPair",
+    .basicsize = sizeof(rwpair),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = bufferedrwpair_slots,
 };
 
 
@@ -2651,6 +2624,8 @@ static PyMethodDef bufferedrandom_methods[] = {
 static PyMemberDef bufferedrandom_members[] = {
     {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
     {"_finalizing", T_BOOL, offsetof(buffered, finalizing), 0},
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(buffered, weakreflist), READONLY},
+    {"__dictoffset__", T_PYSSIZET, offsetof(buffered, dict), READONLY},
     {NULL}
 };
 
@@ -2662,54 +2637,24 @@ static PyGetSetDef bufferedrandom_getset[] = {
 };
 
 
-PyTypeObject PyBufferedRandom_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_io.BufferedRandom",       /*tp_name*/
-    sizeof(buffered),           /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    (destructor)buffered_dealloc,     /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    (reprfunc)buffered_repr,    /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash */
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
-    _io_BufferedRandom___init____doc__, /* tp_doc */
-    (traverseproc)buffered_traverse, /* tp_traverse */
-    (inquiry)buffered_clear,    /* tp_clear */
-    0,                          /* tp_richcompare */
-    offsetof(buffered, weakreflist), /*tp_weaklistoffset*/
-    0,                          /* tp_iter */
-    (iternextfunc)buffered_iternext, /* tp_iternext */
-    bufferedrandom_methods,     /* tp_methods */
-    bufferedrandom_members,     /* tp_members */
-    bufferedrandom_getset,      /* tp_getset */
-    0,                          /* tp_base */
-    0,                          /*tp_dict*/
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    offsetof(buffered, dict), /*tp_dictoffset*/
-    _io_BufferedRandom___init__, /* tp_init */
-    0,                          /* tp_alloc */
-    PyType_GenericNew,          /* tp_new */
-    0,                          /* tp_free */
-    0,                          /* tp_is_gc */
-    0,                          /* tp_bases */
-    0,                          /* tp_mro */
-    0,                          /* tp_cache */
-    0,                          /* tp_subclasses */
-    0,                          /* tp_weaklist */
-    0,                          /* tp_del */
-    0,                          /* tp_version_tag */
-    0,                          /* tp_finalize */
+static PyType_Slot bufferedrandom_slots[] = {
+    {Py_tp_dealloc, buffered_dealloc},
+    {Py_tp_repr, buffered_repr},
+    {Py_tp_doc, (void *)_io_BufferedRandom___init____doc__},
+    {Py_tp_traverse, buffered_traverse},
+    {Py_tp_clear, buffered_clear},
+    {Py_tp_iternext, buffered_iternext},
+    {Py_tp_methods, bufferedrandom_methods},
+    {Py_tp_members, bufferedrandom_members},
+    {Py_tp_getset, bufferedrandom_getset},
+    {Py_tp_init, _io_BufferedRandom___init__},
+    {0, NULL},
+};
+
+PyType_Spec bufferedrandom_spec = {
+    .name = "_io.BufferedRandom",
+    .basicsize = sizeof(buffered),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = bufferedrandom_slots,
 };

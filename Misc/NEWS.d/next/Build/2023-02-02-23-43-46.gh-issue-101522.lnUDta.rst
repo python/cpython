@@ -1,2 +1,0 @@
-Allow overriding Windows dependencies versions and paths using MSBuild
-properties.

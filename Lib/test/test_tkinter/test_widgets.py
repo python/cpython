@@ -9,8 +9,7 @@ from test.test_tkinter.support import (requires_tcl,
                                   AbstractDefaultRootTest)
 from test.test_tkinter.widget_tests import (
     add_standard_options,
-    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
-    setUpModule)
+    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
 
 requires('gui')
 
@@ -1377,6 +1376,11 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
 
     def create(self, **kwargs):
         return tkinter.Menu(self.root, **kwargs)
+
+    def test_indexcommand_none(self):
+        widget = self.create()
+        i = widget.index('none')
+        self.assertIsNone(i)
 
     def test_configure_postcommand(self):
         widget = self.create()

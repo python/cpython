@@ -30,6 +30,7 @@
 #endif
 
 #include <Python.h>
+#include "pycore_long.h"          // _PyLong_IsZero()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "complexobject.h"
 #include "mpdecimal.h"
@@ -2146,35 +2147,25 @@ dec_from_long(PyTypeObject *type, PyObject *v,
 {
     PyObject *dec;
     PyLongObject *l = (PyLongObject *)v;
-    Py_ssize_t ob_size;
-    size_t len;
-    uint8_t sign;
 
     dec = PyDecType_New(type);
     if (dec == NULL) {
         return NULL;
     }
 
-    ob_size = Py_SIZE(l);
-    if (ob_size == 0) {
+    if (_PyLong_IsZero(l)) {
         _dec_settriple(dec, MPD_POS, 0, 0);
         return dec;
     }
 
-    if (ob_size < 0) {
-        len = -ob_size;
-        sign = MPD_NEG;
-    }
-    else {
-        len = ob_size;
-        sign = MPD_POS;
-    }
+    uint8_t sign = _PyLong_IsNegative(l) ? MPD_NEG :  MPD_POS;
 
-    if (len == 1) {
-        _dec_settriple(dec, sign, *l->long_value.ob_digit, 0);
+    if (_PyLong_IsCompact(l)) {
+        _dec_settriple(dec, sign, l->long_value.ob_digit[0], 0);
         mpd_qfinalize(MPD(dec), ctx, status);
         return dec;
     }
+    size_t len = _PyLong_DigitCount(l);
 
 #if PYLONG_BITS_IN_DIGIT == 30
     mpd_qimport_u32(MPD(dec), l->long_value.ob_digit, len, sign, PyLong_BASE,
@@ -3482,7 +3473,6 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     PyLongObject *pylong;
     digit *ob_digit;
     size_t n;
-    Py_ssize_t i;
     mpd_t *x;
     mpd_context_t workctx;
     uint32_t status = 0;
@@ -3536,26 +3526,9 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     }
 
     assert(n > 0);
-    pylong = _PyLong_New(n);
-    if (pylong == NULL) {
-        mpd_free(ob_digit);
-        mpd_del(x);
-        return NULL;
-    }
-
-    memcpy(pylong->long_value.ob_digit, ob_digit, n * sizeof(digit));
+    assert(!mpd_iszero(x));
+    pylong = _PyLong_FromDigits(mpd_isnegative(x), n, ob_digit);
     mpd_free(ob_digit);
-
-    i = n;
-    while ((i > 0) && (pylong->long_value.ob_digit[i-1] == 0)) {
-        i--;
-    }
-
-    Py_SET_SIZE(pylong, i);
-    if (mpd_isnegative(x) && !mpd_iszero(x)) {
-        Py_SET_SIZE(pylong, -i);
-    }
-
     mpd_del(x);
     return (PyObject *) pylong;
 }
