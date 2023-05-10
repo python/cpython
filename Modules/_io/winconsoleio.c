@@ -457,13 +457,10 @@ err_closed(void)
 }
 
 static PyObject *
-err_mode(const char *action)
+err_mode(_PyIO_State *state, const char *action)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_Format(state->unsupported_operation,
-                     "Console buffer does not support %s", action);
-    return NULL;
+    return PyErr_Format(state->unsupported_operation,
+                        "Console buffer does not support %s", action);
 }
 
 /*[clinic input]
@@ -647,7 +644,8 @@ readinto(winconsoleio *self, char *buf, Py_ssize_t len)
         return -1;
     }
     if (!self->readable) {
-        err_mode("reading");
+        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+        err_mode(state, "reading");
         return -1;
     }
     if (len == 0)
@@ -920,8 +918,10 @@ _io__WindowsConsoleIO_read_impl(winconsoleio *self, Py_ssize_t size)
 
     if (self->fd == -1)
         return err_closed();
-    if (!self->readable)
-        return err_mode("reading");
+    if (!self->readable) {
+        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+        return err_mode(state, "reading");
+    }
 
     if (size < 0)
         return _io__WindowsConsoleIO_readall_impl(self);
@@ -972,8 +972,10 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
 
     if (self->fd == -1)
         return err_closed();
-    if (!self->writable)
-        return err_mode("writing");
+    if (!self->writable) {
+        _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
+        return err_mode(state, "writing");
+    }
 
     handle = _Py_get_osfhandle(self->fd);
     if (handle == INVALID_HANDLE_VALUE)
