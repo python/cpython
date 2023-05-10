@@ -92,15 +92,99 @@ PyDoc_STRVAR(_io__BufferedIOBase_detach__doc__,
 "state.");
 
 #define _IO__BUFFEREDIOBASE_DETACH_METHODDEF    \
-    {"detach", (PyCFunction)_io__BufferedIOBase_detach, METH_NOARGS, _io__BufferedIOBase_detach__doc__},
+    {"detach", _PyCFunction_CAST(_io__BufferedIOBase_detach), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__BufferedIOBase_detach__doc__},
 
 static PyObject *
-_io__BufferedIOBase_detach_impl(PyObject *self);
+_io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_io__BufferedIOBase_detach(PyObject *self, PyObject *Py_UNUSED(ignored))
+_io__BufferedIOBase_detach(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _io__BufferedIOBase_detach_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "detach() takes no arguments");
+        return NULL;
+    }
+    return _io__BufferedIOBase_detach_impl(self, cls);
+}
+
+PyDoc_STRVAR(_io__BufferedIOBase_read__doc__,
+"read($self, /)\n"
+"--\n"
+"\n"
+"Read and return up to n bytes.\n"
+"\n"
+"If the argument is omitted, None, or negative, reads and returns all data until EOF.\n"
+"\n"
+"If the argument is positive, and the underlying raw stream is not \'interactive\', multiple raw reads may be issued to satisfy the byte count (unless EOF is reached first). But for interactive raw streams (as well as sockets and pipes), at most one raw read will be issued, and a short result does not imply that EOF is imminent.\n"
+"\n"
+"Return an empty bytes object on EOF.\n"
+"\n"
+"Return None if the underlying raw stream was open in non-blocking mode and no data is available at the moment.");
+
+#define _IO__BUFFEREDIOBASE_READ_METHODDEF    \
+    {"read", _PyCFunction_CAST(_io__BufferedIOBase_read), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__BufferedIOBase_read__doc__},
+
+static PyObject *
+_io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls);
+
+static PyObject *
+_io__BufferedIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "read() takes no arguments");
+        return NULL;
+    }
+    return _io__BufferedIOBase_read_impl(self, cls);
+}
+
+PyDoc_STRVAR(_io__BufferedIOBase_read1__doc__,
+"read1($self, /)\n"
+"--\n"
+"\n"
+"Read and return up to n bytes, with at most one read() call to the underlying raw stream. A short result does not imply that EOF is imminent.\n"
+"\n"
+"Return an empty bytes object on EOF.");
+
+#define _IO__BUFFEREDIOBASE_READ1_METHODDEF    \
+    {"read1", _PyCFunction_CAST(_io__BufferedIOBase_read1), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__BufferedIOBase_read1__doc__},
+
+static PyObject *
+_io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls);
+
+static PyObject *
+_io__BufferedIOBase_read1(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "read1() takes no arguments");
+        return NULL;
+    }
+    return _io__BufferedIOBase_read1_impl(self, cls);
+}
+
+PyDoc_STRVAR(_io__BufferedIOBase_write__doc__,
+"write($self, /)\n"
+"--\n"
+"\n"
+"Write the given buffer to the IO stream.\n"
+"\n"
+"Return the number of bytes written, which is always the length of b in bytes.\n"
+"\n"
+"Raise BlockingIOError if the buffer is full and the underlying raw stream cannot accept more data at the moment.");
+
+#define _IO__BUFFEREDIOBASE_WRITE_METHODDEF    \
+    {"write", _PyCFunction_CAST(_io__BufferedIOBase_write), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__BufferedIOBase_write__doc__},
+
+static PyObject *
+_io__BufferedIOBase_write_impl(PyObject *self, PyTypeObject *cls);
+
+static PyObject *
+_io__BufferedIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "write() takes no arguments");
+        return NULL;
+    }
+    return _io__BufferedIOBase_write_impl(self, cls);
 }
 
 PyDoc_STRVAR(_io__Buffered_peek__doc__,
@@ -714,4 +798,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8412b10c04259bb8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=86cfa7f53e470cd9 input=a9049054013a1b77]*/
