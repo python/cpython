@@ -634,6 +634,18 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}
 };
 
+#define ADD_TYPE(module, type, spec, base)                               \
+do {                                                                     \
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec,        \
+                                                    (PyObject *)base);   \
+    if (type == NULL) {                                                  \
+        return -1;                                                       \
+    }                                                                    \
+    if (PyModule_AddType(module, type) < 0) {                            \
+        return -1;                                                       \
+    }                                                                    \
+} while (0)
+
 static int
 iomodule_exec(PyObject *m)
 {
@@ -660,18 +672,6 @@ iomodule_exec(PyObject *m)
                               (PyObject *) PyExc_BlockingIOError) < 0) {
         return -1;
     }
-
-#define ADD_TYPE(module, type, spec, base)                               \
-do {                                                                     \
-    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec,        \
-                                                    (PyObject *)base);   \
-    if (type == NULL) {                                                  \
-        return -1;                                                       \
-    }                                                                    \
-    if (PyModule_AddType(module, type) < 0) {                            \
-        return -1;                                                       \
-    }                                                                    \
-} while (0)
 
     // Base classes
     ADD_TYPE(m, state->PyIncrementalNewlineDecoder_Type, &nldecoder_spec, NULL);
