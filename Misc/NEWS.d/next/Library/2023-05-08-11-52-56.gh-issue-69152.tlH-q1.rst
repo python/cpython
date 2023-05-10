@@ -1,7 +1,0 @@
-Added attribute '_raw_proxy_headers' to HTTPConnection class. This
-attribute contains the unprocessed header lines of the proxy server response
-to the CONNECT request.
-Added method get_proxy_response_headers to HTTPConnection class that allows
-to get a dictionary with headers of the proxy server response
-to the CONNECT request.
-The HTTPConnection class attribute _proxy_response_headers has been removed.
