@@ -1122,10 +1122,21 @@ class TestBranchAndJumpEvents(CheckEvents):
 class TestLoadSuperAttr(CheckEvents):
     RECORDERS = CallRecorder, LineRecorder, CRaiseRecorder, CReturnRecorder
 
-    def _super_method_call(self, optimized=False):
+    def _exec(self, codestr, optimized=False):
+        # The compiler checks for statically visible shadowing of the name
+        # `super`, and declines to emit `LOAD_SUPER_ATTR` if shadowing is found.
+        # So inserting `super = super` prevents the compiler from emitting
+        # `LOAD_SUPER_ATTR`, and allows us to test that monitoring events for
+        # `LOAD_SUPER_ATTR` are equivalent to those we'd get from the
+        # un-optimized `LOAD_GLOBAL super; CALL; LOAD_ATTR` form.
         assignment = "x = 1" if optimized else "super = super"
-        codestr = textwrap.dedent(f"""
-            {assignment}
+        codestr = f"{assignment}\n{textwrap.dedent(codestr)}"
+        d = {}
+        exec(codestr, d, d)
+        return d
+
+    def _super_method_call(self, optimized=False):
+        codestr = """
             class A:
                 def method(self, x):
                     return x
@@ -1140,9 +1151,8 @@ class TestLoadSuperAttr(CheckEvents):
             b = B()
             def f():
                 return b.method(1)
-        """)
-        d = {}
-        exec(codestr, d, d)
+        """
+        d = self._exec(codestr, optimized)
         expected = [
             ('line', 'check_events', 10),
             ('call', 'f', sys.monitoring.MISSING),
@@ -1170,9 +1180,7 @@ class TestLoadSuperAttr(CheckEvents):
         self.check_events(opt_func, recorders=self.RECORDERS, expected=opt_expected)
 
     def _super_method_call_error(self, optimized=False):
-        assignment = "x = 1" if optimized else "super = super"
-        codestr = textwrap.dedent(f"""
-            {assignment}
+        codestr = """
             class A:
                 def method(self, x):
                     return x
@@ -1194,9 +1202,8 @@ class TestLoadSuperAttr(CheckEvents):
                     pass
                 else:
                     assert False, "should have raised TypeError"
-        """)
-        d = {}
-        exec(codestr, d, d)
+        """
+        d = self._exec(codestr, optimized)
         expected = [
             ('line', 'check_events', 10),
             ('call', 'f', sys.monitoring.MISSING),
@@ -1224,9 +1231,7 @@ class TestLoadSuperAttr(CheckEvents):
         self.check_events(opt_func, recorders=self.RECORDERS, expected=opt_expected)
 
     def _super_attr(self, optimized=False):
-        assignment = "x = 1" if optimized else "super = super"
-        codestr = textwrap.dedent(f"""
-            {assignment}
+        codestr = """
             class A:
                 x = 1
 
@@ -1238,9 +1243,8 @@ class TestLoadSuperAttr(CheckEvents):
             b = B()
             def f():
                 return b.method()
-        """)
-        d = {}
-        exec(codestr, d, d)
+        """
+        d = self._exec(codestr, optimized)
         expected = [
             ('line', 'check_events', 10),
             ('call', 'f', sys.monitoring.MISSING),
