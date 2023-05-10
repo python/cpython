@@ -115,6 +115,9 @@ bufferediobase_unsupported(_PyIO_State *state, const char *message)
 /*[clinic input]
 _io._BufferedIOBase.detach
 
+    cls: defining_class
+    /
+
 Disconnect this buffer from its underlying raw stream and return it.
 
 After the raw stream has been detached, the buffer is in an unusable
@@ -122,63 +125,89 @@ state.
 [clinic start generated code]*/
 
 static PyObject *
-_io__BufferedIOBase_detach_impl(PyObject *self)
-/*[clinic end generated code: output=754977c8d10ed88c input=822427fb58fe4169]*/
+_io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=b87b135d67cd4448 input=0b61a7b4357c1ea7]*/
 {
     _PyIO_State *state = IO_STATE();
     return bufferediobase_unsupported(state, "detach");
 }
 
-PyDoc_STRVAR(bufferediobase_read_doc,
-    "Read and return up to n bytes.\n"
-    "\n"
-    "If the argument is omitted, None, or negative, reads and\n"
-    "returns all data until EOF.\n"
-    "\n"
-    "If the argument is positive, and the underlying raw stream is\n"
-    "not 'interactive', multiple raw reads may be issued to satisfy\n"
-    "the byte count (unless EOF is reached first).  But for\n"
-    "interactive raw streams (as well as sockets and pipes), at most\n"
-    "one raw read will be issued, and a short result does not imply\n"
-    "that EOF is imminent.\n"
-    "\n"
-    "Returns an empty bytes object on EOF.\n"
-    "\n"
-    "Returns None if the underlying raw stream was open in non-blocking\n"
-    "mode and no data is available at the moment.\n");
+/*[clinic input]
+_io._BufferedIOBase.read
+
+    cls: defining_class
+    /
+    *args: object
+
+Read and return up to n bytes.
+
+If the argument is omitted, None, or negative, read and
+return all data until EOF.
+
+If the argument is positive, and the underlying raw stream is
+not 'interactive', multiple raw reads may be issued to satisfy
+the byte count (unless EOF is reached first).
+However, for interactive raw streams (as well as sockets and pipes),
+at most one raw read will be issued, and a short result does not
+imply that EOF is imminent.
+
+Return an empty bytes object on EOF.
+
+Return None if the underlying raw stream was open in non-blocking
+mode and no data is available at the moment.
+[clinic start generated code]*/
 
 static PyObject *
-bufferediobase_read(PyObject *self, PyObject *args)
+_io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls,
+                              PyObject *args)
+/*[clinic end generated code: output=4521b30940fd7b67 input=390205758adc8510]*/
 {
     _PyIO_State *state = IO_STATE();
     return bufferediobase_unsupported(state, "read");
 }
 
-PyDoc_STRVAR(bufferediobase_read1_doc,
-    "Read and return up to n bytes, with at most one read() call\n"
-    "to the underlying raw stream. A short result does not imply\n"
-    "that EOF is imminent.\n"
-    "\n"
-    "Returns an empty bytes object on EOF.\n");
+/*[clinic input]
+_io._BufferedIOBase.read1
+
+    cls: defining_class
+    /
+    *args: object
+
+Read and return up to n bytes, with at most one read() call to the underlying raw stream.
+
+Return an empty bytes object on EOF.
+A short result does not imply that EOF is imminent.
+[clinic start generated code]*/
 
 static PyObject *
-bufferediobase_read1(PyObject *self, PyObject *args)
+_io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls,
+                               PyObject *args)
+/*[clinic end generated code: output=636fd241c21e050a input=ef546a1238c5b41c]*/
 {
     _PyIO_State *state = IO_STATE();
     return bufferediobase_unsupported(state, "read1");
 }
 
-PyDoc_STRVAR(bufferediobase_write_doc,
-    "Write the given buffer to the IO stream.\n"
-    "\n"
-    "Returns the number of bytes written, which is always the length of b\n"
-    "in bytes.\n"
-    "\n"
-    "Raises BlockingIOError if the buffer is full and the\n"
-    "underlying raw stream cannot accept more data at the moment.\n");
+/*[clinic input]
+_io._BufferedIOBase.write
+
+    cls: defining_class
+    /
+    *args: object
+
+Write the given buffer to the IO stream.
+
+Return the number of bytes written, which is always
+the length of b in bytes.
+
+Raise BlockingIOError if the buffer is full and the
+underlying raw stream cannot accept more data at the moment.
+[clinic start generated code]*/
 
 static PyObject *
-bufferediobase_write(PyObject *self, PyObject *args)
+_io__BufferedIOBase_write_impl(PyObject *self, PyTypeObject *cls,
+                               PyObject *args)
+/*[clinic end generated code: output=d51feea4bcac9892 input=f79b72c4dccb3dc2]*/
 {
     _PyIO_State *state = IO_STATE();
     return bufferediobase_unsupported(state, "write");
@@ -2336,11 +2365,11 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
 
 static PyMethodDef bufferediobase_methods[] = {
     _IO__BUFFEREDIOBASE_DETACH_METHODDEF
-    {"read", bufferediobase_read, METH_VARARGS, bufferediobase_read_doc},
-    {"read1", bufferediobase_read1, METH_VARARGS, bufferediobase_read1_doc},
+    _IO__BUFFEREDIOBASE_READ_METHODDEF
+    _IO__BUFFEREDIOBASE_READ1_METHODDEF
     _IO__BUFFEREDIOBASE_READINTO_METHODDEF
     _IO__BUFFEREDIOBASE_READINTO1_METHODDEF
-    {"write", bufferediobase_write, METH_VARARGS, bufferediobase_write_doc},
+    _IO__BUFFEREDIOBASE_WRITE_METHODDEF
     {NULL, NULL}
 };
 
