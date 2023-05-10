@@ -87,4 +87,10 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="_WriteTCL_LIBRARY" Outputs="$(OutDir)TCL_LIBRARY.env" AfterTargets="Build">
+    <WriteLinesToFile File="$(OutDir)TCL_LIBRARY.env" Lines="$(tcltkdir)\lib\tcl$(TclMajorVersion).$(TclMinorVersion)" Encoding="utf-8" Overwrite="true" />
+  </Target>
+  <Target Name="_CleanTCL_LIBRARY" BeforeTargets="Clean">
+    <Delete Files="$(OutDir)TCL_LIBRARY.env" />
+  </Target>
 </Project>
