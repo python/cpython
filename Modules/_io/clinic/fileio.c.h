@@ -349,25 +349,43 @@ PyDoc_STRVAR(_io_FileIO_write__doc__,
 "returns None if the write would block.");
 
 #define _IO_FILEIO_WRITE_METHODDEF    \
-    {"write", (PyCFunction)_io_FileIO_write, METH_O, _io_FileIO_write__doc__},
+    {"write", _PyCFunction_CAST(_io_FileIO_write), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_FileIO_write__doc__},
 
 static PyObject *
-_io_FileIO_write_impl(fileio *self, Py_buffer *b);
+_io_FileIO_write_impl(fileio *self, PyTypeObject *cls, Py_buffer *b);
 
 static PyObject *
-_io_FileIO_write(fileio *self, PyObject *arg)
+_io_FileIO_write(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "write",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_buffer b = {NULL, NULL};
 
-    if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &b, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", "argument", "contiguous buffer", arg);
+        _PyArg_BadArgument("write", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    return_value = _io_FileIO_write_impl(self, &b);
+    return_value = _io_FileIO_write_impl(self, cls, &b);
 
 exit:
     /* Cleanup for b */
@@ -503,4 +521,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=4a1259440192e021 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=58ebd74e61e9c53d input=a9049054013a1b77]*/

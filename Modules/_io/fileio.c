@@ -846,6 +846,7 @@ _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
 
 /*[clinic input]
 _io.FileIO.write
+    cls: defining_class
     b: Py_buffer
     /
 
@@ -857,8 +858,8 @@ returns None if the write would block.
 [clinic start generated code]*/
 
 static PyObject *
-_io_FileIO_write_impl(fileio *self, Py_buffer *b)
-/*[clinic end generated code: output=b4059db3d363a2f7 input=6e7908b36f0ce74f]*/
+_io_FileIO_write_impl(fileio *self, PyTypeObject *cls, Py_buffer *b)
+/*[clinic end generated code: output=927e25be80f3b77b input=2776314f043088f5]*/
 {
     Py_ssize_t n;
     int err;
@@ -866,7 +867,7 @@ _io_FileIO_write_impl(fileio *self, Py_buffer *b)
     if (self->fd < 0)
         return err_closed();
     if (!self->writable) {
-        _PyIO_State *state = IO_STATE();
+        _PyIO_State *state = get_io_state_by_cls(cls);
         return err_mode(state, "writing");
     }
 
