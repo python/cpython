@@ -71,11 +71,9 @@ PyDoc_STRVAR(iobase_doc,
 
 /* Internal methods */
 static PyObject *
-iobase_unsupported(const char *message)
+iobase_unsupported(_PyIO_State *state, const char *message)
 {
-    _PyIO_State *state = IO_STATE();
-    if (state != NULL)
-        PyErr_SetString(state->unsupported_operation, message);
+    PyErr_SetString(state->unsupported_operation, message);
     return NULL;
 }
 
@@ -97,7 +95,8 @@ PyDoc_STRVAR(iobase_seek_doc,
 static PyObject *
 iobase_seek(PyObject *self, PyObject *args)
 {
-    return iobase_unsupported("seek");
+    _PyIO_State *state = IO_STATE();
+    return iobase_unsupported(state, "seek");
 }
 
 /*[clinic input]
@@ -122,7 +121,8 @@ PyDoc_STRVAR(iobase_truncate_doc,
 static PyObject *
 iobase_truncate(PyObject *self, PyObject *args)
 {
-    return iobase_unsupported("truncate");
+    _PyIO_State *state = IO_STATE();
+    return iobase_unsupported(state, "truncate");
 }
 
 static int
@@ -202,6 +202,27 @@ _PyIOBase_check_closed(PyObject *self, PyObject *args)
         return Py_None;
     }
     Py_RETURN_NONE;
+}
+
+static PyObject *
+iobase_check_seekable(PyObject *self, PyObject *args)
+{
+    _PyIO_State *state = IO_STATE();
+    return _PyIOBase_check_seekable(state, self, args);
+}
+
+static PyObject *
+iobase_check_readable(PyObject *self, PyObject *args)
+{
+    _PyIO_State *state = IO_STATE();
+    return _PyIOBase_check_readable(state, self, args);
+}
+
+static PyObject *
+iobase_check_writable(PyObject *self, PyObject *args)
+{
+    _PyIO_State *state = IO_STATE();
+    return _PyIOBase_check_writable(state, self, args);
 }
 
 /* XXX: IOBase thinks it has to maintain its own internal state in
@@ -372,14 +393,14 @@ _io__IOBase_seekable_impl(PyObject *self)
 }
 
 PyObject *
-_PyIOBase_check_seekable(PyObject *self, PyObject *args)
+_PyIOBase_check_seekable(_PyIO_State *state, PyObject *self, PyObject *args)
 {
     PyObject *res  = PyObject_CallMethodNoArgs(self, &_Py_ID(seekable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        iobase_unsupported("File or stream is not seekable.");
+        iobase_unsupported(state, "File or stream is not seekable.");
         return NULL;
     }
     if (args == Py_True) {
@@ -405,14 +426,14 @@ _io__IOBase_readable_impl(PyObject *self)
 
 /* May be called with any object */
 PyObject *
-_PyIOBase_check_readable(PyObject *self, PyObject *args)
+_PyIOBase_check_readable(_PyIO_State *state, PyObject *self, PyObject *args)
 {
     PyObject *res = PyObject_CallMethodNoArgs(self, &_Py_ID(readable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        iobase_unsupported("File or stream is not readable.");
+        iobase_unsupported(state, "File or stream is not readable.");
         return NULL;
     }
     if (args == Py_True) {
@@ -438,14 +459,14 @@ _io__IOBase_writable_impl(PyObject *self)
 
 /* May be called with any object */
 PyObject *
-_PyIOBase_check_writable(PyObject *self, PyObject *args)
+_PyIOBase_check_writable(_PyIO_State *state, PyObject *self, PyObject *args)
 {
     PyObject *res = PyObject_CallMethodNoArgs(self, &_Py_ID(writable));
     if (res == NULL)
         return NULL;
     if (res != Py_True) {
         Py_CLEAR(res);
-        iobase_unsupported("File or stream is not writable.");
+        iobase_unsupported(state, "File or stream is not writable.");
         return NULL;
     }
     if (args == Py_True) {
@@ -487,7 +508,8 @@ static PyObject *
 _io__IOBase_fileno_impl(PyObject *self)
 /*[clinic end generated code: output=7cc0973f0f5f3b73 input=4e37028947dc1cc8]*/
 {
-    return iobase_unsupported("fileno");
+    _PyIO_State *state = IO_STATE();
+    return iobase_unsupported(state, "fileno");
 }
 
 /*[clinic input]
@@ -798,9 +820,9 @@ static PyMethodDef iobase_methods[] = {
     _IO__IOBASE_WRITABLE_METHODDEF
 
     {"_checkClosed",   _PyIOBase_check_closed, METH_NOARGS},
-    {"_checkSeekable", _PyIOBase_check_seekable, METH_NOARGS},
-    {"_checkReadable", _PyIOBase_check_readable, METH_NOARGS},
-    {"_checkWritable", _PyIOBase_check_writable, METH_NOARGS},
+    {"_checkSeekable", iobase_check_seekable, METH_NOARGS},
+    {"_checkReadable", iobase_check_readable, METH_NOARGS},
+    {"_checkWritable", iobase_check_writable, METH_NOARGS},
 
     _IO__IOBASE_FILENO_METHODDEF
     _IO__IOBASE_ISATTY_METHODDEF

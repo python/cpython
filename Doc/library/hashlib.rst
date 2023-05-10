@@ -432,7 +432,7 @@ Constructor functions also accept the following tree hashing parameters:
    :alt: Explanation of tree mode parameters.
 
 See section 2.10 in `BLAKE2 specification
-<https://blake2.net/blake2_20130129.pdf>`_ for comprehensive review of tree
+<https://www.blake2.net/blake2_20130129.pdf>`_ for comprehensive review of tree
 hashing.
 
 
@@ -619,7 +619,7 @@ on the hash function used in digital signatures.
     by the signer.
 
     (`NIST SP-800-106 "Randomized Hashing for Digital Signatures"
-    <https://csrc.nist.gov/publications/detail/sp/800-106/final>`_)
+    <https://csrc.nist.gov/publications/detail/sp/800-106/archive/2009-02-25>`_)
 
 In BLAKE2 the salt is processed as a one-time input to the hash function during
 initialization, rather than as an input to each compression function.
@@ -628,7 +628,7 @@ initialization, rather than as an input to each compression function.
 
     *Salted hashing* (or just hashing) with BLAKE2 or any other general-purpose
     cryptographic hash function, such as SHA-256, is not suitable for hashing
-    passwords.  See `BLAKE2 FAQ <https://blake2.net/#qa>`_ for more
+    passwords.  See `BLAKE2 FAQ <https://www.blake2.net/#qa>`_ for more
     information.
 ..
 
@@ -764,9 +764,9 @@ Domain Dedication 1.0 Universal:
 
 * *Alexandr Sokolovskiy*
 
-.. _BLAKE2: https://blake2.net
+.. _BLAKE2: https://www.blake2.net
 .. _HMAC: https://en.wikipedia.org/wiki/Hash-based_message_authentication_code
-.. _BLAKE: https://131002.net/blake/
+.. _BLAKE: https://web.archive.org/web/20200918190133/https://131002.net/blake/
 .. _SHA-3: https://en.wikipedia.org/wiki/NIST_hash_function_competition
 .. _ChaCha: https://cr.yp.to/chacha.html
 .. _pyblake2: https://pythonhosted.org/pyblake2/
@@ -782,7 +782,7 @@ Domain Dedication 1.0 Universal:
    Module :mod:`base64`
       Another way to encode binary hashes for non-binary environments.
 
-   https://blake2.net
+   https://www.blake2.net
       Official BLAKE2 website.
 
    https://csrc.nist.gov/csrc/media/publications/fips/180/2/archive/2002-08-01/documents/fips180-2.pdf

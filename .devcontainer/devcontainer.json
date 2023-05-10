@@ -37,9 +37,15 @@
                 // "ms-python.python"
             ],
             "settings": {
+                "C_Cpp.default.compilerPath": "/usr/bin/clang",
                 "C_Cpp.default.cStandard": "c11",
                 "C_Cpp.default.defines": [
+                    "CONFIG_64",
                     "Py_BUILD_CORE"
+                ],
+                "C_Cpp.default.includePath": [
+                    "${workspaceFolder}/*",
+                    "${workspaceFolder}/Include/**"
                 ],
                 // https://github.com/microsoft/vscode-cpptools/issues/10732
                 "C_Cpp.errorSquiggles": "disabled",

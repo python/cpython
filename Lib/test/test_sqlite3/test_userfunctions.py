@@ -562,7 +562,7 @@ class WindowFunctionTests(unittest.TestCase):
         # callback errors to sqlite3_step(); this implies that OperationalError
         # is _not_ raised.
         with patch.object(WindowSumInt, "finalize", side_effect=BadWindow):
-            name = f"exception_in_finalize"
+            name = "exception_in_finalize"
             self.con.create_window_function(name, 1, WindowSumInt)
             self.cur.execute(self.query % name)
             self.cur.fetchall()

@@ -1753,6 +1753,17 @@ def Unpack(self, parameters):
         Foo[*tuple[int, str]]
         class Bar(Generic[*Ts]): ...
 
+    The operator can also be used along with a `TypedDict` to annotate
+    `**kwargs` in a function signature. For instance:
+
+      class Movie(TypedDict):
+        name: str
+        year: int
+
+      # This function expects two keyword arguments - *name* of type `str` and
+      # *year* of type `int`.
+      def foo(**kwargs: Unpack[Movie]): ...
+
     Note that there is only some runtime checking of this operator. Not
     everything the runtime allows may be accepted by static type checkers.
 
@@ -1767,7 +1778,7 @@ class _UnpackGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):
         # `Unpack` only takes one argument, so __args__ should contain only
         # a single item.
-        return '*' + repr(self.__args__[0])
+        return f'typing.Unpack[{_type_repr(self.__args__[0])}]'
 
     def __getitem__(self, args):
         if self.__typing_is_unpacked_typevartuple__:
@@ -1885,7 +1896,7 @@ class Generic:
                         base.__origin__ is Generic):
                     if gvars is not None:
                         raise TypeError(
-                            "Cannot inherit from Generic[...] multiple types.")
+                            "Cannot inherit from Generic[...] multiple times.")
                     gvars = base.__parameters__
             if gvars is not None:
                 tvarset = set(tvars)
@@ -1905,7 +1916,8 @@ class _TypingEllipsis:
 
 _TYPING_INTERNALS = frozenset({
     '__parameters__', '__orig_bases__',  '__orig_class__',
-    '_is_protocol', '_is_runtime_protocol'
+    '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
+    '__callable_proto_members_only__',
 })
 
 _SPECIAL_NAMES = frozenset({
@@ -1933,11 +1945,6 @@ def _get_protocol_attrs(cls):
             if not attr.startswith('_abc_') and attr not in EXCLUDED_ATTRIBUTES:
                 attrs.add(attr)
     return attrs
-
-
-def _is_callable_members_only(cls, protocol_attrs):
-    # PEP 544 prohibits using issubclass() with protocols that have non-method members.
-    return all(callable(getattr(cls, attr, None)) for attr in protocol_attrs)
 
 
 def _no_init_or_replace_init(self, *args, **kwargs):
@@ -1998,9 +2005,29 @@ _PROTO_ALLOWLIST = {
 }
 
 
+@functools.cache
+def _lazy_load_getattr_static():
+    # Import getattr_static lazily so as not to slow down the import of typing.py
+    # Cache the result so we don't slow down _ProtocolMeta.__instancecheck__ unnecessarily
+    from inspect import getattr_static
+    return getattr_static
+
+
+_cleanups.append(_lazy_load_getattr_static.cache_clear)
+
+
 class _ProtocolMeta(ABCMeta):
     # This metaclass is really unfortunate and exists only because of
     # the lack of __instancehook__.
+    def __init__(cls, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        cls.__protocol_attrs__ = _get_protocol_attrs(cls)
+        # PEP 544 prohibits using issubclass()
+        # with protocols that have non-method members.
+        cls.__callable_proto_members_only__ = all(
+            callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
+        )
+
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
         # assigned in __init__.
@@ -2013,25 +2040,22 @@ class _ProtocolMeta(ABCMeta):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
 
-        if not is_protocol_cls and issubclass(instance.__class__, cls):
-            return True
-
-        protocol_attrs = _get_protocol_attrs(cls)
-
-        if (
-            _is_callable_members_only(cls, protocol_attrs)
-            and issubclass(instance.__class__, cls)
-        ):
+        if super().__instancecheck__(instance):
             return True
 
         if is_protocol_cls:
-            if all(hasattr(instance, attr) and
-                    # All *methods* can be blocked by setting them to None.
-                    (not callable(getattr(cls, attr, None)) or
-                     getattr(instance, attr) is not None)
-                    for attr in protocol_attrs):
+            getattr_static = _lazy_load_getattr_static()
+            for attr in cls.__protocol_attrs__:
+                try:
+                    val = getattr_static(instance, attr)
+                except AttributeError:
+                    break
+                if val is None and callable(getattr(cls, attr, None)):
+                    break
+            else:
                 return True
-        return super().__instancecheck__(instance)
+
+        return False
 
 
 class Protocol(Generic, metaclass=_ProtocolMeta):
@@ -2087,9 +2111,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                 raise TypeError("Instance and class checks can only be used with"
                                 " @runtime_checkable protocols")
 
-            protocol_attrs = _get_protocol_attrs(cls)
-
-            if not _is_callable_members_only(cls, protocol_attrs):
+            if not cls.__callable_proto_members_only__ :
                 if _allow_reckless_class_checks():
                     return NotImplemented
                 raise TypeError("Protocols with non-method members"
@@ -2099,7 +2121,7 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
                 raise TypeError('issubclass() arg 1 must be a class')
 
             # Second, perform the actual structural compatibility check.
-            for attr in protocol_attrs:
+            for attr in cls.__protocol_attrs__:
                 for base in other.__mro__:
                     # Check if the members appears in the class dictionary...
                     if attr in base.__dict__:
@@ -2143,6 +2165,8 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
     with extra annotations. The alias behaves like a normal typing alias,
     instantiating is the same as instantiating the underlying type, binding
     it to types is also the same.
+
+    The metadata itself is stored in a '__metadata__' attribute as a tuple.
     """
     def __init__(self, origin, metadata):
         if isinstance(origin, _AnnotatedAlias):
@@ -2198,6 +2222,10 @@ class Annotated:
     Details:
 
     - It's an error to call `Annotated` with less than two arguments.
+    - Access the metadata via the ``__metadata__`` attribute::
+
+        Annotated[int, '$'].__metadata__ == ('$',)
+
     - Nested Annotated are flattened::
 
         Annotated[Annotated[T, Ann1, Ann2], Ann3] == Annotated[T, Ann1, Ann2, Ann3]
@@ -2291,15 +2319,16 @@ def cast(typ, val):
 def assert_type(val, typ, /):
     """Ask a static type checker to confirm that the value is of the given type.
 
-    When the type checker encounters a call to assert_type(), it
+    At runtime this does nothing: it returns the first argument unchanged with no
+    checks or side effects, no matter the actual type of the argument.
+
+    When a static type checker encounters a call to assert_type(), it
     emits an error if the value is not of the specified type::
 
         def greet(name: str) -> None:
             assert_type(name, str)  # ok
             assert_type(name, int)  # type checker error
 
-    At runtime this returns the first argument unchanged and otherwise
-    does nothing.
     """
     return val
 
@@ -2945,7 +2974,9 @@ def NamedTuple(typename, fields=None, /, **kwargs):
     elif kwargs:
         raise TypeError("Either list of fields or keywords"
                         " can be provided to NamedTuple, not both")
-    return _make_nmtuple(typename, fields, module=_caller())
+    nt = _make_nmtuple(typename, fields, module=_caller())
+    nt.__orig_bases__ = (NamedTuple,)
+    return nt
 
 _NamedTuple = type.__new__(NamedTupleMeta, 'NamedTuple', (), {})
 
@@ -2976,6 +3007,9 @@ class _TypedDictMeta(type):
             generic_base = ()
 
         tp_dict = type.__new__(_TypedDictMeta, name, (*generic_base, dict), ns)
+
+        if not hasattr(tp_dict, '__orig_bases__'):
+            tp_dict.__orig_bases__ = bases
 
         annotations = {}
         own_annotations = ns.get('__annotations__', {})
@@ -3087,7 +3121,9 @@ def TypedDict(typename, fields=None, /, *, total=True, **kwargs):
         # Setting correct module is necessary to make typed dict classes pickleable.
         ns['__module__'] = module
 
-    return _TypedDictMeta(typename, (), ns, total=total)
+    td = _TypedDictMeta(typename, (), ns, total=total)
+    td.__orig_bases__ = (TypedDict,)
+    return td
 
 _TypedDict = type.__new__(_TypedDictMeta, 'TypedDict', (), {})
 TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)

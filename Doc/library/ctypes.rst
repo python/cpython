@@ -390,7 +390,7 @@ regular, non-variadic, function arguments:
 
    libc.printf.argtypes = [ctypes.c_char_p]
 
-Because specifying the attribute does inhibit portability it is advised to always
+Because specifying the attribute does not inhibit portability it is advised to always
 specify ``argtypes`` for all variadic functions.
 
 
