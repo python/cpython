@@ -294,6 +294,12 @@ The :mod:`csv` module defines the following classes:
 
       Twenty rows after the first row are sampled; if more than half of columns +
       rows meet the criteria, :const:`True` is returned.
+      
+      To improve the accuracy of the heuristic, it will check whether all columns
+      are strings and no column types are specified.
+      If this condition is satisfied, it will compute the average length of strings
+      across all columns and stores this value in the columnTypes dictionary with a key of 0.
+      This information is used to estimate if the first row is a header.
 
    .. note::
 
