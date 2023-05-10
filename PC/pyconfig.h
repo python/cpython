@@ -330,6 +330,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       define SIZEOF_HKEY 8
 #       define SIZEOF_SIZE_T 8
 #       define ALIGNOF_SIZE_T 8
+#       define ALIGNOF_MAX_ALIGN_T 8
 /* configure.ac defines HAVE_LARGEFILE_SUPPORT iff
    sizeof(off_t) > sizeof(long), and sizeof(long long) >= sizeof(off_t).
    On Win64 the second condition is not true, but if fpos_t replaces off_t
@@ -351,6 +352,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       else
 #       define SIZEOF_TIME_T 4
 #       endif
+#       define ALIGNOF_MAX_ALIGN_T 8
 #endif
 
 #ifdef _DEBUG

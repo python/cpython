@@ -216,6 +216,7 @@ Modules/_io/_iomodule.c	-	static_types	-
 Modules/_io/textio.c	-	encodefuncs	-
 Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
 Modules/_localemodule.c	-	langinfo_constants	-
+Modules/_lsprof.c	-	callback_table	-
 Modules/_pickle.c	-	READ_WHOLE_LINE	-
 Modules/_sqlite/module.c	-	error_codes	-
 Modules/_sre/sre.c	pattern_repr	flag_names	-
@@ -404,6 +405,7 @@ Modules/_testbuffer.c	ndarray_memoryview_from_buffer	strides	-
 Modules/_testbuffer.c	ndarray_memoryview_from_buffer	suboffsets	-
 Modules/_testbuffer.c	ndarray_push	kwlist	-
 Modules/_testbuffer.c	staticarray_init	kwlist	-
+Modules/_testcapi/buffer.c	-	testBufType	-
 Modules/_testcapi/code.c	get_code_extra_index	key	-
 Modules/_testcapi/datetime.c	-	test_run_counter	-
 Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-

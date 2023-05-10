@@ -1455,7 +1455,7 @@ _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub, _Py_CODEUNIT *ins
         goto fail;
     }
     if (PyObject_CheckBuffer(container)) {
-        if (PyLong_CheckExact(sub) && (((size_t)Py_SIZE(sub)) > 1)) {
+        if (PyLong_CheckExact(sub) && (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub))) {
             SPECIALIZATION_FAIL(STORE_SUBSCR, SPEC_FAIL_OUT_OF_RANGE);
         }
         else if (strcmp(container_type->tp_name, "array.array") == 0) {

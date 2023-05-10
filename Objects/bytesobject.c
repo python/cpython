@@ -423,9 +423,6 @@ formatfloat(PyObject *v, int flags, int prec, int type,
     if (flags & F_ALT) {
         dtoa_flags |= Py_DTSF_ALT;
     }
-    if (flags & F_NO_NEG_0) {
-        dtoa_flags |= Py_DTSF_NO_NEG_0;
-    }
     p = PyOS_double_to_string(x, type, prec, dtoa_flags, NULL);
 
     if (p == NULL)
@@ -705,7 +702,6 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 case ' ': flags |= F_BLANK; continue;
                 case '#': flags |= F_ALT; continue;
                 case '0': flags |= F_ZERO; continue;
-                case 'z': flags |= F_NO_NEG_0; continue;
                 }
                 break;
             }

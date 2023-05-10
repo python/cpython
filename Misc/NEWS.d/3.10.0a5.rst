@@ -499,7 +499,7 @@ Araujo.
 .. nonce: HY2beA
 .. section: Documentation
 
-Updated importlib.utils.resolve_name() doc to use __spec__.parent instead of
+Updated importlib.util.resolve_name() doc to use __spec__.parent instead of
 __package__. (Thanks Yair Frid.)
 
 ..
