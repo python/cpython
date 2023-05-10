@@ -745,7 +745,8 @@ The add_argument() method
 
 .. method:: ArgumentParser.add_argument(name or flags..., [action], [nargs], \
                            [const], [default], [type], [choices], [required], \
-                           [help], [metavar], [dest])
+                           [help], [metavar], [dest], [capture], \
+                           [capture_reset], [key])
 
    Define how a single command-line argument should be parsed.  Each parameter
    has its own more detailed description below, but in short they are:
@@ -776,6 +777,21 @@ The add_argument() method
 
    * dest_ - The name of the attribute to be added to the object returned by
      :meth:`parse_args`.
+
+   * capture_ - A name or a list of names of attributes to capture by one of
+     capture actions.
+
+     .. versionadded:: 3.10
+
+   * capture_reset_ - A name or a list of name of attributes to capture and
+     reset to default value by one of capture actions.
+
+     .. versionadded:: 3.10
+
+   * key_ - The key to use putting command-line argument to dictionary object
+     created by capture actions.
+
+     .. versionadded:: 3.10
 
 The following sections describe how each of these are used.
 
@@ -914,6 +930,100 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo=['f1', 'f2', 'f3', 'f4'])
 
   .. versionadded:: 3.8
+
+* ``'extend_capture'`` - Captures preceding argument values listed in the
+  capture_ and capture_reset_ keyword arguments and creates a dictionary object
+  from those values, then adds actual command-line value to the dictionary using
+  the key_ keyword argument, finally the created dictionary is appended to the
+  dest_ list. After capturing, all arguments listed in capture_reset_ are reset
+  to their default values. If there are more than one command-line values, a new
+  dictionary object is created, and appended to the list for each value, with
+  capture_reset_ arguments reset to their default values after first value is
+  added.
+  Example usage::
+
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument("--load-addr", type=lambda s: int(s, 16))
+    >>> parser.add_argument("--exec-addr", type=lambda s: int(s, 16))
+    >>> parser.add_argument("--replace", action="store_true")
+    >>> parser.add_argument("--file", nargs="*", action="extend_capture",
+    ...     capture="*", capture_reset=["load_addr", "exec_addr"])
+    >>> parser.parse_args("--replace --load-addr 1900 --exec-addr 8023 "
+    ...     "--file CALC !BOOT".split())
+    Namespace(load_addr=None, exec_addr=None, replace=True, file=[
+        {'replace': True, 'exec_addr': 32803, 'load_addr': 6400, 'file': 'CALC'},
+        {'replace': True, 'exec_addr': None, 'load_addr': None, 'file': '!BOOT'}])
+
+  .. versionadded:: 3.10
+
+* ``'append_capture'`` - This action is very similar to ``'extend_capture'``.
+  The only difference is that instead of creating a dictionary object for each
+  command-line value, the is only one dictionary created, with all command-line
+  values stored as a list using the key_ keyword argument, the created
+  dictionary is appended to the list in the attribute named by dest_ keyword
+  argument in the object returned by the :meth:`~ArgumentParser.parse_args`
+  method.
+  Example usage::
+
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument("--color", default="red")
+    >>> parser.add_argument("--size")
+    >>> parser.add_argument("--extras", action="append", default=None)
+    >>> parser.add_argument("--item", nargs='*', action="append_capture",
+    ...     capture_reset="*")
+    >>> parser.parse_args("--color blue --size S --item jeans blouse "
+    ...     "--extras with-print --item hat".split())
+    Namespace(color='red', size=None, extras=None, item=[
+        {'size': 'S', 'color': 'blue', 'extras': None, 'item': ['jeans', 'blouse']},
+        {'size': None, 'color': 'red', 'extras': ['with-print'], 'item': ['hat']}])
+
+  .. versionadded:: 3.10
+
+* ``'store_capture'`` - Captures preceding argument values listed in the
+  capture_ and capture_reset_ and creates a dictionary object from those values,
+  then adds actual command-line value to the dictionary using the key_ keyword
+  argument, finally the created dictionary is stored in the attribute named
+  by dest_ keyword argument in the object returned by
+  the :meth:`~ArgumentParser.parse_args` method.
+  Example usage::
+
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument("--user", default=None)
+    >>> parser.add_argument("--server", default="localhost")
+    >>> parser.add_argument("src1", action="store_capture", key="file",
+    ...     capture_reset=["user", "server"])
+    >>> parser.add_argument("src2", action="store_capture", key="file",
+    ...     capture_reset=["user", "server"])
+    >>> parser.add_argument("dst", action="store_capture", key="file",
+    ...     capture_reset=["user", "server"])
+    >>> parser.parse_args("first --user guest --server no_such second "
+    ...     "--server not_found third".split())
+    Namespace(user=None, server='localhost',
+        src1={'user': None, 'server': 'localhost', 'file': 'first'},
+        src2={'user': 'guest', 'server': 'no_such', 'file': 'second'},
+        dst={'user': None, 'server': 'not_found', 'file': 'third'})
+
+  .. versionadded:: 3.10
+
+* ``'capture'`` - Captures preceding argument values as other capture actions,
+  but in contrast to them, it doesn't take any command-line values. The created
+  dictionary is appended to the list in the attribute named by dest_ keyword.
+  Example usage::
+
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument("--type", default="unknown")
+    >>> parser.add_argument("--energy", type=float, default=None)
+    >>> parser.add_argument("--direction", type=float, nargs=2, default=None)
+    >>> parser.add_argument("--log", action="capture", capture_reset="*")
+    >>> parser.parse_args("--energy 3.055e8 --direction 20.54 1.54 --log "
+    ...     "--type meson --energy 3.09e9 --log "
+    ...     "--type cruiser --direction 43.20 90.00 --log".split())
+    Namespace(type='unknown', energy=None, direction=None, log=[
+        {'type': 'unknown', 'direction': [20.54, 1.54], 'energy': 305500000.0},
+        {'type': 'meson', 'direction': None, 'energy': 3090000000.0},
+        {'type': 'cruiser', 'direction': [43.2, 90.0], 'energy': None}])
+
+  .. versionadded:: 3.10
 
 You may also specify an arbitrary action by passing an Action subclass or
 other object that implements the same interface. The ``BooleanOptionalAction``
@@ -1438,6 +1548,49 @@ behavior::
    >>> parser.add_argument('--foo', dest='bar')
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
+
+
+capture
+^^^^^^^
+
+The list of attributes to capture. This can be either a single attribute name,
+a list (or other iterable type) of names or special value ``'*'``. Name of
+attribute associated with each argument is determined by the dest_ keyword
+passed to :meth:`~ArgumentParser.add_argument` method when the argument was
+created. If capture_ is ``'*'``, all attributes are captured, except for this
+argument's own value.
+
+This keyword argument is valid only for ``'extend_capture'``,
+``'append_capture'``, ``'store_capture'`` and ``'capture'`` actions.
+
+.. versionadded:: 3.10
+
+
+capture_reset
+^^^^^^^^^^^^^
+
+The list of attributes to capture and reset to default value. As with capture_,
+this can be ``'*'`` to capture and reset all attributes except for this
+argument's own value.
+
+This keyword argument is valid only for ``'extend_capture'``,
+``'append_capture'``, ``'store_capture'`` and ``'capture'`` actions.
+
+.. versionadded:: 3.10
+
+
+key
+^^^
+
+The key to use for adding this argument's own command-line value to dictionary
+of captured values. If this keyword argument is not specified, the dest_ is
+used.
+
+This keyword argument is valid only for ``'extend_capture'``,
+``'append_capture'`` and ``'store_capture'`` actions.
+
+.. versionadded:: 3.10
+
 
 Action classes
 ^^^^^^^^^^^^^^

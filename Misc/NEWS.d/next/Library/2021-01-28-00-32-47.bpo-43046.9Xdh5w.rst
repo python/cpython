@@ -1,0 +1,1 @@
+New actions for :meth:`argparse.ArgumentParser.add_argument` in :mod:`argparse`: 'extend_capture', 'append_capture', 'store_capture' and 'capture'.

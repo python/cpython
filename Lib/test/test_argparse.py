@@ -2049,6 +2049,137 @@ class TestActionExtend(ParserTestCase):
         ('--foo f1 --foo f2 f3 f4', NS(foo=['f1', 'f2', 'f3', 'f4'])),
     ]
 
+
+class TestActionAppendCapture(ParserTestCase):
+    argument_signatures = [
+        Sig('--color', default='red'),
+        Sig('--size'),
+        Sig('--extras', action='append', default=['cheap']),
+        Sig('--item', nargs='*', action="append_capture",
+            capture=['size', 'extras'], capture_reset='color')
+    ]
+    failures = ()
+    successes = [
+        ('--color blue --size S --item jeans blouse --extras with-print --item hat',
+         NS(item=[{'color': 'blue', 'size': 'S', 'item': ['jeans', 'blouse'], 'extras': ['cheap']},
+                   {'color': 'red', 'size': 'S', 'item': ['hat'], 'extras': ['cheap', 'with-print']}],
+            color='red',
+            size='S',
+            extras=['cheap', 'with-print']))
+    ]
+
+
+class TestActionAppendCaptureConst(ParserTestCase):
+    argument_signatures = [
+        Sig('--color', default='red'),
+        Sig('--item', const='something', nargs='?', action="append_capture",
+            capture_reset='color')
+    ]
+    failures = ()
+    successes = [
+        ('--color blue --item Danube --item',
+         NS(item=[{'color': 'blue', 'item': 'Danube'},
+                  {'color': 'red', 'item': 'something'}],
+            color='red'))
+    ]
+
+
+class TestActionExtendCapture(ParserTestCase):
+    argument_signatures = [
+        Sig('--load-addr', type=lambda s: int(s, 16)),
+        Sig('--exec-addr', type=lambda s: int(s, 16)),
+        Sig('--replace', action='store_true'),
+        Sig('--file', nargs='*', action="extend_capture", capture='*',
+            capture_reset=['load_addr', 'exec_addr'])]
+    failures = ()
+    successes = [
+        ('--replace --load-addr 1900 --exec-addr 8023 --file CALC !BOOT',
+         NS(file=[{'file': 'CALC', 'load_addr': 0x1900, 'exec_addr': 0x8023, 'replace': True},
+                  {'file': '!BOOT', 'load_addr': None, 'exec_addr': None, 'replace': True}],
+            load_addr=None,
+            exec_addr=None,
+            replace=True))
+    ]
+
+
+PR24259_MERGED = False
+if PR24259_MERGED:
+    class TestActionExtendCapturePositional(ParserTestCase):
+        argument_signatures = [
+            Sig('--load-addr', type=lambda s: int(s, 16)),
+            Sig('--exec-addr', type=lambda s: int(s, 16)),
+            Sig('--replace', action='store_true'),
+            Sig('file', nargs='**', action="extend_capture", capture='*',
+                capture_reset=['load_addr', 'exec_addr'])]
+        failures = ()
+        successes = [
+            ('--replace !BOOT --load-addr 1900 --exec-addr 8023 CALC README',
+            NS(file=[{'file': '!BOOT',  'load_addr': None,   'exec_addr': None,   'replace': True},
+                     {'file': 'CALC',   'load_addr': 0x1900, 'exec_addr': 0x8023, 'replace': True},
+                     {'file': 'README', 'load_addr': None,   'exec_addr': None,   'replace': True}],
+                load_addr=None,
+                exec_addr=None,
+                replace=True))
+        ]
+
+
+class TestActionStoreCapture(ParserTestCase):
+    argument_signatures = [
+        Sig('--user', default=None),
+        Sig('--server', default='localhost'),
+        Sig('src1', action='store_capture', key='file', capture_reset=['user', 'server']),
+        Sig('src2', action='store_capture', key='file', capture_reset=['user', 'server']),
+        Sig('dst', action='store_capture', key='file', capture_reset=['user', 'server'])
+    ]
+    failures = ()
+    successes = [
+        ('first --user guest --server ftp.no_such second '
+         '--server http.not_found third',
+         NS(src1={'file': 'first',  'user': None,    'server': 'localhost'},
+            src2={'file': 'second', 'user': 'guest', 'server': 'ftp.no_such'},
+            dst= {'file': 'third',  'user': None,    'server': 'http.not_found'},
+            user=None,
+            server='localhost')
+        )
+    ]
+
+
+class TestActionStoreCaptureConst(ParserTestCase):
+    argument_signatures = [
+        Sig('--param', default=None),
+        Sig('--item1', action='store_capture', nargs='?', const='default',
+            capture_reset='param'),
+        Sig('--item2', action='store_capture', nargs='?', const='default',
+            capture_reset='param'),
+    ]
+    failures = ()
+    successes = [
+        ('--param p1 --item1 --param p2 --item2 item2',
+         NS(item1={'item1': 'default', 'param': 'p1'},
+            item2={'item2': 'item2', 'param': 'p2'},
+            param=None))
+    ]
+
+
+class TestActionCapture(ParserTestCase):
+    argument_signatures = [
+        Sig('--type', default='unknown'),
+        Sig('--subtype', default='unknown'),
+        Sig('--energy', type=int, nargs=2, default='unknown'),
+        Sig('--direction', type=int, nargs=2, default='unknown'),
+        Sig('--next', dest='history', action='capture', capture_reset='*')
+    ]
+    failures = ()
+    successes = [
+        ('--energy 3055 5 --direction 2054 154 --next '
+         '--type meson --subtype J/psi --energy 309 7 --next '
+         '--type cruiser --subtype Kirov --direction 4320 9000',
+         NS(history=[{'type': 'unknown', 'subtype': 'unknown', 'energy': [3055, 5], 'direction': [2054, 154]},
+                     {'type': 'meson',   'subtype': 'J/psi',   'energy': [309, 7],  'direction': 'unknown'}],
+            type='cruiser', subtype='Kirov', energy='unknown', direction=[4320, 9000])
+        )
+    ]
+
 # ================
 # Subparsers tests
 # ================

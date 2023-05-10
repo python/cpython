@@ -1254,6 +1254,189 @@ class _ExtendAction(_AppendAction):
         items.extend(values)
         setattr(namespace, self.dest, items)
 
+class _CaptureBaseAction(Action):
+
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 key=None,
+                 capture=None,
+                 capture_reset=None,
+                 **kwargs):
+        super(_CaptureBaseAction, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            **kwargs)
+
+        self.key = key if key is not None else dest
+        self.capture = capture
+        self.capture_reset = capture_reset
+
+        if capture is None:
+            capture = ()
+        elif isinstance(capture, str):
+            capture = (capture,)
+
+        if capture_reset is None:
+            capture_reset = ()
+        elif isinstance(capture_reset, str):
+            capture_reset = (capture_reset,)
+
+        seen_captures = set()
+        self.capture_all = False
+        self.reset_all = False
+        self.capture_list = []
+        self.reset_list = []
+
+        # Build list of items to capture
+        for name in tuple(capture):
+            if self.capture_all or name == '*' and len(self.capture_list) != 0:
+                ValueError("character '*' must appear alone in 'capture' list.")
+            if name in seen_captures:
+                ValueError("attribute name can appear only once in one of "
+                           "'capture' and 'capture_reset' lists.")
+            if name == self.key or name == self.dest:
+                ValueError("argument's attribute name cannot appear on its "
+                           "own 'capture' or 'capture_reset' lists.")
+            if name == '*':
+                self.capture_all = True
+            else:
+                seen_captures.add(name)
+                self.capture_list.append(name)
+
+        # Build list of items to reset,
+        for name in tuple(capture_reset):
+            if self.reset_all or name == '*' and len(self.capture_list) != 0:
+                ValueError("character '*' must appear alone in 'capture_reset'"
+                           " list and 'capture' list must be empty.")
+            if name in seen_captures:
+                ValueError("attribute name can appear only once in one of "
+                           "'capture' and 'capture_reset' lists.")
+            if name == self.key or name == self.dest:
+                ValueError("argument's attribute name cannot appear on its "
+                           "own 'capture' or 'capture_reset' lists.")
+            if name == '*':
+                self.capture_all = True
+                self.reset_all = True
+            else:
+                seen_captures.add(name)
+                if not self.capture_all:
+                    self.capture_list.append(name)
+                self.reset_list.append(name)
+
+    def _get_kwargs(self):
+        kwargs = super(_CaptureBaseAction, self)._get_kwargs()
+        for key in ('key', 'capture', 'capture_reset'):
+            kwargs.append((key, getattr(self, key)))
+        return kwargs
+
+    def get_captures(self, namespace):
+        keys = (vars(namespace).keys() - {self.dest} if self.capture_all
+                else self.capture_list)
+        captures = {}
+        for key in keys:
+            value = getattr(namespace, key, None)
+            # copy value unless we know it's safe not to
+            if value is None or type(value) in (int, float, bool, str):
+                captures[key] = value
+            else:
+                captures[key] = _copy_items(value)
+        return captures
+
+    def reset_captures(self, parser, namespace):
+        keys = (vars(namespace).keys() - {self.dest} if self.reset_all
+                else self.reset_list)
+        for key in keys:
+            if hasattr(namespace, key):
+                setattr(namespace, key, parser.get_default(key))
+
+class _CaptureStoreBaseAction(_CaptureBaseAction):
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 const=None,
+                 nargs=None,
+                 **kwargs):
+        if nargs == 0:
+            raise ValueError('nargs for capture actions must be != 0.')
+        if const is not None and nargs != OPTIONAL:
+            raise ValueError('nargs must be %r to supply const' % OPTIONAL)
+        super(_CaptureStoreBaseAction, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=nargs,
+            const=const,
+            **kwargs)
+
+class _ExtendCaptureAction(_CaptureStoreBaseAction):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        items = getattr(namespace, self.dest, None)
+        # This is needed when multiple parameters get the same default value
+        items = _copy_items(items)
+        first_item = True
+        for value in values:
+            # Get captures for each item, to make sure each gets own copy
+            item_dict = self.get_captures(namespace)
+            item_dict[self.key] = value
+            items.append(item_dict)
+            if first_item:
+                self.reset_captures(parser, namespace)
+                first_item = False
+        setattr(namespace, self.dest, items)
+
+class _AppendCaptureAction(_CaptureStoreBaseAction):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        items = getattr(namespace, self.dest, None)
+        items = _copy_items(items)
+        item_dict = self.get_captures(namespace)
+        item_dict[self.key] = values
+        items.append(item_dict)
+        self.reset_captures(parser, namespace)
+        setattr(namespace, self.dest, items)
+
+class _StoreCaptureAction(_CaptureStoreBaseAction):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        item_dict = self.get_captures(namespace)
+        item_dict[self.key] = values
+        self.reset_captures(parser, namespace)
+        setattr(namespace, self.dest, item_dict)
+
+class _CaptureAction(_CaptureBaseAction):
+
+    def __init__(self,
+                option_strings,
+                dest,
+                default=None,
+                type=None,
+                required=False,
+                help=None,
+                metavar=None,
+                capture=None,
+                capture_reset=None):
+        super(_CaptureAction, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=0,
+            const=None,
+            default=default,
+            type=type,
+            required=required,
+            help=help,
+            metavar=metavar,
+            key=None,
+            capture=capture,
+            capture_reset=capture_reset)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        items = getattr(namespace, self.dest, None)
+        items = _copy_items(items)
+        items.append(self.get_captures(namespace))
+        self.reset_captures(parser, namespace)
+        setattr(namespace, self.dest, items)
+
 # ==============
 # Type classes
 # ==============
@@ -1363,6 +1546,10 @@ class _ActionsContainer(object):
         self.register('action', 'version', _VersionAction)
         self.register('action', 'parsers', _SubParsersAction)
         self.register('action', 'extend', _ExtendAction)
+        self.register('action', 'extend_capture', _ExtendCaptureAction)
+        self.register('action', 'append_capture', _AppendCaptureAction)
+        self.register('action', 'store_capture', _StoreCaptureAction)
+        self.register('action', 'capture', _CaptureAction)
 
         # raise an exception if the conflict handler is invalid
         self._get_handler()
