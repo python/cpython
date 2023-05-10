@@ -264,7 +264,10 @@ HTTPConnection Objects
             encode_chunked=False)
 
    This will send a request to the server using the HTTP request
-   method *method* and the selector *url*.
+   method *method* and the request URI *url*. The provided *url* must be
+   an absolute path to conform with :rfc:`RFC 2616 §5.1.2 <2616#section-5.1.2>`
+   (unless connecting to an HTTP proxy server or using the ``OPTIONS`` or
+   ``CONNECT`` methods).
 
    If *body* is specified, the specified data is sent after the headers are
    finished.  It may be a :class:`str`, a :term:`bytes-like object`, an
@@ -279,7 +282,10 @@ HTTPConnection Objects
    iterable are sent as is until the iterable is exhausted.
 
    The *headers* argument should be a mapping of extra HTTP headers to send
-   with the request.
+   with the request. A :rfc:`Host header <2616#section-14.23>`
+   must be provided to conform with :rfc:`RFC 2616 §5.1.2 <2616#section-5.1.2>`
+   (unless connecting to an HTTP proxy server or using the ``OPTIONS`` or
+   ``CONNECT`` methods).
 
    If *headers* contains neither Content-Length nor Transfer-Encoding,
    but there is a request body, one of those
@@ -297,6 +303,16 @@ HTTPConnection Objects
    specified in *headers*.  If *encode_chunked* is ``False``, the
    HTTPConnection object assumes that all encoding is handled by the
    calling code.  If it is ``True``, the body will be chunk-encoded.
+
+   For example, to perform a ``GET`` request to ``https://docs.python.org/3/``::
+
+      >>> import http.client
+      >>> host = "docs.python.org"
+      >>> conn = http.client.HTTPSConnection(host)
+      >>> conn.request("GET", "/3/", headers={"Host": host})
+      >>> response = conn.getresponse()
+      >>> print(response.status, response.reason)
+      200 OK
 
    .. note::
       Chunked transfer encoding has been added to the HTTP protocol

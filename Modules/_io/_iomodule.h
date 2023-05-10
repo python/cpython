@@ -34,9 +34,13 @@ extern PyType_Spec winconsoleio_spec;
  * with args=NULL, and return a new reference.
  * BUT when args=Py_True is passed, they return a borrowed reference.
  */
-extern PyObject* _PyIOBase_check_readable(PyObject *self, PyObject *args);
-extern PyObject* _PyIOBase_check_writable(PyObject *self, PyObject *args);
-extern PyObject* _PyIOBase_check_seekable(PyObject *self, PyObject *args);
+typedef struct _io_state _PyIO_State;  // Forward decl.
+extern PyObject* _PyIOBase_check_readable(_PyIO_State *state,
+                                          PyObject *self, PyObject *args);
+extern PyObject* _PyIOBase_check_writable(_PyIO_State *state,
+                                          PyObject *self, PyObject *args);
+extern PyObject* _PyIOBase_check_seekable(_PyIO_State *state,
+                                          PyObject *self, PyObject *args);
 extern PyObject* _PyIOBase_check_closed(PyObject *self, PyObject *args);
 
 /* Helper for finalization.
@@ -140,7 +144,7 @@ extern Py_off_t PyNumber_AsOff_t(PyObject *item, PyObject *err);
 
 extern PyModuleDef _PyIO_Module;
 
-typedef struct {
+struct _io_state {
     int initialized;
     PyObject *unsupported_operation;
 
@@ -161,7 +165,7 @@ typedef struct {
 #ifdef MS_WINDOWS
     PyTypeObject *PyWindowsConsoleIO_Type;
 #endif
-} _PyIO_State;
+};
 
 #define IO_MOD_STATE(mod) ((_PyIO_State *)PyModule_GetState(mod))
 #define IO_STATE() _PyIO_get_module_state()
