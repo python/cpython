@@ -1793,8 +1793,9 @@ def test_pdb_issue_gh_101517():
     ...     'continue'
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(5)test_function()
-    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(None)test_function()->None
+    -> Warning: lineno is None
     (Pdb) continue
     """
 

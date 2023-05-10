@@ -776,6 +776,35 @@ handle_eval_breaker:
 #include "generated_cases.c.h"
 
 #if USE_COMPUTED_GOTOS
+        TARGET_INSTRUMENTED_LINE:
+#else
+        case INSTRUMENTED_LINE:
+#endif
+    {
+        _Py_CODEUNIT *prev = frame->prev_instr;
+        _Py_CODEUNIT *here = frame->prev_instr = next_instr;
+        _PyFrame_SetStackPointer(frame, stack_pointer);
+        int original_opcode = _Py_call_instrumentation_line(
+                tstate, frame, here, prev);
+        stack_pointer = _PyFrame_GetStackPointer(frame);
+        if (original_opcode < 0) {
+            next_instr = here+1;
+            goto error;
+        }
+        next_instr = frame->prev_instr;
+        if (next_instr != here) {
+            DISPATCH();
+        }
+        if (_PyOpcode_Caches[original_opcode]) {
+            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
+            INCREMENT_ADAPTIVE_COUNTER(cache->counter);
+        }
+        opcode = original_opcode;
+        DISPATCH_GOTO();
+    }
+
+
+#if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
         EXTRA_CASES  // From opcode.h, a 'case' for each unused opcode

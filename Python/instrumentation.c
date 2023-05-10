@@ -14,7 +14,7 @@
 /* Uncomment this to dump debugging output when assertions fail */
 // #define INSTRUMENT_DEBUG 1
 
-static PyObject DISABLE =
+PyObject _PyInstrumentation_DISABLE =
 {
     .ob_refcnt = _Py_IMMORTAL_REFCNT,
     .ob_type = &PyBaseObject_Type
@@ -859,7 +859,7 @@ call_one_instrument(
         return -1;
     }
     Py_DECREF(res);
-    return (res == &DISABLE);
+    return (res == &_PyInstrumentation_DISABLE);
 }
 
 static const int8_t MOST_SIGNIFICANT_BITS[16] = {
@@ -1002,7 +1002,7 @@ _Py_call_instrumentation_2args(
     return call_instrumentation_vector(tstate, event, frame, instr, 4, args);
 }
 
-int
+_Py_CODEUNIT *
 _Py_call_instrumentation_jump(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *target)
@@ -1010,17 +1010,26 @@ _Py_call_instrumentation_jump(
     assert(event == PY_MONITORING_EVENT_JUMP ||
            event == PY_MONITORING_EVENT_BRANCH);
     assert(frame->prev_instr == instr);
+    /* Event should occur after the jump */
     frame->prev_instr = target;
     PyCodeObject *code = frame->f_code;
     int to = (int)(target - _PyCode_CODE(code));
     PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
     if (to_obj == NULL) {
-        return -1;
+        return NULL;
     }
     PyObject *args[4] = { NULL, NULL, NULL, to_obj };
     int err = call_instrumentation_vector(tstate, event, frame, instr, 3, args);
     Py_DECREF(to_obj);
-    return err;
+    if (err) {
+        return NULL;
+    }
+    if (frame->prev_instr != target) {
+        return frame->prev_instr;
+    }
+    /* Reset prev_instr for INSTRUMENTED_LINE */
+    frame->prev_instr = instr;
+    return target;
 }
 
 static void
@@ -1076,13 +1085,14 @@ _Py_Instrumentation_GetLine(PyCodeObject *code, int index)
 }
 
 int
-_Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr)
+_Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
     frame->prev_instr = instr;
     PyCodeObject *code = frame->f_code;
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
     int i = (int)(instr - _PyCode_CODE(code));
+
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
     _PyCoLineInstrumentationData *line_data = &monitoring->lines[i];
     uint8_t original_opcode = line_data->original_opcode;
@@ -1092,6 +1102,15 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     PyInterpreterState *interp = tstate->interp;
     int8_t line_delta = line_data->line_delta;
     int line = compute_line(code, i, line_delta);
+    assert(line >= 0);
+    int prev_index = (int)(prev - _PyCode_CODE(code));
+    int prev_line = _Py_Instrumentation_GetLine(code, prev_index);
+    if (prev_line == line) {
+        int prev_opcode = _PyCode_CODE(code)[prev_index].op.code;
+        if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME) {
+            goto done;
+        }
+    }
     uint8_t tools = code->_co_monitoring->line_tools != NULL ?
         code->_co_monitoring->line_tools[i] :
         (interp->monitors.tools[PY_MONITORING_EVENT_LINE] |
@@ -1281,23 +1300,73 @@ initialize_lines(PyCodeObject *code)
                 else {
                     line_data[i].original_opcode = 0;
                 }
-                if (line >= 0) {
-                    current_line = line;
-                }
+                current_line = line;
         }
         for (int j = 1; j < length; j++) {
             line_data[i+j].original_opcode = 0;
             line_data[i+j].line_delta = NO_LINE;
         }
-        switch (opcode) {
-            case RETURN_VALUE:
-            case RAISE_VARARGS:
-            case RERAISE:
-                /* Blocks of code after these terminators
-                 * should be treated as different lines */
-                current_line = -1;
-        }
         i += length;
+    }
+    for (int i = code->_co_firsttraceable; i < code_len; ) {
+        int opcode = _Py_GetBaseOpcode(code, i);
+        int oparg = 0;
+        while (opcode == EXTENDED_ARG) {
+            oparg = (oparg << 8) | _PyCode_CODE(code)[i].op.arg;
+            i++;
+            opcode = _Py_GetBaseOpcode(code, i);
+        }
+        oparg = (oparg << 8) | _PyCode_CODE(code)[i].op.arg;
+        i += instruction_length(code, i);
+        int target = -1;
+        switch (opcode) {
+            case POP_JUMP_IF_FALSE:
+            case POP_JUMP_IF_TRUE:
+            case JUMP_FORWARD:
+            {
+                target = i + oparg;
+                break;
+            }
+            case FOR_ITER:
+            case SEND:
+            {
+                /* Skip over END_FOR/END_SEND */
+                target = i + oparg + 1;
+                break;
+            }
+            case JUMP_BACKWARD:
+            case JUMP_BACKWARD_NO_INTERRUPT:
+            {
+                target = i - oparg;
+                break;
+            }
+            default:
+                continue;
+        }
+        assert(target >= 0);
+        if (line_data[target].line_delta != NO_LINE) {
+            line_data[target].original_opcode = _Py_GetBaseOpcode(code, target);
+        }
+    }
+    /* Scan exception table */
+    unsigned char *start = (unsigned char *)PyBytes_AS_STRING(code->co_exceptiontable);
+    unsigned char *end = start + PyBytes_GET_SIZE(code->co_exceptiontable);
+    unsigned char *scan = start;
+    while (scan < end) {
+        int start_offset, size, handler;
+        scan = parse_varint(scan, &start_offset);
+        assert(start_offset >= 0 && start_offset < code_len);
+        scan = parse_varint(scan, &size);
+        assert(size >= 0 && start_offset+size <= code_len);
+        scan = parse_varint(scan, &handler);
+        assert(handler >= 0 && handler < code_len);
+        int depth_and_lasti;
+        scan = parse_varint(scan, &depth_and_lasti);
+        int original_opcode = _Py_GetBaseOpcode(code, handler);
+        if (line_data[handler].line_delta != NO_LINE &&
+            original_opcode != END_ASYNC_FOR) {
+            line_data[handler].original_opcode = original_opcode;
+        }
     }
 }
 
@@ -2010,7 +2079,7 @@ PyObject *_Py_CreateMonitoringObject(void)
     if (mod == NULL) {
         return NULL;
     }
-    if (PyObject_SetAttrString(mod, "DISABLE", &DISABLE)) {
+    if (PyObject_SetAttrString(mod, "DISABLE", &_PyInstrumentation_DISABLE)) {
         goto error;
     }
     if (PyObject_SetAttrString(mod, "MISSING", &_PyInstrumentation_MISSING)) {
