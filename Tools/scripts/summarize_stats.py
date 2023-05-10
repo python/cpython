@@ -230,6 +230,8 @@ def kind_to_text(kind, defines, opname):
         opname = "SUPER"
     elif opname.endswith("ATTR"):
         opname = "ATTR"
+    elif opname in ("FOR_ITER", "SEND"):
+        opname = "ITER"
     elif opname.endswith("SUBSCR"):
         opname = "SUBSCR"
     for name in defines[kind]:

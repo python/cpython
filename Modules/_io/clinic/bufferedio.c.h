@@ -92,15 +92,178 @@ PyDoc_STRVAR(_io__BufferedIOBase_detach__doc__,
 "state.");
 
 #define _IO__BUFFEREDIOBASE_DETACH_METHODDEF    \
-    {"detach", (PyCFunction)_io__BufferedIOBase_detach, METH_NOARGS, _io__BufferedIOBase_detach__doc__},
+    {"detach", _PyCFunction_CAST(_io__BufferedIOBase_detach), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__BufferedIOBase_detach__doc__},
 
 static PyObject *
-_io__BufferedIOBase_detach_impl(PyObject *self);
+_io__BufferedIOBase_detach_impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_io__BufferedIOBase_detach(PyObject *self, PyObject *Py_UNUSED(ignored))
+_io__BufferedIOBase_detach(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _io__BufferedIOBase_detach_impl(self);
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "detach() takes no arguments");
+        return NULL;
+    }
+    return _io__BufferedIOBase_detach_impl(self, cls);
+}
+
+PyDoc_STRVAR(_io__BufferedIOBase_read__doc__,
+"read($self, /, *args)\n"
+"--\n"
+"\n"
+"Read and return up to n bytes.\n"
+"\n"
+"If the argument is omitted, None, or negative, read and\n"
+"return all data until EOF.\n"
+"\n"
+"If the argument is positive, and the underlying raw stream is\n"
+"not \'interactive\', multiple raw reads may be issued to satisfy\n"
+"the byte count (unless EOF is reached first).\n"
+"However, for interactive raw streams (as well as sockets and pipes),\n"
+"at most one raw read will be issued, and a short result does not\n"
+"imply that EOF is imminent.\n"
+"\n"
+"Return an empty bytes object on EOF.\n"
+"\n"
+"Return None if the underlying raw stream was open in non-blocking\n"
+"mode and no data is available at the moment.");
+
+#define _IO__BUFFEREDIOBASE_READ_METHODDEF    \
+    {"read", _PyCFunction_CAST(_io__BufferedIOBase_read), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__BufferedIOBase_read__doc__},
+
+static PyObject *
+_io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls,
+                              PyObject *args);
+
+static PyObject *
+_io__BufferedIOBase_read(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "read",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *__clinic_args = NULL;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    __clinic_args = args[0];
+    return_value = _io__BufferedIOBase_read_impl(self, cls, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(_io__BufferedIOBase_read1__doc__,
+"read1($self, /, *args)\n"
+"--\n"
+"\n"
+"Read and return up to n bytes, with at most one read() call to the underlying raw stream.\n"
+"\n"
+"Return an empty bytes object on EOF.\n"
+"A short result does not imply that EOF is imminent.");
+
+#define _IO__BUFFEREDIOBASE_READ1_METHODDEF    \
+    {"read1", _PyCFunction_CAST(_io__BufferedIOBase_read1), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__BufferedIOBase_read1__doc__},
+
+static PyObject *
+_io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls,
+                               PyObject *args);
+
+static PyObject *
+_io__BufferedIOBase_read1(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "read1",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *__clinic_args = NULL;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    __clinic_args = args[0];
+    return_value = _io__BufferedIOBase_read1_impl(self, cls, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(_io__BufferedIOBase_write__doc__,
+"write($self, /, *args)\n"
+"--\n"
+"\n"
+"Write the given buffer to the IO stream.\n"
+"\n"
+"Return the number of bytes written, which is always\n"
+"the length of b in bytes.\n"
+"\n"
+"Raise BlockingIOError if the buffer is full and the\n"
+"underlying raw stream cannot accept more data at the moment.");
+
+#define _IO__BUFFEREDIOBASE_WRITE_METHODDEF    \
+    {"write", _PyCFunction_CAST(_io__BufferedIOBase_write), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io__BufferedIOBase_write__doc__},
+
+static PyObject *
+_io__BufferedIOBase_write_impl(PyObject *self, PyTypeObject *cls,
+                               PyObject *args);
+
+static PyObject *
+_io__BufferedIOBase_write(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "write",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *__clinic_args = NULL;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    __clinic_args = args[0];
+    return_value = _io__BufferedIOBase_write_impl(self, cls, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
 }
 
 PyDoc_STRVAR(_io__Buffered_peek__doc__,
@@ -714,4 +877,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8412b10c04259bb8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c4ea041ccc91b5d2 input=a9049054013a1b77]*/
