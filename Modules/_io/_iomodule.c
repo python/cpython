@@ -772,7 +772,7 @@ PyInit__io(void)
 
     // PyRawIOBase_Type(PyIOBase_Type) subclasses
     ADD_TYPE(m, state->PyFileIO_Type, &fileio_spec, state->PyRawIOBase_Type);
-#ifdef MS_WINDOWS
+#ifdef HAVE_WINDOWS_CONSOLE_IO
     ADD_TYPE(m, state->PyWindowsConsoleIO_Type, &winconsoleio_spec,
              state->PyRawIOBase_Type);
 #endif

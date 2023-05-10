@@ -263,7 +263,7 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     int fd_is_own = 0;
     HANDLE handle = NULL;
 
-#ifdef Py_DEBUG
+#ifdef NDEBUG
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     assert(PyObject_TypeCheck(self, state->PyWindowsConsoleIO_Type));
 #endif
