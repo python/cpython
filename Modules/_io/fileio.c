@@ -784,6 +784,7 @@ _io_FileIO_readall_impl(fileio *self)
 
 /*[clinic input]
 _io.FileIO.read
+    cls: defining_class
     size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
@@ -795,8 +796,8 @@ Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
-_io_FileIO_read_impl(fileio *self, Py_ssize_t size)
-/*[clinic end generated code: output=42528d39dd0ca641 input=bec9a2c704ddcbc9]*/
+_io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
+/*[clinic end generated code: output=bbd749c7c224143e input=f613d2057e4a1918]*/
 {
     char *ptr;
     Py_ssize_t n;
@@ -805,7 +806,7 @@ _io_FileIO_read_impl(fileio *self, Py_ssize_t size)
     if (self->fd < 0)
         return err_closed();
     if (!self->readable) {
-        _PyIO_State *state = IO_STATE();
+        _PyIO_State *state = get_io_state_by_cls(cls);
         return err_mode(state, "reading");
     }
 

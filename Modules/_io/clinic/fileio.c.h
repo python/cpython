@@ -296,28 +296,43 @@ PyDoc_STRVAR(_io_FileIO_read__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO_FILEIO_READ_METHODDEF    \
-    {"read", _PyCFunction_CAST(_io_FileIO_read), METH_FASTCALL, _io_FileIO_read__doc__},
+    {"read", _PyCFunction_CAST(_io_FileIO_read), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _io_FileIO_read__doc__},
 
 static PyObject *
-_io_FileIO_read_impl(fileio *self, Py_ssize_t size);
+_io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size);
 
 static PyObject *
-_io_FileIO_read(fileio *self, PyObject *const *args, Py_ssize_t nargs)
+_io_FileIO_read(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "read",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
     Py_ssize_t size = -1;
 
-    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (nargs < 1) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
     if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
         goto exit;
     }
-skip_optional:
-    return_value = _io_FileIO_read_impl(self, size);
+skip_optional_posonly:
+    return_value = _io_FileIO_read_impl(self, cls, size);
 
 exit:
     return return_value;
@@ -488,4 +503,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=3bdbb95958e7357b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4a1259440192e021 input=a9049054013a1b77]*/
