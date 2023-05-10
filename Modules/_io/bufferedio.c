@@ -1227,8 +1227,9 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
     CHECK_CLOSED(self, "seek of closed file")
 
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
-    if (_PyIOBase_check_seekable(state, self->raw, Py_True) == NULL)
+    if (_PyIOBase_check_seekable(state, self->raw, Py_True) == NULL) {
         return NULL;
+    }
 
     target = PyNumber_AsOff_t(targetobj, PyExc_ValueError);
     if (target == -1 && PyErr_Occurred())
@@ -1427,8 +1428,9 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
     self->detached = 0;
 
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
-    if (_PyIOBase_check_readable(state, raw, Py_True) == NULL)
+    if (_PyIOBase_check_readable(state, raw, Py_True) == NULL) {
         return -1;
+    }
 
     Py_XSETREF(self->raw, Py_NewRef(raw));
     self->buffer_size = buffer_size;
@@ -1782,8 +1784,9 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     self->detached = 0;
 
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
-    if (_PyIOBase_check_writable(state, raw, Py_True) == NULL)
+    if (_PyIOBase_check_writable(state, raw, Py_True) == NULL) {
         return -1;
+    }
 
     Py_INCREF(raw);
     Py_XSETREF(self->raw, raw);
@@ -2100,10 +2103,12 @@ _io_BufferedRWPair___init___impl(rwpair *self, PyObject *reader,
 /*[clinic end generated code: output=327e73d1aee8f984 input=620d42d71f33a031]*/
 {
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
-    if (_PyIOBase_check_readable(state, reader, Py_True) == NULL)
+    if (_PyIOBase_check_readable(state, reader, Py_True) == NULL) {
         return -1;
-    if (_PyIOBase_check_writable(state, writer, Py_True) == NULL)
+    }
+    if (_PyIOBase_check_writable(state, writer, Py_True) == NULL) {
         return -1;
+    }
 
     self->reader = (buffered *) PyObject_CallFunction(
             (PyObject *)state->PyBufferedReader_Type,
@@ -2298,12 +2303,15 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     self->detached = 0;
 
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
-    if (_PyIOBase_check_seekable(state, raw, Py_True) == NULL)
+    if (_PyIOBase_check_seekable(state, raw, Py_True) == NULL) {
         return -1;
-    if (_PyIOBase_check_readable(state, raw, Py_True) == NULL)
+    }
+    if (_PyIOBase_check_readable(state, raw, Py_True) == NULL) {
         return -1;
-    if (_PyIOBase_check_writable(state, raw, Py_True) == NULL)
+    }
+    if (_PyIOBase_check_writable(state, raw, Py_True) == NULL) {
         return -1;
+    }
 
     Py_INCREF(raw);
     Py_XSETREF(self->raw, raw);

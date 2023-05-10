@@ -456,6 +456,9 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
         assert(offset < nlocalsplus);
         // For now we do not distinguish arg kinds.
         _PyLocals_Kind kind = CO_FAST_LOCAL;
+        if (PyDict_Contains(umd->u_fasthidden, k)) {
+            kind |= CO_FAST_HIDDEN;
+        }
         if (PyDict_GetItem(umd->u_cellvars, k) != NULL) {
             kind |= CO_FAST_CELL;
         }

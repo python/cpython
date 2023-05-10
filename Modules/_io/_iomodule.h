@@ -28,6 +28,19 @@ extern PyType_Spec textiowrapper_spec;
 extern PyType_Spec winconsoleio_spec;
 #endif
 
+/* These functions are used as METH_NOARGS methods, are normally called
+ * with args=NULL, and return a new reference.
+ * BUT when args=Py_True is passed, they return a borrowed reference.
+ */
+typedef struct _io_state _PyIO_State;  // Forward decl.
+extern PyObject* _PyIOBase_check_readable(_PyIO_State *state,
+                                          PyObject *self, PyObject *args);
+extern PyObject* _PyIOBase_check_writable(_PyIO_State *state,
+                                          PyObject *self, PyObject *args);
+extern PyObject* _PyIOBase_check_seekable(_PyIO_State *state,
+                                          PyObject *self, PyObject *args);
+extern PyObject* _PyIOBase_check_closed(PyObject *self, PyObject *args);
+
 /* Helper for finalization.
    This function will revive an object ready to be deallocated and try to
    close() it. It returns 0 if the object can be destroyed, or -1 if it
@@ -129,7 +142,8 @@ extern Py_off_t PyNumber_AsOff_t(PyObject *item, PyObject *err);
 
 extern PyModuleDef _PyIO_Module;
 
-typedef struct {
+struct _io_state {
+    int initialized;
     PyObject *unsupported_operation;
 
     /* Types */
@@ -150,7 +164,7 @@ typedef struct {
 #ifdef HAVE_WINDOWS_CONSOLE_IO
     PyTypeObject *PyWindowsConsoleIO_Type;
 #endif
-} _PyIO_State;
+};
 
 static inline _PyIO_State *
 get_io_state(PyObject *module)
@@ -175,15 +189,6 @@ find_io_state_by_def(PyTypeObject *type)
     assert(mod != NULL);
     return get_io_state(mod);
 }
-
-/* These functions are used as METH_NOARGS methods, are normally called
- * with args=NULL, and return a new reference.
- * BUT when args=Py_True is passed, they return a borrowed reference.
- */
-extern PyObject* _PyIOBase_check_readable(_PyIO_State *state, PyObject *self, PyObject *args);
-extern PyObject* _PyIOBase_check_writable(_PyIO_State *state, PyObject *self, PyObject *args);
-extern PyObject* _PyIOBase_check_seekable(_PyIO_State *state, PyObject *self, PyObject *args);
-extern PyObject* _PyIOBase_check_closed(PyObject *self, PyObject *args);
 
 extern PyObject *_PyIOBase_cannot_pickle(PyObject *self, PyObject *args);
 

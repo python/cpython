@@ -835,7 +835,7 @@ static PyMethodDef iobase_methods[] = {
     _IO__IOBASE_READABLE_METHODDEF
     _IO__IOBASE_WRITABLE_METHODDEF
 
-    {"_checkClosed", _PyIOBase_check_closed, METH_NOARGS},
+    {"_checkClosed",   _PyIOBase_check_closed, METH_NOARGS},
     {"_checkSeekable", iobase_check_seekable, METH_NOARGS},
     {"_checkReadable", iobase_check_readable, METH_NOARGS},
     {"_checkWritable", iobase_check_writable, METH_NOARGS},
