@@ -150,7 +150,7 @@ dummy_func(
         inst(INSTRUMENTED_RESUME, (--)) {
             /* Possible performance enhancement:
              *   We need to check the eval breaker anyway, can we
-             * combine the instrument verison check and the eval breaker test?
+             * combine the instrument version check and the eval breaker test?
              */
             if (frame->f_code->_co_instrumentation_version != tstate->interp->monitoring_version) {
                 if (_Py_Instrument(frame->f_code, tstate->interp)) {
