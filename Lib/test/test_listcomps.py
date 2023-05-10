@@ -163,6 +163,15 @@ class ListComprehensionTest(unittest.TestCase):
         outputs = {"y": [4, 4, 4, 4, 4], "i": 20}
         self._check_in_scopes(code, outputs)
 
+    def test_inner_cell_shadows_outer_no_store(self):
+        code = """
+            def f(x):
+                return [lambda: x for x in range(x)]
+            y = [fn() for fn in f(2)]
+        """
+        outputs = {"y": [1, 1]}
+        self._check_in_scopes(code, outputs)
+
     def test_closure_can_jump_over_comp_scope(self):
         code = """
             items = [(lambda: y) for i in range(5)]
