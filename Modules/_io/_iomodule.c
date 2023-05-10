@@ -640,9 +640,8 @@ iomodule_exec(PyObject *m)
     _PyIO_State *state = get_io_state(m);
 
     /* DEFAULT_BUFFER_SIZE */
-    if (PyModule_AddIntMacro(m, DEFAULT_BUFFER_SIZE) < 0) {
+    if (PyModule_AddIntMacro(m, DEFAULT_BUFFER_SIZE) < 0)
         return -1;
-    }
 
     /* UnsupportedOperation inherits from ValueError and OSError */
     state->unsupported_operation = PyObject_CallFunction(
