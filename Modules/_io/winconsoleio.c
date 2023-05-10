@@ -735,6 +735,7 @@ readinto(winconsoleio *self, char *buf, Py_ssize_t len)
 
 /*[clinic input]
 _io._WindowsConsoleIO.readinto
+    cls: defining_class
     buffer: Py_buffer(accept={rwbuffer})
     /
 
@@ -742,8 +743,9 @@ Same as RawIOBase.readinto().
 [clinic start generated code]*/
 
 static PyObject *
-_io__WindowsConsoleIO_readinto_impl(winconsoleio *self, Py_buffer *buffer)
-/*[clinic end generated code: output=66d1bdfa3f20af39 input=4ed68da48a6baffe]*/
+_io__WindowsConsoleIO_readinto_impl(winconsoleio *self, PyTypeObject *cls,
+                                    Py_buffer *buffer)
+/*[clinic end generated code: output=96717c74f6204b79 input=4b0627c3b1645f78]*/
 {
     Py_ssize_t len = readinto(self, buffer->buf, buffer->len);
     if (len < 0)
@@ -899,6 +901,7 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
 
 /*[clinic input]
 _io._WindowsConsoleIO.read
+    cls: defining_class
     size: Py_ssize_t(accept={int, NoneType}) = -1
     /
 
@@ -910,8 +913,9 @@ Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
-_io__WindowsConsoleIO_read_impl(winconsoleio *self, Py_ssize_t size)
-/*[clinic end generated code: output=57df68af9f4b22d0 input=8bc73bc15d0fa072]*/
+_io__WindowsConsoleIO_read_impl(winconsoleio *self, PyTypeObject *cls,
+                                Py_ssize_t size)
+/*[clinic end generated code: output=7e569a586537c0ae input=a14570a5da273365]*/
 {
     PyObject *bytes;
     Py_ssize_t bytes_size;
@@ -952,6 +956,7 @@ _io__WindowsConsoleIO_read_impl(winconsoleio *self, Py_ssize_t size)
 
 /*[clinic input]
 _io._WindowsConsoleIO.write
+    cls: defining_class
     b: Py_buffer
     /
 
@@ -962,8 +967,9 @@ The number of bytes actually written is returned.
 [clinic start generated code]*/
 
 static PyObject *
-_io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
-/*[clinic end generated code: output=775bdb16fbf9137b input=be35fb624f97c941]*/
+_io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
+                                 Py_buffer *b)
+/*[clinic end generated code: output=e8019f480243cb29 input=10ac37c19339dfbe]*/
 {
     BOOL res = TRUE;
     wchar_t *wbuf;
