@@ -498,7 +498,7 @@ class TypeParamsTraditionalTypeVars(unittest.TestCase):
             class ClassA[T](Generic[T]): ...
         """
 
-        with self.assertRaisesRegex(TypeError, r"Cannot inherit from Generic\[...\] multiple types."):
+        with self.assertRaisesRegex(TypeError, r"Cannot inherit from Generic\[...\] multiple times."):
             run_code(code)
 
     def test_traditional_02(self):
