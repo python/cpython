@@ -112,6 +112,43 @@ def find_spec(name, package=None):
             return spec
 
 
+# Normally we would use contextlib.contextmanager.  However, this module
+# is imported by runpy, which means we want to avoid any unnecessary
+# dependencies.  Thus we use a class.
+
+class allowing_all_extensions:
+    """A context manager that lets users skip the compatibility check.
+
+    Normally, extensions that do not support multiple interpreters
+    may not be imported in a subinterpreter.  That implies modules
+    that do not implement multi-phase init.
+
+    Likewise for modules import in a subinterpeter with its own GIL
+    when the extension does not support a per-interpreter GIL.  This
+    implies the module does not have a Py_mod_multiple_interpreters slot
+    set to Py_MOD_PER_INTERPRETER_GIL_SUPPORTED.
+
+    In both cases, this context manager may be used to temporarily
+    disable the check for compatible extension modules.
+    """
+
+    def __init__(self, disable_check=True):
+        self.disable_check = disable_check
+
+    def __enter__(self):
+        self.old = _imp._override_multi_interp_extensions_check(self.override)
+        return self
+
+    def __exit__(self, *args):
+        old = self.old
+        del self.old
+        _imp._override_multi_interp_extensions_check(old)
+
+    @property
+    def override(self):
+        return -1 if self.disable_check else 1
+
+
 class _LazyModule(types.ModuleType):
 
     """A subclass of the module type which triggers loading upon attribute access."""

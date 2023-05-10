@@ -21,8 +21,7 @@ struct _ceval_runtime_state;
 
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
-extern void _PyEval_InitRuntimeState(struct _ceval_runtime_state *);
-extern void _PyEval_InitState(struct _ceval_state *, PyThread_type_lock);
+extern void _PyEval_InitState(PyInterpreterState *, PyThread_type_lock);
 extern void _PyEval_FiniState(struct _ceval_state *ceval);
 PyAPI_FUNC(void) _PyEval_SignalReceived(PyInterpreterState *interp);
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
@@ -100,7 +99,9 @@ extern int _PyEval_ThreadsInitialized(void);
 extern PyStatus _PyEval_InitGIL(PyThreadState *tstate, int own_gil);
 extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
+extern void _PyEval_AcquireLock(PyThreadState *tstate);
 extern void _PyEval_ReleaseLock(PyThreadState *tstate);
+extern PyThreadState * _PyThreadState_SwapNoGIL(PyThreadState *);
 
 extern void _PyEval_DeactivateOpCache(void);
 

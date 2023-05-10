@@ -2111,6 +2111,28 @@ class TestGetattrStatic(unittest.TestCase):
         self.assertEqual(inspect.getattr_static(foo, 'a'), 3)
         self.assertFalse(test.called)
 
+    def test_mutated_mro(self):
+        test = self
+        test.called = False
+
+        class Foo(dict):
+            a = 3
+            @property
+            def __dict__(self):
+                test.called = True
+                return {}
+
+        class Bar(dict):
+            a = 4
+
+        class Baz(Bar): pass
+
+        baz = Baz()
+        self.assertEqual(inspect.getattr_static(baz, 'a'), 4)
+        Baz.__bases__ = (Foo,)
+        self.assertEqual(inspect.getattr_static(baz, 'a'), 3)
+        self.assertFalse(test.called)
+
     def test_custom_object_dict(self):
         test = self
         test.called = False
@@ -2164,6 +2186,35 @@ class TestGetattrStatic(unittest.TestCase):
         with self.assertRaises(AttributeError):
             inspect.getattr_static(Thing, "spam")
         self.assertFalse(Thing.executed)
+
+    def test_custom___getattr__(self):
+        test = self
+        test.called = False
+
+        class Foo:
+            def __getattr__(self, attr):
+                test.called = True
+                return {}
+
+        with self.assertRaises(AttributeError):
+            inspect.getattr_static(Foo(), 'whatever')
+
+        self.assertFalse(test.called)
+
+    def test_custom___getattribute__(self):
+        test = self
+        test.called = False
+
+        class Foo:
+            def __getattribute__(self, attr):
+                test.called = True
+                return {}
+
+        with self.assertRaises(AttributeError):
+            inspect.getattr_static(Foo(), 'really_could_be_anything')
+
+        self.assertFalse(test.called)
+
 
 class TestGetGeneratorState(unittest.TestCase):
 
