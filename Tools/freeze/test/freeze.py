@@ -153,7 +153,7 @@ def prepare(script=None, outdir=None):
     print(f'configuring python in {builddir}...')
     cmd = [
         os.path.join(srcdir, 'configure'),
-        *shlex.split(get_config_var(builddir, 'CONFIG_ARGS') or ''),
+        *shlex.split(get_config_var(srcdir, 'CONFIG_ARGS') or ''),
     ]
     ensure_opt(cmd, 'cache-file', os.path.join(outdir, 'python-config.cache'))
     prefix = os.path.join(outdir, 'python-installation')

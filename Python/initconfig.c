@@ -5,7 +5,7 @@
 #include "pycore_interp.h"        // _PyInterpreterState.runtime
 #include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_pathconfig.h"    // _Py_path_config
-#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -2355,13 +2355,13 @@ config_usage(int error, const wchar_t* program)
 }
 
 static void
-config_envvars_usage()
+config_envvars_usage(void)
 {
     printf(usage_envvars, (wint_t)DELIM, (wint_t)DELIM, PYTHONHOMEHELP);
 }
 
 static void
-config_xoptions_usage()
+config_xoptions_usage(void)
 {
     puts(usage_xoptions);
 }

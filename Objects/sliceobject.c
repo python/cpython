@@ -29,6 +29,16 @@ ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     return Py_NewRef(Py_Ellipsis);
 }
 
+static void
+ellipsis_dealloc(PyObject *ellipsis)
+{
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref Ellipsis out of existence. Instead,
+     * since Ellipsis is an immortal object, re-set the reference count.
+     */
+    _Py_SetImmortal(ellipsis);
+}
+
 static PyObject *
 ellipsis_repr(PyObject *op)
 {
@@ -51,7 +61,7 @@ PyTypeObject PyEllipsis_Type = {
     "ellipsis",                         /* tp_name */
     0,                                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
-    0, /*never called*/                 /* tp_dealloc */
+    ellipsis_dealloc,                   /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -89,7 +99,8 @@ PyTypeObject PyEllipsis_Type = {
 
 PyObject _Py_EllipsisObject = {
     _PyObject_EXTRA_INIT
-    1, &PyEllipsis_Type
+    { _Py_IMMORTAL_REFCNT },
+    &PyEllipsis_Type
 };
 
 
@@ -445,7 +456,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
         if (start == NULL)
             goto error;
 
-        if (_PyLong_Sign(start) < 0) {
+        if (_PyLong_IsNegative((PyLongObject *)start)) {
             /* start += length */
             PyObject *tmp = PyNumber_Add(start, length);
             Py_SETREF(start, tmp);
@@ -478,7 +489,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
         if (stop == NULL)
             goto error;
 
-        if (_PyLong_Sign(stop) < 0) {
+        if (_PyLong_IsNegative((PyLongObject *)stop)) {
             /* stop += length */
             PyObject *tmp = PyNumber_Add(stop, length);
             Py_SETREF(stop, tmp);
@@ -533,7 +544,7 @@ slice_indices(PySliceObject* self, PyObject* len)
     if (length == NULL)
         return NULL;
 
-    if (_PyLong_Sign(length) < 0) {
+    if (_PyLong_IsNegative((PyLongObject *)length)) {
         PyErr_SetString(PyExc_ValueError,
                         "length should not be negative");
         Py_DECREF(length);

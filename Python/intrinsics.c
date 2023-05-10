@@ -199,7 +199,7 @@ list_to_tuple(PyThreadState* unused, PyObject *v)
     return _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
 }
 
-instrinsic_func1
+const instrinsic_func1
 _PyIntrinsics_UnaryFunctions[] = {
     [0] = no_intrinsic,
     [INTRINSIC_PRINT] = print_expr,
@@ -221,7 +221,7 @@ prep_reraise_star(PyThreadState* unused, PyObject *orig, PyObject *excs)
     return _PyExc_PrepReraiseStar(orig, excs);
 }
 
-instrinsic_func2
+const instrinsic_func2
 _PyIntrinsics_BinaryFunctions[] = {
     [INTRINSIC_PREP_RERAISE_STAR] = prep_reraise_star,
 };

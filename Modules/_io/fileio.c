@@ -37,7 +37,9 @@
 #ifdef MS_WINDOWS
 /* can simulate truncate with Win32 API functions; see file_truncate */
 #define HAVE_FTRUNCATE
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #endif
 
@@ -88,14 +90,13 @@ static PyObject *
 fileio_dealloc_warn(fileio *self, PyObject *source)
 {
     if (self->fd >= 0 && self->closefd) {
-        PyObject *exc, *val, *tb;
-        PyErr_Fetch(&exc, &val, &tb);
+        PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_ResourceWarning(source, 1, "unclosed file %R", source)) {
             /* Spurious errors can appear at shutdown */
             if (PyErr_ExceptionMatches(PyExc_Warning))
                 PyErr_WriteUnraisable((PyObject *) self);
         }
-        PyErr_Restore(exc, val, tb);
+        PyErr_SetRaisedException(exc);
     }
     Py_RETURN_NONE;
 }
@@ -129,6 +130,9 @@ internal_close(fileio *self)
 /*[clinic input]
 _io.FileIO.close
 
+    cls: defining_class
+    /
+
 Close the file.
 
 A closed file cannot be used for further I/O operations.  close() may be
@@ -136,32 +140,39 @@ called more than once without error.
 [clinic start generated code]*/
 
 static PyObject *
-_io_FileIO_close_impl(fileio *self)
-/*[clinic end generated code: output=7737a319ef3bad0b input=f35231760d54a522]*/
+_io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
+/*[clinic end generated code: output=c30cbe9d1f23ca58 input=70da49e63db7c64d]*/
 {
     PyObject *res;
-    PyObject *exc, *val, *tb;
     int rc;
-    res = PyObject_CallMethodOneArg((PyObject*)&PyRawIOBase_Type,
+    _PyIO_State *state = get_io_state_by_cls(cls);
+    res = PyObject_CallMethodOneArg((PyObject*)state->PyRawIOBase_Type,
                                      &_Py_ID(close), (PyObject *)self);
     if (!self->closefd) {
         self->fd = -1;
         return res;
     }
-    if (res == NULL)
-        PyErr_Fetch(&exc, &val, &tb);
+
+    PyObject *exc;
+    if (res == NULL) {
+        exc = PyErr_GetRaisedException();
+    }
     if (self->finalizing) {
         PyObject *r = fileio_dealloc_warn(self, (PyObject *) self);
-        if (r)
+        if (r) {
             Py_DECREF(r);
-        else
+        }
+        else {
             PyErr_Clear();
+        }
     }
     rc = internal_close(self);
-    if (res == NULL)
-        _PyErr_ChainExceptions(exc, val, tb);
-    if (rc < 0)
+    if (res == NULL) {
+        _PyErr_ChainExceptions1(exc);
+    }
+    if (rc < 0) {
         Py_CLEAR(res);
+    }
     return res;
 }
 
@@ -487,10 +498,9 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
     if (!fd_is_own)
         self->fd = -1;
     if (self->fd >= 0) {
-        PyObject *exc, *val, *tb;
-        PyErr_Fetch(&exc, &val, &tb);
+        PyObject *exc = PyErr_GetRaisedException();
         internal_close(self);
-        _PyErr_ChainExceptions(exc, val, tb);
+        _PyErr_ChainExceptions1(exc);
     }
 
  done:

@@ -86,6 +86,12 @@ Printing and clearing
 
    An exception must be set when calling this function.
 
+.. c:function:: void PyErr_DisplayException(PyObject *exc)
+
+   Print the standard traceback display of ``exc`` to ``sys.stderr``, including
+   chained exceptions and notes.
+
+   .. versionadded:: 3.12
 
 Raising exceptions
 ==================
@@ -596,7 +602,7 @@ Signal Handling
 .. c:function:: int PyErr_CheckSignals()
 
    .. index::
-      module: signal
+      pair: module; signal
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
@@ -627,7 +633,7 @@ Signal Handling
 .. c:function:: void PyErr_SetInterrupt()
 
    .. index::
-      module: signal
+      pair: module; signal
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
@@ -642,7 +648,7 @@ Signal Handling
 .. c:function:: int PyErr_SetInterruptEx(int signum)
 
    .. index::
-      module: signal
+      pair: module; signal
       single: KeyboardInterrupt (built-in exception)
 
    Simulate the effect of a signal arriving. The next time
