@@ -1196,6 +1196,14 @@ iterations of the loop.
 
    .. versionadded:: 3.12
 
+.. opcode:: LOAD_FAST_AND_CLEAR (var_num)
+
+   Pushes a reference to the local ``co_varnames[var_num]`` onto the stack (or
+   pushes ``NULL`` onto the stack if the local variable has not been
+   initialized) and sets ``co_varnames[var_num]`` to ``NULL``.
+
+   .. versionadded:: 3.12
+
 .. opcode:: STORE_FAST (var_num)
 
    Stores ``STACK.pop()`` into the local ``co_varnames[var_num]``.
