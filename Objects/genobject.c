@@ -1406,9 +1406,6 @@ typedef struct _PyAsyncGenWrappedValue {
 #define _PyAsyncGenWrappedValue_CheckExact(o) \
                     Py_IS_TYPE(o, &_PyAsyncGenWrappedValue_Type)
 
-#define PyAsyncGenASend_CheckExact(o) \
-                    Py_IS_TYPE(o, &_PyAsyncGenASend_Type)
-
 
 static int
 async_gen_traverse(PyAsyncGenObject *gen, visitproc visit, void *arg)
