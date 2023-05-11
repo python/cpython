@@ -421,6 +421,7 @@ PYTHON_OBJS=	\
 		Python/sysmodule.o \
 		Python/thread.o \
 		Python/traceback.o \
+		Python/tracemalloc.o \
 		Python/getopt.o \
 		Python/pystrcmp.o \
 		Python/pystrtod.o \

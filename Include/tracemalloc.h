@@ -33,6 +33,40 @@ PyAPI_FUNC(int) PyTraceMalloc_Untrack(
 PyAPI_FUNC(PyObject*) _PyTraceMalloc_GetTraceback(
     unsigned int domain,
     uintptr_t ptr);
+
+/* Return non-zero if traceamlloc is tracing */
+PyAPI_FUNC(int) _PyTraceMalloc_IsTracing(void);
+
+/* Clear the traceamlloc tracies */
+PyAPI_FUNC(void) _PyTraceMalloc_ClearTraces(void);
+
+/* Clear the traceamlloc tracies */
+PyAPI_FUNC(PyObject *) _PyTraceMalloc_GetTraces(void);
+
+/* Clear traceamlloc traceback for an object */
+PyAPI_FUNC(PyObject *) _PyTraceMalloc_GetObjectTraceback(PyObject *obj);
+
+/* Initialize traceamlloc */
+PyAPI_FUNC(int) _PyTraceMalloc_Init(void);
+
+/* Start traceamlloc */
+PyAPI_FUNC(int) _PyTraceMalloc_Start(int max_nframe);
+
+/* Stop traceamlloc */
+PyAPI_FUNC(void) _PyTraceMalloc_Stop(void);
+
+/* Get the tracemalloc traceback limit */
+PyAPI_FUNC(int) _PyTraceMalloc_GetTracebackLimit(void);
+
+/* Get the memory usage of tracemalloc in bytes */
+PyAPI_FUNC(size_t) _PyTraceMalloc_GetMemory(void);
+
+/* Get the current size and peak size of traced memory blocks as a 2-tuple */
+PyAPI_FUNC(PyObject *) _PyTraceMalloc_GetTracedMemory(void);
+
+/* Set the peak size of traced memory blocks to the current size */
+PyAPI_FUNC(void) _PyTraceResetPeak(void);
+
 #endif
 
 #endif /* !Py_TRACEMALLOC_H */
