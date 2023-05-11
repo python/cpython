@@ -4258,9 +4258,9 @@ class MiscIOTest(unittest.TestCase):
                 kwargs["encoding"] = "utf-8"
             for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
                 with self.subTest(protocol=protocol, kwargs=kwargs):
-                     with self.open(os_helper.TESTFN, **kwargs) as f:
-                         with self.assertRaisesRegex(TypeError, msg):
-                             pickle.dumps(f, protocol)
+                    with self.open(os_helper.TESTFN, **kwargs) as f:
+                        with self.assertRaisesRegex(TypeError, msg):
+                            pickle.dumps(f, protocol)
 
     @unittest.skipIf(
         support.is_emscripten, "fstat() of a pipe fd is not supported"
