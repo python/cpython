@@ -124,7 +124,7 @@ This is where using the ``if __name__ == '__main__'`` code block comes in
 handy. Code within this block won't run unless the module is executed in the
 top-level environment.
 
-Putting as few statements as possible in the block below ``if __name___ ==
+Putting as few statements as possible in the block below ``if __name__ ==
 '__main__'`` can improve code clarity and correctness. Most often, a function
 named ``main`` encapsulates the program's primary behavior::
 

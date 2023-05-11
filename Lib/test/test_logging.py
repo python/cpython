@@ -1524,6 +1524,32 @@ class ConfigFileTest(BaseTest):
     kwargs={{"encoding": "utf-8"}}
     """
 
+
+    config9 = """
+    [loggers]
+    keys=root
+
+    [handlers]
+    keys=hand1
+
+    [formatters]
+    keys=form1
+
+    [logger_root]
+    level=WARNING
+    handlers=hand1
+
+    [handler_hand1]
+    class=StreamHandler
+    level=NOTSET
+    formatter=form1
+    args=(sys.stdout,)
+
+    [formatter_form1]
+    format=%(message)s ++ %(customfield)s
+    defaults={"customfield": "defaultvalue"}
+    """
+
     disable_test = """
     [loggers]
     keys=root
@@ -1686,6 +1712,16 @@ class ConfigFileTest(BaseTest):
 
         handler = logging.root.handlers[0]
         self.addCleanup(closeFileHandler, handler, fn)
+
+    def test_config9_ok(self):
+        self.apply_config(self.config9)
+        formatter = logging.root.handlers[0].formatter
+        result = formatter.format(logging.makeLogRecord({'msg': 'test'}))
+        self.assertEqual(result, 'test ++ defaultvalue')
+        result = formatter.format(logging.makeLogRecord(
+            {'msg': 'test', 'customfield': "customvalue"}))
+        self.assertEqual(result, 'test ++ customvalue')
+
 
     def test_logger_disabling(self):
         self.apply_config(self.disable_test)
@@ -2909,6 +2945,30 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    # config0 but with default values for formatter. Skipped 15, it is defined
+    # in the test code.
+    config16 = {
+        'version': 1,
+        'formatters': {
+            'form1' : {
+                'format' : '%(message)s ++ %(customfield)s',
+                'defaults': {"customfield": "defaultvalue"}
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'form1',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+            'handlers' : ['hand1'],
+        },
+    }
+
     bad_format = {
         "version": 1,
         "formatters": {
@@ -3021,7 +3081,7 @@ class ConfigDictTest(BaseTest):
         }
     }
 
-    # Configuration with custom function and 'validate' set to False
+    # Configuration with custom function, 'validate' set to False and no defaults
     custom_formatter_with_function = {
         'version': 1,
         'formatters': {
@@ -3029,6 +3089,33 @@ class ConfigDictTest(BaseTest):
                 '()': formatFunc,
                 'format': '%(levelname)s:%(name)s:%(message)s',
                 'validate': False,
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class': 'logging.StreamHandler',
+                'formatter': 'form1',
+                'level': 'NOTSET',
+                'stream': 'ext://sys.stdout',
+            },
+        },
+        "loggers": {
+            "my_test_logger_custom_formatter": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+                "propagate": "true"
+            }
+        }
+    }
+
+    # Configuration with custom function, and defaults
+    custom_formatter_with_defaults = {
+        'version': 1,
+        'formatters': {
+            'form1': {
+                '()': formatFunc,
+                'format': '%(levelname)s:%(name)s:%(message)s:%(customfield)s',
+                'defaults': {"customfield": "myvalue"}
             },
         },
         'handlers' : {
@@ -3349,6 +3436,22 @@ class ConfigDictTest(BaseTest):
         handler = logging.root.handlers[0]
         self.addCleanup(closeFileHandler, handler, fn)
 
+    def test_config16_ok(self):
+        self.apply_config(self.config16)
+        h = logging._handlers['hand1']
+
+        # Custom value
+        result = h.formatter.format(logging.makeLogRecord(
+            {'msg': 'Hello', 'customfield': 'customvalue'}))
+        self.assertEqual(result, 'Hello ++ customvalue')
+
+        # Default value
+        result = h.formatter.format(logging.makeLogRecord(
+            {'msg': 'Hello'}))
+        self.assertEqual(result, 'Hello ++ defaultvalue')
+
+
+
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
         # Ask for a randomly assigned port (by using port 0)
@@ -3515,6 +3618,9 @@ class ConfigDictTest(BaseTest):
 
     def test_custom_formatter_function_with_validate(self):
         self.assertRaises(ValueError, self.apply_config, self.custom_formatter_with_function)
+
+    def test_custom_formatter_function_with_defaults(self):
+        self.assertRaises(ValueError, self.apply_config, self.custom_formatter_with_defaults)
 
     def test_baseconfig(self):
         d = {

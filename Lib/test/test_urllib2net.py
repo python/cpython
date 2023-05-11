@@ -134,7 +134,9 @@ class OtherNetworkTests(unittest.TestCase):
     # They do sometimes catch some major disasters, though.
 
     def test_ftp(self):
+        # Testing the same URL twice exercises the caching in CacheFTPHandler
         urls = [
+            'ftp://www.pythontest.net/README',
             'ftp://www.pythontest.net/README',
             ('ftp://www.pythontest.net/non-existent-file',
              None, urllib.error.URLError),

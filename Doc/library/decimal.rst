@@ -926,7 +926,7 @@ Each thread has its own current context which is accessed or changed using the
 You can also use the :keyword:`with` statement and the :func:`localcontext`
 function to temporarily change the active context.
 
-.. function:: localcontext(ctx=None, \*\*kwargs)
+.. function:: localcontext(ctx=None, **kwargs)
 
    Return a context manager that will set the current context for the active thread
    to a copy of *ctx* on entry to the with-statement and restore the previous context

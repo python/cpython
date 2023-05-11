@@ -97,7 +97,6 @@ if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # resources get picked up before their $srcdir counterparts.
     #   Objects/ -> typeslots.inc
     #   Include/ -> Python.h
-    #   Python/  -> importlib.h
     # (A side effect of this is that these resources will automatically be
     #  regenerated when building out-of-tree, regardless of whether or not
     #  the $srcdir counterpart is up-to-date.  This is an acceptable trade
@@ -960,6 +959,20 @@ cat > conftest.c <<EOF
         hppa-linux-gnu
 # elif defined(__ia64__)
         ia64-linux-gnu
+# elif defined(__loongarch__)
+#  if defined(__loongarch_lp64)
+#   if defined(__loongarch_soft_float)
+        loongarch64-linux-gnusf
+#   elif defined(__loongarch_single_float)
+        loongarch64-linux-gnuf32
+#   elif defined(__loongarch_double_float)
+        loongarch64-linux-gnu
+#   else
+#    error unknown platform triplet
+#   endif
+#  else
+#   error unknown platform triplet
+#  endif
 # elif defined(__m68k__) && !defined(__mcoldfire__)
         m68k-linux-gnu
 # elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6) && defined(_MIPSEL)
@@ -1939,6 +1952,13 @@ if test "$Py_BOLT" = 'true' ; then
   DEF_MAKE_ALL_RULE="bolt-opt"
   DEF_MAKE_RULE="build_all"
 
+  AC_SUBST(READELF)
+  AC_CHECK_TOOLS(READELF, [readelf], "notfound")
+  if test "$READELF" == "notfound"
+  then
+    AC_MSG_ERROR([readelf is required for a --enable-bolt build but could not be found.])
+  fi
+      
   # -fno-reorder-blocks-and-partition is required for bolt to work.
   # Possibly GCC only.
   AX_CHECK_COMPILE_FLAG([-fno-reorder-blocks-and-partition],[
@@ -2915,6 +2935,7 @@ AC_CHECK_SIZEOF(size_t, 4)
 AC_CHECK_ALIGNOF(size_t)
 AC_CHECK_SIZEOF(pid_t, 4)
 AC_CHECK_SIZEOF(uintptr_t)
+AC_CHECK_ALIGNOF(max_align_t)
 
 AC_TYPE_LONG_DOUBLE
 AC_CHECK_SIZEOF(long double, 16)
