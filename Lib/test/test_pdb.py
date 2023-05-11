@@ -1811,12 +1811,12 @@ def test_pdb_ambiguous_statements():
     ...     n = -1
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     ...     print(f"The value of n is {n}")
-    > <doctest test.test_pdb.test_pdb_issue_gh_104301[0]>(8)<module>()
+    > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(8)<module>()
     -> print(f"The value of n is {n}")
     (Pdb) ! n = 42
     (Pdb) n
     The value of n is 42
-    > <doctest test.test_pdb.test_pdb_issue_gh_104301[0]>(1)<module>()
+    > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(1)<module>()
     -> with PdbTestInput([
     (Pdb) continue
     """
