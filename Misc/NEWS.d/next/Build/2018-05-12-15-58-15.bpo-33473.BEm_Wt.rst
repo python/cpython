@@ -1,0 +1,1 @@
+configure.ac was fixed to correctly report CC, CFLAGS, and LDFLAGS

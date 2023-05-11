@@ -9610,11 +9610,9 @@ if ${ac_cv_pthread+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_save_cc="$CC"
-CC="$CC -pthread"
-if test "$cross_compiling" = yes; then :
-  ac_cv_pthread=no
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+CC="$CC"
+CFLAGS="-pthread"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <stdio.h>
@@ -9631,15 +9629,13 @@ int main(void){
 }
 
 _ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_pthread=yes
 else
   ac_cv_pthread=no
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 CC="$ac_save_cc"
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthread" >&5
@@ -9667,7 +9663,8 @@ then
   ac_cv_cxx_thread=yes
 elif test "$ac_cv_pthread" = "yes"
 then
-  CXX="$CXX -pthread"
+  CXX="$CXX"
+  CXXFLAGS="-pthread"
   ac_cv_cxx_thread=yes
 else
   ac_cv_cxx_thread=no
@@ -11007,7 +11004,7 @@ then CC="$CC -Kpthread"
 elif test "$ac_cv_kthread" = "yes"
 then CC="$CC -Kthread"
 elif test "$ac_cv_pthread" = "yes"
-then CC="$CC -pthread"
+then CC="$CC"; BASECFLAGS="$BASECFLAGS -pthread"; BASECXXFLAGS="$BASECXXFLAGS -pthread"
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_t" >&5
@@ -15105,9 +15102,11 @@ then
     posix_threads=yes
 elif test "$ac_cv_pthread" = "yes"
 then
-    CC="$CC -pthread"
+    CC="$CC"
+    BASECFLAGS="$BASECFLAGS -pthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
-        CXX="$CXX -pthread"
+        CXX="$CXX"
+	BASECXXFLAGS="$BASECFLAGS -pthread"
     fi
     posix_threads=yes
 else
