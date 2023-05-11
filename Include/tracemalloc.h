@@ -34,25 +34,25 @@ PyAPI_FUNC(PyObject*) _PyTraceMalloc_GetTraceback(
     unsigned int domain,
     uintptr_t ptr);
 
-/* Return non-zero if traceamlloc is tracing */
+/* Return non-zero if tracemalloc is tracing */
 PyAPI_FUNC(int) _PyTraceMalloc_IsTracing(void);
 
-/* Clear the traceamlloc tracies */
+/* Clear the tracemalloc traces */
 PyAPI_FUNC(void) _PyTraceMalloc_ClearTraces(void);
 
-/* Clear the traceamlloc tracies */
+/* Clear the tracemalloc traces */
 PyAPI_FUNC(PyObject *) _PyTraceMalloc_GetTraces(void);
 
-/* Clear traceamlloc traceback for an object */
+/* Clear tracemalloc traceback for an object */
 PyAPI_FUNC(PyObject *) _PyTraceMalloc_GetObjectTraceback(PyObject *obj);
 
-/* Initialize traceamlloc */
+/* Initialize tracemalloc */
 PyAPI_FUNC(int) _PyTraceMalloc_Init(void);
 
-/* Start traceamlloc */
+/* Start tracemalloc */
 PyAPI_FUNC(int) _PyTraceMalloc_Start(int max_nframe);
 
-/* Stop traceamlloc */
+/* Stop tracemalloc */
 PyAPI_FUNC(void) _PyTraceMalloc_Stop(void);
 
 /* Get the tracemalloc traceback limit */
